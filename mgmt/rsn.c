@@ -3089,9 +3089,12 @@ uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 		return aisGetAisSpecBssInfo(prAdapter,
 				ucBssIndex)->fgBipKeyInstalled;
 	} else if (IS_BSS_APGO(prBssInfo)) {
-		if (prStaRec->rPmfCfg.fgApplyPmf)
+		u_int8_t fgApplyPmf = prStaRec->rPmfCfg.fgApplyPmf &&
+			prStaRec->fgTransmitKeyExist;
+
+		if (fgApplyPmf)
 			DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
-		return prStaRec->rPmfCfg.fgApplyPmf;
+		return fgApplyPmf;
 	} else
 		return FALSE;
 }
@@ -3977,7 +3980,7 @@ uint8_t rsnApCheckSaQueryTimeout(struct ADAPTER
 				p2pFuncDisconnect(prAdapter, prBssInfo,
 					prStaRec, FALSE,
 					REASON_CODE_DEAUTH_LEAVING_BSS,
-					TRUE);
+					MAC_FRAME_DEAUTH, TRUE);
 				/* Deactive BSS if PWR is IDLE and no peer */
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
 					prBssInfo->ucBssIndex)

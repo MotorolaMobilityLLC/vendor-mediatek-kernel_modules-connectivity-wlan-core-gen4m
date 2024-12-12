@@ -3664,6 +3664,15 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 	COPY_MAC_ADDR(prDisconnectMsg->aucTargetID, mac);
 	prDisconnectMsg->u2ReasonCode = params->reason_code;
 	prDisconnectMsg->fgSendDeauth = TRUE;
+	switch (params->subtype << 4) {
+	case IEEE80211_STYPE_DISASSOC:
+		prDisconnectMsg->ucSubType = MAC_FRAME_DISASSOC;
+		break;
+	case IEEE80211_STYPE_DEAUTH:
+	default:
+		prDisconnectMsg->ucSubType = MAC_FRAME_DEAUTH;
+		break;
+	}
 	wait = UNEQUAL_MAC_ADDR(mac, bcast_addr) ? TRUE : FALSE;
 
 	DBGLOG(P2P, INFO,
@@ -3746,7 +3755,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		COPY_MAC_ADDR(prDisconnectMsg->aucTargetID, mac);
 		prDisconnectMsg->u2ReasonCode = REASON_CODE_UNSPECIFIED;
 		prDisconnectMsg->fgSendDeauth = TRUE;
-
+		prDisconnectMsg->ucSubType = MAC_FRAME_DEAUTH;
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
@@ -3806,7 +3815,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		COPY_MAC_ADDR(prDisconnectMsg->aucTargetID, mac);
 		prDisconnectMsg->u2ReasonCode = REASON_CODE_UNSPECIFIED;
 		prDisconnectMsg->fgSendDeauth = TRUE;
-
+		prDisconnectMsg->ucSubType = MAC_FRAME_DEAUTH;
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,

@@ -6784,6 +6784,7 @@ void cnmPowerControlErrorHandling(
 			prBssInfo->prStaRecOfAP,
 			TRUE,
 			REASON_CODE_OP_MODE_CHANGE_FAIL,
+			MAC_FRAME_DEAUTH,
 			TRUE);
 		break;
 	default:

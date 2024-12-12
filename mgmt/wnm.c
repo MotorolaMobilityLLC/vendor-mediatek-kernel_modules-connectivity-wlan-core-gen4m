@@ -899,7 +899,8 @@ static void wnmMulAPAgentBTMRequestDisassocTimerFunc(
 		p2pFuncDisconnect(prAdapter,
 			prBssInfo, prStaRec,
 			TRUE,
-			REASON_CODE_DISASSOC_INACTIVITY);
+			REASON_CODE_DISASSOC_INACTIVITY,
+			MAC_FRAME_DEAUTH, TRUE);
 }
 
 static uint32_t wnmMulAPAgentBTMRequestTxDone(struct ADAPTER *prAdapter,

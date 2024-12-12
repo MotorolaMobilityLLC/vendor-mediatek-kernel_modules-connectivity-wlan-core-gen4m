@@ -122,6 +122,7 @@ struct MSG_P2P_CONNECTION_ABORT {
 	uint8_t aucTargetID[MAC_ADDR_LEN];
 	uint16_t u2ReasonCode;
 	u_int8_t fgSendDeauth;
+	uint8_t ucSubType;
 };
 
 struct MSG_P2P_FILS_DISCOVERY_UPDATE {

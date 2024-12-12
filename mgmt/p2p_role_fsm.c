@@ -1102,6 +1102,7 @@ void p2pRoleFsmRunEventRxDeauthentication(struct ADAPTER *prAdapter,
 			prStaRec,
 			FALSE,
 			u2ReasonCode,
+			MAC_FRAME_DEAUTH,
 			FALSE);
 
 		SET_NET_PWR_STATE_IDLE(prAdapter,
@@ -1161,6 +1162,7 @@ void p2pRoleFsmRunEventRxDeauthentication(struct ADAPTER *prAdapter,
 				prStaRec,
 				fgSendDeauth,
 				u2ReasonCode,
+				MAC_FRAME_DEAUTH,
 				FALSE);
 			/* Deactive BSS
 			 * if PWR is IDLE and no peer
@@ -1226,6 +1228,7 @@ void p2pRoleFsmRunEventRxDisassociation(struct ADAPTER *prAdapter,
 			prStaRec,
 			FALSE,
 			prStaRec->u2ReasonCode,
+			MAC_FRAME_DEAUTH,
 			FALSE);
 
 		SET_NET_PWR_STATE_IDLE(prAdapter,
@@ -1283,6 +1286,7 @@ void p2pRoleFsmRunEventRxDisassociation(struct ADAPTER *prAdapter,
 				prStaRec,
 				fgSendDeauth,
 				u2ReasonCode,
+				MAC_FRAME_DEAUTH,
 				FALSE);
 			/* Deactive BSS if PWR is IDLE and no peer */
 			if (IS_NET_PWR_STATE_IDLE(prAdapter,
@@ -1398,6 +1402,7 @@ void p2pRoleFsmRunEventBeaconTimeout(struct ADAPTER *prAdapter,
 
 			p2pFuncDisconnect(prAdapter, bss, prCurrStarec, FALSE,
 					  REASON_CODE_DISASSOC_LEAVING_BSS,
+					  MAC_FRAME_DEAUTH,
 					  TRUE);
 
 			SET_NET_PWR_STATE_IDLE(prAdapter, bss->ucBssIndex);
@@ -1413,7 +1418,8 @@ void p2pRoleFsmRunEventBeaconTimeout(struct ADAPTER *prAdapter,
 		prP2pBssInfo->prStaRecOfAP = NULL;
 
 		p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE,
-				  REASON_CODE_DISASSOC_LEAVING_BSS, TRUE);
+				  REASON_CODE_DISASSOC_LEAVING_BSS,
+				  MAC_FRAME_DEAUTH, TRUE);
 
 		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -1461,6 +1467,7 @@ void p2pRoleFsmRunEventAgingTimeout(struct ADAPTER *prAdapter,
 			p2pFuncDisconnect(prAdapter, prP2pBssInfo, prCurrStarec,
 					  FALSE,
 					  REASON_CODE_DISASSOC_INACTIVITY,
+					  MAC_FRAME_DEAUTH,
 					  TRUE);
 		}
 	} else
@@ -1476,7 +1483,8 @@ void p2pRoleFsmRunEventAgingTimeout(struct ADAPTER *prAdapter,
 		bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
 
 		p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE,
-				  REASON_CODE_DISASSOC_INACTIVITY, TRUE);
+				  REASON_CODE_DISASSOC_INACTIVITY,
+				  MAC_FRAME_DEAUTH, TRUE);
 	}
 }
 
@@ -2010,6 +2018,7 @@ void p2pRoleFsmDelIface(
 				prStaRec,
 				TRUE,
 				REASON_CODE_DEAUTH_LEAVING_BSS,
+				MAC_FRAME_DEAUTH,
 				TRUE);
 
 			cnmTimerStopTimer(prAdapter,
@@ -3350,6 +3359,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 						prJoinInfo->prTargetStaRec,
 						FALSE,
 						prDisconnMsg->u2ReasonCode,
+						MAC_FRAME_DEAUTH,
 						TRUE);
 				}
 				p2pRoleFsmStateTransition(prAdapter,
@@ -3389,6 +3399,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 					prStaRec,
 					prDisconnMsg->fgSendDeauth,
 					prDisconnMsg->u2ReasonCode,
+					MAC_FRAME_DEAUTH,
 					TRUE);
 
 				cnmTimerStopTimer(prAdapter,
@@ -3451,6 +3462,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 				prCurrStaRec,
 				prDisconnMsg->fgSendDeauth,
 				prDisconnMsg->u2ReasonCode,
+				prDisconnMsg->ucSubType,
 				TRUE);
 
 			cnmTimerStopTimer(prAdapter,
@@ -4540,6 +4552,7 @@ void p2pRoleFsmRunEventAAATxFailImpl(struct ADAPTER *prAdapter,
 		prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2
 		? STATUS_CODE_AUTH_TIMEOUT
 		: STATUS_CODE_ASSOC_TIMEOUT,
+		MAC_FRAME_DEAUTH,
 		TRUE);
 }				/* p2pRoleFsmRunEventAAATxFail */
 
@@ -6017,6 +6030,7 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 						prCurrStaRec,
 						FALSE,
 						REASON_CODE_DEAUTH_LEAVING_BSS,
+						MAC_FRAME_DEAUTH,
 						TRUE);
 				}
 			}
@@ -6054,7 +6068,8 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 
 			p2pFuncDisconnect(prAdapter, prBssInfo,
 				prBssInfo->prStaRecOfAP, FALSE,
-				REASON_CODE_DEAUTH_LEAVING_BSS, TRUE);
+				REASON_CODE_DEAUTH_LEAVING_BSS,
+				MAC_FRAME_DEAUTH, TRUE);
 			p2pFuncStopComplete(prAdapter, prBssInfo);
 		}
 	}

@@ -173,11 +173,10 @@ p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter);
 
 void
 p2pFuncDisconnect(struct ADAPTER *prAdapter,
-		struct BSS_INFO *prP2pBssInfo,
-		struct STA_RECORD *prStaRec,
-		u_int8_t fgSendDeauth,
-		uint16_t u2ReasonCode,
-		u_int8_t fgIsLocallyGenerated);
+		  struct BSS_INFO *prP2pBssInfo,
+		  struct STA_RECORD *prStaRec,
+		  u_int8_t fgSendDeauth, uint16_t u2ReasonCode,
+		  uint8_t ucSubType, u_int8_t fgIsLocallyGenerated);
 
 struct BSS_INFO *p2pFuncBSSIDFindBssInfo(struct ADAPTER *prAdapter,
 		uint8_t *pucBSSID);

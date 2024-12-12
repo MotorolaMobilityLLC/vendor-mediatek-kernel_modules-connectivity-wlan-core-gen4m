@@ -3611,6 +3611,7 @@ p2pFuncDissolve(struct ADAPTER *prAdapter,
 					prP2pBssInfo->prStaRecOfAP,
 					fgSendDeauth,
 					u2ReasonCode,
+					MAC_FRAME_DEAUTH,
 					fgIsLocallyGenerated);
 			}
 
@@ -3644,6 +3645,7 @@ p2pFuncDissolve(struct ADAPTER *prAdapter,
 				p2pFuncDisconnect(prAdapter,
 					prP2pBssInfo, prCurrStaRec,
 					fgSendDeauth, u2ReasonCode,
+					MAC_FRAME_DEAUTH,
 					fgIsLocallyGenerated);
 			}
 			break;
@@ -3684,10 +3686,10 @@ p2pFuncDissolve(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void
 p2pFuncDisconnect(struct ADAPTER *prAdapter,
-		struct BSS_INFO *prP2pBssInfo,
-		struct STA_RECORD *prStaRec,
-		u_int8_t fgSendDeauth, uint16_t u2ReasonCode,
-		u_int8_t fgIsLocallyGenerated)
+		  struct BSS_INFO *prP2pBssInfo,
+		  struct STA_RECORD *prStaRec,
+		  u_int8_t fgSendDeauth, uint16_t u2ReasonCode,
+		  uint8_t ucSubType, u_int8_t fgIsLocallyGenerated)
 {
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode = NULL;
@@ -3771,23 +3773,31 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(P2P, INFO,
-			"p2pFuncDisconnect(): BssMode: %d, reason: %d, SendDeauth %s, locally_generated: %d\n",
+			"BssMode: %d, reason: %d, SendDeauth %s, type 0x%x, locally_generated: %d\n",
 			prP2pBssInfo->eCurrentOPMode, u2ReasonCode,
 			fgSendDeauth == TRUE ? "TRUE" : "FALSE",
+			ucSubType,
 			fgIsLocallyGenerated);
 
 		if (fgSendDeauth) {
 			prStaRec->u2ReasonCode = u2ReasonCode;
 			prStaRec->fgIsLocallyGenerated = fgIsLocallyGenerated;
 			p2pFunAbortOngoingScan(prAdapter);
-			/* Send deauth. */
-			authSendDeauthFrame(prAdapter,
-			    prP2pBssInfo,
-			    prStaRec,
-			    (struct SW_RFB *) NULL,
-			    u2ReasonCode,
-			    (PFN_TX_DONE_HANDLER)
-			    p2pRoleFsmRunEventDeauthTxDone);
+			if (ucSubType == MAC_FRAME_DISASSOC)
+				assocSendDisAssocFrame(prAdapter,
+				    prP2pBssInfo,
+				    prStaRec,
+				    u2ReasonCode,
+				    (PFN_TX_DONE_HANDLER)
+				    p2pRoleFsmRunEventDeauthTxDone);
+			else
+				authSendDeauthFrame(prAdapter,
+				    prP2pBssInfo,
+				    prStaRec,
+				    (struct SW_RFB *) NULL,
+				    u2ReasonCode,
+				    (PFN_TX_DONE_HANDLER)
+				    p2pRoleFsmRunEventDeauthTxDone);
 
 			/* Make the deauth frame send to FW ASAP. */
 #if !CFG_SUPPORT_MULTITHREAD
@@ -4105,6 +4115,7 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 					p2pFuncDisconnect(prAdapter, bss, sta,
 						FALSE,
 						REASON_CODE_DISASSOC_INACTIVITY,
+						MAC_FRAME_DEAUTH,
 						TRUE);
 				}
 			} else
@@ -4115,6 +4126,7 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 				p2pFuncDisconnect(prAdapter, prP2pBssInfo,
 					prStaRec, FALSE,
 					REASON_CODE_DISASSOC_INACTIVITY,
+					MAC_FRAME_DEAUTH,
 					TRUE);
 			}
 			prStaRec = NULL;
@@ -10533,6 +10545,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 				p2pFuncDisconnect(prAdapter, prBssInfo,
 						prCurrStaRec, TRUE,
 						REASON_CODE_DEAUTH_LEAVING_BSS,
+						MAC_FRAME_DEAUTH,
 						TRUE);
 			}
 			/* wait for deauth TX done & switch channel */

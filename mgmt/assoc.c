@@ -1308,6 +1308,97 @@ assocComposeDisassocFrame(struct STA_RECORD *prStaRec,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function will send the Disassociation frame
+ *
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ * @param[in] u2ReasonCode  The reason code of disassociation
+ *
+ * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
+ * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t assocSendDisAssocFrame(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo,
+				struct STA_RECORD *prStaRec,
+				uint16_t u2ReasonCode,
+				PFN_TX_DONE_HANDLER pfTxDoneHandler)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct WLAN_DISASSOC_FRAME *prDisassocFrame;
+	uint16_t u2PayloadLen, u2EstimatedFrameLen;
+
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
+			      WLAN_MAC_MGMT_HEADER_LEN +
+			      REASON_CODE_FIELD_LEN;
+
+	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+	if (prMsduInfo == NULL) {
+		DBGLOG(SAA, WARN, "No PKT_INFO_T for DisAssoc %u.\n",
+			u2EstimatedFrameLen);
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	prDisassocFrame = (struct WLAN_DISASSOC_FRAME *)
+		((unsigned long) (prMsduInfo->prPacket) +
+		 MAC_TX_RESERVED_FIELD);
+	assocComposeDisassocFrame(prStaRec,
+				  (uint8_t *)prDisassocFrame,
+				  prBssInfo->aucOwnMacAddr,
+				  u2ReasonCode);
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)
+			prDisassocFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+	}
+#endif
+
+	u2PayloadLen = REASON_CODE_FIELD_LEN;
+
+	TX_SET_MMPDU(prAdapter,
+		     prMsduInfo,
+		     prStaRec->ucBssIndex,
+		     prStaRec->ucIndex,
+		     WLAN_MAC_MGMT_HEADER_LEN,
+		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen,
+		     pfTxDoneHandler,
+		     MSDU_RATE_MODE_AUTO);
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	/* caution: access prStaRec only if true */
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		/* 4.3.3.1 send unprotected deauth reason 6/7 */
+		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)
+			nicTxConfigPktOption(prMsduInfo,
+					     MSDU_OPT_PROTECTED_FRAME, TRUE);
+
+		prStaRec->rPmfCfg.fgRxDeauthResp = FALSE;
+	}
+#endif
+
+	DBGLOG(SAA, INFO,
+		"[%u][%u %u] seq=%d DA="MACSTR" SA="MACSTR" BSSID="MACSTR
+		" reason=%u ctrl=0x%x option=0x%x\n",
+		prBssInfo->ucBssIndex,
+		prStaRec->ucIndex, prStaRec->ucWlanIndex,
+		prMsduInfo->ucTxSeqNum,
+		prMsduInfo->ucStaRecIndex,
+		MAC2STR(prDisassocFrame->aucDestAddr),
+		MAC2STR(prDisassocFrame->aucSrcAddr),
+		MAC2STR(prDisassocFrame->aucBSSID),
+		prDisassocFrame->u2ReasonCode,
+		prDisassocFrame->u2FrameCtrl,
+		prMsduInfo->u4Option);
+
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}				/* end of assocSendDisAssocFrame() */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This function will parse and process the incoming Disassociation
  *        frame if the given BSSID is matched.
  *
