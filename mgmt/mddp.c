@@ -50,6 +50,7 @@
 #if (CFG_PCIE_GEN_SWITCH == 1)
 #define MDDP_HIF_GEN_SWITCH_END		4
 #endif /* CFG_PCIE_GEN_SWITCH */
+#define MDDP_HIF_MD_SER			5
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -75,6 +76,7 @@ enum ENUM_MDDPW_MD_INFO {
 	MDDPW_MD_EVENT_COMMUNICATION = 4,
 	MDDPW_MD_INFO_WIFI_OFF_CONFIRM = 5,
 	MDDPW_MD_INFO_DRVOWN_RELEASE = 6,
+	MDDPW_MD_INFO_TRIG_SER_REQ = 64,
 	MDDPW_MD_INFO_PCIE_MMIO = 128,
 	MDDPW_MD_INFO_PCIE_GENSWITCH_START = 129,
 	MDDPW_MD_INFO_PCIE_GENSWITCH_END = 130,
@@ -94,6 +96,8 @@ enum wsvc_drv_info_id {
 	WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS        = 8,
 	WSVC_DRVINFO_CHECK_SER                    = 9,
 	WSVC_DRVINFO_INVALID_ID                   = 10,
+	MACOD_DRVINFO_TRIG_SER_RSP                = 64,
+	MACOD_DRVINFO_TRIG_SER_SUPP               = 65,
 	WFPM_DRVINFO_PCIE_MMIO                    = 128,
 	WFPM_DRVINFO_PCIE_GENSWITCH_START         = 129,
 	WFPM_DRVINFO_PCIE_GENSWITCH_END           = 130,
@@ -114,13 +118,24 @@ enum EMUM_MD_NOTIFY_REASON_TYPE_T {
 	MD_DRV_OWN_FAIL,
 	MD_INIT_FAIL,
 	MD_STATE_ABNORMAL,
-	MD_TX_DATA_HANG,
+	MD_TX_DATA_TIMEOUT,
 	MD_TX_CMD_FAIL,
 	MD_L12_DISABLE, /* 7 */
 	MD_L12_ENABLE, /* 8 */
 	MD_RST_WIFI_OFF, /* 9 */
 	MD_SER_NO_RSP, /* 10 */
 	MD_ENUM_MAX,
+};
+
+enum MD_TRIG_SER_RESULT {
+	MD_TRIG_SER_SUCC = 0,
+	MD_TRIG_SER_FAIL = 1,
+	MD_TRIG_SER_NOT_SUPP = 2,
+};
+
+enum MD_TRIG_SER_SUPP_TYPE {
+	MD_TRIG_SER_SUPP = 0,
+	MD_TRIG_SER_FW_NOT_SUPP = 1,
 };
 
 /* MDDPW_MD_EVENT_COMMUNICATION */
@@ -131,6 +146,30 @@ struct wsvc_md_event_comm_t {
 	uint32_t dump_payload[32];
 	uint8_t  dump_size;
 	char pucFuncName[64];
+};
+
+struct mddpw_drv_info_entry {
+	struct QUE_ENTRY entry;
+	struct mddpw_drv_info_t *info;
+};
+
+struct macod_trig_ser_rsp_t {
+	uint8_t ver;
+	uint8_t sn;
+	uint8_t rsp;
+	uint8_t rsv;
+};
+
+struct macod_trig_ser_supp_t {
+	uint8_t ver;
+	uint8_t supp_type;
+	uint8_t rsv[2];
+};
+
+struct macod_trig_ser_req_t {
+	uint8_t ver;
+	uint8_t sn;
+	uint8_t rsv[2];
 };
 
 struct wsv_check_ser_info_t {
@@ -185,6 +224,8 @@ u_int32_t g_u4CheckSerCnt;
 u_int8_t g_fgIsMdCrash;
 unsigned long g_ulMddpActionFlag;
 u_int32_t g_u4MddpRstFlag;
+uint32_t g_u4SerSn;
+
 
 struct mddpw_net_stat_ext_t stats;
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
@@ -857,6 +898,75 @@ void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 	prApBuf->end_idx = prReorderQueParm->u2WinEnd;
 }
 
+int32_t mddpNotifyDrvInfoQue(struct QUE *prQue)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_entry *prDrvInfoEntry;
+	struct mddpw_drv_info_t *prDrvInfo;
+	struct QUE_ENTRY *prEntry = NULL;
+	uint32_t u4BufSize = 0, u4InfoNum = 0, u4DrvInfoSize;
+	uint8_t *buff = NULL, *cur = NULL;
+	int32_t ret = 0;
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	u4BufSize = sizeof(struct mddpw_drv_notify_info_t);
+	prDrvInfoEntry = QUEUE_GET_HEAD(prQue);
+	while (prDrvInfoEntry) {
+		if (prDrvInfoEntry->info) {
+			u4BufSize += sizeof(struct mddpw_drv_info_t) +
+				prDrvInfoEntry->info->info_len;
+			u4InfoNum++;
+		}
+		prDrvInfoEntry = QUEUE_GET_NEXT_ENTRY(prDrvInfoEntry);
+	}
+
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *)buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = u4BufSize -
+		sizeof(struct mddpw_drv_notify_info_t);
+	prNotifyInfo->info_num = u4InfoNum;
+
+	cur = buff + sizeof(struct mddpw_drv_notify_info_t);
+	QUEUE_REMOVE_HEAD(prQue, prEntry, struct QUE_ENTRY *);
+	while (prEntry) {
+		prDrvInfoEntry = (struct mddpw_drv_info_entry *)prEntry;
+		prDrvInfo = prDrvInfoEntry->info;
+		if (prDrvInfo) {
+			u4DrvInfoSize = sizeof(struct mddpw_drv_info_t) +
+				prDrvInfo->info_len;
+
+			kalMemCopy(cur, prDrvInfo, u4DrvInfoSize);
+			cur += u4DrvInfoSize;
+			kalMemFree(prDrvInfo, VIR_MEM_TYPE, u4DrvInfoSize);
+		}
+		kalMemFree(prDrvInfoEntry, VIR_MEM_TYPE,
+			   sizeof(struct mddpw_drv_info_entry));
+		QUEUE_REMOVE_HEAD(prQue, prEntry, struct QUE_ENTRY *);
+	}
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+	if (ret)
+		DBGLOG(INIT, WARN, "notify failed. mddp status:%d\n",
+		       g_eMddpStatus);
+exit:
+	if (buff)
+		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
+
+	return ret;
+}
+
 int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t fgActivate)
@@ -867,7 +977,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct net_device *prNetdev;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
-	uint32_t u32BufSize = 0;
+	uint32_t u4BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0;
 
@@ -909,11 +1019,11 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		       prStaRec->ucBssIndex);
 	}
 
-	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) +
 			sizeof(struct mddp_txd_t) +
 			NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
 
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
@@ -974,20 +1084,19 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 
 exit:
 	if (buff)
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 	return ret;
 }
 
 #if defined(_HIF_PCIE)
-int32_t mddpNotifyWifiPcieBarInfo(void)
+int32_t mddpNotifyWifiPcieBarInfo(struct QUE *prQue)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_entry *prDrvInfoEntry;
 	struct mddpw_drv_info_t *prDrvInfo;
 	struct mddp_pcie_bar_info *prBarInfo;
 	uint32_t u4BufSize = 0;
-	uint8_t *buff = NULL;
-	int32_t ret = 0, feature = 0;
+	int32_t feature = 0;
 
 	glGetChipInfo((void **)&prChipInfo);
 	if (prChipInfo == NULL) {
@@ -1003,40 +1112,225 @@ int32_t mddpNotifyWifiPcieBarInfo(void)
 	if (gMddpWFunc.get_mddp_feature)
 		feature = gMddpWFunc.get_mddp_feature();
 
-	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
-		     sizeof(struct mddpw_drv_info_t) +
-		     sizeof(struct mddp_pcie_bar_info));
-	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
-	if (buff == NULL) {
-		DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
+	prDrvInfoEntry = kalMemAlloc(
+		sizeof(struct mddpw_drv_info_entry), VIR_MEM_TYPE);
+	if (prDrvInfoEntry == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate entry.\n");
 		return -1;
 	}
-	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
-	prNotifyInfo->version = 0;
-	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
-		sizeof(struct mddp_pcie_bar_info);
-	prNotifyInfo->info_num = 1;
-	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+
+	u4BufSize = sizeof(struct mddpw_drv_info_t) +
+		     sizeof(struct mddp_pcie_bar_info);
+	prDrvInfo = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (prDrvInfo == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate drv info.\n");
+		kalMemFree(prDrvInfoEntry, VIR_MEM_TYPE,
+			   sizeof(struct mddpw_drv_info_entry));
+		return -1;
+	}
+
+	prDrvInfoEntry->info = prDrvInfo;
 	prDrvInfo->info_id = WFPM_DRVINFO_PCIE_MMIO;
 	prDrvInfo->info_len = sizeof(struct mddp_pcie_bar_info);
 	prBarInfo = (struct mddp_pcie_bar_info *) &(prDrvInfo->info[0]);
 	prBarInfo->version = 0;
 	prBarInfo->offset = prChipInfo->u8CsrOffset;
 
-	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-	DBGLOG(INIT, INFO, "pcie bar info 0x%llx, ret: %d, feature:0x%x.\n",
-	       prBarInfo->offset, ret, feature);
-	kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
+	QUEUE_INSERT_TAIL(prQue, prDrvInfoEntry);
 
-	return ret;
+	DBGLOG(INIT, INFO, "pcie bar info 0x%llx, feature:0x%x.\n",
+	       prBarInfo->offset, feature);
+
+	return 0;
 }
 #endif /* _HIF_PCIE */
+
+int32_t mddpNotifyTrigSerRspInfo(enum MD_TRIG_SER_RESULT eRst)
+{
+	struct QUE rQue, *prQue = &rQue;
+	struct mddpw_drv_info_entry *prDrvInfoEntry;
+	struct mddpw_drv_info_t *prDrvInfo;
+	struct macod_trig_ser_rsp_t *prRsp;
+	uint32_t u4BufSize = 0;
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		return -1;
+	}
+
+	QUEUE_INITIALIZE(prQue);
+	prDrvInfoEntry = kalMemAlloc(
+		sizeof(struct mddpw_drv_info_entry), VIR_MEM_TYPE);
+	if (prDrvInfoEntry == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate entry.\n");
+		return -1;
+	}
+
+	u4BufSize = sizeof(struct mddpw_drv_info_t) +
+		     sizeof(struct macod_trig_ser_rsp_t);
+	prDrvInfo = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (prDrvInfo == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate drv info.\n");
+		kalMemFree(prDrvInfoEntry, VIR_MEM_TYPE,
+			   sizeof(struct mddpw_drv_info_entry));
+		return -1;
+	}
+
+	prDrvInfoEntry->info = prDrvInfo;
+	prDrvInfo->info_id = MACOD_DRVINFO_TRIG_SER_RSP;
+	prDrvInfo->info_len = sizeof(struct macod_trig_ser_rsp_t);
+	prRsp = (struct macod_trig_ser_rsp_t *) &(prDrvInfo->info[0]);
+	prRsp->ver = 0;
+	prRsp->sn = g_u4SerSn;
+	prRsp->rsp = eRst;
+
+	DBGLOG(INIT, INFO, "SER rsp %u.\n", prRsp->rsp);
+
+	QUEUE_INSERT_TAIL(prQue, prDrvInfoEntry);
+	mddpNotifyDrvInfoQue(prQue);
+
+	return 0;
+}
+
+int32_t mddpNotifyTrigSerSuppInfo(struct QUE *prQue)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+	struct mddpw_drv_info_entry *prDrvInfoEntry;
+	struct mddpw_drv_info_t *prDrvInfo;
+	struct macod_trig_ser_supp_t *prSuppInfo;
+	uint32_t u4BufSize = 0;
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		return -1;
+	}
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return -1;
+	}
+
+	prDrvInfoEntry = kalMemAlloc(
+		sizeof(struct mddpw_drv_info_entry), VIR_MEM_TYPE);
+	if (prDrvInfoEntry == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate entry.\n");
+		return -1;
+	}
+
+	u4BufSize = sizeof(struct mddpw_drv_info_t) +
+		     sizeof(struct macod_trig_ser_supp_t);
+	prDrvInfo = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (prDrvInfo == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate drv info.\n");
+		kalMemFree(prDrvInfoEntry, VIR_MEM_TYPE,
+			   sizeof(struct mddpw_drv_info_entry));
+		return -1;
+	}
+
+	prDrvInfoEntry->info = prDrvInfo;
+	prDrvInfo->info_id = MACOD_DRVINFO_TRIG_SER_SUPP;
+	prDrvInfo->info_len = sizeof(struct macod_trig_ser_supp_t);
+	prSuppInfo = (struct macod_trig_ser_supp_t *) &(prDrvInfo->info[0]);
+	prSuppInfo->ver = 0;
+	if (prAdapter->rWifiVar.eEnableSerL1 == FEATURE_OPT_SER_ENABLE)
+		prSuppInfo->supp_type = MD_TRIG_SER_SUPP;
+	else
+		prSuppInfo->supp_type = MD_TRIG_SER_FW_NOT_SUPP;
+
+	QUEUE_INSERT_TAIL(prQue, prDrvInfoEntry);
+
+	DBGLOG(INIT, INFO, "SER support type %u.\n", prSuppInfo->supp_type);
+
+	return 0;
+}
+
+int32_t mddpNotifyWifiStatusByQue(
+	struct QUE *prQue, enum ENUM_MDDPW_DRV_INFO_STATUS status)
+{
+	struct mddpw_drv_info_entry *prDrvInfoEntry;
+	struct mddpw_drv_info_t *prDrvInfo;
+	uint32_t u4BufSize = 0;
+	int32_t ret = 0, feature = 0;
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	struct mddpw_coex_intf_info_t *prCoexInfo;
+
+	if (GLUE_GET_REF_CNT(g_rSettings.seq) >= COEX_NOTIFY_MAX_SEQ)
+		GLUE_SET_REF_CNT(0, g_rSettings.seq);
+	GLUE_INC_REF_CNT(g_rSettings.seq);
+	GLUE_SET_REF_CNT(0, g_rSettings.md_status);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
+	if (gMddpWFunc.get_mddp_feature)
+		feature = gMddpWFunc.get_mddp_feature();
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	prDrvInfoEntry = kalMemAlloc(
+		sizeof(struct mddpw_drv_info_entry), VIR_MEM_TYPE);
+	if (prDrvInfoEntry == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate entry.\n");
+		ret = -1;
+		goto exit;
+	}
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	u4BufSize = sizeof(struct mddpw_drv_info_t) +
+		      sizeof(struct mddpw_coex_intf_info_t);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	u4BufSize = sizeof(struct mddpw_drv_info_t) + sizeof(bool);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	prDrvInfo = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (prDrvInfo == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate drv info.\n");
+		kalMemFree(prDrvInfoEntry, VIR_MEM_TYPE,
+			   sizeof(struct mddpw_drv_info_entry));
+		ret = -1;
+		goto exit;
+	}
+
+	prDrvInfoEntry->info = prDrvInfo;
+	prDrvInfo->info_id = WSVC_DRVINFO_WIFI_ONOFF;
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+		sizeof(struct mddpw_coex_intf_info_t);
+	prDrvInfo->info_len = sizeof(struct mddpw_coex_intf_info_t);
+	prCoexInfo = (struct mddpw_coex_intf_info_t *)
+		&(prDrvInfo->info[0]);
+	prCoexInfo->status = status;
+	prCoexInfo->ringNum = 0;
+	prCoexInfo->seq = GLUE_GET_REF_CNT(g_rSettings.seq);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	prDrvInfo->info_len = WIFI_ONOFF_NOTIFICATION_LEN;
+	prDrvInfo->info[0] = status;
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
+	QUEUE_INSERT_TAIL(prQue, prDrvInfoEntry);
+
+	DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
+	       status, ret, feature);
+	g_eMddpStatus = status;
+
+exit:
+	return ret;
+}
 
 int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
-	uint32_t u32BufSize = 0;
+	uint32_t u4BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0, feature = 0;
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
@@ -1055,14 +1349,14 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		int32_t ret;
 
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+		u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) +
 			sizeof(struct mddpw_coex_intf_info_t));
 #else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
-		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+		u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(bool));
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
-		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+		buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
 
 		if (buff == NULL) {
 			DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
@@ -1092,7 +1386,7 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
 		       status, ret, feature);
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 		g_eMddpStatus = status;
 		if (ret)
 			DBGLOG(INIT, WARN, "notify failed. mddp status:%d\n",
@@ -1186,8 +1480,8 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
-	uint32_t u32BufSize = 0;
-	uint32_t u32DrvOwnTimeoutTime = g_rSettings.u4MdDrvOwnTimeoutTime;
+	uint32_t u4BufSize = 0;
+	uint32_t u4DrvOwnTimeoutTime = g_rSettings.u4MdDrvOwnTimeoutTime;
 	uint8_t *buff = NULL;
 
 	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
@@ -1200,12 +1494,12 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 
 	/* align AP/MD drv own timeout */
 	if (mddpIsCasanFWload() == TRUE)
-		u32DrvOwnTimeoutTime = LP_OWN_BACK_TOTAL_DELAY_CASAN_MS;
+		u4DrvOwnTimeoutTime = LP_OWN_BACK_TOTAL_DELAY_CASAN_MS;
 
-	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
 
-	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
 
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
@@ -1222,17 +1516,17 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	prDrvInfo->info_id = WSVC_DRVINFO_DRVOWN_TIME_SET;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
-	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u32DrvOwnTimeoutTime,
+	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u4DrvOwnTimeoutTime,
 			sizeof(uint32_t));
 
 	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 
 exit:
 	if (buff)
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 
 	DBGLOG(INIT, INFO, "ret: %d, timeout: %d.\n",
-				   ret, u32DrvOwnTimeoutTime);
+				   ret, u4DrvOwnTimeoutTime);
 	return ret;
 }
 
@@ -1243,7 +1537,7 @@ int32_t mddpNotifyMDPCIeL12Status(uint8_t fgEnable)
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
-	uint32_t u32BufSize = 0;
+	uint32_t u4BufSize = 0;
 	uint8_t ucInfoId = WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS;
 	uint8_t *buff = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1269,10 +1563,10 @@ int32_t mddpNotifyMDPCIeL12Status(uint8_t fgEnable)
 		goto exit;
 	}
 
-	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
 
-	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
 
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
@@ -1305,10 +1599,10 @@ int32_t mddpNotifyMDPCIeL12Status(uint8_t fgEnable)
 
 exit:
 	if (buff)
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 
 	if (prAdapter) {
-		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u32SeqNum:%u.\n",
+		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u4SeqNum:%u.\n",
 			ret, ucInfoId, prAdapter->u4MddpPCIeL12SeqNum);
 	}
 
@@ -1469,18 +1763,18 @@ int32_t mddpMdNotifyInfoHandleGenSwitchByPassEnd(
 	return 0;
 }
 
-int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
+int32_t mddpNotifyMDGenSwithAction(uint32_t u4Action)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
-	uint32_t u32BufSize = 0;
-	uint32_t u32InfoId = 0;
+	uint32_t u4BufSize = 0;
+	uint32_t u4InfoId = 0;
 	uint8_t *buff = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-	DBGLOG(INIT, TRACE, "Notify GenSwitch u32Action %u\n", u32Action);
+	DBGLOG(INIT, TRACE, "Notify GenSwitch u4Action %u\n", u4Action);
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1500,10 +1794,10 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 		goto exit;
 	}
 
-	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
 
-	buff = kalMemAlloc(u32BufSize, PHY_MEM_TYPE);
+	buff = kalMemAlloc(u4BufSize, PHY_MEM_TYPE);
 
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
@@ -1511,13 +1805,13 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 		goto exit;
 	}
 
-	if (u32Action == WFPM_DRVINFO_PCIE_GENSWITCH_START) {
+	if (u4Action == WFPM_DRVINFO_PCIE_GENSWITCH_START) {
 		/* GenSwitch Start */
-		u32InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_START;
+		u4InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_START;
 		GLUE_INC_REF_CNT(prAdapter->u2MddpGenSwitchSeqNum);
-	} else if (u32Action == WFPM_DRVINFO_PCIE_GENSWITCH_END) {
+	} else if (u4Action == WFPM_DRVINFO_PCIE_GENSWITCH_END) {
 		/* GenSwitch End */
-		u32InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_END;
+		u4InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_END;
 	} else
 		goto exit;
 
@@ -1527,7 +1821,7 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 			sizeof(uint32_t);
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-	prDrvInfo->info_id = u32InfoId;
+	prDrvInfo->info_id = u4InfoId;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
 	kalMemCopy((uint16_t *) &(prDrvInfo->info[0]),
@@ -1538,11 +1832,11 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 
 exit:
 	if (buff)
-		kalMemFree(buff, PHY_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, PHY_MEM_TYPE, u4BufSize);
 
 	if (prAdapter) {
 		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, SeqNum:%u.\n",
-			ret, u32InfoId, prAdapter->u2MddpGenSwitchSeqNum);
+			ret, u4InfoId, prAdapter->u2MddpGenSwitchSeqNum);
 	}
 
 	return ret;
@@ -1893,8 +2187,8 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
-	uint32_t u32BufSize = 0;
-	uint32_t u32UnifiedCmdVer = 1;
+	uint32_t u4BufSize = 0;
+	uint32_t u4UnifiedCmdVer = 1;
 	uint8_t *buff = NULL;
 
 	DBGLOG(INIT, INFO, "Notify MD Unified Cmd version.\n");
@@ -1905,10 +2199,10 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 		goto exit;
 	}
 
-	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
 
-	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
 
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
@@ -1925,17 +2219,16 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 	prDrvInfo->info_id = WSVC_DRVINFO_WIFI_UNIFIED_CMD_VER;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
-	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u32UnifiedCmdVer,
+	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u4UnifiedCmdVer,
 			sizeof(uint32_t));
 
 	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 
 exit:
 	if (buff)
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 
-	DBGLOG(INIT, INFO, "ret: %d, Ver: %u.\n",
-				   ret, u32UnifiedCmdVer);
+	DBGLOG(INIT, INFO, "ret: %d, Ver: %u.\n", ret, u4UnifiedCmdVer);
 	return ret;
 }
 #endif
@@ -1949,6 +2242,8 @@ static void mddpResetGlobalVariable(void)
 
 void __mddpNotifyWifiOnStart(u_int8_t fgIsForce)
 {
+	struct QUE rQue, *prQue = &rQue;
+
 	if (!fgIsForce &&
 	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_END) {
 		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
@@ -1959,10 +2254,14 @@ void __mddpNotifyWifiOnStart(u_int8_t fgIsForce)
 	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
 #endif
 
-	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
+	QUEUE_INITIALIZE(prQue);
+
+	mddpNotifyWifiStatusByQue(prQue, MDDPW_DRV_INFO_STATUS_ON_START);
+	mddpNotifyTrigSerSuppInfo(prQue);
 #if defined(_HIF_PCIE) && (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
-	mddpNotifyWifiPcieBarInfo();
+	mddpNotifyWifiPcieBarInfo(prQue);
 #endif
+	mddpNotifyDrvInfoQue(prQue);
 }
 
 void mddpNotifyWifiOnStart(u_int8_t fgIsForce)
@@ -2212,124 +2511,131 @@ void mddpNotifyWifiReset(void)
 		g_rSettings.rOps.clr(&g_rSettings, g_rSettings.u4WifiOnBit);
 }
 
-int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
+u_int8_t mddpMdNotifyInfoSanityCheck(struct GLUE_INFO *prGlueInfo)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	int32_t ret = 0;
 	u_int8_t fgHalted = kalIsHalted();
-	struct BUS_INFO *prBusInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
 
-	DBGLOG(INIT, TRACE, "MD notify mddpMdNotifyInfo.\n");
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
-		ret = -ENODEV;
-		goto exit;
+		return FALSE;
 	}
-	prAdapter = prGlueInfo->prAdapter;
-	if (prAdapter == NULL) {
+
+	if (prGlueInfo->prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-		ret = -ENODEV;
-		goto exit;
+		return FALSE;
 	}
 
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, INFO,
 			"Skip update info. to MD, fgHalted: %d, u4ReadyFlag: %d\n",
 			fgHalted, prGlueInfo->u4ReadyFlag);
-		ret = -ENODEV;
-		goto exit;
+		return FALSE;
 	}
-
-	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (!mddpIsSupportMcifWifi()) {
 		DBGLOG(INIT, ERROR, "mcif wifi not support.\n");
-		ret = -ENODEV;
-		goto exit;
+		return FALSE;
 	}
 
 	if (!is_cal_flow_finished()) {
 		DBGLOG(INIT, ERROR, "cal flow not finished.\n");
-		ret = -ENODEV;
-		goto exit;
+		return FALSE;
 	}
 
 #if CFG_MTK_ANDROID_WMT
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing()) {
 		DBGLOG(INIT, ERROR, "is_pwr_on_notify_processing.\n");
-		ret = -ENODEV;
-		goto exit;
+		return FALSE;
 	}
 #endif
 #endif
+	return TRUE;
+}
 
-	if (prMdInfo->info_type == MDDPW_MD_INFO_RESET_IND) {
-		uint32_t i;
-		struct BSS_INFO *prSapBssInfo = (struct BSS_INFO *) NULL;
-		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-		u_int8_t fgIsForceNotify = TRUE;
-		int32_t ret;
+int32_t mddpMdNotifyInfoHandleResetInd(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BSS_INFO *prSapBssInfo = (struct BSS_INFO *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	u_int8_t fgIsForceNotify = TRUE;
+	uint32_t i;
+	int32_t ret = 0;
 
-		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-		prHifInfo->fgMdResetInd = TRUE;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prHifInfo->fgMdResetInd = TRUE;
 
-		DBGLOG(INIT, INFO, "MD resetting.\n");
-		save_mddp_stats();
+	DBGLOG(INIT, INFO, "MD resetting.\n");
+	save_mddp_stats();
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
-		save_mddp_lls_stats();
-		isMdResetSinceLastQuery = TRUE;
+	save_mddp_lls_stats();
+	isMdResetSinceLastQuery = TRUE;
 #endif
 #if defined(_HIF_PCIE)
 #if (CFG_PCIE_GEN_SWITCH == 1)
-		mddpWaitGenSwitchToNormalState();
+	mddpWaitGenSwitchToNormalState();
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif
-		/* don't notify md when wifi off */
-		if (g_eMddpStatus == MDDPW_DRV_INFO_STATUS_OFF_START)
-			fgIsForceNotify = FALSE;
-		mutex_lock(&rMddpLock);
-		__mddpNotifyWifiOnStart(fgIsForceNotify);
-		ret = __mddpNotifyWifiOnEnd(fgIsForceNotify);
-		mutex_unlock(&rMddpLock);
-		if (ret != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
-			return 0;
-		}
+	/* don't notify md when wifi off */
+	if (g_eMddpStatus == MDDPW_DRV_INFO_STATUS_OFF_START)
+		fgIsForceNotify = FALSE;
+	mutex_lock(&rMddpLock);
+	__mddpNotifyWifiOnStart(fgIsForceNotify);
+	ret = __mddpNotifyWifiOnEnd(fgIsForceNotify);
+	mutex_unlock(&rMddpLock);
+	if (ret != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
+		return 0;
+	}
 
-		g_fgIsMdCrash = FALSE;
-		prHifInfo->fgMdResetInd = FALSE;
+	g_fgIsMdCrash = FALSE;
+	prHifInfo->fgMdResetInd = FALSE;
 
-		/* Notify STA's TXD to MD */
-		for (i = 0; i < KAL_AIS_NUM; i++) {
- 			struct BSS_INFO *prAisBssInfo =	aisGetMainLinkBssInfo(
-					aisFsmGetInstance(prAdapter, i));
+	/* Notify STA's TXD to MD */
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		struct BSS_INFO *prAisBssInfo =	aisGetMainLinkBssInfo(
+			aisFsmGetInstance(prAdapter, i));
 
-			if (prAisBssInfo && prAisBssInfo->eConnectionState ==
-					MEDIA_STATE_CONNECTED)
-				mddpNotifyDrvTxd(prAdapter,
-						prAisBssInfo->prStaRecOfAP,
-						TRUE);
-		}
+		if (prAisBssInfo && prAisBssInfo->eConnectionState ==
+		    MEDIA_STATE_CONNECTED)
+			mddpNotifyDrvTxd(prAdapter,
+					 prAisBssInfo->prStaRecOfAP,
+					 TRUE);
+	}
 #if CFG_ENABLE_WIFI_DIRECT
-		/* Notify SAP clients' TXD to MD */
-		prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
-		if (prP2pBssInfo) {
+	/* Notify SAP clients' TXD to MD */
+	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
+	if (prP2pBssInfo) {
+		struct LINK *prClientList;
+		struct STA_RECORD *prCurrStaRec;
+
+		prClientList = &prP2pBssInfo->rStaRecOfClientList;
+		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+				    rLinkEntry, struct STA_RECORD) {
+			if (!prCurrStaRec)
+				break;
+			mddpNotifyDrvTxd(prAdapter,
+					 prCurrStaRec,
+					 TRUE);
+		}
+
+		prSapBssInfo = cnmGetOtherSapBssInfo(prAdapter,
+						     prP2pBssInfo);
+		if (prSapBssInfo) {
 			struct LINK *prClientList;
 			struct STA_RECORD *prCurrStaRec;
 
-			prClientList = &prP2pBssInfo->rStaRecOfClientList;
+			prClientList =
+				&prSapBssInfo->rStaRecOfClientList;
 			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
-					rLinkEntry, struct STA_RECORD) {
+					    rLinkEntry, struct STA_RECORD) {
 				if (!prCurrStaRec)
 					break;
 				mddpNotifyDrvTxd(prAdapter,
-						prCurrStaRec,
-						TRUE);
+						 prCurrStaRec,
+						 TRUE);
 			}
 
 			prSapBssInfo = cnmGetOtherSapBssInfo(prAdapter,
@@ -2350,97 +2656,163 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				}
 			}
 		}
+	}
 #endif
-	} else if (prMdInfo->info_type == MDDPW_MD_INFO_DRV_EXCEPTION) {
-		struct wsvc_md_event_exception_t *event;
+	return 0;
+}
 
-		if (prMdInfo->buf_len != sizeof(
-				struct wsvc_md_event_exception_t)) {
-			DBGLOG(INIT, ERROR,
-				"Invalid args from MD, expect %lu but %u\n",
-				sizeof(struct wsvc_md_event_exception_t),
-				prMdInfo->buf_len);
-			ret = -EINVAL;
-			goto exit;
-		}
-		event = (struct wsvc_md_event_exception_t *)
-				&(prMdInfo->buf[1]);
-		DBGLOG(INIT, WARN, "reason: %d, flag: %d, line: %d, func: %s\n",
-				event->u4RstReason,
-				event->u4RstFlag,
-				event->u4Line,
-				event->pucFuncName);
-		mddpTriggerReset(prAdapter, event->u4RstFlag);
-	} else if (prMdInfo->info_type == MDDPW_MD_EVENT_COMMUNICATION) {
-		struct wsvc_md_event_comm_t *event;
+int32_t mddpMdNotifyInfoHandleDrvException(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct wsvc_md_event_exception_t *event;
 
-		if (prMdInfo->buf_len != sizeof(
-				struct wsvc_md_event_comm_t)) {
-			DBGLOG(INIT, ERROR,
-				"Invalid args from MD, expect %lu but %u\n",
-				sizeof(struct wsvc_md_event_comm_t),
-				prMdInfo->buf_len);
-			ret = -EINVAL;
-			goto exit;
-		}
-		event = (struct wsvc_md_event_comm_t *)
-				&(prMdInfo->buf[1]);
-		if (event->u4Reason == MD_L12_DISABLE ||
-			event->u4Reason == MD_L12_ENABLE) {
-			DBGLOG_LIMITED(INIT, WARN,
-				"reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
-					event->u4Reason,
-					event->u4RstFlag,
-					event->u4Line,
-					event->pucFuncName,
-					event->dump_payload[1]);
-		} else {
-			DBGLOG(INIT, WARN,
-				"reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
-					event->u4Reason,
-					event->u4RstFlag,
-					event->u4Line,
-					event->pucFuncName,
-					event->dump_payload[1]);
-		}
-		if (event->u4Reason == MD_TX_DATA_HANG) {
-			prAdapter->u4HifChkFlag |= HIF_CHK_TX_TIMEOUT;
-			prAdapter->u4HifChkFlag |= HIF_CHK_MD_TX_TIMEOUT;
-			prAdapter->ucMddpBssIndex =
-				(uint8_t) event->dump_payload[1];
-			kalSetHifDbgEvent(prAdapter->prGlueInfo);
+	if (prMdInfo->buf_len != sizeof(struct wsvc_md_event_exception_t)) {
+		DBGLOG(INIT, ERROR,
+		       "Invalid args from MD, expect %lu but %u\n",
+		       sizeof(struct wsvc_md_event_exception_t),
+		       prMdInfo->buf_len);
+		return -EINVAL;
+	}
+	event = (struct wsvc_md_event_exception_t *)
+		&(prMdInfo->buf[1]);
+	DBGLOG(INIT, WARN, "reason: %d, flag: %d, line: %d, func: %s\n",
+	       event->u4RstReason,
+	       event->u4RstFlag,
+	       event->u4Line,
+	       event->pucFuncName);
+	mddpTriggerReset(prAdapter, event->u4RstFlag);
+
+	return 0;
+}
+
+int32_t mddpMdNotifyInfoHandleCommunication(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo;
+	struct wsvc_md_event_comm_t *event;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prMdInfo->buf_len != sizeof(struct wsvc_md_event_comm_t)) {
+		DBGLOG(INIT, ERROR,
+		       "Invalid args from MD, expect %lu but %u\n",
+		       sizeof(struct wsvc_md_event_comm_t),
+		       prMdInfo->buf_len);
+		return -EINVAL;
+	}
+	event = (struct wsvc_md_event_comm_t *)
+		&(prMdInfo->buf[1]);
+	if (event->u4Reason == MD_L12_DISABLE ||
+	    event->u4Reason == MD_L12_ENABLE) {
+		DBGLOG_LIMITED(INIT, WARN,
+			       "reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
+			       event->u4Reason,
+			       event->u4RstFlag,
+			       event->u4Line,
+			       event->pucFuncName,
+			       event->dump_payload[1]);
+	} else {
+		DBGLOG(INIT, WARN,
+		       "reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
+		       event->u4Reason,
+		       event->u4RstFlag,
+		       event->u4Line,
+		       event->pucFuncName,
+		       event->dump_payload[1]);
+	}
+	if (event->u4Reason == MD_TX_DATA_TIMEOUT) {
+		prAdapter->u4HifChkFlag |= HIF_CHK_TX_TIMEOUT;
+		prAdapter->u4HifChkFlag |= HIF_CHK_MD_TX_TIMEOUT;
+		prAdapter->ucMddpBssIndex =
+			(uint8_t) event->dump_payload[1];
+		kalSetHifDbgEvent(prGlueInfo);
 #if defined(_HIF_PCIE)
 #if CFG_SUPPORT_PCIE_ASPM
-		} else if (event->u4Reason == MD_L12_DISABLE) {
-			/* disable PCIe L1.2, 2 means md config */
-			if (prBusInfo->configPcieAspm) {
-				prBusInfo->configPcieAspm(prGlueInfo, FALSE, 2);
-				mddpNotifyMDPCIeL12Status(0);
-			}
-		} else if (event->u4Reason == MD_L12_ENABLE) {
-			/* enable PCIe L1.2, 2 means md config */
-			if (prBusInfo->configPcieAspm) {
-				prBusInfo->configPcieAspm(prGlueInfo, TRUE, 2);
-				mddpNotifyMDPCIeL12Status(1);
-			}
-#endif
-#endif
-		} else if (event->u4Reason == MD_INFORMATION_DUMP ||
-				event->u4Reason == MD_DRV_OWN_FAIL ||
-				event->u4Reason == MD_INIT_FAIL ||
-				event->u4Reason == MD_STATE_ABNORMAL ||
-				event->u4Reason == MD_SER_NO_RSP ||
-				event->u4Reason == MD_TX_CMD_FAIL) {
-			mddpTriggerReset(prAdapter, event->u4RstFlag);
-		} else {
-			DBGLOG(INIT, WARN,
-				"MD event reason undefined reason:%d\n",
-					event->u4Reason);
+	} else if (event->u4Reason == MD_L12_DISABLE) {
+		/* disable PCIe L1.2, 2 means md config */
+		if (prBusInfo->configPcieAspm) {
+			prBusInfo->configPcieAspm(prGlueInfo, FALSE, 2);
+			mddpNotifyMDPCIeL12Status(0);
 		}
+	} else if (event->u4Reason == MD_L12_ENABLE) {
+		/* enable PCIe L1.2, 2 means md config */
+		if (prBusInfo->configPcieAspm) {
+			prBusInfo->configPcieAspm(prGlueInfo, TRUE, 2);
+			mddpNotifyMDPCIeL12Status(1);
+		}
+#endif
+#endif
+	} else if (event->u4Reason == MD_INFORMATION_DUMP ||
+		   event->u4Reason == MD_DRV_OWN_FAIL ||
+		   event->u4Reason == MD_INIT_FAIL ||
+		   event->u4Reason == MD_STATE_ABNORMAL ||
+		   event->u4Reason == MD_SER_NO_RSP ||
+		   event->u4Reason == MD_TX_CMD_FAIL) {
+		mddpTriggerReset(prAdapter, event->u4RstFlag);
+	} else {
+		DBGLOG(INIT, WARN,
+		       "MD event reason undefined reason:%d\n",
+		       event->u4Reason);
 	}
+
+	return 0;
+}
+
+int32_t mddpMdNotifyInfoHandleTrigSerReq(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct macod_trig_ser_req_t *event;
+
+	if (prMdInfo->buf_len != sizeof(struct macod_trig_ser_req_t)) {
+		DBGLOG(INIT, ERROR,
+		       "Invalid args from MD, expect %lu but %u\n",
+		       sizeof(struct macod_trig_ser_req_t),
+		       prMdInfo->buf_len);
+		return -EINVAL;
+	}
+	event = (struct macod_trig_ser_req_t *)&(prMdInfo->buf[1]);
+	g_u4SerSn = event->sn;
+	if (prAdapter->rWifiVar.eEnableSerL1 == FEATURE_OPT_SER_ENABLE)
+		mddpTriggerMdSer(prAdapter);
+	else
+		mddpNotifyTrigSerRspInfo(MD_TRIG_SER_NOT_SUPP);
+	DBGLOG(INIT, INFO, "ser req ver: %u, sn: %u\n", event->ver, event->sn);
+
+	return 0;
+}
+
+int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t ret = 0;
+
+	DBGLOG(INIT, TRACE, "[%s]MD notify\n", __func__);
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!mddpMdNotifyInfoSanityCheck(prGlueInfo)) {
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (prMdInfo->info_type == MDDPW_MD_INFO_RESET_IND) {
+		ret = mddpMdNotifyInfoHandleResetInd(prAdapter, prMdInfo);
+	} else if (prMdInfo->info_type == MDDPW_MD_INFO_DRV_EXCEPTION) {
+		ret = mddpMdNotifyInfoHandleDrvException(prAdapter, prMdInfo);
+	} else if (prMdInfo->info_type == MDDPW_MD_EVENT_COMMUNICATION) {
+		ret = mddpMdNotifyInfoHandleCommunication(prAdapter, prMdInfo);
+	} else if (prMdInfo->info_type == MDDPW_MD_INFO_TRIG_SER_REQ) {
+		ret = mddpMdNotifyInfoHandleTrigSerReq(prAdapter, prMdInfo);
 #if defined(_HIF_PCIE)
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	else if (prMdInfo->info_type == MDDPW_MD_INFO_PCIE_GENSWITCH_START) {
+	} else if (prMdInfo->info_type == MDDPW_MD_INFO_PCIE_GENSWITCH_START) {
 		mddpMdNotifyInfoHandleGenSwitchStart(prAdapter, prMdInfo);
 	} else if (prMdInfo->info_type == MDDPW_MD_INFO_PCIE_GENSWITCH_END) {
 		mddpMdNotifyInfoHandleGenSwitchEnd(prAdapter, prMdInfo);
@@ -2450,10 +2822,9 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	} else if (prMdInfo->info_type ==
 			MDDPW_MD_INFO_PCIE_GENSWITCH_BYPASS_END) {
 		mddpMdNotifyInfoHandleGenSwitchByPassEnd(prAdapter, prMdInfo);
-	}
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif
-	else {
+	} else {
 		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
 			prMdInfo->info_type);
 		ret = -ENODEV;
@@ -2744,6 +3115,20 @@ void mddpInHifThread(struct ADAPTER *prAdapter)
 			g_u4MddpRstFlag | RST_FLAG_DO_CORE_DUMP);
 	}
 
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    MDDP_HIF_MD_SER,
+		    g_ulMddpActionFlag)) {
+#if (CFG_PCIE_GEN_SWITCH == 1)
+		if (prAdapter->fgIsGenSwitchProcessing) {
+			mddpNotifyTrigSerRspInfo(MD_TRIG_SER_FAIL);
+		} else
+#endif /* CFG_PCIE_GEN_SWITCH */
+		{
+			halSetDrvSer(prAdapter);
+			mddpNotifyTrigSerRspInfo(MD_TRIG_SER_SUCC);
+		}
+	}
+
 #if (CFG_PCIE_GEN_SWITCH == 1)
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    MDDP_HIF_GEN_SWITCH_END,
@@ -2771,6 +3156,12 @@ void mddpTriggerReset(struct ADAPTER *prAdapter, uint32_t u4RstFlag)
 {
 	g_u4MddpRstFlag = u4RstFlag;
 	KAL_SET_BIT(MDDP_HIF_TRIGGER_RESET, g_ulMddpActionFlag);
+	kalSetMddpEvent(prAdapter->prGlueInfo);
+}
+
+void mddpTriggerMdSer(struct ADAPTER *prAdapter)
+{
+	KAL_SET_BIT(MDDP_HIF_MD_SER, g_ulMddpActionFlag);
 	kalSetMddpEvent(prAdapter->prGlueInfo);
 }
 
