@@ -9860,9 +9860,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	struct BSS_INFO *aliveBss2g[MAX_BSSID_NUM] = { 0 };
 	struct BSS_INFO *aliveBss5g[MAX_BSSID_NUM] = { 0 };
 	struct BSS_INFO *aliveBss6g[MAX_BSSID_NUM] = { 0 };
-#if (CFG_SUPPORT_WIFI_6G == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
 	uint8_t ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g = 0;
 
 	/* prepare alive bss info for SCC */
@@ -9877,6 +9875,21 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO,
 	       "alive Bss num [bn0:bn1:bn2]=[%u:%u:%u]\n",
 	       ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g);
+
+	/* CONNAC 1 only support SCC */
+	if (prWifiVar->eDbdcMode == ENUM_DBDC_MODE_DISABLED &&
+	    ucNumAliveBss2g + ucNumAliveBss5g + ucNumAliveBss6g > 0) {
+		if (ucNumAliveBss6g)
+			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss6g,
+			    ucNumAliveBss6g, &pau4FreqList[*pu4FreqListNum]);
+		if (ucNumAliveBss5g)
+			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss5g,
+			    ucNumAliveBss5g, &pau4FreqList[*pu4FreqListNum]);
+		if (ucNumAliveBss2g)
+			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss2g,
+			    ucNumAliveBss2g, &pau4FreqList[*pu4FreqListNum]);
+		goto done;
+	}
 
 #if (CFG_SUPPORT_CCM)
 	/* Prefer A+A for SP Skyhawk Sku1 2G+2A+1A */
@@ -9919,6 +9932,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			&pau4FreqList[*pu4FreqListNum]);
 	}
 
+done:
 	p2pFuncGetSafeFreq(eIftype, pau4FreqList, pu4FreqListNum,
 			   pau4FreqAllowList, ucAllowFreqNum);
 
