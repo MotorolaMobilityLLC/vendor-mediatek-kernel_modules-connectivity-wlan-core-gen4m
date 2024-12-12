@@ -7851,10 +7851,11 @@ void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
 			j++;
 		}
 	}
-	if (j > 0)
+	if (j > 0) {
 		memcpy(prSapSwitchCand, &rSapSwitchCand[0],
 			j*sizeof(struct P2P_CH_SWITCH_CANDIDATE));
-	else
+		*ucChSwithCandNum = j;
+	} else
 		*ucChSwithCandNum = 0;
 
 	for (i = 0; i < *ucChSwithCandNum; ++i)
