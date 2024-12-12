@@ -494,6 +494,8 @@ struct _NAN_SCHEDULER_T {
 	uint8_t ucNdcBand; /* band bitmap of NDC, enum NAN_BSS_ROLE_INDEX */
 };
 
+uint8_t *nanGetNanIEBuffer(void);
+
 struct _NAN_PEER_SCH_DESC_T *
 nanSchedAcquirePeerSchDescByNmi(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
 

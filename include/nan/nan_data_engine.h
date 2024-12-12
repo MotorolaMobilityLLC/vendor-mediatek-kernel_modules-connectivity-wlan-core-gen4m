@@ -384,10 +384,6 @@ struct _NAN_NDL_INSTANCE_T {
 	struct LINK rPendingReqList;
 	uint8_t aucTxRespAddr[MAC_ADDR_LEN]; /* Schedule Response peer addr */
 
-
-	uint32_t u4FastRecoveryId; /* Store request ID */
-	uint32_t u4SetFastRecovery; /* Log timestamp of entering FR */
-
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1 && CFG_SUPPORT_NAN_11BE == 1)
 	u_int8_t fgIsEhtReschedule;
 #endif

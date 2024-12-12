@@ -1185,9 +1185,7 @@ void nanBackToNormal(struct ADAPTER *prAdapter)
 		return;
 	}
 
-#if CFG_SUPPORT_NAN_EXT
-	nanAdsdcBackToNormal(prAdapter);
-#endif
+	nanExtBackToNormal(prAdapter);
 }
 
 struct BSS_INFO *nanIsSapOrP2pActive(struct ADAPTER *prAdapter)

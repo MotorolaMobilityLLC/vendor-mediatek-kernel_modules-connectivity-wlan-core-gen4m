@@ -469,6 +469,10 @@ enum _ENUM_CNM_CH_CONCURR_T {
 	CNM_CH_CONCURR_NUM
 };
 
+uint8_t *nanGetNanIEBuffer(void)
+{
+	return g_aucNanIEBuffer;
+}
 
 static u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 		    struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
@@ -11822,148 +11826,6 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 
 	return rRetStatus;
 }
-
-#if CFG_SUPPORT_NAN_EXT
-uint32_t
-nanSchedGetVendorAttr(
-	struct ADAPTER *prAdapter,
-	uint8_t **ppucVendorAttr,
-	uint32_t *pu4VendorAttrLength)
-{
-	__KAL_ATTRIB_PACKED_FRONT__
-	struct _NAN_ATTR_VSIE_SPECIFIC_T {
-		uint8_t aucValue[8];
-	} __KAL_ATTRIB_PACKED__;
-	uint8_t aucSsOui[] = {0x00, 0x00, 0xF0};
-	struct _NAN_ATTR_VENDOR_SPECIFIC_T *prAttrVendor;
-	struct _NAN_ATTR_VSIE_SPECIFIC_T *prVsie;
-	uint8_t *pucPos;
-
-	prAttrVendor =
-		(struct _NAN_ATTR_VENDOR_SPECIFIC_T *)
-		g_aucNanIEBuffer;
-	kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
-
-	prAttrVendor->ucAttrId = NAN_ATTR_ID_VENDOR_SPECIFIC;
-
-	prAttrVendor->u2Length = 14;
-
-	kalMemCopy(prAttrVendor->aucOui, aucSsOui, VENDOR_OUI_LEN);
-
-	prAttrVendor->ucVendorSpecificOuiType = 0x33;
-
-	prAttrVendor->u2SubAttrLength = 8;
-
-	pucPos = prAttrVendor->aucVendorSpecificOuiData;
-
-	prVsie = (struct _NAN_ATTR_VSIE_SPECIFIC_T *)pucPos;
-
-	kalMemZero(prVsie, sizeof(struct _NAN_ATTR_VSIE_SPECIFIC_T));
-
-#if (CFG_SUPPORT_802_11AX == 1)
-	prVsie->aucValue[0] = 0x1;
-#endif
-
-	pucPos += sizeof(struct _NAN_ATTR_VSIE_SPECIFIC_T);
-
-	if (ppucVendorAttr)
-		*ppucVendorAttr = g_aucNanIEBuffer;
-	if (pu4VendorAttrLength)
-		*pu4VendorAttrLength = (pucPos - g_aucNanIEBuffer);
-
-	nanUtilDump(prAdapter, "SS VSIE",
-			g_aucNanIEBuffer, (pucPos-g_aucNanIEBuffer));
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-#if (CFG_SUPPORT_NAN_11BE == 1)
-uint32_t
-nanSchedGetVendorEhtAttr(
-	struct ADAPTER *prAdapter,
-	uint8_t **ppucVendorAttr,
-	uint32_t *pu4VendorAttrLength)
-{
-#if CFG_EXT_FEATURE
-	__KAL_ATTRIB_PACKED_FRONT__
-	struct _NAN_ATTR_EHT_SPECIFIC_T {
-		u_int8_t ucId;
-		u_int8_t ucLength;
-		u_int8_t ucExtId;
-		u_int8_t ucEhtMacCap[2];
-		u_int8_t ucEhtPhyCap[9];
-		u_int8_t ucEhtMcs[9];
-		u_int8_t ucValue[4];
-	} __KAL_ATTRIB_PACKED__;
-	uint8_t aucSsOui[] = {0x00, 0x00, 0xF0};
-	uint8_t aucSsMacCap[] = {0x00, 0x00};
-	uint8_t aucSsPhyCap[] = {0xE2, 0xFF, 0xFF, 0x01,
-			0x00, 0x06, 0x00, 0x00, 0x02};
-	uint8_t aucSsMcs[] = {0x22, 0x22, 0x22, 0x22,
-			0x22, 0x22, 0x22, 0x22, 0x22};
-	uint8_t aucSsMode2[] = {0x12, 0x00, 0x00, 0x00};
-	uint8_t aucSsMode0[] = {0x10, 0x00, 0x00, 0x00};
-	struct _NAN_ATTR_VENDOR_SPECIFIC_T *prAttrVendor;
-	struct _NAN_ATTR_EHT_SPECIFIC_T *prEht;
-	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
-	struct BSS_INFO *prBssInfo;
-	uint8_t *pucPos;
-
-	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND1);
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					  prNanSpecificBssInfo->ucBssIndex);
-
-	if (!prBssInfo || !nanIsEhtSupport(prAdapter))
-		return 0;
-
-	prAttrVendor =
-		(struct _NAN_ATTR_VENDOR_SPECIFIC_T *)
-		g_aucNanIEBuffer;
-	kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
-
-	prAttrVendor->ucAttrId = NAN_ATTR_ID_VENDOR_SPECIFIC;
-
-	kalMemCopy(prAttrVendor->aucOui, aucSsOui, VENDOR_OUI_LEN);
-
-	prAttrVendor->ucVendorSpecificOuiType = 0x41;
-
-	pucPos = prAttrVendor->aucVendorSpecificOuiData;
-
-	prEht = (struct _NAN_ATTR_EHT_SPECIFIC_T *)pucPos;
-
-	kalMemZero(prEht, sizeof(struct _NAN_ATTR_EHT_SPECIFIC_T));
-
-	prEht->ucId = ELEM_ID_RESERVED;
-	prEht->ucLength = 0x19;
-	prEht->ucExtId = ELEM_EXT_ID_EHT_CAPS;
-	kalMemCopy(prEht->ucEhtMacCap, aucSsMacCap, 2);
-	kalMemCopy(prEht->ucEhtPhyCap, aucSsPhyCap, 9);
-	kalMemCopy(prEht->ucEhtMcs, aucSsMcs, 9);
-	if (nanIsEhtEnable(prAdapter))
-		kalMemCopy(prEht->ucValue, aucSsMode2, 4);
-	else
-		kalMemCopy(prEht->ucValue, aucSsMode0, 4);
-
-	prAttrVendor->u2SubAttrLength = prEht->ucLength + 2;
-
-	prAttrVendor->u2Length = prAttrVendor->u2SubAttrLength + 6;
-
-	pucPos += sizeof(struct _NAN_ATTR_EHT_SPECIFIC_T);
-
-	if (ppucVendorAttr)
-		*ppucVendorAttr = g_aucNanIEBuffer;
-	if (pu4VendorAttrLength)
-		*pu4VendorAttrLength = (pucPos - g_aucNanIEBuffer);
-
-	nanUtilDump(prAdapter, "SS EHT VSIE",
-			g_aucNanIEBuffer, (pucPos-g_aucNanIEBuffer));
-#endif
-
-	return WLAN_STATUS_SUCCESS;
-}
-#endif
-#endif
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 uint32_t

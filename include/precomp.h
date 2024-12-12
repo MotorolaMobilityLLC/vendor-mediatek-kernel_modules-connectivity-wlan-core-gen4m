@@ -266,6 +266,7 @@
 #include "nan_link.h"
 #include "nan_intf.h"
 #include "nan_ranging.h"
+#include "nan_func.h"
 #endif
 
 #if CFG_SUPPORT_ROAMING

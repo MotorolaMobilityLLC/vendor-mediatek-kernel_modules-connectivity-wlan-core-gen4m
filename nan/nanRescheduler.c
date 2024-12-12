@@ -40,18 +40,6 @@
 #include <linux/init.h>
 #include <linux/net.h>
 
-#if CFG_SUPPORT_NAN_EXT
-#include "nan_ext.h"
-#include "nan_ext_ccm.h"
-#include "nan_ext_pa.h"
-#include "nan_ext_mdc.h"
-#include "nan_ext_asc.h"
-#include "nan_ext_amc.h"
-#include "nan_ext_ascc.h"
-#include "nan_ext_fr.h"
-#include "nan_ext_adsdc.h"
-#include "nan_ext_eht.h"
-#endif /* CFG_SUPPORT_NAN_EXT */
 #include "nanRescheduler.h"
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE  == 1)

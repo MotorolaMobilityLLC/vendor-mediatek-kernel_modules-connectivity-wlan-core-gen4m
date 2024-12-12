@@ -624,9 +624,7 @@ wlanoidNANEnableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 
- #if CFG_SUPPORT_NAN_EXT
 	nanExtEnableReq(prAdapter);
-#endif
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
@@ -675,9 +673,7 @@ wlanoidNANDisableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 
-#if CFG_SUPPORT_NAN_EXT
 	nanExtDisableReq(prAdapter);
-#endif
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
@@ -2698,9 +2694,9 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 		kalMemFree(prNanEventInd, VIR_MEM_TYPE, message_len);
 		return WLAN_STATUS_SUCCESS;
 	}
-#if CFG_SUPPORT_NAN_EXT
+
 	nanExtComposeClusterEvent(prAdapter, prDeEvt);
-#endif
+
 	/* Add TLV datas */
 	tlvs = nanAddTlv(u2EventType, MAC_ADDR_LEN, prDeEvt->ucClusterId, tlvs);
 
@@ -3364,9 +3360,8 @@ mtk_cfg80211_vendor_event_nan_report_beacon(
 		prFwEvt->ucHwChnl,
 		prFwEvt->au4LocalTsf[0]);
 
-#if CFG_SUPPORT_NAN_EXT
 	nanExtComposeBeaconTrack(prAdapter, prFwEvt);
-#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -3424,75 +3419,6 @@ int mtk_cfg80211_vendor_nan_ext_indication(struct ADAPTER *prAdapter,
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN,
 			     sizeof(struct NanExtIndMsg),
 			     &nanExtInd) < 0)) {
-		DBGLOG(NAN, ERROR, "nla_put_nohdr failed\n");
-		kfree_skb(skb);
-		return -EFAULT;
-	}
-
-	cfg80211_vendor_event(skb, GFP_KERNEL);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-u32 wlanoidNANExtCmd(struct ADAPTER *prAdapter, void *pvSetBuffer,
-		     uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
-{
-	struct NanExtCmdMsg *pExtCmd = (struct NanExtCmdMsg *)pvSetBuffer;
-
-	DBGLOG(NAN, INFO, "NAN Ext Cmd:\n");
-	DBGLOG_HEX(NAN, INFO, pExtCmd->data, pExtCmd->fwHeader.msgLen);
-
-	/**
-	 * 1. Pass to NAN EXT CMD handler in binary array
-	 * 2. The handler returns binary array in pExtCmd->data
-	 * Both data buffer and data buffer size arguments are bidirectional
-	 */
-	return nanExtParseCmd(prAdapter, pExtCmd->data,
-			      &pExtCmd->fwHeader.msgLen);
-}
-
-u32
-wlanoidNANExtCmdRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
-		    uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
-{
-	struct NanExtResponseMsg nanExtRsp = {0};
-	struct NanExtResponseMsg *pNanExtRsp =
-		(struct NanExtResponseMsg *)pvSetBuffer;
-	struct sk_buff *skb = NULL;
-	struct wiphy *wiphy;
-	struct wireless_dev *wdev;
-
-	wiphy = wlanGetWiphy();
-	if (!wiphy) {
-		DBGLOG(NAN, ERROR, "wiphy error!\n");
-		return -EFAULT;
-	}
-
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		->ieee80211_ptr;
-	if (!wiphy) {
-		DBGLOG(NAN, ERROR, "wiphy error!\n");
-		return -EFAULT;
-	}
-
-	nanExtRsp.fwHeader = pNanExtRsp->fwHeader;
-
-	skb = kalCfg80211VendorEventAlloc(
-		wiphy, wdev, sizeof(struct NanExtResponseMsg) + NLMSG_HDRLEN,
-		WIFI_EVENT_SUBCMD_NAN_EXT, GFP_KERNEL);
-	if (!skb) {
-		DBGLOG(NAN, ERROR, "Allocate skb failed\n");
-		return -ENOMEM;
-	}
-
-	/* TODO: append response string */
-	kalMemCopy(nanExtRsp.data, pNanExtRsp->data, nanExtRsp.fwHeader.msgLen);
-	DBGLOG(NAN, TRACE, "Resp data:");
-	DBGLOG_HEX(NAN, TRACE, nanExtRsp.data, nanExtRsp.fwHeader.msgLen);
-
-	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN,
-			     sizeof(struct NanExtResponseMsg),
-			     &nanExtRsp) < 0)) {
 		DBGLOG(NAN, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;

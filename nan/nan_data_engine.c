@@ -446,11 +446,8 @@ static void nanDataEngineDisconnectByNdl(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prNDL->u4SetFastRecovery) {
-		DBGLOG(NAN, INFO, "In FR skip terminate NDL %u\n",
-		       prNDL->ucIndex);
+	if (nanExtHoldNdl(prNDL))
 		return;
-	}
 
 	for (i = 0; i < NAN_MAX_SUPPORT_NDP_NUM; i++) {
 		if (!prNDL->arNDP[i].fgNDPValid)
@@ -483,7 +480,7 @@ nanDataUtilSearchEmptyNdlEntry(struct ADAPTER *prAdapter)
 {
 	uint8_t ucNdlIndex;
 	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
-	struct _NAN_NDL_INSTANCE_T *prOldestFrNDL = NULL;
+	struct _NAN_NDL_INSTANCE_T *prReuseNDL = NULL;
 	uint8_t ucNumNDL = kal_min_t(uint8_t, NAN_MAX_SUPPORT_NDL_NUM,
 				     prAdapter->rWifiVar.ucNanMaxNdpSession);
 
@@ -491,41 +488,25 @@ nanDataUtilSearchEmptyNdlEntry(struct ADAPTER *prAdapter)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 #endif
 
+
+
 	for (ucNdlIndex = 0; ucNdlIndex < ucNumNDL; ucNdlIndex++) {
-
 		prNDL = &prAdapter->rDataPathInfo.arNDL[ucNdlIndex];
-
-		if (prNDL->u4SetFastRecovery &&
-		    (!prOldestFrNDL ||
-		     prNDL->u4SetFastRecovery <
-		     prOldestFrNDL->u4SetFastRecovery)) {
-			DBGLOG(NAN, INFO, "Reuse FR NDL %u\n", ucNdlIndex);
-			prOldestFrNDL = prNDL;
-		}
 
 		if (prNDL->fgNDLValid)
 			continue;
 
-		DBGLOG(NAN, INFO, "[%s] ucNdlIndex:%d\n", __func__,
-		       ucNdlIndex);
+		DBGLOG(NAN, INFO, "found empty ucNdlIndex:%d\n", ucNdlIndex);
 		prNDL->ucIndex = ucNdlIndex;
 		break;
 	}
 
-	if (ucNdlIndex == ucNumNDL) {
-		if (prOldestFrNDL) { /* Use oldest in FR state if available */
-#if CFG_SUPPORT_NAN_EXT
-			nanIndicateFrDeleted(prAdapter, prOldestFrNDL);
-#endif
-			/* TODO: would the deleted ID == new allocated ID
-			 * confuse the framework handler?
-			 */
-			prOldestFrNDL->u4SetFastRecovery = 0; /* invalidate */
-			nanDataEngineDisconnectByNdl(prAdapter, prOldestFrNDL,
+	if (prNDL == NULL) {
+		prReuseNDL = nanExtGetReusedNdl(prAdapter);
+		if (prReuseNDL)
+			nanDataEngineDisconnectByNdl(prAdapter, prReuseNDL,
 						     FALSE);
-			return prOldestFrNDL;
-		}
-		return NULL;
+		return prReuseNDL;
 	}
 
 	return prNDL;
@@ -1309,8 +1290,8 @@ nanDataAllocateNdl(struct ADAPTER *prAdapter, uint8_t *pucMacAddr,
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	kalMemZero(&(prNDL->aucIeEhtCap), sizeof(prNDL->aucIeEhtCap));
 #endif
-	prNDL->u4FastRecoveryId = 0;
-	prNDL->u4SetFastRecovery = 0;
+
+	nanExtResetNdlConfig(prNDL);
 
 	for (ucNdpCxtIdx = 0; ucNdpCxtIdx < NAN_MAX_SUPPORT_NDP_CXT_NUM;
 	     ucNdpCxtIdx++)
