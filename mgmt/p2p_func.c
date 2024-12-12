@@ -107,7 +107,7 @@ uint8_t g_ucBssIdx;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 u_int8_t g_fgManualCac = FALSE;
 uint32_t g_u4DriverCacTime;
-uint32_t g_u4CacStartBootTime;
+uint64_t g_u8CacStartBootTime;
 uint8_t g_ucRadarDetectMode = FALSE;
 uint8_t g_ucRadarDetectCnt;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
@@ -3269,20 +3269,21 @@ const char *p2pFuncShowDfsState(void)
 
 void p2pFuncRecordCacStartBootTime(void)
 {
-	g_u4CacStartBootTime = kalGetBootTime();
+	g_u8CacStartBootTime = kalGetBootTime();
 }
 
 uint32_t p2pFuncGetCacRemainingTime(void)
 {
-	uint32_t u4CurrentBootTime;
-	uint32_t u4CacRemainingTime;
+	uint64_t u8CurrentBootTime;
+	uint64_t u8CacRemainingTime;
 
-	u4CurrentBootTime = kalGetBootTime();
+	u8CurrentBootTime = kalGetBootTime();
 
-	u4CacRemainingTime = g_u4DriverCacTime -
-		(u4CurrentBootTime - g_u4CacStartBootTime)/1000000;
+	u8CacRemainingTime = (uint64_t)g_u4DriverCacTime -
+		kal_div64_u64((u8CurrentBootTime
+			 - g_u8CacStartBootTime), USEC_PER_SEC);
 
-	return u4CacRemainingTime;
+	return (uint32_t)u8CacRemainingTime;
 }
 
 void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,

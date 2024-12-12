@@ -895,7 +895,8 @@ uint32_t rttDoPasn(struct ADAPTER *prAdapter,
 			sizeof(struct PASN_PEER) * PASN_MAX_PEERS);
 
 		/* Indicate PASN request */
-		rPasnReq.eAction = QCA_WLAN_VENDOR_PASN_ACTION_AUTH;
+		rPasnReq.eAction =
+			(enum PASN_ACTION)QCA_WLAN_VENDOR_PASN_ACTION_AUTH;
 
 		pasnHandlePasnRequest(prAdapter, ucBssIndex, &rPasnReq,
 			rttPasnDoneCallback, rttRangingCtxCallback, NULL);
@@ -957,7 +958,7 @@ uint32_t rttCancelPasn(struct ADAPTER *prAdapter,
 			NULL, REASON_CODE_PREV_AUTH_INVALID, NULL);
 	}
 
-	rPasnReq.eAction =
+	rPasnReq.eAction = (enum PASN_ACTION)
 		QCA_WLAN_VENDOR_PASN_ACTION_DELETE_SECURE_RANGING_CONTEXT;
 
 	pasnHandlePasnRequest(prAdapter, ucBssIndex, &rPasnReq,
@@ -1031,7 +1032,7 @@ uint32_t rttDeleteSecureCtx(struct ADAPTER *prAdapter,
 
 	rttInfo->ucNumPeers -= rPasnReq.ucNumPeers;
 
-	rPasnReq.eAction =
+	rPasnReq.eAction = (enum PASN_ACTION)
 		QCA_WLAN_VENDOR_PASN_ACTION_DELETE_SECURE_RANGING_CONTEXT;
 
 	pasnHandlePasnRequest(prAdapter, ucBssIndex, &rPasnReq,

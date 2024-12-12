@@ -431,8 +431,8 @@ void wmmSyncAcParamWithFw(struct ADAPTER *prAdapter, uint8_t ucAc,
 	if (u2MediumTime)
 		u2MediumTime = 153;
 #endif
-	prAcmCtrl->u4AdmittedTime = u2MediumTime * 32;
-	prAcmCtrl->u4IntervalEndSec = 0;
+	prAcmCtrl->u8AdmittedTime = u2MediumTime * 32;
+	prAcmCtrl->u8IntervalEndSec = 0;
 #endif
 	kalMemZero(&rCmdUpdateAcParam, sizeof(rCmdUpdateAcParam));
 	rCmdUpdateAcParam.ucAcIndex = ucAc;
@@ -1589,7 +1589,7 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	struct SOFT_ACM_CTRL *prAcmCtrl = NULL;
 	struct WMM_INFO *prWmmInfo =
 		aisGetWMMInfo(prAdapter, ucBssIndex);
-	uint32_t u4CurTime = 0;
+	uint64_t u8CurTime = 0;
 
 	if (!prWmmInfo) {
 		DBGLOG(WMM, INFO, "prWmmInfo is null %d\n", ucBssIndex);
@@ -1597,21 +1597,21 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	}
 
 	prAcmCtrl = &prWmmInfo->arAcmCtrl[ucAc];
-	if (!prAcmCtrl->u4AdmittedTime)
+	if (!prAcmCtrl->u8AdmittedTime)
 		return FALSE;
 
-	u4CurTime = (uint32_t)kal_div64_u64(kalGetBootTime(), USEC_PER_SEC);
+	u8CurTime = kal_div64_u64(kalGetBootTime(), USEC_PER_SEC);
 
-	if (!TIME_BEFORE(u4CurTime, prAcmCtrl->u4IntervalEndSec)) {
-		u4CurTime++;
+	if (!TIME_BEFORE(u8CurTime, prAcmCtrl->u8IntervalEndSec)) {
+		u8CurTime++;
 		DBGLOG(WMM, INFO,
-		       "AC %d, Admitted %u, LastEnd %u, NextEnd %u, LastUsed %u, LastDeq %d\n",
-		       ucAc, prAcmCtrl->u4AdmittedTime,
-		       prAcmCtrl->u4IntervalEndSec, u4CurTime,
-		       prAcmCtrl->u4AdmittedTime - prAcmCtrl->u4RemainTime,
+		       "AC %d, Admitted %lu, LastEnd %lu, NextEnd %lu, LastUsed %lu, LastDeq %d\n",
+		       ucAc, prAcmCtrl->u8AdmittedTime,
+		       prAcmCtrl->u8IntervalEndSec, u8CurTime,
+		       prAcmCtrl->u8AdmittedTime - prAcmCtrl->u8RemainTime,
 		       prAcmCtrl->u2DeqNum);
-		prAcmCtrl->u4IntervalEndSec = u4CurTime;
-		prAcmCtrl->u4RemainTime = prAcmCtrl->u4AdmittedTime;
+		prAcmCtrl->u8IntervalEndSec = u8CurTime;
+		prAcmCtrl->u8RemainTime = prAcmCtrl->u8AdmittedTime;
 		prAcmCtrl->u2DeqNum = 0;
 		/* Stop the next dequeue timer due to we will dequeue right now.
 		 */
@@ -1620,48 +1620,48 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	}
 	if (!u4PktTxTime) {
 		DBGLOG(WMM, TRACE, "AC %d, can dq %d\n", ucAc,
-		       (prAcmCtrl->u4RemainTime > 0));
-		return (prAcmCtrl->u4RemainTime > 0);
+		       (prAcmCtrl->u8RemainTime > 0));
+		return (prAcmCtrl->u8RemainTime > 0);
 	}
 	/* If QM request to dequeue, and have enough medium time,  then dequeue
 	 */
-	if (prAcmCtrl->u4RemainTime >= u4PktTxTime) {
+	if (prAcmCtrl->u8RemainTime >= u4PktTxTime) {
 		prAcmCtrl->u2DeqNum++;
-		prAcmCtrl->u4RemainTime -= u4PktTxTime;
-		DBGLOG(WMM, INFO, "AC %d, Remain %u, DeqNum %d\n", ucAc,
-		       prAcmCtrl->u4RemainTime, prAcmCtrl->u2DeqNum);
-		if (prAcmCtrl->u4RemainTime > 0)
+		prAcmCtrl->u8RemainTime -= u4PktTxTime;
+		DBGLOG(WMM, INFO, "AC %d, Remain %lu, DeqNum %d\n", ucAc,
+		       prAcmCtrl->u8RemainTime, prAcmCtrl->u2DeqNum);
+		if (prAcmCtrl->u8RemainTime > 0)
 			return TRUE;
 	}
 	/* If not enough medium time to dequeue next packet, should start a
 	 * timer to schedue next dequeue
-	 * We didn't consider the case u4RemainTime is enough to dequeue
+	 * We didn't consider the case u8RemainTime is enough to dequeue
 	 * packets except the head of the
 	 * station tx queue, because it is too complex to implement dequeue
 	 * routine.
-	 * We should reset u4RemainTime to 0, used to skip next dequeue request
+	 * We should reset u8RemainTime to 0, used to skip next dequeue request
 	 * if still in this deq interval.
 	 * the dequeue interval is 1 second according to WMM-AC specification.
 	 */
-	prAcmCtrl->u4RemainTime = 0;
+	prAcmCtrl->u8RemainTime = 0;
 	/* Start a timer to schedule next dequeue interval, since application
 	 * may stop sending data to driver,
 	 * but driver still pending some data to dequeue
 	 */
 	if (!timerPendingTimer(&prWmmInfo->rAcmDeqTimer)) {
-		uint32_t u4EndMsec = prAcmCtrl->u4IntervalEndSec * 1000;
+		uint64_t u8EndMsec = prAcmCtrl->u8IntervalEndSec * 1000;
 
-		u4CurTime = (uint32_t)kal_div64_u64(kalGetBootTime(),
+		u8CurTime = kal_div64_u64(kalGetBootTime(),
 					USEC_PER_MSEC);
 
-		/* It is impossible that u4EndMsec is less than u4CurTime */
-		u4EndMsec = u4EndMsec - u4CurTime +
+		/* It is impossible that u4EndMsec is less than u8CurTime */
+		u8EndMsec = u8EndMsec - u8CurTime +
 			    20; /* the timeout duration at least 2 jiffies */
 		cnmTimerStartTimer(prAdapter, &prWmmInfo->rAcmDeqTimer,
-				   u4EndMsec);
+				   (uint32_t)u8EndMsec);
 		DBGLOG(WMM, INFO,
-		       "AC %d, will start next deq interval after %u ms\n",
-		       ucAc, u4EndMsec);
+		       "AC %d, will start next deq interval after %lu ms\n",
+		       ucAc, u8EndMsec);
 	}
 	return FALSE;
 }

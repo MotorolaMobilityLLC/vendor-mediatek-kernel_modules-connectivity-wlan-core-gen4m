@@ -4943,9 +4943,7 @@ static int32_t kalThreadSchedRetrieve(struct task_struct *pThread,
 	memcpy(&se, &pThread->se, sizeof(struct sched_entity));
 	kalGetLocalTime(&sec, &usec);
 
-#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE) || \
-	((CFG_KERNEL_AN14_515 == 1) && \
-	KERNEL_VERSION(5, 15, 110) <= LINUX_VERSION_CODE)
+#if (KERNEL_VERSION(5, 15, 110) <= LINUX_VERSION_CODE)
 	stats = &pThread->stats;
 #else
 	stats = &pThread->se.statistics;
@@ -8921,6 +8919,10 @@ nla_put_failure:
 }
 #endif
 
+/*
+ * kalGetBootTime
+ * Returns elapsed time in microseconds since boot up
+ */
 uint64_t kalGetBootTime(void)
 {
 	struct timespec64 ts;

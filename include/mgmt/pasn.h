@@ -53,11 +53,13 @@ struct PASN_PEER {
 	enum PASN_STATUS eStatus;
 };
 
+enum PASN_ACTION {
+	PASN_ACTION_AUTH,
+	PASN_ACTION_DELETE_SECURE_RANGING_CONTEXT,
+};
+
 struct PASN_AUTH {
-	enum {
-		PASN_ACTION_AUTH,
-		PASN_ACTION_DELETE_SECURE_RANGING_CONTEXT,
-	} eAction;
+	enum PASN_ACTION eAction;
 	uint8_t ucNumPeers;
 	/* aucOwnAddr, aucPeerAddr, ucLtfKeyseedRequired are mandatory */
 	struct PASN_PEER arPeer[PASN_MAX_PEERS];
