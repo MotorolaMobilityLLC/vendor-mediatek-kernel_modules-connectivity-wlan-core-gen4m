@@ -2239,12 +2239,17 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			preempt_enable();
 		} else {
 			skb_queue_tail(&prGlueInfo->rRxNapiSkbQ, prSkb);
-			if (prGlueInfo->fgNapiReady)
+			if (prGlueInfo->fgNapiReady) {
+				RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+					RX_NAPI_SCHEDULE_COUNT);
+				GLUE_SET_REF_CNT(1,
+					prGlueInfo->fgNapiScheduled);
 				kal_napi_schedule(&prGlueInfo->napi);
-			else
+			} else {
 				DBGLOG(RX, WARN,
 					"Skip napi schedule, NapiReady:%u\n",
 					prGlueInfo->fgNapiReady);
+			}
 		}
 #else /* CFG_SUPPORT_RX_NAPI */
 		/* GRO receive function can't be interrupt so it need to
@@ -11797,18 +11802,23 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	pos += composeNdevDrp(prAdapter, pos, end);
 
 	pos += kalSnprintf(pos, end - pos,
-		"NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",
+		"NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INTR_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_WORK_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT));
-
+#if CFG_SUPPORT_RX_NAPI
+	pos += kalSnprintf(pos, end - pos, ",%u",
+			glue->fgNapiScheduled);
+#endif
 #if CFG_SUPPORT_RX_GRO
 	pos += kalSnprintf(pos, end - pos, ",%u",
 			skb_queue_len(&glue->rRxNapiSkbQ));
@@ -15481,6 +15491,8 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 	prRxCtrl = &prAdapter->rRxCtrl;
 
 	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+
+	GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
 	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
 }
 
@@ -15743,6 +15755,8 @@ end:
 #endif
 		kal_napi_complete_done(napi, work_done);
 
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
+
 	return work_done;
 }
 #else
@@ -15790,6 +15804,8 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
+	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
 
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
 	if (HAL_IS_RX_DIRECT(prAdapter))
@@ -15839,6 +15855,8 @@ next_try:
 			DBGLOG(RX, ERROR, "skb NULL %d %d\n",
 				work_done, skb_queue_len(prFlushSkbQ));
 			kal_napi_complete_done(napi, work_done);
+			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_POLL_END_COUNT);
 			return work_done;
 		}
 
@@ -15883,6 +15901,8 @@ next_try:
 		napi_schedule(napi);
 	}
 
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
+
 	return work_done;
 #else /* CFG_SUPPORT_RX_NAPI */
 	return 0;
@@ -15902,6 +15922,7 @@ uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(RX, INFO, "RX NAPI disable ongoing\n");
 
 	prGlueInfo->fgNapiReady = FALSE;
+	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
 #if CFG_NAPI_DELAY
 	kalNapiDelayTimerUninit(prGlueInfo);
 #endif /* CFG_NAPI_DELAY */

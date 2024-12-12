@@ -1083,6 +1083,7 @@ struct GLUE_INFO {
 	u_int8_t fgNapiReady;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
+	u_int8_t fgNapiScheduled;
 #if CFG_NAPI_DELAY
 	struct hrtimer rNapiDelayTimer;
 	unsigned long ulNapiDelayFlag;
