@@ -2869,12 +2869,14 @@ void connac3x_dump_format_memory32(
 static void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_DMABUF *prRingDmyDbg;
 	struct RTMP_DMABUF *prRingDidx, *prRingCidx, *prRingIntSta;
 	struct RTMP_DMABUF *prHwDoneFlag, *prSwDoneFlag;
 	struct RTMP_DMABUF *prRingMdDidx, *prRingMdIntSta;
 	uint32_t u4Val = 0, u4Idx;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prRingDmyDbg = &prHifInfo->rRingDmyDbg;
 	prRingDidx = &prHifInfo->rRingDidx;
 	prRingCidx = &prHifInfo->rRingCidx;
 	prHwDoneFlag = &prHifInfo->rHwDoneFlag;
@@ -2897,6 +2899,11 @@ static void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 	}
 
+	if (prRingDmyDbg->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump RingDmyDbg\n");
+		DBGLOG_MEM32(HAL, INFO, prRingDmyDbg->AllocVa,
+			     prRingDmyDbg->AllocSize);
+	}
 	if (prRingDidx->AllocVa) {
 		DBGLOG(HAL, INFO, "Dump RingDidx\n");
 		DBGLOG_MEM32(HAL, INFO, prRingDidx->AllocVa,

@@ -242,6 +242,7 @@ struct GL_HIF_INFO {
 #if CFG_MTK_WIFI_WFDMA_WB
 	struct RTMP_DMABUF rRingDmyRd;
 	struct RTMP_DMABUF rRingDmyWr;
+	struct RTMP_DMABUF rRingDmyDbg;
 	struct RTMP_DMABUF rRingIntSta;
 	struct RTMP_DMABUF rRingDidx;
 	struct RTMP_DMABUF rRingCidx;
