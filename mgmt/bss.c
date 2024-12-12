@@ -1442,13 +1442,15 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 					prOtherBssInfo->ucBssIndex);
 				continue;
 			}
+			prBcnFrame = (struct WLAN_BEACON_FRAME *)
+				prOtherMsduInfo->prPacket;
 			u2IELen = prOtherMsduInfo->u2FrameLength -
 				OFFSET_OF(struct WLAN_BEACON_FRAME,
 					  aucInfoElem);
 			nicUpdateBeaconIETemplate(prAdapter,
 						  eMethod,
-						  ucBssIndex,
-						  prBssInfo->u2CapInfo,
+						  prOtherBssInfo->ucBssIndex,
+						  prOtherBssInfo->u2CapInfo,
 						  prBcnFrame->aucInfoElem,
 						  u2IELen);
 		}
