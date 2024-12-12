@@ -11051,22 +11051,17 @@ static u_int8_t wlanIsFirstNetInterfaceByNetdev(struct GLUE_INFO *prGlueInfo,
 	return i == ucBssIndex;
 }
 
-static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
+static uint32_t calcualteTput(struct ADAPTER *prAdapter,
+			      uint64_t *throughput, int32_t period,
+			      signed long txDiffBytes[static MAX_BSSID_NUM],
+			      signed long txDiffPkts[static MAX_BSSID_NUM],
+			      signed long rxDiffBytes[static MAX_BSSID_NUM],
+			      signed long rxDiffPkts[static MAX_BSSID_NUM])
 {
 	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
 	struct BSS_INFO *bss;
 	struct net_device *ndev = NULL;
-#if CFG_SUPPORT_LINK_QUALITY_MONITOR
-	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
-#endif
-	OS_SYSTIME now, last;
-	int32_t period;
-	uint8_t i, j;
-	signed long txDiffBytes[MAX_BSSID_NUM] = {0};
-	signed long rxDiffBytes[MAX_BSSID_NUM] = {0};
-	signed long rxDiffPkts[MAX_BSSID_NUM] = {0};
-	signed long txDiffPkts[MAX_BSSID_NUM] = {0};
 	unsigned long lastTxBytes;
 	unsigned long lastRxBytes;
 	unsigned long lastTxPkts;
@@ -11075,61 +11070,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	unsigned long currentRxBytes;
 	unsigned long currentTxPkts;
 	unsigned long currentRxPkts;
-	uint64_t throughput = 0;
 	uint64_t throughputInPPS = 0;
-	char *buf = NULL;
-	char *head1;
-	char *head2;
-	char *head3;
-	char *head4;
-	char *head5;
-#if CFG_QUEUE_RX_IF_CONN_NOT_READY
-	char *head6;
-#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-	char *head7;
-	struct TX_FREE_INFO *prTxFreeInfo;
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-	char *pos;
-	char *end;
-	uint32_t slen;
 	uint8_t fgIsValidNetDevice = FALSE;
-#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
-	struct rtnl_link_stats64 rtnls;
-#endif
-
-	uint32_t ret = WLAN_STATUS_SUCCESS;
-#if CFG_SUPPORT_SKB_ALLOC_WORK
-	struct SKB_ALLOC_INFO *prSkbAllocInfo = &glue->rSkbAllocInfo;
-#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+	uint32_t i;
 
 	GLUE_SPIN_LOCK_DECLARATION();
-
-	GET_BOOT_SYSTIME(&now);
-	last = perf->rLastUpdateTime;
-
-	if (!KAL_TEST_BIT(PERF_MON_INIT_BIT, perf->ulPerfMonFlag) ||
-	    !CHECK_FOR_TIMEOUT(now, last,
-			MSEC_TO_SYSTIME(perf->u4UpdatePeriod))) {
-		ret = WLAN_STATUS_PENDING;
-		goto done;
-	}
-
-	perf->rLastUpdateTime = now;
-
-	period = ((int32_t) now - (int32_t) last) * MSEC_PER_SEC / KAL_HZ;
-	if (period < 0) {
-		/* overflow should not happen */
-		DBGLOG(SW4, WARN, "wrong period: now=%u, last=%u, period=%d\n",
-			now, last, period);
-		ret = WLAN_STATUS_FAILURE;
-		goto done;
-	}
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		ndev = wlanGetNetInterfaceByBssIdx(glue, i);
 		if (ndev && !wlanIsFirstNetInterfaceByNetdev(glue, ndev, i))
 			continue;
+
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
@@ -11185,17 +11136,100 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 				"[%d]wrong bytes: tx[%lu][%lu][%ld], rx[%lu][%lu][%ld],\n",
 				i, currentTxBytes, lastTxBytes, txDiffBytes[i],
 				currentRxBytes, lastRxBytes, rxDiffBytes[i]);
-			ret = WLAN_STATUS_FAILURE;
-			goto done;
+			return WLAN_STATUS_FAILURE;
 		}
 
 		/* Divsion first to avoid overflow */
 		perf->ulTxTp[i] = (txDiffBytes[i] / period) * MSEC_PER_SEC;
 		perf->ulRxTp[i] = (rxDiffBytes[i] / period) * MSEC_PER_SEC;
 
-		throughput += txDiffBytes[i] + rxDiffBytes[i];
+		*throughput += txDiffBytes[i] + rxDiffBytes[i];
 		throughputInPPS += txDiffPkts[i] + rxDiffPkts[i];
 	}
+
+	perf->fgIdle = (*throughput == 0 && glue->i4TxPendingFrameNum == 0);
+	perf->ulThroughput = *throughput * MSEC_PER_SEC;
+	do_div(perf->ulThroughput, period);
+	perf->ulThroughput <<= 3;
+
+	perf->ulThroughputInPPS = throughputInPPS * ETHER_MAX_PKT_SZ
+		* MSEC_PER_SEC;
+	do_div(perf->ulThroughputInPPS, period);
+	perf->ulThroughputInPPS <<= 3;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
+{
+	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
+	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
+	struct BSS_INFO *bss;
+	struct net_device *ndev = NULL;
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
+#endif
+	OS_SYSTIME now, last;
+	int32_t period;
+	uint8_t i, j;
+	signed long txDiffBytes[MAX_BSSID_NUM] = {0};
+	signed long txDiffPkts[MAX_BSSID_NUM] = {0};
+	signed long rxDiffBytes[MAX_BSSID_NUM] = {0};
+	signed long rxDiffPkts[MAX_BSSID_NUM] = {0};
+	uint64_t throughput = 0;
+	char *buf = NULL;
+	char *head1;
+	char *head2;
+	char *head3;
+	char *head4;
+	char *head5;
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	char *head6;
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	char *head7;
+	struct TX_FREE_INFO *prTxFreeInfo;
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+	char *pos;
+	char *end;
+	uint32_t slen;
+	uint8_t fgIsValidNetDevice = FALSE;
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+	struct rtnl_link_stats64 rtnls;
+#endif
+
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &glue->rSkbAllocInfo;
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	GET_BOOT_SYSTIME(&now);
+	last = perf->rLastUpdateTime;
+
+	if (!KAL_TEST_BIT(PERF_MON_INIT_BIT, perf->ulPerfMonFlag) ||
+	    !CHECK_FOR_TIMEOUT(now, last,
+			MSEC_TO_SYSTIME(perf->u4UpdatePeriod))) {
+		ret = WLAN_STATUS_PENDING;
+		goto done;
+	}
+
+	perf->rLastUpdateTime = now;
+
+	period = ((int32_t) now - (int32_t) last) * MSEC_PER_SEC / KAL_HZ;
+	if (period < 0) {
+		/* overflow should not happen */
+		DBGLOG(SW4, WARN, "wrong period: now=%u, last=%u, period=%d\n",
+			now, last, period);
+		ret = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+
+	ret = calcualteTput(prAdapter, &throughput, period,
+			    txDiffBytes, txDiffPkts, rxDiffBytes, rxDiffPkts);
+	if (ret != WLAN_STATUS_SUCCESS)
+		goto done;
 
 #if CFG_NAPI_DELAY
 	kalNapiDelayCheck(glue);
@@ -11209,22 +11243,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_RETURN_WORK */
 
 #if CFG_SAP_RPS_SUPPORT
-	if (prAdapter->rWifiVar.fgSapRpsEnable == 1) {
-		p2pFuncRpsKalCheck(prAdapter,
-					period,
-					rxDiffPkts);
-	}
+	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
+		p2pFuncRpsKalCheck(prAdapter, period, rxDiffPkts);
 #endif
-
-	perf->fgIdle = (throughput == 0 && glue->i4TxPendingFrameNum == 0);
-	perf->ulThroughput = throughput * MSEC_PER_SEC;
-	do_div(perf->ulThroughput, period);
-	perf->ulThroughput <<= 3;
-
-	perf->ulThroughputInPPS = throughputInPPS * ETHER_MAX_PKT_SZ
-		* MSEC_PER_SEC;
-	do_div(perf->ulThroughputInPPS, period);
-	perf->ulThroughputInPPS <<= 3;
 
 	/* The length should include
 	 * 1. "[%ld:%ld:%ld:%ld]" for each bss, %ld range is
