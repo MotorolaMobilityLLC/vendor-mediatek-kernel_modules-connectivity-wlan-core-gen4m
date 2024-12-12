@@ -960,7 +960,8 @@ void aisFsmRunEventCancelTxWait(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
-	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	struct BSS_DESC_SET *prBssDescSet);
 #if defined(CFG_TEST_MGMT_FSM) && (CFG_TEST_MGMT_FSM != 0)
 void aisTest(void);
 #endif /* CFG_TEST_MGMT_FSM */

@@ -2727,6 +2727,11 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 			 * MultiLink or already scan 2 links, directly
 			 * request channel
 			 */
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogStaInfo(prAdapter,
+				ucBssIndex,
+				prBssDescSet);
+#endif
 			prAisFsmInfo->ucConnTrialCount++;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prAisFsmInfo->ucMlProbeSendCount = 0;
@@ -2735,7 +2740,8 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 #endif
 			return AIS_STATE_REQ_CHANNEL_JOIN;
 		} else {
-			return aisFsmStateSearchAction(prAdapter, ucBssIndex);
+			return aisFsmStateSearchAction(prAdapter, ucBssIndex,
+				prBssDescSet);
 		}
 	} else {
 #if CFG_SUPPORT_ROAMING
@@ -3504,7 +3510,8 @@ send_msg:
 }				/* end of aisFsmSteps() */
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
-	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	struct BSS_DESC_SET *prBssDescSet)
 {
 	struct AIS_FSM_INFO *ais;
 	struct CONNECTION_SETTINGS *conn;
@@ -3515,8 +3522,14 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(
 	if (ais->ucReasonOfDisconnect ==
 	    DISCONNECT_REASON_CODE_NEW_CONNECTION) {
 		/* don't scan if already try connection */
-		if (ais->ucConnTrialCount > 0)
+		if (ais->ucConnTrialCount > 0) {
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogStaInfo(prAdapter,
+				ucBssIndex,
+				prBssDescSet);
+#endif
 			return AIS_STATE_JOIN_FAILURE;
+		}
 
 		if (conn->eConnectionPolicy == CONNECT_BY_BSSID ||
 		    conn->eConnectionPolicy == CONNECT_BY_BSSID_HINT) {
@@ -3543,8 +3556,14 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(
 	}
 
 	/* already full scan */
-	if (!ais->fgTargetChnlScanIssued)
+	if (!ais->fgTargetChnlScanIssued) {
+#if (CFG_SUPPORT_CONN_LOG == 1)
+		connLogStaInfo(prAdapter,
+			ucBssIndex,
+			prBssDescSet);
+#endif
 		return AIS_STATE_JOIN_FAILURE;
+	}
 
 	/* already partial scan, try full scan */
 	if (ais->ucScanTrialCount > 0)

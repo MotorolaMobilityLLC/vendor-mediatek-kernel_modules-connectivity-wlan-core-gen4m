@@ -688,7 +688,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				MAC2STR(prBssDesc->aucBSSID));
 #if (CFG_SUPPORT_CONN_LOG == 1)
 			connLogConnectFail(prAdapter, ucBssIndex,
-				2);
+				CONN_FAIL_FWK_BLACLIST);
 #endif
 			return FALSE;
 		}

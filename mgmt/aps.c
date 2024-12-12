@@ -2653,6 +2653,7 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	return FALSE;
 }
 
+static uint8_t g_ApCnt;
 void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint16_t min_score, uint8_t min_rfband_bmap,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
@@ -2987,6 +2988,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	if (currBss && !apsSanityCheckBssDesc(ad, currBss, reason, bidx))
 		min_score = 0;
 
+	g_ApCnt = 0;
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
 		/* select best link plan for each ap collection */
