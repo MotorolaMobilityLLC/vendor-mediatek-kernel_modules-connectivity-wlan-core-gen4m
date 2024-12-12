@@ -13452,6 +13452,18 @@ kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
 			case NL80211_CHAN_WIDTH_160:
 				prRfChnlInfo->ucChnlBw = MAX_BW_160MHZ;
 				break;
+#if (KERNEL_VERSION(5, 18, 0) <= CFG80211_VERSION_CODE)
+			case NL80211_CHAN_WIDTH_320:
+				if (channel_def->center_freq1 == 6105 ||
+				    channel_def->center_freq1 == 6425 ||
+				    channel_def->center_freq1 == 6745)
+					prRfChnlInfo->ucChnlBw =
+						MAX_BW_320_1MHZ;
+				else
+					prRfChnlInfo->ucChnlBw =
+						MAX_BW_320_2MHZ;
+				break;
+#endif
 			default:
 				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
 				break;

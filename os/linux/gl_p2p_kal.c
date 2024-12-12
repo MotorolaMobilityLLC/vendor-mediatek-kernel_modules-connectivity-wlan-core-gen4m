@@ -2573,11 +2573,13 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucSeg0Ch,
 		uint8_t ucSeg1Ch,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
-		enum P2P_VENDOR_ACS_HW_MODE eHwMode)
+		enum P2P_VENDOR_ACS_HW_MODE eHwMode,
+		uint16_t u2PunctBitmap)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct sk_buff *vendor_event = NULL;
 	uint16_t ch_width = MAX_BW_20MHZ;
+	uint8_t ucLinkId = 0;
 
 	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
@@ -2585,6 +2587,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
 		return;
 	}
+
+	ucLinkId = (uint8_t)prGlueP2pInfo->u4LinkId;
 
 	switch (eChnlBw) {
 	case MAX_BW_20MHZ:
@@ -2636,7 +2640,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	DBGLOG(P2P, INFO,
-		"r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d\n",
+		"l=%u r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d, b=0x%x\n",
+		ucLinkId,
 		ucRoleIndex,
 		eBand,
 		ucPrimaryCh,
@@ -2644,7 +2649,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		ucSeg0Ch,
 		ucSeg1Ch,
 		ch_width,
-		eHwMode);
+		eHwMode,
+		u2PunctBitmap);
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	vendor_event = kalCfg80211VendorEventAlloc(prGlueP2pInfo->prWdev->wiphy,
@@ -2699,6 +2705,21 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(P2P, ERROR, "put hw mode fail.\n");
 		goto nla_put_failure;
 	}
+
+	if (unlikely(nla_put_u16(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_PUNCTURE_BITMAP,
+			u2PunctBitmap) < 0)) {
+		DBGLOG(P2P, ERROR, "put punct bitmap fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u8(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_LINK_ID,
+			ucLinkId) < 0)) {
+		DBGLOG(P2P, ERROR, "put link id fail.\n");
+		goto nla_put_failure;
+	}
+
 #if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
 #endif

@@ -313,6 +313,11 @@ struct P2P_CONNECTION_REQ_INFO {
 	/* To record Channel Center Frequency Segment 1 (MHz) from CFG80211 */
 	uint32_t u4CenterFreq2;
 
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	/* To record channel puncturing bitmap from CFG80211 */
+	uint16_t u2PunctBitmap;
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
+
 	/* For ASSOC Req. */
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];

@@ -7667,12 +7667,7 @@ wlanoidSetPpCap(struct ADAPTER *prAdapter,
 		      uint32_t *pu4SetInfoLen)
 {
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct UNI_CMD_PP *uni_cmd;
-	struct UNI_CMD_PP_EN_CTRL_T *tag;
 	struct UNI_CMD_PP_EN_CTRL_T *para;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PP) +
-			       sizeof(struct UNI_CMD_PP_EN_CTRL_T);
 
 	if (prAdapter == NULL || pu4SetInfoLen == NULL)
 		return WLAN_STATUS_ADAPTER_NOT_READY;
@@ -7686,41 +7681,10 @@ wlanoidSetPpCap(struct ADAPTER *prAdapter,
 
 	para = (struct UNI_CMD_PP_EN_CTRL_T *)pvSetBuffer;
 
-	uni_cmd = (struct UNI_CMD_PP *) cnmMemAlloc(prAdapter,
-				RAM_TYPE_MSG, max_cmd_len);
-	if (!uni_cmd) {
-		DBGLOG(INIT, ERROR,
-		       "Allocate UNI_CMD_PP ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	tag = (struct UNI_CMD_PP_EN_CTRL_T *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_PP_TAG_EN_CTRL;
-	tag->u2Length =  sizeof(*tag);
-	tag->u1DbdcIdx = para->u1DbdcIdx;
-	tag->u1PpMgmtMode = para->u1PpMgmtMode;
-	tag->u1PpMgmtEn = para->u1PpMgmtEn;
-	tag->u1PpCtrl = para->u1PpCtrl;
-	tag->u1PpBitMap = para->u1PpBitMap;
-
-	DBGLOG(INIT, ERROR, "pp_cap_ctrl: %d-%d-%d-%d\n",
-			tag->u1PpMgmtMode,
-			tag->u1PpMgmtEn,
-			tag->u1PpCtrl,
-			tag->u1PpBitMap);
-
-	status = wlanSendSetQueryUniCmd(prAdapter,
-			     UNI_CMD_ID_PP,
-			     TRUE,
-			     FALSE,
-			     TRUE,
-			     nicUniCmdEventSetCommon,
-			     nicUniCmdTimeoutCommon,
-			     max_cmd_len,
-			     (void *)uni_cmd, NULL, 0);
-
-	cnmMemFree(prAdapter, uni_cmd);
-	return status;
+	return nicUniCmdPpEnCtrl(prAdapter, para->u1PpMgmtMode,
+				 para->u1DbdcIdx, para->u1PpCtrl,
+				 para->u1PpMgmtEn, para->u1PpBitMap,
+				 TRUE);
 #else
 	return WLAN_STATUS_NOT_SUPPORTED;
 #endif
@@ -7733,12 +7697,7 @@ wlanoidSetPpAlgCtrl(struct ADAPTER *prAdapter,
 		      uint32_t *pu4SetInfoLen)
 {
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct UNI_CMD_PP *uni_cmd;
-	struct UNI_CMD_PP_ALG_CTRL *tag;
 	struct UNI_CMD_PP_ALG_CTRL *para;
-	uint32_t u4MaxCmdLen = sizeof(struct UNI_CMD_PP) +
-			       sizeof(struct UNI_CMD_PP_ALG_CTRL);
 
 	if (!prAdapter) {
 		DBGLOG(REQ, ERROR,
@@ -7763,95 +7722,68 @@ wlanoidSetPpAlgCtrl(struct ADAPTER *prAdapter,
 	}
 	para = (struct UNI_CMD_PP_ALG_CTRL *)pvSetBuffer;
 
-	uni_cmd = (struct UNI_CMD_PP *) cnmMemAlloc(prAdapter,
-				RAM_TYPE_MSG, u4MaxCmdLen);
-	if (!uni_cmd) {
-		DBGLOG(REQ, ERROR,
-			"\x1b[31m uni_cmd is null !!!!\x1b[m\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	tag = (struct UNI_CMD_PP_ALG_CTRL *)uni_cmd->aucTlvBuffer;
-	kalMemCopy(tag, para, sizeof(*tag));
-	tag->u2Tag = UNI_CMD_PP_TAG_ALG_CTRL;
-	tag->u2Length =  sizeof(*tag);
-
-	switch (tag->u1PpAction) {
+	switch (para->u1PpAction) {
 	case UNI_CMD_PP_ALG_SET_TIMER:
-		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
-			, tag->u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
-			, tag->u1DbdcIdx);
-		DBGLOG(REQ, INFO, "\x1b[32m u4PpTimerIntv = %d\x1b[m\n"
-			, tag->u4PpTimerIntv);
-
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n",
+			para->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n",
+			para->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpTimerIntv = %d\x1b[m\n",
+			para->u4PpTimerIntv);
 		break;
+
 	case UNI_CMD_PP_ALG_SET_THR:
-		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
-			, tag->u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
-			, tag->u1DbdcIdx);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Value = %d\x1b[m\n"
-			, tag->u4ThrX2_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Shift = %d\x1b[m\n"
-			, tag->u4ThrX2_Shift);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Value = %d\x1b[m\n"
-			, tag->u4ThrX3_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Shift = %d\x1b[m\n"
-			, tag->u4ThrX3_Shift);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Value = %d\x1b[m\n"
-			, tag->u4ThrX4_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Shift = %d\x1b[m\n"
-			, tag->u4ThrX4_Shift);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Value = %d\x1b[m\n"
-			, tag->u4ThrX5_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Shift = %d\x1b[m\n"
-			, tag->u4ThrX5_Shift);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Value = %d\x1b[m\n"
-			, tag->u4ThrX6_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Shift = %d\x1b[m\n"
-			, tag->u4ThrX6_Shift);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Value = %d\x1b[m\n"
-			, tag->u4ThrX7_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Shift = %d\x1b[m\n"
-			, tag->u4ThrX7_Shift);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Value = %d\x1b[m\n"
-			, tag->u4ThrX8_Value);
-		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Shift = %d\x1b[m\n"
-			, tag->u4ThrX8_Shift);
-
-
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n",
+			para->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n",
+			para->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Value = %d\x1b[m\n",
+			para->u4ThrX2_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Shift = %d\x1b[m\n",
+			para->u4ThrX2_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Value = %d\x1b[m\n",
+			para->u4ThrX3_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Shift = %d\x1b[m\n",
+			para->u4ThrX3_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Value = %d\x1b[m\n",
+			para->u4ThrX4_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Shift = %d\x1b[m\n",
+			para->u4ThrX4_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Value = %d\x1b[m\n",
+			para->u4ThrX5_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Shift = %d\x1b[m\n",
+			para->u4ThrX5_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Value = %d\x1b[m\n",
+			para->u4ThrX6_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Shift = %d\x1b[m\n",
+			para->u4ThrX6_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Value = %d\x1b[m\n",
+			para->u4ThrX7_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Shift = %d\x1b[m\n",
+			para->u4ThrX7_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Value = %d\x1b[m\n",
+			para->u4ThrX8_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Shift = %d\x1b[m\n",
+			para->u4ThrX8_Shift);
 		break;
 
 	case UNI_CMD_PP_ALG_GET_STATISTICS:
-		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
-			, tag->u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
-			, tag->u1DbdcIdx);
-		DBGLOG(REQ, INFO, "\x1b[32m u1Reset = %d\x1b[m\n"
-			, tag->u1Reset);
-
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n",
+			para->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n",
+			para->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u1Reset = %d\x1b[m\n",
+			para->u1Reset);
 		break;
 
 	default:
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m u4PpAction = %d is not supported !!\x1b[m\n"
-			, tag->u1PpAction);
+			"\x1b[31m u4PpAction = %d is not supported !!\x1b[m\n",
+			para->u1PpAction);
 		break;
 	}
 
-	status = wlanSendSetQueryUniCmd(prAdapter,
-			     UNI_CMD_ID_PP,
-			     TRUE,
-			     FALSE,
-			     TRUE,
-			     nicUniCmdEventSetCommon,
-			     nicUniCmdTimeoutCommon,
-			     u4MaxCmdLen,
-			     (void *)uni_cmd, NULL, 0);
-
-	cnmMemFree(prAdapter, uni_cmd);
-	return status;
+	return nicUniCmdPpAlgoCtrl(prAdapter, para, TRUE);
 #else
 	return WLAN_STATUS_NOT_SUPPORTED;
 #endif

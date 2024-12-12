@@ -8804,6 +8804,101 @@ uint32_t nicUniCmdPowerLimitEmiInfo(struct ADAPTER *ad,
 }
 #endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
+uint32_t nicUniCmdPpEnCtrl(struct ADAPTER *ad, uint8_t ucMode,
+			   uint8_t ucDbdxIdx, uint8_t ucCtrl,
+			   uint8_t ucMgmtEn, uint16_t u2Bitmap,
+			   u_int8_t fgIsOid)
+{
+	struct UNI_CMD_PP *uni_cmd;
+	struct UNI_CMD_PP_EN_CTRL_T *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PP) +
+			       sizeof(struct UNI_CMD_PP_EN_CTRL_T);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	if (ad == NULL)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	uni_cmd = (struct UNI_CMD_PP *)
+		cnmMemAlloc(ad, RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(NIC, ERROR,
+		       "Allocate UNI_CMD_PP (%u) ==> FAILED.\n",
+		       max_cmd_len);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_PP_EN_CTRL_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_PP_TAG_EN_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->u1DbdcIdx = ucDbdxIdx;
+	tag->u1PpMgmtMode = ucMode;
+	tag->u1PpMgmtEn = ucMgmtEn;
+	tag->u1PpCtrl = ucCtrl;
+	tag->u1PpBitMap = u2Bitmap;
+
+	DBGLOG(NIC, INFO,
+		"mode=%u dbdc=%u ctrl=%u mgmt_en=%u bitmap=%u oid=%u\n",
+		ucMode, ucDbdxIdx, ucCtrl, ucMgmtEn, u2Bitmap, fgIsOid);
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_PP,
+					TRUE,
+					FALSE,
+					fgIsOid,
+					nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
+
+uint32_t nicUniCmdPpAlgoCtrl(struct ADAPTER *ad,
+			     struct UNI_CMD_PP_ALG_CTRL *para,
+			     u_int8_t fgIsOid)
+{
+	struct UNI_CMD_PP *uni_cmd;
+	struct UNI_CMD_PP_ALG_CTRL *tag;
+	uint32_t u4MaxCmdLen = sizeof(struct UNI_CMD_PP) +
+			       sizeof(struct UNI_CMD_PP_ALG_CTRL);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	if (!ad) {
+		DBGLOG(NIC, ERROR,
+			"prAdapter is null !!!!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd = (struct UNI_CMD_PP *)
+		cnmMemAlloc(ad, RAM_TYPE_MSG, u4MaxCmdLen);
+	if (!uni_cmd) {
+		DBGLOG(NIC, ERROR,
+			"uni_cmd is null !!!!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_PP_ALG_CTRL *)uni_cmd->aucTlvBuffer;
+	kalMemCopy(tag, para, sizeof(*tag));
+	tag->u2Tag = UNI_CMD_PP_TAG_ALG_CTRL;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_PP,
+					TRUE,
+					FALSE,
+					fgIsOid,
+					nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon,
+					u4MaxCmdLen,
+					(void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************

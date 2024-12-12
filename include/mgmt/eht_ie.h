@@ -50,6 +50,14 @@ struct IE_EHT_CAP {
 	((_aucEhtOpParams & EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT) \
 	== EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
 
+#define BW_INDICATION_PARAM_DIS_SUBCHANNEL_PRESENT             BIT(1)
+
+#define BW_INDICATION_SET_DIS_SUBCHANNEL_PRESENT(_ucParam) \
+	(_ucParam |= BW_INDICATION_PARAM_DIS_SUBCHANNEL_PRESENT)
+#define BW_INDICATION_IS_DIS_SUBCHANNEL_PRESENT(_ucParam) \
+	((_ucParam & BW_INDICATION_PARAM_DIS_SUBCHANNEL_PRESENT) \
+	== BW_INDICATION_PARAM_DIS_SUBCHANNEL_PRESENT)
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct EHT_DSCB_INFO {
 	u_int16_t u2DisSubChannelBitmap;
@@ -78,6 +86,15 @@ struct EHT_OP_INFO {
 	 * please use packed and sizeof
 	 */
 	/* u_int8_t  aucVarInfo[0]; */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_BW_INDICATION {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t ucParam;
+	uint8_t aucVarInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 #define EHT_RESET_MAC_CAP(_aucMacCapInfo) \

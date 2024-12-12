@@ -336,7 +336,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucSeg0Ch,
 		uint8_t ucSeg1Ch,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
-		enum P2P_VENDOR_ACS_HW_MODE eHwMode);
+		enum P2P_VENDOR_ACS_HW_MODE eHwMode,
+		uint16_t u2PunctBitmap);
 
 void kalP2pIndicateListenOffloadEvent(
 	struct GLUE_INFO *prGlueInfo,

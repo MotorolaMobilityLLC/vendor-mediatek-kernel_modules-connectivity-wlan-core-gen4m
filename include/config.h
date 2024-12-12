@@ -1400,6 +1400,14 @@
 #define CFG_SUPPORT_802_11BE_MLO                 0
 #endif
 
+#ifndef CFG_SUPPORT_SAP_PUNCTURE
+#define CFG_SUPPORT_SAP_PUNCTURE                 0
+#endif
+
+#ifndef CFG_SUPPORT_SAP_CSA_PUNCTURE
+#define CFG_SUPPORT_SAP_CSA_PUNCTURE             0
+#endif
+
 #ifndef CFG_SUPPORT_802_11BE_EPCS
 #define CFG_SUPPORT_802_11BE_EPCS                0
 #endif

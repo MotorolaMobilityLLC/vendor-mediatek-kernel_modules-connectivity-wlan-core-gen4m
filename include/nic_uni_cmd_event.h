@@ -3673,19 +3673,22 @@ struct UNI_CMD_PP {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
-	*
-	*   TAG                                        | ID   |
-	*   -------------------------      | --   |
-	*   UNI_CMD_PP_SET_PP_CAP_CTRL     | 0x1  |
-	*/
+	uint8_t aucTlvBuffer[];
+	/**< the TLVs included in this field:
+	 *
+	 * TAG                        | ID  | structure
+	 * -------------------        | ----| -------------
+	 *    UNI_CMD_PP_EN_CTRL         | 0x0 | UNI_CMD_PP_EN_CTRL_T
+	 *    UNI_CMD_PP_ALG_CTRL        | 0x1 | UNI_CMD_PP_ALG_CTRL_T
+	 *    UNI_CMD_PP_DSCB_CTRL       | 0x2 | UNI_CMD_PP_DSCB_CTRL_T
+	 */
 };
 /** @} */
 
 enum UNI_CMD_ID_PP_TAG {
-    /** SET **/
 	UNI_CMD_PP_TAG_EN_CTRL = 0x0,
 	UNI_CMD_PP_TAG_ALG_CTRL = 0x1,
+	UNI_CMD_PP_DSCB_CTRL = 0x2,
 	UNI_CMD_PP_MAX_NUM
 };
 
@@ -3696,12 +3699,39 @@ enum UNI_CMD_PP_ALG_CMD_ACTION {
 	UNI_CMD_PP_ALG_MAX_NUM
 };
 
+enum PP_HW_CTRL_MODE {
+	PP_NO_PP = 0x0,
+	PP_HW_PP = 0x1,
+	PP_SW_PP = 0x2,
+	PP_SW_THEN_HW_PP = 0x3
+};
+
+enum PP_MGMT_MODE {
+	PP_MGMT_ALG = 0,
+	PP_MGMT_MANUAL = 1,
+	PP_MGMT_IGNORE_ECO_SYSTEM = 2
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_PP_EN_CTRL_T {
+	uint16_t  u2Tag;
+	uint16_t  u2Length;
+
+	/* tag specific part */
+	uint8_t    u1PpMgmtMode;
+	uint8_t    u1DbdcIdx;
+	uint8_t    u1PpCtrl;
+	uint8_t    u1PpMgmtEn;
+	uint16_t   u1PpBitMap;
+	uint8_t    u1Reserved[2];
+} __KAL_ATTRIB_PACKED__;
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PP_ALG_CTRL {
 	uint16_t  u2Tag;
 	uint16_t  u2Length;
 
-    /* tag specific part */
+	/* tag specific part */
 	uint32_t u4PpTimerIntv;
 	uint32_t u4ThrX2_Value;
 	uint32_t u4ThrX2_Shift;
@@ -3724,17 +3754,19 @@ struct UNI_CMD_PP_ALG_CTRL {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_PP_EN_CTRL_T {
+struct UNI_CMD_PP_DSCB_CTRL_T {
 	uint16_t  u2Tag;
 	uint16_t  u2Length;
 
-    /* tag specific part */
-	uint8_t    u1PpMgmtMode;
-	uint8_t    u1DbdcIdx;
-	uint8_t    u1PpCtrl;
-	uint8_t    u1PpMgmtEn;
-	uint16_t   u1PpBitMap;
-	uint8_t    u1Reserved[2];
+	/* tag specific part */
+	uint8_t  ucBssInfoIdx;
+	uint8_t  fgIsEhtOpPresent;
+	uint8_t  fgIsEhtDscbPresent;
+	uint8_t  ucEhtCtrl;
+	uint8_t  ucEhtCcfs0;
+	uint8_t  ucEhtCcfs1;
+	uint16_t u2EhtDisSubChanBitmap;
+	uint8_t  u1Reserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 /*HM command (Tag 0x??) */
@@ -9287,6 +9319,15 @@ uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 uint32_t nicUniCmdUpdateTsfSyncParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
+
+uint32_t nicUniCmdPpEnCtrl(struct ADAPTER *ad, uint8_t ucMode,
+			   uint8_t ucDbdxIdx, uint8_t ucCtrl,
+			   uint8_t ucMgmtEn, uint16_t u2Bitmap,
+			   u_int8_t fgIsOid);
+
+uint32_t nicUniCmdPpAlgoCtrl(struct ADAPTER *ad,
+			     struct UNI_CMD_PP_ALG_CTRL *para,
+			     u_int8_t fgIsOid);
 /*******************************************************************************
  *                   Event
  *******************************************************************************

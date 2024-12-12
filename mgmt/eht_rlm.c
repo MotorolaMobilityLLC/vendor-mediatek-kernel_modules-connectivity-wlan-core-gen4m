@@ -710,47 +710,59 @@ static void ehtRlmFillOpIE(
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
 
-	EHT_SET_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams);
-
 	eht_bw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+
+	if ((prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	     || prBssInfo->eBand == BAND_6G
+#endif /* CFG_SUPPORT_WIFI_6G */
+	    ) &&
+	    ((eht_bw == MAX_BW_320_1MHZ || eht_bw == MAX_BW_320_2MHZ) ||
+	     prBssInfo->fgIsEhtDscbPresent))
+		EHT_SET_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams);
 
 	/* Basic EHT-MCS And Nss Set */
 	kalMemZero(prEhtMcsSet, sizeof(*prEhtMcsSet));
 	prEhtMcsSet->eht_bw20_mcs_0_7 = 1 + (1 << 4);
 
+	if (!EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))
+		goto exit;
+
 	/* filling operation info field */
 	prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
+	kalMemZero(prEhtOpInfo, sizeof(*prEhtOpInfo));
 
 	/* fixed field in operation info */
 	prEhtOpInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(eht_bw);
-	prEhtOpInfo->ucCCFS0 = nicGetS1(prBssInfo->eBand,
-		prBssInfo->ucPrimaryChannel, eht_bw);
-	prEhtOpInfo->ucCCFS1 = nicGetS2(prBssInfo->eBand,
-		prBssInfo->ucPrimaryChannel, eht_bw);
+	prEhtOpInfo->ucCCFS0 =
+		nicGetS1(prBssInfo->eBand,
+			 prBssInfo->ucPrimaryChannel,
+			 eht_bw);
+	prEhtOpInfo->ucCCFS1 =
+		nicGetS2(prBssInfo->eBand,
+			 prBssInfo->ucPrimaryChannel,
+			 eht_bw);
 	u4OverallLen += 3;
 
-	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
-		prEhtOpInfo->ucControl);
-
 #if CFG_SUPPORT_802_PP_DSCB
-	if (IS_BSS_APGO(prBssInfo) &&
-		(EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))) {
-
-		if (prBssInfo->fgIsEhtDscbPresent) {
-			EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
-				prEhtOp->ucEhtOpParams);
-			prEhtOpInfo->u2EhtDisSubChanBitmap =
-				prBssInfo->u2EhtDisSubChanBitmap;
-			u4OverallLen += 2;
-		} else {
-			EHT_RESET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
-				prEhtOp->ucEhtOpParams);
-			prEhtOpInfo->u2EhtDisSubChanBitmap = 0;
-		}
+	if (prBssInfo->fgIsEhtDscbPresent) {
+		EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
+			prEhtOp->ucEhtOpParams);
+		prEhtOpInfo->u2EhtDisSubChanBitmap =
+			prBssInfo->u2EhtDisSubChanBitmap;
 		u4OverallLen += 2;
 	}
 #endif
 
+	DBGLOG(RLM, TRACE,
+		"params=0x%x control=%u ccfs0=%u ccfs1=%u bitmap=0x%x\n",
+		prEhtOp->ucEhtOpParams,
+		prEhtOpInfo->ucControl,
+		prEhtOpInfo->ucCCFS0,
+		prEhtOpInfo->ucCCFS1,
+		prEhtOpInfo->u2EhtDisSubChanBitmap);
+
+exit:
 	prEhtOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtOp);
@@ -1055,4 +1067,71 @@ void ehtRlmInitHtcACtrlOM(struct ADAPTER *prAdapter)
 	EHT_SET_HTC_HE_OM_UL_MU_DATA_DISABLE(prAdapter->u4HeHtcOM, 0);
 }
 
+uint32_t ehtRlmFillBwIndicationIe(struct ADAPTER *prAdapter,
+				  uint8_t *pucBuffer)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct IE_BW_INDICATION *prBwIndIe;
+	struct EHT_OP_INFO *prInfo;
+	uint8_t ucOpBw;
+
+	switch (prWifiVar->ucNewChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+		ucOpBw = MAX_BW_320_1MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_320_2:
+		ucOpBw = MAX_BW_320_2MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_160:
+		ucOpBw = MAX_BW_160MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+		ucOpBw = MAX_BW_80MHZ;
+		break;
+	default:
+		DBGLOG(RLM, WARN,
+			"Unsupported bw(%u) for be indication ie\n",
+			prWifiVar->ucNewChannelWidth);
+		ucOpBw = MAX_BW_20MHZ;
+		return 0;
+	}
+
+	prBwIndIe = (struct IE_BW_INDICATION *)pucBuffer;
+	prBwIndIe->ucId = ELEM_ID_EXTENSION;
+	prBwIndIe->ucLength = 5;
+	prBwIndIe->ucExtId = ELEM_EXT_ID_BW_INDICATION;
+	prBwIndIe->ucParam = 0;
+
+	prInfo = (struct EHT_OP_INFO *)prBwIndIe->aucVarInfo;
+	prInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(ucOpBw);
+	prInfo->ucCCFS0 =
+		nicGetS1(prWifiVar->eNewBand,
+			 prWifiVar->ucNewChannelNumber,
+			 ucOpBw);
+	prInfo->ucCCFS1 =
+		nicGetS2(prWifiVar->eNewBand,
+			 prWifiVar->ucNewChannelNumber,
+			 ucOpBw);
+
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	if (prWifiVar->u2NewPunctBitmap) {
+		BW_INDICATION_SET_DIS_SUBCHANNEL_PRESENT(
+			prBwIndIe->ucParam);
+		prBwIndIe->ucLength += 2;
+		prInfo->u2EhtDisSubChanBitmap =
+			prWifiVar->u2NewPunctBitmap;
+	}
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
+
+	DBGLOG(RLM, TRACE,
+		"param=%u control=%u ccfs0=%u ccfs1=%u bitmap=0x%x\n",
+		prBwIndIe->ucParam,
+		prInfo->ucControl,
+		prInfo->ucCCFS0,
+		prInfo->ucCCFS1,
+		BW_INDICATION_IS_DIS_SUBCHANNEL_PRESENT(prBwIndIe->ucParam) ?
+			prInfo->u2EhtDisSubChanBitmap : 0);
+
+	return IE_SIZE(prBwIndIe);
+}
 #endif /* CFG_SUPPORT_802_11BE == 1 */

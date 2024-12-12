@@ -942,6 +942,9 @@ struct WIFI_VAR {
 	uint32_t u4AisEHTNumber;
 	uint8_t fgForceRrmMloScan;
 	u_int8_t fgEnTuao;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	uint16_t u2AcsPunctBitmap;
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	u_int8_t fgEnEpcs;
 #endif
@@ -1130,6 +1133,7 @@ struct WIFI_VAR {
 
 	uint8_t fgCsaInProgress;
 	uint8_t ucChannelSwitchMode;
+	enum ENUM_BAND eNewBand;
 	uint8_t ucNewOperatingClass;
 	uint8_t ucNewChannelNumber;
 	uint8_t ucChannelSwitchCount;
@@ -1137,6 +1141,12 @@ struct WIFI_VAR {
 	uint8_t ucNewChannelWidth;
 	uint8_t ucNewChannelS1;
 	uint8_t ucNewChannelS2;
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	uint16_t u2NewPunctBitmap;
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint32_t u4MaxChannelSwitchTime; /* TU */
+#endif /* CFG_SUPPORT_802_11BE */
 
 	uint32_t u4HifIstLoopCount;
 	uint32_t u4Rx2OsLoopCount;

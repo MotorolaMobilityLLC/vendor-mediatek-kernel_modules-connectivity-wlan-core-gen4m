@@ -200,7 +200,7 @@ const struct nla_policy nla_get_acs_policy[
 	[WIFI_VENDOR_ATTR_ACS_CH_LIST] = { .type = NLA_UNSPEC },
 	[WIFI_VENDOR_ATTR_ACS_FREQ_LIST] = { .type = NLA_UNSPEC },
 #endif
-	[WIFI_VENDOR_ATTR_ACS_ACS_EHT_ENABLED] = { .type = NLA_FLAG },
+	[WIFI_VENDOR_ATTR_ACS_EHT_ENABLED] = { .type = NLA_FLAG },
 };
 
 const struct nla_policy nla_string_cmd_policy[
@@ -4013,9 +4013,9 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		vht_enabled = 0;
 
 #if (CFG_SUPPORT_802_11BE == 1)
-	if (tb[WIFI_VENDOR_ATTR_ACS_ACS_EHT_ENABLED])
+	if (tb[WIFI_VENDOR_ATTR_ACS_EHT_ENABLED])
 		eht_enabled =
-			nla_get_flag(tb[WIFI_VENDOR_ATTR_ACS_ACS_EHT_ENABLED]);
+			nla_get_flag(tb[WIFI_VENDOR_ATTR_ACS_EHT_ENABLED]);
 	else
 		eht_enabled = 0;
 #endif

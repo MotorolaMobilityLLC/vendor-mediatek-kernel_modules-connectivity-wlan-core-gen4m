@@ -2118,6 +2118,17 @@ SKIP_START_RDD:
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
+	if (prBssInfo->fgIsEhtDscbPresent) {
+		nicUniCmdPpEnCtrl(prAdapter,
+				  PP_MGMT_MANUAL,
+				  prBssInfo->eHwBandIdx,
+				  PP_SW_PP,
+				  FALSE,
+				  prBssInfo->u2EhtDisSubChanBitmap,
+				  FALSE);
+	}
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		if (prP2pChnlReqInfo->eBand == BAND_5G &&
@@ -2845,6 +2856,10 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucUnsolProbeResp = prAdapter->rWifiVar.ucUnsolProbeResp;
 #endif
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	u_int8_t fgUpdatePunctBitmap = FALSE;
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
+
 	if (!prBssInfo) {
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
 		return;
@@ -2863,6 +2878,20 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	prBssInfo->ucPrimaryChannel = prP2pChnlReqInfo->ucReqChnlNum;
 	prBssInfo->eBand = prP2pChnlReqInfo->eBand;
 	prBssInfo->eBssSCO = prP2pChnlReqInfo->eChnlSco;
+
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	if (prP2pChnlReqInfo->u2PunctBitmap != prBssInfo->u2EhtDisSubChanBitmap)
+		fgUpdatePunctBitmap = TRUE;
+
+	if (prP2pChnlReqInfo->u2PunctBitmap) {
+		prBssInfo->fgIsEhtDscbPresent = TRUE;
+		prBssInfo->u2EhtDisSubChanBitmap =
+			prP2pChnlReqInfo->u2PunctBitmap;
+	} else {
+		prBssInfo->fgIsEhtDscbPresent = FALSE;
+		prBssInfo->u2EhtDisSubChanBitmap = 0;
+	}
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
 
 /* To Support Cross Band Channel Swtich */
 #if CFG_SUPPORT_IDC_CH_SWITCH
@@ -2977,6 +3006,18 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
 	nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
+
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
+	if (fgUpdatePunctBitmap)
+		nicUniCmdPpEnCtrl(prAdapter,
+				PP_MGMT_MANUAL,
+				prBssInfo->eHwBandIdx,
+				prBssInfo->fgIsEhtDscbPresent ?
+					PP_SW_PP : PP_NO_PP,
+				FALSE,
+				prBssInfo->u2EhtDisSubChanBitmap,
+				FALSE);
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
 
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -4107,6 +4148,10 @@ void p2pFuncSetChannel(struct ADAPTER *prAdapter,
 			prRfChannelInfo->u4CenterFreq1;
 		prP2pConnReqInfo->u4CenterFreq2 =
 			prRfChannelInfo->u4CenterFreq2;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+		prP2pConnReqInfo->u2PunctBitmap =
+			prRfChannelInfo->u2PunctBitmap;
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
 #if CFG_AP_80211KVR_INTERFACE
 		/* Update TX-pwr as soon as channel changed */
 		{
@@ -7916,6 +7961,7 @@ void p2pFuncSwitchGcChannel(
 	}
 
 	/* Update channel parameters & channel request info */
+	kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
 	rRfChnlInfo.ucChannelNum = prP2pBssInfo->ucPrimaryChannel;
 	rRfChnlInfo.eBand = prP2pBssInfo->eBand;
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prP2pBssInfo->ucBssIndex);
@@ -10727,6 +10773,22 @@ skip_bw_overwrite:
 					   prAcsReqInfo->ucPrimaryCh,
 					   prAcsReqInfo->eChnlBw);
 
+	prAcsReqInfo->u2PunctBitmap = 0;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	if (prAcsReqInfo->eChnlBw >= MAX_BW_80MHZ &&
+	    prWifiVar->u2AcsPunctBitmap &&
+	    rlmValidatePunctBitmap(prGlueInfo->prAdapter,
+				   prAcsReqInfo->eBand,
+				   prAcsReqInfo->eChnlBw,
+				   prAcsReqInfo->ucPrimaryCh,
+				   prWifiVar->u2AcsPunctBitmap)) {
+		DBGLOG(P2P, INFO,
+			"Apply acs punct bitmap 0x%x\n",
+			prWifiVar->u2AcsPunctBitmap);
+		prAcsReqInfo->u2PunctBitmap = prWifiVar->u2AcsPunctBitmap;
+	}
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
+
 	prAcsReqInfo->fgIsProcessing = FALSE;
 
 	kalP2pIndicateAcsResult(prGlueInfo,
@@ -10737,7 +10799,8 @@ skip_bw_overwrite:
 				prAcsReqInfo->ucVhtSeg0,
 				prAcsReqInfo->ucVhtSeg1,
 				prAcsReqInfo->eChnlBw,
-				prAcsReqInfo->eHwMode);
+				prAcsReqInfo->eHwMode,
+				prAcsReqInfo->u2PunctBitmap);
 }
 
 void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
@@ -10899,6 +10962,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
 		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+		prAdapter->rWifiVar.eNewBand = prNewChannelInfo->eBand;
 		prAdapter->rWifiVar.ucNewOperatingClass =
 			nicChannelInfo2OpClass(prNewChannelInfo);
 		prAdapter->rWifiVar.ucNewChannelNumber =
@@ -10912,6 +10976,10 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 			nicFreq2ChannelNum(
 				prNewChannelInfo->u4CenterFreq1 * 1000);
 		prAdapter->rWifiVar.ucNewChannelS2 = 0;
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+		prAdapter->rWifiVar.u2NewPunctBitmap = 0;
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
+
 		p2pFunAbortOngoingScan(prAdapter);
 
 		/* Send Action Frames */

@@ -1186,6 +1186,7 @@ void cnmCsaResetParams(struct ADAPTER *prAdapter,
 {
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
+	prAdapter->rWifiVar.eNewBand = BAND_NULL;
 	prAdapter->rWifiVar.ucNewOperatingClass = 0;
 	prAdapter->rWifiVar.ucNewChannelNumber = 0;
 	prAdapter->rWifiVar.ucChannelSwitchCount = 0;
@@ -1193,6 +1194,9 @@ void cnmCsaResetParams(struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucNewChannelWidth = 0;
 	prAdapter->rWifiVar.ucNewChannelS1 = 0;
 	prAdapter->rWifiVar.ucNewChannelS2 = 0;
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	prAdapter->rWifiVar.u2NewPunctBitmap = 0;
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
 }
 #endif
 
@@ -1373,6 +1377,7 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 
 	if (prBssInfo->eBand != eBand ||
 		prBssInfo->ucPrimaryChannel != ucCh) {
+		kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
 		rlmGetChnlInfoForCSA(prAdapter,
 			eBand, ucCh, ucBssIdx, &rRfChnlInfo);
 
@@ -5835,8 +5840,8 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		 * make sure you can restore to current peer's OpBw.
 		 */
 		ucOpMaxBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
-		ucOpBwFinal =
-			((ucOpBwFinal > ucOpMaxBw) ? ucOpMaxBw : ucOpBwFinal);
+		if (ucOpBwFinal > ucOpMaxBw)
+			ucOpBwFinal = ucOpMaxBw;
 
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 		if ((eRunReq == CNM_OPMODE_REQ_DBDC ||

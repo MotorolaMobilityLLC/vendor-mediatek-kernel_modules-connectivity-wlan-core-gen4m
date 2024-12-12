@@ -1810,6 +1810,16 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum;
 	prP2pBssInfo->eBand =
 		prP2pConnReqInfo->rChannelInfo.eBand;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	if (prP2pConnReqInfo->u2PunctBitmap) {
+		prP2pBssInfo->fgIsEhtDscbPresent = TRUE;
+		prP2pBssInfo->u2EhtDisSubChanBitmap =
+			prP2pConnReqInfo->u2PunctBitmap;
+	} else {
+		prP2pBssInfo->fgIsEhtDscbPresent = FALSE;
+		prP2pBssInfo->u2EhtDisSubChanBitmap = 0;
+	}
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
 
 	/*
 	 * beacon content is related with Nss number ,
@@ -2599,6 +2609,9 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 		prChnlReqInfo->ucReqChnlNum,
 		prRfChannelInfo->ucChnlBw);
 	prChnlReqInfo->ucCenterFreqS2 = 0;
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	prChnlReqInfo->u2PunctBitmap = prRfChannelInfo->u2PunctBitmap;
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
 	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
 	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_GO_START_BSS;
 

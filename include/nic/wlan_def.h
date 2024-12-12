@@ -1059,6 +1059,9 @@ struct RF_CHANNEL_INFO {
 	uint8_t ucChnlBw;
 	uint8_t ucChannelNum;
 	u_int8_t fgDFS;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	uint16_t u2PunctBitmap;
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
 };
 
 struct DBDC_DECISION_ELEM {

@@ -1306,6 +1306,12 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11BE=1
+    ifeq ($(CONFIG_MTK_WIFI_SAP_PUNCTURE_SUPPORT), y)
+        ccflags-y += -DCFG_SUPPORT_SAP_PUNCTURE=1
+        ifeq ($(CONFIG_MTK_WIFI_SAP_CSA_PUNCTURE_SUPPORT), y)
+            ccflags-y += -DCFG_SUPPORT_SAP_CSA_PUNCTURE=1
+        endif
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE=0
 endif

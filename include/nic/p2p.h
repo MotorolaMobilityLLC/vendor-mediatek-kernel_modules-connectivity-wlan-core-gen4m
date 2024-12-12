@@ -106,6 +106,8 @@
 #define DEFAULT_P2P_CSA_TIMEOUT_MS	7000
 #define P2P_MAX_AID_VALUE	2007
 
+#define DEFAULT_MAX_CHANNEL_SWITCH_TIME_TU     1000
+
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************
@@ -280,6 +282,7 @@ struct P2P_ACS_REQ_INFO {
 	uint8_t ucSecondCh;
 	uint8_t ucVhtSeg0;
 	uint8_t ucVhtSeg1;
+	uint16_t u2PunctBitmap;
 };
 
 struct P2P_CHNL_REQ_INFO {
@@ -294,6 +297,9 @@ struct P2P_CHNL_REQ_INFO {
 	enum ENUM_CHANNEL_WIDTH eChannelWidth;	/*VHT operation ie */
 	uint8_t ucCenterFreqS1;
 	uint8_t ucCenterFreqS2;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	uint16_t u2PunctBitmap;
+#endif /* CFG_SUPPORT_SAP_PUNCTURE */
 	enum ENUM_BAND eOriBand;
 	enum ENUM_CHNL_EXT eOriChnlSco;
 	uint32_t u4MaxInterval;

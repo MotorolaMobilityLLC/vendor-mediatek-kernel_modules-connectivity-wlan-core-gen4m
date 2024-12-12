@@ -755,6 +755,9 @@ uint32_t rlmCalculateTpeIELen(struct ADAPTER *prAdapter,
 void rlmGenerateTpeIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 
+enum ENUM_MAX_BANDWIDTH_SETTING
+rlmVhtBw2OpBw(uint8_t ucVhtBw, enum ENUM_CHNL_EXT eSco);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
