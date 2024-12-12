@@ -9826,8 +9826,7 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 {
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 		DBGLOG(AIS, WARN,
-			"Use default, invalid index=%d caller=%pS\n",
-			ucBssIndex, KAL_TRACE);
+		       "Use default, invalid index=%d\n", ucBssIndex);
 		return aisGetDefaultAisInfo(prAdapter);
 	}
 

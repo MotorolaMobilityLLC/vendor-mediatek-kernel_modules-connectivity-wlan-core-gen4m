@@ -481,7 +481,7 @@ struct SWITCH_CH_AND_BAND_PARAMS {
 	enum ENUM_CHNL_SWITCH_MODE ucCsaMode;
 	uint32_t u4MaxSwitchTime;
 };
-#endif
+#endif /* CFG_SUPPORT_DFS */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

@@ -2386,7 +2386,7 @@ omac_choosed:
 				prBssInfo->wepkeyUsed[i] = FALSE;
 			}
 #if CFG_SUPPORT_DFS
-			cnmTimerInitTimer(prAdapter,
+			cnmTimerInitHrtimer(prAdapter,
 				&prBssInfo->rCsaTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
 				(uintptr_t)ucBssIndex);

@@ -5329,8 +5329,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_DFS
-	if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams)) {
+	if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams) &&
+	    ucCurrentCsaCount > 0) {
 		uint16_t u2SwitchTime;
+
 		cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
 		if (prCSAParams->u4MaxSwitchTime != 0)
 			u2SwitchTime =
@@ -8660,16 +8662,16 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		}	 /*end of IE_FOR_EACH */
 
 		if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams)) {
+			uint32_t delayMs =
+				prBssInfo->u2BeaconInterval * ucCurrentCsaCount;
+
 			cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
 			cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer,
-				prBssInfo->u2BeaconInterval *
-					ucCurrentCsaCount);
+					   delayMs);
 			prCSAParams->ucCsaCount = ucCurrentCsaCount;
 			DBGLOG(RLM, INFO,
 				"[CSA Mgt] Channel switch Countdown: %d msecs, Mode: %d\n",
-				prBssInfo->u2BeaconInterval *
-					prCSAParams->ucCsaCount,
-				prCSAParams->ucCsaMode);
+				delayMs, prCSAParams->ucCsaMode);
 		}
 
 		break;
@@ -8772,13 +8774,15 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 	}
 
 	if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams)) {
+		uint32_t delayMs =
+			prBssInfo->u2BeaconInterval * ucCurrentCsaCount;
+
 		cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
-		cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer,
-			prBssInfo->u2BeaconInterval * ucCurrentCsaCount);
+		cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer, delayMs);
 		prCSAParams->ucCsaCount = ucCurrentCsaCount;
 		DBGLOG(RLM, INFO,
 			"[ECSA Public] Channel switch Countdown: %d msecs\n",
-			prBssInfo->u2BeaconInterval * prCSAParams->ucCsaCount);
+			delayMs);
 	}
 }
 
@@ -8812,7 +8816,7 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll)
 }
 
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
-				   uintptr_t ulParamPtr)
+		   uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 	struct BSS_INFO *prBssInfo;
@@ -8833,6 +8837,15 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 		DBGLOG(AIS, INFO, "No prStaRec\n");
 		return;
 	}
+
+	/* For GO/AP pre-TBTT handler still not be served till TBTT, the content
+	 * of beacon will be the same as previous beacon, and FW can not know
+	 * that. This means GO/AP will postpone CSA flow by one Beacon
+	 * interval, and may case GC/STA rlmCsaTimeout twice.
+	 * So we should stop timer to avoid receive the duplicate beacon between
+	 * timer timeout and timeout event processed by main thread.
+	 */
+	cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
 
 	kalMemZero(&rSsid, sizeof(rSsid));
 	prCSAParams = &prBssInfo->CSAParams;
