@@ -3707,9 +3707,13 @@ void p2pRoleFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 	}
 
 	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
-		if (prP2pBssInfo->eConnectionState ==
-				MEDIA_STATE_CONNECTED) {
-			/* do nothing & wait for timeout or EAPOL 4/4 TX done */
+		if (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+#if CFG_SUPPORT_NAN
+			/* NAN on, early abort channel */
+			if (nanIsOn(prAdapter))
+				p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+#endif
 		} else {
 			struct BSS_DESC *prBssDesc;
 			struct P2P_SSID_STRUCT rSsid = {0};

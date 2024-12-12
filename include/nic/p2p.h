@@ -61,7 +61,7 @@
 /* Device Charactoristic. */
 /* 1000 is too short , the deauth would block in the queue */
 #define SAP_CHNL_HOLD_TIME_MS			200
-#define P2P_CHNL_HOLD_TIME_MS			5000
+#define P2P_CHNL_HOLD_TIME_MS			3000
 #define P2P_AP_CHNL_HOLD_TIME_CSA_MS		100
 #define P2P_GC_JOIN_CH_GRANT_THRESHOLD		10
 #define P2P_GC_JOIN_CH_REQUEST_INTERVAL		4000
