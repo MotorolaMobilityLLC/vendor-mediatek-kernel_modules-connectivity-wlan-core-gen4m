@@ -2039,7 +2039,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 				}
 				prNbrScanParam->ucSSIDType =
 					prScanParam->ucSSIDType;
-				DBGLOG(SCN, STATE,
+				DBGLOG(SCN, TRACE,
 					"OOB scan specific SSIDNum %d\n",
 					prNbrScanParam->ucSSIDNum);
 			} else {
