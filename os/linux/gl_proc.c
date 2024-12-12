@@ -137,11 +137,56 @@ static struct GLUE_INFO *g_prGlueInfo_proc;
 static struct proc_dir_entry *gprProcRoot;
 #if (BUILD_QA_DBG)
 static uint32_t u4McrOffset;
-static uint8_t aucDbModuleName[][PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN] = {
-	"INIT", "HAL", "INTR", "REQ", "TX", "RX", "RFTEST", "EMU",
-	"SW1", "SW2", "SW3", "SW4", "HEM", "AIS", "RLM", "MEM",
-	"CNM", "RSN", "BSS", "SCN", "SAA", "AAA", "P2P", "QM",
-	"SEC", "BOW", "WAPI", "ROAMING", "TDLS", "PF", "OID", "NIC"
+static const char * const apcDbModuleName[DBG_MODULE_NUM] = {
+	[DBG_INIT_IDX] = "INIT",
+	[DBG_HAL_IDX] = "HAL",
+	[DBG_INTR_IDX] = "INTR",
+	[DBG_REQ_IDX] = "REQ",
+	[DBG_TX_IDX] = "TX",
+	[DBG_RX_IDX] = "RX",
+	[DBG_RFTEST_IDX] = "RFTEST",
+	[DBG_EMU_IDX] = "EMU",
+	[DBG_SW1_IDX] = "SW1",
+	[DBG_SW2_IDX] = "SW2",
+	[DBG_SW3_IDX] = "SW3",
+	[DBG_SW4_IDX] = "SW4",
+	[DBG_HEM_IDX] = "HEM",
+	[DBG_AIS_IDX] = "AIS",
+	[DBG_RLM_IDX] = "RLM",
+	[DBG_MEM_IDX] = "MEM",
+	[DBG_CNM_IDX] = "CNM",
+	[DBG_RSN_IDX] = "RSN",
+	[DBG_BSS_IDX] = "BSS",
+	[DBG_SCN_IDX] = "SCN",
+	[DBG_SAA_IDX] = "SAA",
+	[DBG_AAA_IDX] = "AAA",
+	[DBG_P2P_IDX] = "P2P",
+	[DBG_QM_IDX] = "QM",
+	[DBG_SEC_IDX] = "SEC",
+	[DBG_BOW_IDX] = "BOW",
+	[DBG_WAPI_IDX] = "WAPI",
+	[DBG_ROAMING_IDX] = "ROAMING",
+	[DBG_TDLS_IDX] = "TDLS",
+	[DBG_PF_IDX] = "PF",
+	[DBG_OID_IDX] = "OID",
+	[DBG_NIC_IDX] = "NIC",
+	[DBG_WNM_IDX] = "WNM",
+	[DBG_WMM_IDX] = "WMM",
+	[DBG_TRACE_IDX] = "TRACE",
+	[DBG_TWT_REQUESTER_IDX] = "TWT_REQ",
+	[DBG_TWT_PLANNER_IDX] = "TWT_PLN",
+	[DBG_TWT_RESPONDER_IDX] = "TWT_RES",
+	[DBG_SMC_IDX] = "SMC",
+	[DBG_RRM_IDX] = "RRM",
+	[DBG_ML_IDX] = "ML",
+	[DBG_RTT_IDX] = "RTT",
+	[DBG_NAN_IDX] = "NAN",
+	[DBG_ICS_IDX] = "ICS",
+	[DBG_HIF_WMM_ENHANCE_IDX] = "HIF_WMM",
+	[DBG_APS_IDX] = "APS",
+	[DBG_SA_IDX] = "SA",
+	[DBG_MET_IDX] = "MET",
+	[DBG_FILS_IDX] = "FILS",
 };
 #endif /* (BUILD_QA_DBG) */
 
@@ -1326,9 +1371,9 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	uint8_t *str = NULL;
 	uint32_t u4CopySize = 0;
 	uint16_t i;
-	uint16_t u2ModuleNum = 0;
+	uint16_t u2ModuleNum;
 	uint32_t u4StrLen = 0;
-	uint32_t u4Level1, u4Level2;
+	uint32_t u4Level;
 	int32_t i4Ret = 0;
 
 	/* if *f_ops>0, we should return 0 to make cat command exit */
@@ -1345,28 +1390,16 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	kalStrnCpy(temp, str, u4StrLen);
 	temp += u4StrLen;
 
-	u2ModuleNum =
-	    (sizeof(aucDbModuleName) /
-	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
+	u2ModuleNum = ARRAY_SIZE(apcDbModuleName);
 
-	for (i = 0; i < u2ModuleNum; i += 2) {
-		wlanGetDriverDbgLevel(i, &u4Level1);
-		wlanGetDriverDbgLevel(i + 1, &u4Level2);
-		SNPRINTF(temp, PROC_MAX_BUF_SIZE - kalStrLen(pucProcBuf),
-			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t"
-			 "DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			 &aucDbModuleName[i][0], i, (uint8_t) u4Level1,
-			 &aucDbModuleName[i + 1][0], i + 1,
-			 (uint8_t) u4Level2));
-	}
-
-	if ((sizeof(aucDbModuleName) /
-	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1) {
-		wlanGetDriverDbgLevel(u2ModuleNum, &u4Level1);
-		SNPRINTF(temp, PROC_MAX_BUF_SIZE - kalStrLen(pucProcBuf),
-			 ("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			  &aucDbModuleName[u2ModuleNum][0], u2ModuleNum,
-			  (uint8_t) u4Level1));
+	for (i = 0; i < u2ModuleNum; i++) {
+		wlanGetDriverDbgLevel(i, &u4Level);
+		SNPRINTF(temp, PROC_MAX_BUF_SIZE - (temp - pucProcBuf),
+			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t",
+			 apcDbModuleName[i] ? : "?", i, (uint16_t) u4Level));
+		if (i % 2 == 1 || i == u2ModuleNum - 1)
+			SNPRINTF(temp, PROC_MAX_BUF_SIZE - (temp - pucProcBuf),
+				("\n"));
 	}
 
 	u4CopySize = kalStrLen(pucProcBuf);

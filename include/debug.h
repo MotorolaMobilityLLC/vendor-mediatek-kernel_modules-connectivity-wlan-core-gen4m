@@ -161,7 +161,7 @@ extern uint32_t get_wifi_standalone_log_mode(void);
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
-/* Define debug module index */
+/* Define debug module index, sync with apcDbModuleName */
 enum ENUM_DBG_MODULE {
 	DBG_INIT_IDX = 0,	/* 0x00 *//* For driver initial */
 	DBG_HAL_IDX,		/* 0x01 *//* For HAL(HW) Layer */
