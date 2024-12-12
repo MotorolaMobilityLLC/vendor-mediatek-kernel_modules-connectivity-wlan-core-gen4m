@@ -8857,18 +8857,28 @@ uint8_t kalGetShutdownState(void)
 #if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 void wlanShutdown(void)
 {
+	uint32_t u4RetryCount;
+
 	/* there are two shutdown entry,
 	 * one is pre_fmd and another is platform
 	 */
 	if (kalGetShutdownState()) {
 		DBGLOG(REQ, INFO, "shutdown is ongoing\n");
-		return;
+		goto exit;
 	}
 
+	u4RetryCount = 0;
 	uShutdownState = SHUTDOWN_STATE_ONGOING;
 	while (kalIsResetOnEnd()) {
 		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 		kalMsleep(1000);
+
+		u4RetryCount++;
+		if (u4RetryCount > 30) {
+			DBGLOG(REQ, ERROR,
+				"Reset not finished more than 30s.\n");
+			goto exit;
+		}
 	}
 
 	wfsys_lock();

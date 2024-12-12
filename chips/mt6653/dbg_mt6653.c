@@ -2261,6 +2261,8 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 		return;
 	}
 
+	DBGLOG(HAL, INFO, "Start dump. fgIsDumpViaBt=%u\n", fgIsDumpViaBt);
+
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_conninfra_bus_dump(fgIsDumpViaBt ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
