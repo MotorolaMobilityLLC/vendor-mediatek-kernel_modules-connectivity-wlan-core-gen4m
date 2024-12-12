@@ -2027,7 +2027,7 @@ bool IsOverRstTimeThreshold(
 {
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	struct timespec64 rTimeout, rTime = {0};
-	bool fgIsTimeout = FALSE;
+	bool fgIsTimeout = TRUE;
 
 	rTimeout.tv_sec = 30;
 	rTimeout.tv_nsec = 0;
@@ -2227,8 +2227,12 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			g_SubsysRstCnt = 1;
 	}
 
-	if (g_SubsysRstCnt == 1)
-		rLastTs = rNowTs;
+	if (g_SubsysRstCnt == 1 &&
+		rLastTs != NULL &&
+		rNowTs != NULL) {
+		rLastTs->tv_nsec = rNowTs->tv_nsec;
+		rLastTs->tv_sec = rNowTs->tv_sec;
+	}
 
 	g_Coredump_source = COREDUMP_SOURCE_NUM;
 	rst->force_dump = FALSE;
