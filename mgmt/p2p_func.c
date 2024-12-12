@@ -9459,10 +9459,10 @@ uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 	struct PARAM_GET_CHN_INFO *prLteSafeChn = NULL;
 	uint32_t u4BufLen;
 	uint32_t *pau4SafeChnl;
-	uint32_t u4SafeChnlInfo_2g;
-	uint32_t u4SafeChnlInfo_5g_0;
-	uint32_t u4SafeChnlInfo_5g_1;
-	uint32_t u4SafeChnlInfo_6g;
+	uint32_t *u4SafeChnlInfo_2g;
+	uint32_t *u4SafeChnlInfo_5g_0;
+	uint32_t *u4SafeChnlInfo_5g_1;
+	uint32_t *u4SafeChnlInfo_6g;
 	uint32_t rStatus;
 
 	/* Get Lte Safe Chnl */
@@ -9475,27 +9475,27 @@ uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 		   prLteSafeChn, sizeof(struct PARAM_GET_CHN_INFO), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(P2P, ERROR, "get safe chnl failed");
+		DBGLOG(P2P, ERROR, "get safe chnl failed\n");
 
 	pau4SafeChnl = prLteSafeChn->rLteSafeChnList.au4SafeChannelBitmask;
-	u4SafeChnlInfo_2g = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_2G4];
-	u4SafeChnlInfo_5g_0 = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_0];
-	u4SafeChnlInfo_5g_1 = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_1];
-	u4SafeChnlInfo_6g = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G];
+	u4SafeChnlInfo_2g = &pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_2G4];
+	u4SafeChnlInfo_5g_0 = &pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_0];
+	u4SafeChnlInfo_5g_1 = &pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_1];
+	u4SafeChnlInfo_6g = &pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G];
 
-	if (!u4SafeChnlInfo_2g && !u4SafeChnlInfo_5g_0 && !u4SafeChnlInfo_5g_1
-	    && !u4SafeChnlInfo_6g) {
-		DBGLOG(P2P, WARN, "No safe chnl, reset safe chnl bitmap");
-		u4SafeChnlInfo_2g = BITS(0, 31);
-		u4SafeChnlInfo_5g_0 = BITS(0, 31);
-		u4SafeChnlInfo_5g_1 = BITS(0, 31);
-		u4SafeChnlInfo_6g = BITS(0, 31);
+	if (!*u4SafeChnlInfo_2g && !*u4SafeChnlInfo_5g_0 &&
+	    !*u4SafeChnlInfo_5g_1 && !*u4SafeChnlInfo_6g) {
+		DBGLOG(P2P, WARN, "No safe chnl, reset safe chnl bitmap\n");
+		*u4SafeChnlInfo_2g = BITS(0, 31);
+		*u4SafeChnlInfo_5g_0 = BITS(0, 31);
+		*u4SafeChnlInfo_5g_1 = BITS(0, 31);
+		*u4SafeChnlInfo_6g = BITS(0, 31);
 	}
 
 	DBGLOG(P2P, INFO,
-	       "safe chnl bitmask: 2G=0x%x, 5G_0=0x%x, 5G_1=0x%x, 6G=0x%x",
-	       u4SafeChnlInfo_2g, u4SafeChnlInfo_5g_0, u4SafeChnlInfo_5g_1,
-	       u4SafeChnlInfo_6g);
+	       "safe chnl bitmask: 2G=0x%x, 5G_0=0x%x, 5G_1=0x%x, 6G=0x%x\n",
+	       *u4SafeChnlInfo_2g, *u4SafeChnlInfo_5g_0, *u4SafeChnlInfo_5g_1,
+	       *u4SafeChnlInfo_6g);
 
 	/* Get channel allow list */
 	prChnlList = kalMemZAlloc(sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM,
@@ -9522,7 +9522,8 @@ uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 					  pau4SafeChnl))
 			continue;
 
-		DBGLOG(P2P, LOUD, "safe chnl: %u", prChnlList[i].ucChannelNum);
+		DBGLOG(P2P, LOUD, "safe chnl: %u\n",
+		       prChnlList[i].ucChannelNum);
 		pau4AllowFreqList[ucChnlNum++] = nicChannelNum2Freq(
 			prChnlList[i].ucChannelNum,
 			prChnlList[i].eBand) / 1000;
