@@ -1373,6 +1373,8 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 				SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
 			prScanParam->u2ChannelMinDwellTime =
 				SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
+			prScanParam->u4ScnFuncMaskExtend |=
+				ENUM_SCN_RNR_SCAN;
 
 			/* Init value = CFG_SCAN_OOB_MAX_NUM, if init value = 0
 			 * will let FW confuse to match SSID ind 0.
@@ -1431,15 +1433,19 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 				/* using customized scan parameters */
 				prScanParam->u2ChannelDwellTime =
 					prAisFsmInfo->ucNonDfsChDwellTimeMs;
+
 				prScanParam->u2ChannelMinDwellTime =
 					(prScanParam->u2ChannelDwellTime <
 					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC) ?
 					prScanParam->u2ChannelDwellTime :
 					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+
 				prScanParam->u2OpChStayTime =
 					prAisFsmInfo->u2OpChStayTimeMs;
+
 				prScanParam->ucDfsChDwellTime =
 					prAisFsmInfo->ucDfsChDwellTimeMs;
+
 				prScanParam->ucPerScanChCnt =
 					prAisFsmInfo->ucPerScanChannelCnt;
 #endif

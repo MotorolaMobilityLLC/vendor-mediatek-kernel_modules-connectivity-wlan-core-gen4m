@@ -5490,12 +5490,17 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 
 			if (prFilsReqIe->ucMaxChannelTime < 10 ||
 			    prFilsReqIe->ucMaxChannelTime == 255) {
-				prFilsReqIe->ucMaxChannelTime =
-				    SCAN_CHANNEL_DWELL_TIME_OCE;
-				prCmdScanReq->u2ChannelMinDwellTime =
-				    SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
-				prCmdScanReq->u2ChannelDwellTime =
-				    SCAN_CHANNEL_DWELL_TIME_OCE;
+				/* We shall stay at scan channel at least
+				 * MaxChannelTime. If anyone change
+				 * MinDwellTime, we follow it, or
+				 * set to default MinDwell time 42ms
+				 */
+				if (prCmdScanReq->u2ChannelMinDwellTime != 0)
+					prFilsReqIe->ucMaxChannelTime =
+					    prCmdScanReq->u2ChannelMinDwellTime;
+				else
+					prFilsReqIe->ucMaxChannelTime =
+					    SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
 			}
 		}
 	}
