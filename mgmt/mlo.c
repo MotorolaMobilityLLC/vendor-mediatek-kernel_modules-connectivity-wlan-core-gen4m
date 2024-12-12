@@ -577,9 +577,7 @@ uint8_t *mldGenerateBasicCommonInfo(
 
 		if (IS_BSS_APGO(bss)) {
 			present |= (ML_CTRL_LINK_ID_INFO_PRESENT |
-				    ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT |
-				    ML_CTRL_EML_CAPA_PRESENT |
-				    ML_CTRL_MLD_CAPA_PRESENT);
+				    ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT);
 
 			/* mld id for mbss only
 			if (mld_bssinfo)
