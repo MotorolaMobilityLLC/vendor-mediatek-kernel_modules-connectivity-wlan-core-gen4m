@@ -4580,9 +4580,7 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	unsigned int u4SupportSchedScanFlag = 0;
 	uint32_t u4Idx = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-#if CFG_SUPPORT_MULTI_CARD
 	uint32_t u4GlueIdx = 0;
-#endif
 
 	/* 4 <1.1> Create wireless_dev for wlan0 only */
 	prWdev[u4Idx] = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
@@ -4611,7 +4609,9 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	}
 	wlanResetGlueInfo(prGlueInfo, FALSE);
 
-#if CFG_SUPPORT_MULTI_CARD
+#if (CFG_SUPPORT_MULTI_CARD == 0)
+	prGlueInfo->u4DevNum = u4GlueIdx;
+#else
 	for (u4GlueIdx = 0; u4GlueIdx < CFG_MAX_WLAN_DEVICES; u4GlueIdx++) {
 		if (aprGlueInfo[u4GlueIdx])
 			continue;
@@ -5083,6 +5083,12 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
  * \retval NULL          Fail to create wireless_dev object
  */
 /*----------------------------------------------------------------------------*/
+static struct lock_class_key rSpinKey[CFG_MAX_WLAN_DEVICES][SPIN_LOCK_NUM];
+static struct lock_class_key rMutexKey[CFG_MAX_WLAN_DEVICES][MUTEX_NUM];
+#if CFG_SUPPORT_RX_PAGE_POOL
+static struct lock_class_key
+	rMutexPagePoolKey[CFG_MAX_WLAN_DEVICES][PAGE_POOL_NUM];
+#endif
 struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 		void *pvData,
 		void *pvDriverData)
@@ -5314,18 +5320,23 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 	/* initialize timer for OID timeout checker */
 	kalOsTimerInitialize(prGlueInfo, kalTimeoutHandler);
 
+	if (prGlueInfo->u4DevNum >= CFG_MAX_WLAN_DEVICES) {
+		DBGLOG(INIT, ERROR, "prGlueInfo missing\n");
+		goto netcreate_err;
+	}
+
 	for (i = 0; i < SPIN_LOCK_NUM; i++) {
 		spin_lock_init(&prGlueInfo->rSpinLock[i]);
 		lockdep_set_class(
 			&prGlueInfo->rSpinLock[i],
-			&prGlueInfo->rSpinKey[i]);
+			&rSpinKey[prGlueInfo->u4DevNum][i]);
 	}
 
 	for (i = 0; i < MUTEX_NUM; i++) {
 		mutex_init(&prGlueInfo->arMutex[i]);
 		lockdep_set_class(
 			&prGlueInfo->arMutex[i],
-			&prGlueInfo->rMutexKey[i]);
+			&rMutexKey[prGlueInfo->u4DevNum][i]);
 	}
 
 #if CFG_SUPPORT_RX_PAGE_POOL
@@ -5333,7 +5344,7 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 		mutex_init(&prGlueInfo->arMutexPagePool[i]);
 		lockdep_set_class(
 			&prGlueInfo->arMutexPagePool[i],
-			&prGlueInfo->rMutexPagePoolKey[i]);
+			&rMutexPagePoolKey[prGlueInfo->u4DevNum][i]);
 	}
 #endif
 

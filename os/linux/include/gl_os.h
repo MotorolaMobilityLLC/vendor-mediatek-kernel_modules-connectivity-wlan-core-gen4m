@@ -1310,12 +1310,6 @@ struct GLUE_INFO {
 
 	uint32_t u4McrOffset;
 
-	struct lock_class_key rSpinKey[SPIN_LOCK_NUM];
-	struct lock_class_key rMutexKey[MUTEX_NUM];
-#if CFG_SUPPORT_RX_PAGE_POOL
-	struct lock_class_key rMutexPagePoolKey[PAGE_POOL_NUM];
-#endif
-
 	u_int8_t wlan_perf_monitor_force_enable;
 
 	u_int8_t fgCmdDumpIsDone;
