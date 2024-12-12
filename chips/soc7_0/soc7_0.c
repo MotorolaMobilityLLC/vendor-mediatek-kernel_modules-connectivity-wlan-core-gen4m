@@ -1241,7 +1241,7 @@ static void soc7_0clearEvtRingTillCmdRingEmpty(
 		u4Retry++;
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
 		DBGLOG_LIMITED(INIT, INFO,
-		       "cmd ring cidx[%lu] != didx[%lu] try to clear event ring, retry: %lu\n",
+		       "cmd ring cidx[%u] != didx[%u] try to clear event ring, retry: %u\n",
 		       u4CpuIdx, u4DmaIdx, u4Retry);
 		kalDevRegRead(prAdapter->prGlueInfo,
 			      prTxRing->hw_didx_addr, &u4DmaIdx);
