@@ -963,8 +963,6 @@ void aisResetNeighborApList(struct ADAPTER *prAdapter,
 uint8_t aisCheckNeighborApValidity(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif
-void aisSendNeighborRequest(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
 /* end Support 11K */
 
 void aisCheckPmkidCache(struct ADAPTER *prAdapter,

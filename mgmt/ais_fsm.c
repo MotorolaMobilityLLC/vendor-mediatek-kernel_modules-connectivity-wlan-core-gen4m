@@ -144,8 +144,14 @@ static void aisScanProcessReqExtra(struct ADAPTER *prAdapter,
 
 static void aisScanResetReq(struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 
+static void aisFsmQueryCandidates(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBss, uint8_t ucBssIndex);
+
+static void aisFsmConnectedAction(struct ADAPTER *prAdapter,
+				     uint8_t ucBssIndex);
 
 static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 				     uint8_t ucBssIndex);
@@ -3415,39 +3421,6 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(
 	return AIS_STATE_LOOKING_FOR;
 }
 
-void aisFsmQueryCandidates(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
-{
-#if CFG_SUPPORT_802_11K
-	struct STA_RECORD *prStaRec;
-	struct BSS_DESC *prBssDesc;
-	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
-
-	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
-	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
-
-#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
-	if (prBtmParam->fgPendingResponse) {
-		DBGLOG(WNM, WARN, "BTM: don't query when handling\n");
-		return;
-	}
-#endif
-
-	if (prBssDesc && !prBssDesc->fgQueriedCandidates) {
-		prBssDesc->fgQueriedCandidates = TRUE;
-
-		aisResetNeighborApList(prAdapter, ucBssIndex);
-
-		if (prBssDesc->aucRrmCap[0] &
-		    BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))
-			aisSendNeighborRequest(prAdapter, ucBssIndex);
-		else if (prBssDesc->fgSupportBTM)
-			wnmSendBTMQueryFrame(prAdapter,
-				prStaRec, BSS_TRANSITION_BETTER_AP_FOUND);
-	}
-#endif
-}
-
 uint8_t aisFsmUpdateChannelList(uint8_t channel, enum ENUM_BAND eBand,
 	uint8_t *bitmap, uint8_t *count, struct ESS_CHNL_INFO *info)
 {
@@ -3732,8 +3705,6 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_AGPS_ASSIST
 			scanReportScanResultToAgps(prAdapter);
 #endif
-
-			aisFsmQueryCandidates(prAdapter, ucBssIndex);
 			break;
 
 		case AIS_STATE_LOOKING_FOR:
@@ -5186,6 +5157,25 @@ void aisFsmRunEventFoundIBSSPeer(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function will do necessary procedures when connected
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+static void aisFsmConnectedAction(struct ADAPTER *prAdapter,
+				     uint8_t ucBssIndex)
+{
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* 5. Check if need to set low latency after connected. */
+	wlanConnectedForLowLatency(prAdapter, ucBssIndex);
+#endif
+
+	/* send BTM query or NBR request after connected */
+	aisFsmQueryCandidates(prAdapter, ucBssIndex);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This function will do necessary procedures when disconnected
  *
  * @return (none)
@@ -5253,7 +5243,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	/* clear query done flag */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
 		struct BSS_DESC) {
-		prBssDesc->fgQueriedCandidates = FALSE;
+		prBssDesc->fgQueriedCandidates &= ~BIT(ucBssIndex);
 	}
 #endif
 
@@ -6549,11 +6539,8 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 		eNewState = aisFsmHandleNextReq_NORMAL_TR(
 			prAdapter, prAisFsmInfo, ucBssIndex);
 
-#if CFG_SUPPORT_LOWLATENCY_MODE
-		/* 5. Check if need to set low latency after connected. */
-		wlanConnectedForLowLatency(prAdapter, ucBssIndex);
-#endif
-
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED)
+			aisFsmConnectedAction(prAdapter, ucBssIndex);
 		break;
 
 	default:
@@ -9313,7 +9300,38 @@ uint8_t aisCheckNeighborApValidity(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+#endif /* CFG_SUPPORT_802_11K */
+
+void aisFsmQueryCandidates(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+#if CFG_SUPPORT_802_11K
+	struct STA_RECORD *prStaRec;
+	struct BSS_DESC *prBssDesc;
+	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
+
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+
+	if (!prBssDesc || !prStaRec || prBtmParam->fgPendingResponse) {
+		DBGLOG(WNM, WARN, "BTM: don't query when not ready\n");
+		return;
+	}
+
+	if (!(prBssDesc->fgQueriedCandidates & BIT(ucBssIndex))) {
+		prBssDesc->fgQueriedCandidates |= BIT(ucBssIndex);
+
+		aisResetNeighborApList(prAdapter, ucBssIndex);
+
+		if (prBssDesc->aucRrmCap[0] &
+		    BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))
+			aisSendNeighborRequest(prAdapter, ucBssIndex);
+		else if (prBssDesc->fgSupportBTM)
+			wnmSendBTMQueryFrame(prAdapter,
+				prStaRec, BSS_TRANSITION_BETTER_AP_FOUND);
+	}
 #endif
+}
 
 void aisFsmRunEventCancelTxWait(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
