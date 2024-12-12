@@ -540,15 +540,6 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <1> Get a valid STA_RECORD_T */
-	prStaRec =
-	    cnmGetStaRecByAddress(prAdapter, ucBssIndex, prBssDesc->aucSrcAddr);
-	if (prStaRec) {
-		DBGLOG(BSS, WARN,
-		       "STA_REC entry exist, cannot acquire new entry for ["
-		       MACSTR "]!!\n", MAC2STR(prBssDesc->aucSrcAddr));
-		return NULL;
-	}
-
 	prStaRec = cnmStaRecAlloc(prAdapter, eStaType, ucBssIndex,
 		prBssDesc->aucSrcAddr);
 	if (!prStaRec) {

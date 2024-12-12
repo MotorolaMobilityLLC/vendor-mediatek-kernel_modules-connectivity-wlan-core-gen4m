@@ -3099,9 +3099,12 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, struct BSS_DESC_SET *set, uint8_t bidx)
 {
 	struct mt66xx_chip_info *prChipInfo = ad->chip_info;
+	struct AIS_FSM_INFO *ais;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	uint8_t i;
+
+	ais = aisGetAisFsmInfo(ad, bidx);
 
 	if (!set)
 		return ap ? ap->aprTarget[0] : NULL;
@@ -3130,13 +3133,15 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	 */
 	for (i = 1; i < set->ucLinkNum; i++) {
 		uint8_t *found = NULL;
-		struct BSS_DESC *bss;
+		struct BSS_DESC *bss = set->aprBssDesc[i];
 
-		bss = set->aprBssDesc[i];
-		if (bss->fgDriverGen)
-			continue;
-
-		if (set->aprBssDesc[0]->ucJoinFailureCount > 1 &&
+		if (IS_AIS_CONN_BSSDESC(ais, set->aprBssDesc[0]) &&
+		    !(IS_AIS_CONN_BSSDESC(ais, bss))) {
+			set->aprBssDesc[i] = set->aprBssDesc[0];
+			set->aprBssDesc[0] = bss;
+			found = "connected_link";
+		} else if (set->aprBssDesc[0]->ucJoinFailureCount > 1 &&
+		    !IS_AIS_CONN_BSSDESC(ais, bss) &&
 		    bss->ucJoinFailureCount <
 		    set->aprBssDesc[0]->ucJoinFailureCount) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];

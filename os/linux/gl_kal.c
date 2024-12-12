@@ -2598,7 +2598,7 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 
 	if (bss == NULL) {
 		DBGLOG(SCN, WARN,
-			"cannot find bss by cfg80211_get_bss");
+			"cannot find bss by cfg80211_get_bss\n");
 		bss = kalInformConnectionBss(prAdapter,
 			prChannel, prBssInfo->aucBSSID, ucBssIndex);
 	}
@@ -2639,7 +2639,7 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 		} else {
 			if (bss_others) {
 				DBGLOG(SCN, TRACE,
-					"call cfg80211_put_bss for bss_others");
+				      "call cfg80211_put_bss for bss_others\n");
 				cfg80211_put_bss(
 					wlanGetWiphy(),
 					bss_others);
@@ -2883,7 +2883,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 				params.links[id].bss = links[i].bss;
 			}
 
-			DBGLOG(INIT, INFO, "JOIN %s: MLD "MACSTR" Status=%d",
+			DBGLOG(INIT, INFO, "JOIN %s: MLD "MACSTR" Status=%d\n",
 				u2JoinStatus == WLAN_STATUS_SUCCESS ?
 				"Success" : "Failure",
 				MAC2STR(params.ap_mld_addr), u2JoinStatus);
@@ -2893,7 +2893,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 			params.links[0].bssid = links[0].bssid;
 			params.links[0].bss = links[0].bss;
 
-			DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d",
+			DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d\n",
 				u2JoinStatus == WLAN_STATUS_SUCCESS ?
 				"Success" : "Failure",
 				MAC2STR(links[0].bssid), u2JoinStatus);
@@ -2912,7 +2912,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		cfg80211_connect_done(netdev, &params, GFP_KERNEL);
 
 #else /* KERNEL_VERSION(4, 18, 0) < CFG80211_VERSION_CODE */
-		DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d",
+		DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d\n",
 			u2JoinStatus == WLAN_STATUS_SUCCESS ?
 			"Success" : "Failure",
 			MAC2STR(links[0].bssid), u2JoinStatus);

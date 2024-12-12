@@ -760,33 +760,14 @@ u_int8_t secPrivacySeekForEntry(
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 #if CFG_WIFI_SW_WTBL_SEARCH_FAIL
-	if (i % 8 == 0)
-		continue;
+		if (i % 8 == 0)
+			continue;
 #endif
-		if (prWtbl[i].ucUsed
-		    && EQUAL_MAC_ADDR(prSta->aucMacAddr, prWtbl[i].aucMacAddr)
-		    && prWtbl[i].ucPairwise
-		    /* This function for ucPairwise only */
-		    && prWtbl[i].ucBssIndex == prSta->ucBssIndex) {
+		if (prWtbl[i].ucUsed == FALSE) {
 			ucEntry = i;
 			DBGLOG(RSN, TRACE,
-			       "[Wlan index]: Reuse entry #%d\n", i);
+			       "[Wlan index]: Assign entry #%d\n", i);
 			break;
-		}
-	}
-
-	if (i == (ucMaxIDX + 1)) {
-		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
-#if CFG_WIFI_SW_WTBL_SEARCH_FAIL
-			if (i % 8 == 0)
-				continue;
-#endif
-			if (prWtbl[i].ucUsed == FALSE) {
-				ucEntry = i;
-				DBGLOG(RSN, TRACE,
-				       "[Wlan index]: Assign entry #%d\n", i);
-				break;
-			}
 		}
 	}
 
@@ -893,29 +874,14 @@ void secPrivacyFreeForEntry(struct ADAPTER *prAdapter, uint8_t ucEntry)
 void secPrivacyFreeSta(struct ADAPTER *prAdapter,
 		       struct STA_RECORD *prStaRec)
 {
-	uint32_t entry;
-	struct WLAN_TABLE *prWtbl;
-
 	if (!prStaRec)
 		return;
 
-	prWtbl = prAdapter->rWifiVar.arWtbl;
+	DBGLOG(RSN, INFO, "Free STA entry (%d)!\n", prStaRec->ucWlanIndex);
 
-	for (entry = 0; entry < WTBL_SIZE; entry++) {
-		/* Consider GTK case !! */
-		if (prWtbl[entry].ucUsed &&
-		    EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
-				   prWtbl[entry].aucMacAddr)
-		    && prWtbl[entry].ucPairwise
-		    && prWtbl[entry].ucBssIndex == prStaRec->ucBssIndex) {
-#if 1				/* DBG */
-			DBGLOG(RSN, INFO, "Free STA entry (%d)!\n", entry);
-#endif
-			secPrivacyFreeForEntry(prAdapter, entry);
-			prStaRec->ucWlanIndex = WTBL_RESERVED_ENTRY;
-			/* prStaRec->ucBMCWlanIndex = WTBL_RESERVED_ENTRY; */
-		}
-	}
+	secPrivacyFreeForEntry(prAdapter, prStaRec->ucWlanIndex);
+
+	prStaRec->ucWlanIndex = WTBL_RESERVED_ENTRY;
 }
 
 /*----------------------------------------------------------------------------*/

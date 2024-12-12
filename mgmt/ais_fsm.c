@@ -1395,7 +1395,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 	if (!prBssInfo) {
 		DBGLOG(AIS, ERROR,
-			"aisFsmStateInit_JOIN failed because prAisBssInfo is NULL, return.\n");
+			"Link%d failed, prBssInfo is NULL\n", ucLinkIndex);
 		return;
 	}
 
@@ -1413,9 +1413,9 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 	if (!prStaRec) {
 		DBGLOG(AIS, ERROR,
-			"aisFsmStateInit_JOIN failed because prStaRec is NULL, return.\n");
-		aisFsmStateAbort_JOIN(prAdapter, ucBssIndex);
-		aisFsmSteps(prAdapter, AIS_STATE_JOIN_FAILURE, ucBssIndex);
+			"Bss%d failed, prStaRec is NULL\n", ucBssIndex);
+		aisFsmStateAbort(prAdapter, DISCONNECT_REASON_CODE_LOCALLY,
+				 FALSE, ucBssIndex);
 		return;
 	}
 
@@ -4022,6 +4022,7 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	u_int8_t fgIsCheckConnected;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	/* XXX: The wlan0 may has been changed to AP mode. */
@@ -7453,58 +7454,45 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 static enum ENUM_AIS_STATE aisSearchHandleReconnect(struct ADAPTER *ad,
 	uint8_t ucBssIndex)
 {
-	uint8_t i, j;
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, ucBssIndex);
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, ucBssIndex);
+	struct BSS_DESC *prCurrBssDesc = aisGetMainLinkBssDesc(ais);
+	struct BSS_INFO *prAisBssInfo = aisGetMainLinkBssInfo(ais);
 
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(ais, i);
+	if (!prAisBssInfo || !prCurrBssDesc)
+		return AIS_STATE_NORMAL_TR;
 
-		if (!prBssDesc)
-			continue;
+	/* abort to reconnect the same ap again */
+	if (ad->rWifiVar.fgRoamByBTO ||
+	    EQUAL_MAC_ADDR(prAisBssInfo->aucBSSID, prCurrBssDesc->aucBSSID)) {
+		struct MSG_AIS_ABORT *prAisAbortMsg;
 
-		for (j = 0; j < MLD_LINK_MAX; j++) {
-			struct BSS_INFO *bss = aisGetLinkBssInfo(ais, j);
-
-			if (!bss)
-				continue;
-
-			/* same ap, need to reconnect */
-			if (ad->rWifiVar.fgRoamByBTO ||
-			    EQUAL_MAC_ADDR(bss->aucBSSID,
-					   prBssDesc->aucBSSID)) {
-				struct MSG_AIS_ABORT *prAisAbortMsg;
-
-				prAisAbortMsg = (struct MSG_AIS_ABORT *)
-					cnmMemAlloc(ad, RAM_TYPE_MSG,
-					sizeof(struct MSG_AIS_ABORT));
-				if (!prAisAbortMsg) {
-					DBGLOG(REQ, ERROR,
-					   "Fail in allocating AisAbortMsg.\n");
-					return AIS_STATE_NORMAL_TR;
-				}
-
-				/* set cache to keep aps result */
-				conn->eConnectionPolicy =
-					CONNECT_BY_BSSID_REUSE;
-				prAisAbortMsg->rMsgHdr.eMsgId =
-					MID_OID_AIS_FSM_JOIN_REQ;
-				prAisAbortMsg->ucReasonOfDisconnect =
-					DISCONNECT_REASON_CODE_REASSOCIATION;
-				prAisAbortMsg->fgDelayIndication = TRUE;
-				prAisAbortMsg->ucBssIndex = ucBssIndex;
-				mboxSendMsg(ad, MBOX_ID_0,
-					(struct MSG_HDR *) prAisAbortMsg,
-					MSG_SEND_METHOD_BUF);
-
-				DBGLOG(AIS, INFO,
-					"Force reconnect to the same AP, policy=%d\n",
-					conn->eConnectionPolicy);
-
-				/* stay ROAMING and wait for msg executed */
-				return AIS_STATE_ROAMING;
-			}
+		prAisAbortMsg = (struct MSG_AIS_ABORT *)
+			cnmMemAlloc(ad, RAM_TYPE_MSG,
+			sizeof(struct MSG_AIS_ABORT));
+		if (!prAisAbortMsg) {
+			DBGLOG(REQ, ERROR,
+			   "Fail in allocating AisAbortMsg.\n");
+			return AIS_STATE_NORMAL_TR;
 		}
+
+		/* set cache to keep aps result */
+		conn->eConnectionPolicy = CONNECT_BY_BSSID_REUSE;
+		prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_JOIN_REQ;
+		prAisAbortMsg->ucReasonOfDisconnect =
+			DISCONNECT_REASON_CODE_REASSOCIATION;
+		prAisAbortMsg->fgDelayIndication = TRUE;
+		prAisAbortMsg->ucBssIndex = ucBssIndex;
+		mboxSendMsg(ad, MBOX_ID_0,
+			    (struct MSG_HDR *) prAisAbortMsg,
+			    MSG_SEND_METHOD_BUF);
+
+		DBGLOG(AIS, INFO,
+			"Force reconnect to the same AP, policy=%d\n",
+			conn->eConnectionPolicy);
+
+		/* stay ROAMING and wait for msg executed */
+		return AIS_STATE_ROAMING;
 	}
 
 	return AIS_STATE_REQ_CHANNEL_JOIN;
