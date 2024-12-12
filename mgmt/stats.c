@@ -1041,6 +1041,7 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 				pucEthBody[2], pucEthBody[3],
 				u2SSN);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_TDLS);
+			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			break;
 		case EVENT_TX:
 			DBGLOG(TX, INFO,
