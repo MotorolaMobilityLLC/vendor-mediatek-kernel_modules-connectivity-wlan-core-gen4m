@@ -2902,10 +2902,8 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev,
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-		if (dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) {
-			netif_carrier_off(dev);
-			netif_tx_stop_all_queues(dev);
-		}
+		netif_carrier_off(dev);
+		netif_tx_stop_all_queues(dev);
 #endif
 
 		if (__mtk_Netdev_To_RoleIdx(prGlueInfo, dev, link_id,
