@@ -28,6 +28,11 @@
 #include "gl_os.h"
 
 #include "hif_pdma.h"
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if CFG_TC10_FEATURE
+#include "gl_coredump.h"
+#endif
+#endif
 
 #include "precomp.h"
 
@@ -1325,6 +1330,30 @@ static void wifiSetupFwFlavor(struct platform_device *pdev,
 	DBGLOG(HAL, INFO, "fw_flavor: %s\n", driver_data->fw_flavor);
 }
 
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if CFG_TC10_FEATURE
+static void wifiSetupMemdumpMode(struct platform_device *pdev,
+	struct mt66xx_hif_driver_data *driver_data)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *node = dev->of_node;
+
+	if (of_property_read_string(node,
+				    DEFAULT_MEMDUMP_KEY,
+				    &driver_data->memdump))
+		return;
+
+	if (kalkStrtou32(driver_data->memdump, 0, &g_u4Memdump)) {
+		DBGLOG(INIT, ERROR, "parse memdump %s error\n",
+			driver_data->memdump);
+		return;
+	}
+
+	DBGLOG(HAL, INFO, "memdump setup: %s\n", driver_data->memdump);
+}
+#endif
+#endif
+
 static int mtk_wifi_probe(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
@@ -1339,6 +1368,11 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, (void *)prDriverData);
 
 	wifiSetupFwFlavor(pdev, prDriverData);
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if CFG_TC10_FEATURE
+	wifiSetupMemdumpMode(pdev, prDriverData);
+#endif
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (!wifiCsrIoremap(pdev))

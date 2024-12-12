@@ -56,7 +56,7 @@ do { \
 		 __func__, ##__VA_ARGS__); \
 } while (0)
 
-#define SA_LOG_SIZE (128*1024)
+#define SA_LOG_SIZE (512*1024)
 #define SA_WAIT_READY_MAX_CNT 2000
 #define SA_WAIT_READY_SLEEP_TIME 100
 #define SA_DRIVER_NAME "sa_log_wifi"

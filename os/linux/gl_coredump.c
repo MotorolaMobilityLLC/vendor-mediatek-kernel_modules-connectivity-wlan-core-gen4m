@@ -1917,6 +1917,9 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 
+	DBGLOG(INIT, INFO, "source: %d, reason: %s, force_dump: %d\n",
+		source, reason, force_dump);
+
 	if (!ctx->initialized) {
 		DBGLOG(INIT, WARN,
 			"Skip coredump due to NOT initialized.\n");
@@ -1931,8 +1934,17 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 	}
 #endif
 
-	DBGLOG(INIT, INFO, "source: %d, reason: %s, force_dump: %d\n",
-		source, reason, force_dump);
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if CFG_TC10_FEATURE
+	if (g_u4Memdump == 0) {
+		DBGLOG(INIT, WARN,
+			"Skip coredump due to memdump mode[%u].\n",
+			g_u4Memdump);
+		return;
+	}
+#endif
+#endif
+
 	ctx->processing = TRUE;
 
 #if CFG_SUPPORT_CONNINFRA

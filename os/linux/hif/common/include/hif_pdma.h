@@ -312,6 +312,11 @@
 #define HIF_INT_TIME_DEBUG              0
 
 #define FW_BIN_FLAVOR_KEY		"flavor-bin"
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if CFG_TC10_FEATURE
+#define DEFAULT_MEMDUMP_KEY		"default-memdump"
+#endif
+#endif
 
 #define TX_MSDU_MEM_ALLOC_MAX_TIME	3000
 
