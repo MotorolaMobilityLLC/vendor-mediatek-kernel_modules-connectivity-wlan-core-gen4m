@@ -14223,7 +14223,9 @@ wlanoidSetStartSchedScan(struct ADAPTER *prAdapter,
 			 void *pvSetBuffer, uint32_t u4SetBufferLen,
 			 uint32_t *pu4SetInfoLen)
 {
-	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest =
+		(struct PARAM_SCHED_SCAN_REQUEST *) pvSetBuffer;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	uint8_t ucBssIndex;
 
 	if (pvSetBuffer == NULL)
@@ -14260,6 +14262,14 @@ wlanoidSetStartSchedScan(struct ADAPTER *prAdapter,
 		       "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		goto success;
+	}
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
+	    prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN) {
+		DBGLOG(OID, INFO, "ucBssIndex = %d\n", ucBssIndex);
+		prAisFsmInfo->fgIsScanOidAborted = TRUE;
+		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
 	}
 
 	if (!scnFsmSchedScanRequest(prAdapter, prSchedScanRequest)) {
