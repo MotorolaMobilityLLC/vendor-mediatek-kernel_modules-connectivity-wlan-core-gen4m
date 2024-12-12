@@ -1282,11 +1282,20 @@ uint8_t cnmDecideSapNewChannel(
 	uint32_t u4LteSafeChnBitMask_2G  = 0, u4LteSafeChnBitMask_5G_1 = 0,
 		u4LteSafeChnBitMask_5G_2 = 0, u4LteSafeChnBitMask_6G = 0;
 	uint8_t ucCurrentChannel = 0;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+			(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	if (!prGlueInfo || !prBssInfo) {
 		DBGLOG(P2P, ERROR, "prGlueInfo or prBssInfo is NULL\n");
 		return -EFAULT;
 	}
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prGlueInfo->prAdapter,
+			prBssInfo->u4PrivateData);
+	if (prP2pRoleFsmInfo &&
+		prP2pRoleFsmInfo->eCurrentState ==
+		P2P_ROLE_STATE_DFS_CAC)
+		return 0;
 
 	ucCurrentChannel = prBssInfo->ucPrimaryChannel;
 
