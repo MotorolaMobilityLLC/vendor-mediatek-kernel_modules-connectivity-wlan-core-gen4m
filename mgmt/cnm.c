@@ -2711,14 +2711,17 @@ static u_int8_t cnmMLSRDbdcIsConcurrent(
 
 	if (prDbdcDecisionInfo &&
 		(ucNewConnectionType == MLO_MODE_EMLSR ||
-		 ucNewConnectionType == MLO_MODE_HYMLO) &&
+		 ucNewConnectionType == MLO_MODE_HYMLO ||
+		mldNeedEMLSRAsMLSR(prAdapter, NULL, ucNewConnectionType)) &&
 		!mldHasSingleLinkBss(prAdapter)) {
 		log_dbg(CNM, INFO, "[DBDC]ONLY EMLSR/Hybrid case, DBDC disable\n");
 		return FALSE;
 	} else if (!prDbdcDecisionInfo &&
 			    !mldHasSingleLinkBss(prAdapter) &&
 			    (ucMloType == MLO_MODE_EMLSR ||
-			     ucMloType == MLO_MODE_HYMLO)) {
+			     ucMloType == MLO_MODE_HYMLO ||
+				mldNeedEMLSRAsMLSR(prAdapter, NULL,
+					ucNewConnectionType))) {
 		log_dbg(CNM, INFO, "[DBDC]ONLY EMLSR/Hybrid case, DBDC disable\n");
 		return FALSE;
 	}
@@ -2851,8 +2854,9 @@ next:
 			ucBandCount[BAND_6G] > 0 && uc6gCH > 0 &&
 			(cnmDbdcDecideIsAAConcurrent(prAdapter,
 			uc5gCH, uc6gCH) ||
-			((ucNewConnectionType == MLO_MODE_MLSR ||
-			  ucMloType == MLO_MODE_MLSR) &&
+			((mldNeedSTRAsMLSR(prAdapter, NULL,
+				ucNewConnectionType) ||
+			  mldNeedSTRAsMLSR(prAdapter, NULL, ucMloType)) &&
 			  !mldHasSingleLinkBss(prAdapter)))) {
 			/*MLSR only case can support A+A*/
 			fgDBDCConcurrent = TRUE;
@@ -4638,7 +4642,8 @@ void cnmDbdcPreConnectionEnableDecision(
 	ucMloType = mldCheckMLSRType(prAdapter);
 
 	if ((ucMloType == MLO_MODE_EMLSR ||
-		ucMloType == MLO_MODE_HYMLO) &&
+		ucMloType == MLO_MODE_HYMLO ||
+		mldNeedEMLSRAsMLSR(prAdapter, NULL, ucMloType)) &&
 		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
 		== MLO_MODE_SLSR) {
 		log_dbg(CNM, INFO,
@@ -4815,7 +4820,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 
 		if (!mldHasSingleLinkBss(prAdapter) &&
 			(ucMloType == MLO_MODE_EMLSR ||
-			ucMloType == MLO_MODE_HYMLO)) {
+			ucMloType == MLO_MODE_HYMLO ||
+			mldNeedEMLSRAsMLSR(prAdapter, NULL, ucMloType))) {
 			log_dbg(CNM, INFO,
 				"mld Clear MLSR Paused Link Flag\n");
 			mldClearMLSRPausedLinkFlag(prAdapter);
@@ -5038,7 +5044,8 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER
 
 	if (!mldHasSingleLinkBss(prAdapter) &&
 		(ucMloType == MLO_MODE_EMLSR ||
-		ucMloType == MLO_MODE_HYMLO) &&
+		 ucMloType == MLO_MODE_HYMLO ||
+		mldNeedEMLSRAsMLSR(prAdapter, NULL, ucMloType)) &&
 		prAdapter->rWifiVar.fgDbDcModeEn &&
 		!fgDbdcEn) {
 		log_dbg(CNM, INFO,

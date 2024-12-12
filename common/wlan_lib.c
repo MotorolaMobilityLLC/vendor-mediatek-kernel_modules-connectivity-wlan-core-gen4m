@@ -7601,6 +7601,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgMlcSupport, "EnableMlc", FEATURE_ENABLED,
 		FEATURE_TO_CUSTOMER);
 #endif
+	INIT_UINT(prWifiVar->ucDisEmlsrAllowlist,
+		  "DisEmlsrAllowList", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif /* CFG_SUPPORT_802_11BE */
 	INIT_UINT(prWifiVar->ucApHt, "ApHT", FEATURE_ENABLED,
@@ -13103,9 +13105,8 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
 	if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
 		(mld_bssinfo->ucMaxSimuLinks >= 1 ||
-		(mld_bssinfo->ucMaxSimuLinks == 0 &&
-		 mld_bssinfo->ucEmlEnabled == FALSE &&
-		 mld_bssinfo->ucHmloEnabled == FALSE)) &&
+		 mldNeedSTRAsMLSR(prAdapter, mld_bssinfo,
+			MLO_MODE_NUM)) &&
 		 prAdapter->rWifiVar.fgDbDcModeEn == TRUE) {
 		DBGLOG(CNM, INFO, "STR mode work in 1SS\n");
 		return 1;

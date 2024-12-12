@@ -2078,6 +2078,8 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_HS_CONFIG_DGAF_DISABLED_MASK           BIT(0)
 #endif /* CFG_SUPPORT_PASSPOINT */
 
+#define ELEM_MIN_LEN_VENDOR_OUI			    5
+
 /* MTK Vendor Specific OUI */
 #define ELEM_MIN_LEN_MTK_OUI			    \
 	(sizeof(struct IE_MTK_OUI) - (sizeof(struct IE_HDR))) /* 7 */

@@ -552,5 +552,9 @@ void mldTriggerCriticalUpdate(struct ADAPTER *prAdapter,
 uint32_t mldSendMlcRequest(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo, struct PARAM_MLC_REQ *prMlcReq);
 #endif /* CFG_SUPPORT_MLC */
-
+uint8_t isEmlsrPermittedAP(uint8_t *aucOui);
+uint8_t mldNeedSTRAsMLSR(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType);
+uint8_t mldNeedEMLSRAsMLSR(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType);
 #endif /* !_MLO_H */

@@ -1860,15 +1860,26 @@ static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	uint8_t i;
 	enum ENUM_MLO_MODE eMloMode = MLO_MODE_NUM;
 	uint8_t ucMaxSimuLinks = 0;
+	uint8_t tmpIsEmlsrPermittedAP = FALSE;
+	uint8_t fgNeedCheckEmlsrAllowlist = FALSE;
 
 	for (i = 0; i < ucLinkNum; i++) {
 		u4TotalScore += arLinks[i]->u2Score;
 		u4TotalTput += arLinks[i]->u4Tput;
+		if (arLinks[i]->rMlInfo.fgIsEmlsrPermittedAP)
+			tmpIsEmlsrPermittedAP = TRUE;
 	}
 
+	if (IS_FEATURE_DISABLED(
+			prAdapter->rWifiVar.ucDisEmlsrAllowlist) &&
+			prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_NONE)
+		fgNeedCheckEmlsrAllowlist = TRUE;
+
 	if (ucLinkNum > 1) {
-		ucMaxSimuLinks = prAdapter->rWifiVar.ucMaxSimuLinksCap;
-		eMloMode = MLO_MODE_STR;
+		//ucMaxSimuLinks = prAdapter->rWifiVar.ucMaxSimuLinksCap;
+		ucMaxSimuLinks = 0;
+		eMloMode = MLO_MODE_MLSR;
 	}
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
@@ -1876,7 +1887,15 @@ static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
 			BE_IS_EML_CAP_SUPPORT_EMLSR(
 				best_bss->rMlInfo.u2EmlCap)) {
-		eMloMode = MLO_MODE_EMLSR;
+		/* The AP is in allow list, the connection
+		 * select EMLSR, otherwise it need select MLSR.
+		 */
+		if (tmpIsEmlsrPermittedAP == FALSE &&
+			fgNeedCheckEmlsrAllowlist == TRUE)
+			eMloMode = MLO_MODE_MLSR;
+		else
+			eMloMode = MLO_MODE_EMLSR;
+
 		ucMaxSimuLinks = 0;
 	}
 #endif
@@ -1893,7 +1912,7 @@ static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 		ucMaxSimuLinks = 0;
 	}
 #endif
-
+	DBGLOG(ML, INFO, "eMloMode: %d\n", eMloMode);
 	kalMemCopy(prScoreInfo->aprTarget, arLinks,
 		sizeof(prScoreInfo->aprTarget));
 	prScoreInfo->ucLinkNum = ucLinkNum;

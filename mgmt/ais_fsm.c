@@ -10824,8 +10824,11 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 		/*need set BAND AUTO in the case of EMLSR/Hybrid*/
 		if (prMldBssInfo && prMldBssInfo->ucMaxSimuLinks == 0 &&
-			(prMldBssInfo->ucEmlEnabled == TRUE ||
-			prMldBssInfo->ucHmloEnabled == TRUE))
+
+			((prMldBssInfo->ucEmlEnabled == TRUE ||
+			prMldBssInfo->ucHmloEnabled == TRUE) ||
+			mldNeedEMLSRAsMLSR(prAdapter, prMldBssInfo,
+				MLO_MODE_NUM)))
 			prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 	}
 #endif

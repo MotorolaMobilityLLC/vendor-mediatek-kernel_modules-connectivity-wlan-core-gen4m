@@ -3563,6 +3563,13 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 			scanParseWMMIE(prAdapter,
 				pucIE, prBssDesc);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (IE_LEN(pucIE) >= ELEM_MIN_LEN_VENDOR_OUI &&
+				!prBssDesc->rMlInfo.fgIsEmlsrPermittedAP) {
+				prBssDesc->rMlInfo.fgIsEmlsrPermittedAP =
+					isEmlsrPermittedAP(pucIE + 2);
+			}
+#endif
 			break;
 		}
 #if (CFG_SUPPORT_802_11AX == 1)

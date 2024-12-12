@@ -255,6 +255,7 @@ struct ML_INFO {
 	uint16_t u2ApRemovalTimer;
 	uint8_t fgMldType;
 	struct MLD_BLOCKLIST_ITEM *prBlock;
+	uint8_t fgIsEmlsrPermittedAP;
 };
 #endif
 
@@ -520,7 +521,6 @@ struct BSS_DESC {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
 #endif
-
 };
 
 struct SCAN_PARAM {	/* Used by SCAN FSM */

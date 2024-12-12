@@ -13,6 +13,39 @@
 
 #define MAX_DUP_IE_COUNT 64
 
+uint8_t g_rEmlsrAllowList[][3] = {
+	{0x00, 0x0C, 0xE7}, /* AP Vendor 01 */
+	{0x00, 0x0A, 0x00},
+	{0x00, 0x17, 0xA5},
+	{0x00, 0x0C, 0x43},
+	{0x00, 0x62, 0x0B}, /* AP Vendor 02 */
+	{0x5C, 0x6F, 0x69},
+	{0xBC, 0x97, 0xE1},
+	{0x00, 0x1B, 0xE9},
+	{0x00, 0x05, 0xB5},
+	{0x8C, 0x84, 0x74},
+	{0x14, 0x23, 0xF3},
+	{0x40, 0x5B, 0x7F},
+	{0xD4, 0x04, 0xE6},
+	{0xE0, 0x3E, 0x44},
+	{0x6C, 0x92, 0xCF},
+	{0x04, 0x32, 0x01},
+	{0x70, 0xB7, 0xE4},
+	{0x14, 0x23, 0xF2},
+	{0x48, 0x57, 0xD2},
+	{0x9C, 0x21, 0x83},
+	{0x84, 0x16, 0x0C},
+	{0xE4, 0x3D, 0x1A},
+	{0x00, 0x0D, 0xB6},
+	{0x00, 0x0A, 0xF7},
+	{0xD4, 0x01, 0x29},
+	{0x6C, 0x83, 0x75},
+	{0xB0, 0x26, 0x28},
+	{0x00, 0x10, 0x18},
+	{0x18, 0xC0, 0x86},
+	{0x38, 0xBA, 0xB0}
+};
+
 static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec);
 
@@ -5069,9 +5102,7 @@ enum ENUM_CH_REQ_TYPE mldDecideCnmReqCHType(struct ADAPTER *prAdapter,
 	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) ||
 	    (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
 	    (mld_bssinfo->ucMaxSimuLinks >= 1 ||
-	    (mld_bssinfo->ucMaxSimuLinks == 0 &&
-		 mld_bssinfo->ucEmlEnabled == FALSE &&
-		 mld_bssinfo->ucHmloEnabled == FALSE)
+	     mldNeedSTRAsMLSR(prAdapter, mld_bssinfo, MLO_MODE_NUM)
 		 )))
 		return CH_REQ_TYPE_JOIN;
 
@@ -5761,5 +5792,63 @@ void mldTriggerCriticalUpdate(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_UNIFIED_COMMAND */
 }
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+uint8_t isEmlsrPermittedAP(uint8_t *aucOui)
+{
+	uint8_t ucListSize;
+	uint8_t i;
+
+	ucListSize = ARRAY_SIZE(g_rEmlsrAllowList);
+	for (i = 0; i < ucListSize; i++) {
+		if (aucOui[0] == g_rEmlsrAllowList[i][0] &&
+			aucOui[1] == g_rEmlsrAllowList[i][1] &&
+			aucOui[2] == g_rEmlsrAllowList[i][2])
+			return TRUE; // Match found
+	}
+	return FALSE; // No match found
+}
+
+uint8_t mldNeedSTRAsMLSR(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType)
+{
+	if (!prAdapter) {
+		DBGLOG(ML, TRACE, "prAdapter is null!\n");
+		return FALSE;
+	}
+	/* cert & mlsr config */
+	if (mld_bssinfo)
+		return prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_SIGMA_BE &&
+			mld_bssinfo->ucMaxSimuLinks == 0 &&
+			mld_bssinfo->ucEmlEnabled == FALSE &&
+			mld_bssinfo->ucHmloEnabled == FALSE;
+	else if (ucMloType == MLO_MODE_MLSR)
+		return prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_SIGMA_BE;
+	else
+		return FALSE;
+}
+
+uint8_t mldNeedEMLSRAsMLSR(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType)
+{
+	if (!prAdapter) {
+		DBGLOG(ML, TRACE, "prAdapter is null!\n");
+		return FALSE;
+	}
+	/* cert & mlsr config */
+	if (mld_bssinfo)
+		return prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_NONE &&
+			mld_bssinfo->ucMaxSimuLinks == 0 &&
+			mld_bssinfo->ucEmlEnabled == FALSE &&
+			mld_bssinfo->ucHmloEnabled == FALSE;
+	else if (ucMloType == MLO_MODE_MLSR)
+		return prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_NONE;
+	else
+		return FALSE;
+
+}
 
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
