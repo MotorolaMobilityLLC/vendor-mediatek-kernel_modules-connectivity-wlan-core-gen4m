@@ -93,6 +93,8 @@
 #define PCIE_CFGSPACE_FW_STATUS_SYNC_MASK	0x3
 #endif /* CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE */
 
+#define PCIE_EP_CONFIG_SPACE_SIZE	16
+
 #if (CFG_PCIE_GEN_SWITCH == 1)
 #define PCIE_STOP_TRANSITION_NOT_START  0
 #define PCIE_STOP_TRANSITION_ON_GOING   1
@@ -484,6 +486,8 @@ struct BUS_INFO {
 	const uint32_t u4PseGroupLen;
 	struct pcie_msi_info pcie_msi_info;
 	const u_int8_t is_en_drv_ctrl_pci_msi_irq;
+	uint32_t u4ConfigSpace[PCIE_EP_CONFIG_SPACE_SIZE];
+	uint8_t ucConfigSpaceBkDone;
 
 	void (*pcieMsiMaskIrq)(uint32_t u4Irq, uint32_t u4Bit);
 	void (*pcieMsiUnmaskIrq)(uint32_t u4Irq, uint32_t u4Bit);
@@ -688,6 +692,10 @@ uint32_t mtk_pci_read_msi_mask(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo);
+uint8_t pcie_backup_config_space_settings(
+	struct ADAPTER *prAdapter);
+uint8_t pcie_restore_config_space_settings(
+	struct ADAPTER *prAdapter);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
 #if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI

@@ -751,6 +751,62 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+uint8_t pcie_backup_config_space_settings(
+	struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = NULL;
+	int i;
+	uint32_t ret = 0;
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "adapter is NULL\n");
+		return -1;
+	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	for (i = 0; i < PCIE_EP_CONFIG_SPACE_SIZE; i++) {
+		ret = glReadPcieCfgSpace(i * 4,
+			&prBusInfo->u4ConfigSpace[i]);
+		if (ret != 0) {
+			prBusInfo->ucConfigSpaceBkDone = 0;
+			DBGLOG(HAL, ERROR, "cfg space bk failed\n");
+			return -1;
+		}
+	}
+	prBusInfo->ucConfigSpaceBkDone = 1;
+	DBGLOG(HAL, INFO, "cfg space bk pass\n");
+
+	return 0;
+}
+
+uint8_t pcie_restore_config_space_settings(
+	struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = NULL;
+	int i;
+	uint32_t ret = 0;
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "adapter is NULL\n");
+		return -1;
+	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	for (i = 0; i < PCIE_EP_CONFIG_SPACE_SIZE; i++) {
+		ret = glWritePcieCfgSpace(i * 4,
+			prBusInfo->u4ConfigSpace[i]);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "cfg space rs failed\n");
+			return -1;
+		}
+	}
+	DBGLOG(HAL, INFO, "cfg space rs pass\n");
+
+	return 0;
+}
+
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance)
 {
 	return IRQ_WAKE_THREAD;
