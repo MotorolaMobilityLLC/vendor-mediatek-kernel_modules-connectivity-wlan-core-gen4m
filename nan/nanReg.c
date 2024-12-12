@@ -592,7 +592,7 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 	uint8_t ucChannelS1;
 	uint8_t ucChannelS2;
 	unsigned char fgFound = FALSE;
-	uint8_t ucCenterChnl;
+	uint8_t ucCenterChnl = 0;
 #if (CFG_SUPPORT_NAN_6G == 1) || (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucIs6gChnl = eBand == BAND_6G;
 #endif
