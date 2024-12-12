@@ -2391,8 +2391,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 					event->dump_payload[1]);
 		}
 		if (event->u4Reason == MD_TX_DATA_HANG) {
-			prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
-			prAdapter->u4HifChkFlag |= HIF_CHK_MD_TX_HANG;
+			prAdapter->u4HifChkFlag |= HIF_CHK_TX_TIMEOUT;
+			prAdapter->u4HifChkFlag |= HIF_CHK_MD_TX_TIMEOUT;
 			prAdapter->ucMddpBssIndex =
 				(uint8_t) event->dump_payload[1];
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);

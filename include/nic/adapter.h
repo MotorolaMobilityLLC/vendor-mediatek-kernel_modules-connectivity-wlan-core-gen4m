@@ -1261,6 +1261,7 @@ struct WIFI_VAR {
 	uint32_t u4DeQuePercentHT40Nss1;
 	uint32_t u4DeQuePercentHT20Nss1;
 
+	uint32_t u4HifDetectTxTimeoutPeriod;
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
 #if CFG_NAPI_DELAY
@@ -2040,6 +2041,7 @@ struct PERF_MONITOR {
 
 struct HIF_STATS {
 	unsigned long ulUpdatePeriod; /* in ms */
+	unsigned long ulTxTimeoutDetectPeriod; /* in ms */
 	uint32_t u4MsiIsrCount[32];
 	uint32_t u4HwIsrCount;
 	uint32_t u4SwIsrCount;

@@ -12288,7 +12288,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 
 	/* check tx hang */
 	if (!fgIsStopPerfMon) {
-		prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
+		prAdapter->u4HifChkFlag |= HIF_CHK_TX_TIMEOUT;
 		kalSetHifDbgEvent(prAdapter->prGlueInfo);
 	}
 

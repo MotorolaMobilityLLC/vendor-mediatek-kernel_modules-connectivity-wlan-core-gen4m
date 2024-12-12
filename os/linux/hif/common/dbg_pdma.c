@@ -182,7 +182,7 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 	}
 
 #if CFG_MTK_MDDP_SUPPORT
-	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG)
+	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_TIMEOUT)
 		ucBssIndex = prAdapter->ucMddpBssIndex;
 	else
 #endif
@@ -209,7 +209,7 @@ bool halCheckFullDump(struct ADAPTER *prAdapter)
 	}
 
 #if CFG_MTK_MDDP_SUPPORT
-	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
+	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_TIMEOUT) {
 		ret = TRUE;
 		DBGLOG(HAL, INFO, "MD Tx timeout dump\n");
 		goto end;
@@ -241,7 +241,7 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
-	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
+	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_TIMEOUT) {
 		if (halIsTxTimeout(prAdapter, &u4TokenId)) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
@@ -650,7 +650,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	ASSERT(prAdapter->prGlueInfo);
 
 #if CFG_MTK_MDDP_SUPPORT
-	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
+	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_TIMEOUT) {
 		DBGLOG(HAL, INFO, "MD Tx timeout dump\n");
 		return TRUE;
 	}
@@ -707,9 +707,9 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			eOPMode = prBssInfo->eCurrentOPMode;
 
 		DBGLOG(HAL, INFO,
-				"TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[sec:%ld] OpMode[%u]\n",
-				u4TokenId, prToken->ucWlanIndex,
-				prToken->ucBssIndex, rLongest.tv_sec, eOPMode);
+		       "TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[%ld.%09ld] OpMode[%u]\n",
+		       u4TokenId, prToken->ucWlanIndex, prToken->ucBssIndex,
+		       rLongest.tv_sec, rLongest.tv_nsec, eOPMode);
 
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
@@ -848,7 +848,7 @@ u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx)
 	return FALSE;
 }
 
-void halCheckWfdmaHang(struct ADAPTER *prAdapter)
+void halCheckWfdmaStall(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_WIFI_WFDMA_WB
 	struct GLUE_INFO *prGlueInfo;
@@ -905,6 +905,27 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
 	}
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+}
+
+void halCheckTxTimeout(struct ADAPTER *prAdapter)
+{
+	struct HIF_STATS *prHifStats;
+
+	prHifStats = &prAdapter->rHifStats;
+
+	if (time_before(jiffies, prHifStats->ulTxTimeoutDetectPeriod))
+		return;
+
+	prHifStats->ulTxTimeoutDetectPeriod = jiffies +
+		prAdapter->rWifiVar.u4HifDetectTxTimeoutPeriod * HZ / 1000;
+	prAdapter->u4HifChkFlag |= HIF_CHK_TX_TIMEOUT;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+}
+
+void halDetectHifStall(struct ADAPTER *prAdapter)
+{
+	halCheckWfdmaStall(prAdapter);
+	halCheckTxTimeout(prAdapter);
 }
 
 void halShowPdmaInfo(struct ADAPTER *prAdapter)

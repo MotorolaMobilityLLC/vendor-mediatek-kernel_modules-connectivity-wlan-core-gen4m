@@ -9142,6 +9142,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4RecoveryMsiShortTime,
 		  "RecoveryMsiShortTime", 200, FEATURE_DEBUG_ONLY);
 
+	INIT_UINT(prWifiVar->u4HifDetectTxTimeoutPeriod,
+		  "HifDetectTxTimeoutPeriod", 10000, FEATURE_DEBUG_ONLY);
+
 #if CFG_UPDATE_PACING_SHIFT_SUPPORT
 	/* Default TCP Small queue budget is ~1 ms of data (1sec >> 10).
 	 * u4PacingShift is used to update the scaling factor for TSQ.
