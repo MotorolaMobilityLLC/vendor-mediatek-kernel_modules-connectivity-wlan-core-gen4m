@@ -1022,6 +1022,7 @@ struct SW_RFB {
 	struct IEEE80211_RADIOTAP_INFO *prRadiotapInfo;
 #endif
 	uint8_t ucHwBandIdx;
+	uint8_t ucHwBssIdx;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	uint32_t u4IndReason;
@@ -1883,8 +1884,8 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 void nicRxProcessRxv(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
 
-uint8_t getWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
-			 uint8_t ucWlanIdx);
+uint8_t getWlanIdxByBandAndBssid(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucHwBssidIdx, uint8_t ucWlanIdx);
 
 uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
 		uint8_t ucTid, uint8_t ucWlanIdx);

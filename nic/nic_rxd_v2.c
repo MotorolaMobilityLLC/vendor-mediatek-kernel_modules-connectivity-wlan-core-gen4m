@@ -254,6 +254,8 @@ void nic_rxd_v2_fill_rfb(
 	ucHwChnlNum = HAL_MAC_CONNAC2X_RX_STATUS_GET_CHNL_NUM(prRxStatus);
 	prSwRfb->ucHwBandIdx =
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_BAND_IDX(prRxStatus);
+	prSwRfb->ucHwBssIdx =
+		HAL_MAC_CONNAC2X_RX_STATUS_GET_BSSID(prRxStatus);
 	prSwRfb->eRfBand =
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_RF_BAND(prRxStatus);
 	prSwRfb->ucChnlNum = nicRxdChNumTranslate(prSwRfb->eRfBand,
@@ -706,6 +708,8 @@ uint8_t nic_rxd_v2_fill_radiotap(
 
 	prSwRfb->ucHwBandIdx =
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_BAND_IDX(prRxStatus);
+	prSwRfb->ucHwBssIdx =
+		HAL_MAC_CONNAC2X_RX_STATUS_GET_BSSID(prRxStatus);
 
 	if (HAL_MAC_CONNAC2X_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus) != 0)
 		prGlueInfo->u4AmpduRefNum[prSwRfb->ucHwBandIdx] += 1;

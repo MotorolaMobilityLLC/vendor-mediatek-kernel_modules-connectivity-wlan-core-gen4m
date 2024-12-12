@@ -4299,11 +4299,12 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 /**
  * Lookup wlan index by matching band index.
  */
-uint8_t getWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
-			 uint8_t ucWlanIdx)
+uint8_t getWlanIdxByBandAndBssid(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucHwBssIdx, uint8_t ucWlanIdx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	return mldGetWlanIdxByBand(prAdapter, ucHwBandIdx, ucWlanIdx);
+	return mldGetWlanIdxByBandAndBssid(prAdapter,
+		ucHwBandIdx, ucHwBssIdx, ucWlanIdx);
 #else
 	return ucWlanIdx;
 #endif

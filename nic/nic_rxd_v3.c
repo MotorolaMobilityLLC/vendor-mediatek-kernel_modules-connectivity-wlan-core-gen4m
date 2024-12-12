@@ -141,10 +141,9 @@ static uint8_t getUnicastWlanIndex(struct ADAPTER *prAdapter,
 	u2FrameCtrl = nicRxGetFrameControl(prAdapter, prSwRfb);
 
 	if (RXM_IS_MGMT_FRAME(u2FrameCtrl))
-		return getWlanIdxByBand(prAdapter, prSwRfb->ucHwBandIdx,
-			(uint8_t)
-			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
-
+		return getWlanIdxByBandAndBssid(prAdapter, prSwRfb->ucHwBandIdx,
+		(uint8_t)HAL_MAC_CONNAC3X_RX_STATUS_GET_BSSID(prRxStatus),
+		(uint8_t)HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 	else
 		return getPrimaryWlanIdx(prAdapter, prSwRfb->ucTid, (uint8_t)
 			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
@@ -265,6 +264,9 @@ void nic_rxd_v3_fill_rfb(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	prSwRfb->ucHwBandIdx =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_BAND_IDX(prRxStatus);
+	prSwRfb->ucHwBssIdx =
+		HAL_MAC_CONNAC3X_RX_STATUS_GET_BSSID(prRxStatus);
+
 	prSwRfb->fgIsBC = HAL_MAC_CONNAC3X_RX_STATUS_IS_BC(prRxStatus);
 	prSwRfb->fgIsMC = HAL_MAC_CONNAC3X_RX_STATUS_IS_MC(prRxStatus);
 	/* For MLO, MLD_ID need to be corrected according to TID */
@@ -823,6 +825,8 @@ uint8_t nic_rxd_v3_fill_radiotap(
 
 	prSwRfb->ucHwBandIdx =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_BAND_IDX(prRxStatus);
+	prSwRfb->ucHwBssIdx =
+		HAL_MAC_CONNAC3X_RX_STATUS_GET_BSSID(prRxStatus);
 
 	if (HAL_MAC_CONNAC3X_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus) != 0)
 		prGlueInfo->u4AmpduRefNum[prSwRfb->ucHwBandIdx] += 1;

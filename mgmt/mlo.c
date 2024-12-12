@@ -4419,14 +4419,35 @@ struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	return prMldStarec;
 }
 
-uint8_t mldGetWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
-			    uint8_t ucWlanIdx)
+/**
+ * mldGetStaRecByBandAndBssid() - find a STA_RECORD in same MLD by
+ * HW band index and HW bssid index. In the same band case, need to compare
+ * bssid.
+ *
+ * @prAdapter: adapter pointer to look up required information
+ * @prStaRec: a STA_RECORD points to the same MLD to be queried
+ * @ucHwBandIdx: band index to match a STA_RECORD
+ */
+struct STA_RECORD *mldGetStaRecByBandAndBssid(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucHwBssIdx, uint8_t ucWlanIdx)
 {
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
+
+	ucWlanIdx = mldGetWlanIdxByBandAndBssid(prAdapter,
+		ucHwBandIdx, ucHwBssIdx, ucWlanIdx);
+	prStaRec = cnmGetStaRecByWlanIndex(prAdapter, ucWlanIdx);
+
+	return prStaRec;
+}
+
+uint8_t mldGetWlanIdxByBandAndBssid(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucHwBssIdx, uint8_t ucWlanIdx)
+{
+	struct MLD_STA_RECORD *prMldStarec;
+	struct STA_RECORD *prStaRec = NULL;
+	struct STA_RECORD *sta_rec = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIndex;
-	uint8_t ucStaIndex;
 
 	ucBssIndex = secGetBssIdxByWlanIdx(prAdapter, ucWlanIdx);
 	if (ucBssIndex != WTBL_RESERVED_ENTRY)
@@ -4435,20 +4456,28 @@ uint8_t mldGetWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
 	if (!prBssInfo)
 		return ucWlanIdx;
 
-	if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
+	if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx &&
+	    prBssInfo->ucOwnMacIndex == ucHwBssIdx)
 		return ucWlanIdx; /* hit */
 
-	/* check alternative */
-	ucStaIndex = secGetStaIdxByWlanIdx(prAdapter, ucWlanIdx);
-	/* primary */
-	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIndex);
+	prStaRec = cnmGetStaRecByWlanIndex(prAdapter, ucWlanIdx);
+	if (!prStaRec)
+		return ucWlanIdx;
 
-	/* link associated with the ucHwBandIdx */
-	prStaRec = mldGetStaRecByBandIdx(prAdapter, prStaRec, ucHwBandIdx);
-	if (prStaRec)
-		return prStaRec->ucWlanIndex;
-#endif
+	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (!prMldStarec)
+		return ucWlanIdx;
 
+	LINK_FOR_EACH_ENTRY(sta_rec, &prMldStarec->rStarecList,
+					rLinkEntryMld, struct STA_RECORD) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						  sta_rec->ucBssIndex);
+		if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx &&
+		    prBssInfo->ucOwnMacIndex == ucHwBssIdx)
+			return sta_rec->ucWlanIndex;
+	}
+
+	/* not matched */
 	return ucWlanIdx;
 }
 
@@ -4947,39 +4976,6 @@ uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 		return MLD_TYPE_EXTERNAL;
 
 	return MLD_TYPE_INVALID;
-}
-
-/**
- * mldGetStaRecByBandIdx() - find a STA_RECORD in same MLD by HW band index
- *
- * @prAdapter: adapter pointer to look up required information
- * @prStaRec: a STA_RECORD points to the same MLD to be queried
- * @ucHwBandIdx: band index to match a STA_RECORD
- */
-struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
-		struct STA_RECORD *prStaRec, uint8_t ucHwBandIdx)
-{
-	struct MLD_STA_RECORD *prMldStarec;
-	struct STA_RECORD *sta_rec = NULL;
-	struct BSS_INFO *prBssInfo;
-
-	if (!prStaRec)
-		return prStaRec;
-
-	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (!prMldStarec)
-		return prStaRec;
-
-	LINK_FOR_EACH_ENTRY(sta_rec, &prMldStarec->rStarecList,
-					rLinkEntryMld, struct STA_RECORD) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  sta_rec->ucBssIndex);
-		if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
-			return sta_rec;
-	}
-
-	/* not matched */
-	return prStaRec;
 }
 
 void mldCheckApRemoval(struct ADAPTER *prAdapter,

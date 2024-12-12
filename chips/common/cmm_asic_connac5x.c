@@ -1970,9 +1970,10 @@ void asicConnac5xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prStaRec = mldGetStaRecByBandIdx(prAdapter,
-				&prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx],
-				prRetSwRfb->ucHwBandIdx);
+		prStaRec = mldGetStaRecByBandAndBssid(prAdapter,
+				prRetSwRfb->ucHwBandIdx,
+				prRetSwRfb->ucHwBssIdx,
+				prRetSwRfb->ucWlanIdx);
 		if (!prStaRec)
 			return;
 		ucStaRecIdx = prStaRec->ucIndex;

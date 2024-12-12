@@ -2434,8 +2434,10 @@ void mt7999_get_rx_link_stats(struct ADAPTER *prAdapter,
 	 * For MLO, it should read prSwRfb->ucHwBandIdx to match the RX link.
 	 * Locate a starec in same MLD by matching eHwBandIdx.
 	 */
-	prStaRec = mldGetStaRecByBandIdx(prAdapter, prStaRec,
-					prSwRfb->ucHwBandIdx);
+	prStaRec = mldGetStaRecByBandAndBssid(prAdapter,
+			prSwRfb->ucHwBandIdx,
+			prSwRfb->ucHwBssIdx,
+			prSwRfb->ucWlanIdx);
 #endif
 	if (!prStaRec) {
 		DBGLOG(RX, WARN, "StaRec %u band=%u not found",

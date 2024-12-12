@@ -438,8 +438,8 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
-uint8_t mldGetWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucWlanIdx,
-			    uint8_t ucHwBandIdx);
+uint8_t mldGetWlanIdxByBandAndBssid(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucHwBssIdx, uint8_t ucWlanIdx);
 
 uint8_t mldGetPrimaryWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx);
 
@@ -493,8 +493,8 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 	uint8_t *pucIe, uint16_t u2Len);
 
-struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
-		struct STA_RECORD *prStaRec, uint8_t ucHwBandIdx);
+struct STA_RECORD *mldGetStaRecByBandAndBssid(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucHwBssIdx, uint8_t ucWlanIdx);
 
 void mldCheckApRemoval(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, const uint8_t *pucIE);
