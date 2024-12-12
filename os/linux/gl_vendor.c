@@ -2498,7 +2498,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 				rStatus);
 #endif
 
-		DBGLOG(REQ, INFO, "llstats_get_info(bss=%u)", ucBssIdx);
+		DBGLOG(REQ, TRACE, "llstats_get_info(bss=%u)", ucBssIdx);
 		/* Fill returning buffer from shared EMI address */
 		ptr = buf;
 

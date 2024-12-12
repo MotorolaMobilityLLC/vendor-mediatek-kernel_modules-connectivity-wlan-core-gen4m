@@ -10513,8 +10513,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 				prUlq->cLinkQuality, prUlq->u2LinkSpeed,
 				prUlq->ucMediumBusyPercentage,
 				prUlq->ucIsLQ0Rdy);
-
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, TRACE,
 			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
 			i,
 			prLq->u2TxLinkSpeed,

@@ -5857,7 +5857,7 @@ void wlanDumpBssStatistics(struct ADAPTER *prAdapter,
 
 	/* <2>Dump BSS statistics */
 	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-		DBGLOG(SW4, INFO,
+		DBGLOG(SW4, LOUD,
 		       "LLS BSS[%u] %s: T[%06u] R[%06u] T_D[%06u] T_F[%06u]\n",
 		       prBssInfo->ucBssIndex, apucACI2Str[eAci],
 		       arLLStats[eAci].u4TxMsdu,
