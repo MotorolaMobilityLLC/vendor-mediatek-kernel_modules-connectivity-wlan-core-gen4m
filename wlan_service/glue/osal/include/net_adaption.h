@@ -1914,6 +1914,10 @@ struct test_operation {
 		u_int32 band_idx,
 		u_int32 wf_path,
 		u_int32 *dbv_value);
+	s_int32 (*op_get_sleep_check)(
+		struct test_wlan_info *winfos,
+		u_int32 action,
+		u_int32 *sleep_result);
 };
 
 /*****************************************************************************

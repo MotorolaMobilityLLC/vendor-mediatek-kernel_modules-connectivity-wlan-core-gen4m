@@ -329,6 +329,8 @@ enum ENUM_RF_AT_FUNCID {
 	/* Set & get power type. 0:NVRAM, 1:UI*/
 	RF_AT_CMD_SET_GET_POWER_TYPE = 227,
 
+	RF_AT_FUNCID_GET_SLEEP_CHECK = 236,
+
 	RF_AT_FUNCID_NULL = 0xFF
 };
 
@@ -4236,3 +4238,24 @@ s_int32 mt_op_get_tssi_meas_dbv(
 	return ret;
 }
 
+s_int32 mt_op_get_sleep_check(
+	struct test_wlan_info *winfos,
+	u_int32 action,
+	u_int32 *sleep_result)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 buf_len = 0;
+	struct param_mtk_wifi_test_struct rf_at_info;
+
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_SLEEP_CHECK;
+	rf_at_info.func_data = action;
+	ret = tm_rftest_query_auto_test(winfos,
+			&rf_at_info, &buf_len);
+
+	if (ret == SERV_STATUS_SUCCESS)
+		*sleep_result = rf_at_info.func_data;
+	else
+		*sleep_result = 0;
+
+	return ret;
+}

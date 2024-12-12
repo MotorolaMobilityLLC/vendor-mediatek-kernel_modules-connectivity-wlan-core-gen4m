@@ -5414,6 +5414,33 @@ static s_int32 hqa_get_tssi_meas_dbv(
 	return ret;
 }
 
+static s_int32 hqa_get_sleep_check(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret;
+	u_char *data = hqa_frame->data;
+	u_int32 action = 0;
+	u_int32 sleep_result = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	get_param_and_shift_buf(TRUE, sizeof(action),
+				&data, (u_char *)&action);
+
+	ret = mt_serv_get_sleep_check(serv_test, action,
+		&sleep_result);
+
+	sleep_result = SERV_OS_HTONL(sleep_result);
+
+	sys_ad_move_mem(hqa_frame->data + 2,
+		&sleep_result, sizeof(sleep_result));
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2 + sizeof(sleep_result), ret);
+
+	return ret;
+}
+
 static struct hqa_cmd_entry CMD_SET5[] = {
 	/* cmd id start from 0x1500 */
 	{0x0,	hqa_get_fw_info},
@@ -5479,8 +5506,9 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x9c,	hqa_set_etssi_gain},
 	{0x9d,	hqa_get_tssi_meas_dbv},
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	{0xA1,	hqa_set_ru_info_v3}
+	{0xA1,	hqa_set_ru_info_v3},
 #endif
+	{0xA2,	hqa_get_sleep_check},
 };
 
 static s_int32 hqa_set_channel_ext(

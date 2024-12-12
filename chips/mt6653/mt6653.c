@@ -977,7 +977,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 #if (CONFIG_WLAN_SERVICE == 1)
 struct test_capability mt6653_toolCapability = {
 	/* u_int32 version; */
-	0xC,
+	0xD,
 	/* u_int32 tag_num; */
 	3,
 	/* struct test_capability_ph_cap ph_cap; */
@@ -1059,7 +1059,9 @@ struct test_capability mt6653_toolCapability = {
 		/* BIT6: MLR+, ALR support 0 */
 		/* BIT7: Bandwidth duplcate debug support 0 */
 		/* BIT8: dRU support 1 */
-		0x12C,	/*u_int32 feature1; */
+		/* BIT12: TX time 1 */
+		/* BIT13: keep full power switch 1*/
+		0x312C,	/*u_int32 feature1; */
 
 		/* u_int32 reserved[15]; */
 		{ 0, 0, 0, 0, 0, 0, 0, 0,

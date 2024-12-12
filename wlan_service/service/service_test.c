@@ -130,6 +130,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_set_tx_gain = mt_op_set_tx_gain;
 	ops->op_set_etssi_gain = mt_op_set_etssi_gain;
 	ops->op_get_tssi_meas_dbv = mt_op_get_tssi_meas_dbv;
+	ops->op_get_sleep_check = mt_op_get_sleep_check;
 
 	return SERV_STATUS_SUCCESS;
 }
@@ -2752,6 +2753,27 @@ s_int32 mt_serv_get_tssi_meas_dbv(
 		band_idx,
 		wf_path,
 		dbv_value);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_get_sleep_check(
+	struct service_test *serv_test,
+	u_int32 action,
+	u_int32 *sleep_result)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *ops;
+
+	ops = serv_test->test_op;
+	ret = ops->op_get_sleep_check(
+		serv_test->test_winfo,
+		action,
+		sleep_result);
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,

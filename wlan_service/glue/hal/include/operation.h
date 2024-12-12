@@ -628,5 +628,9 @@ s_int32 mt_op_get_tssi_meas_dbv(
 	u_int32 band_idx,
 	u_int32 wf_path,
 	u_int32 *dbv_value);
+s_int32 mt_op_get_sleep_check(
+	struct test_wlan_info *winfos,
+	u_int32 action,
+	u_int32 *sleep_result);
 
 #endif /* __OPERATION_H__ */
