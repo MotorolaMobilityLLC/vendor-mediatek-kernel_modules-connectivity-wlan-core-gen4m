@@ -43,6 +43,7 @@
 #define MBU_MSI_MIRROR_IDX	7
 #define MBU_TIMEOUT_VALUE	0xffffdead
 #define MBU_REG_MASK		0xffff0000
+#define MBU_TIMEOUT_DBG_CNT	1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -205,6 +206,18 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+void halMbuUninit(struct GLUE_INFO *prGlueInfo)
+{
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prMbuInfo;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prMbuInfo = &prBusInfo->rSwEmiRingInfo;
+
+	prMbuInfo->fgIsEnable = FALSE;
+	prMbuInfo->prMbuEmiData = NULL;
+}
+
 u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 		    uint32_t *pu4Val)
 {
@@ -302,6 +315,7 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 			       u4ReadAddr, prMsiMirror->u4IntSta);
 			fgRet = FALSE;
 			*pu4Val = MBU_TIMEOUT_VALUE;
+			prMbuInfo->u4TimeoutCnt++;
 			goto exit;
 		}
 		kalUdelay(5);
@@ -317,6 +331,15 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 
 exit:
 	GLUE_DEC_REF_CNT(prMbuInfo->u4ReadBlockCnt);
+
+	if (prMbuInfo->rOps.dumpDebugCr) {
+		if ((prMbuInfo->u4TimeoutCnt >= MBU_TIMEOUT_DBG_CNT &&
+		     !prMbuInfo->fgIsDumpDebugCr) ||
+		    IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
+			prMbuInfo->rOps.dumpDebugCr(prGlueInfo);
+			prMbuInfo->fgIsDumpDebugCr = TRUE;
+		}
+	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg) && prMsiMirror) {
 		KAL_REC_TIME_END();

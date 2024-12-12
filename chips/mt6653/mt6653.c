@@ -77,6 +77,8 @@
 #include <linux/msi.h>
 #endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 
+#include "wlan_hw_dbg.h"
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -254,6 +256,10 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 				 u_int8_t *pfgResult);
 static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult);
+#if CFG_MTK_WIFI_MBU
+static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
 #endif
@@ -821,8 +827,10 @@ struct BUS_INFO mt6653_bus_info = {
 	.rSwEmiRingInfo = {
 		.rOps = {
 			.init = halMbuInit,
+			.uninit = halMbuUninit,
 			.read = halMbuRead,
 			.debug = halMbuDebug,
+			.dumpDebugCr = mt6653MbuDumpDebugCr,
 		},
 		.fgIsSupport = TRUE,
 		.u4RemapAddr = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
@@ -5056,4 +5064,136 @@ u_int8_t mt6653_is_AA_DBDC_enable(void)
 }
 #endif /* CFG_SUPPORT_CONNFEM == 1 */
 
+#if CFG_MTK_WIFI_MBU
+static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prMbuInfo;
+	struct MBU_EMI_CTX *prEmi;
+	char *aucBuf;
+	uint32_t u4BufferSize = 1024, u4Pos = 0, u4Idx, u4Val = 0;
+	const uint32_t au4DbgCr1[] = {
+		/* cb_infra */
+		0x7002500C, 0x70025014, 0x70025024, 0x7002502C,
+		0x70028730, 0x70026100,
+		/* mbu */
+		0x74130200, 0x74130204, 0x7413A004, 0x74138018,
+		0x7413B000, 0x70028800, 0x74130040, 0x74130044,
+		0x74130048, 0x7413004C, 0x74130050, 0x74130054,
+		0x74130058, 0x7413005C, 0x74138000, 0x74138004,
+		0x74138008, 0x7413800C, 0x74138010, 0x74138014,
+		0x74138018, 0x7413801C, 0x74138020, 0x74138060,
+		0x74138064, 0x74138100, 0x74138104, 0x74138108
+	};
+	const uint32_t au4DbgCr2[] = {
+		/* mbu */
+		0x7413810C, 0x74138110, 0x74138114, 0x74138118,
+		0x7413811C, 0x74138120, 0x74138160, 0x74138164,
+		0x7413D008, 0x7413B008, 0x7413B00C,
+		/* pcie mac */
+		0x74030150, 0x74030154, 0x74030184, 0x74031010,
+		0x74031204, 0x74031210, 0x740301A8, 0x740301D4,
+		0x74030D40, 0x740310A8,
+		/* pcie phy */
+		0x740700B0, 0x740700C0
+	};
+	const struct wlan_dbg_command arMbuDbg[] = {
+		/* write, w_addr, mask, value, read, r_addr*/
+		/* pcie mac */
+		{TRUE, 0x74030168, 0, 0xCCCC0100, FALSE, 0},
+		{TRUE, 0x74030164, 0, 0x4C4D4E4F, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x50515253, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x54555657, TRUE, 0x7403002C},
+		{TRUE, 0x74030168, 0, 0x88880100, FALSE, 0},
+		{TRUE, 0x74030164, 0, 0x0001030C, TRUE, 0x7403002C},
+		{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+		{TRUE, 0x74030164, 0, 0x24252627, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x50515253, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x54555657, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0xB0B1B2B3, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0xB4B5B6B7, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x98999A9B, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x9C9D9E9F, TRUE, 0x7403002C},
+		/* cb_infra */
+		{TRUE, 0x70025300, 0, 0x00010E0F, TRUE, 0x70025304},
+		{TRUE, 0x70025300, 0, 0x00011011, TRUE, 0x70025304},
+	};
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prMbuInfo = &prBusInfo->rSwEmiRingInfo;
+	prEmi = prMbuInfo->prMbuEmiData;
+
+	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi)
+		return;
+
+	aucBuf = kalMemAlloc(u4BufferSize, PHY_MEM_TYPE);
+	if (aucBuf == NULL) {
+		DBGLOG(HAL, WARN, "buffer alloc fail\n");
+		return;
+	}
+
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr1); u4Idx++) {
+		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr1[u4Idx], &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos,
+			u4BufferSize - u4Pos,
+			"[0x%08x]=[0x%08x] ",
+			au4DbgCr1[u4Idx],
+			u4Val);
+	}
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+
+	u4Pos = 0;
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr2); u4Idx++) {
+		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr2[u4Idx], &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos,
+			u4BufferSize - u4Pos,
+			"[0x%08x]=[0x%08x] ",
+			au4DbgCr2[u4Idx],
+			u4Val);
+	}
+
+	kalMdelay(3);
+	HAL_RMCR_RD(PLAT_DBG, prAdapter, 0x74130200, &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos, u4BufferSize - u4Pos,
+			"delay[0x%08x]=[0x%08x]",
+			0x74130200, u4Val);
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+
+	u4Pos = 0;
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(arMbuDbg); u4Idx++) {
+		if (arMbuDbg[u4Idx].write) {
+			HAL_MCR_WR(prAdapter,
+				   arMbuDbg[u4Idx].w_addr,
+				   arMbuDbg[u4Idx].value);
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				u4BufferSize - u4Pos,
+				"W[0x%08x]=[0x%08x] ",
+				arMbuDbg[u4Idx].w_addr,
+				arMbuDbg[u4Idx].value);
+		}
+		if (arMbuDbg[u4Idx].read) {
+			HAL_RMCR_RD(PLAT_DBG, prAdapter,
+				    arMbuDbg[u4Idx].r_addr, &u4Val);
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				u4BufferSize - u4Pos,
+				"R[0x%08x]=[0x%08x] ",
+				arMbuDbg[u4Idx].r_addr,
+				u4Val);
+		}
+	}
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+
+	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
+}
+#endif /* CFG_MTK_WIFI_MBU */
 #endif  /* MT6653 */

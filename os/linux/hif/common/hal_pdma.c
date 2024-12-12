@@ -2024,6 +2024,9 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
@@ -2037,6 +2040,9 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	del_timer_sync(&prHifInfo->rSerTimer);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
@@ -2092,6 +2098,11 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 
 	if (prSwWfdmaInfo->rOps.uninit)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
+
+#if CFG_MTK_WIFI_SW_EMI_RING
+	if (prSwEmiRingInfo->rOps.uninit)
+		prSwEmiRingInfo->rOps.uninit(prGlueInfo);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_HIF_RX_NAPI
 	napi_synchronize(&prNapiDev->napi);
