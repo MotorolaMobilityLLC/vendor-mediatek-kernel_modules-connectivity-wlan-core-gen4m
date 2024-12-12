@@ -2919,6 +2919,8 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	if (prMemOps->copyRxData &&
 	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
+		/* If it encounter copy Rx data Fail, it will trigger KE */
+		ASSERT(0);
 		fgRet = false;
 		goto skip;
 	}
@@ -2933,11 +2935,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
 	NIC_DUMP_RXDMAD(prAdapter, (uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 
-	if (fgDebugSegment) {
-		kalDevDebugSegment(prAdapter, prSwRfb, eType, pRxD->SDLen0);
-		goto skip;
-	}
-
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
@@ -2945,6 +2942,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #else
 	pRxD->SDPtr1 = 0;
 #endif
+
+	if (fgDebugSegment) {
+		kalDevDebugSegment(prAdapter, prSwRfb, eType, pRxD->SDLen0);
+		goto skip;
+	}
 
 #ifdef CFG_SUPPORT_PDMA_SCATTER
 	if (prGlueInfo->fgIsEnableMon && fgRet == FALSE) {
