@@ -1450,6 +1450,13 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	gResetStaInfoPrinted();
+	connLogConnect(prGlueInfo->prAdapter,
+		ucBssIndex,
+		sme);
+#endif
+
 	DBGLOG(REQ, INFO,
 	       "[wlan] mtk_cfg80211_connect %p %zu auth_type=%d flags=0x%x\n",
 	       sme->ie, sme->ie_len, sme->auth_type, sme->flags);

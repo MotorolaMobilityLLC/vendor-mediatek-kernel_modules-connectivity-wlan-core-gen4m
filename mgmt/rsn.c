@@ -3164,6 +3164,10 @@ uint8_t rsnCheckSaQueryTimeout(
 			DBGLOG(RSN, ERROR, "prAisBssInfo is NULL");
 		else if (prAisBssInfo->eConnectionState ==
 					MEDIA_STATE_CONNECTED)
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogRxDeauthPrint(prAdapter,
+				ucBssIdx);
+#endif
 			saaSendDisconnectMsgHandler(prAdapter,
 					prAisBssInfo->prStaRecOfAP,
 					prAisBssInfo,

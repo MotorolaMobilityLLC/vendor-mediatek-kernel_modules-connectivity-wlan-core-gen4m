@@ -1508,13 +1508,6 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 			goto exit;
 
 		if (prStaRec->ucStaState > STA_STATE_1) {
-#if (CFG_SUPPORT_CONN_LOG == 1)
-			connLogRxDeauth(prAdapter,
-				prStaRec,
-				prDeauthFrame,
-				prBssDesc);
-#endif
-
 			/* Check if this is the AP we are associated
 			 * or associating with
 			 */
@@ -1555,11 +1548,23 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 				     * CIPHER_SUITE_BIP
 				     */
 				    ) {
+#if (CFG_SUPPORT_CONN_LOG == 1)
+					connLogRxDeauthBuffer(prAdapter,
+						prStaRec,
+						prDeauthFrame,
+						prBssDesc);
+#endif
 					saaChkDeauthfrmParamHandler(
 						prAdapter, prSwRfb,
 						prStaRec);
 					return WLAN_STATUS_SUCCESS;
 				}
+#endif
+#if (CFG_SUPPORT_CONN_LOG == 1)
+				connLogRxDeauth(prAdapter,
+					prStaRec,
+					prDeauthFrame,
+					prBssDesc);
 #endif
 				if (saaFsmStaState2HandleRxDeauth(prAdapter,
 					prStaRec) == WLAN_STATUS_SUCCESS)

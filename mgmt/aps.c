@@ -1910,6 +1910,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				MAC2STR(prBssDesc->aucBSSID),
 				prBssDesc->prBlock->ucCount,
 				prAdapter->rWifiVar.ucAisBssTrialLimit);
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogConnectFail(prAdapter, ucBssIndex,
+				CONN_FAIL_BLACLIST_LIMIT);
+#endif
 			return FALSE;
 		}
 	}
