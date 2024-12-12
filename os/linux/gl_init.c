@@ -8154,6 +8154,15 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			&prRegInfo,
 			prChipInfo);
 
+#if CFG_TC10_FEATURE
+		if (prGlueInfo->fgNvramAvailable == FALSE) {
+			i4Status = -EIO;
+			DBGLOG(INIT, ERROR, "Nvram load failed\n");
+			eFailReason = ADAPTER_START_FAIL;
+			break;
+		}
+#endif
+
 		if (wlanAdapterStart(prAdapter,
 				     prRegInfo, FALSE) != WLAN_STATUS_SUCCESS)
 			i4Status = -EIO;

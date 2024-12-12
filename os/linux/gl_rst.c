@@ -303,6 +303,10 @@ void glResetCleanResetFlag(void)
 /*----------------------------------------------------------------------------*/
 void glResetInit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_WMT_RESET_API_SUPPORT && defined(CONFIG_PM)
+	int ret = 0;
+#endif
+
 #if CFG_WMT_RESET_API_SUPPORT
 #if CFG_SUPPORT_CONNAC1X
 	/* 1. Register reset callback */
@@ -338,7 +342,10 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 					"wlan_rst_thread");
 #ifdef CONFIG_PM
 	wifi_rst.pm_nb.notifier_call = wlan_pm_notifier_call;
-	register_pm_notifier(&wifi_rst.pm_nb);
+	ret = register_pm_notifier(&wifi_rst.pm_nb);
+	if (ret)
+		DBGLOG(INIT, WARN,
+			"register pm notifier failed\n");
 #endif
 #endif
 	wifi_coredump_init(prGlueInfo);
