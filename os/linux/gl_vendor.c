@@ -2212,7 +2212,7 @@ uint32_t fill_ml_iface(struct ADAPTER *prAdapter, uint8_t *dst, uint8_t bss_idx)
 	kalMemCopyFromIo(dst, &prAdapter->prLinkStatsIface[bss_idx],
 		offsetof(struct STATS_LLS_WIFI_IFACE_ML_STAT, num_links));
 	dst += offsetof(struct STATS_LLS_WIFI_IFACE_ML_STAT, num_links);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, TRACE,
 		"Copy STATS_LLS_WIFI_IFACE_ML_STAT [%u] up to num_links of %zu bytes",
 		bss_idx,
 		offsetof(struct STATS_LLS_WIFI_IFACE_ML_STAT, num_links));
@@ -2320,7 +2320,7 @@ static uint32_t fill_power_levels(struct ADAPTER *prAdapter, uint8_t *dst,
 		dst += sizeof(uint32_t) * TX_POWER_LEVELS;
 	}
 
-	DBGLOG(REQ, INFO, "Copy power level %td bytes", dst - orig);
+	DBGLOG(REQ, TRACE, "Copy power level %td bytes", dst - orig);
 
 	return dst - orig;
 }

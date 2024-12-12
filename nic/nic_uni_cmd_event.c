@@ -10563,7 +10563,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			prAdapter->prGlueInfo->u4TxBwCache[i] =
 				rLlsRateInfo.arTxRateInfo[i].bw;
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"ucBssIdx=%d, bw=%u\n", i,
 				prAdapter->prGlueInfo->u4TxBwCache[i]);
 		}

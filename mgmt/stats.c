@@ -748,11 +748,11 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 	case IPV6_PROTOCOL_HOP_BY_HOP:
 		if (eventType == EVENT_RX) {
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-			DBGLOG_LIMITED(RX, INFO,
+			DBGLOG_LIMITED(RX, TRACE,
 				       "<RX><IPv6> hop-by-hop packet, SSN:%u\n",
 				       u2SSN);
 		} else { /* EVENT_TX */
-			DBGLOG_LIMITED(TX, INFO,
+			DBGLOG_LIMITED(TX, TRACE,
 				       "<TX><IPv6> hop-by-hop packet\n");
 		}
 		break;

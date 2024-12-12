@@ -11275,7 +11275,7 @@ int32_t wlanHexStrToByteArray(const char *hexString,
 	uint8_t ucToken[3];
 	const size_t len = strlen(hexString);
 
-	DBGLOG(INIT, INFO, "input str=%s\n", hexString);
+	DBGLOG(INIT, TRACE, "input str=%s\n", hexString);
 	if (len % 2 == 1) {
 		DBGLOG(INIT, LOUD,
 		       "Warning, odd string length %zu\n", strlen(hexString));

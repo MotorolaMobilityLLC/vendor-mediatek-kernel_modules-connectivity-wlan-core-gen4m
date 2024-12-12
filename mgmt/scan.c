@@ -5532,8 +5532,6 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	uint8_t *pucBuf = prScanParam->aucIE;
 	struct IE_FILS_REQ_FRAME *prFilsReqIe;
 
-	DBGLOG(SCN, INFO, "before OCE IE, length = %d\n", u2IEsBufLen);
-	dumpMemory8(pucBuf, u2IEsBufLen);
 	/* Find MaxChannelTime in FILS request parameter,
 	 * it shall > 10 and not equal to 255 (TUs)
 	 */
@@ -5556,11 +5554,11 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 					prFilsReqIe->ucMaxChannelTime =
 					    SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
 			}
+			DBGLOG(SCN, INFO,
+				"OCE IE, length = %d\n", prScanParam->u2IELen);
+			dumpMemory8(pucBuf, prScanParam->u2IELen);
 		}
 	}
-
-	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
-	dumpMemory8(pucBuf, prScanParam->u2IELen);
 }
 
 uint8_t	*scanGetFilsCacheIdFromBssDesc(struct BSS_DESC *bss)
