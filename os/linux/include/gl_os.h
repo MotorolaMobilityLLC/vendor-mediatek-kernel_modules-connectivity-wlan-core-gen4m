@@ -585,6 +585,8 @@ enum ENUM_WORK {
 #if CFG_SUPPORT_HIF_REG_WORK
 	HIF_REG_WORK,
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+	/* Need this idle enum to avoid arGlwork[0] in GLUE_INFO */
+	IDLE_WORK,
 	WORK_MAX
 };
 
