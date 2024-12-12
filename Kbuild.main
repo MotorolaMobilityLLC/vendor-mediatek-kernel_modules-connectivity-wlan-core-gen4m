@@ -2315,7 +2315,7 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     ccflags-y += -DCFG_EXT_FEATURE=1
     ccflags-y += -DCFG_EXT_SCAN=1
     ccflags-y += -DCFG_EXT_ROAMING=1
-    ccflags-y += -DCFG_EXT_ROAMING_WTC=0
+    ccflags-y += -DCFG_EXT_ROAMING_WTC=1
     ccflags-y += -DCFG_SUPPORT_ROAMING_LOG=1
     ccflags-y += -DCFG_SUPPORT_CONN_LOG=1
     ccflags-y += -DCFG_SUPPORT_MLD_LOG=1

@@ -383,6 +383,9 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 	/* 4 <2> Initiate BSS_INFO_T - common part */
 	BSS_INFO_INIT(prAdapter, prAisBssInfo);
 
+	if (prAisFsmInfo->ucAisIndex >= KAL_AIS_NUM)
+		return;
+
 	/* override config only affects default ais, which is wlan0 */
 	if (!prAdapter->rWifiVar.ucMacAddrOverride ||
 	    prAisFsmInfo->ucAisIndex != AIS_DEFAULT_INDEX) {
@@ -2625,6 +2628,11 @@ uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	if (prAdapter->fgIsNANRegistered)
 		return FALSE;
 #endif
+
+	/* Disable MLO for sub Wi-Fi. */
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
+	    AIS_INDEX(prAdapter, ucBssIndex) != AIS_DEFAULT_INDEX)
+		return FALSE;
 
 	return mldBssAllowReconfig(prAdapter, prMldBssInfo);
 }
@@ -5029,9 +5037,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			prAisFsmInfo->rJoinReqTime = 0;
 			prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
 
-			/* remove AP's last deauth flag from blocklist */
-			aisRemoveDeauthBlocklist(prAdapter, TRUE, 0);
-
 			/* remove deferred bto event */
 			aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
 
@@ -5426,6 +5431,9 @@ void aisFsmAuthorizedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	/* send BTM query or NBR request after connected */
 	aisFsmQueryCandidates(prAdapter, ucBssIndex);
+
+	/* remove AP's last deauth flag from blocklist */
+	aisRemoveDeauthBlocklist(prAdapter, TRUE, 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5533,6 +5541,10 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 
 	/* reset BTM Params when disconnect */
 	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
+
+	/* Reset RSSI monitor when disconnection */
+	kalMemZero(&prAisFsmInfo->rRSSIMonitor,
+		sizeof(struct PARAM_RSSI_MONITOR_T));
 
 #if CFG_SUPPORT_802_11K
 	/* clear query done flag */
