@@ -4018,6 +4018,10 @@ static uint32_t nicUniCmdStaRecTagMldSetupImpl(struct ADAPTER *ad,
 		tag->u2SetupWlanId,
 		tag->ucLinkNumber,
 		MAC2STR(prMldStaRec->aucPeerMldAddr));
+#if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldLogSetup(ad, prStaRec, MLD_LOG_SUCCESS);
+	mldLogT2LMStatus(ad, prStaRec);
+#endif
 
 	link = (struct UNI_CMD_STAREC_LINK_INFO *)tag->aucLinkInfo;
 	LINK_FOR_EACH_ENTRY(prCurStaRec, prStaList, rLinkEntryMld,
