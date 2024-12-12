@@ -56,6 +56,7 @@ enum ModuleType {
 	RESET_MODULE_TYPE_WIFI = 0,
 	RESET_MODULE_TYPE_BT,
 	RESET_MODULE_TYPE_ZB,
+	RESET_MODULE_TYPE_LRWPAN = RESET_MODULE_TYPE_ZB,
 
 	RESET_MODULE_TYPE_MAX
 };
@@ -100,6 +101,7 @@ struct FsmState {
 struct FsmEntity {
 	struct list_head node;
 
+	uint32_t dongle_id;
 	char *name;
 	enum ModuleType eModuleType;
 
@@ -123,7 +125,8 @@ struct FsmEntity {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ***********************************************************************
 */
-struct FsmEntity *allocFsmEntity(char *name, enum ModuleType eModuleType);
+struct FsmEntity *allocFsmEntity(uint32_t dongle_id,
+				char *name, enum ModuleType eModuleType);
 void freeFsmEntity(struct FsmEntity *fsm);
 
 void RFSM_handle_event(struct FsmEntity *fsm, unsigned int event);

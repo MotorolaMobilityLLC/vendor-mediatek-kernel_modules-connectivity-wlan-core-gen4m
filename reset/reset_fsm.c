@@ -23,6 +23,7 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/preempt.h>
+#include <linux/version.h>
 
 #include "reset.h"
 
@@ -65,7 +66,8 @@
 /**********************************************************************
 *                              F U N C T I O N S
 **********************************************************************/
-struct FsmEntity *allocFsmEntity(char *name, enum ModuleType eModuleType)
+struct FsmEntity *allocFsmEntity(uint32_t dongle_id,
+				char *name, enum ModuleType eModuleType)
 {
 	struct FsmEntity *fsm;
 #if CFG_RESETKO_ENABLE_WAKE_LOCK
@@ -86,23 +88,29 @@ struct FsmEntity *allocFsmEntity(char *name, enum ModuleType eModuleType)
 		kfree(fsm);
 		return NULL;
 	}
+#if KERNEL_VERSION(4, 3, 0) <= LINUX_VERSION_CODE
+	strscpy(fsm->name, name, RFSM_NAME_MAX_LEN);
+#else
 	strncpy(fsm->name, name, RFSM_NAME_MAX_LEN);
+	fsm->name[RFSM_NAME_MAX_LEN - 1] = 0;
+#endif
 	fsm->eModuleType = eModuleType;
 	fsm->fgReady = false;
 	fsm->notifyFunc = NULL;
 
 	fsm->wakeupCount = 0;
 #if CFG_RESETKO_ENABLE_WAKE_LOCK
-	ret = snprintf(wakeupSourceName, RFSM_NAME_MAX_LEN, "resetko_%s", name);
+	ret = snprintf(wakeupSourceName, RFSM_NAME_MAX_LEN,
+			"resetko_%s_%d", name, dongle_id);
 	if (ret > 0) {
 		fsm->wakeupSource = wakeup_source_create(wakeupSourceName);
 		if (!fsm->wakeupSource) {
-			MR_Err("fail to create wakeup resource(%s)\n",
-				wakeupSourceName);
+			MR_Err("[%s_%d] fail to create wakeup resource(%s)\n",
+				name, dongle_id, wakeupSourceName);
 		} else {
 			wakeup_source_add(fsm->wakeupSource);
-			MR_Info("success to create wakeup resource (%s)\n",
-				wakeupSourceName);
+			MR_Info("[%s_%d] create wakeup resource (%s)\n",
+				name, dongle_id, wakeupSourceName);
 		}
 	}
 #endif
@@ -146,9 +154,10 @@ void RFSM_handle_event(struct FsmEntity *fsm, unsigned int event)
 
 	currentFsmState = fsm->fsmState;
 	if ((currentFsmState->name == NULL) ||
-	    (currentFsmState->eventActionList == 0) ||
+	    (currentFsmState->eventActionListCount == 0) ||
 	    (currentFsmState->eventActionList == NULL)) {
-		MR_Err("[%s] RFSM ignore event [%d]\n", fsm->name, event);
+		MR_Err("[%s_%d] RFSM ignore event [%d]\n",
+			fsm->name, fsm->dongle_id, event);
 		return;
 	}
 
@@ -168,8 +177,8 @@ void RFSM_handle_event(struct FsmEntity *fsm, unsigned int event)
 				if (currentFsmState->leave_func != NULL)
 					currentFsmState->leave_func(fsm,
 								nextFsmState);
-				MR_Info("[%s] state: [%s] -> [%s]",
-					fsm->name,
+				MR_Info("[%s_%d] state: [%s] -> [%s]",
+					fsm->name, fsm->dongle_id,
 					currentFsmState->name,
 					nextFsmState->name);
 				fsm->fsmState = nextFsmState;

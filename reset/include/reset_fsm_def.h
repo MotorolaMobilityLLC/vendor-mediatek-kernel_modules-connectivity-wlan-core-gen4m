@@ -86,27 +86,30 @@ enum ModuleNotifyEvent {
 ***********************************************************************
 */
 /* functions in reset_fsm_def.c */
-struct FsmEntity *allocResetFsm(char *name, enum ModuleType eModuleType);
+struct FsmEntity *allocResetFsm(uint32_t dongle_id,
+				char *name, enum ModuleType eModuleType);
 void freeResetFsm(struct FsmEntity *fsm);
 
 void resetFsmHandlevent(struct FsmEntity *fsm, enum ResetFsmEvent event);
 
 /* functions in reset.c */
+bool findBusIdByDongleId(uint32_t dongle_id, uint32_t *bus_id);
+
 void resetkoNotifyEvent(struct FsmEntity *fsm, enum ModuleNotifyEvent event);
 
 void wakeupSourceStayAwake(struct FsmEntity *fsm);
 void wakeupSourceRelax(struct FsmEntity *fsm);
 
-void clearAllModuleReady(void);
-bool isAllModuleReady(void);
-bool isAllModuleInState(const struct FsmState *state);
+void clearAllModuleReady(uint32_t dongle_id);
+bool isAllModuleReady(uint32_t dongle_id);
+bool isAllModuleInState(uint32_t dongle_id, const struct FsmState *state);
 
 void resetkoStartTimer(struct FsmEntity *fsm, unsigned int ms);
 void resetkoCancleTimer(struct FsmEntity *fsm);
 
-void powerOff(void);
-void powerOn(void);
-void powerReset(void);
+void powerOff(uint32_t dongle_id);
+void powerOn(uint32_t dongle_id);
+void powerReset(uint32_t dongle_id);
 
 /**********************************************************************
 *                            P U B L I C   D A T A

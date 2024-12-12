@@ -25,6 +25,9 @@
  *                                 M A C R O S
  *******************************************************************************
  */
+#ifndef CFG_CHIP_RESET_USE_MSTAR_GPIO_API
+#define CFG_CHIP_RESET_USE_MSTAR_GPIO_API 0
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -40,21 +43,21 @@
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void resetHif_Init(void);
-void resetHif_Uninit(void);
+void resetHif_Init(uint32_t dongle_id, struct device_node *node);
+void resetHif_Uninit(uint32_t dongle_id);
 
 enum ReturnStatus resetHif_UpdateSdioHost(void *info);
 void resetHif_SdioRemoveHost(void);
 void resetHif_SdioAddHost(void);
 bool resetHif_isSdioAdded(void);
 
-void resetHif_ResetGpioPull(void);
-void resetHif_ResetGpioRelease(void);
-bool resetHif_isResetGpioReleased(void);
+void resetHif_ResetGpioPull(uint32_t dongle_id);
+void resetHif_ResetGpioRelease(uint32_t dongle_id);
+bool resetHif_isResetGpioReleased(uint32_t dongle_id);
 
-void resetHif_PowerGpioSwitchOn(void);
-void resetHif_PowerGpioSwitchOff(void);
-bool resetHif_isPowerSwitchOn(void);
+void resetHif_PowerGpioSwitchOn(uint32_t dongle_id);
+void resetHif_PowerGpioSwitchOff(uint32_t dongle_id);
+bool resetHif_isPowerSwitchOn(uint32_t dongle_id);
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

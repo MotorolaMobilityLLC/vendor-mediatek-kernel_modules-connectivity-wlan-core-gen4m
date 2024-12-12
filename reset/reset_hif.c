@@ -26,7 +26,7 @@
 #include <linux/mmc/sdio_func.h>	/* sdio_readl(), etc */
 #include <linux/mmc/host.h>		/* mmc_add_host(), etc */
 #include <linux/mmc/sdio_ids.h>
-
+#include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
@@ -107,138 +107,218 @@ struct PowerGpioInfo {
 static struct mmc_host *prSdioHost;
 static bool isSdioAdded;
 
-static struct ResetGpioInfo resetGpioInfo;
-static bool isResetGpioReleased;
+static struct ResetGpioInfo resetGpioInfo[MAX_DONGLE_NUM];
+static bool isResetGpioReleased[MAX_DONGLE_NUM];
 
-static struct PowerGpioInfo powerGpioInfo;
-static bool isPowerSwitchOn;
+static struct PowerGpioInfo powerGpioInfo[MAX_DONGLE_NUM];
+static bool isPowerSwitchOn[MAX_DONGLE_NUM];
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
-static void dtsGetResetGpioInfo(void)
+static void dtsGetResetGpioInfo(uint32_t dongle_id, struct device_node *node)
 {
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+	int i;
+#endif
 	int i4Status;
-	struct device_node *node;
 	unsigned int gpio_num, default_level, action_level, invert_time;
 
-	node = of_find_compatible_node(NULL,
-				       NULL,
-				       CHIP_RESET_DTS_COMPATIBLE_NAME);
+	if (!node)
+		node = of_find_compatible_node(NULL, NULL,
+					       CHIP_RESET_DTS_COMPATIBLE_NAME);
 	if (!node) {
-		MR_Err("%s: Failed to find dts node: %s\n",
-		       __func__, CHIP_RESET_DTS_COMPATIBLE_NAME);
+		MR_Err("[%d] %s: Failed to find dts node: %s\n",
+		       dongle_id, __func__, CHIP_RESET_DTS_COMPATIBLE_NAME);
 		return;
 	}
 	if (of_property_read_u32(node, CHIP_RESET_GPIO_PROPERTY_NAME,
 				&gpio_num) != 0) {
-		MR_Err("%s: Failed to get gpio_num: %s\n",
-		       __func__, CHIP_RESET_GPIO_PROPERTY_NAME);
+		MR_Err("[%d] %s: Failed to get gpio_num: %s\n",
+		       dongle_id, __func__, CHIP_RESET_GPIO_PROPERTY_NAME);
 		return;
 	}
 	if (of_property_read_u32(node, CHIP_RESET_INVERT_PROPERTY_NAME,
 				&invert_time) != 0) {
-		MR_Err("%s: Failed to get invert_time: %s\n",
-		       __func__, CHIP_RESET_INVERT_PROPERTY_NAME);
+		MR_Err("[%d] %s: Failed to get invert_time: %s\n",
+		       dongle_id, __func__, CHIP_RESET_INVERT_PROPERTY_NAME);
 		invert_time = RESET_PIN_SET_LOW_TIME;
 	}
 	if (of_property_read_u32(node, CHIP_RESET_DEFAULT_VAL_PROPERTY_NAME,
 				&default_level) != 0) {
-		MR_Err("%s: Failed to get default_level: %s\n",
-		       __func__, CHIP_RESET_DEFAULT_VAL_PROPERTY_NAME);
+		MR_Err("[%d] %s: Failed to get default_level: %s\n",
+		       dongle_id, __func__,
+		       CHIP_RESET_DEFAULT_VAL_PROPERTY_NAME);
 		default_level = 1;
 	}
 	default_level = (default_level == 0) ? 0 : 1;
 	action_level = (default_level == 0) ? 1 : 0;
 
-	MR_Info("%s: read wifi reset gpio %d pull %s %dms from dts\n", __func__,
+	MR_Info("[%d] %s: read wifi reset gpio %d pull %s %dms from dts\n",
+		dongle_id, __func__,
 		gpio_num, (action_level == 0) ? "down" : "up", invert_time);
 
-	resetGpioInfo.gpio_num = gpio_num;
-	resetGpioInfo.default_level = default_level;
-	resetGpioInfo.action_level = action_level;
-	resetGpioInfo.invert_time = invert_time;
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
 
-	i4Status = gpio_request(resetGpioInfo.gpio_num, "wifi-reset");
+	resetGpioInfo[dongle_id].gpio_num = gpio_num;
+	resetGpioInfo[dongle_id].default_level = default_level;
+	resetGpioInfo[dongle_id].action_level = action_level;
+	resetGpioInfo[dongle_id].invert_time = invert_time;
+
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+	for (i = 0; i < MAX_DONGLE_NUM; i++) {
+		if ((i != dongle_id) &&
+		    (gpio_num == resetGpioInfo[i].gpio_num)) {
+			MR_Info(
+			  "[%d] %s: gpio %d already requested by dongle [%d]\n",
+			  dongle_id, __func__, gpio_num, i);
+			resetGpioInfo[dongle_id].flag_inited = true;
+			return;
+		}
+	}
+#endif
+
+	i4Status = gpio_request(resetGpioInfo[dongle_id].gpio_num,
+				"wifi-reset");
 	if (i4Status < 0) {
-		MR_Err("%s: gpio %d request failed, ret = %d\n",
-		       __func__, resetGpioInfo.gpio_num, i4Status);
-		resetGpioInfo.flag_inited = false;
+		MR_Err("[%d] %s: gpio %d request failed, ret = %d\n",
+		       dongle_id, __func__,
+		       resetGpioInfo[dongle_id].gpio_num, i4Status);
+		resetGpioInfo[dongle_id].flag_inited = false;
 	} else {
-		resetGpioInfo.flag_inited = true;
+		resetGpioInfo[dongle_id].flag_inited = true;
 	}
 }
 
-static void dtsGetPowerGpioInfo(void)
+static void dtsGetPowerGpioInfo(uint32_t dongle_id, struct device_node *node)
 {
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+	int i;
+#endif
 	int i4Status;
-	struct device_node *node;
 	unsigned int gpio_num, default_level, action_level;
 
-	node = of_find_compatible_node(NULL,
-				       NULL,
-				       CHIP_POWER_DTS_COMPATIBLE_NAME);
+	if (!node)
+		node = of_find_compatible_node(NULL, NULL,
+					       CHIP_POWER_DTS_COMPATIBLE_NAME);
 	if (!node) {
-		MR_Err("%s: Failed to find dts node: %s\n",
-		       __func__, CHIP_POWER_DTS_COMPATIBLE_NAME);
+		MR_Err("[%d] %s: Failed to find dts node: %s\n",
+		       dongle_id, __func__, CHIP_POWER_DTS_COMPATIBLE_NAME);
 		return;
 	}
 	if (of_property_read_u32(node, CHIP_POWER_GPIO_PROPERTY_NAME,
 				&gpio_num) != 0) {
-		MR_Err("%s: Failed to get gpio_num: %s\n",
-		       __func__, CHIP_POWER_GPIO_PROPERTY_NAME);
+		MR_Err("[%d] %s: Failed to get gpio_num: %s\n",
+		       dongle_id, __func__, CHIP_POWER_GPIO_PROPERTY_NAME);
 		return;
 	}
 	if (of_property_read_u32(node, CHIP_POWER_DEFAULT_VAL_PROPERTY_NAME,
 				&default_level) != 0) {
-		MR_Err("%s: Failed to get default_level: %s\n",
-		       __func__, CHIP_POWER_DEFAULT_VAL_PROPERTY_NAME);
+		MR_Err("[%d] %s: Failed to get default_level: %s\n",
+		       dongle_id, __func__,
+		       CHIP_POWER_DEFAULT_VAL_PROPERTY_NAME);
 		return;
 	}
 	default_level = (default_level == 0) ? 0 : 1;
 	action_level = (default_level == 0) ? 1 : 0;
 
-	MR_Info("%s: read wifi power gpio %d pull %s from dts\n", __func__,
+	MR_Info("[%d] %s: read wifi power gpio %d pull %s from dts\n",
+		dongle_id, __func__,
 		gpio_num, (action_level == 0) ? "down" : "up");
 
-	powerGpioInfo.gpio_num = gpio_num;
-	powerGpioInfo.switch_off_level = default_level;
-	powerGpioInfo.switch_on_level = action_level;
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
 
-	i4Status = gpio_request(powerGpioInfo.gpio_num, "wifi-power");
+	powerGpioInfo[dongle_id].gpio_num = gpio_num;
+	powerGpioInfo[dongle_id].switch_off_level = default_level;
+	powerGpioInfo[dongle_id].switch_on_level = action_level;
+
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+	for (i = 0; i < MAX_DONGLE_NUM; i++) {
+		if ((i != dongle_id) &&
+		    (gpio_num == resetGpioInfo[i].gpio_num)) {
+			MR_Info(
+			  "[%d] %s: gpio %d already requested by dongle [%d]\n",
+			  dongle_id, __func__, gpio_num, i);
+			powerGpioInfo[dongle_id].flag_inited = true;
+			return;
+		}
+	}
+#endif
+
+	i4Status = gpio_request(powerGpioInfo[dongle_id].gpio_num,
+				"wifi-power");
 	if (i4Status < 0) {
-		MR_Err("%s: gpio %d request failed, ret = %d\n",
-		       __func__, powerGpioInfo.gpio_num, i4Status);
-		powerGpioInfo.flag_inited = false;
+		MR_Err("[%d] %s: gpio %d request failed, ret = %d\n",
+		       dongle_id, __func__,
+		       powerGpioInfo[dongle_id].gpio_num, i4Status);
+		powerGpioInfo[dongle_id].flag_inited = false;
 	} else {
-		powerGpioInfo.flag_inited = true;
+		powerGpioInfo[dongle_id].flag_inited = true;
 	}
 }
 
-void resetHif_Init(void)
+void resetHif_Init(uint32_t dongle_id, struct device_node *node)
 {
 	prSdioHost = NULL;
-	isSdioAdded = true;
+	isSdioAdded = false;
 
-	isResetGpioReleased = true;
-	memset(&resetGpioInfo, 0, sizeof(struct ResetGpioInfo));
-	dtsGetResetGpioInfo();
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
 
-	isPowerSwitchOn = true;
-	memset(&powerGpioInfo, 0, sizeof(struct PowerGpioInfo));
-	dtsGetPowerGpioInfo();
+	isResetGpioReleased[dongle_id] = true;
+	memset(&resetGpioInfo[dongle_id], 0, sizeof(struct ResetGpioInfo));
+	dtsGetResetGpioInfo(dongle_id, node);
+
+	isPowerSwitchOn[dongle_id] = true;
+	memset(&powerGpioInfo[dongle_id], 0, sizeof(struct PowerGpioInfo));
+	dtsGetPowerGpioInfo(dongle_id, node);
 }
 
-void resetHif_Uninit(void)
+void resetHif_Uninit(uint32_t dongle_id)
 {
-	if (resetGpioInfo.flag_inited) {
-		gpio_free(resetGpioInfo.gpio_num);
-		resetGpioInfo.flag_inited = false;
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+	int i;
+#endif
+	bool skip;
+
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
+
+	skip = false;
+	if (resetGpioInfo[dongle_id].flag_inited) {
+		resetGpioInfo[dongle_id].flag_inited = false;
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+		for (i = 0; i < MAX_DONGLE_NUM; i++) {
+			if ((resetGpioInfo[i].flag_inited == true) &&
+			    (resetGpioInfo[dongle_id].gpio_num ==
+			     resetGpioInfo[i].gpio_num)) {
+				skip = true;
+				break;
+			}
+		}
+#endif
+		if (!skip)
+			gpio_free(resetGpioInfo[dongle_id].gpio_num);
 	}
-	if (powerGpioInfo.flag_inited) {
-		gpio_free(powerGpioInfo.gpio_num);
-		powerGpioInfo.flag_inited = false;
+
+	skip = false;
+	if (powerGpioInfo[dongle_id].flag_inited) {
+		powerGpioInfo[dongle_id].flag_inited = false;
+#if CFG_RESETKO_SUPPORT_MULTI_CARD
+		for (i = 0; i < MAX_DONGLE_NUM; i++) {
+			if ((powerGpioInfo[i].flag_inited == true) &&
+			    (powerGpioInfo[dongle_id].gpio_num ==
+			     powerGpioInfo[i].gpio_num)) {
+				skip = true;
+				break;
+			}
+		}
+#endif
+		if (!skip)
+			gpio_free(powerGpioInfo[dongle_id].gpio_num);
 	}
 }
 
@@ -250,13 +330,14 @@ enum ReturnStatus resetHif_UpdateSdioHost(void *data)
 	if (!func || !func->card)
 		return RESET_RETURN_STATUS_FAIL;
 
+	isSdioAdded = true;
 	host = func->card->host;
 	if (prSdioHost != host) {
-		MR_Warn("%s: sdio host is updated as %p\n", __func__, host);
+		MR_Warn("[0] %s: sdio host is updated as %p\n", __func__, host);
 		prSdioHost = host;
 		dump_stack();
 	}
-	MR_Info("%s: update sdio host as %p\n", __func__, prSdioHost);
+	MR_Info("[0] %s: update sdio host as %p\n", __func__, prSdioHost);
 
 	return RESET_RETURN_STATUS_SUCCESS;
 }
@@ -264,15 +345,15 @@ enum ReturnStatus resetHif_UpdateSdioHost(void *data)
 void resetHif_SdioRemoveHost(void)
 {
 	if (!prSdioHost) {
-		MR_Err("%s: sdio host is NULL\n", __func__);
+		MR_Err("[0] %s: sdio host is NULL\n", __func__);
 		return;
 	}
 	if (!isSdioAdded) {
-		MR_Err("%s: sdio is already removed\n", __func__);
+		MR_Err("[0] %s: sdio is already removed\n", __func__);
 		return;
 	}
 	prSdioHost->rescan_entered = 0;
-	MR_Warn("%s: mmc_remove_host\n", __func__);
+	MR_Warn("[0] %s: mmc_remove_host\n", __func__);
 	mmc_remove_host(prSdioHost);
 	isSdioAdded = false;
 }
@@ -280,16 +361,17 @@ void resetHif_SdioRemoveHost(void)
 void resetHif_SdioAddHost(void)
 {
 	if (!prSdioHost) {
-		MR_Err("%s: sdio host is NULL\n", __func__);
+		MR_Err("[0] %s: sdio host is NULL\n", __func__);
 		return;
 	}
 	if (isSdioAdded) {
-		MR_Err("%s: sdio is already added\n", __func__);
+		MR_Err("[0] %s: sdio is already added\n", __func__);
 		return;
 	}
 	prSdioHost->rescan_entered = 0;
-	MR_Warn("%s: mmc_add_host\n", __func__);
+	MR_Warn("[0] %s: mmc_add_host\n", __func__);
 	mmc_add_host(prSdioHost);
+	isSdioAdded = true;
 }
 
 bool resetHif_isSdioAdded(void)
@@ -297,122 +379,179 @@ bool resetHif_isSdioAdded(void)
 	return isSdioAdded;
 }
 
-void resetHif_ResetGpioPull(void)
+static int resetHif_GpioOutput(unsigned int gpo, unsigned int val)
+{
+#if ((CFG_CHIP_RESET_USE_MSTAR_GPIO_API == 1) && (CFG_ENABLE_GKI_SUPPORT != 1))
+	typedef void (*gpioMstarFunc)(uint32_t);
+	gpioMstarFunc pFuncSetLow = NULL;
+	gpioMstarFunc pFuncSetHigh = NULL;
+	char *func_name_L = "MDrv_GPIO_Set_Low";
+	char *func_name_H = "MDrv_GPIO_Set_High";
+	int ret = -EIO;
+
+	if (val) {
+		pFuncSetHigh = (gpioMstarFunc)__symbol_get(func_name_H);
+		if (pFuncSetHigh) {
+			pFuncSetHigh(gpo);
+			__symbol_put(func_name_H);
+			ret = 0;
+		}
+	} else {
+		pFuncSetLow = (gpioMstarFunc)__symbol_get(func_name_L);
+		if (pFuncSetLow) {
+			pFuncSetLow(gpo);
+			__symbol_put(func_name_L);
+			ret = 0;
+		}
+	}
+	return ret;
+#else
+	return gpio_direction_output(gpo, val);
+#endif
+
+}
+
+void resetHif_ResetGpioPull(uint32_t dongle_id)
 {
 	int i4Status;
 
-	if (!isResetGpioReleased) {
-		MR_Err("%s: reset gpio is already pulled\n", __func__);
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
+
+	if (!isResetGpioReleased[dongle_id]) {
+		MR_Err("[%d] %s: reset gpio is already pulled\n",
+			dongle_id, __func__);
 		return;
 	}
-	if (!resetGpioInfo.flag_inited) {
-		MR_Err("%s: reset gpio is unknown\n", __func__);
+	if (!resetGpioInfo[dongle_id].flag_inited) {
+		MR_Err("[%d] %s: reset gpio is unknown\n",
+			dongle_id, __func__);
 		return;
 	}
 
-	i4Status = gpio_direction_output(resetGpioInfo.gpio_num,
-					 resetGpioInfo.action_level);
+	i4Status = resetHif_GpioOutput(resetGpioInfo[dongle_id].gpio_num,
+					 resetGpioInfo[dongle_id].action_level);
 	if (i4Status < 0) {
-		MR_Err("%s: gpio %d set output %d failed, ret = %d\n",
-		       __func__, resetGpioInfo.gpio_num,
-		       resetGpioInfo.action_level, i4Status);
+		MR_Err("[%d] %s: gpio %d set output %d failed, ret = %d\n",
+		       dongle_id, __func__, resetGpioInfo[dongle_id].gpio_num,
+		       resetGpioInfo[dongle_id].action_level, i4Status);
 		return;
 	}
 
-	MR_Warn("%s: pull reset gpio (%d, %d)\n", __func__,
-		resetGpioInfo.gpio_num, resetGpioInfo.action_level);
-	isResetGpioReleased = false;
+	MR_Warn("[%d] %s: pull reset gpio (%d, %d)\n", dongle_id, __func__,
+		resetGpioInfo[dongle_id].gpio_num,
+		resetGpioInfo[dongle_id].action_level);
+	isResetGpioReleased[dongle_id] = false;
 }
 
-void resetHif_ResetGpioRelease(void)
+void resetHif_ResetGpioRelease(uint32_t dongle_id)
 {
 	int i4Status;
 
-	if (isResetGpioReleased) {
-		MR_Err("%s: reset gpio is already released\n", __func__);
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
+
+	if (isResetGpioReleased[dongle_id]) {
+		MR_Err("[%d] %s: reset gpio is already released\n",
+			dongle_id, __func__);
 		return;
 	}
-	if (!resetGpioInfo.flag_inited) {
-		MR_Err("%s: reset gpio is unknown\n", __func__);
+	if (!resetGpioInfo[dongle_id].flag_inited) {
+		MR_Err("[%d] %s: reset gpio is unknown\n", dongle_id, __func__);
 		return;
 	}
 
-	i4Status = gpio_direction_output(resetGpioInfo.gpio_num,
-					 resetGpioInfo.default_level);
+	i4Status = resetHif_GpioOutput(resetGpioInfo[dongle_id].gpio_num,
+					resetGpioInfo[dongle_id].default_level);
 	if (i4Status < 0) {
-		MR_Err("%s: gpio %d set output %d failed, ret = %d\n",
-		       __func__, resetGpioInfo.gpio_num,
-		       resetGpioInfo.default_level, i4Status);
+		MR_Err("[%d] %s: gpio %d set output %d failed, ret = %d\n",
+		       dongle_id, __func__, resetGpioInfo[dongle_id].gpio_num,
+		       resetGpioInfo[dongle_id].default_level, i4Status);
 		return;
 	}
 
-	MR_Warn("%s: release reset gpio (%d, %d)\n", __func__,
-		resetGpioInfo.gpio_num, resetGpioInfo.default_level);
-	isResetGpioReleased = true;
+	MR_Warn("[%d] %s: release reset gpio (%d, %d)\n", dongle_id, __func__,
+		resetGpioInfo[dongle_id].gpio_num,
+		resetGpioInfo[dongle_id].default_level);
+	isResetGpioReleased[dongle_id] = true;
 }
 
-bool resetHif_isResetGpioReleased(void)
+bool resetHif_isResetGpioReleased(uint32_t dongle_id)
 {
-	return isResetGpioReleased;
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return true;
+	return isResetGpioReleased[dongle_id];
 }
 
-void resetHif_PowerGpioSwitchOn(void)
+void resetHif_PowerGpioSwitchOn(uint32_t dongle_id)
 {
 	int i4Status;
 
-	if (isPowerSwitchOn) {
-		MR_Err("%s: power is already switched on\n", __func__);
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
+
+	if (isPowerSwitchOn[dongle_id]) {
+		MR_Err("[%d] %s: power is already switched on\n",
+			dongle_id, __func__);
 		return;
 	}
-	if (!powerGpioInfo.flag_inited) {
-		MR_Err("%s: power gpio is unknown\n", __func__);
+	if (!powerGpioInfo[dongle_id].flag_inited) {
+		MR_Err("[%d] %s: power gpio is unknown\n", dongle_id, __func__);
 		return;
 	}
 
-	i4Status = gpio_direction_output(powerGpioInfo.gpio_num,
-					 powerGpioInfo.switch_on_level);
+	i4Status = resetHif_GpioOutput(powerGpioInfo[dongle_id].gpio_num,
+				      powerGpioInfo[dongle_id].switch_on_level);
 	if (i4Status < 0) {
-		MR_Err("%s: gpio %d set output %d failed, ret = %d\n",
-		       __func__, powerGpioInfo.gpio_num,
-		       powerGpioInfo.switch_on_level, i4Status);
+		MR_Err("[%d] %s: gpio %d set output %d failed, ret = %d\n",
+		       dongle_id, __func__, powerGpioInfo[dongle_id].gpio_num,
+		       powerGpioInfo[dongle_id].switch_on_level, i4Status);
 		return;
 	}
 
-	MR_Warn("%s: power switch on (%d, %d)\n", __func__,
-		powerGpioInfo.gpio_num, powerGpioInfo.switch_on_level);
-	isPowerSwitchOn = true;
+	MR_Warn("[%d] %s: power switch on (%d, %d)\n", dongle_id, __func__,
+		powerGpioInfo[dongle_id].gpio_num,
+		powerGpioInfo[dongle_id].switch_on_level);
+	isPowerSwitchOn[dongle_id] = true;
 }
 
-void resetHif_PowerGpioSwitchOff(void)
+void resetHif_PowerGpioSwitchOff(uint32_t dongle_id)
 {
 	int i4Status;
 
-	if (!isPowerSwitchOn) {
-		MR_Err("%s: power is already switched off\n", __func__);
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return;
+
+	if (!isPowerSwitchOn[dongle_id]) {
+		MR_Err("[%d] %s: power is already switched off\n",
+			dongle_id, __func__);
 		return;
 	}
-	if (!powerGpioInfo.flag_inited) {
-		MR_Err("%s: power gpio is unknown\n", __func__);
+	if (!powerGpioInfo[dongle_id].flag_inited) {
+		MR_Err("[%d] %s: power gpio is unknown\n", dongle_id, __func__);
 		return;
 	}
 
-	i4Status = gpio_direction_output(powerGpioInfo.gpio_num,
-					 powerGpioInfo.switch_off_level);
+	i4Status = resetHif_GpioOutput(powerGpioInfo[dongle_id].gpio_num,
+				     powerGpioInfo[dongle_id].switch_off_level);
 	if (i4Status < 0) {
-		MR_Err("%s: gpio %d set output %d failed, ret = %d\n",
-		       __func__, powerGpioInfo.gpio_num,
-		       powerGpioInfo.switch_off_level, i4Status);
+		MR_Err("[%d] %s: gpio %d set output %d failed, ret = %d\n",
+		       dongle_id, __func__, powerGpioInfo[dongle_id].gpio_num,
+		       powerGpioInfo[dongle_id].switch_off_level, i4Status);
 		return;
 	}
 
-	MR_Warn("%s: power switch off (%d, %d)\n", __func__,
-		powerGpioInfo.gpio_num, powerGpioInfo.switch_off_level);
-	isPowerSwitchOn = false;
+	MR_Warn("[%d] %s: power switch off (%d, %d)\n", dongle_id, __func__,
+		powerGpioInfo[dongle_id].gpio_num,
+		powerGpioInfo[dongle_id].switch_off_level);
+	isPowerSwitchOn[dongle_id] = false;
 }
 
-bool resetHif_isPowerSwitchOn(void)
+bool resetHif_isPowerSwitchOn(uint32_t dongle_id)
 {
-	return isPowerSwitchOn;
+	if (dongle_id >= MAX_DONGLE_NUM)
+		return true;
+	return isPowerSwitchOn[dongle_id];
 }
 
 
