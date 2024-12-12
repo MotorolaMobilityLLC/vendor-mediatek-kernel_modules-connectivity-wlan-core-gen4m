@@ -439,9 +439,14 @@ void kalSetTaskUtilMinPct(int pid, unsigned int min)
 		get_task_struct(p);
 	rcu_read_unlock();
 
-	/* sched_setattr */
+	/* sched_setattr_nocheck */
 	if (likely(p)) {
-		ret = sched_setattr(p, &attr);
+		ret = sched_setattr_nocheck(p, &attr);
+		if (ret < 0) {
+			DBGLOG(INIT, ERROR,
+				"sched_setattr_nocheck pid[%u] min[%u] fail\n",
+				pid, min);
+		}
 		put_task_struct(p);
 	}
 }
