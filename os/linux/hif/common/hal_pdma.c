@@ -2822,6 +2822,12 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		if (!fgRet)
 			break;
 
+#if (CFG_RX_SW_PROCESS_DBG == 1)
+		/* Recognize RX packet process in SW*/
+		HAL_MAC_CONNAC3X_RX_STATUS_SET_SWRFB_PROCESS(prRxStatus);
+		HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_TO_HOST(prRxStatus);
+		HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_FREE(prRxStatus);
+#endif
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
