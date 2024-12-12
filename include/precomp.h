@@ -365,6 +365,7 @@
 #include "p2p_ext.h"
 #include "roaming_ext.h"
 #include "twt_ext.h"
+#include "debug_ext.h"
 #include "gl_sys.h"
 #endif
 

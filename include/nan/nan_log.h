@@ -50,7 +50,7 @@ struct _NAN_SCHED_EVENT_SLOT_STATISTICS_T {
  */
 #define NAN_DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		NAN_LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \

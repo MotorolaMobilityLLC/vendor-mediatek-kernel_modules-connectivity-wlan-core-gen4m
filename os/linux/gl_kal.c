@@ -324,7 +324,7 @@ void tracing_mark_write(const char *fmt, ...)
 	char buf[__BUFFER_SIZE];
 	int retval;
 
-	if ((aucDebugModule[DBG_TRACE_IDX] & DBG_CLASS_TEMP) == 0)
+	if ((au2DebugModule[DBG_TRACE_IDX] & DBG_CLASS_TEMP) == 0)
 		return;
 
 	va_start(ap, fmt);

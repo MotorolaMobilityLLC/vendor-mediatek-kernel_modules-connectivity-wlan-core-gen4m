@@ -895,7 +895,7 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 #else /* DBG_DISABLE_ALL_LOG */
 #define scanlog_dbg(prefix, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_SCN_IDX] & \
+		if ((au2DebugModule[DBG_SCN_IDX] & \
 			DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC("[%u]SCANLOG:(SCN " #_Clz ") %s " _Fmt, \

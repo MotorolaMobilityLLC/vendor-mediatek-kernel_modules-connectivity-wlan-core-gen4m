@@ -1241,7 +1241,7 @@ uint16_t ehtRlmNANFillCapIE(
 
 	DBGLOG(NAN, TRACE, "Dump cap ie\n");
 
-	if (aucDebugModule[DBG_NAN_IDX] & DBG_CLASS_TRACE) {
+	if (au2DebugModule[DBG_NAN_IDX] & DBG_CLASS_TRACE) {
 		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}
@@ -1294,7 +1294,7 @@ uint16_t ehtRlmNANFillOpIE(
 
 	DBGLOG(NAN, TRACE, "Dump cap ie\n");
 
-	if (aucDebugModule[DBG_NAN_IDX] & DBG_CLASS_TRACE) {
+	if (au2DebugModule[DBG_NAN_IDX] & DBG_CLASS_TRACE) {
 		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}

@@ -568,12 +568,12 @@ uint32_t wlanSetDriverDbgLevel(uint32_t u4DbgIdx, uint32_t u4DbgMask)
 
 	if (u4DbgIdx == DBG_ALL_MODULE_IDX) {
 		for (u4Idx = 0; u4Idx < DBG_MODULE_NUM; u4Idx++)
-			aucDebugModule[u4Idx] = (uint8_t) u4DbgMask;
-		LOG_FUNC("Set ALL DBG module log level to [0x%02x]\n",
+			au2DebugModule[u4Idx] = (uint16_t) u4DbgMask;
+		LOG_FUNC("Set ALL DBG module log level to [0x%03x]\n",
 				u4DbgMask);
 	} else if (u4DbgIdx < DBG_MODULE_NUM) {
-		aucDebugModule[u4DbgIdx] = (uint8_t) u4DbgMask;
-		LOG_FUNC("Set DBG module[%u] log level to [0x%02x]\n",
+		au2DebugModule[u4DbgIdx] = (uint16_t) u4DbgMask;
+		LOG_FUNC("Set DBG module[%u] log level to [0x%03x]\n",
 				u4DbgIdx, u4DbgMask);
 	} else {
 		fgStatus = WLAN_STATUS_FAILURE;
@@ -588,7 +588,7 @@ uint32_t wlanSetDriverDbgLevel(uint32_t u4DbgIdx, uint32_t u4DbgMask)
 uint32_t wlanGetDriverDbgLevel(uint32_t u4DbgIdx, uint32_t *pu4DbgMask)
 {
 	if (u4DbgIdx < DBG_MODULE_NUM) {
-		*pu4DbgMask = aucDebugModule[u4DbgIdx];
+		*pu4DbgMask = au2DebugModule[u4DbgIdx];
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -659,12 +659,23 @@ void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 		{
 			uint32_t u4DriverLogMask;
 
-			if (u4level == ENUM_WIFI_LOG_LEVEL_DEFAULT)
+			switch (u4level) {
+			case ENUM_WIFI_LOG_LEVEL_DEFAULT:
 				u4DriverLogMask = DBG_LOG_LEVEL_DEFAULT;
-			else if (u4level == ENUM_WIFI_LOG_LEVEL_MORE)
+				break;
+			case ENUM_WIFI_LOG_LEVEL_MORE:
 				u4DriverLogMask = DBG_LOG_LEVEL_MORE;
-			else
+				break;
+			case ENUM_WIFI_LOG_LEVEL_EXTREME:
 				u4DriverLogMask = DBG_LOG_LEVEL_EXTREME;
+				break;
+			case ENUM_WIFI_LOG_LEVEL_UV:
+				u4DriverLogMask = DBG_LOG_LEVEL_UV;
+				break;
+			default:
+				u4DriverLogMask = DBG_LOG_LEVEL_DEFAULT;
+				break;
+			}
 
 			wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
 					(u4DriverLogMask & DBG_CLASS_MASK));
@@ -719,6 +730,11 @@ void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, &u4DriverLevel);
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
 	kalSetLogTooMuch(u4DriverLevel, u4FwLevel);
+
+	DBGLOG(INIT, INFO,
+		"version=%d module=%d u4level=%d result[D:%d|F:%d]\n",
+		u4Version, u4Module, u4level, u4DriverLevel, u4FwLevel);
+
 }
 
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level)
@@ -749,15 +765,18 @@ void wlanDriverDbgLevelSync(void)
 
 	/* get the lowest level as module's level */
 	for (i = 0; i < DBG_MODULE_NUM; i++)
-		u4Mask &= aucDebugModule[i];
+		u4Mask &= au2DebugModule[i];
 
 	if ((u4Mask & DBG_LOG_LEVEL_EXTREME) == DBG_LOG_LEVEL_EXTREME)
 		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_EXTREME;
 	else if ((u4Mask & DBG_LOG_LEVEL_MORE) == DBG_LOG_LEVEL_MORE)
 		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_MORE;
-	else
+	else if ((u4Mask & DBG_LOG_LEVEL_DEFAULT) == DBG_LOG_LEVEL_DEFAULT)
 		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+	else
+		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_UV;
 
+	DBGLOG(INIT, INFO, "u4DriverLogLevel=%d\n", u4DriverLogLevel);
 	wlanDbgSetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, u4DriverLogLevel);
 }
 

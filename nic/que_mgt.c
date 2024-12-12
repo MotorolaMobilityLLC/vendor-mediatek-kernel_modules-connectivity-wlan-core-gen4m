@@ -7857,7 +7857,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_TC10_FEATURE == 1)
-	if ((aucDebugModule[DBG_QM_IDX] & DBG_CLASS_TRACE) == 0) {
+	if ((au2DebugModule[DBG_QM_IDX] & DBG_CLASS_TRACE) == 0) {
 		*i4Written += kalScnprintf(pucLogBuf + *i4Written,
 			 QM_ABS_PRES_LOG_BUF_SIZE - *i4Written,
 			 "(A=%u,T=%u) ",

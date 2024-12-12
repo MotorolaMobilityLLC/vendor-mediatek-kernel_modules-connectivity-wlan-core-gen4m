@@ -9596,8 +9596,8 @@ void wlanCfgSetDebugLevel(struct ADAPTER *prAdapter)
 		if (u4DbgIdx == 0xFFFFFFFF) {
 			wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, u4DbgMask);
 			DBGLOG(INIT, INFO,
-			       "Set ALL DBG module log level to [0x%02x]!",
-			       (uint8_t) u4DbgMask);
+			       "Set ALL DBG module log level to [0x%03x]!",
+			       (uint16_t) u4DbgMask);
 		} else if (u4DbgIdx == 0xFFFFFFFE) {
 			wlanDebugInit();
 			DBGLOG(INIT, INFO,
@@ -9605,8 +9605,8 @@ void wlanCfgSetDebugLevel(struct ADAPTER *prAdapter)
 		} else if (u4DbgIdx < DBG_MODULE_NUM) {
 			wlanSetDriverDbgLevel(u4DbgIdx, u4DbgMask);
 			DBGLOG(INIT, INFO,
-			       "Set DBG module[%u] log level to [0x%02x]!",
-			       u4DbgIdx, (uint8_t) u4DbgMask);
+			       "Set DBG module[%u] log level to [0x%03x]!",
+			       u4DbgIdx, (uint16_t) u4DbgMask);
 		}
 	}
 }
@@ -15487,6 +15487,9 @@ void wlanSetConnsysFwLog(struct ADAPTER *prAdapter)
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
+
+	DBGLOG(INIT, INFO, "LogLevel=%d OnOffCache=%d LevelCache=%d\n",
+		u4LogLevel, getFWLogOnOff(), getFWLogLevel());
 
 	rFwLogCmd.fgCmd = (int)FW_LOG_CMD_ON_OFF;
 	rFwLogCmd.fgValue = getFWLogOnOff();

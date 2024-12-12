@@ -296,7 +296,7 @@ static void asicConnac3xFillCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prWifiCmd->ucSeqNum;
 
-	if (aucDebugModule[DBG_TX_IDX] & DBG_CLASS_TRACE)
+	if (au2DebugModule[DBG_TX_IDX] & DBG_CLASS_TRACE)
 		DBGLOG(TX, TRACE,
 			"TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,

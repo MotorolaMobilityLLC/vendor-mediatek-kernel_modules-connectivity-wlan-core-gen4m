@@ -1487,7 +1487,7 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	u_int16_t u2Ctrl;
 	u_int8_t *aucCommonInfo;
 
-	show_info = !!(aucDebugModule[DBG_ML_IDX] & DBG_CLASS_LOUD) ||
+	show_info = !!(au2DebugModule[DBG_ML_IDX] & DBG_CLASS_LOUD) ||
 		u2FrameCtrl == MAC_FRAME_ASSOC_REQ ||
 		u2FrameCtrl == MAC_FRAME_ASSOC_RSP ||
 		u2FrameCtrl == MAC_FRAME_REASSOC_REQ ||
@@ -2096,7 +2096,7 @@ void mldParseReconfigMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *pos, *end;
 	uint8_t ucMlCtrlType, ucMlCtrlPreBmp;
 	struct IE_MULTI_LINK_CONTROL *prMlInfoIe;
-	uint8_t show_info = !!(aucDebugModule[DBG_ML_IDX] & DBG_CLASS_LOUD);
+	uint8_t show_info = !!(au2DebugModule[DBG_ML_IDX] & DBG_CLASS_LOUD);
 
 	if (show_info) {
 		DBGLOG(ML, INFO, "[%s] ML RECONFIG IE, IE_LEN = %d\n",

@@ -38,7 +38,7 @@
 #include "gl_vendor.h"
 
 extern u_int8_t wlan_fb_power_down;
-extern uint8_t aucDebugModule[];
+extern uint16_t au2DebugModule[];
 extern uint32_t au4LogLevel[];
 extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 #if CFG_SUPPORT_SA_LOG
@@ -51,6 +51,7 @@ extern uint32_t get_wifi_standalone_log_mode(void);
  */
 /* Define debug category (class):
  * (1) ERROR (2) WARN (3) STATE (4) EVENT (5) TRACE (6) INFO (7) LOUD (8) TEMP
+ * (9) DEBUG
  */
 #define DBG_CLASS_ERROR         BIT(0)
 #define DBG_CLASS_WARN          BIT(1)
@@ -60,22 +61,29 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 #define DBG_CLASS_INFO          BIT(5)
 #define DBG_CLASS_LOUD          BIT(6)
 #define DBG_CLASS_TEMP          BIT(7)
-#define DBG_CLASS_VOC           DBG_CLASS_INFO
-#define DBG_CLASS_INFO2         DBG_CLASS_INFO
-#define DBG_CLASS_MASK          BITS(0, 7)
+#define DBG_CLASS_VOC           DBG_CLASS_INFO /* TODO: remove */
+#define DBG_CLASS_DEBUG         BIT(8)
+#define DBG_CLASS_MASK          BITS(0, 8)
 
 #define DBG_LOG_LEVEL_DEFAULT \
 	(DBG_CLASS_ERROR | \
 	DBG_CLASS_WARN | \
 	DBG_CLASS_STATE | \
 	DBG_CLASS_EVENT | \
-	DBG_CLASS_INFO)
+	DBG_CLASS_INFO | \
+	DBG_CLASS_DEBUG)
 #define DBG_LOG_LEVEL_MORE \
 	(DBG_LOG_LEVEL_DEFAULT | \
 	DBG_CLASS_TRACE)
 #define DBG_LOG_LEVEL_EXTREME \
 	(DBG_LOG_LEVEL_MORE | \
 	DBG_CLASS_LOUD)
+#define DBG_LOG_LEVEL_UV \
+	(DBG_CLASS_ERROR | \
+	DBG_CLASS_WARN | \
+	DBG_CLASS_STATE | \
+	DBG_CLASS_EVENT | \
+	DBG_CLASS_INFO)
 
 #if defined(LINUX)
 #define DBG_PRINTF_64BIT_DEC    "lld"
@@ -708,7 +716,7 @@ enum WAIT_TO_PERIOD {
 
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
@@ -720,7 +728,7 @@ enum WAIT_TO_PERIOD {
 	} while (0)
 #define DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
@@ -733,7 +741,7 @@ enum WAIT_TO_PERIOD {
 #else
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
@@ -742,7 +750,7 @@ enum WAIT_TO_PERIOD {
 	} while (0)
 #define DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
@@ -752,35 +760,35 @@ enum WAIT_TO_PERIOD {
 #endif
 #define TOOL_PRINTLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC(_Fmt, ##__VA_ARGS__); \
 	} while (0)
 #define DBGLOG_HEX(_Mod, _Clz, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
 			dumpHex((uint8_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #define DBGLOG_MEM8(_Mod, _Clz, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
 			dumpMemory8((uint8_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #define DBGLOG_MEM32(_Mod, _Clz, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
 			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #define DBGFWLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		wlanPrintFwLog(NULL, 0, DEBUG_MSG_TYPE_DRIVER, \
@@ -791,14 +799,14 @@ enum WAIT_TO_PERIOD {
 
 #define DBGLOG_MEM128(_Mod, _Clz, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			dumpMemory128((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 
 #define DBGDUMP_HEX(_Mod, _Clz, _Title, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
 				 KAL_GET_CURRENT_THREAD_ID(), \
 				 __func__, _Title); \
@@ -807,7 +815,7 @@ enum WAIT_TO_PERIOD {
 	}
 #define DBGDUMP_MEM8(_Mod, _Clz, _Title, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
 				 KAL_GET_CURRENT_THREAD_ID(), \
 				 __func__, _Title); \
@@ -816,7 +824,7 @@ enum WAIT_TO_PERIOD {
 	}
 #define DBGDUMP_MEM32(_Mod, _Clz, _Title, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
 				 KAL_GET_CURRENT_THREAD_ID(), \
 				 __func__, _Title); \
@@ -825,7 +833,7 @@ enum WAIT_TO_PERIOD {
 	}
 #define DBGDUMP_MEM128(_Mod, _Clz, _Title, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
 				 KAL_GET_CURRENT_THREAD_ID(), \
 				 __func__, _Title); \

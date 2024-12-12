@@ -191,6 +191,9 @@ static const char * const apcDbModuleName[DBG_MODULE_NUM] = {
 	[DBG_SA_IDX] = "SA",
 	[DBG_MET_IDX] = "MET",
 	[DBG_FILS_IDX] = "FILS",
+	[DBG_AM_IDX] = "AM",
+	[DBG_CCM_IDX] = "CCM",
+	[DBG_PASN_IDX] = "PASN",
 };
 #endif /* (BUILD_QA_DBG) */
 
@@ -1386,9 +1389,9 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 		goto freeBuf;
 	}
 
-	str = "\nTEMP|LOUD|INFO|TRACE | EVENT|STATE|WARN|ERROR\n"
-	    "bit7|bit6|bit5|bit4 | bit3|bit2|bit1|bit0\n\n"
-	    "Usage: Module Index:Module Level, such as 0x00:0xff\n\n"
+	str = "\nDEBUG| TEMP|LOUD|INFO|TRACE | EVENT|STATE|WARN|ERROR\n"
+	    "bit8| bit7|bit6|bit5|bit4 | bit3|bit2|bit1|bit0\n\n"
+	    "Usage: Module Index:Module Level, such as 0x00:0x1ff\n\n"
 	    "Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n";
 	u4StrLen = kalStrLen(str);
 	kalStrnCpy(temp, str, u4StrLen);
@@ -1399,7 +1402,7 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	for (i = 0; i < u2ModuleNum; i++) {
 		wlanGetDriverDbgLevel(i, &u4Level);
 		SNPRINTF(temp, PROC_MAX_BUF_SIZE - (temp - pucProcBuf),
-			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t",
+			("DBG_%s_IDX\t(0x%02x):\t0x%03x\t",
 			 apcDbModuleName[i] ? : "?", i, (uint16_t) u4Level));
 		if (i % 2 == 1 || i == u2ModuleNum - 1)
 			SNPRINTF(temp, PROC_MAX_BUF_SIZE - (temp - pucProcBuf),
@@ -1463,6 +1466,15 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 			pr_info("debug module and debug level should be one byte in length\n");
 			break;
 		}
+
+		/* If MTKLogger and mobile_log_d are not modified together,
+		 * the following safeguards will be needed."
+		 * u4NewDbgLevel |= DBG_CLASS_DEBUG;
+		 */
+#if (CFG_SUPPORT_UV == 1)
+		wlanSetDbgMaskForUvTestMode(&u4NewDbgLevel);
+#endif
+
 		if (u4NewDbgModule == 0xFF) {
 			wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
 					(u4NewDbgLevel & DBG_CLASS_MASK));

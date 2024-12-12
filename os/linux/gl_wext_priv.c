@@ -3368,9 +3368,9 @@ int priv_driver_get_dbg_level(struct net_device
 			fgIsCmdAccept = TRUE;
 			i4BytesWritten =
 				kalSnprintf(pcCommand, i4TotalLen,
-					 "Get DBG module[%u] log level => [0x%02x]!",
+					 "Get DBG module[%u] log level => [0x%03x]!",
 					 u4DbgIdx,
-					 (uint8_t) u4DbgMask);
+					 (uint16_t) u4DbgMask);
 		}
 	}
 

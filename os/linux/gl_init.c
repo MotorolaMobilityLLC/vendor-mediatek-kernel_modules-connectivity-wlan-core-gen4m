@@ -210,7 +210,7 @@ module_param_named(connfemid, gu4ConnfemId, uint, 0000);
 #define CUSTOM_IFNAMESIZ 5
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
 
-uint8_t aucDebugModule[DBG_MODULE_NUM];
+uint16_t au2DebugModule[DBG_MODULE_NUM];
 uint32_t au4LogLevel[ENUM_WIFI_LOG_MODULE_NUM] = {ENUM_WIFI_LOG_LEVEL_DEFAULT};
 
 #if (CFG_TESTMODE_FWDL_SUPPORT == 1)
@@ -3566,21 +3566,25 @@ struct net_device_stats *wlanGetStats(struct net_device
 
 void wlanDebugInit(void)
 {
+	uint32_t u4DbgMask = DBG_LOG_LEVEL_DEFAULT;
+
 	/* Set the initial debug level of each module */
 #if DBG
 	/* enable all */
-	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, DBG_CLASS_MASK);
+	u4DbgMask = DBG_CLASS_MASK;
 #else
 #ifdef CFG_DEFAULT_DBG_LEVEL
-	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
-			      CFG_DEFAULT_DBG_LEVEL);
+	u4DbgMask = CFG_DEFAULT_DBG_LEVEL;
 #else
-	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
-			      DBG_LOG_LEVEL_DEFAULT);
+#if (CFG_SUPPORT_UV == 1)
+	wlanGetDbgMaskForUvTestMode(&u4DbgMask);
+#endif
 #endif
 #endif /* DBG */
+	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, u4DbgMask);
 
-	LOG_FUNC("Reset ALL DBG module log level to DEFAULT!");
+	LOG_FUNC("Reset ALL DBG module log level to DEFAULT[0x%03x]!",
+		u4DbgMask);
 
 }
 
@@ -6893,7 +6897,7 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		/*ENG_LOAD_OFFSET 1*/
 		/*USERDEBUG_LOAD_OFFSET 2 */
 		/*USER_LOAD_OFFSET 3 */
-		int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+		uint32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 
 		DBGLOG(INIT, INFO, "FW_LOG_CMD_SET_LEVEL %d\n", prCmd->fgValue);
 		switch (prCmd->fgValue) {
@@ -6906,10 +6910,20 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		case 2:
 			u4LogLevel = ENUM_WIFI_LOG_LEVEL_EXTREME;
 			break;
+#if (CFG_SUPPORT_UV == 1)
+		case 3:
+			u4LogLevel = ENUM_WIFI_LOG_LEVEL_UV;
+			break;
+#endif
 		default:
 			u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 			break;
 		}
+
+#if (CFG_SUPPORT_UV == 1)
+		wlanUpdateLogLevelByUvTestMode(prAdapter, &u4LogLevel,
+			prCmd->fgEarlySet);
+#endif
 
 		if (prCmd->fgEarlySet) {
 			wlanDbgSetLogLevel(prAdapter,
@@ -6924,7 +6938,7 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		}
 
 		/* keep in cache */
-		u4LogLevelCache = prCmd->fgValue;
+		u4LogLevelCache = u4LogLevel;
 	} else {
 		DBGLOG(INIT, INFO, "command can not parse\n");
 	}

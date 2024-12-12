@@ -2323,7 +2323,7 @@ struct MSDU_INFO *assocComposeReAssocRespFrame(struct ADAPTER *prAdapter,
 
 	DBGLOG(AAA, TRACE, "Dump assoc response frame\n");
 
-	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+	if (au2DebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
 		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}

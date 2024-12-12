@@ -37,7 +37,7 @@ extern int mrdump_mini_add_extra_file(
 
 #define SA_DBGLOG(_Mod, _Clz, _Fmt, ...) \
 do { \
-	if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+	if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 		 DBG_CLASS_##_Clz) == 0) \
 		break; \
 	pr_info("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
@@ -47,7 +47,7 @@ do { \
 
 #define SA_DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
 do { \
-	if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+	if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 		 DBG_CLASS_##_Clz) == 0) \
 		break; \
 	pr_info_ratelimited(\

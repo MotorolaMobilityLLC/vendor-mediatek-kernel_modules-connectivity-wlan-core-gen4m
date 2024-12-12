@@ -57,10 +57,10 @@ const struct mtk_regdomain *g_prRegRuleTable[] = {
  * ENUM_WIFI_LOG_LEVEL_DEFAULT: include/wlan_oid.h
  *
  * access method in include/debug.h:
- * extern uint8_t aucDebugModule[];
+ * extern uint16_t au2DebugModule[];
  * extern uint32_t au4LogLevel[];
  */
-uint8_t aucDebugModule[DBG_MODULE_NUM];
+uint16_t au2DebugModule[DBG_MODULE_NUM];
 uint32_t au4LogLevel[ENUM_WIFI_LOG_MODULE_NUM] = {ENUM_WIFI_LOG_LEVEL_DEFAULT};
 /*****************************************************************************
  *                           P R I V A T E   D A T A

@@ -183,7 +183,7 @@ enum ENUM_MLR_STATE {
 	do { \
 		if (!MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) \
 			break; \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \

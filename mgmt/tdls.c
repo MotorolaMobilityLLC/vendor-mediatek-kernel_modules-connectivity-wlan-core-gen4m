@@ -1045,7 +1045,7 @@ uint16_t _TdlsComposeCapIE(
 
 	DBGLOG(TDLS, TRACE, "Dump cap ie\n");
 
-	if (aucDebugModule[DBG_TDLS_IDX] & DBG_CLASS_TRACE) {
+	if (au2DebugModule[DBG_TDLS_IDX] & DBG_CLASS_TRACE) {
 		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}

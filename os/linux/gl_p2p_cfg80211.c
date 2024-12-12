@@ -3951,10 +3951,8 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 			DBGLOG(REQ, INFO,
 				"cipher pairwise (%d)\n",
 				sme->crypto.ciphers_pairwise[0]);
-			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-				dumpMemory8((uint8_t *) prConnReqMsg->aucIEBuf,
-					(uint32_t) prConnReqMsg->u4IELen);
-			}
+			DBGLOG_MEM8(P2P, TRACE, prConnReqMsg->aucIEBuf,
+					prConnReqMsg->u4IELen);
 
 			switch (sme->crypto.ciphers_pairwise[0]) {
 			case WLAN_CIPHER_SUITE_WEP40:

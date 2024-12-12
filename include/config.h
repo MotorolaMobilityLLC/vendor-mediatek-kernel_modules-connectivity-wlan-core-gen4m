@@ -1991,6 +1991,7 @@
 #define CFG_STAINFO_FEATURE (0)
 #define CFG_SUPPORT_STA_INFO (CFG_EXT_FEATURE)
 #define CFG_SUPPORT_BW_SELECT (CFG_EXT_FEATURE)
+#define CFG_SUPPORT_UV (CFG_EXT_FEATURE)
 
 /*------------------------------------------------------------------------------
  * Flags of Manipulate TID for UDP packets
