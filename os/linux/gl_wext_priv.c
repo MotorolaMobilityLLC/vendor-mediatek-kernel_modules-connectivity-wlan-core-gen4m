@@ -23446,7 +23446,7 @@ int priv_driver_coex_ctrl(struct net_device *prNetDev,
 	int32_t i4ArgNum = 2;
 	signed char *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret = 0;
-	uint32_t u4Offset = 0;
+	int i4Offset = 0;
 	enum ENUM_COEX_CMD_CTRL CoexCmdCtrl;
 	struct COEX_CMD_HANDLER rCoexCmdHandler;
 
@@ -23477,14 +23477,12 @@ int priv_driver_coex_ctrl(struct net_device *prNetDev,
 
 		switch (CoexCmdCtrl) {
 		case COEX_CMD_SET_RX_DATA_INFO:
-		{
 			break;
-		}
+
 		/* Isolation Detection */
 		case COEX_CMD_GET_INFO:
-		{
 			break;
-		}
+
 		case COEX_CMD_GET_ISO_DETECT:
 		{
 #if (CFG_WIFI_ISO_DETECT == 1)
@@ -23508,13 +23506,20 @@ int priv_driver_coex_ctrl(struct net_device *prNetDev,
 
 			/* Get Isolation value */
 			prCoexCmdIsoDetect =
-		(struct COEX_CMD_ISO_DETECT *)rCoexCmdHandler.aucBuffer;
+				(struct COEX_CMD_ISO_DETECT *)
+						rCoexCmdHandler.aucBuffer;
 
 			/* Set Return i4BytesWritten Value */
-			u4Offset = snprintf(pcCommand, i4TotalLen, "%d",
-				(prCoexCmdIsoDetect->u4Isolation/2));
+			i4Offset = snprintf(pcCommand, i4TotalLen, "%d",
+				(prCoexCmdIsoDetect->u4Isolation / 2));
+			if (i4Offset < 0) {
+				DBGLOG(REQ, ERROR, "snprintf returns fail %d\n",
+				       i4Offset);
+				break;
+			}
+
 			DBGLOG(REQ, INFO, "Isolation: %d\n",
-				(prCoexCmdIsoDetect->u4Isolation/2));
+				(prCoexCmdIsoDetect->u4Isolation / 2));
 #endif
 			break;
 		}
@@ -23524,7 +23529,7 @@ int priv_driver_coex_ctrl(struct net_device *prNetDev,
 		}
 
 		/* Set Return i4BytesWritten Value */
-		i4BytesWritten = (int32_t)u4Offset;
+		i4BytesWritten = (int32_t)i4Offset;
 	}
 	return i4BytesWritten;
 }
