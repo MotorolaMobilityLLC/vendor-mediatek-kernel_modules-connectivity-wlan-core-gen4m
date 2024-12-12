@@ -11339,13 +11339,15 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_LLW_SCAN
 	/* using customized scan parameters */
-	prScanReqMsg->u2ChannelDwellTime =
-		prAisFsmInfo->ucNonDfsChDwellTimeMs;
-	prScanReqMsg->u2ChannelMinDwellTime =
-		(prScanReqMsg->u2ChannelDwellTime <
-		SCAN_CHANNEL_DWELL_TIME_MIN_MSEC) ?
-		prScanReqMsg->u2ChannelDwellTime :
-		SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+	if (prAisFsmInfo->ucNonDfsChDwellTimeMs != 0) {
+		prScanReqMsg->u2LLWChannelDwellTime =
+			prAisFsmInfo->ucNonDfsChDwellTimeMs;
+		prScanReqMsg->u2LLWChannelMinDwellTime =
+			prScanReqMsg->u2LLWChannelDwellTime -
+			SCAN_CUST_DWELL_GAP_FOR_MAX_AND_MIN;
+		prScanReqMsg->u4ScnFuncMaskExtend |=
+				ENUM_SCN_LLW_SCAN;
+	}
 
 	/* using customized scan parameters */
 	prScanReqMsg->u2OpChStayTime =
@@ -11354,6 +11356,7 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 		prAisFsmInfo->ucDfsChDwellTimeMs;
 	prScanReqMsg->ucPerScanChCnt =
 		prAisFsmInfo->ucPerScanChannelCnt;
+
 #endif
 
 	/* for 6G OOB scan */

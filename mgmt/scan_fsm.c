@@ -428,6 +428,13 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 	prCmdScanReq->u2TimeoutValue = prScanParam->u2TimeoutValue;
 
 #if CFG_SUPPORT_LLW_SCAN
+
+	if (prScanParam->u2LLWChannelDwellTime != 0) {
+		prCmdScanReq->u2ChannelDwellTime =
+			prScanParam->u2LLWChannelDwellTime;
+		prCmdScanReq->u2ChannelMinDwellTime =
+			prScanParam->u2LLWChannelMinDwellTime;
+	}
 	prCmdScanReq->u2OpChStayTimeMs = prScanParam->u2OpChStayTime;
 	prCmdScanReq->ucDfsChDwellTimeMs = prScanParam->ucDfsChDwellTime;
 	prCmdScanReq->ucPerScanChannelCnt = prScanParam->ucPerScanChCnt;
@@ -860,6 +867,10 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 	prScanParam->u2OpChStayTime = prScanReqMsg->u2OpChStayTime;
 	prScanParam->ucDfsChDwellTime = prScanReqMsg->ucDfsChDwellTime;
 	prScanParam->ucPerScanChCnt = prScanReqMsg->ucPerScanChCnt;
+	prScanParam->u2LLWChannelDwellTime =
+		prScanReqMsg->u2LLWChannelDwellTime;
+	prScanParam->u2LLWChannelMinDwellTime =
+		prScanReqMsg->u2LLWChannelMinDwellTime;
 #endif
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
 	prScanParam->eMsgId = prScanReqMsg->rMsgHdr.eMsgId;
@@ -1644,8 +1655,7 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 	print_info(SCN, INFO, "IdleTime : %s\n", au2ChannelIdleTime);
 	print_info(SCN, INFO, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
 	print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
-	if (prScanDone->ucScanDoneVersion >= 4)
-		print_info(SCN, LOUD,
+	print_info(SCN, INFO,
 			"ScanTime : %s\n", au2ChannelScanTime);
 #undef	print_scan_info
 }

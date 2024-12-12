@@ -5927,19 +5927,24 @@ uint32_t wlanoidSetScanParam(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	/* To mitigate switch ch overhead,
-	 * we reduce dwell time 20ms, MIN is 20ms
+	/* LLW command's dwell time should always larger than 40ms;
+	 * otherwise, we will set it to 40ms.
 	 */
 	if (param->ucDfsChDwellTimeMs != 0)
-		ais->ucDfsChDwellTimeMs = (param->ucDfsChDwellTimeMs >= 40)
-			? param->ucDfsChDwellTimeMs - 20 : 20;
+		ais->ucDfsChDwellTimeMs =
+			(param->ucDfsChDwellTimeMs >=
+			SCAN_CUST_LLW_DWELLTIME_THRESHOLD) ?
+			param->ucDfsChDwellTimeMs :
+			SCAN_CUST_LLW_DWELLTIME_THRESHOLD;
 	else
 		ais->ucDfsChDwellTimeMs = 0;
 
 	if (param->ucNonDfsChDwellTimeMs != 0)
 		ais->ucNonDfsChDwellTimeMs =
-			(param->ucNonDfsChDwellTimeMs >= 40)
-			? param->ucNonDfsChDwellTimeMs - 20 : 20;
+			(param->ucNonDfsChDwellTimeMs >=
+			SCAN_CUST_LLW_DWELLTIME_THRESHOLD) ?
+			param->ucNonDfsChDwellTimeMs :
+			SCAN_CUST_LLW_DWELLTIME_THRESHOLD;
 	else
 		ais->ucNonDfsChDwellTimeMs = 0;
 

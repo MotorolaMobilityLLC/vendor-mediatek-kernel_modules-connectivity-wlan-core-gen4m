@@ -100,6 +100,11 @@
 #define SCAN_TBTT_INFO_SET_OFFSET		(4)
 #endif
 
+#if CFG_SUPPORT_LLW_SCAN
+#define SCAN_CUST_DWELL_GAP_FOR_MAX_AND_MIN (10)
+#define SCAN_CUST_LLW_DWELLTIME_THRESHOLD (40)
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
 /*----------------------------------------------------------------------------*/
@@ -552,6 +557,8 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint16_t u2OpChStayTime;
 	uint8_t ucDfsChDwellTime;
 	uint8_t ucPerScanChCnt;
+	uint16_t u2LLWChannelDwellTime;
+	uint16_t u2LLWChannelMinDwellTime;
 #endif
 
 	uint8_t ucBssidNum;
@@ -759,6 +766,8 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	uint16_t u2OpChStayTime;	/* ms unit */
 	uint8_t ucDfsChDwellTime;	/* ms unit */
 	uint8_t ucPerScanChCnt;
+	uint16_t u2LLWChannelDwellTime;
+	uint16_t u2LLWChannelMinDwellTime;
 #endif
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	enum ENUM_SCAN_CHANNEL eScanChannel;
