@@ -1704,10 +1704,13 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		msleep(100);
 	}
+	wfsys_lock();
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		wfsys_unlock();
 		return bRet;
 	}
+	wfsys_unlock();
 
 	triggerHifDumpIfNeed();
 
