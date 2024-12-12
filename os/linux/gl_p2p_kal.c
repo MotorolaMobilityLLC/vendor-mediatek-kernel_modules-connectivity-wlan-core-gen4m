@@ -2611,23 +2611,28 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 	/* Indicatre CAC */
 	if ((eBand == BAND_5G) &&
-		(rlmDomainIsLegalDfsChannel(
-		prGlueInfo->prAdapter,
-		eBand,
-		ucPrimaryCh) || (eChnlBw >= MAX_BW_160MHZ))) {
+	    (rlmDomainIsLegalDfsChannel(prGlueInfo->prAdapter,
+					eBand,
+					ucPrimaryCh) ||
+	     (eChnlBw >= MAX_BW_160MHZ))) {
 		DBGLOG(P2P, INFO, "Do pre CAC.\n");
+
 		if (ch_width == 40) {
 			/* Hostapd workaround for dfs offload BW40 */
 			ch_width = 20;
 			ucSecondCh = 0;
 		}
+
 		wlanUpdateDfsChannelTable(prGlueInfo,
-			ucRoleIndex,
-			ucPrimaryCh,
-			rlmGetVhtOpBwByBssOpBw(eChnlBw),
-			0,
-			nicChannelNum2Freq(ucSeg0Ch, eBand) / 1000,
-			eBand);
+					  ucRoleIndex,
+					  ucPrimaryCh,
+					  rlmGetVhtOpBwByBssOpBw(eChnlBw),
+					  0,
+					  nicGetS1Freq(prGlueInfo->prAdapter,
+						       eBand,
+						       ucPrimaryCh,
+						       eChnlBw),
+					  eBand);
 	}
 #endif
 
