@@ -619,7 +619,7 @@ struct BUS_INFO mt6639_bus_info = {
 #else
 	.fgCheckDriverOwnInt = FALSE,
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) && !defined(UEFI)
 	.checkFwOwnMsiStatus = mt6639CheckFwOwnMsiStatus,
 #endif
 	.u4DmaMask = 32,
@@ -804,9 +804,13 @@ struct TX_DESC_OPS_T mt6639_TxDescOps = {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 };
 
+#if defined(UEFI)
+struct RX_DESC_OPS_T mt6639_RxDescOps = {0};
+#else
 struct RX_DESC_OPS_T mt6639_RxDescOps = {
 	.getRxModeMcs = mt6639_get_rx_mode_mcs,
 };
+#endif
 
 #if (DBG_DISABLE_ALL_INFO == 0)
 struct CHIP_DBG_OPS mt6639_DebugOps = {
@@ -842,7 +846,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.dumpwfsyscpupcr = mt6639_dumpWfsyscpupcr,
 #if (CFG_SUPPORT_DEBUG_SOP == 0)
 	.dumpBusHangCr = mt6639_DumpBusHangCr,
+#if CFG_SUPPORT_PCIE_ASPM
 	.dumpPcieStatus = mt6639DumpPcieDateFlowStatus,
+#endif
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	.dumpPcieCr = mt6639_dumpPcieReg,
 	.checkDumpViaBt = mt6639_CheckDumpViaBt,
