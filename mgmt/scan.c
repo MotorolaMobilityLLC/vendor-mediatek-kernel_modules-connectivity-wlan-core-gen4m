@@ -3938,7 +3938,7 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
 			slen += prEssResult[u4Index].u2SSIDLen + 2; /* _ssid;*/
 	}
 
-	slen = KAL_MIN(slen + 1, SCAN_LOG_MSG_MAX_LEN); /* 1 for null end*/
+	slen = kal_min_t(int, slen + 1, SCAN_LOG_MSG_MAX_LEN); /* 1 for null */
 	pos = strbuf = kalMemAlloc(slen, VIR_MEM_TYPE);
 	if (strbuf == NULL) {
 		scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "Can't allocate memory\n");

@@ -779,7 +779,7 @@ firmwareHexDump(const uint8_t *pucPreFix,
 		i4RowSize = 16;
 
 	for (i = 0; i < len; i += i4RowSize) {
-		i4LineLen = KAL_MIN(i4Remaining, i4RowSize);
+		i4LineLen = kal_min_t(int32_t, i4Remaining, i4RowSize);
 		i4Remaining -= i4RowSize;
 
 		KAL_HEX_DUMP_TO_BUFFER(pucPtr + i, i4LineLen, i4RowSize,

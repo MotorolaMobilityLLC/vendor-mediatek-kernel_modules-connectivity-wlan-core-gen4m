@@ -653,7 +653,6 @@ enum HIF_DEV_REG_REASON {
 
 #define KAL_WARN_ON WARN_ON
 #define KAL_IS_ERR IS_ERR
-#define KAL_MIN min
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
 /*----------------------------------------------------------------------------*/
@@ -1239,11 +1238,11 @@ char *strtok_r(char *s, const char *delim, char **last);
 #define kal_ieee80211_channel_to_frequency(_ch, _band) \
 	ieee80211_channel_to_frequency(_ch, _band)
 
-#define kal_max_t(_type, _v1, _v2) \
-	max_t(_type, _v1, _v2)
+#define kal_max_t(_type, _v1, _v2)	max_t(_type, _v1, _v2)
 
-#define kal_min_t(_type, _v1, _v2) \
-	min_t(_type, _v1, _v2)
+#define kal_min_t(_type, _v1, _v2)	min_t(_type, _v1, _v2)
+
+#define kal_clamp_t(_type, _val, _lo, _hi)	clamp_t(_type, _val, _lo, _hi)
 
 #define kal_tasklet_schedule(_rTasklet) \
 	tasklet_schedule(_rTasklet)
@@ -1253,9 +1252,6 @@ char *strtok_r(char *s, const char *delim, char **last);
 
 #define kalIsZeroEtherAddr(_addr) \
 	is_zero_ether_addr(_addr)
-
-#define kal_max_t(_type, _v1, _v2) max_t(_type, _v1, _v2)
-#define kal_min_t(_type, _v1, _v2) min_t(_type, _v1, _v2)
 
 unsigned int kalGetRxFifoCount(struct GLUE_INFO *prGlueInfo);
 

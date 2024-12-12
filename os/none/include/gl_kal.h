@@ -343,7 +343,6 @@ enum ENUM_PKT_PATH {
 #define KAL_WARN_ON(_condition) kal_warn_on(_condition)
 
 #define KAL_IS_ERR(_ptr) kal_is_err(_ptr)
-#define KAL_MIN(_a, _b) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
@@ -749,10 +748,13 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kal_max_t(_type, _v1, _v2) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _type, _v1, _v2)
 
 #define kal_min_t(_type, _v1, _v2) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _type, _v1, _v2)
+
+#define kal_clamp_t(_type, _val, _lo, _hi) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _type, _val, _lo, _hi)
 
 #define kal_tasklet_schedule(_rTasklet) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
@@ -772,13 +774,6 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 #else
 #define kal_fallthrough do {} while (0)  /* fallthrough */
 #endif
-
-#define kal_min_t(_type, _v1, _v2) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define kal_tasklet_schedule(_rTasklet) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
 
 #define kalGetRxFifoCount(_prGlueInfo)	\
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)

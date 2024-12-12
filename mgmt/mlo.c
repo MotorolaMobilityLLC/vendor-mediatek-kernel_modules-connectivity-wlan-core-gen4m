@@ -3739,8 +3739,8 @@ done:
 		prMldBssInfo->ucMaxSimuLinks = prWifiVar->ucMaxSimuLinks;
 
 	prMldBssInfo->ucMaxSimuLinks =
-		KAL_MIN(prWifiVar->ucMaxSimuLinksCap,
-			prMldBssInfo->ucMaxSimuLinks);
+		kal_min_t(uint8_t, prWifiVar->ucMaxSimuLinksCap,
+				   prMldBssInfo->ucMaxSimuLinks);
 
 	DBGLOG(ML, INFO, "EmlEnable: %d, Hybird Enable:%d,MaxSimuLinks:%d\n",
 		prMldBssInfo->ucEmlEnabled,
