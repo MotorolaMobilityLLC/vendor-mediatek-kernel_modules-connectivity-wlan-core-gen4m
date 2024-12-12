@@ -2897,7 +2897,12 @@ int wlan_test_mode_on(bool uIsSwtichTestMode)
 		return ret;
 	}
 
-	wfsys_lock();
+	if (!wfsys_trylock()) {
+		DBGLOG(INIT, INFO, "now is write processing\n");
+		ret = WLAN_STATUS_FAILURE;
+		return ret;
+	}
+
 	set_wifi_in_switch_mode(1);
 	g_fgWlanOnOffHoldRtnlLock = 1;
 
