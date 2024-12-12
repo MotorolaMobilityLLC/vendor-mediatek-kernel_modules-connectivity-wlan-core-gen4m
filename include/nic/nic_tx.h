@@ -1074,6 +1074,10 @@ struct TX_DESC_OPS_T {
 		void *prTxDesc,
 		uint8_t ucTid,
 		uint8_t fgSet);
+	uint8_t (*nic_txd_pkt_format_op)(
+		void *prTxDesc,
+		uint8_t ucFormat,
+		uint8_t fgSet);
 	uint8_t (*nic_txd_queue_idx_op)(
 		void *prTxDesc,
 		uint8_t ucQueIdx,

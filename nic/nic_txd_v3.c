@@ -78,6 +78,18 @@ uint8_t nic_txd_v3_tid_op(
 			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
 }
 
+uint8_t nic_txd_v3_pkt_format_op(
+	void *prTxDesc,
+	uint8_t ucFormat,
+	uint8_t fgSet)
+{
+	if (fgSet)
+		HAL_MAC_CONNAC3X_TXD_SET_PKT_FORMAT(
+			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc, ucFormat);
+	return HAL_MAC_CONNAC3X_TXD_GET_PKT_FORMAT(
+			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
+}
+
 uint8_t nic_txd_v3_queue_idx_op(
 	void *prTxDesc,
 	uint8_t ucQueIdx,
