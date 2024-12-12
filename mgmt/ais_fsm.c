@@ -7069,6 +7069,13 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 
 		if (prStaRec)
 			fgDoAbortIndication = TRUE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
+		if (ucBcnTimeoutReason == UNI_ENUM_BCN_PROT_ERROR) {
+			fgDoAbortIndication = FALSE;
+			DBGLOG(AIS, EVENT,
+				"Skip BTO roam for BP ERROR");
+		}
+#endif
 	} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
 		fgDoAbortIndication = TRUE;
 	}
@@ -7112,6 +7119,10 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 				roam, join);
 			aisHandleBeaconTimeout(prAdapter, ucBssIndex, FALSE);
 		}
+	} else {
+		aisFsmStateAbort(prAdapter,
+			DISCONNECT_REASON_CODE_DEAUTHENTICATED,
+			FALSE, ucBssIndex);
 	}
 }
 

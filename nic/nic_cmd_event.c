@@ -5263,6 +5263,14 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
+	if (ucBcnTimeoutReason == UNI_ENUM_BCN_PROT_ERROR) {
+		DBGLOG(ML, INFO, "BTO reason for BP error=%d",
+			ucBcnTimeoutReason);
+		return TRUE;
+	}
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
 	if (ucBcnTimeoutReason != UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD) {
 		DBGLOG(ML, INFO, "Only single link BTO reason=%d",
 			ucBcnTimeoutReason);
