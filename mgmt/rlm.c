@@ -7021,9 +7021,8 @@ uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
 	 * the same purpose. The latter allows the STA to use only a
 	 * single receive chain immediately after association.
 	 */
-	if (prBssInfo->ucOpRxNss < supportNss)
-		prHtCap->u2HtCapInfo &=
-			~HT_CAP_INFO_SM_POWER_SAVE; /*Set as static power save*/
+	/* Set as non static power save for Tx 2Nss*/
+	prHtCap->u2HtCapInfo |= HT_CAP_INFO_SM_POWER_SAVE;
 
 	prHtCap->ucAmpduParam = AMPDU_PARAM_DEFAULT_VAL;
 
