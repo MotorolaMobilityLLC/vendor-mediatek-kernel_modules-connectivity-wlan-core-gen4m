@@ -1252,6 +1252,11 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 	}
 
 #if CFG_SUPPORT_XONVRAM
+	if (prRegInfo->prXonvCfg == NULL) {
+		DBGLOG(INIT, TRACE, "Unsupport xo nvram\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	if (wlanCopyXonvramToSysram(prGlueInfo, prRegInfo->prXonvCfg, prPlatCfg)
 		!= WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, TRACE, "Fail to copy xo nvram\n");
