@@ -4614,7 +4614,6 @@ u_int8_t p2pFuncParseCheckForTKIPInfoElem(uint8_t *pucBuf)
 		return FALSE;
 }				/* p2pFuncParseCheckForP2PInfoElem */
 
-#if CFG_SUPPORT_BALANCE_MLR
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to check the MTK Oui IE from packets
@@ -4629,8 +4628,10 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint8_t *aucCapa;
+#if CFG_SUPPORT_BALANCE_MLR
 	uint8_t *ie;
 	uint16_t ie_len, ie_offset;
+#endif
 
 	if (pucIE == NULL)
 		return;
@@ -4643,6 +4644,10 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
+	prStaRec->fgIsPeerWithMtkOui = 1;
+	DBGLOG(P2P, TRACE, "Peer with MTK Oui\n");
+
+#if CFG_SUPPORT_BALANCE_MLR
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - 7;
 
@@ -4663,8 +4668,8 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 				prStaRec->ucMlrSupportBitmap);
 		}
 	}
-}				/* p2pFuncParseMTKOuiInfoElem */
 #endif /* CFG_SUPPORT_BALANCE_MLR */
+}				/* p2pFuncParseMTKOuiInfoElem */
 
 /*---------------------------------------------------------------------------*/
 /*!
@@ -11979,13 +11984,12 @@ u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if all client support Spectrum Management.
- *        Client support CSA only if it support Spectrum Management.
+ * \brief Check if all client support CSA (Spec mgmt & MTK Oui).
  */
 /*----------------------------------------------------------------------------*/
 static u_int8_t
-p2pFuncIsAllClientSupportSpecMgmt(struct ADAPTER *prAdapter,
-				  struct BSS_INFO *prBssInfo)
+p2pFuncIsAllClientSupportCsa(struct ADAPTER *prAdapter,
+			     struct BSS_INFO *prBssInfo)
 {
 	struct LINK *prClientList;
 	struct STA_RECORD *prStaRec;
@@ -11998,6 +12002,16 @@ p2pFuncIsAllClientSupportSpecMgmt(struct ADAPTER *prAdapter,
 
 		if (!prStaRec->fgIsInUse)
 			continue;
+
+		/* assume only MTK device support CSA now */
+		if (!prStaRec->fgIsPeerWithMtkOui) {
+			DBGLOG(P2P, TRACE,
+			       "peer is not MTK device, starec idx:%u, mac:"
+			       MACSTR "\n",
+			       prStaRec->ucIndex,
+			       MAC2STR(prStaRec->aucMacAddr));
+			return FALSE;
+		}
 
 		if (!(prStaRec->u2CapInfo & CAP_INFO_SPEC_MGT)) {
 			DBGLOG(P2P, TRACE,
@@ -12015,8 +12029,8 @@ p2pFuncIsAllClientSupportSpecMgmt(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if all client support Spectrum Management.
- *        Client support CSA only if it support Spectrum Management.
+ * \brief Check if all client support target op class.
+ *        For 6G CSA should have this IE.
  */
 /*----------------------------------------------------------------------------*/
 static u_int8_t
@@ -12157,7 +12171,7 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 		rRfChnlInfo.fgDFS = FALSE;
 
 		ucTargetOpClass = nicChannelInfo2OpClass(&rRfChnlInfo);
-		if (!p2pFuncIsAllClientSupportSpecMgmt(prAdapter, prBssInfo))
+		if (!p2pFuncIsAllClientSupportCsa(prAdapter, prBssInfo))
 			rStatus = CSA_STATUS_PEER_NOT_SUP_CSA;
 		else if (!p2pFuncIsAllClientSupportOpClass(prAdapter,
 					prBssInfo, ucTargetOpClass) &&

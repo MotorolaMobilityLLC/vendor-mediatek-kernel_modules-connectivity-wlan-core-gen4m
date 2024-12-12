@@ -868,6 +868,8 @@ struct STA_RECORD {
 	u_int8_t fgIsEapEncrypt;
 
 	u_int8_t fgEcsaCapable;
+
+	u_int8_t fgIsPeerWithMtkOui;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

@@ -343,11 +343,9 @@ u_int8_t p2pFuncParseCheckForP2PInfoElem(struct ADAPTER *prAdapter,
 
 u_int8_t p2pFuncParseCheckForTKIPInfoElem(uint8_t *pucBuf);
 
-#if CFG_SUPPORT_BALANCE_MLR
 void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec,
 		uint8_t *pucIE);
-#endif /* CFG_SUPPORT_BALANCE_MLR */
 u_int8_t
 p2pFuncValidateProbeReq(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb, uint32_t *pu4ControlFlags,
