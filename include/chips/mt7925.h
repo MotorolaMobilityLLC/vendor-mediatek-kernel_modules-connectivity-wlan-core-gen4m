@@ -137,7 +137,7 @@ void mt7925_icapRiseVcoreClockRate(void);
 void mt7925_icapDownVcoreClockRate(void);
 
 void mt7925_dumpWfsyscpupcr(struct ADAPTER *ad);
-void mt7925_DumpBusHangCr(struct ADAPTER *ad);
+void mt7925_DumpBusStatus(struct ADAPTER *ad);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int mt7925_get_rx_rate_info(const uint32_t *prRxV,
 	struct RxRateInfo *prRxRateInfo);

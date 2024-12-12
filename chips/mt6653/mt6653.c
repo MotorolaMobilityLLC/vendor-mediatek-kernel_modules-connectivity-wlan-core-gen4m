@@ -948,7 +948,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 	.show_wfdma_dbg_probe_info = mt6653_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt6653_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt6653_dumpWfsyscpupcr,
-	.dumpBusHangCr = mt6653_DumpBusHangCr,
+	.dumpBusStatus = mt6653_DumpBusStatus,
 	.dumpPcieStatus = mt6653DumpPcieDateFlowStatus,
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	.dumpPcieCr = mt6653_dumpPcieReg,
@@ -4324,8 +4324,8 @@ dump:
 
 		prChipInfo = ad->chip_info;
 		prDbgOps = prChipInfo->prDebugOps;
-		if (prDbgOps && prDbgOps->dumpBusHangCr)
-			prDbgOps->dumpBusHangCr(ad);
+		if (prDbgOps && prDbgOps->dumpBusStatus)
+			prDbgOps->dumpBusStatus(ad);
 
 		/* Clock detection for ULPOSC */
 		HAL_MCR_WR(ad,

@@ -1682,7 +1682,7 @@ static void mt7935_dumpConninfraBus(struct ADAPTER *ad)
 #endif
 }
 
-void mt7935_DumpBusHangCr(struct ADAPTER *ad)
+void mt7935_DumpBusStatus(struct ADAPTER *ad)
 {
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");

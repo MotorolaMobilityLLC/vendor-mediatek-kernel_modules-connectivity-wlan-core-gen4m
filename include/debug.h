@@ -575,7 +575,7 @@ struct CHIP_DBG_OPS {
 		uint8_t ucCase);
 #endif
 	void (*dumpwfsyscpupcr)(struct ADAPTER *prAdapter);
-	void (*dumpBusHangCr)(struct ADAPTER *prAdapter);
+	void (*dumpBusStatus)(struct ADAPTER *prAdapter);
 	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	void (*dumpPcieCr)(void);

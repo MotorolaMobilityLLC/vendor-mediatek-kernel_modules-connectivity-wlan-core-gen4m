@@ -82,7 +82,7 @@ static void soc5_0_triggerInt(struct GLUE_INFO *prGlueInfo);
 static void soc5_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta);
 
 static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
-static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter);
+static void soc5_0_DumpBusStatus(struct ADAPTER *prAdapter);
 static u_int8_t soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status);
 static uint32_t soc5_0_SetupRomEmi(struct ADAPTER *prAdapter);
@@ -531,7 +531,7 @@ struct CHIP_DBG_OPS soc5_0_DebugOps = {
 	.get_rx_link_stats = soc5_0_get_rx_link_stats,
 #endif
 	.show_mcu_debug_info = NULL,
-	.dumpBusHangCr = soc5_0_DumpBusHangCr,
+	.dumpBusStatus = soc5_0_DumpBusStatus,
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -1711,7 +1711,7 @@ static uint32_t soc5_0_McuInit(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 			"wf_pwr_on_consys_mcu failed, ret=%d\n",
 			ret);
-		soc5_0_DumpBusHangCr(prAdapter);
+		soc5_0_DumpBusStatus(prAdapter);
 		goto exit;
 	}
 
@@ -1749,7 +1749,7 @@ static void soc5_0_McuDeInit(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 			"wf_pwr_off_consys_mcu failed, ret=%d\n",
 			ret);
-		soc5_0_DumpBusHangCr(prAdapter);
+		soc5_0_DumpBusStatus(prAdapter);
 	}
 }
 
@@ -2294,7 +2294,7 @@ static void soc5_0_DumpHostCr(struct ADAPTER *prAdapter)
 	soc5_0_DumpWFDMACr(prAdapter);
 }
 
-static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter)
+static void soc5_0_DumpBusStatus(struct ADAPTER *prAdapter)
 {
 	conninfra_is_bus_hang();
 	soc5_0_DumpHostCr(prAdapter);

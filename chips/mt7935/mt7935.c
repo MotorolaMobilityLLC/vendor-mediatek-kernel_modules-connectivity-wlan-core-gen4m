@@ -731,7 +731,7 @@ struct CHIP_DBG_OPS mt7935_DebugOps = {
 	.show_wfdma_dbg_probe_info = mt7935_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt7935_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt7935_dumpWfsyscpupcr,
-	.dumpBusHangCr = mt7935_DumpBusHangCr,
+	.dumpBusStatus = mt7935_DumpBusStatus,
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = mt7935_get_rx_rate_info,

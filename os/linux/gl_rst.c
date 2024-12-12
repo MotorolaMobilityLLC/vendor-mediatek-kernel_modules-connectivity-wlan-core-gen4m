@@ -775,8 +775,8 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	if (prAdapter) {
 		prDbgOps = prChipInfo->prDebugOps;
 
-		if (prDbgOps && prDbgOps->dumpBusHangCr)
-			prDbgOps->dumpBusHangCr(prAdapter);
+		if (prDbgOps && prDbgOps->dumpBusStatus)
+			prDbgOps->dumpBusStatus(prAdapter);
 
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
@@ -1796,6 +1796,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *chip = NULL;
+	struct CHIP_DBG_OPS *dbg_ops = NULL;
 
 	DBGLOG(INIT, INFO,
 		"drv:%d, reason:%s, reset_type:%d\n",
@@ -1878,6 +1879,10 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		}
 		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
+
+		dbg_ops = prAdapter->chip_info->prDebugOps;
+		if (dbg_ops && dbg_ops->dumpBusStatus)
+			dbg_ops->dumpBusStatus(prAdapter);
 
 		if (drv != CONNV3_DRV_TYPE_WIFI)
 			glSetRstReason(RST_WHOLE_CHIP_TRIGGER);
@@ -2088,8 +2093,8 @@ void glResetWholeChipResetTrigger(char *pcReason)
 		dumpViaBt = prDebugOps->checkDumpViaBt(prAdapter);
 
 	if (prGlueInfo->u4ReadyFlag && dumpViaBt) {
-		if (prDebugOps && prDebugOps->dumpBusHangCr)
-			prDebugOps->dumpBusHangCr(prAdapter);
+		if (prDebugOps && prDebugOps->dumpBusStatus)
+			prDebugOps->dumpBusStatus(prAdapter);
 	}
 #endif
 
@@ -2130,13 +2135,11 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
 	if (g_IsWfsysBusHang == TRUE) {
 		if (prAdapter) {
+#if (CFG_SUPPORT_CONNINFRA == 1)
 			struct CHIP_DBG_OPS *debug_ops =
 				prAdapter->chip_info->prDebugOps;
-
+#endif
 			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
-				/* dump host cr */
-				if (debug_ops && debug_ops->dumpBusHangCr)
-					debug_ops->dumpBusHangCr(prAdapter);
 				fgIsDrvTriggerWholeChipReset = TRUE;
 				glSetRstReasonString(
 					"fw detect bus hang");
@@ -2147,8 +2150,8 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			if (conninfra_reg_readable_for_coredump() == 1 &&
 			    debug_ops &&
-			    debug_ops->dumpBusHangCr)
-				debug_ops->dumpBusHangCr(prAdapter);
+			    debug_ops->dumpBusStatus)
+				debug_ops->dumpBusStatus(prAdapter);
 #endif
 		}
 		DBGLOG(INIT, INFO,

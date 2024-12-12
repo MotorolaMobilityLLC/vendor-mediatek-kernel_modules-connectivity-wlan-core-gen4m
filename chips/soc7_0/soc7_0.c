@@ -107,7 +107,7 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter);
 
 static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
-static void soc7_0_DumpBusHangCr(struct ADAPTER *prAdapter);
+static void soc7_0_DumpBusStatus(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 static int soc7_0_ConnacPccifon(struct ADAPTER *prAdapter);
@@ -530,7 +530,7 @@ struct CHIP_DBG_OPS soc7_0_DebugOps = {
 	.get_rx_link_stats = soc7_0_get_rx_link_stats,
 #endif
 	.dumpwfsyscpupcr = soc7_0_DumpWfsyscpupcr,
-	.dumpBusHangCr = soc7_0_DumpBusHangCr,
+	.dumpBusStatus = soc7_0_DumpBusStatus,
 };
 
 
@@ -2109,7 +2109,7 @@ static uint32_t soc7_0_McuInit(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 			"wf_pwr_on_consys_mcu failed, ret=%d\n",
 			ret);
-		soc7_0_DumpBusHangCr(prAdapter);
+		soc7_0_DumpBusStatus(prAdapter);
 		goto exit;
 	}
 
@@ -2141,7 +2141,7 @@ static void soc7_0_McuDeInit(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 			"wf_pwr_off_consys_mcu failed, ret=%d\n",
 			ret);
-		soc7_0_DumpBusHangCr(prAdapter);
+		soc7_0_DumpBusStatus(prAdapter);
 	}
 }
 
@@ -2636,7 +2636,7 @@ static void soc7_0_DumpHostCr(struct ADAPTER *prAdapter)
 	soc7_0_DumpWFDMACr(prAdapter);
 }
 
-static void soc7_0_DumpBusHangCr(struct ADAPTER *prAdapter)
+static void soc7_0_DumpBusStatus(struct ADAPTER *prAdapter)
 {
 	conninfra_is_bus_hang();
 	soc7_0_DumpHostCr(prAdapter);

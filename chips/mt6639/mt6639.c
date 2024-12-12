@@ -845,7 +845,7 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt6639_dumpWfsyscpupcr,
 #if (CFG_SUPPORT_DEBUG_SOP == 0)
-	.dumpBusHangCr = mt6639_DumpBusHangCr,
+	.dumpBusStatus = mt6639_DumpBusStatus,
 #if CFG_SUPPORT_PCIE_ASPM
 	.dumpPcieStatus = mt6639DumpPcieDateFlowStatus,
 #endif
@@ -3358,8 +3358,8 @@ dump:
 
 		prChipInfo = ad->chip_info;
 		prDbgOps = prChipInfo->prDebugOps;
-		if (prDbgOps && prDbgOps->dumpBusHangCr)
-			prDbgOps->dumpBusHangCr(ad);
+		if (prDbgOps && prDbgOps->dumpBusStatus)
+			prDbgOps->dumpBusStatus(ad);
 
 		/* Clock detection for ULPOSC */
 		HAL_MCR_WR(ad,

@@ -1101,7 +1101,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 #endif
 	.show_mcu_debug_info = NULL,
 	.dumpwfsyscpupcr = connac2x_DumpWfsyscpupcr,
-	.dumpBusHangCr = soc3_0_DumpBusHangCr,
+	.dumpBusStatus = soc3_0_DumpBusStatus,
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -1880,7 +1880,7 @@ static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter, bool fgIsReadable)
 	soc3_0_DumpWFDMACr(prAdapter);
 } /* soc3_0_DumpHostCr */
 
-void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter)
+void soc3_0_DumpBusStatus(struct ADAPTER *prAdapter)
 {
 	conninfra_is_bus_hang();
 	soc3_0_DumpHostCr(prAdapter, conninfra_reg_readable());
@@ -2539,7 +2539,7 @@ static uint32_t soc3_0_McuInit(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 			"wf_pwr_on_consys_mcu failed, ret=%d\n",
 			ret);
-		soc3_0_DumpBusHangCr(prAdapter);
+		soc3_0_DumpBusStatus(prAdapter);
 		goto exit;
 	}
 
@@ -2577,7 +2577,7 @@ static void soc3_0_McuDeInit(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 			"wf_pwr_off_consys_mcu failed, ret=%d\n",
 			ret);
-		soc3_0_DumpBusHangCr(prAdapter);
+		soc3_0_DumpBusStatus(prAdapter);
 	}
 }
 

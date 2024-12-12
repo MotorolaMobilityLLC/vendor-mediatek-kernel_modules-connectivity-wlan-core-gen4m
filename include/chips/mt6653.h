@@ -181,7 +181,7 @@ void mt6653_icapDownVcoreClockRate(void);
 
 #if defined(_HIF_PCIE)
 void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad);
-void mt6653_DumpBusHangCr(struct ADAPTER *ad);
+void mt6653_DumpBusStatus(struct ADAPTER *ad);
 void mt6653_dumpPcGprLog(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
 void mt6653_dumpRV55CoreReg(struct ADAPTER *ad);
 void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);

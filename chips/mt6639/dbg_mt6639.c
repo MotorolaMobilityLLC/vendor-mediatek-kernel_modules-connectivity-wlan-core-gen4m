@@ -2545,7 +2545,7 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 }
 
-void mt6639_DumpBusHangCr(struct ADAPTER *ad)
+void mt6639_DumpBusStatus(struct ADAPTER *ad)
 {
 	struct mt66xx_chip_info *chip_info = NULL;
 	struct CHIP_DBG_OPS *debug_ops = NULL;

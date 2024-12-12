@@ -554,7 +554,7 @@ struct CHIP_DBG_OPS mt7925_DebugOps = {
 	.show_wfdma_dbg_probe_info = mt7925_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt7925_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt7925_dumpWfsyscpupcr,
-	.dumpBusHangCr = mt7925_DumpBusHangCr,
+	.dumpBusStatus = mt7925_DumpBusStatus,
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = mt7925_get_rx_rate_info,

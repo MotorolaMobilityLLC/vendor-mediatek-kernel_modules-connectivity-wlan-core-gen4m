@@ -207,7 +207,7 @@ void mt7935_icapDownVcoreClockRate(void);
 
 #if defined(_HIF_PCIE)
 void mt7935_dumpWfsyscpupcr(struct ADAPTER *ad);
-void mt7935_DumpBusHangCr(struct ADAPTER *ad);
+void mt7935_DumpBusStatus(struct ADAPTER *ad);
 void mt7935_dumpPcGprLog(struct ADAPTER *ad);
 void mt7935_dumpN45CoreReg(struct ADAPTER *ad);
 void mt7935_dumpWfTopReg(struct ADAPTER *ad);

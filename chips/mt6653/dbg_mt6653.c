@@ -2183,7 +2183,7 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad)
 #endif
 }
 
-void mt6653_DumpBusHangCr(struct ADAPTER *ad)
+void mt6653_DumpBusStatus(struct ADAPTER *ad)
 {
 	struct mt66xx_chip_info *chip_info = NULL;
 	struct CHIP_DBG_OPS *debug_ops = NULL;

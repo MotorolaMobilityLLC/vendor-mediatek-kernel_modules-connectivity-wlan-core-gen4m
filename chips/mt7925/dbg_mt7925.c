@@ -2654,7 +2654,7 @@ static void mt7925_dumpWfBusReg(struct ADAPTER *ad)
 	mt7925_dumpAhbApbTimeoutInfo(ad);
 }
 
-void mt7925_DumpBusHangCr(struct ADAPTER *ad)
+void mt7925_DumpBusStatus(struct ADAPTER *ad)
 {
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");

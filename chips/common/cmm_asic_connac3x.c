@@ -2574,8 +2574,8 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif /* CFG_MTK_MDDP_SUPPORT */
 
-		if (dbg_ops && dbg_ops->dumpBusHangCr)
-			dbg_ops->dumpBusHangCr(prAdapter);
+		if (dbg_ops && dbg_ops->dumpBusStatus)
+			dbg_ops->dumpBusStatus(prAdapter);
 
 		kalSetRstFwNotifyL05Event(TRUE);
 	}
@@ -2598,8 +2598,8 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif /* CFG_MTK_MDDP_SUPPORT */
 
-	if (dbg_ops && dbg_ops->dumpBusHangCr)
-		dbg_ops->dumpBusHangCr(prAdapter);
+	if (dbg_ops && dbg_ops->dumpBusStatus)
+		dbg_ops->dumpBusStatus(prAdapter);
 
 	kalSetRstFwNotifyTriggerL0Event(TRUE);
 }

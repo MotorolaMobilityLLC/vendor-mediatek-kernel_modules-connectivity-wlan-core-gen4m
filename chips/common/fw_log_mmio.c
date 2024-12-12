@@ -190,8 +190,8 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 
 		prDebugOps = prAdapter->chip_info->prDebugOps;
 
-		if (prDebugOps && prDebugOps->dumpBusHangCr)
-			prDebugOps->dumpBusHangCr(prAdapter);
+		if (prDebugOps && prDebugOps->dumpBusStatus)
+			prDebugOps->dumpBusStatus(prAdapter);
 
 		WARN_ON_ONCE(TRUE);
 
