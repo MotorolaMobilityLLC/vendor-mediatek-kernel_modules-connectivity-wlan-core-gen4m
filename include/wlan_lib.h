@@ -1373,6 +1373,9 @@ struct PARAM_GET_STA_STATISTICS {
 	uint32_t u4PhyMode;
 	uint16_t u2LinkSpeed;	/* unit is 0.5 Mbits */
 
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	uint32_t u4TxDataCount;
+#endif
 	uint32_t u4TxFailCount;
 	uint32_t u4TxLifeTimeoutCount;
 
