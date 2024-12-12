@@ -99,6 +99,104 @@ uint8_t TdlsAllowedChannel(
 }
 
 #if CFG_SUPPORT_TDLS_AUTO
+void TdlsProcessPublicAction(
+	struct ADAPTER *ad,
+	struct SW_RFB *prSwRfb)
+{
+	uint16_t i;
+	struct WLAN_ACTION_FRAME *prActFrame = NULL;
+	struct BSS_INFO *prBssInfo;
+	struct sta_tdls_info *staTdls;
+	uint8_t ucBssIndex = 0;
+
+	if (!ad || !prSwRfb) {
+		DBGLOG(TDLS, INFO, " ad or prSwRfb are NULL");
+		return;
+	}
+
+	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+
+	if (!prActFrame ||
+		prActFrame->ucAction != TDLS_FRM_ACTION_DISCOVERY_RSP) {
+		DBGLOG(TDLS, TRACE, " not discovery response, skip");
+		return;
+	}
+
+	DBGLOG(TDLS, TRACE, "Src=>%02x:%02x:%02x:%02x:%02x:%02x\n",
+		prActFrame->aucSrcAddr[0],
+		prActFrame->aucSrcAddr[1],
+		prActFrame->aucSrcAddr[2],
+		prActFrame->aucSrcAddr[3],
+		prActFrame->aucSrcAddr[4],
+		prActFrame->aucSrcAddr[5]);
+	DBGLOG(TDLS, TRACE, "Dest=>%02x:%02x:%02x:%02x:%02x:%02x\n",
+		prActFrame->aucDestAddr[0],
+		prActFrame->aucDestAddr[1],
+		prActFrame->aucDestAddr[2],
+		prActFrame->aucDestAddr[3],
+		prActFrame->aucDestAddr[4],
+		prActFrame->aucDestAddr[5]);
+	DBGLOG(TDLS, TRACE, "BSSID=>%02x:%02x:%02x:%02x:%02x:%02x\n",
+		prActFrame->aucBSSID[0],
+		prActFrame->aucBSSID[1],
+		prActFrame->aucBSSID[2],
+		prActFrame->aucBSSID[3],
+		prActFrame->aucBSSID[4],
+		prActFrame->aucBSSID[5]);
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		prBssInfo = ad->aprBssInfo[i];
+		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
+			DBGLOG(TDLS, TRACE,
+				"aucBSSID=>%02x:%02x:%02x:%02x:%02x:%02x\n",
+				prBssInfo->aucBSSID[0],
+				prBssInfo->aucBSSID[1],
+				prBssInfo->aucBSSID[2],
+				prBssInfo->aucBSSID[3],
+				prBssInfo->aucBSSID[4],
+				prBssInfo->aucBSSID[5]);
+			if (kalMemCmp(prBssInfo->aucBSSID,
+				prActFrame->aucBSSID, ETH_ALEN) == 0) {
+				ucBssIndex = i;
+				break;
+			}
+		}
+	}
+
+	if (!prBssInfo) {
+		DBGLOG(TDLS, ERROR, "prBssInfo is NULL");
+		return;
+	}
+
+	if (i == MAX_BSSID_NUM) {
+		DBGLOG(TDLS, ERROR, "No active BSS found matching the BSSID");
+		return;
+	}
+
+	for (i = 0; i < STA_TDLS_HASH_SIZE; i++) {
+		staTdls = prBssInfo->prTdlsHash[i];
+		if (!staTdls)
+			continue;
+		DBGLOG(TDLS, VOC,
+			" staTdls->aucAddr "MACSTR"\n",
+			MAC2STR(staTdls->aucAddr));
+		if (kalMemCmp(staTdls->aucAddr,
+			prActFrame->aucSrcAddr, ETH_ALEN) == 0 &&
+			staTdls->eTdlsRole == STA_TDLS_ROLE_INITOR &&
+			staTdls->eTdlsStatus == STA_TDLS_SETUP_INPROCESS) {
+			DBGLOG(TDLS, VOC, MACSTR
+				" auto send setup request\n",
+				MAC2STR(staTdls->aucAddr));
+			kalTdlsOpReq(
+				ad->prGlueInfo,
+				ucBssIndex,
+				staTdls->aucAddr,
+				(uint16_t) TDLS_SETUP,
+				0);
+		}
+	}
+}
+
 uint8_t TdlsCheckSetup(
 	struct ADAPTER *ad,
 	struct sta_tdls_info *sta)
@@ -368,7 +466,7 @@ uint32_t TdlsAutoSetup(
 		ad->prGlueInfo,
 		bss,
 		sta->aucAddr,
-		(uint16_t) TDLS_SETUP,
+		(uint16_t) TDLS_DISCOVERY_REQ,
 		0);
 
 	sta->eTdlsStatus = STA_TDLS_SETUP_INPROCESS;
@@ -425,15 +523,14 @@ uint32_t TdlsAutoTeardown(
 			bss,
 			sta->aucAddr);
 
-		if (!s)
-			return TDLS_STATUS_FAIL;
-
-		kalTdlsOpReq(
-			ad->prGlueInfo,
-			s->ucBssIndex,
-			s->aucMacAddr,
-			(uint16_t) TDLS_TEARDOWN,
-			0);
+		if (s) {
+			kalTdlsOpReq(
+				ad->prGlueInfo,
+				s->ucBssIndex,
+				s->aucMacAddr,
+				(uint16_t) TDLS_TEARDOWN,
+				0);
+		}
 	}
 
 	b->prTdlsHash[STA_TDLS_HASH_SIZE] = NULL;

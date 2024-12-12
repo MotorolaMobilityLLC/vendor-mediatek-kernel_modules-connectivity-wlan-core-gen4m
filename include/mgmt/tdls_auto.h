@@ -127,7 +127,9 @@ struct MSG_AUTO_TDLS_INFO {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-
+void TdlsProcessPublicAction(
+	struct ADAPTER *ad,
+	struct SW_RFB *prSwRfb);
 uint32_t TdlsAutoSetup(
 	struct ADAPTER *ad,
 	uint8_t bss,

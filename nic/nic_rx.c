@@ -3915,6 +3915,9 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		if (prAdapter->fgIsNANRegistered)
 			nicRxProcessNanPubActionFrame(prAdapter, prSwRfb);
 #endif
+#if CFG_SUPPORT_TDLS_AUTO
+		TdlsProcessPublicAction(prAdapter, prSwRfb);
+#endif
 		break;
 
 	case CATEGORY_FT_ACTION:
