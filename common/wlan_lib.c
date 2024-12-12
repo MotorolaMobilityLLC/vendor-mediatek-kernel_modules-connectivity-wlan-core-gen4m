@@ -12683,24 +12683,20 @@ wlanGetChannelIndex(enum ENUM_BAND eBand, uint8_t channel)
 uint8_t
 wlanGetChannelNumFromIndex(uint8_t ucIdx)
 {
-	uint8_t ucChannel = 0;
-
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (ucIdx >= (MAX_2G_BAND_CHN_NUM + MAX_5G_BAND_CHN_NUM))
-		ucChannel = ((ucIdx -
-			(MAX_2G_BAND_CHN_NUM + MAX_5G_BAND_CHN_NUM)) << 2) + 1;
-	else
+		return 1 +
+		     ((ucIdx - MAX_2G_BAND_CHN_NUM - MAX_5G_BAND_CHN_NUM) << 2);
 #endif /* CFG_SUPPORT_WIFI_6G */
-	if (ucIdx >= 34)
-		ucChannel = ((ucIdx - 34) << 2) + 149;
-	else if (ucIdx >= 22)
-		ucChannel = ((ucIdx - 22) << 2) + 100;
-	else if (ucIdx >= 14)
-		ucChannel = ((ucIdx - 14) << 2) + 36;
-	else
-		ucChannel = ucIdx + 1;
 
-	return ucChannel;
+	if (ucIdx >= 34)
+		return 149 + ((ucIdx - 34) << 2);
+	if (ucIdx >= 22)
+		return 100 + ((ucIdx - 22) << 2);
+	if (ucIdx >= 14)
+		return 36 + ((ucIdx - 14) << 2);
+
+	return ucIdx + 1;
 }
 
 enum ENUM_BAND
