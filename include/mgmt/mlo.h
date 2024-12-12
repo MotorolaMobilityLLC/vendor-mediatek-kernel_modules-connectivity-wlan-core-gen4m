@@ -245,7 +245,7 @@ struct STA_PROFILE {
 	uint8_t ucOpType;
 	uint32_t u4OpParam;
 	uint16_t u2IEbufLen;
-	uint8_t aucIEbuf[400];
+	uint8_t aucIEbuf[500];
 };
 
 struct MULTI_LINK_INFO {

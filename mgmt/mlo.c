@@ -2010,12 +2010,16 @@ sta:
 			goto next;
 		}
 
+		if (pos == tail)
+			goto next;
+
 		if (pos + 2 > tail) {
 			DBGLOG(ML, WARN,
 				"invalid STA profile len=%td\n", tail - pos);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
+
 		WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
 		if (show_info)
 			DBGLOG(ML, INFO,

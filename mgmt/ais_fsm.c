@@ -113,7 +113,6 @@ static const char * const apucDebugReqType[AIS_REQUEST_NUM] = {
  */
 static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 					  uintptr_t ulParam);
-static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter);
 
 static void aisFunClearAllTxReq(struct ADAPTER *prAdapter,
 		struct AIS_MGMT_TX_REQ_INFO *prAisMgmtTxInfo);
@@ -833,6 +832,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	uint8_t ucBssIndex, i;
+	struct APS_INFO *prApsInfo;
 
 	if (!prAisFsmInfo) {
 		DBGLOG(AIS, ERROR, "prAisFsmInfo is NULL!\n");
@@ -901,6 +901,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prAisSpecificBssInfo = &prAisFsmInfo->rAisSpecificBssInfo;
 	prConnSettings = &prAisFsmInfo->rConnSettings;
 	prWpaInfo = &prAisFsmInfo->rWpaInfo;
+	prApsInfo = &prAisFsmInfo->rApsInfo;
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 
 	/* The Init value of u4WpaVersion/u4AuthAlg shall be
@@ -914,6 +915,8 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_NONE;
 	prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
 
+	/* Init number of AP in ESS */
+	prApsInfo->u4EssApNum = 0;
 
 	/* kalGetMediaStateIndicated to disconneted */
 	prAisFsmInfo->eParamMediaStateIndicated = MEDIA_STATE_DISCONNECTED;
@@ -3547,6 +3550,7 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		aisGetConnSettings(prAdapter, ucBssIndex);
 	struct ESS_CHNL_INFO *prEssChnlInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct APS_INFO *prApsInfo = aisGetApsInfo(prAdapter, ucBssIndex);
 	uint8_t *pucChnlInfoNum;
 	uint8_t *pauChnlBitMap;
 	uint8_t aucChnlApNum[234] = {0,};
@@ -3557,9 +3561,7 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct LINK *prNeighborAPLink;
 #endif
 	struct CFG_SCAN_CHNL *prRoamScnChnl = &prAdapter->rAddRoamScnChnl;
-#if (CFG_SUPPORT_ROAMING_LOG == 1)
 	uint16_t u2ApNum = 0;
-#endif
 
 	if (!prConnSettings)  {
 		log_dbg(SCN, INFO, "No prConnSettings\n");
@@ -3605,9 +3607,8 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 			continue;
 
-#if (CFG_SUPPORT_ROAMING_LOG == 1)
 		u2ApNum++;
-#endif
+
 #if CFG_SUPPORT_NCHO
 		/* scan control is 1: use NCHO channel list only */
 		if (prAdapter->rNchoInfo.u4RoamScanControl)
@@ -3690,6 +3691,8 @@ updated:
 		prEssChnlInfo[j].ucApNum = aucChnlApNum[ucChnl];
 		prEssChnlInfo[j].ucUtilization = aucChnlUtil[ucChnl];
 	}
+
+	prApsInfo->u4EssApNum = u2ApNum;
 
 #if (CFG_SUPPORT_ROAMING_LOG == 1)
 	roamingFsmLogScanDone(
@@ -3905,6 +3908,12 @@ void aisAddDeauthBlockList(struct ADAPTER *prAdapter,
 		if (blk) {
 			blk->u2DeauthReason = u2DeauthReason;
 			blk->fgDeauthLastTime = TRUE;
+			blk->ucDeauthCount++;
+
+			DBGLOG(AIS, INFO, "update deauth count %d for "
+					MACSTR "\n",
+					blk->ucDeauthCount,
+					MAC2STR(prBssDesc->aucBSSID));
 		}
 	}
 }
@@ -4894,8 +4903,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			prAisFsmInfo->rJoinReqTime = 0;
 			prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
 
-			/* remove all deauthing AP from blocklist */
-			aisRemoveDeauthBlocklist(prAdapter);
+			/* remove AP's last deauth flag from blocklist */
+			aisRemoveDeauthBlocklist(prAdapter, TRUE, 0);
 
 			/* remove deferred bto event */
 			aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
@@ -5328,9 +5337,9 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	if (prRoamingFsmInfo != NULL)
 		prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
 #endif
-	aisRemoveDeauthBlocklist(prAdapter);
 	aisClearAllLink(prAisFsmInfo);
 
+	aisRemoveDeauthBlocklist(prAdapter, FALSE, 0);
 	aisRemoveTimeoutBlocklist(prAdapter, 0);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	aisRemoveTimeoutMldBlocklist(prAdapter, 0);
@@ -5756,7 +5765,8 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	prBssDesc->ucJoinFailureCount = 0;
 	prBssDesc->ucTempRejectCount = 0;
 
-	aisRemoveBlockList(prAdapter, prBssDesc);
+	if (prBssDesc->prBlock && prBssDesc->prBlock->ucDeauthCount == 0)
+		aisRemoveBlockList(prAdapter, prBssDesc);
 	/* 4 <4.1> Setup MIB for current BSS */
 	prAisBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
@@ -8827,7 +8837,8 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 				 struct AIS_BLOCKLIST_ITEM) {
 		uint16_t sec = u2Sec;
 
-		if (prEntry->fgIsInFWKBlocklist == TRUE)
+		if (prEntry->fgIsInFWKBlocklist == TRUE ||
+		    prEntry->ucDeauthCount > 0)
 			continue;
 
 #if CFG_SUPPORT_MBO
@@ -8860,18 +8871,22 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 	}
 }
 
-static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter)
+void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
+			u_int8_t fgRemoveDeauthFlag, uint16_t u2Sec)
 {
 	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
 	struct AIS_BLOCKLIST_ITEM *prNextEntry = NULL;
 	struct LINK *prBlockList = &prAdapter->rWifiVar.rBlockList.rUsingLink;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct PARAM_SSID rSsid;
+	OS_SYSTIME rCurrent;
+
+	GET_CURRENT_SYSTIME(&rCurrent);
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct AIS_BLOCKLIST_ITEM) {
 		if (prEntry->fgIsInFWKBlocklist ||
-		    !prEntry->fgDeauthLastTime)
+		    !prEntry->ucDeauthCount)
 			continue;
 
 		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
@@ -8883,16 +8898,31 @@ static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter)
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 						prEntry->aucBSSID,
 						TRUE, &rSsid);
-		if (prBssDesc) {
-			prBssDesc->prBlock = NULL;
-			prBssDesc->ucJoinFailureCount = 0;
-			prBssDesc->ucTempRejectCount = 0;
-			DBGLOG(AIS, INFO,
-			       "Remove deauth "MACSTR" from blocklist\n",
-			       MAC2STR(prBssDesc->aucBSSID));
+
+		if (fgRemoveDeauthFlag) {
+			prEntry->fgDeauthLastTime = FALSE;
+			if (prBssDesc) {
+				prBssDesc->ucJoinFailureCount = 0;
+				prBssDesc->ucTempRejectCount = 0;
+				DBGLOG(AIS, INFO, "Remove " MACSTR
+				  " last deauth flag, deauth count = %d\n",
+				  MAC2STR(prBssDesc->aucBSSID),
+				  prEntry->ucDeauthCount);
+			}
+		} else if (CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
+					     SEC_TO_MSEC(u2Sec))) {
+			if (prBssDesc) {
+				prBssDesc->prBlock = NULL;
+				prBssDesc->ucJoinFailureCount = 0;
+				prBssDesc->ucTempRejectCount = 0;
+				DBGLOG(AIS, INFO,
+				       "Remove deauth "MACSTR
+				       " from blocklist\n",
+				       MAC2STR(prBssDesc->aucBSSID));
+			}
+			LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlockList,
+				prEntry);
 		}
-		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlockList,
-			prEntry);
 	}
 }
 

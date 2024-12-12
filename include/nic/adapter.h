@@ -1254,6 +1254,7 @@ struct WIFI_VAR {
 	uint8_t ucAisConnTrialLimit;
 	uint8_t ucAisBssTrialLimit;
 	uint16_t u2AisBlocklistTimeout;
+	uint16_t u2AisDeauthBlocklistTimeout;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	uint16_t u2AisMldBlocklistTimeout;
 	uint8_t ucAisMldTrialLimit;

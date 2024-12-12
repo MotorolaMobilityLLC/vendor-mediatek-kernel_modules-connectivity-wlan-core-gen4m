@@ -8179,6 +8179,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		AIS_BSS_TRIAL_LIMIT, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u2AisBlocklistTimeout, "AisBlocklistTimeout",
 		  AIS_BLOCKLIST_TIMEOUT, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u2AisDeauthBlocklistTimeout,
+		"AisDeauthBlocklistTimeout", 0, FEATURE_TO_CUSTOMER);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	INIT_UINT(prWifiVar->u2AisMldBlocklistTimeout, "AisMldBlocklistTimeout",
 		  AIS_MLD_BLOCKLIST_TIMEOUT, FEATURE_TO_CUSTOMER);

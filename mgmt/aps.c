@@ -136,6 +136,7 @@ enum ENUM_APS_REPLACE_REASON {
 	APS_UNMATCH_BSSID,
 	APS_UNMATCH_BSSID_HINT,
 	APS_WORSE_RSSI,
+	APS_LAST_DEAUTH,
 
 	/* reason to replace */
 	APS_FIRST_CANDIDATE,
@@ -143,6 +144,7 @@ enum ENUM_APS_REPLACE_REASON {
 	APS_MATCH_BSSID,
 	APS_MATCH_BSSID_HINT,
 	APS_BETTER_RSSI,
+	APS_NOT_LAST_DEAUTH,
 
 	/* don't add after this */
 	APS_REPLACE_REASON_NUM,
@@ -155,11 +157,13 @@ static const char * const apucReplaceReasonStr[APS_REPLACE_REASON_NUM] = {
 	"UNMATCH BSSID",
 	"UNMATCH BSSID_HINT",
 	"WORSE RSSI",
+	"LAST DEAUTH",
 	"FIRST CANDIDATE",
 	"HIGH SCORE",
 	"MATCH BSSID",
 	"MATCH BSSID_HINT",
 	"BETTER RSSI",
+	"NOT LAST DEAUTH",
 };
 
 static const char * const apucLinkPlanStr[MLO_LINK_PLAN_NUM] = {
@@ -1792,6 +1796,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *ais;
 	struct BSS_INFO *prAisBssInfo;
 	struct CONNECTION_SETTINGS *conn;
+	struct APS_INFO *prApsInfo;
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
@@ -1801,6 +1806,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	conn = aisGetConnSettings(prAdapter, ucBssIndex);
+	prApsInfo = aisGetApsInfo(prAdapter, ucBssIndex);
 
 	if (ais == NULL) {
 		DBGLOG(APS, WARN, "ais is NULL\n");
@@ -1877,9 +1883,17 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 
-		if (prBssDesc->prBlock->fgDeauthLastTime) {
-			DBGLOG(APS, WARN, MACSTR " is sending deauth.\n",
-				MAC2STR(prBssDesc->aucBSSID));
+		if (prBssDesc->prBlock->fgDeauthLastTime
+#if (CFG_EXT_ROAMING == 0)
+		    && (prApsInfo->u4EssApNum <= 1 ||
+			prBssDesc->prBlock->ucDeauthCount >= 2 ||
+			prAdapter->rWifiVar.u4SwTestMode !=
+						ENUM_SW_TEST_MODE_NONE)
+#endif
+		    ) {
+			DBGLOG(APS, WARN, MACSTR " is sending deauth [%d].\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				prBssDesc->prBlock->ucDeauthCount);
 			return FALSE;
 		}
 
@@ -2751,8 +2765,12 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 		uint8_t addr[MAC_ADDR_LEN] = {0};
 		uint8_t *mld_addr = addr;
 
-		if (cand->prBlock)
+		if (cand->prBlock) {
 			j++;
+
+			if (cand->prBlock->fgDeauthLastTime)
+				ap->fgIsLastDeauth = TRUE;
+		}
 
 		if (IS_AIS_CONN_BSSDESC(ais, cand))
 			k++;
@@ -2763,7 +2781,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 		DBGLOG(APS, INFO,
 			"CAND[%d] BSS[" MACSTR "] band[%s] mld[" MACSTR
-			"] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] mode[%d] simu[%d]\n",
+			"] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] deauth[%d] mode[%d] simu[%d]\n",
 			ap->u4Index,
 			MAC2STR(cand->aucBSSID),
 			apucBandStr[cand->eBand],
@@ -2773,6 +2791,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			cand->fgIsMatchBssid,
 			cand->fgIsMatchBssidHint,
 			cand->prBlock != NULL,
+			ap->fgIsLastDeauth,
 			ap->eMloMode, ap->ucMaxSimuLinks);
 	}
 
@@ -3087,17 +3106,27 @@ enum ENUM_APS_REPLACE_REASON apsInterNeedReplace(struct ADAPTER *ad,
 			return APS_UNMATCH_BSSID_HINT;
 	}
 
+	/*
+	 *  If there is no candidate AP,
+	 *  then select normal or last deauth AP as candidate AP.
+	 */
 	if (!cand)
 		return APS_FIRST_CANDIDATE;
 
+	/*
+	 *  If there is a more suitable AP than the last deauth AP in ESS,
+	 *  choose it as the candidate AP.
+	 */
+	if (curr->fgIsLastDeauth)
+		return APS_LAST_DEAUTH;
+	else if (cand->fgIsLastDeauth)
+		return APS_NOT_LAST_DEAUTH;
+
 #if (CFG_TC10_FEATURE == 0)
-	if (reason == ROAMING_REASON_POOR_RCPI ||
-	    reason == ROAMING_REASON_INACTIVE) {
-		if (apsNeedReplaceByRssi(ad, cand, curr, reason))
-			return APS_BETTER_RSSI;
-		if (apsNeedReplaceByRssi(ad, curr, cand, reason))
-			return APS_WORSE_RSSI;
-	}
+	if (apsNeedReplaceByRssi(ad, cand, curr, reason))
+		return APS_BETTER_RSSI;
+	if (apsNeedReplaceByRssi(ad, curr, cand, reason))
+		return APS_WORSE_RSSI;
 #endif
 
 	return curr_score > cand_score ? APS_HIGH_SCORE : APS_LOW_SCORE;
@@ -3148,8 +3177,7 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
 			found = "connected_link";
-		} else if (set->aprBssDesc[0]->ucJoinFailureCount > 1 &&
-		    !IS_AIS_CONN_BSSDESC(ais, bss) &&
+		} else if (!IS_AIS_CONN_BSSDESC(ais, bss) &&
 		    bss->ucJoinFailureCount <
 		    set->aprBssDesc[0]->ucJoinFailureCount) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];
@@ -3299,6 +3327,8 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 		conn->eConnectionPolicy, reason);
 
 	aisClearCusBlocklist(ad, bidx, FALSE);
+	aisRemoveDeauthBlocklist(ad, FALSE,
+		ad->rWifiVar.u2AisDeauthBlocklistTimeout);
 	aisRemoveTimeoutBlocklist(ad, ad->rWifiVar.u2AisBlocklistTimeout);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	aisRemoveTimeoutMldBlocklist(ad, ad->rWifiVar.u2AisMldBlocklistTimeout);

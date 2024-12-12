@@ -433,6 +433,7 @@ struct AIS_BLOCKLIST_ITEM {
 	uint16_t u2DeauthReason;
 	uint16_t u2AuthStatus;
 	uint8_t ucCount;
+	uint8_t ucDeauthCount;
 	uint8_t ucSSIDLen;
 	uint8_t aucSSID[32];
 	OS_SYSTIME rAddTime;
@@ -965,6 +966,8 @@ struct AIS_BLOCKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisRemoveBlockList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec);
+void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
+	u_int8_t fgRemoveAll, uint16_t u2Sec);
 struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
