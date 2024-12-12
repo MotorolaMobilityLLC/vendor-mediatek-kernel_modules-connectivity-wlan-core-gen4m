@@ -1092,7 +1092,8 @@ kalP2PIndicateChannelReady(struct GLUE_INFO *prGlueInfo,
 	enum nl80211_channel_type eChnlType = NL80211_CHAN_NO_HT;
 
 	do {
-		if (prGlueInfo == NULL)
+		if (prGlueInfo == NULL || !prGlueInfo->prP2PInfo[0] ||
+		    !prGlueInfo->prP2PInfo[0]->prDevHandler)
 			break;
 
 		kalMemZero(&rChannelInfo, sizeof(struct RF_CHANNEL_INFO));
