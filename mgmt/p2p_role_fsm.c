@@ -4184,16 +4184,6 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventChnlGrant */
 
-/* ////////////////////////////////////// */
-void p2pRoleFsmRunEventDissolve(struct ADAPTER *prAdapter,
-		struct MSG_HDR *prMsgHdr)
-{
-	/* TODO: */
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
-}				/* p2pRoleFsmRunEventDissolve */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @	This routine update the current MAC table based on the current ACL.

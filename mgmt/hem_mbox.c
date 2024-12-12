@@ -105,7 +105,6 @@ static const char * const apucDebugMsg[] = {
 	"MID_MNY_P2P_CHNL_ABORT",
 	"MID_MNY_P2P_MGMT_TX",
 	"MID_MNY_P2P_MGMT_TX_CANCEL_WAIT",
-	"MID_MNY_P2P_GROUP_DISSOLVE",
 	"MID_MNY_P2P_MGMT_FRAME_REGISTER",
 	"MID_MNY_P2P_START_AP",
 	"MID_MNY_P2P_DEL_IFACE",
@@ -305,7 +304,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_CHNL_ABORT, p2pDevFsmRunEventChannelAbort},	/* V */
 	{MID_MNY_P2P_MGMT_TX, p2pFsmRunEventMgmtFrameTx},	/* V */
 	{MID_MNY_P2P_MGMT_TX_CANCEL_WAIT, p2pFsmRunEventTxCancelWait},
-	{MID_MNY_P2P_GROUP_DISSOLVE, p2pRoleFsmRunEventDissolve},
 	{MID_MNY_P2P_MGMT_FRAME_REGISTER,
 		p2pDevFsmRunEventMgmtFrameRegister},
 #if CFG_ENABLE_WIFI_DIRECT

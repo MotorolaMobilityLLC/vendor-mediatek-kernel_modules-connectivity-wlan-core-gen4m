@@ -547,9 +547,6 @@ void p2pRoleFsmReInitBeaconAll(struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
-void p2pRoleFsmRunEventDissolve(struct ADAPTER *prAdapter,
-		struct MSG_HDR *prMsgHdr);
-
 void
 p2pProcessEvent_UpdateNOAParam(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
