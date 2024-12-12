@@ -11813,7 +11813,11 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 	     rCmdKey.aucPeerAddr[5]) == 0xFF) {
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 				prBssInfo->ucBssIndex, prBssInfo->aucBSSID);
-		ASSERT(prStaRec);	/* AIS RSN Group key, addr is BC addr */
+		if (prStaRec == NULL) {
+			DBGLOG(REQ, WARN, "Can't find station.\n");
+			return WLAN_STATUS_FAILURE;
+		}
+		/* AIS RSN Group key, addr is BC addr */
 		kalMemCopy(rCmdKey.aucPeerAddr, prStaRec->aucMacAddr,
 			   MAC_ADDR_LEN);
 	} else {
@@ -11845,7 +11849,8 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 				prStaRec->fgTransmitKeyExist =
 					TRUE;	/* wait for CMD Done ? */
 			} else {
-				ASSERT(FALSE);
+				DBGLOG(REQ, WARN, "Key type is invalid.\n");
+				return WLAN_STATUS_INVALID_DATA;
 			}
 		}
 #if 0
@@ -11900,7 +11905,9 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 							rCmdKey.ucKeyId);
 				prStaRec->ucWlanIndex = rCmdKey.ucWlanIndex;
 			} else {	/* Exist this case ? */
-				ASSERT(FALSE);
+				DBGLOG(REQ, WARN, "Can't find station.\n");
+				return WLAN_STATUS_FAILURE;
+
 				/* prCmdKey->ucWlanIndex = */
 				/* secPrivacySeekForBcEntry(prAdapter, */
 				/* prBssInfo->ucBssIndex, */
