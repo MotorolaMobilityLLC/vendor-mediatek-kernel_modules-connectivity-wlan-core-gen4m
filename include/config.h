@@ -2445,6 +2445,18 @@
 #define DEFAULT_STA_6G_BW (MAX_BW_320_2MHZ)
 #endif
 
+#ifdef CFG_SAP_2G_BW
+#define DEFAULT_SAP_2G_BW (CFG_SAP_2G_BW)
+#else
+#define DEFAULT_SAP_2G_BW (MAX_BW_20MHZ)
+#endif
+
+#ifdef CFG_P2P_2G_BW
+#define DEFAULT_P2P_2G_BW (CFG_P2P_2G_BW)
+#else
+#define DEFAULT_P2P_2G_BW (MAX_BW_20MHZ)
+#endif
+
 #ifndef CFG_MTK_WIFI_SW_WFDMA
 #define CFG_MTK_WIFI_SW_WFDMA			0
 #endif
