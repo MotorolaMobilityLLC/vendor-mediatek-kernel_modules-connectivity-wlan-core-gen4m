@@ -2574,7 +2574,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucSeg1Ch,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		enum P2P_VENDOR_ACS_HW_MODE eHwMode,
-		uint16_t u2PunctBitmap)
+		uint16_t u2PunctBitmap,
+		enum ENUM_CHNL_EXT eSco)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct sk_buff *vendor_event = NULL;
@@ -2632,9 +2633,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 					  ucPrimaryCh,
 					  rlmGetVhtOpBwByBssOpBw(eChnlBw),
 					  0,
-					  nicGetS1Freq(eBand,
-						       ucPrimaryCh,
-						       eChnlBw),
+					  nicGetCenterChFreq(eBand, ucPrimaryCh,
+							     eSco, eChnlBw),
 					  eBand);
 	}
 #endif

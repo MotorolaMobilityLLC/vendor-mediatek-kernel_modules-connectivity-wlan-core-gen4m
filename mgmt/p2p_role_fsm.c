@@ -1497,6 +1497,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	u_int8_t bSkipCac = FALSE;
 	enum ENUM_BAND eBand;
 	uint8_t ucChannelNum;
+	enum ENUM_CHNL_EXT eSco;
 
 	prP2pStartAPMsg = (struct MSG_P2P_START_AP *) prMsgHdr;
 
@@ -1524,6 +1525,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 
 	eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
+	eSco = prP2pConnReqInfo->eChnlExt;
 
 #if (CFG_MTK_ANDROID_WMT == 1)
 	if (p2pFuncIsAPMode(prAdapter->rWifiVar
@@ -1548,7 +1550,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 				ucRfBw = MAX_BW_80MHZ;
 
 			/* Revise to VHT OP BW */
-			if (nicGetS1(eBand, ucChannelNum, ucRfBw) &&
+			if (nicGetS1(eBand, ucChannelNum, eSco, ucRfBw) &&
 				(ucRfBw >= MAX_BW_160MHZ))
 				bSkipRdd = FALSE;
 		}
@@ -2480,6 +2482,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 			p2pFuncChannelListFiltering(prAdapter,
 				prP2pConnReqInfo->rChannelInfo.ucChannelNum,
 				rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo),
+				prP2pConnReqInfo->eChnlExt,
 				ucNumOfChannel,
 				aucChannelList,
 				&ucNumOfChannel,
@@ -2607,6 +2610,7 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 	prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 		prChnlReqInfo->eBand,
 		prChnlReqInfo->ucReqChnlNum,
+		prChnlReqInfo->eChnlSco,
 		prRfChannelInfo->ucChnlBw);
 	prChnlReqInfo->ucCenterFreqS2 = 0;
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
@@ -3240,6 +3244,7 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 			prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 				prChnlReqInfo->eBand,
 				prChnlReqInfo->ucReqChnlNum,
+				prChnlReqInfo->eChnlSco,
 				rlmGetBssOpBwByChannelWidth(
 					prChnlReqInfo->eChnlSco,
 					prChnlReqInfo->eChannelWidth));

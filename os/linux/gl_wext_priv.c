@@ -11948,7 +11948,9 @@ int priv_driver_dfs_cac_start(struct net_device *prNetDev,
 	rRfChnlInfo.ucChnlBw = ucBw;
 	rRfChnlInfo.u2PriChnlFreq =
 		nicChannelNum2Freq(ucCh, BAND_5G) / 1000;
-	rRfChnlInfo.u4CenterFreq1 = nicGetS1Freq(BAND_5G, ucCh, ucBw);
+	/* 5G sco no matter */
+	rRfChnlInfo.u4CenterFreq1 = nicGetS1Freq(BAND_5G, ucCh, CHNL_EXT_RES,
+						 ucBw);
 	rRfChnlInfo.u4CenterFreq2 = 0;
 
 	prP2pRoleFsmInfo =

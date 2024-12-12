@@ -1653,7 +1653,9 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 uint8_t nicChannelInfo2OpClass(struct RF_CHANNEL_INFO *prChannelInfo)
 {
 	uint8_t ucVhtOpClass;
-	uint32_t u4Freq = prChannelInfo->u4CenterFreq1;
+	uint32_t u4Freq = nicGetCenterChFreq(prChannelInfo->eBand,
+		prChannelInfo->ucChannelNum, prChannelInfo->eSco,
+		prChannelInfo->ucChnlBw);
 
 	if (u4Freq >= 2412 && u4Freq <= 2472) {
 		/* 2.407 GHz, channels 1..13 */
@@ -1764,13 +1766,14 @@ uint8_t nicChannelInfo2OpClass(struct RF_CHANNEL_INFO *prChannelInfo)
 #endif
 
 	DBGLOG(NIC, ERROR,
-		"Get op class failed, band=%d channel=%d bw=%d freq=%d s1=%d s2=%d\n",
+		"Get op class failed, band=%d channel=%d bw=%d freq=%d s1=%d s2=%d center=%u\n",
 		prChannelInfo->eBand,
 		prChannelInfo->ucChannelNum,
 		prChannelInfo->ucChnlBw,
 		prChannelInfo->u2PriChnlFreq,
 		prChannelInfo->u4CenterFreq1,
-		prChannelInfo->u4CenterFreq2);
+		prChannelInfo->u4CenterFreq2,
+		u4Freq);
 
 	return 0;
 }
@@ -1922,13 +1925,23 @@ void nicReviseBwByCh(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t *bw)
 }
 
 uint32_t nicGetS1Freq(enum ENUM_BAND eBand, uint8_t ucPrimaryChannel,
-		      uint8_t ucBandwidth)
+		      uint8_t ucSco, uint8_t ucBandwidth)
 {
 	uint8_t ucS1Channel;
 
-	ucS1Channel = nicGetS1(eBand, ucPrimaryChannel, ucBandwidth);
+	ucS1Channel = nicGetS1(eBand, ucPrimaryChannel, ucSco, ucBandwidth);
 
 	return nicChannelNum2Freq(ucS1Channel, eBand) / 1000;
+}
+
+uint32_t nicGetS2Freq(enum ENUM_BAND eBand, uint8_t ucPrimaryChannel,
+		      uint8_t ucBandwidth)
+{
+	uint8_t ucCh;
+
+	ucCh = nicGetS2(eBand, ucPrimaryChannel, ucBandwidth);
+
+	return nicChannelNum2Freq(ucCh, eBand) / 1000;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1966,7 +1979,8 @@ uint8_t nicGetS2(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 		else /* 6G */
 			fgIsPriChAtRight = ((ucPriCh - 1) / 16) % 2;
 
-		ucS1 = nicGetS1(eBand, ucPriCh, ucBw);
+		/* sco no matter */
+		ucS1 = nicGetS1(eBand, ucPriCh, CHNL_EXT_RES, ucBw);
 		if (ucS1) {
 			if (fgIsPriChAtRight)
 				return ucS1 - 16;
@@ -2015,7 +2029,7 @@ fail:
  */
 /*----------------------------------------------------------------------------*/
 uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
-		 uint8_t ucBw)
+		 uint8_t ucSco, uint8_t ucBw)
 {
 	/* Caller should do nicReviseBwByCh first to get right BW */
 	if (!nicIsChBwValid(eBand, ucPriCh, ucBw)) {
@@ -2028,10 +2042,15 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 		return ucPriCh;
 	case MAX_BW_40MHZ:
 		if (eBand == BAND_2G4) {
-			if (ucPriCh >= 1 && ucPriCh <= 7)
-				return 3 + (ucPriCh - 1);
-			else if (ucPriCh >= 8 && ucPriCh <= 13)
-				return 6 + (ucPriCh - 8);
+			if (ucSco == CHNL_EXT_SCN || ucSco == CHNL_EXT_RES)
+				break;
+
+			if (ucSco == CHNL_EXT_SCA &&
+			    ucPriCh >= 1 && ucPriCh <= 9)
+				return ucPriCh + 2;
+			else if (ucSco == CHNL_EXT_SCB &&
+				 ucPriCh >= 5 && ucPriCh <= 13)
+				return ucPriCh - 2;
 		} else if (eBand == BAND_5G) {
 			if (ucPriCh >= 36 && ucPriCh <= 161)
 				return 38 + 8 * ((ucPriCh - 36) / 8);
@@ -2076,8 +2095,8 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 	}
 
 fail:
-	DBGLOG(NIC, WARN, "get S1 fail, band=%u, ch=%u, bw=%u",
-	       eBand, ucPriCh, ucBw);
+	DBGLOG(NIC, WARN, "get S1 fail, band=%u, ch=%u, sco=%u, bw=%u",
+	       eBand, ucPriCh, ucSco, ucBw);
 	return 0;
 }
 
@@ -2087,7 +2106,8 @@ fail:
  *        Usually used in command to FW (FW only use center freq).
  */
 /*----------------------------------------------------------------------------*/
-uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
+uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucSco,
+		       uint8_t ucBw)
 {
 	uint8_t ucS1;
 
@@ -2096,12 +2116,22 @@ uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 		return 0;
 	}
 
-	ucS1 = nicGetS1(eBand, ucPriCh, ucBw);
+	ucS1 = nicGetS1(eBand, ucPriCh, ucSco, ucBw);
 
 	if (ucBw <= MAX_BW_80MHZ || ucBw == MAX_BW_80_80_MHZ)
 		return ucS1;
 	else
 		return nicGetS2(eBand, ucPriCh, ucBw);
+}
+
+uint32_t nicGetCenterChFreq(enum ENUM_BAND eBand, uint8_t ucPriCh,
+			    uint8_t ucSco, uint8_t ucBw)
+{
+	uint8_t ucS1;
+
+	ucS1 = nicGetCenterCh(eBand, ucPriCh, ucSco, ucBw);
+
+	return nicChannelNum2Freq(ucS1, eBand) / 1000;
 }
 
 /* firmware command wrapper */

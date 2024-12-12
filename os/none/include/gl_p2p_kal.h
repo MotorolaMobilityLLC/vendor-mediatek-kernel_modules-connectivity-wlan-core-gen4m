@@ -451,7 +451,7 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 
 #define kalP2pIndicateAcsResult(_prGlueInfo, _eBand, _ucRoleIndex, \
 	_ucPrimaryCh, _ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw, _eHwMode, \
-	_u2PunctBitmap) \
+	_u2PunctBitmap, _eSco) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2pPreStartRdd( \
@@ -509,7 +509,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucSeg1Ch,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		enum P2P_VENDOR_ACS_HW_MODE eHwMode,
-		uint16_t u2PunctBitmap);
+		uint16_t u2PunctBitmap,
+		enum ENUM_CHNL_EXT eSco);
 
 void kalP2pIndicateRadarEvent(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,

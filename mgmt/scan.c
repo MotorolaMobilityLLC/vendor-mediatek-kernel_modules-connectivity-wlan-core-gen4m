@@ -5683,6 +5683,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 		prBssDesc->eChannelWidth = ucVhtOpBw;
 		prBssDesc->ucCenterFreqS1 = nicGetS1(
 			prBssDesc->eBand, prBssDesc->ucChannelNum,
+			prBssDesc->eSco,
 			rlmGetBssOpBwByChannelWidth(prBssDesc->eSco,
 						    prBssDesc->eChannelWidth));
 		prBssDesc->ucCenterFreqS2 = 0;

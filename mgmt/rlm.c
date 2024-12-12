@@ -2174,6 +2174,7 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 			eRfChannelWidth = prBssDesc->eChannelWidth;
 			ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand,
 						      ucPrimaryChannel,
+						      prBssDesc->eSco,
 				rlmGetBssOpBwByChannelWidth(prBssDesc->eSco,
 							    eRfChannelWidth));
 
@@ -2507,6 +2508,7 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	ucBandwidth = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 	ucSeg0 = nicGetS1(prBssInfo->eBand,
 			  prBssInfo->ucPrimaryChannel,
+			  prBssInfo->eBssSCO,
 			  ucBandwidth);
 	ucSeg1 = nicGetS2(prBssInfo->eBand,
 			  prBssInfo->ucPrimaryChannel,
@@ -2849,7 +2851,8 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 		rlmGetBssOpBwByChannelWidth(*peSco, *pucChannelWidth),
 		ucChannelNum,
 		pucCenterFreqS1,
-		pucCenterFreqS2);
+		pucCenterFreqS2,
+		peSco);
 
 	/* 6G BW40, need to modify Sco to proper value */
 	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40
@@ -2866,7 +2869,8 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 void rlmModifyHE6GBwPara(uint8_t ucBw,
 	uint8_t ucHe6gPrimaryChannel,
 	uint8_t *pucHe6gChannelFrequencyS1,
-	uint8_t *pucHe6gChannelFrequencyS2)
+	uint8_t *pucHe6gChannelFrequencyS2,
+	enum ENUM_CHNL_EXT *peSco)
 {
 	uint8_t i = 0, ucS1Modify = 0;
 	uint8_t ucS1Origin = *pucHe6gChannelFrequencyS1;
@@ -2898,7 +2902,7 @@ void rlmModifyHE6GBwPara(uint8_t ucBw,
 
 		if (ucS1Modify == 0) {
 			ucS1Modify = nicGetS1(BAND_6G, ucHe6gPrimaryChannel,
-					      ucBw);
+					      *peSco, ucBw);
 
 			DBGLOG(RLM, WARN,
 				"S1/S2 for 6G BW160 is out of spec, S1[%d->%d] S2[%d->0]\n",
@@ -2908,7 +2912,8 @@ void rlmModifyHE6GBwPara(uint8_t ucBw,
 		*pucHe6gChannelFrequencyS1 = ucS1Modify;
 		*pucHe6gChannelFrequencyS2 = 0;
 	} else if (ucBw == MAX_BW_80MHZ) {
-		ucS1Modify = nicGetS1(BAND_6G, ucHe6gPrimaryChannel, ucBw);
+		ucS1Modify = nicGetS1(BAND_6G, ucHe6gPrimaryChannel, *peSco,
+				      ucBw);
 
 		if (ucS1Modify != ucS1Origin) {
 			DBGLOG(RLM, WARN,
@@ -3021,6 +3026,7 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 			*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
 			*pucS1 = nicGetS1(prBssInfo->eBand, *pucPrimaryCh,
+					  *peExtend,
 				  rlmGetBssOpBwByChannelWidth(*peExtend,
 					*peChannelWidth));
 		}
@@ -3127,6 +3133,7 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 	prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
 		prBssInfo->eBand,
 		prBssInfo->ucPrimaryChannel,
+		prBssInfo->eBssSCO,
 		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 	prBssInfo->ucVhtChannelFrequencyS2 = 0;
 }
@@ -5997,6 +6004,7 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 	prCmdBody->ucVhtChannelFrequencyS1 = nicGetCenterCh(
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
+			prBssInfo->eBssSCO,
 			rlmGetBssOpBwByChannelWidth(prBssInfo->eBssSCO,
 					    prBssInfo->ucVhtChannelWidth));
 	prCmdBody->ucVhtChannelFrequencyS2 = prBssInfo->ucVhtChannelFrequencyS2;
@@ -7308,7 +7316,7 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 		break;
 	}
 	prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
-			ucNewChannelNum,
+			ucNewChannelNum, prCSAParams->eSco,
 			rlmGetBssOpBwByChannelWidth(prCSAParams->eSco,
 						    prCSAParams->ucVhtBw));
 

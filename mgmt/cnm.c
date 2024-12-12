@@ -744,6 +744,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		prMsgChReq[i].ucRfCenterFreqSeg1 = nicGetCenterCh(
 			prMsgChReq[i].eRfBand,
 			prMsgChReq[i].ucPrimaryChannel,
+			prMsgChReq[i].eRfSco,
 			rlmGetBssOpBwByChannelWidth(
 				prMsgChReq[i].eRfSco,
 				prMsgChReq[i].eRfChannelWidth));
@@ -751,6 +752,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		prMsgChReq[i].ucRfCenterFreqSeg1FromAP = nicGetCenterCh(
 			prMsgChReq[i].eRfBand,
 			prMsgChReq[i].ucPrimaryChannel,
+			prMsgChReq[i].eRfSco,
 			rlmGetBssOpBwByChannelWidth(prMsgChReq[i].eRfSco,
 				prMsgChReq[i].eRfChannelWidthFromAP));
 	}
@@ -6364,6 +6366,7 @@ void cnmRddOpmodeEventHandler(
 		rfChannelInfo.ucChnlBw = prRddEvtOpMode->ucChBw;
 		rfChannelInfo.u4CenterFreq1 = nicGetS1Freq(rfChannelInfo.eBand,
 			rfChannelInfo.ucChannelNum,
+			prP2pConnReqInfo->eChnlExt,
 			rfChannelInfo.ucChnlBw);
 		rfChannelInfo.u4CenterFreq2 = 0;
 		cnmSapChannelSwitchReq(prAdapter,

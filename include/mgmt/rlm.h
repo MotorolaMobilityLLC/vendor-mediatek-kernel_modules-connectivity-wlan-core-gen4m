@@ -625,7 +625,8 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 void rlmModifyHE6GBwPara(uint8_t ucBw,
 	uint8_t ucHe6gPrimaryChannel,
 	uint8_t *pucHe6gChannelFrequencyS1,
-	uint8_t *pucHe6gChannelFrequencyS2);
+	uint8_t *pucHe6gChannelFrequencyS2,
+	enum ENUM_CHNL_EXT *peSco);
 #endif
 
 void rlmReviseMaxBw(

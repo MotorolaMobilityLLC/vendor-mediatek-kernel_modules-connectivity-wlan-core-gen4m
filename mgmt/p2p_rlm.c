@@ -78,6 +78,7 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 		/* get seg0 & seg1 with original bandwidth for puncturing */
 		ucSeg0 = nicGetS1(prBssInfo->eBand,
 				  prBssInfo->ucPrimaryChannel,
+				  prBssInfo->eBssSCO,
 				  ucMaxBandwidth);
 		ucSeg1 = nicGetS2(prBssInfo->eBand,
 				  prBssInfo->ucPrimaryChannel,
@@ -99,6 +100,7 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 	/* re-sync seg0 & seg1 channel in case puncture takes effect. */
 	ucSeg0 = nicGetS1(prBssInfo->eBand,
 			  prBssInfo->ucPrimaryChannel,
+			  prBssInfo->eBssSCO,
 			  ucMaxBandwidth);
 	ucSeg1 = nicGetS2(prBssInfo->eBand,
 			  prBssInfo->ucPrimaryChannel,
@@ -973,6 +975,7 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		ucFreq1Channel = nicGetS1(
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
+			prBssInfo->eBssSCO,
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 	}
 
@@ -987,10 +990,12 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	enum ENUM_BAND eBandOrig, eBandCsa;
+	enum ENUM_CHNL_EXT eScoCsa;
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
 	prRfChnlInfo->ucChannelNum = ucCh;
+	eScoCsa = nicGetSco(prAdapter, eBand, ucCh);
 
 	eBandCsa = eBand;
 	prRfChnlInfo->eBand = eBandCsa;
@@ -999,6 +1004,7 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	eBandOrig = prBssInfo->eBand;
 	prBssInfo->eBand = eBandCsa;
 	prRfChnlInfo->ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
+	prRfChnlInfo->eSco = eScoCsa;
 #if (CFG_SUPPORT_802_11BE == 1)
 	if ((!(prBssInfo->ucPhyTypeSet &
 		PHY_TYPE_BIT_EHT)) &&
@@ -1010,9 +1016,10 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 
 	prRfChnlInfo->u2PriChnlFreq =
 		nicChannelNum2Freq(ucCh, eBandCsa) / 1000;
-	prRfChnlInfo->u4CenterFreq1 = nicGetS1Freq(
-		eBandCsa, prRfChnlInfo->ucChannelNum, prRfChnlInfo->ucChnlBw);
-	prRfChnlInfo->u4CenterFreq2 = 0;
+	prRfChnlInfo->u4CenterFreq1 = nicGetS1Freq(eBandCsa, ucCh, eScoCsa,
+		prRfChnlInfo->ucChnlBw);
+	prRfChnlInfo->u4CenterFreq2 = nicGetS2Freq(eBandCsa, ucCh,
+		prRfChnlInfo->ucChnlBw);
 
 	if ((eBand == BAND_5G) &&
 		(ucCh >= 52 && ucCh <= 144))
@@ -1111,7 +1118,7 @@ void rlmPunctUpdateLegacyBw(enum ENUM_BAND eBand, uint16_t u2Bitmap,
 					  pucBw, &ucCenterCh);
 	}
 
-	*pucSeg0 = nicGetS1(eBand, ucPriChannel, *pucBw);
+	*pucSeg0 = nicGetS1(eBand, ucPriChannel, CHNL_EXT_RES, *pucBw);
 	*pucSeg1 = nicGetS2(eBand, ucPriChannel, *pucBw);
 
 	if (pucOpClass) {
@@ -1119,16 +1126,17 @@ void rlmPunctUpdateLegacyBw(enum ENUM_BAND eBand, uint16_t u2Bitmap,
 
 		rChannelInfo.eBand = eBand;
 		rChannelInfo.ucChnlBw = *pucBw;
+		/* Sco no matter for BW > 40 MHz */
+		rChannelInfo.eSco = CHNL_EXT_RES;
 		rChannelInfo.ucChannelNum = ucPriChannel;
 		rChannelInfo.u2PriChnlFreq =
 			nicChannelNum2Freq(ucPriChannel,
 					   eBand) / 1000;
 		rChannelInfo.u4CenterFreq1 =
-			nicChannelNum2Freq(nicGetCenterCh(eBand,
-							  ucPriChannel,
-							  *pucBw),
-					   eBand) / 1000;
-		rChannelInfo.u4CenterFreq2 = 0;
+			nicGetS1Freq(eBand, ucPriChannel,
+				     rChannelInfo.eSco, *pucBw);
+		rChannelInfo.u4CenterFreq2 =
+			nicGetS2Freq(eBand, ucPriChannel, *pucBw);
 
 		*pucOpClass = nicChannelInfo2OpClass(&rChannelInfo);
 	}
@@ -1151,7 +1159,7 @@ u_int8_t rlmValidatePunctBitmap(struct ADAPTER *prAdapter,
 		return FALSE;
 
 	ucVhtBw = rlmGetVhtOpBwByBssOpBw(eBw);
-	ucCenterCh = nicGetS1(eBand, ucPriCh, ucVhtBw);
+	ucCenterCh = nicGetS1(eBand, ucPriCh, CHNL_EXT_RES, ucVhtBw);
 
 	switch (eBw) {
 	case MAX_BW_80MHZ:

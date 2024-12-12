@@ -13453,6 +13453,18 @@ kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
 				break;
 			case NL80211_CHAN_WIDTH_40:
 				prRfChnlInfo->ucChnlBw = MAX_BW_40MHZ;
+				switch (cfg80211_get_chandef_type(
+						channel_def)) {
+				case NL80211_CHAN_HT40PLUS:
+					prRfChnlInfo->eSco = CHNL_EXT_SCA;
+					break;
+				case NL80211_CHAN_HT40MINUS:
+					prRfChnlInfo->eSco = CHNL_EXT_SCB;
+					break;
+				default:
+					prRfChnlInfo->eSco = CHNL_EXT_SCN;
+					break;
+				}
 				break;
 			case NL80211_CHAN_WIDTH_80:
 				prRfChnlInfo->ucChnlBw = MAX_BW_80MHZ;

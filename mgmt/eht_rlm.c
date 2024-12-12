@@ -737,6 +737,7 @@ static void ehtRlmFillOpIE(
 	prEhtOpInfo->ucCCFS0 =
 		nicGetS1(prBssInfo->eBand,
 			 prBssInfo->ucPrimaryChannel,
+			 prBssInfo->eBssSCO,
 			 eht_bw);
 	prEhtOpInfo->ucCCFS1 =
 		nicGetS2(prBssInfo->eBand,
@@ -928,6 +929,7 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prBssInfo->ucVhtChannelWidth = ucVhtOpBw;
 		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
 			prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
+			prBssInfo->eBssSCO,
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 		prBssInfo->ucEhtCtrl = prEhtOpInfo->ucControl;
@@ -1107,6 +1109,7 @@ uint32_t ehtRlmFillBwIndicationIe(struct ADAPTER *prAdapter,
 	prInfo->ucCCFS0 =
 		nicGetS1(prWifiVar->eNewBand,
 			 prWifiVar->ucNewChannelNumber,
+			 prWifiVar->ucSecondaryOffset,
 			 ucOpBw);
 	prInfo->ucCCFS1 =
 		nicGetS2(prWifiVar->eNewBand,

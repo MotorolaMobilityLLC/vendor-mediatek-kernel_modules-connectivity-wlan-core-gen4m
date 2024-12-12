@@ -4267,7 +4267,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	eRfSco = prBssDesc->eSco;
 	eRfChannelWidth = prBssDesc->eChannelWidth;
 	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
-		rlmGetBssOpBwByChannelWidth(eRfSco, eRfChannelWidth));
+	      eRfSco, rlmGetBssOpBwByChannelWidth(eRfSco, eRfChannelWidth));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 #endif
@@ -10579,7 +10579,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->eRfBand = prBssDesc->eBand;
 		prSubReq->eRfChannelWidth = prBssDesc->eChannelWidth;
 		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prSubReq->eRfBand,
-			prSubReq->ucPrimaryChannel,
+			prSubReq->ucPrimaryChannel, prSubReq->eRfSco,
 			rlmGetBssOpBwByChannelWidth(prSubReq->eRfSco,
 				prSubReq->eRfChannelWidth));
 		prSubReq->ucRfCenterFreqSeg2 = 0;
@@ -10590,6 +10590,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->eRfChannelWidthFromAP = prBssDesc->eChannelWidth;
 		prSubReq->ucRfCenterFreqSeg1FromAP = nicGetS1(prSubReq->eRfBand,
 			prSubReq->ucPrimaryChannel,
+			prSubReq->eRfSco,
 			rlmGetBssOpBwByChannelWidth(prSubReq->eRfSco,
 				prSubReq->eRfChannelWidth));
 
@@ -11329,6 +11330,7 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 		prMsgChReq->ucRfCenterFreqSeg1FromAP
 			= nicGetS1(prBssDesc->eBand,
 				prBssDesc->ucChannelNum,
+				prBssDesc->eSco,
 				prBssDesc->eChannelWidth);
 		rlmReviseS1(
 			&(prMsgChReq->ucRfCenterFreqSeg1FromAP),

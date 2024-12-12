@@ -1058,6 +1058,7 @@ struct RF_CHANNEL_INFO {
 	uint16_t u2PriChnlFreq;
 	/* To record channel bandwidth from CFG80211 */
 	uint8_t ucChnlBw;
+	enum ENUM_CHNL_EXT eSco;
 	uint8_t ucChannelNum;
 	u_int8_t fgDFS;
 #if (CFG_SUPPORT_SAP_PUNCTURE == 1)

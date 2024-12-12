@@ -221,7 +221,7 @@ void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
 
 void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 		uint16_t ucFilteredCh, uint8_t ucFilteredBw,
-		uint8_t pucNumOfChannel,
+		enum ENUM_CHNL_EXT eChnlExt, uint8_t pucNumOfChannel,
 		struct RF_CHANNEL_INFO *paucChannelList,
 		uint8_t *pucOutNumOfChannel,
 		struct RF_CHANNEL_INFO *paucOutChannelList);

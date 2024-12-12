@@ -3287,7 +3287,7 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 
 void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 		uint16_t ucFilteredCh, uint8_t ucFilteredBw,
-		uint8_t pucNumOfChannel,
+		enum ENUM_CHNL_EXT eFilteredSco, uint8_t pucNumOfChannel,
 		struct RF_CHANNEL_INFO *paucChannelList,
 		uint8_t *pucOutNumOfChannel,
 		struct RF_CHANNEL_INFO *paucOutChannelList)
@@ -3302,20 +3302,21 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, ucFilteredBw);
+	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, eFilteredSco, ucFilteredBw);
 	if (rddS1 == 0)
 		return;
 
 	j = 0;
 	for (i = 0; i < pucNumOfChannel; i++) {
 		if (nicGetS1(BAND_5G, paucChannelList[i].ucChannelNum,
-			ucFilteredBw) != rddS1) {
+			eFilteredSco, ucFilteredBw) != rddS1) {
 			paucOutChannelList[j] = paucChannelList[i];
 			DBGLOG(RLM, TRACE,
 				"ch: %d, s1: %d, is_dfs: %d, rdds1: %d\n",
 				paucOutChannelList[j].ucChannelNum,
 				nicGetS1(BAND_5G,
 					 paucOutChannelList[j].ucChannelNum,
+					 eFilteredSco,
 					 ucFilteredBw),
 				paucOutChannelList[j].fgDFS,
 				rddS1);
@@ -7535,7 +7536,7 @@ void p2pFuncSwitchGcChannel(
 		nicChannelNum2Freq(rRfChnlInfo.ucChannelNum,
 			rRfChnlInfo.eBand) / 1000;
 	rRfChnlInfo.u4CenterFreq1 = nicGetS1Freq(rRfChnlInfo.eBand,
-		rRfChnlInfo.ucChannelNum,
+		rRfChnlInfo.ucChannelNum, prP2pBssInfo->eBssSCO,
 		rRfChnlInfo.ucChnlBw);
 	rRfChnlInfo.u4CenterFreq2 = 0;
 
@@ -9696,35 +9697,38 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct RF_CHANNEL_INFO *prRfChnlInfo1;
 	struct RF_CHANNEL_INFO rRfChnlInfo2;
-	struct RF_CHANNEL_INFO arChnlList[
-		MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = { 0 };
+	struct RF_CHANNEL_INFO *paChnlList = NULL;
 	struct BSS_INFO *bss;
 	uint8_t bssIdx;
 	uint8_t ch;
 	uint8_t ucChNum, ucCandidateChnlNum = 0;
+
+	paChnlList = kalMemZAlloc(sizeof(struct RF_CHANNEL_INFO) *
+				  (MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM),
+				  VIR_MEM_TYPE);
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	p2pFunGetAcsBestChList(prAdapter, BIT(BAND_5G) | BIT(BAND_6G),
 			       BITS(0, 31), BITS(0, 31),
 			       BITS(0, 31), BITS(0, 31),
-			       &ucCandidateChnlNum, arChnlList);
+			       &ucCandidateChnlNum, paChnlList);
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 #else /* CFG_SUPPORT_P2PGO_ACS == 1 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE, MAX_6G_BAND_CHN_NUM,
-		&ucChNum, &arChnlList[ucCandidateChnlNum]);
+		&ucChNum, &paChnlList[ucCandidateChnlNum]);
 	ucCandidateChnlNum += ucChNum;
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
 	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE, MAX_5G_BAND_CHN_NUM,
-		&ucChNum, arChnlList);
+		&ucChNum, paChnlList);
 	ucCandidateChnlNum += ucChNum;
 #endif
 
 	ucChNum = 0;
 	for (ch = 0; ch < ucCandidateChnlNum; ++ch) {
-		prRfChnlInfo1 = &arChnlList[ch];
+		prRfChnlInfo1 = &paChnlList[ch];
 
 		if (prRfChnlInfo1->eBand == BAND_5G)
 			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p5gBandwidth;
@@ -9733,8 +9737,10 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p6gBandwidth;
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
-		prRfChnlInfo1->u4CenterFreq1 = nicGetS1Freq(
+		prRfChnlInfo1->u4CenterFreq1 = nicGetCenterChFreq(
 			prRfChnlInfo1->eBand, prRfChnlInfo1->ucChannelNum,
+			nicGetSco(prAdapter, prRfChnlInfo1->eBand,
+				  prRfChnlInfo1->ucChannelNum),
 			prRfChnlInfo1->ucChnlBw);
 
 		DBGLOG(P2P, LOUD, "chnlInfo1 b:%u, ch:%u, bw:%u, cf:%u\n",
@@ -9758,8 +9764,9 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			rRfChnlInfo2.ucChannelNum = bss->ucPrimaryChannel;
 			rRfChnlInfo2.ucChnlBw = rlmGetBssOpBwByChannelWidth(
 					bss->eBssSCO, bss->ucVhtChannelWidth);
-			rRfChnlInfo2.u4CenterFreq1 = nicChannelNum2Freq(
-			      bss->ucVhtChannelFrequencyS1, bss->eBand) / 1000;
+			rRfChnlInfo2.u4CenterFreq1 = nicGetCenterChFreq(
+				bss->eBand, bss->ucPrimaryChannel,
+				bss->eBssSCO, bss->ucVhtChannelWidth);
 			DBGLOG(P2P, LOUD,
 			       "chnlInfo2 b:%u, ch:%u, bw:%u, cf:%u\n",
 			       rRfChnlInfo2.eBand,
@@ -9778,6 +9785,11 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+
+	if (paChnlList)
+		kalMemFree(paChnlList, VIR_MEM_TYPE,
+			   sizeof(struct RF_CHANNEL_INFO) *
+			   (MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM));
 
 	return ucChNum;
 }
@@ -10204,7 +10216,7 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		if (prChnRank->eBand == BAND_5G &&
 		    prWifiVar->ucP2p5gBandwidth >= MAX_BW_80MHZ &&
-			nicGetS1(BAND_5G, prChnRank->ucChannel,
+			nicGetS1(BAND_5G, prChnRank->ucChannel, CHNL_EXT_RES,
 				 prWifiVar->ucP2p5gBandwidth) == 0)
 			continue;
 
@@ -10213,6 +10225,7 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		if (prChnRank->eBand == BAND_6G &&
 		    prWifiVar->ucP2p6gBandwidth >= MAX_BW_80MHZ &&
 			nicGetS1(prChnRank->eBand, prChnRank->ucChannel,
+				 CHNL_EXT_RES,
 				 prWifiVar->ucP2p6gBandwidth) == 0)
 			continue;
 #endif
@@ -10261,6 +10274,7 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 {
 	struct WIFI_VAR *prWifiVar;
 	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
+	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
 
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
@@ -10300,6 +10314,7 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 
 		ucS1 = nicGetS1(prAcsReqInfo->eBand,
 				prAcsReqInfo->ucPrimaryCh,
+				eSCO,
 				ucMaxBandwidth);
 
 		if ((ucMaxBandwidth >= MAX_BW_80MHZ && ucS1) ||
@@ -10314,8 +10329,6 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 
 skip_bw_overwrite:
 	if (prAcsReqInfo->eChnlBw > MAX_BW_20MHZ) {
-		enum ENUM_CHNL_EXT eSCO;
-
 		eSCO = nicGetSco(prGlueInfo->prAdapter,
 				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh);
@@ -10329,6 +10342,7 @@ skip_bw_overwrite:
 
 	prAcsReqInfo->ucVhtSeg0 = nicGetS1(prAcsReqInfo->eBand,
 					   prAcsReqInfo->ucPrimaryCh,
+					   eSCO,
 					   prAcsReqInfo->eChnlBw);
 	prAcsReqInfo->ucVhtSeg1 = nicGetS2(prAcsReqInfo->eBand,
 					   prAcsReqInfo->ucPrimaryCh,
@@ -10361,7 +10375,8 @@ skip_bw_overwrite:
 				prAcsReqInfo->ucVhtSeg1,
 				prAcsReqInfo->eChnlBw,
 				prAcsReqInfo->eHwMode,
-				prAcsReqInfo->u2PunctBitmap);
+				prAcsReqInfo->u2PunctBitmap,
+				eSCO);
 }
 
 void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
@@ -10534,10 +10549,10 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 			rlmGetScoByChnInfo(prAdapter, prNewChannelInfo);
 		prAdapter->rWifiVar.ucNewChannelWidth =
 			rlmGetVhtOpBwByBssOpBw(prNewChannelInfo->ucChnlBw);
-		prAdapter->rWifiVar.ucNewChannelS1 =
-			nicFreq2ChannelNum(
+		prAdapter->rWifiVar.ucNewChannelS1 = nicFreq2ChannelNum(
 				prNewChannelInfo->u4CenterFreq1 * 1000);
-		prAdapter->rWifiVar.ucNewChannelS2 = 0;
+		prAdapter->rWifiVar.ucNewChannelS2 = nicFreq2ChannelNum(
+				prNewChannelInfo->u4CenterFreq2 * 1000);
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
 		prAdapter->rWifiVar.u2NewPunctBitmap = 0;
 #endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
@@ -11312,13 +11327,12 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	else if (IS_BSS_APGO(prBssInfo) &&
 	    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
 				    prBssInfo->u4PrivateData])) {
-		/* prepare chnl info
-		 * TODO: re-design nicGetS1Freq
-		 */
+		/* prepare chnl info */
 		rRfChnlInfo.ucChannelNum = u4TargetCh;
 		rRfChnlInfo.eBand = eTargetBand;
 		/* always use BW20 to check the minimum capability of peer */
 		rRfChnlInfo.ucChnlBw = MAX_BW_20MHZ;
+		rRfChnlInfo.eSco = CHNL_EXT_SCN;
 		rRfChnlInfo.u2PriChnlFreq =
 			nicChannelNum2Freq(u4TargetCh, eTargetBand) / 1000;
 		rRfChnlInfo.u4CenterFreq1 = rRfChnlInfo.u2PriChnlFreq;

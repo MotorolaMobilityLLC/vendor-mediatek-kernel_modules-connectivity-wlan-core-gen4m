@@ -2608,6 +2608,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		prWifiVar->ucNewChannelS1 =
 			nicGetS1(rRfChnlInfo.eBand,
 				 rRfChnlInfo.ucChannelNum,
+				 prWifiVar->ucSecondaryOffset,
 				 rRfChnlInfo.ucChnlBw);
 		prWifiVar->ucNewChannelS2 =
 			nicGetS2(rRfChnlInfo.eBand,
