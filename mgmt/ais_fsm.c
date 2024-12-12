@@ -3886,7 +3886,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc =
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-		if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
+		if (!roamingFsmInDecision(prAdapter, TRUE, ucBssIndex)) {
 			DBGLOG(AIS, STATE,
 				"Ignore roaming request if unable to roam\n");
 
@@ -7090,9 +7090,9 @@ uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 #if (CFG_EXT_ROAMING == 1)
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -83)
+	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) && rssi > -83)
 #else
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -70)
+	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) && rssi > -70)
 #endif
 	{
 		/* Good rssi but beacon timeout happened => PER */
@@ -7450,7 +7450,7 @@ uint8_t aisCheckNeedDriverRoaming(
 	/*
 	 * try to select AP only when roaming is enabled and rssi is bad
 	 */
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) &&
+	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) &&
 	    ais->eCurrentState == AIS_STATE_ONLINE_SCAN &&
 	    CHECK_FOR_TIMEOUT(roam->rRoamingDiscoveryUpdateTime,
 		      roam->rRoamingLastDecisionTime,

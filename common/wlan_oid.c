@@ -16554,7 +16554,7 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		}
 
 		/* Check roaming FSM and CSA states*/
-		if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
+		if (!roamingFsmInDecision(prAdapter, FALSE, ucBssIndex)) {
 			DBGLOG(OID, WARN,
 				"Ignore FW-EVENT Roaming if not in decision or in CSA.\n");
 			return WLAN_STATUS_SUCCESS;

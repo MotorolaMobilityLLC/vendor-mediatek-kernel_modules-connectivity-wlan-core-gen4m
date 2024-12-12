@@ -256,7 +256,8 @@ void roamingFsmSetRecoverBitmap(struct ADAPTER *prAdapter,
 
 void roamingFsmDoRecover(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter,
+	u_int8_t fgIgnorePolicy, uint8_t ucBssIndex);
 
 void roamingFsmRunEventRxFtAction(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
