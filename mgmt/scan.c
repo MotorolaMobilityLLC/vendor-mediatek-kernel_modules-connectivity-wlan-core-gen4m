@@ -2427,6 +2427,15 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	uint8_t ucRxRCPI;
 	uint8_t ucHwChannelNum;
 
+
+	if (prSwRfb->fgDriverGen && !prBssDesc->fgDriverGen &&
+		prBssDesc->eBand != BAND_NULL) {
+		log_dbg(SCN, INFO,
+			MACSTR" is driver gen but already exist, skip\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return;
+	}
+
 	/* 4 <4> Update information from HIF RX Header */
 	/* 4 <4.1> Get TSF comparison result */
 	prBssDesc->fgIsLargerTSF = prSwRfb->ucTcl;
@@ -2811,12 +2820,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
-		") valid(%u) found(%u),band=%d\n",
+		") valid(%u) found(%u),band=%d, %p\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
 		ucChnlNum,
 		MAC2STR((uint8_t *)prWlanBeaconFrame->aucBSSID), fgIsValidSsid,
 		(prBssDesc != NULL) ? 1 : 0,
-		eHwBand);
+		eHwBand, prBssDesc);
 
 	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
 			== MAC_FRAME_PROBE_RSP)
@@ -2891,13 +2900,24 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			&& u8Timestamp < prBssDesc->u8TimeStamp.QuadPart
 			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
+			u_int8_t ucRCPI = 0, ucChannelNum = 0;
 			struct AIS_BLOCKLIST_ITEM *prBlock;
-			uint32_t u4PairwiseCipher = 0;
-			uint32_t u4GroupCipher = 0;
-			uint32_t u4GroupMgmtCipher = 0;
-			uint32_t u4AkmSuite = 0;
-			uint8_t u4MgmtProtection = 0;
+			uint32_t u4PairwiseCipher = 0, u4GroupCipher = 0;
+			uint32_t u4GroupMgmtCipher = 0, u4AkmSuite = 0;
+			uint8_t u4MgmtProtection = 0, fgIsLargerTSF = 0;
 			enum ENUM_PARAM_AUTH_MODE eAuthMode;
+			enum ENUM_BAND eBand;
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			uint8_t ucMaxBSSIDIndicator = 0, ucMBSSIDIndex = 0;
+#endif
+			int8_t cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			uint8_t fgIsTxPwrEnvPresent, ucTxPwrEnvPwrLmtNum;
+			int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
+#endif
 
 			DBGLOG_LIMITED(SCN, INFO, "Reset BssDesc "MACSTR
 				"AP Timestamp: %llu BssDesc Timestamp: %llu\n",
@@ -2905,10 +2925,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				u8Timestamp,
 				prBssDesc->u8TimeStamp.QuadPart);
 
-			/* set flag for indicating this is a new BSS-DESC */
-			fgIsNewBssDesc = TRUE;
-
-			/* backup for APs which reset timestamp unexpectedly */
+			fgIsLargerTSF = prBssDesc->fgIsLargerTSF;
+			eBand = prBssDesc->eBand;
+			ucRCPI = prBssDesc->ucRCPI;
+			ucChannelNum = prBssDesc->ucChannelNum;
 			fgIsConnected = prBssDesc->fgIsConnected;
 			fgIsConnecting = prBssDesc->fgIsConnecting;
 			prBlock = prBssDesc->prBlock;
@@ -2921,6 +2941,22 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			eAuthMode = prBssDesc->eRsnSelectedAuthMode;
 			u4MgmtProtection = prBssDesc->u4RsnSelectedPmf;
 
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			ucMaxBSSIDIndicator = prBssDesc->ucMaxBSSIDIndicator;
+			ucMBSSIDIndex = prBssDesc->ucMBSSIDIndex;
+#endif
+
+			cPowerLimit = prBssDesc->cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			fgIsTxPwrEnvPresent = prBssDesc->fgIsTxPwrEnvPresent;
+			ucTxPwrEnvPwrLmtNum = prBssDesc->ucTxPwrEnvPwrLmtNum;
+			kalMemCopy(aicTxPwrEnvMaxTxPwr,
+				prBssDesc->aicTxPwrEnvMaxTxPwr,
+				sizeof(aicTxPwrEnvMaxTxPwr));
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			e6GPwrMode = prBssDesc->e6GPwrMode;
+#endif
 			/* Connected BSS descriptor still be used by other
 			 * functions. Thus, we should re-initialize the BSS_DESC
 			 * structure instead of re-allocating the BSS_DESC
@@ -2929,6 +2965,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			scanResetBssDesc(prAdapter, prBssDesc);
 
 			/* restore */
+			prBssDesc->fgIsLargerTSF = fgIsLargerTSF;
+			prBssDesc->eBand = eBand;
+			prBssDesc->ucRCPI = ucRCPI;
+			prBssDesc->ucChannelNum = ucChannelNum;
 			prBssDesc->fgIsConnected = fgIsConnected;
 			prBssDesc->fgIsConnecting = fgIsConnecting;
 			prBssDesc->prBlock = prBlock;
@@ -2940,6 +2980,23 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedAKMSuite = u4AkmSuite;
 			prBssDesc->eRsnSelectedAuthMode = eAuthMode;
 			prBssDesc->u4RsnSelectedPmf = u4MgmtProtection;
+
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			prBssDesc->ucMaxBSSIDIndicator = ucMaxBSSIDIndicator;
+			prBssDesc->ucMBSSIDIndex = ucMBSSIDIndex;
+#endif
+
+			prBssDesc->cPowerLimit = cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			prBssDesc->fgIsTxPwrEnvPresent = fgIsTxPwrEnvPresent;
+			prBssDesc->ucTxPwrEnvPwrLmtNum = ucTxPwrEnvPwrLmtNum;
+			kalMemCopy(prBssDesc->aicTxPwrEnvMaxTxPwr,
+				aicTxPwrEnvMaxTxPwr,
+				sizeof(aicTxPwrEnvMaxTxPwr));
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			prBssDesc->e6GPwrMode = e6GPwrMode;
+#endif
 		}
 	}
 

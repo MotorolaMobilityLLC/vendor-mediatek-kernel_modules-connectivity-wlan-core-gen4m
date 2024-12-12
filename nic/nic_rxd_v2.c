@@ -261,6 +261,7 @@ void nic_rxd_v2_fill_rfb(
 	prSwRfb->ucTcl =
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_TCL(prRxStatus);
 	prSwRfb->ucKeyID = HAL_MAC_CONNAC2X_RX_STATUS_GET_KID(prRxStatus);
+	prSwRfb->fgDriverGen = FALSE;
 }
 
 u_int8_t nic_rxd_v2_sanity_check(

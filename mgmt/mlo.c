@@ -1892,11 +1892,11 @@ sta:
 				goto next;
 			}
 
-			kalMemCopy(&prStaProfile->u8TsfOffset, pos, 8);
+			kalMemCopy(&prStaProfile->i8TsfOffset, pos, 8);
 			if (show_info)
 				DBGLOG(ML, INFO,
-					"\tLinkID=%d, TSF_OFFSET = %lu\n",
-					ucLinkId, prStaProfile->u8TsfOffset);
+					"\tLinkID=%d, TSF_OFFSET = %ld\n",
+					ucLinkId, prStaProfile->i8TsfOffset);
 			pos += 8;
 		}
 		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
@@ -2854,10 +2854,30 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	if (fctrl == MAC_FRAME_PROBE_RSP || fctrl == MAC_FRAME_BEACON) {
 		struct WLAN_BEACON_FRAME *bcn = prDst->pvHeader;
 
-		if (prBssDesc)
-			bcn->u2CapInfo = prBssDesc->u2CapInfo;
-		else
+		if (prSta->ucComplete) {
+			uint64_t u8Timestamp;
+
+			WLAN_GET_FIELD_64(bcn->au4Timestamp, &u8Timestamp);
 			bcn->u2CapInfo = prSta->u2CapInfo;
+			WLAN_SET_FIELD_64(bcn->au4Timestamp,
+				u8Timestamp + prSta->i8TsfOffset * 2);
+			bcn->u2BeaconInterval = prSta->u2BcnIntv;
+
+			DBGLOG(ML, TRACE,
+				"tsf=%llu offset=%ld new=%llu bcnInt=%d\n",
+				u8Timestamp, prSta->i8TsfOffset,
+				*((uint64_t *)bcn->au4Timestamp),
+				bcn->u2BeaconInterval);
+		} else if (prBssDesc) {
+			bcn->u2CapInfo = prBssDesc->u2CapInfo;
+			WLAN_SET_FIELD_64(bcn->au4Timestamp,
+				prBssDesc->u8TimeStamp.QuadPart);
+			bcn->u2BeaconInterval = prBssDesc->u2BeaconInterval;
+
+			DBGLOG(ML, TRACE, "tsf=%llu bcnInt=%d\n",
+				*((uint64_t *)bcn->au4Timestamp),
+				bcn->u2BeaconInterval);
+		}
 	} else if (prStaRec) {
 		struct BSS_INFO *bss =
 			GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);

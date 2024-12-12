@@ -239,6 +239,7 @@ void nic_rxd_v1_fill_rfb(
 	prSwRfb->ucChnlNum =
 		nicRxdChNumTranslate(prSwRfb->eRfBand, ucHwChnlNum);
 	prSwRfb->ucTcl = HAL_RX_STATUS_GET_TCL(prRxStatus);
+	prSwRfb->fgDriverGen = FALSE;
 
 #if 0
 	if (prHifRxHdr->ucReorder &

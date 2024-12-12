@@ -306,6 +306,7 @@ void nic_rxd_v3_fill_rfb(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		nicRxdChNumTranslate(prSwRfb->eRfBand, ucHwChnlNum);
 	prSwRfb->ucTcl =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_TCL(prRxStatus);
+	prSwRfb->fgDriverGen = FALSE;
 
 	if (prChipInfo->fgCheckRxDropThreshold &&
 	    prChipInfo->prRxDescOps->getRxModeMcs)

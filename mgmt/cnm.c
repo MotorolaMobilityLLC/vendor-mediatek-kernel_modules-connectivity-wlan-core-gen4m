@@ -2009,7 +2009,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		       uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
+	uint8_t ucMaxBandwidth = MAX_BW_320_2MHZ; /*chip capability*/
 	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
 #if CFG_ENABLE_WIFI_DIRECT
@@ -2044,8 +2044,6 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			eBand = prBssInfo->eBand;
 
 
-		ASSERT(eBand != BAND_NULL);
-
 		if (eBand == BAND_2G4) {
 			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
 #if CFG_SUPPORT_IOT_AP_BLOCKLIST
@@ -2060,6 +2058,8 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		else if (eBand == BAND_6G)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
 #endif
+		else
+			DBGLOG(CNM, ERROR, "Invalid BAND:%d!\n", eBand);
 
 		/* max bw is BW320_1 but ap is BW320_2, downgrade to BW160 */
 		if (ucMaxBandwidth == MAX_BW_320_1MHZ &&
