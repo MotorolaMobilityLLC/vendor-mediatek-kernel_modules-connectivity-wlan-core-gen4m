@@ -11791,6 +11791,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_DEQUEUE_COUNT),
 		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT));
 
+	pos += kalSnprintf(pos, end - pos,
+		     "TxP[%x,%x,%x] ",
+		     prAdapter->u4StaPsBitmap,
+		     prAdapter->u4StaPendBitmap,
+#if CFG_SUPPORT_SOFT_ACM
+		     prAdapter->u4StaAcmBitmap
+#else
+		     0x0
+#endif
+		     );
+
 	pos += composeMgmtSub(prAdapter, pos, end);
 
 #if CFG_SUPPORT_TX_FREE_SKB_WORK
@@ -11946,7 +11957,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FW_DROP_SSN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NULL_PACKET_COUNT));
-	DBGLOG(SW4, INFO, "%s", buf);
+	DBGLOG(SW4, VOC, "%s", buf);
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),

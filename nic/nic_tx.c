@@ -6473,7 +6473,8 @@ void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 			if (u4StaPendBitmap & BIT(ucStaRecIndex)) {
 				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
 					0xff, ucStaRecIndex, 0xff);
-				DBGLOG(TX, INFO, "Check pending Queue idx=%u\n",
+				DBGLOG_LIMITED(TX, INFO,
+					"Check pending Queue idx=%u\n",
 					ucStaRecIndex);
 			}
 		}
@@ -6487,7 +6488,7 @@ void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
 					0xff, ucStaRecIndex, 0xff);
 				u4StaPsBitmap &= ~BIT(ucStaRecIndex);
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 					"ucStaRecIndex: %u\n", ucStaRecIndex);
 			}
 			if (u4StaPsBitmap == 0)
@@ -6503,7 +6504,7 @@ void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
 					0xff, 0xff, ucBssIndex);
 				u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 					"ucBssIndex: %u\n", ucBssIndex);
 			}
 			if (u4BssAbsentTxBufferBitmap == 0)

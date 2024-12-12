@@ -728,7 +728,7 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 #endif
 
 	if (prMsduInfo->pfTxDoneHandler) {
-		DBGLOG(TX, INFO,
+		DBGLOG(TX, VOC,
 			"TX[%s] WIDX[%u] PID[%u] Rate mode[%d], RateIdx=%u\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,

@@ -757,11 +757,12 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		if (prBssInfo)
 			eOPMode = prBssInfo->eCurrentOPMode;
 
-		DBGLOG(HAL, INFO,
-		       "TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[%lld.%06lld] OpMode[%u]\n",
-		       u4TokenId, prToken->ucWlanIndex, prToken->ucBssIndex,
-		       USEC_TO_SEC(u8Longest),
-			   USEC_REM_TO_SEC(u8Longest), eOPMode);
+		DBGLOG(HAL, VOC,
+			"TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[%lld.%06lld] OpMode[%u]\n",
+			u4TokenId, prToken->ucWlanIndex,
+			prToken->ucBssIndex,
+			USEC_TO_SEC(u8Longest),
+			USEC_REM_TO_SEC(u8Longest), eOPMode);
 
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);

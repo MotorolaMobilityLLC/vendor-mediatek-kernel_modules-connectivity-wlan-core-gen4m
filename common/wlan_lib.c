@@ -12062,7 +12062,7 @@ uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
 			aucDelayInfo);
 	else
 #endif
-		DBGLOG_LIMITED(TX, INFO,
+		DBGLOG_LIMITED(TX, VOC,
 			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], MAC: "
 			MACSTR " SeqNo: %d %s\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
@@ -14741,7 +14741,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, VOC,
 	       "Link Quality: Tx(rate:%u, total:%lu, retry:%lu, fail:%lu, RTS fail:%lu, ACK fail:%lu), Rx(rate:%u, total:%lu, dup:%u, error:%lu), PER(%u), Congestion(idle slot:%lu, diff:%lu, AwakeDur:%u)\n",
 	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
 	       prLinkQualityInfo->u8TxTotalCount, /* tx total packages */

@@ -408,13 +408,13 @@ void statsParseICMPInfo(void *pvPacket, uint8_t *pucIcmp, uint8_t eventType,
 	if (eventType == EVENT_RX) {
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMP);
-		DBGLOG_LIMITED(RX, INFO,
+		DBGLOG_LIMITED(RX, VOC,
 			       "<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
 			       MACSTR " SSN:%u\n",
 			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
 			       MAC2STR(prEth->aucSrcAddr), u2SSN);
 	} else { /* EVENT_TX */
-		DBGLOG_LIMITED(TX, INFO,
+		DBGLOG_LIMITED(TX, VOC,
 			       "<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
 			       MACSTR " SeqNo: %d\n",
 			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
@@ -434,11 +434,11 @@ static void statsParseDNSInfo(void *pvPacket, struct UDP_HEADER *prUdp,
 	if (eventType == EVENT_RX) {
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DNS);
-		DBGLOG_LIMITED(RX, INFO,
+		DBGLOG_LIMITED(RX, VOC,
 			"<RX>%s DNS: IPID[0x%04x] TransID[0x%04x] SSN:%u\n",
 			ipstr, u2IpId, u2DnsTransId, u2SSN);
 	} else if (eventType == EVENT_TX) {
-		DBGLOG_LIMITED(TX, INFO,
+		DBGLOG_LIMITED(TX, VOC,
 			"<TX>%s DNS: IPID[0x%04x] TransID[0x%04x] SeqNo[%d]\n",
 			ipstr, u2IpId, u2DnsTransId,
 			GLUE_GET_PKT_SEQ_NO(pvPacket));
@@ -475,7 +475,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DHCP);
 
-			DBGLOG_LIMITED(RX, INFO,
+			DBGLOG_LIMITED(RX, VOC,
 				"<RX> DHCP: Recv %s IPID 0x%04x, MsgType 0x%x, TransID 0x%08x SSN:%u\n",
 				msg_type, u2IpId, prDhcp->aucDhcpOption[2],
 				u4TransID, u2SSN);
@@ -486,7 +486,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 				u4DhcpOpt);
 #endif
 		} else { /* EVENT_TX */
-			DBGLOG_LIMITED(TX, INFO,
+			DBGLOG_LIMITED(TX, VOC,
 				"<TX> DHCP: Send %s, XID[0x%08x] OPT[0x%08x] TYPE[%u], SeqNo: %d\n",
 				msg_type, u4TransID, u4DhcpOpt,
 				prDhcp->aucDhcpOption[2],
@@ -720,7 +720,7 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 			switch (ucIpv6UDPSrcPort) {
 			case IPV6_UDP_PORT_DHCPC:
 			case IPV6_UDP_PORT_DHCPS:
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, VOC,
 				       "<RX><IPv6> DHCP packet SSN:%u\n",
 				       u2SSN);
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
@@ -728,7 +728,7 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 				break;
 
 			case UDP_PORT_NTP:
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, VOC,
 				       "<RX><IPv6> NTP packet SSN:%u\n",
 				       u2SSN);
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
@@ -788,12 +788,12 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMPV6);
 			if (unlikely(!icmp6msg)) {
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, VOC,
 					       "<RX><IPv6> ICMPV6 type=%u SSN:%u\n",
 					       ucICMPv6Type, u2SSN);
 			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
 				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, VOC,
 					       "<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x, MAC:"
 					       MACSTR " SSN:%u\n",
 					       icmp6msg, u2IcmpId, u2IcmpSeq,
@@ -801,32 +801,32 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 					       u2SSN);
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, VOC,
 					       "<RX><IPv6> ICMPv6: %s, who has: %s link: %s, SSN:%u\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr, u2SSN);
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, VOC,
 					       "<RX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SSN:%u\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr, u2SSN);
 
 			} else {
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, VOC,
 					       "<RX><IPv6> ICMPv6 %s SSN:%u\n",
 					       icmp6msg, u2SSN);
 			}
 		} else { /* EVENT_TX */
 
 			if (unlikely(!icmp6msg)) {
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 					       "<TX><IPv6> ICMPV6 type=%u, SeqNo: %d\n",
 					       ucICMPv6Type,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
 				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 						"<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, MAC:"
 						MACSTR " SeqNo: %d\n",
 						icmp6msg, u2IcmpId, u2IcmpSeq,
@@ -834,20 +834,20 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 						GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 					       "<TX><IPv6> ICMPv6: %s, who has: %s link: %s, SeqNo: %d\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 					       "<TX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SeqNo: %d\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else {
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, VOC,
 					       "<TX><IPv6> ICMPv6 %s, SeqNo: %u\n",
 					       icmp6msg,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
@@ -857,7 +857,7 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 
 	default:
 		if (eventType == EVENT_RX)
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, VOC,
 			       "<RX><IPv6> default protocol=%u SSN:%u\n",
 			       ucIpv6Proto, u2SSN);
 		break;
@@ -923,7 +923,7 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 #endif
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, VOC,
 					"<RX> EAP Packet: code=%u id=%u len=%u type=%d SSN:%u\n",
 					pucEapol[4], pucEapol[5],
 					NTOHS(*(uint16_t *)&pucEapol[6]),
@@ -938,7 +938,7 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 #endif
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG(TX, VOC,
 					"<TX> EAP Packet: code=%u id=%u len=%u type=%d SeqNo=%d\n",
 					pucEapol[4], pucEapol[5],
 					NTOHS(*(uint16_t *)&pucEapol[6]),
@@ -959,11 +959,11 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 		case 1: /* eapol start */
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, VOC,
 					"<RX> EAPOL: start SSN:%u\n", u2SSN);
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG(TX, VOC,
 				       "<TX> EAPOL: start, SeqNo: %d\n",
 						GLUE_GET_PKT_SEQ_NO(pvPacket));
 				break;

@@ -1877,7 +1877,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 
 	ASSERT(prBssInfo);
 
-	log_dbg(SW4, INFO, "============= DUMP STA[%u] ===========\n",
+	log_dbg(SW4, VOC, "============= DUMP STA[%u] ===========\n",
 		ucStaRecIdx);
 	/* [1]STA_IDX                  [2]BSS_IDX
 	 * [3]MAC                      [4]TYPE

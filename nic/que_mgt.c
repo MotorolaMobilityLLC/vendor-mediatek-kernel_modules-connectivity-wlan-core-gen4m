@@ -7867,7 +7867,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 		prBssInfo->ucAbsPresLogCount++;
 
 		if (prBssInfo->ucAbsPresLogCount >= QA_ABS_PRES_LOG_MAX_COUNT) {
-			DBGLOG(QM, INFO, "NAF: B=%u, %u.%u, %s\n",
+			DBGLOG(QM, VOC, "NAF: B=%u, %u.%u, %s\n",
 			       prBssInfo->ucBssIndex,
 			       prBssInfo->u4FirstAbsPresTime / MSEC_PER_SEC,
 			       prBssInfo->u4FirstAbsPresTime % MSEC_PER_SEC,
