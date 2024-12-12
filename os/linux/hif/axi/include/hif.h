@@ -235,6 +235,8 @@ struct GL_HIF_INFO {
 #if CFG_SUPPORT_HIF_TX_NAPI
 	struct HIF_NAPI_DEVICE rTxNapiDev;
 #endif /* CFG_SUPPORT_HIF_TX_NAPI */
+
+	u_int8_t fgIsTriggerRxTimeout;
 };
 
 struct BUS_INFO {

@@ -953,14 +953,16 @@ void halCheckWfdmaStallForWB(struct ADAPTER *prAdapter)
 			prBusInfo->recoverSerStatus(prAdapter);
 
 		if (prRxRing->u4CidxErrCnt >=
-		    prWifiVar->u4WfdmaRxHangRecoveryCnt &&
+		    prWifiVar->u4WfdmaRxTimeoutRecoveryCnt &&
 		    prBusInfo->recoveryMsiStatus)
 			prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 #endif
 
-		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
-			GL_DEFAULT_RESET_TRIGGER(
-				prAdapter, RST_WFDMA_RX_TIMEOUT);
+		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxTimeoutCnt) {
+			prHifInfo->fgIsTriggerRxTimeout = TRUE;
+			DBGLOG(HAL, ERROR, "CidxErrCnt > WfdmaRxTimeoutCnt\n");
+			break;
+		}
 	}
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
@@ -999,11 +1001,17 @@ void halCheckWfdmaStallForceRecvRx(struct ADAPTER *prAdapter)
 
 void halCheckWfdmaStall(struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
 #if CFG_MTK_WIFI_WFDMA_WB
 	halCheckWfdmaStallForWB(prAdapter);
 #elif (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
 	halCheckWfdmaStallForceRecvRx(prAdapter);
 #endif
+	if (prHifInfo->fgIsTriggerRxTimeout) {
+		prHifInfo->fgIsTriggerRxTimeout = FALSE;
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_TIMEOUT);
+	}
 }
 
 

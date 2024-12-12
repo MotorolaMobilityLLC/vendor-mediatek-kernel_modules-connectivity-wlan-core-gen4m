@@ -1738,8 +1738,8 @@ struct WIFI_VAR {
 	u_int8_t fgEnableMawdSramDump;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	uint32_t u4WfdmaRxHangRecoveryCnt;
-	uint32_t u4WfdmaRxHangCnt;
+	uint32_t u4WfdmaRxTimeoutRecoveryCnt;
+	uint32_t u4WfdmaRxTimeoutCnt;
 
 	u_int8_t fgIcmpTxDone;
 
