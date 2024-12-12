@@ -238,6 +238,8 @@ struct _NAN_SCHED_CMD_UPDATE_CRB_T {
 	struct _NAN_SCHEDULE_TIMELINE_T
 			arCommFawTimeline[NAN_TIMELINE_MGMT_SIZE];
 	struct _NAN_NDC_CTRL_T rCommNdcCtrl;
+	struct _NAN_FAW_NDC_TIMELINE_T
+			arFawNdcTimeline[NAN_TIMELINE_MGMT_SIZE];
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 __KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
@@ -341,6 +343,8 @@ struct _NAN_CRB_NEGO_CTRL_T g_rNanSchNegoCtrl = {0};
 struct _NAN_PEER_SCHEDULE_RECORD_T g_arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
 struct _NAN_TIMELINE_MGMT_T g_arNanTimelineMgmt[NAN_TIMELINE_MGMT_SIZE] = {0};
 struct _NAN_SCHEDULER_T g_rNanScheduler = {0};
+
+struct _NAN_FAW_NDC_TIMELINE_T g_arNanFawNdcTimeline[NAN_TIMELINE_MGMT_SIZE];
 
 const union _NAN_BAND_CHNL_CTRL g_rNullChnl = {.u4RawData = 0 };
 
@@ -1039,6 +1043,23 @@ nanSchedGetPeerSchRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	return NULL;
 }
 
+void
+nanSchedResetFawNdcTimeline(void)
+{
+	uint8_t ucIdx = 0;
+
+	for (ucIdx = 0; ucIdx < NAN_TIMELINE_MGMT_SIZE; ucIdx++)
+		kalMemZero(&g_arNanFawNdcTimeline[ucIdx],
+			sizeof(struct _NAN_FAW_NDC_TIMELINE_T));
+}
+
+struct _NAN_FAW_NDC_TIMELINE_T*
+nanSchedGetFawNdcTimeline(uint8_t ucTimelineMgmtIndex)
+{
+	return &g_arNanFawNdcTimeline[ucTimelineMgmtIndex];
+}
+
+
 struct _NAN_PEER_SCH_DESC_T *
 nanSchedGetPeerSchDesc(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 {
@@ -1467,6 +1488,8 @@ nanSchedInit(struct ADAPTER *prAdapter)
 
 	for (u4Idx = 0; u4Idx < NAN_MAX_CONN_CFG; u4Idx++)
 		nanSchedReleasePeerSchedRecord(prAdapter, u4Idx);
+
+	nanSchedResetFawNdcTimeline();
 
 	nanSchedReleaseAllPeerSchDesc(prAdapter);
 
@@ -12258,6 +12281,148 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 	return rStatus;
 }
 
+uint32_t nanSchedTransferFawAvailMap(uint32_t bitmap)
+{
+	uint32_t u4Result = 0;
+	uint8_t ucInSequence = 0;
+	uint8_t ucFirstOne = 32; // Initialize to an invalid position
+	uint8_t ucLastOne = 32;  // Initialize to an invalid position
+	uint8_t ucBitmapIdx = 0;
+
+	for (ucBitmapIdx = 0; ucBitmapIdx < 32; ucBitmapIdx++) {
+		if ((bitmap & (1 << ucBitmapIdx)) != 0) {
+			if (!ucInSequence) {
+				ucInSequence = 1;
+				ucFirstOne = ucBitmapIdx;
+			}
+			ucLastOne = ucBitmapIdx;
+		} else {
+			if (ucInSequence) {
+				ucInSequence = 0;
+				if (ucFirstOne != 32) {
+					u4Result |= (1 << ucFirstOne);
+
+					if (ucLastOne + 1 < 32)
+						u4Result |=
+							(1 << (ucLastOne + 1));
+				}
+				ucFirstOne = 32;
+				ucLastOne = 32;
+			}
+		}
+	}
+
+	if (ucInSequence && ucFirstOne != 32) {
+		u4Result |= (1 << ucFirstOne);
+
+		if (ucLastOne + 1 < 32)
+			u4Result |= (1 << (ucLastOne + 1));
+	}
+	if ((bitmap & 0x80000000) != 0)
+		u4Result |= 0x80000000;
+
+	return u4Result;
+}
+
+uint32_t nanSchedTransferNdcAvailMap(uint32_t u4Bitmap)
+{
+	uint32_t u4Result = 0;
+	uint8_t ucShift = 0;
+	uint8_t ucBitmapIdx = 0;
+
+	for (ucBitmapIdx = 0; ucBitmapIdx < 32; ucBitmapIdx++) {
+		if (u4Bitmap & (1 << ucBitmapIdx)) {
+
+			u4Result |= (1 << (ucBitmapIdx + ucShift));
+
+			if (ucBitmapIdx + ucShift + 1 < 32)
+				u4Result |= (1 << (ucBitmapIdx + ucShift + 1));
+
+			ucShift++;
+		} else {
+			u4Result |= (u4Bitmap & (1 << ucBitmapIdx)) << ucShift;
+		}
+	}
+
+	return u4Result;
+}
+
+
+uint32_t
+nanSchedGetTimelineByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand)
+{
+	uint8_t ucTimelineIdx = 0;
+	struct _NAN_SCHEDULER_T *prScheduler;
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec = NULL;
+	uint32_t u4SchIdx = 0;
+	struct _NAN_SCHEDULE_TIMELINE_T *prTimeline = NULL;
+	struct _NAN_FAW_NDC_TIMELINE_T *prNanFawNdcTimeline = NULL;
+	uint32_t u4EntryIdx = 0;
+	struct _NAN_NDC_CTRL_T *prNdcCtrl = NULL;
+
+	ucTimelineIdx = nanGetTimelineMgmtIndexByBand(prAdapter, eBand);
+	prScheduler = nanGetScheduler(prAdapter);
+	prNanFawNdcTimeline = nanSchedGetFawNdcTimeline(ucTimelineIdx);
+	kalMemZero(prNanFawNdcTimeline->au4AvailMap,
+		sizeof(prNanFawNdcTimeline));
+
+	if (((eBand == BAND_2G4) && prScheduler->fgEn2g) ||
+		((eBand == BAND_5G) && (prScheduler->fgEn5gH ||
+		prScheduler->fgEn5gL))) {
+		for (u4SchIdx = 0; u4SchIdx < NAN_MAX_CONN_CFG; u4SchIdx++) {
+			prPeerSchRec =
+				nanSchedGetPeerSchRecord(
+					prAdapter, u4SchIdx);
+
+			if ((prPeerSchRec == NULL) ||
+				(prPeerSchRec->fgUseDataPath == FALSE))
+				continue;
+
+			prTimeline =
+				&prPeerSchRec->arCommFawTimeline[ucTimelineIdx];
+
+			/*
+			 * Combine all FAW bitmap
+			 * Ex. 1111111100000000 -> 1000000010000000
+			 */
+			for (u4EntryIdx = 0;
+				u4EntryIdx < NAN_TOTAL_DW;
+				u4EntryIdx++) {
+				if (prTimeline->au4AvailMap[u4EntryIdx] == 0)
+					continue;
+
+				prNanFawNdcTimeline->au4AvailMap[u4EntryIdx] |=
+					nanSchedTransferFawAvailMap(
+					prTimeline->au4AvailMap[u4EntryIdx]);
+			}
+
+			prNdcCtrl = prPeerSchRec->prCommNdcCtrl;
+			prTimeline =
+				&prNdcCtrl->arTimeline[ucTimelineIdx];
+
+			/*
+			 * Combine all NDC bitmap
+			 * Ex. 0000100000000000  -> 0000110000000000
+			 */
+			for (u4EntryIdx = 0;
+				u4EntryIdx < NAN_TOTAL_DW;
+				u4EntryIdx++) {
+				if (prTimeline->au4AvailMap[u4EntryIdx] == 0)
+					continue;
+
+				prNanFawNdcTimeline->au4AvailMap[u4EntryIdx] |=
+					nanSchedTransferNdcAvailMap(
+					prTimeline->au4AvailMap[u4EntryIdx]);
+			}
+		}
+
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	return WLAN_STATUS_FAILURE;
+}
+
+
 uint32_t
 nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 {
@@ -12270,6 +12435,8 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl = NULL;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
+	struct _NAN_FAW_NDC_TIMELINE_T *prNanFawNdcTimeline = NULL;
+	uint8_t ucIdx = 0;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
@@ -12353,6 +12520,21 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 			   sizeof(prCmdUpdateCRB->arCommRangingTimeline));
 	}
 
+	nanSchedGetTimelineByBand(prAdapter, BAND_2G4);
+	nanSchedGetTimelineByBand(prAdapter, BAND_5G);
+	for (ucIdx = 0; ucIdx < NAN_TIMELINE_MGMT_SIZE; ucIdx++) {
+		prNanFawNdcTimeline = nanSchedGetFawNdcTimeline(ucIdx);
+		kalMemCopy(&prCmdUpdateCRB->arFawNdcTimeline[ucIdx],
+			prNanFawNdcTimeline,
+			sizeof(struct _NAN_FAW_NDC_TIMELINE_T));
+		DBGLOG(NAN, INFO,
+			"MapIdx=%u, Revised bitmap=%02x-%02x-%02x-%02x\n",
+			ucIdx,
+			((uint8_t *)prNanFawNdcTimeline->au4AvailMap)[0],
+			((uint8_t *)prNanFawNdcTimeline->au4AvailMap)[1],
+			((uint8_t *)prNanFawNdcTimeline->au4AvailMap)[2],
+			((uint8_t *)prNanFawNdcTimeline->au4AvailMap)[3]);
+	}
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, NULL, nicCmdTimeoutCommon,
 				      u4CmdBufferLen, prCmdBuffer,

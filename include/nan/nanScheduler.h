@@ -335,6 +335,10 @@ struct _NAN_NDC_CTRL_T {
 	struct _NAN_SCHEDULE_TIMELINE_T arTimeline[NAN_TIMELINE_MGMT_SIZE];
 };
 
+struct _NAN_FAW_NDC_TIMELINE_T {
+	uint32_t au4AvailMap[NAN_TOTAL_DW];
+};
+
 union _NAN_AVAIL_ENTRY_CTRL {
 	struct {
 		uint16_t u2Type : 3;
