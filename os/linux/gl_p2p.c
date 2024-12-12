@@ -1142,6 +1142,9 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* so initial the corresponding data structure here. */
 	wlanBindBssIdxToNetInterface(prGlueInfo, prNetDevPriv->ucBssIdx,
 					(void *) prP2PInfo->aprRoleHandler);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prNetDevPriv->ucMldBssIdx = prMldBss->ucGroupMldId;
+#endif
 
 	/* bind netdev pointer to netdev index */
 #if 0
