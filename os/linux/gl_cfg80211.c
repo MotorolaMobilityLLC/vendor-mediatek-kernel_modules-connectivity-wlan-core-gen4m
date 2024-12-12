@@ -67,6 +67,7 @@ static const uint32_t arBwCfg80211Table[] = {
 #if (CFG_MTK_ANDROID_WMT == 1 && \
 		KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE) || \
 	KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+	RATE_INFO_BW_320,
 	RATE_INFO_BW_320
 #endif
 };
