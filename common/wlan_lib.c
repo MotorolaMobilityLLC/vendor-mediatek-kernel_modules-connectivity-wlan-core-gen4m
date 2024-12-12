@@ -1679,6 +1679,58 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		prAdapter->chip_info->checkbusNoAck((void *) prAdapter, TRUE);
 #endif
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+#if defined(_HIF_PCIE)
+	prAdapter->rFactCalFile.common_t =
+	KAL_DMA_ALLOC_COHERENT(prAdapter->prGlueInfo->rHifInfo.prDmaDev,
+		sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE),
+		&prAdapter->rFactCalFile.Common_pa);
+
+	prAdapter->rFactCalFile.group_t =
+	KAL_DMA_ALLOC_COHERENT(prAdapter->prGlueInfo->rHifInfo.prDmaDev,
+		sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE),
+		&prAdapter->rFactCalFile.Group_pa);
+
+	prAdapter->rFactCalFile.channel_t =
+	KAL_DMA_ALLOC_COHERENT(prAdapter->prGlueInfo->rHifInfo.prDmaDev,
+		sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE),
+		&prAdapter->rFactCalFile.Channel_pa);
+
+	kalMemZero(prAdapter->rFactCalFile.common_t,
+		sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE));
+
+	kalMemZero(prAdapter->rFactCalFile.group_t,
+		sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE));
+
+	kalMemZero(prAdapter->rFactCalFile.channel_t,
+		sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
+#else //USB
+	prAdapter->rFactCalFile.common_t =
+		(struct FACT_CAL_COMMON_LOOKUP_TABLE *)kalMemAlloc(
+			sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE),
+			VIR_MEM_TYPE);
+
+	prAdapter->rFactCalFile.group_t =
+		(struct FACT_CAL_GROUP_LOOKUP_TABLE *)kalMemAlloc(
+			sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE),
+			VIR_MEM_TYPE);
+
+	prAdapter->rFactCalFile.channel_t =
+		(struct FACT_CAL_CHANNEL_LOOKUP_TABLE *)kalMemAlloc(
+			sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE),
+			VIR_MEM_TYPE);
+
+	kalMemZero(prAdapter->rFactCalFile.common_t,
+		sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE));
+
+	kalMemZero(prAdapter->rFactCalFile.group_t,
+		sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE));
+
+	kalMemZero(prAdapter->rFactCalFile.channel_t,
+		sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
+#endif
+#endif //CFG_SUPPORT_FACT_CAL
+
 	return u4Status;
 }				/* wlanAdapterStart */
 

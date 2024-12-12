@@ -320,6 +320,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	[UNI_EVENT_ID_MLO] = nicUniEventMLSRSwitchDone,
 #endif
+#if (CFG_SUPPORT_FACT_CAL)
+	[UNI_EVENT_ID_FACT_CAL] = nicUniEventGetFactCalData,
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	[UNI_EVENT_ID_OMI] = nicUniEventOmi,
 #endif
@@ -9293,17 +9296,27 @@ uint32_t nicUniCmdPpAlgoCtrl(struct ADAPTER *ad,
 #if (CFG_SUPPORT_FACT_CAL == 1)
 uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 		uint32_t u4Action,
-		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData)
+		struct UNI_CMD_FACT_CAL_DATA *prCalData)
 {
 	struct UNI_CMD_FACT_CAL *uni_cmd = NULL;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_FACT_CAL) +
-				sizeof(struct UNI_CMD_FACT_CAL_GET_CE);
+	uint32_t max_cmd_len = 0;
 	uint32_t status = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(NIC, TRACE, "u4Action=%u, ucCalType=%u, u4CalParam=0x%x\n",
 			u4Action, prCalData->ucCalType, prCalData->u4Data);
 
 	/* Alloc cmd mem */
+	if (u4Action == FACT_CAL_ACTION_GET) {
+		max_cmd_len = sizeof(struct UNI_CMD_FACT_CAL) +
+				sizeof(struct UNI_CMD_FACT_CAL_RAPID_GET);
+	} else if (u4Action == FACT_CAL_ACTION_SET) {
+		max_cmd_len = sizeof(struct UNI_CMD_FACT_CAL) +
+				sizeof(struct UNI_CMD_FACT_CAL_RAPID_SET);
+	} else {
+		DBGLOG(NIC, ERROR, "Error Action Type=%d\n", u4Action);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	uni_cmd = (struct UNI_CMD_FACT_CAL *)cnmMemAlloc(prAdapter,
 				RAM_TYPE_MSG, max_cmd_len);
 	if (!uni_cmd) {
@@ -9313,14 +9326,39 @@ uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 
 	switch (u4Action) {
 	case FACT_CAL_ACTION_GET: {
-		struct UNI_CMD_FACT_CAL_GET_CE *tag =
-			(struct UNI_CMD_FACT_CAL_GET_CE *)uni_cmd->aucTlvBuffer;
-		tag->u2Tag = UNI_CMD_FACT_CAL_TAG_GET_CE;
+		struct UNI_CMD_FACT_CAL_RAPID_GET *tag =
+			(struct UNI_CMD_FACT_CAL_RAPID_GET *)
+				uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_FACT_CAL_TAG_RAPID_GET;
 		tag->u2Length = sizeof(*tag);
 		tag->u4Data = prCalData->u4Data;
 		tag->u1CalType = prCalData->ucCalType;
 		tag->u1Band = prCalData->ucBand;
 		tag->u1Channel = prCalData->ucChannel;
+		break;
+	}
+
+	case FACT_CAL_ACTION_SET: {
+		struct UNI_CMD_FACT_CAL_RAPID_SET *tag =
+			(struct UNI_CMD_FACT_CAL_RAPID_SET *)
+				uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_FACT_CAL_TAG_RAPID_SET;
+		tag->u2Length = sizeof(*tag);
+		tag->u1CalType = prCalData->ucCalType;
+		tag->u4SeqNum = prCalData->u4SeqNum;
+		tag->u1Done = prCalData->ucDone;
+		if (prCalData->u4BufDataLength <= FACT_CAL_DATA_BUF_MAXSIZE)
+			kalMemCopy(tag->u1BufData,
+				prCalData->aucBufData,
+				prCalData->u4BufDataLength);
+		else {
+			DBGLOG(NIC, ERROR,
+				"Data size %d is bigger than max size %d\n",
+				prCalData->u4BufDataLength,
+				FACT_CAL_DATA_BUF_MAXSIZE);
+			return WLAN_STATUS_FAILURE;
+		}
+		tag->u4BufDataLength = prCalData->u4BufDataLength;
 		break;
 	}
 
@@ -9331,10 +9369,10 @@ uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 
 	status = wlanSendSetQueryUniCmd(prAdapter,
 				UNI_CMD_ID_FACT_CAL,
-				u4Action == FACT_CAL_ACTION_GET ? FALSE : TRUE,
 				TRUE,
 				FALSE,
-				nicUniEventGetFactCalData,
+				FALSE,
+				nicUniCmdEventSetCommon,
 				nicUniCmdTimeoutCommon,
 				max_cmd_len,
 				(uint8_t *)uni_cmd, NULL, 0);
@@ -15160,17 +15198,15 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 #if (CFG_SUPPORT_FACT_CAL == 1)
 void nicUniEventGetFactCalData(struct ADAPTER *prAdapter,
-	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+	struct WIFI_UNI_EVENT *uni_evt)
 {
-	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
 	int32_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
+	struct UNI_EVENT_FACT_CAL_RAPID_GET_DATA *prFactCalGetData = NULL;
 	uint32_t fixed_len = sizeof(struct UNI_EVENT_FACT_CAL);
 	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(uni_evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(uni_evt);
-
-	KAL_SPIN_LOCK_DECLARATION();
 
 	DBGLOG(NIC, INFO, "EVENT_ID_ONE_TIME_CAL\n");
 
@@ -15180,23 +15216,9 @@ void nicUniEventGetFactCalData(struct ADAPTER *prAdapter,
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 		switch (TAG_ID(tag)) {
-		case UNI_EVENT_FACT_CAL_GET_DATA_TAG: {
-			struct  UNI_EVENT_FACT_CAL_GET_DATA *prFactCalGetData =
-				(struct UNI_EVENT_FACT_CAL_GET_DATA *) tag;
-
-			if (prFactCalGetData->ucDone != TRUE) {
-				/* Re-Insert into prCmdQueue for next event*/
-				KAL_ACQUIRE_SPIN_LOCK(
-				prAdapter, SPIN_LOCK_CMD_PENDING);
-				QUEUE_INSERT_TAIL(
-				&prAdapter->rPendingCmdQueue,
-				(struct QUE_ENTRY *)prCmdInfo);
-				KAL_RELEASE_SPIN_LOCK(
-				prAdapter, SPIN_LOCK_CMD_PENDING);
-			} else {
-				DBGLOG(NIC, INFO,
-				"EVENT_ID_ONE_TIME_CAL Done\n");
-			}
+		case UNI_EVENT_FACT_CAL_RAPID_GET_DATA_TAG: {
+			prFactCalGetData =
+			(struct UNI_EVENT_FACT_CAL_RAPID_GET_DATA *) tag;
 
 			if (prFactCalGetData->u4SeqNum == 0) {
 				DBGLOG(NIC, INFO,

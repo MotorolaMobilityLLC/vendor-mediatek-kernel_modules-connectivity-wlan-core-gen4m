@@ -175,23 +175,29 @@ extern const char * const apucOpBw[MAX_BW_UNKNOWN+1];
 #define FACT_CAL_CMD_EVENT_WAITTIME_MS (1000) /* uint: msec */
 #define FACT_CAL_GET_TIMEOUT_TH (10) /* uint: sec */
 
+/* Define for fact cal result to 4 byte-align */
+#define FACT_CAL_COM_CAL_RESULT_LEN 600
+#define FACT_CAL_GRP_CAL_RESUL_LEN  4500
+#define FACT_CAL_CH_CAL_RESULT_LEN  700
+
+#define FACT_CAL_DATA_BUF_NUM_MAX (4) /* Maximum of channel cache num */
 #define FACT_CAL_CH_NUM_2G (14)	/* ARRAY_SIZE g_au1ChList2G */
 #define FACT_CAL_CH_NUM_5G (68) /* ARRAY_SIZE g_au1ChList5G */
 #define FACT_CAL_CH_NUM_6G (109) /* ARRAY_SIZE g_au1ChList6G */
 #define FACT_CAL_CH_NUM_ALL ((FACT_CAL_CH_NUM_2G) + (FACT_CAL_CH_NUM_5G)+ \
-							+ (FACT_CAL_CH_NUM_6G))
+					+ (FACT_CAL_CH_NUM_6G))
 
-#define FACT_CAL_DATA_BUF_NUM_MAX (3)
 #define FACT_CAL_DATA_BUF_CFG_U32_LEN (4)
 #define FACT_CAL_DATA_BUF_CFG_U8_LEN (16)
 /* buffer format [address, u4Length, others 1, others 2] = 4*4 = 16bytes */
-/* Total 3 buf = 48 */
-#define FACT_CAL_DATA_MAX_BUF_LEN (FACT_CAL_DATA_BUF_NUM_MAX * \
-FACT_CAL_DATA_BUF_CFG_U32_LEN)
+/* Total BUF_NUM_MAX buf = 16 * BUF_NUM_MAX */
+#define FACT_CAL_DATA_MAX_BUF_LEN \
+	((FACT_CAL_DATA_BUF_NUM_MAX)*(FACT_CAL_DATA_BUF_CFG_U32_LEN))
 #define FACT_CAL_DATA_BUF_LEN (1400)
-#define FACT_CAL_BUF_LEN_COM (600)
-#define FACT_CAL_BUF_LEN_GRP (4500)
-#define FACT_CAL_BUF_LEN_CH (1400)
+#define FACT_CAL_BUF_LEN_COM (FACT_CAL_COM_CAL_RESULT_LEN)
+#define FACT_CAL_BUF_LEN_GRP (FACT_CAL_GRP_CAL_RESUL_LEN)
+#define FACT_CAL_BUF_LEN_CH \
+	((FACT_CAL_CH_CAL_RESULT_LEN)*(FACT_CAL_DATA_BUF_NUM_MAX))
 
 #define FACT_CAL_2G_GROUP_NUM (1)
 #define FACT_CAL_5G_GROUP_NUM (8)
@@ -213,6 +219,8 @@ FACT_CAL_DATA_BUF_CFG_U32_LEN)
 #define FACT_CAL_CENT_CH_PARAM_RF_BAND_OFFSET             (12)
 
 #define BAND_TO_FACT_BAND(_ucBand) ((_ucBand) - 1)
+#define FACT_CAL_DATA_INVALID_IDX 0xFFFFFFFF
+
 #endif //#if CFG_SUPPORT_FACT_CAL
 
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
@@ -267,8 +275,7 @@ enum FACT_CAL_TYPE_CE {
 	FACT_CAL_TYPE_POWERON = 0,
 	FACT_CAL_TYPE_SETCHANNEL = 1,
 	FACT_CAL_TYPE_BAND = 2,
-	FACT_CAL_TYPE_CE_ALL = 3,
-	FACT_CAL_TYPE_NUM_CE
+	FACT_CAL_TYPE_GET_ALL = 3
 };
 
 enum FACT_CAL_COMMON_BAND {
@@ -408,6 +415,11 @@ struct FACT_CAL_BASE_LOOKUP_TABLE {
 	struct FACT_CAL_COMMON_LOOKUP_TABLE *common_t;
 	struct FACT_CAL_GROUP_LOOKUP_TABLE *group_t;
 	struct FACT_CAL_CHANNEL_LOOKUP_TABLE *channel_t;
+#if defined(_HIF_PCIE)
+	dma_addr_t Group_pa;
+	dma_addr_t Common_pa;
+	dma_addr_t Channel_pa;
+#endif
 };
 #endif
 
@@ -842,7 +854,7 @@ uint32_t rlmFactCalHandler(struct ADAPTER *prAdapter,
 
 uint32_t rlmFactCalUpdateStruct(struct ADAPTER *prAdapter,
 		enum FACT_CAL_STORE_ACTION eAction,
-		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData);
+		struct UNI_EVENT_FACT_CAL_RAPID_GET_DATA *prCalData);
 
 uint32_t rlmFactCalGetBufInfo(struct ADAPTER *prAdapter,
 		struct FACT_CAL_DATA_BUF *prCalData);

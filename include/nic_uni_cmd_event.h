@@ -5426,6 +5426,8 @@ struct UNI_CMD_FACT_CAL {
  *   UNI_CMD_FACT_CAL_SET          | 0x01 | UNI_CMD_FACT_CAL_SET_T
  *   UNI_CMD_FACT_CAL_TRIGGER      | 0x02 | UNI_CMD_FACT_CAL_TRIGGER_T
  *   UNI_CMD_FACT_CAL_UPDATE_FLAG  | 0x03 | UNI_CMD_FACT_CAL_UPDATE_FLAG_T
+ *   UNI_CMD_FACT_CAL_RAPID_GET    | 0x04 | UNI_CMD_FACT_CAL_RAPID_GET_T
+ *   UNI_CMD_FACT_CAL_RAPID_SET    | 0x05 | UNI_CMD_FACT_CAL_RAPID_SET_T
  */
 
 /* Fact cal command Tag */
@@ -5434,8 +5436,8 @@ enum ENUM_UNI_CMD_ID_FACT_CAL_TAG {
 	UNI_CMD_FACT_CAL_TAG_SET            = 1,
 	UNI_CMD_FACT_CAL_TAG_TRIGGER        = 2,
 	UNI_CMD_FACT_CAL_TAG_UPDATE_FLAG    = 3,
-	UNI_CMD_FACT_CAL_TAG_GET_CE         = 4,
-	UNI_CMD_FACT_CAL_TAG_SET_CE         = 5,
+	UNI_CMD_FACT_CAL_TAG_RAPID_GET      = 4,
+	UNI_CMD_FACT_CAL_TAG_RAPID_SET      = 5,
 	UNI_CMD_ID_FACT_CAL_TAG_MAX_NUM
 };
 
@@ -5532,7 +5534,7 @@ struct UNI_CMD_FACT_CAL_UPDATE_FLAG {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_FACT_CAL_GET_CE {
+struct UNI_CMD_FACT_CAL_RAPID_GET {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -5547,7 +5549,7 @@ struct UNI_CMD_FACT_CAL_GET_CE {
 	uint8_t u1BufData[FACT_CAL_DATA_BUF_MAXSIZE];
 } __KAL_ATTRIB_PACKED__;
 
-/** This structure is used for UNI_CMD_FACT_CAL_SET_CE(0x05)
+/** This structure is used for UNI_CMD_FACT_CAL_RAPID_SET(0x05)
  * of UNI_CMD_ID_FACT_CAL command (0x7C) to set calbration data.
  * @version Supported from ver:1.0.0.0
  *
@@ -5563,7 +5565,7 @@ struct UNI_CMD_FACT_CAL_GET_CE {
  */
 /* Fact cal set command (Tag1) */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_FACT_CAL_SET_CE {
+struct UNI_CMD_FACT_CAL_RAPID_SET {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -9094,13 +9096,29 @@ struct UNI_EVENT_FACT_CAL {
 
 /* Update Factory Calibration event tags */
 enum UNI_EVENT_FACT_CAL_TAG {
-	UNI_EVENT_FACT_CAL_GET_DATA_TAG      = 0x0,
+	UNI_EVENT_FACT_CAL_GET_DATA_TAG       = 0x0,   // For cx driver used
+	UNI_EVENT_FACT_CAL_RAPID_GET_DATA_TAG = 0x1,   // For SDK driver used
 	UNI_EVENT_FACT_CAL_TAG_MAX_TAG_NUM
 };
 
 /**
- * This structure is used for UNI_EVENT_ID_FACT_CAL tag(0x00)
- of UNI_EVENT_ID_FACT_CAL_GET_DATA event (0x7C) to report fact data to host
+ * This structure is used for send RAPID_GET/RAPID_SET cmd data
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_DATA {
+	uint32_t u4Data;
+	uint32_t u4SeqNum;
+	uint32_t u4BufDataLength;
+	uint8_t ucCalType;
+	uint8_t ucDone;
+	uint8_t ucBand;
+	uint8_t ucChannel;
+	uint8_t aucBufData[FACT_CAL_DATA_BUF_MAXSIZE];
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * This structure is used for UNI_EVENT_FACT_CAL_RAPID_GET_DATA_TAG tag(0x01)
+ of UNI_EVENT_ID_FACT_CAL event (0x7C) to report fact data to host
  * @version Supported from ver:1.0.0.0
  *
  * @param[in] u2Tag            should be 0x00
@@ -9114,8 +9132,8 @@ enum UNI_EVENT_FACT_CAL_TAG {
  * @param[in] u1BufData        cal data
  */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_FACT_CAL_GET_DATA {
-	uint16_t u2Tag;    // Tag = 0x00
+struct UNI_EVENT_FACT_CAL_RAPID_GET_DATA {
+	uint16_t u2Tag;    // Tag = 0x01
 	uint16_t u2Length;
 
 	uint32_t u4Data;
@@ -9123,8 +9141,10 @@ struct UNI_EVENT_FACT_CAL_GET_DATA {
 	uint32_t u4BufDataLength;
 	uint8_t ucCalType;
 	uint8_t ucDone;
+	uint8_t ucSubDone;
 	uint8_t ucBand;
 	uint8_t ucChannel;
+	uint8_t rvsd[3];
 	uint8_t aucBufData[FACT_CAL_DATA_BUF_MAXSIZE];
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_SUPPORT_FACT_CAL */
@@ -9856,7 +9876,7 @@ uint32_t nicUniCmdPpAlgoCtrl(struct ADAPTER *ad,
 #if (CFG_SUPPORT_FACT_CAL == 1)
 uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 		uint32_t u4Action,
-		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData);
+		struct UNI_CMD_FACT_CAL_DATA *prCalData);
 #endif
 
 #if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
@@ -10003,7 +10023,7 @@ void nicUniEventRttCapabilities(struct ADAPTER	*prAdapter,
 
 #if (CFG_SUPPORT_FACT_CAL == 1)
 void nicUniEventGetFactCalData(struct ADAPTER *prAdapter,
-	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+	struct WIFI_UNI_EVENT *uni_evt);
 #endif
 /*******************************************************************************
  *                   Unsolicited Event
