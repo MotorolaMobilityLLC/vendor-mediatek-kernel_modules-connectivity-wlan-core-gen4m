@@ -6375,7 +6375,12 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	uint32_t u4CurrTick;
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
 	uint32_t u4EmiUpdateMs = 0;
-	struct timespec64 rNow, rDrvDiff, rFwDiff, rUpdate, rTimeout, rPeriod;
+	struct timespec64 rNow;
+	struct timespec64 rDrvDiff = {0};
+	struct timespec64 rFwDiff = {0};
+	struct timespec64 rUpdate;
+	struct timespec64 rTimeout = {0};
+	struct timespec64 rPeriod;
 #endif
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
@@ -6474,12 +6479,11 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	KAL_SET_MSEC_TO_TIME(rPeriod, prParam->u4Period);
 
 	if (kalGetDeltaTime(&rNow, &prAdapter->rRegStatSyncDrvTs, &rDrvDiff) &&
-		kalGetDeltaTime(
-			&rUpdate, &prAdapter->rRegStatSyncFwTs, &rFwDiff) &&
-		kalGetDeltaTime(&rDrvDiff, &rFwDiff, &rTimeout) &&
-		kalTimeCompare(&rTimeout, &rPeriod) <= 0)
+	    kalGetDeltaTime(&rUpdate, &prAdapter->rRegStatSyncFwTs, &rFwDiff) &&
+	    kalGetDeltaTime(&rDrvDiff, &rFwDiff, &rTimeout) &&
+	    kalTimeCompare(&rTimeout, &rPeriod) <= 0) {
 		nicCollectRegStatFromEmi(prAdapter);
-	else {
+	} else {
 		DBGLOG(REQ, TRACE,
 			"drvDiff=%ld.%09ld fwDiff=%ld.%09ld to=%ld.%09ld per=%ld.%09ld\n",
 			rDrvDiff.tv_sec, rDrvDiff.tv_nsec,
@@ -6487,19 +6491,20 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			rTimeout.tv_sec, rTimeout.tv_nsec,
 			rPeriod.tv_sec, rPeriod.tv_nsec);
 send_cmd:
-#else
-	{
-#endif
 		rResult = sendStatsUniCmd(prAdapter, pvQueryBuffer,
 			u4QueryBufferLen, pu4QueryInfoLen,
 			fgIsOid, max_cmd_len);
 	}
+#else
+	rResult = sendStatsUniCmd(prAdapter, pvQueryBuffer,
+		u4QueryBufferLen, pu4QueryInfoLen,
+		fgIsOid, max_cmd_len);
+#endif
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		if (!ucConnBss[i])
 			continue;
-		prQueryStaStatistics = (
-			&prAdapter->rQueryStaStatistics[i]);
+		prQueryStaStatistics = &prAdapter->rQueryStaStatistics[i];
 		prQueryStaStatistics->u4Flag |= BIT(1);
 	}
 
