@@ -8794,8 +8794,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucGROEnableTput, "GROEnableTput", 6250000,
 		  FEATURE_DEBUG_ONLY);
 #endif
+	INIT_UINT(prWifiVar->fgApGoTxTimeoutEn, "ApGoTxTimeoutEn",
+		  FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4MsduReportTimeout, "MsduReportTimeout",
 		  NIC_MSDU_REPORT_DUMP_TIMEOUT, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4ApGoMsduReportTimeout, "ApGoMsduReportTimeout",
+		  NIC_MSDU_REPORT_SAP_DUMP_TIMEOUT, FEATURE_DEBUG_ONLY);
+
 #if CFG_DISABLE_TXTIMEOUT_SER
 	/* default not trigger SER during SQC */
 	INIT_UINT(prWifiVar->u4MsduReportTimeoutSerTime,

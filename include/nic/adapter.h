@@ -1436,7 +1436,9 @@ struct WIFI_VAR {
 	uint32_t u4TxHighTputTh;
 	uint32_t u4RxHighTputTh;
 
+	u_int8_t fgApGoTxTimeoutEn;
 	uint32_t u4MsduReportTimeout;
+	uint32_t u4ApGoMsduReportTimeout;
 	uint32_t u4MsduReportTimeoutSerTime;
 
 

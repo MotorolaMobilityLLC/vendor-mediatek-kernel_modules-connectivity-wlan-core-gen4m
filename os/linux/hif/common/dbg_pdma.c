@@ -635,7 +635,7 @@ static void halResetTxTimeoutParams(struct ADAPTER *prAdapter)
 }
 
 static void halWarningTxTimeout(struct ADAPTER *prAdapter,
-	uint32_t u4LongestPending)
+	uint32_t u4LongestPending, uint8_t ucBssIndex)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4AvgIdleSlot = 0;
@@ -658,12 +658,13 @@ static void halWarningTxTimeout(struct ADAPTER *prAdapter,
 		/* only trigger SER when enable in wifi.cfg */
 		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 		kalSendAeeWarning("Tx Timeout",
-			"Tx timeout same token > %d , idle slot %d SER!\n",
-			prWifiVar->u4SameTokenThr, u4AvgIdleSlot);
+			"Bss_Idx[%u] Tx timeout same token > %d , idle slot %d SER!\n",
+			ucBssIndex, prWifiVar->u4SameTokenThr,
+			u4AvgIdleSlot);
 	} else if (u4LongestPending >= prWifiVar->u4TxTimeoutWarningThr) {
 		kalSendAeeWarning("Tx Timeout",
-			"Tx timeout > %ds, Warning, idle slot %d\n",
-			prWifiVar->u4TxTimeoutWarningThr,
+			"Bss_Idx[%u] Tx timeout > %ds, Warning, idle slot %d\n",
+			ucBssIndex, prWifiVar->u4TxTimeoutWarningThr,
 			u4AvgIdleSlot);
 	}
 }
@@ -710,7 +711,6 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	u4TimeoutSerTime = prWifiVar->u4MsduReportTimeoutSerTime;
 	prHifStats = &prAdapter->rHifStats;
 
-	u8Timeout = SEC_TO_USEC(prWifiVar->u4MsduReportTimeout);
 	u8Longest = 0;
 	u8Now = kalGetBootTime();
 
@@ -719,6 +719,17 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 		if (!prToken->prPacket)
 			continue;
+
+		u8Timeout = SEC_TO_USEC(prWifiVar->u4MsduReportTimeout);
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prToken->ucBssIndex);
+		if (IS_BSS_APGO(prBssInfo)) {
+			if (!prWifiVar->fgApGoTxTimeoutEn)
+				continue;
+			u8Timeout = SEC_TO_USEC(
+				prWifiVar->u4ApGoMsduReportTimeout);
+		}
 
 		if (prToken->fgInUsed &&
 		    CHECK_FOR_TIMEOUT64(u8Now, prToken->u8Tm, u8Timeout)) {
@@ -785,7 +796,8 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		halResetTxTimeoutParams(prAdapter);
 	}
 
-	halWarningTxTimeout(prAdapter, USEC_TO_SEC(u8Longest));
+	halWarningTxTimeout(prAdapter, USEC_TO_SEC(u8Longest),
+		prToken->ucBssIndex);
 #if CFG_SUPPORT_MBRAIN
 	mbrIsTxTimeout(prAdapter, u4TokenId, USEC_TO_SEC(u8Longest));
 #endif
