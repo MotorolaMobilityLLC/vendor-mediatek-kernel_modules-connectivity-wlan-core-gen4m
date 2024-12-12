@@ -1245,7 +1245,7 @@ void asicConnac3xProcessSoftwareInterrupt(
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_SUBSYS_BUS_TIMEOUT) {
 		DBGLOG(INIT, ERROR, "[SER][L0.5] wfsys timeout!!\n");
-		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SUBSYS_BUS_HANG);
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SUBSYS_BUS_TIMEOUT);
 	} else if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
 		halHwRecoveryFromError(prAdapter);

@@ -31,12 +31,11 @@
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 
-/* 1: 3rd arbitration makes decision based on group priority in current slot.
- * 0: 3rd arbitration makes decision based on fixed user-defined priority.
- */
 #define MT7999_DMASHDL_SLOT_ARBITER_EN                 (0)
+#define MT7999_DMASHDL_PLE_TOTAL_PAGE_SIZE             (0x6E0)
+#define MT7999_DMASHDL_PSE_TOTAL_PAGE_SIZE             (0x10)
 #define MT7999_DMASHDL_PKT_PLE_MAX_PAGE                (0x1)
-#define MT7999_DMASHDL_PKT_PSE_MAX_PAGE                (0x18)
+#define MT7999_DMASHDL_PKT_PSE_MAX_PAGE                (0x8)
 #define MT7999_DMASHDL_GROUP_0_REFILL_EN               (1)
 #define MT7999_DMASHDL_GROUP_1_REFILL_EN               (1)
 #define MT7999_DMASHDL_GROUP_2_REFILL_EN               (1)
@@ -52,13 +51,13 @@
 #define MT7999_DMASHDL_GROUP_12_REFILL_EN              (0)
 #define MT7999_DMASHDL_GROUP_13_REFILL_EN              (0)
 #define MT7999_DMASHDL_GROUP_14_REFILL_EN              (0)
-#define MT7999_DMASHDL_GROUP_15_REFILL_EN              (0)
-#define MT7999_DMASHDL_GROUP_0_MAX_QUOTA               (0x490)
-#define MT7999_DMASHDL_GROUP_1_MAX_QUOTA               (0x490)
-#define MT7999_DMASHDL_GROUP_2_MAX_QUOTA               (0x490)
-#define MT7999_DMASHDL_GROUP_3_MAX_QUOTA               (0x490)
-#define MT7999_DMASHDL_GROUP_4_MAX_QUOTA               (0x490)
-#define MT7999_DMASHDL_GROUP_5_MAX_QUOTA               (0x490)
+#define MT7999_DMASHDL_GROUP_15_REFILL_EN              (1)
+#define MT7999_DMASHDL_GROUP_0_MAX_QUOTA               (0x300)
+#define MT7999_DMASHDL_GROUP_1_MAX_QUOTA               (0x300)
+#define MT7999_DMASHDL_GROUP_2_MAX_QUOTA               (0x300)
+#define MT7999_DMASHDL_GROUP_3_MAX_QUOTA               (0x300)
+#define MT7999_DMASHDL_GROUP_4_MAX_QUOTA               (0x300)
+#define MT7999_DMASHDL_GROUP_5_MAX_QUOTA               (0x300)
 #define MT7999_DMASHDL_GROUP_6_MAX_QUOTA               (0x0)
 #define MT7999_DMASHDL_GROUP_7_MAX_QUOTA               (0x0)
 #define MT7999_DMASHDL_GROUP_8_MAX_QUOTA               (0x0)
@@ -105,7 +104,7 @@
 #define MT7999_DMASHDL_QUEUE_17_TO_GROUP               (0x0)   /* BMC */
 #define MT7999_DMASHDL_QUEUE_18_TO_GROUP               (0x0)   /* BCN */
 #define MT7999_DMASHDL_QUEUE_19_TO_GROUP               (0x0)   /* HW Reserved */
-#define MT7999_DMASHDL_QUEUE_20_TO_GROUP               (0x5)   /* TGID=1 ALTX */
+#define MT7999_DMASHDL_QUEUE_20_TO_GROUP               (0x3)   /* TGID=1 ALTX */
 #define MT7999_DMASHDL_QUEUE_21_TO_GROUP               (0x0)   /* TGID=1 BMC  */
 #define MT7999_DMASHDL_QUEUE_22_TO_GROUP               (0x0)   /* TGID=1 BCN  */
 #define MT7999_DMASHDL_QUEUE_23_TO_GROUP               (0x0)   /* HW Reserved */
@@ -113,7 +112,7 @@
 #define MT7999_DMASHDL_QUEUE_25_TO_GROUP               (0x0)   /* NBCN */
 #define MT7999_DMASHDL_QUEUE_26_TO_GROUP               (0x0)   /* FIXFID */
 #define MT7999_DMASHDL_QUEUE_27_TO_GROUP               (0x0)   /* Reserved */
-#define MT7999_DMASHDL_QUEUE_28_TO_GROUP               (0x5)   /* TGID=2 ALTX */
+#define MT7999_DMASHDL_QUEUE_28_TO_GROUP               (0x3)   /* TGID=2 ALTX */
 #define MT7999_DMASHDL_QUEUE_29_TO_GROUP               (0x0)   /* TGID=2 BMC  */
 #define MT7999_DMASHDL_QUEUE_30_TO_GROUP               (0x0)   /* TGID=2 BCN  */
 #define MT7999_DMASHDL_QUEUE_31_TO_GROUP               (0x0)   /* HW Reserved */

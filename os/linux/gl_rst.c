@@ -103,7 +103,7 @@ char * const apucRstReason[RST_REASON_MAX] = {
 	"RST_SER_L0P5_FAIL",
 	"RST_CMD_EVT_FAIL",
 	"RST_WDT",
-	"RST_SUBSYS_BUS_HANG",
+	"RST_SUBSYS_BUS_TIMEOUT",
 	"RST_SMC_CMD_FAIL",
 	"RST_DEVAPC",
 	"RST_PCIE_NOT_READY",
@@ -965,7 +965,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	case RST_SER_L1_FAIL:
 	case RST_CMD_EVT_FAIL:
 	case RST_WDT:
-	case RST_SUBSYS_BUS_HANG:
+	case RST_SUBSYS_BUS_TIMEOUT:
 		if (prChipInfo->fgIsSupportL0p5Reset)
 			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
 		else

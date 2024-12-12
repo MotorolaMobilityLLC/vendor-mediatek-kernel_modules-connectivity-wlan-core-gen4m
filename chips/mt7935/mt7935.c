@@ -2207,7 +2207,7 @@ static void mt7935ProcessSoftwareInterruptByEmi(struct ADAPTER *prAdapter)
 	prErrRecoveryCtrl->u4BackupStatus = u4Sta;
 	if (u4Sta & ERROR_DETECT_SUBSYS_BUS_TIMEOUT) {
 		DBGLOG(INIT, ERROR, "[SER][L0.5] wfsys timeout!!\n");
-		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SUBSYS_BUS_HANG);
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SUBSYS_BUS_TIMEOUT);
 	} else if (u4Sta & ERROR_DETECT_MASK) {
 		/* reset the done flag to zero when wfdma resetting */
 		if (u4Sta & ERROR_DETECT_STOP_PDMA) {

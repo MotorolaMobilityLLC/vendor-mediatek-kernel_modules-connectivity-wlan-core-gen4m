@@ -24,9 +24,9 @@
 #endif
 #include "coda/mt7999/wf_ple_top.h"
 #include "coda/mt7999/wf_pse_top.h"
-#include "coda/mt7999/wf_wfdma_host_dma0.h"
+#include "coda/mt7999/wf_p0_wfdma.h"
+#include "coda/mt7999/wfdma_wrap_csr.h"
 #include "coda/mt7999/wf_hif_dmashdl_top.h"
-#include "coda/mt7999/wf_wfdma_ext_wrap_csr.h"
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
@@ -1414,8 +1414,8 @@ void mt7999_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 	if (enum_wfdma_type != WFDMA_TYPE_HOST)
 		return;
 
-	u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
-	u4DbgProbeAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_PROBE_ADDR;
+	u4DbgIdxAddr = WF_P0_WFDMA_WPDMA_DBG_IDX_ADDR;
+	u4DbgProbeAddr = WF_P0_WFDMA_WPDMA_DBG_PROBE_ADDR;
 
 	for (i = 0; i < ARRAY_SIZE(dbg_cr_idx); i++) {
 		u4DbgIdxValue = 0x100 + dbg_cr_idx[i];
@@ -1439,33 +1439,39 @@ void mt7999_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	if (enum_wfdma_type != WFDMA_TYPE_HOST)
 		return;
 
-	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
 	DBGLOG(HAL, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_ADDR;
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_0_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT_CTRL_0(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = 0x20027078;
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_SLPPROT_DBG_0_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_SLPPROT_DBG_0(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = 0x2002707C;
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_SLPPROT_DBG_1_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_SLPPROT_DBG_1(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR;
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_SLPPROT_DBG_2_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_MSI_CONFIG_ADDR(0x%08x): [0x%08x]",
+	DBGLOG(HAL, INFO, "WFDMA_SLPPROT_DBG_2(0x%08x): 0x%08x\n",
+	       u4DmaCfgCr,
+	       u4RegValue);
+
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_MSI_CONFIG0_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
+	DBGLOG(HAL, INFO, "WFDMA_MSI_CONFIG0_ADDR(0x%08x): [0x%08x]",
 	       u4DmaCfgCr, u4RegValue);
 }
 
@@ -2195,7 +2201,6 @@ void mt7999_DumpBusStatus(struct ADAPTER *ad)
 	u_int8_t fgIsBusAccessFailedBak = 0;
 #endif
 
-
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
@@ -2209,17 +2214,15 @@ void mt7999_DumpBusStatus(struct ADAPTER *ad)
 	debug_ops = chip_info->prDebugOps;
 	prHifInfo = &ad->prGlueInfo->rHifInfo;
 
-	if (prHifInfo) {
-		if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
-			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
-			return;
-		}
-		GLUE_SET_REF_CNT(1, prHifInfo->fgIsDebugSopOnGoing);
+	if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
+		DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
+		return;
 	}
+	GLUE_SET_REF_CNT(1, prHifInfo->fgIsDebugSopOnGoing);
 
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-	if (prHifInfo && prHifInfo->fgEnablePcieCfgDump) {
+	if (prHifInfo->fgEnablePcieCfgDump) {
 		mtk_pcie_disable_cfg_dump(0);
 		prHifInfo->fgEnablePcieCfgDump = FALSE;
 	} else if (prHifInfo == NULL)
@@ -2328,8 +2331,7 @@ dump_end:
 	fgTriggerDebugSop = FALSE;
 #endif
 
-	if (prHifInfo)
-		GLUE_SET_REF_CNT(0, prHifInfo->fgIsDebugSopOnGoing);
+	GLUE_SET_REF_CNT(0, prHifInfo->fgIsDebugSopOnGoing);
 }
 #endif
 

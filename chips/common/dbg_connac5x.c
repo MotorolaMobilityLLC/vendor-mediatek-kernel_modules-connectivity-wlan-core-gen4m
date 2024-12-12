@@ -33,7 +33,8 @@
 #include "coda/mt7999/wf_hif_dmashdl_top.h"
 #include "coda/mt7999/wf_ple_top.h"
 #include "coda/mt7999/wf_pse_top.h"
-#include "coda/mt7999/wf_wfdma_host_dma0.h"
+#include "coda/mt7999/wf_p0_wfdma.h"
+#include "coda/mt7999/wf_p0_wfdma_trinfo_top.h"
 #include "coda/mt7999/bn0_wf_mib_top.h"
 #include "coda/mt7999/bn1_wf_mib_top.h"
 #include "coda/mt7999/wf_umib_top.h"
@@ -2697,15 +2698,15 @@ static void connac5x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 	prRingMdDidx = &prHifInfo->rRingMdDidx;
 	prRingMdIntSta = &prHifInfo->rRingMdIntSta;
 
-	for (u4Idx = WF_WFDMA_HOST_DMA0_HOST_TX_INT_WB_EN_ADDR;
-	     u4Idx <= WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL2_ADDR;
+	for (u4Idx = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_CTRL_0_ADDR;
+	     u4Idx <= WF_P0_WFDMA_TRINFO_TOP_AP_TRX_DIDX_ADDR_63_32_ADDR;
 	     u4Idx += 4) {
 		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Idx, &u4Val);
 		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 	}
 
-	for (u4Idx = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_MD_CTRL0_ADDR;
-	     u4Idx <= WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_MD_CTRL2_ADDR;
+	for (u4Idx = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_ADDR;
+	     u4Idx <= WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_RX_EN_63_32_ADDR;
 	     u4Idx += 4) {
 		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Idx, &u4Val);
 		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
