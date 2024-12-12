@@ -11767,6 +11767,7 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 		 */
 		if (ch_idx >= rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)) {
 			uint32_t u4ChnlSeq;
+			int32_t i4StartIdx;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			/* For example,
 			 * 5G chnl 116、6G chnl 33 -> case 1
@@ -11775,12 +11776,18 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			 * 5G chnl 128、6G chnl 45 -> case 0
 			 * For 6G band : +1 is to align the cases with 5G band
 			 */
-			if (eChBand == BAND_6G)
+			if (eChBand == BAND_6G) {
 				u4ChnlSeq = ((pCh->u2ChNum >> 2) + 1) & 0x3;
+				i4StartIdx =
+				rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
+				rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+			}
 			else
 #endif
 			{
 				u4ChnlSeq = (pCh->u2ChNum >> 2) & 0x3;
+				i4StartIdx =
+				rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
 			}
 
 			/* Limit MAX_BW_40MHz and above to MAX_BW_20MHZ */
@@ -11801,44 +11808,48 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			if (channelBw > MAX_BW_40MHZ) {
 				struct CMD_DOMAIN_CHANNEL *pAdj20Chnl = NULL;
 				struct CMD_DOMAIN_CHANNEL *pAdj40Chnl = NULL;
-				int32_t ch_idx_offset = 0;
+				int32_t offset = 0;
+				int32_t i4ChIdx = ch_idx;
+				int32_t i4EndIdx = end_idx;
 
 				switch (u4ChnlSeq) {
 				case 1:
 					/* 5G chnl 116 to check chnl 120 flag */
-					ch_idx_offset = 1;
-					if ((ch_idx + ch_idx_offset) < end_idx)
+					offset = 1;
+					if ((i4ChIdx + offset) < i4EndIdx)
 						pAdj20Chnl = (
 						rlmDomainGetActiveChannels() +
-						(ch_idx + ch_idx_offset));
+						(i4ChIdx + offset));
 					kal_fallthrough;
 				case 2:
 					/* 5G chnl 116 to check chnl 124 flag or
 					 * 5G chnl 120 to check chnl 124 flag
 					 */
-					ch_idx_offset++;
+					offset++;
 					break;
 				case 0:
 					/* 5G chnl 128 to check chnl 124 flag */
-					ch_idx_offset = -1;
-					pAdj20Chnl = (
+					offset = -1;
+					if ((i4ChIdx + offset) >= i4StartIdx)
+						pAdj20Chnl = (
 						rlmDomainGetActiveChannels() +
-						(ch_idx + ch_idx_offset));
+						(i4ChIdx + offset));
 					kal_fallthrough;
 				case 3:
 					/* 5G chnl 128 to check chnl 120 flag or
 					 * 5G chnl 124 to check chnl 120 flag
 					 */
-					ch_idx_offset--;
+					offset--;
 					kal_fallthrough;
 				default:
 					break;
 				}
 
-				if ((ch_idx + ch_idx_offset) < end_idx)
+				if (((i4ChIdx + offset) >= i4StartIdx) &&
+					((i4ChIdx + offset) < i4EndIdx))
 					pAdj40Chnl = (
 						rlmDomainGetActiveChannels() +
-						(ch_idx + ch_idx_offset));
+						(i4ChIdx + offset));
 
 				if ((pAdj20Chnl) &&
 					(kalIsChFlagMatch(
