@@ -704,7 +704,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,	/*CH_SET_UNII_UPPER_149_165 */
 			{125, BAND_NULL, 0, 0, 0, FALSE}
 				/* CH_SET_UNII_UPPER_NA */
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -721,7 +722,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,	/* CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -737,7 +739,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{121, BAND_5G, CHNL_SPAN_20, 100, 11, TRUE}
 			,			/* CH_SET_UNII_WW_100_140 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -754,7 +757,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,	/* CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -772,7 +776,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,	/* CH_SET_UNII_WW_132_144 */
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 				/* CH_SET_UNII_UPPER_149_165 */
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -789,7 +794,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,	/* CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -806,7 +812,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,	/*CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -823,7 +830,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,	/*CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -847,7 +855,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 				/* 6G_CH_1_233 */
 #endif
 
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -864,7 +873,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_NULL, 0, 0, 0, FALSE}
 			,	/*CH_SET_UNII_UPPER_NA */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -881,7 +891,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_NULL, 0, 0, 0, FALSE}
 			,	/*CH_SET_UNII_UPPER_NA */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -898,7 +909,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_NULL, 0, 0, 0, FALSE}
 			,	/*CH_SET_UNII_UPPER_NA */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -915,7 +927,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,	/*CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -939,7 +952,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2*/
 #endif
-		}
+		},
+		REG_CAT_ARIB
 	}
 	,
 	{
@@ -963,7 +977,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 				/* 6G_CH_2 */
 #endif
 
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -985,7 +1000,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{131, BAND_6G, CHNL_SPAN_20, 1, 24, FALSE}
 				/* 6G_CH_1_93 */
 #endif
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1002,7 +1018,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 4, FALSE}
 			,	/*CH_SET_UNII_UPPER_149_161 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1018,7 +1035,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,	/*CH_SET_UNII_MID_100_116 */
 			{125, BAND_NULL, 0, 0, 0, FALSE}
 			,	/*CH_SET_UNII_UPPER_NA */
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1039,7 +1057,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{131, BAND_6G, CHNL_SPAN_20, 1, 24, FALSE}
 				/* 6G_CH_1_93 */
 #endif
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1060,7 +1079,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,	/* 6G_CH_1_93 */
 #endif
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1083,7 +1103,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2*/
 #endif
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -1100,7 +1121,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 4, FALSE}
 			,	/* CH_SET_UNII_UPPER_149_161 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1123,7 +1145,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2*/
 #endif
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -1140,7 +1163,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 8, FALSE}
 			,	/* CH_SET_UNII_UPPER_149_177 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1163,7 +1187,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{131, BAND_6G, CHNL_SPAN_20, 1, 24, FALSE}
 				/* 6G_CH_1_93 */
 #endif
-		}
+		},
+		REG_CAT_ETSI
 	}
 	,
 	{
@@ -1184,7 +1209,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
 				/* 6G_CH_1_233 */
 #endif
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -1207,7 +1233,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2 */
 #endif
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -1230,7 +1257,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2 */
 #endif
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -1257,7 +1285,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			 */
 			/* 6G_CH_2 */
 #endif
-		}
+		},
+		REG_CAT_FCC
 	}
 	,
 	{
@@ -1281,7 +1310,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2 */
 #endif
-		}
+		},
+		REG_CAT_NULL
 	}
 };
 
@@ -2268,8 +2298,8 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.uc2G4BandwidthMode;
 	prCmd->uc5GBandwidth =
 		prAdapter->rWifiVar.uc5GBandwidthMode;
+	prCmd->ucRegCat = (uint8_t)prDomainInfo->eRegCat;
 	prCmd->aucReserved[0] = 0;
-	prCmd->aucReserved[1] = 0;
 
 	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
 		prSubBand = &prDomainInfo->rSubBand[i];
@@ -2296,6 +2326,14 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 						= prSubBand->fgDfs;
 		}
 	}
+
+	DBGLOG(RLM, TRACE,
+	       "Domain: ValidCC=%c%c, PwrLimitCC=%c%c, Reg=%d\n",
+	       (prAdapter->rWifiVar.u2CountryCode & 0xff00) >> 8,
+	       (prAdapter->rWifiVar.u2CountryCode & 0x00ff),
+	       ((prCmd->u2CountryCode & 0xff00) >> 8),
+	       (prCmd->u2CountryCode & 0x00ff),
+	       prCmd->ucRegCat);
 
 	/* Set domain info to chip */
 	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
@@ -2355,7 +2393,6 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 	prCmd->uc5GBandwidth =
 		prAdapter->rWifiVar.uc5GBandwidthMode;
 	prCmd->aucReserved[0] = 0;
-	prCmd->aucReserved[1] = 0;
 
 	DBGLOG(RLM, TRACE, "u2CountryCode=0x%04x\n",
 	       prAdapter->rWifiVar.u2CountryCode);
@@ -2377,6 +2414,8 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 	if (i >= REG_DOMAIN_PASSIVE_GROUP_NUM)
 		prDomainInfo = &arSupportedRegDomains_Passive
 					[REG_DOMAIN_PASSIVE_DEF_IDX];
+
+	prCmd->ucRegCat = (uint8_t)prDomainInfo->eRegCat;
 
 	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
 		prSubBand = &prDomainInfo->rSubBand[i];
@@ -2401,6 +2440,12 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 						prSubBand->ucNumChannels;
 		}
 	}
+
+	/* Get domain info from arSupportedRegDomains
+	 * to set regulatory category
+	 */
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	prCmd->ucRegCat = (uint8_t)prDomainInfo->eRegCat;
 
 	/* Set passive scan channel info to chip */
 	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
