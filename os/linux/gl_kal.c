@@ -11181,10 +11181,10 @@ static u_int8_t wlanIsFirstNetInterfaceByNetdev(struct GLUE_INFO *prGlueInfo,
 
 static uint32_t calculateTput(struct ADAPTER *prAdapter,
 			      uint64_t *throughput, int32_t period,
-			      signed long txDiffBytes[static MAX_BSSID_NUM],
-			      signed long txDiffPkts[static MAX_BSSID_NUM],
-			      signed long rxDiffBytes[static MAX_BSSID_NUM],
-			      signed long rxDiffPkts[static MAX_BSSID_NUM])
+			      signed long txDiffBytes[],
+			      signed long txDiffPkts[],
+			      signed long rxDiffBytes[],
+			      signed long rxDiffPkts[])
 {
 	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
@@ -11322,10 +11322,10 @@ static uint32_t calculateTput(struct ADAPTER *prAdapter,
 
 /* bytes/pkts following Tput: */
 static size_t composeTput(struct ADAPTER *prAdapter, char *pos, char *end,
-			  signed long txDiffBytes[static MAX_BSSID_NUM],
-			  signed long rxDiffBytes[static MAX_BSSID_NUM],
-			  signed long rxDiffPkts[static MAX_BSSID_NUM],
-			  signed long txDiffPkts[static MAX_BSSID_NUM])
+			  signed long txDiffBytes[],
+			  signed long rxDiffBytes[],
+			  signed long rxDiffPkts[],
+			  signed long txDiffPkts[])
 {
 	char *orig = pos;
 	uint32_t i;
