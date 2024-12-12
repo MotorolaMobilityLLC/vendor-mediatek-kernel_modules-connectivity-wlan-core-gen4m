@@ -1085,6 +1085,14 @@ struct MEM_TRACK {
 	uint8_t aucData[];
 };
 #endif
+
+#ifdef UEFI
+struct UEFI_CNM_MEM_SIZE_HEADER {
+	uint32_t u4AllocatedSize;
+	uint8_t aucData[];
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

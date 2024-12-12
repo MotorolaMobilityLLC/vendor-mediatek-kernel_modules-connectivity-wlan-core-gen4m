@@ -345,6 +345,9 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 	uint32_t u4BlockNum;
 	uint32_t i, u4BlkSzInPower;
 	void *pvMemory;
+#ifdef UEFI
+	struct UEFI_CNM_MEM_SIZE_HEADER *p;
+#endif
 	enum ENUM_SPIN_LOCK_CATEGORY_E eLockBufCat;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -452,6 +455,22 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 			eRamType, u4Length + sizeof(struct MEM_TRACK));
 	}
 #else
+#ifdef UEFI
+	p = (struct UEFI_CNM_MEM_SIZE_HEADER *)kalMemAlloc(u4Length
+				+ sizeof(struct UEFI_CNM_MEM_SIZE_HEADER),
+				PHY_MEM_TYPE);
+	if (!p)
+		DBGLOG(MEM, WARN,
+			"kalMemAlloc fail, type: %d sz: %u\n",
+			eRamType,
+			u4Length);
+
+	p->u4AllocatedSize = u4Length + sizeof(struct UEFI_CNM_MEM_SIZE_HEADER);
+	kalMemZero(p->aucData, u4Length);
+
+	return p->aucData;
+
+#else
 	pvMemory = kalMemAlloc(u4Length, PHY_MEM_TYPE);
 	if (!pvMemory)
 		DBGLOG(MEM, WARN,
@@ -459,17 +478,35 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 			eRamType,
 			u4Length);
 #endif
+#endif
 #else
 	/*
 	 * For Windows, it is not supported because of no size argument
 	 * in windows cx it supports and common part has massive allocation
 	 */
+#ifdef UEFI
+
+	p = (struct UEFI_CNM_MEM_SIZE_HEADER *)kalMemAlloc(u4Length
+			+ sizeof(struct UEFI_CNM_MEM_SIZE_HEADER),
+			PHY_MEM_TYPE);
+	if (!p)
+		DBGLOG(MEM, WARN,
+			"kalMemAlloc fail, type: %d sz: %u\n",
+			eRamType,
+			u4Length);
+
+	p->u4AllocatedSize = u4Length + sizeof(struct UEFI_CNM_MEM_SIZE_HEADER);
+	kalMemZero(p->aucData, u4Length);
+
+	return p->aucData;
+#else
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
 	if (!pvMemory)
 		DBGLOG(MEM, WARN,
 			"kalMemAlloc fail, type: %d sz: %u\n",
 			eRamType,
 			u4Length);
+#endif
 #endif
 
 #if CFG_DBG_MGT_BUF
@@ -498,6 +535,10 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 	struct BUF_INFO *prBufInfo;
 	uint32_t u4BlockIndex;
 	uint32_t rAllocatedBlocksBitmap;
+#ifdef UEFI
+	uint32_t freeSize;
+	struct UEFI_CNM_MEM_SIZE_HEADER *p;
+#endif
 	enum ENUM_RAM_TYPE eRamType;
 	enum ENUM_SPIN_LOCK_CATEGORY_E eLockBufCat;
 
@@ -542,9 +583,35 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
 		kalMemFree(prTrack, PHY_MEM_TYPE, 0);
 #else
+
+#ifdef UEFI
+		/* For UEFI like environments, where memory availability is
+		 *	low, memory alloc and free starts happening
+		 *	dynamically from heap.
+		 */
+
+		p = CONTAINER_OF((uint8_t (*)[]) pvMemory,
+				struct UEFI_CNM_MEM_SIZE_HEADER, aucData);
+		freeSize = p->u4AllocatedSize;
+		kalMemFree(pvMemory, PHY_MEM_TYPE, freeSize);
+#else
 		/* For Linux, it is supported because size is not needed */
 		kalMemFree(pvMemory, PHY_MEM_TYPE, 0);
 #endif
+
+#endif
+#else
+
+#ifdef UEFI
+		/* For UEFI like environments, where memory availability is
+		 * low, memory alloc and free starts happening
+		 * dynamically from heap.
+		 */
+
+		p = CONTAINER_OF((uint8_t (*)[]) pvMemory,
+			struct UEFI_CNM_MEM_SIZE_HEADER, aucData);
+		freeSize = p->u4AllocatedSize;
+		kalMemFree(pvMemory, PHY_MEM_TYPE, freeSize);
 #else
 		/*
 		 * For Windows, it is not supported because of no size argument
@@ -552,6 +619,7 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 		 * common part has massive allocation
 		 */
 		kalMemFree(pvMemory, PHY_MEM_TYPE, 0);
+#endif
 		/* ASSERT(0); */
 #endif
 
