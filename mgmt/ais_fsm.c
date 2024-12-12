@@ -7806,6 +7806,9 @@ uint8_t aisCheckNeedDriverRoaming(
 		/* Driver roaming prefer 5g/6g */
 		target = aisGetHighBandLinkBssDesc(prAdapter, ais);
 
+		if (target == NULL)
+			return FALSE;
+
 		/* 2.4 -> 5 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if ((bss->eBand == BAND_5G || bss->eBand == BAND_6G)

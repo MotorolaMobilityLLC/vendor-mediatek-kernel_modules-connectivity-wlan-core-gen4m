@@ -3152,7 +3152,7 @@ struct ADAPTER {
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 	uint8_t ucBssAbsentBitmap;
-	uint32_t u4StaInPSBitmap;
+	unsigned long long u8StaInPSBitmap;
 	uint8_t ucT2LMTxDialogToken;
 	uint8_t ucT2LMRxDialogToken;
 	uint8_t ucT2LMReqRetryCnt;

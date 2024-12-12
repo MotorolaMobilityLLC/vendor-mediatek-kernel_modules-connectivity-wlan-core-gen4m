@@ -3403,11 +3403,12 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"PRI/SEC/SETUP/ACT_BMP/PEER_MLD:%d/%d/%d/%d/"MACSTR"\n",
+			"PRI/SEC/SETUP/ACT_BMP/PEER_MLD:%d/%d/%d/0x%llx/"
+			MACSTR"\n",
 			prMldStarec->u2PrimaryMldId,
 			prMldStarec->u2SecondMldId,
 			prMldStarec->u2SetupWlanId,
-			prMldStarec->u4ActiveStaBitmap,
+			prMldStarec->u8ActiveStaBitmap,
 			MAC2STR(prMldStarec->aucPeerMldAddr));
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -4214,7 +4215,7 @@ struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
 	if (IS_MLC_CAPABLE(prAdapter) &&
 	    IS_BSS_INDEX_AIS(prAdapter, prMainStarec->ucBssIndex)) {
 		if (prMainStarec != prStarec)
-			prMldStaRec->u4ActiveStaBitmap &=
+			prMldStaRec->u8ActiveStaBitmap &=
 				~BIT(prStarec->ucIndex);
 	}
 #endif
@@ -4239,13 +4240,13 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		return -EINVAL;
 	}
 
-	if (prMldStarec->u4StaBitmap & BIT(prStarec->ucIndex)) {
+	if (prMldStarec->u8StaBitmap & BIT(prStarec->ucIndex)) {
 		DBGLOG(ML, WARN,
 			"starec(%d) already in mld_starec(id=%d, "
-			MACSTR ", stabitmap=%x)\n",
+			MACSTR ", stabitmap=0x%llx)\n",
 			prStarec->ucIndex, prMldStarec->ucIdx,
 			MAC2STR(prMldStarec->aucPeerMldAddr),
-			prMldStarec->u4StaBitmap);
+			prMldStarec->u8StaBitmap);
 		rStatus = -EINVAL;
 		goto exit;
 	}
@@ -4257,8 +4258,8 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 
 	prStarecList = &prMldStarec->rStarecList;
 	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
-	prMldStarec->u4StaBitmap |= BIT(prStarec->ucIndex);
-	prMldStarec->u4ActiveStaBitmap |= BIT(prStarec->ucIndex);
+	prMldStarec->u8StaBitmap |= BIT(prStarec->ucIndex);
+	prMldStarec->u8ActiveStaBitmap |= BIT(prStarec->ucIndex);
 	prMldStarec->u2ValidLinks |= BIT(ucLinkId);
 
 	mldStarecUpdateMldId(prAdapter, prMldStarec);
@@ -4315,8 +4316,8 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 
 	mldStarecUpdateMldId(prAdapter, prMldStarec);
 
-	prMldStarec->u4StaBitmap &= ~BIT(prStarec->ucIndex);
-	prMldStarec->u4ActiveStaBitmap &= ~BIT(prStarec->ucIndex);
+	prMldStarec->u8StaBitmap &= ~BIT(prStarec->ucIndex);
+	prMldStarec->u8ActiveStaBitmap &= ~BIT(prStarec->ucIndex);
 	prMldStarec->u2ValidLinks &= ~BIT(prStarec->ucLinkIndex);
 
 	if (LINK_IS_EMPTY(prStarecList))

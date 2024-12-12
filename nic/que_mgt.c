@@ -8951,8 +8951,8 @@ u_int8_t qmIsStaInPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 	if (!prMldStarec)
 		return fgIsInPS;
 
-	if ((prMldStarec->u4StaBitmap & prAdapter->u4StaInPSBitmap) ==
-		prMldStarec->u4StaBitmap)
+	if ((prMldStarec->u8StaBitmap & prAdapter->u8StaInPSBitmap) ==
+		prMldStarec->u8StaBitmap)
 		return TRUE;
 
 	return FALSE;
@@ -8967,8 +8967,8 @@ void qmSetStaPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	prStaRec->fgIsInPS = fgIsInPS;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (fgIsInPS)
-		prAdapter->u4StaInPSBitmap |= BIT(prStaRec->ucIndex);
+		prAdapter->u8StaInPSBitmap |= BIT(prStaRec->ucIndex);
 	else
-		prAdapter->u4StaInPSBitmap &= ~BIT(prStaRec->ucIndex);
+		prAdapter->u8StaInPSBitmap &= ~BIT(prStaRec->ucIndex);
 #endif
 }

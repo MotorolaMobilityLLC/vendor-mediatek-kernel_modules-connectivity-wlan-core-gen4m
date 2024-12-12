@@ -13331,16 +13331,16 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
 			if (prStaRec && prMldStaRec) {
 				if (state->ucLinkState == MLO_LINK_STATE_ACTIVE)
-					prMldStaRec->u4ActiveStaBitmap |=
+					prMldStaRec->u8ActiveStaBitmap |=
 						BIT(prStaRec->ucIndex);
 				else
-					prMldStaRec->u4ActiveStaBitmap &=
+					prMldStaRec->u8ActiveStaBitmap &=
 						~BIT(prStaRec->ucIndex);
 				DBGLOG(ML, INFO,
-					"bss=%d sta=%d widx=%d ActiveStaBitmap=0x%x\n",
+					"bss=%d sta=%d widx=%d ActiveStaBitmap=0x%llx\n",
 					prStaRec->ucBssIndex, prStaRec->ucIndex,
 					prStaRec->ucWlanIndex,
-					prMldStaRec->u4ActiveStaBitmap);
+					prMldStaRec->u8ActiveStaBitmap);
 #if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
 				mldLogLink(ad,
 					prStaRec,
@@ -13350,7 +13350,7 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #endif
 #ifdef CFG_SUPPORT_TWT_EXT
 				twtmldCheckTeardown(ad,
-					prMldStaRec->u4ActiveStaBitmap);
+					prMldStaRec->u8ActiveStaBitmap);
 #endif
 			}
 #endif /* CFG_SUPPORT_802_11BE_MLO */

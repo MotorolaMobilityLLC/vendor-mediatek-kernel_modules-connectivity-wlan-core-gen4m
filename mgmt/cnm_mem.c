@@ -1180,7 +1180,7 @@ uint8_t cnmStaRecIsActive(struct ADAPTER *prAdapter,
 
 	mldSta = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (mldSta)
-		return !!(mldSta->u4ActiveStaBitmap & BIT(prStaRec->ucIndex));
+		return !!(mldSta->u8ActiveStaBitmap & BIT(prStaRec->ucIndex));
 #endif
 
 	return TRUE;

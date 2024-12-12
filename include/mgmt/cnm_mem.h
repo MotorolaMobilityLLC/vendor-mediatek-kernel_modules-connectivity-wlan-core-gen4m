@@ -895,8 +895,8 @@ struct MLD_STA_RECORD {
 	uint8_t ucMaxSimuLinks;
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
-	uint32_t u4StaBitmap;
-	uint32_t u4ActiveStaBitmap;
+	unsigned long long u8StaBitmap;
+	unsigned long long u8ActiveStaBitmap;
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
 	uint8_t fgIsSbMlsr; /* single band MLSR 5+6 */
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
