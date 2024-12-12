@@ -19279,6 +19279,9 @@ wlanoidSendPwrLimitToEmi(struct ADAPTER *prAdapter,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen)
 {
+
+	uint8_t *pu1PwrLmtCountryCode = NULL;
+
 	/***************ANT Power Setting******************/
 	rlmDomainSendAntPowerSetting(prAdapter);
 
@@ -19287,11 +19290,21 @@ wlanoidSendPwrLimitToEmi(struct ADAPTER *prAdapter,
 	rlmDomainPatchPwrLimitType();
 
 	/* Step 2  -  Fill country code */
-	rlmDomainSetPwrLimitCountryCode(
-		prAdapter,
+	pu1PwrLmtCountryCode =
 		rlmDomainPwrLmtGetMatchCountryCode(
 			prAdapter,
-			prAdapter->rWifiVar.u2CountryCode)
+			prAdapter->rWifiVar.u2CountryCode);
+
+	if (pu1PwrLmtCountryCode == NULL) {
+		DBGLOG(INIT, INFO,
+			"Can not find according CC[0x%04x] in pwr limit default table\n",
+			prAdapter->rWifiVar.u2CountryCode);
+		return 0;
+	}
+
+	rlmDomainSetPwrLimitCountryCode(
+		prAdapter,
+		pu1PwrLmtCountryCode
 	);
 
 	/* Step 3  -  Fill pwr limit header */
