@@ -146,6 +146,7 @@ enum NanStatsType {
 };
 
 enum NanDiscType {
+	NAN_UNINIT_DISC,
 	NAN_EXISTING_DISC,
 	NAN_UNSYNC_DISC
 };

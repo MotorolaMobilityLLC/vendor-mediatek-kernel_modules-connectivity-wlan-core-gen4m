@@ -173,6 +173,10 @@ uint8_t aisCheckNeedDriverRoaming(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 #endif
 
+#if CFG_SUPPORT_NAN
+static uint8_t aisIsNanOn(struct ADAPTER *ad);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -4910,6 +4914,24 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
 
 			rlmReqGenerateOMIIE(prAdapter, prAisBssInfo);
+
+			/* early abort for NAN */
+			if (prAdapter->rWifiVar.fgAisEarlyAbort
+#if CFG_SUPPORT_NAN
+			    || aisIsNanOn(prAdapter)
+#endif
+			) {
+				DBGLOG(AIS, WARN,
+					"Early abort join timer (fg=%d)\n",
+					prAdapter->rWifiVar.fgAisEarlyAbort);
+
+				cnmTimerStopTimer(prAdapter,
+					&prAisFsmInfo->rJoinTimeoutTimer);
+				cnmTimerStartTimer(prAdapter,
+					&prAisFsmInfo->rJoinTimeoutTimer,
+					0);
+			}
+
 			/* 4 <1.7> Set the Next State of AIS FSM */
 			eNextState = AIS_STATE_NORMAL_TR;
 		}
@@ -8286,6 +8308,13 @@ aisFunAddTxReq2Queue(struct ADAPTER *prAdapter,
 
 	return TRUE;
 }
+
+#if CFG_SUPPORT_NAN
+uint8_t aisIsNanOn(struct ADAPTER *ad)
+{
+	return ad->rNanDiscType != NAN_UNINIT_DISC;
+}
+#endif
 
 static uint32_t
 aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,

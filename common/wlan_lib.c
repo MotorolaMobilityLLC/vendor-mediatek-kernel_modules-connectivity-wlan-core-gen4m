@@ -8187,6 +8187,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucAisMldTrialLimit, "AisMldTrialLimit",
 		AIS_MLD_TRIAL_LIMIT, FEATURE_TO_CUSTOMER);
 #endif
+	INIT_UINT(prWifiVar->fgAisEarlyAbort, "AisEarlyAbort", 0,
+		  FEATURE_DEBUG_ONLY);
+
 	INIT_UINT(prWifiVar->fgEnArpFilter, "EnArpFilter", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
 

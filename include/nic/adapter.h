@@ -1259,6 +1259,8 @@ struct WIFI_VAR {
 	uint16_t u2AisMldBlocklistTimeout;
 	uint8_t ucAisMldTrialLimit;
 #endif
+	u_int8_t fgAisEarlyAbort;
+
 	uint32_t fgEnArpFilter;
 
 	uint8_t	uDeQuePercentEnable;
