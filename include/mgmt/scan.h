@@ -1226,4 +1226,6 @@ enum ENUM_BAND scanOpClassToBand(uint8_t ucOpClass);
 void updateLinkStatsApRec(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc);
 
+const char *SSID2STR(const uint8_t *ssid, uint8_t ssid_len);
+
 #endif /* _SCAN_H */

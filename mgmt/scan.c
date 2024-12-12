@@ -2697,6 +2697,16 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			continue;
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
+			if (IE_LEN(pucIE) > ELEM_MAX_LEN_SSID) {
+				DBGLOG(SCN, WARN, "Drop AP "MACSTR
+					"due to SSID too long(%u), %s\n",
+					MAC2STR(prWlanBeaconFrame->aucBSSID),
+					IE_LEN(pucIE),
+					SSID2STR(SSID_IE(pucIE)->aucSSID,
+					SSID_IE(pucIE)->ucLength));
+				return NULL;
+			}
+
 			if (!fgIsValidSsid)
 				fgIsValidSsid = scanCopySSID(pucIE, &rSsid);
 			break;
@@ -5819,4 +5829,24 @@ enum ENUM_BAND scanOpClassToBand(uint8_t ucOpClass)
 		log_dbg(SCN, WARN, "OpClass%d illegal\n", ucOpClass);
 		return BAND_NULL;
 	}
+}
+
+const char *SSID2STR(const uint8_t *ssid, uint8_t ssid_len)
+{
+	static char ssid_txt[ELEM_MAX_LEN_SSID + 1];
+	uint8_t ucMinLen;
+
+	if (ssid_len <= ELEM_MAX_LEN_SSID)
+		ucMinLen = ssid_len;
+	else
+		ucMinLen = ELEM_MAX_LEN_SSID;
+
+	if (ssid == NULL) {
+		ssid_txt[0] = '\0';
+		return ssid_txt;
+	}
+
+	kalMemCopy(ssid_txt, ssid, ucMinLen);
+	ssid_txt[ucMinLen] = '\0';
+	return ssid_txt;
 }
