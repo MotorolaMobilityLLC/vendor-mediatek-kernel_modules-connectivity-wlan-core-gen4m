@@ -1981,8 +1981,8 @@ uint32_t nicUniCmdSetWOWLAN(struct ADAPTER *ad,
 	port_tag->u2Length = sizeof(*port_tag);
 	port_tag->ucIPv4UdpPortCnt = cmd->stWowPort.ucIPv4UdpPortCnt;
 	port_tag->ucIPv4TcpPortCnt = cmd->stWowPort.ucIPv4TcpPortCnt;
-	port_tag->ucIPv4UdpPortCnt = cmd->stWowPort.ucIPv4UdpPortCnt;
-	port_tag->ucIPv4TcpPortCnt = cmd->stWowPort.ucIPv4TcpPortCnt;
+	port_tag->ucIPv6UdpPortCnt = cmd->stWowPort.ucIPv6UdpPortCnt;
+	port_tag->ucIPv6TcpPortCnt = cmd->stWowPort.ucIPv6TcpPortCnt;
 	kalMemCopy(port_tag->ausIPv4UdpPort, cmd->stWowPort.ausIPv4UdpPort,
 		sizeof(port_tag->ausIPv4UdpPort));
 	kalMemCopy(port_tag->ausIPv4TcpPort, cmd->stWowPort.ausIPv4TcpPort,
