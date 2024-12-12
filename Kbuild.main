@@ -622,7 +622,6 @@ ifeq ($(CONFIG_MTK_WIFI_MT6653_DEV), y)
     ccflags-y += -DCFG_REUSE_RSN_IE=1
     CONFIG_SUPPORT_CONTROL_PORT_OVER_NL80211=y
     CONFIG_MTK_PRE_WIFI7=n
-    CONFIG_IFACE_CONCURRENT_MODE=2
     CONFIG_AP_EHT_DEFAULT_VALUE=1
     CONFIG_MLD_AP_LINK_MAX=2
     CONFIG_MTK_WIFI_SUPPORT_CCM=y
@@ -762,7 +761,6 @@ endif
 
 ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
     CONFIG_BAND_NUM=3
-    CONFIG_IFACE_CONCURRENT_MODE=2
     ccflags-y += -DCFG_P2P_NUM=3
     ccflags-y += -DCFG_STA_NUM=3
 endif
@@ -1046,7 +1044,6 @@ endif
 
 ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
     CONFIG_BAND_NUM=3
-    CONFIG_IFACE_CONCURRENT_MODE=2
     ccflags-y += -DCFG_P2P_NUM=3
     ccflags-y += -DCFG_STA_NUM=3
 endif
@@ -2463,12 +2460,6 @@ ifeq ($(CFG_NL80211_TESTMODE), y)
 ccflags-y += -DCONFIG_NL80211_TESTMODE
 endif
 
-ifneq ($(CONFIG_IFACE_CONCURRENT_MODE),)
-    ccflags-y += -DCFG_IFACE_CONCURRENT_MODE=$(CONFIG_IFACE_CONCURRENT_MODE)
-else
-    ccflags-y += -DCFG_IFACE_CONCURRENT_MODE=1
-endif
-
 ifeq ($(CONFIG_SUPPORT_WIFI_DL_BT_PATCH), y)
     ccflags-y += -DCFG_SUPPORT_WIFI_DL_BT_PATCH=1
 else
@@ -3167,6 +3158,18 @@ else
     ccflags-y += -DCFG_SUPPORT_WF_DUMP_BT_COREDUMP=0
 endif
 
+ifeq ($(CONFIG_WIFI_DX4), y)
+    ccflags-y += -DCFG_WIFI_DX4=1
+else
+    ccflags-y += -DCFG_WIFI_DX4=0
+endif
+
+ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
+    ccflags-y += -DCFG_WIFI_LIBER_TRIBAND=1
+else
+    ccflags-y += -DCFG_WIFI_LIBER_TRIBAND=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
@@ -3251,7 +3254,8 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
                 $(OS_DIR)gl_ics.o \
 		$(OS_DIR)gl_reg_rule.o \
 		$(OS_DIR)gl_cmd_validate.o \
-		$(OS_DIR)gl_met_log.o
+		$(OS_DIR)gl_met_log.o \
+		$(OS_DIR)gl_concurrency_matrix.o
 	ifeq ($(WMT_SUPPORT), y)
 		OS_OBJS += $(OS_DIR)gl_sys_lock.o
 	endif

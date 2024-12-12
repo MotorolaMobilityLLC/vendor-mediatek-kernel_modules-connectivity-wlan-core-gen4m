@@ -8877,8 +8877,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	 */
 	INIT_UINT(prWifiVar->fgNanAutoFC, "NanAutoFC", 0,
 		FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->fgNanConcurrency, "NanConcurrency", 0,
-		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgNanConcurrency, "NanConcurrency",
+		CFG_NAN_CONCURRENCY, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanMldLinkMax, "NanMldLinkMax",
 		NAN_LINK_NUM, FEATURE_TO_CUSTOMER);
 #if (CFG_SUPPORT_802_11BE == 1)

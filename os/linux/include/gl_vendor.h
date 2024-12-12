@@ -640,68 +640,6 @@ enum WIFI_USABLE_CHANNEL_REQ_ATTRIBUTE {
 	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX
 };
 
-#define MAX_IFACE_COMBINATIONS 16
-#define MAX_IFACE_LIMITS 8
-
-struct wifi_iface_limit {
-	/* Max number of interfaces of same type */
-	uint32_t max_limit;
-
-	/* BIT mask of interfaces from wifi_interface_type */
-	uint32_t iface_mask;
-};
-
-struct wifi_iface_combination {
-	/* Maximum number of concurrent interfaces allowed in this
-	 * combination
-	 */
-	uint32_t max_ifaces;
-
-	/* Total number of interface limits in a combination */
-	uint32_t num_iface_limits;
-
-	/* Interface limits */
-	struct wifi_iface_limit iface_limits[MAX_IFACE_LIMITS];
-};
-
-struct wifi_iface_concurrency_matrix {
-	/* Total count of possible iface combinations */
-	uint32_t num_iface_combinations;
-
-	/* Interface combinations */
-	struct wifi_iface_combination iface_combinations[
-		MAX_IFACE_COMBINATIONS];
-};
-
-struct mtk_wifi_iface_combination {
-	/* Maximum number of concurrent interfaces allowed in this
-	 * combination
-	 */
-	uint32_t max_ifaces;
-
-	/* Total number of interface limits in a combination */
-	uint32_t num_iface_limits;
-
-	/* Interface limits */
-	struct wifi_iface_limit *iface_limits;
-};
-
-struct mtk_wifi_iface_concurrency_matrix {
-	/* Total count of possible iface combinations */
-	uint32_t num_iface_combinations;
-
-	/* Interface combinations */
-	struct mtk_wifi_iface_combination *iface_combinations;
-};
-
-enum wifi_interface_type {
-	WIFI_INTERFACE_TYPE_STA        = 0,
-	WIFI_INTERFACE_TYPE_AP         = 1,
-	WIFI_INTERFACE_TYPE_P2P        = 2,
-	WIFI_INTERFACE_TYPE_NAN        = 3,
-	WIFI_INTERFACE_TYPE_AP_BRIDGED = 4,
-};
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

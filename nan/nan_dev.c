@@ -927,7 +927,8 @@ nanDevSendEnableRequest(
 	} else {
 		prAdapter->ucNanSapCh = 0;
 
-#if CFG_ENABLE_WIFI_DIRECT
+#if (CFG_ENABLE_WIFI_DIRECT == 1)
+#if (CFG_NAN_CONCURRENCY == 1)
 		if (prAdapter->rWifiVar.fgNanConcurrency) {
 			for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
 				prNANSpecInfo = prAdapter->rWifiVar
@@ -939,7 +940,8 @@ nanDevSendEnableRequest(
 						prnanBssInfo, __func__);
 			}
 		}
-#endif
+#endif /* (CFG_NAN_CONCURRENCY == 1) */
+#endif /* (CFG_ENABLE_WIFI_DIRECT == 1) */
 
 		/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
 		if (!p2pFuncIsSapCsa(prAdapter))

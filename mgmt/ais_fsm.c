@@ -2659,7 +2659,7 @@ uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prMldBssInfo = prAisFsmInfo->prMldBssInfo;
 
-#if CFG_SUPPORT_NAN && !CFG_MLO_CONCURRENT_NAN
+#if CFG_SUPPORT_NAN && CFG_SUPPORT_MLO_STA_NAN_FALLBACK
 	if (prAdapter->fgIsNANRegistered)
 		return FALSE;
 #endif
