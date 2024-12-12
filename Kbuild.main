@@ -196,16 +196,19 @@ endif
 ifneq ($(filter MT7668,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7668,$(ccflags-y))
 ccflags-y += -DMT7668
+CONFIG_MTK_WIFI_CONNAC1X=y
 endif
 
 ifneq ($(filter MT7663,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7663,$(ccflags-y))
 ccflags-y += -DMT7663
+CONFIG_MTK_WIFI_CONNAC1X=y
 endif
 
 ifneq ($(filter CONNAC,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
+CONFIG_MTK_WIFI_CONNAC1X=y
 ifneq ($(filter 6768, $(WLAN_CHIP_ID)),)
 CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
 CONFIG_MTK_WIFI_APF_SUPPORT=y
@@ -215,6 +218,7 @@ endif
 ifneq ($(filter SOC2_1X1,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_1X1,$(ccflags-y))
 ccflags-y += -DSOC2_1X1
+CONFIG_MTK_WIFI_CONNAC1X=y
 ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
@@ -233,6 +237,7 @@ endif
 ifneq ($(filter SOC2_2X2,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_2X2,$(ccflags-y))
 ccflags-y += -DSOC2_2X2
+CONFIG_MTK_WIFI_CONNAC1X=y
 ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
@@ -243,6 +248,10 @@ else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
 else
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
     ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+endif
+ifneq ($(filter 6779 6873 6853, $(WLAN_CHIP_ID)),)
+    CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
+    CONFIG_SUPPORT_DBDC_DOWNGRADE_BW=y
 endif
 endif
 
@@ -258,6 +267,8 @@ CONFIG_MTK_WIFI_TWT_HOTSPOT_SUPPORT=n
 CONFIG_MTK_WIFI_TWT_HOTSPOT_AC_SUPPORT=n
 CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=1
+CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
+CONFIG_SUPPORT_DBDC_DOWNGRADE_BW=y
 endif
 
 ifneq ($(findstring 3_0,$(MTK_COMBO_CHIP)),)
@@ -293,6 +304,8 @@ CONFIG_MLD_LINK_MAX=2
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_DBDC_MODE=1
 endif
+CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
+CONFIG_SUPPORT_DBDC_DOWNGRADE_BW=y
 endif
 
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
@@ -359,6 +372,8 @@ ifeq ($(CFG_GET_CNM_INFO_BC), y)
 else
     ccflags-y += -DCFG_GET_CNM_INFO_BC=0
 endif
+CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
+CONFIG_SUPPORT_DBDC_DOWNGRADE_BW=y
 endif
 
 ifneq ($(filter 6873, $(WLAN_CHIP_ID)),)
@@ -391,6 +406,8 @@ ccflags-y += -DCONFIG_MTK_WIFI_HE80
 CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
 CONFIG_MTK_WIFI_APF_SUPPORT=y
 CONFIG_MTK_WIFI_FORCE_RECV_RX=y
+CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
+CONFIG_SUPPORT_DBDC_DOWNGRADE_BW=y
 endif
 
 ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
@@ -468,6 +485,8 @@ ccflags-y += -DCFG_SUPPORT_BW160
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
+CONFIG_SUPPORT_DBDC_DOWNGRADE_BW=y
 endif
 
 ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
@@ -515,6 +534,7 @@ ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
+CONFIG_SUPPORT_UNII4=y
 endif
 
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
@@ -830,6 +850,7 @@ ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 CONFIG_BCN_PROT=y
 CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL=n
+CONFIG_SUPPORT_UNII4=y
 endif
 
 ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
@@ -1396,22 +1417,11 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=1
-    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=0
-    ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)
-        ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
+    ifneq ($(CONFIG_MTK_WIFI_CONNAC3X_DS_VER),)
+        ccflags-y += -DCFG_CONNAC3X_DS_VER=$(CONFIG_MTK_WIFI_CONNAC3X_DS_VER)
     endif
-    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
-    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
-        ifeq ($(CONFIG_MTK_WIFI_SUPPORT_UDS_FWDL), y)
-            ccflags-y += -DCFG_MTK_WIFI_SUPPORT_UDS_FWDL=1
-        endif
-    endif
-    ccflags-y += -DCFG_SUPPORT_UNII4=1
 else
-    CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
-    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
-    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC5X), y)
@@ -1420,20 +1430,10 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNAC5X=0
 endif
 
-ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
-ifneq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
-    CONFIG_MTK_WIFI_CONNAC1X=y
-endif
-endif
-
 ifeq ($(CONFIG_MTK_WIFI_CONNAC1X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC1X=1
 else
     ccflags-y += -DCFG_SUPPORT_CONNAC1X=0
-endif
-
-ifneq ($(CONFIG_MTK_WIFI_CONNAC3X_DS_VER),)
-    ccflags-y += -DCFG_CONNAC3X_DS_VER=$(CONFIG_MTK_WIFI_CONNAC3X_DS_VER)
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_UPSTREAM_TOOL), y)
@@ -3065,6 +3065,12 @@ else
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_DBDC_DOWNGRADE_BW), y)
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
+else
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_COEX_DOWNGRADE_BW), n)
     ccflags-y += -DCFG_SUPPORT_COEX_DOWNGRADE_BW=0
 else
@@ -3145,6 +3151,26 @@ ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
     ccflags-y += -DCFG_WIFI_LIBER_TRIBAND=1
 else
     ccflags-y += -DCFG_WIFI_LIBER_TRIBAND=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_UNII4), y)
+    ccflags-y += -DCFG_SUPPORT_UNII4=1
+else
+    ccflags-y += -DCFG_SUPPORT_UNII4=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)
+    ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_UDS_FWDL), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_MTK_WIFI_SUPPORT_UDS_FWDL=1
+    endif
+endif
+
+ifeq ($(CFG_DRIVER_INITIAL_RUNNING_MODE),)
+    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 endif
 
 # ---------------------------------------------------
