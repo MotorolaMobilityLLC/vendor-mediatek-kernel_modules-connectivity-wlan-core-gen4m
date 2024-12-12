@@ -684,12 +684,15 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 				prMsgChReq[i].eRfSco,
 				prMsgChReq[i].eRfChannelWidth));
 
-		prMsgChReq[i].ucRfCenterFreqSeg1FromAP = nicGetCenterCh(
-			prMsgChReq[i].eRfBand,
-			prMsgChReq[i].ucPrimaryChannel,
-			prMsgChReq[i].eRfSco,
-			rlmGetBssOpBwByChannelWidth(prMsgChReq[i].eRfSco,
-				prMsgChReq[i].eRfChannelWidthFromAP));
+		if (prMsgChReq[i].ucRfCenterFreqSeg1FromAP) {
+			prMsgChReq[i].ucRfCenterFreqSeg1FromAP = nicGetCenterCh(
+				prMsgChReq[i].eRfBand,
+				prMsgChReq[i].ucPrimaryChannel,
+				prMsgChReq[i].eRfSco,
+				rlmGetBssOpBwByChannelWidth(
+					prMsgChReq[i].eRfSco,
+					prMsgChReq[i].eRfChannelWidthFromAP));
+		}
 	}
 
 	log_dbg(CNM, VOC,
