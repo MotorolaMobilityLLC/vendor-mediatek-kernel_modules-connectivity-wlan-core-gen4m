@@ -8822,13 +8822,15 @@ void wlanShutdown(void)
 	/* wifi is off */
 	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0)) {
 		wfsys_unlock();
-		return;
+		goto exit;
 	}
 
 	DBGLOG(INIT, INFO, "do wifi off\n");
 	wlanFuncOff();
 	wfsys_unlock();
 
+exit:
+	DBGLOG(REQ, INFO, "wifi shutdown finished\n");
 	uShutdownState = SHUTDOWN_STATE_DONE;
 }
 #endif
