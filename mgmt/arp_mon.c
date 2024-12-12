@@ -195,9 +195,15 @@ end:
 
 static u_int8_t arpMonIsIOTIssue(struct ADAPTER *ad, uint32_t ucBssIdx)
 {
+#if !CFG_EXT_FEATURE
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint8_t ucArpMonitorUseRule;
 	uint32_t uArpMonitorRxPktNum;
+#endif
+
+#if CFG_EXT_FEATURE
+	return FALSE;
+#else
 
 	prWifiVar = &ad->rWifiVar;
 	ucArpMonitorUseRule = prWifiVar->ucArpMonitorUseRule;
@@ -213,6 +219,7 @@ static u_int8_t arpMonIsIOTIssue(struct ADAPTER *ad, uint32_t ucBssIdx)
 		/* no unicast rx after tx arp */
 		return (arpMonGetRxUnicastTimeDiff(ad, ucBssIdx) == 0);
 	}
+#endif
 }
 
 /* Should call inside main_thread */
