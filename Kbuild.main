@@ -3267,6 +3267,24 @@ ifeq ($(CFG_DRIVER_INITIAL_RUNNING_MODE),)
     ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 endif
 
+ifeq ($(CONFIG_SDIO_MAILBOX_EXTENSION), y)
+    ccflags-y += -DCFG_SDIO_MAILBOX_EXTENSION=1
+else
+    ccflags-y += -DCFG_SDIO_MAILBOX_EXTENSION=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_SDIO_FORCE_DRV_OWN), y)
+    ccflags-y += -DCFG_SUPPORT_SDIO_FORCE_DRV_OWN=1
+else
+    ccflags-y += -DCFG_SUPPORT_SDIO_FORCE_DRV_OWN=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_SDIO_DB_DELAY), y)
+    ccflags-y += -DCFG_SUPPORT_SDIO_DB_DELAY=1
+else
+    ccflags-y += -DCFG_SUPPORT_SDIO_DB_DELAY=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------

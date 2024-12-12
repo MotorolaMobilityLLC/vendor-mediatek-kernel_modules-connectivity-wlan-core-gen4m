@@ -136,6 +136,17 @@
 #define SER_SDIO_HOST_N9_RESET_DONE_ACK            BIT(20)
 /* Host interrupt N9 System Error Recovery done */
 #define SER_SDIO_HOST_N9_RECOVERY_DONE_ACK         BIT(21)
+
+/* Host interrupt for clear mailbox ack */
+#define SDIO_HOST_CLEAR_MAILBOX_ACK         BIT(22)
+
+/* Definition for select value using in MCR_WF_MIXED_DEBUG_SEL(0x48) */
+#define SDIO_CON_DBG_RDATA		0x0	/* wfsys */
+#define SDIO_CON1_DBG_RDATA		0x1	/* wf_mcu */
+#define SDIO_PMUX_DBG_RDATA		0x2	/* cbtop_aon */
+#define SDIO_COM_DBG_RDATA		0x3	/* con_infra */
+#define SDIO_INFRA_CSR_RDATA	0x4	/* con_infra */
+
 enum HIF_TX_COUNT_IDX_T {
 	HIF_TXC_IDX_0,
 	HIF_TXC_IDX_1,
@@ -174,6 +185,16 @@ enum HIF_TX_COUNT_IDX_T {
 	HIF_TXC_IDX_NUM
 };
 
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+enum ENUM_SDIO_MAILBOX_IDX_T {
+	ENUM_SDIO_MAILBOX_RW_REG_0 = 0,
+	ENUM_SDIO_MAILBOX_RW_REG_1 = 1,
+	ENUM_SDIO_MAILBOX_STATUS   = 4,
+	ENUM_SDIO_MAILBOX_ASSERT_0 = 4,
+	ENUM_SDIO_MAILBOX_ASSERT_1 = 5,
+	ENUM_SDIO_MAILBOX_CMD_DBG  = 5,
+};
+#endif
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -249,6 +270,10 @@ enum sdio_state {
 	SDIO_STATE_LINK_UP,
 	SDIO_STATE_READY
 };
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+#define SDIO_STATE_MASK        0x0000000F
+#endif
 
 /* host interface's private data structure, which is attached to os glue
 ** layer info structure.
@@ -400,6 +425,10 @@ void halProcessEnhanceInterruptStatus(struct ADAPTER *prAdapter);
 void halRxSDIOAggReceiveRFBs(struct ADAPTER *prAdapter);
 #endif
 
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+void halSetMailboxHifStatus(struct ADAPTER *prAdapter,
+	uint32_t u4IntrBits);
+#endif
 void halPutMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
 		uint32_t u4Data);
 void halGetMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,

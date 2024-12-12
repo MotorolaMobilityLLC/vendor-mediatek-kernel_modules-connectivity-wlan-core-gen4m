@@ -983,8 +983,13 @@ do { \
 	halPollDbgCr(_prAdapter, LP_DBGCR_POLL_ROUND); \
 } while (0)
 
+#if (defined(CFG_SDIO_MAILBOX_EXTENSION) && (CFG_SDIO_MAILBOX_EXTENSION == 1))
+#define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
+	halGetMailbox(_prAdapter, ENUM_SDIO_MAILBOX_STATUS, &_u4Result)
+#else
 #define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
 	halGetMailbox(_prAdapter, 0, &_u4Result)
+#endif
 
 #define HAL_INTR_DISABLE(_prAdapter) \
 	HAL_MCR_WR(_prAdapter, \
@@ -1040,6 +1045,99 @@ do { \
 		*_pfgResult = TRUE; \
 	} \
 }
+
+#if (CFG_SUPPORT_SDIO_DB_DELAY == 1)
+
+#define HAL_LP_DB_DELAY_CLEAR(_prAdapter, _pfgResult) \
+{ \
+	if (_pfgResult != NULL) { \
+		uint32_t u4RegValue = 0; \
+		*_pfgResult = TRUE; \
+		HAL_MCR_RD(_prAdapter, \
+			MCR_WHLPCR, \
+			&u4RegValue); \
+		if ((u4RegValue & WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+			u4RegValue &= WHLPCR_FORCE_DRV_OWN; \
+			HAL_MCR_WR(_prAdapter, \
+				MCR_WHLPCR, \
+				u4RegValue); \
+			HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+			if ((u4RegValue \
+				& WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+				*_pfgResult = FALSE; \
+			} \
+		} \
+	} \
+}
+
+#define HAL_LP_DB_DELAY_SET(_prAdapter, _pfgResult) \
+{ \
+	if (_pfgResult != NULL) { \
+		uint32_t u4RegValue = 0; \
+		*_pfgResult = FALSE; \
+		HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+		if ((u4RegValue & WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+			*_pfgResult = TRUE; \
+		} else { \
+			u4RegValue &= WHLPCR_FORCE_DRV_OWN; \
+			u4RegValue |= WHLPCR_REG_DB_DELAY_CNT_ENABLE; \
+			u4RegValue |= (WHLPCR_REG_DB_DELAY_CNT_0x60 << \
+					WHLPCR_REG_DB_DELAY_CNT_SHIFT); \
+			HAL_MCR_WR(_prAdapter, \
+				MCR_WHLPCR, \
+				u4RegValue); \
+			HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+			if ((u4RegValue \
+				& WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+				*_pfgResult = TRUE; \
+			} \
+		} \
+	} \
+}
+
+#endif
+
+#if (CFG_SUPPORT_SDIO_FORCE_DRV_OWN == 1)
+#define HAL_LP_FORCE_DRV_OWN_SET(_prAdapter, _pfgResult) \
+{ \
+	uint32_t u4RegValue = 0; \
+	*_pfgResult = FALSE; \
+	/* Software set LP force driver own*/ \
+	HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+	if ((u4RegValue & \
+		(WHLPCR_FORCE_DRV_OWN | WHLPCR_IS_DRIVER_OWN)) != 0) { \
+		*_pfgResult = TRUE; \
+	} else { \
+		u4RegValue &= (WHLPCR_REG_DB_DELAY_CNT_MASK | \
+				WHLPCR_REG_DB_DELAY_CNT_ENABLE); \
+		u4RegValue |= WHLPCR_FORCE_DRV_OWN; \
+		HAL_MCR_WR(_prAdapter, MCR_WHLPCR, u4RegValue); \
+		HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+		if (((u4RegValue & WHLPCR_FORCE_DRV_OWN) != 0) && \
+			((u4RegValue & WHLPCR_IS_DRIVER_OWN) == 0)) { \
+			*_pfgResult = TRUE; \
+		} \
+	} \
+}
+
+#define HAL_LP_FORCE_DRV_OWN_CLR(_prAdapter, _pfgResult) \
+{ \
+	uint32_t u4RegValue = 0; \
+	*_pfgResult = TRUE; \
+	HAL_MCR_RD(_prAdapter, \
+		MCR_WHLPCR, \
+		&u4RegValue); \
+	if ((u4RegValue & WHLPCR_FORCE_DRV_OWN) != 0) { \
+		u4RegValue &= (WHLPCR_REG_DB_DELAY_CNT_MASK | \
+				WHLPCR_REG_DB_DELAY_CNT_ENABLE); \
+		HAL_MCR_WR(_prAdapter, MCR_WHLPCR, u4RegValue); \
+		HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+		if ((u4RegValue & WHLPCR_FORCE_DRV_OWN) != 0) { \
+			*_pfgResult = FALSE; \
+		} \
+	} \
+}
+#endif
 
 #define HAL_GET_ABNORMAL_INTERRUPT_REASON_CODE(_prAdapter, pu4AbnormalReason) \
 { \
@@ -1199,6 +1297,17 @@ do { \
 #define HAL_IS_FW_OWNBACK_INTR(u4IntrStatus) \
 	((u4IntrStatus & WHISR_FW_OWN_BACK_INT) ? TRUE : FALSE)
 
+#if (defined(CFG_SDIO_MAILBOX_EXTENSION) && (CFG_SDIO_MAILBOX_EXTENSION == 1))
+#define HAL_PUT_MAILBOX(prAdapter, u4MboxId, u4Data) \
+{ \
+	halPutMailbox(prAdapter, u4MboxId, u4Data); \
+}
+
+#define HAL_GET_MAILBOX(prAdapter, u4MboxId, pu4Data) \
+{ \
+	halGetMailbox(prAdapter, u4MboxId, pu4Data); \
+}
+#else
 #define HAL_PUT_MAILBOX(prAdapter, u4MboxId, u4Data) \
 { \
 	ASSERT(u4MboxId < 2); \
@@ -1214,6 +1323,7 @@ do { \
 		((u4MboxId == 0) ? MCR_D2HRM0R : MCR_D2HRM1R), \
 		pu4Data); \
 }
+#endif
 
 #define HAL_SET_MAILBOX_READ_CLEAR(prAdapter, fgEnableReadClear) \
 { \
@@ -1259,7 +1369,6 @@ do { \
 #define HAL_RESUME_TX_RX(_prAdapter) nicSerStartTxRx(_prAdapter)
 
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)  halToggleWfsysRst(_prAdapter)
-
 #endif
 
 #if defined(_HIF_USB)

@@ -10,7 +10,5 @@
 *[Author]
 *[Description]
 *    dummy file for build system
-*[Copyright]
-*    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
 ******************************************************************************/
 

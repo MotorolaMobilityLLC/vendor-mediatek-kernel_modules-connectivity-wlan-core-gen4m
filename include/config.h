@@ -600,6 +600,12 @@
 /* #define _HIF_SDIO   1 */
 #endif
 
+/* 1(default): Enable SDIO MAILBOX EXTENSION
+ * 0: Disable
+ */
+#ifndef CFG_SDIO_MAILBOX_EXTENSION
+#define CFG_SDIO_MAILBOX_EXTENSION                   0
+#endif
 /* 1(default): Enable SDIO ISR & TX/RX status enhance mode
  * 0: Disable
  */
@@ -3324,6 +3330,22 @@
 #else
 #undef CFG_SUPPORT_SAP_BCN_PROT
 #define CFG_SUPPORT_SAP_BCN_PROT 0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Support Force Driver Own or not.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_SDIO_FORCE_DRV_OWN
+#define CFG_SUPPORT_SDIO_FORCE_DRV_OWN  0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Support SDIO Reg Db Delay or not.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_SDIO_DB_DELAY
+#define CFG_SUPPORT_SDIO_DB_DELAY  0
 #endif
 
 /*******************************************************************************

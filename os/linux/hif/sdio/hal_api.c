@@ -10,8 +10,6 @@
 *[Author]
 *[Description]
 *    The program provides SDIO HIF APIs
-*[Copyright]
-*    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
 ******************************************************************************/
 
 /*******************************************************************************
@@ -352,29 +350,143 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 	GLUE_SET_REF_CNT(0, prAdapter->fgIsIntEnable);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief clear fw own and poll driver own ack
+*
+* @param prAdapter pointer to the Adapter handler
+*
+* @return TRUE/FALSE
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t halFWOwnClr(struct ADAPTER *prAdapter,
+	uint32_t *u4WaitAckTime,
+	uint32_t *u4PollCount)
+{
+	u_int8_t fgStatus = TRUE;
+	u_int8_t fgResult;
+	u_int8_t fgTimeout;
+	u_int8_t fgWmtCoreDump = FALSE;
+	uint32_t u4CurrTick = 0, u4WriteTick, u4WriteTickTemp;
+	struct CHIP_DBG_OPS *prChipDbg = prAdapter->chip_info->prDebugOps;
+
+	if (u4WaitAckTime == NULL || u4PollCount == NULL) {
+		DBGLOG(INIT, ERROR, "Parameter is NULL!\n");
+
+		return FALSE;
+	}
+
+	if (nicSerIsWaitingReset(prAdapter) &&
+		(prAdapter->rWifiVar.eEnableSerL1 == FEATURE_OPT_SER_ENABLE)) {
+		DBGLOG(INIT, WARN,
+		  "[SER][L1] Still in L1 reset flow, can't issue driver own\n");
+
+		return FALSE;
+	}
+
+	u4WriteTick = 0;
+	u4CurrTick = kalGetTimeTick();
+
+	while (1) {
+		HAL_LP_OWN_RD(prAdapter, &fgResult);
+
+		if (TIME_BEFORE(kalGetTimeTick(), u4CurrTick)) { /* To prevent timer wraparound */
+			fgTimeout =
+				((kalGetTimeTick() + (~u4CurrTick)) > LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		} else {
+			fgTimeout =
+				((kalGetTimeTick() - u4CurrTick) > LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		}
+		if (fgResult) {
+			prAdapter->fgIsFwOwn = FALSE;
+			prAdapter->u4OwnFailedCount = 0;
+			prAdapter->u4OwnFailedLogCount = 0;
+
+			break;
+		} else if ((*u4PollCount > LP_OWN_BACK_FAILED_RETRY_CNT) &&
+			   (kalIsCardRemoved(prAdapter->prGlueInfo) || fgIsBusAccessFailed || fgTimeout
+			    || wlanIsChipNoAck(prAdapter))) {
+
+			/* For driver own back fail debug,  get current PC value */
+			halPrintMailbox(prAdapter);
+			halPollDbgCr(prAdapter, LP_OWN_BACK_FAILED_DBGCR_POLL_ROUND);
+			if (prChipDbg->show_mcu_debug_info) {
+				prChipDbg->show_mcu_debug_info(prAdapter,
+				  NULL, 0, DBG_MCU_DBG_ALL, NULL);
+			}
+			if ((prAdapter->u4OwnFailedCount == 0) ||
+			    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
+					      MSEC_TO_SYSTIME(LP_OWN_BACK_FAILED_LOG_SKIP_MS))) {
+
+				DBGLOG(INIT, ERROR,
+				       "LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
+				       fgTimeout, kalGetTimeTick() - u4CurrTick, fgIsBusAccessFailed);
+				DBGLOG(INIT, ERROR,
+				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u] fgCoreDump[%u]\n",
+				       kalIsResetting(prAdapter->prGlueInfo),
+				       kalIsCardRemoved(prAdapter->prGlueInfo), wlanIsChipNoAck(prAdapter),
+				       prAdapter->u4OwnFailedCount, fgWmtCoreDump);
+
+				DBGLOG(INIT, INFO,
+				       "Skip LP own back failed log for next %ums\n", LP_OWN_BACK_FAILED_LOG_SKIP_MS);
+
+				prAdapter->u4OwnFailedLogCount++;
+				if (prAdapter->u4OwnFailedLogCount
+					> LP_OWN_BACK_FAILED_RESET_CNT) {
+					/* Trigger RESET */
+					GL_DEFAULT_RESET_TRIGGER(prAdapter,
+							      RST_DRV_OWN_FAIL);
+				}
+				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
+			}
+
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+			prChipDbg->show_debug_sop_info(prAdapter, SLAVENORESP);
+#endif
+
+			prAdapter->u4OwnFailedCount++;
+			fgStatus = FALSE;
+			break;
+		}
+
+		u4WriteTickTemp = kalGetTimeTick();
+		if ((*u4PollCount == 0) || TIME_AFTER(u4WriteTickTemp,
+			(u4WriteTick + LP_OWN_REQ_CLR_INTERVAL_MS))) {
+			/* Driver get LP ownership per 200 ms, to avoid
+			 *  iteration time not accurate
+			 */
+			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+			u4WriteTick = u4WriteTickTemp;
+		}
+		/* Delay for LP engine to complete its operation. */
+		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US, LP_OWN_BACK_LOOP_DELAY_MAX_US);
+		(*u4PollCount)++;
+	}
+	*u4WaitAckTime = ((kalGetTimeTick() >= u4CurrTick) ?
+			(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
+
+	return fgStatus;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is used to process the POWER OFF procedure.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-*
-* \return (none)
-*/
+ * \brief This routine is used to process the POWER OFF procedure.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgStatus = TRUE;
-	uint32_t i, j, u4CurrTick = 0, u4WriteTick, u4WriteTickTemp;
+	uint32_t i, j, u4CurrTick = 0;
 	u_int8_t fgTimeout;
-	u_int8_t fgResult;
 	u_int8_t fgReady = FALSE;
 	uint32_t u4DriverOwnTime = 0, u4Cr4ReadyTime = 0;
 	struct GL_HIF_INFO *prHifInfo;
 	u_int8_t fgWmtCoreDump = FALSE;
-#if (CFG_SUPPORT_DEBUG_SOP == 1)
-	struct CHIP_DBG_OPS *prChipDbg = prAdapter->chip_info->prDebugOps;
-#endif
 
 	ASSERT(prAdapter);
 
@@ -389,91 +501,14 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN\n");
 
-	if (nicSerIsWaitingReset(prAdapter)) {
-		DBGLOG(INIT, WARN,
-		  "[SER][L1] Still in L1 reset flow, can't issue driver own\n");
-
-		return FALSE;
-	}
-
-	u4WriteTick = 0;
-	u4CurrTick = kalGetTimeTick();
 	i = 0;
 	j = 0;
 
 	glWakeupSdio(prAdapter->prGlueInfo);
 
-	while (1) {
-		u4WriteTickTemp = kalGetTimeTick();
-		if ((i == 0) || TIME_AFTER(u4WriteTickTemp,
-			(u4WriteTick + LP_OWN_REQ_CLR_INTERVAL_MS))) {
-			/* Driver get LP ownership per 200 ms, to avoid
-			*  iteration time not accurate
-			*/
-			HAL_LP_OWN_CLR(prAdapter, &fgResult);
-			u4WriteTick = u4WriteTickTemp;
-		}
-		HAL_LP_OWN_RD(prAdapter, &fgResult);
-
-		if (TIME_BEFORE(kalGetTimeTick(), u4CurrTick)) { /* To prevent timer wraparound */
-			fgTimeout =
-				((kalGetTimeTick() + (~u4CurrTick)) > LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
-		} else {
-			fgTimeout =
-				((kalGetTimeTick() - u4CurrTick) > LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
-		}
-
-		if (fgResult) {
-			prAdapter->fgIsFwOwn = FALSE;
-			prAdapter->u4OwnFailedCount = 0;
-			prAdapter->u4OwnFailedLogCount = 0;
-
-			break;
-		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
-			   (kalIsCardRemoved(prAdapter->prGlueInfo) || fgIsBusAccessFailed || fgTimeout
-			    || wlanIsChipNoAck(prAdapter))) {
-
-			/* For driver own back fail debug,  get current PC value */
-			halPrintMailbox(prAdapter);
-			halPollDbgCr(prAdapter, LP_OWN_BACK_FAILED_DBGCR_POLL_ROUND);
-
-			if ((prAdapter->u4OwnFailedCount == 0) ||
-			    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
-					      MSEC_TO_SYSTIME(LP_OWN_BACK_FAILED_LOG_SKIP_MS))) {
-
-				DBGLOG(INIT, ERROR,
-				       "LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
-				       fgTimeout, kalGetTimeTick() - u4CurrTick, fgIsBusAccessFailed);
-				DBGLOG(INIT, ERROR,
-				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u] fgCoreDump[%u]\n",
-				       kalIsResetting(),
-				       kalIsCardRemoved(prAdapter->prGlueInfo), wlanIsChipNoAck(prAdapter),
-				       prAdapter->u4OwnFailedCount, fgWmtCoreDump);
-
-				DBGLOG(INIT, DEBUG,
-				       "Skip LP own back failed log for next %ums\n", LP_OWN_BACK_FAILED_LOG_SKIP_MS);
-
-				prAdapter->u4OwnFailedLogCount++;
-				if (prAdapter->u4OwnFailedLogCount >
-				    LP_OWN_BACK_FAILED_RESET_CNT)
-					GL_DEFAULT_RESET_TRIGGER(prAdapter,
-							      RST_DRV_OWN_FAIL);
-
-				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
-			}
-#if (CFG_SUPPORT_DEBUG_SOP == 1)
-			prChipDbg->show_debug_sop_info(prAdapter, SLAVENORESP);
-#endif
-			prAdapter->u4OwnFailedCount++;
-			fgStatus = FALSE;
-			break;
-		}
-		/* Delay for LP engine to complete its operation. */
-		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US, LP_OWN_BACK_LOOP_DELAY_MAX_US);
-		i++;
-	}
-	u4DriverOwnTime = ((kalGetTimeTick() >= u4CurrTick) ?
-			(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
+	fgStatus = halFWOwnClr(prAdapter, &u4DriverOwnTime, &i);
+	if (!fgStatus)
+		goto unlock;
 
 	/* 1. Driver need to polling until CR4 ready, then could do normal Tx/Rx */
 	/* 2. Send a dummy command to change data path to store-forward mode */
@@ -563,6 +598,52 @@ unlock:
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Check mailbox status
+ *
+ * @param prAdapter - pointer to the Adapter handler
+ * @param u4MailBoxCR - mailbox CR address
+ * @param u4ExpectVal - value need to polling from mailbox CR
+ *
+ * @return TRUE/FALSE
+ */
+/*----------------------------------------------------------------------------*/
+
+u_int8_t halPollMailBoxSts(struct ADAPTER *prAdapter,
+	uint32_t u4MailBoxCR,
+	uint32_t u4ExpectVal)
+{
+	u_int8_t fgStatus = TRUE;
+	uint32_t u4Value = 0;
+	u_int8_t fgTimeout = 0;
+	uint32_t u4CurrTick = 0;
+
+	u4CurrTick = kalGetTimeTick();
+	while (1) {
+		HAL_MCR_RD(prAdapter, u4MailBoxCR, &u4Value);
+		if (TIME_BEFORE(kalGetTimeTick(), u4CurrTick)) {
+			/* To prevent timer wraparound */
+			fgTimeout = ((kalGetTimeTick() + (~u4CurrTick))
+				> POLL_MAILBOX_TIMEOUT_MS) ? TRUE : FALSE;
+		} else {
+			fgTimeout = ((kalGetTimeTick() - u4CurrTick)
+				> POLL_MAILBOX_TIMEOUT_MS) ? TRUE : FALSE;
+		}
+		if (fgTimeout) {
+			DBGLOG(INIT, ERROR, "PollMailBox timeout!\n");
+			fgStatus = FALSE;
+			break;
+		}
+		if (u4Value == u4ExpectVal) {
+			fgStatus = TRUE;
+			break;
+		}
+	}
+
+	return fgStatus;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief This routine is used to process the POWER ON procedure.
 *
 * \param[in] pvAdapter Pointer to the Adapter structure.
@@ -574,6 +655,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 {
 
 	u_int8_t fgResult;
+	u_int8_t fgStatus;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(prAdapter);
@@ -627,10 +709,20 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
 		if (fgResult) {
+			uint32_t u4WaitAckTime = 0;
+			uint32_t u4PollCount = 0;
+
 			/* if set firmware own not successful (possibly pending interrupts), */
 			/* indicate an own clear event */
-			HAL_LP_OWN_CLR(prAdapter, &fgResult);
-			DBGLOG(INIT, WARN, "FW OWN fail due to pending INT\n");
+			fgStatus = halFWOwnClr(prAdapter,
+				&u4WaitAckTime, &u4PollCount);
+			DBGLOG(INIT, WARN,
+				"halFWOwnClr WaitAckTime %d, count %d\n",
+				u4WaitAckTime, u4PollCount);
+			if (!fgStatus)
+				DBGLOG(INIT, ERROR, "FW OWN clear fail!\n");
+
+			DBGLOG(INIT, WARN, "FW OWN fail!\n");
 		} else {
 			prAdapter->fgIsFwOwn = TRUE;
 
@@ -1014,7 +1106,7 @@ uint32_t halTxPollingResource(struct ADAPTER *prAdapter, uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	uint32_t u4Status = WLAN_STATUS_RESOURCES;
-	uint32_t au4WTSR[SDIO_TX_RESOURCE_REG_NUM];
+	struct TX_RES_INFO_STRUCT ResInfo;
 	struct GL_HIF_INFO *prHifInfo;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1023,17 +1115,18 @@ uint32_t halTxPollingResource(struct ADAPTER *prAdapter, uint8_t ucTC)
 
 	if (prHifInfo->fgIsPendingInt && (prHifInfo->prSDIOCtrl->u4WHISR & WHISR_TX_DONE_INT)) {
 		/* Get Tx done resource from pending interrupt status */
-		kalMemCopy(au4WTSR, &prHifInfo->prSDIOCtrl->rTxInfo,
+		kalMemCopy(&ResInfo.rTxResInfo, &prHifInfo->prSDIOCtrl->rTxInfo,
 			sizeof(uint32_t) * SDIO_TX_RESOURCE_REG_NUM);
 
 		/* Clear pending Tx done interrupt */
 		prHifInfo->prSDIOCtrl->u4WHISR &= ~WHISR_TX_DONE_INT;
 	} else
-		HAL_READ_TX_RELEASED_COUNT(prAdapter, au4WTSR);
+		HAL_READ_TX_RELEASED_COUNT(prAdapter, &ResInfo.rTxResInfo);
 
 	if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE || fgIsBusAccessFailed == TRUE) {
 		u4Status = WLAN_STATUS_FAILURE;
-	} else if (halTxReleaseResource(prAdapter, (uint16_t *) au4WTSR)) {
+	} else if (halTxReleaseResource(prAdapter,
+		(uint16_t *) &ResInfo.rTxResInfo)) {
 		if (prTxCtrl->rTc.au4FreeBufferCount[ucTC] > 0)
 			u4Status = WLAN_STATUS_SUCCESS;
 	}
@@ -2060,7 +2153,6 @@ uint32_t halGetValidCoalescingBufSize(struct ADAPTER *prAdapter)
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-
 	u4BufSize = HIF_TX_COALESCING_BUFFER_SIZE;
 
 #if (MTK_WCN_HIF_SDIO == 0)
@@ -2198,12 +2290,17 @@ void halPrintFirmwareAssertInfo(struct ADAPTER *prAdapter)
 	uint8_t aucAssertFile[7];
 	/* UINT_32 u4ChipId; */
 
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+	halGetMailbox(prAdapter, ENUM_SDIO_MAILBOX_ASSERT_0, &u4MailBox0);
+	halGetMailbox(prAdapter, ENUM_SDIO_MAILBOX_ASSERT_1, &u4MailBox1);
+#else
 #if CFG_SDIO_INTR_ENHANCE
 	u4MailBox0 = prAdapter->prGlueInfo->rHifInfo.prSDIOCtrl->u4RcvMailbox0;
 	u4MailBox1 = prAdapter->prGlueInfo->rHifInfo.prSDIOCtrl->u4RcvMailbox1;
 #else
 	halGetMailbox(prAdapter, 0, &u4MailBox0);
 	halGetMailbox(prAdapter, 1, &u4MailBox1);
+#endif
 #endif
 
 	line = u4MailBox0 & 0x0000FFFF;
@@ -2222,16 +2319,23 @@ void halPrintFirmwareAssertInfo(struct ADAPTER *prAdapter)
 
 void halPrintMailbox(struct ADAPTER *prAdapter)
 {
-	uint32_t u4MailBoxStatus0, u4MailBoxStatus1;
-	uint8_t fgResult;
+	uint32_t u4MailBoxStatus0 = 0, u4MailBoxStatus1 = 0;
+	uint8_t fgResult = 0;
 
 	HAL_LP_OWN_RD(prAdapter, &fgResult);
 	if (fgResult != TRUE)
 		return;
 
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+	halGetMailbox(prAdapter, ENUM_SDIO_MAILBOX_ASSERT_0, &u4MailBoxStatus0);
+	halGetMailbox(prAdapter, ENUM_SDIO_MAILBOX_ASSERT_1, &u4MailBoxStatus1);
+#else
 	halGetMailbox(prAdapter, 0, &u4MailBoxStatus0);
 	halGetMailbox(prAdapter, 1, &u4MailBoxStatus1);
-	DBGFWLOG(INIT, ERROR, "MailBox Status = 0x%08X, 0x%08X\n", u4MailBoxStatus0, u4MailBoxStatus1);
+#endif
+	DBGFWLOG(INIT, ERROR,
+		"MailBox Status = 0x%08X, 0x%08X\n",
+		u4MailBoxStatus0, u4MailBoxStatus1);
 }
 
 void halPrintIntStatus(struct ADAPTER *prAdapter)
@@ -2348,7 +2452,27 @@ void halProcessAbnormalInterrupt(struct ADAPTER *prAdapter)
 	halDumpIntLog(prAdapter);
 
 	if (u4Data & (WASR_RX0_UNDER_FLOW | WASR_RX1_UNDER_FLOW)) {
+		struct CHIP_DBG_OPS *prDbgOps;
+
+		prDbgOps = prAdapter->chip_info->prDebugOps;
+
 		DBGLOG(REQ, WARN, "Skip all SDIO Rx due to Rx underflow error!\n");
+
+		if (prDbgOps) {
+			if (prDbgOps->get_sdio_debug_info)
+				prDbgOps->get_sdio_debug_info(prAdapter);
+
+			if (prDbgOps->show_mcu_debug_info) {
+				prDbgOps->show_mcu_debug_info(prAdapter,
+				  NULL, 0, DBG_MCU_DBG_ALL, NULL);
+			}
+
+			if (prDbgOps->showPseInfo)
+				prDbgOps->showPseInfo(prAdapter);
+
+			if (prDbgOps->showPleInfo)
+				prDbgOps->showPleInfo(prAdapter, FALSE);
+		}
 		prAdapter->prGlueInfo->rHifInfo.fgSkipRx = TRUE;
 		halDumpHifStatus(prAdapter, NULL, 0);
 	}
@@ -2371,6 +2495,12 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 	u4IntrBits = prAdapter->u4IntStatus & BITS(8, 31);
+
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+	if ((u4IntrBits & WHISR_D2H_SW_COREDUMP_CHK_HIF_INT) != 0)
+		halSetMailboxHifStatus(prAdapter, u4IntrBits);
+#endif
 
 	if ((u4IntrBits & WHISR_D2H_SW_ASSERT_INFO_INT) != 0) {
 		halPrintFirmwareAssertInfo(prAdapter);
@@ -2429,10 +2559,57 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 
 } /* end of halProcessSoftwareInterrupt() */
 
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+/**
+ * @brief Set the mailbox HIF status based on interrupt bits
+ *
+ * This function is responsible for setting the mailbox HIF status based on
+ * the provided interrupt bits.
+ *
+ * @param prAdapter Pointer to the ADAPTER structure
+ * @param u4IntrBits Interrupt bits that determine the mailbox HIF status
+ */
+void halSetMailboxHifStatus(struct ADAPTER *prAdapter,
+	uint32_t u4IntrBits)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	uint8_t fgResult = 0;
+
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	if (!(u4IntrBits & WHISR_D2H_SW_COREDUMP_CHK_HIF_INT))
+		return;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+
+	if (fgResult != TRUE)
+		return;
+
+	if (u4IntrBits & WHISR_D2H_SW_COREDUMP_CHK_HIF_STS_INT) {
+		halPutMailbox(prAdapter, ENUM_SDIO_MAILBOX_STATUS,
+		(glSdioGetState(prHifInfo) & SDIO_STATE_MASK));
+
+		DBGLOG(INIT, INFO,
+			"FWD Coredump: set mailbox HIF Status = %d\n",
+			prHifInfo->state);
+		return;
+	}
+
+	if (u4IntrBits & WHISR_D2H_SW_COREDUMP_CHK_HIF_CLR_INT) {
+		halPutMailbox(prAdapter, ENUM_SDIO_MAILBOX_STATUS, 0);
+		DBGLOG(INIT, INFO,
+			"FWD Coredump: clear mailbox HIF Status.\n");
+	}
+}
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 void halPutMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
 		uint32_t u4Data)
 {
-
 	switch (u4MailboxNum) {
 	case 0:
 		HAL_MCR_WR(prAdapter, MCR_H2DSM0R, u4Data);
@@ -2440,11 +2617,26 @@ void halPutMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
 	case 1:
 		HAL_MCR_WR(prAdapter, MCR_H2DSM1R, u4Data);
 		break;
-
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+	case 2:
+		HAL_MCR_WR(prAdapter, MCR_H2DSM2R, u4Data);
+		break;
+	case 3:
+		HAL_MCR_WR(prAdapter, MCR_H2DSM3R, u4Data);
+		break;
+	case 4:
+		HAL_MCR_WR(prAdapter, MCR_H2DSM4R, u4Data);
+		break;
+	case 5:
+		HAL_MCR_WR(prAdapter, MCR_H2DSM5R, u4Data);
+		break;
+	case 6:
+		HAL_MCR_WR(prAdapter, MCR_H2DSM6R, u4Data);
+		break;
+#endif
 	default:
 		ASSERT(0);
 	}
-
 }
 
 void halGetMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
@@ -2452,12 +2644,28 @@ void halGetMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
 {
 	switch (u4MailboxNum) {
 	case 0:
-			HAL_MCR_RD(prAdapter, MCR_D2HRM0R, pu4Data);
-			break;
+		HAL_MCR_RD(prAdapter, MCR_D2HRM0R, pu4Data);
+		break;
 	case 1:
-			HAL_MCR_RD(prAdapter, MCR_D2HRM1R, pu4Data);
-			break;
-
+		HAL_MCR_RD(prAdapter, MCR_D2HRM1R, pu4Data);
+		break;
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+	case 2:
+		HAL_MCR_RD(prAdapter, MCR_D2HRM2R, pu4Data);
+		break;
+	case 3:
+		HAL_MCR_RD(prAdapter, MCR_D2HRM3R, pu4Data);
+		break;
+	case 4:
+		HAL_MCR_RD(prAdapter, MCR_D2HRM4R, pu4Data);
+		break;
+	case 5:
+		HAL_MCR_RD(prAdapter, MCR_D2HRM5R, pu4Data);
+		break;
+	case 6:
+		HAL_MCR_RD(prAdapter, MCR_D2HRM6R, pu4Data);
+		break;
+#endif
 	default:
 			ASSERT(0);
 	}
@@ -2809,8 +3017,12 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 void halPollDbgCr(struct ADAPTER *prAdapter, uint32_t u4LoopCount)
 {
 	uint32_t au4Value[] = {MCR_WCIR, MCR_WHLPCR};
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+	uint32_t au4Value1[] = {MCR_WHIER, MCR_D2HRM4R, MCR_D2HRM5R};
+#else
 	uint32_t au4Value1[] = {MCR_WHIER, MCR_D2HRM0R, MCR_D2HRM1R,
 		MCR_D2HRM2R};
+#endif
 	uint32_t u4Loop = 0;
 	uint32_t u4Data = 0;
 	uint8_t i = 0, fgResult;
@@ -2860,11 +3072,17 @@ void halPollDbgCr(struct ADAPTER *prAdapter, uint32_t u4LoopCount)
 		for (i = 0; i < ARRAY_SIZE(au4Value1); i++)
 			HAL_MCR_RD(prAdapter, au4Value1[i], &au4Value1[i]);
 
+#if (CFG_SDIO_MAILBOX_EXTENSION == 1)
+		DBGLOG(REQ, WARN,
+			"MCR_WHIER:0x%08X, MCR_D2HRM4R:0x%08X, MCR_D2HRM5R:0x%08X",
+			au4Value1[0], au4Value1[1], au4Value1[2]);
+#else
 		DBGLOG(REQ, WARN,
 			"MCR_WHIER:0x%x, MCR_D2HRM0R:0x%x",
 			au4Value1[0], au4Value1[1]);
 		DBGLOG(REQ, WARN, "MCR_D2HRM1R:0x%x, MCR_D2HRM2R:0x%x\n",
 			au4Value1[2], au4Value1[3]);
+#endif
 	}
 
 #if MTK_WCN_HIF_SDIO
@@ -2929,7 +3147,7 @@ u_int8_t halIsTxResourceControlEn(struct ADAPTER *prAdapter)
 void halTxResourceResetHwTQCounter(struct ADAPTER *prAdapter)
 {
 	uint32_t *pu4WHISR = NULL;
-	uint16_t au2TxCount[16];
+	uint32_t au4WTSR[SDIO_TX_RESOURCE_REG_NUM] = {0};
 
 	pu4WHISR = (uint32_t *)kalMemAlloc(sizeof(uint32_t), PHY_MEM_TYPE);
 	if (!pu4WHISR) {
@@ -2938,10 +3156,9 @@ void halTxResourceResetHwTQCounter(struct ADAPTER *prAdapter)
 	}
 
 	HAL_READ_INTR_STATUS(prAdapter, sizeof(uint32_t), (uint8_t *)pu4WHISR);
-
 	/* TXQ count CR access type is read clear. */
 	if (HAL_IS_TX_DONE_INTR(*pu4WHISR))
-		HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
+		HAL_READ_TX_RELEASED_COUNT(prAdapter, au4WTSR);
 
 	if (pu4WHISR)
 		kalMemFree(pu4WHISR, PHY_MEM_TYPE, sizeof(uint32_t));
@@ -3225,7 +3442,7 @@ void halRestoreTxResource_v1(struct ADAPTER *prAdapter)
 void halUpdateTxDonePendingCount(struct ADAPTER *prAdapter, u_int8_t isIncr,
 		uint8_t ucTc, uint32_t u4Len)
 {
-	uint8_t u2PageCnt;
+	uint8_t u2PageCnt = 0;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
 #if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
@@ -3300,7 +3517,7 @@ void halUpdateTxDonePendingCount_v1(struct ADAPTER *prAdapter, u_int8_t isIncr,
 /*----------------------------------------------------------------------------*/
 void halPreSuspendCmd(struct ADAPTER *prAdapter)
 {
-	struct CMD_HIF_CTRL rCmdHifCtrl;
+	struct CMD_HIF_CTRL rCmdHifCtrl = {0};
 	uint32_t rStatus;
 
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_SDIO;
@@ -3336,7 +3553,7 @@ void halPreSuspendCmd(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void halPreResumeCmd(struct ADAPTER *prAdapter)
 {
-	struct CMD_HIF_CTRL rCmdHifCtrl;
+	struct CMD_HIF_CTRL rCmdHifCtrl = {0};
 	uint32_t rStatus;
 
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_SDIO;
@@ -3437,16 +3654,33 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	fgIsRstPreventFwOwn = FALSE;
 
+#if (CFG_SUPPORT_SDIO_DB_DELAY == 1)
+	HAL_LP_DB_DELAY_SET(prAdapter, &u4CrValue);
+	if (u4CrValue == FALSE) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] set delay fail !!\n");
+		goto FAIL;
+	}
+#endif
+
 	HAL_LP_OWN_RD(prAdapter, &u4CrValue);
 	if (u4CrValue == FALSE) {
 		DBGLOG(INIT, DEBUG,
 			"[SER][L0.5] WHLPCR_IS_DRIVER_OWN = %d\n", u4CrValue);
+#if (CFG_SUPPORT_SDIO_FORCE_DRV_OWN == 1)
+		HAL_LP_FORCE_DRV_OWN_SET(prAdapter, &u4CrValue);
+		if (u4CrValue == FALSE) {
+			DBGLOG(INIT, ERROR,
+				"[SER][L0.5] set force drv own fail !!\n");
+			goto FAIL;
+		}
+#else
 		HAL_LP_OWN_CLR(prAdapter, &u4CrValue);
 		if (u4CrValue == FALSE) {
 			DBGLOG(INIT, ERROR,
 				"[SER][L0.5] set drv own fail !!\n");
 			goto FAIL;
 		}
+#endif
 	}
 
 	/* assert WF L0.5 reset */
@@ -3484,6 +3718,23 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 	/* rst cr clear check */
 	if (halChkRstPass(prAdapter) != WLAN_STATUS_SUCCESS)
 		goto FAIL;
+
+#if (CFG_SUPPORT_SDIO_FORCE_DRV_OWN == 1)
+	HAL_LP_FORCE_DRV_OWN_CLR(prAdapter, &u4CrValue);
+	if (u4CrValue == FALSE) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] release force drv own fail !!\n");
+		goto FAIL;
+	}
+#endif
+
+#if (CFG_SUPPORT_SDIO_DB_DELAY == 1)
+	HAL_LP_DB_DELAY_CLEAR(prAdapter, &u4CrValue);
+	if (u4CrValue == FALSE) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] clear delay fail !!\n");
+		goto FAIL;
+	}
+#endif
 
 	HAL_LP_OWN_SET(prAdapter, &u4CrValue);
 	if (u4CrValue == TRUE) {

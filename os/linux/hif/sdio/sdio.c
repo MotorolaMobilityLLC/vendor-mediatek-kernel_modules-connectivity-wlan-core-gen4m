@@ -10,8 +10,6 @@
 *[Author]
 *[Description]
 *    The program provides SDIO HIF driver
-*[Copyright]
-*    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
 ******************************************************************************/
 
 
@@ -1215,6 +1213,16 @@ u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 	u_int8_t fgOwnStatus = 0;
 	u_int8_t fgIssueOwn = FALSE;
 
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(HAL, ERROR,
+			"prGlueInfo or prGlueInfo->prAdpater is NULL error\n");
+		return FALSE;
+	}
+	if (!pu4Value) {
+		DBGLOG(HAL, ERROR, "pu4Value is NULL error\n");
+		return FALSE;
+	}
+
 	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
 	if (!fgOwnStatus) {
 		fgOwnStatus = nicpmSetDriverOwn(prGlueInfo->prAdapter);
@@ -1384,6 +1392,12 @@ u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 	uint8_t ucResult; /* For Unchecked return value*/
 	u_int8_t fgOwnStatus = 0;
 	u_int8_t fgIssueOwn = FALSE;
+
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(HAL, ERROR,
+			"prGlueInfo or prGlueInfo->prAdpater is NULL error\n");
+		return FALSE;
+	}
 
 	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
 	if (!fgOwnStatus) {

@@ -286,6 +286,15 @@
 #define SDIO_HIF_TXD_LEN		sizeof(struct SDIO_HIF_TX_HEADER)
 #define SDIO_HIF_TXD_PKG_TYPE_SHIFT		(0)
 #define SDIO_HIF_TXD_PKG_TYPE_MASK		(0x3)
+
+/* For support mcu debug mechanism. +*/
+#define SDIO_CTRL_EN                    (1 << 31)
+#define CONNAC2X_SDIO_WM_MONITER_SEL    (~(0x40000000))
+#define CONNAC2X_SDIO_PC_MONITER_SEL    (~(0x20000000))
+#define CONNAC2X_SDIO_LR_MONITER_SEL    (0x20000000)
+#define CONNAC2X_SDIO_MCU_PC_LOG_MASK	(0x3F)
+#define CONNAC2X_SDIO_MCU_PC_LOG_SHIFT	(16)
+/* For support mcu debug mechanism. -*/
 #endif /* _HIF_SDIO */
 
 #define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7C500000

@@ -50,7 +50,10 @@
 #define LP_OWN_BACK_LOOP_DELAY_MAX_US   1000
 #define LP_OWN_REQ_CLR_INTERVAL_MS		200
 #define LP_DBGCR_POLL_ROUND			1
-
+#define POLL_MAILBOX_TIMEOUT_MS		2048
+#define ISSUE_SW_INT_INTERVAL_MS	200
+#define CLR_MAILBOX_ACK_LOOP_DELAY_MIN_US   900
+#define CLR_MAILBOX_ACK_LOOP_DELAY_MAX_US   1000
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

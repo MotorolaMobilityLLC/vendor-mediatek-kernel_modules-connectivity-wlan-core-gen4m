@@ -947,6 +947,17 @@ union DELAY_INT_CFG_STRUCT {
 /* 4 WLAN TX Data Register 1 */
 #define MCR_WTDR1                           0x0034
 
+/* Since MT7902, add these CR for debug+ */
+/* 4 DB domian debug data */
+#define MCR_DB_COMDBGCR                     0x0040
+
+/* 4 DB domain debug data sel */
+#define MCR_DB_COMDBGCR_SEL                 0x0044
+
+/* 4 Wf mixed debug sel */
+#define MCR_WF_MIXED_DEBUG_SEL              0x0048
+/* Add from MT7902, used for debug- */
+
 /* 4 WLAN RX Data Register 0 */
 #define MCR_WRDR0                           0x0050
 
@@ -962,6 +973,18 @@ union DELAY_INT_CFG_STRUCT {
 /* 4 Host to Device Send Mailbox 2 Register */
 #define MCR_H2DSM2R                         0x0160
 
+/* 4 Host to Device Send Mailbox 3 Register */
+#define MCR_H2DSM3R                         0x0164
+
+/* 4 Host to Device Send Mailbox 4 Register */
+#define MCR_H2DSM4R                         0x0168
+
+/* 4 Host to Device Send Mailbox 5 Register */
+#define MCR_H2DSM5R                         0x016C
+
+/* 4 Host to Device Send Mailbox 6 Register */
+#define MCR_H2DSM6R                         0x0170
+
 /* 4 Device to Host Receive Mailbox 0 Register */
 #define MCR_D2HRM0R                         0x0078
 
@@ -970,6 +993,18 @@ union DELAY_INT_CFG_STRUCT {
 
 /* 4 Device to Host Receive Mailbox 2 Register */
 #define MCR_D2HRM2R                         0x0080
+
+/* 4 Device to Host Receive Mailbox 3 Register */
+#define MCR_D2HRM3R                         0x0174
+
+/* 4 Device to Host Receive Mailbox 4 Register */
+#define MCR_D2HRM4R                         0x0178
+
+/* 4 Device to Host Receive Mailbox 5 Register */
+#define MCR_D2HRM5R                         0x017C
+
+/* 4 Device to Host Receive Mailbox 6 Register */
+#define MCR_D2HRM6R                         0x0180
 
 /* 4 WLAN RX Packet Length Register */
 #define MCR_WRPLR                           0x0090
@@ -1122,6 +1157,13 @@ struct ENHANCE_MODE_DATA_STRUCT {
 	uint32_t u4RcvMailbox0;
 	uint32_t u4RcvMailbox1;
 };
+
+struct TX_RES_INFO_STRUCT {
+	union {
+		uint16_t auTQCnt[SDIO_TX_RESOURCE_NUM];
+		uint32_t au4WTSR[SDIO_TX_RESOURCE_REG_NUM];
+	} rTxResInfo;
+};
 #endif
 
 /* 2 Definition in each register */
@@ -1135,6 +1177,13 @@ struct ENHANCE_MODE_DATA_STRUCT {
 #define MTK_CHIP_MP_REVERSION_ID        0x0
 
 /* 3 WHLPCR 0x0004 */
+#if (CFG_SUPPORT_SDIO_FORCE_DRV_OWN == 1)
+#define WHLPCR_REG_DB_DELAY_CNT_0x60    0x60
+#define WHLPCR_REG_DB_DELAY_CNT_SHIFT   25
+#define WHLPCR_REG_DB_DELAY_CNT_MASK    BITS(25, 31)
+#define WHLPCR_FORCE_DRV_OWN            BIT(24)
+#define WHLPCR_REG_DB_DELAY_CNT_ENABLE  BIT(22)
+#endif
 #define WHLPCR_FW_OWN_REQ_CLR           BIT(9)
 #define WHLPCR_FW_OWN_REQ_SET           BIT(8)
 #define WHLPCR_IS_DRIVER_OWN            BIT(8)
@@ -1165,6 +1214,11 @@ struct ENHANCE_MODE_DATA_STRUCT {
 #define WHISR_D2H_SW_ASSERT_INFO_INT    BIT(31)
 #define WHISR_D2H_WKUP_BY_RX_PACKET		BIT(30)
 #define WHISR_D2H_SW_RD_MAILBOX_INT     BIT(29)
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+#define WHISR_D2H_SW_COREDUMP_CHK_HIF_INT      BITS(27, 28)
+#define WHISR_D2H_SW_COREDUMP_CHK_HIF_STS_INT  BIT(28)
+#define WHISR_D2H_SW_COREDUMP_CHK_HIF_CLR_INT  BIT(27)
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 #define WHISR_FW_OWN_BACK_INT           BIT(7)
 #define WHISR_WDT_INT                   BIT(5)
 #define WHISR_ABNORMAL_INT              BIT(6)
