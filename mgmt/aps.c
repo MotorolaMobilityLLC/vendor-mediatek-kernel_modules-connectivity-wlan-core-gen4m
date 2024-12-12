@@ -4,6 +4,7 @@
  */
 
 #include "precomp.h"
+#include "gl_kal.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -516,7 +517,6 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 	struct BSS_DESC *bss, uint8_t bidx)
 {
 	uint16_t bssAmsduLen = 0, amsduLen = 0;
-	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (bss->eBand == BAND_6G) {
@@ -539,7 +539,7 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (bss->fgIsEHTPresent == TRUE &&
-	    (prWifiVar->fgDisSecurityCheck ||
+	    (ad->rWifiVar.fgDisSecurityCheck ||
 	     rsnIsKeyMgmtForEht(ad, bss, bidx))) {
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
@@ -2604,10 +2604,10 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	if (policy == CONNECT_BY_BSSID)
 		goto done;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prChipInfo->apsFillBssDescSet)
 		prChipInfo->apsFillBssDescSet(ad, set, bidx);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* pick by special requirement
 	 * and avoid picking the poor-quality link.
 	 */

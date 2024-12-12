@@ -10018,14 +10018,12 @@ struct ROAMING_INFO *aisGetRoamingInfo(
 }
 #endif
 
-#if (CFG_SUPPORT_APS == 1)
 struct APS_INFO *aisGetApsInfo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rApsInfo;
 }
-#endif
 
 struct PARAM_BSSID_EX *aisGetCurrBssId(
 	struct ADAPTER *prAdapter,

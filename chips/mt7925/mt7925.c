@@ -130,7 +130,7 @@ static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 #endif
 #endif
 
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 static uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex);
@@ -768,7 +768,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 #endif
 	.ucTxPwrLimitBatchSize = 3,
 
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	.apsLinkPlanDecision = mt7925_apsLinkPlanDecision,
 	.apsFillBssDescSet = mt7925_apsFillBssDescSet,
 	.apsUpdateTotalScore = mt7925_apsUpdateTotalScore,
@@ -1645,7 +1645,7 @@ static uint32_t mt7925GetFlavorVer(struct GLUE_INFO *prGlueInfo,
 	return ret;
 }
 
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex)
@@ -1907,6 +1907,6 @@ static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	}
 }
 
-#endif /* CFG_SUPPORT_APS */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 #endif  /* MT7925 */

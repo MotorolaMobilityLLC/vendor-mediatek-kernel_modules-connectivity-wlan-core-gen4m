@@ -244,7 +244,7 @@ static void mt6639PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 #endif
 #endif
 
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 static uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex);
@@ -1137,7 +1137,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif
 
 	.ucTxPwrLimitBatchSize = 3,
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	.apsLinkPlanDecision = mt6639_apsLinkPlanDecision,
 #endif
 #if defined(_HIF_USB)
@@ -3915,7 +3915,7 @@ int mt6639PowerDumpEnd(void *priv_data)
 	return 0;
 }
 #endif  /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex)
@@ -3946,5 +3946,5 @@ uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
 }
-#endif /* CFG_SUPPORT_APS */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif  /* MT6639 */

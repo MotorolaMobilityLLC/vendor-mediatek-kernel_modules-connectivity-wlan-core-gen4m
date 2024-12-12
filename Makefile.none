@@ -76,8 +76,6 @@ export CONFIG_CHIP_RESET_SUPPORT=n
 
 export CONFIG_MSCS_FAST_PATH_SUPPORT=y
 
-export CONFIG_MTK_WIFI_APS_SUPPORT=y
-
 # leverage Makefile for common build option
 KO_CODE_PATH := $(if $(filter /%,$(src)),,$(srctree)/)$(src)
 include Kbuild.main

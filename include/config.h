@@ -1461,10 +1461,6 @@
 "CFG_SUPPORT_802_11BE should be 1 once CFG_SUPPORT_802_11BE_MLO equals to 1"
 #endif
 
-#ifndef CFG_SUPPORT_APS
-#define CFG_SUPPORT_APS				0
-#endif
-
 #ifndef CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO
 #define CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO	0
 #endif

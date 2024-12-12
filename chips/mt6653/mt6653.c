@@ -234,7 +234,7 @@ static void mt6653PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit);
 
 static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter);
 
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex);
@@ -1246,7 +1246,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.u4McuWfdmaBaseAddr = WF_WFDMA_MCU_DMA0_BASE,
 	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	.apsLinkPlanDecision = mt6653_apsLinkPlanDecision,
 	.apsUpdateTotalScore = mt6653_apsUpdateTotalScore,
 	.apsFillBssDescSet = mt6653_apsFillBssDescSet,
@@ -4681,7 +4681,7 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
-#if (CFG_SUPPORT_APS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex)
@@ -4829,7 +4829,7 @@ static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 #endif
 }
 
-#endif /* CFG_SUPPORT_APS */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 static void mt6653LowPowerOwnInit(struct ADAPTER *prAdapter)
 {
