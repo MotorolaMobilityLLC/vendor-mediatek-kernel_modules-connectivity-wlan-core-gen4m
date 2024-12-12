@@ -402,15 +402,41 @@ bow_proc:
 			return;
 		}
 
+		DBGLOG(AAA, INFO,
+			"u4RsnSelectedAKMSuite=%x, algo=%d\n",
+			prBssInfo->u4RsnSelectedAKMSuite,
+			prStaRec->ucAuthAlgNum);
+
 		if (rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) ||
-		    prBssInfo->u4RsnSelectedAKMSuite ==	RSN_AKM_SUITE_OWE) {
+#if CFG_SUPPORT_PASN
+			prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN ||
+#endif
+			prBssInfo->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_OWE) {
 			kalP2PIndicateRxMgmtFrame(prAdapter,
 				prAdapter->prGlueInfo,
 				prSwRfb,
 				FALSE,
 				(uint8_t)prBssInfo->u4PrivateData,
 				(uint32_t)prBssInfo->ucLinkIndex);
-			DBGLOG(AAA, INFO, "Forward RxAuth\n");
+			DBGLOG(AAA, INFO, "Forward RxAuth Seq: %d\n",
+				prAuthFrame->u2AuthTransSeqNo);
+
+#if CFG_SUPPORT_PASN
+			if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN &&
+				prAuthFrame->u2AuthTransSeqNo ==
+					AUTH_TRANSACTION_SEQ_3) {
+				DBGLOG(AAA, INFO, "Receive PASN AUTH 3\n");
+				prStaRec->eAuthAssocState =
+					SAA_STATE_EXTERNAL_AUTH;
+				cnmTimerStopTimer(prAdapter,
+					&prStaRec->rTxReqDoneOrRxRespTimer);
+
+				cnmStaRecChangeState(prAdapter, prStaRec,
+					STA_STATE_3);
+
+				return;
+			}
+#endif
 			if (prStaRec && prStaRec->fgIsInUse) {
 				cnmTimerStopTimer(prAdapter,
 					&prStaRec->rTxReqDoneOrRxRespTimer);

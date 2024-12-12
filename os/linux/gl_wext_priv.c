@@ -22,6 +22,7 @@
 #include "gl_wext_priv.h"
 #include "gl_cmd_validate.h"
 #include "gl_hook_api.h"
+#include "wlan_lib.h"
 
 #if CFG_SUPPORT_QA_TOOL
 #include "gl_ate_agent.h"
@@ -42,6 +43,10 @@
 #if CFG_SUPPORT_NAN
 #include "nan_data_engine.h"
 #include "nan_sec.h"
+#endif
+
+#if CFG_SUPPORT_RTT
+#include "rtt.h"
 #endif
 
 #if CFG_SUPPORT_CSI
@@ -22609,12 +22614,16 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 	uint8_t aucTestMacAddr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct RTT_CAPABILITIES rRttCapabilities;
-	struct PARAM_RTT_REQUEST request;
+	struct PARAM_RTT_REQUEST rttReq;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4BufLen;
 	uint8_t ucType = 0;
 	uint32_t u4Freq = 0;
 	uint8_t ucWidth = WIFI_CHAN_WIDTH_80;
+	uint8_t ucI2rLmrFeedback = 0;
+	uint8_t ucImmeR2iFeedback = 0;
+	uint8_t ucImmeI2rFeedback = 0;
+	uint8_t ucForceReplyI2rLmr = 0;
 	uint32_t u4Ret;
 
 	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
@@ -22625,7 +22634,6 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 	if (i4Argc < 2)
 		goto out;
 
-	DBGLOG(REQ, TRACE, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
 	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucType);
 	if (u4Ret) {
 		DBGLOG(REQ, ERROR, "parse ucType error %d\n", u4Ret);
@@ -22636,17 +22644,17 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 	if (ucType == 0) {
 		kalMemZero(&rRttCapabilities, sizeof(rRttCapabilities));
 		rStatus = kalIoctl(prGlueInfo,
-			wlanoidGetRttCapabilities,
-			&rRttCapabilities,
-			sizeof(struct RTT_CAPABILITIES),
-			&u4BufLen);
+				wlanoidGetRttCapabilities,
+				&rRttCapabilities,
+				sizeof(struct RTT_CAPABILITIES),
+				&u4BufLen);
 	}
 
-	/* test CMD_ID_RTT_RANGE_REQUEST */
+	/* test CMD_ID_RTT_RANGE_REQUEST: 11mc/11az ranging */
 	if (ucType == 1 /* mc */ || ucType == 2 /* az */) {
-		kalMemZero(&request, sizeof(request));
-		request.fgEnable = true;
-		request.ucConfigNum = 1;
+		kalMemZero(&rttReq, sizeof(rttReq));
+		rttReq.fgEnable = true;
+		rttReq.ucConfigNum = 1;
 
 		/* Peer mac */
 		if (i4Argc > 2)
@@ -22660,41 +22668,74 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 		if (i4Argc > 4)
 			u4Ret = kalkStrtou8(apcArgv[4], 0, &ucWidth);
 
-		COPY_MAC_ADDR(request.arRttConfigs[0].aucAddr, aucTestMacAddr);
-		request.arRttConfigs[0].eType = (ucType == 1) ?
+		/* 11az: I2R LMR feedback */
+		if (i4Argc > 5)
+			u4Ret = kalkStrtou8(apcArgv[5], 0, &ucI2rLmrFeedback);
+
+		/* 11az: Immeidate R2I feedback */
+		if (i4Argc > 6)
+			u4Ret = kalkStrtou8(apcArgv[6], 0, &ucImmeR2iFeedback);
+
+		/* 11az: Immediate I2R feedback */
+		if (i4Argc > 7)
+			u4Ret = kalkStrtou8(apcArgv[7], 0, &ucImmeI2rFeedback);
+
+		/* 11az: Force reply I2R LMR */
+		if (i4Argc > 8)
+			u4Ret = kalkStrtou8(apcArgv[8], 0,
+					&ucForceReplyI2rLmr);
+
+		COPY_MAC_ADDR(rttReq.arRttConfigs[0].aucAddr, aucTestMacAddr);
+		rttReq.arRttConfigs[0].eType = (ucType == 1) ?
 			RTT_TYPE_2_SIDED : RTT_TYPE_2_SIDED_11AZ_NTB;
-		request.arRttConfigs[0].ePeer = RTT_PEER_AP;
-		request.arRttConfigs[0].rChannel.width =
+		rttReq.arRttConfigs[0].ePeer = RTT_PEER_AP;
+		rttReq.arRttConfigs[0].rChannel.width =
 			(enum WIFI_CHANNEL_WIDTH) ucWidth;
-		request.arRttConfigs[0].rChannel.center_freq =
+		rttReq.arRttConfigs[0].rChannel.center_freq =
 			u4Freq ? u4Freq : 5180;
-		request.arRttConfigs[0].rChannel.center_freq0 =
-			u4Freq ? u4Freq : 5180;
-		request.arRttConfigs[0].rChannel.center_freq1 = 0;
-		request.arRttConfigs[0].u2BurstPeriod = 0;
-		request.arRttConfigs[0].u2NumBurstExponent = 0;
-		request.arRttConfigs[0].u2PreferencePartialTsfTimer = 0;
-		request.arRttConfigs[0].ucNumFramesPerBurst = 5;
-		request.arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
-		request.arRttConfigs[0].ucNumRetriesPerFtmr = 0;
-		request.arRttConfigs[0].ucLciRequest = 0;
-		request.arRttConfigs[0].ucLcrRequest = 0;
-		request.arRttConfigs[0].ucBurstDuration = 11;
-		request.arRttConfigs[0].ePreamble = WIFI_RTT_PREAMBLE_VHT;
-		request.arRttConfigs[0].eBw = rttBssBwToRttBw(ucWidth);
-		request.arRttConfigs[0].ucASAP = 1;
-		request.arRttConfigs[0].ucFtmMinDeltaTime = 40;
+		rttReq.arRttConfigs[0].rChannel.center_freq0 = 0;
+		rttReq.arRttConfigs[0].rChannel.center_freq1 = 0;
+		rttReq.arRttConfigs[0].u2BurstPeriod = 0;
+		rttReq.arRttConfigs[0].u2NumBurstExponent = 0;
+		rttReq.arRttConfigs[0].u2PreferencePartialTsfTimer = 0;
+		rttReq.arRttConfigs[0].ucNumFramesPerBurst = 14;
+		rttReq.arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
+		rttReq.arRttConfigs[0].ucNumRetriesPerFtmr = 0;
+		rttReq.arRttConfigs[0].ucLciRequest = 0;
+		rttReq.arRttConfigs[0].ucLcrRequest = 0;
+		rttReq.arRttConfigs[0].ucBurstDuration = 11;
+		rttReq.arRttConfigs[0].ePreamble = WIFI_RTT_PREAMBLE_VHT;
+		rttReq.arRttConfigs[0].eBw = rttBssBwToRttBw(ucWidth);
+		rttReq.arRttConfigs[0].ucASAP = 1;
+		rttReq.arRttConfigs[0].ucFtmMinDeltaTime = 40;
+
+		/* 11az configruation */
+		rttReq.arRttConfigs[0].ucI2rLmrFeedback = ucI2rLmrFeedback;
+		rttReq.arRttConfigs[0].ucImmeR2iFeedback = ucImmeR2iFeedback;
+		rttReq.arRttConfigs[0].ucImmeI2rFeedback = ucImmeI2rFeedback;
+		rttReq.arRttConfigs[0].ucForceReplyI2rLmr = ucForceReplyI2rLmr;
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
-			&request,
-			sizeof(struct PARAM_RTT_REQUEST),
-			&u4BufLen);
+				&rttReq,
+				sizeof(struct PARAM_RTT_REQUEST),
+				&u4BufLen);
 	}
+
+	/* test CMD_ID_RTT_RANGE_REQUEST: cancel ranging */
+	if (ucType == 3) {
+		kalMemZero(&rttReq, sizeof(rttReq));
+		rttReq.fgEnable = false;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
+				&rttReq,
+				sizeof(struct PARAM_RTT_REQUEST),
+				&u4BufLen);
+	}
+
 out:
 	return (rStatus == WLAN_STATUS_SUCCESS) ? 0 : -1;
 }
 #endif
-
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int priv_driver_set_pwr_level(struct net_device *prNetDev,

@@ -262,7 +262,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_PATH_COMPASATION,        /* 0x43 (Set) */
 	CMD_ID_RTT_GET_CAPABILITIES = 0x44, /* 0x44 (Query) */
 	CMD_ID_RTT_RANGE_REQUEST,           /* 0x45 (Set) */
-	CMD_ID_GET_RTT_RANGE_UPDATE,        /* 0x46 (Set), NO USE */
+	CMD_ID_RTT_INSTALL_LTF_KEYSEED,     /* 0x46 (Set) */
 	CMD_ID_SET_BATCH_REQ,               /* 0x47 (Set), NO USE */
 	CMD_ID_SET_NVRAM_SETTINGS,          /* 0x48 (Set) */
 	CMD_ID_SET_COUNTRY_POWER_LIMIT,     /* 0x49 (Set) */

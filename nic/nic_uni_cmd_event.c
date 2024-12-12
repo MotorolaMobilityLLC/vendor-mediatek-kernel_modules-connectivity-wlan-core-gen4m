@@ -158,6 +158,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_SUPPORT_RTT == 1)
 	[CMD_ID_RTT_GET_CAPABILITIES] = nicUniCmdRttGetCapabilities,
 	[CMD_ID_RTT_RANGE_REQUEST] = nicUniCmdRttRangeRequest,
+	[CMD_ID_RTT_INSTALL_LTF_KEYSEED] = nicUniCmdRttInstallLtfKeyseed,
 #endif
 #if (CFG_SUPPORT_NAN == 1)
 	[CMD_ID_NAN_EXT_CMD] = nicUniCmdNan,
@@ -7219,7 +7220,9 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		return WLAN_STATUS_INVALID_DATA;
 
 	max_cmd_len = sizeof(struct UNI_CMD_RTT);
-	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC)
+	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11AZ_NTB)
+		max_cmd_len += sizeof(struct UNI_CMD_RTT_RANGE_REQ_AZ_NTB_T);
+	else if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC)
 		max_cmd_len += sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
 	else
 		return WLAN_STATUS_INVALID_DATA;
@@ -7231,7 +7234,6 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_RTT *) entry->pucInfoBuffer;
-
 	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC) {
 		struct UNI_CMD_RTT_RANGE_REQ_MC_T *tag;
 
@@ -7246,13 +7248,37 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		for (i = 0; i < cmd->ucConfigNum; i++) {
 			kalMemCopy(&tag->arRttConfigs[i],
 				&cmd->arRttConfigs[i],
-				sizeof(struct RTT_CONFIG));
+				sizeof(struct RTT_CONFIG_MC));
 		}
 
 		dumpMemory32((uint32_t *)tag->arRttConfigs,
-			sizeof(struct RTT_CONFIG) * CFG_RTT_MAX_CANDIDATES);
+			sizeof(struct RTT_CONFIG_MC) *
+			CFG_RTT_MAX_CANDIDATES);
 
-		DBGLOG(REQ, INFO, "rtt request, seq:%d, enable:%d\n",
+		DBGLOG(REQ, INFO, "11mc rtt request, seq:%d, enable:%d\n",
+			tag->ucSeqNum, tag->fgEnable);
+	} else if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11AZ_NTB) {
+		struct UNI_CMD_RTT_RANGE_REQ_AZ_NTB_T *tag;
+
+		tag = (struct UNI_CMD_RTT_RANGE_REQ_AZ_NTB_T *)
+			uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ_AZ_NTB;
+		tag->u2Length = sizeof(*tag);
+		tag->ucSeqNum = cmd->ucSeqNum;
+		tag->fgEnable = cmd->fgEnable;
+		tag->ucConfigNum = cmd->ucConfigNum;
+
+		for (i = 0; i < cmd->ucConfigNum; i++) {
+			kalMemCopy(&tag->arRttConfigs[i],
+				&cmd->arRttConfigs[i],
+				sizeof(struct RTT_CONFIG_AZ_NTB));
+		}
+
+		dumpMemory32((uint32_t *)tag->arRttConfigs,
+			sizeof(struct RTT_CONFIG_AZ_NTB) *
+			CFG_RTT_MAX_CANDIDATES);
+
+		DBGLOG(REQ, INFO, "11az rtt request, seq:%d, enable:%d\n",
 			tag->ucSeqNum, tag->fgEnable);
 	}
 
@@ -7260,7 +7286,48 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
-#endif
+
+uint32_t nicUniCmdRttInstallLtfKeyseed(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_RTT_INSTALL_LTF_KEYSEED *cmd;
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_INSTALL_LTE_KEYSEED *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+		sizeof(struct UNI_CMD_STAREC_INSTALL_LTE_KEYSEED);
+
+	if (info->ucCID != CMD_ID_RTT_INSTALL_LTF_KEYSEED ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_RTT_INSTALL_LTF_KEYSEED *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
+
+	tag = (struct UNI_CMD_STAREC_INSTALL_LTE_KEYSEED *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_INSTALL_LTF_KEYSEED;
+	tag->u2Length = sizeof(*tag);
+	tag->ucAddRemove = cmd->ucAddRemove;
+	tag->ucLtfKeyseedLen = cmd->ucLtfKeyseedLen;
+	tag->u2WlanIdx = cmd->u2WlanIdx;
+	kalMemCopy(tag->aucLtfKeyseed, cmd->aucLtfKeyseed,
+		cmd->ucLtfKeyseedLen);
+
+	DBGLOG(REQ, INFO,
+		"add=%d, wlanIdx=%d, LftKeyseedLen=%d\n",
+		tag->ucAddRemove, tag->u2WlanIdx, tag->ucLtfKeyseedLen);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_NAN
 struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,

@@ -1313,6 +1313,9 @@ enum ENUM_PARAM_NAN_MODE_T {
 #if CFG_SUPPORT_NAN
 #define IS_STA_NAN_TYPE(_prStaRec) ((_prStaRec->eStaType) & STA_TYPE_NAN_MASK)
 #endif
+#if CFG_SUPPORT_RTT
+#define IS_STA_RTT_TYPE(_prStaRec) ((_prStaRec->eStaSubtype) == STA_SUBTYPE_RTT)
+#endif
 
 /* The ENUM_STA_TYPE_T accounts for
  * ENUM_NETWORK_TYPE_T and ENUM_STA_ROLE_INDEX_T.
@@ -1345,6 +1348,13 @@ enum ENUM_STA_TYPE {
 	STA_TYPE_DLS_PEER = (STA_TYPE_LEGACY_MASK | STA_TYPE_DLS_MASK),
 #if CFG_SUPPORT_NAN
 	STA_TYPE_NAN = (STA_TYPE_NAN_MASK),
+#endif
+};
+
+enum ENUM_STA_SUBTYPE {
+	STA_SUBTYPE_DEFAULT = 0,
+#if CFG_SUPPORT_RTT
+	STA_SUBTYPE_RTT,
 #endif
 };
 

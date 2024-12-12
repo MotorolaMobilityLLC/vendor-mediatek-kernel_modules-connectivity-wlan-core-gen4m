@@ -254,6 +254,51 @@ const struct nla_policy nla_set_rtt_config_policy[
 	[RTT_ATTRIBUTE_TARGET_BW] = {.type = NLA_U8},
 };
 
+/* PASN */
+const struct nla_policy nla_pasn_policy[
+		QCA_WLAN_VENDOR_ATTR_PASN_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_PASN_INVALID] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PASN_ACTION] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PASN_PEERS] = {
+		.type = NLA_NESTED },
+};
+
+const struct nla_policy nla_pasn_peer_policy[
+		QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_PASN_PEER_INVALID] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PASN_PEER_SRC_ADDR] = {
+		.type = NLA_BINARY, .len = MAC_ADDR_LEN },
+	[QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAC_ADDR] = {
+		.type = NLA_BINARY, .len = MAC_ADDR_LEN },
+	[QCA_WLAN_VENDOR_ATTR_PASN_PEER_LTF_KEYSEED_REQUIRED] = {
+		.type = NLA_FLAG },
+	[QCA_WLAN_VENDOR_ATTR_PASN_PEER_STATUS_SUCCESS] = {
+		.type = NLA_FLAG },
+};
+
+const struct nla_policy nla_secure_ranging_ctx_policy[
+		QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_INVALID] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_ACTION] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_SRC_ADDR] = {
+		.type = NLA_BINARY, .len = MAC_ADDR_LEN },
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_PEER_MAC_ADDR] = {
+		.type = NLA_BINARY, .len = MAC_ADDR_LEN },
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_SHA_TYPE] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_TK] = {
+		.type = NLA_BINARY, .len = 512},
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_CIPHER] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_LTF_KEYSEED] = {
+		.type = NLA_BINARY, .len = 512 },
+};
+
 #if CFG_SUPPORT_CSI
 const struct nla_policy nla_get_csi_policy[
 		WIFI_ATTRIBUTE_CSI_MAX + 1] = {
@@ -6150,4 +6195,274 @@ exit:
 
 	return rStatus;
 }
+
+#if CFG_SUPPORT_PASN
+int mtk_cfg80211_vendor_pasn(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	const void *data,
+	int data_len)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *attr;
+	struct nlattr *tb
+		[QCA_WLAN_VENDOR_ATTR_PASN_MAX + 1] = {};
+	struct nlattr *cfg
+		[QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAX + 1] = {};
+	unsigned int n_peers = 0, idx = 0;
+	int rem;
+	struct MSG_PASN_RESP *prMsg;
+	uint32_t msg_size;
+	uint8_t *buf;
+
+	if (!wiphy || !wdev || !data || !data_len) {
+		DBGLOG(REQ, ERROR, "input data null.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
+		rStatus = -EFAULT;
+		goto exit;
+	}
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		rStatus = -EFAULT;
+		goto exit;
+	}
+
+	if (NLA_PARSE(tb, QCA_WLAN_VENDOR_ATTR_PASN_MAX,
+		data,
+		data_len,
+		nla_pasn_policy)) {
+		DBGLOG(REQ, ERROR, "NLP_PARSE failed\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	if (!tb[QCA_WLAN_VENDOR_ATTR_PASN_ACTION] &&
+		!tb[QCA_WLAN_VENDOR_ATTR_PASN_PEERS]) {
+		DBGLOG(REQ, ERROR, "Invalid ATTR\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	msg_size = sizeof(struct MSG_PASN_RESP);
+	prMsg = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, msg_size);
+	if (prMsg == NULL) {
+		DBGLOG(REQ, ERROR, "allocate msg req. fail.\n");
+		rStatus = -ENOMEM;
+		goto exit;
+	}
+
+	kalMemSet(prMsg, 0, msg_size);
+
+	prMsg->rMsgHdr.eMsgId = MID_PASN_RESP;
+
+	nla_for_each_nested(attr, tb[QCA_WLAN_VENDOR_ATTR_PASN_PEERS], rem)
+		n_peers++;
+
+	if (n_peers > PASN_MAX_PEERS) {
+		DBGLOG(REQ, ERROR, "Too many peers: %d", n_peers);
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	nla_for_each_nested(attr, tb[QCA_WLAN_VENDOR_ATTR_PASN_PEERS], rem) {
+		struct nlattr *nl_src, *nl_peer, *nl_success;
+
+		if (NLA_PARSE_NESTED(cfg, QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAX,
+			attr, nla_pasn_peer_policy)) {
+			DBGLOG(REQ, ERROR, "Invalid peer ATTR.\n");
+			rStatus = -EINVAL;
+			goto exit;
+		}
+
+		nl_src = cfg[QCA_WLAN_VENDOR_ATTR_PASN_PEER_SRC_ADDR];
+		nl_peer = cfg[QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAC_ADDR];
+		nl_success = cfg[QCA_WLAN_VENDOR_ATTR_PASN_PEER_STATUS_SUCCESS];
+
+		if (nl_src) {
+			buf = nla_data(nl_src);
+			COPY_MAC_ADDR(
+				prMsg->rPasnRespEvt.arPeer[idx].aucOwnAddr,
+				buf);
+		}
+
+		if (nl_peer) {
+			buf = nla_data(nl_peer);
+			COPY_MAC_ADDR(
+				prMsg->rPasnRespEvt.arPeer[idx].aucPeerAddr,
+				buf);
+		}
+
+		prMsg->rPasnRespEvt.arPeer[idx].eStatus = nl_success ?
+			PASN_STATUS_SUCCESS : PASN_STATUS_FAILURE;
+
+		DBGLOG(REQ, INFO,
+			"src:"MACSTR", peer:"MACSTR", success=%d\n",
+			MAC2STR(prMsg->rPasnRespEvt.arPeer[idx].aucOwnAddr),
+			MAC2STR(prMsg->rPasnRespEvt.arPeer[idx].aucPeerAddr),
+			prMsg->rPasnRespEvt.arPeer[idx].eStatus);
+
+		idx++;
+	}
+	prMsg->rPasnRespEvt.ucNumPeers = n_peers;
+
+	DBGLOG(REQ, INFO, "pasn_resp, peers: %d\n", n_peers);
+
+	mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsg,
+			MSG_SEND_METHOD_BUF);
+
+exit:
+
+	return rStatus;
+}
+
+int mtk_cfg80211_vendor_secure_ranging_ctx(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	const void *data,
+	int data_len)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *tb
+		[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_MAX + 1] = {};
+	struct MSG_PASN_SECURE_RANGING_CTX *prMsg;
+	uint32_t msg_size;
+	uint8_t ucTkLen, ucLtfKeyseedLen;
+	uint8_t *buf;
+
+	if (!wiphy || !wdev || !data || !data_len) {
+		DBGLOG(REQ, ERROR, "input data null.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
+		rStatus = -EFAULT;
+		goto exit;
+	}
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		rStatus = -EFAULT;
+		goto exit;
+	}
+
+	if (NLA_PARSE(tb, QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_MAX,
+		data,
+		data_len,
+		nla_secure_ranging_ctx_policy)) {
+		DBGLOG(REQ, ERROR, "Invalid ATTR.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	if (!tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_ACTION] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_SRC_ADDR] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_PEER_MAC_ADDR]) {
+		DBGLOG(REQ, ERROR, "Invalid ATTR.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	msg_size = sizeof(struct MSG_PASN_SECURE_RANGING_CTX);
+
+	prMsg = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, msg_size);
+	if (prMsg == NULL) {
+		DBGLOG(REQ, ERROR, "allocate msg req. fail.\n");
+		rStatus = -ENOMEM;
+		goto exit;
+	}
+
+	kalMemSet(prMsg, 0, msg_size);
+
+	prMsg->rMsgHdr.eMsgId = MID_PASN_SECURE_RANGING_CTX;
+
+	prMsg->rRangingCtx.u4Action = nla_get_u32(
+		tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_ACTION]);
+
+	buf = nla_data(
+		tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_SRC_ADDR]);
+	COPY_MAC_ADDR(prMsg->rRangingCtx.aucOwnAddr, buf);
+
+	buf = nla_data(
+		tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_PEER_MAC_ADDR]);
+	COPY_MAC_ADDR(prMsg->rRangingCtx.aucPeerAddr, buf);
+
+	if (tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_CIPHER]) {
+		prMsg->rRangingCtx.u4Cipher = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_CIPHER]);
+	}
+
+	if (tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_SHA_TYPE]) {
+		prMsg->rRangingCtx.u4ShaType = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_SHA_TYPE]);
+	}
+
+	if (tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_TK]) {
+		buf = nla_data(tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_TK]);
+		ucTkLen = nla_len(
+			tb[QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_TK]);
+
+		if (ucTkLen <= 32) {
+			prMsg->rRangingCtx.ucTkLen = ucTkLen;
+			kalMemCopy(prMsg->rRangingCtx.aucTk, buf,
+				prMsg->rRangingCtx.ucTkLen);
+		} else {
+			DBGLOG(REQ, ERROR,
+				"Exceed max TK length = %d\n",
+				ucTkLen);
+		}
+	}
+
+#define CTX_LTF_KEYSEED QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_LTF_KEYSEED
+	if (tb[CTX_LTF_KEYSEED]) {
+		buf = nla_data(tb[CTX_LTF_KEYSEED]);
+		ucLtfKeyseedLen = nla_len(tb[CTX_LTF_KEYSEED]);
+
+		if (ucLtfKeyseedLen <= 48) {
+			prMsg->rRangingCtx.ucLtfKeyseedLen = ucLtfKeyseedLen;
+			kalMemCopy(prMsg->rRangingCtx.aucLtfKeyseed, buf,
+				prMsg->rRangingCtx.ucLtfKeyseedLen);
+		} else {
+			DBGLOG(REQ, ERROR,
+				"Exceed max LTF keyseed length = %d\n",
+				ucLtfKeyseedLen);
+		}
+	}
+
+	DBGLOG(REQ, INFO,
+		"Ranging ctx, action=%d, src=" MACSTR ", peer=" MACSTR "\n",
+		prMsg->rRangingCtx.u4Action,
+		MAC2STR(prMsg->rRangingCtx.aucOwnAddr),
+		MAC2STR(prMsg->rRangingCtx.aucPeerAddr));
+
+	DBGLOG(REQ, INFO,
+		"Ranging ctx, TK len=%d, LTF keyseed len=%d, Cipher=0x%x\n",
+		prMsg->rRangingCtx.ucTkLen,
+		prMsg->rRangingCtx.ucLtfKeyseedLen,
+		prMsg->rRangingCtx.u4Cipher);
+
+	mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsg,
+			MSG_SEND_METHOD_BUF);
+exit:
+	return rStatus;
+}
+
+#endif /* CFG_SUPPORT_PASN */
 

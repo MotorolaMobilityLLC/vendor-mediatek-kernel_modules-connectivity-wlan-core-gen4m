@@ -354,6 +354,12 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #endif /* ARP_MONITER_ENABLE */
 	{MID_RSN_FW_DUMP, rsnTriggerDumpWTBL},
 	{MID_RSN_MIC_FAIL, rsnMicErrorHandleMsg},
+
+#if CFG_SUPPORT_PASN
+	{MID_PASN_RESP, pasnHandlePasnResp},
+	{MID_PASN_SECURE_RANGING_CTX, pasnHandleSecureRangingCtx},
+#endif
+
 	{MID_UEVENT_REQ, kalSendUeventHandler},
 };
 

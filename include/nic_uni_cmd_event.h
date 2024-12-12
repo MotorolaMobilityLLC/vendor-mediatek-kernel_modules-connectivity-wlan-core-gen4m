@@ -853,6 +853,7 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_FAST_ALL		= 0x2C,
 	UNI_CMD_STAREC_TAG_MLR_INFO		= 0x2D,
 	UNI_CMD_STAREC_TAG_T2LM			= 0x3E,
+	UNI_CMD_STAREC_TAG_INSTALL_LTF_KEYSEED	= 0x40,
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
 
@@ -1194,6 +1195,17 @@ struct UNI_CMD_STAREC_T2LM {
 	uint8_t   ucLinkNumber;
 	uint8_t   audPaddings[3];
 	uint8_t   aucLinkInfo[];
+} __KAL_ATTRIB_PACKED__;
+
+/* LTF keyseed (Tag 0x40) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_INSTALL_LTE_KEYSEED {
+	uint16_t  u2Tag;                 /* Tag = 0x40 */
+	uint16_t  u2Length;
+	uint8_t   ucAddRemove;
+	uint8_t   ucLtfKeyseedLen;
+	uint16_t  u2WlanIdx;
+	uint8_t   aucLtfKeyseed[48];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
@@ -4637,10 +4649,11 @@ struct UNI_CMD_RTT {
 	/* tlv */
 	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
-	*   TAG                            |  ID  | structure
-	*   -------------------------------|------|--------------
-	*   UNI_CMD_RTT_TAG_GET_CAPA       | 0x00 | UNI_CMD_RTT_GET_CAPA_T
-	*   UNI_CMD_RTT_TAG_RANGE_REQ_MC   | 0x01 | UNI_CMD_RTT_RANGE_REQ_MC_T
+	*   TAG                              |  ID  | structure
+	*   ---------------------------------|------|--------------------------
+	*   UNI_CMD_RTT_TAG_GET_CAPA         | 0x00 | UNI_CMD_RTT_GET_CAPA_T
+	*   UNI_CMD_RTT_TAG_RANGE_REQ_MC     | 0x01 | UNI_CMD_RTT_REQ_MC_T
+	*   UNI_CMD_RTT_TAG_RANGE_REQ_AZ_NTB | 0x03 | UNI_CMD_RTT_REQ_AZ_NTB_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -4648,6 +4661,7 @@ struct UNI_CMD_RTT {
 enum ENUM_UNI_CMD_RTT_TAG {
 	UNI_CMD_RTT_TAG_GET_CAPA = 0,
 	UNI_CMD_RTT_TAG_RANGE_REQ_MC = 1,      /* 11MC */
+	UNI_CMD_RTT_TAG_RANGE_REQ_AZ_NTB = 3,  /* 11AZ NTB */
 	UNI_CMD_RTT_TAG_NUM
 };
 /* Get RTT Capabilities (Tag0) */
@@ -4658,6 +4672,36 @@ struct UNI_CMD_RTT_GET_CAPA_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* 11mc ranging request (Tag1) */
+struct RTT_CONFIG_MC {
+	uint8_t aucAddr[MAC_ADDR_LEN]; /* peer device mac address */
+	uint8_t eType; /* enum ENUM_RTT_TYPE */
+	uint8_t ePeer; /* enum ENUM_RTT_PEER_TYPE */
+	struct WIFI_CHANNEL_INFO rChannel;
+	uint16_t u2BurstPeriod;
+	uint16_t u2NumBurstExponent;
+	uint16_t u2PreferencePartialTsfTimer;
+	uint8_t ucNumFramesPerBurst;
+	uint8_t ucNumRetriesPerRttFrame;
+	uint8_t ucNumRetriesPerFtmr;
+	uint8_t ucLciRequest;
+	uint8_t ucLcrRequest;
+	uint8_t ucBurstDuration;
+	uint8_t ePreamble; /* enum ENUM_WIFI_RTT_PREAMBLE */
+	uint8_t eBw; /* enum ENUM_WIFI_RTT_BW */
+
+	/* bellow are for internal useages */
+	uint8_t eBand; /* enum ENUM_BAND */
+	uint8_t ucPrimaryChannel;
+	uint8_t ucS1;
+	uint8_t ucS2;
+	uint8_t eChannelWidth; /* enum ENUM_CHANNEL_WIDTH */
+	uint8_t ucBssIndex;
+	uint8_t eEventType;  /* enum ENUM_LOC_EVENT_TYPE_T*/
+	uint8_t ucASAP;
+	uint8_t ucFtmMinDeltaTime; //mc: UNIT:100us
+	uint8_t ucReserved; // 4 byte align
+};
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RTT_RANGE_REQ_MC_T {
 	uint16_t u2Tag;
@@ -4666,8 +4710,59 @@ struct UNI_CMD_RTT_RANGE_REQ_MC_T {
 	uint8_t fgEnable;              /* request or cancel */
 	uint8_t ucConfigNum;
 	uint8_t ucPaddings[5];
-	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CANDIDATES];
+	struct RTT_CONFIG_MC arRttConfigs[CFG_RTT_MAX_CANDIDATES];
 } __KAL_ATTRIB_PACKED__;
+
+/* 11az NTB ranging request (Tag3) */
+struct RTT_CONFIG_AZ_NTB {
+	uint8_t aucAddr[MAC_ADDR_LEN]; /* peer device mac address */
+	uint8_t eType; /* enum ENUM_RTT_TYPE */
+	uint8_t ePeer; /* enum ENUM_RTT_PEER_TYPE */
+	struct WIFI_CHANNEL_INFO rChannel;
+	uint16_t u2BurstPeriod;
+	uint16_t u2NumBurstExponent;
+	uint16_t u2PreferencePartialTsfTimer;
+	uint8_t ucNumFramesPerBurst;
+	uint8_t ucNumRetriesPerRttFrame;
+	uint8_t ucNumRetriesPerFtmr;
+	uint8_t ucLciRequest;
+	uint8_t ucLcrRequest;
+	uint8_t ucBurstDuration;
+	uint8_t ePreamble; /* enum ENUM_WIFI_RTT_PREAMBLE */
+	uint8_t eBw; /* enum ENUM_WIFI_RTT_BW */
+
+	/* bellow are for internal useages */
+	uint8_t eBand; /* enum ENUM_BAND */
+	uint8_t ucPrimaryChannel;
+	uint8_t ucS1;
+	uint8_t ucS2;
+	uint8_t eChannelWidth; /* enum ENUM_CHANNEL_WIDTH */
+	uint8_t ucBssIndex;
+	uint8_t eEventType;  /* enum ENUM_LOC_EVENT_TYPE_T*/
+	uint8_t ucASAP;
+	uint8_t ucFtmMinDeltaTime; //mc: UNIT:100us
+	uint8_t ucReserved; // 4 byte align
+
+	/* 11az */
+	uint64_t u8NtbMinMeasurementTime;
+	uint64_t u8NtbMaxMeasurementTime;
+	uint8_t ucI2rLmrFeedback;
+	uint8_t ucImmeR2iFeedback;
+	uint8_t ucImmeI2rFeedback;
+	uint8_t ucForceReplyI2rLmr;
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RTT_RANGE_REQ_AZ_NTB_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSeqNum;
+	uint8_t fgEnable;              /* request or cancel */
+	uint8_t ucConfigNum;
+	uint8_t ucPaddings[5];
+	struct RTT_CONFIG_AZ_NTB arRttConfigs[CFG_RTT_MAX_CANDIDATES];
+} __KAL_ATTRIB_PACKED__;
+
 #endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_NAN
@@ -9088,6 +9183,8 @@ uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
 uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdRttInstallLtfKeyseed(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
 

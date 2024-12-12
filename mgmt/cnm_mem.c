@@ -791,6 +791,17 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
+#if CFG_SUPPORT_RTT
+	if (IS_STA_RTT_TYPE(prStaRec)) {
+		log_dbg(CNM, INFO,
+			"Don't free StaRec for RTT, BssIdx=%d, StaRecIdx=%d, InUse=%d\n",
+			prStaRec->ucBssIndex,
+			prStaRec->ucIndex,
+			prStaRec->fgIsInUse);
+		return;
+	}
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecUnregister(prAdapter, prStaRec);
 #endif

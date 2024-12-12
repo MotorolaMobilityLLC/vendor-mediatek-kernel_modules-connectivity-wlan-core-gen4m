@@ -4450,8 +4450,13 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_SWCR
 	swCrDebugInit(prAdapter);
 #endif /* CFG_SUPPORT_SWCR */
+
 #if CFG_SUPPORT_RTT
 	rttInit(prAdapter);
+#endif
+
+#if CFG_SUPPORT_PASN
+	pasnInit(prAdapter);
 #endif
 
 #if CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT
@@ -4508,6 +4513,10 @@ void nicUninitMGMT(struct ADAPTER *prAdapter)
 #endif
 #if CFG_SUPPORT_RTT
 	rttUninit(prAdapter);
+#endif
+
+#if CFG_SUPPORT_PASN
+	pasnUninit(prAdapter);
 #endif
 }
 

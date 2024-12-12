@@ -658,6 +658,7 @@
 #define AUTH_ALGORITHM_NUM_FILS_SK		4 /* FILS - Shared key */
 #define AUTH_ALGORITHM_NUM_FILS_SK_PFS		5 /* FILS - SK with PFS */
 #define AUTH_ALGORITHM_NUM_FILS_PK		6 /* FILS - Public key */
+#define AUTH_ALGORITHM_NUM_PASN			7 /* PASN */
 #define AUTH_ALGORITHM_NUM                      0xFF
 
 /* 7.3.1.2 Authentication Transaction Sequence Number field */

@@ -2971,44 +2971,48 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			else
 				DBGLOG(AIS, INFO, "No req anymore");
 
-			if (prAisReq == NULL ||
-			    prAisReq->eReqType == AIS_REQUEST_RECONNECT) {
-				if (prAisReq != NULL) {
-					aisDeactivateAllLink(prAdapter,
-							prAisFsmInfo);
-#if CFG_SUPPORT_DBDC
-					if (cnmDBDCIsReqPeivilegeLock()) {
-						DBGLOG(AIS, INFO,
-						"DBDC lock: skip activate\n");
-					} else
+			if (prAisReq == NULL) {
+#if CFG_SUPPORT_RTT
+				if (rttIsRunning(prAdapter)) {
+					DBGLOG(AIS, INFO,
+					"RTT: skip deactivate\n");
+				} else
 #endif
-					{
-					    /* sync with firmware */
-					    nicActivateNetwork(prAdapter,
-						prAisBssInfo->ucBssIndex);
-
-					    SET_NET_PWR_STATE_ACTIVE(prAdapter,
-						prAisBssInfo->ucBssIndex);
-					}
-					eNextState = AIS_STATE_SEARCH;
-					fgIsTransition = TRUE;
-				} else {
+				{
 					SET_NET_PWR_STATE_IDLE(prAdapter,
-					prAisBssInfo->ucBssIndex);
+						prAisBssInfo->ucBssIndex);
 					/* If sched scan is ongoing, let sched
 					 * scan deactivate newtwork when sched
-					 * scan done.
+					 * scan is done.
 					 */
 					if (!prAdapter->rWifiVar.rScanInfo.
 						fgSchedScanning)
-						aisDeactivateAllLink(prAdapter,
-								prAisFsmInfo);
+						aisDeactivateAllLink(
+							prAdapter,
+							prAisFsmInfo);
 				}
+			} else if (prAisReq->eReqType ==
+				AIS_REQUEST_RECONNECT) {
+				aisDeactivateAllLink(prAdapter, prAisFsmInfo);
+#if CFG_SUPPORT_DBDC
+				if (cnmDBDCIsReqPeivilegeLock()) {
+					DBGLOG(AIS, INFO,
+					"DBDC lock: skip activate\n");
+				} else
+#endif
+				{
+					/* sync with firmware */
+					nicActivateNetwork(prAdapter,
+						prAisBssInfo->ucBssIndex);
 
-				if (prAisReq) {
-					/* free the message */
-					cnmMemFree(prAdapter, prAisReq);
+					SET_NET_PWR_STATE_ACTIVE(prAdapter,
+						prAisBssInfo->ucBssIndex);
 				}
+				eNextState = AIS_STATE_SEARCH;
+				fgIsTransition = TRUE;
+
+				/* free the message */
+				cnmMemFree(prAdapter, prAisReq);
 			} else if (prAisReq->eReqType == AIS_REQUEST_SCAN) {
 				prAisScanReq = (struct AIS_SCAN_REQ *)prAisReq;
 				aisFsmSyncScanReq(prAdapter,

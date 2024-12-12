@@ -20,6 +20,9 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+#if CFG_SUPPORT_PASN
+#include "pasn.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -109,6 +112,17 @@ enum ENUM_RTT_TYPE {
 	RTT_TYPE_2_SIDED_11AZ_NTB = 0x3
 };
 
+/* RTT state */
+enum ENUM_RTT_STATE {
+	RTT_STATE_IDLE,
+	RTT_STATE_RTT_START,
+	RTT_STATE_RTT_DONE,
+#if CFG_SUPPORT_PASN
+	RTT_STATE_PASN,
+#endif
+	RTT_STATE_NUM
+};
+
 struct PARAM_RTT_REQUEST {
 	uint8_t fgEnable;
 	uint8_t ucConfigNum;
@@ -129,9 +143,17 @@ struct RTT_INFO {
 	uint8_t fgIsRunning;
 	uint8_t fgIsContRunning;
 	uint8_t ucSeqNum;
+	uint8_t ucState; /* ENUM_RTT_STATE */
 	struct LINK rResultList;
 	struct TIMER rRttDoneTimer;
 	struct TIMER rRttContTimer; /* Continuous RTT requests */
+#if CFG_SUPPORT_PASN
+	struct CMD_RTT_REQUEST *prRttReq;
+	uint8_t ucNumPeers;
+	struct PASN_PEER arPeer[PASN_MAX_PEERS];
+	uint8_t ucOldBssColorInfo; /* Original bss color in BSSInfo */
+	uint8_t ucOldPhyTypSet; /* Original PhyTypeSet in BSSInfo */
+#endif
 };
 
 /*******************************************************************************
@@ -171,10 +193,31 @@ uint32_t rttHandleRttRequest(struct ADAPTER *prAdapter,
 	struct PARAM_RTT_REQUEST *prRequest,
 	uint8_t ucBssIndex);
 
+uint32_t rttHandleDeauth(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
 void rttEventDone(struct ADAPTER *prAdapter,
 		      struct EVENT_RTT_DONE *prEvent);
 
 void rttEventResult(struct ADAPTER *prAdapter,
 		      struct EVENT_RTT_RESULT *prEvent);
+
+uint8_t rttBssBwToRttBw(uint8_t ucBssBw);
+
+uint8_t rttBwToBssBw(uint8_t eRttBw);
+
+#if CFG_SUPPORT_PASN
+uint32_t rttDoPasn(struct ADAPTER *prAdapter,
+			struct PARAM_RTT_REQUEST *prRequest,
+			uint8_t ucBssIndex);
+
+uint32_t rttCancelPasn(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
+
+uint32_t rttDeleteSecureCtx(struct ADAPTER *prAdapter,
+			struct STA_RECORD *prStaRec,
+			uint8_t ucBssIndex);
+#endif /* CFG_SUPPORT_PASN */
+
 #endif /* CFG_SUPPORT_RTT */
 #endif /* _RTT_H */

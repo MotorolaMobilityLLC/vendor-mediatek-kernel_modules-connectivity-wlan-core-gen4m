@@ -258,6 +258,9 @@ struct STA_RECORD {
 	/* Indicate the role of this STA in the network (for example, P2P GO) */
 	enum ENUM_STA_TYPE eStaType;
 
+	/* Indicate if it's a RTT network */
+	enum ENUM_STA_SUBTYPE eStaSubtype;
+
 	uint8_t ucBssIndex;	/* BSS_INFO_I index */
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

@@ -2885,8 +2885,10 @@
 #ifndef CFG_SUPPORT_RTT
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_SUPPORT_RTT 1
+#define CFG_SUPPORT_PASN 1
 #else
 #define CFG_SUPPORT_RTT 0
+#define CFG_SUPPORT_PASN 0
 #endif
 #endif
 

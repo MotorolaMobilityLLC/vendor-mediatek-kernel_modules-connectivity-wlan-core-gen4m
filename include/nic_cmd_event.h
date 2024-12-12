@@ -3863,6 +3863,13 @@ struct CMD_RTT_REQUEST {
 	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CANDIDATES];
 };
 
+struct CMD_RTT_INSTALL_LTF_KEYSEED {
+	uint8_t  ucAddRemove;
+	uint8_t  ucLtfKeyseedLen;
+	uint16_t u2WlanIdx;
+	uint8_t  aucLtfKeyseed[48];
+};
+
 struct EVENT_RTT_CAPABILITIES {
 	struct RTT_CAPABILITIES rCapabilities;
 };

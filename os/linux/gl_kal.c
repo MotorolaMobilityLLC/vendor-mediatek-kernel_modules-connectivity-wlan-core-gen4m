@@ -16782,6 +16782,78 @@ kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
 	return (void *) skb;
 }
 
+#if CFG_SUPPORT_PASN
+uint8_t kalIndicatePasnEvent(struct ADAPTER *prAdapter,
+		void *pvPasnReq,
+		uint8_t ucBssIdx)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy = NULL;
+	struct net_device *netdev = NULL;
+	struct wireless_dev *wdev = NULL;
+	struct nlattr *peer_cfg, *peer_data;
+	struct PASN_AUTH *prPasnReq = (struct PASN_AUTH *) pvPasnReq;
+	uint32_t dataLen;
+	uint8_t i;
+
+	wiphy = wlanGetWiphy();
+	netdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIdx);
+	if (netdev)
+		wdev = netdev->ieee80211_ptr;
+
+	if (!wiphy || !wdev)
+		return -EINVAL;
+
+	dataLen = sizeof(struct PASN_AUTH);
+
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
+		dataLen, WIFI_EVENT_PASN, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_PASN_ACTION,
+		prPasnReq->eAction) < 0))
+		goto nla_put_failure;
+
+	peer_cfg = nla_nest_start(skb, QCA_WLAN_VENDOR_ATTR_PASN_PEERS);
+	if (!peer_cfg)
+		goto nla_put_failure;
+
+	for (i = 0; i < prPasnReq->ucNumPeers; i++) {
+		peer_data = nla_nest_start(skb, i);
+		if (!peer_data ||
+			unlikely(nla_put(skb,
+				QCA_WLAN_VENDOR_ATTR_PASN_PEER_SRC_ADDR,
+				MAC_ADDR_LEN,
+				prPasnReq->arPeer[i].aucOwnAddr) < 0))
+			goto nla_put_failure;
+
+		if (unlikely(nla_put(skb,
+				QCA_WLAN_VENDOR_ATTR_PASN_PEER_MAC_ADDR,
+				MAC_ADDR_LEN,
+				prPasnReq->arPeer[i].aucPeerAddr) < 0))
+			goto nla_put_failure;
+
+#define LTF_KEYSEED_REQUIRED QCA_WLAN_VENDOR_ATTR_PASN_PEER_LTF_KEYSEED_REQUIRED
+		if (prPasnReq->arPeer[i].ucLtfKeyseedRequired &&
+			unlikely(nla_put_flag(skb, LTF_KEYSEED_REQUIRED) < 0))
+			goto nla_put_failure;
+
+		nla_nest_end(skb, peer_data);
+	}
+	nla_nest_end(skb, peer_cfg);
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return TRUE;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return FALSE;
+}
+#endif
+
 void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo)
 {
 	return (void *)(prGlueInfo->prDevHandler);

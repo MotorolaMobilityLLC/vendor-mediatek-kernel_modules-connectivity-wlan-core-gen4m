@@ -4390,6 +4390,13 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 
 	prStaRec->ucAuthAlgNum = prAuthFrame->u2AuthAlgNum;
 
+#if CFG_SUPPORT_PASN
+	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN) {
+		prStaRec->eStaSubtype = STA_SUBTYPE_RTT;
+		prStaRec->eAuthAssocState = SAA_STATE_EXTERNAL_AUTH;
+	}
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (p2pLinkProcessRxAuthReqFrame(prAdapter,
 		prP2pBssInfo, prStaRec, prSwRfb) != WLAN_STATUS_SUCCESS) {

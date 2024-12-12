@@ -214,6 +214,7 @@ enum ENUM_DBG_MODULE {
 	DBG_FILS_IDX,		/* 0x30 *//* FILS */
 	DBG_AM_IDX,		/* 0x31 *//* ARP Monitor */
 	DBG_CCM_IDX,		/* 0x32 *//* CCM */
+	DBG_PASN_IDX,		/* 0x33 *//* PASN */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {

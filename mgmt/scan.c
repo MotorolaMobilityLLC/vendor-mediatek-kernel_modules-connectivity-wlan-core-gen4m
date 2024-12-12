@@ -3534,6 +3534,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
 
+					prBssDesc->ucBssColorInfo =
+						prHeOp->ucBssColorInfo;
+
 					DBGLOG(SCN, LOUD,
 						"ER: BSSID:" MACSTR
 						" SSID:%s,rx:%x, er:%x\n",

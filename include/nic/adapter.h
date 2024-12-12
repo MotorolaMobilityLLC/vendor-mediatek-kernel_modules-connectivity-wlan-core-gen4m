@@ -777,6 +777,9 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_RTT
 	struct RTT_INFO rRttInfo;
 #endif
+#if CFG_SUPPORT_PASN
+	struct PASN_INFO rPasnInfo;
+#endif
 	enum ENUM_PWR_STATE aePwrState[MAX_BSSID_NUM + 1];
 
 	struct BSS_INFO arBssInfoPool[MAX_BSSID_NUM + 1];

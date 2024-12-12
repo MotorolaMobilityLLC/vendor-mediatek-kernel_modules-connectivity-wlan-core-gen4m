@@ -487,11 +487,13 @@ uint32_t authCheckRxAuthFrameTransSeq(struct ADAPTER *prAdapter,
 	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+
 	if (prStaRec &&
 		(IS_STA_IN_AIS(prAdapter, prStaRec) ||
 		(IS_STA_IN_P2P(prAdapter, prStaRec) &&
 		 IS_AP_STA(prStaRec)))) {
 		if (prStaRec->eAuthAssocState == SAA_STATE_EXTERNAL_AUTH) {
+			DBGLOG(SAA, INFO, "External auth\n");
 			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
 			return WLAN_STATUS_SUCCESS;
 		}
@@ -1261,16 +1263,30 @@ authProcessRxAuthFrame(struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <4> Parse the Fixed Fields of Authentication Frame Body. */
-	if (prAuthFrame->u2AuthAlgNum != AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
-		prAuthFrame->u2AuthAlgNum != AUTH_ALGORITHM_NUM_SAE)
+	switch (prAuthFrame->u2AuthAlgNum) {
+	case AUTH_ALGORITHM_NUM_OPEN_SYSTEM:
+		if (prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1)
+			u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+		break;
+
+	case AUTH_ALGORITHM_NUM_SAE:
+		if (prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1 &&
+			prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_2)
+			u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+		break;
+
+#if CFG_SUPPORT_PASN
+	case AUTH_ALGORITHM_NUM_PASN:
+		if (prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1 &&
+			prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_3)
+			u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+		break;
+#endif
+
+	default:
 		u2ReturnStatusCode = STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED;
-	else if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
-		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1)
-		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
-	else if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE &&
-		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1 &&
-		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_2)
-		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+		break;
+	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,

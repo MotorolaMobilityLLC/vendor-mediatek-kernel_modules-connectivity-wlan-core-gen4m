@@ -933,7 +933,7 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			MAC2STR(mgmt->aucBSSID),
 			ucWlanIdx,
 			ucStaRecIdx);
-#if (CFG_WLAN_CONNAC3_DEV == 1)
+#if (CFG_WLAN_CONNAC3_DEV == 1) || (CFG_SUPPORT_PASN)
  		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN, "StaRec not found\n");
@@ -1120,9 +1120,13 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 				prStaRec->u2StatusCode = u2StatusCode;
 			}
 		}
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		u4LinkId = (uint32_t)prStaRec->ucLinkIndex;
 #endif
+		DBGLOG(SAA, INFO, "Forward RxAuth Seq: %d\n",
+			((struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader)->
+				u2AuthTransSeqNo);
 		kalIndicateRxMgmtFrame(prAdapter, prAdapter->prGlueInfo,
 				prSwRfb, prStaRec->ucBssIndex, u4LinkId);
 	}
@@ -1324,6 +1328,27 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 		secHandleNoWtbl(prAdapter, prSwRfb);
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 					       prSwRfb->ucStaRecIdx);
+	}
+#endif
+
+#if CFG_SUPPORT_RTT
+	if (!prStaRec) {
+		struct WLAN_MAC_MGMT_HEADER *mgmt =
+			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
+
+		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
+		if (!prStaRec) {
+			DBGLOG(SAA, WARN, "StaRec not found\n");
+			goto exit;
+		}
+	}
+
+	if (IS_STA_RTT_TYPE(prStaRec)) {
+		DBGLOG(SAA, WARN,
+			"Received a Deauth: wlanIdx[%d] from RTT network\n",
+			ucWlanIdx);
+		rttHandleDeauth(prAdapter, prStaRec);
+		goto exit;
 	}
 #endif
 

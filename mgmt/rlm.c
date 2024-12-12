@@ -5218,8 +5218,15 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		if (IS_BSS_ACTIVE(prBssInfo)) {
 			if (prBssInfo->eCurrentOPMode ==
 				    OP_MODE_INFRASTRUCTURE &&
-			    prBssInfo->eConnectionState ==
-				    MEDIA_STATE_CONNECTED) {
+				prBssInfo->eConnectionState ==
+					MEDIA_STATE_CONNECTED) {
+#if CFG_SUPPORT_RTT
+				if (rttIsRunning(prAdapter)) {
+					DBGLOG(RLM, INFO,
+						"Ignore rlm update when RTT is active\n");
+					continue;
+				}
+#endif
 				/* P2P client or AIS infra STA */
 				if (prBssInfo->eIftype == IFTYPE_P2P_CLIENT &&
 					prBssInfo->fgIsSwitchingChnl) {
@@ -5242,7 +5249,6 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					    ((struct WLAN_MAC_MGMT_HEADER
 						      *)(prSwRfb->pvHeader))
 						    ->aucBSSID)) {
-
 					prWlanBeacon =
 						(struct WLAN_BEACON_FRAME *)
 							(prSwRfb->pvHeader);

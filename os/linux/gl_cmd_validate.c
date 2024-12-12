@@ -759,7 +759,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.pcCmdStr  = CMD_SET_RTT,
 		.pfHandler = priv_driver_set_rtt,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = set_rtt_policy,
 		.u4PolicySize = ARRAY_SIZE(set_rtt_policy)
 	},

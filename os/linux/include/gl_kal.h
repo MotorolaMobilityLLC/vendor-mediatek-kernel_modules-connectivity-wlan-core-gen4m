@@ -2729,6 +2729,12 @@ void *kalProcessRttReportDone(
 	struct GLUE_INFO *prGlueInfo,
 	uint32_t u4DataLen, uint32_t u4Count);
 
+#if CFG_SUPPORT_PASN
+uint8_t kalIndicatePasnEvent(struct ADAPTER *prAdapter,
+	void *pvPasnReq,
+	uint8_t ucBssIdx);
+#endif
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0
 #endif

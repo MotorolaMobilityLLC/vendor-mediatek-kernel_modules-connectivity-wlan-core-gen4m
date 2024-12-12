@@ -762,7 +762,7 @@ struct MDNS_RECORD_T {
 /*
  * Type variable structure:
 	ucquerynumber: 1-4
-	u2querytype: 1 - A, 12 - PTR, 16 - TXT, 33 – SRV and others
+	u2querytype: 1 - A, 12 - PTR, 16 - TXT, 33 â€“ SRV and others
  */
 	uint8_t ucquerynumber;
 	uint16_t u2querytype[4];
@@ -1823,6 +1823,23 @@ struct RTT_CONFIG {
 	uint8_t ucASAP;
 	uint8_t ucFtmMinDeltaTime; //mc: UNIT:100us
 	uint8_t ucReserved; // 4 byte align
+
+	/* 11az */
+	uint64_t u8NtbMinMeasurementTime;
+	uint64_t u8NtbMaxMeasurementTime;
+	uint8_t ucI2rLmrFeedback;
+	uint8_t ucImmeR2iFeedback;
+	uint8_t ucImmeI2rFeedback;
+	uint8_t ucForceReplyI2rLmr;
+
+	/* PASN */
+	uint32_t u4Cipher; /* WPA_CIPHER_* */
+	uint32_t u4ShaType; /* QCA_WLAN_VENDOR_SHA_TYPE */
+	uint8_t ucTkLen;
+	uint8_t ucLtfKeyseedLen;
+	uint8_t aucPaddings[2];
+	uint8_t aucTk[32]; /* WPA_TK_MAX_LEN */
+	uint8_t aucLtfKeyseed[48]; /* WPA_LTF_KEYSEED_MAX_LEN */
 };
 
 struct RTT_RESULT {

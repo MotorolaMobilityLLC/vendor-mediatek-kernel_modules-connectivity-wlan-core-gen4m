@@ -2058,6 +2058,40 @@ static const struct wiphy_vendor_command
 #endif
 	},
 #endif
+
+#if CFG_SUPPORT_PASN
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = QCA_NL80211_VENDOR_SUBCMD_PASN
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV
+				| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_pasn
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = nla_pasn_policy,
+		.maxattr = QCA_WLAN_VENDOR_ATTR_PASN_MAX
+#endif
+	},
+	{
+#define QCA_SUBCMD_RANGING_CTX QCA_NL80211_VENDOR_SUBCMD_SECURE_RANGING_CONTEXT
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = QCA_SUBCMD_RANGING_CTX
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV
+				| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_secure_ranging_ctx
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = nla_secure_ranging_ctx_policy,
+		.maxattr = QCA_WLAN_VENDOR_ATTR_SECURE_RANGING_CTX_MAX
+#endif
+	},
+#endif /* CFG_SUPPORT_PASN */
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -2171,6 +2205,10 @@ static const struct nl80211_vendor_cmd_info
 	[WIFI_EVENT_P2P_LISTEN_OFFLOAD] = {
 		.vendor_id = OUI_QCA,
 		.subcmd = QCA_NL80211_VENDOR_SUBCMD_P2P_LISTEN_OFFLOAD_STOP
+	},
+	[WIFI_EVENT_PASN] = {
+		.vendor_id = OUI_QCA,
+		.subcmd = QCA_NL80211_VENDOR_SUBCMD_PASN
 	},
 };
 #endif
@@ -4432,6 +4470,17 @@ static void wlanCreateWirelessDevice(void)
 		NL80211_EXT_FEATURE_OCE_PROBE_REQ_HIGH_TX_RATE);
 	wiphy_ext_feature_set(prWiphy,
 		NL80211_EXT_FEATURE_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION);
+#endif
+
+#if KERNEL_VERSION(5, 15, 0) < CFG80211_VERSION_CODE
+#if CFG_SUPPORT_PASN
+	wiphy_ext_feature_set(prWiphy,
+		NL80211_EXT_FEATURE_SECURE_LTF);
+	wiphy_ext_feature_set(prWiphy,
+		NL80211_EXT_FEATURE_SECURE_RTT);
+	wiphy_ext_feature_set(prWiphy,
+		NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE);
+#endif /* CFG_SUPPORT_PASN */
 #endif
 
 #if (CFG_SUPPORT_BCN_PROT == 1) && \

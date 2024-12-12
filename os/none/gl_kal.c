@@ -458,6 +458,15 @@ kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+#if CFG_SUPPORT_PASN
+uint8_t kalIndicatePasnEvent(struct ADAPTER *prAdapter,
+		void *pvPasnReq,
+		uint8_t ucBssIdx)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
+
 void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);

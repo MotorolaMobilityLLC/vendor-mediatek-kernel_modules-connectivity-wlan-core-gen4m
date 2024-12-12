@@ -273,7 +273,13 @@
 #endif
 
 #include "ais_fsm.h"
+
+#if CFG_SUPPORT_RTT
 #include "rtt.h"
+#endif
+#if CFG_SUPPORT_PASN
+#include "pasn.h"
+#endif
 
 #include "gcm.h"
 
