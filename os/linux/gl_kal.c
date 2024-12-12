@@ -14393,7 +14393,7 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 
 	ret = snprintf(s,
 		SA_LOG_TIMEBUF_LEN,
-		"[%5lu.%06lu] %s",
+		"[%5lu.%06lu] %s ",
 		(unsigned long)ts,
 		rem_nsec / 1000,
 		KAL_GET_CURRENT_THREAD_NAME());

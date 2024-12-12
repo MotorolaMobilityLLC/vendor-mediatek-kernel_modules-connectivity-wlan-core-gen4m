@@ -2839,7 +2839,7 @@ void connac3x_dump_format_memory32(
 
 	ASSERT(pu4StartAddr);
 
-	LOG_FUNC("%s, Count(%d)\n", aucInfo, u4Count);
+	DBGLOG(HAL, STATE, "%s, Count(%d)\n", aucInfo, u4Count);
 
 	while (u4Count > 0) {
 
@@ -2855,7 +2855,7 @@ void connac3x_dump_format_memory32(
 			strncat(buf, tmp, strlen(tmp));
 		}
 
-		LOG_FUNC("%s\n", buf);
+		DBGLOG(HAL, STATE, "%s\n", buf);
 
 		if (u4Count > ONE_LINE_MAX_COUNT) {
 			u4Count -= ONE_LINE_MAX_COUNT;
