@@ -1418,7 +1418,7 @@ check:
 		if (prChipInfo->fgIsWarnInvalidMmioRead)
 			WARN_ON_ONCE(TRUE);
 
-		if (prChipInfo->fgIsResetInvalidMmioRead) {
+		if (prGlueInfo && prChipInfo->fgIsResetInvalidMmioRead) {
 			GL_USER_DEFINE_RESET_TRIGGER(
 				prGlueInfo->prAdapter,
 				RST_MMIO_READ, RST_FLAG_WF_RESET);
