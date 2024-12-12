@@ -89,7 +89,7 @@ static const uint8_t dscp2up[64] = {
 	[46] = WMM_UP_VO_INDEX,
 #if !CFG_WIFI_AT_THE_EDGE_QOS
 	[48] = WMM_UP_VO_INDEX,
-	[56] = WMM_UP_VO_INDEX,
+	[56] = WMM_UP_NC_INDEX,
 #endif
 };
 #endif
