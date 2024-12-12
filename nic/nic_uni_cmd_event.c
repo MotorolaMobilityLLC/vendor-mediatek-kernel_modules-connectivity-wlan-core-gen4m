@@ -640,7 +640,7 @@ uint32_t nicUniCmdNotSupport(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicUniCmdScanTagReq(struct ADAPTER *ad,
+uint16_t nicUniCmdScanTagReq(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_REQ *tag = (struct UNI_CMD_SCAN_REQ *)buf;
@@ -659,7 +659,7 @@ uint32_t nicUniCmdScanTagReq(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
@@ -690,7 +690,7 @@ uint32_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagShortSsid(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdScanTagShortSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
@@ -724,7 +724,7 @@ uint32_t nicUniCmdScanTagShortSsid(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_BSSID *tag = (struct UNI_CMD_SCAN_BSSID *)buf;
@@ -758,7 +758,7 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 	}
 }
 
-uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_CHANNEL_INFO *tag =
@@ -791,7 +791,7 @@ uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagIe(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_IE *tag;
@@ -882,7 +882,7 @@ uint32_t nicUniCmdScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	return pos - buf;
 }
 
-uint32_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_MISC *tag = (struct UNI_CMD_SCAN_MISC *)buf;
@@ -1616,7 +1616,7 @@ uint32_t nicUniCmdSchedScanEnable(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicUniCmdSchedScanTagReq(struct ADAPTER *ad,
+uint16_t nicUniCmdSchedScanTagReq(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SCHED_SCAN_REQ *cmd)
 {
 	struct UNI_CMD_SCAN_SCHED_SCAN_REQ *tag =
@@ -1633,7 +1633,7 @@ uint32_t nicUniCmdSchedScanTagReq(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdSchedScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdSchedScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCHED_SCAN_REQ *cmd)
 {
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
@@ -1657,7 +1657,7 @@ uint32_t nicUniCmdSchedScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCHED_SCAN_REQ *cmd)
 {
 	struct UNI_CMD_SCAN_CHANNEL_INFO *tag =
@@ -1684,7 +1684,7 @@ uint32_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdSchedScanTagIe(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdSchedScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCHED_SCAN_REQ *cmd)
 {
 	struct UNI_CMD_SCAN_IE *tag = (struct UNI_CMD_SCAN_IE *)buf;
@@ -1700,7 +1700,7 @@ uint32_t nicUniCmdSchedScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdSchedScanTagSsidMatchSets(struct ADAPTER *ad, uint8_t *buf,
+uint16_t nicUniCmdSchedScanTagSsidMatchSets(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCHED_SCAN_REQ *cmd)
 {
 	struct UNI_CMD_SCAN_SSID_MATCH_SETS *tag =

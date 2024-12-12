@@ -2238,7 +2238,7 @@ struct UNI_CMD_SCAN {
 	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
-typedef uint32_t(*PFN_UNI_CMD_SCAN_TAG_HANDLER) (struct ADAPTER
+typedef uint16_t(*PFN_UNI_CMD_SCAN_TAG_HANDLER) (struct ADAPTER
 	*ad, uint8_t *buf, struct CMD_SCAN_REQ_V2 *cmd);
 
 struct UNI_CMD_SCAN_TAG_HANDLE {
@@ -2246,7 +2246,7 @@ struct UNI_CMD_SCAN_TAG_HANDLE {
 	PFN_UNI_CMD_SCAN_TAG_HANDLER pfHandler;
 };
 
-typedef uint32_t(*PFN_UNI_CMD_SCHED_SCAN_TAG_HANDLER) (struct ADAPTER
+typedef uint16_t(*PFN_UNI_CMD_SCHED_SCAN_TAG_HANDLER) (struct ADAPTER
 	*ad, uint8_t *buf, struct CMD_SCHED_SCAN_REQ *cmd);
 
 struct UNI_CMD_SCHED_SCAN_TAG_HANDLE {
