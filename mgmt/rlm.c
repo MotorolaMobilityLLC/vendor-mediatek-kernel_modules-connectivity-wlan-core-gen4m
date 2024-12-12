@@ -1235,12 +1235,11 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 		pucBuffer += sizeof(struct IE_CHANNEL_SWITCH_WRAPPER);
 
-		if (ucChannelWidth <= VHT_OP_CHANNEL_WIDTH_80P80)
-			pucBuffer +=
-				rlmFillWideBandChannelIE(prAdapter, pucBuffer,
-							 ucChannelWidth,
-							 ucSeg0,
-							 ucSeg1);
+		pucBuffer +=
+			rlmFillWideBandChannelIE(prAdapter, pucBuffer,
+						 ucChannelWidth,
+						 ucSeg0,
+						 ucSeg1);
 
 #if (CFG_SUPPORT_802_11BE == 1)
 		if (ucChannelWidth == VHT_OP_CHANNEL_WIDTH_320_1 ||
