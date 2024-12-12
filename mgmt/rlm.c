@@ -12249,19 +12249,23 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 
 	if (RLM_NET_IS_11AC(prBssInfo) &&
-	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
+		(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC) &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
 		ucMode = MODE_VHT;
 	else if (RLM_NET_IS_11N(prBssInfo) &&
+		(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N) &&
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
 		ucMode = MODE_HT;
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (RLM_NET_IS_11AX(prBssInfo) &&
+		(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX) &&
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer))
 		ucMode = MODE_HE_SU;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (RLM_NET_IS_11BE(prBssInfo) &&
-		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer))
+		(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11BE) &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucEhtSUBfer))
 		ucMode = MODE_EHT_SU;
 #endif
 
