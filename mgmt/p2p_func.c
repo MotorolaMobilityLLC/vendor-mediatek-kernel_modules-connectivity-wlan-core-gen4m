@@ -8850,6 +8850,49 @@ void p2pDualABandFilter(struct ADAPTER *prAdapter,
 
 }
 
+u_int8_t p2pFuncIsBssWpa3OnlyCheck(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prP2pBssInfo)
+{
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	uint8_t i;
+	uint32_t u4PrivateData;
+
+	u4PrivateData =
+		prP2pBssInfo->u4PrivateData;
+	prP2pSpecBssInfo =
+		prAdapter
+		->rWifiVar.prP2pSpecificBssInfo[u4PrivateData];
+
+	if (!(prP2pBssInfo->ucPhyTypeSet &
+		PHY_TYPE_BIT_HE))
+		return FALSE;
+
+	for (i = 0;
+		i < prP2pSpecBssInfo->u4KeyMgtSuiteCount;
+		i++) {
+		if (prP2pSpecBssInfo
+			->au4KeyMgtSuite[i] ==
+			RSN_AKM_SUITE_OWE) {
+			DBGLOG(P2P, TRACE, "OWE security\n");
+			return TRUE;
+		}
+		if (rsnKeyMgmtSae(prP2pSpecBssInfo
+			->au4KeyMgtSuite[i]))
+			continue;
+
+		DBGLOG(P2P, TRACE, "invalid suit:0x%04x\n",
+			prP2pSpecBssInfo->au4KeyMgtSuite[i]);
+		return FALSE;
+	}
+	if ((prP2pSpecBssInfo->aucRsnxIeBuffer[2] &
+		BIT(WLAN_RSNX_CAPAB_SAE_H2E)) == 0) {
+		DBGLOG(P2P, TRACE, "no H2E in RSNX IE\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwitchCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
@@ -8872,17 +8915,13 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, INFO, "[CSA] scenario error\n");
 		return;
 	}
-	DBGLOG(P2P, INFO, "[CSA] is sap wpa3: %u and %u\n",
-			aliveSapBss[0]->u4RsnSelectedAKMSuite &
-			RSN_AKM_SUITE_SAE,
-			(aliveSapBss[0]->u4RsnSelectedAKMSuite &
-			RSN_AKM_SUITE_SAE) == RSN_AKM_SUITE_SAE);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	for (i = *ucChSwitchCandNum; i > 0; i--) {
 		if (aliveSapBss[0]->eBand == BAND_5G &&
 			prSapSwitchCand[i-1].eRfBand == BAND_6G &&
-			(aliveSapBss[0]->u4RsnSelectedAKMSuite &
-			RSN_AKM_SUITE_SAE) != RSN_AKM_SUITE_SAE) {
+			p2pFuncIsBssWpa3OnlyCheck(prAdapter,
+				aliveSapBss[0])) {
 			p2pSapSwitchCandidateRemove(
 				ucChSwitchCandNum,
 				prSapSwitchCand,
