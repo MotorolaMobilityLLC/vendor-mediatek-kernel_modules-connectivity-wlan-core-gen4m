@@ -2747,7 +2747,7 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 			if (fw->size > 0 && fw->size <= sizeof(g_aucNvram)) {
 				kalMemCopy(g_aucNvram, fw->data, fw->size);
 				g_NvramFsm = NVRAM_STATE_READY;
-				DBGLOG(INIT, INFO, "Set NVRAM state[%d]\n",
+				DBGLOG(INIT, VOC, "Set NVRAM state[%d]\n",
 					g_NvramFsm);
 #if CFG_MTK_ANDROID_WMT
 				if (!g_IsPlatCbsRegistered) {
@@ -2760,7 +2760,7 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	DBGLOG(INIT, INFO, "g_NvramFsm = %d\n", g_NvramFsm);
+	DBGLOG(INIT, VOC, "g_NvramFsm = %d\n", g_NvramFsm);
 	if (g_NvramFsm != NVRAM_STATE_READY) {
 		DBGLOG(INIT, WARN, "Nvram not available\n");
 		return;
@@ -2833,7 +2833,7 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 			MAX_SUBBAND_NUM*sizeof(uint8_t));
 	}
 
-	log_dbg(INIT, INFO, "NVRAM Version = [%08x,%08x], 5G = [%d,%d]\n",
+	log_dbg(INIT, VOC, "NVRAM Version = [%08x,%08x], 5G = [%d,%d]\n",
 				 prNvramSettings->u2Part1OwnVersion,
 				 prNvramSettings->u2Part1PeerVersion,
 				 prRegInfo->ucSupport5GBand,

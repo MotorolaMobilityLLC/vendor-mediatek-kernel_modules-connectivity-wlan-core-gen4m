@@ -5030,7 +5030,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 			/*sanity check*/
 			if ((u1TypeID == 0) &&
 				(u1LenLSB == 0) && (u1LenMSB == 0)) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, VOC,
 					"TLV is Null, last index = %d\n",
 					index);
 				break;

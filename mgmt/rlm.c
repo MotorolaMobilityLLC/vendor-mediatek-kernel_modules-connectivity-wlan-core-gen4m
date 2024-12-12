@@ -11582,14 +11582,14 @@ void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter,
 
 	if (ucEnable) {
 		if (icLimit > icMaxPwrLmt) {
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, VOC,
 				"LM: Target MaxPwr [%d] too big, use default[%d]\n"
 				, icLimit,
 				icMaxPwrLmt);
 			icLimit = icMaxPwrLmt;
 		}
 		if (icLimit < icMinPwrLmt) {
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, VOC,
 				"LM: Target MinPwr [%d] too low, use default[%d]\n"
 				, icLimit
 				, icMinPwrLmt);
@@ -11600,7 +11600,7 @@ void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter,
 		rTxPwrLimit.cMaxTxPwr = icLimit * 2;
 		rTxPwrLimit.cMinTxPwr = icMinPwrLmt * 2;
 
-		DBGLOG(RLM, INFO,
+		DBGLOG(RLM, VOC,
 			"LM: Set Max Tx Power Limit %d, Min Limit %d\n",
 			rTxPwrLimit.cMaxTxPwr,
 			rTxPwrLimit.cMinTxPwr);
@@ -13165,7 +13165,7 @@ static uint32_t rlmTxPwrEnvGetMaxTxPwrPsd(
 
 	if (rlmTxPwrEnvGetBwShift(eChannelWidth, eSco, &ucBwShift)
 		!= WLAN_STATUS_SUCCESS) {
-		DBGLOG(RLM, ERROR,
+		DBGLOG(RLM, TRACE,
 			"Get PSD BW shift fail,ChBw[%d]Sco[%d]\n",
 			eChannelWidth,
 			eSco);
@@ -13462,7 +13462,7 @@ void rlmTxPwrEnvMaxPwrSend(
 			= picTxPwrEnvMaxPwr[eBwType];
 	}
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, VOC,
 		"TPE Send:En[%d]B[%d]PriCh[%d]Num[%d]PwrLmtBW20[%d]BW40[%d]BW80[%d]BW160[%d]\n",
 		prTxPwrEnvPwrLmt->fgPwrLmtEnable,
 		prTxPwrEnvPwrLmt->ucBand,
@@ -13646,7 +13646,7 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		ucPwrLmtNum = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
 
 		if (u4Status != WLAN_STATUS_SUCCESS) {
-			DBGLOG(RLM, WARN,
+			DBGLOG(RLM, TRACE,
 				"Update TxPwrEnv fail 0x%08x\n", u4Status);
 		}
 
