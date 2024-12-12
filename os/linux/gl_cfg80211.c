@@ -6126,23 +6126,39 @@ int testmode_set_latency_crt_data(struct wiphy *wiphy,
 	int32_t i4Argc = 0, i4Ret = -1;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4SetInfoLen = 0, u4Mode = 0;
+	int8_t *pcmd = NULL;
+	uint32_t u4pcmdLen = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	/* Since the pcCommand would be separated by
+	 * wlanCfgParseArgument, we should copy original pcCommand first.
+	 */
+	u4pcmdLen = i4TotalLen + 1;
+	pcmd = (int8_t *) kalMemZAlloc(u4pcmdLen, VIR_MEM_TYPE);
+
+	if (!pcmd)
+		return WLAN_STATUS_FAILURE;
+
+	kalMemCopy(pcmd, pcCommand, i4TotalLen);
+	pcmd[u4pcmdLen-1] = '\0';
 
 	/*ex: wpa_cli driver SET_LATENCY_CRT_DATA X */
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	if (i4Argc != 2) {
 		DBGLOG(REQ, ERROR,
 			"Error input parameters(%d):%s\n", i4Argc, pcCommand);
-		return WLAN_STATUS_INVALID_DATA;
+		rStatus = WLAN_STATUS_INVALID_DATA;
+		goto free_pcmd;
 	}
 
 	i4Ret = kalkStrtou32(apcArgv[1], 0, &u4Mode);
 	if (i4Ret) {
 		DBGLOG(REQ, ERROR, "Set Latency crt mode parse error %d\n",
 			i4Ret);
-		return WLAN_STATUS_FAILURE;
+		rStatus = WLAN_STATUS_FAILURE;
+		goto free_pcmd;
 	}
 
 	/* Do further scan handling for mode 2 and mode 3,
@@ -6151,7 +6167,7 @@ int testmode_set_latency_crt_data(struct wiphy *wiphy,
 	if (u4Mode >= 2 || u4Mode == 0) {
 		if (u4Mode == 0)
 			wlanChipConfigWithType(prGlueInfo->prAdapter,
-				pcCommand, 22, CHIP_CONFIG_TYPE_WO_RESPONSE);
+				pcmd, 22, CHIP_CONFIG_TYPE_WO_RESPONSE);
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetLatencyCrtData,
 			&u4Mode, sizeof(uint32_t),
@@ -6166,8 +6182,12 @@ int testmode_set_latency_crt_data(struct wiphy *wiphy,
 	} else {
 		/* for mode 1 */
 		wlanChipConfigWithType(prGlueInfo->prAdapter,
-			pcCommand, 22, CHIP_CONFIG_TYPE_WO_RESPONSE);
+			pcmd, 22, CHIP_CONFIG_TYPE_WO_RESPONSE);
+		rStatus = WLAN_STATUS_SUCCESS;
 	}
+
+free_pcmd:
+	kalMemFree(pcmd, VIR_MEM_TYPE, u4pcmdLen);
 
 	return rStatus;
 }
