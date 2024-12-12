@@ -494,7 +494,7 @@ int connfem_sku_flag_u8(enum connfem_subsys subsys,
 			__func__, subsys);
 	}
 
-	while (flags && flags->name && flags->name[0] != 0) {
+	while (flags && flags->name[0] != 0) {
 		if (strncasecmp(name, flags->name, sizeof(flags->name)) == 0) {
 			pr_info("%s, Default setting: Subsys %d '%s': 0x%02x",
 				__func__, subsys, name, flags->value);
