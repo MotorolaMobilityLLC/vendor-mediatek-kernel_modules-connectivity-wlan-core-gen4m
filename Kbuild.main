@@ -796,6 +796,12 @@ else
     CONFIG_SUPPORT_MLC=y
 endif
 
+ifeq ($(CONFIG_WIFI_DX5), y)
+    ifeq ($(CONFIG_WLAN_PLATFORM),mt6993)
+        CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT=y
+    endif
+endif
+
 ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
     CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
@@ -2753,6 +2759,12 @@ ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mddp/include/
 ccflags-y += -DCFG_MTK_MDDP_SUPPORT=1
 else
 ccflags-y += -DCFG_MTK_MDDP_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT), y)
+ccflags-y += -DCFG_MTK_MDDP_IDC_UART_3_0_SUPPORT=1
+else
+ccflags-y += -DCFG_MTK_MDDP_IDC_UART_3_0_SUPPORT=0
 endif
 
 ifneq ($(CONFIG_MTK_ADVANCED_80211_MLO),)

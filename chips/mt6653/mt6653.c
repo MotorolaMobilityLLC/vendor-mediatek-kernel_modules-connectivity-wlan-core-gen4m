@@ -4532,11 +4532,13 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 
 	u4Val = readl(vir_addr + MCIF_EMI_BASE_OFFSET);
 
+#if (CFG_MTK_MDDP_IDC_UART_3_0_SUPPORT == 0)
 	if (mddpIsSupportMcifWifi()) {
 		HAL_MCR_WR(prAdapter,
 			   MT6653_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR,
 			   u4Val);
 	}
+#endif /* CFG_MTK_MDDP_IDC_UART_3_0_SUPPORT */
 
 	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x]\n", u4Val);
 	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
