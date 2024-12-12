@@ -66,16 +66,11 @@
 
 #define CMA_MEM_MAX_SIZE			128
 
-/*
- * MT7925 (Owl) does not need to do Redownload.
- * The FWDL binary size becomes larger, so the
- * TX CMD RING size needs to be larger.
- */
-#if defined(MT7925) || defined(MT6653)
-#define TX_RING_CMD_SIZE			512
+#ifdef CFG_NUM_OF_TX_CMD_RING_SIZE
+#define TX_RING_CMD_SIZE			(CFG_NUM_OF_TX_CMD_RING_SIZE)
 #else
 #define TX_RING_CMD_SIZE			320
-#endif
+#endif /* CFG_NUM_OF_TX_CMD_RING_SIZE */
 
 #define HIF_NUM_OF_QM_RX_PKT_NUM		10240
 #define HIF_PLE_PAGE_SIZE			0xBC0
