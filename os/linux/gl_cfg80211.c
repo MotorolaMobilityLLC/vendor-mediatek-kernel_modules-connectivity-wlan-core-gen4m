@@ -1545,7 +1545,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	enum ENUM_WEP_STATUS eEncStatus;
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode = AUTH_MODE_OPEN;
 	uint32_t cipher;
 	struct PARAM_CONNECT rNewSsid;
 	struct PARAM_OP_MODE rOpMode;
