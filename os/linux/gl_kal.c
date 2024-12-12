@@ -9995,6 +9995,11 @@ uint32_t kalGetAndResetHitCounterToFw(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BufLen;
 	uint32_t u4Hit = -1;
 
+	if (RECORDKEY_BASE - recordKey + 1 > MAX_MDNS_CACHE_NUM) {
+		DBGLOG(REQ, WARN, "Invalid RecordKey:%d\n",
+			recordKey);
+		return u4Hit;
+	}
 	cmdMdnsParam =
 		kalMemAlloc(sizeof(struct CMD_MDNS_PARAM_T), PHY_MEM_TYPE);
 	if (!cmdMdnsParam) {
@@ -10017,6 +10022,8 @@ uint32_t kalGetAndResetHitCounterToFw(struct GLUE_INFO *prGlueInfo,
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "wlanoidGetMdnsHitMiss error.\n");
+		kalMemFree(cmdMdnsParam, PHY_MEM_TYPE,
+			sizeof(struct CMD_MDNS_PARAM_T));
 		return u4Hit;
 	}
 
@@ -10056,6 +10063,8 @@ uint32_t kalGetAndResetMissCounterToFw(struct GLUE_INFO *prGlueInfo)
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "wlanoidGetMdnsHitMiss error.\n");
+		kalMemFree(cmdMdnsParam, PHY_MEM_TYPE,
+			sizeof(struct CMD_MDNS_PARAM_T));
 		return u4Miss;
 	}
 
@@ -10106,7 +10115,7 @@ void kalSendMdnsFlagsToFw(struct GLUE_INFO *prGlueInfo)
 	if (!ucPayloadAssemble) {
 		DBGLOG(REQ, WARN, "%s, alloc ucPayloadAssemble mem failed.\n",
 			__func__);
-		 kalMemFree(cmdMdnsParam, PHY_MEM_TYPE,
+		kalMemFree(cmdMdnsParam, PHY_MEM_TYPE,
 			sizeof(struct CMD_MDNS_PARAM_T));
 		return;
 	}
