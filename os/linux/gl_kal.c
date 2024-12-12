@@ -9018,6 +9018,9 @@ void kalWowProcess(struct GLUE_INFO *prGlueInfo,
 	uint32_t ii, wait = 0;
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t fgWake = TRUE;
+#if CFG_ANV_OR_LATER == 1
+	uint8_t ucCountIpv4, ucCountIpv6;
+#endif
 
 	kalMemZero(&rCmdWowlanParam,
 		   sizeof(struct CMD_WOWLAN_PARAM));
@@ -9057,6 +9060,30 @@ void kalWowProcess(struct GLUE_INFO *prGlueInfo,
 	kalMemCopy(&rCmdWowlanParam.astWakeHif[0],
 		   &pWOW_CTRL->astWakeHif[0], sizeof(struct WOW_WAKE_HIF));
 
+#if CFG_ANV_OR_LATER == 1
+	ucCountIpv4 = pWOW_CTRL->stWowPort.ucIPv4UdpPortCnt;
+	ucCountIpv6 = pWOW_CTRL->stWowPort.ucIPv6UdpPortCnt;
+	for (ii = 0; ii < ucCountIpv4; ii++) {
+		if (pWOW_CTRL->stWowPort.ausIPv4UdpPort[ii] ==
+			UDP_PORT_MDNS)
+			break;
+	}
+	if (ii == ucCountIpv4 && ucCountIpv4 < MAX_TCP_UDP_PORT) {
+		pWOW_CTRL->stWowPort.ucIPv4UdpPortCnt++;
+		pWOW_CTRL->stWowPort.ausIPv4UdpPort[ucCountIpv4] =
+			UDP_PORT_MDNS;
+	}
+	for (ii = 0; ii < ucCountIpv6; ii++) {
+		if (pWOW_CTRL->stWowPort.ausIPv6UdpPort[ii] ==
+			UDP_PORT_MDNS)
+			break;
+	}
+	if (ii == ucCountIpv6 && uucCountIpv6 < MAX_TCP_UDP_PORT) {
+		pWOW_CTRL->stWowPort.ucIPv6UdpPortCnt++;
+		pWOW_CTRL->stWowPort.ausIPv6UdpPort[ucCountIpv6] =
+			UDP_PORT_MDNS;
+	}
+#endif
 	if (fgWake) {
 		/* copy UDP/TCP port setting */
 		kalMemCopy(&rCmdWowlanParam.stWowPort,

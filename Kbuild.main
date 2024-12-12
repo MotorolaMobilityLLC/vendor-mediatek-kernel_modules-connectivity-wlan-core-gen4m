@@ -143,26 +143,42 @@ endif
 # IMB use $(BRANCH)
 #	T: android13-5.15
 #	U: android14-5.15
+#	V: android15-*
+# DTV use CONFIG_MTK_KERNEL_ANDROID_15 to identify android15 Kernel-5.15
 # DTV use CONFIG_MTK_KERNEL_ANDROID_14 to identify android14 Kernel-5.15
 # DTV use CONFIG_MTK_KERNEL_ANDROID_13 to identify android13 Kernel-5.15
+BRANCH_VERSION := $(patsubst android%,%,$(BRANCH))
+BRANCH_MAJOR_VERSION := $(word 1, $(subst -, ,$(BRANCH_VERSION)))
+
+CONFIG_KERNEL_AN15_OR_LATER=0
 ifeq ($(BRANCH), android13-5.15)
-    CFG_KERNEL_AN13_515=1
-    CFG_KERNEL_AN14_515=0
+    CONFIG_KERNEL_AN13_515=1
+    CONFIG_KERNEL_AN14_515=0
 else ifeq ($(BRANCH), android14-5.15)
-    CFG_KERNEL_AN13_515=0
-    CFG_KERNEL_AN14_515=1
+    CONFIG_KERNEL_AN13_515=0
+    CONFIG_KERNEL_AN14_515=1
 else ifeq ($(CONFIG_MTK_KERNEL_ANDROID_13), y)
-    CFG_KERNEL_AN13_515=1
-    CFG_KERNEL_AN14_515=0
+    CONFIG_KERNEL_AN13_515=1
+    CONFIG_KERNEL_AN14_515=0
 else ifeq ($(CONFIG_MTK_KERNEL_ANDROID_14), y)
-    CFG_KERNEL_AN13_515=0
-    CFG_KERNEL_AN14_515=1
+    CONFIG_KERNEL_AN13_515=0
+    CONFIG_KERNEL_AN14_515=1
+else ifeq ($(CONFIG_MTK_KERNEL_ANDROID_15), y)
+    CONFIG_KERNEL_AN13_515=0
+    CONFIG_KERNEL_AN14_515=0
+    CONFIG_KERNEL_AN15_OR_LATER=1
 else
-    CFG_KERNEL_AN13_515=0
-    CFG_KERNEL_AN14_515=0
+    CONFIG_KERNEL_AN13_515=0
+    CONFIG_KERNEL_AN14_515=0
 endif
-ccflags-y += -DCFG_KERNEL_AN13_515=$(CFG_KERNEL_AN13_515)
-ccflags-y += -DCFG_KERNEL_AN14_515=$(CFG_KERNEL_AN14_515)
+
+ifeq ($(shell [ $(BRANCH_MAJOR_VERSION) -ge 15 ] && echo true), true)
+    CONFIG_KERNEL_AN15_OR_LATER =1
+endif
+
+ccflags-y += -DCFG_KERNEL_AN13_515=$(CONFIG_KERNEL_AN13_515)
+ccflags-y += -DCFG_KERNEL_AN14_515=$(CONFIG_KERNEL_AN14_515)
+ccflags-y += -DCFG_ANV_OR_LATER=$(CONFIG_KERNEL_AN15_OR_LATER)
 
 ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
 ccflags-y += $(call cc-disable-warning, attribute-warning)

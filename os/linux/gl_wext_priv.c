@@ -13127,8 +13127,17 @@ int priv_driver_set_wow_udpport(struct net_device *prNetDev,
 	if (i4Argc >= 3) {
 
 		/* Pick Max */
-		ucCount = ((i4Argc - 2) > MAX_TCP_UDP_PORT) ? MAX_TCP_UDP_PORT :
-			  (i4Argc - 2);
+#if CFG_ANV_OR_LATER == 1
+#define MAX_PORT_LIMIT (MAX_TCP_UDP_PORT - 1)
+#else
+#define MAX_PORT_LIMIT MAX_TCP_UDP_PORT
+#endif
+		if (i4Argc - 2 > MAX_PORT_LIMIT) {
+			DBGLOG(PF, ERROR, "ucCount=%d out of size\n",
+				i4Argc - 2);
+			return -1;
+		}
+		ucCount = i4Argc - 2;
 		DBGLOG(PF, INFO, "UDP ucCount=%d\n", ucCount);
 
 		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
