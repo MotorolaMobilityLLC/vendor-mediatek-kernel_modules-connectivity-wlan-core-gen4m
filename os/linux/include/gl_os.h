@@ -718,6 +718,7 @@ struct FT_IES {
 struct GL_CH_SWITCH_WORK {
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct work_struct rChSwitchNotifyWork;
+	u_int8_t fgWorkInit;
 #endif
 };
 
