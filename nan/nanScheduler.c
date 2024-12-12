@@ -8874,6 +8874,7 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 	rFixChnl = nanSchedGetFixedChnlInfo(prAdapter);
 
 	if (rFixChnl.rChannel.u4PrimaryChnl != 0) {
+		rChnlEntry = (struct _NAN_CHNL_ENTRY_T) { 0 };
 		nanParserGenChnlEntryField(prAdapter, &rFixChnl, &rChnlEntry);
 		u4Num = 1;
 		prCmdUpdatePontentialChnlList->u4Num = u4Num;
