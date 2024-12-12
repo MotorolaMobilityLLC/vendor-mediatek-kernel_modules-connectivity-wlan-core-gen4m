@@ -4523,112 +4523,31 @@ uint32_t wlanConnFemGetId(void)
 }
 #endif
 
-static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo)
+static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo, uint8_t fgNeedRsvd)
 {
-	struct wireless_dev *pprP2pRoleWdev[KAL_P2P_NUM] = { NULL };
-	struct wireless_dev *pprP2pWdev[KAL_P2P_NUM] = { NULL };
-
-	struct notifier_block wlan_fb_notifier;
-	struct notifier_block wlan_netdev_notifier;
-	struct notifier_block inetaddr_notifier;
-#if CFG_POWER_OFF_CTRL_SUPPORT
-	struct notifier_block wf_pdwnc_notifier;
-#endif
-#if CFG_SUPPORT_IDC_RIL_BRIDGE || CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
-	struct notifier_block ril_notifier_block;
-	int init_ril_notifier;
-#endif
-	struct net_device *prNetDevice;
-	struct delayed_work workq;
-	struct delayed_work sched_workq;
-#if CFG_ENABLE_EARLY_SUSPEND
-	struct early_suspend wlan_early_suspend_desc;
-#endif
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	struct dentry *dbgFsDir;
-#endif
-#if (CFG_SUPPORT_SER_DEBUGFS == 1)
-	struct dentry *serDbgFsDir;
-#endif
-	struct miscdevice wlan_object;
-#if (CFG_SUPPORT_STATISTICS == 1)
-	struct WAKE_INFO_T *prWakeInfoStatics;
-#endif
-	u_int8_t fgCmdDumpIsDone;
-	u_int32_t u4WlanFbLen = 0;
+	uint8_t *prResetAddr = NULL;
+	uint32_t u4WlanFbLen = 0;
+	uint32_t u4RsvdStart, u4RsvdEnd;
 
 	if (!prGlueInfo)
 		return;
 
-	// Backup
-	kalMemCopy(pprP2pWdev, prGlueInfo->prP2pWdev,
-		sizeof(struct wireless_dev *) * KAL_P2P_NUM);
-	kalMemCopy(pprP2pRoleWdev, prGlueInfo->prP2pRoleWdev,
-		sizeof(struct wireless_dev *) * KAL_P2P_NUM);
+	if (fgNeedRsvd) {
+		u4RsvdStart = OFFSET_OF(struct GLUE_INFO, reserved_start);
+		u4RsvdEnd = OFFSET_OF(struct GLUE_INFO, reserved_end);
 
-	wlan_fb_notifier     = prGlueInfo->wlan_fb_notifier;
-	wlan_netdev_notifier = prGlueInfo->wlan_netdev_notifier;
-	inetaddr_notifier    = prGlueInfo->inetaddr_notifier;
-#if CFG_POWER_OFF_CTRL_SUPPORT
-	wf_pdwnc_notifier    = prGlueInfo->wf_pdwnc_notifier;
-#endif
-#if CFG_SUPPORT_IDC_RIL_BRIDGE || CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
-	ril_notifier_block   = prGlueInfo->ril_notifier_block;
-	init_ril_notifier    = prGlueInfo->init_ril_notifier;
-#endif
-	prNetDevice          = prGlueInfo->prNetDevice;
-	workq                = prGlueInfo->workq;
-	sched_workq          = prGlueInfo->sched_workq;
-#if CFG_ENABLE_EARLY_SUSPEND
-	wlan_early_suspend_desc = prGlueInfo->wlan_early_suspend_desc;
-#endif
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	dbgFsDir             = prGlueInfo->dbgFsDir;
-#endif
-#if (CFG_SUPPORT_SER_DEBUGFS == 1)
-	serDbgFsDir          = prGlueInfo->serDbgFsDir;
-#endif
-	wlan_object          = prGlueInfo->wlan_object;
-#if (CFG_SUPPORT_STATISTICS == 1)
-	prWakeInfoStatics    = prGlueInfo->prWakeInfoStatics;
-#endif
-	fgCmdDumpIsDone      = prGlueInfo->fgCmdDumpIsDone;
+		prResetAddr = (u_int8_t *) prGlueInfo;
+		kalMemZero(prResetAddr, u4RsvdStart);
 
-	kalMemZero(prGlueInfo, sizeof(struct GLUE_INFO));
+		prResetAddr = (u_int8_t *) prGlueInfo + u4RsvdEnd +
+			sizeof(prGlueInfo->reserved_end);
+		kalMemZero(prResetAddr, sizeof(struct GLUE_INFO) - u4RsvdEnd -
+			sizeof(prGlueInfo->reserved_end));
 
-	// Restore
-	kalMemCopy(prGlueInfo->prP2pWdev, pprP2pWdev,
-		sizeof(struct wireless_dev *) * KAL_P2P_NUM);
-	kalMemCopy(prGlueInfo->prP2pRoleWdev, pprP2pRoleWdev,
-		sizeof(struct wireless_dev *) * KAL_P2P_NUM);
+		return;
+	}
 
-	prGlueInfo->wlan_fb_notifier     = wlan_fb_notifier;
-	prGlueInfo->wlan_netdev_notifier = wlan_netdev_notifier;
-	prGlueInfo->inetaddr_notifier    = inetaddr_notifier;
-#if CFG_POWER_OFF_CTRL_SUPPORT
-	prGlueInfo->wf_pdwnc_notifier    = wf_pdwnc_notifier;
-#endif
-#if CFG_SUPPORT_IDC_RIL_BRIDGE || CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
-	prGlueInfo->ril_notifier_block   = ril_notifier_block;
-	prGlueInfo->init_ril_notifier    = init_ril_notifier;
-#endif
-	prGlueInfo->prNetDevice          = prNetDevice;
-	prGlueInfo->workq                = workq;
-	prGlueInfo->sched_workq          = sched_workq;
-#if CFG_ENABLE_EARLY_SUSPEND
-	prGlueInfo->wlan_early_suspend_desc = wlan_early_suspend_desc;
-#endif
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	prGlueInfo->dbgFsDir             = dbgFsDir;
-#endif
-#if (CFG_SUPPORT_SER_DEBUGFS == 1)
-	prGlueInfo->serDbgFsDir          = serDbgFsDir;
-#endif
-	prGlueInfo->wlan_object          = wlan_object;
-#if (CFG_SUPPORT_STATISTICS == 1)
-	prGlueInfo->prWakeInfoStatics    = prWakeInfoStatics;
-#endif
-	prGlueInfo->fgCmdDumpIsDone      = fgCmdDumpIsDone;
+	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 
 	/* initialize semaphore for halt control */
 	sema_init(&prGlueInfo->halt_sem, 1);
@@ -4690,8 +4609,7 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 		       "Allocating memory to GLUE_INFO failed\n");
 		goto free_wiphy;
 	}
-	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
-	wlanResetGlueInfo(prGlueInfo);
+	wlanResetGlueInfo(prGlueInfo, FALSE);
 
 #if CFG_SUPPORT_MULTI_CARD
 	for (u4GlueIdx = 0; u4GlueIdx < CFG_MAX_WLAN_DEVICES; u4GlueIdx++) {
@@ -5236,7 +5154,7 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 	 * time when the wlanProbe() -> wlanCreateWirelessDevice() is run,
 	 * so we don't need to initialize it here.
 	 */
-	wlanResetGlueInfo(prGlueInfo);
+	wlanResetGlueInfo(prGlueInfo, TRUE);
 #else
 	kalSnprintf(prGlueInfo->aucFbName, sizeof(prGlueInfo->aucFbName),
 		"wlan_fb_notifier%d", u4WlanDevNum);

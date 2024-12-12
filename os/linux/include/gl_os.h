@@ -1235,6 +1235,9 @@ struct GLUE_INFO {
 #endif
 #endif /* CFG_SUPPORT_TPUT_FACTOR */
 
+	/* GLUE_INFO reserved START area for each wlanProbe */
+	u_int8_t reserved_start;
+
 	uint32_t u4DevNum;
 
 	const struct firmware *fw_entry;
@@ -1312,6 +1315,9 @@ struct GLUE_INFO {
 	u_int8_t fgCmdDumpIsDone;
 
 	struct ECO_INFO eco_info;
+
+	u_int8_t reserved_end;
+	/* GLUE_INFO reserved END area for each wlanProbe */
 
 #if CFG_SUPPORT_MULTI_CARD
 	struct wireless_dev *prWdev[KAL_AIS_NUM];
