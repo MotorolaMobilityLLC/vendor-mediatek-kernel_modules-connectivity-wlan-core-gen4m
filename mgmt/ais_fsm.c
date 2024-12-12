@@ -476,8 +476,6 @@ struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
 	if (!bss) {
 		DBGLOG(AIS, ERROR,
 			"prAisBssInfo is NULL for link%d\n", ucLinkIdx);
-		if (ucLinkIdx == AIS_MAIN_LINK_INDEX)
-			ASSERT(0);
 	} else {
 		prAisFsmInfo->ucLinkNum++;
 		aisSetLinkBssInfo(prAisFsmInfo, bss, ucLinkIdx);
@@ -903,6 +901,11 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 		prAisFsmInfo->arBssId2LinkMap[i] = MLD_LINK_ID_NONE;
 	prBssInfo = aisAllocBssInfo(prAdapter, prAisFsmInfo,
 		AIS_MAIN_LINK_INDEX, FALSE);
+
+	if (!prBssInfo) {
+		DBGLOG(AIS, ERROR, "Cannot alloc BssInfo!\n");
+		return;
+	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	COPY_MAC_ADDR(aucMldMac, prBssInfo->aucOwnMacAddr);
