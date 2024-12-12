@@ -48,6 +48,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#if CFG_MTK_WIFI_MBU
+#define MBU_MAX_TIMEOUT_CNT 3
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -3235,8 +3238,24 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 		}
 
 		if (prReq->eOp == WF_REG_READ) {
-			HAL_RMCR_RD(HIF_BT_DBG, prGlueInfo->prAdapter,
-				    prReq->u4Addr, &prReq->u4Val);
+#if CFG_MTK_WIFI_MBU
+			u_int8_t fgRet = TRUE;
+
+			if (prGlueInfo->u4MbuTimeoutCnt < MBU_MAX_TIMEOUT_CNT) {
+				HAL_MCR_EMI_RD(
+					prGlueInfo->prAdapter,
+					prReq->u4Addr,
+					&prReq->u4Val,
+					&fgRet);
+				if (!fgRet)
+					prGlueInfo->u4MbuTimeoutCnt++;
+			} else {
+				fgRet = FALSE;
+			}
+			if (!fgRet)
+#endif
+				HAL_RMCR_RD(HIF_BT_DBG, prGlueInfo->prAdapter,
+					    prReq->u4Addr, &prReq->u4Val);
 		} else if (prReq->eOp == WF_REG_WRITE) {
 			HAL_MCR_WR(prGlueInfo->prAdapter,
 				   prReq->u4Addr, prReq->u4Val);
