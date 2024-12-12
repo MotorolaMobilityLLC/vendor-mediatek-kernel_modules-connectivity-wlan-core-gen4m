@@ -10447,6 +10447,20 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 			prSubReq->eRfChannelWidth);
 		prSubReq->ucRfCenterFreqSeg2 = 0;
 
+		/* FW CNM need actual capability of AP to calculate the offset
+		 * value when set channel.
+		 */
+		prSubReq->eRfChannelWidthFromAP = prBssDesc->eChannelWidth;
+		prSubReq->ucRfCenterFreqSeg1FromAP = nicGetS1(prSubReq->eRfBand,
+			prSubReq->ucPrimaryChannel,
+			prSubReq->eRfChannelWidthFromAP);
+		rlmReviseS1(
+			&(prSubReq->ucRfCenterFreqSeg1FromAP),
+			prBssDesc->ucChannelNum,
+			prBssDesc->eChannelWidth,
+			prBssDesc->eSco);
+		prSubReq->ucRfCenterFreqSeg2FromAP = 0;
+
 		rlmReviseMaxBw(prAdapter,
 			prSubReq->ucBssIndex,
 			&prSubReq->eRfSco,
@@ -11106,6 +11120,8 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 				uint8_t *ucChTokenId)
 {
 	struct MSG_CH_REQ *prMsgChReq = NULL;
+	struct BSS_DESC *prBssDesc;
+	struct PARAM_SSID rSsid;
 
 	prMsgChReq = (struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
 		RAM_TYPE_MSG,
@@ -11115,6 +11131,12 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 		return;
 	}
 	kalMemZero(prMsgChReq, sizeof(struct MSG_CH_REQ));
+	kalMemZero(&rSsid, sizeof(rSsid));
+
+	COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+		  prBss->aucSSID, prBss->ucSSIDLen);
+	prBssDesc = scanSearchBssDescByBssidAndSsid(
+			prAdapter, prBss->aucBSSID, TRUE, &rSsid);
 
 	*ucChTokenId = cnmIncreaseTokenId(prAdapter);
 	prAisFsmInfo->ucChReqNum = 1;
@@ -11135,6 +11157,23 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	prMsgChReq->eRfChannelWidth = prBss->ucVhtChannelWidth;
 	prMsgChReq->ucRfCenterFreqSeg1 = prBss->ucVhtChannelFrequencyS1;
 	prMsgChReq->ucRfCenterFreqSeg2 = prBss->ucVhtChannelFrequencyS2;
+
+	/* FW CNM need actual capability of AP to calculate the offset
+	 * value when set channel.
+	 */
+	if (prBssDesc) {
+		prMsgChReq->eRfChannelWidthFromAP = prBssDesc->eChannelWidth;
+		prMsgChReq->ucRfCenterFreqSeg1FromAP
+			= nicGetS1(prBssDesc->eBand,
+				prBssDesc->ucChannelNum,
+				prBssDesc->eChannelWidth);
+		rlmReviseS1(
+			&(prMsgChReq->ucRfCenterFreqSeg1FromAP),
+			prBssDesc->ucChannelNum,
+			prBssDesc->eChannelWidth,
+			prBssDesc->eSco);
+		prMsgChReq->ucRfCenterFreqSeg2FromAP = 0;
+	}
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 			(struct MSG_HDR *)prMsgChReq,

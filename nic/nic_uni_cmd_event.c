@@ -4404,6 +4404,36 @@ nicUniCmdChReqBandType(enum ENUM_MBMC_BN eBand)
 	return eUniBand;
 }
 
+static enum ENUM_UNI_CMD_CNM_CHANNEL_WIDTH
+		channelWidthTransform(enum ENUM_CHANNEL_WIDTH eRfChannelWidth)
+{
+	enum ENUM_UNI_CMD_CNM_CHANNEL_WIDTH eWidth;
+
+	switch (eRfChannelWidth) {
+	case CW_20_40MHZ:
+		eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ;
+		break;
+	case CW_80MHZ:
+		eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ;
+		break;
+	case CW_160MHZ:
+		eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ;
+		break;
+	case CW_80P80MHZ:
+		eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ;
+		break;
+	case CW_320_1MHZ:
+	case CW_320_2MHZ:
+		eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ;
+		break;
+	default:
+		eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ;
+		break;
+	}
+
+	return eWidth;
+}
+
 static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		struct MSG_CH_REQ *msg,
 		struct WIFI_UNI_CMD_ENTRY **out_entry)
@@ -4430,7 +4460,6 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_CNM_CH_PRIVILEGE_REQ *)&uni_cmd->aucTlvBuffer[0];
 	for (i = 0; i < msg->ucExtraChReqNum + 1; i++, tag++) {
 		struct MSG_CH_REQ *sub_req = NULL;
-		enum ENUM_UNI_CMD_CNM_CHANNEL_WIDTH eWidth;
 		uint8_t extra = 0;
 
 		if (i == 0) {
@@ -4452,34 +4481,33 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucBssIndex = sub_req->ucBssIndex;
 		tag->ucRfBand = sub_req->eRfBand;
 		tag->ucPrimaryChannel = sub_req->ucPrimaryChannel;
-		switch (sub_req->eRfChannelWidth) {
-		case CW_20_40MHZ:
-			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ;
-			break;
-		case CW_80MHZ:
-			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ;
-			break;
-		case CW_160MHZ:
-			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ;
-			break;
-		case CW_80P80MHZ:
-			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ;
-			break;
-		case CW_320_1MHZ:
-		case CW_320_2MHZ:
-			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ;
-			break;
-		default:
-			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ;
-			break;
-		}
-		tag->ucRfChannelWidth = (uint8_t)eWidth;
+		tag->ucRfChannelWidth =
+			(uint8_t)
+			channelWidthTransform(sub_req->eRfChannelWidth);
 		tag->ucRfSco = sub_req->eRfSco;
 		tag->ucRfCenterFreqSeg1 = sub_req->ucRfCenterFreqSeg1;
 		tag->ucRfCenterFreqSeg2 = sub_req->ucRfCenterFreqSeg2;
-		tag->ucRfChannelWidthFromAP = (uint8_t)eWidth;
-		tag->ucRfCenterFreqSeg1FromAP = sub_req->ucRfCenterFreqSeg1;
-		tag->ucRfCenterFreqSeg2FromAP = sub_req->ucRfCenterFreqSeg2;
+
+		/* If the caller doesn't fill the fields of AP, keep them
+		 * same as STA's capability.
+		 */
+		if (sub_req->ucRfCenterFreqSeg1FromAP != 0) {
+			tag->ucRfChannelWidthFromAP =
+				(uint8_t)channelWidthTransform(
+					sub_req->eRfChannelWidthFromAP);
+			tag->ucRfCenterFreqSeg1FromAP =
+				sub_req->ucRfCenterFreqSeg1FromAP;
+			tag->ucRfCenterFreqSeg2FromAP =
+				sub_req->ucRfCenterFreqSeg2FromAP;
+		} else {
+			tag->ucRfChannelWidthFromAP =
+				tag->ucRfChannelWidth;
+			tag->ucRfCenterFreqSeg1FromAP =
+				sub_req->ucRfCenterFreqSeg1;
+			tag->ucRfCenterFreqSeg2FromAP =
+				sub_req->ucRfCenterFreqSeg2;
+		}
+
 		tag->ucDBDCBand = nicUniCmdChReqBandType(sub_req->eDBDCBand);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (IS_BSS_APGO(bss)) {

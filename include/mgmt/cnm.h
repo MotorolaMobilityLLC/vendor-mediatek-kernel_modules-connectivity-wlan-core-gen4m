@@ -99,7 +99,7 @@ struct MSG_CH_REQ {
 	enum ENUM_BAND eRfBand;
 
 	/** Enum for RF Channel Width */
-    /* To support 80/160MHz bandwidth */
+	/* To support 80/160MHz bandwidth */
 	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
 
 	/** Center frequency segment 1 for 80/160MHz bandwidth */
@@ -107,6 +107,15 @@ struct MSG_CH_REQ {
 
 	/** Center frequency segment 2 for 80/160MHz bandwidth */
 	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
+
+	/** Enum for RF Channel Width from AP*/
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidthFromAP;
+
+	/** Center frequency segment 1 from AP for 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg1FromAP;
+
+	/** Center frequency segment 2 from AP for 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg2FromAP;
 
 	/** Enum for Channel Request Type */
 	enum ENUM_CH_REQ_TYPE eReqType;

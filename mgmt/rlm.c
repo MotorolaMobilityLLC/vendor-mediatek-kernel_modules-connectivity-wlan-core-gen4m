@@ -2944,9 +2944,7 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	}
 
 	/* Revise S1 */
-	if (*peExtend == 0 &&
-	    *peChannelWidth == CW_20_40MHZ)
-		*pucS1 = *pucPrimaryCh;
+	rlmReviseS1(pucS1, *pucPrimaryCh, *peChannelWidth, *peExtend);
 
 	if (eChBwOrigin != *peChannelWidth ||
 	    ucS1Origin != *pucS1) {
@@ -2954,6 +2952,27 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 			eChBwOrigin, *peChannelWidth,
 			ucS1Origin, *pucS1);
 	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Revise S1
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+
+void rlmReviseS1(
+	uint8_t *pucS1,
+	uint8_t ucPrimaryCh,
+	enum ENUM_CHANNEL_WIDTH eChBw,
+	enum ENUM_CHNL_EXT eSco)
+{
+	/* For 6G BW20 Case*/
+	if (eSco == 0 && eChBw == CW_20_40MHZ)
+		*pucS1 = ucPrimaryCh;
 }
 
 /*----------------------------------------------------------------------------*/
