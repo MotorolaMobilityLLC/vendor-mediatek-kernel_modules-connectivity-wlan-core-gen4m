@@ -3252,18 +3252,6 @@ uint8_t halPcieIsPcieProbed(void)
 
 
 #if CFG_MTK_WIFI_PCIE_SR
-int mtk_pcie_L2_is_supported(struct pci_dev *pdev)
-{
-	u16 u2DdeviceId = 0;
-
-	pci_bus_read_config_word(pdev->bus->parent, 0, 0x2, &u2DdeviceId);
-	if (u2DdeviceId == 0x6899) {
-		DBGLOG(HAL, INFO, "L2 unsupported\n");
-		return -1;
-	}
-	return 0;
-}
-
 int mtk_pcie_enter_L2(struct pci_dev *pdev)
 {
 	int state = 0;
