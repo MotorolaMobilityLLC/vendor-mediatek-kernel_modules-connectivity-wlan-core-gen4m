@@ -137,6 +137,12 @@ struct MDDP_SETTINGS {
 };
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
+struct mddpw_drv_info_genswitch {
+	uint16_t u2Seq;
+	uint16_t u2Result;
+};
+
+
 enum ENUM_MDDP_GEN_SWITCH_STATE {
 	MDDP_GEN_SWITCH_NORMAL_STATE = 0,
 	MDDP_GEN_SWITCH_START_BEGIN_STATE,

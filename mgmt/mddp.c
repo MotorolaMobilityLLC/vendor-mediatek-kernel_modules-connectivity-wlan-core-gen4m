@@ -1322,31 +1322,52 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 	struct mddpw_md_notify_info_t *prMdInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+	uint16_t u2genSwitchSeq = 0, u2GenSwitchRsp = 0;
+	struct mddpw_drv_info_genswitch *prAckRsp =
+		(struct mddpw_drv_info_genswitch *) &(prMdInfo->buf[1]);
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	if (prMdInfo->buf_len >= 4) {
-		kalMemCopy((uint32_t *) &u4genSwitchSeq,
-					&prMdInfo->buf[0],
-					sizeof(uint32_t));
-	}
-	if (prMdInfo->buf_len >= 8) {
-		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
-					&prMdInfo->buf[4],
-					sizeof(uint32_t));
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+			   ERR_RECOV_STOP_IDLE) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE,
+			u2genSwitchSeq, u2GenSwitchRsp);
+		DBGLOG(INIT, ERROR, "SER on-going\n");
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		goto end;
 	}
 
-	DBGLOG(HAL, INFO,
-		"mddp gen switch state [%d]->[%d] seq: %u, status: %u\n",
-		prHifInfo->u4GenSwitchState,
-		MDDP_GEN_SWITCH_START_END_STATE,
-		u4genSwitchSeq, u4GenSwitchStatus);
-	prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_END_STATE;
-	wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
+
+	if (prMdInfo->buf_len >= 4) {
+		u2genSwitchSeq = prAckRsp->u2Seq;
+		u2GenSwitchRsp = prAckRsp->u2Result;
+	}
+
+	if (u2GenSwitchRsp == 1) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_START_END_STATE,
+			u2genSwitchSeq, u2GenSwitchRsp);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_END_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
+	} else {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE,
+			u2genSwitchSeq, u2GenSwitchRsp);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+	}
 
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
 
+end:
 	return 0;
 }
 
@@ -1355,25 +1376,22 @@ int32_t mddpMdNotifyInfoHandleGenSwitchEnd(
 	struct mddpw_md_notify_info_t *prMdInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+	uint16_t u2genSwitchSeq = 0, u2GenSwitchRsp = 0;
+	struct mddpw_drv_info_genswitch *prAckRsp =
+		(struct mddpw_drv_info_genswitch *) &(prMdInfo->buf[1]);
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prMdInfo->buf_len >= 4) {
-		kalMemCopy((uint32_t *) &u4genSwitchSeq,
-					&prMdInfo->buf[0],
-					sizeof(uint32_t));
+		u2genSwitchSeq = prAckRsp->u2Seq;
+		u2GenSwitchRsp = prAckRsp->u2Result;
 	}
-	if (prMdInfo->buf_len >= 8) {
-		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
-					&prMdInfo->buf[4],
-					sizeof(uint32_t));
-	}
+
 	DBGLOG(HAL, INFO,
-		"mddp gen switch state [%d]->[%d] seq: %u, status: %u\n",
+		"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 		prHifInfo->u4GenSwitchState,
 		MDDP_GEN_SWITCH_NORMAL_STATE,
-		u4genSwitchSeq, u4GenSwitchStatus);
+		u2genSwitchSeq, u2GenSwitchRsp);
 	prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
 
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
@@ -1386,37 +1404,34 @@ int32_t mddpMdNotifyInfoHandleGenSwitchByPassStart(
 	struct mddpw_md_notify_info_t *prMdInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+	uint16_t u2genSwitchSeq = 0, u2GenSwitchRsp = 0;
+	struct mddpw_drv_info_genswitch *prAckRsp =
+		(struct mddpw_drv_info_genswitch *) &(prMdInfo->buf[1]);
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prMdInfo->buf_len >= 4) {
-		kalMemCopy((uint32_t *) &u4genSwitchSeq,
-					&prMdInfo->buf[0],
-					sizeof(uint32_t));
+		u2genSwitchSeq = prAckRsp->u2Seq;
+		u2GenSwitchRsp = prAckRsp->u2Result;
 	}
-	if (prMdInfo->buf_len >= 8) {
-		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
-					&prMdInfo->buf[4],
-					sizeof(uint32_t));
-	}
+
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_NORMAL_STATE) {
 		/* set to bypass state only when GenSwitch in normal state */
 		DBGLOG(HAL, INFO,
-			"mddp gen switch state [%d]->[%d] seq: %u, status: %u\n",
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_BYPASS_STATE,
-			u4genSwitchSeq, u4GenSwitchStatus);
+			u2genSwitchSeq, u2GenSwitchRsp);
 		prHifInfo->u4GenSwitchState =
 			MDDP_GEN_SWITCH_BYPASS_STATE;
 		wlandioStopPcieStatus(prAdapter,
 			PCIE_MD_BYPASS_GEN_SWITCH_START);
 	} else {
 		DBGLOG(HAL, INFO,
-			"mddp gen switch state [%d]->[%d] seq: %u, status: %u, ignore md bypass\n",
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u, ignore md bypass\n",
 			prHifInfo->u4GenSwitchState,
 			prHifInfo->u4GenSwitchState,
-			u4genSwitchSeq, u4GenSwitchStatus);
+			u2genSwitchSeq, u2GenSwitchRsp);
 	}
 
 	return 0;
@@ -1427,25 +1442,24 @@ int32_t mddpMdNotifyInfoHandleGenSwitchByPassEnd(
 	struct mddpw_md_notify_info_t *prMdInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+	uint16_t u2genSwitchSeq = 0, u2GenSwitchRsp = 0;
+	struct mddpw_drv_info_genswitch *prAckRsp =
+		(struct mddpw_drv_info_genswitch *) &(prMdInfo->buf[1]);
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prMdInfo->buf_len >= 4) {
-		kalMemCopy((uint32_t *) &u4genSwitchSeq,
-					&prMdInfo->buf[0],
-					sizeof(uint32_t));
+		u2genSwitchSeq = prAckRsp->u2Seq;
+		u2GenSwitchRsp = prAckRsp->u2Result;
 	}
-	if (prMdInfo->buf_len >= 8) {
-		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
-					&prMdInfo->buf[4],
-					sizeof(uint32_t));
-	}
+
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
 		/* set to bypass state only when GenSwitch in normal state */
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
-			MDDP_GEN_SWITCH_NORMAL_STATE);
+			MDDP_GEN_SWITCH_NORMAL_STATE,
+			u2genSwitchSeq, u2GenSwitchRsp);
 		prHifInfo->u4GenSwitchState =
 			MDDP_GEN_SWITCH_NORMAL_STATE;
 		wlandioStopPcieStatus(prAdapter,
@@ -1500,7 +1514,7 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 	if (u32Action == WFPM_DRVINFO_PCIE_GENSWITCH_START) {
 		/* GenSwitch Start */
 		u32InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_START;
-		GLUE_INC_REF_CNT(prAdapter->u4MddpGenSwitchSeqNum);
+		GLUE_INC_REF_CNT(prAdapter->u2MddpGenSwitchSeqNum);
 	} else if (u32Action == WFPM_DRVINFO_PCIE_GENSWITCH_END) {
 		/* GenSwitch End */
 		u32InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_END;
@@ -1516,9 +1530,9 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 	prDrvInfo->info_id = u32InfoId;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
-	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]),
-			&prAdapter->u4MddpGenSwitchSeqNum,
-			sizeof(uint32_t));
+	kalMemCopy((uint16_t *) &(prDrvInfo->info[0]),
+			&prAdapter->u2MddpGenSwitchSeqNum,
+			sizeof(uint16_t));
 
 	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 
@@ -1527,8 +1541,8 @@ exit:
 		kalMemFree(buff, PHY_MEM_TYPE, u32BufSize);
 
 	if (prAdapter) {
-		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u32SeqNum:%u.\n",
-			ret, u32InfoId, prAdapter->u4MddpGenSwitchSeqNum);
+		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, SeqNum:%u.\n",
+			ret, u32InfoId, prAdapter->u2MddpGenSwitchSeqNum);
 	}
 
 	return ret;
