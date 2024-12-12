@@ -176,8 +176,6 @@ const struct nla_policy
 		.type = NLA_BINARY, .len = 512},
 	[QCA_WLAN_VENDOR_ATTR_P2P_LO_CTRL_FLAG] = {
 		.type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_P2P_LO_CHANNEL] = {
-		.type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_P2P_LO_STOP_REASON] = {
 		.type = NLA_U8 },
 };
