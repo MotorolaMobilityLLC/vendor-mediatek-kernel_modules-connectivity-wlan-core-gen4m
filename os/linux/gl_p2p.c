@@ -296,7 +296,11 @@ static int p2pInit(struct net_device *prDev)
 		return -ENXIO;
 #if CFG_SUPPORT_RX_GRO
 	kalRxGroInit(prDev);
-#endif
+#endif /* CFG_SUPPORT_RX_GRO */
+
+#if CFG_TX_GSO
+	kalTxGsoInit(prDev);
+#endif /* CFG_TX_GSO */
 	return 0;		/* success */
 }				/* end of p2pInit() */
 

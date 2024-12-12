@@ -15272,6 +15272,20 @@ void kalSetThreadSchPolicyPriority(struct GLUE_INFO *prGlueInfo)
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif
 
+#if CFG_TX_GSO
+void kalTxGsoInit(struct net_device *prDev)
+{
+	/*
+	 * NETIF_F_SG is required when GSO is enabled
+	 * ref: netdev_fix_features
+	 *
+	 * Please note that skb->data only have header after SG is enabled.
+	 */
+	prDev->features |= NETIF_F_GSO | NETIF_F_SG;
+	prDev->hw_features |= NETIF_F_GSO | NETIF_F_SG;
+}
+#endif /* CFG_TX_GSO */
+
 /* For Linux kernel version wrapper */
 void kal_napi_complete_done(struct napi_struct *n, int work_done)
 {

@@ -2556,6 +2556,10 @@ kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
 		struct ieee80211_channel *channel,
 		struct RF_CHANNEL_INFO *prRfChnlInfo);
 
+#if CFG_TX_GSO
+void kalTxGsoInit(struct net_device *prDev);
+#endif /* CFG_TX_GSO */
+
 void kal_napi_complete_done(struct napi_struct *n, int work_done);
 void kal_napi_schedule(struct napi_struct *n);
 

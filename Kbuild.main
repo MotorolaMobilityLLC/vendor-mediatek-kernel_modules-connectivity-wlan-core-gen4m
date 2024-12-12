@@ -1881,6 +1881,12 @@ else
     ccflags-y += -DCFG_SUPPORT_PAGE_POOL_USE_CMA=0
 endif
 
+ifeq ($(CONFIG_TX_GSO), y)
+    ccflags-y += -DCFG_TX_GSO=1
+else
+    ccflags-y += -DCFG_TX_GSO=0
+endif
+
 ifeq ($(CONFIG_ADJUST_NETIF_TH_BY_BAND), y)
     ccflags-y += -DCFG_ADJUST_NETIF_TH_BY_BAND=1
 else

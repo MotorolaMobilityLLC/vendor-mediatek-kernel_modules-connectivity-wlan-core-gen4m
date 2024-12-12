@@ -1145,13 +1145,6 @@ void halCopyPathAllocTxCmaTxDataBuf(
 	prToken->rDmaAddr = 0;
 }
 
-bool halCopyPathCopyTxCmaTxData(struct MSDU_TOKEN_ENTRY *prToken,
-			  void *pucSrc, uint32_t u4Len)
-{
-	memcpy(prToken->prPacket, pucSrc, u4Len);
-	return true;
-}
-
 phys_addr_t halCopyPathMapTxCmaTxBuf(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len)
 {
@@ -1249,13 +1242,6 @@ void halCopyPathAllocNonCacheTxDataBuf(
 	if (!prToken->prPacket)
 		DBGLOG_LIMITED(INIT, ERROR,
 			"alloc tx buf fail u4Idx: %u\n", u4Idx);
-}
-
-bool halCopyPathCopyNonCacheTxData(struct MSDU_TOKEN_ENTRY *prToken,
-			  void *pucSrc, uint32_t u4Len)
-{
-	memcpy(prToken->prPacket, pucSrc, u4Len);
-	return true;
 }
 
 int halInitTxCmaNonCacheMem(struct platform_device *pdev)
@@ -1439,6 +1425,43 @@ bool halCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
 
 	return true;
 }
+
+#if CFG_TX_GSO
+bool halCopyPathCopyTxDataSG(struct MSDU_TOKEN_ENTRY *prToken,
+			  void *pucSrc, uint32_t u4Len)
+{
+	struct MSDU_INFO *prMsduInfo = prToken->prMsduInfo;
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	uint32_t u4CopyLen = 0;
+	uint32_t i;
+
+	/*
+	 * Please note that skb->data only have header after SG is enabled.
+	 * For Non-SG, prSkb->data_len == 0
+	 *   => skb_headlen(prSkb) = prSkb->len + 0
+	 *
+	 * For SG, prSkb->data_len != 0,
+	 *   => skb_headlen(prSkb) => only header
+	 *   => __skb_pagelen(prSkb) => other payload.
+	 */
+	/* copy header */
+	memcpy(prToken->prPacket, prSkb->data, skb_headlen(prSkb));
+	if (!skb_is_nonlinear(prSkb))
+		goto skip;
+
+	u4CopyLen = skb_headlen(prSkb);
+	for (i = 0; i < skb_shinfo(prSkb)->nr_frags; i++) {
+		skb_frag_t *frag = &skb_shinfo(prSkb)->frags[i];
+
+		memcpy(prToken->prPacket + u4CopyLen, skb_frag_address(frag),
+			skb_frag_size(frag));
+		u4CopyLen += skb_frag_size(frag);
+	}
+
+skip:
+	return true;
+}
+#endif /* CFG_TX_GSO */
 
 bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			  struct RTMP_DMACB *pRxCell,
@@ -1667,13 +1690,6 @@ bool halZeroCopyPathCopyEvent(struct GL_HIF_INFO *prHifInfo,
 		return false;
 	}
 	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
-	return true;
-}
-
-bool halZeroCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
-			   void *pucSrc, uint32_t u4Len)
-{
-	memcpy(prToken->prPacket, pucSrc, u4Len);
 	return true;
 }
 
@@ -2193,22 +2209,25 @@ static int halSetMemOpsTxData(
 	struct HIF_MEM_OPS *prMemOps,
 	enum WIFI_MEM_OPER_SETS op_sets)
 {
+#if CFG_TX_GSO
+	prMemOps->copyTxData = halCopyPathCopyTxDataSG;
+#else /* CFG_TX_GSO */
+	prMemOps->copyTxData = halCopyPathCopyTxData;
+#endif /* CFG_TX_GSO */
+
 	if (op_sets == WF_MEM_OP_TX_DATA_ZERO_COPY_PATH) {
 		prMemOps->allocTxDataBuf = halZeroCopyPathAllocTxDataBuf;
-		prMemOps->copyTxData = halZeroCopyPathCopyTxData;
 		prMemOps->freeDataBuf = halZeroCopyPathFreeDataBuf;
 		prMemOps->mapTxDataBuf = halZeroCopyPathMapTxDataBuf;
 		prMemOps->unmapTxDataBuf = halZeroCopyPathUnmapTxDataBuf;
 	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH) {
 		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
-		prMemOps->copyTxData = halCopyPathCopyTxData;
 		prMemOps->freeDataBuf = NULL;
 		prMemOps->mapTxDataBuf = NULL;
 		prMemOps->unmapTxDataBuf = NULL;
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH_TX_DYN_CMA) {
 		prMemOps->allocTxDataBuf = halCopyPathAllocTxCmaTxDataBuf;
-		prMemOps->copyTxData = halCopyPathCopyTxCmaTxData;
 		prMemOps->freeDataBuf = halCopyPathFreeTxCmaBuf;
 		prMemOps->mapTxDataBuf = halCopyPathMapTxCmaTxBuf;
 		prMemOps->unmapTxDataBuf = halCopyPathUnmapTxCmaTxBuf;
@@ -2216,7 +2235,6 @@ static int halSetMemOpsTxData(
 #if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
 	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH_TX_NON_CACHE) {
 		prMemOps->allocTxDataBuf = halCopyPathAllocNonCacheTxDataBuf;
-		prMemOps->copyTxData = halCopyPathCopyNonCacheTxData;
 		prMemOps->freeDataBuf = NULL;
 		prMemOps->mapTxDataBuf = NULL;
 		prMemOps->unmapTxDataBuf = NULL;

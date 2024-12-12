@@ -3631,6 +3631,10 @@ static int wlanInit(struct net_device *prDev)
 #if CFG_SUPPORT_RX_GRO
 	kalRxGroInit(prDev);
 #endif /* CFG_SUPPORT_RX_GRO */
+
+#if CFG_TX_GSO
+	kalTxGsoInit(prDev);
+#endif /* CFG_TX_GSO */
 	return 0;		/* success */
 }				/* end of wlanInit() */
 
