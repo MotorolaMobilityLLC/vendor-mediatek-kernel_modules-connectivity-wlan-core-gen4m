@@ -306,11 +306,6 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_HIF_MDDP_BIT			(18)
 #define GLUE_FLAG_DRV_INT_BIT			(19)
 
-#define GLUE_FLAG_RST_START			BIT(18)
-#define GLUE_FLAG_RST_START_BIT			(18)
-#define GLUE_FLAG_RST_END			BIT(19)
-#define GLUE_FLAG_RST_END_BIT			(19)
-
 #if CFG_SUPPORT_NAN /* notice the bit differnet with 7668 */
 #define GLUE_FLAG_NAN_MULTICAST			BIT(20)
 #define GLUE_FLAG_NAN_MULTICAST_BIT		(20)
@@ -340,12 +335,6 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 
 #define GLUE_FLAG_TX_TIMEOUT_DUMP_BIT		(28)
 #define GLUE_FLAG_TX_TIMEOUT_DUMP		BIT(28)
-
-#define GLUE_FLAG_RST_FW_NOTIFY_L0_BIT		(29)
-#define GLUE_FLAG_RST_FW_NOTIFY_L0		BIT(29)
-
-#define GLUE_FLAG_RST_FW_NOTIFY_L05_BIT		(30)
-#define GLUE_FLAG_RST_FW_NOTIFY_L05		BIT(30)
 
 #define GLUE_FLAG_CONNECTIVITY_LOG_BIT		(31)
 #define GLUE_FLAG_CONNECTIVITY_LOG		BIT(31)

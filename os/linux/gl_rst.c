@@ -414,7 +414,7 @@ void glResetUninit(void)
 			sizeof(*rst->pending_req));
 		rst->pending_req = NULL;
 	}
-	set_bit(GLUE_FLAG_HALT_BIT, &rst->ulFlag);
+	set_bit(RESET_FLAG_HALT_BIT, &rst->ulFlag);
 	wake_up_interruptible(&g_waitq_rst);
 	wait_for_completion_interruptible(&rst->halt_comp);
 #if CFG_SUPPORT_CONNAC1X
@@ -2364,9 +2364,7 @@ int wlan_reset_thread_main(void *data)
 		/* Unlock wakelock if hif_thread going to idle */
 		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
 		/*
-		 * sleep on waitqueue if no events occurred. Event contain
-		 * (1) GLUE_FLAG_HALT (2) GLUE_FLAG_RST
-		 *
+		 * sleep on waitqueue if no events occurred.
 		 */
 		do {
 			ret = wait_event_interruptible(g_waitq_rst,
@@ -2380,7 +2378,7 @@ int wlan_reset_thread_main(void *data)
 				      prWlanRstThreadWakeLock);
 #endif
 
-		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &rst->ulFlag)) {
+		if (test_and_clear_bit(RESET_FLAG_START, &rst->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
@@ -2432,7 +2430,7 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstTotalCnt);
 		}
 
-		if (test_and_clear_bit(GLUE_FLAG_RST_FW_NOTIFY_L05_BIT,
+		if (test_and_clear_bit(RESET_FLAG_FW_NOTIFY_L05_BIT,
 			&rst->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
@@ -2457,7 +2455,7 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstTotalCnt);
 		}
 
-		if (test_and_clear_bit(GLUE_FLAG_RST_FW_NOTIFY_L0_BIT,
+		if (test_and_clear_bit(RESET_FLAG_FW_NOTIFY_L0_BIT,
 			&rst->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
@@ -2482,7 +2480,7 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstTotalCnt);
 		}
 
-		if (test_and_clear_bit(GLUE_FLAG_RST_END_BIT, &rst->ulFlag)) {
+		if (test_and_clear_bit(RESET_FLAG_END_BIT, &rst->ulFlag)) {
 #if (CFG_ENABLE_WAKE_LOCK)
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
@@ -2521,7 +2519,7 @@ void kalSetRstEvent(u_int8_t force_dump)
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	rst->force_dump = force_dump;
-	set_bit(GLUE_FLAG_RST_START_BIT, &rst->ulFlag);
+	set_bit(RESET_FLAG_START, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);
@@ -2534,7 +2532,7 @@ void kalSetRstFwNotifyL05Event(u_int8_t force_dump)
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	rst->force_dump = force_dump;
-	set_bit(GLUE_FLAG_RST_FW_NOTIFY_L05_BIT, &rst->ulFlag);
+	set_bit(RESET_FLAG_FW_NOTIFY_L05_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);
@@ -2547,7 +2545,7 @@ void kalSetRstFwNotifyTriggerL0Event(u_int8_t force_dump)
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	rst->force_dump = force_dump;
-	set_bit(GLUE_FLAG_RST_FW_NOTIFY_L0_BIT, &rst->ulFlag);
+	set_bit(RESET_FLAG_FW_NOTIFY_L0_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);
@@ -2559,7 +2557,7 @@ void glRstSetRstEndEvent(void)
 
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
-	set_bit(GLUE_FLAG_RST_END_BIT, &rst->ulFlag);
+	set_bit(RESET_FLAG_END_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);
