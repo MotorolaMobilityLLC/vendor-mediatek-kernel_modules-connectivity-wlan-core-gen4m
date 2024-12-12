@@ -1826,7 +1826,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 	 * [33]KeyRdy                  [34]AMPDU
 	 * [35]TxQLEN TC               [36]BMP AC Delivery/Trigger
 	 * [37]FreeQuota:Total         [38]Delivery/NonDelivery
-	 * [39]aucRxMcsBitmask
+	 * [39]aucRxMcsBitmask         [40]IsPeerWithMtkOui
 	 */
 
 	log_dbg(SW4, INFO, "[1][%u],[2][%u],[3][" MACSTR
@@ -1868,7 +1868,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		prStaRec->ucVhtOpMode,
 		prStaRec->ucRCPI);
 
-	log_dbg(SW4, DEBUG, "[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x]\n",
+	log_dbg(SW4, DEBUG, "[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x],40[%d]\n",
 		prStaRec->fgIsInPS,
 		prStaRec->fgIsTxAllowed,
 		prStaRec->fgIsTxKeyReady,
@@ -1884,7 +1884,8 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		prStaRec->ucFreeQuotaForDelivery,
 		prStaRec->ucFreeQuotaForNonDelivery,
 		prStaRec->aucRxMcsBitmask[0],
-		prStaRec->aucRxMcsBitmask[1]);
+		prStaRec->aucRxMcsBitmask[1],
+		prStaRec->fgIsPeerWithMtkOui);
 
 	log_dbg(SW4, DEBUG, "[CapInfo][0x%x],[SupOpClass][0x%x],[SupChnl2g][0x%x],[SupChnl5g_0][0x%x],[SupChnl5g_1][0x%x]\n",
 		prStaRec->u2CapInfo,

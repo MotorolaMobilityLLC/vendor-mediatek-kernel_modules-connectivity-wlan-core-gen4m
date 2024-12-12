@@ -4471,8 +4471,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
-	prStaRec->fgIsPeerWithMtkOui = 1;
-	DBGLOG(P2P, TRACE, "Peer with MTK Oui\n");
+	prStaRec->fgIsPeerWithMtkOui = TRUE;
 
 #if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;

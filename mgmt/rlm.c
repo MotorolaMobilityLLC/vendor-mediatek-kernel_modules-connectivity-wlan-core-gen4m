@@ -4483,6 +4483,8 @@ void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
 	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
+	prStaRec->fgIsPeerWithMtkOui = TRUE;
+
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - ELEM_MIN_LEN_MTK_OUI;
 
