@@ -1230,6 +1230,11 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 			conn->aucBSSIDHint, TRUE, &ssid);
 	}
 
+#if (CFG_EXT_ROAMING == 1)
+	if (reason == ROAMING_REASON_BT_COEX)
+		aps->fgIsGBandCoex = TRUE;
+#endif /* CFG_EXT_ROAMING == 1 */
+
 	LINK_FOR_EACH_ENTRY(bss, scan_result, rLinkEntry,
 		struct BSS_DESC) {
 		if (bss->ucChannelNum > 233)
@@ -1875,13 +1880,6 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDesc->prBlock->fgIsInFWKBlocklist) {
 			DBGLOG(APS, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
-#if (CFG_SUPPORT_CONN_LOG == 1)
-#ifdef DX5_TC10_TODO /* DX5 TC10 */
-			connLogBlockList(prAdapter,
-				ucBssIndex,
-				prBssDesc);
-#endif
-#endif
 			return FALSE;
 		}
 
@@ -2059,13 +2057,6 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		ucBssIndex)) {
 		DBGLOG(APS, WARN, MACSTR " rsn policy select fail.\n",
 			MAC2STR(prBssDesc->aucBSSID));
-#if (CFG_SUPPORT_CONN_LOG == 1)
-#ifdef DX5_TC10_TODO /* DX5 TC10 */
-		connLogRsnMismatch(prAdapter,
-			ucBssIndex,
-			prBssDesc);
-#endif
-#endif
 		return FALSE;
 	}
 

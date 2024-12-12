@@ -633,13 +633,6 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				&disallow->aucList[index])) {
 			log_dbg(SCN, WARN, MACSTR" disallowed list\n",
 				MAC2STR(prBssDesc->aucBSSID));
-#if (CFG_SUPPORT_CONN_LOG == 1)
-#ifdef DX5_TC10_TODO /* DX5 TC10 */
-			connLogDisallowedList(prAdapter,
-				ucBssIndex,
-				prBssDesc);
-#endif
-#endif
 			return FALSE;
 		}
 	}
@@ -689,13 +682,6 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDesc->prBlock->fgIsInFWKBlocklist) {
 			log_dbg(SCN, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
-#if (CFG_SUPPORT_CONN_LOG == 1)
-#ifdef DX5_TC10_TODO /* DX5 TC10 */
-			connLogBlockList(prAdapter,
-				ucBssIndex,
-				prBssDesc);
-#endif
-#endif
 			return FALSE;
 		}
 
@@ -814,13 +800,6 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		ucBssIndex)) {
 		log_dbg(SCN, WARN, MACSTR " rsn policy select fail.\n",
 			MAC2STR(prBssDesc->aucBSSID));
-#if (CFG_SUPPORT_CONN_LOG == 1)
-#ifdef DX5_TC10_TODO /* DX5 TC10 */
-		connLogRsnMismatch(prAdapter,
-			ucBssIndex,
-			prBssDesc);
-#endif
-#endif
 		return FALSE;
 	}
 	if (aisGetAisSpecBssInfo(prAdapter,

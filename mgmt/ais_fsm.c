@@ -2232,8 +2232,8 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	}
 	discovering =
 		bss->eConnectionState == MEDIA_STATE_CONNECTED &&
-		(roam->eCurrentState == ROAMING_STATE_DISCOVERY ||
-		roam->eCurrentState == ROAMING_STATE_ROAM);
+		(roam->eCurrentState >= ROAMING_STATE_DISCOVERY &&
+		 roam->eCurrentState < ROAMING_STATE_NUM);
 
 	if (discovering) {
 		if (roam->rRoamScanParam.ucScanType ==
@@ -2245,30 +2245,37 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	}
 #endif
 	postponing = aisFsmIsInProcessPostpone(prAdapter, ucBssIndex);
-
-#if CFG_EXT_ROAMING_WTC
-	aisWtcNeedPartialScan(
-		prAdapter,
-		ucBssIndex,
-		&issued);
-#endif
-#if CFG_SUPPORT_NCHO
-	issued = ais->fgTargetChnlScanIssued ||
-		 prAdapter->rNchoInfo.u4RoamScanControl;
-#else
 	issued = ais->fgTargetChnlScanIssued;
-#endif
-#if CFG_SUPPORT_LLW_SCAN
-	/* If CRT DATA is 2, prohibit full roaming scan
-	 * even if fgTargetChnlScanIssued is FALSE.
-	 */
-	if (ais->ucLatencyCrtDataMode == 2)
+
+#if (CFG_SUPPORT_NCHO == 1)
+	if (prAdapter->rNchoInfo.u4RoamScanControl
+#if (CFG_SUPPORT_ROAMING == 1)
+	    && roam->eReason != ROAMING_REASON_BEACON_TIMEOUT
+#endif /* CFG_SUPPORT_ROAMING == 1 */
+	) {
 		issued = TRUE;
-#endif
+		DBGLOG(AIS, INFO, "Ncho mode, force to do partial scan\n");
+	}
+#endif /* CFG_SUPPORT_NCHO == 1 */
+
+#if (CFG_SUPPORT_LLW_SCAN == 1)
+	if (ais->ucLatencyCrtDataMode == 2
+#if (CFG_SUPPORT_ROAMING == 1)
+	    && roam->eReason != ROAMING_REASON_BEACON_TIMEOUT
+#endif /* CFG_SUPPORT_ROAMING == 1 */
+	) {
+		issued = TRUE;
+		DBGLOG(AIS, INFO, "LLW mode, force to do partial scan\n");
+	}
+#endif /* CFG_SUPPORT_LLW_SCAN == 1 */
+
 
 	/* For OCE certification, we need to perform full scan in all cases*/
 	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE)
 		return FALSE;
+
+	DBGLOG(AIS, INFO, "Discovering[%u] Postpone[%u] PartialScan[%u]\n",
+			discovering, postponing, issued);
 
 	return (discovering || postponing) && issued;
 }
@@ -2497,6 +2504,18 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 
 	roamingFsmRunEventNewCandidate(prAdapter, NULL, ucBssIndex);
 
+#if (CFG_EXT_ROAMING == 1)
+	if (roamingFsmScheduleNextSearch(prAdapter, ucBssIndex)) {
+		DBGLOG(AIS, INFO,
+		       "[Roaming] No target found, try to full scan again\n");
+
+		ais->fgTargetChnlScanIssued = FALSE;
+		state = AIS_STATE_LOOKING_FOR;
+		goto skip_roam_fail;
+	}
+
+	roamingFsmSetSingleScanCadence(prAdapter, ucBssIndex);
+#else
 	if (fgDisallowScan) {
 		/* disallow to do more scan */
 	} else if (ais->fgTargetChnlScanIssued ||
@@ -2516,6 +2535,7 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 		state = AIS_STATE_LOOKING_FOR;
 		goto skip_roam_fail;
 	}
+#endif /* CFG_EXT_ROAMING == 1 */
 
 	DBGLOG(AIS, INFO,
 		"[Roaming] No target found(trial=%d/%d), disallowScan=%d, issued=%d\n",
@@ -2564,7 +2584,7 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 		DBGLOG(AIS, INFO, "AIS[%d][%d] Trigger BTO disconnection\n",
 			ais->ucAisIndex, ucBssIndex);
 
-		prAisAbortMsg->rMsgHdr.eMsgId =	MID_OID_AIS_FSM_ABORT;
+		prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_ABORT;
 		prAisAbortMsg->ucReasonOfDisconnect =
 			      DISCONNECT_REASON_CODE_RADIO_LOST;
 		prAisAbortMsg->fgDelayIndication = FALSE;
@@ -3531,7 +3551,7 @@ uint8_t aisFsmUpdateChannelList(uint8_t channel, enum ENUM_BAND eBand,
 	bitNum = channel % 8;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G)
-		byteNum + 32;
+		byteNum += 32;
 #endif
 	if (bitmap[byteNum] & BIT(bitNum))
 		return 1;
@@ -3557,6 +3577,7 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct APS_INFO *prApsInfo = aisGetApsInfo(prAdapter, ucBssIndex);
 	uint8_t *pucChnlInfoNum;
 	uint8_t *pauChnlBitMap;
+	uint8_t ucEssBandBitMap = 0;
 	uint8_t aucChnlApNum[234] = {0,};
 	uint8_t aucChnlUtil[234] = {0,};
 	uint32_t i;
@@ -3692,9 +3713,14 @@ updated:
 	for (j = 0; j < *pucChnlInfoNum; j++) {
 		uint8_t ucChnl = prEssChnlInfo[j].ucChannel;
 
+		ucEssBandBitMap |= BIT(prEssChnlInfo[j].eBand);
 		prEssChnlInfo[j].ucApNum = aucChnlApNum[ucChnl];
 		prEssChnlInfo[j].ucUtilization = aucChnlUtil[ucChnl];
 	}
+
+#if (CFG_EXT_ROAMING == 1)
+	wlanSetEssBandBitmap(prAdapter, ucEssBandBitMap);
+#endif /* CFG_EXT_ROAMING == 1 */
 
 	prApsInfo->u4EssApNum = u2ApNum;
 
@@ -3745,6 +3771,7 @@ enum ENUM_AIS_STATE aisFsmScanResultsUpdate(struct ADAPTER *prAdapter,
 			rRoamingData.u2RcpiLowThreshold =
 				prRoamingFsmInfo->ucThreshold;
 			rRoamingData.ucBssidx = ucBssIndex;
+
 			roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
 		}
 #endif
@@ -4739,6 +4766,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 #if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *roam;
+#if (CFG_EXT_ROAMING == 1)
+	struct ROAMING_SCAN_CADENCE *prScanCadence;
+#endif /* CFG_EXT_ROAMING == 1 */
 #endif
 	enum ENUM_AIS_STATE eNextState;
 	struct STA_RECORD *prStaRec;
@@ -4759,6 +4789,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 	eNextState = prAisFsmInfo->eCurrentState;
 #if CFG_SUPPORT_ROAMING
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+#if (CFG_EXT_ROAMING == 1)
+	prScanCadence = &roam->rScanCadence;
+#endif  /* CFG_EXT_ROAMING == 1 */
 #endif
 
 	do {
@@ -4794,9 +4827,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			if (prAisBssInfo->eConnectionState ==
 			    MEDIA_STATE_CONNECTED) {
 #if CFG_SUPPORT_ROAMING
-				roamingFsmNotifyEvent(prAdapter,
-					ucBssIndex, FALSE,
-					aisGetMainLinkBssDesc(prAisFsmInfo));
+#if (CFG_EXT_ROAMING == 1)
+				prScanCadence->fgIsInitialConn = FALSE;
+#endif /* CFG_EXT_ROAMING == 1 */
 
 #ifdef CFG_SUPPORT_TWT_EXT
 				twtPlannerReset(prAdapter, prAisBssInfo);
@@ -4845,7 +4878,14 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 								prAdapter,
 								prAisFsmInfo,
 								TRUE);
+#if (CFG_EXT_ROAMING == 1)
+					prScanCadence->fgIsInitialConn = FALSE;
+				} else
+					prScanCadence->fgIsInitialConn = TRUE;
+#else
 				}
+#endif /* CFG_EXT_ROAMING == 1 */
+
 #endif /* CFG_SUPPORT_ROAMING */
 
 				/* 4 <1.1> Change FW's Media State
@@ -5380,6 +5420,14 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
 
+#if (CFG_SUPPORT_LLW_SCAN == 1)
+	prAisFsmInfo->ucLatencyCrtDataMode = 0;
+	prAisFsmInfo->ucDfsChDwellTimeMs = 0;
+	prAisFsmInfo->ucNonDfsChDwellTimeMs = 0;
+	prAisFsmInfo->u2OpChStayTimeMs = 0;
+	prAisFsmInfo->ucPerScanChannelCnt = 0;
+#endif /* CFG_SUPPORT_LLW_SCAN == 1 */
+
 #if CFG_SUPPORT_NCHO
 	aisFsmNotifyManageChannelList(prAdapter, ucBssIndex);
 #endif
@@ -5631,7 +5679,7 @@ void aisPostponedEventOfDisconnTimeout(struct ADAPTER *prAdapter,
 		fgIsPostponeTimeout = TRUE;
 
 	DBGLOG(AIS, EVENT, "policy %d, timeout %d, trial %d\n",
-		policy,	fgIsPostponeTimeout, prAisFsmInfo->ucConnTrialCount);
+		policy, fgIsPostponeTimeout, prAisFsmInfo->ucConnTrialCount);
 
 	/* only retry connect once when beacon timeout */
 	if (!fgIsPostponeTimeout) {
@@ -6619,6 +6667,12 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc;
 	struct STA_RECORD *prStaRec;
 
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(AIS, ERROR, "ucBssIndex [%d] out of range!\n",
+			ucBssIndex);
+		return;
+	}
+
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
@@ -7407,10 +7461,18 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	enum ENUM_AIS_REQUEST_TYPE eAisRequest;
 	struct ROAMING_INFO *prRoamingInfo;
+#if (CFG_EXT_ROAMING_WTC == 1)
+	struct BSS_TRANSITION_MGT_PARAM *prBtmReq;
+	struct WTC_MODE_INFO *prWtc;
+#endif /* CFG_EXT_ROAMING_WTC == 1 */
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRoamingInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+#if (CFG_EXT_ROAMING_WTC == 1)
+	prBtmReq = aisGetBTMParam(prAdapter, ucBssIndex);
+	prWtc = &prAdapter->rWtcModeInfo;
+#endif /* CFG_EXT_ROAMING_WTC == 1 */
 
 	/* TODO: Stop roaming event in FW */
 #if CFG_SUPPORT_WFD
@@ -7446,6 +7508,22 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 		eAisRequest = AIS_REQUEST_ROAMING_SEARCH;
 
 	prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
+
+#if (CFG_EXT_ROAMING == 1)
+#if (CFG_EXT_ROAMING_WTC == 1)
+	if (prRoamingInfo->eReason == ROAMING_REASON_BTM &&
+	    prBtmReq->ucIsCisco &&
+	    prWtc->ucScanMode > 1) {
+		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
+	}
+#endif /* CFG_EXT_ROAMING_WTC == 1 */
+	if (prRoamingInfo->eReason == ROAMING_REASON_IDLE) {
+		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
+	} else if (prRoamingInfo->eReason == ROAMING_REASON_INACTIVE_TIMER) {
+		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
+	}
+#endif /* CFG_EXT_ROAMING == 1 */
+
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
 	    && !timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 		if (eAisRequest == AIS_REQUEST_ROAMING_SEARCH)

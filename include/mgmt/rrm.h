@@ -68,7 +68,7 @@ struct BCN_RM_PARAMS {
 	uint8_t reportIeIdsLen;
 	uint8_t *reportExtIeIds;
 	uint8_t reportExtIeIdsLen;
-	uint8_t *apChannels;
+	uint8_t apChannels[256];
 	uint8_t apChannelsLen;
 };
 

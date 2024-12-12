@@ -1590,7 +1590,7 @@ struct WIFI_VAR {
 	u_int8_t fgDhcpResetBaWindow;
 #endif /* CFG_SUPPORT_DHCP_RESET_BA_WINDOW */
 #if (CFG_EXT_ROAMING == 1)
-	uint8_t ucRCMinRoamDetla;
+	uint8_t ucRCMinRoamDelta;
 	uint8_t ucRCDelta;
 	uint8_t ucRIDelta;
 	uint8_t ucScanMode;
@@ -1606,6 +1606,7 @@ struct WIFI_VAR {
 	uint8_t ucRBTMDelta;
 	uint8_t ucRssiWeight;
 	uint8_t ucCUWeight;
+	int8_t cConMinRssi;
 	uint8_t ucRCMloTpPref;
 	int8_t cB1RssiFactorVal1;
 	int8_t cB1RssiFactorVal2;

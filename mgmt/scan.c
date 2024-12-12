@@ -3079,6 +3079,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 	/* Support 802.11k rrm */
 	prBssDesc->u2CurrCountryCode = COUNTRY_CODE_NULL;
+	kalMemZero(prBssDesc->aucRrmCap, sizeof(prBssDesc->aucRrmCap));
 
 	if (fgIsProbeResp == FALSE) {
 		/* Probe response doesn't have TIM IE. Thus, we should
@@ -3657,8 +3658,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		case ELEM_ID_RRM_ENABLED_CAP:
 			if (IE_LEN(pucIE) == 5) {
 				/* RRM Capability IE is always 5 bytes */
-				kalMemZero(prBssDesc->aucRrmCap,
-					   sizeof(prBssDesc->aucRrmCap));
 				kalMemCopy(prBssDesc->aucRrmCap, pucIE + 2,
 					   sizeof(prBssDesc->aucRrmCap));
 			}

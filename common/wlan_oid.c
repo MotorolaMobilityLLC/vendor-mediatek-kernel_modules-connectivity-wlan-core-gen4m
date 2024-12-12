@@ -16492,8 +16492,8 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 /* It's a Integretion Test function for RadioMeasurement. If you found errors
 ** during doing Radio Measurement,
 ** you can run this IT function with iwpriv wlan0 driver \"RM-IT
-** xx,xx,xx, xx\"
-** xx,xx,xx,xx is the RM request frame data
+** xx,xx,xx,xx,xx\"
+** xx,xx,xx,xx,xx is the RM request frame data
 */
 uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			     uint32_t u4BufferLen, uint32_t *pu4InfoLen)
@@ -16504,11 +16504,13 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	struct BSS_INFO *ais;
 	struct AIS_SPECIFIC_BSS_INFO *aiss = NULL;
 	struct LINK *ess = NULL;
+	struct STA_RECORD *prStaRec = NULL;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	ais = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	aiss = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	ess = &aiss->rCurEssLink;
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 
 	if (!pvBuffer || !u4BufferLen) {
 		DBGLOG(OID, ERROR, "pvBuffer is NULL\n");
@@ -16520,7 +16522,6 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	if (!kalStrniCmp(pucSavedPtr, "RM-IT", 5)) {
 		pucSavedPtr += 5;
 	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT", 6)) {
-#if (CFG_SUPPORT_CONNAC3X == 0)
 		static uint8_t aucPacket[500] = {0,};
 		struct SW_RFB rSwRfb;
 		struct BSS_DESC *target;
@@ -16530,13 +16531,15 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		struct ACTION_BTM_REQ_FRAME *rxframe = NULL;
 		int32_t i4Argc = 0;
 		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+		uint8_t VSIEEnable = 0;
 
 		/*
-		 * BTM-IT 0x7 200 220 5
+		 * BTM-IT 0x7 200 220 5 1
 		 * 0x07: request mode
 		 * 200: disassoc timer, which is timer x beacon interval (ms)
 		 * 220: preference for sending btm AP
 		 * 5: diff to decrease preference for each candidate
+		 * 1: VSIE is added at the end of frame
 		 */
 		DBGLOG(INIT, INFO, "BTM command is [%s]\n", pucSavedPtr);
 		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
@@ -16552,6 +16555,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		rSwRfb.u2PacketLen = sizeof(struct ACTION_BTM_REQ_FRAME);
 		rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
 		rSwRfb.ucStaRecIdx = KAL_NETWORK_TYPE_AIS_INDEX;
+		rSwRfb.ucWlanIdx = prStaRec->ucWlanIndex;
 
 		rxframe = (struct ACTION_BTM_REQ_FRAME *) rSwRfb.pvHeader;
 		COPY_MAC_ADDR(rxframe->aucDestAddr, ais->aucOwnMacAddr);
@@ -16576,6 +16580,13 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 				apcArgv[2], 0, &rxframe->u2DisassocTimer);
 			DBGLOG(OID, TRACE,
 				"parse u2DisassocTimer error i4Ret=%d\n",
+				i4Ret);
+		}
+		if (i4Argc > 5) {
+			i4Ret = kalkStrtou8(
+				apcArgv[5], 0, &VSIEEnable);
+			DBGLOG(OID, TRACE,
+				"parse VSIEEnable error i4Ret=%d\n",
 				i4Ret);
 		}
 
@@ -16634,7 +16645,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			*pos++ = 1;
 			*pos++ = targetPref;
 
-			rSwRfb.u2PacketLen += neig->ucLength;
+			rSwRfb.u2PacketLen += pos - (uint8_t *) neig;
 
 			LINK_FOR_EACH_ENTRY(bssDesc, ess,
 				rLinkEntryEss[ucBssIndex], struct BSS_DESC) {
@@ -16674,14 +16685,24 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			}
 		}
 
+		/* Cisco VSIE for Wi-Fi to Cellular on BTM request */
+		if (VSIEEnable & BIT(0)) {
+			*pos++ = ELEM_ID_VENDOR;
+			*pos++ = 8;
+			WLAN_SET_FIELD_BE24(pos, 0x004096);
+			pos += 3;
+			*pos++ = 0x2B;
+			*pos++ = 0x01;
+			*pos++ = 0xff;
+			*pos++ = 0xff;
+			*pos++ = 0x00;
+			rSwRfb.u2PacketLen += 10;
+		}
+
 		dumpMemory8(rSwRfb.pvHeader, rSwRfb.u2PacketLen);
 
 		wnmWNMAction(prAdapter, &rSwRfb);
 		return WLAN_STATUS_SUCCESS;
-#else
-		DBGLOG(OID, INFO, "connac3 doesn't support!!!\n");
-		return WLAN_STATUS_FAILURE;
-#endif
 	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT", 5)) {
 		int32_t i4Argc = 0, i4Ret = 0, i4Recover = 1;
 		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};

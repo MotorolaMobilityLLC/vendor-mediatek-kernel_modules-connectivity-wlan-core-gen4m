@@ -2194,8 +2194,7 @@ scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
 		fgRecovery = FALSE;
 
 	/* Not to do recovery for roaming scan */
-	if (aisNeedTargetScan(prAdapter, ucBssIndex) ||
-		prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
 		fgRecovery = FALSE;
 
 	if (!fgRecovery)
