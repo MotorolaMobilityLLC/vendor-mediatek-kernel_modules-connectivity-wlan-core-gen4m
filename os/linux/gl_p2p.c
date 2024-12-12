@@ -1906,7 +1906,7 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 	struct MLD_BSS_INFO *prMldBss = NULL;
 	struct MLD_STA_RECORD *prMldSta = NULL;
 	struct ETH_FRAME *prEthFrame;
-	netdev_tx_t status = NETDEV_TX_BUSY;
+	u_int8_t fgFreeSkb = FALSE;
 
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 		netdev_priv(prDev);
@@ -1920,7 +1920,8 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 	if (!prMldBss) {
 		DBGLOG(P2P, ERROR, "Null prMldBss %u\n",
 			prNetDevPrivate->ucMldBssIdx);
-		return NETDEV_TX_BUSY;
+		fgFreeSkb = TRUE;
+		goto exit;
 	}
 
 	if (is_multicast_ether_addr(prEthFrame->aucDestAddr)) {
@@ -1930,10 +1931,10 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 
 		prBssList = &prMldBss->rBssList;
 		if (IS_MLD_BSSINFO_MULTI(prMldBss) == FALSE) {
-			status = __p2pHardStartXmit(prGlueInfo,
-						    prSkb,
-						    prDev,
-						    prNetDevPrivate->ucBssIdx);
+			__p2pHardStartXmit(prGlueInfo,
+					   prSkb,
+					   prDev,
+					   prNetDevPrivate->ucBssIdx);
 			goto exit;
 		}
 
@@ -1946,15 +1947,14 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 			if (!prDupSkb) {
 				DBGLOG(P2P, ERROR,
 					"duplicate skb failed.\n");
-				status = NETDEV_TX_BUSY;
 				break;
 			}
-			status = __p2pHardStartXmit(prGlueInfo,
-						    prDupSkb,
-						    prDev,
-						    prTempBss->ucBssIndex);
+			__p2pHardStartXmit(prGlueInfo,
+					   prDupSkb,
+					   prDev,
+					   prTempBss->ucBssIndex);
 		}
-		kfree_skb(prSkb);
+		fgFreeSkb = TRUE;
 	} else if (prMldSta) {
 		struct STA_RECORD *prStarec;
 
@@ -1965,13 +1965,12 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(P2P, ERROR,
 				"get sta failed by wlan idx(%u).\n",
 				prMldSta->u2SetupWlanId);
-			status = NETDEV_TX_OK;
-			kfree_skb(prSkb);
+			fgFreeSkb = TRUE;
 			goto exit;
 		}
 
-		status = __p2pHardStartXmit(prGlueInfo, prSkb, prDev,
-					    prStarec->ucBssIndex);
+		__p2pHardStartXmit(prGlueInfo, prSkb, prDev,
+				   prStarec->ucBssIndex);
 	} else {
 		struct LINK *prBssList;
 		struct BSS_INFO *prTempBss;
@@ -1988,23 +1987,24 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 			if (!prStaRec)
 				continue;
 
-			status = __p2pHardStartXmit(prGlueInfo,
-						    prSkb,
-						    prDev,
-						    prTempBss->ucBssIndex);
+			__p2pHardStartXmit(prGlueInfo,
+					   prSkb,
+					   prDev,
+					   prTempBss->ucBssIndex);
 			fgMatched = TRUE;
 			break;
 		}
 
 		if (!fgMatched) {
-			status = NETDEV_TX_OK;
-			kfree_skb(prSkb);
+			fgFreeSkb = TRUE;
 			goto exit;
 		}
 	}
 
 exit:
-	return status;
+	if (fgFreeSkb)
+		dev_kfree_skb(prSkb);
+	return NETDEV_TX_OK;
 }
 #endif
 
