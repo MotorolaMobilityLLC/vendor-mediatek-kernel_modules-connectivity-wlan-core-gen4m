@@ -2860,8 +2860,12 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 
 	cfg80211_chandef_create(&chandef, chan, rChannelType);
 	chandef.width = __kalP2pGetNl80211ChnlBw(prRfChnlInfo);
-	chandef.center_freq1 = prRfChnlInfo->u4CenterFreq1;
-	chandef.center_freq2 = prRfChnlInfo->u4CenterFreq2;
+	chandef.center_freq1 =
+		nicGetCenterChFreq(prRfChnlInfo->eBand,
+				   prRfChnlInfo->ucChannelNum,
+				   eChnlSco,
+				   prRfChnlInfo->ucChnlBw);
+	chandef.center_freq2 = 0;
 
 	DBGLOG(P2P, INFO,
 		"name=%s role=%u link=%u b=%d f=%d w=%d s1=%d s2=%d\n",
@@ -2930,6 +2934,7 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	struct cfg80211_chan_def chandef = {0};
 	struct ieee80211_channel *chan = NULL;
 	enum nl80211_channel_type rChannelType;
+	enum ENUM_MAX_BANDWIDTH_SETTING eBandWidth;
 	uint8_t linkIdx = 0;
 #if CFG_SUPPORT_CCM
 	uint32_t u4BufLen = 0;
@@ -3006,65 +3011,33 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 #if KERNEL_VERSION(5, 18, 0) <= CFG80211_VERSION_CODE
 	case VHT_OP_CHANNEL_WIDTH_320_1:
 	case VHT_OP_CHANNEL_WIDTH_320_2:
-		chandef.width
-			= NL80211_CHAN_WIDTH_320;
-		chandef.center_freq1
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000;
-		chandef.center_freq2
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS2,
-			prBssInfo->eBand) / 1000;
+		chandef.width = NL80211_CHAN_WIDTH_320;
 		break;
 #endif
 	case VHT_OP_CHANNEL_WIDTH_80P80:
-		chandef.width
-			= NL80211_CHAN_WIDTH_80P80;
-		chandef.center_freq1
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000;
-		chandef.center_freq2
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS2,
-			prBssInfo->eBand) / 1000;
+		chandef.width = NL80211_CHAN_WIDTH_80P80;
 		break;
 	case VHT_OP_CHANNEL_WIDTH_160:
-		chandef.width
-			= NL80211_CHAN_WIDTH_160;
-		chandef.center_freq1
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000;
-		chandef.center_freq2
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS2,
-			prBssInfo->eBand) / 1000;
+		chandef.width = NL80211_CHAN_WIDTH_160;
 		break;
 	case VHT_OP_CHANNEL_WIDTH_80:
-		chandef.width
-			= NL80211_CHAN_WIDTH_80;
-		chandef.center_freq1
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000;
-		chandef.center_freq2
-			= nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS2,
-			prBssInfo->eBand) / 1000;
+		chandef.width = NL80211_CHAN_WIDTH_80;
 		break;
 	case VHT_OP_CHANNEL_WIDTH_20_40:
 		/* handle in cfg80211_chandef_create above */
-		break;
 	default:
-		chandef.width
-			= NL80211_CHAN_WIDTH_20;
-		chandef.center_freq1
-			= chan->center_freq;
-		chandef.center_freq2 = 0;
+		chandef.width = NL80211_CHAN_WIDTH_20;
 		break;
 	}
+
+	eBandWidth = rlmVhtBw2OpBw(prBssInfo->ucVhtChannelWidth,
+				   prBssInfo->eBssSCO);
+	chandef.center_freq1 =
+		nicGetCenterChFreq(prBssInfo->eBand,
+				   prBssInfo->ucPrimaryChannel,
+				   prBssInfo->eBssSCO,
+				   eBandWidth);
+	chandef.center_freq2 = 0;
 
 	DBGLOG(P2P, INFO,
 		"name=%s role=%u link=%u b=%d f=%d w=%d s1=%d s2=%d dfs=%d\n",

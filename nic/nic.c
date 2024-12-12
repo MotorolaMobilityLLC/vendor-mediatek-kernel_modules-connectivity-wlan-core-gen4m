@@ -2136,7 +2136,9 @@ fail:
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get center channel instead of CCFS0 in spec.
- *        Usually used in command to FW (FW only use center freq).
+ *        Scenarios used:
+ *        1. Command to FW (FW only use center freq)
+ *        2. Kernel center_freq1 / center_freq2.
  */
 /*----------------------------------------------------------------------------*/
 uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucSco,
