@@ -161,6 +161,12 @@ TdlsApStaForEach(struct ADAPTER *pAd,
 		GET_BSS_INFO_BY_INDEX(
 		pAd, bss);
 
+	if (!b) {
+		DBGLOG(TDLS, ERROR,
+			"can not find bssinfo\n");
+		return;
+	}
+
 	for (i = 0; i < STA_TDLS_HASH_SIZE; i++) {
 		r = b->prTdlsHash[i];
 		while (r) {
