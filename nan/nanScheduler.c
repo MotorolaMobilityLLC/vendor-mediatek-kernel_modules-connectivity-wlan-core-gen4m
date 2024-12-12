@@ -5819,6 +5819,9 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 
 #if (CFG_SUPPORT_NAN_DBDC == 1)
 	nanUpdateMbmcIdx(prAdapter,
+		nanGetBssIdxbyBand(prAdapter, BAND_2G4),
+		(uint8_t)NAN_BSS_INDEX_BAND0);
+	nanUpdateMbmcIdx(prAdapter,
 		nanGetBssIdxbyBand(prAdapter, BAND_5G),
 		(uint8_t)NAN_BSS_INDEX_BAND1);
 #endif
