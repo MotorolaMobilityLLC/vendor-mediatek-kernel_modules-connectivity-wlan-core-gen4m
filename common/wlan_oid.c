@@ -11458,8 +11458,9 @@ static uint32_t wlanWaitInitEvt(struct ADAPTER *prAdapter,
 
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG_MEM8(INIT, ERROR, pucBuf,
-				prChipInfo->rxd_size +
-				prInitEvtHeader->u2RxByteCount);
+				    kal_min_t(uint32_t, prChipInfo->rxd_size +
+					    prInitEvtHeader->u2RxByteCount,
+					    CFG_RX_MAX_PKT_SIZE));
 			break;
 		}
 
