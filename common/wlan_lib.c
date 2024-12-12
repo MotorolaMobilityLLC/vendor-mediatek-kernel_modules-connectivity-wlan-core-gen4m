@@ -111,6 +111,12 @@ struct ofdmDataRateMappingTable_t {
 } g_rOfdmDataRateMappingTable = {
 	{60, 90, 120, 180, 240, 360, 480, 540}
 };
+/* data rate mapping table for PLR */
+struct plrDataRateMappingTable_t {
+	uint32_t rate[2];
+} g_rplrDataRateMappingTable = {
+	{15, 30}
+};
 /* data rate mapping table for 802.11n and 802.11ac */
 struct dataRateMappingTable_t {
 	struct nsts_t {
@@ -14290,6 +14296,20 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			u4CurRate = u4CurRate >> 1;
 			u4MaxRate = u4MaxRate >> 1;
 		}
+	} else if (txmode == TX_RATE_MODE_PLR) {
+		/* bit 4: dcm */
+		rate = rate & BITS(0, 3);
+
+		ucMaxSize = ARRAY_SIZE(g_rplrDataRateMappingTable.rate);
+		if (rate >= ucMaxSize) {
+			DBGLOG_LIMITED(SW4, ERROR,
+			       "rate error for PLR: %u\n", rate);
+			return -1;
+		}
+
+		u4CurRate = g_rplrDataRateMappingTable.rate[rate];
+		u4MaxRate = g_rplrDataRateMappingTable
+			.rate[MCS_IDX_MAX_RATE_PLR];
 	} else {
 		DBGLOG_LIMITED(SW4, ERROR,
 				"Unknown rate for [%d,%d,%d,%d,%d]\n",

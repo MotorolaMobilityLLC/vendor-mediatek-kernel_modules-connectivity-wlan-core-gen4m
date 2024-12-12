@@ -72,6 +72,7 @@ enum ENUM_BAND_WIDTH {
  * For current rate, this table support the actual rate in use.
  * For max rate, limit the return values based on standard defined max index.
  */
+#define MCS_IDX_MAX_RATE_PLR 1
 #define MCS_IDX_MAX_RATE_CCK  3
 #define MCS_IDX_MAX_RATE_OFDM  7
 #define MCS_IDX_MAX_RATE_HT  7
