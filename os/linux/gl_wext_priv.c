@@ -5276,7 +5276,7 @@ int priv_driver_set_atxop(struct net_device *prNetDev, char *pcCommand,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	uint32_t u4Ret;
-	uint32_t u4Cmd;
+	uint32_t u4Cmd = 0;
 	uint32_t au4Param[32] = {0};
 	struct CMD_ATXOP_CFG rCmdATXOPCfg;
 
