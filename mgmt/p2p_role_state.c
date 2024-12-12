@@ -124,15 +124,17 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
+	struct WIFI_VAR *prWifiVar = NULL;
 	u_int8_t fgIsStartGO = FALSE;
-#if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
-	u_int8_t fgIsMloSap = FALSE;
-#endif
+	uint8_t ucRoleIdx;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
 			&& (prP2pRoleBssInfo != NULL)
 			&& (prP2pRoleFsmInfo != NULL));
+
+		prWifiVar = &prAdapter->rWifiVar;
+		ucRoleIdx = prP2pRoleFsmInfo->ucRoleIndex;
 
 		if (eNextState == P2P_ROLE_STATE_IDLE) {
 			if (prP2pRoleBssInfo->eIntendOPMode
@@ -165,34 +167,13 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		}
 	} while (FALSE);
 
-#if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter,
-							 prP2pRoleBssInfo));
-#endif
-
-	if (fgIsStartGO && p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIndex]) &&
-	    !fgIsMloSap) {
-		struct GL_P2P_INFO *prP2PInfo =	prAdapter->prGlueInfo
-			->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex];
-		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
-			&(prP2pRoleFsmInfo->rChnlReqInfo[0]);
-
-		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
-		p2pFuncSwitchSapChannel(prAdapter,
-			P2P_DEFAULT_SCENARIO);
-		if (prP2PInfo->eChnlSwitchPolicy != CHNL_SWITCH_POLICY_NONE) {
-			if (prP2pChnlReqInfo->fgIsChannelRequested) {
-				p2pFuncReleaseCh(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex,
-					prP2pChnlReqInfo);
-			}
-			cnmTimerStopTimer(prAdapter,
-				&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
-		}
+#ifndef CFG_AP_GO_DELAY_CARRIER_ON
+	if (fgIsStartGO && prWifiVar &&
+	    p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx])) {
+		p2pFuncNotifySapStarted(prAdapter,
+			prP2pRoleBssInfo->ucBssIndex);
 	}
-#endif
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 }				/* p2pRoleStateAbort_REQING_CHANNEL */
 
 void

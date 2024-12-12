@@ -600,6 +600,9 @@ u_int8_t p2pFuncSwitchGoChannel(struct ADAPTER *prAdapter,
 bool p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
 
+void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx);
+
 uint8_t p2pFuncSapFilteredChListGen(
 		struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO *prChnlList,

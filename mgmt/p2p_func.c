@@ -2103,12 +2103,17 @@ SKIP_START_RDD:
 #endif
 
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
+		/* Wait for fw's setup done event and continue to
+		 * notify carrier_on & start all tx queues to
+		 * userspace
+		 */
 		cnmTimerStartTimer(prAdapter,
 				   &(prBssInfo->rP2pApGoCarrierOnTimer),
 				   AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS);
 #else
+		prBssInfo->fgIsApGoStarted = TRUE;
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
-#endif
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -10076,6 +10081,52 @@ exit:
 
 	DBGLOG(P2P, TRACE, "Check done\n");
 	return FALSE;
+}
+
+void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx)
+{
+#if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo;
+	struct GL_P2P_INFO *prP2PInfo;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo;
+	uint8_t ucRoleIdx;
+	u_int8_t fgIsSap = FALSE, fgIsMloSap = FALSE;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR, "Null bss by idx(%u)\n",
+			ucBssIdx);
+		return;
+	}
+
+	ucRoleIdx = (uint8_t)prBssInfo->u4PrivateData;
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		ucRoleIdx);
+	prP2pChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo[0]);
+	fgIsSap = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx]);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter,
+							 prBssInfo));
+#endif
+
+	if (!fgIsSap || fgIsMloSap)
+		return;
+
+	prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
+	p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
+	if (prP2PInfo->eChnlSwitchPolicy != CHNL_SWITCH_POLICY_NONE) {
+		if (prP2pChnlReqInfo->fgIsChannelRequested)
+			p2pFuncReleaseCh(prAdapter, ucBssIdx,
+					 prP2pChnlReqInfo);
+
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+	}
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
