@@ -1322,10 +1322,8 @@ static uint16_t apsCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
 	else if (prBssDesc->eBand == BAND_6G && cRssi < MINIMUM_RSSI_6G)
 		u2Score = 0;
 #endif
-	else if (cRssi > -98)
-		u2Score = (uint16_t)(cRssi + 98) * 2;
 	else
-		u2Score = 0;
+		u2Score = (cRssi <= -98) ? 0 : (uint16_t)((cRssi + 98) * 2);
 
 	return u2Score * gasMtkWeightConfig[eRoamType].ucRssiWeight;
 }

@@ -8178,7 +8178,7 @@ u_int8_t aisFsmClearRequest(struct ADAPTER *prAdapter,
 				 &(prAisFsmInfo->rPendingReqList), rLinkEntry,
 				 struct AIS_REQ_HDR) {
 		/* check for specified type */
-		if (prPendingReqHdr->eReqType == eReqType) {
+		if (prPendingReqHdr && prPendingReqHdr->eReqType == eReqType) {
 			found = TRUE;
 
 			LINK_REMOVE_KNOWN_ENTRY(&(prAisFsmInfo->

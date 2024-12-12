@@ -174,6 +174,7 @@ struct ROAMING_INFO {
 	uint8_t ucPER;
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
+	uint8_t ucRspBssIndex;
 	struct ROAMING_REPORT_INFO rReportInfo;
 #if (CFG_EXT_ROAMING == 1)
 	struct ROAMING_SCAN_CADENCE rScanCadence;

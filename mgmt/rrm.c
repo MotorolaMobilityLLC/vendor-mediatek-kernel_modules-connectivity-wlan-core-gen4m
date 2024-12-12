@@ -1374,8 +1374,8 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prBssInfo = aisGetAisBssInfo(prAdapter,
-		secGetBssIdxByRfb(prAdapter, prSwRfb));
+	prBssInfo = aisGetMainLinkBssInfo(aisGetAisFsmInfo(prAdapter,
+		secGetBssIdxByRfb(prAdapter, prSwRfb)));
 	if (prBssInfo == NULL) {
 		DBGLOG(RRM, INFO, "Ignored due to AIS isn't created\n");
 		return;
@@ -1395,7 +1395,7 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prRmRepParam->ucRspBssIndex = prBssInfo->ucBssIndex;
+	prRmRepParam->ucRspBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 	prRspBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prRmRepParam->ucRspBssIndex);
 
