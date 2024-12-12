@@ -4018,6 +4018,21 @@ static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 			prMldStarec->aucStrBitmap[i] =
 				prMldBssInfo->ucHwBandBitmap;
 	}
+
+	/* update STR bitmap for EMLSR/Hybrid MLO case*/
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (prMldStarec && IS_MLD_BSSINFO_MULTI(prMldBssInfo) &&
+		(prMldBssInfo->ucEmlEnabled ||
+			prMldBssInfo->ucHmloEnabled)) {
+
+		for (i = 0; i < UNI_MLD_LINK_MAX; i++) {
+			prMldStarec->aucStrBitmap[i] =
+				BIT(ENUM_BAND_0) | BIT(ENUM_BAND_1);
+		}
+
+		DBGLOG(ML, INFO, "emlsr/hybrid case,set str bitmap\n");
+	}
+#endif
 }
 
 struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
