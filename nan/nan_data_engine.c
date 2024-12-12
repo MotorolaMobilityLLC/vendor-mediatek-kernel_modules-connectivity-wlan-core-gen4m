@@ -900,29 +900,14 @@ nanDataUtilSearchNdlByStaRec(struct ADAPTER *prAdapter,
 			if (prNdpCxt->fgValid == FALSE)
 				continue;
 
-			if (prNdpCxt->prNanStaRec == prStaRec)
+			if (nanGetStaRecExist(
+				prNdpCxt,
+				prStaRec))
 				return prNDL;
 		}
 	}
 
 	return NULL;
-}
-
-static uint8_t nanGetStaRecIdxByNdl(struct _NAN_NDL_INSTANCE_T *prNDL)
-{
-	uint8_t ucNdpCxtIdx;
-	struct _NAN_NDP_CONTEXT_T *prNdpCxt;
-
-	for (ucNdpCxtIdx = 0; ucNdpCxtIdx < NAN_MAX_SUPPORT_NDP_CXT_NUM;
-	     ucNdpCxtIdx++) {
-		prNdpCxt = &prNDL->arNdpCxt[ucNdpCxtIdx];
-		if (prNdpCxt->fgValid == FALSE)
-			continue;
-
-		return prNdpCxt->prNanStaRec->ucIndex;
-	}
-
-	return STA_REC_INDEX_NOT_FOUND;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2761,9 +2746,7 @@ nanNdpProcessDataTermination(struct ADAPTER *prAdapter,
 
 	/* Workaround for R2 cert 5.5.4 and 5.5.5 */
 	if (nanGetFeatureIsSigma(prAdapter) &&
-		prNDP->prContext &&
-		prNDP->prContext->prNanStaRec &&
-		prNDP->prContext->prNanStaRec->fgIsTxKeyReady) {
+		nanIsTxKeyReady(prNDP->prContext)) {
 		/* NAN Todo: Not HW_MAC_RX_DESC here */
 #if (CFG_SUPPORT_CONNAC3X == 1)
 		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_CIPHER_MISMATCH(

@@ -1175,23 +1175,26 @@ nanSchedLookupPeerSchRecord(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 
 uint32_t
 nanSchedQueryStaRecIdx(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
-		       uint32_t u4Idx)
-{
-	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
+		       uint32_t u4Idx, uint8_t ucLinkIdx) {
+	struct _NAN_PEER_SCHEDULE_RECORD_T *p;
 
-	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
-	if (prPeerSchRecord == NULL) {
+	p = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+	if (p == NULL) {
 		DBGLOG(NAN, ERROR, "Get Peer Sch Record %d error\n", u4SchIdx);
 		return STA_REC_INDEX_NOT_FOUND;
 	}
 
-	return prPeerSchRecord->aucStaRecIdx[u4Idx];
+	if (ucLinkIdx >= NAN_LINK_NUM)
+		return p->aucStaRecIdx[NAN_MAIN_LINK_INDEX][u4Idx];
+
+	return p->aucStaRecIdx[ucLinkIdx][u4Idx];
 }
 
 uint32_t
 nanSchedResetPeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 {
 	uint32_t u4Idx;
+	uint32_t i;
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
 
 	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
@@ -1203,7 +1206,9 @@ nanSchedResetPeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	kalMemZero((uint8_t *)prPeerSchRecord, sizeof(*prPeerSchRecord));
 
 	for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++)
-		prPeerSchRecord->aucStaRecIdx[u4Idx] = STA_REC_INDEX_NOT_FOUND;
+		for (i = 0; i < NAN_LINK_NUM; i++)
+			prPeerSchRecord->aucStaRecIdx[i][u4Idx] =
+				STA_REC_INDEX_NOT_FOUND;
 
 	for (u4Idx = 0; u4Idx < NAN_TIMELINE_MGMT_SIZE; u4Idx++) {
 		prPeerSchRecord->arCommImmuNdlTimeline[u4Idx].ucMapId =
@@ -12425,12 +12430,14 @@ nanSchedCmdMapStaRecord(
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct _NAN_SCHED_CMD_MAP_STA_REC_T *prCmdMapStaRec = NULL;
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
+	uint8_t i = nanGetLinkIndexbyRole(eRoleIdx);
 
 	prPeerSchRecord = nanSchedLookupPeerSchRecord(prAdapter, pucNmiAddr);
 	if (!prPeerSchRecord)
 		return WLAN_STATUS_FAILURE;
 
-	prPeerSchRecord->aucStaRecIdx[ucNdpCxtId] = ucStaRecIdx;
+	if (i < NAN_LINK_NUM)
+		prPeerSchRecord->aucStaRecIdx[i][ucNdpCxtId] = ucStaRecIdx;
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
@@ -16347,7 +16354,9 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 		 * is ready
 		 */
 		else if (eHighestCommonBand != ENUM_SUPPORTED_BN_2G &&
-			 szTimeLineIdx == 0 && szNanActiveTimelineNum > 1)
+			 (szTimeLineIdx == 0) &&
+			 (szNanActiveTimelineNum > 1) &&
+			 !nanLinkNeedMlo(prAdapter))
 			continue;
 
 		prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter,

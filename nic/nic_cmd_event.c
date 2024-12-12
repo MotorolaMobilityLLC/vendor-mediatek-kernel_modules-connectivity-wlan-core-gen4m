@@ -6637,7 +6637,7 @@ void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		rExpiryTime -= NAN_SEND_PKT_TIME_GUARD_TIME;
 		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
 			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
-							  u4Idx);
+				u4Idx, NAN_MAIN_LINK_INDEX);
 			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
 				continue;
 
@@ -6677,12 +6677,15 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
 		uint8_t ucSTAIdx;
 		uint16_t u2RemainingTime;
+		uint32_t u4OpClass = 0;
 
 		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
 			continue;
 
-		if (IS_2G_OP_CLASS(prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				.rChannel.u4OperatingClass) &&
+		u4OpClass = prFlowCtrlEvt->arBandChnlInfo[u2SchId]
+				.rChannel.u4OperatingClass;
+		if (!nanLinkNeedMlo(prAdapter) &&
+			IS_2G_OP_CLASS(u4OpClass) &&
 			nanSchedGetHighestCommonBand(prAdapter, u2SchId) !=
 				ENUM_SUPPORTED_BN_2G) {
 			DBGLOG(NAN, INFO,
@@ -6732,7 +6735,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		rExpiryTime -= u4NanSendPacketGuardTime;
 		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
 			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
-							  u4Idx);
+				u4Idx, nanGetLinkIndexbyOpClass(u4OpClass));
 			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
 				continue;
 
@@ -6742,7 +6745,14 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
 			prStaRec->rNanExpiredSendTime = rExpiryTime;
 
-			if (prStaRec->fgNanSendTimeExpired) {
+			if (prStaRec->fgNanSendTimeExpired
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+				&& IS_2G_OP_CLASS(u4OpClass)
+				&& mldIsMultiLinkFormed(
+				prAdapter,
+				prStaRec)
+#endif
+				) {
 				prStaRec->fgNanSendTimeExpired = FALSE;
 
 				DBGLOG(NAN, INFO, "Trigger NAN tx request\n");

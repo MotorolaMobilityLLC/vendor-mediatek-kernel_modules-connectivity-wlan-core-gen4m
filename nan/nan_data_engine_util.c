@@ -4498,8 +4498,11 @@ nanDataEngineAllocStaRec(struct ADAPTER *prAdapter,
 
 		(*pprStaRec)->ucRCPI = ucRcpi;
 
-		/* always set to state 3 for data path operation */
-		cnmStaRecChangeState(prAdapter, *pprStaRec, STA_STATE_3);
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+		nanMldStaRecRegister(prAdapter,
+			*pprStaRec,
+			nanGetLinkIndexbyBand(prAdapter, prBssInfo->eBand));
+#endif
 
 		atomic_set(&((*pprStaRec)->NanRefCount), 1);
 	} else {
@@ -4599,6 +4602,7 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 	uint8_t *pucLocalNMI;
 	uint8_t *pucPeerNMI;
 	enum ENUM_BAND eBand;
+	struct STA_RECORD *prNanStaRec = NULL;
 
 #if !CFG_NAN_PMF_PATCH
 	return WLAN_STATUS_SUCCESS;
@@ -4645,7 +4649,7 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 			   MAC_ADDR_LEN);
 		kalMemCopy(prNdpCxt->aucPeerNDIAddr, pucPeerNMI, MAC_ADDR_LEN);
 
-		prNdpCxt->prNanStaRec = NULL;
+		nanResetStaRec(prNdpCxt);
 
 		DBGLOG(NAN, INFO, "Allocate NDP Cxt %d\n", u4NdpCxtIdx);
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -4698,33 +4702,38 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 
 	eBand = nanSchedGetSchRecBandByMac(prAdapter, pucPeerNMI);
 	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
+	nanSetPreferLinkStaRec(prAdapter, prNdpCxt, ucBssIndex);
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex, pucPeerNMI,
-				     prNDP->ucRCPI, &prNdpCxt->prNanStaRec) !=
+		prNDP->ucRCPI, &prNdpCxt->prNanPreferStaRec) !=
 	    WLAN_STATUS_SUCCESS)
 		return WLAN_STATUS_FAILURE;
 
+	prNanStaRec = nanGetPreferLinkStaRec(prAdapter, prNdpCxt);
 	/* update SA with strongest security */
-	if (!prNdpCxt->prNanStaRec) {
+	if (!prNanStaRec) {
 		DBGLOG(NAN, ERROR, "[%s] prNanStaRec error\n", __func__);
 		return WLAN_STATUS_FAILURE;
 	}
 
+	/* always set to state 3 for data path operation */
+	cnmStaRecChangeState(prAdapter, prNanStaRec, STA_STATE_3);
+
 	/* Notify scheduler */
 	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr,
 				NAN_BSS_INDEX_BAND0,
-				prNdpCxt->prNanStaRec->ucIndex,
+				prNanStaRec->ucIndex,
 				prNdpCxt->ucId,
-				prNdpCxt->prNanStaRec->ucWlanIndex,
+				prNanStaRec->ucWlanIndex,
 				prNDP->aucPeerNDIAddr);
 
 	if (fgSecurityRequired == FALSE)
-		nanSecResetTk(prNdpCxt->prNanStaRec);
+		nanSecResetTk(prNanStaRec);
 	else
-		nanSecInstallTk(prTargetNdpSA, prNdpCxt->prNanStaRec);
+		nanSecInstallTk(prTargetNdpSA, prNanStaRec);
 
-	nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
-	nicTxGenerateDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+	nicTxFreeDescTemplate(prAdapter, prNanStaRec);
+	nicTxGenerateDescTemplate(prAdapter, prNanStaRec);
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Summary\n", __func__);
@@ -4740,15 +4749,8 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 		if (prNdpCxt->fgValid == FALSE)
 			continue;
 
-		DBGLOG(NAN, INFO,
-		       "NdpCxtId:%d, StaIdx:%d, BssIdx:%d, Enrollee:%d\n",
-		       prNdpCxt->ucId,
-		       (prNdpCxt->prNanStaRec ? prNdpCxt->prNanStaRec->ucIndex
-					      : STA_REC_INDEX_NOT_FOUND),
-		       (prNdpCxt->prNanStaRec
-				? prNdpCxt->prNanStaRec->ucBssIndex
-				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
-		       prNdpCxt->ucNumEnrollee);
+		nanDumpStaRec(prNdpCxt);
+
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
 		       prNdpCxt->aucLocalNDIAddr[1],
@@ -4785,6 +4787,7 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 	uint8_t *pucLocalNMI;
 	uint8_t *pucPeerNMI;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
+	struct STA_RECORD *prNanStaRec = NULL;
 
 #if !CFG_NAN_PMF_PATCH
 	return WLAN_STATUS_SUCCESS;
@@ -4826,21 +4829,22 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 
 	/* update SA with strongest security */
 	prTargetNdpSA = NULL;
+	prNanStaRec = nanGetPreferLinkStaRec(prAdapter, prNdpCxt);
 	if (prNdpCxt->ucNumEnrollee > 1) {
 		if (u4Idx == 0) {
 			prTargetNdpSA = prNdpCxt->aprEnrollNdp[1];
 
-			if (!prNdpCxt->prNanStaRec) {
+			if (!prNanStaRec) {
 				DBGLOG(NAN, ERROR,
 					"[%s] prNanStaRec error\n", __func__);
 				return WLAN_STATUS_FAILURE;
 			}
 
 			if (prTargetNdpSA->fgSecurityRequired == FALSE)
-				nanSecResetTk(prNdpCxt->prNanStaRec);
+				nanSecResetTk(prNanStaRec);
 			else if (prAdapter->rWifiVar.fgNanUnrollInstallTk)
 				nanSecInstallTk(prTargetNdpSA,
-						prNdpCxt->prNanStaRec);
+						prNanStaRec);
 		} else {
 			prTargetNdpSA = prNdpCxt->aprEnrollNdp[0];
 		}
@@ -4852,9 +4856,9 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 	 */
 	if (prNDP->fgNDPEstablish == TRUE)
 		nanDataEngineFreeStaRec(prAdapter, prNDL,
-					&prNdpCxt->prNanStaRec);
+					&prNanStaRec);
 
-	if (prNdpCxt->prNanStaRec == NULL) {
+	if (prNanStaRec == NULL) {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					STA_REC_INDEX_NOT_FOUND,
 					prNdpCxt->ucId,
@@ -4862,9 +4866,9 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 					prNDP->aucPeerNDIAddr);
 	} else {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
-					prNdpCxt->prNanStaRec->ucIndex,
+					prNanStaRec->ucIndex,
 					prNdpCxt->ucId,
-					prNdpCxt->prNanStaRec->ucWlanIndex,
+					prNanStaRec->ucWlanIndex,
 					prNDP->aucPeerNDIAddr);
 	}
 
@@ -4873,20 +4877,20 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 			prNdpCxt->aprEnrollNdp[u4Idx + 1];
 	prNdpCxt->ucNumEnrollee--;
 	if (prNdpCxt->ucNumEnrollee == 0) {
-		if (prNdpCxt->prNanStaRec &&
-		    atomic_read(&(prNdpCxt->prNanStaRec->NanRefCount)) > 0) {
+		if (prNanStaRec &&
+		    atomic_read(&(prNanStaRec->NanRefCount)) > 0) {
 			DBGLOG(NAN, WARN, "%s(): STA-REC RefCount:%d\n",
 			       __func__,
 			       atomic_read(
-				       &(prNdpCxt->prNanStaRec->NanRefCount)));
+				       &(prNanStaRec->NanRefCount)));
 		}
 
 		prNdpCxt->fgValid = FALSE;
 	} else {
-		if (prNdpCxt->prNanStaRec) {
-			nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+		if (prNanStaRec) {
+			nicTxFreeDescTemplate(prAdapter, prNanStaRec);
 			nicTxGenerateDescTemplate(prAdapter,
-				prNdpCxt->prNanStaRec);
+				prNanStaRec);
 		} else {
 			DBGLOG(NAN, WARN,
 				"[%s] prNanStaRec = NULL\n", __func__);
@@ -4907,15 +4911,8 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 		if (prNdpCxt->fgValid == FALSE)
 			continue;
 
-		DBGLOG(NAN, INFO,
-		       "NdpCxtId:%d, StaIdx:%d, BssIdx:%d, Enrollee:%d\n",
-		       prNdpCxt->ucId,
-		       (prNdpCxt->prNanStaRec ? prNdpCxt->prNanStaRec->ucIndex
-					      : STA_REC_INDEX_NOT_FOUND),
-		       (prNdpCxt->prNanStaRec
-				? prNdpCxt->prNanStaRec->ucBssIndex
-				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
-		       prNdpCxt->ucNumEnrollee);
+		nanDumpStaRec(prNdpCxt);
+
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
 		       prNdpCxt->aucLocalNDIAddr[1],
@@ -4955,6 +4952,8 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 	unsigned char fgSecurityRequired;
 	uint8_t ucBssIndex;
 	enum ENUM_BAND eBand;
+	uint32_t i = 0;
+	struct STA_RECORD *prNanStaRec = NULL;
 
 	if ((prNDL == NULL) || (prNDP == NULL))
 		return WLAN_STATUS_FAILURE;
@@ -4990,7 +4989,7 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		kalMemCopy(prNdpCxt->aucPeerNDIAddr, prNDP->aucPeerNDIAddr,
 			   MAC_ADDR_LEN);
 
-		prNdpCxt->prNanStaRec = NULL;
+		nanResetStaRec(prNdpCxt);
 
 		DBGLOG(NAN, INFO, "Allocate NDP Cxt %d\n", u4NdpCxtIdx);
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -5053,34 +5052,63 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, WARN,
 			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
 	}
-	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
-	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex,
-				     prNDP->aucPeerNDIAddr, prNDP->ucRCPI,
-				     &prNdpCxt->prNanStaRec) !=
-	    WLAN_STATUS_SUCCESS)
-		return WLAN_STATUS_FAILURE;
+	for (i = 0;
+		i < prAdapter->rWifiVar.ucNanMldLinkMax;
+		i++) {
+		prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
+		ucBssIndex = nanGetBssIdxbyLink(prAdapter, i);
 
-	/* update SA with strongest security */
-	if (!prNdpCxt->prNanStaRec) {
-		DBGLOG(NAN, ERROR, "[%s] prNanStaRec error\n", __func__);
-		return WLAN_STATUS_FAILURE;
+		if (nanDataEngineAllocStaRec(
+			prAdapter,
+			prNDL,
+			ucBssIndex,
+			prNDP->aucPeerNDIAddr,
+			prNDP->ucRCPI,
+			&prNanStaRec) !=
+		    WLAN_STATUS_SUCCESS)
+			return WLAN_STATUS_FAILURE;
+
+		/* update SA with strongest security */
+		if (!prNanStaRec) {
+			DBGLOG(NAN, ERROR,
+				"prNanStaRec error\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+		nanSetLinkStaRec(prNdpCxt, prNanStaRec, i);
 	}
 
-	if (fgSecurityRequired == FALSE)
-		nanSecResetTk(prNdpCxt->prNanStaRec);
-	else
-		nanSecInstallTk(prTargetNdpSA, prNdpCxt->prNanStaRec);
+	for (i = 0;
+		i < prAdapter->rWifiVar.ucNanMldLinkMax;
+		i++) {
+		prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
+		if (!prNanStaRec)
+			continue;
 
-	nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
-	nicTxGenerateDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+		/* always set to state 3 for data path operation */
+		cnmStaRecChangeState(prAdapter,
+			prNanStaRec,
+			STA_STATE_3);
 
-	/* Notify scheduler */
-	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
-				prNdpCxt->prNanStaRec->ucIndex,
-				prNDP->prContext->ucId,
-				prNdpCxt->prNanStaRec->ucWlanIndex,
-				prNDP->aucPeerNDIAddr);
+		if (fgSecurityRequired == FALSE)
+			nanSecResetTk(prNanStaRec);
+		else
+			nanSecInstallTk(prTargetNdpSA, prNanStaRec);
+
+		nicTxFreeDescTemplate(prAdapter, prNanStaRec);
+		nicTxGenerateDescTemplate(prAdapter, prNanStaRec);
+
+		/* Notify scheduler */
+		nanSchedCmdMapStaRecord(
+			prAdapter,
+			prNDL->aucPeerMacAddr,
+			nanGetRoleIndexbyLink(i),
+			prNanStaRec->ucIndex,
+			prNDP->prContext->ucId,
+			prNanStaRec->ucWlanIndex,
+			prNDP->aucPeerNDIAddr);
+	}
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 	if (atomic_inc_return(&(prDataPathInfo->NetDevRefCount[eRole])) == 1) {
@@ -5106,15 +5134,8 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		if (prNdpCxt->fgValid == FALSE)
 			continue;
 
-		DBGLOG(NAN, INFO,
-		       "NdpCxtId:%d, StaIdx:%d, BssIdx:%d, Enrollee:%d\n",
-		       prNdpCxt->ucId,
-		       (prNdpCxt->prNanStaRec ? prNdpCxt->prNanStaRec->ucIndex
-					      : STA_REC_INDEX_NOT_FOUND),
-		       (prNdpCxt->prNanStaRec
-				? prNdpCxt->prNanStaRec->ucBssIndex
-				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
-		       prNdpCxt->ucNumEnrollee);
+		nanDumpStaRec(prNdpCxt);
+
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
 		       prNdpCxt->aucLocalNDIAddr[1],
@@ -5150,6 +5171,8 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 	struct _NAN_NDP_INSTANCE_T *prTargetNdpSA;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	uint32_t i = 0;
+	struct STA_RECORD *prNanStaRec = NULL;
 
 	if ((prNDL == NULL) || (prNDP == NULL))
 		return WLAN_STATUS_FAILURE;
@@ -5172,18 +5195,11 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 	if (prNdpCxt->ucNumEnrollee > 1) {
 		if (u4Idx == 0) {
 			prTargetNdpSA = prNdpCxt->aprEnrollNdp[1];
-
-			if (!prNdpCxt->prNanStaRec) {
+			if (nanLinkResetTk(prAdapter, prNdpCxt)) {
 				DBGLOG(NAN, ERROR,
-					"[%s] prNanStaRec error\n", __func__);
+					"prNanStaRec error\n");
 				return WLAN_STATUS_FAILURE;
 			}
-
-			if (prTargetNdpSA->fgSecurityRequired == FALSE)
-				nanSecResetTk(prNdpCxt->prNanStaRec);
-			else if (prAdapter->rWifiVar.fgNanUnrollInstallTk)
-				nanSecInstallTk(prTargetNdpSA,
-						prNdpCxt->prNanStaRec);
 		} else {
 			prTargetNdpSA = prNdpCxt->aprEnrollNdp[0];
 		}
@@ -5193,25 +5209,41 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 	 * STARec only establish when NDP setup success (NORMAL_TR)
 	 *  in NDP case
 	 */
-	if (prNDP->fgNDPEstablish == TRUE)
-		nanDataEngineFreeStaRec(prAdapter, prNDL,
-					&prNdpCxt->prNanStaRec);
+	for (i = 0;
+		i < prAdapter->rWifiVar.ucNanMldLinkMax;
+		i++) {
+		prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
+		if (!prNanStaRec)
+			continue;
 
-	if (prNdpCxt->ucNumEnrollee > 1)
-		goto skip_map_starecord;
+		if (prNDP->fgNDPEstablish == TRUE)
+			nanDataEngineFreeStaRec(
+				prAdapter,
+				prNDL,
+				&prNanStaRec);
 
-	if (prNdpCxt->prNanStaRec == NULL) {
-		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
-					STA_REC_INDEX_NOT_FOUND,
-					prNdpCxt->ucId,
-					STA_REC_INDEX_NOT_FOUND,
-					prNDP->aucPeerNDIAddr);
-	} else {
-		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
-					prNdpCxt->prNanStaRec->ucIndex,
-					prNdpCxt->ucId,
-					prNdpCxt->prNanStaRec->ucWlanIndex,
-					prNDP->aucPeerNDIAddr);
+		if (prNdpCxt->ucNumEnrollee > 1)
+			goto skip_map_starecord;
+
+		if (prNanStaRec == NULL) {
+			nanSchedCmdMapStaRecord(
+				prAdapter,
+				prNDL->aucPeerMacAddr,
+				nanGetRoleIndexbyLink(i),
+				STA_REC_INDEX_NOT_FOUND,
+				prNdpCxt->ucId,
+				STA_REC_INDEX_NOT_FOUND,
+				prNDP->aucPeerNDIAddr);
+		} else {
+			nanSchedCmdMapStaRecord(
+				prAdapter,
+				prNDL->aucPeerMacAddr,
+				nanGetRoleIndexbyLink(i),
+				prNanStaRec->ucIndex,
+				prNdpCxt->ucId,
+				prNanStaRec->ucWlanIndex,
+				prNDP->aucPeerNDIAddr);
+		}
 	}
 
 skip_map_starecord:
@@ -5229,23 +5261,36 @@ skip_map_starecord:
 			prNdpCxt->aprEnrollNdp[u4Idx + 1];
 	prNdpCxt->ucNumEnrollee--;
 	if (prNdpCxt->ucNumEnrollee == 0) {
-		if (prNdpCxt->prNanStaRec &&
-		    atomic_read(&(prNdpCxt->prNanStaRec->NanRefCount)) > 0) {
-			DBGLOG(NAN, WARN, "%s(): STA-REC RefCount:%d\n",
-			       __func__,
-			       atomic_read(
-				       &(prNdpCxt->prNanStaRec->NanRefCount)));
-		}
+		for (i = 0;
+			i < prAdapter->rWifiVar.ucNanMldLinkMax;
+			i++) {
+			prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
 
+			if (prNanStaRec &&
+			    atomic_read(&(prNanStaRec->NanRefCount)) > 0) {
+				DBGLOG(NAN, WARN,
+					"STA-REC[%d] RefCount:%d\n", i,
+				       atomic_read(
+					       &(prNanStaRec->NanRefCount)));
+			}
+		}
 		prNdpCxt->fgValid = FALSE;
 	} else {
-		if (prNdpCxt->prNanStaRec) {
-			nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
-			nicTxGenerateDescTemplate(prAdapter,
-				prNdpCxt->prNanStaRec);
-		} else {
-			DBGLOG(NAN, WARN,
-					"[%s] prNanStaRec = NULL\n", __func__);
+		for (i = 0;
+			i < prAdapter->rWifiVar.ucNanMldLinkMax;
+			i++) {
+			prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
+			if (prNanStaRec) {
+				nicTxFreeDescTemplate(
+					prAdapter,
+					prNanStaRec);
+				nicTxGenerateDescTemplate(
+					prAdapter,
+					prNanStaRec);
+			} else {
+				DBGLOG(NAN, WARN,
+					"prNanStaRec[%d] = NULL\n", i);
+			}
 		}
 	}
 	prNDP->prContext = NULL;
@@ -5264,15 +5309,8 @@ skip_map_starecord:
 		if (prNdpCxt->fgValid == FALSE)
 			continue;
 
-		DBGLOG(NAN, INFO,
-		       "NdpCxtId:%d, StaIdx:%d, BssIdx:%d, Enrollee:%d\n",
-		       prNdpCxt->ucId,
-		       (prNdpCxt->prNanStaRec ? prNdpCxt->prNanStaRec->ucIndex
-					      : STA_REC_INDEX_NOT_FOUND),
-		       (prNdpCxt->prNanStaRec
-				? prNdpCxt->prNanStaRec->ucBssIndex
-				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
-		       prNdpCxt->ucNumEnrollee);
+		nanDumpStaRec(prNdpCxt);
+
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
 		       prNdpCxt->aucLocalNDIAddr[1],
@@ -5318,7 +5356,8 @@ struct STA_RECORD *nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
 
 		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr, pucLocalAddr) &&
 		    EQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr, pucPeerAddr))
-			return prNdpCxt->prNanStaRec;
+			/* TBD: Send NAF by Station Record */
+			return nanGetPreferLinkStaRec(prAdapter, prNdpCxt);
 	}
 
 	return NULL;

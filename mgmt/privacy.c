@@ -785,7 +785,8 @@ u_int8_t secPrivacySeekForEntry(
 		prSta->ucWlanIndex = ucEntry;
 
 #if CFG_SUPPORT_NAN
-		if (prSta->eStaType & STA_TYPE_NAN) {
+		if (!nanLinkNeedMlo(prAdapter) &&
+			(prSta->eStaType & STA_TYPE_NAN)) {
 			struct _NAN_PEER_SCH_DESC_T
 				*prPeerSchDesc = NULL;
 
@@ -910,22 +911,23 @@ void secPrivacyFreeSta(struct ADAPTER *prAdapter,
 	secPrivacyFreeForEntry(prAdapter, prStaRec->ucWlanIndex);
 
 #if CFG_SUPPORT_NAN
-			if (prStaRec->eStaType & STA_TYPE_NAN) {
-				struct _NAN_PEER_SCH_DESC_T
-						*prPeerSchDesc = NULL;
+	if (!nanLinkNeedMlo(prAdapter) &&
+		(prStaRec->eStaType & STA_TYPE_NAN)) {
+		struct _NAN_PEER_SCH_DESC_T
+				*prPeerSchDesc = NULL;
 
-				prPeerSchDesc = nanSchedSearchPeerSchDescByNmi(
-					prAdapter, prStaRec->aucMacAddr);
-				/* Handle only NDI */
-				if (prPeerSchDesc == NULL) {
-					DBGLOG(RSN, INFO,
-						"Free NAN other STA entry(%d)\n",
-						prStaRec->ucOtherWlanIndex);
-					secPrivacyFreeForEntry(
-						prAdapter,
-						prStaRec->ucOtherWlanIndex);
-				}
-			}
+		prPeerSchDesc = nanSchedSearchPeerSchDescByNmi(
+			prAdapter, prStaRec->aucMacAddr);
+		/* Handle only NDI */
+		if (prPeerSchDesc == NULL) {
+			DBGLOG(RSN, INFO,
+				"Free NAN other STA entry(%d)\n",
+				prStaRec->ucOtherWlanIndex);
+			secPrivacyFreeForEntry(
+				prAdapter,
+				prStaRec->ucOtherWlanIndex);
+		}
+	}
 #endif
 
 	prStaRec->ucWlanIndex = WTBL_RESERVED_ENTRY;

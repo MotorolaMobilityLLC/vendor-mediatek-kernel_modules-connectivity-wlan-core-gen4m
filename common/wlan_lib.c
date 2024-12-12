@@ -8834,6 +8834,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanConcurrency, "NanConcurrency", 0,
 		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanMldLinkMax, "NanMldLinkMax",
+		NAN_LINK_NUM, FEATURE_TO_CUSTOMER);
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prWifiVar->ucNanMldLinkMax > prWifiVar->ucMldLinkMax) {
+		DBGLOG(INIT, WARN,
+			"ucNanMldLinkMax %d => %d\n",
+			prWifiVar->ucNanMldLinkMax, prWifiVar->ucMldLinkMax);
+		prWifiVar->ucNanMldLinkMax = prWifiVar->ucMldLinkMax;
+	}
+#endif
 	INIT_UINT(prWifiVar->fgNanNdpSkipSchedule,
 		"NanNdpSkipSchedule", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanOnAbortScan,

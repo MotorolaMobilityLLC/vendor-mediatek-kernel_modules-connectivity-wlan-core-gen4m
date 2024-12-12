@@ -1563,6 +1563,7 @@ struct WIFI_VAR {
 	uint32_t u4NanPreferBandMask;
 	uint32_t u4NanNdcPreferBandMask;
 	uint8_t ucNanMaxNdpDissolve;
+	uint8_t ucNanMldLinkMax;
 	uint32_t u4NanDissolveTimeout;
 	uint32_t u4NanDissolveOffTimeout;
 	u_int8_t fgNanDissolveAbortScan;

@@ -4750,7 +4750,13 @@ uint8_t mldIsMultiLinkEnabled(
 					    prWifiVar->ucP2pMldLinkMax);
 		}
 	}
-
+#if (CFG_SUPPORT_NAN == 1)
+	if (eNetworkType == NETWORK_TYPE_NAN) {
+		linkMax = kal_min_t(uint8_t,
+				prWifiVar->ucMldLinkMax,
+				prWifiVar->ucNanMldLinkMax);
+	}
+#endif
 
 	/* mlo is disable when one of these is true
 	 * 1. eht disabled

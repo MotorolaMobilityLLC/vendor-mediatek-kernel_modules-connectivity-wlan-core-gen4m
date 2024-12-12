@@ -93,7 +93,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		 */
 		prnanBssInfo->fgIsProtection = FALSE;
 
-		cnmWmmIndexDecision(prAdapter, prnanBssInfo);
+		nanGetLinkWmmQueSet(prAdapter, prnanBssInfo);
 
 #if (CFG_SUPPORT_NAN_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1) {
@@ -214,6 +214,11 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK;
 #endif
 
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+		nanMldBssRegister(prAdapter,
+			prnanBssInfo);
+#endif
+
 		/* Activate NAN BSS */
 		if (!IS_BSS_ACTIVE(
 			    prAdapter->aprBssInfo
@@ -296,6 +301,11 @@ void nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx)
 		nicUpdateBss(prAdapter, prnanBssInfo->ucBssIndex);
 
 		cnmFreeBssInfo(prAdapter, prnanBssInfo);
+
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+		nanMldBssUnregister(prAdapter,
+			prnanBssInfo);
+#endif
 	}
 }
 

@@ -207,7 +207,8 @@ struct _NAN_NDP_CONTEXT_T {
 	uint8_t aucPeerNDIAddr[MAC_ADDR_LEN];
 
 	/* STA-REC management */
-	struct STA_RECORD *prNanStaRec;
+	struct STA_RECORD *prNanStaRec[NAN_LINK_NUM];
+	struct STA_RECORD *prNanPreferStaRec;
 
 	uint8_t ucNumEnrollee;
 	struct _NAN_NDP_INSTANCE_T *aprEnrollNdp[NAN_MAX_SUPPORT_NDP_NUM];

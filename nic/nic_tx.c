@@ -1950,6 +1950,50 @@ static bool nicIsNeedTXDAppend(struct MSDU_INFO *prMsduInfo)
 	return FALSE;
 }
 
+static bool nicIsNanStaRecTxAllowed(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+#if CFG_SUPPORT_NAN_11BE_MLO
+	struct MLD_STA_RECORD *mld_starec;
+	struct LINK *links;
+	struct STA_RECORD *starec;
+
+	if (!prStaRec || !IS_STA_NAN_TYPE(prStaRec))
+		return FALSE;
+
+	mld_starec = mldStarecGetByStarec(prAdapter,
+		prStaRec);
+	if (!mld_starec)
+		return FALSE;
+
+
+	links =  &mld_starec->rStarecList;
+	LINK_FOR_EACH_ENTRY(starec,
+		links, rLinkEntryMld,
+		struct STA_RECORD) {
+		if (!starec) {
+			DBGLOG(NAN, WARN,
+				"\tNull starec\n");
+			continue;
+		}
+
+		DBGLOG(INIT, INFO,
+			"\tsta: %d, wid: %d, bss: %d => %d\n",
+			starec->ucIndex,
+			starec->ucWlanIndex,
+			starec->ucBssIndex,
+			starec->fgIsTxAllowed);
+
+		if (starec->fgIsTxAllowed)
+			return TRUE;
+	}
+#endif
+
+	return FALSE;
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll compose the Tx descriptor of the MSDU.
@@ -5671,7 +5715,8 @@ static void nicTxDirectCheckStaPsPendQ(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prStaRec->fgIsTxAllowed == TRUE) {
+	if (prStaRec->fgIsTxAllowed == TRUE ||
+		nicIsNanStaRecTxAllowed(prAdapter, prStaRec)) {
 		/* dequeue pending Queue */
 		if (prAdapter->u4StaPendBitmap & BIT(ucStaIdx))
 			nicTxDirectDequeueStaPendQ(prAdapter, ucStaIdx, prQue);

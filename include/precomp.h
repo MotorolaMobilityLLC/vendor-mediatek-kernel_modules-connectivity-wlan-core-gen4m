@@ -263,6 +263,7 @@
 #endif
 #include "nan_data_engine.h"
 #include "nan_dev.h"
+#include "nan_link.h"
 #include "nan_intf.h"
 #include "nan_ranging.h"
 #endif

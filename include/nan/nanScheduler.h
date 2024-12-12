@@ -397,7 +397,7 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 	uint32_t u4DefNdlNumSlots;
 	uint32_t u4DefRangingNumSlots;
 
-	uint8_t aucStaRecIdx[NAN_MAX_SUPPORT_NDP_CXT_NUM];
+	uint8_t aucStaRecIdx[NAN_LINK_NUM][NAN_MAX_SUPPORT_NDP_CXT_NUM];
 
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 
@@ -703,7 +703,7 @@ unsigned char
 nanSchedPeerSchRecordIsValid(struct ADAPTER *prAdapter, uint32_t u4SchIdx);
 uint32_t
 nanSchedQueryStaRecIdx(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
-		       uint32_t u4Idx);
+		       uint32_t u4Idx, uint8_t ucLinkIdx);
 
 void nanSchedPeerPrepareNegoState(struct ADAPTER *prAdapter,
 				  uint8_t *pucNmiAddr);
