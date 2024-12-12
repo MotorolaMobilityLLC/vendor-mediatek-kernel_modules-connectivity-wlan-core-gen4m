@@ -8678,11 +8678,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if CFG_SUPPORT_DATA_STALL
-	INIT_UINT(prWifiVar->u4PerHighThreshole, "PerHighThreshole",
+	/* ...hol"e" for backward compatibility */
+	INIT_UINT(prWifiVar->u4PerHighThreshold, "PerHighThreshole",
 		  EVENT_PER_HIGH_THRESHOLD, FEATURE_DEBUG_ONLY);
-	INIT_UINT(prWifiVar->u4TxLowRateThreshole, "TxLowRateThreshole",
+	INIT_UINT(prWifiVar->u4TxLowRateThreshold, "TxLowRateThreshole",
 		  EVENT_TX_LOW_RATE_THRESHOLD, FEATURE_DEBUG_ONLY);
-	INIT_UINT(prWifiVar->u4RxLowRateThreshole, "RxLowRateThreshole",
+	INIT_UINT(prWifiVar->u4RxLowRateThreshold, "RxLowRateThreshole",
+		  EVENT_RX_LOW_RATE_THRESHOLD, FEATURE_DEBUG_ONLY);
+
+	INIT_UINT(prWifiVar->u4PerHighThreshold, "PerHighThreshold",
+		  EVENT_PER_HIGH_THRESHOLD, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4TxLowRateThreshold, "TxLowRateThreshold",
+		  EVENT_TX_LOW_RATE_THRESHOLD, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4RxLowRateThreshold, "RxLowRateThreshold",
 		  EVENT_RX_LOW_RATE_THRESHOLD, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4ReportEventInterval, "ReportEventInterval",
 		  REPORT_EVENT_INTERVAL, FEATURE_DEBUG_ONLY);
@@ -14902,21 +14910,21 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	/* Add custom monitor here */
 	if (u8TxTotalCntDif >= prWifiVar->u4TrafficThreshold) {
 		if (prLinkQualityInfo->u4CurTxRate <
-			prWifiVar->u4TxLowRateThreshole)
+			prWifiVar->u4TxLowRateThreshold)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_TX_LOW_RATE,
 				(uint16_t)sizeof(uint32_t),
 				ucBssIdx,
 				FALSE);
 		else if (prLinkQualityInfo->u4CurRxRate <
-			prWifiVar->u4RxLowRateThreshole)
+			prWifiVar->u4RxLowRateThreshold)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_RX_LOW_RATE,
 				(uint16_t)sizeof(uint32_t),
 				ucBssIdx,
 				FALSE);
 		else if (prLinkQualityInfo->u4CurTxPer >
-			prWifiVar->u4PerHighThreshole)
+			prWifiVar->u4PerHighThreshold)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_PER_HIGH,
 				(uint16_t)sizeof(uint32_t),

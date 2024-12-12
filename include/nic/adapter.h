@@ -1414,9 +1414,9 @@ struct WIFI_VAR {
 
 
 #if CFG_SUPPORT_DATA_STALL
-	uint32_t u4PerHighThreshole;
-	uint32_t u4TxLowRateThreshole;
-	uint32_t u4RxLowRateThreshole;
+	uint32_t u4PerHighThreshold;
+	uint32_t u4TxLowRateThreshold;
+	uint32_t u4RxLowRateThreshold;
 	uint32_t u4ReportEventInterval;
 	uint32_t u4TrafficThreshold;
 
