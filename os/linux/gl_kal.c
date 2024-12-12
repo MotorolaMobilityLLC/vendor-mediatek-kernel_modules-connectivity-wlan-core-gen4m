@@ -5820,6 +5820,16 @@ int hif_thread(void *data)
 		}
 #endif
 
+#if defined(_HIF_PCIE)
+		if (test_and_clear_bit(HIF_FLAG_MSI_RECOVERY_BIT,
+				       &prGlueInfo->ulHifFlag)) {
+			struct BUS_INFO *prBusInfo =
+				prAdapter->chip_info->bus_info;
+
+			if (prBusInfo->recoveryMsiStatus)
+				prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
+		}
+#endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 		if (test_and_clear_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT,
 				       &prGlueInfo->ulHifFlag))
@@ -7181,6 +7191,14 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr)
 {
 	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr)
+{
+	set_bit(HIF_FLAG_MSI_RECOVERY_BIT, &pr->ulHifFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif

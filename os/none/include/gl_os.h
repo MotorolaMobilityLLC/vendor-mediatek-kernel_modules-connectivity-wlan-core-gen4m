@@ -207,6 +207,9 @@ extern u_int8_t fgTriggerDebugSop;
 #define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
 #endif
 
+#define HIF_FLAG_MSI_RECOVERY		BIT(1)
+#define HIF_FLAG_MSI_RECOVERY_BIT	(1)
+
 #if CFG_ENABLE_BT_OVER_WIFI
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */

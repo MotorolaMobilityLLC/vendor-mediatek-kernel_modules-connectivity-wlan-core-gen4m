@@ -3215,17 +3215,20 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyMDGenSwitchEnd(prAdapter);
 #endif
+	kalSetHifMsiRecoveryEvent(prGlueInfo);
 
 	return IRQ_HANDLED;
 }
 
-void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 {
 	uint32_t u4Val = 0;
 
 	if (prAdapter) {
 		if (prAdapter->ucStopMMIO) {
-			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going\n");
+			DBGLOG(INIT, ERROR,
+			       "[Gen Switch] check start. reg[0x%08x]\n",
+			       u4Reg);
 			while (prAdapter->ucStopMMIO) {
 				udelay(1);
 				u4Val++;
