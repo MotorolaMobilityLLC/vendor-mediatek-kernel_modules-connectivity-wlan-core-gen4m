@@ -38,6 +38,9 @@
 #endif
 
 /* for rps */
+#if KERNEL_VERSION(6, 8, 0) <= LINUX_VERSION_CODE
+#include <net/rps.h>
+#endif
 #include <linux/netdevice.h>
 #if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
 #include <net/netdev_rx_queue.h>
