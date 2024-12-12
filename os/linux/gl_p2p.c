@@ -1475,17 +1475,18 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 	struct ADAPTER *prAdapter;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
 	struct wireless_dev **pprP2pRoleWdev = NULL;
-	int i4Start = 0, i4End = 0;
+	uint8_t ucStart = 0;
+	uint8_t ucEnd = 0;
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prGlueInfo);
 
 	if (ucIdx == 0xff) {
-		i4Start = 0;
-		i4End = BSS_P2P_NUM;
+		ucStart = 0;
+		ucEnd = BSS_P2P_NUM;
 	} else if (ucIdx < BSS_P2P_NUM) {
-		i4Start = ucIdx;
-		i4End = ucIdx + 1;
+		ucStart = ucIdx;
+		ucEnd = ucIdx + 1;
 	} else {
 		DBGLOG(INIT, WARN, "The ucIdx (%d) is a wrong value\n", ucIdx);
 		return FALSE;
@@ -1501,7 +1502,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 		p2pDevFsmUninit(prAdapter);
 
 	/* 4 <2> Uninit P2P role FSM */
-	for (ucRoleIdx = i4Start; ucRoleIdx < i4End; ucRoleIdx++) {
+	for (ucRoleIdx = ucStart; ucRoleIdx < ucEnd; ucRoleIdx++) {
 		if (P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx)) {
 			/* FIXME: The cfg80211_XXX() is following the
 			 * p2pRoleFsmUninit() sub-progress.
@@ -1515,7 +1516,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 	}
 
 	/* 4 <3> Free Wiphy & netdev */
-	for (ucRoleIdx = i4Start; ucRoleIdx < i4End; ucRoleIdx++) {
+	for (ucRoleIdx = ucStart; ucRoleIdx < ucEnd; ucRoleIdx++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 
