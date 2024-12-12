@@ -9309,6 +9309,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"EnTxFragTxDone", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucErrPos, "ErrPos", 0, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4MlrCfg, "MlrCfg", 0x3, FEATURE_TO_CUSTOMER);
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+	/* 0x0: SAP and P2P GO/GC not support MLR
+	 * 0x1: Only SAP support MLR
+	 * 0x2: Only P2P GO/GC support MLR
+	 * 0x3: Both SAP and P2P GO/GC support MLR
+	 */
+	INIT_UINT(prWifiVar->u4MlrCfgSapP2pEn, "MlrCfgSapP2pEn", 0x1,
+		FEATURE_TO_CUSTOMER);
+#endif
 #endif
 
 	INIT_UINT(prWifiVar->ucSinglePMK,

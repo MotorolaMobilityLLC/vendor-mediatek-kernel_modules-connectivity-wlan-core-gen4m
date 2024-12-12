@@ -4447,7 +4447,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint8_t *aucCapa;
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	uint8_t *ie;
 	uint16_t ie_len, ie_offset;
 #endif
@@ -4466,7 +4466,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	prStaRec->fgIsPeerWithMtkOui = 1;
 	DBGLOG(P2P, TRACE, "Peer with MTK Oui\n");
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - 7;
 
@@ -4482,12 +4482,12 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 			 */
 			prStaRec->ucMlrSupportBitmap = prMLR->ucLRBitMap;
 
-			MLR_DBGLOG(prAdapter, P2P, INFO,
-				"MLR assoc req - Type|Len|B[0x%02x]\n",
+			DBGLOG(P2P, INFO,
+				"MLR rx assoc req - Type|Len|B[0x%02x]\n",
 				prStaRec->ucMlrSupportBitmap);
 		}
 	}
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 }				/* p2pFuncParseMTKOuiInfoElem */
 
 /*---------------------------------------------------------------------------*/

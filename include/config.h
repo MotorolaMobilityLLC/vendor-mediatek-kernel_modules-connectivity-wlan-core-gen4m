@@ -1334,14 +1334,23 @@
 #endif
 #endif
 
-#ifndef CFG_SUPPORT_BALANCE_MLR
-#if CFG_SUPPORT_MLR
+#ifndef CFG_SUPPORT_BALANCE_MLRV2
+#if ((CFG_SUPPORT_MLR == 1) && (CFG_SUPPORT_MLR_V2 == 1))
+#define CFG_SUPPORT_BALANCE_MLRV2		1
+#else
+#define CFG_SUPPORT_BALANCE_MLRV2		0
+#endif
+#endif
+
+#ifndef CFG_SUPPORT_BALANCE_MLRP_ALR
+#if ((CFG_SUPPORT_MLR == 1) && (CFG_SUPPORT_MLR_V2 == 1) \
+	&& (CFG_SUPPORT_BALANCE_MLRV2 == 1))
 /* Currently, this feature does not have requirements for MP.
  * Therefore, it is disabled by default.
  */
-#define CFG_SUPPORT_BALANCE_MLR			0
+#define CFG_SUPPORT_BALANCE_MLRP_ALR			0
 #else
-#define CFG_SUPPORT_BALANCE_MLR			0
+#define CFG_SUPPORT_BALANCE_MLRP_ALR			0
 #endif /* CFG_SUPPORT_MLR */
 #endif
 

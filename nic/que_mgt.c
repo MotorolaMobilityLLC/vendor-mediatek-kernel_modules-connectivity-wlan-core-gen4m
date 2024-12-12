@@ -3978,7 +3978,8 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				}
 
 				if (fgSwRxReordering && prReorderQueParm &&
-					prReorderQueParm->fgIsValid) {
+					prReorderQueParm->fgIsValid &&
+					!prCurrSwRfb->fgFragFrame) {
 					/* Only QoS Data frame with BA aggrement
 					 * shall enter reordering buffer
 					 */

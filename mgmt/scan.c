@@ -4454,14 +4454,14 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 						= prBssDesc->ucDTIMPeriod;
 					prAisBssInfo->fgTIMPresent
 						= prBssDesc->fgTIMPresent;
-#if CFG_SUPPORT_BALANCE_MLR
+#if (CFG_SUPPORT_BALANCE_MLRP_ALR == 1)
 					prAisBssInfo->u2BeaconInterval
 						= prBssDesc->u2BeaconInterval;
 
 					log_dbg(SCN, WARN,
 						"Update Beacon interval [%u]\n",
 						prAisBssInfo->u2BeaconInterval);
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 					/* Handle No TIM IE information case */
 					if (!prAisBssInfo->fgTIMPresent) {

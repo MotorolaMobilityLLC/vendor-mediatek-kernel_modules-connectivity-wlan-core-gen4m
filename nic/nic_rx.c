@@ -734,6 +734,17 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 	prSWRfb->u2FrameCtrl = u2FrameCtrl;
 	prSWRfb->ucTid = ucTid;
 
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+	MLR_DBGLOG(prAdapter, RX, INFO,
+		   "SN:%d FragNo:%d MoreFrag:%04x FC:%04x SQ:%04x fgHdrTran:%d\n",
+		   u2SeqNo,
+		   ucFragNo,
+		   (uint16_t) (u2FrameCtrl & MASK_FC_MORE_FRAG),
+		   u2FrameCtrl,
+		   u2SeqCtrl,
+		   prSWRfb->fgHdrTran);
+#endif
+
 	if (!(u2FrameCtrl & MASK_FC_MORE_FRAG)) {
 		/* The last fragment frame */
 		if (ucFragNo) {
