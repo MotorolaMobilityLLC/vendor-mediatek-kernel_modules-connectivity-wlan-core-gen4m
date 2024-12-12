@@ -514,6 +514,7 @@ struct GLUE_INFO {
 	kal_completion rPendComp;	/* indicate main thread halt complete */
 
 	unsigned long ulFlag;		/* GLUE_FLAG_XXX */
+	unsigned long ulHifFlag;	/* HIF_FLAG_XXX */
 
 	/* Host interface related information */
 	/* defined in related hif header file */

@@ -346,6 +346,9 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_RST_FW_NOTIFY_L05_BIT		(30)
 #define GLUE_FLAG_RST_FW_NOTIFY_L05		BIT(30)
 
+#define HIF_FLAG_ALL_TOKENS_UNUSED	BIT(2)
+#define HIF_FLAG_ALL_TOKENS_UNUSED_BIT	(2)
+
 #if CFG_SUPPORT_HIF_RX_NAPI
 #define HIF_NAPI_SET_DRV_OWN_BIT		(0)
 #define HIF_NAPI_SET_FW_OWN_BIT			(1)
@@ -791,6 +794,7 @@ struct GLUE_INFO {
 	uint64_t u8Cookie;
 
 	unsigned long ulFlag;		/* GLUE_FLAG_XXX */
+	unsigned long ulHifFlag;	/* HIF_FLAG_XXX */
 	uint32_t u4PendFlag;
 	/* UINT_32 u4TimeoutFlag; */
 	u_int8_t fgOidWaiting; /* TRUE: waiter enters ioctl, FALSE: completed */

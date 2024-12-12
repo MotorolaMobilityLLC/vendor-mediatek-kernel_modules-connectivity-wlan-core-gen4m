@@ -5694,7 +5694,8 @@ int hif_thread(void *data)
 		}
 
 		/* Unlock wakelock if hif_thread going to idle */
-		if (!(prGlueInfo->ulFlag & GLUE_FLAG_HIF_PROCESS))
+		if (!(prGlueInfo->ulFlag & GLUE_FLAG_HIF_PROCESS) &&
+			!(prGlueInfo->ulHifFlag & HIF_FLAG))
 			KAL_WAKE_UNLOCK(prGlueInfo->prAdapter,
 					prHifThreadWakeLock);
 
@@ -5707,7 +5708,8 @@ int hif_thread(void *data)
 		do {
 			ret = wait_event_interruptible(prGlueInfo->waitq_hif,
 				((prGlueInfo->ulFlag & GLUE_FLAG_HIF_PROCESS)
-				!= 0));
+				!= 0) ||
+				((prGlueInfo->ulHifFlag & HIF_FLAG) != 0));
 		} while (ret != 0);
 
 		kalTraceBegin("hif_thread");
@@ -5813,6 +5815,12 @@ int hif_thread(void *data)
 			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_MDDP);
 			mddpInHifThread(prAdapter);
 		}
+#endif
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		if (test_and_clear_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT,
+				       &prGlueInfo->ulHifFlag))
+			halHandleAllTokensUnused(prAdapter, FALSE);
 #endif
 
 		/* Set FW own */
@@ -7162,6 +7170,14 @@ void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
 void kalSetMddpEvent(struct GLUE_INFO *pr)
 {
 	set_bit(GLUE_FLAG_HIF_MDDP_BIT, &pr->ulFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr)
+{
+	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif

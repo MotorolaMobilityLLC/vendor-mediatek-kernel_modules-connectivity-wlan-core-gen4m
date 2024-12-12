@@ -1656,13 +1656,54 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 #endif
 }
 
-void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
+u_int8_t halHandleAllTokensUnused(struct ADAPTER *prAdapter, u_int8_t fgIsCheck)
 {
-	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 #if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
-	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo =
+		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	u_int8_t fgRet = FALSE;
+
+	prChipInfo = prAdapter->chip_info;
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
+	prBusInfo = prChipInfo->bus_info;
+#endif
+
+	if (GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt) != 0)
+		return FALSE;
+
+#if CFG_SUPPORT_PCIE_ASPM
+	if (prBusInfo->updatePcieAspm) {
+		if (!fgIsCheck)
+			prBusInfo->updatePcieAspm(
+				prAdapter->prGlueInfo, TRUE);
+		fgRet = TRUE;
+	}
+#endif
+#if CFG_PCIE_LTR_UPDATE
+	/* set pcie LTR high latency */
+	if (prBusInfo->pcieLTRValue) {
+		if (!fgIsCheck)
+			prBusInfo->pcieLTRValue(
+				prAdapter, PCIE_LTR_STATE_TX_END);
+		fgRet = TRUE;
+	}
+#endif
+	if (prChipInfo->wifiNappingCtrl) {
+		if (!fgIsCheck)
+			prChipInfo->wifiNappingCtrl(
+				prAdapter->prGlueInfo, TRUE);
+		fgRet = TRUE;
+	}
+
+	return fgRet;
+}
+
+void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -1671,12 +1712,7 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 #if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	unsigned long flags = 0;
 #endif
-
-#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
-	prBusInfo = prAdapter->chip_info->bus_info;
-#endif
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prChipInfo = prAdapter->chip_info;
 
 	u4UsedCnt = GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt);
 	if (!u4UsedCnt) {
@@ -1712,30 +1748,15 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 		DBGLOG(HAL, ERROR, "fifo full token[%u]\n", u4TokenNum);
 		GLUE_INC_REF_CNT(prTokenInfo->u4FifoErrCnt);
 	}
+
+	if (halHandleAllTokensUnused(prAdapter, TRUE))
+		kalSetHifHandleAllTokensUnusedEvent(prAdapter->prGlueInfo);
 #else
 	halReturnMsduTokenToFreeList(prAdapter, prToken);
-#endif /* CFG_SUPPORT_HIF_FIFO_TOKEN */
+	halHandleAllTokensUnused(prAdapter, FALSE);
 
-	if (GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt) == 0) {
-#if CFG_SUPPORT_PCIE_ASPM
-		if (prBusInfo->updatePcieAspm)
-			prBusInfo->updatePcieAspm(
-				prAdapter->prGlueInfo, TRUE);
-#endif
-#if CFG_PCIE_LTR_UPDATE
-	/* set pcie LTR high latency */
-		if (prBusInfo->pcieLTRValue)
-			prBusInfo->pcieLTRValue(
-				prAdapter, PCIE_LTR_STATE_TX_END);
-#endif
-		if (prChipInfo->wifiNappingCtrl)
-			prChipInfo->wifiNappingCtrl(
-				prAdapter->prGlueInfo, TRUE);
-	}
-
-#if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
-#endif
+#endif /* CFG_SUPPORT_HIF_FIFO_TOKEN */
 }
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
