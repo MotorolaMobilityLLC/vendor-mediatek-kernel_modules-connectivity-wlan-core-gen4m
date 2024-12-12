@@ -2253,14 +2253,15 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		glResetCleanResetFlag();
 		return;
 	}
+
+	if (resetReason >= RST_REASON_MAX)
+		resetReason = 0;
 	if (g_SubsysRstCnt > 3) {
 		if (fgIsTimeout == TRUE) {
 		/*
 		 * g_SubsysRstCnt > 3, > 30 sec,
 		 * need to update rLastTs, still do wfsys reset
 		 */
-			if (resetReason >= RST_REASON_MAX)
-				resetReason = 0;
 
 			if (g_fgRstRecover == TRUE)
 				g_fgRstRecover = FALSE;
@@ -2295,15 +2296,11 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			g_IsSubsysRstOverThreshold = TRUE;
 			/*coredump is done, no need do again*/
 			fgIsDrvTriggerWholeChipReset = TRUE;
-			glSetRstReasonString(
-				"subsys reset more than 3 times");
+			glSetRstReasonString(apucRstReason[resetReason]);
 			glResetWholeChipResetTrigger(g_reason);
 			glResetCleanResetFlag();
 		}
 	} else {
-		if (resetReason >= RST_REASON_MAX)
-			resetReason = 0;
-
 		if (g_fgRstRecover == TRUE)
 			g_fgRstRecover = FALSE;
 		else
