@@ -6040,10 +6040,12 @@ static void nanSchedUpdateActiveNdcBands(struct ADAPTER *prAdapter)
 	prScheduler->ucNdcBand = ucNdcBandBitmap;
 	DBGLOG(NAN, DEBUG, "NDC band = 0x%02x\n", prScheduler->ucNdcBand);
 
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 	if (prScheduler->ucNdcBand ==
 	    (BIT(NAN_BSS_INDEX_BAND0) | BIT(NAN_BSS_INDEX_BAND1))) {
 		DBGLOG(NAN, WARN, "NDC in both bands\n");
 	}
+#endif
 }
 
 static void

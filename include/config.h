@@ -2435,7 +2435,11 @@
 #if (CFG_SUPPORT_NAN == 1)
 #define CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL 2
 #define CFG_SUPPORT_NAN_CARRIER_ON_INIT 1
+#if defined(CFG_NSS) && (CFG_NSS == 1)
+#define CFG_SUPPORT_NAN_DBDC 0
+#else
 #define CFG_SUPPORT_NAN_DBDC 1
+#endif
 #define CFG_NAN_BSS_SEPARATE_SEC_ROLE 0
 #define CFG_NAN_PMF_PATCH 1 /* special handle for peer send PMF w/ NMI */
 #define CFG_NAN_ACTION_FRAME_ADDR                                              \

@@ -51,7 +51,11 @@
 
 #define NAN_NUM_PEER_SCH_DESC 50
 
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 #define NAN_TIMELINE_MGMT_SIZE          2  /* need to align with FW */
+#else
+#define NAN_TIMELINE_MGMT_SIZE          1  /* need to align with FW */
+#endif
 #define NAN_TIMELINE_MGMT_CHNL_LIST_NUM \
 	(NAN_SUPPORTED_2G_FAW_CH_NUM+NAN_SUPPORTED_5G_FAW_CH_NUM)
 	/* need to align with FW */
