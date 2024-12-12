@@ -303,7 +303,7 @@ extern struct sock *nl_sk;
 #endif /*CFG_AP_80211KVR_INTERFACE*/
 
 typedef uint32_t(*PFN_OID_HANDLER_FUNC_REQ) (
-	void *prAdapter,
+	struct ADAPTER *prAdapter,
 	void *pvBuf, uint32_t u4BufLen,
 	uint32_t *pu4OutInfoLen);
 

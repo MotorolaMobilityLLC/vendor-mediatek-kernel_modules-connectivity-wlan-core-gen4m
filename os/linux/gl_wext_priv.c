@@ -116,17 +116,16 @@ static u_int8_t reqSearchSupportedOidEntry(uint32_t rOid,
 		struct WLAN_REQ_ENTRY **ppWlanReqEntry);
 
 static uint32_t
-reqExtSetAcpiDevicePowerState(struct GLUE_INFO
-			      *prGlueInfo,
+reqExtSetAcpiDevicePowerState(struct ADAPTER *prAdapter,
 			      void *pvSetBuffer, uint32_t u4SetBufferLen,
 			      uint32_t *pu4SetInfoLen);
 
-static uint32_t glWextRfTestSetTestMode(void *ptr,
+static uint32_t glWextRfTestSetTestMode(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
 
-static uint32_t glWextRfTestSetAbortTestMode(void *ptr,
+static uint32_t glWextRfTestSetAbortTestMode(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
@@ -2272,13 +2271,13 @@ priv_set_ndis(struct net_device *prNetDev,
 
 	if (prWlanReqEntry->eOidMethod == ENUM_OID_GLUE_ONLY) {
 		/* GLUE sw info only */
-		status = prWlanReqEntry->pfOidSetHandler(prGlueInfo,
+		status = prWlanReqEntry->pfOidSetHandler(prGlueInfo->prAdapter,
 				prNdisReq->ndisOidContent,
 				prNdisReq->inNdisOidlength, &u4SetInfoLen);
 	} else if (prWlanReqEntry->eOidMethod ==
 		   ENUM_OID_GLUE_EXTENSION) {
 		/* multiple sw operations */
-		status = prWlanReqEntry->pfOidSetHandler(prGlueInfo,
+		status = prWlanReqEntry->pfOidSetHandler(prGlueInfo->prAdapter,
 				prNdisReq->ndisOidContent,
 				prNdisReq->inNdisOidlength, &u4SetInfoLen);
 	} else if (prWlanReqEntry->eOidMethod ==
@@ -2414,13 +2413,15 @@ priv_get_ndis(struct net_device *prNetDev,
 
 	if (prWlanReqEntry->eOidMethod == ENUM_OID_GLUE_ONLY) {
 		/* GLUE sw info only */
-		status = prWlanReqEntry->pfOidQueryHandler(prGlueInfo,
+		status = prWlanReqEntry->pfOidQueryHandler(
+				prGlueInfo->prAdapter,
 				prNdisReq->ndisOidContent,
 				prNdisReq->inNdisOidlength, &u4BufLen);
 	} else if (prWlanReqEntry->eOidMethod ==
 		   ENUM_OID_GLUE_EXTENSION) {
 		/* multiple sw operations */
-		status = prWlanReqEntry->pfOidQueryHandler(prGlueInfo,
+		status = prWlanReqEntry->pfOidQueryHandler(
+				prGlueInfo->prAdapter,
 				prNdisReq->ndisOidContent,
 				prNdisReq->inNdisOidlength, &u4BufLen);
 	} else if (prWlanReqEntry->eOidMethod ==
@@ -3165,14 +3166,14 @@ priv_set_driver(struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t
-reqExtSetAcpiDevicePowerState(struct GLUE_INFO
-			      *prGlueInfo,
+reqExtSetAcpiDevicePowerState(struct ADAPTER *prAdapter,
 			      void *pvSetBuffer, uint32_t u4SetBufferLen,
 			      uint32_t *pu4SetInfoLen)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	ASSERT(prGlueInfo);
+	ASSERT(prAdapter);
+	ASSERT(prAdapter->prGlueInfo);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
 
@@ -3200,7 +3201,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t
-glWextRfTestSetTestMode(void *ptr,
+glWextRfTestSetTestMode(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen)
@@ -3208,7 +3209,9 @@ glWextRfTestSetTestMode(void *ptr,
 	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	prGlueInfo = (struct GLUE_INFO *) ptr;
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	if (!prGlueInfo)
 		return WLAN_STATUS_FAILURE;
@@ -3235,7 +3238,7 @@ glWextRfTestSetTestMode(void *ptr,
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t
-glWextRfTestSetAbortTestMode(void *ptr,
+glWextRfTestSetAbortTestMode(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen)
@@ -3243,12 +3246,12 @@ glWextRfTestSetAbortTestMode(void *ptr,
 	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	if (!pu4SetInfoLen)
+	if (!pu4SetInfoLen || !prAdapter)
 		return WLAN_STATUS_FAILURE;
 
 	*pu4SetInfoLen = 0;
 
-	prGlueInfo = (struct GLUE_INFO *) ptr;
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	if (!prGlueInfo)
 		return WLAN_STATUS_FAILURE;
