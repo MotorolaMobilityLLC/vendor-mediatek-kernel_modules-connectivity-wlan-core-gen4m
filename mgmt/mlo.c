@@ -640,12 +640,19 @@ uint8_t *mldGenerateBasicCommonInfo(
 			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap,
 				mld_bssinfo->ucMaxSimuLinks);
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
-			BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap,
-				prWifiVar->ucT2LMNegotiationSupport);
+			/* SAP not support T2lm currently*/
+			if (IS_BSS_APGO(bss)) {
+				BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap,
+					T2LM_NO_SUPPORT);
+			} else {
+				BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap,
+					prWifiVar->ucT2LMNegotiationSupport);
+			}
 #endif
 		} else if (bss) {
 			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap, 0);
-			BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap, 0);
+			BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap,
+				T2LM_NO_SUPPORT);
 		}
 		WLAN_SET_FIELD_16(cp, mld_cap);
 		DBGLOG(ML, TRACE, "\tML common Info MLD capa = 0x%x",
