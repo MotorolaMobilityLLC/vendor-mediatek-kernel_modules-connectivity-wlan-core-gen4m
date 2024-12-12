@@ -17,6 +17,13 @@ enum ENUM_P2P_CCM_MODE {
  *                                 M A C R O S
  ******************************************************************************
  */
+struct CCM_AA_FOBIDEN_REGION_UNIT {
+	uint32_t u4BoundForward1;
+	uint32_t u4BoundForward2;
+	uint32_t u4BoundInverse1;
+	uint32_t u4BoundInverse2;
+	uint32_t u4BoundIsolate;
+};
 
 /******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
@@ -38,6 +45,20 @@ void ccmRemoveBssPendingEntry(struct ADAPTER *prAdapter,
 void ccmPendingCheck(struct ADAPTER *prAdapter,
 		     struct BSS_INFO *prTargetBss,
 		     uint32_t u4GrantInterval);
+
+
+void ccmAAForbiddenRegionCal(struct ADAPTER *prAdapter,
+			     struct RF_CHANNEL_INFO *rChnlInfo,
+			     uint8_t *prForbiddenListLen,
+			     uint16_t *prTargetBw,
+			     struct CCM_AA_FOBIDEN_REGION_UNIT *arRegionOutput);
+
+u_int8_t ccmIsPreferAA(struct ADAPTER *prAdapter,
+		       struct BSS_INFO *prCsaBss);
+
+bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
+			 struct RF_CHANNEL_INFO *prRfChnlInfo1,
+			 struct RF_CHANNEL_INFO *prRfChnlInfo2);
 
 #else
 static inline void ccmInit(struct ADAPTER *prAdapter) {}

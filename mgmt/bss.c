@@ -2991,7 +2991,7 @@ void bssGetAliveBssHwBitmap(struct ADAPTER *prAdapter, uint32_t *pau4Bitmap)
 
 		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
 	}
-	DBGLOG(P2P, TRACE,
+	DBGLOG(BSS, TRACE,
 	       "alive Bss hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
 	       pau4Bitmap[AA_HW_BAND_0], pau4Bitmap[AA_HW_BAND_1],
 	       pau4Bitmap[AA_HW_BAND_2]);

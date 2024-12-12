@@ -8216,277 +8216,6 @@ void p2pFuncCrossBandChannelSwitchCheck(
 
 }
 
-uint32_t
-p2pBwEnumToValue(uint8_t ucInputChnlBw)
-{
-	uint32_t u4OutputBw;
-
-	if (ucInputChnlBw > MAX_BW_320_2MHZ)
-		return 0;
-
-	if (ucInputChnlBw == MAX_BW_320_1MHZ ||
-		ucInputChnlBw == MAX_BW_320_2MHZ)
-		u4OutputBw = 20*BIT(4);
-	else
-		u4OutputBw = 20*BIT(ucInputChnlBw);
-
-	return u4OutputBw;
-}
-
-void
-p2pForbiddenRegionCal(struct ADAPTER *prAdapter,
-		struct RF_CHANNEL_INFO *rRfChnlInfo,
-		uint8_t *prForbiddenListLen,
-		uint16_t *prTargetBw,
-		struct P2P_A_A_FOBIDEN_REGION_UNIT *aprRegionOutput)
-{
-	uint32_t u4InputBw, u4TargetBw;
-	uint8_t  i;
-
-
-	if (rRfChnlInfo->ucChnlBw == MAX_BW_320_1MHZ ||
-		rRfChnlInfo->ucChnlBw == MAX_BW_320_2MHZ)
-		u4InputBw = 20*BIT(4);
-	else
-		u4InputBw = 20*BIT(rRfChnlInfo->ucChnlBw);
-
-	DBGLOG(P2P, INFO,
-		"forbidden region input: fc %u, input bw %u\n",
-		rRfChnlInfo->u4CenterFreq1,
-		u4InputBw);
-
-	if (rRfChnlInfo->u4CenterFreq1 <=
-		P2P_5G_L_UPPER_BOUND) {
-		u4TargetBw = prTargetBw[0];
-
-		aprRegionOutput[0].u4BoundForward1 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4InputBw) +
-			(u4InputBw + u4TargetBw)/2;
-
-		aprRegionOutput[0].u4BoundIsolate =
-			(rRfChnlInfo->u4CenterFreq1 +
-			P2P_5G_L_H_ISOLATION_WIDTH +
-			(u4InputBw + u4TargetBw)/2);
-		aprRegionOutput[0].u4BoundForward2 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4InputBw) -
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[0].u4BoundInverse1 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4TargetBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[0].u4BoundInverse2 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4TargetBw) -
-			(u4InputBw + u4TargetBw)/2;
-
-		u4TargetBw = prTargetBw[1];
-
-		aprRegionOutput[1].u4BoundForward1 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4InputBw) +
-			(u4InputBw + u4TargetBw)/2;
-
-		aprRegionOutput[1].u4BoundIsolate =
-			(rRfChnlInfo->u4CenterFreq1 +
-			P2P_5G_6G_ISOLATION_WIDTH +
-			(u4InputBw + u4TargetBw)/2);
-		aprRegionOutput[1].u4BoundForward2 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4InputBw) -
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[1].u4BoundInverse1 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4TargetBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[1].u4BoundInverse2 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4TargetBw) -
-			(u4InputBw + u4TargetBw)/2;
-
-		*prForbiddenListLen = 2;
-	} else if (rRfChnlInfo->u4CenterFreq1 <=
-		P2P_5G_H_UPPER_BOUND) {
-		u4TargetBw = prTargetBw[0];
-
-		aprRegionOutput[0].u4BoundForward1 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4InputBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[0].u4BoundForward2 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4InputBw) -
-			(u4InputBw + u4TargetBw)/2;
-
-		aprRegionOutput[0].u4BoundIsolate =
-			(rRfChnlInfo->u4CenterFreq1 -
-			P2P_5G_L_H_ISOLATION_WIDTH -
-			(u4InputBw + u4TargetBw)/2);
-
-		aprRegionOutput[0].u4BoundInverse1 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4TargetBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[0].u4BoundInverse2 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4TargetBw) -
-			(u4InputBw + u4TargetBw)/2;
-		u4TargetBw = prTargetBw[1];
-
-		aprRegionOutput[1].u4BoundForward1 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4InputBw) +
-			(u4InputBw + u4TargetBw)/2;
-
-		aprRegionOutput[1].u4BoundIsolate =
-			(rRfChnlInfo->u4CenterFreq1 +
-			P2P_5G_6G_ISOLATION_WIDTH +
-			(u4InputBw + u4TargetBw)/2);
-
-		aprRegionOutput[1].u4BoundForward2 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4InputBw) -
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[1].u4BoundInverse1 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4TargetBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[1].u4BoundInverse2 =
-			rRfChnlInfo->u4CenterFreq1 +
-			(4*u4TargetBw) -
-			(u4InputBw + u4TargetBw)/2;
-
-		*prForbiddenListLen = 2;
-
-	} else {
-		u4TargetBw = prTargetBw[0];
-
-		aprRegionOutput[0].u4BoundForward1 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4InputBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[0].u4BoundForward2 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4InputBw) -
-			(u4InputBw + u4TargetBw)/2;
-			aprRegionOutput[0].u4BoundIsolate =
-			(rRfChnlInfo->u4CenterFreq1 -
-			P2P_5G_6G_ISOLATION_WIDTH -
-			(u4InputBw + u4TargetBw)/2);
-
-		aprRegionOutput[0].u4BoundInverse1 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4TargetBw) +
-			(u4InputBw + u4TargetBw)/2;
-		aprRegionOutput[0].u4BoundInverse2 =
-			rRfChnlInfo->u4CenterFreq1 -
-			(4*u4TargetBw) -
-			(u4InputBw + u4TargetBw)/2;
-
-		*prForbiddenListLen = 1;
-	}
-	for (i = 0; i < *prForbiddenListLen; ++i) {
-		DBGLOG(P2P, INFO,
-			"forbidden region bound %u, %u, %u, %u, %u\n",
-			aprRegionOutput[i].u4BoundForward1,
-			aprRegionOutput[i].u4BoundForward2,
-			aprRegionOutput[i].u4BoundInverse1,
-			aprRegionOutput[i].u4BoundInverse2,
-			aprRegionOutput[i].u4BoundIsolate);
-	}
-}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-bool
-p2pAAAvailableCheck(struct ADAPTER *prAdapter,
-		struct RF_CHANNEL_INFO *prRfChnlInfo1,
-		struct RF_CHANNEL_INFO *prRfChnlInfo2)
-{
-	uint16_t arTargetBw[2];
-	uint8_t prForbiddenListLen;
-	struct P2P_A_A_FOBIDEN_REGION_UNIT aprRegionOutput[2];
-	struct RF_CHANNEL_INFO *prRfChnlInfo_h;
-	struct RF_CHANNEL_INFO *prRfChnlInfo_l;
-	struct P2P_CH_BW_RANGE rP2pChBwRange;
-
-	rP2pChBwRange.fgIsDfsSupport = false;
-
-	if (prRfChnlInfo1->eBand == BAND_5G &&
-		prRfChnlInfo2->eBand == BAND_5G) {
-		if (prRfChnlInfo1->u4CenterFreq1 >
-			prRfChnlInfo2->u4CenterFreq1) {
-			prRfChnlInfo_h = prRfChnlInfo1;
-			prRfChnlInfo_l = prRfChnlInfo2;
-			rP2pChBwRange.eRfBand =
-				prRfChnlInfo2->eBand;
-			rP2pChBwRange.ucCh =
-				prRfChnlInfo2->ucChannelNum;
-			p2pFuncGetChBwBitmap(prAdapter,
-				&rP2pChBwRange);
-			arTargetBw[0] =
-				p2pBwEnumToValue(prRfChnlInfo2->ucChnlBw);
-		} else {
-			prRfChnlInfo_h = prRfChnlInfo2;
-			prRfChnlInfo_l = prRfChnlInfo1;
-			rP2pChBwRange.eRfBand =
-				prRfChnlInfo1->eBand;
-			rP2pChBwRange.ucCh =
-				prRfChnlInfo1->ucChannelNum;
-			p2pFuncGetChBwBitmap(prAdapter,
-				&rP2pChBwRange);
-			arTargetBw[0] =
-				p2pBwEnumToValue(prRfChnlInfo1->ucChnlBw);
-		}
-	} else if (prRfChnlInfo1->eBand == BAND_5G &&
-		prRfChnlInfo2->eBand == BAND_6G) {
-		prRfChnlInfo_h = prRfChnlInfo2;
-		prRfChnlInfo_l = prRfChnlInfo1;
-		rP2pChBwRange.eRfBand =
-			prRfChnlInfo1->eBand;
-		rP2pChBwRange.ucCh =
-			prRfChnlInfo1->ucChannelNum;
-		p2pFuncGetChBwBitmap(prAdapter,
-			&rP2pChBwRange);
-		arTargetBw[0] =
-			p2pBwEnumToValue(prRfChnlInfo1->ucChnlBw);
-	} else if (prRfChnlInfo1->eBand == BAND_6G &&
-		prRfChnlInfo2->eBand == BAND_5G) {
-		prRfChnlInfo_h = prRfChnlInfo1;
-		prRfChnlInfo_l = prRfChnlInfo2;
-		rP2pChBwRange.eRfBand =
-			prRfChnlInfo2->eBand;
-		rP2pChBwRange.ucCh =
-			prRfChnlInfo2->ucChannelNum;
-		p2pFuncGetChBwBitmap(prAdapter,
-			&rP2pChBwRange);
-		arTargetBw[0] =
-			p2pBwEnumToValue(prRfChnlInfo2->ucChnlBw);
-	} else
-		return FALSE;
-
-	p2pForbiddenRegionCal(prAdapter,
-		prRfChnlInfo_h,
-		&prForbiddenListLen,
-		arTargetBw,
-		aprRegionOutput);
-
-	if ((aprRegionOutput[0].u4BoundForward1 <=
-		prRfChnlInfo_l->u4CenterFreq1 ||
-		aprRegionOutput[0].u4BoundForward2 >=
-		prRfChnlInfo_l->u4CenterFreq1) &&
-		(aprRegionOutput[0].u4BoundInverse1 <=
-		prRfChnlInfo_l->u4CenterFreq1 ||
-		aprRegionOutput[0].u4BoundInverse2 >=
-		prRfChnlInfo_l->u4CenterFreq1) &&
-		aprRegionOutput[0].u4BoundIsolate >
-		prRfChnlInfo_l->u4CenterFreq1 &&
-		prRfChnlInfo_l->u4CenterFreq1 !=
-		prRfChnlInfo_h->u4CenterFreq1)
-		return TRUE;
-	else
-		return FALSE;
-}
-#endif
 void p2pCrossBandStaSccFilter(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwithCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
@@ -8772,6 +8501,182 @@ void p2pSetDefaultFilter(struct ADAPTER *prAdapter,
 	}
 }
 
+void p2pFuncFillChInfo(struct ADAPTER *prAdapter,
+		       struct P2P_CH_BW_RANGE *prChBwRange,
+		       uint8_t ucBitIdx)
+{
+	uint32_t *u4CenterFreq = &prChBwRange->u4CenterFreq[ucBitIdx];
+	uint32_t *u4LowerBound = &prChBwRange->u4LowerBound[ucBitIdx];
+	uint32_t *u4UpperBound = &prChBwRange->u4UpperBound[ucBitIdx];
+	uint8_t ucCh = prChBwRange->ucCh;
+	enum ENUM_BAND eBand = prChBwRange->eRfBand;
+	uint32_t u4Freq = nicChannelNum2Freq(ucCh, eBand);
+
+	if (!u4Freq) {
+		DBGLOG(P2P, WARN, "invalid freq\n");
+		return;
+	}
+
+	if (ucBitIdx == MAX_BW_20MHZ) {
+		*u4CenterFreq = u4Freq / 1000;
+		*u4LowerBound = *u4CenterFreq - 10;
+		*u4UpperBound = *u4CenterFreq + 10;
+	} else if (ucBitIdx == MAX_BW_40MHZ) {
+		if (eBand == BAND_5G) {
+			if ((ucCh <= 144 && (ucCh % 8) == 0) ||
+			    (ucCh <= 177 && (ucCh % 8) == 1))
+				*u4CenterFreq = u4Freq / 1000 - 10;
+			else if ((ucCh <= 144 && (ucCh % 8) == 4) ||
+				 (ucCh <= 177 && (ucCh % 8) == 5))
+				*u4CenterFreq = u4Freq / 1000 + 10;
+		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G) {
+			if (ucCh <= 229 && (ucCh % 8) == 5)
+				*u4CenterFreq = u4Freq / 1000 - 10;
+			else if (ucCh <= 229 && (ucCh % 8) == 1)
+				*u4CenterFreq = u4Freq / 1000 + 10;
+		}
+#endif
+		*u4LowerBound = *u4CenterFreq - 20;
+		*u4UpperBound = *u4CenterFreq + 20;
+	} else if (ucBitIdx == MAX_BW_80MHZ) {
+		if (eBand == BAND_5G) {
+			if (ucCh <= 48 && ucCh >= 36)
+				*u4CenterFreq = 5210;
+			else if (ucCh <= 64 && ucCh >= 52)
+				*u4CenterFreq = 5290;
+			else if (ucCh <= 80 && ucCh >= 68)
+				*u4CenterFreq = 5370;
+			else if (ucCh <= 96 && ucCh >= 84)
+				*u4CenterFreq = 5450;
+			else if (ucCh <= 112 && ucCh >= 100)
+				*u4CenterFreq = 5530;
+			else if (ucCh <= 128 && ucCh >= 116)
+				*u4CenterFreq = 5610;
+			else if (ucCh <= 144 && ucCh >= 132)
+				*u4CenterFreq = 5690;
+			else if (ucCh <= 161)
+				*u4CenterFreq = 5775;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		} else if (eBand == BAND_6G) {
+			if ((ucCh % 16) == 1)
+				*u4CenterFreq = u4Freq / 1000 + 30;
+			else if ((ucCh % 16) == 5)
+				*u4CenterFreq = u4Freq / 1000 + 10;
+			else if ((ucCh % 16) == 9)
+				*u4CenterFreq = u4Freq / 1000 - 10;
+			else if ((ucCh % 16) == 13)
+				*u4CenterFreq = u4Freq / 1000 - 30;
+#endif
+		}
+
+		*u4LowerBound = *u4CenterFreq - 40;
+		*u4UpperBound = *u4CenterFreq + 40;
+	} else if (ucBitIdx == MAX_BW_160MHZ) {
+		if (eBand == BAND_5G) {
+			if (ucCh <= 64 && ucCh >= 36)
+				*u4CenterFreq = 5250;
+			else if (ucCh <= 96 && ucCh >= 68)
+				*u4CenterFreq = 5410;
+			else if (ucCh <= 128 && ucCh >= 100)
+				*u4CenterFreq = 5570;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		} else if (eBand == BAND_6G) {
+			if (ucCh >= 1 && ucCh <= 29)
+				*u4CenterFreq = 6025;
+			else if (ucCh >= 33 && ucCh <= 61)
+				*u4CenterFreq = 6185;
+			else if (ucCh >= 65 && ucCh <= 93)
+				*u4CenterFreq = 6345;
+			else if (ucCh >= 97 && ucCh <= 125)
+				*u4CenterFreq = 6505;
+			else if (ucCh >= 129 && ucCh <= 157)
+				*u4CenterFreq = 6665;
+			else if (ucCh >= 161 && ucCh <= 189)
+				*u4CenterFreq = 6825;
+			else if (ucCh >= 193 && ucCh <= 221)
+				*u4CenterFreq = 6985;
+#endif
+		}
+
+		*u4LowerBound = *u4CenterFreq - 80;
+		*u4UpperBound = *u4CenterFreq + 80;
+	} else if (ucBitIdx == MAX_BW_320_1MHZ) {
+		if (ucCh >= 1 && ucCh <= 61)
+			*u4CenterFreq = 6105;
+		else if (ucCh >= 65 && ucCh <= 125)
+			*u4CenterFreq = 6425;
+		else if (ucCh >= 129 && ucCh <= 189)
+			*u4CenterFreq = 6745;
+
+		*u4LowerBound = *u4CenterFreq - 160;
+		*u4UpperBound = *u4CenterFreq + 160;
+	} else if (ucBitIdx == MAX_BW_320_2MHZ) {
+		if (ucCh >= 33 && ucCh <= 93)
+			*u4CenterFreq = 6265;
+		else if (ucCh >= 97 && ucCh <= 157)
+			*u4CenterFreq = 6585;
+		else if (ucCh >= 161 && ucCh <= 221)
+			*u4CenterFreq = 6905;
+
+		*u4LowerBound = *u4CenterFreq - 160;
+		*u4UpperBound = *u4CenterFreq + 160;
+	}
+}
+
+void p2pFuncGetChBwBitmap(struct ADAPTER *prAdapter,
+			  struct P2P_CH_BW_RANGE *prChBwRange)
+{
+	uint8_t i;
+
+	if (prChBwRange->eRfBand == BAND_2G4) {
+		prChBwRange->ucBwBitmap = BIT(MAX_BW_20MHZ);
+	} else if (prChBwRange->eRfBand == BAND_5G) {
+		if (prChBwRange->ucCh == 165)
+			prChBwRange->ucBwBitmap = BIT(MAX_BW_20MHZ);
+		else
+			prChBwRange->ucBwBitmap = BIT(MAX_BW_20MHZ) |
+						  BIT(MAX_BW_40MHZ) |
+						  BIT(MAX_BW_80MHZ);
+		if (prChBwRange->fgIsDfsSupport == TRUE &&
+			(prChBwRange->ucCh >= 36 && prChBwRange->ucCh <= 128)) {
+			prChBwRange->ucBwBitmap |= BIT(MAX_BW_160MHZ);
+		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (prChBwRange->eRfBand == BAND_6G) {
+		prChBwRange->ucBwBitmap = BIT(MAX_BW_20MHZ);
+
+		if (prChBwRange->ucCh != 2 && prChBwRange->ucCh <= 229)
+			prChBwRange->ucBwBitmap |= (BIT(MAX_BW_40MHZ));
+		if (prChBwRange->ucCh != 2 && prChBwRange->ucCh <= 221)
+			prChBwRange->ucBwBitmap |= (BIT(MAX_BW_80MHZ) |
+						    BIT(MAX_BW_160MHZ));
+		if (prChBwRange->ucCh != 2 && prChBwRange->ucCh <= 189)
+			prChBwRange->ucBwBitmap |= BIT(MAX_BW_320_1MHZ);
+		if (prChBwRange->ucCh <= 221 && prChBwRange->ucCh >= 33)
+			prChBwRange->ucBwBitmap |= BIT(MAX_BW_320_2MHZ);
+#endif
+	}
+
+	for (i = 0 ; i < MAX_BW_NUM ; i++) {
+		if ((BIT(i) & prChBwRange->ucBwBitmap)) {
+			p2pFuncFillChInfo(prAdapter, prChBwRange, i);
+
+			DBGLOG(CCM, TRACE,
+				"supported fc:%u, upper/ lower bound:%u, %u\n",
+				prChBwRange->u4CenterFreq[i],
+				prChBwRange->u4UpperBound[i],
+				prChBwRange->u4LowerBound[i]);
+		}
+	}
+	DBGLOG(CCM, INFO, "band:%d ch:%d bw bitmap:%d\n",
+	       prChBwRange->eRfBand,
+	       prChBwRange->ucCh,
+	       prChBwRange->ucBwBitmap);
+}
+
+#if CFG_SUPPORT_CCM
 void p2pAAChCandModify(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwitchCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
@@ -8782,7 +8687,7 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 	struct P2P_CH_BW_RANGE rP2pChBwRange = { 0 };
 	uint16_t arTargetBw[2];
 	uint8_t rForbiddenListLen;
-	struct P2P_A_A_FOBIDEN_REGION_UNIT aprRegionOutput[2];
+	struct CCM_AA_FOBIDEN_REGION_UNIT aprRegionOutput[2];
 	struct RF_CHANNEL_INFO
 		arChnlList[MAX_PER_BAND_CHN_NUM] = { { 0 } };
 	u_int8_t fgIsBandMatch = TRUE;
@@ -8796,8 +8701,7 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 	rP2pChBwRange.ucCh =
 		prHwBandUnit->ucCh;
 
-	p2pFuncGetChBwBitmap(prAdapter,
-		&rP2pChBwRange);
+	p2pFuncGetChBwBitmap(prAdapter, &rP2pChBwRange);
 
 	rRfChnlInfo.eBand =
 		prHwBandUnit->eRfBand;
@@ -8816,7 +8720,7 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 #endif
 		rRfChnlInfo.eBand == BAND_5G) {
 		arTargetBw[0] = 80;
-		p2pForbiddenRegionCal(prAdapter,
+		ccmAAForbiddenRegionCal(prAdapter,
 			&rRfChnlInfo,
 			&rForbiddenListLen,
 			arTargetBw,
@@ -8929,7 +8833,7 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 		arTargetBw[0] = 80;
 		arTargetBw[1] = 320;
 
-		p2pForbiddenRegionCal(prAdapter,
+		ccmAAForbiddenRegionCal(prAdapter,
 			&rRfChnlInfo,
 			&rForbiddenListLen,
 			arTargetBw,
@@ -9057,6 +8961,7 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 	}
 
 }
+#endif /* CFG_SUPPORT_CCM */
 
 void p2pForbiddenChRemove(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwitchCandNum,
@@ -9090,7 +8995,7 @@ void p2pForbiddenChRemove(struct ADAPTER *prAdapter,
 					prSapSwitchCand, i-1);
 			}
 		}
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_CCM)
 	} else if (ENUM_BAND_NUM == (ENUM_BAND_2 + 1)) {
 
 		if (prHwBandGroup[ENUM_BAND_1].ucUnitNum != 0 &&
@@ -9175,10 +9080,12 @@ void p2pHwBandMccRemove(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+#if CFG_SUPPORT_CCM
 	p2pForbiddenChRemove(prAdapter,
 			ucChSwitchCandNum,
 			prSapSwitchCand,
 			rHwBandGroup);
+#endif
 
 }
 
@@ -9416,292 +9323,12 @@ void p2pFuncSapSwitchChCheck(
 
 }
 
-void p2pFuncFillChInfo(
-		struct ADAPTER *prAdapter,
-		struct P2P_CH_BW_RANGE *prP2pChBwRange,
-		uint8_t ucBitIdx)
-{
-	if (ucBitIdx == MAX_BW_20MHZ) {
-		prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-			nicChannelNum2Freq(prP2pChBwRange->ucCh,
-				prP2pChBwRange->eRfBand) / 1000;
-		prP2pChBwRange->u4LowerBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] - 10;
-		prP2pChBwRange->u4UpperBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] + 10;
-	} else if (ucBitIdx == MAX_BW_40MHZ) {
-		if (prP2pChBwRange->eRfBand == BAND_5G) {
-			if (prP2pChBwRange->ucCh <= 144 &&
-				(prP2pChBwRange->ucCh % 8) == 0)
-				prP2pChBwRange
-					->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(
-						prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 - 10;
-			else if (prP2pChBwRange->ucCh <= 144 &&
-				(prP2pChBwRange->ucCh % 8) == 4)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 + 10;
-			else if (prP2pChBwRange->ucCh <= 177 &&
-				(prP2pChBwRange->ucCh % 8) == 5)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 + 10;
-			else if (prP2pChBwRange->ucCh <= 177 &&
-				(prP2pChBwRange->ucCh % 8) == 1)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 - 10;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prP2pChBwRange->eRfBand == BAND_6G) {
-			if (prP2pChBwRange->ucCh <= 229 &&
-				(prP2pChBwRange->ucCh % 8) == 5)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 - 10;
-			else if (prP2pChBwRange->ucCh <= 229 &&
-				(prP2pChBwRange->ucCh % 8) == 1)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 + 10;
-#endif
-		}
-		prP2pChBwRange->u4LowerBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] - 20;
-		prP2pChBwRange->u4UpperBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] + 20;
-	} else if (ucBitIdx == MAX_BW_80MHZ) {
-		if (prP2pChBwRange->eRfBand == BAND_5G) {
-			if (prP2pChBwRange->ucCh <= 48 &&
-				prP2pChBwRange->ucCh >= 36)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5210;
-			else if (prP2pChBwRange->ucCh <= 64 &&
-				prP2pChBwRange->ucCh >= 52)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5290;
-			else if (prP2pChBwRange->ucCh <= 80 &&
-				prP2pChBwRange->ucCh >= 68)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5370;
-			else if (prP2pChBwRange->ucCh <= 96 &&
-				prP2pChBwRange->ucCh >= 84)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5450;
-			else if (prP2pChBwRange->ucCh <= 112 &&
-				prP2pChBwRange->ucCh >= 100)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5530;
-			else if (prP2pChBwRange->ucCh <= 128 &&
-				prP2pChBwRange->ucCh >= 116)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5610;
-			else if (prP2pChBwRange->ucCh <= 144 &&
-				prP2pChBwRange->ucCh >= 132)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5690;
-			else if (prP2pChBwRange->ucCh <= 161)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5775;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prP2pChBwRange->eRfBand == BAND_6G) {
-			if ((prP2pChBwRange->ucCh % 16) == 1)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 + 30;
-			else if ((prP2pChBwRange->ucCh % 16) == 5)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 + 10;
-			else if ((prP2pChBwRange->ucCh % 16) == 9)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 - 10;
-			else if ((prP2pChBwRange->ucCh % 16) == 13)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] =
-					nicChannelNum2Freq(prP2pChBwRange->ucCh,
-						prP2pChBwRange->eRfBand)
-						/ 1000 - 30;
-#endif
-		}
-		prP2pChBwRange->u4LowerBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] - 40;
-		prP2pChBwRange->u4UpperBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] + 40;
-	} else if (ucBitIdx == MAX_BW_160MHZ) {
-		if (prP2pChBwRange->eRfBand == BAND_5G) {
-			if (prP2pChBwRange->ucCh <= 64 &&
-				prP2pChBwRange->ucCh >= 36)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5250;
-			else if (prP2pChBwRange->ucCh <= 96 &&
-				prP2pChBwRange->ucCh >= 68)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5410;
-			else if (prP2pChBwRange->ucCh <= 128 &&
-				prP2pChBwRange->ucCh >= 100)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 5570;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prP2pChBwRange->eRfBand == BAND_6G) {
-			if (prP2pChBwRange->ucCh >= 1 &&
-				prP2pChBwRange->ucCh <= 29)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6025;
-			else if (prP2pChBwRange->ucCh >= 33 &&
-				prP2pChBwRange->ucCh <= 61)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6185;
-			else if (prP2pChBwRange->ucCh >= 65 &&
-				prP2pChBwRange->ucCh <= 93)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6345;
-			else if (prP2pChBwRange->ucCh >= 97 &&
-				prP2pChBwRange->ucCh <= 125)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6505;
-			else if (prP2pChBwRange->ucCh >= 129 &&
-				prP2pChBwRange->ucCh <= 157)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6665;
-			else if (prP2pChBwRange->ucCh >= 161 &&
-				prP2pChBwRange->ucCh <= 189)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6825;
-			else if (prP2pChBwRange->ucCh >= 193 &&
-				prP2pChBwRange->ucCh <= 221)
-				prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6985;
-#endif
-		}
-		prP2pChBwRange->u4LowerBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] - 80;
-		prP2pChBwRange->u4UpperBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] + 80;
-	} else if (ucBitIdx == MAX_BW_320_1MHZ) {
-		if (prP2pChBwRange->ucCh >= 1 &&
-			prP2pChBwRange->ucCh <= 61)
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6105;
-		else if (prP2pChBwRange->ucCh >= 65 &&
-			prP2pChBwRange->ucCh <= 125)
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6425;
-		else if (prP2pChBwRange->ucCh >= 129 &&
-			prP2pChBwRange->ucCh <= 189)
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6745;
-		prP2pChBwRange->u4LowerBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] - 160;
-		prP2pChBwRange->u4UpperBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] + 160;
-	} else if (ucBitIdx == MAX_BW_320_2MHZ) {
-		if (prP2pChBwRange->ucCh >= 33 &&
-			prP2pChBwRange->ucCh <= 93)
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6265;
-		else if (prP2pChBwRange->ucCh >= 97 &&
-			prP2pChBwRange->ucCh <= 157)
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6585;
-		else if (prP2pChBwRange->ucCh >= 161 &&
-			prP2pChBwRange->ucCh <= 221)
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] = 6905;
-		prP2pChBwRange->u4LowerBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] - 160;
-		prP2pChBwRange->u4UpperBound[ucBitIdx] =
-			prP2pChBwRange->u4CenterFreq[ucBitIdx] + 160;
-	}
-}
-
-void p2pFuncGetChBwBitmap(
-		struct ADAPTER *prAdapter,
-		struct P2P_CH_BW_RANGE *prP2pChBwRange)
-{
-	uint8_t i;
-
-	if (prP2pChBwRange->eRfBand == BAND_2G4) {
-		prP2pChBwRange->ucBwBitmap =
-			BIT(MAX_BW_20MHZ);
-	} else if (prP2pChBwRange->eRfBand == BAND_5G) {
-		if (prP2pChBwRange->ucCh == 165)
-			prP2pChBwRange->ucBwBitmap =
-			BIT(MAX_BW_20MHZ);
-		else
-			prP2pChBwRange->ucBwBitmap =
-			BIT(MAX_BW_20MHZ) |
-			BIT(MAX_BW_40MHZ) |
-			BIT(MAX_BW_80MHZ);
-		if (prP2pChBwRange->fgIsDfsSupport == TRUE &&
-			(prP2pChBwRange->ucCh >= 36 &&
-			prP2pChBwRange->ucCh <= 128)) {
-			prP2pChBwRange->ucBwBitmap |=
-				BIT(MAX_BW_160MHZ);
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	} else if (prP2pChBwRange->eRfBand == BAND_6G) {
-		prP2pChBwRange->ucBwBitmap =
-			BIT(MAX_BW_20MHZ);
-		if (prP2pChBwRange->ucCh != 2 &&
-			prP2pChBwRange->ucCh <= 229)
-			prP2pChBwRange->ucBwBitmap |=
-				(BIT(MAX_BW_40MHZ));
-		if (prP2pChBwRange->ucCh != 2 &&
-			prP2pChBwRange->ucCh <= 221)
-			prP2pChBwRange->ucBwBitmap |=
-				(BIT(MAX_BW_80MHZ) |
-				BIT(MAX_BW_160MHZ));
-		if (prP2pChBwRange->ucCh != 2 &&
-			prP2pChBwRange->ucCh <= 189)
-			prP2pChBwRange->ucBwBitmap |=
-				BIT(MAX_BW_320_1MHZ);
-		if (prP2pChBwRange->ucCh <= 221 &&
-			prP2pChBwRange->ucCh >= 33)
-			prP2pChBwRange->ucBwBitmap |=
-				BIT(MAX_BW_320_2MHZ);
-#endif
-	}
-
-	for (i = 0 ; i < MAX_BW_NUM ; i++) {
-		if ((BIT(i) & prP2pChBwRange->ucBwBitmap)) {
-			p2pFuncFillChInfo(prAdapter,
-					prP2pChBwRange,	i);
-
-			DBGLOG(P2P, TRACE,
-				"supported fc:%u, upper/ lower bound:%u, %u\n",
-				prP2pChBwRange->u4CenterFreq[i],
-				prP2pChBwRange->u4UpperBound[i],
-				prP2pChBwRange->u4LowerBound[i]);
-		}
-	}
-	DBGLOG(P2P, INFO,
-		"band:%d ch:%d bw bitmap:%d\n",
-		prP2pChBwRange->eRfBand,
-		prP2pChBwRange->ucCh,
-		prP2pChBwRange->ucBwBitmap);
-}
-
-void p2pFuncGetChMaxBwFc(
-		struct ADAPTER *prAdapter,
-		struct RF_CHANNEL_INFO *prChnlInfo)
-{
-	struct P2P_CH_BW_RANGE rP2pChBwRange = { 0 };
-	uint8_t i;
-
-	rP2pChBwRange.eRfBand = prChnlInfo->eBand;
-	rP2pChBwRange.ucCh = prChnlInfo->ucChannelNum;
-
-	p2pFuncGetChBwBitmap(prAdapter,
-		&rP2pChBwRange);
-
-	for (i = 0; i < MAX_BW_NUM; i++) {
-		if (rP2pChBwRange.ucBwBitmap & BIT(i)) {
-			prChnlInfo->ucChnlBw = i;
-			prChnlInfo->u4CenterFreq1 =
-				rP2pChBwRange.u4CenterFreq[i];
-		}
-	}
-	DBGLOG(P2P, INFO,
-		"band:%d ch:%d max bw:%d fc:%u\n",
-		prChnlInfo->eBand,
-		prChnlInfo->ucChannelNum,
-		prChnlInfo->ucChnlBw,
-		prChnlInfo->u4CenterFreq1);
-
-}
-
+#if CFG_SUPPORT_CCM
 uint8_t p2pFuncSapFilteredChListGen(
 		struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO *prChnlList,
 		uint8_t *prForbiddenListLen,
-		struct P2P_A_A_FOBIDEN_REGION_UNIT *prRegionOutput,
+		struct CCM_AA_FOBIDEN_REGION_UNIT *prRegionOutput,
 		uint16_t *prTargetBw)
 {
 	uint8_t ucChnlNum, j, k;
@@ -9719,8 +9346,7 @@ uint8_t p2pFuncSapFilteredChListGen(
 		rP2pChBwRange.eRfBand = BAND_5G;
 		for (k = 0; k < ucChnlNum; k++) {
 			rP2pChBwRange.ucCh = prChnlList[k].ucChannelNum;
-			p2pFuncGetChBwBitmap(prAdapter,
-				&rP2pChBwRange);
+			p2pFuncGetChBwBitmap(prAdapter, &rP2pChBwRange);
 			for (j = 0; j < MAX_BW_NUM; j++) {
 				if (rP2pChBwRange.ucBwBitmap & BIT(j)) {
 					prChnlList[k].u4CenterFreq1 =
@@ -9770,8 +9396,7 @@ uint8_t p2pFuncSapFilteredChListGen(
 		rP2pChBwRange.eRfBand = BAND_6G;
 		for (k = 0; k < ucChnlNum; k++) {
 			rP2pChBwRange.ucCh = prChnlList[k].ucChannelNum;
-			p2pFuncGetChBwBitmap(prAdapter,
-				&rP2pChBwRange);
+			p2pFuncGetChBwBitmap(prAdapter, &rP2pChBwRange);
 			for (j = 0; j < MAX_BW_NUM; j++) {
 				if (rP2pChBwRange.ucBwBitmap & BIT(j)) {
 					prChnlList[k].u4CenterFreq1 =
@@ -9816,6 +9441,7 @@ uint8_t p2pFuncSapFilteredChListGen(
 	}
 	return i;
 }
+#endif /* CFG_SUPPORT_CCM */
 
 uint8_t p2pFuncSapSwichCandidatGen(
 		struct ADAPTER *prAdapter,
@@ -9826,7 +9452,6 @@ uint8_t p2pFuncSapSwichCandidatGen(
 	struct RF_CHANNEL_INFO arChnlList[MAX_PER_BAND_CHN_NUM] = { { 0 } };
 	uint8_t ucChnlNum, j, k, i = 0;
 	struct BSS_INFO *prBssInfo;
-	struct P2P_CH_BW_RANGE rP2pChBwRange;
 
 	if (*eFilterScnario ==
 		P2P_BT_COEX_SCENARIO)
@@ -9845,9 +9470,6 @@ uint8_t p2pFuncSapSwichCandidatGen(
 			ENUM_BAND_0;
 
 		i++;
-		rP2pChBwRange.eRfBand = BAND_2G4;
-		rP2pChBwRange.fgIsDfsSupport = FALSE;
-		rP2pChBwRange.ucCh = arChnlList[ucChnlNum-1].ucChannelNum;
 	}
 	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE, MAX_5G_BAND_CHN_NUM,
 		&ucChnlNum, arChnlList);
@@ -10458,7 +10080,7 @@ void p2pFuncGetSafeFreq(enum ENUM_IFTYPE eIftype,
 	/* P2P return original targetFreqList */
 }
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
+#if CFG_SUPPORT_CCM
 uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			     struct BSS_INFO *prBssInfo, uint32_t *apu4FreqList)
 {
@@ -10473,14 +10095,18 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 	uint8_t ucChNum, ucCandidateChnlNum = 0;
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	p2pFunGetAcsBestChList(prAdapter, BIT(BAND_5G) | BIT(BAND_6G),
 			       BITS(0, 31), BITS(0, 31),
 			       BITS(0, 31), BITS(0, 31),
 			       &ucCandidateChnlNum, arChnlList);
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 #else /* CFG_SUPPORT_P2PGO_ACS == 1 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE, MAX_6G_BAND_CHN_NUM,
 		&ucChNum, &arChnlList[ucCandidateChnlNum]);
 	ucCandidateChnlNum += ucChNum;
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
 	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE, MAX_5G_BAND_CHN_NUM,
 		&ucChNum, arChnlList);
@@ -10493,8 +10119,10 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 
 		if (prRfChnlInfo1->eBand == BAND_5G)
 			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (prRfChnlInfo1->eBand == BAND_6G)
 			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p6gBandwidth;
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
 		prRfChnlInfo1->u4CenterFreq1 = nicGetS1Freq(prAdapter,
 			prRfChnlInfo1->eBand, prRfChnlInfo1->ucChannelNum,
@@ -10530,7 +10158,7 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			       rRfChnlInfo2.ucChnlBw,
 			       rRfChnlInfo2.u4CenterFreq1);
 
-			if (p2pAAAvailableCheck(prAdapter, prRfChnlInfo1,
+			if (ccmAAAvailableCheck(prAdapter, prRfChnlInfo1,
 						&rRfChnlInfo2)) {
 				*(apu4FreqList + ucChNum++) =
 					nicChannelNum2Freq(
@@ -10540,11 +10168,11 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 				       ucChNum, prRfChnlInfo1->ucChannelNum);
 			}
 		}
-	};
+	}
 
 	return ucChNum;
 }
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+#endif /* CFG_SUPPORT_CCM */
 
 uint32_t p2pFuncGetPreferAliveBssByBand(struct ADAPTER *prAdapter,
 					enum ENUM_BAND eBand,
@@ -10626,7 +10254,6 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 	uint8_t ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g = 0;
-	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
 
 	/* prepare alive bss info for SCC */
 	ucNumAliveBss2g = p2pFuncGetPreferAliveBssByBand(
@@ -10641,13 +10268,9 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	       "alive Bss num [bn0:bn1:bn2]=[%u:%u:%u]\n",
 	       ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g);
 
-	bssGetAliveBssHwBitmap(prAdapter, au4AliveBssBitmap);
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_CCM)
 	/* Prefer A+A for SP Skyhawk Sku1 2G+2A+1A */
-	if (au4AliveBssBitmap[AA_HW_BAND_1] != 0 &&
-	    au4AliveBssBitmap[AA_HW_BAND_2] == 0 &&
-	    p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap))
+	if (p2pFuncIsPreferWfdAa(prAdapter, NULL))
 		*pu4FreqListNum += p2pFuncAppendAaFreq(prAdapter, NULL,
 			&pau4FreqList[*pu4FreqListNum]);
 #endif
@@ -11957,30 +11580,17 @@ u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 	return FALSE;
 }
 
+#if CFG_SUPPORT_CCM
 u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
-			      uint32_t *pau4AliveBssBitmap)
+			      struct BSS_INFO *prCsaBss)
 {
-#if (CONFIG_BAND_NUM > 2 && CFG_SUPPORT_WIFI_6G == 1)
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
 		&(prAdapter->rWifiVar.rWfdConfigureSettings);
-	u_int8_t fgIsAaDbdcEnable = prChipInfo->isAaDbdcEnable;
 
-	DBGLOG(P2P, INFO, "AaDbdcEnable=%u, isWFD=%u\n", fgIsAaDbdcEnable,
-	       prWfdCfgSettings->ucWfdEnable == 1);
-
-	if (ENUM_BAND_NUM > 2 &&
-	    /* bn2 is available */
-	    pau4AliveBssBitmap[AA_HW_BAND_1] != 0 &&
-	    pau4AliveBssBitmap[AA_HW_BAND_2] == 0 &&
-	    /* skyhawk sku1 */
-	    fgIsAaDbdcEnable &&
-	    /* WFD */
-	    prWfdCfgSettings->ucWfdEnable == 1)
-		return TRUE;
-#endif
-	return FALSE;
+	return (ccmIsPreferAA(prAdapter, prCsaBss) &&
+		prWfdCfgSettings->ucWfdEnable == 1);
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

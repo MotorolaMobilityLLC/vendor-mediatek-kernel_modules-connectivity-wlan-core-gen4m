@@ -4,7 +4,10 @@
  */
 #include "precomp.h"
 
-
+/*******************************************************************************
+ *                                 CCM Related
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_CCM
 struct P2P_CCM_CSA_ENTRY {
 	struct LINK_ENTRY rLinkEntry;
@@ -197,7 +200,7 @@ static void ccmGetOtherAliveBssHwBitmap(struct ADAPTER *prAdapter,
 
 		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
 	}
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
 	       "alive BSS hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
 	       pau4Bitmap[AA_HW_BAND_0], pau4Bitmap[AA_HW_BAND_1],
 	       pau4Bitmap[AA_HW_BAND_2]);
@@ -273,7 +276,6 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 			    enum ENUM_BAND *eTargetBand)
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
 	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
 	uint32_t u4FreqListNum;
 	uint32_t u4Idx;
@@ -294,11 +296,12 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+	if ((prBssInfo->eBand == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	ccmGetOtherAliveBssHwBitmap(prAdapter, au4AliveBssBitmap, prBssInfo);
-
-	if ((prBssInfo->eBand == BAND_5G || prBssInfo->eBand == BAND_6G) &&
-	    p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap)) {
+	     || prBssInfo->eBand == BAND_6G
+#endif
+	     ) &&
+	    p2pFuncIsPreferWfdAa(prAdapter, prBssInfo)) {
 		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
 						     freqList);
 		for (u4Idx = 0; u4Idx < u4FreqListNum; u4Idx++) {
@@ -308,8 +311,10 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 				eBandForAa = BAND_2G4;
 			else if (u4Freq >= 5180 && u4Freq <= 5900)
 				eBandForAa = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
 			else if (u4Freq >= 5955 && u4Freq <= 7115)
 				eBandForAa = BAND_6G;
+#endif
 			if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo,
 				u4ChForAa, eBandForAa) == CSA_STATUS_SUCCESS) {
 				/* modify the input ch and band! */
@@ -318,9 +323,7 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 				return TRUE;
 			}
 		}
-	}
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
-	else if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo, *u4TargetCh,
+	} else if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo, *u4TargetCh,
 				 *eTargetBand) == CSA_STATUS_SUCCESS)
 		return TRUE;
 
@@ -538,4 +541,218 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 
 	ccmChannelSwitchConsumer(prAdapter);
 }
+
+
+/*******************************************************************************
+ *                                A + A Related
+ *******************************************************************************
+ */
+uint32_t ccmAABwEnumToValue(uint8_t ucInputChnlBw)
+{
+	uint32_t u4OutputBw;
+
+	if (ucInputChnlBw > MAX_BW_320_2MHZ)
+		return 0;
+
+	if (ucInputChnlBw == MAX_BW_320_1MHZ ||
+		ucInputChnlBw == MAX_BW_320_2MHZ)
+		u4OutputBw = 20 * BIT(4);
+	else
+		u4OutputBw = 20 * BIT(ucInputChnlBw);
+
+	return u4OutputBw;
+}
+
+void ccmAAForbiddenRegionCal(struct ADAPTER *prAdapter,
+			     struct RF_CHANNEL_INFO *rChnlInfo,
+			     uint8_t *prForbiddenListLen,
+			     uint16_t *prTargetBw,
+			     struct CCM_AA_FOBIDEN_REGION_UNIT *arRegionOutput)
+{
+	uint32_t u4InputBw, u4TargetBw, u4RegionBw;
+	uint32_t u4Freq = rChnlInfo->u4CenterFreq1;
+	uint8_t  i;
+
+	if (rChnlInfo->ucChnlBw == MAX_BW_320_1MHZ ||
+	    rChnlInfo->ucChnlBw == MAX_BW_320_2MHZ)
+		u4InputBw = 20 * BIT(4);
+	else
+		u4InputBw = 20 * BIT(rChnlInfo->ucChnlBw);
+
+	DBGLOG(CCM, TRACE, "input: fc %u, bw %u, target: bw1 %u bw2 %u\n",
+	       u4Freq, u4InputBw, prTargetBw[0], prTargetBw[1]);
+
+	*prForbiddenListLen = 1;
+
+	if (u4Freq <= P2P_5G_L_UPPER_BOUND) {
+		u4TargetBw = prTargetBw[0];
+		u4RegionBw = (u4InputBw + u4TargetBw) / 2;
+
+		arRegionOutput[0].u4BoundForward1 =
+			u4Freq + (4 * u4InputBw) + u4RegionBw;
+		arRegionOutput[0].u4BoundIsolate =
+			u4Freq + P2P_5G_L_H_ISOLATION_WIDTH + u4RegionBw;
+		arRegionOutput[0].u4BoundForward2 =
+			u4Freq + (4 * u4InputBw) - u4RegionBw;
+		arRegionOutput[0].u4BoundInverse1 =
+			u4Freq + (4 * u4TargetBw) + u4RegionBw;
+		arRegionOutput[0].u4BoundInverse2 =
+			u4Freq + (4 * u4TargetBw) - u4RegionBw;
+
+		u4TargetBw = prTargetBw[1];
+		if (u4TargetBw) {
+			u4RegionBw = (u4InputBw + u4TargetBw) / 2;
+
+			arRegionOutput[1].u4BoundForward1 =
+				u4Freq + (4 * u4InputBw) + u4RegionBw;
+			arRegionOutput[1].u4BoundIsolate =
+				u4Freq + P2P_5G_6G_ISOLATION_WIDTH + u4RegionBw;
+			arRegionOutput[1].u4BoundForward2 =
+				u4Freq + (4 * u4InputBw) - u4RegionBw;
+			arRegionOutput[1].u4BoundInverse1 =
+				u4Freq + (4 * u4TargetBw) + u4RegionBw;
+			arRegionOutput[1].u4BoundInverse2 =
+				u4Freq + (4 * u4TargetBw) - u4RegionBw;
+
+			(*prForbiddenListLen)++;
+		}
+	} else if (u4Freq <= P2P_5G_H_UPPER_BOUND) {
+		u4TargetBw = prTargetBw[0];
+		u4RegionBw = (u4InputBw + u4TargetBw) / 2;
+
+		arRegionOutput[0].u4BoundForward1 =
+			u4Freq - (4 * u4InputBw) + u4RegionBw;
+		arRegionOutput[0].u4BoundForward2 =
+			u4Freq - (4 * u4InputBw) - u4RegionBw;
+		arRegionOutput[0].u4BoundIsolate =
+			u4Freq - P2P_5G_L_H_ISOLATION_WIDTH - u4RegionBw;
+		arRegionOutput[0].u4BoundInverse1 =
+			u4Freq - (4 * u4TargetBw) + u4RegionBw;
+		arRegionOutput[0].u4BoundInverse2 =
+			u4Freq - (4 * u4TargetBw) - u4RegionBw;
+
+		u4TargetBw = prTargetBw[1];
+		if (u4TargetBw) {
+			u4RegionBw = (u4InputBw + u4TargetBw) / 2;
+
+			arRegionOutput[1].u4BoundForward1 =
+				u4Freq + (4 * u4InputBw) + u4RegionBw;
+			arRegionOutput[1].u4BoundIsolate =
+				u4Freq + P2P_5G_6G_ISOLATION_WIDTH + u4RegionBw;
+			arRegionOutput[1].u4BoundForward2 =
+				u4Freq + (4 * u4InputBw) - u4RegionBw;
+			arRegionOutput[1].u4BoundInverse1 =
+				u4Freq + (4 * u4TargetBw) + u4RegionBw;
+			arRegionOutput[1].u4BoundInverse2 =
+				u4Freq + (4 * u4TargetBw) - u4RegionBw;
+
+			(*prForbiddenListLen)++;
+		}
+	} else {
+		u4TargetBw = prTargetBw[0];
+		u4RegionBw = (u4InputBw + u4TargetBw) / 2;
+
+		arRegionOutput[0].u4BoundForward1 =
+			u4Freq - (4 * u4InputBw) + u4RegionBw;
+		arRegionOutput[0].u4BoundForward2 =
+			u4Freq - (4 * u4InputBw) - u4RegionBw;
+		arRegionOutput[0].u4BoundIsolate =
+			u4Freq - P2P_5G_6G_ISOLATION_WIDTH - u4RegionBw;
+		arRegionOutput[0].u4BoundInverse1 =
+			u4Freq - (4 * u4TargetBw) + u4RegionBw;
+		arRegionOutput[0].u4BoundInverse2 =
+			u4Freq - (4 * u4TargetBw) - u4RegionBw;
+	}
+
+	for (i = 0; i < *prForbiddenListLen; ++i) {
+		DBGLOG(CCM, TRACE, "fw1:%u, fw2:%u, inv1:%u, inv2:%u, iso:%u\n",
+			arRegionOutput[i].u4BoundForward1,
+			arRegionOutput[i].u4BoundForward2,
+			arRegionOutput[i].u4BoundInverse1,
+			arRegionOutput[i].u4BoundInverse2,
+			arRegionOutput[i].u4BoundIsolate);
+	}
+}
+
+u_int8_t ccmIsPreferAA(struct ADAPTER *prAdapter,
+		       struct BSS_INFO *prCsaBss)
+{
+#if (CONFIG_BAND_NUM > 2)
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	u_int8_t fgIsAaDbdcEnable = prChipInfo->isAaDbdcEnable;
+	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
+
+	DBGLOG(CCM, LOUD, "AaDbdcEnable=%u\n", fgIsAaDbdcEnable);
+
+	if (prCsaBss)
+		ccmGetOtherAliveBssHwBitmap(prAdapter,
+					    au4AliveBssBitmap, prCsaBss);
+	else
+		bssGetAliveBssHwBitmap(prAdapter, au4AliveBssBitmap);
+
+	if (ENUM_BAND_NUM > 2 &&
+	    /* bn2 is available */
+	    au4AliveBssBitmap[AA_HW_BAND_1] != 0 &&
+	    au4AliveBssBitmap[AA_HW_BAND_2] == 0 &&
+	    /* skyhawk sku1 */
+	    fgIsAaDbdcEnable)
+		return TRUE;
+#endif
+	return FALSE;
+}
+
+bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
+			 struct RF_CHANNEL_INFO *prChnlInfo1,
+			 struct RF_CHANNEL_INFO *prChnlInfo2)
+{
+	uint16_t arTargetBw[2];
+	uint8_t prForbiddenListLen;
+	struct CCM_AA_FOBIDEN_REGION_UNIT arRegionOutput[2];
+	struct RF_CHANNEL_INFO *prChnlInfo_h;
+	struct RF_CHANNEL_INFO *prChnlInfo_l;
+
+	if (!ccmIsPreferAA(prAdapter, NULL))
+		return FALSE;
+
+	if (prChnlInfo1->eBand == BAND_5G && prChnlInfo2->eBand == BAND_5G) {
+		if (prChnlInfo1->u4CenterFreq1 > prChnlInfo2->u4CenterFreq1) {
+			prChnlInfo_h = prChnlInfo1;
+			prChnlInfo_l = prChnlInfo2;
+		} else {
+			prChnlInfo_h = prChnlInfo2;
+			prChnlInfo_l = prChnlInfo1;
+		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (prChnlInfo1->eBand == BAND_5G &&
+		   prChnlInfo2->eBand == BAND_6G) {
+		prChnlInfo_h = prChnlInfo2;
+		prChnlInfo_l = prChnlInfo1;
+	} else if (prChnlInfo1->eBand == BAND_6G &&
+		   prChnlInfo2->eBand == BAND_5G) {
+		prChnlInfo_h = prChnlInfo1;
+		prChnlInfo_l = prChnlInfo2;
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+	} else
+		return FALSE;
+
+	arTargetBw[0] = ccmAABwEnumToValue(prChnlInfo_l->ucChnlBw);
+
+	ccmAAForbiddenRegionCal(prAdapter, prChnlInfo_h, &prForbiddenListLen,
+				arTargetBw, arRegionOutput);
+
+	if (/* ADC Aliasing Forbidden Spacing */
+	    (arRegionOutput[0].u4BoundForward1 <= prChnlInfo_l->u4CenterFreq1 ||
+	    arRegionOutput[0].u4BoundForward2 >= prChnlInfo_l->u4CenterFreq1)
+	    &&
+	    (arRegionOutput[0].u4BoundInverse1 <= prChnlInfo_l->u4CenterFreq1 ||
+	    arRegionOutput[0].u4BoundInverse2 >= prChnlInfo_l->u4CenterFreq1)
+	    /* Isolation Channel Spacing */
+	    &&
+	    arRegionOutput[0].u4BoundIsolate > prChnlInfo_l->u4CenterFreq1 &&
+	    prChnlInfo_l->u4CenterFreq1 != prChnlInfo_h->u4CenterFreq1)
+		return TRUE;
+	else
+		return FALSE;
+}
+
 #endif /* CFG_SUPPORT_CCM */
