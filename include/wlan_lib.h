@@ -96,6 +96,8 @@
 #define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
 /* Support Random P2P MAC */
 #define WIFI_FEATURE_P2P_RAND_MAC  (0x80000000)
+/* Support MLO SoftAp */
+#define WIFI_FEATURE_MLO_SAP  (0x4000000000)
 
 /* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT

@@ -13617,6 +13617,12 @@ uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo)
 	u8FeatureSet |= WIFI_FEATURE_TDLS_OFFCHANNEL;
 #endif
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prGlueInfo->u4ReadyFlag &&
+	    prGlueInfo->prAdapter->rWifiVar.ucApMldLinkMax >= 2)
+		u8FeatureSet |= WIFI_FEATURE_MLO_SAP;
+#endif
+
 	return u8FeatureSet;
 }
 
