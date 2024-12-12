@@ -5052,12 +5052,17 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, WARN,
 			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
 	}
+	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
 	for (i = 0;
 		i < prAdapter->rWifiVar.ucNanMldLinkMax;
 		i++) {
 		prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
-		ucBssIndex = nanGetBssIdxbyLink(prAdapter, i);
+
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+		if (prAdapter->rWifiVar.ucNanMldLinkMax > 1)
+			ucBssIndex = nanGetBssIdxbyLink(prAdapter, i);
+#endif
 
 		if (nanDataEngineAllocStaRec(
 			prAdapter,
@@ -5100,6 +5105,12 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		nicTxGenerateDescTemplate(prAdapter, prNanStaRec);
 
 		/* Notify scheduler */
+		if (i && (eBand == BAND_2G4)) {
+			DBGLOG(NAN, VOC,
+				"Prefer sta is 2G, skip map\n");
+			continue;
+		}
+
 		nanSchedCmdMapStaRecord(
 			prAdapter,
 			prNDL->aucPeerMacAddr,
@@ -5109,6 +5120,10 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 			prNanStaRec->ucWlanIndex,
 			prNDP->aucPeerNDIAddr);
 	}
+
+	nanSetPreferLinkStaRec(prAdapter,
+		prNdpCxt,
+		nanGetBssIdxbyBand(prAdapter, eBand));
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 	if (atomic_inc_return(&(prDataPathInfo->NetDevRefCount[eRole])) == 1) {
@@ -5356,7 +5371,6 @@ struct STA_RECORD *nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
 
 		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr, pucLocalAddr) &&
 		    EQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr, pucPeerAddr))
-			/* TBD: Send NAF by Station Record */
 			return nanGetPreferLinkStaRec(prAdapter, prNdpCxt);
 	}
 

@@ -12298,8 +12298,10 @@ nanSchedCmdMapStaRecord(
 	if (!prPeerSchRecord)
 		return WLAN_STATUS_FAILURE;
 
-	if (i < NAN_LINK_NUM)
-		prPeerSchRecord->aucStaRecIdx[i][ucNdpCxtId] = ucStaRecIdx;
+	if (i >= NAN_LINK_NUM)
+		i = 0;
+
+	prPeerSchRecord->aucStaRecIdx[i][ucNdpCxtId] = ucStaRecIdx;
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +

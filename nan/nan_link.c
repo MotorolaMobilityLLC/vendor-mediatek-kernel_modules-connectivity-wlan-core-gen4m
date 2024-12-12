@@ -154,7 +154,7 @@ void nanGetLinkWmmQueSet(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 	/* connac3 MLO all bss use the same wmm index as main bss use */
-	if (nanLinkNeedMlo(prAdapter)) {
+	if (TRUE /*nanLinkNeedMlo(prAdapter)*/) {
 		prBssInfo->fgIsWmmInited = TRUE;
 		prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
 
