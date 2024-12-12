@@ -4350,6 +4350,8 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 {
 	uint32_t aucCapablilities[2] = {APF_VERSION, APF_MAX_PROGRAM_LEN};
 	struct sk_buff *skb;
+	uint8_t ucBssIdx = 0;
+	uint8_t ucAisIdx = 0;
 #if (CFG_SUPPORT_APF == 1)
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif
@@ -4383,8 +4385,20 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 		goto nla_put_failure;
 	}
 
+	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+
 	if (prGlueInfo->prAdapter->rWifiVar.ucApfEnable == 0)
 		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
+
+	ucAisIdx = AIS_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+
+#if (CFG_SUPPORT_MULTI_APF == 0)
+	if (ucAisIdx != AIS_DEFAULT_INDEX) {
+		DBGLOG(REQ, ERROR, "Not supporting APF for secondary STA.\n");
+		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
+	}
+#endif
+
 #endif
 
 	if (unlikely(nla_put(skb, APF_ATTRIBUTE_VERSION,
@@ -4394,8 +4408,8 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 				sizeof(uint32_t), &aucCapablilities[1]) < 0))
 		goto nla_put_failure;
 
-	DBGLOG(REQ, INFO, "apf capability - ver:%d, max program len: %d\n",
-		APF_VERSION, APF_MAX_PROGRAM_LEN);
+	DBGLOG(REQ, INFO, "BSS[%d] Ais[%d] capability - ver:%d, max len: %d\n",
+		ucBssIdx, ucAisIdx, aucCapablilities[0], aucCapablilities[1]);
 
 	return cfg80211_vendor_cmd_reply(skb);
 
@@ -4410,6 +4424,12 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIdx = 0;
+	uint8_t ucAisIdx = 0;
+	uint8_t ucApfStart = 0;
+	uint16_t u2ApfBufSize = PKT_OFLD_BUF_SIZE;
+	uint16_t u2CopySize = 0;
+
 	struct nlattr *attr;
 	struct PARAM_OFLD_INFO *prInfo = NULL;
 
@@ -4446,9 +4466,24 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
+	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	ucAisIdx = AIS_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+
+#if (CFG_SUPPORT_MULTI_APF == 0)
+	if (ucAisIdx != AIS_DEFAULT_INDEX) {
+		DBGLOG(REQ, ERROR, "Not supporting APF for secondary STA.\n");
+		return -EFAULT;
+	}
+#else
+	/* First two bytes will used to store BSS index and AIS index */
+	ucApfStart = 2;
+#endif
+
+	u2ApfBufSize = PKT_OFLD_BUF_SIZE - ucApfStart;
+
 	u4ProgLen = nla_len(attr);
-	ucFragNum = u4ProgLen / PKT_OFLD_BUF_SIZE;
-	if (u4ProgLen > PKT_OFLD_BUF_SIZE && u4ProgLen % PKT_OFLD_BUF_SIZE > 0)
+	ucFragNum = u4ProgLen / u2ApfBufSize;
+	if (u4ProgLen > u2ApfBufSize && u4ProgLen % u2ApfBufSize > 0)
 		ucFragNum++;
 
 	prProg = (uint8_t *) nla_data(attr);
@@ -4459,6 +4494,8 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 		goto exit;
 	}
 
+	DBGLOG_MEM8(REQ, TRACE, prProg, u4ProgLen);
+
 	/* Init OFLD description */
 	prInfo->ucType = PKT_OFLD_TYPE_APF;
 	prInfo->ucOp = PKT_OFLD_OP_INSTALL;
@@ -4468,16 +4505,27 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 	u4RemainLen = u4ProgLen;
 	do {
 		prInfo->ucFragSeq = ucFragSeq;
-		prInfo->u4BufLen = u4RemainLen > PKT_OFLD_BUF_SIZE ?
-					PKT_OFLD_BUF_SIZE : u4RemainLen;
-		kalMemCopy(prInfo->aucBuf, (prProg + u4SentLen),
-				prInfo->u4BufLen);
+		u2CopySize = u4RemainLen > u2ApfBufSize ?
+					u2ApfBufSize : u4RemainLen;
 
-		u4SentLen += prInfo->u4BufLen;
+		DBGLOG(REQ, TRACE, "Bss[%d] Ais[%d] Remain[%d]  BufLen[%d]\n",
+				ucBssIdx, ucAisIdx, u4RemainLen, u2CopySize);
+
+#if (CFG_SUPPORT_MULTI_APF == 1)
+		prInfo->aucBuf[0] = ucBssIdx;
+		prInfo->aucBuf[1] = ucAisIdx;
+#endif
+
+		kalMemCopy(&prInfo->aucBuf[ucApfStart], (prProg + u4SentLen),
+				u2CopySize);
+
+		u4SentLen += u2CopySize;
 
 		if (u4SentLen == u4ProgLen) {
 			prInfo->ucOp = PKT_OFLD_OP_ENABLE_W_TPUT_DETECT;
 		}
+
+		prInfo->u4BufLen = u2CopySize + ucApfStart;
 
 		DBGLOG(REQ, TRACE, "Set APF size(%d, %d) frag(%d, %d).\n",
 				u4ProgLen, u4SentLen,
@@ -4492,7 +4540,7 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 			goto exit;
 		}
 		ucFragSeq++;
-		u4RemainLen -= u4SentLen;
+		u4RemainLen -= u2CopySize;
 	} while (ucFragSeq < ucFragNum);
 exit:
 	if (prInfo)
@@ -4507,7 +4555,8 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-
+	uint8_t ucBssIdx = 0;
+	uint8_t ucAisIdx = 0;
 	struct PARAM_OFLD_INFO *prInfo = NULL;
 	uint32_t u4SetInfoLen = 0;
 	struct sk_buff *skb = NULL;
@@ -4515,7 +4564,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	uint8_t *prProg = NULL;
 	uint32_t u4ProgLen = 0, u4RecvLen = 0;
 	uint8_t ucFragNum = 0, ucCurrSeq = 0;
-
+	uint8_t ucApfStart = 0;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -4531,6 +4580,16 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	ucAisIdx = AIS_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+
+#if (CFG_SUPPORT_MULTI_APF == 0)
+	if (ucAisIdx != AIS_DEFAULT_INDEX) {
+		DBGLOG(REQ, ERROR, "Not supporting APF for secondary STA.\n");
+		return -EFAULT;
+	}
+#endif
+
 	prProg = kalMemZAlloc(APF_MAX_PROGRAM_LEN, VIR_MEM_TYPE);
 	prInfo = kalMemZAlloc(sizeof(struct PARAM_OFLD_INFO), VIR_MEM_TYPE);
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
@@ -4544,6 +4603,12 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	prInfo->ucType = PKT_OFLD_TYPE_APF;
 	prInfo->ucOp = PKT_OFLD_OP_QUERY;
 	prInfo->u4BufLen = PKT_OFLD_BUF_SIZE;
+
+#if (CFG_SUPPORT_MULTI_APF == 1)
+	prInfo->aucBuf[0] = ucBssIdx;
+	prInfo->aucBuf[1] = ucAisIdx;
+	ucApfStart = 2;
+#endif
 
 	do {
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryOffloadInfo, prInfo,
@@ -4566,18 +4631,20 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 			DBGLOG(REQ, ERROR, "Wrong frag seq (%d, %d)\n",
 				ucCurrSeq, prInfo->ucFragSeq);
 			goto query_apf_failure;
-		} else if (prInfo->u4BufLen > PKT_OFLD_BUF_SIZE ||
-				(u4RecvLen + prInfo->u4BufLen) > u4ProgLen) {
+		} else if ((prInfo->u4BufLen - ucApfStart) > PKT_OFLD_BUF_SIZE
+				|| (u4RecvLen +
+				(prInfo->u4BufLen - ucApfStart)) > u4ProgLen
+				|| prInfo->u4TotalLen > APF_MAX_PROGRAM_LEN) {
+
 			DBGLOG(REQ, ERROR,
 				"Buffer overflow, got wrong size %d\n",
-				(u4RecvLen + prInfo->u4BufLen));
+				(u4RecvLen + (prInfo->u4BufLen - ucApfStart)));
 			goto query_apf_failure;
 		}
 
-		kalMemCopy((prProg + u4RecvLen), &prInfo->aucBuf[0],
-					prInfo->u4BufLen);
-
-		u4RecvLen += prInfo->u4BufLen;
+		kalMemCopy((prProg + u4RecvLen), &prInfo->aucBuf[ucApfStart],
+					(prInfo->u4BufLen - ucApfStart));
+		u4RecvLen += (prInfo->u4BufLen - ucApfStart);
 		DBGLOG(REQ, INFO, "Get APF size(%d, %d) frag(%d, %d).\n",
 					u4ProgLen, u4RecvLen,
 					ucFragNum, prInfo->ucFragSeq);
@@ -4588,6 +4655,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	if (unlikely(nla_put(skb, APF_ATTRIBUTE_PROGRAM,
 				u4ProgLen, prProg) < 0))
 		goto query_apf_failure;
+
 
 	if (prProg != NULL)
 		kalMemFree(prProg, VIR_MEM_TYPE, APF_MAX_PROGRAM_LEN);
