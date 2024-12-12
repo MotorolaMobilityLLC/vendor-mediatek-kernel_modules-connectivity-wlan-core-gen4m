@@ -12547,6 +12547,11 @@ uint32_t __weak kalGetProjectId(void)
 	return 0;
 }
 
+void __weak kalDumpPlatGPIOStat(void)
+{
+	DBGLOG(SW4, WARN, "enter DumpPlatGPIOStat\n");
+}
+
 void __weak kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 {
 	DBGLOG(SW4, WARN, "enter kalSetEmiMetOffset\n");

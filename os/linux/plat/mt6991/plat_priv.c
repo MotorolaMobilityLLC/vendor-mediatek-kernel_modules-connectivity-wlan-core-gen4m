@@ -11,6 +11,7 @@
 #include <linux/cpufreq.h>
 #endif
 #include <linux/pm_qos.h>
+#include <linux/gpio.h>
 #include "precomp.h"
 
 #ifdef CONFIG_WLAN_MTK_EMI
@@ -997,6 +998,16 @@ uint32_t kalGetProjectId(void)
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 {
 	u4EmiMetOffset = newEmiMetOffset;
+}
+
+void kalDumpPlatGPIOStat(void)
+{
+	DBGLOG(INIT, INFO, "GPIO 244, val=%d\n",
+		gpio_get_value(512 + 244));
+	DBGLOG(INIT, INFO, "GPIO 248, val=%d\n",
+		gpio_get_value(512 + 248));
+	DBGLOG(INIT, INFO, "GPIO 249, val=%d\n",
+		gpio_get_value(512 + 249));
 }
 
 #ifdef CONFIG_WLAN_MTK_EMI
