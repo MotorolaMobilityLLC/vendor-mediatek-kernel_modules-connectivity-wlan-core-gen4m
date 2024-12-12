@@ -2816,6 +2816,11 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	tag = (uint8_t *) query.arTlv;
+	if (!tag) {
+		DBGLOG(REQ, ERROR,
+		       "Can not alloc tag fail.\n");
+		return -ENOMEM;
+	}
 	TAG_FOR_EACH(tag, u4QueryInfoLen, offset) {
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_STATISTICS_TAG_GET_BSS_PRED_TX_BITRATE: {
