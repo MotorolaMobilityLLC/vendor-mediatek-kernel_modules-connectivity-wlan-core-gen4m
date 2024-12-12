@@ -425,10 +425,7 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 		prCmdScanReq->u2ProbeDelayTime = 0;
 
 	/* OCE certification handling */
-	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE) {
-		scanHandleOceIE(prScanParam, prCmdScanReq);
-		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_OCE_SCAN_EN;
-	}
+	scanHandleOceIE(prScanParam, prCmdScanReq);
 
 	/* enable split scan when (not in roam) && (WFD || 1s TRX pkt > 30) */
 	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex,

@@ -5476,8 +5476,6 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 {
 	uint16_t u2Offset = 0, u2IEsBufLen = prScanParam->u2IELen;
 	uint8_t *pucBuf = prScanParam->aucIE;
-	uint8_t *pucBufAppend = NULL;
-	uint8_t aucOceOui[] = VENDOR_OUI_WFA_SPECIFIC;
 	struct IE_FILS_REQ_FRAME *prFilsReqIe;
 
 	DBGLOG(SCN, INFO, "before OCE IE, length = %d\n", u2IEsBufLen);
@@ -5499,38 +5497,9 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 				prCmdScanReq->u2ChannelDwellTime =
 				    SCAN_CHANNEL_DWELL_TIME_OCE;
 			}
-		/* Append OCE_ATTR_ID_SUPPRESSION_BSSID to OCE IE tail,
-		 * length = 0. So total 2bytes(ID and Length).
-		 * FOR OCE CERTIFICATION 5.3.1
-		 */
-		} else if (IE_ID(pucBuf) == ELEM_ID_VENDOR) {
-			if ((OCE_IE_OUI_TYPE(pucBuf) == VENDOR_OUI_TYPE_MBO) &&
-			      (!kalMemCmp(OCE_IE_OUI(pucBuf), aucOceOui, 3))) {
-				/* point to OCE IE's tail */
-				pucBufAppend =
-					(uint8_t *)(pucBuf + IE_SIZE(pucBuf));
-
-				/* If OCE IE is not last IE, we need to add 2
-				 * byte offset after OCE IE. In order to insert
-				 * 2 bytes OCE_ATTR_ID_SUPPRESSION_BSSID.
-				 */
-				if (u2IEsBufLen > (u2Offset + IE_SIZE(pucBuf)))
-					kalMemMove(pucBufAppend + 2,
-						pucBufAppend,
-						u2IEsBufLen -
-						(u2Offset + IE_SIZE(pucBuf)));
-
-				OCE_OUI_SUP_BSSID(pucBufAppend)->ucAttrId =
-						OCE_ATTR_ID_SUPPRESSION_BSSID;
-				OCE_OUI_SUP_BSSID(pucBufAppend)->ucAttrLength
-						= 0;
-				prScanParam->u2IELen += 2;
-				IE_LEN(pucBuf) += 2;
-			}
 		}
 	}
 
-	pucBuf = prScanParam->aucIE;
 	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
 	dumpMemory8(pucBuf, prScanParam->u2IELen);
 }
