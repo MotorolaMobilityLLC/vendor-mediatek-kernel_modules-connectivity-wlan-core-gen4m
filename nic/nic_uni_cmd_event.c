@@ -230,6 +230,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 	[EXT_CMD_ID_TWT_STA_GET_CNM_GRANTED] = nicUniCmdTwtStaGetCnmGranted,
 #endif
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+	[EXT_CMD_ID_BT_CTRL] = nicUniCmdBtCtrl,
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
@@ -320,6 +323,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_SUPPORT_802_11AX == 1)
 	[UNI_EVENT_ID_OMI] = nicUniEventOmi,
 #endif
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+	[UNI_EVENT_ID_BT_CTRL] = nicUniCmdEventQueryBtCtrl,
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -8481,6 +8487,7 @@ void initCECoredump(struct ADAPTER *ad)
 
 	ad->fgKeepPrintCoreDump = TRUE;
 	ad->fgN9AssertDumpOngoing = TRUE;
+
 #if defined(_HIF_PCIE)
 	if (prBusInfo->bypassWfWdt)
 		prBusInfo->bypassWfWdt(ad, TRUE);
@@ -8519,7 +8526,15 @@ void appendCECoredump(struct ADAPTER *ad, uint8_t *buf, uint16_t len)
 		ad->fgN9AssertDumpOngoing = FALSE;
 
 		cnmTimerStopTimer(ad, &ad->rN9CorDumpTimer);
-		GL_DEFAULT_RESET_TRIGGER(ad, RST_FW_ASSERT);
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+		if (wlanBtCoreDumpInfo(FALSE, FALSE) == TRUE) {
+			/* Reset the BT coredump ctrl info */
+			wlanBtCoreDumpInfo(TRUE, FALSE);
+		} else
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+		{
+			GL_DEFAULT_RESET_TRIGGER(ad, RST_FW_ASSERT);
+		}
 #if defined(_HIF_PCIE)
 		if (prBusInfo->bypassWfWdt)
 			prBusInfo->bypassWfWdt(ad, FALSE);
@@ -8553,6 +8568,22 @@ void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_ASSERT_DUMP_BASIC:
 			if (!ad->fgN9AssertDumpOngoing) {
 				initCECoredump(ad);
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+				if (kalMemCmp(tag + sizeof(struct TAG_HDR),
+					"bt_coredump", 11))
+					wlanBtCoreDumpInfo(TRUE, FALSE);
+				else
+					wlanBtCoreDumpInfo(TRUE, TRUE);
+
+				if (wlanBtCoreDumpInfo(FALSE, FALSE) == TRUE) {
+					uint8_t ucAction =
+						CMD_BT_CTRL_GET_COREDUMP_HEADER;
+					wlanoidBtCoreDumpCtrl(ad, &ucAction,
+								0, NULL);
+				}
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 				/* skip first line (disable cache) */
 				break;
 			}
@@ -15486,3 +15517,89 @@ uint32_t nicUniCmdUpdateTsfSyncParam(struct ADAPTER *ad,
 }
 
 #endif
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+uint32_t nicUniCmdBtCtrl(struct ADAPTER *prAdapter,
+			    struct WIFI_UNI_SETQUERY_INFO *prInfo)
+{
+	struct EXT_CMD_BT_CTRL *prLegacyCmd;
+	struct UNI_CMD_BT_CTRL *prUniCmd;
+	struct UNI_CMD_BT_CTRL_HEAD *prTag;
+	struct WIFI_UNI_CMD_ENTRY *prEntry;
+	uint32_t u4MaxSize = sizeof(struct UNI_CMD_BT_CTRL) +
+		sizeof(struct UNI_CMD_BT_CTRL_HEAD);
+	uint16_t u2TagId;
+
+	if (!prInfo || !prInfo->pucInfoBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (prInfo->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+		prInfo->ucExtCID != EXT_CMD_ID_BT_CTRL)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prLegacyCmd = (struct EXT_CMD_BT_CTRL *) prInfo->pucInfoBuffer;
+
+	if (prLegacyCmd->ucAction == CMD_BT_CTRL_GET_COREDUMP_HEADER)
+		u2TagId = UNI_CMD_BT_CTRL_HEAD;
+	else if (prLegacyCmd->ucAction == CMD_BT_CTRL_GET_COREDUMP_DATA)
+		u2TagId = UNI_CMD_BT_CTRL_DATA;
+	else
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prEntry = nicUniCmdAllocEntry(prAdapter, UNI_CMD_ID_BT_CTRL,
+			u4MaxSize, prInfo->pfCmdDoneHandler,
+			prInfo->pfCmdTimeoutHandler);
+
+	if (!prEntry)
+		return WLAN_STATUS_RESOURCES;
+
+	prUniCmd = (struct UNI_CMD_BT_CTRL *) prEntry->pucInfoBuffer;
+	/* UNI_CMD_BT_CTRL_HEAD struct == UNI_CMD_BT_CTRL_DATA struct */
+	prTag = (struct UNI_CMD_BT_CTRL_HEAD *) prUniCmd->aucTlvBuffer;
+	prTag->u2Tag = u2TagId;
+	prTag->u2Length = sizeof(*prTag);
+
+	LINK_INSERT_TAIL(&prInfo->rUniCmdList, &prEntry->rLinkEntry);
+	return WLAN_STATUS_SUCCESS;
+}
+
+void nicUniCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
+			       struct WIFI_UNI_EVENT *prEvt)
+{
+	int32_t s4TagsLen;
+	uint8_t *prTag;
+	uint16_t u2Offset = 0;
+
+	s4TagsLen = GET_UNI_EVENT_DATA_LEN(prEvt) -
+			sizeof(struct UNI_EVENT_BT_CTRL);
+	prTag = GET_UNI_EVENT_DATA(prEvt) +
+			sizeof(struct UNI_EVENT_BT_CTRL);
+
+	if (s4TagsLen <= 0) {
+		DBGLOG(NIC, WARN, "the evt tags len is wrong (%d)\n",
+			s4TagsLen);
+		return;
+	}
+
+	TAG_FOR_EACH(prTag, s4TagsLen, u2Offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n",
+			TAG_ID(prTag), TAG_LEN(prTag));
+
+		if (TAG_ID(prTag) == UNI_EVENT_BT_CTRL_GET_COREDUMP_HEAD) {
+			struct UNI_EVENT_BT_CTRL_HEAD *prBtCtrlTag =
+				(struct UNI_EVENT_BT_CTRL_HEAD *) prTag;
+			struct EXT_EVENT_BT_CTRL rEvtBtCtrl;
+
+			rEvtBtCtrl.u4Addr = prBtCtrlTag->addr;
+			rEvtBtCtrl.u4Length = prBtCtrlTag->length;
+			rEvtBtCtrl.u4Round = prBtCtrlTag->round;
+			rEvtBtCtrl.u4DumpLeave = prBtCtrlTag->dumpLeave;
+			rEvtBtCtrl.u4CurrentRound = prBtCtrlTag->currentRound;
+			rEvtBtCtrl.u4Done = prBtCtrlTag->done;
+
+			nicCmdEventQueryBtCtrl(prAdapter, &rEvtBtCtrl);
+		}
+	}
+}
+
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */

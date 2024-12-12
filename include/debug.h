@@ -965,6 +965,10 @@ void wlanDriverDbgLevelSync(void);
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level);
 u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
 
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+u_int8_t wlanBtCoreDumpInfo(u_int8_t fgIsSet, u_int8_t fgval);
+#endif
+
 void halShowPseInfo(struct ADAPTER *prAdapter);
 uint32_t halGetPleInt(struct ADAPTER *prAdapter);
 void halSetPleInt(struct ADAPTER *prAdapter, bool fgTrigger,

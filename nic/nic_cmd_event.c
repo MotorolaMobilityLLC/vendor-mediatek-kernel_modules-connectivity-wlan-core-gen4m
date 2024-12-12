@@ -4773,6 +4773,14 @@ void nicEventLayer0ExtMagic(struct ADAPTER *prAdapter,
 		break;
 	}
 #endif
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+	case EXT_EVENT_ID_BT_CTRL:
+	{
+		nicCmdEventQueryBtCtrl(prAdapter,
+			(struct EXT_EVENT_BT_CTRL *)prEvent->aucBuffer);
+		break;
+	}
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 
 	default:
 		break;
@@ -5761,10 +5769,30 @@ void nicEventAssertDump(struct ADAPTER *prAdapter,
 
 	prChipInfo = prAdapter->chip_info;
 
-	if (wlanIsChipRstRecEnabled(prAdapter))
-		wlanChipRstPreAct(prAdapter);
-
 	if (prEvent->ucS2DIndex == S2D_INDEX_EVENT_N2H) {
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+		if (!prAdapter->fgN9AssertDumpOngoing) {
+			if (kalMemCmp(prEvent->aucBuffer, "bt_coredump", 11))
+				wlanBtCoreDumpInfo(TRUE, FALSE);
+			else
+				wlanBtCoreDumpInfo(TRUE, TRUE);
+
+			if (wlanBtCoreDumpInfo(FALSE, FALSE) == TRUE) {
+				uint8_t ucAction =
+					CMD_BT_CTRL_GET_COREDUMP_HEADER;
+				wlanoidBtCoreDumpCtrl(prAdapter, &ucAction,
+							0, NULL);
+			}
+		}
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
+		if (wlanIsChipRstRecEnabled(prAdapter)
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+		    && (wlanBtCoreDumpInfo(FALSE, FALSE) == FALSE)
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+		   )
+			wlanChipRstPreAct(prAdapter);
+
 		if (!prAdapter->fgN9AssertDumpOngoing) {
 			DBGLOG(NIC, ERROR,
 				"%s: EVENT_ID_ASSERT_DUMP\n", __func__);
@@ -5828,18 +5856,31 @@ void nicEventAssertDump(struct ADAPTER *prAdapter,
 
 			if (kalStrStr(prEvent->aucBuffer,
 					";coredump end")) {
-				DBGLOG(NIC, ERROR,
-					"core dump end, trigger whole chip reset\n");
+				DBGLOG(NIC, ERROR, "core dump end\n");
 				prAdapter->fgN9AssertDumpOngoing = FALSE;
 				cnmTimerStopTimer(prAdapter,
 						  &prAdapter->rN9CorDumpTimer);
-				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+				if (wlanBtCoreDumpInfo(FALSE, FALSE) == TRUE) {
+					/* Reset the BT coredump ctrl info */
+					wlanBtCoreDumpInfo(TRUE, FALSE);
+				} else
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+				{
+					DBGLOG(NIC, ERROR,
+						"trigger whole chip reset\n");
+					GL_DEFAULT_RESET_TRIGGER(prAdapter,
 						RST_FW_ASSERT);
+				}
 			}
 
 			wlanCorDumpTimerReset(prAdapter);
 		}
 	} else {
+		if (wlanIsChipRstRecEnabled(prAdapter))
+			wlanChipRstPreAct(prAdapter);
+
 		/* prEvent->ucS2DIndex == S2D_INDEX_EVENT_C2H */
 		DBGLOG(NIC, ERROR,
 				"%s: Skip CR4 Dump Handle\n", __func__);
@@ -7695,3 +7736,36 @@ void nicEventHwDetectReport(struct ADAPTER *prAdapter,
 	}
 }
 #endif
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+void nicCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
+			    struct EXT_EVENT_BT_CTRL *prEvtBtCtrl)
+{
+	uint8_t ucAction;
+
+	if (!prAdapter || !prEvtBtCtrl) {
+		DBGLOG(NIC, WARN, "prAdapter=%p || prEvtBtCtrl=%p\n",
+			prAdapter, prEvtBtCtrl);
+		return;
+	}
+
+	DBGLOG(REQ, LOUD, "u4Addr=0x%x, u4Length=%d, u4Round=%d\n",
+		prEvtBtCtrl->u4Addr, prEvtBtCtrl->u4Length,
+		prEvtBtCtrl->u4Round);
+	DBGLOG(REQ, LOUD, "u4DumpLeave=%d, u4CurrentRound=%d, u4Done=%d\n",
+		prEvtBtCtrl->u4DumpLeave, prEvtBtCtrl->u4CurrentRound,
+		prEvtBtCtrl->u4Done);
+
+	if (!prEvtBtCtrl->u4Done) {
+		/* get the bt coredump data  */
+		DBGLOG(NIC, STATE, "get the bt coredump data\n");
+		ucAction = CMD_BT_CTRL_GET_COREDUMP_DATA;
+		wlanoidBtCoreDumpCtrl(prAdapter, &ucAction, 0, NULL);
+
+		/* query the bt coredump for the next run */
+		DBGLOG(NIC, STATE, "query the bt coredump header\n");
+		ucAction = CMD_BT_CTRL_GET_COREDUMP_HEADER;
+		wlanoidBtCoreDumpCtrl(prAdapter, &ucAction, 0, NULL);
+	}
+}
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */

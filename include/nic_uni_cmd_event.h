@@ -267,6 +267,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_SET_SAP		= 0x70, /* SAP */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
+	UNI_CMD_ID_BT_CTRL		= 0x7B, /* BT control */
 	UNI_CMD_ID_FACT_CAL		= 0x7C, /* Factory Calibration*/
 	UNI_CMD_ID_HM			= 0x7D, /* Hybrid mlo */
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x7E, /* TX RESET SCRAMBLE */
@@ -5717,6 +5718,46 @@ struct UNI_CMD_COEX_STOP_CONNECT_PROTECT_T {
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_BT_CTRL {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**<the TLVs includer in this field:
+	 *
+	 *  TAG                    | ID   | structure
+	 *  -------------          | -----| -------------
+	 *  UNI_CMD_BT_CTRL_HEAD   | 0x0  | UNI_CMD_BT_CTRL_HEAD_T
+	 *  UNI_CMD_BT_CTRL_DATA   | 0x1  | UNI_CMD_BT_CTRL_DATA_T
+	 */
+} __KAL_ATTRIB_PACKED__;
+
+/* BT_CTRL command TLV List */
+enum UNI_CMD_BT_CTRL_TAG {
+	UNI_CMD_BT_CTRL_HEAD = 0,
+	UNI_CMD_BT_CTRL_DATA = 1,
+	UNI_CMD_BT_CTRL_MAX_NUM
+};
+
+/* get header (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_BT_CTRL_HEAD {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+/* get data (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_BT_CTRL_DATA {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -5829,11 +5870,12 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_HW_DETECT_REPORT = 0x76,
 	UNI_EVENT_ID_UPDATE_LP       = 0x77,
+	UNI_EVENT_ID_BT_CTRL         = 0x7B,
 #if (CFG_SUPPORT_FACT_CAL == 1)
 	UNI_EVENT_ID_FACT_CAL        = 0x7C,
 #endif
 	UNI_EVENT_ID_PHY_LIST_DUMP   = 0x7f,
-	UNI_EVENT_ID_OMI	    = 0x84,
+	UNI_EVENT_ID_OMI	     = 0x84,
 	UNI_EVENT_ID_MLC	     = 0x86,
 	UNI_EVENT_ID_NUM
 };
@@ -9217,6 +9259,45 @@ struct UNI_EVENT_MLC_QUERY {
 	uint8_t aucLinkInfo[];
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_BT_CTRL {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+} __KAL_ATTRIB_PACKED__;
+
+/* BT control event Tag */
+enum UNI_EVENT_BT_CTRL_TAG {
+	UNI_EVENT_BT_CTRL_GET_COREDUMP_HEAD = 0,
+	UNI_EVENT_BT_CTRL_GET_COREDUMP_DATA = 1,
+	UNI_EVENT_BT_CTRL_MAX_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_BT_CTRL_HEAD {
+	uint16_t   u2Tag;    /* Tag = 0x00 */
+	uint16_t   u2Length;
+	/* coredump header */
+	uint32_t addr;
+	uint32_t length;
+	uint32_t round;
+	uint32_t dumpLeave;
+	uint32_t currentRound;
+	uint32_t done;
+	uint32_t reserved[20];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_BT_CTRL_DATA_T {
+	uint16_t   u2Tag;    // Tag = 0x01
+	uint16_t   u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -9717,6 +9798,12 @@ uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 		uint32_t u4Action,
 		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData);
 #endif
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+uint32_t nicUniCmdBtCtrl(struct ADAPTER *prAdapter,
+			    struct WIFI_UNI_SETQUERY_INFO *prInfo);
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -9996,6 +10083,12 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 	#endif
 void nicUniEventOmi(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+void nicUniCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
+			    struct WIFI_UNI_EVENT *prEvt);
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

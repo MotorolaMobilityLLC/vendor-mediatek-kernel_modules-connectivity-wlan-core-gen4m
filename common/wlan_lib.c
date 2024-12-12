@@ -11899,8 +11899,16 @@ void wlanCorDumpTimerReset(struct ADAPTER *prAdapter)
 void wlanN9CorDumpTimeOut(struct ADAPTER *prAdapter,
 			  uintptr_t ulParamPtr)
 {
-	/* Trigger RESET */
-	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_ASSERT_TIMEOUT);
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+	if (wlanBtCoreDumpInfo(FALSE, FALSE) == TRUE) {
+		/* Reset the BT core dump flag */
+		wlanBtCoreDumpInfo(TRUE, FALSE);
+	} else
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+	{
+		/* Trigger RESET */
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_ASSERT_TIMEOUT);
+	}
 }
 
 #endif

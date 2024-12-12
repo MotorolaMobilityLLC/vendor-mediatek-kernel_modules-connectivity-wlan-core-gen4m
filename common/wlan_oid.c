@@ -19615,3 +19615,57 @@ wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_CCM */
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to query BT Core Dump Ctrl.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuffer A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_PENDING
+ * \retval WLAN_STATUS_FAILURE
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidBtCoreDumpCtrl(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		       uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	struct EXT_CMD_BT_CTRL rCmdBtCtrl = {0};
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pvQueryBuffer) {
+		DBGLOG(REQ, ERROR, "pvQueryBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/* CMD_BT_CTRL_GET_COREDUMP_HEADER or CMD_BT_CTRL_GET_COREDUMP_DATA */
+	rCmdBtCtrl.ucAction = *(uint8_t *)pvQueryBuffer;
+
+	return wlanSendSetQueryExtCmd(prAdapter,
+				      CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+				      EXT_CMD_ID_BT_CTRL,
+				      TRUE,
+				      FALSE,
+				      FALSE,
+				      NULL,
+				      nicOidCmdTimeoutCommon,
+				      sizeof(struct EXT_CMD_BT_CTRL),
+				      (uint8_t *) &rCmdBtCtrl,
+				      NULL,
+				      0);
+}
+
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */

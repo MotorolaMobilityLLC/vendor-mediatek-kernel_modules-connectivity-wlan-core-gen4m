@@ -206,6 +206,10 @@ enum ENUM_EXT_CMD_ID {
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 	EXT_CMD_ID_TWT_STA_GET_CNM_GRANTED = 0xAC,
 #endif
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+	EXT_CMD_ID_BT_CTRL = 0xBF,
+#endif
+
 	EXT_CMD_ID_END
 };
 
@@ -762,6 +766,9 @@ struct CMD_RX_PACKET_FILTER {
 #define EXT_EVENT_ID_MPDU_TIME_UPDATE 0x6F
 #define EXT_EVENT_ID_SER 0x81
 #define EXT_EVENT_ID_SYSDVT_TEST 0x99
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+#define EXT_EVENT_ID_BT_CTRL	0x9C
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 #define EXT_EVENT_ID_SR_INFO 0xA8
 #endif
@@ -4061,6 +4068,29 @@ struct EVENT_HW_DETECT_REPORT {
 	uint8_t aucStrBuffer[HW_DETECT_REPORT_STR_MAX_LEN];
 };
 #endif
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+/* ucAction value options */
+#define CMD_BT_CTRL_GET_COREDUMP_HEADER 0
+#define CMD_BT_CTRL_GET_COREDUMP_DATA 1
+
+struct EXT_CMD_BT_CTRL {
+	uint8_t  ucAction;
+	uint32_t u4Reserved[4];
+};
+
+struct EXT_EVENT_BT_CTRL {
+	uint32_t u4Addr;
+	uint32_t u4Length;
+	uint32_t u4Round;
+	uint32_t u4DumpLeave;
+	uint32_t u4CurrentRound;
+	uint32_t u4Done;
+	uint32_t u4Reserved[20];
+};
+
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4609,6 +4639,12 @@ void nicEventChannelTime(struct ADAPTER *prAdapter,
 void nicEventHwDetectReport(struct ADAPTER *prAdapter,
 		struct WIFI_EVENT *prEvent);
 #endif
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+void nicCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
+			    struct EXT_EVENT_BT_CTRL *prEvtBtCtrl);
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

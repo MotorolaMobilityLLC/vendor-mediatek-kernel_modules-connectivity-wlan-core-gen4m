@@ -3027,6 +3027,12 @@ ifneq ($(CONFIG_WTBL_MAXSIZE),)
     ccflags-y += -DCFG_WTBL_MAXSIZE=$(CONFIG_WTBL_MAXSIZE)
 endif
 
+ifeq ($(CONFIG_SUPPORT_WF_DUMP_BT_COREDUMP), y)
+    ccflags-y += -DCFG_SUPPORT_WF_DUMP_BT_COREDUMP=1
+else
+    ccflags-y += -DCFG_SUPPORT_WF_DUMP_BT_COREDUMP=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------

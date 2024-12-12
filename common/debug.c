@@ -925,3 +925,15 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 #undef OLD_KBUILD_MODNAME
 #undef OLD_LOG_FUNC
 }
+
+#if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
+u_int8_t wlanBtCoreDumpInfo(u_int8_t fgIsSet, u_int8_t fgval)
+{
+	static u_int8_t fgIsBtDump = FALSE;
+
+	if (fgIsSet == TRUE)
+		fgIsBtDump = fgval;
+
+	return fgIsBtDump;
+}
+#endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
