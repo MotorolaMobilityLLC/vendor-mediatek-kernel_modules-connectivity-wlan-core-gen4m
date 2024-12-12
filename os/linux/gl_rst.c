@@ -65,7 +65,7 @@ u_int8_t g_SubsysRstCnt;
 int g_SubsysRstTotalCnt;
 int g_WholeChipRstTotalCnt;
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
-u_int8_t g_IsWfsysBusHang = FALSE;
+u_int8_t g_IsWfsysBusNoAck = FALSE;
 char *g_reason;
 char *g_WholeChipRstReason;
 u_int8_t g_IsWfsysResetOnFail = FALSE;
@@ -284,6 +284,9 @@ void glResetCleanResetFlag(void)
 {
 	glResetUpdateFlag(FALSE);
 	glResetOnEndUpdateFlag(FALSE);
+#if CFG_WMT_RESET_API_SUPPORT
+	g_IsWfsysBusNoAck = FALSE;
+#endif
 }
 
 #if CFG_CHIP_RESET_SUPPORT
@@ -706,7 +709,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 
 		/* L0.5 upgrade to L0 */
 		if (g_IsWholeChipRst == FALSE &&
-			g_IsWfsysBusHang == FALSE &&
+			g_IsWfsysBusNoAck == FALSE &&
 			prChipInfo->isUpgradeWholeChipReset) {
 			if (prChipInfo->isUpgradeWholeChipReset(prAdapter)) {
 				char reason[64] = {0};
@@ -768,7 +771,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		"Trigger chip reset in %s#%u, bus[%d] flag[0x%x] reason[%s]\n",
 		pucFile,
 		u4Line,
-		g_IsWfsysBusHang,
+		g_IsWfsysBusNoAck,
 		u4RstFlag,
 		apucRstReason[eResetReason]);
 
@@ -1322,7 +1325,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 #if !CFG_SUPPORT_CONNAC1X
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
-		g_IsWfsysBusHang = FALSE;
+		g_IsWfsysBusNoAck = FALSE;
 		complete(&g_RstOnComp);
 	}
 #endif
@@ -1675,7 +1678,7 @@ bool glRstCheckRstCriteria(void)
 	 * for those cases which need to trigger whole chip reset
 	 * when fgIsResetting = TRUE
 	 */
-	if (g_IsSubsysRstOverThreshold || g_IsWfsysBusHang)
+	if (g_IsSubsysRstOverThreshold || g_IsWfsysBusNoAck)
 		return FALSE;
 	else
 		return TRUE;
@@ -1744,7 +1747,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	} else {
 		if (g_IsSubsysRstOverThreshold)
 			DBGLOG(INIT, INFO, "Reach subsys reset threshold!!!\n");
-		else if (g_IsWfsysBusHang)
+		else if (g_IsWfsysBusNoAck)
 			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
 
 		while (kalIsResetOnEnd() &&
@@ -1837,7 +1840,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		if (prGlueInfo->u4ReadyFlag &&
 		    kalStrnCmp(reason, "PMIC Fault", 10) == 0) {
 			fgIsBusAccessFailed = TRUE;
-			g_IsWfsysBusHang = TRUE;
+			g_IsWfsysBusNoAck = TRUE;
 			DBGLOG(REQ, INFO,
 				"Get PMIC Fault\n");
 #if defined(_HIF_PCIE)
@@ -2133,7 +2136,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 	}
 
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
-	if (g_IsWfsysBusHang == TRUE) {
+	if (g_IsWfsysBusNoAck == TRUE) {
 		if (prAdapter) {
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			struct CHIP_DBG_OPS *debug_ops =
@@ -2180,7 +2183,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			glSetIsNeedWaitCoredumpFlag(FALSE);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-			if (g_IsWfsysBusHang == TRUE)
+			if (g_IsWfsysBusNoAck == TRUE)
 				DBGLOG(INIT, INFO,
 					"Detect bus hang, do whole chip reset.\n");
 			else if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
@@ -2221,7 +2224,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		glSetIsNeedWaitCoredumpFlag(FALSE);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-		if (g_IsWfsysBusHang == TRUE)
+		if (g_IsWfsysBusNoAck == TRUE)
 			DBGLOG(INIT, INFO,
 				"Detect bus hang, do whole chip reset.\n");
 		else if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
@@ -2232,7 +2235,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			glResetMsgHandler(ENUM_RST_MSG_L04_END);
 		} else {
 			glResetCleanResetFlag();
-			g_IsWfsysBusHang = FALSE;
+			g_IsWfsysBusNoAck = FALSE;
 			DBGLOG(INIT, INFO,
 				"Don't trigger subsys reset due to driver is not ready\n");
 		}

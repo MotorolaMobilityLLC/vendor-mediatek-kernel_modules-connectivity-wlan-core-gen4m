@@ -2816,7 +2816,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 		g_IsNeedWaitCoredump = TRUE;
 #endif
 	glResetUpdateFlag(TRUE);
-	g_IsWfsysBusHang = TRUE;
+	g_IsWfsysBusNoAck = TRUE;
 	kalSetRstEvent(TRUE);
 }
 

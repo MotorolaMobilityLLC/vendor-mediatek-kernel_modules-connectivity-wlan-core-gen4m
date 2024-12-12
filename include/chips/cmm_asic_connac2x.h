@@ -1146,7 +1146,7 @@ struct SDIO_HIF_TX_HEADER {
 #endif /* defined(_HIF_SDIO) */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-extern u_int8_t g_IsWfsysBusHang;
+extern u_int8_t g_IsWfsysBusNoAck;
 extern u_int8_t g_fgRstRecover;
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 extern u_int8_t g_IsNeedWaitCoredump;

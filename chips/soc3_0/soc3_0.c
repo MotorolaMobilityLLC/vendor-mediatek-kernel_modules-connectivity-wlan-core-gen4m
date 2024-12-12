@@ -1308,7 +1308,7 @@ int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 	int value = 0, ret = 0;
 
 	soc3_0_CheckBusHang(NULL, FALSE);
-	if (g_IsWfsysBusHang == TRUE) {
+	if (g_IsWfsysBusNoAck == TRUE) {
 		DBGLOG(HAL, INFO,
 			"Already trigger conninfra whole chip reset.\n");
 		return -EBUSY;
@@ -2074,10 +2074,10 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 			soc3_0_DumpHostCr(prAdapter, conninfra_read_ret);
 
 		if (conninfra_reset) {
-			g_IsWfsysBusHang = TRUE;
+			g_IsWfsysBusNoAck = TRUE;
 			glResetWholeChipResetTrigger("bus hang");
 		} else if (ucWfResetEnable) {
-			g_IsWfsysBusHang = TRUE;
+			g_IsWfsysBusNoAck = TRUE;
 			glResetWholeChipResetTrigger("wifi bus hang");
 		}
 	}

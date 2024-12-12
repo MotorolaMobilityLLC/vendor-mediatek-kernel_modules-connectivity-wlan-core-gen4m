@@ -179,7 +179,7 @@ union soc3_0_WPDMA_INT_MASK {
 ********************************************************************************
 */
 #if (CFG_SUPPORT_CONNINFRA == 1)
-extern u_int8_t g_IsWfsysBusHang;
+extern u_int8_t g_IsWfsysBusNoAck;
 extern u_int8_t g_fgRstRecover;
 #endif
 
