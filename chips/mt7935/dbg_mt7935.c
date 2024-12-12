@@ -1314,17 +1314,17 @@ void mt7935_dumpWfsyscpupcr(struct ADAPTER *ad)
 	char log_buf_pc[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
 	char log_buf_lp[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
 
-	HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+	HAL_MCR_WR_FIELD(ad,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 		0x3F,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_SHFT,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK);
-	HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+	HAL_MCR_WR_FIELD(ad,
 		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
 		0x3F,
 		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK);
-	HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+	HAL_MCR_WR_FIELD(ad,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
 		0x0,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
@@ -1381,7 +1381,7 @@ void mt7935_dumpPcGprLog(struct ADAPTER *ad)
 
 	DBGLOG(HAL, INFO, "Dump PC log / GPR log\n");
 
-	HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+	HAL_MCR_WR_FIELD(ad,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
 		0x0,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
@@ -1389,7 +1389,7 @@ void mt7935_dumpPcGprLog(struct ADAPTER *ad)
 
 	kalMemZero(pc_dump, sizeof(pc_dump));
 	for (i = 0; i < PC_LOG_NUM; i++) {
-		HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+		HAL_MCR_WR_FIELD(ad,
 			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
 			i,
 			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
@@ -1402,7 +1402,7 @@ void mt7935_dumpPcGprLog(struct ADAPTER *ad)
 
 	kalMemZero(gpr_dump, sizeof(gpr_dump));
 	for (i = 0; i < GPR_LOG_NUM; i++) {
-		HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+		HAL_MCR_WR_FIELD(ad,
 			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
 			i,
 			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
@@ -1436,7 +1436,7 @@ void mt7935_dumpN45CoreReg(struct ADAPTER *ad)
 				   &val);
 			general_dump[idx++] = val;
 		} else {
-			HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+			HAL_MCR_WR_FIELD(ad,
 				n45_general_dump_list[i].addr,
 				n45_general_dump_list[i].value,
 				n45_general_dump_list[i].shift,
@@ -1455,7 +1455,7 @@ void mt7935_dumpN45CoreReg(struct ADAPTER *ad)
 				   &val);
 			ctl_status_dump[idx++] = val;
 		} else {
-			HAL_MCR_WR_FIELD(PLAT_DBG, ad,
+			HAL_MCR_WR_FIELD(ad,
 				n45_ctrl_status_dump_list[i].addr,
 				n45_ctrl_status_dump_list[i].value,
 				n45_ctrl_status_dump_list[i].shift,

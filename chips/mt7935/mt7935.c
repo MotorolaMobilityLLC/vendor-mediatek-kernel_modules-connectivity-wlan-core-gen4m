@@ -98,7 +98,8 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt7935GetFlavorVer(uint8_t *flavor);
+static uint32_t mt7935GetFlavorVer(struct GLUE_INFO *prGlueInfo,
+				   uint8_t *flavor);
 
 static void mt7935_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
@@ -210,7 +211,7 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter);
 static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
 				      uint8_t **apucFwNameTable);
 #endif /* CFG_ENABLE_IPC_FW_DOWNLOAD */
-#endif
+#endif /*_HIF_PCIE */
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -477,7 +478,7 @@ struct BUS_INFO mt7935_bus_info = {
 #endif /* CFG_SUPPORT_DISABLE_CMD_DDONE_INTR == 0 */
 #if (WFDMA_AP_MSI_NUM == 1)
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK |
-#endif
+#endif /* WFDMA_AP_MSI_NUM */
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_mcu2host_sw_int_sts_MASK),
 	.host_int_rxdone_bits =
 	(WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_0_MASK |
@@ -546,14 +547,14 @@ struct BUS_INFO mt7935_bus_info = {
 #else
 	.enableInterrupt = mt7935EnableInterrupt,
 	.disableInterrupt = mt7935DisableInterrupt,
-#endif /* CFG_SUPPORT_PCIE_PLAT_INT_FLOW */
+#endif /* CFG_MTK_WIFI_WFDMA_WB, CFG_SUPPORT_PCIE_PLAT_INT_FLOW */
 #else /* !_HIF_PCIE */
 	.enableInterrupt = mt7935EnableInterrupt,
 	.disableInterrupt = mt7935DisableInterrupt,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.configWfdmaIntMask = NULL,
-#else
+#else /* CFG_MTK_WIFI_WFDMA_WB */
 	.configWfdmaIntMask = mt7935ConfigIntMask,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 #if defined(_HIF_PCIE)
@@ -570,7 +571,7 @@ struct BUS_INFO mt7935_bus_info = {
 	.processTxInterrupt = mt7935ProcessTxInterruptByEmi,
 	.processRxInterrupt = mt7935ProcessRxInterruptByEmi,
 	.processSoftwareInterrupt = mt7935ProcessSoftwareInterruptByEmi,
-#else
+#else /* CFG_MTK_WIFI_WFDMA_WB */
 	.processTxInterrupt = mt7935ProcessTxInterrupt,
 	.processRxInterrupt = mt7935ProcessRxInterrupt,
 	.processSoftwareInterrupt = asicConnac3xProcessSoftwareInterrupt,
@@ -588,24 +589,25 @@ struct BUS_INFO mt7935_bus_info = {
 	.hifRst = asicConnac3xHifRst,
 #if defined(_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8)
 	.devReadIntStatus = mt7935ReadIntStatusByMsi,
-#else
+#else /* (_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8) */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.devReadIntStatus = mt7935ReadIntStatusByEmi,
-#else
+#else /* CFG_MTK_WIFI_WFDMA_WB */
 	.devReadIntStatus = mt7935ReadIntStatus,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
-#endif /* _HIF_PCIE */
+#endif /* (_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8) */
 	.setRxRingHwAddr = mt7935SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7935WfdmaAllocRxRing,
 #if CFG_MTK_WIFI_SUPPORT_IPC
 	.setupMcuEmiAddr = NULL,
-#else
+#else /* CFG_MTK_WIFI_SUPPORT_IPC */
 	.setupMcuEmiAddr = mt7935SetupMcuEmiAddr,
-#endif
+#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
 #endif /*_HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.DmaShdlInit = mt7935DmashdlInit,
-#endif
+	/* .updateTxRingMaxQuota = mt7925UpdateDmashdlQuota, */
+#endif /* _HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_NONE)
 	/* for compiler need one entry */
@@ -687,6 +689,7 @@ struct FWDL_OPS_T mt7935_fw_dl_ops = {
 #endif
 #endif
 	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
+	.getFlavorVer = mt7935GetFlavorVer,
 #if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
 	.constructDspName = mt7935_ConstructDspName,
 	.downloadDspFw = wlanDownloadDspFw,
@@ -1032,12 +1035,12 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* owner set true when feature is ready. */
 	.fgIsSupportL0p5Reset = TRUE,
+	.wifiNappingCtrl = mt7935WiFiNappingCtrl,
 #elif defined(_HIF_SDIO)
 	/* owner set true when feature is ready. */
 	.fgIsSupportL0p5Reset = FALSE,
 #endif
 	.u4MinTxLen = 2,
-	.wifiNappingCtrl = mt7935WiFiNappingCtrl,
 #if CFG_NEW_HIF_DEV_REG_IF
 	.fgIsResetInvalidMmioRead = TRUE,
 	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
@@ -1058,6 +1061,23 @@ void mt7935_icapRiseVcoreClockRate(void)
 void mt7935_icapDownVcoreClockRate(void)
 {
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
+}
+
+static uint32_t mt7935GetFlavorVer(struct GLUE_INFO *prGlueInfo,
+				   uint8_t *flavor)
+{
+	int32_t ret;
+	u_int8_t fgTestFW = FALSE;
+
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
+	if (prGlueInfo)
+		fgTestFW = prGlueInfo->fgTestFwDl;
+#endif
+
+	ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN,
+		fgTestFW ? "1t" : "1");
+
+	return (uint32_t) ret;
 }
 
 #if (CFG_ENABLE_IPC_FW_DOWNLOAD == 1)
@@ -1432,7 +1452,7 @@ static void mt7935_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7935GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	/* Type 0. mt7935_wifi.bin */
@@ -1502,7 +1522,7 @@ static void mt7935_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7935GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	/* Type 0. mt7935_wifi.bin */
@@ -1561,7 +1581,7 @@ static void mt7935_ConstructDspName(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7935GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 	/* Type 1. WIFI_MT7935_PHY_RAM_CODE_1_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
@@ -1586,7 +1606,7 @@ static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
-	mt7935GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 	/* ex: WIFI_RAM_CODE_MT7935_2_1_idxlog.bin */
 	ret = kalSnprintf(apucName[0],
@@ -3405,37 +3425,6 @@ static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter)
 
 	return status;
 }
-#endif /* _HIF_PCIE */
-
-static uint32_t mt7935GetFlavorVer(uint8_t *flavor)
-{
-	uint32_t ret = WLAN_STATUS_FAILURE;
-	uint32_t u4StrLen = 0;
-	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
-
-	if (kalGetFwFlavor(&aucFlavor[0]) == 1) {
-		u4StrLen = kalStrnLen(aucFlavor,
-						CFG_FW_FLAVOR_MAX_LEN);
-		if (u4StrLen == 1) {
-			kalScnprintf(flavor,
-					CFG_FW_FLAVOR_MAX_LEN,
-					"%u%s", CFG_WIFI_IP_SET, aucFlavor);
-		} else {
-			kalScnprintf(flavor,
-					CFG_FW_FLAVOR_MAX_LEN,
-					"%s", aucFlavor);
-		}
-		ret = WLAN_STATUS_SUCCESS;
-	} else if (kalScnprintf(flavor,
-					CFG_FW_FLAVOR_MAX_LEN,
-					"1") > 0) {
-		ret = WLAN_STATUS_SUCCESS;
-	} else {
-		ret = WLAN_STATUS_FAILURE;
-	}
-
-	return ret;
-}
 
 static void mt7935WiFiNappingCtrl(
 	struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
@@ -3535,4 +3524,5 @@ static void mt7935LowPowerOwnClear(struct ADAPTER *prAdapter,
 	*pfgResult = (u4RegValue &
 		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0;
 }
+#endif /* _HIF_PCIE */
 #endif  /* MT7935 */
