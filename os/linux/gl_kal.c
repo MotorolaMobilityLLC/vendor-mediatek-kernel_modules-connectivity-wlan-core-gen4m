@@ -2839,7 +2839,9 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 			if (prConnSettings->u2JoinStatus !=
 					STATUS_CODE_AUTH_TIMEOUT &&
 			    prConnSettings->u2JoinStatus !=
-					STATUS_CODE_ASSOC_TIMEOUT)
+					STATUS_CODE_ASSOC_TIMEOUT &&
+			    prConnSettings->u2JoinStatus !=
+					STATUS_CODE_SUCCESSFUL)
 				u2JoinStatus = prConnSettings->u2JoinStatus;
 			else
 #if CFG_SUPPORT_WPA3_LOG

@@ -2014,12 +2014,13 @@ void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
 		status);
 #endif
 
-	if (status != WLAN_STATUS_SUCCESS) {
-		saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE,
-			    (struct SW_RFB *)NULL);
-	} else if (prStaRec->eAuthAssocState != SAA_STATE_EXTERNAL_AUTH) {
+	if (prStaRec->eAuthAssocState != SAA_STATE_EXTERNAL_AUTH) {
 		DBGLOG(SAA, WARN,
 		       "Receive External Auth DONE at wrong state\n");
+	} else if (status != WLAN_STATUS_SUCCESS) {
+		prStaRec->u2StatusCode = status;
+		saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE,
+			    (struct SW_RFB *)NULL);
 	} else {
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
 		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1,
