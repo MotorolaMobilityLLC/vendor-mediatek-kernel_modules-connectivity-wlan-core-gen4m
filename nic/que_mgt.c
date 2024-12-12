@@ -8630,8 +8630,8 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	return FALSE;
 }
 
-void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
-		      struct STA_RECORD *prDstStaRec)
+void qmMoveStaTxQueue(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prSrcStaRec, struct STA_RECORD *prDstStaRec)
 {
 	uint8_t ucQueArrayIdx;
 	struct QUE *prSrcQue = NULL;
@@ -8660,6 +8660,18 @@ void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		}
 		QUEUE_CONCATENATE_QUEUES((&prDstQue[ucQueArrayIdx]),
 					 (&prSrcQue[ucQueArrayIdx]));
+	}
+
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectMoveStaAcmQ(
+			prAdapter, ucDstStaIndex, prSrcStaRec->ucIndex);
+		nicTxDirectMoveStaPendQ(
+			prAdapter, ucDstStaIndex, prSrcStaRec->ucIndex);
+		nicTxDirectMoveStaPsQ(
+			prAdapter, ucDstStaIndex, prSrcStaRec->ucIndex);
+		nicTxDirectMoveBssAbsentQ(
+			prAdapter, prSrcStaRec->ucBssIndex,
+			ucDstStaIndex, prSrcStaRec->ucIndex);
 	}
 }
 

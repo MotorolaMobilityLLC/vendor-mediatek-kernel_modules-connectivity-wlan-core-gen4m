@@ -187,6 +187,8 @@ const char *const TXS_PACKET_TYPE[ENUM_PKT_FLAG_NUM] = {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+static void nicTxDirectDequeueStaPendQ(
+	struct ADAPTER *prAdapter, uint8_t ucStaIdx, struct QUE *prQue);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -2175,9 +2177,11 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 	i2HeadLength = NIC_TX_DESC_AND_PADDING_LENGTH
 			+ prChipInfo->txd_append_size;
 
-	kalGetPacketBufHeadManipulate(prMsduInfo->prPacket,
-					&pucOutputBuf,
-					0 - i2HeadLength);
+	if (prMsduInfo->fgIsMovePkt)
+		kalGetPacketBuf(prMsduInfo->prPacket, &pucOutputBuf);
+	else
+		kalGetPacketBufHeadManipulate(
+			prMsduInfo->prPacket, &pucOutputBuf, 0 - i2HeadLength);
 
 	if (pucOutputBuf == NULL)
 		return;
@@ -5099,6 +5103,89 @@ void nicTxDirectClearStaPsQ(struct ADAPTER *prAdapter,
 	}
 }
 
+void nicTxDirectMoveStaPsQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct QUE rMoveQue;
+	struct QUE *prMoveQue = &rMoveQue;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	QUEUE_INITIALIZE(prMoveQue);
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
+	if (QUEUE_IS_EMPTY(&prAdapter->rStaPsQueue[ucSrcStaRecIdx]))
+		goto exit;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_MOVE_ALL(prMoveQue, &prAdapter->rStaPsQueue[ucSrcStaRecIdx]);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	DBGLOG(QM, INFO, "Move PS MSDUs STA[%u->%u] Num[%u]\n",
+	       ucSrcStaRecIdx, ucDstStaRecIdx, prMoveQue->u4NumElem);
+
+	prMsduInfo = QUEUE_GET_HEAD(prMoveQue);
+	while (prMsduInfo) {
+		prMsduInfo->ucStaRecIndex = ucDstStaRecIdx;
+		prMsduInfo->fgIsMovePkt = TRUE;
+		prMsduInfo = QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(
+		&prAdapter->rStaPsQueue[ucDstStaRecIdx], prMoveQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+exit:
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
+}
+
+void nicTxDirectMoveBssAbsentQ(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct QUE rMoveQue;
+	struct QUE *prMoveQue = &rMoveQue;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	QUEUE_INITIALIZE(prMoveQue);
+
+	if (ucBssIndex > MAX_BSSID_NUM) {
+		DBGLOG(TX, INFO, "ucBssIndex is out of range!\n");
+		return;
+	}
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
+	if (QUEUE_IS_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex]))
+		goto exit;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(
+		prMoveQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	DBGLOG(QM, INFO, "Move AbsentQ MSDUs Bss[%u] STA[%u->%u] Num[%u]\n",
+	       ucBssIndex, ucSrcStaRecIdx, ucDstStaRecIdx,
+	       prMoveQue->u4NumElem);
+
+	prMsduInfo = QUEUE_GET_HEAD(prMoveQue);
+	while (prMsduInfo) {
+		prMsduInfo->ucStaRecIndex = ucDstStaRecIdx;
+		prMsduInfo->fgIsMovePkt = TRUE;
+		prMsduInfo = QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(
+		&prAdapter->rBssAbsentQueue[ucBssIndex], prMoveQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+exit:
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
+}
+
 void nicTxDirectClearBssAbsentQ(struct ADAPTER
 				*prAdapter, uint8_t ucBssIndex)
 {
@@ -5148,6 +5235,43 @@ void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 	}
 
 	prAdapter->u4StaPendBitmap &= ~BIT(ucStaRecIdx);
+}
+
+void nicTxDirectMoveStaPendQ(struct ADAPTER *prAdapter,
+		uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct QUE rMoveQue;
+	struct QUE *prMoveQue = &rMoveQue;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	QUEUE_INITIALIZE(prMoveQue);
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
+	nicTxDirectDequeueStaPendQ(prAdapter, ucSrcStaRecIdx, prMoveQue);
+	if (QUEUE_IS_EMPTY(prMoveQue))
+		goto exit;
+
+	DBGLOG(QM, INFO, "Move Pending MSDUs STA[%u->%u] Num[%u]\n",
+	       ucSrcStaRecIdx, ucDstStaRecIdx, prMoveQue->u4NumElem);
+
+	prMsduInfo = QUEUE_GET_HEAD(prMoveQue);
+	while (prMsduInfo) {
+		prMsduInfo->ucStaRecIndex = ucDstStaRecIdx;
+		prMsduInfo->fgIsMovePkt = TRUE;
+		prMsduInfo = QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(
+		&prAdapter->rStaPendQueue[ucDstStaRecIdx], prMoveQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	prAdapter->u4StaPendBitmap |= BIT(ucDstStaRecIdx);
+
+exit:
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
 }
 
 void nicTxDirectClearAllStaPsQ(struct ADAPTER *prAdapter)
@@ -5207,15 +5331,19 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 	uint8_t ucStaRecIndex;
 	u_int8_t fgReturnStaPsQ = FALSE;
 
+	KAL_SPIN_LOCK_DECLARATION();
+
 	if (prStaRec == NULL)
 		return;
 
 	ucStaRecIndex = prStaRec->ucIndex;
 
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	QUEUE_CONCATENATE_QUEUES(
 		&prAdapter->rStaPsQueue[ucStaRecIndex], prQue);
 	QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex],
 			  prQueueEntry, struct QUE_ENTRY *);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 	if (prMsduInfo == NULL) {
@@ -5224,8 +5352,6 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 	}
 
 	if (qmIsStaInPS(prAdapter, prStaRec)) {
-		KAL_SPIN_LOCK_DECLARATION();
-
 		DBGLOG_LIMITED(TX, INFO, "fgIsInPS!\n");
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		while (1) {
@@ -5260,20 +5386,24 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 				break;
 			}
 		}
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		if (fgReturnStaPsQ) {
 			QUEUE_INSERT_HEAD(
 				&prAdapter->rStaPsQueue[ucStaRecIndex],
 				(struct QUE_ENTRY *) prMsduInfo);
 			prAdapter->u4StaPsBitmap |= BIT(ucStaRecIndex);
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 			return;
 		}
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	} else {
 		QUEUE_INSERT_TAIL(prQue, prMsduInfo);
 		if (QUEUE_IS_NOT_EMPTY(
-			    &prAdapter->rStaPsQueue[ucStaRecIndex]))
+			    &prAdapter->rStaPsQueue[ucStaRecIndex])) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 			QUEUE_CONCATENATE_QUEUES(prQue,
 				&prAdapter->rStaPsQueue[ucStaRecIndex]);
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+		}
 	}
 	prAdapter->u4StaPsBitmap &= ~BIT(ucStaRecIndex);
 }
@@ -5300,6 +5430,32 @@ u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 #endif
 }
 
+u_int8_t nicIsEapolFrame(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+
+	/* the add key isn't completed case */
+	if ((prMsduInfo == NULL) || (prAdapter == NULL))
+		return FALSE;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsduInfo->ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TX, INFO, "prBssInfo is NULL\n");
+		return FALSE;
+	}
+
+	if (secIsProtectedBss(prAdapter, prBssInfo) &&
+	    (prMsduInfo->fgIs802_1x) &&
+	    (prMsduInfo->fgIs802_1x_NonProtected) &&
+	    (!prAdapter->fgIsPostponeTxEAPOLM3))
+		return TRUE;
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief This function is to check the Bss is net absent or not,
@@ -5317,9 +5473,16 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	*prAdapter, uint8_t ucBssIndex, struct QUE *prQue)
 {
 	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
 	struct MSDU_INFO *prMsduInfo;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-	u_int8_t fgReturnBssAbsentQ = FALSE;
+	struct QUE rTmpQue, *prTmpQue = &rTmpQue;
+	struct QUE rFreeQue, *prFreeQue = &rFreeQue;
+	struct QUE_ENTRY *prQueueEntry;
+	uint32_t u4Idx, u4Size;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	QUEUE_INITIALIZE(prTmpQue);
+	QUEUE_INITIALIZE(prFreeQue);
 
 	if (ucBssIndex > MAX_BSSID_NUM) {
 		DBGLOG(TX, INFO, "ucBssIndex is out of range!\n");
@@ -5332,10 +5495,12 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 		return;
 	}
 
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	QUEUE_CONCATENATE_QUEUES(
 		&prAdapter->rBssAbsentQueue[ucBssIndex], prQue);
 	QUEUE_REMOVE_HEAD(&prAdapter->rBssAbsentQueue[ucBssIndex],
 			  prQueueEntry, struct QUE_ENTRY *);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 	if (prMsduInfo == NULL) {
@@ -5345,47 +5510,64 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	}
 
 	if (isNetAbsent(prAdapter, prBssInfo)) {
-		KAL_SPIN_LOCK_DECLARATION();
-
 		DBGLOG(TX, TRACE, "fgIsNetAbsent!\n");
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		while (1) {
-			if (prBssInfo->ucBssFreeQuota > 0) {
-				prBssInfo->ucBssFreeQuota--;
-				QUEUE_INSERT_TAIL(prQue, prMsduInfo);
-			} else {
-				fgReturnBssAbsentQ = TRUE;
-				break;
-			}
-			if (QUEUE_IS_NOT_EMPTY(
-				    &prAdapter->rBssAbsentQueue[ucBssIndex])) {
-				QUEUE_REMOVE_HEAD(
-					&prAdapter->rBssAbsentQueue[ucBssIndex],
-					prQueueEntry, struct QUE_ENTRY *);
-				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
-			} else {
-				break;
-			}
-		}
+		QUEUE_INSERT_HEAD(
+			&prAdapter->rBssAbsentQueue[ucBssIndex],
+			(struct QUE_ENTRY *) prMsduInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		if (fgReturnBssAbsentQ) {
-			QUEUE_INSERT_HEAD(
-				&prAdapter->rBssAbsentQueue[ucBssIndex],
-				(struct QUE_ENTRY *) prMsduInfo);
-			prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
-			return;
-		} else
-			DBGLOG(TX, TRACE, "fgIsNetAbsent NoQuota\n");
-	} else {
-		if (prAdapter->u4BssAbsentTxBufferBitmap)
-			DBGLOG(TX, TRACE, "fgIsNetAbsent END!\n");
-		QUEUE_INSERT_TAIL(prQue, prMsduInfo);
-		if (QUEUE_IS_NOT_EMPTY(
-			&prAdapter->rBssAbsentQueue[ucBssIndex]))
-			QUEUE_CONCATENATE_QUEUES(prQue,
-				&prAdapter->rBssAbsentQueue[ucBssIndex]);
+		prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
+		return;
 	}
-	prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
+
+	if (prAdapter->u4BssAbsentTxBufferBitmap)
+		DBGLOG(TX, TRACE, "fgIsNetAbsent END!\n");
+
+	if (QUEUE_IS_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex])) {
+		QUEUE_INSERT_TAIL(prQue, prMsduInfo);
+		return;
+	}
+
+	QUEUE_INSERT_TAIL(prTmpQue, prMsduInfo);
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(
+		prTmpQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	u4Size = QUEUE_LENGTH(prTmpQue);
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		QUEUE_REMOVE_HEAD(prTmpQue, prQueueEntry, struct QUE_ENTRY *);
+		prMsduInfo = (struct MSDU_INFO *)prQueueEntry;
+		if (prMsduInfo == NULL) {
+			DBGLOG(TX, LOUD, "prMsduInfo empty\n");
+			continue;
+		}
+		prStaRec = cnmGetStaRecByIndex(
+			prAdapter, prMsduInfo->ucStaRecIndex);
+		if (!prStaRec) {
+			DBGLOG(NIC, WARN, "prStaRec is NULL\n");
+			QUEUE_INSERT_TAIL(prFreeQue, prMsduInfo);
+			continue;
+		}
+		if (prStaRec->fgIsTxAllowed ||
+		    nicIsEapolFrame(prAdapter, prMsduInfo))
+			QUEUE_INSERT_TAIL(prQue, prMsduInfo);
+		else
+			QUEUE_INSERT_TAIL(prTmpQue, prMsduInfo);
+	}
+
+	if (QUEUE_IS_NOT_EMPTY(prTmpQue)) {
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+		QUEUE_CONCATENATE_QUEUES(
+			&prAdapter->rBssAbsentQueue[ucBssIndex],
+			prTmpQue);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	} else {
+		prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
+	}
+
+	if (QUEUE_IS_NOT_EMPTY(prFreeQue))
+		wlanProcessQueuedMsduInfo(prAdapter, QUEUE_GET_HEAD(prFreeQue));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5440,25 +5622,13 @@ static void nicTxDirectDequeueStaPendQ(struct ADAPTER *prAdapter,
 static void nicTxDirectEnqueueStaPendQ(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
 {
-	struct BSS_INFO *prBssInfo;
-
 	KAL_SPIN_LOCK_DECLARATION();
 
 	/* the add key isn't completed case */
 	if ((prMsduInfo == NULL) || (prAdapter == NULL))
 		return;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		prMsduInfo->ucBssIndex);
-
-	if (prBssInfo == NULL) {
-		DBGLOG(TX, INFO, "prBssInfo is NULL\n");
-		return;
-	}
-
-	if (secIsProtectedBss(prAdapter, prBssInfo) &&
-	    (prMsduInfo->fgIs802_1x) && (prMsduInfo->fgIs802_1x_NonProtected) &&
-	    (!prAdapter->fgIsPostponeTxEAPOLM3)) {
+	if (nicIsEapolFrame(prAdapter, prMsduInfo)) {
 		/* The EAPoL frame can't be blocked. */
 		DBGLOG(TX, TRACE, "Is EAPoL frame\n");
 	} else {
@@ -5669,6 +5839,43 @@ void nicTxDirectClearStaAcmQ(struct ADAPTER *prAdapter,
 	prAdapter->u4StaAcmBitmap &= ~BIT(ucStaRecIdx);
 }
 
+void nicTxDirectMoveStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct QUE rMoveQue;
+	struct QUE *prMoveQue = &rMoveQue;
+	uint8_t ucAc;
+
+	QUEUE_INITIALIZE(prMoveQue);
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
+	for (ucAc = 0; ucAc < ACI_NUM; ucAc++) {
+		nicTxDirectDequeueStaAcmQ(
+			prAdapter, ucSrcStaRecIdx, ucAc, prMoveQue);
+		if (QUEUE_IS_EMPTY(prMoveQue))
+			continue;
+
+		DBGLOG(QM, INFO,
+		       "Move ACM MSDUs STA[%u->%u] TC[%u] Num[%u]\n",
+		       ucSrcStaRecIdx, ucDstStaRecIdx, ucAc,
+		       prMoveQue->u4NumElem);
+
+		prMsduInfo = QUEUE_GET_HEAD(prMoveQue);
+		while (prMsduInfo) {
+			prMsduInfo->ucStaRecIndex = ucDstStaRecIdx;
+			prMsduInfo->fgIsMovePkt = TRUE;
+			prMsduInfo = QUEUE_GET_NEXT_ENTRY(
+				&prMsduInfo->rQueEntry);
+		}
+		nicTxDirectEnqueueStaAcmQ(
+			prAdapter, ucDstStaRecIdx, ucAc, prMoveQue);
+	}
+
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
+}
+
 void nicTxDirectClearAllStaAcmQ(struct ADAPTER *prAdapter)
 {
 	uint8_t ucIdx; /* StaRec Index */
@@ -5725,6 +5932,8 @@ uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
 		if (prQueueEntry == NULL)
 			break;
 		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+		if (prMsduInfo->fgIsMovePkt)
+			nicTxFillDataDesc(prAdapter, prMsduInfo);
 		ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
 		ucBssIndex = prMsduInfo->ucBssIndex;
 		prHifQueue = &(prAdapter->rTxPQueue[ucBssIndex][ucHifTc]);
