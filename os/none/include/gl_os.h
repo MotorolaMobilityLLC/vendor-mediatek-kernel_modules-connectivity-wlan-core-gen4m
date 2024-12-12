@@ -673,6 +673,7 @@ struct PACKET_PRIVATE_DATA {
 
 	uint16_t u2IpId;		/* 2byte */
 	uint16_t u2FrameLen;	/* 2byte */
+	uint16_t u2Sn;		/* 2byte */
 	OS_SYSTIME rArrivalTime;/* 4byte total:32 */
 
 	uint64_t u8ArriveTime;	/* 8byte total:40 */
@@ -815,6 +816,12 @@ enum nl80211_wpa_versions {
 #define GLUE_GET_PKT_IS_CONTROL_PORT_TX(_p) \
 	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag & BIT(1))
 
+#define GLUE_SET_PKT_SN_VALID(_p) \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag |= BIT(2))
+
+#define GLUE_GET_PKT_IS_SN_VALID(_p) \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag & BIT(2))
+
 #define GLUE_SET_PKT_XTIME(_p, _rSysTime) \
 	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u8ArriveTime = (uint64_t)(_rSysTime))
 
@@ -836,6 +843,15 @@ enum nl80211_wpa_versions {
 
 #define GLUE_RX_GET_PKT_RX_TIME(_p) \
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u8RxTime)
+
+#define GLUE_SET_PKT_SN(_p, _rSn) \
+	do { \
+		GLUE_GET_PKT_PRIVATE_DATA(_p)->u2Sn = (uint16_t)(_rSn); \
+		GLUE_SET_PKT_SN_VALID(_p); \
+	} while (0)
+
+#define GLUE_GET_PKT_SN(_p)    \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u2Sn)
 
 /* TODO: os-related implementation */
 #define GLUE_GET_TX_PKT_ETHER_DEST_ADDR(_p)

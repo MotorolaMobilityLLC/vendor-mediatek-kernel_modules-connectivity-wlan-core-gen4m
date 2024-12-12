@@ -1342,7 +1342,7 @@ struct PACKET_PRIVATE_TX_DATA {      /* total: 24byte */
 	uint8_t ucFlag;              /* 1byte */
 	uint8_t ucSeqNo;             /* 1byte */
 	uint16_t u2FrameLen;         /* 2byte */
-	uint8_t aucReserved[2];      /* 2byte */
+	uint16_t u2Sn;               /* 2byte */
 	uint32_t u4Cookie;           /* 4byte */
 	OS_SYSTIME rArrivalTime;     /* 4byte */
 	uint64_t u8ArriveTime;       /* 8byte */
@@ -1550,6 +1550,12 @@ enum BOOTMODE {
 #define GLUE_GET_PKT_IS_CONTROL_PORT_TX(_p) \
 	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucFlag & BIT(1))
 
+#define GLUE_SET_PKT_SN_VALID(_p) \
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucFlag |= BIT(2))
+
+#define GLUE_GET_PKT_IS_SN_VALID(_p) \
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucFlag & BIT(2))
+
 #define GLUE_SET_PKT_XTIME(_p, _rSysTime) \
 	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u8ArriveTime = (uint64_t)(_rSysTime))
 
@@ -1587,6 +1593,15 @@ enum BOOTMODE {
 #define GLUE_RX_GET_PKT_PPE_TYPE(_p) \
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u4PpeType)
 #endif
+
+#define GLUE_SET_PKT_SN(_p, _rSn) \
+	do { \
+		GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u2Sn = (uint16_t)(_rSn); \
+		GLUE_SET_PKT_SN_VALID(_p); \
+	} while (0)
+
+#define GLUE_GET_PKT_SN(_p)    \
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u2Sn)
 
 #define GLUE_GET_TX_PKT_ETHER_DEST_ADDR(_p)    \
 		(((struct sk_buff *)(_p))->data)

@@ -401,6 +401,9 @@ struct MLD_BSS_INFO *mldBssGetByBss(struct ADAPTER *prAdapter,
 struct MLD_BSS_INFO *mldBssGetByIdx(struct ADAPTER *prAdapter,
 	uint8_t ucIdx);
 
+uint16_t mldBssGetGrpFrameSn(struct ADAPTER *prAdapter,
+			     struct MLD_BSS_INFO *prMldBssInfo);
+
 int8_t mldBssInit(struct ADAPTER *prAdapter);
 
 void mldBssUninit(struct ADAPTER *prAdapter);

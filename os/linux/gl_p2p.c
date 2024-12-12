@@ -1895,8 +1895,6 @@ static netdev_tx_t __p2pHardStartXmit(struct GLUE_INFO *prGlueInfo,
 		goto exit;
 	}
 
-	kalResetPacket(prGlueInfo, (void *) prSkb);
-
 	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
 
 	if (prBssInfo &&
@@ -1936,19 +1934,15 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 		goto exit;
 	}
 
-	if (is_multicast_ether_addr(prEthFrame->aucDestAddr)) {
+	if (IS_BMCAST_MAC_ADDR(prEthFrame->aucDestAddr)) {
+#if (CFG_SUPPORT_MLO_GRP_FRAME_XMIT == 1)
 		struct LINK *prBssList;
 		struct BSS_INFO *prTempBss;
 		struct sk_buff *prDupSkb = NULL;
+		uint16_t u2Sn;
 
+		u2Sn = mldBssGetGrpFrameSn(prGlueInfo->prAdapter, prMldBss);
 		prBssList = &prMldBss->rBssList;
-		if (IS_MLD_BSSINFO_MULTI(prMldBss) == FALSE) {
-			__p2pHardStartXmit(prGlueInfo,
-					   prSkb,
-					   prDev,
-					   prNetDevPrivate->ucBssIdx);
-			goto exit;
-		}
 
 		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
 				    struct BSS_INFO) {
@@ -1958,15 +1952,25 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 			prDupSkb = skb_copy(prSkb, GFP_ATOMIC);
 			if (!prDupSkb) {
 				DBGLOG(P2P, ERROR,
-					"duplicate skb failed.\n");
+					"[%u] duplicate skb failed.\n",
+					prTempBss->ucBssIndex);
 				break;
 			}
+
+			GLUE_SET_PKT_SN(prDupSkb, u2Sn);
+
 			__p2pHardStartXmit(prGlueInfo,
 					   prDupSkb,
 					   prDev,
 					   prTempBss->ucBssIndex);
 		}
 		fgFreeSkb = TRUE;
+#else
+		__p2pHardStartXmit(prGlueInfo,
+				   prSkb,
+				   prDev,
+				   prNetDevPrivate->ucBssIdx);
+#endif
 	} else if (prMldSta) {
 		struct STA_RECORD *prStarec;
 
@@ -2063,6 +2067,8 @@ netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
 		return NETDEV_TX_OK;
 	}
 #endif
+
+	kalResetPacket(prGlueInfo, (void *) prSkb);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && \
 	(KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)

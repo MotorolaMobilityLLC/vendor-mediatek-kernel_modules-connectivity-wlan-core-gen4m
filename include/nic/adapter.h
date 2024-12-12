@@ -664,6 +664,7 @@ struct MLD_BSS_INFO {
 	uint16_t u2EMLCap;
 	uint8_t ucMlcToken;
 	uint8_t ucHmloEnabled;
+	uint16_t u2GrpFrameSn;
 };
 #endif
 

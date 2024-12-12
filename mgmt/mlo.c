@@ -3951,6 +3951,25 @@ struct MLD_BSS_INFO *mldBssGetByIdx(struct ADAPTER *prAdapter,
 		return NULL;
 }
 
+uint16_t mldBssGetGrpFrameSn(struct ADAPTER *prAdapter,
+			     struct MLD_BSS_INFO *prMldBssInfo)
+{
+	uint16_t u2Sn;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MLD_GRP_SN);
+
+	u2Sn = prMldBssInfo->u2GrpFrameSn;
+	prMldBssInfo->u2GrpFrameSn++;
+	if (prMldBssInfo->u2GrpFrameSn > 4095)
+		prMldBssInfo->u2GrpFrameSn = 0;
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MLD_GRP_SN);
+
+	return u2Sn;
+}
+
 int8_t mldBssInit(struct ADAPTER *prAdapter)
 {
 	DBGLOG(ML, INFO, "Total %lu MldBssInfo\n",

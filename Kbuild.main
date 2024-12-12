@@ -1537,12 +1537,18 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     ifneq ($(CONFIG_AP_EHT_DEFAULT_VALUE),)
         ccflags-y += -DCFG_AP_EHT_DEFAULT_VALUE=$(CONFIG_AP_EHT_DEFAULT_VALUE)
     endif
+    ifeq ($(CONFIG_SUPPORT_MLO_GRP_FRAME_XMIT), y)
+        ccflags-y += -DCFG_SUPPORT_MLO_GRP_FRAME_XMIT=1
+    else
+        ccflags-y += -DCFG_SUPPORT_MLO_GRP_FRAME_XMIT=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
     ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_EPCS=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_T2LM=0
     ccflags-y += -DCFG_SUPPORT_CONTROL_PORT_OVER_NL80211=0
+    ccflags-y += -DCFG_SUPPORT_MLO_GRP_FRAME_XMIT=0
 endif
 
 ifeq ($(CONFIG_MLO_EMLSR_CONCURRENT_ENHANCEMENT), y)

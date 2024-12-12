@@ -3435,6 +3435,12 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
 			prMsduInfo->u8Cookie = GLUE_GET_PKT_COOKIE(prPacket);
 #endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (GLUE_GET_PKT_IS_SN_VALID(prMsduInfo->prPacket))
+			nicTxSetPktSequenceNumber(prMsduInfo,
+				GLUE_GET_PKT_SN(prMsduInfo->prPacket));
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 	}
 
 	/* Add dummy Tx done */

@@ -1482,6 +1482,108 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 	}
 }
 
+static struct SW_RFB *nicRxDuplicateBmcPkt(struct ADAPTER *prAdapter,
+					   struct SW_RFB *prSwRfb)
+{
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	struct SW_RFB *prSwRfbDuplicated;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < /* Reserved for others */
+	    CFG_RX_MAX_PKT_NUM - (CFG_NUM_OF_QM_RX_PKT_NUM - 16)) {
+		DBGLOG(RX, WARN,
+		      "Stop to forward BMC packet due to less free Sw Rfb %u\n",
+		      RX_GET_FREE_RFB_CNT(prRxCtrl));
+		return NULL;
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
+			  prSwRfbDuplicated, struct SW_RFB *);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+	if (!prSwRfbDuplicated)
+		return NULL;
+
+	if (kalDuplicateSwRfbSanity(prSwRfbDuplicated) !=
+	    WLAN_STATUS_SUCCESS) {
+		nicRxReturnRFB(prAdapter, prSwRfbDuplicated);
+		RX_INC_CNT(prRxCtrl, RX_POINTER_ERR_DROP_COUNT);
+		RX_INC_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT);
+		return NULL;
+	}
+
+	kalMemCopy(prSwRfbDuplicated->pucRecvBuff,
+		   prSwRfb->pucRecvBuff,
+		   ALIGN_4(prSwRfb->u2RxByteCount +
+			   HIF_RX_HW_APPENDED_LEN));
+
+	prSwRfbDuplicated->ucPacketType = RX_PKT_TYPE_RX_DATA;
+	prSwRfbDuplicated->ucStaRecIdx = prSwRfb->ucStaRecIdx;
+
+	nicRxFillRFB(prAdapter, prSwRfbDuplicated);
+	GLUE_COPY_PRIV_DATA(prSwRfbDuplicated->pvPacket,
+			    prSwRfb->pvPacket);
+
+	prSwRfbDuplicated->eDst = RX_PKT_DESTINATION_FORWARD;
+
+	return prSwRfbDuplicated;
+}
+
+static void nicRxDuplicateBmcPkts(struct ADAPTER *prAdapter,
+				  struct SW_RFB *prSwRfb,
+				  struct SW_RFB *aprSwRfbs[], uint8_t *pucNum)
+{
+	struct SW_RFB *prSwRfbDuplicated;
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_MLO_GRP_FRAME_XMIT == 1)
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct MLD_BSS_INFO *prMldBss;
+	struct LINK *prBssList;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2Sn;
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	*pucNum = 0;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_MLO_GRP_FRAME_XMIT == 1)
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		GLUE_GET_PKT_BSS_IDX(prSwRfb->pvPacket));
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prBssInfo || !prMldBss ||
+	    !p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[
+		prBssInfo->u4PrivateData]) ||
+	    !RLM_NET_IS_11BE(prBssInfo))
+		goto legacy;
+
+	prBssList = &prMldBss->rBssList;
+	u2Sn = mldBssGetGrpFrameSn(prAdapter, prMldBss);
+	LINK_FOR_EACH_ENTRY(prBssInfo, prBssList, rLinkEntryMld,
+			    struct BSS_INFO) {
+		prSwRfbDuplicated = nicRxDuplicateBmcPkt(prAdapter, prSwRfb);
+		if (!prSwRfbDuplicated)
+			break;
+
+		GLUE_SET_PKT_BSS_IDX(prSwRfbDuplicated->pvPacket,
+				     prBssInfo->ucBssIndex);
+		GLUE_SET_PKT_SN(prSwRfbDuplicated->pvPacket, u2Sn);
+		prSwRfbDuplicated->ucWlanIdx = prBssInfo->ucBMCWlanIndex;
+
+		aprSwRfbs[(*pucNum)++] = prSwRfbDuplicated;
+	}
+
+	return;
+
+legacy:
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	prSwRfbDuplicated = nicRxDuplicateBmcPkt(prAdapter, prSwRfb);
+	if (!prSwRfbDuplicated)
+		return;
+
+	aprSwRfbs[(*pucNum)++] = prSwRfbDuplicated;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process broadcast data packet for both host and forwarding
@@ -1496,65 +1598,19 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 void nicRxProcessGOBroadcastPkt(struct ADAPTER
 				*prAdapter, struct SW_RFB *prSwRfb)
 {
-	struct SW_RFB *prSwRfbDuplicated = NULL;
-	struct TX_CTRL *prTxCtrl;
-	struct RX_CTRL *prRxCtrl;
+	struct SW_RFB *aprSwRfbs[MLD_LINK_MAX];
+	uint8_t ucIdx, ucNum = 0;
 
 	_Static_assert(CFG_NUM_OF_QM_RX_PKT_NUM >= 16,
 			"CFG_NUM_OF_QM_RX_PKT_NUM too small");
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prTxCtrl = &prAdapter->rTxCtrl;
-	prRxCtrl = &prAdapter->rRxCtrl;
-
-	do {
-		if (RX_GET_FREE_RFB_CNT(prRxCtrl) < /* Reserved for others */
-		    CFG_RX_MAX_PKT_NUM - (CFG_NUM_OF_QM_RX_PKT_NUM - 16)) {
-			DBGLOG(RX, WARN,
-			      "Stop to forward BMC packet due to less free Sw Rfb %u\n",
-			      RX_GET_FREE_RFB_CNT(prRxCtrl));
-			break;
-		}
-
-		/* 1. Duplicate SW_RFB_T */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
-				  prSwRfbDuplicated, struct SW_RFB *);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
-		if (!prSwRfbDuplicated)
-			break;
-
-		if (kalDuplicateSwRfbSanity(prSwRfbDuplicated) !=
-				WLAN_STATUS_SUCCESS) {
-			nicRxReturnRFB(prAdapter, prSwRfbDuplicated);
-			RX_INC_CNT(prRxCtrl, RX_POINTER_ERR_DROP_COUNT);
-			RX_INC_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT);
-			break;
-		}
-
-		kalMemCopy(prSwRfbDuplicated->pucRecvBuff,
-			   prSwRfb->pucRecvBuff,
-			   ALIGN_4(prSwRfb->u2RxByteCount +
-				   HIF_RX_HW_APPENDED_LEN));
-
-		prSwRfbDuplicated->ucPacketType = RX_PKT_TYPE_RX_DATA;
-		prSwRfbDuplicated->ucStaRecIdx = prSwRfb->ucStaRecIdx;
-
-		nicRxFillRFB(prAdapter, prSwRfbDuplicated);
-		GLUE_COPY_PRIV_DATA(prSwRfbDuplicated->pvPacket,
-			prSwRfb->pvPacket);
-
-		/* 2. Modify eDst */
-		prSwRfbDuplicated->eDst = RX_PKT_DESTINATION_FORWARD;
-
-		/* 4. Forward */
-		nicRxProcessForwardPkt(prAdapter, prSwRfbDuplicated);
-	} while (0);
+	kalMemZero(aprSwRfbs, sizeof(aprSwRfbs));
+	nicRxDuplicateBmcPkts(prAdapter, prSwRfb, aprSwRfbs, &ucNum);
+	for (ucIdx = 0; ucIdx < ucNum; ucIdx++)
+		nicRxProcessForwardPkt(prAdapter, aprSwRfbs[ucIdx]);
 
 	/* 3. Indicate to host */
 	prSwRfb->eDst = RX_PKT_DESTINATION_HOST;
