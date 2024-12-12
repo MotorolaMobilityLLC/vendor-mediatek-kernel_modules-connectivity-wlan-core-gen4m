@@ -5643,7 +5643,6 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 				ucOpMaxBw = MAX_BW_20MHZ;
 			}
 		}
-
 		/* The limited BW is decided by DRV/FW capability.
 		 * It should be modified if someday BW_80_80 or
 		 * BW_320_2 supported.
@@ -5837,7 +5836,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 			prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 			DBGLOG(CNM, INFO,
 				"Bss[%d] is in roaming state\n", ucBssIndex);
-			return CNM_OPMODE_REQ_STATUS_DEFER;
+			ucSendAct = FALSE;
 		}
 #endif
 		/* Step 3. Special rule for BW change (DBDC)
