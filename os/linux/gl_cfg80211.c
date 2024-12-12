@@ -7103,17 +7103,20 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		return -EINVAL;
 	}
 
-	/* exclude wlan0 (index 0) since its netdev is NOT created by
-	 * cfg80211, and wlan0's netdev life cycle must be the same
-	 * as driver on/off
-	 */
-	for (ucIdx = 1; ucIdx < KAL_AIS_NUM; ucIdx++) {
-		if (gprWdev[ucIdx] == wdev)
-			break;
-	}
-	if (ucIdx >= KAL_AIS_NUM) {
-		DBGLOG(REQ, WARN, "can NOT find matching wireless dev.\n");
-		return -EINVAL;
+	if (KAL_AIS_NUM > 1) {
+		/* exclude wlan0 (index 0) since its netdev is NOT created by
+		 * cfg80211, and wlan0's netdev life cycle must be the same
+		 * as driver on/off
+		 */
+		for (ucIdx = 1; ucIdx < KAL_AIS_NUM; ucIdx++) {
+			if (gprWdev[ucIdx] == wdev)
+				break;
+		}
+		if (ucIdx >= KAL_AIS_NUM) {
+			DBGLOG(REQ, WARN,
+				"can NOT find matching wireless dev.\n");
+			return -EINVAL;
+		}
 	}
 
 	prWdev = gprWdev[ucAisIndex];
