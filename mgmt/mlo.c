@@ -4488,6 +4488,7 @@ uint32_t mldUpdateTidBitmap(struct ADAPTER *prAdapter,
 			       sizeof(struct UNI_CMD_STAREC_T2LM);
 	struct LINK *prStarecList = &prMldStaRec->rStarecList;
 	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
 	uint16_t widx = 0;
 
 	prStaRec = LINK_PEEK_HEAD(prStarecList,
@@ -4526,11 +4527,17 @@ uint32_t mldUpdateTidBitmap(struct ADAPTER *prAdapter,
 	link = (struct UNI_CMD_STAREC_LINK_INFO *)tag->aucLinkInfo;
 	LINK_FOR_EACH_ENTRY(prStaRec, prStarecList, rLinkEntryMld,
 			struct STA_RECORD) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
+		if (!prBssInfo)
+			continue;
+
 		link->ucBssIdx = prStaRec->ucBssIndex;
 		link->u2WlanIdx = prStaRec->ucWlanIndex;
 		link->ucTidBitmap = prStaRec->ucULTidBitmap;
-		DBGLOG(ML, INFO, "\tbss=%d,wlan_idx=%d,tid=0x%x\n",
-			link->ucBssIdx, link->u2WlanIdx, link->ucTidBitmap);
+		DBGLOG(ML, INFO, "\tband=%d,bss=%d,wlan_idx=%d,tid=0x%x\n",
+			prBssInfo->eBand, link->ucBssIdx,
+			link->u2WlanIdx, link->ucTidBitmap);
 		link++;
 	}
 

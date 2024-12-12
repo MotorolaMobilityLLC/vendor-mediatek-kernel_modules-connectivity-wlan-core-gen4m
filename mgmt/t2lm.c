@@ -185,10 +185,12 @@ uint32_t t2lmReqTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, INFO,
-		"T2LM TX DONE, WIDX:PID:SN[%u:%u:%u] Status[%u], SeqNo: %d\n",
-		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
+		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
+		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 
@@ -214,6 +216,7 @@ uint32_t t2lmRspTxDoneCb(struct ADAPTER *prAdapter,
 	struct EVENT_TX_DONE *prTxDone;
 	struct STA_RECORD *prStaRec;
 	struct MLD_STA_RECORD *prMldStaRec;
+	struct BSS_INFO *prBssInfo;
 
 	prTxDone = prMsduInfo->prTxDone;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -224,9 +227,13 @@ uint32_t t2lmRspTxDoneCb(struct ADAPTER *prAdapter,
 	if (!prMldStaRec)
 		return WLAN_STATUS_FAILURE;
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
 	DBGLOG(TX, INFO,
-		"T2LM TX DONE, WIDX:PID:SN[%u:%u:%u] Status[%u], SeqNo: %d\n",
-		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
+		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
+		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 
@@ -240,6 +247,7 @@ uint32_t t2lmTeardownTxDoneCb(struct ADAPTER *prAdapter,
 	struct EVENT_TX_DONE *prTxDone;
 	struct STA_RECORD *prStaRec;
 	struct MLD_STA_RECORD *prMldStaRec;
+	struct BSS_INFO *prBssInfo;
 
 	prTxDone = prMsduInfo->prTxDone;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -250,9 +258,13 @@ uint32_t t2lmTeardownTxDoneCb(struct ADAPTER *prAdapter,
 	if (!prMldStaRec)
 		return WLAN_STATUS_FAILURE;
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
 	DBGLOG(TX, INFO,
-		"T2LM TX DONE, WIDX:PID:SN[%u:%u:%u] Status[%u], SeqNo: %d\n",
-		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
+		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
+		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 
