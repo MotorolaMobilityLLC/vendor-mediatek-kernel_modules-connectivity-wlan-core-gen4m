@@ -1789,6 +1789,9 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		kalP2pNotifyDisconnComplete(prAdapter,
 			prP2pBssInfo->u4PrivateData);
 
+	if (IS_BSS_APGO(prP2pBssInfo))
+		prP2pBssInfo->fgIsApGoStarted = FALSE;
+
 	/* Reset current OPMode */
 	prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 	prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
