@@ -3791,15 +3791,15 @@ struct _NAN_EVENT_DEVICE_INFO {
 	uint8_t ucFwElectionEnable;
 	uint32_t u4NanDeviceRole;
 	uint32_t u4NanDeviceState;
-	uint8_t ucMastrPreference;
+	uint8_t ucMasterPreference;
 	uint8_t ucRandomFactor;
 	uint8_t ucHopCount;
 	uint8_t aucClusterID[MAC_ADDR_LEN];
-	uint8_t aucAnchorMastrMacAddr[MAC_ADDR_LEN];
-	uint8_t ucAmMastrPreference;
+	uint8_t aucAnchorMasterMacAddr[MAC_ADDR_LEN];
+	uint8_t ucAmMasterPreference;
 	uint8_t ucAmRandomFactor;
 	uint8_t aucParentMacAddr[MAC_ADDR_LEN];
-	uint8_t ucParentMastrPreference;
+	uint8_t ucParentMasterPreference;
 	uint8_t ucParentRandomFactor;
 	uint32_t u4AMBTT;
 	uint32_t au4Tsf[2];
@@ -3822,7 +3822,7 @@ struct _NAN_EVENT_REPORT_BEACON {
 enum _ENUM_NAN_SUB_CMD {
 	NAN_CMD_TEST, /* 0 */
 	NAN_TXM_TEST,
-	NAN_CMD_MASTR_PREFERENCE,
+	NAN_CMD_MASTER_PREFERENCE,
 	NAN_CMD_HOP_COUNT,
 	NAN_CMD_PUBLISH,
 	NAN_CMD_CANCEL_PUBLISH, /* 5 */

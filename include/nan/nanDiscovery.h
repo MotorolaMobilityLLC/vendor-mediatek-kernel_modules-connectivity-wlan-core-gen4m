@@ -64,7 +64,7 @@ struct NAN_DE_EVENT {
 	uint8_t ucClusterId[MAC_ADDR_LEN];
 	uint8_t aucAnchorMasterRank[ANCHOR_MASTER_RANK_NUM];
 	uint8_t ucOwnNmi[MAC_ADDR_LEN];
-	uint8_t ucMastrNmi[MAC_ADDR_LEN];
+	uint8_t ucMasterNmi[MAC_ADDR_LEN];
 };
 
 struct NAN_DISABLE_EVENT {

@@ -396,7 +396,7 @@ nanDevSetMasterPreference(
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus = nicNanAddNewTlvElement(NAN_CMD_MASTR_PREFERENCE,
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_MASTER_PREFERENCE,
 				    sizeof(struct _NAN_CMD_MASTER_PREFERENCE_T),
 				    u4CmdBufferLen, prCmdBuffer);
 	if (rStatus != WLAN_STATUS_SUCCESS) {

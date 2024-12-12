@@ -4917,7 +4917,7 @@ struct UNI_CMD_NAN {
 
 /* NAN set command Tag */
 enum ENUM_UNI_CMD_NAN_TAG {
-	UNI_CMD_NAN_TAG_SET_MASTR_PREFERENCE = 0,
+	UNI_CMD_NAN_TAG_SET_MASTER_PREFERENCE = 0,
 	UNI_CMD_NAN_TAG_PUBLISH = 1,
 	UNI_CMD_NAN_TAG_CANCEL_PUBLISH = 2,
 	UNI_CMD_NAN_TAG_UPDATE_PUBLISH = 3,
@@ -9746,6 +9746,11 @@ uint32_t nicUniCmdTestmodeRxStatTlv(struct ADAPTER *ad,
 	uint32_t u4QueryBufferLen);
 
 #endif
+
+#if (CFG_SUPPORT_NAN == 1)
+int32_t nanGetSubCmdId(uint32_t tag, uint16_t *u2CmdTag);
+#endif
+
 uint32_t nicUniCmdSetTxAmpdu(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetRxAmpdu(struct ADAPTER *ad,

@@ -2665,7 +2665,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 			   NAN_EVENT_ID_JOINED_CLUSTER)
 			nanLogJoinCluster(prDeEvt->ucClusterId);
 		DBGLOG(NAN, DEBUG,
-		       "AnchorMastrRank=%02x%02x%02x%02x%02x%02x%02x%02x\n",
+		       "AnchorMasterRank=%02x%02x%02x%02x%02x%02x%02x%02x\n",
 		       prDeEvt->aucAnchorMasterRank[0],
 		       prDeEvt->aucAnchorMasterRank[1],
 		       prDeEvt->aucAnchorMasterRank[2],
@@ -2678,10 +2678,10 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 		       prDeEvt->ucOwnNmi[0], prDeEvt->ucOwnNmi[1],
 		       prDeEvt->ucOwnNmi[2], prDeEvt->ucOwnNmi[3],
 		       prDeEvt->ucOwnNmi[4], prDeEvt->ucOwnNmi[5]);
-		DBGLOG(NAN, DEBUG, "MastrNMI=%02x%02x%02x%02x%02x%02x\n",
-		       prDeEvt->ucMastrNmi[0], prDeEvt->ucMastrNmi[1],
-		       prDeEvt->ucMastrNmi[2], prDeEvt->ucMastrNmi[3],
-		       prDeEvt->ucMastrNmi[4], prDeEvt->ucMastrNmi[5]);
+		DBGLOG(NAN, DEBUG, "MasterNMI=%02x%02x%02x%02x%02x%02x\n",
+		       prDeEvt->ucMasterNmi[0], prDeEvt->ucMasterNmi[1],
+		       prDeEvt->ucMasterNmi[2], prDeEvt->ucMasterNmi[3],
+		       prDeEvt->ucMasterNmi[4], prDeEvt->ucMasterNmi[5]);
 	}
 
 	if (prDeEvt->ucEventType == NAN_EVENT_ID_DISC_MAC_ADDR)

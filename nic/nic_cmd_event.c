@@ -6336,7 +6336,7 @@ const char *nanCmdTagString(uint32_t tag)
 	const char * const nanTagStr[] = {
 		[NAN_CMD_TEST] = "Test",
 		[NAN_TXM_TEST] = "TXM Test",
-		[NAN_CMD_MASTR_PREFERENCE] = "Mastr Preference",
+		[NAN_CMD_MASTER_PREFERENCE] = "Master Preference",
 		[NAN_CMD_HOP_COUNT] = "Hop Count",
 		[NAN_CMD_PUBLISH] = "Publish",
 		[NAN_CMD_CANCEL_PUBLISH] = "Cancel Publish", /* 5 */
@@ -6406,6 +6406,18 @@ const char *nanCmdTagString(uint32_t tag)
 	return "";
 }
 
+void nanGetSubCmdIdString(uint32_t tag, char subcmd[], size_t szBufSize)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint16_t u2CmdTag = -1;
+
+	if (nanGetSubCmdId(tag, &u2CmdTag) >= 0)
+		kalSnprintf(subcmd, szBufSize, "(Subcmd:%d),", u2CmdTag);
+#else
+	kalSnprintf(subcmd, szBufSize, ",");
+#endif
+}
+
 /**
  * nicNanAddNewTlvElement() - Add an element to NAN TLV structure
  * @u4Tag: Tag of new TLV
@@ -6432,6 +6444,7 @@ uint32_t nicNanAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
 {
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement;
 	uint32_t u4TotalLen;
+	char subcmd[20] = {0};
 
 	/* Get pointer to new element (the one right after current last) */
 	prTlvElement = nicNanGetTargetTlvElement(
@@ -6463,9 +6476,11 @@ uint32_t nicNanAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
 	 * body_length here only counts the following data field
 	 */
 	prTlvElement->body_len = u4BodyLen;
-	DBGLOG(NAN, INFO, "Add cmd to firmware:%u(%s), len:%u\n",
-	       prTlvElement->tag_type, nanCmdTagString(prTlvElement->tag_type),
-	       prTlvElement->body_len);
+	nanGetSubCmdIdString(prTlvElement->tag_type, subcmd, sizeof(subcmd));
+	DBGLOG(NAN, INFO, "Add cmd to firmware:%u(%s)%s, len:%u\n",
+	       prTlvElement->tag_type,
+	       nanCmdTagString(prTlvElement->tag_type),
+	       subcmd, prTlvElement->body_len);
 
 	return WLAN_STATUS_SUCCESS;
 }

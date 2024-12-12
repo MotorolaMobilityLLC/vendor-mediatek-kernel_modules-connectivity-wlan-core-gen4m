@@ -10989,28 +10989,34 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	union _NAN_BAND_CHNL_CTRL ChCtl = {0};
 	union _NAN_BAND_CHNL_CTRL ct = {0};
 	uint32_t u4OpClass = 0;
-	uint8_t aucRole[5][16] = {"ROLE_NONE",
-						"ANCHOR_MASTR",
-						"ROLE_MASTR",
-						"ROLE_NON_MASTR",
-						"ROLE_NUM"};
-	uint8_t aucState[4][20] = {"STATE_NONE",
-						"NON_MASTR_SYNC",
-						"NON_MASTR_NON_SYNC",
-						"STATE_NUM"};
-	uint8_t aucNdpState[13][37] = {"NDP_IDLE",
-						"NDP_INITIATOR_TX_DP_REQUEST",
-						"NDP_INITIATOR_RX_DP_RESPONSE",
-						"NDP_INITIATOR_TX_DP_CONFIRM",
-						"NDP_INITIATOR_RX_DP_SECURITY_INSTALL",
-						"NDP_RESPONDER_WAIT_DATA_RSP",
-						"NDP_RESPONDER_TX_DP_RESPONSE",
-						"NDP_RESPONDER_RX_DP_CONFIRM",
-						"NDP_RESPONDER_TX_DP_SECURITY_INSTALL",
-						"NDP_NORMAL_TR",
-						"NDP_TX_DP_TERMINATION",
-						"NDP_DISCONNECT",
-						"NDP_PROTOCOL_STATE_NUM"};
+	static const char * const aucRole[] = {
+		"ROLE_NONE",
+		"ANCHOR_MASTER",
+		"ROLE_MASTER",
+		"ROLE_NON_MASTER",
+		"ROLE_NUM"
+	};
+	static const char * const aucState[] = {
+		"STATE_NONE",
+		"NON_MASTER_SYNC",
+		"NON_MASTER_NON_SYNC",
+		"STATE_NUM"
+	};
+	static const char * const aucNdpState[] = {
+		"NDP_IDLE",
+		"NDP_INITIATOR_TX_DP_REQUEST",
+		"NDP_INITIATOR_RX_DP_RESPONSE",
+		"NDP_INITIATOR_TX_DP_CONFIRM",
+		"NDP_INITIATOR_RX_DP_SECURITY_INSTALL",
+		"NDP_RESPONDER_WAIT_DATA_RSP",
+		"NDP_RESPONDER_TX_DP_RESPONSE",
+		"NDP_RESPONDER_RX_DP_CONFIRM",
+		"NDP_RESPONDER_TX_DP_SECURITY_INSTALL",
+		"NDP_NORMAL_TR",
+		"NDP_TX_DP_TERMINATION",
+		"NDP_DISCONNECT",
+		"NDP_PROTOCOL_STATE_NUM"
+	};
 
 	if (!prNetDev) {
 		DBGLOG(NAN, ERROR, "prNetDev error!\n");
@@ -11090,24 +11096,24 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 			MAC2STR(prEventDeviceInfo->aucSelfMacAddr));
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "Mastr Preference         = %3u, Random Factor       = %3u\n",
-	       prEventDeviceInfo->ucMastrPreference,
+	       "Master Preference         = %3u, Random Factor       = %3u\n",
+	       prEventDeviceInfo->ucMasterPreference,
 	       prEventDeviceInfo->ucRandomFactor);
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"\nAnchor Mastr["MACSTR"]\n",
-		MAC2STR(prEventDeviceInfo->aucAnchorMastrMacAddr));
+		"\nAnchor Master["MACSTR"]\n",
+		MAC2STR(prEventDeviceInfo->aucAnchorMasterMacAddr));
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "AM Mastr Preference      = %3u, AM Random Factor    = %3u\n",
-	       prEventDeviceInfo->ucAmMastrPreference,
+	       "AM Master Preference      = %3u, AM Random Factor    = %3u\n",
+	       prEventDeviceInfo->ucAmMasterPreference,
 	       prEventDeviceInfo->ucAmRandomFactor);
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"\nParent["MACSTR"]\n",
 		MAC2STR(prEventDeviceInfo->aucParentMacAddr));
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "Parent Mastr Preference  = %3u, Parent Random Factor = %3u\n",
-	       prEventDeviceInfo->ucParentMastrPreference,
+	       "Parent Master Preference  = %3u, Parent Random Factor = %3u\n",
+	       prEventDeviceInfo->ucParentMasterPreference,
 	       prEventDeviceInfo->ucParentRandomFactor);
 
 	/* Data Path */
