@@ -4667,7 +4667,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		pfnOidHandler = wlanoidExtRfTestICapStart;
 		break;
 	case OP_WLAN_OID_SET_TEST_ICAP_ABORT:
-		i4Status = ServiceIcapDeInit(prAdapter);
+		ServiceIcapDeInit(prAdapter);
 		pfnOidHandler = wlanoidExtRfTestICapStart;
 		break;
 	case OP_WLAN_OID_SET_TEST_ICAP_STATUS:
