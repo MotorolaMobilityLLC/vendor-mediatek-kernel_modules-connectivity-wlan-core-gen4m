@@ -545,7 +545,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgStatus = TRUE;
 	u_int8_t fgTimeout;
-	u_int8_t fgResult;
+	u_int8_t fgResult = FALSE;
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
 	uint32_t i = 0, u4CurrTick = 0, u4chkTick = 0;
 	uint32_t u4DrvOwnElapsed = 0, u4Send = 0;
@@ -625,6 +625,9 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
+		if (fgResult)
+			goto done;
+
 #if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 		if (test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prAdapter->prGlueInfo->fgIsInSuspend)) {
@@ -648,10 +651,9 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 					LP_OWN_BACK_TOTAL_DELAY_MS)
 					? TRUE : FALSE;
 		}
-
+done:
 		if (fgResult) {
 #if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
-done:
 			clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 				&prAdapter->prGlueInfo->ulFlag);
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */

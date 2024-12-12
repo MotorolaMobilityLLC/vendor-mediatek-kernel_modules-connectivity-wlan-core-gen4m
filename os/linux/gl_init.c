@@ -246,6 +246,10 @@ static uint8_t *apucEepromName[] = {
 };
 #endif
 
+#if CFG_ENABLE_WAKE_LOCK
+static KAL_WAKE_LOCK_T * prPwrWakeLock;
+#endif /* CFG_ENABLE_WAKE_LOCK */
+
 #if CFG_SUPPORT_BUFFER_MODE
 uint8_t	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
 	/* 0x000 ~ 0x00F */
@@ -8867,6 +8871,11 @@ int wlanFuncOnImpl(void)
 		uShutdownState = SHUTDOWN_STATE_INIT;
 #endif
 
+#if CFG_ENABLE_WAKE_LOCK
+	if (!KAL_WAKE_LOCK_ACTIVE(NULL, prPwrWakeLock))
+		KAL_WAKE_LOCK(NULL, prPwrWakeLock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	power_throttling_pre_start();
 #endif
@@ -8889,6 +8898,10 @@ power_throttling_post_stop:
 	if (chip)
 		wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
 exit:
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(NULL, prPwrWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prPwrWakeLock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
 	return ret;
 }
 
@@ -8896,6 +8909,10 @@ void wlanFuncOffImpl(void)
 {
 	struct mt66xx_chip_info *chip = NULL;
 
+#if CFG_ENABLE_WAKE_LOCK
+	if (!KAL_WAKE_LOCK_ACTIVE(NULL, prPwrWakeLock))
+		KAL_WAKE_LOCK(NULL, prPwrWakeLock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
 	glBusFuncOff();
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	power_throttling_post_stop();
@@ -8904,6 +8921,10 @@ void wlanFuncOffImpl(void)
 	glGetChipInfo((void **)&chip);
 	if (chip)
 		wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(NULL, prPwrWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prPwrWakeLock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
 }
 
 int wlanFuncOn(void)
@@ -9109,15 +9130,20 @@ static int initWlan(void)
 		goto INIT_WLAN_RETURN;
 	}
 
+#if (CFG_CHIP_RESET_SUPPORT)
+	glResetInit(prGlueInfo);
+#endif
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(NULL, prPwrWakeLock, "WLAN_Power_Ctrl");
+#endif /* CFG_ENABLE_WAKE_LOCK */
+
 #if (!CFG_MTK_ANDROID_WMT)
 	ret = glBusFuncOn();
 	if (ret)
 		DBGLOG(INIT, ERROR, "glBusFuncOn failed.\n");
 #endif /* CFG_MTK_ANDROID_WMT */
 
-#if (CFG_CHIP_RESET_SUPPORT)
-	glResetInit(prGlueInfo);
-#endif
 	kalFbNotifierReg(prGlueInfo);
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -9219,6 +9245,12 @@ static void exitWlan(void)
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	kalBatNotifierUnReg();
 #endif
+
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(NULL, prPwrWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prPwrWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prPwrWakeLock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
 
 #if CFG_CHIP_RESET_SUPPORT
 #if CFG_CHIP_RESET_KO_SUPPORT
