@@ -1217,7 +1217,7 @@ bool halInitOneMsduTokenInfo(struct ADAPTER *prAdapter,
 	return true;
 }
 
-void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
+u_int8_t halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
@@ -1238,6 +1238,10 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 		kalRoundUpPowerOf2(HIF_TX_MSDU_TOKEN_NUM) * sizeof(void *);
 	prTokenInfo->aucTokenFifoBuf = kalMemAlloc(
 		prTokenInfo->u4TokenFifoLen, VIR_MEM_TYPE);
+	if (!prTokenInfo->aucTokenFifoBuf) {
+		DBGLOG(HAL, ERROR, "token fifo buf alloc failed\n");
+		return FALSE;
+	}
 	KAL_FIFO_INIT(&prTokenInfo->rTokenFifo,
 		      prTokenInfo->aucTokenFifoBuf,
 		      prTokenInfo->u4TokenFifoLen);
@@ -1310,6 +1314,7 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 	halGetTxCmaNonCacheMemUsage();
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
+	return TRUE;
 }
 
 void halUninitOneMsduTokenInfo(struct ADAPTER *prAdapter,
@@ -1936,7 +1941,8 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 			return false;
 
 		halWpdmaInitRing(prAdapter->prGlueInfo, true);
-		halInitMsduTokenInfo(prAdapter);
+		if (!halInitMsduTokenInfo(prAdapter))
+			return false;
 	}
 	/* Initialize wfdma reInit handshake parameters */
 	if ((prChipInfo->asicWfdmaReInit)

@@ -1266,7 +1266,7 @@ bool halInitOneMsduTokenInfo(struct ADAPTER *prAdapter,
 	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx);
 void halUninitOneMsduTokenInfo(struct ADAPTER *prAdapter,
 	struct MSDU_TOKEN_ENTRY *prToken);
-void halInitMsduTokenInfo(struct ADAPTER *prAdapter);
+u_int8_t halInitMsduTokenInfo(struct ADAPTER *prAdapter);
 void halUninitMsduTokenInfo(struct ADAPTER *prAdapter);
 uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter);
 struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
