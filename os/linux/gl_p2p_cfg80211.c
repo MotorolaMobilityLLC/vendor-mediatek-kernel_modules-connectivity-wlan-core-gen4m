@@ -2109,7 +2109,9 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 					 settings->sae_h2e_required);
 #endif
 
-#if KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE
+		punct_bitmap = settings->chandef.punctured;
+#elif KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
 		punct_bitmap = settings->punct_bitmap;
 #endif
 
@@ -2552,7 +2554,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		kalChannelFormatSwitch(&params->chandef, params->chandef.chan,
 				       &rRfChnlInfo);
 
-#if KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE
+		punct_bitmap = params->chandef.punctured;
+#elif KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
 		punct_bitmap = params->punct_bitmap;
 #endif
 

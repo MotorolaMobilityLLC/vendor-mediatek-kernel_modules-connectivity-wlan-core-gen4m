@@ -2880,7 +2880,13 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 #endif
 	}
 
-#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
+#if (KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
+	chandef.punctured = prAdapter->rWifiVar.u2NewPunctBitmap;
+#endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
+					  ucLinkIdx, ucCsaCount, fgQuiet);
+#elif (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
 					  ucLinkIdx, ucCsaCount, fgQuiet, 0);
@@ -3070,7 +3076,13 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
 #endif
 
-#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_SUPPORT_802_11BE == 1)
+	chandef.punctured = prBssInfo->u2EhtDisSubChanBitmap;
+#endif /* CFG_SUPPORT_802_11BE */
+	cfg80211_ch_switch_notify(prNetdevice, &chandef,
+		linkIdx);
+#elif (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
 		linkIdx, 0);
 #elif (CFG_ADVANCED_80211_MLO == 1)

@@ -13106,7 +13106,10 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	mutex_lock(&prDevHandler->ieee80211_ptr->mtx);
 #endif
 
-#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prDevHandler, &chandef,
+		linkIdx);
+#elif (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx, 0);
 #elif (CFG_ADVANCED_80211_MLO == 1)
