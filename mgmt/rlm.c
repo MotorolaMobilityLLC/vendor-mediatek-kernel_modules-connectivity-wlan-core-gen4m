@@ -4119,9 +4119,13 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
 				(struct IE_MTK_PRE_WIFI7 *)ie;
 
+			DBGLOG_MEM8(RLM, TRACE, ie, IE_SIZE(ie));
+			if (IE_SIZE(prPreWifi7) <
+			    sizeof(struct IE_MTK_PRE_WIFI7))
+				return;
+
 			DBGLOG(RLM, TRACE, "MTK_OUI_PRE_WIFI7 %d.%d",
 				prPreWifi7->ucVersion1, prPreWifi7->ucVersion0);
-			DBGLOG_MEM8(RLM, TRACE, ie, IE_SIZE(ie));
 
 			sub = prPreWifi7->aucInfoElem;
 			sub_len = IE_LEN(prPreWifi7) - 2;
