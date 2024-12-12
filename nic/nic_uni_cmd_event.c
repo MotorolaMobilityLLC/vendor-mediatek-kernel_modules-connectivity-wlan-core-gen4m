@@ -14924,6 +14924,9 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint32_t fixed_len = sizeof(struct UNI_EVENT_UPDATE_LP);
 	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	struct GL_HIF_INFO *prHifInfo = NULL;
+#endif /* CFG_PCIE_GEN_SWITCH */
 
 	/* underflow check */
 	if (data_len < fixed_len) {
@@ -14965,9 +14968,21 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				"[Gen Switch] event status [%d]\n",
 					info->ucGenSwitchStatus);
 
+			prHifInfo = &ad->prGlueInfo->rHifInfo;
+
+			if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+					   ERR_RECOV_STOP_IDLE) {
+				DBGLOG(INIT, ERROR, "SER on-going\n");
+				wlandioStopPcieStatus(ad,
+					PCIE_MD_REJECT_GEN_SWITCH);
+			} else {
 #if CFG_MTK_MDDP_SUPPORT
-			mddpNotifyMDGenSwitchStart(ad);
+				mddpNotifyMDGenSwitchStart(ad);
+#else
+				wlandioStopPcieStatus(ad,
+					PCIE_STOP_TRANSITION_END);
 #endif
+			}
 		}
 			break;
 #endif
