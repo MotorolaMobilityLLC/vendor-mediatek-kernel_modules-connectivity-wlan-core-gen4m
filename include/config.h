@@ -1432,6 +1432,10 @@
 #define CFG_SUPPORT_MLO_HYBRID     0
 #endif
 
+#ifndef CFG_SUPPORT_FORCE_LINK_SORT
+#define CFG_SUPPORT_FORCE_LINK_SORT      0
+#endif
+
 #ifndef CFG_SINGLE_BAND_MLSR_56
 #define CFG_SINGLE_BAND_MLSR_56                  0
 #endif

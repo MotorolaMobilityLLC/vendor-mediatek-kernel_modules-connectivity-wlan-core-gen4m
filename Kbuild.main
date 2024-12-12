@@ -1360,6 +1360,9 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_MLO_HYBRID), y)
 	ccflags-y += -DCFG_SUPPORT_MLO_HYBRID=1
+	ifeq ($(CONFIG_SUPPORT_FORCE_LINK_SORT), y)
+		ccflags-y += -DCFG_SUPPORT_FORCE_LINK_SORT=1
+	endif
 endif
 
 ifeq ($(CONFIG_SUPPORT_BW320), y)

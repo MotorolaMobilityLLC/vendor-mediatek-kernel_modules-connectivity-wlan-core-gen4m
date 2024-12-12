@@ -3028,6 +3028,10 @@ struct ADAPTER {
 #endif
 	uint32_t u4CurPrdcIntTime;
 
+#if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
+	uint8_t ucForceLinkSort;
+	uint8_t ucForceLinkSortType;
+#endif
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

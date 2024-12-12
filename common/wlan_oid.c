@@ -6920,7 +6920,45 @@ wlanoidQuerySwCtrlRead(struct ADAPTER *prAdapter,
 		case 0x04:
 			halDumpHifStatus(prAdapter, NULL, 0);
 			break;
-
+#if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
+		case 0x10:
+			switch (u2SubId & BITS(0, 7)) {
+			case 0xff:
+				/*Enable Force mode*/
+				prAdapter->ucForceLinkSort = TRUE;
+				break;
+			case 0xfe:
+				/*disable Force mode*/
+				prAdapter->ucForceLinkSort = FALSE;
+				break;
+			case 0x21:
+				/*Force Hybrid link Sort as(6,5,2)*/
+				prAdapter->ucForceLinkSortType = 0x21;
+				break;
+			case 0x20:
+				/*Force Hybrid link Sort as(6,2,5)*/
+				prAdapter->ucForceLinkSortType = 0x20;
+				break;
+			case 0x11:
+				/*Force Hybrid link Sort as(5,6,2)*/
+				prAdapter->ucForceLinkSortType = 0x11;
+				break;
+			case 0x10:
+				/*Force Hybrid link Sort as(5,2,6)*/
+				prAdapter->ucForceLinkSortType = 0x10;
+				break;
+			case 0x01:
+				/*Force Hybrid link Sort as(2,6,5)*/
+				prAdapter->ucForceLinkSortType = 0x01;
+				break;
+			case 0x00:
+				/*Force Hybrid link Sort as(2,5,6)*/
+			default:
+				prAdapter->ucForceLinkSortType = 0x00;
+				break;
+			}
+			break;
+#endif
 		default:
 			break;
 		}
