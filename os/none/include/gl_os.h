@@ -1111,8 +1111,11 @@ extern void connectivity_arch_setup_dma_ops(
 #endif
 
 #define wlanHardStartXmit(_prSkb, _prDev)
+
 #ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
+#define IS_ARRAY(arr) ((void *)&(arr) == &(arr)[0])
+#define STATIC_EXP(e) (0 * sizeof(struct {int ARRAY_SIZE_FAILED:(2*(e) - 1); }))
+#define ARRAY_SIZE(D) (sizeof(D) / sizeof((D)[0]) + STATIC_EXP(IS_ARRAY(D)))
 #endif
 
 #define wlanNvramSetState(_state) \

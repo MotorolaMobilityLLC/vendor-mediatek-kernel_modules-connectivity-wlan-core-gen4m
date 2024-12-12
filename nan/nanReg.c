@@ -121,10 +121,9 @@ struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[] = {
 	{136, 20, CHNL_EXT_SCN, { 2, } /* 6G BW20 => Channel set */ }, /* 26 */
 	{137, 320, CHNL_EXT_SCN, { 31, 95, 159 } },
 #endif
-	{0, 0, 0, { 0, } } /* terminator */
 };
 
-#define REG_MAX_DB_SIZE ARRAY_SIZE(g_rNanRegInfo)
+#define REG_DB_ENTRY_NOT_FOUND ARRAY_SIZE(g_rNanRegInfo)
 
 uint8_t fgForceNANr36GCH_CHBitmap = FALSE;
 
@@ -132,19 +131,17 @@ uint8_t fgForceNANr36GCH_CHBitmap = FALSE;
  * Table E4 - Global Operating Classes
  *******************************************
  */
+/* Return index of matched entry; REG_DB_ENTRY_NOT_FOUND if not found. */
 uint8_t nanRegFindRecordIdx(uint8_t ucOperatingClass)
 {
-	int i;
+	uint8_t i;
 
-	for (i = 0; i < REG_MAX_DB_SIZE; i++) {
-		if (g_rNanRegInfo[i].ucOperatingClass == 0)
-			break;
-
+	for (i = 0; i < ARRAY_SIZE(g_rNanRegInfo); i++) {
 		if (ucOperatingClass == g_rNanRegInfo[i].ucOperatingClass)
-			return i;
+			break;
 	}
 
-	return REG_MAX_DB_SIZE;
+	return i;
 }
 
 /* NAN 4.0 Spec, Table 101. Setting for Primary Channel Bitmap */
@@ -204,7 +201,7 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i == REG_MAX_DB_SIZE)
+	if (i == REG_DB_ENTRY_NOT_FOUND)
 		return REG_INVALID_INFO;
 
 	for (j = 0; j < u4MaxChnlBitmap; j++) {
@@ -265,7 +262,7 @@ nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
 	}
 #endif
 
-	if (i != REG_MAX_DB_SIZE) {
+	if (i != REG_DB_ENTRY_NOT_FOUND) {
 		for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
 			if (g_rNanRegInfo[i].aucSupportChnlList[j] == ucChannel)
 				pucBuf[j / 8] |= BIT(j % 8);
@@ -281,7 +278,7 @@ nanRegGetBw(uint8_t ucOperatingClass)
 	int i;
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i != REG_MAX_DB_SIZE)
+	if (i != REG_DB_ENTRY_NOT_FOUND)
 		return g_rNanRegInfo[i].u2Bw;
 
 	return REG_INVALID_INFO;
@@ -293,7 +290,7 @@ nanRegGetSco(uint8_t ucOperatingClass)
 	int i;
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i != REG_MAX_DB_SIZE)
+	if (i != REG_DB_ENTRY_NOT_FOUND)
 		return g_rNanRegInfo[i].eSco;
 
 	return REG_INVALID_INFO;
@@ -385,7 +382,7 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i == REG_MAX_DB_SIZE)
+	if (i == REG_DB_ENTRY_NOT_FOUND)
 		return REG_INVALID_INFO;
 
 	DBGLOG(NAN, LOUD, "find oc=%u, i=%u, u2ChnlBitmap=0x%04x",
@@ -454,7 +451,7 @@ uint8_t nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass,
 	ucCenterChnl = REG_INVALID_INFO;
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i != REG_MAX_DB_SIZE) {
+	if (i != REG_DB_ENTRY_NOT_FOUND) {
 		u2Bw = g_rNanRegInfo[i].u2Bw;
 		if (u2Bw == 20)
 			ucRang = 0;
@@ -513,10 +510,7 @@ uint8_t nanRegGetOperatingClass(uint16_t u2Bw, uint8_t ucChannel,
 	uint8_t ucIs6gChnl = (eBand == BAND_6G) ? TRUE : FALSE;
 #endif
 
-	for (i = 0; i < REG_MAX_DB_SIZE; i++) {
-		if (g_rNanRegInfo[i].ucOperatingClass == 0)
-			break;
-
+	for (i = 0; i < ARRAY_SIZE(g_rNanRegInfo); i++) {
 #if (CFG_SUPPORT_NAN_6G == 1)
 		if (ucIs6gChnl !=
 		    IS_6G_OP_CLASS(g_rNanRegInfo[i].ucOperatingClass))
@@ -635,10 +629,7 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 #endif
 
 	/* Look up the OC table by matching BW and primary channel */
-	for (u4Idx = 0; (u4Idx < REG_MAX_DB_SIZE) && !fgFound; u4Idx++) {
-		if (g_rNanRegInfo[u4Idx].ucOperatingClass == 0) /* end */
-			break;
-
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(g_rNanRegInfo); u4Idx++) {
 		if (g_rNanRegInfo[u4Idx].u2Bw != u2Bw)
 			continue;
 
@@ -804,7 +795,7 @@ uint32_t nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
 	pucBuf = (uint8_t *)pu2ChnlBitmap;
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i == REG_MAX_DB_SIZE)
+	if (i == REG_DB_ENTRY_NOT_FOUND)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	if (!IS_6G_OP_CLASS(ucOperatingClass))
