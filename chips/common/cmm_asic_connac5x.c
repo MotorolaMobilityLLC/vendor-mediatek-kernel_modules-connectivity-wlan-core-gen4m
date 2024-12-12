@@ -1854,7 +1854,7 @@ void fillConnac5xTxDescTxByteCount(
 	ASSERT(prTxDesc);
 
 	prChipInfo = prAdapter->chip_info;
-	u4TxByteCount += prMsduInfo->u2FrameLength;
+	u4TxByteCount += nicTxGetFrameLength(prMsduInfo);
 
 	if (IsPacketGoThruDataPath(prMsduInfo))
 		u4TxByteCount += prChipInfo->u4ExtraTxByteCount;

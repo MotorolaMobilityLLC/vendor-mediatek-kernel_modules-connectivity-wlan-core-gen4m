@@ -15280,6 +15280,64 @@ void kalTxGsoInit(struct net_device *prDev)
 }
 #endif /* CFG_TX_GSO */
 
+#if CFG_SW_TSO
+void kalTxTsoSwInit(struct net_device *prDev)
+{
+	/*
+	 * NETIF_F_SG is required when TSO is enabled
+	 * ref: netdev_fix_features
+	 *
+	 * Please note that skb->data only have header after SG is enabled.
+	 */
+	prDev->features |= NETIF_F_TSO | NETIF_F_SG;
+	prDev->hw_features |= NETIF_F_TSO | NETIF_F_SG;
+	DBGLOG(INIT, INFO, "Turn on TSO SW.\n");
+}
+
+void kalTxStartTsoSw(struct MSDU_INFO *prMsduInfo)
+{
+	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	uint32_t u4SegSize;
+
+	if (!skb_is_gso(prSkb))
+		return;
+
+	prTso->u4CurrPktIdx = 0;
+	prTso->u4HdrLen = tso_start(prSkb, &prTso->rTso);
+	prTso->u4TotLen = prSkb->len - prTso->u4HdrLen;
+	if (prTso->u4TotLen > 0) {
+		/* fast ceiling of pkt cnt */
+		u4SegSize = skb_shinfo(prSkb)->gso_size;
+		prTso->u4PktCnt = 1 + (prTso->u4TotLen - 1) / u4SegSize;
+	} else
+		prTso->u4PktCnt = 1;
+}
+
+uint32_t kalTxGetPktCnt(struct MSDU_INFO *prMsduInfo)
+{
+	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+
+	if (skb_is_gso(prSkb))
+		return prTso->u4PktCnt;
+
+	return 1;
+}
+#endif /* CFG_SW_TSO */
+
+uint32_t kalGetTxPktIdx(struct MSDU_INFO *prMsduInfo)
+{
+#if CFG_SW_TSO
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
+
+	if (skb_is_gso(prSkb))
+		return prTso->u4CurrPktIdx;
+#endif /* CFG_SW_TSO */
+	return 1;
+}
+
 /* For Linux kernel version wrapper */
 void kal_napi_complete_done(struct napi_struct *n, int work_done)
 {

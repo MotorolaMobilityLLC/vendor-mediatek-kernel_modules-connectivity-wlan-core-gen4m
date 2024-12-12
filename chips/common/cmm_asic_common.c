@@ -146,12 +146,12 @@ void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
 	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] =
 		u4MsduId | TXD_MSDU_ID_VLD;
 	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
-	u2Len = prMsduInfo->u2FrameLength;
+	u2Len = nicTxGetFrameLength(prMsduInfo);
 
 #if (CFG_SUPPORT_TX_SG == 1)
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (prToken && prToken->nr_frags)
-		u2Len = prMsduInfo->u2FrameLength - prToken->len_frags;
+		u2Len = nicTxGetFrameLength(prMsduInfo) - prToken->len_frags;
 #endif
 #endif
 	u2Len = (u2Len & TXD_LEN_MASK_V2) |
@@ -213,10 +213,10 @@ void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
 
 	NIC_DUMP_TXP_HEADER(prAdapter, "Dump DATA TXP: append=%zu, len=%u\n",
 			sizeof(prHwTxDescAppend->CONNAC_APPEND),
-			prMsduInfo->u2FrameLength);
+			nicTxGetFrameLength(prMsduInfo));
 	NIC_DUMP_TXP(prAdapter, (uint8_t *)prHwTxDescAppend,
 			sizeof(prHwTxDescAppend->CONNAC_APPEND),
-			prMsduInfo->u2FrameLength);
+			nicTxGetFrameLength(prMsduInfo));
 }
 
 static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};

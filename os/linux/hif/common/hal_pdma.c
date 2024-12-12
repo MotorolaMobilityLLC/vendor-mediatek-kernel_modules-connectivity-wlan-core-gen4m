@@ -1083,8 +1083,8 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 	while (TRUE) {
 		if ((prHifInfo->u4TxDataQLen[u2Port] <
 		     halGetMsduTokenFreeCnt(prAdapter)) &&
-		    (prTxRing->u4UsedCnt + prHifInfo->u4TxDataQLen[u2Port] + 1
-		     < prTxRing->u4RingSize))
+		    (prTxRing->u4UsedCnt + prHifInfo->u4TxDataQLen[u2Port] +
+		     GET_TX_PKT_CNT(prMsduInfo) < prTxRing->u4RingSize))
 			return TRUE;
 
 		ucTryCnt--;
@@ -1097,11 +1097,14 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(HAL, TRACE,
-		"Low Tx Data Resource Tok[%u] Ring%d[%u] List[%u]\n",
+		"Low Tx Data Resource Tok[%u] Ring%d[%u] Size[%u] UsedCnt[%u] List[%u] PktCnt[%u]\n",
 		halGetMsduTokenFreeCnt(prAdapter),
 		u2Port,
 		(prTxRing->u4RingSize - prTxRing->u4UsedCnt),
-		prHifInfo->u4TxDataQLen[u2Port]);
+		prTxRing->u4RingSize,
+		prTxRing->u4UsedCnt,
+		prHifInfo->u4TxDataQLen[u2Port],
+		GET_TX_PKT_CNT(prMsduInfo));
 	kalTraceEvent("Low T[%u]Ring%d[%u]L[%u] id=0x%04x sn=%d",
 		halGetMsduTokenFreeCnt(prAdapter),
 		u2Port,
@@ -2281,7 +2284,8 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 			if (prMsduInfo)
 				halWpdmaFreeMsdu(prGlueInfo, prMsduInfo,
 						 FALSE, NULL);
-			prHifInfo->u4TxDataQLen[u4Idx]--;
+			prHifInfo->u4TxDataQLen[u4Idx] -=
+				GET_TX_PKT_CNT(prMsduInfo);
 		}
 		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx], flags);
 	}
@@ -2707,7 +2711,7 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 	if (prMemOps->mapTxDataBuf) {
 		rPhyAddr = prMemOps->mapTxDataBuf(
 			prHifInfo, pucBufferTxD, u4TxHeadRoomSize,
-			prMsduInfo->u2FrameLength);
+			nicTxGetFrameLength(prMsduInfo));
 	} else {
 		if (prDataToken->rDmaAddr)
 			rPhyAddr = prDataToken->rDmaAddr + u4TxHeadRoomSize;
@@ -2717,6 +2721,14 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "Get address error!\n");
 		return;
 	}
+
+#if CFG_SW_TSO
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
+		if (prTxDescOps->fillTxByteCount)
+			prTxDescOps->fillTxByteCount(prGlueInfo->prAdapter,
+					prMsduInfo, pucBufferTxD);
+	}
+#endif /* CFG_SW_TSO */
 
 #if CFG_DEDICATED_TXD
 	if (prTxDescOps->fillNicAppend)
@@ -2730,7 +2742,7 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			rPhyAddr, u4Idx, fgIsLast, prFillToken->prPacket);
 
 	prDataToken->rPktDmaAddr = rPhyAddr;
-	prDataToken->u4PktDmaLength = prMsduInfo->u2FrameLength;
+	prDataToken->u4PktDmaLength = nicTxGetFrameLength(prMsduInfo);
 }
 
 static uint32_t halTxGetPageCount(struct ADAPTER *prAdapter,
@@ -4374,6 +4386,20 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prTxRing->u4UsedCnt++;
 	prTxRing->u4TotalCnt++;
 
+#if CFG_SW_TSO
+	if (kalGetTxPktIdx(prToken->prMsduInfo) >
+		GET_TX_PKT_CNT(prToken->prMsduInfo) ||
+		prTxRing->u4UsedCnt > prTxRing->u4RingSize) {
+		DBGLOG(HAL, WARN,
+			"HIF Tx Overflow Idx[%u/%u] Used[%u] Size[%u]\n",
+			kalGetTxPktIdx(prToken->prMsduInfo),
+			GET_TX_PKT_CNT(prToken->prMsduInfo),
+			prTxRing->u4UsedCnt,
+			prTxRing->u4RingSize);
+		ASSERT_HIF_TX_OVERFLOW();
+	}
+#endif /* CFG_SW_TSO */
+
 	DBGLOG_LIMITED(HAL, TRACE,
 		"Tx Data:Ring%d CPU idx[0x%x] Used[%u]\n",
 		u2Port, prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
@@ -4627,17 +4653,37 @@ static u_int8_t halIsValidLength(struct ADAPTER *prAdapter,
 	uint32_t u4HifTxMaxSize = HIF_TX_MAX_SIZE_PER_FRAME
 				+ wlanGetTxdAppendSize(prAdapter);
 #endif /* CFG_DEDICATED_TXD */
+	uint32_t u4Len = u4TotalLen;
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
 
-	if (u4TotalLen <= u4HifTxMaxSize)
+#if CFG_SW_TSO
+	if (skb_is_gso(prSkb))
+		u4Len = min_t(int, skb_shinfo(prSkb)->gso_size, u4TotalLen);
+#endif /* CFG_SW_TSO */
+
+	if (u4Len <= u4HifTxMaxSize)
 		return TRUE;
 
 	DBGLOG(HAL, ERROR,
-		"BSS[%u] STA[%u] eSrc[%u] PType[%u] Len[%u] HifTxMaxSize[%u]\n",
+		"BSS[%u] STA[%u] eSrc[%u] PType[%u] Gso[%u:%u] Len[%u] HifTxMaxSize[%u]\n",
 		prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex,
 		prMsduInfo->eSrc, prMsduInfo->ucPacketType,
+		skb_is_gso(prSkb), skb_shinfo(prSkb)->gso_size,
 		u4TotalLen, u4HifTxMaxSize);
 
 	return FALSE;
+}
+
+static u_int8_t halIsNextTxNeeded(struct MSDU_INFO *prMsduInfo)
+{
+#if CFG_SW_TSO
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
+
+	return (skb_is_gso(prSkb) && prTso->fgIsLastPkt == FALSE);
+#else /* CFG_SW_TSO */
+	return FALSE;
+#endif /* CFG_SW_TSO */
 }
 
 bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
@@ -4676,15 +4722,18 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 
 		if (prCurList) {
 			list_del(prCurList);
-			prHifInfo->u4TxDataQLen[u2Port]--;
+			prHifInfo->u4TxDataQLen[u2Port] -=
+				GET_TX_PKT_CNT(prMsduInfo);
 		}
 		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
 
 		return false;
 	}
 
-	if (halIsValidLength(prAdapter, prMsduInfo, u4TotalLen)) {
+	if (!halIsValidLength(prAdapter, prMsduInfo, u4TotalLen))
+		goto skip;
 
+	do {
 		/* Acquire MSDU token */
 		prToken = halAcquireMsduToken(prAdapter,
 					      prMsduInfo->ucBssIndex,
@@ -4718,11 +4767,12 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 			halReturnMsduToken(prAdapter, prToken->u4Token);
 			return false;
 		}
-	}
+	} while (halIsNextTxNeeded(prMsduInfo));
 
+skip:
 	if (prCurList) {
 		list_del(prCurList);
-		prHifInfo->u4TxDataQLen[u2Port]--;
+		prHifInfo->u4TxDataQLen[u2Port] -= GET_TX_PKT_CNT(prMsduInfo);
 	}
 
 #if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
@@ -4833,7 +4883,7 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 		prMsduInfo = prTxReq->prMsduInfo;
 
 		list_del(prCur);
-		prHifInfo->u4TxDataQLen[u2Port]--;
+		prHifInfo->u4TxDataQLen[u2Port] -= GET_TX_PKT_CNT(prMsduInfo);
 
 		if (!HAL_IS_TX_DIRECT(prAdapter))
 			if (prMsduInfo->pfHifTxMsduDoneCb)

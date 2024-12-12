@@ -917,6 +917,10 @@ struct MSDU_INFO {
 #endif
 	/* roaming packet. move to new sta rec */
 	u_int8_t fgIsMovePkt;
+
+#if CFG_SW_TSO
+	struct TSO_SW rTsoSw;
+#endif /* CFG_SW_TSO */
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
@@ -2162,4 +2166,5 @@ u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 void nicTxForceAmsduForCert(struct ADAPTER *prAdapter,
 				u_int8_t *prTxDescBuffer);
 
+uint32_t nicTxGetFrameLength(struct MSDU_INFO *prMsduInfo);
 #endif /* _NIC_TX_H */

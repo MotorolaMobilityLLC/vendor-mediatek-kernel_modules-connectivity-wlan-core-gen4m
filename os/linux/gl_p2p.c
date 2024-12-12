@@ -296,6 +296,10 @@ static int p2pInit(struct net_device *prDev)
 #if CFG_TX_GSO
 	kalTxGsoInit(prDev);
 #endif /* CFG_TX_GSO */
+
+#if CFG_SW_TSO
+	kalTxTsoSwInit(prDev);
+#endif /* CFG_SW_TSO */
 	return 0;		/* success */
 }				/* end of p2pInit() */
 

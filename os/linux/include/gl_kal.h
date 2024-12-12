@@ -2554,6 +2554,16 @@ kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
 void kalTxGsoInit(struct net_device *prDev);
 #endif /* CFG_TX_GSO */
 
+#if CFG_SW_TSO
+void kalTxTsoSwInit(struct net_device *prDev);
+void kalTxStartTsoSw(struct MSDU_INFO *prMsduInfo);
+uint32_t kalTxGetPktCnt(struct MSDU_INFO *prMsduInfo);
+#define GET_TX_PKT_CNT(prMsduInfo) kalTxGetPktCnt(prMsduInfo)
+#else /* CFG_SW_TSO */
+#define GET_TX_PKT_CNT(prMsduInfo) (1)
+#endif /* CFG_SW_TSO */
+uint32_t kalGetTxPktIdx(struct MSDU_INFO *prMsduInfo);
+
 void kal_napi_complete_done(struct napi_struct *n, int work_done);
 void kal_napi_schedule(struct napi_struct *n);
 

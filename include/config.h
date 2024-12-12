@@ -498,6 +498,13 @@
 #define CFG_TX_GSO                              0
 #endif /* CFG_TX_GSO */
 
+#ifndef CFG_SW_TSO
+#define CFG_SW_TSO                              0
+#endif /* CFG_SW_TSO */
+#if (CFG_DEDICATED_TXD == 0 || CFG_TX_GSO == 0) && (CFG_SW_TSO == 1)
+#error "CFG_SW_TSO is based on CFG_TX_GSO and CFG_DEDICATED_TXD"
+#endif
+
 /* By using GRO at NAPI level, the driver is doing the aggregation to a large
  * SKB very early, right at the receive completion handler. This means that all
  * the next functions in the receive stack do much less processing.

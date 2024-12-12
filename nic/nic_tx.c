@@ -2082,12 +2082,8 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 			if (prMsduInfo->fgMgmtUseDataQ) {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-				prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
-#else
 				prMsduInfo->ucPacketFormat =
-				  TXD_PKT_FORMAT_TXD_PAYLOAD;
-#endif
+					prChipInfo->ucPacketFormat;
 			} else
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 				prMsduInfo->ucPacketFormat =
@@ -2112,9 +2108,13 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 	 * Fill up remaining parts, per-packet variant fields
 	 * --------------------------------------------------------------------
 	 */
-	if (prTxDescOps->fillTxByteCount)
-		prTxDescOps->fillTxByteCount(prAdapter,
-				prMsduInfo, prTxDesc);
+#if CFG_SW_TSO
+	/* fill TxByteCnt later in halTxUpdateCutThroughDesc for data */
+	if (prMsduInfo->ucPacketType != TX_PACKET_TYPE_DATA)
+#endif /* CFG_SW_TSO */
+		if (prTxDescOps->fillTxByteCount)
+			prTxDescOps->fillTxByteCount(prAdapter,
+					prMsduInfo, prTxDesc);
 
 	/* Checksum offload */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -3452,6 +3452,10 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 				GLUE_GET_PKT_SN(prMsduInfo->prPacket));
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 	}
+
+#if CFG_SW_TSO
+	kalTxStartTsoSw(prMsduInfo);
+#endif /* CFG_SW_TSO */
 
 	/* Add dummy Tx done */
 	if ((prAdapter->rWifiVar.ucDataTxDone == 1)
@@ -7132,5 +7136,19 @@ uint8_t nicTxResTc2WmmTc(uint8_t ucResTC)
 	}
 
 	return ucTcIdx;
+}
+
+uint32_t nicTxGetFrameLength(struct MSDU_INFO *prMsduInfo)
+{
+#if CFG_SW_TSO
+	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA &&
+		skb_is_gso(prSkb))
+		return prTso->u4CurrPktLen;
+#endif /* CFG_SW_TSO */
+
+	return prMsduInfo->u2FrameLength;
 }
 

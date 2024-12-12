@@ -2494,7 +2494,7 @@ static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 
 	KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ[u4Port]);
-	prHifInfo->u4TxDataQLen[u4Port]++;
+	prHifInfo->u4TxDataQLen[u4Port] += GET_TX_PKT_CNT(prMsduInfo);
 	KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Port);
 
 	return true;

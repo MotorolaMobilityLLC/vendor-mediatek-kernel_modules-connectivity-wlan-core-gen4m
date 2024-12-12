@@ -890,6 +890,12 @@ struct WAKE_INFO_T {
 	kalSendAeeWarning("Wlan_Gen4 Queue Debug",\
 		"Queue Debug Failed %s:%d", __FILE__, __LINE__); \
 }
+#define ASSERT_HIF_TX_OVERFLOW() \
+{ \
+	LOG_FUNC("hif tx overflow failed at %s:%d\n", __FILE__, __LINE__); \
+	kalSendAeeWarning("Wlan_Gen4 HIF Tx Overflow",\
+		"HIF Tx Overflow Failed %s:%d", __FILE__, __LINE__); \
+}
 #ifdef _lint
 #define ASSERT(_exp) \
 	{ \
@@ -945,6 +951,13 @@ struct WAKE_INFO_T {
 		"Queue Debug Failed %s:%d", __FILE__, __LINE__); \
 }
 
+#define ASSERT_HIF_TX_OVERFLOW() \
+{ \
+	LOG_FUNC("hif tx overflow failed at %s:%d\n", __FILE__, __LINE__); \
+	kalSendAeeWarning("Wlan_Gen4 HIF Tx Overflow",\
+		"HIF Tx Overflow Failed %s:%d", __FILE__, __LINE__); \
+}
+
 #define ASSERT(_exp) \
 	{ \
 		if (!(_exp)) { \
@@ -966,6 +979,7 @@ struct WAKE_INFO_T {
 #else
 #define ASSERT_NOMEM() {}
 #define ASSERT_QUEUE_DEBUG() {}
+#define ASSERT_HIF_TX_OVERFLOW() {}
 #define ASSERT(_exp) {}
 #define ASSERT_REPORT(_exp, _fmt) {}
 #endif /* BUILD_QA_DBG */

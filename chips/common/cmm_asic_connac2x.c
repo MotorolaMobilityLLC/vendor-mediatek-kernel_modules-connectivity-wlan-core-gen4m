@@ -1946,7 +1946,7 @@ void fillConnac2xTxDescTxByteCount(
 	ASSERT(prTxDesc);
 
 	prChipInfo = prAdapter->chip_info;
-	u4TxByteCount += prMsduInfo->u2FrameLength;
+	u4TxByteCount += nicTxGetFrameLength(prMsduInfo);
 
 	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
 		u4TxByteCount += prChipInfo->u4ExtraTxByteCount;
