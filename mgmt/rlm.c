@@ -502,14 +502,14 @@ void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter,
 		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 	}
 
-	if (RLM_NET_IS_11N(prBssInfo) && ((ucPhyTypeSet & PHY_TYPE_SET_802_11N)
+	if ((ucPhyTypeSet & PHY_TYPE_SET_802_11N)
 #if (CFG_SUPPORT_802_11AX == 1)
 		|| (ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 		|| (ucPhyTypeSet & PHY_TYPE_SET_802_11BE)
 #endif
-	))
+	)
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
