@@ -3977,8 +3977,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 				prAdapter, prMldStaRec->u2SecondMldId);
 
 			/* only second link is active, change bssinfo */
-			if (prMldStaRec->u4ActiveStaBitmap ==
-			    BIT(prStaRec->ucIndex)) {
+			if (prStaRec &&
+			    prMldStaRec->u4ActiveStaBitmap ==
+				BIT(prStaRec->ucIndex)) {
 				ucBssIndex = prStaRec->ucBssIndex;
 				prBssInfo = GET_BSS_INFO_BY_INDEX(
 					prAdapter, ucBssIndex);
