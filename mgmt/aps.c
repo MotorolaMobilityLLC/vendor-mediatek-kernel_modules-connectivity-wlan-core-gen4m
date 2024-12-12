@@ -1225,6 +1225,8 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 
 	kalMemZero(aps->arCuInfo, sizeof(aps->arCuInfo));
 	aps->ucConsiderEsp = TRUE;
+	DBGLOG(APS, LOUD, "Update %s. reason:%u\n", __func__, reason);
+
 
 	if (conn->eConnectionPolicy == CONNECT_BY_BSSID_HINT) {
 		struct PARAM_SSID ssid = {0};
@@ -1799,6 +1801,27 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_EXT_ROAMING  */
 
+#if (CFG_EXT_ROAMING == 1) && (CFG_SUPPORT_NCHO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t apsGetMloLinkNum(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	uint32_t ucMloLinkNum = 0;
+	struct MLD_BSS_INFO *prMldBssInfo;
+
+	prMldBssInfo = aisGetMldBssInfo(prAdapter, ucBssIndex);
+	if (!prMldBssInfo) {
+		DBGLOG(APS, WARN, "prMldBssInfo doesn't exist!\n");
+		return ucMloLinkNum;
+	}
+
+	ucMloLinkNum = prMldBssInfo->rBssList.u4NumElem;
+
+	DBGLOG(APS, LOUD, "AP MLD link counter = %d\n", ucMloLinkNum);
+	return ucMloLinkNum;
+}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+#endif
 uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex)
@@ -2021,6 +2044,103 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				apucBandStr[prBssDesc->eBand]);
 			return FALSE;
 		}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/*  1. check if AIS is currently connected to
+		 *  multilink AP-MLD
+		 */
+		if (apsGetMloLinkNum(prAdapter, ucBssIndex) > 1) {
+			/* 2. check candidate is affiliated link of MLO */
+			if (apsCanFormMld(prAdapter, prBssDesc, ucBssIndex)) {
+				struct BSS_DESC *bss = NULL;
+				struct LINK *scan_result =
+				    &prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+				uint8_t highestband = BAND_NULL;
+
+				/*  3. get the highest band of
+				 *  candidate's AP-MLD
+				 */
+				LINK_FOR_EACH_ENTRY(bss, scan_result,
+					rLinkEntry, struct BSS_DESC) {
+					if (EQUAL_MAC_ADDR(
+						bss->rMlInfo.aucMldAddr,
+					    prBssDesc->rMlInfo.aucMldAddr) &&
+					    bss->eBand > highestband) {
+						highestband = bss->eBand;
+					}
+				}
+				/*
+				 *  DBGLOG(APS, WARN, "highestband of AP-Mld["
+				 *         MACSTR"] : %u\n",
+				 *         prBssDesc->rMlInfo.aucMldAddr,
+				 *         highestband);
+				 */
+
+				/*  4. return FALSE if this candidate is not
+				 *  the highest band among links in
+				 *  the target AP-MLD
+				 */
+				if (prBssDesc->eBand != highestband) {
+				/*
+				 * DBGLOG(APS, WARN, "SSID["MACSTR
+				 * "] is AP-MLD link. and "
+				 * "it's eBand[%u]"
+				 * "is not highestband : %u"
+				 * "-> filter out !!\n",
+				 * MAC2STR(prBssDesc->aucBSSID),
+				 * prBssDesc->eBand, highestband);
+				 */
+					return FALSE;
+				}
+
+			/* if candidate is non MLO */
+			} else {
+				uint8_t curr_highestband = BAND_NULL;
+				struct BSS_INFO *prBssInfo;
+				struct MLD_BSS_INFO *prMldBssInfo;
+				struct LINK *prBssList;
+				int32_t curr_rssi;
+
+				prMldBssInfo = aisGetMldBssInfo(prAdapter,
+								ucBssIndex);
+				prBssList = &prMldBssInfo->rBssList;
+				LINK_FOR_EACH_ENTRY(prBssInfo, prBssList,
+					rLinkEntryMld, struct BSS_INFO) {
+					uint8_t idx = prBssInfo->ucBssIndex;
+					int8_t cRssi =
+					prAdapter->rLinkQuality.rLq[idx].cRssi;
+					if (prBssInfo->eBand > curr_highestband)
+						curr_highestband =
+							prBssInfo->eBand;
+					if (prBssDesc->eBand ==
+							prBssInfo->eBand) {
+						curr_rssi = RCPI_TO_dBm(cRssi);
+					}
+				}
+
+				if (prBssDesc->eBand < curr_highestband &&
+				    (eRoamReason == ROAMING_REASON_POOR_RCPI ||
+				     eRoamReason == ROAMING_REASON_RETRY) &&
+				    (curr_rssi >
+					prAdapter->rNchoInfo.i4RoamTrigger ||
+				     curr_rssi +
+					prAdapter->rNchoInfo.i4RoamDelta >
+					RCPI_TO_dBm(prBssDesc->ucRCPI))) {
+				/* DBGLOG(APS, WARN, "NON MLO AP SSID["MACSTR \
+				 * "]'s eBand[%u] has lower RSSI:[%d] than" \
+				 * " current eBand[%u]'s RSSI[%d] " \
+				 * "-> filter out !!\n",
+				 * MAC2STR(prBssDesc->aucBSSID),
+				 * prBssDesc->eBand,
+				 * RCPI_TO_dBm(prBssDesc->ucRCPI),
+				 * overlapped_band, curr_rssi);
+				 */
+					return FALSE;
+				}
+			}
+		} else
+			DBGLOG(APS, WARN, "current AP is single link\n");
+#endif
 	}
 #endif
 
