@@ -1258,11 +1258,15 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 	/* For Beacon */
 	prMsduInfo = prBssInfo->prBeacon;
 
-	/* beacon prMsduInfo will be NULLify once BSS deactivated,
+	/* beacon prMsduInfo will be NULL if once BSS deactivated,
 	 * so skip if it is
 	 */
 	if (prMsduInfo == NULL)
 		return NULL;
+
+	kalMemZero(prMsduInfo->prPacket,
+		   OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0]) +
+		   MAX_IE_LENGTH);
 
 	/* 4 <2> Compose header */
 	bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
