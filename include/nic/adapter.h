@@ -26,6 +26,9 @@
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #include "thrm.h"
 #endif
+#if CFG_SUPPORT_TDLS_AUTO
+#include "tdls_auto.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************

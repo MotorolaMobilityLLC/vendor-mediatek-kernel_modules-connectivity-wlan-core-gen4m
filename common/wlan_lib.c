@@ -28,7 +28,6 @@
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 #include "gl_coredump.h"
 #endif
-
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -11328,6 +11327,11 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 
+#if CFG_SUPPORT_TDLS_AUTO
+	struct MSG_AUTO_TDLS_INFO *prAutoTdls =
+		(struct MSG_AUTO_TDLS_INFO *) NULL;
+#endif
+
 	if (!wlanTxLifetimeIsProfilingEnabled(prAdapter))
 		return;
 
@@ -11412,12 +11416,24 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_TDLS_AUTO
-			TdlsAuto(
-				prAdapter,
-				prMsduInfo->ucBssIndex,
-				prMsduInfo->u2FrameLength,
-				0,
+			prAutoTdls =
+				(struct MSG_AUTO_TDLS_INFO *)
+				cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_AUTO_TDLS_INFO));
+			if (!prAutoTdls) {
+				DBGLOG(TX, ERROR, "TDLS: MemAlloc Fail");
+				ASSERT(FALSE);
+				return;
+			}
+			prAutoTdls->rMsgHdr.eMsgId = MID_TDLS_AUTO;
+			prAutoTdls->ucBssIndex = prMsduInfo->ucBssIndex;
+			prAutoTdls->u2FrameLength = prMsduInfo->u2FrameLength;
+			COPY_MAC_ADDR(prAutoTdls->aucEthDestAddr,
 				prMsduInfo->aucEthDestAddr);
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prAutoTdls,
+				MSG_SEND_METHOD_BUF);
 #endif
 		}
 		break;

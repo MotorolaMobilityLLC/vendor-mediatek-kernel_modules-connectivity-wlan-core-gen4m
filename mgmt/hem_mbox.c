@@ -113,6 +113,8 @@ static const char * const apucDebugMsg[] = {
 	"MID_MNY_P2P_MGMT_FRAME_UPDATE",
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	"MID_MNY_P2P_DFS_CAC",
+	"MID_MNY_P2P_START_CAC",
+	"MID_MNY_P2P_STOP_CAC",
 #endif
 	"MID_MNY_P2P_SET_NEW_CHANNEL",
 #if CFG_SUPPORT_WFD
@@ -137,6 +139,8 @@ static const char * const apucDebugMsg[] = {
 #if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 	"MID_WNM_AIS_BSS_TRANSITION",
 #endif
+	"MID_OID_WMM_TSPEC_OPERATE",
+	"MID_RRM_REQ_SCHEDULE",
 #if CFG_SUPPORT_NCHO
 	"MID_MNY_AIS_NCHO_ACTION_FRAME",
 #endif
@@ -156,6 +160,45 @@ static const char * const apucDebugMsg[] = {
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	"MID_SMPS_ACTION_SET",
+#endif
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	"MID_TWT_RESP_PARAMS_SET",
+	"MID_TWT_RESP_SETUP_AGRT_TO_FW",
+	"MID_TWT_RESP_TEARDOWN_TO_FW",
+#endif
+#if (CFG_SUPPORT_BTWT == 1)
+	"MID_BTWT_REQ_FSM_START",
+	"MID_BTWT_REQ_FSM_TEARDOWN",
+	"MID_BTWT_REQ_IND_TEARDOWN_DONE",
+#endif
+#if (CFG_SUPPORT_RTWT == 1)
+	"MID_RTWT_REQ_FSM_START",
+	"MID_RTWT_REQ_FSM_JOIN",
+	"MID_RTWT_REQ_FSM_TEARDOWN",
+	"MID_RTWT_REQ_IND_TEARDOWN_DONE",
+#endif
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	"MID_ML_TWT_REQ_FSM_START_ALL_LINKS",
+	"MID_ML_TWT_REQ_FSM_START_ONE_BY_ONE",
+#endif
+#if (CFG_SUPPORT_NAN == 1)
+	"MID_CNM_NAN_CH_GRANT",
+#endif
+#if CFG_ENABLE_WIFI_DIRECT
+	"MID_MNY_P2P_GC_CSA",
+#endif
+	"MID_MNY_P2P_LISTEN_OFFLOAD_START",
+	"MID_MNY_P2P_LISTEN_OFFLOAD_STOP",
+#if ARP_MONITER_ENABLE
+#if CFG_QM_ARP_MONITOR_MSG
+	"MID_QM_ARP_MONITOR",
+#endif /* CFG_QM_ARP_MONITOR_MSG */
+#endif /* ARP_MONITER_ENABLE */
+	"MID_RSN_FW_DUMP",
+	"MID_RSN_MIC_FAIL",
+	"MID_UEVENT_REQ",
+#if CFG_SUPPORT_TDLS_AUTO
+	"MID_TDLS_AUTO",
 #endif
 };
 
@@ -361,6 +404,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #endif
 
 	{MID_UEVENT_REQ, kalSendUeventHandler},
+#if CFG_SUPPORT_TDLS_AUTO
+	{MID_TDLS_AUTO, TdlsAuto},
+#endif
 };
 
 /*******************************************************************************
