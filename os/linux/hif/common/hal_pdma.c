@@ -352,7 +352,7 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 			fgStatus = kalDevPortRead(
 				prGlueInfo, ucNewPort, u4PktLen,
 				pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE,
-				!fgIsTimeout && !prAdapter->fgIsFwDownloaded);
+				!fgIsTimeout && !prGlueInfo->u4ReadyFlag);
 
 			if (fgStatus) {
 				*pu4Length = u4PktLen;
