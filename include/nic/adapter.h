@@ -288,6 +288,14 @@ struct BSS_INFO {
 	u_int8_t fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
 	OS_SYSTIME tmLastPresent;
 	uint32_t u4PresentTime; /* in ms */
+	OS_SYSTIME tmLastAbsent;
+	uint32_t u4AbsentTime; /* in ms */
+#if (CFG_TC10_FEATURE == 1)
+	uint8_t aucAbsPresLogBuf[QM_ABS_PRES_LOG_BUF_SIZE];
+	int32_t i4AbsPresWritten;
+	uint8_t ucAbsPresLogCount;
+	uint32_t u4FirstAbsPresTime;
+#endif
 
 	/* Stop/Start Subqueue threshold for BSS */
 	uint32_t u4TxStopTh;

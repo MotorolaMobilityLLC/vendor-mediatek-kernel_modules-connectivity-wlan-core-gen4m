@@ -243,6 +243,11 @@ extern const uint8_t *apucACI2Str[4];
 /* BW20 NSS1 Max rate: 72.2Mbps (MCS8 86.7Mbps)*/
 #define QM_DEQUE_PERCENT_HT20_NSS1	5
 
+#if (CFG_TC10_FEATURE == 1)
+#define QM_ABS_PRES_LOG_BUF_SIZE	512
+#define QA_ABS_PRES_LOG_MAX_COUNT	25
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

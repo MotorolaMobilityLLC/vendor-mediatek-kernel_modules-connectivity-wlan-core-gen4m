@@ -7799,6 +7799,10 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsNetAbsentOld;
+#if (CFG_TC10_FEATURE == 1)
+	uint8_t *pucLogBuf;
+	int32_t *i4Written;
+#endif
 
 	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
 		prEvent->aucBuffer);
@@ -7819,10 +7823,19 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	fgIsNetAbsentOld = prBssInfo->fgIsNetAbsent;
 	prBssInfo->fgIsNetAbsent = prEventBssStatus->ucIsAbsent;
 	prBssInfo->ucBssFreeQuota = prEventBssStatus->ucBssFreeQuota;
+#if (CFG_TC10_FEATURE == 1)
+	pucLogBuf = prBssInfo->aucAbsPresLogBuf;
+	i4Written = &prBssInfo->i4AbsPresWritten;
+#endif
 
 	if (!prBssInfo->fgIsNetAbsent) {
 		if (!prBssInfo->tmLastPresent)
 			prBssInfo->tmLastPresent = kalGetTimeTick();
+		if (prBssInfo->tmLastAbsent) {
+			prBssInfo->u4AbsentTime = kalGetTimeTick() -
+				prBssInfo->tmLastAbsent;
+			prBssInfo->tmLastAbsent = 0;
+		}
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_27);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -7834,6 +7847,8 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 				prBssInfo->tmLastPresent;
 			prBssInfo->tmLastPresent = 0;
 		}
+		if (!prBssInfo->tmLastAbsent)
+			prBssInfo->tmLastAbsent = kalGetTimeTick();
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_28);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -7841,9 +7856,45 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	DBGLOG(QM, INFO, "NAF:B=%d,A=%d,F=%d,P=%u\n",
-		prEventBssStatus->ucBssIndex, prBssInfo->fgIsNetAbsent,
-		prBssInfo->ucBssFreeQuota, prBssInfo->u4PresentTime);
+#if (CFG_TC10_FEATURE == 1)
+	if ((aucDebugModule[DBG_QM_IDX] & DBG_CLASS_TRACE) == 0) {
+		*i4Written += kalScnprintf(pucLogBuf + *i4Written,
+			 QM_ABS_PRES_LOG_BUF_SIZE - *i4Written,
+			 "(A=%u,T=%u) ",
+			 prBssInfo->fgIsNetAbsent,
+			 prBssInfo->fgIsNetAbsent ? prBssInfo->u4PresentTime :
+						    prBssInfo->u4AbsentTime);
+		prBssInfo->ucAbsPresLogCount++;
+
+		if (prBssInfo->ucAbsPresLogCount >= QA_ABS_PRES_LOG_MAX_COUNT) {
+			DBGLOG(QM, INFO, "NAF: B=%u, %u.%u, %s\n",
+			       prBssInfo->ucBssIndex,
+			       prBssInfo->u4FirstAbsPresTime / MSEC_PER_SEC,
+			       prBssInfo->u4FirstAbsPresTime % MSEC_PER_SEC,
+			       pucLogBuf);
+
+			kalMemZero(pucLogBuf, QM_ABS_PRES_LOG_BUF_SIZE);
+			*i4Written = 0;
+			prBssInfo->ucAbsPresLogCount = 0;
+			prBssInfo->u4FirstAbsPresTime = 0;
+		} else if (prBssInfo->ucAbsPresLogCount == 1) {
+			prBssInfo->u4FirstAbsPresTime = kalGetTimeTick();
+		}
+	}
+	DBGLOG(QM, TRACE, "NAF:B=%u,A=%u,F=%u,T=%u\n",
+		prEventBssStatus->ucBssIndex,
+		prBssInfo->fgIsNetAbsent,
+		prBssInfo->ucBssFreeQuota,
+		prBssInfo->fgIsNetAbsent ? prBssInfo->u4PresentTime :
+					   prBssInfo->u4AbsentTime);
+#else
+	DBGLOG(QM, INFO, "NAF:B=%u,A=%u,F=%u,T=%u\n",
+		prEventBssStatus->ucBssIndex,
+		prBssInfo->fgIsNetAbsent,
+		prBssInfo->ucBssFreeQuota,
+		prBssInfo->fgIsNetAbsent ? prBssInfo->u4PresentTime :
+					   prBssInfo->u4AbsentTime);
+#endif /* (CFG_TC10_FEATURE == 1) */
 
 	/* From Absent to Present */
 	if (fgIsNetAbsentOld && !prBssInfo->fgIsNetAbsent) {
