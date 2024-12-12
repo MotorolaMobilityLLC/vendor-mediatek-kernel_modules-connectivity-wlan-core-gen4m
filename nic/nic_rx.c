@@ -1246,12 +1246,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 		prSwRfb->prStaRec->u8TotalRxPkts++;
 	}
 #endif
-#if (CFG_RX_SW_PROCESS_DBG == 1)
-	/* Recognize RX packet forward to host*/
-	HAL_MAC_CONNAC3X_RX_STATUS_SET_SWRFB_TO_HOST(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_PROCESS(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_FREE(prSwRfb->prRxStatus);
-#endif
+
 	if (kalProcessRxPacket(prAdapter->prGlueInfo,
 			       prSwRfb->pvPacket,
 			       prSwRfb->pvHeader,
@@ -2882,12 +2877,7 @@ static uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
 #if CFG_RFB_TRACK
 	prSwRfb->u4RfbTrackId = u4RfbTrackId;
 #endif /* CFG_RFB_TRACK */
-#if (CFG_RX_SW_PROCESS_DBG == 1)
-	/* Recognize RX packet passed by SW*/
-	HAL_MAC_CONNAC3X_RX_STATUS_SET_SWRFB_FREE(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_TO_HOST(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_PROCESS(prSwRfb->prRxStatus);
-#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 

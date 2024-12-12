@@ -292,7 +292,6 @@ CONFIG_MTK_WIFI_11BE_ML_RECONFIG=y
 CONFIG_MLD_LINK_MAX=2
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_DBDC_MODE=1
-CONFIG_RX_SW_PROCESS_DBG=y
 endif
 endif
 
@@ -2882,12 +2881,6 @@ ifeq ($(CONFIG_DEBUG_RX_SEGMENT), y)
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=1
 else
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=0
-endif
-
-ifeq ($(CONFIG_RX_SW_PROCESS_DBG), y)
-    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=1
-else
-    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=0
 endif
 
 ifeq ($(CONFIG_PERF_MON_FAST), y)

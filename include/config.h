@@ -2618,10 +2618,6 @@
 #define RX_SEGMENT_DEBUG_TIMEOUT 10 /* unit: second */
 #endif /* CFG_DEBUG_RX_SEGMENT */
 
-#ifndef CFG_RX_SW_PROCESS_DBG
-#define CFG_RX_SW_PROCESS_DBG 0
-#endif /* CFG_RX_SW_PROCESS_DBG */
-
 /*------------------------------------------------------------------------------
  * Support FreeMsdu tasklet.
  * Linux version only. Force remove for other platform
