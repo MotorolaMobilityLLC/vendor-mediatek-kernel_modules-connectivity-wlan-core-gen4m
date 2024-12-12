@@ -19088,10 +19088,6 @@ uint32_t wlanoidListMode(struct ADAPTER *prAdapter,
 		      pvQueryBuffer,
 		      u4QueryBufferLen);
 
-	/* Prevent list mode command takes more than 2 seconds */
-	if (rStatus == WLAN_STATUS_FAILURE)
-		rStatus = WLAN_STATUS_SUCCESS;
-
 	kalMemFree(pCmdBuf, VIR_MEM_TYPE, u4QueryBufferLen);
 	return rStatus;
 }
