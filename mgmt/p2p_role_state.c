@@ -565,7 +565,8 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(struct ADAPTER *prAdapter,
 		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
-			prChnlReqInfo->eChannelWidth);
+			rlmGetBssOpBwByChannelWidth(prChnlReqInfo->eChnlSco,
+				prChnlReqInfo->eChannelWidth));
 		prChnlReqInfo->ucCenterFreqS2 = 0;
 
 		/* If the S1 is invalid, force to change bandwidth */
@@ -655,7 +656,8 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
-			prChnlReqInfo->eChannelWidth);
+			rlmGetBssOpBwByChannelWidth(prChnlReqInfo->eChnlSco,
+				prChnlReqInfo->eChannelWidth));
 		prChnlReqInfo->ucCenterFreqS2 = 0;
 
 		/* If the S1 is invalid, force to change bandwidth */

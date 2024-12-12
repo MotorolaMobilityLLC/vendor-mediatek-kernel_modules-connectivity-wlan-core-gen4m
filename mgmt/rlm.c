@@ -63,7 +63,7 @@ uint8_t Rxsmm_Iot_Allowlist[]
 };
 #endif
 
-static const char * const apucOpBw[MAX_BW_UNKNOWN+1] = {
+const char * const apucOpBw[MAX_BW_UNKNOWN+1] = {
 	[MAX_BW_20MHZ] = "MAX_BW_20MHZ",
 	[MAX_BW_40MHZ] = "MAX_BW_40MHZ",
 	[MAX_BW_80MHZ] = "MAX_BW_80MHZ",
@@ -2094,7 +2094,9 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 			eRfSco = prBssDesc->eSco;
 			eRfChannelWidth = prBssDesc->eChannelWidth;
 			ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand,
-				ucPrimaryChannel, eRfChannelWidth);
+						      ucPrimaryChannel,
+				rlmGetBssOpBwByChannelWidth(prBssDesc->eSco,
+							    eRfChannelWidth));
 
 			/* Fix the IOT issue of low DL t-put of VHT40 and HE40.
 			 * The root cause is that the channel width of operation
@@ -2427,38 +2429,6 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	prVhtOp->ucVhtOperation[1] = prBssInfo->ucVhtChannelFrequencyS1;
 	prVhtOp->ucVhtOperation[2] = prBssInfo->ucVhtChannelFrequencyS2;
 
-#if 0
-	if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) < MAX_BW_80MHZ) {
-		prVhtOp->ucVhtOperation[0] = VHT_OP_CHANNEL_WIDTH_20_40;
-		prVhtOp->ucVhtOperation[1] = 0;
-		prVhtOp->ucVhtOperation[2] = 0;
-	} else if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) ==
-			MAX_BW_80MHZ) {
-		prVhtOp->ucVhtOperation[0] = VHT_OP_CHANNEL_WIDTH_80;
-		prVhtOp->ucVhtOperation[1] =
-			nicGetVhtS1(prBssInfo->ucPrimaryChannel);
-		prVhtOp->ucVhtOperation[2] = 0;
-	} else {
-		/* TODO: BW80 + 80/160 support */
-	}
-#endif
-
-	/* VHT-4.2.58 */
-	if (IS_BSS_APGO(prBssInfo) &&
-		(prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_160)) {
-		/*
-		 * Convert 160 MHz channel width to new style as interop
-		 * workaround.
-		 */
-		prVhtOp->ucVhtOperation[0] = 1;
-		prVhtOp->ucVhtOperation[2] = prVhtOp->ucVhtOperation[1];
-		if (prBssInfo->ucPrimaryChannel <
-			prBssInfo->ucVhtChannelFrequencyS1)
-			prVhtOp->ucVhtOperation[1] -= 8;
-		else
-			prVhtOp->ucVhtOperation[1] += 8;
-	}
-
 	prVhtOp->u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prVhtOp);
@@ -2769,7 +2739,8 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 	}
 
 	/* Covert S1, S2 to VHT format */
-	rlmModifyHE6GBwPara(*pucChannelWidth,
+	rlmModifyHE6GBwPara(
+		rlmGetBssOpBwByChannelWidth(*peSco, *pucChannelWidth),
 		ucChannelNum,
 		pucCenterFreqS1,
 		pucCenterFreqS2);
@@ -2786,7 +2757,7 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 	}
 }
 
-void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+void rlmModifyHE6GBwPara(uint8_t ucBw,
 	uint8_t ucHe6gPrimaryChannel,
 	uint8_t *pucHe6gChannelFrequencyS1,
 	uint8_t *pucHe6gChannelFrequencyS2)
@@ -2795,7 +2766,7 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 	uint8_t ucS1Origin = *pucHe6gChannelFrequencyS1;
 	uint8_t ucS2Origin = *pucHe6gChannelFrequencyS2;
 
-	if (ucHe6gChannelWidth == CW_160MHZ) {
+	if (ucBw == MAX_BW_160MHZ) {
 		if ((ucS1Origin != 0 && ucS2Origin != 0) &&
 			(((ucS2Origin - ucS1Origin) == 8) ||
 			 ((ucS1Origin - ucS2Origin) == 8))) {
@@ -2820,8 +2791,8 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 		}
 
 		if (ucS1Modify == 0) {
-			ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
-				ucHe6gChannelWidth);
+			ucS1Modify = nicGetS1(BAND_6G, ucHe6gPrimaryChannel,
+					      ucBw);
 
 			DBGLOG(RLM, WARN,
 				"S1/S2 for 6G BW160 is out of spec, S1[%d->%d] S2[%d->0]\n",
@@ -2830,9 +2801,8 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 
 		*pucHe6gChannelFrequencyS1 = ucS1Modify;
 		*pucHe6gChannelFrequencyS2 = 0;
-	} else if (ucHe6gChannelWidth == CW_80MHZ) {
-		ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
-			ucHe6gChannelWidth);
+	} else if (ucBw == MAX_BW_80MHZ) {
+		ucS1Modify = nicGetS1(BAND_6G, ucHe6gPrimaryChannel, ucBw);
 
 		if (ucS1Modify != ucS1Origin) {
 			DBGLOG(RLM, WARN,
@@ -2842,7 +2812,7 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 			*pucHe6gChannelFrequencyS1 = ucS1Modify;
 			*pucHe6gChannelFrequencyS2 = 0;
 		}
-	} else if (ucHe6gChannelWidth == CW_20_40MHZ) {
+	} else if (ucBw == MAX_BW_40MHZ || MAX_BW_20MHZ) {
 		if (ucS2Origin != 0) {
 			DBGLOG(RLM, WARN,
 				"S1/S2 for 6G BW20/40 is out of spec, S1[%d->0] S2[%d->0]\n",
@@ -2944,9 +2914,9 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		} else { /* BW80, BW160, BW80P80, BW320 */
 			*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
-			*pucS1 = nicGetS1(prBssInfo->eBand,
-				*pucPrimaryCh,
-				*peChannelWidth);
+			*pucS1 = nicGetS1(prBssInfo->eBand, *pucPrimaryCh,
+				  rlmGetBssOpBwByChannelWidth(*peExtend,
+					*peChannelWidth));
 		}
 	}
 
@@ -3042,7 +3012,7 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 	prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
 		prBssInfo->eBand,
 		prBssInfo->ucPrimaryChannel,
-		prBssInfo->ucVhtChannelWidth);
+		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 	prBssInfo->ucVhtChannelFrequencyS2 = 0;
 }
 
@@ -5906,7 +5876,14 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 	prCmdBody->ucUseShortPreamble = prBssInfo->fgUseShortPreamble;
 	prCmdBody->ucUseShortSlotTime = prBssInfo->fgUseShortSlotTime;
 	prCmdBody->ucVhtChannelWidth = prBssInfo->ucVhtChannelWidth;
-	prCmdBody->ucVhtChannelFrequencyS1 = prBssInfo->ucVhtChannelFrequencyS1;
+	/* For FW, ucVhtChannelFrequencyS1 means center channel,
+	 * not Channel Center Frequency Segment 0(CCFS0) in spec.
+	 */
+	prCmdBody->ucVhtChannelFrequencyS1 = nicGetCenterCh(
+			prBssInfo->eBand,
+			prBssInfo->ucPrimaryChannel,
+			rlmGetBssOpBwByChannelWidth(prBssInfo->eBssSCO,
+					    prBssInfo->ucVhtChannelWidth));
 	prCmdBody->ucVhtChannelFrequencyS2 = prBssInfo->ucVhtChannelFrequencyS2;
 	prCmdBody->u2VhtBasicMcsSet = prBssInfo->u2BSSBasicRateSet;
 	prCmdBody->ucTxNss = prBssInfo->ucOpTxNss;
@@ -7216,8 +7193,9 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 		break;
 	}
 	prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
-					ucNewChannelNum,
-					prCSAParams->ucVhtBw);
+			ucNewChannelNum,
+			rlmGetBssOpBwByChannelWidth(prCSAParams->eSco,
+						    prCSAParams->ucVhtBw));
 
 	if (ucChannelSwitchMode == 1) {
 		/* Need to stop data transmission immediately */

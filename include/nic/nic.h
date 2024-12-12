@@ -405,42 +405,24 @@ uint8_t nicGetSecCh(struct ADAPTER *prAdapter,
 		enum ENUM_CHNL_EXT eSCO,
 		uint8_t ucPrimaryCh);
 
-uint32_t nicGetS1Freq(struct ADAPTER *prAdapter,
-	enum ENUM_BAND eBand,
+u_int8_t nicIsChBwValid(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t bw);
+
+void nicReviseBwByCh(enum ENUM_BAND eBand, uint8_t ucCh,
+		     uint8_t *bw);
+
+uint32_t nicGetS1Freq(enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth);
 
-#if (CFG_SUPPORT_802_11BE == 1)
-uint8_t nicGetEhtS1(enum ENUM_BAND eBand,
-	uint8_t ucPrimaryChannel,
-	uint8_t ucBandwidth);
-uint8_t nicGetEht6gS1(uint8_t ucPrimaryChannel,
-	uint8_t ucBandwidth);
-uint8_t nicGetEhtS2(enum ENUM_BAND eBand,
-	uint8_t ucPrimaryChannel,
-	uint8_t ucBandwidth);
-uint8_t nicGetEht6gS2(uint8_t ucPrimaryChannel,
-	uint8_t ucBandwidth);
-#endif
-
-/* Utility to get S1, S2 */
+/* Utility to get S1, S2 which defined as CCFS0, CCFS1 in spec */
 uint8_t nicGetS1(enum ENUM_BAND eBand,
-		uint8_t ucPrimaryChannel,
-		uint8_t ucBandwidth);
+		uint8_t ucPriCh,
+		uint8_t ucBw);
 uint8_t nicGetS2(enum ENUM_BAND eBand,
-		uint8_t ucPrimaryChannel,
-		uint8_t ucBandwidth,
-		uint8_t ucS1);
-uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
-		uint8_t ucBandwidth);
-#if (CFG_SUPPORT_WIFI_6G == 1)
-uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
-		uint8_t ucBandwidth);
-uint8_t nicGetHe6gS2(uint8_t ucPrimaryChannel,
-		uint8_t ucBandwidth,
-		uint8_t ucS1);
-uint8_t nicGetHe6gS1BW40(uint8_t ucPrimaryChannel);
-#endif
+		uint8_t ucPriCh,
+		uint8_t ucBw);
+/* Utility to get center channel instread of CCFS */
+uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw);
 
 /* firmware command wrapper */
 /* NETWORK (WIFISYS) */

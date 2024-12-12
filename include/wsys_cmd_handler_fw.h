@@ -843,6 +843,7 @@ struct CMD_SET_BSS_RLM_PARAM {
 	uint8_t      ucUseShortPreamble;
 	uint8_t      ucUseShortSlotTime;
 	uint8_t      ucVhtChannelWidth;
+	/* Means CCFS0 for spec, means center freq for FW */
 	uint8_t      ucVhtChannelFrequencyS1;
 	uint8_t      ucVhtChannelFrequencyS2;
 	uint16_t     u2VhtBasicMcsSet;

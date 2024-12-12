@@ -736,6 +736,15 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 			prMsgChReq->u4MaxInterval + P2P_AP_CAC_TIMER_MARGIN;
 #endif
 
+	/* For FW, ucVhtChannelFrequencyS1 means center channel,
+	 * not Channel Center Frequency Segment 0(CCFS0) in spec.
+	 */
+	prMsgChReq->ucRfCenterFreqSeg1 = nicGetCenterCh(
+			prMsgChReq->eRfBand,
+			prMsgChReq->ucPrimaryChannel,
+			rlmGetBssOpBwByChannelWidth(prMsgChReq->eRfSco,
+					    prMsgChReq->eRfChannelWidth));
+
 	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
 	       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID,
@@ -5583,7 +5592,6 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 {
 
 	uint8_t ucOpMaxBw, ucLimitedBw = MAX_BW_20MHZ;
-	uint8_t ucS1 = 0;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 #if CFG_SUPPORT_P2P_ECSA
@@ -5617,48 +5625,9 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		if (ucOpMaxBw >= MAX_BW_80MHZ) {
-			/* Verify if there is valid S1 */
-			ucS1 = nicGetS1(prBssInfo->eBand,
-				prBssInfo->ucPrimaryChannel,
-				rlmGetVhtOpBwByBssOpBw(ucOpMaxBw));
+		nicReviseBwByCh(prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
+				&ucOpMaxBw);
 
-			/* Try if there is valid S1 for BW160 if we failed to
-			 * get S1 for BW320.
-			 */
-			if (ucS1 == 0 &&
-			   (ucOpMaxBw == MAX_BW_320_1MHZ ||
-			    ucOpMaxBw == MAX_BW_320_2MHZ)) {
-				ucS1 = nicGetS1(prBssInfo->eBand,
-					prBssInfo->ucPrimaryChannel,
-					rlmGetVhtOpBwByBssOpBw(MAX_BW_160MHZ));
-
-				if (ucS1) /* Fallback to BW80 */
-					ucOpMaxBw = MAX_BW_160MHZ;
-			}
-
-			/* Try if there is valid S1 for BW80 if we failed to
-			 * get S1 for BW160.
-			 */
-			if (ucS1 == 0 && ucOpMaxBw == MAX_BW_160MHZ) {
-				ucS1 = nicGetS1(prBssInfo->eBand,
-					prBssInfo->ucPrimaryChannel,
-					rlmGetVhtOpBwByBssOpBw(MAX_BW_80MHZ));
-
-				if (ucS1) /* Fallback to BW80 */
-					ucOpMaxBw = MAX_BW_80MHZ;
-			}
-
-			if (ucS1 == 0) { /* Invalid S1 */
-				DBGLOG(CNM, INFO,
-					"fallback to BW20, BssIdx[%d], CH[%d], MaxBw[%d]\n",
-					prBssInfo->ucBssIndex,
-					prBssInfo->ucPrimaryChannel,
-					ucOpMaxBw);
-
-				ucOpMaxBw = MAX_BW_20MHZ;
-			}
-		}
 		/* The limited BW is decided by DRV/FW capability.
 		 * It should be modified if someday BW_80_80 or
 		 * BW_320_2 supported.
@@ -5678,7 +5647,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE == 1)
 		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT)
-			ucLimitedBw = MAX_BW_320_1MHZ;
+			ucLimitedBw = MAX_BW_320_2MHZ;
 #endif
 
 		if (ucOpMaxBw > ucLimitedBw) {
@@ -6375,8 +6344,7 @@ void cnmRddOpmodeEventHandler(
 		else
 			rfChannelInfo.eBand = BAND_5G;
 		rfChannelInfo.ucChnlBw = prRddEvtOpMode->ucChBw;
-		rfChannelInfo.u4CenterFreq1 = nicGetS1Freq(prAdapter,
-			rfChannelInfo.eBand,
+		rfChannelInfo.u4CenterFreq1 = nicGetS1Freq(rfChannelInfo.eBand,
 			rfChannelInfo.ucChannelNum,
 			rfChannelInfo.ucChnlBw);
 		rfChannelInfo.u4CenterFreq2 = 0;

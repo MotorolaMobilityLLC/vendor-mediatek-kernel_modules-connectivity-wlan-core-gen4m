@@ -723,10 +723,10 @@ static void ehtRlmFillOpIE(
 
 	/* fixed field in operation info */
 	prEhtOpInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(eht_bw);
-	prEhtOpInfo->ucCCFS0 = nicGetEhtS1(prBssInfo->eBand,
-		prBssInfo->ucPrimaryChannel, rlmGetVhtOpBwByBssOpBw(eht_bw));
-	prEhtOpInfo->ucCCFS1 = nicGetEhtS2(prBssInfo->eBand,
-		prBssInfo->ucPrimaryChannel, rlmGetVhtOpBwByBssOpBw(eht_bw));
+	prEhtOpInfo->ucCCFS0 = nicGetS1(prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel, eht_bw);
+	prEhtOpInfo->ucCCFS1 = nicGetS2(prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel, eht_bw);
 	u4OverallLen += 3;
 
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
@@ -916,7 +916,7 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prBssInfo->ucVhtChannelWidth = ucVhtOpBw;
 		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
 			prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
-			prBssInfo->ucVhtChannelWidth);
+			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 		prBssInfo->ucEhtCtrl = prEhtOpInfo->ucControl;
 		prBssInfo->ucEhtCcfs0 = prEhtOpInfo->ucCCFS0;

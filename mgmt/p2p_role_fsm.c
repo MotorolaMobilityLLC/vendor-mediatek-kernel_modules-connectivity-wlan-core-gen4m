@@ -1548,11 +1548,8 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 				ucRfBw = MAX_BW_80MHZ;
 
 			/* Revise to VHT OP BW */
-			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-			if (nicGetVhtS1(
-				ucChannelNum,
-				ucRfBw) &&
-				(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
+			if (nicGetS1(eBand, ucChannelNum, ucRfBw) &&
+				(ucRfBw >= MAX_BW_160MHZ))
 				bSkipRdd = FALSE;
 		}
 	}
@@ -2472,7 +2469,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		} else {
 			p2pFuncChannelListFiltering(prAdapter,
 				prP2pConnReqInfo->rChannelInfo.ucChannelNum,
-				prP2pBssInfo->ucVhtChannelWidth,
+				rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo),
 				ucNumOfChannel,
 				aucChannelList,
 				&ucNumOfChannel,
@@ -2600,7 +2597,7 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 	prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 		prChnlReqInfo->eBand,
 		prChnlReqInfo->ucReqChnlNum,
-		prChnlReqInfo->eChannelWidth);
+		prRfChannelInfo->ucChnlBw);
 	prChnlReqInfo->ucCenterFreqS2 = 0;
 	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
 	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_GO_START_BSS;
@@ -3230,7 +3227,9 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 			prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 				prChnlReqInfo->eBand,
 				prChnlReqInfo->ucReqChnlNum,
-				prChnlReqInfo->eChannelWidth);
+				rlmGetBssOpBwByChannelWidth(
+					prChnlReqInfo->eChnlSco,
+					prChnlReqInfo->eChannelWidth));
 			prChnlReqInfo->ucCenterFreqS2 = 0;
 
 			rlmReviseMaxBw(prAdapter,
@@ -4063,7 +4062,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 	struct LINK *prClientList;
 #endif
 	uint8_t ucTokenID = 0;
-	enum ENUM_MAX_BANDWIDTH_SETTING eNewBw;
+	uint8_t eNewBw;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!\n");
@@ -4165,9 +4164,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				/* Renew BW */
 				eNewBw = cnmGetDbdcBwCapability(prAdapter,
 						prBssInfo->ucBssIndex);
-				if (prBssInfo->ucPrimaryChannel == 165 &&
-				    eNewBw > MAX_BW_20MHZ)
-					eNewBw = MAX_BW_20MHZ;
+				nicReviseBwByCh(prBssInfo->eBand,
+					prBssInfo->ucPrimaryChannel, &eNewBw);
 				prBssInfo->ucVhtChannelWidth =
 					rlmGetVhtOpBwByBssOpBw(eNewBw);
 

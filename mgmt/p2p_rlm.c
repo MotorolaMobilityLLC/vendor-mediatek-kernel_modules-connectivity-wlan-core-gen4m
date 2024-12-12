@@ -79,12 +79,11 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 
 		ucS1 = nicGetS1(prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
-				ucVhtChannelWidth);
+				rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 
 		ucS2 = nicGetS2(prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
-				ucVhtChannelWidth,
-				ucS1);
+				ucVhtChannelWidth);
 
 		prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
 			heRlmMaxBwToHeBw(ucMaxBandwidth);
@@ -1443,7 +1442,7 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		ucFreq1Channel = nicGetS1(
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
-			prBssInfo->ucVhtChannelWidth);
+			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
 	}
 
 	return ucFreq1Channel;
@@ -1480,7 +1479,7 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 
 	prRfChnlInfo->u2PriChnlFreq =
 		nicChannelNum2Freq(ucCh, eBandCsa) / 1000;
-	prRfChnlInfo->u4CenterFreq1 = nicGetS1Freq(prAdapter,
+	prRfChnlInfo->u4CenterFreq1 = nicGetS1Freq(
 		eBandCsa, prRfChnlInfo->ucChannelNum, prRfChnlInfo->ucChnlBw);
 	prRfChnlInfo->u4CenterFreq2 = 0;
 

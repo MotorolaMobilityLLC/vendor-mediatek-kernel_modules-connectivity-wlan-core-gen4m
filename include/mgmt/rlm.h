@@ -33,6 +33,8 @@ extern uint8_t  g_fgSigmaCMDHt;
 extern uint8_t  g_ucHtSMPSCapValue;
 #endif
 
+extern const char * const apucOpBw[MAX_BW_UNKNOWN+1];
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -610,7 +612,7 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 	uint8_t *pucCenterFreqS2,
 	enum ENUM_CHNL_EXT *peSco);
 
-void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+void rlmModifyHE6GBwPara(uint8_t ucBw,
 	uint8_t ucHe6gPrimaryChannel,
 	uint8_t *pucHe6gChannelFrequencyS1,
 	uint8_t *pucHe6gChannelFrequencyS2);

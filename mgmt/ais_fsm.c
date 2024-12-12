@@ -4220,7 +4220,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	eRfSco = prBssDesc->eSco;
 	eRfChannelWidth = prBssDesc->eChannelWidth;
 	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
-		eRfChannelWidth);
+		rlmGetBssOpBwByChannelWidth(eRfSco, eRfChannelWidth));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 #endif
@@ -10462,16 +10462,16 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->eRfChannelWidth = prBssDesc->eChannelWidth;
 		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prSubReq->eRfBand,
 			prSubReq->ucPrimaryChannel,
-			prSubReq->eRfChannelWidth);
+			rlmGetBssOpBwByChannelWidth(prSubReq->eRfSco,
+				prSubReq->eRfChannelWidth));
 		prSubReq->ucRfCenterFreqSeg2 = 0;
 
 		/* FW CNM need actual capability of AP to calculate the offset
 		 * value when set channel.
 		 */
 		prSubReq->eRfChannelWidthFromAP = prBssDesc->eChannelWidth;
-		prSubReq->ucRfCenterFreqSeg1FromAP = nicGetS1(prSubReq->eRfBand,
-			prSubReq->ucPrimaryChannel,
-			prSubReq->eRfChannelWidthFromAP);
+		prSubReq->ucRfCenterFreqSeg1FromAP =
+			prSubReq->eRfChannelWidthFromAP;
 		rlmReviseS1(
 			&(prSubReq->ucRfCenterFreqSeg1FromAP),
 			prBssDesc->ucChannelNum,

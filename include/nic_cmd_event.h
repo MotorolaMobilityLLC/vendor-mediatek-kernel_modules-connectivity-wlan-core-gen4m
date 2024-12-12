@@ -2516,6 +2516,7 @@ struct CMD_CH_PRIVILEGE {
 	uint8_t ucRfSco;
 	uint8_t ucRfBand;
 	uint8_t ucRfChannelWidth;	/* To support 80/160MHz bandwidth */
+	/* Means CCFS0 for spec, means center freq for FW */
 	uint8_t ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
 	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
 	uint8_t ucReqType;
