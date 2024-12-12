@@ -941,6 +941,8 @@
 #define STATUS_CODE_ASSOC_TIMEOUT                   0xFFF3
 /* CCX CCKM reassociation failure */
 #define STATUS_CODE_CCX_CCKM_REASSOC_FAILURE        0xFFF4
+/* (Re)Association but receive deauth with REASON_CODE_PREV_AUTH_INVALID */
+#define STATUS_CODE_ASSOC_PREV_AUTH_INVALID	    0xFFF5
 
 /* Initalization value */
 #define STATUS_CODE_INVALID                         0xFFFF

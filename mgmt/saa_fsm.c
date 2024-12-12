@@ -1297,6 +1297,38 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function will handle the incoming Deauth Frame when State2.
+ *
+ * @param[in] prSwRfb            Pointer to the SW_RFB_T structure.
+ *
+ * @retval WLAN_STATUS_SUCCESS   Always not retain deauthentication frames
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t saaFsmStaState2HandleRxDeauth(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec)
+{
+	uint16_t u2StatusCode = STATUS_CODE_ASSOC_PREV_AUTH_INVALID;
+
+	if (!prStaRec ||
+	    prStaRec->ucStaState != STA_STATE_2 ||
+	    prStaRec->u2ReasonCode != REASON_CODE_PREV_AUTH_INVALID)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prStaRec->u2StatusCode = u2StatusCode;
+#if CFG_STAINFO_FEATURE
+	prAdapter->u2ConnRejectStatus = u2StatusCode;
+#endif
+
+	/* Reset Send Auth/(Re)Assoc Frame Count */
+	prStaRec->ucTxAuthAssocRetryCount = 0;
+
+	saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE, (struct SW_RFB *) NULL);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This function will check the incoming Deauth Frame.
  *
  * @param[in] prSwRfb            Pointer to the SW_RFB_T structure.
@@ -1361,33 +1393,36 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 
 	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		struct BSS_INFO *prAisBssInfo;
-		struct AIS_FSM_INFO *prAisFsmInfo;
 		struct BSS_DESC *prBssDesc;
-		uint8_t ucBssIndex = 0;
-
-		if (!IS_AP_STA(prStaRec))
-			goto exit;
-
-		ucBssIndex = prStaRec->ucBssIndex;
+		uint8_t ucBssIndex = prStaRec->ucBssIndex;
 
 		prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-		if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-			prDeauthFrame->aucSrcAddr)) {
+		if (!prAisBssInfo || !IS_AP_STA(prStaRec))
+			goto exit;
+
+		if ((UNEQUAL_MAC_ADDR(prStaRec->aucMacAddr,
+			prDeauthFrame->aucSrcAddr)) ||
+		    (prAisBssInfo && IS_UCAST_MAC_ADDR(
+			prDeauthFrame->aucDestAddr) &&
+		     UNEQUAL_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
+			prDeauthFrame->aucDestAddr))) {
 			DBGLOG(SAA, WARN,
-				"Received a Deauth[" MACSTR
-				"] unmatch target[" MACSTR "]\n",
+				"Received a Deauth SA[" MACSTR
+				"] DA[" MACSTR "] unmatch Peer[" MACSTR
+				"] Own[" MACSTR "]\n",
 				MAC2STR(prDeauthFrame->aucSrcAddr),
-				MAC2STR(prBssDesc->aucBSSID));
+				MAC2STR(prDeauthFrame->aucDestAddr),
+				MAC2STR(prStaRec->aucMacAddr),
+				MAC2STR(prAisBssInfo->aucOwnMacAddr));
 			goto exit;
 		}
 
 		/* if state != CONNECTED, don't do disconnect again */
-		if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-			ucBssIndex) !=
-			MEDIA_STATE_CONNECTED)
+		if (prStaRec->ucStaState != STA_STATE_2 &&
+		    kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			ucBssIndex) != MEDIA_STATE_CONNECTED)
 			goto exit;
 
 		if (prStaRec->ucStaState > STA_STATE_1) {
@@ -1444,6 +1479,9 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 					return WLAN_STATUS_SUCCESS;
 				}
 #endif
+				if (saaFsmStaState2HandleRxDeauth(prAdapter,
+					prStaRec) == WLAN_STATUS_SUCCESS)
+					goto exit;
 
 				saaSendDisconnectMsgHandler(prAdapter,
 				      prStaRec,
@@ -1975,14 +2013,16 @@ void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
 		status);
 #endif
 
-	if (status != WLAN_STATUS_SUCCESS)
+	if (status != WLAN_STATUS_SUCCESS) {
 		saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE,
 			    (struct SW_RFB *)NULL);
-	else if (prStaRec->eAuthAssocState != SAA_STATE_EXTERNAL_AUTH)
+	} else if (prStaRec->eAuthAssocState != SAA_STATE_EXTERNAL_AUTH) {
 		DBGLOG(SAA, WARN,
 		       "Receive External Auth DONE at wrong state\n");
-	else
+	} else {
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
 		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1,
 			    (struct SW_RFB *)NULL);
+	}
 }				/* end of saaFsmRunEventExternalAuthDone() */
 
