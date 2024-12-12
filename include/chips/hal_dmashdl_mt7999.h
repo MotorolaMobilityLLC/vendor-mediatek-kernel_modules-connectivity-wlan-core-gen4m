@@ -33,7 +33,7 @@
 
 #define MT7999_DMASHDL_SLOT_ARBITER_EN                 (0)
 #define MT7999_DMASHDL_PLE_TOTAL_PAGE_SIZE             (0x6E0)
-#define MT7999_DMASHDL_PSE_TOTAL_PAGE_SIZE             (0x10)
+#define MT7999_DMASHDL_PSE_TOTAL_PAGE_SIZE             (0x20)
 #define MT7999_DMASHDL_PKT_PLE_MAX_PAGE                (0x1)
 #define MT7999_DMASHDL_PKT_PSE_MAX_PAGE                (0x8)
 #define MT7999_DMASHDL_GROUP_0_REFILL_EN               (1)

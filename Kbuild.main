@@ -1146,6 +1146,12 @@ else
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_WB=0
 endif
 
+ifneq ($(CONFIG_NUM_OF_WFDMA_WB_TX_RING),)
+    ccflags-y += -DCFG_NUM_OF_WFDMA_WB_TX_RING=$(CONFIG_NUM_OF_WFDMA_WB_TX_RING)
+else
+    ccflags-y += -DCFG_NUM_OF_WFDMA_WB_TX_RING=64
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_FORCE_RECV_RX), y)
     ccflags-y += -DCFG_MTK_WIFI_FORCE_RECV_RX=1
 else

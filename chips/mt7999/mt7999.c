@@ -2181,7 +2181,6 @@ static void mt7999WfdmaConfigWriteBack(struct GLUE_INFO *prGlueInfo)
 		WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_CTRL_AP_PER_TIME_SHFT;
 
 #if (CFG_SUPPORT_DISABLE_TX_DDONE_INTR == 1)
-	/* disable tx done interrupt */
 	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_ADDR;
 	u4WrVal = 0xffffffff;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
@@ -2273,7 +2272,7 @@ static void mt7999WfdmaConfigCidxFetch(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_P0_WFDMA_TRINFO_TOP_CIDX_FET_CTRL_ADDR;
 	u4WrVal = WF_P0_WFDMA_TRINFO_TOP_CIDX_FET_CTRL_RX_EN_MASK |
 		WF_P0_WFDMA_TRINFO_TOP_CIDX_FET_CTRL_TX_EN_MASK |
-		WF_P0_WFDMA_TRINFO_TOP_CIDX_FET_CTRL_AP_EN_SHFT;
+		WF_P0_WFDMA_TRINFO_TOP_CIDX_FET_CTRL_AP_EN_MASK;
 	u4WrVal |= 0x5 <<
 		WF_P0_WFDMA_TRINFO_TOP_CIDX_FET_CTRL_DLY_TIME_SHFT;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
@@ -2480,14 +2479,7 @@ enable:
 #if CFG_MTK_WIFI_WFDMA_WB
 static void mt7999EnableInterruptViaPcieByEmi(struct ADAPTER *prAdapter)
 {
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	uint32_t u4Addr;
-
 	asicConnac5xEnablePlatformIRQ(prAdapter);
-
-	/* enable wfdma writeback interrupt */
-	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_RX_EN_31_00_ADDR;
-	HAL_MCR_WR(prAdapter, u4Addr, prHifInfo->u4WbIntSta);
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
@@ -2898,7 +2890,7 @@ static void mt7999WfdmaTxRingExtCtrl(
 		prGlueInfo, prTxRing, index, prTxRing->u4RingSize);
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	mt7999WfdmaTxRingWbExtCtrl(prGlueInfo, prTxRing, index);
+	mt7999WfdmaTxRingWbExtCtrl(prGlueInfo, prTxRing, u4RingIdx);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
@@ -2933,7 +2925,7 @@ static void mt7999WfdmaRxRingExtCtrl(
 		prGlueInfo, prRxRing, index, u4Val);
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	mt7999WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, index);
+	mt7999WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, u4RingIdx);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 

@@ -291,11 +291,9 @@ void mt7999DmashdlInit(struct ADAPTER *prAdapter)
 
 	/* group 0~31 */
 	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_DISABLE_0_ADDR;
-	u4Val = 0;
-	for (idx = 0; idx < (prCfg->u4GroupNum / 2); idx++) {
-		if (prCfg->afgRefillEn[idx])
-			u4Val &= ~(1 << idx);
-		else
+	u4Val = 0xFFFF0000;
+	for (idx = 0; idx < prCfg->u4GroupNum; idx++) {
+		if (!prCfg->afgRefillEn[idx])
 			u4Val |= (1 << idx);
 	}
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);

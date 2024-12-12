@@ -2130,7 +2130,10 @@ void connac5x_show_wfdma_ring_info(
 		u8_hw_desc_base_value = (u4_hw_cnt_value & 0xF0000);
 		u8_hw_desc_base_value = (u8_hw_desc_base_value << 16)
 			| u4_hw_desc_base_value;
-		group->cnt = u4_hw_cnt_value & MT_RING_CNT_MASK;
+		u4_hw_cnt_value &= MT_RING_CNT_MASK;
+		u4_hw_cidx_value &= MT_RING_CIDX_MASK;
+		u4_hw_didx_value &= MT_RING_DIDX_MASK;
+		group->cnt = u4_hw_cnt_value;
 		group->cidx = u4_hw_cidx_value;
 		group->didx = u4_hw_didx_value;
 
@@ -2177,7 +2180,10 @@ void connac5x_show_wfdma_ring_info(
 		u8_hw_desc_base_value = (u4_hw_cnt_value & 0xF0000);
 		u8_hw_desc_base_value = (u8_hw_desc_base_value << 16)
 			| u4_hw_desc_base_value;
-		group->cnt = u4_hw_cnt_value & MT_RING_CNT_MASK;
+		u4_hw_cnt_value &= MT_RING_CNT_MASK;
+		u4_hw_cidx_value &= MT_RING_CIDX_MASK;
+		u4_hw_didx_value &= MT_RING_DIDX_MASK;
+		group->cnt = u4_hw_cnt_value;
 		group->cidx = u4_hw_cidx_value;
 		group->didx = u4_hw_didx_value;
 
