@@ -40,6 +40,7 @@ static struct STATS_TLV_MAP_T apfnTxTbl[STATS_TX_TAG_MAX_NUM] = {
 	{STATS_TX_TAG_RETRY, {statsTxGetRetryLen, statsTxGetRetryHdlr} },
 	{STATS_TX_TAG_TIME, {statsTxGetTimeLen, statsTxTimeHdlr} },
 	{STATS_TX_TAG_LAT, {statsTxGetLatLen, statsTxLatHdlr} },
+	{STATS_TX_TAG_AVG_LAT, {statsTxGetAvgLatLen, statsTxAvgLatHdlr} },
 };
 
 static struct STATS_TLV_MAP_T apfnRxTbl[STATS_RX_TAG_MAX_NUM] = {
@@ -1146,6 +1147,12 @@ statsTxGetLatLen(struct GLUE_INFO *prGlueInfo)
 }
 
 uint32_t
+statsTxGetAvgLatLen(struct GLUE_INFO *prGlueInfo)
+{
+	return sizeof(struct STATS_TX_AVG_LAT_STAT_T);
+}
+
+uint32_t
 statsRxGetAvgRssiLen(struct GLUE_INFO *prGlueInfo)
 {
 	return sizeof(struct STATS_RX_AVG_RSSI_STAT_T);
@@ -1202,6 +1209,7 @@ statsGetTlvStatTotalLen(struct GLUE_INFO *prGlueInfo, uint8_t type,
 	for (i = 0; i < ucNum; i++) {
 		u4TlvIdx = stateGetTlvTag(pTlvTbl, arTagList[i], u4MaxTagNum);
 
+		/* tag not fount */
 		if (u4TlvIdx == u4MaxTagNum) {
 			DBGLOG(TX, TRACE, "type=%u invalid tag=%u\n",
 				type, arTagList[i]);
@@ -1393,6 +1401,47 @@ statsTxLatHdlr(uint8_t ucBssIdx,
 		prLatStat->au4DriverLat[4], prLatStat->au4MacLat[0],
 		prLatStat->au4MacLat[1], prLatStat->au4MacLat[2],
 		prLatStat->au4MacLat[3], prLatStat->au4MacLat[4]);
+}
+
+void
+statsTxAvgLatHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
+	void *prTlvBuf, uint32_t u4TlvLen)
+{
+	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
+	struct STATS_TX_AVG_LAT_STAT_T *prAvgLatStat;
+
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	struct TX_LATENCY_AVERAGE *stats;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+#endif
+
+	prAvgLatStat = (struct STATS_TX_AVG_LAT_STAT_T *)(
+		&prStatTlv->aucBuffer[0]);
+	kalMemZero(prAvgLatStat, sizeof(*prAvgLatStat));
+
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	stats = &prAdapter->rMsduReportStats.rAverage;
+	prAvgLatStat->u4DriverLat = GLUE_GET_REF_CNT(
+		stats->au4AverageTxDelay[DRIVER_TX_DELAY][ucBssIdx]);
+	prAvgLatStat->u4ConnLat = GLUE_GET_REF_CNT(
+		stats->au4AverageTxDelay[CONNSYS_TX_DELAY][ucBssIdx]);
+	prAvgLatStat->u4MacLat = GLUE_GET_REF_CNT(
+		stats->au4AverageTxDelay[MAC_TX_DELAY][ucBssIdx]);
+	prAvgLatStat->u4AirLat = GLUE_GET_REF_CNT(
+		stats->au4AverageTxDelay[AIR_TX_DELAY][ucBssIdx]);
+	prAvgLatStat->u4FailConnLat = GLUE_GET_REF_CNT(
+		stats->au4AverageTxDelay[FAIL_CONNSYS_TX_DELAY][ucBssIdx]);
+#else
+	DBGLOG(TX, INFO, "tx latency not support.\n");
+#endif
+	prStatTlv->u4Tag = STATS_TX_TAG_AVG_LAT;
+	prStatTlv->u4Len = u4TlvLen;
+	DBGLOG(TX, INFO,
+		"AvgTxLatency len=%u [D:C:M:A:FC]=[%u:%u:%u:%u:%u]\n",
+		u4TlvLen, prAvgLatStat->u4DriverLat, prAvgLatStat->u4ConnLat,
+		prAvgLatStat->u4MacLat, prAvgLatStat->u4AirLat,
+		prAvgLatStat->u4FailConnLat);
 }
 
 void
@@ -1605,6 +1654,7 @@ statsGetInfoHdlr(uint8_t ucBssIdx, struct GLUE_INFO *prGlueInfo,
 
 	for (i = 0; i < ucNum; i++) {
 		u4TlvIdx = stateGetTlvTag(pTlvTbl, arTagList[i], u4MaxTagNum);
+		/* tag not fount */
 		if (u4TlvIdx == u4MaxTagNum)
 			continue;
 
