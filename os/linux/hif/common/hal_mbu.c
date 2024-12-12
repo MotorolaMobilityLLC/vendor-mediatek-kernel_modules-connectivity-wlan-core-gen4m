@@ -218,8 +218,16 @@ void halMbuUninit(struct GLUE_INFO *prGlueInfo)
 	prMbuInfo->prMbuEmiData = NULL;
 }
 
-u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
-		    uint32_t *pu4Val)
+u_int8_t halMbuRead4(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
+		     uint32_t *pu4Val)
+{
+	uint32_t u4TmpVal = 0;
+
+	return halMbuRead8(prGlueInfo, u4ReadAddr, pu4Val, &u4TmpVal);
+}
+
+u_int8_t halMbuRead8(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
+		     uint32_t *pu4LowVal, uint32_t *pu4HighVal)
 {
 	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
@@ -287,7 +295,14 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	prMsiMirror = &prEmi->arMsiMirror[MBU_MSI_MIRROR_IDX];
 	prMsiMirror->u4IntSta = 0;
 
-	/* 5. Trigger events */
+	/* 5. Modify byte length for DMA#0 (8bytes) */
+	HAL_MCR_WR(prAdapter, 0x74040A08, 0x16100008);
+	HAL_MCR_WR(prAdapter, 0x74040214, 0x16000008);
+
+	/* 6. Program to unmask vector event for cb_infra_mbu */
+	HAL_MCR_WR(prAdapter, 0x74140204, 0xFF7FFBF3);
+
+	/* 7. Trigger events */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
 	if (IS_CONN_INFRA_MCU_ADDR(u4ReadAddr)) {
 		u4Val = u4ReadAddr - CONN_INFRA_REMAPPING_OFFSET;
@@ -315,7 +330,8 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 			       "Read[0x%08x] timeout Sta[0x%08x]\n",
 			       u4ReadAddr, prMsiMirror->u4IntSta);
 			fgRet = FALSE;
-			*pu4Val = MBU_TIMEOUT_VALUE;
+			*pu4LowVal = MBU_TIMEOUT_VALUE;
+			*pu4HighVal = MBU_TIMEOUT_VALUE;
 			prMbuInfo->u4TimeoutCnt++;
 			goto exit;
 		}
@@ -328,7 +344,8 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* 7. Host driver check rdata on EMI */
-	*pu4Val = prEmi->u4Val;
+	*pu4LowVal = prEmi->u4LowVal;
+	*pu4HighVal = prEmi->u4HighVal;
 
 exit:
 	GLUE_DEC_REF_CNT(prMbuInfo->u4ReadBlockCnt);
@@ -346,8 +363,8 @@ exit:
 		KAL_REC_TIME_END();
 		fgDbg = TRUE;
 		DBGLOG(HAL, INFO,
-		       "read [0x%08x]=[0x%08x] sta[0x%08x] time[%u us]\n",
-		       u4Addr, *pu4Val, prMsiMirror->u4IntSta,
+		       "read [0x%08x]=[0x%08x][0x%08x] sta[0x%08x] time[%u us]\n",
+		       u4Addr, *pu4LowVal, *pu4HighVal, prMsiMirror->u4IntSta,
 		       KAL_GET_TIME_INTERVAL());
 	}
 	if (fgDbg)

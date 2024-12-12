@@ -955,8 +955,9 @@ struct MBU_MSI_MIRROR {
 	uint32_t au4Rsv;
 };
 struct MBU_EMI_CTX {
-	uint32_t u4Val;
-	uint32_t au4Rsv[3];
+	uint32_t u4LowVal;
+	uint32_t u4HighVal;
+	uint32_t au4Rsv[2];
 	struct MBU_MSI_MIRROR arMsiMirror[8];
 };
 #endif /* CFG_MTK_WIFI_MBU */
@@ -967,6 +968,8 @@ struct SW_EMI_RING_OPS {
 	void (*uninit)(struct GLUE_INFO *prGlueInfo);
 	u_int8_t (*read)(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 			 uint32_t *pu4Val);
+	u_int8_t (*read8)(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
+			  uint32_t *pu4LowVal, uint32_t *pu4HighVal);
 	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
 	void (*debug)(struct GLUE_INFO *prGlueInfo);
 	void (*dumpDebugCr)(struct GLUE_INFO *prGlueInfo);
@@ -1401,8 +1404,10 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo);
 #if CFG_MTK_WIFI_MBU
 void halMbuInit(struct GLUE_INFO *prGlueInfo);
 void halMbuUninit(struct GLUE_INFO *prGlueInfo);
-u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
-		    uint32_t *pu4Val);
+u_int8_t halMbuRead4(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
+		     uint32_t *pu4Val);
+u_int8_t halMbuRead8(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
+		     uint32_t *pu4LowVal, uint32_t *pu4HighVal);
 void halMbuDebug(struct GLUE_INFO *prGlueInfo);
 #endif
 

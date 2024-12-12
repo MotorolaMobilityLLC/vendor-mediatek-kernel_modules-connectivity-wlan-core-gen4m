@@ -1909,6 +1909,8 @@ u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
 #if CFG_MTK_WIFI_SW_EMI_RING
 u_int8_t kalDevRegReadByEmi(struct GLUE_INFO *prGlueInfo,
 			    uint32_t u4Reg, uint32_t *pu4Val);
+u_int8_t kalDevRegRead8ByEmi(struct GLUE_INFO *prGlueInfo, uint32_t u4Reg,
+			     uint32_t *pu4LowVal, uint32_t *pu4HighVal);
 #endif
 
 u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo,

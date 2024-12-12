@@ -1675,6 +1675,26 @@ u_int8_t kalDevRegReadByEmi(struct GLUE_INFO *prGlueInfo,
 
 	return fgRet;
 }
+
+u_int8_t kalDevRegRead8ByEmi(struct GLUE_INFO *prGlueInfo, uint32_t u4Reg,
+			     uint32_t *pu4LowVal, uint32_t *pu4HighVal)
+{
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+	u_int8_t fgRet = FALSE;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+
+	prSwEmiRingInfo = &prChipInfo->bus_info->rSwEmiRingInfo;
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnSwEmiRead) &&
+	    prSwEmiRingInfo->rOps.read8)
+		fgRet = prSwEmiRingInfo->rOps.read8(
+			prGlueInfo, u4Reg, pu4LowVal, pu4HighVal);
+
+	return fgRet;
+}
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_MTK_WIFI_WFDMA_WB

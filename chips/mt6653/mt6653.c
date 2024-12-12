@@ -837,7 +837,8 @@ struct BUS_INFO mt6653_bus_info = {
 		.rOps = {
 			.init = halMbuInit,
 			.uninit = halMbuUninit,
-			.read = halMbuRead,
+			.read = halMbuRead4,
+			.read8 = halMbuRead8,
 			.debug = halMbuDebug,
 			.dumpDebugCr = mt6653MbuDumpDebugCr,
 		},

@@ -148,8 +148,22 @@ extern struct TIMER rSerSyncTimer;
 		*_puRet = FALSE; \
 	} \
 }
+
+#define HAL_MCR_EMI_RD8(_prAdapter, _u4Offset, _pu4Low, _pu4High, _puRet) { \
+	struct ADAPTER *_A = _prAdapter; \
+	if (_A) { \
+		*_puRet = kalDevRegReadByEmi8( \
+			_A->prGlueInfo, _u4Offset, _pu4Low, _pu4High); \
+	} else { \
+		*_puRet = FALSE; \
+	} \
+}
 #else
 #define HAL_MCR_EMI_RD(_prAdapter, _u4Offset, _pu4Value, _puRet) { \
+	*_puRet = FALSE; \
+}
+
+#define HAL_MCR_EMI_RD8(_prAdapter, _u4Offset, _pu4Value, _puRet) {	\
 	*_puRet = FALSE; \
 }
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
