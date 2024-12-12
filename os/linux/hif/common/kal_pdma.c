@@ -3167,6 +3167,12 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
+	if (!glue->prHifRegFifoBuf) {
+		DBGLOG(HAL, ERROR, "fifo is free\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	ad = glue->prAdapter;
 	if (!ad) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
