@@ -1365,9 +1365,8 @@ uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter,
 				    aucAllSupportedRates,
 				    &ucAllSupportedRatesLen);
 
-	ucSupRatesLen = ((ucAllSupportedRatesLen >
-			  ELEM_MAX_LEN_SUP_RATES) ?
-			 ELEM_MAX_LEN_SUP_RATES : ucAllSupportedRatesLen);
+	ucSupRatesLen = kal_min_t(uint8_t,
+				ucAllSupportedRatesLen, ELEM_MAX_LEN_SUP_RATES);
 
 	ucExtSupRatesLen = ucAllSupportedRatesLen - ucSupRatesLen;
 
