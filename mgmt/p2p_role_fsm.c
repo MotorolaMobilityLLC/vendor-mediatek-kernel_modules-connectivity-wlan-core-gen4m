@@ -4825,8 +4825,15 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucRoleIndex];
 
 	if (rEapolKeyType == EAPOL_KEY_4_OF_4 &&
-			rTxDoneStatus == TX_RESULT_SUCCESS)
+			rTxDoneStatus == TX_RESULT_SUCCESS) {
 		prP2pSpecificBssInfo->fgIsGcEapolDone = TRUE;
+#if (CFG_MTK_WIFI_SUPPORT_EAPOL_FAST_IP_ALLOCATION == 1)
+		/* Finish GC connection process. */
+		p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
+#endif
+	}
 }
 
 void p2pRoleFsmNotifyDhcpDone(struct ADAPTER *prAdapter,
