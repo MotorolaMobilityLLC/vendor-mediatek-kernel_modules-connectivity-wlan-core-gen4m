@@ -1107,12 +1107,24 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	copy_to_user(_pvTo, _pvFrom, _u4N)
 
 /* Copy memory block with specific size */
-#define kalMemCopy(pvDst, pvSrc, u4Size)  \
-	memcpy(pvDst, pvSrc, u4Size)
+#define kalMemCopy(pvDst, pvSrc, u4Size) ({ \
+	void *pvRetAddr; \
+	if (likely(u4Size != 0)) \
+		pvRetAddr = memcpy(pvDst, pvSrc, u4Size); \
+	else \
+		pvRetAddr = pvDst; \
+	pvRetAddr; \
+})
 
 /* Set memory block with specific pattern */
-#define kalMemSet(pvAddr, ucPattern, u4Size)  \
-	memset(pvAddr, ucPattern, u4Size)
+#define kalMemSet(pvAddr, ucPattern, u4Size) ({ \
+	void *pvRetAddr; \
+	if (likely(u4Size != 0)) \
+		pvRetAddr = memset(pvAddr, ucPattern, u4Size); \
+	else \
+		pvRetAddr = pvAddr; \
+	pvRetAddr; \
+})
 
 /* Copy memory block from IO memory */
 #define kalMemCopyFromIo(pvDst, pvSrc, u4Size)  \
@@ -1129,12 +1141,24 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 /* Compare two memory block with specific length.
  * Return zero if they are the same.
  */
-#define kalMemCmp(pvAddr1, pvAddr2, u4Size)  \
-	memcmp(pvAddr1, pvAddr2, u4Size)
+#define kalMemCmp(pvAddr1, pvAddr2, u4Size) ({ \
+	int32_t ret; \
+	if (likely(u4Size != 0)) \
+		ret = memcmp(pvAddr1, pvAddr2, u4Size); \
+	else \
+		ret = 0; \
+	ret; \
+})
 
 /* Zero specific memory block */
-#define kalMemZero(pvAddr, u4Size)  \
-	memset(pvAddr, 0, u4Size)
+#define kalMemZero(pvAddr, u4Size) ({ \
+	void *pvRetAddr; \
+	if (likely(u4Size != 0)) \
+		pvRetAddr = memset(pvAddr, 0, u4Size); \
+	else \
+		pvRetAddr = pvAddr; \
+	pvRetAddr; \
+})
 
 /* Move memory block with specific size */
 #define kalMemMove(pvDst, pvSrc, u4Size)  \
