@@ -508,125 +508,6 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 	return i4Rst;
 }
 
-#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This routine is responsible for getting tx rate from LLS
- *
- * @param
- *
- * @retval 0:       successful
- *         others:  failure
- */
-/*----------------------------------------------------------------------------*/
-static uint32_t wlanGetTxRateFromLinkStats(
-	struct GLUE_INFO *prGlueInfo, uint32_t *pu4TxRate,
-	uint32_t *pu4TxBw, uint8_t ucBssIndex)
-{
-	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
-	uint32_t u4MaxTxRate, u4Nss;
-	union {
-		struct CMD_GET_STATS_LLS cmd;
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-		struct UNI_EVENT_BSS_TX_RATE arTlv[MAX_BSSID_NUM];
-#else
-		struct EVENT_STATS_LLS_TX_RATE_INFO rate_info;
-#endif
-	} query = {0};
-	uint32_t u4QueryBufLen;
-	uint32_t u4QueryInfoLen;
-	struct _STATS_LLS_TX_RATE_INFO *target;
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	uint16_t offset = 0;
-	uint8_t *tag = NULL;
-#endif
-
-	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
-		return WLAN_STATUS_FAILURE;
-
-	kalMemZero(&query, sizeof(query));
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	query.cmd.u4Tag = STATS_LLS_TAG_BSS_CURRENT_TX_RATE;
-#else
-	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
-#endif
-	u4QueryBufLen = sizeof(query);
-	u4QueryInfoLen = sizeof(query.cmd);
-
-	rStatus = kalIoctl(prGlueInfo,
-			wlanQueryLinkStats,
-			&query,
-			u4QueryBufLen,
-			&u4QueryInfoLen);
-	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
-				rStatus, u4QueryInfoLen);
-
-	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
-		DBGLOG(REQ, INFO, "wlanQueryLinkStats return fail\n");
-		return rStatus;
-	}
-
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	if (unlikely(u4QueryInfoLen > (sizeof(struct UNI_EVENT_BSS_TX_RATE)
-		* MAX_BSSID_NUM))) {
-		DBGLOG(REQ, INFO, "wlanQueryLinkStats return len unexpected\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	tag = (uint8_t *) query.arTlv;
-	TAG_FOR_EACH(tag, u4QueryInfoLen, offset) {
-		DBGLOG_HEX(REQ, INFO, tag, TAG_LEN(tag));
-		switch (TAG_ID(tag)) {
-		case UNI_EVENT_STATISTICS_TAG_BSS_CURRENT_TX_RATE: {
-			struct UNI_EVENT_BSS_TX_RATE *tlv =
-				(struct UNI_EVENT_BSS_TX_RATE *)tag;
-			if (tlv->ucBssIdx == ucBssIndex)
-				target = &tlv->rTxRateInfo;
-			break;
-		}
-		default:
-			DBGLOG(REQ, WARN, "invalid tag:%u", TAG_ID(tag));
-			break;
-		}
-	}
-#else
-	if (unlikely(u4QueryInfoLen != sizeof(
-		struct EVENT_STATS_LLS_TX_RATE_INFO))) {
-		DBGLOG(REQ, INFO, "wlanQueryLinkStats return len unexpected\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	target = &query.rate_info.arTxRateInfo[ucBssIndex];
-#endif
-	if (!target)
-		return WLAN_STATUS_FAILURE;
-
-	if (target->bw >= ARRAY_SIZE(arBwCfg80211Table)) {
-		DBGLOG(REQ, WARN, "wrong tx bw!");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	*pu4TxBw = arBwCfg80211Table[target->bw];
-	target->nsts += 1;
-	if (target->nsts == 1)
-		u4Nss = target->nsts;
-	else
-		u4Nss = target->stbc ?
-			(target->nsts >> 1)
-			: target->nsts;
-
-	wlanQueryRateByTable(target->mode,
-		target->rate, target->bw, 0,
-		u4Nss, pu4TxRate, &u4MaxTxRate);
-	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
-		target->rate, target->mode,
-		u4Nss, target->stbc,
-		*pu4TxBw, *pu4TxRate);
-
-	return rStatus;
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for getting station information such as
@@ -827,8 +708,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #else
 	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate,
 			&u4TxBw, ucBssIndex);
-	if (rStatus == WLAN_STATUS_SUCCESS)
-		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		if (u4TxBw < ARRAY_SIZE(arBwCfg80211Table))
+			prGlueInfo->u4TxBwCache[ucBssIndex] =
+				arBwCfg80211Table[u4TxBw];
+	}
 	sinfo->txrate.bw =
 		prGlueInfo->u4TxBwCache[ucBssIndex];
 #endif

@@ -1660,7 +1660,7 @@
 #define AOSP_LLS_V1_SINGLE_INTERFACE 0
 #endif
 
-#define CFG_REPORT_TX_RATE_FROM_LLS 0
+#define CFG_REPORT_TX_RATE_FROM_LLS 1
 /*------------------------------------------------------------------------------
  * Flags for prepare the FW compile flag
  *------------------------------------------------------------------------------

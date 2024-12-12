@@ -2244,6 +2244,12 @@ wlanoidQueryBssStatistics(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void wlanDumpBssStatistics(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+uint32_t wlanGetTxRateFromLinkStats(
+	struct GLUE_INFO *prGlueInfo, uint32_t *pu4TxRate,
+	uint32_t *pu4TxBw, uint8_t ucBssIndex);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* query sta statistics information from driver and firmware                  */
 /*----------------------------------------------------------------------------*/

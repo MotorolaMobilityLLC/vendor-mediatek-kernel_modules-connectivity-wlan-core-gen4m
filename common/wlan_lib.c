@@ -6265,6 +6265,81 @@ wlanQueryStatistics(struct ADAPTER *prAdapter,
 
 } /* wlanQueryStatistics */
 
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This routine is responsible for getting tx rate from LLS
+ *
+ * @param
+ *
+ * @retval 0:       successful
+ *         others:  failure
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanGetTxRateFromLinkStats(
+	struct GLUE_INFO *prGlueInfo, uint32_t *pu4TxRate,
+	uint32_t *pu4TxBw, uint8_t ucBssIndex)
+{
+	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
+	uint32_t u4MaxTxRate, u4Nss;
+	union {
+		struct CMD_GET_STATS_LLS cmd;
+		struct EVENT_STATS_LLS_TX_RATE_INFO rate_info;
+	} query = {0};
+	uint32_t u4QueryBufLen;
+	uint32_t u4QueryInfoLen;
+	struct _STATS_LLS_TX_RATE_INFO targetRateInfo;
+
+	if (unlikely(ucBssIndex >= BSSID_NUM))
+		return WLAN_STATUS_FAILURE;
+
+	kalMemZero(&query, sizeof(query));
+	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
+	u4QueryBufLen = sizeof(query);
+	u4QueryInfoLen = sizeof(query.cmd);
+
+	rStatus = kalIoctl(prGlueInfo,
+			wlanQueryLinkStats,
+			&query,
+			u4QueryBufLen,
+			&u4QueryInfoLen);
+	DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes",
+				rStatus, u4QueryInfoLen);
+	targetRateInfo = query.rate_info.arTxRateInfo[ucBssIndex];
+	DBGLOG_HEX(REQ, TRACE, &query.rate_info, sizeof(query.rate_info));
+
+	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
+		DBGLOG(REQ, INFO, "wlanQueryLinkStats return fail\n");
+		return rStatus;
+	}
+	if (unlikely(u4QueryInfoLen != sizeof(
+		struct EVENT_STATS_LLS_TX_RATE_INFO))) {
+		DBGLOG(REQ, INFO, "wlanQueryLinkStats return len unexpected\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	*pu4TxBw = targetRateInfo.bw;
+	targetRateInfo.nsts += 1;
+	if (targetRateInfo.nsts == 1)
+		u4Nss = targetRateInfo.nsts;
+	else
+		u4Nss = targetRateInfo.stbc ?
+			(targetRateInfo.nsts >> 1)
+			: targetRateInfo.nsts;
+
+	wlanQueryRateByTable(targetRateInfo.mode,
+		targetRateInfo.rate, targetRateInfo.bw, 0,
+		u4Nss, pu4TxRate, &u4MaxTxRate);
+	DBGLOG(REQ, TRACE,
+		"rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
+		targetRateInfo.rate, targetRateInfo.mode,
+		u4Nss, targetRateInfo.stbc,
+		*pu4TxBw, *pu4TxRate);
+
+	return rStatus;
+}
+#endif
+
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
