@@ -15,10 +15,6 @@
  * definition for AP selection algrithm
  */
 #define BSS_FULL_SCORE                          (100)
-#define CHNL_BSS_NUM_THRESOLD                   100
-#define BSS_STA_CNT_THRESOLD                    30
-#define SCORE_PER_AP                            1
-#define ROAMING_NO_SWING_SCORE_STEP             100
 /* MCS9 at BW 160 requires rssi at least -48dbm */
 #define BEST_RSSI                               -48
 /* MCS7 at 20BW, MCS5 at 40BW, MCS4 at 80BW, MCS3 at 160BW */
@@ -32,10 +28,6 @@
 #define MINIMUM_RSSI_6G                         -86
 #endif
 
-/* level of rssi range on StatusBar */
-#define RSSI_MAX_LEVEL                          -55
-#define RSSI_SECOND_LEVEL                       -66
-
 /* Real Rssi of a Bss may range in current_rssi - 5 dbm
  *to current_rssi + 5 dbm
  */
@@ -43,43 +35,22 @@
 #define RSSI_DIFF_MED_STEP			10 /* dbm */
 #define RSSI_DIFF_SML_STEP			5 /* dbm */
 #define LOW_RSSI_FOR_5G_BAND                    -70 /* dbm */
-#define HIGH_RSSI_FOR_5G_BAND                   -60 /* dbm */
 
-#define CHNL_DWELL_TIME_DEFAULT  100
-#define CHNL_DWELL_TIME_ONLINE   50
+#define CHNL_DWELL_TIME_DEFAULT                 100
+#define CHNL_DWELL_TIME_ONLINE                  50
 
-#define WEIGHT_IDX_CHNL_UTIL                    0
-#define WEIGHT_IDX_RSSI                         2
-#define WEIGHT_IDX_SCN_MISS_CNT                 2
-#define WEIGHT_IDX_PROBE_RSP                    1
-#define WEIGHT_IDX_CLIENT_CNT                   0
-#define WEIGHT_IDX_AP_NUM                       0
-#define WEIGHT_IDX_5G_BAND                      2
-#define WEIGHT_IDX_BAND_WIDTH                   1
-#define WEIGHT_IDX_STBC                         1
-#define WEIGHT_IDX_DEAUTH_LAST                  1
+#define WEIGHT_IDX_RSSI                         4
+#define WEIGHT_IDX_CHNL_LOAD                    2
+#define WEIGHT_IDX_BAND                         3
+#define WEIGHT_IDX_BAND_WIDTH                   3
 #define WEIGHT_IDX_BLOCK_LIST                   2
-#define WEIGHT_IDX_SAA                          0
-#define WEIGHT_IDX_CHNL_IDLE                    1
-#define WEIGHT_IDX_OPCHNL                       0
-#define WEIGHT_IDX_TPUT                         1
 #define WEIGHT_IDX_PREFERENCE                   2
 
-#define WEIGHT_IDX_CHNL_UTIL_PER                0
-#define WEIGHT_IDX_RSSI_PER                     4
-#define WEIGHT_IDX_SCN_MISS_CNT_PER             4
-#define WEIGHT_IDX_PROBE_RSP_PER                1
-#define WEIGHT_IDX_CLIENT_CNT_PER               1
-#define WEIGHT_IDX_AP_NUM_PER                   6
-#define WEIGHT_IDX_5G_BAND_PER                  4
+#define WEIGHT_IDX_RSSI_PER                     6
+#define WEIGHT_IDX_CHNL_LOAD_PER                6
+#define WEIGHT_IDX_BAND_PER                     4
 #define WEIGHT_IDX_BAND_WIDTH_PER               1
-#define WEIGHT_IDX_STBC_PER                     1
-#define WEIGHT_IDX_DEAUTH_LAST_PER              1
 #define WEIGHT_IDX_BLOCK_LIST_PER               4
-#define WEIGHT_IDX_SAA_PER                      1
-#define WEIGHT_IDX_CHNL_IDLE_PER                6
-#define WEIGHT_IDX_OPCHNL_PER                   6
-#define WEIGHT_IDX_TPUT_PER                     2
 #define WEIGHT_IDX_PREFERENCE_PER               2
 
 #define ROAM_SCORE_DELTA                        5
@@ -102,21 +73,11 @@
  */
 
 struct WEIGHT_CONFIG {
-	uint8_t ucChnlUtilWeight;
-	uint8_t ucSnrWeight;
 	uint8_t ucRssiWeight;
-	uint8_t ucProbeRespWeight;
-	uint8_t ucClientCntWeight;
-	uint8_t ucApNumWeight;
+	uint8_t ucChnlLoadWeight;
 	uint8_t ucBandWeight;
 	uint8_t ucBandWidthWeight;
-	uint8_t ucStbcWeight;
-	uint8_t ucLastDeauthWeight;
 	uint8_t ucBlockListWeight;
-	uint8_t ucSaaWeight;
-	uint8_t ucChnlIdleWeight;
-	uint8_t ucOpchnlWeight;
-	uint8_t ucTputWeight;
 	uint8_t ucPreferenceWeight;
 };
 
@@ -184,38 +145,20 @@ static const char * const apucLinkPlanStr[MLO_LINK_PLAN_NUM] = {
 
 struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 	[ROAM_TYPE_RCPI] = {
-		.ucChnlUtilWeight = WEIGHT_IDX_CHNL_UTIL,
 		.ucRssiWeight = WEIGHT_IDX_RSSI,
-		.ucProbeRespWeight = WEIGHT_IDX_PROBE_RSP,
-		.ucClientCntWeight = WEIGHT_IDX_CLIENT_CNT,
-		.ucApNumWeight = WEIGHT_IDX_AP_NUM,
-		.ucBandWeight = WEIGHT_IDX_5G_BAND,
+		.ucChnlLoadWeight = WEIGHT_IDX_CHNL_LOAD,
+		.ucBandWeight = WEIGHT_IDX_BAND,
 		.ucBandWidthWeight = WEIGHT_IDX_BAND_WIDTH,
-		.ucStbcWeight = WEIGHT_IDX_STBC,
-		.ucLastDeauthWeight = WEIGHT_IDX_DEAUTH_LAST,
 		.ucBlockListWeight = WEIGHT_IDX_BLOCK_LIST,
-		.ucSaaWeight = WEIGHT_IDX_SAA,
-		.ucChnlIdleWeight = WEIGHT_IDX_CHNL_IDLE,
-		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL,
-		.ucTputWeight = WEIGHT_IDX_TPUT,
 		.ucPreferenceWeight = WEIGHT_IDX_PREFERENCE
 	}
 #if CFG_SUPPORT_ROAMING
 	, [ROAM_TYPE_PER] = {
-		.ucChnlUtilWeight = WEIGHT_IDX_CHNL_UTIL_PER,
 		.ucRssiWeight = WEIGHT_IDX_RSSI_PER,
-		.ucProbeRespWeight = WEIGHT_IDX_PROBE_RSP_PER,
-		.ucClientCntWeight = WEIGHT_IDX_CLIENT_CNT_PER,
-		.ucApNumWeight = WEIGHT_IDX_AP_NUM_PER,
-		.ucBandWeight = WEIGHT_IDX_5G_BAND_PER,
+		.ucChnlLoadWeight = WEIGHT_IDX_CHNL_LOAD_PER,
+		.ucBandWeight = WEIGHT_IDX_BAND_PER,
 		.ucBandWidthWeight = WEIGHT_IDX_BAND_WIDTH_PER,
-		.ucStbcWeight = WEIGHT_IDX_STBC_PER,
-		.ucLastDeauthWeight = WEIGHT_IDX_DEAUTH_LAST_PER,
 		.ucBlockListWeight = WEIGHT_IDX_BLOCK_LIST_PER,
-		.ucSaaWeight = WEIGHT_IDX_SAA_PER,
-		.ucChnlIdleWeight = WEIGHT_IDX_CHNL_IDLE_PER,
-		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL_PER,
-		.ucTputWeight = WEIGHT_IDX_TPUT_PER,
 		.ucPreferenceWeight = WEIGHT_IDX_PREFERENCE_PER
 	}
 #endif
@@ -240,15 +183,6 @@ const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
 #endif
 };
 #endif
-
-const uint16_t mpduLen[CW_320_2MHZ + 1] = {
-	[CW_20_40MHZ]  = 40,
-	[CW_80MHZ] = 80,
-	[CW_160MHZ] = 160,
-	[CW_80P80MHZ] = 160,
-	[CW_320_1MHZ]  = 320,
-	[CW_320_2MHZ]  = 320
-};
 
 #define PERCENTAGE(_val, _base) (_val * 100 / _base)
 
@@ -448,11 +382,6 @@ static const struct minsnr_bitrate_entry eht320_table[] = {
 #define AP_HASH(_addr) \
 	((uint8_t) (MAC_ADDR_HASH(_addr) & (AP_HASH_SIZE - 1)))
 
-#define CALCULATE_SCORE_BY_DEAUTH(prBssDesc, eRoamType) \
-	(gasMtkWeightConfig[eRoamType].ucLastDeauthWeight * \
-	(prBssDesc->prBlock && prBssDesc->prBlock->fgDeauthLastTime ? 0 : \
-	BSS_FULL_SCORE))
-
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -461,9 +390,6 @@ static const struct minsnr_bitrate_entry eht320_table[] = {
 static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex);
-
-static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
-	uint8_t bidx);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1178,7 +1104,7 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 				slot = scanGetChnlIdleSlot(ad,
 					bss->eBand, bss->ucChannelNum);
 
-				/* 90000 ms = 90ms dwell time to micro sec */
+				/* 90000 ms = 90us dwell time to micro sec */
 				idle = (slot * 9 * 100) / (90000);
 				airTime  = kal_max_t(int32_t, idle, 50);
 
@@ -1305,55 +1231,8 @@ static enum ROAM_TYPE roamReasonToType(enum ENUM_ROAMING_REASON type)
 }
 
 #if (CFG_EXT_ROAMING == 0) /* Common part */
-/* Channel Utilization: weight index will be */
-static uint16_t apsCalculateScoreByChnlInfo(
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo, uint8_t ucChannel,
+static uint16_t apsCalculateScoreByBW(struct BSS_DESC *prBssDesc,
 	enum ROAM_TYPE eRoamType)
-{
-	struct ESS_CHNL_INFO *prEssChnlInfo = &prAisSpecificBssInfo->
-		arCurEssChnlInfo[0];
-	uint8_t i = 0;
-	uint16_t u2Score = 0;
-	uint8_t weight = 0;
-
-	if (eRoamType >= ROAM_TYPE_NUM) {
-		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
-		return 0;
-	}
-
-	weight = gasMtkWeightConfig[eRoamType].ucApNumWeight;
-
-	for (; i < prAisSpecificBssInfo->ucCurEssChnlInfoNum; i++) {
-		if (ucChannel == prEssChnlInfo[i].ucChannel) {
-#if 0	/* currently, we don't take channel utilization into account */
-			/* the channel utilization max value is 255.
-			 *great utilization means little weight value.
-			 * the step of weight value is 2.6
-			 */
-			u2Score = mtk_weight_config[eRoamType].
-				ucChnlUtilWeight * (BSS_FULL_SCORE -
-				(prEssChnlInfo[i].ucUtilization * 10 / 26));
-#endif
-			/* if AP num on this channel is greater than 100,
-			 * the weight will be 0.
-			 * otherwise, the weight value decrease 1
-			 * if AP number increase 1
-			 */
-			if (prEssChnlInfo[i].ucApNum <= CHNL_BSS_NUM_THRESOLD)
-				u2Score += weight *
-				(BSS_FULL_SCORE - prEssChnlInfo[i].ucApNum *
-					SCORE_PER_AP);
-			DBGLOG(APS, TRACE, "channel %d, AP num %d\n",
-				ucChannel, prEssChnlInfo[i].ucApNum);
-			break;
-		}
-	}
-	return u2Score;
-}
-
-static uint16_t apsCalculateScoreByBW(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType,
-	uint8_t ucBssIndex)
 {
 	uint16_t u2Score = 0;
 
@@ -1364,14 +1243,14 @@ static uint16_t apsCalculateScoreByBW(struct ADAPTER *prAdapter,
 
 	switch (prBssDesc->eChannelWidth) {
 	case CW_20_40MHZ:
-		u2Score = 40;
+		u2Score = 25;
 		break;
 	case CW_80MHZ:
-		u2Score = 60;
+		u2Score = 50;
 		break;
 	case CW_160MHZ:
 	case CW_80P80MHZ:
-		u2Score = 80;
+		u2Score = 75;
 		break;
 	case CW_320_1MHZ:
 	case CW_320_2MHZ:
@@ -1385,9 +1264,10 @@ static uint16_t apsCalculateScoreByBW(struct ADAPTER *prAdapter,
 }
 
 static uint16_t apsCalculateScoreByBand(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, int8_t cRssi, enum ROAM_TYPE eRoamType)
+	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
+	int8_t cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
 	if (eRoamType >= ROAM_TYPE_NUM) {
 		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
@@ -1400,7 +1280,7 @@ static uint16_t apsCalculateScoreByBand(struct ADAPTER *prAdapter,
 		break;
 	case BAND_5G:
 		if (prAdapter->fgEnable5GBand && cRssi > LOW_RSSI_FOR_5G_BAND)
-			u2Score = 80;
+			u2Score = 70;
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case BAND_6G:
@@ -1413,63 +1293,6 @@ static uint16_t apsCalculateScoreByBand(struct ADAPTER *prAdapter,
 	}
 
 	return u2Score * gasMtkWeightConfig[eRoamType].ucBandWeight;
-}
-
-static uint16_t apsCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
-			enum ROAM_TYPE eRoamType)
-{
-	uint16_t u2Score = 0;
-	uint16_t u2StaCnt = 0;
-#define BSS_STA_CNT_NORMAL_SCORE 50
-#define BSS_STA_CNT_GOOD_THRESOLD 10
-
-	if (eRoamType >= ROAM_TYPE_NUM) {
-		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
-		return 0;
-	}
-
-	DBGLOG(APS, TRACE, "Exist bss load %d, sta cnt %d\n",
-			prBssDesc->fgExistBssLoadIE, prBssDesc->u2StaCnt);
-
-	if (!prBssDesc->fgExistBssLoadIE) {
-		u2Score = BSS_STA_CNT_NORMAL_SCORE;
-		return u2Score *
-		gasMtkWeightConfig[eRoamType].ucClientCntWeight;
-	}
-
-	u2StaCnt = prBssDesc->u2StaCnt;
-	if (u2StaCnt > BSS_STA_CNT_THRESOLD)
-		u2Score = 0;
-	else if (u2StaCnt < BSS_STA_CNT_GOOD_THRESOLD)
-		u2Score = BSS_FULL_SCORE - u2StaCnt;
-	else
-		u2Score = BSS_STA_CNT_NORMAL_SCORE;
-
-	return u2Score * gasMtkWeightConfig[eRoamType].ucClientCntWeight;
-}
-
-static uint16_t apsCalculateScoreByStbc(struct BSS_DESC *prBssDesc,
-	enum ROAM_TYPE eRoamType)
-{
-	uint16_t u2Score = 0;
-
-	if (eRoamType >= ROAM_TYPE_NUM) {
-		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
-		return 0;
-	}
-
-	if (prBssDesc->fgMultiAnttenaAndSTBC)
-		u2Score = BSS_FULL_SCORE;
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	/* assume stbc is supported because 6g AP doesn't carry ht cap */
-	if (prBssDesc->eBand == BAND_6G)
-		u2Score = BSS_FULL_SCORE;
-#endif
-
-	u2Score *= gasMtkWeightConfig[eRoamType].ucStbcWeight;
-
-	return u2Score;
 }
 
 static uint16_t apsCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
@@ -1499,67 +1322,21 @@ static uint16_t apsCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
 	else if (prBssDesc->eBand == BAND_6G && cRssi < MINIMUM_RSSI_6G)
 		u2Score = 0;
 #endif
-	else if (cRssi <= -98)
+	else if (cRssi > -98)
+		u2Score = (uint16_t)(cRssi + 98) * 2;
+	else
 		u2Score = 0;
-	else
-		u2Score = (cRssi + 98) * 2;
 
-	u2Score *= gasMtkWeightConfig[eRoamType].ucRssiWeight;
-
-	return u2Score;
+	return u2Score * gasMtkWeightConfig[eRoamType].ucRssiWeight;
 }
 
-static uint16_t apsCalculateScoreBySaa(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+static uint16_t apsCalculateScoreByChnlLoad(struct ADAPTER *prAdapter,
+	enum ROAM_TYPE eRoamType, struct BSS_DESC *prBssDesc,
+	uint8_t ucBssIndex)
 {
-	uint16_t u2Score = 0;
-	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+	uint16_t slot = 0, idle, score = 0, cuRatio = 0;
+	uint8_t cu = 0;
 
-	if (eRoamType >= ROAM_TYPE_NUM) {
-		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
-		return 0;
-	}
-
-	prStaRec = cnmGetStaRecByAddress(prAdapter, NETWORK_TYPE_AIS,
-		prBssDesc->aucSrcAddr);
-	if (prStaRec)
-		u2Score = gasMtkWeightConfig[eRoamType].ucSaaWeight *
-		(prStaRec->ucTxAuthAssocRetryCount ? 0 : BSS_FULL_SCORE);
-	else
-		u2Score = gasMtkWeightConfig[eRoamType].ucSaaWeight *
-		BSS_FULL_SCORE;
-
-	return u2Score;
-}
-
-static uint16_t apsCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
-	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
-	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
-	enum ENUM_BAND eBand)
-{
-	struct SCAN_INFO *info;
-	struct SCAN_PARAM *param;
-	struct BSS_INFO *bss;
-	int32_t score, rssi, cu = 0, cuRatio, dwell;
-	uint32_t rssiFactor, cuFactor, rssiWeight, cuWeight;
-	uint32_t slot = 0, idle;
-	uint8_t i;
-
-	rssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
-	rssiWeight = 65;
-	cuWeight = 35;
-	if (rssi >= -55)
-		rssiFactor = 100;
-	else if (rssi < -55 && rssi >= -60)
-		rssiFactor = 90 + 2 * (60 + rssi);
-	else if (rssi < -60 && rssi >= -70)
-		rssiFactor = 60 + 3 * (70 + rssi);
-	else if (rssi < -70 && rssi >= -80)
-		rssiFactor = 20 + 4 * (80 + rssi);
-	else if (rssi < -80 && rssi >= -90)
-		rssiFactor = 2 * (90 + rssi);
-	else
-		rssiFactor = 0;
 	if (eRoamType >= ROAM_TYPE_NUM) {
 		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
@@ -1568,74 +1345,63 @@ static uint16_t apsCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		DBGLOG(APS, WARN, "Invalid Band %d\n", prBssDesc->eBand);
 		return 0;
 	}
+
 	if (prBssDesc->fgExistBssLoadIE) {
 		cu = prBssDesc->ucChnlUtilization;
+		cuRatio = cu * 100 / 255;
 	} else {
-		bss = aisGetAisBssInfo(prAdapter, ucBssIndex);
-		info = &(prAdapter->rWifiVar.rScanInfo);
-		param = &(info->rScanParam);
+		cu = apsGetCuInfo(prAdapter, prBssDesc, ucBssIndex);
+		if (cu) {
+			cuRatio = cu * 100 / 255;
+		} else {
+			slot = scanGetChnlIdleSlot(prAdapter,
+				prBssDesc->eBand, prBssDesc->ucChannelNum);
 
-		if (param->u2ChannelDwellTime > 0)
-			dwell = param->u2ChannelDwellTime;
-		else if (bss->eConnectionState == MEDIA_STATE_CONNECTED)
-			dwell = CHNL_DWELL_TIME_ONLINE;
-		else
-			dwell = CHNL_DWELL_TIME_DEFAULT;
-
-		for (i = 0; i < info->ucSparseChannelArrayValidNum; i++) {
-			if (prBssDesc->ucChannelNum == info->aucChannelNum[i] &&
-					eBand == info->aeChannelBand[i]) {
-				slot = info->au2ChannelIdleTime[i];
-				idle = (slot * 9 * 100) / (dwell * 1000);
-#if CFG_SUPPORT_ROAMING
-				if (eRoamType == ROAM_TYPE_PER) {
-					score = idle > BSS_FULL_SCORE ?
-						BSS_FULL_SCORE : idle;
-					goto done;
-				}
-#endif
-				cu = 255 - idle * 255 / 100;
-				break;
-			}
+			/* 90000 ms = 90us dwell time to micro sec */
+			idle = (slot * 9 * 100) / (90000);
+			cuRatio = idle > 100 ? 0 : 100 - idle;
 		}
 	}
 
-	cuRatio = cu * 100 / 255;
 	if (prBssDesc->eBand == BAND_2G4) {
 		if (cuRatio < 10)
-			cuFactor = 100;
+			score = 100;
 		else if (cuRatio < 70 && cuRatio >= 10)
-			cuFactor = 111 - (13 * cuRatio / 10);
+			score = 111 - (13 * cuRatio / 10);
 		else
-			cuFactor = 20;
-	} else {
+			score = 20;
+	} else if (prBssDesc->eBand == BAND_5G) {
 		if (cuRatio < 30)
-			cuFactor = 100;
+			score = 100;
 		else if (cuRatio < 80 && cuRatio >= 30)
-			cuFactor = 148 - (16 * cuRatio / 10);
+			score = 148 - (16 * cuRatio / 10);
 		else
-			cuFactor = 20;
+			score = 20;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (prBssDesc->eBand == BAND_6G) {
+		if (cuRatio < 30)
+			score = 120;
+		else if (cuRatio < 80 && cuRatio >= 30)
+			score = 180 - (20 * cuRatio / 10);
+		else
+			score = 20;
+#endif
 	}
-
-	score = (rssiFactor * rssiWeight + cuFactor * cuWeight) >> 6;
 
 	DBGLOG(APS, TRACE,
 		MACSTR
-		" Band[%s],chl[%d],slt[%d],ld[%d] idle Score %d,rssi[%d],cu[%d],cuR[%d],rf[%d],rw[%d],cf[%d],cw[%d]\n",
+		" Band[%s],chl[%d],slot[%d],fgIE[%d] Score %d, CU[%d,%d%%]\n",
 		MAC2STR(prBssDesc->aucBSSID),
 		apucBandStr[prBssDesc->eBand],
 		prBssDesc->ucChannelNum, slot,
-		prBssDesc->fgExistBssLoadIE, score, rssi, cu, cuRatio,
-		rssiFactor, rssiWeight, cuFactor, cuWeight);
-#if CFG_SUPPORT_ROAMING
-done:
-#endif
-	return score * gasMtkWeightConfig[eRoamType].ucChnlIdleWeight;
+		prBssDesc->fgExistBssLoadIE, score, cu, cuRatio);
+
+	return score * gasMtkWeightConfig[eRoamType].ucChnlLoadWeight;
 
 }
 
-uint16_t apsCalculateScoreByBlockList(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+uint16_t apsCalculateScoreByBlockList(struct BSS_DESC *prBssDesc,
+	enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 
@@ -1647,7 +1413,7 @@ uint16_t apsCalculateScoreByBlockList(struct ADAPTER *prAdapter,
 	if (!prBssDesc->prBlock)
 		u2Score = 100;
 	else if (rsnApOverload(prBssDesc->prBlock->u2AuthStatus,
-		prBssDesc->prBlock->u2DeauthReason) ||
+			       prBssDesc->prBlock->u2DeauthReason) ||
 		 prBssDesc->prBlock->ucCount >= 10)
 		u2Score = 0;
 	else
@@ -1656,26 +1422,8 @@ uint16_t apsCalculateScoreByBlockList(struct ADAPTER *prAdapter,
 	return u2Score * gasMtkWeightConfig[eRoamType].ucBlockListWeight;
 }
 
-uint16_t apsCalculateScoreByTput(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
-{
-	uint16_t u2Score = 0;
-
-	if (eRoamType >= ROAM_TYPE_NUM) {
-		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
-		return 0;
-	}
-
-#if CFG_SUPPORT_MBO
-	if (prBssDesc->fgExistEspIE)
-		u2Score = (prBssDesc->u4EspInfo[ESP_AC_BE] >> 8) & 0xff;
-#endif
-
-	return u2Score * gasMtkWeightConfig[eRoamType].ucTputWeight;
-}
-
-uint16_t apsCalculateScoreByPreference(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason)
+uint16_t apsCalculateScoreByPreference(struct BSS_DESC *prBssDesc,
+	enum ENUM_ROAMING_REASON eRoamReason)
 {
 	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
 
@@ -1687,33 +1435,25 @@ uint16_t apsCalculateScoreByPreference(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_ROAMING
 #if CFG_SUPPORT_802_11K
 	if (prBssDesc->prNeighbor)
-		return (prBssDesc->prNeighbor->ucPreference + 100) *
+		return (prBssDesc->prNeighbor->ucPreference) *
 		       gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
 #endif
 #endif
-	return 100 * gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
+	return 0;
 }
 
 uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
 	struct APS_INFO *aps = aisGetApsInfo(prAdapter, ucBssIndex);
-	uint8_t fgIsGBandCoex = aps->fgIsGBandCoex;
-	uint16_t u2ScoreStaCnt = 0;
 	uint16_t u2ScoreBandwidth = 0;
-	uint16_t u2ScoreSTBC = 0;
-	uint16_t u2ScoreChnlInfo = 0;
 	uint16_t u2ScoreSnrRssi = 0;
-	uint16_t u2ScoreDeauth = 0;
 	uint16_t u2ScoreBand = 0;
-	uint16_t u2ScoreSaa = 0;
-	uint16_t u2ScoreIdleTime = 0;
+	uint16_t u2ScoreChnlLoad = 0;
 	uint16_t u2ScoreTotal = 0;
 	uint16_t u2BlockListScore = 0;
 	uint16_t u2PreferenceScore = 0;
-	uint16_t u2TputScore = 0;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 	uint8_t fgBssInDenseRange =
 		IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
@@ -1723,11 +1463,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 #else
 	char *extra = "";
 #endif
-	int8_t cRssi = -128;
 	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
-
-	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
 	if (eRoamType >= ROAM_TYPE_NUM) {
 		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
@@ -1737,34 +1473,21 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 		DBGLOG(APS, WARN, "Invalid Band %d\n", prBssDesc->eBand);
 		return 0;
 	}
-	u2ScoreBandwidth = apsCalculateScoreByBW(prAdapter,
-		prBssDesc, eRoamType, ucBssIndex);
-	u2ScoreStaCnt = apsCalculateScoreByClientCnt(prBssDesc, eRoamType);
-	u2ScoreSTBC = apsCalculateScoreByStbc(prBssDesc, eRoamType);
-	u2ScoreChnlInfo = apsCalculateScoreByChnlInfo(prAisSpecificBssInfo,
-				prBssDesc->ucChannelNum, eRoamType);
+
+	u2ScoreBandwidth = apsCalculateScoreByBW(prBssDesc, eRoamType);
 	u2ScoreSnrRssi = apsCalculateScoreByRssi(prBssDesc, eRoamType);
-	u2ScoreDeauth = CALCULATE_SCORE_BY_DEAUTH(prBssDesc, eRoamType);
-	u2ScoreBand = apsCalculateScoreByBand(prAdapter, prBssDesc,
-		cRssi, eRoamType);
-	u2ScoreSaa = apsCalculateScoreBySaa(prAdapter, prBssDesc, eRoamType);
-	u2ScoreIdleTime = apsCalculateScoreByIdleTime(prAdapter,
-		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex,
-		prBssDesc->eBand);
-	u2BlockListScore =
-	       apsCalculateScoreByBlockList(prAdapter, prBssDesc, eRoamType);
-	u2PreferenceScore =
-	      apsCalculateScoreByPreference(prAdapter, prBssDesc, eRoamReason);
+	u2ScoreBand = apsCalculateScoreByBand(prAdapter, prBssDesc, eRoamType);
+	u2ScoreChnlLoad = apsCalculateScoreByChnlLoad(prAdapter, eRoamType,
+		prBssDesc, ucBssIndex);
+	u2BlockListScore = apsCalculateScoreByBlockList(prBssDesc, eRoamType);
+	u2PreferenceScore = apsCalculateScoreByPreference(prBssDesc,
+		eRoamReason);
 
-	u2TputScore = apsCalculateScoreByTput(prAdapter, prBssDesc, eRoamType);
-
-	u2ScoreTotal = u2ScoreBandwidth + u2ScoreChnlInfo +
-		u2ScoreDeauth + u2ScoreSnrRssi + u2ScoreStaCnt + u2ScoreSTBC +
-		u2ScoreBand + u2BlockListScore + u2ScoreSaa +
-		u2ScoreIdleTime + u2TputScore;
+	u2ScoreTotal = u2ScoreBandwidth + u2ScoreSnrRssi + u2ScoreBand +
+		u2ScoreChnlLoad + u2BlockListScore + u2PreferenceScore;
 
 	/* Adjust 2.4G AP's score if BT coex */
-	if (prBssDesc->eBand == BAND_2G4 && fgIsGBandCoex)
+	if (prBssDesc->eBand == BAND_2G4 && aps->fgIsGBandCoex)
 		u2ScoreTotal = u2ScoreTotal * WEIGHT_GBAND_COEX_DOWNGRADE / 100;
 
 	if (prBssDesc->fgIsMCC)
@@ -1777,23 +1500,17 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 #endif
 
 #define TEMP_LOG_TEMPLATE\
-		"BSS["MACSTR"] Score:%d Band[%s],cRSSI[%d],GBandCoex[%d]"\
-		",MCC[%d],DE[%d],RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
-		",BW[%d],SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
-		",TPUT[%d]%s\n"
+	"BSS["MACSTR"] Score:%d Band[%s],cRSSI[%d],GBandCoex[%d]"\
+	",MCC[%d],RSSI[%d],CL[%d],BD[%d],BW[%d],BL[%d],PF[%d]%s\n"
 
 	DBGLOG(APS, TRACE,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID),
 		u2ScoreTotal, apucBandStr[prBssDesc->eBand],
-		cRssi, fgIsGBandCoex, prBssDesc->fgIsMCC, u2ScoreDeauth,
-		u2ScoreSnrRssi, u2ScoreBand, u2BlockListScore,
-		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
-		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
-		prBssDesc->fgExistBssLoadIE,
-		prBssDesc->ucChnlUtilization,
-		u2PreferenceScore,
-		u2TputScore, extra);
+		RCPI_TO_dBm(prBssDesc->ucRCPI), aps->fgIsGBandCoex,
+		prBssDesc->fgIsMCC, u2ScoreSnrRssi, u2ScoreChnlLoad,
+		u2ScoreBand, u2ScoreBandwidth, u2BlockListScore,
+		u2PreferenceScore, extra);
 
 #undef TEMP_LOG_TEMPLATE
 
@@ -3031,7 +2748,7 @@ uint32_t apsCalculateFinalScore(struct ADAPTER *ad,
 					continue;
 
 				pref = apsCalculateScoreByPreference(
-					ad, ap->aprTarget[i], reason);
+					ap->aprTarget[i], reason);
 
 				/* select highest pref as tput score */
 				if (score == 0 || pref > score)

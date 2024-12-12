@@ -16558,7 +16558,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	if (!kalStrniCmp(pucSavedPtr, "RM-IT", 5)) {
 		pucSavedPtr += 5;
 	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT", 6)) {
-		static uint8_t aucPacket[500] = {0,};
+		static uint8_t aucPacket[500] = {0};
 		struct SW_RFB rSwRfb;
 		struct BSS_DESC *target;
 		uint8_t *pos = NULL;
@@ -16758,7 +16758,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 		return WLAN_STATUS_SUCCESS;
 	} else if (!kalStrniCmp(pucSavedPtr, "CHNLLOAD-IT", 11)) {
-		static uint8_t aucPacket[500] = {0,};
+		static uint8_t aucPacket[500] = {0};
 		struct SW_RFB rSwRfb;
 		struct BSS_DESC *target;
 		int32_t i4Ret = 0;
@@ -16834,7 +16834,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 		return WLAN_STATUS_SUCCESS;
 	} else if (!kalStrniCmp(pucSavedPtr, "STATISTICS-IT", 13)) {
-		static uint8_t aucPacket[500] = {0,};
+		static uint8_t aucPacket[500] = {0};
 		struct SW_RFB rSwRfb;
 		struct BSS_DESC *target;
 		int32_t i4Ret = 0;
