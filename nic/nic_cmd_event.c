@@ -5349,8 +5349,6 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 			   struct WIFI_EVENT *prEvent)
 {
-	DBGLOG(NIC, INFO, "EVENT_ID_BSS_BEACON_TIMEOUT\n");
-
 	if (prAdapter->fgDisBcnLostDetection == FALSE) {
 		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 		struct EVENT_BSS_BEACON_TIMEOUT *prEventBssBeaconTimeout;
@@ -5366,7 +5364,9 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 			return;
 		}
 
-		DBGLOG(NIC, INFO, "Reason code: %d\n",
+		DBGLOG(NIC, VOC,
+		       "EVENT_ID_BSS_BEACON_TIMEOUT, BssIdx: %u, Reason code: %d\n",
+		       prEventBssBeaconTimeout->ucBssIndex,
 		       prEventBssBeaconTimeout->ucReasonCode);
 /* fos_change begin */
 #if CFG_SUPPORT_EXCEPTION_STATISTICS

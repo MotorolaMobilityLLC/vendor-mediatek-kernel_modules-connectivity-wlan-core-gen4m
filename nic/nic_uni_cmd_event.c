@@ -11894,7 +11894,7 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 		ucBssIdx);
 
 	if (prBssInfo) {
-		DBGLOG(CNM, INFO, "ucBssIdx=%d, eHwBandIdx=%d, ucBandIdx=%d\n",
+		DBGLOG(CNM, VOC, "ucBssIdx=%d, eHwBandIdx=%d, ucBandIdx=%d\n",
 			ucBssIdx, prBssInfo->eHwBandIdx, ucBandIdx);
 
 		if (prBssInfo->eHwBandIdx != ucBandIdx &&

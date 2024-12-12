@@ -6955,7 +6955,7 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 	prCmdBody->ucRxNss = prBssInfo->ucOpRxNss;
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
-		DBGLOG(RLM, INFO,
+		DBGLOG(RLM, VOC,
 		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w(vht)=%d %s s1=%d s2=%d RxN=%d, TxN=%d\n",
 		       prCmdBody->ucBssIndex, prCmdBody->ucRfBand,
 		       prCmdBody->ucPrimaryChannel, prCmdBody->ucRfSco,
@@ -6969,7 +6969,7 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 		       prCmdBody->ucRxNss,
 		       prCmdBody->ucTxNss);
 	} else {
-		DBGLOG(RLM, INFO, "N=%d closed\n", prCmdBody->ucBssIndex);
+		DBGLOG(RLM, VOC, "N=%d closed\n", prCmdBody->ucBssIndex);
 	}
 }
 

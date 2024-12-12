@@ -1032,7 +1032,7 @@ void qmSetStaRecTxAllowed(struct ADAPTER *prAdapter,
 	uint8_t ucIdx;
 	struct QUE *prSrcQ, *prDstQ;
 
-	DBGLOG(QM, INFO, "Set Sta[%u] TxAllowed from [%u] to [%u] %s TxQ\n",
+	DBGLOG(QM, VOC, "Set Sta[%u] TxAllowed from [%u] to [%u] %s TxQ\n",
 		prStaRec->ucIndex,
 		prStaRec->fgIsTxAllowed,
 		fgIsTxAllowed,

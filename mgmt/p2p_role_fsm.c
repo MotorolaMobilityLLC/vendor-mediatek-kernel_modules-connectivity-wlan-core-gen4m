@@ -1324,8 +1324,6 @@ void p2pRoleFsmRunEventBeaconTimeout(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(P2P, INFO, "Bss=%d\n", prP2pBssInfo->ucBssIndex);
-
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 		prP2pBssInfo->u4PrivateData);
 
