@@ -151,6 +151,22 @@ void scnFsmSteps(struct ADAPTER *prAdapter,
 			break;
 
 		case SCAN_STATE_SCANNING:
+#if CFG_ENABLE_CSA_BLOCK_SCAN
+			/* If CSA is ongoing, directly report scan done. */
+			if (p2pFuncIsCsaBlockScan(prAdapter)) {
+				scnFsmGenerateScanDoneMsg(prAdapter,
+					prScanParam->eMsgId,
+					prScanParam->ucSeqNum,
+					prScanParam->ucBssIndex,
+					SCAN_STATUS_CANCELLED,
+					MSG_SEND_METHOD_BUF);
+
+				/* switch to next pending scan */
+				eNextState = SCAN_STATE_IDLE;
+				fgIsTransition = TRUE;
+				break;
+			}
+#endif
 			/* Support AP Selection */
 			prScanInfo->u4ScanUpdateIdx++;
 			if (prScanParam->fgIsScanV2 == FALSE)
