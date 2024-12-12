@@ -2919,8 +2919,9 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	if (prMemOps->copyRxData &&
 	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
-		/* If it encounter copy Rx data Fail, it will trigger KE */
-		ASSERT(0);
+		/* If it encounter copy Rx data Fail, it will trigger EE */
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
+			RST_WFDMA_MAP_FAIL, RST_FLAG_WF_RESET);
 		fgRet = false;
 		goto skip;
 	}

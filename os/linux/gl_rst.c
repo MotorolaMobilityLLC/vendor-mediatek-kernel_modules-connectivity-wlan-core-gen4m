@@ -116,6 +116,7 @@ char * const apucRstReason[RST_REASON_MAX] = {
 	"RST_WFDMA_RX_HANG",
 	"RST_MAWD_WAKEUP_FAIL",
 	"RST_RFB_FAIL",
+	"RST_WFDMA_MAP_FAIL",
 };
 
 static const char *const apucRstAction[] = {
