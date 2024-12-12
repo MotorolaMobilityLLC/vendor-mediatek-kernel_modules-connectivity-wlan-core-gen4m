@@ -3594,6 +3594,11 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	uint32_t buf_size = 1024, pos = 0;
 	char *buf;
 
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "prAdapter NULL\n");
+		return;
+	}
+
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCr = prBusInfo->prPleTopCr;
 
