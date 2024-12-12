@@ -2284,7 +2284,8 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
-	struct BSS_DESC_SET *prBssDescSet)
+	struct BSS_DESC_SET *prBssDescSet,
+	uint8_t ucBssIndex)
 {
 	uint8_t i;
 	struct BSS_INFO *prMainBss;
@@ -2295,6 +2296,12 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
+
+#if (CFG_SUPPORT_ROAMING == 1)
+	roamingRecordCandiStatus(prAdapter,
+				 ucBssIndex,
+				 prBssDescSet->aprBssDesc[0]);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
 
 	prConnSettings = &prAisFsmInfo->rConnSettings;
 	prWpaInfo = &prAisFsmInfo->rWpaInfo;
@@ -2587,6 +2594,8 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 		DBGLOG(AIS, INFO, "AIS[%d][%d] Trigger BTO disconnection\n",
 			ais->ucAisIndex, ucBssIndex);
 
+		kalRoamingReport(prAdapter, ucBssIndex, FALSE);
+
 		prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_ABORT;
 		prAisAbortMsg->ucReasonOfDisconnect =
 			      DISCONNECT_REASON_CODE_RADIO_LOST;
@@ -2712,7 +2721,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 			 */
 
 			aisFillBssInfoFromBssDesc(prAdapter,
-				prAisFsmInfo, prBssDescSet);
+				prAisFsmInfo, prBssDescSet, ucBssIndex);
 
 			/* If target connected AP does not have
 			 * MultiLink or already scan 2 links, directly
@@ -3983,6 +3992,15 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	ucBssIndex = prAisAbortMsg->ucBssIndex;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+#if (CFG_SUPPORT_ROAMING == 1)
+	/* Triggered by SAA/uppder layer */
+	if (fgDelayIndication ||
+	    ((ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING ||
+	      ucReasonOfDisconnect == DISCONNECT_REASON_CODE_TEST_MODE) &&
+	     prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING))
+		roamingRecordCurrentStatus(prAdapter, ucBssIndex);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
+
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -4655,7 +4673,6 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		if (prAisBssInfo->prStaRecOfAP)
 			prAisBssInfo->prStaRecOfAP->fgIsTxAllowed = TRUE;
 #if CFG_SUPPORT_ROAMING
-		roamingFsmNotifyEvent(prAdapter, ucBssIndex, TRUE, prBssDesc);
 		prAisFsmInfo->ucIsStaRoaming = FALSE;
 #endif
 	} else if (aisJoinFailureOverLimit(prAdapter, ucBssIndex)) {
@@ -4838,6 +4855,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 #ifdef CFG_SUPPORT_TWT_EXT
 				twtPlannerReset(prAdapter, prAisBssInfo);
 #endif
+				kalRoamingReport(
+					prAdapter, ucBssIndex, TRUE);
 
 				/* 2. Deactivate previous BSS */
 				aisFsmRoamingDisconnectPrevAllAP(prAdapter,
@@ -4872,9 +4891,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_ROAMING
 				if (aisFsmIsInProcessPostpone(prAdapter,
 					ucBssIndex)) {
-					roamingFsmNotifyEvent(
-					   prAdapter, ucBssIndex, FALSE,
-					   aisGetMainLinkBssDesc(prAisFsmInfo));
+					kalRoamingReport(
+					   prAdapter, ucBssIndex, TRUE);
 
 					/* Enable rssi monitor */
 					if (prAisFsmInfo->rRSSIMonitor.enable)
@@ -4995,6 +5013,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			 */
 			if (aisFsmStateInit_RetryJOIN(prAdapter, prStaRec,
 				ucBssIndex) == FALSE) {
+#if (CFG_SUPPORT_ROAMING == 1)
+				roamingUpdateSaaFailReason(prAdapter,
+					ucBssIndex,
+					prJoinCompMsg->ucAuthAssocState);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
 				eNextState = aisHandleJoinFailure(
 					prAdapter, prStaRec,
 					prAssocRspSwRfb, ucBssIndex);
@@ -5691,6 +5714,10 @@ void aisPostponedEventOfDisconnTimeout(struct ADAPTER *prAdapter,
 		       "DelayTimeOfDisconnect, don't report disconnect\n");
 		return;
 	}
+
+#if (CFG_SUPPORT_ROAMING == 1)
+	kalRoamingReport(prAdapter, ucBssIndex, FALSE);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
 
 	/* 4 <2> Remove all connection request */
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_RECONNECT, ucBssIndex);
@@ -6691,6 +6718,11 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 
 		prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
 		prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
+#if (CFG_SUPPORT_ROAMING == 1)
+		roamingUpdateSaaFailReason(prAdapter,
+					   ucBssIndex,
+					   prStaRec->eAuthAssocState);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
 		eNewState = aisHandleJoinFailure(prAdapter,
 				prStaRec,
 				NULL, ucBssIndex);
@@ -7174,6 +7206,11 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBtoBssDesc;
 	uint8_t roam = FALSE, join = FALSE;
 
+#if (CFG_SUPPORT_ROAMING == 1)
+	/* Triggered by BTO */
+	roamingRecordCurrentStatus(prAdapter, ucBssIndex);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
+
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prBtoBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
@@ -7465,6 +7502,7 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	enum ENUM_AIS_REQUEST_TYPE eAisRequest;
 	struct ROAMING_INFO *prRoamingInfo;
+	struct ROAMING_REPORT_INFO *prReportInfo;
 #if (CFG_EXT_ROAMING_WTC == 1)
 	struct BSS_TRANSITION_MGT_PARAM *prBtmReq;
 	struct WTC_MODE_INFO *prWtc;
@@ -7473,6 +7511,7 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRoamingInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prReportInfo = &prRoamingInfo->rReportInfo;
 #if (CFG_EXT_ROAMING_WTC == 1)
 	prBtmReq = aisGetBTMParam(prAdapter, ucBssIndex);
 	prWtc = &prAdapter->rWtcModeInfo;
@@ -7489,6 +7528,8 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 		prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
 		if ((prWfdCfgSettings->ucWfdEnable != 0)) {
 			DBGLOG(AIS, INFO, "WFD is running. Stop roaming.\n");
+			prReportInfo->eFailReason =
+					ROAMING_FAIL_REASON_WFD_ONGOING;
 			roamingFsmRunEventNewCandidate(prAdapter,
 				NULL, ucBssIndex);
 			roamingFsmRunEventFail(prAdapter,
@@ -7616,7 +7657,7 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	ais->prMlProbeBssDesc = NULL;
 #endif
 
-	aisFillBssInfoFromBssDesc(prAdapter, ais, set);
+	aisFillBssInfoFromBssDesc(prAdapter, ais, set, ucBssIndex);
 
 #if CFG_EXT_ROAMING_WTC
 	aisWtcSearchHandleBssDesc(
@@ -10147,6 +10188,13 @@ struct ROAMING_INFO *aisGetRoamingInfo(
 	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rRoamingInfo;
+}
+
+struct ROAMING_REPORT_INFO *aisGetRoamingReport(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	return &aisGetRoamingInfo(prAdapter, ucBssIndex)->rReportInfo;
 }
 #endif
 

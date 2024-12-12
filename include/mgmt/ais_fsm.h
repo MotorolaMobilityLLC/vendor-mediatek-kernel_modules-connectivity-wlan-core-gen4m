@@ -294,7 +294,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 
 	/* Support AP Selection */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	uint8_t	ucRoamSkipTimes;
+	uint8_t ucRoamSkipTimes;
 	u_int8_t fgGoodRcpiArea;
 	u_int8_t fgPoorRcpiArea;
 #endif
@@ -1178,6 +1178,10 @@ struct IEEE_802_11_MIB *aisGetMib(
 
 #if CFG_SUPPORT_ROAMING
 struct ROAMING_INFO *aisGetRoamingInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+struct ROAMING_REPORT_INFO *aisGetRoamingReport(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif

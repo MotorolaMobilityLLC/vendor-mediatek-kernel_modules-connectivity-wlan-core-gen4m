@@ -52,6 +52,10 @@
 enum ENUM_ROAMING_FAIL_REASON {
 	ROAMING_FAIL_REASON_CONNLIMIT = 0,
 	ROAMING_FAIL_REASON_NOCANDIDATE,
+	ROAMING_FAIL_REASON_AUTH_FAIL,
+	ROAMING_FAIL_REASON_ASSOC_FAIL,
+	ROAMING_FAIL_REASON_WFD_ONGOING,
+	ROAMING_FAIL_REASON_CONSECUTIVE_PER,
 	ROAMING_FAIL_REASON_NUM
 };
 
@@ -107,17 +111,15 @@ enum ENUM_ROAMING_STATE {
 	ROAMING_STATE_NUM
 };
 
-struct ROAMING_EVENT_INFO {
-	uint8_t ucStatus;
+struct ROAMING_REPORT_INFO {
+	OS_SYSTIME rRoamingStartTime;
 	uint8_t aucPrevBssid[MAC_ADDR_LEN];
-	uint8_t aucCurrBssid[MAC_ADDR_LEN];
+	uint8_t aucCandBssid[MAC_ADDR_LEN];
 	uint8_t ucPrevChannel;
-	uint8_t ucCurrChannel;
-	uint8_t ucPrevRcpi;
-	uint8_t ucCurrRcpi;
-	uint8_t ucBw;
-	uint16_t u2ApLoading;
-	uint8_t ucSupportStbc;
+	uint8_t ucCandChannel;
+	int8_t cPrevRssi;
+	int8_t cCandRssi;
+	enum ENUM_ROAMING_FAIL_REASON eFailReason;
 };
 
 #if (CFG_EXT_ROAMING == 1)
@@ -172,7 +174,7 @@ struct ROAMING_INFO {
 	uint8_t ucPER;
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
-	struct ROAMING_EVENT_INFO rEventInfo;
+	struct ROAMING_REPORT_INFO rReportInfo;
 #if (CFG_EXT_ROAMING == 1)
 	struct ROAMING_SCAN_CADENCE rScanCadence;
 #endif
@@ -243,9 +245,6 @@ void roamingFsmRunEventNewCandidate(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prRoamTarget,
 	uint8_t ucBssIndex);
 
-void roamingFsmNotifyEvent(struct ADAPTER *adapter, uint8_t bssIndex,
-	uint8_t ucFail, struct BSS_DESC *prBssDesc);
-
 uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 	struct CMD_ROAMING_TRANSIT *prTransit);
 
@@ -268,4 +267,14 @@ u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 
 void roamingFsmBTMTimeout(struct ADAPTER *prAdapter,
 	uintptr_t ulParamPtr);
+
+void roamingRecordCurrentStatus(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+void roamingRecordCandiStatus(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct BSS_DESC *prBssDesc);
+
+void roamingUpdateSaaFailReason(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, enum ENUM_AA_STATE eAuthAssocState);
+
 #endif /* _ROAMING_FSM_H */

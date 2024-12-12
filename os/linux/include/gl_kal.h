@@ -2944,6 +2944,10 @@ void kalHifRegWorkInit(struct GLUE_INFO *pr);
 void kalHifRegWorkUninit(struct GLUE_INFO *pr);
 void kalHifRegWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+#if (CFG_SUPPORT_ROAMING == 1)
+void kalRoamingReport(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, u_int8_t fgSuccess);
+#endif /* CFG_SUPPORT_ROAMING == 1 */
 void kalPmicCtrl(u_int8_t fgIsEnabled);
 void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);

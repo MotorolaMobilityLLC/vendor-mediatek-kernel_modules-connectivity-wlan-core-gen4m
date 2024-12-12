@@ -1608,6 +1608,7 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_DHCP_RESET_BA_WINDOW
 	u_int8_t fgDhcpResetBaWindow;
 #endif /* CFG_SUPPORT_DHCP_RESET_BA_WINDOW */
+	u_int8_t fgRoamingReport;
 #if (CFG_EXT_ROAMING == 1)
 	uint8_t ucRCMinRoamDelta;
 	uint8_t ucRCDelta;

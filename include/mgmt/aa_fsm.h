@@ -134,8 +134,8 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 
 uint32_t
 saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
-			    uint32_t rJoinStatus, struct STA_RECORD *prStaRec,
-			    struct SW_RFB *prSwRfb);
+		enum ENUM_AA_STATE ePreviousState, uint32_t rJoinStatus,
+		struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb);
 
 void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 			 struct MSG_HDR *prMsgHdr);

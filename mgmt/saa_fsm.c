@@ -160,7 +160,8 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 					WLAN_STATUS_SUCCESS :
 					WLAN_STATUS_FAILURE;
 				uint32_t result = saaFsmSendEventJoinComplete(
-						prAdapter, status, prStaRec,
+						prAdapter, ePreviousState,
+						status, prStaRec,
 						prRetainedSwRfb);
 
 				if (result != WLAN_STATUS_SUCCESS) {
@@ -346,6 +347,7 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint32_t
 saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
+			    enum ENUM_AA_STATE ePreviousState,
 			    uint32_t rJoinStatus,
 			    struct STA_RECORD *prStaRec,
 			    struct SW_RFB *prSwRfb)
@@ -379,6 +381,7 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 
 		prSaaFsmCompMsg->rMsgHdr.eMsgId = MID_SAA_P2P_JOIN_COMPLETE;
 		prSaaFsmCompMsg->ucSeqNum = prStaRec->ucAuthAssocReqSeqNum;
+		prSaaFsmCompMsg->ucAuthAssocState = (uint8_t)ePreviousState;
 		prSaaFsmCompMsg->rJoinStatus = rJoinStatus;
 		prSaaFsmCompMsg->prStaRec = prStaRec;
 		prSaaFsmCompMsg->prSwRfb = prSwRfb;
@@ -494,8 +497,8 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 		       prStaRec->eStaType);
 
 		/* Ignore the return value because don't care the prSwRfb */
-		saaFsmSendEventJoinComplete(prAdapter, WLAN_STATUS_FAILURE,
-					    prStaRec, NULL);
+		saaFsmSendEventJoinComplete(prAdapter, AA_STATE_IDLE,
+				WLAN_STATUS_FAILURE, prStaRec, NULL);
 
 		return;
 	}

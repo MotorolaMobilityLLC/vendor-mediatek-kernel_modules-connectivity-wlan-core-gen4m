@@ -492,6 +492,8 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	uint8_t i;
+	struct ROAMING_REPORT_INFO *prReportInfo;
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 
 	DBGLOG(ROAMING, LOUD,
 	       "[%d]->Init: Current Time = %u\n",
@@ -499,6 +501,7 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	       kalGetTimeTick());
 
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prReportInfo = &prRoamingFsmInfo->rReportInfo;
 
 	/* 4 <1> Initiate FSM */
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
@@ -522,6 +525,16 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		(PFN_MGMT_TIMEOUT_FUNC) roamingFsmRunScanTimerTimeout,
 		(uintptr_t)ucBssIndex);
 #endif /* CFG_EXT_ROAMING == 1 */
+
+	/* Initialize roaming report variables */
+	prReportInfo->rRoamingStartTime = 0;
+	COPY_MAC_ADDR(prReportInfo->aucPrevBssid, aucZeroMacAddr);
+	COPY_MAC_ADDR(prReportInfo->aucCandBssid, aucZeroMacAddr);
+	prReportInfo->cPrevRssi = 0;
+	prReportInfo->cCandRssi = 0;
+	prReportInfo->ucPrevChannel = 0;
+	prReportInfo->ucCandChannel = 0;
+	prReportInfo->eFailReason = ROAMING_FAIL_REASON_NOCANDIDATE;
 }				/* end of roamingFsmInit() */
 
 /*----------------------------------------------------------------------------*/
@@ -794,6 +807,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *ais;
 	struct ROAMING_INFO *prRoam;
+	struct ROAMING_REPORT_INFO *prReportInfo;
 	enum ENUM_ROAMING_STATE ePreviousState;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
 	u_int32_t u4ScnResultsTimeout = prAdapter->rWifiVar.u4DiscoverTimeout;
@@ -807,6 +821,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	prFtParam = aisGetFtEventParam(prAdapter, ucBssIndex);
+	prReportInfo = &prRoam->rReportInfo;
 
 	do {
 		if (prRoam->eCurrentState < 0 ||
@@ -841,7 +856,8 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			prRoam->rRoamScanParam.ucScanMode =
 					ROAMING_SCAN_MODE_NORMAL;
 			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
-
+			prReportInfo->eFailReason =
+					ROAMING_FAIL_REASON_NOCANDIDATE;
 			break;
 		case ROAMING_STATE_DECISION:
 #if CFG_SUPPORT_DRIVER_ROAMING
@@ -856,7 +872,8 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			prRoam->rRoamScanParam.ucScanMode =
 					ROAMING_SCAN_MODE_NORMAL;
 			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
-
+			prReportInfo->eFailReason =
+					ROAMING_FAIL_REASON_NOCANDIDATE;
 			break;
 
 		case ROAMING_STATE_DISCOVERY: {
@@ -1185,50 +1202,12 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 			&prRoamingFsmInfo->rScanCadence.rScanTimer);
 #endif /* CFG_EXT_ROAMING == 1 */
 
+		/* Triggered by Driver/BTM/low RSSI/high PER */
+		roamingRecordCurrentStatus(prAdapter, ucBssIndex);
+
 		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
 	}
 }				/* end of roamingFsmRunEventDiscovery() */
-
-void roamingFsmNotifyEvent(
-	struct ADAPTER *adapter, uint8_t bssIndex, uint8_t ucFail,
-	struct BSS_DESC *prBssDesc)
-{
-	struct ROAMING_INFO *roam = aisGetRoamingInfo(adapter, bssIndex);
-	struct ROAMING_EVENT_INFO *prEventInfo = &roam->rEventInfo;
-	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(adapter, bssIndex);
-	char uevent[300];
-
-	/* Check if bss index valid to pass coverity */
-	if (bssIndex >= ARRAY_SIZE(adapter->rLinkQuality.rLq)) {
-		DBGLOG(ROAMING, WARN, "invalid bss idx %u, caller=%pS\n",
-				bssIndex, KAL_TRACE);
-		return;
-	}
-
-	COPY_MAC_ADDR(roam->rEventInfo.aucPrevBssid, prAisBssInfo->aucBSSID);
-	COPY_MAC_ADDR(roam->rEventInfo.aucCurrBssid, prBssDesc->aucBSSID);
-	roam->rEventInfo.ucPrevChannel = prAisBssInfo->ucPrimaryChannel;
-	roam->rEventInfo.ucCurrChannel = prBssDesc->ucChannelNum;
-	roam->rEventInfo.ucBw = (uint8_t) prBssDesc->eBand;
-	roam->rEventInfo.u2ApLoading = prBssDesc->u2StaCnt;
-	roam->rEventInfo.ucSupportStbc = prBssDesc->fgMultiAnttenaAndSTBC;
-	roam->rEventInfo.ucSupportStbc = prBssDesc->fgMultiAnttenaAndSTBC;
-	roam->rEventInfo.ucPrevRcpi =
-		dBm_TO_RCPI(adapter->rLinkQuality.rLq[bssIndex].cRssi);
-	roam->rEventInfo.ucCurrRcpi = prBssDesc->ucRCPI;
-
-	kalSnprintf(uevent, sizeof(uevent),
-		"roam=Status:%s,BSSID:" MACSTR "/" MACSTR
-		",Reason:%d,Chann:%d/%d,RCPI:%d/%d,BW:%d,STBC:%s\n",
-		(ucFail == TRUE ? "FAIL" : "SUCCESS"),
-		MAC2STR(prEventInfo->aucPrevBssid),
-		MAC2STR(prEventInfo->aucCurrBssid), (uint8_t) roam->eReason,
-		prEventInfo->ucPrevChannel, prEventInfo->ucCurrChannel,
-		prEventInfo->ucPrevRcpi, prEventInfo->ucCurrRcpi,
-		prEventInfo->ucBw,
-		(prEventInfo->ucSupportStbc == TRUE ? "TRUE" : " FALSE"));
-	kalSendUevent(adapter, uevent);
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1254,6 +1233,8 @@ void roamingFsmRunEventFail(struct ADAPTER *prAdapter,
 	       "[%d] EVENT-ROAMING FAIL: reason %x Current Time = %u\n",
 	       ucBssIndex,
 	       ucReason, kalGetTimeTick());
+
+	kalRoamingReport(prAdapter, ucBssIndex, FALSE);
 
 	if (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_IDLE) {
 		DBGLOG(ROAMING, INFO,
@@ -1526,4 +1507,61 @@ u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+void roamingRecordCurrentStatus(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct ROAMING_REPORT_INFO *prReportInfo =
+		aisGetRoamingReport(prAdapter, ucBssIndex);
+	struct BSS_INFO *prAisBssInfo =
+		aisGetAisBssInfo(prAdapter, ucBssIndex);
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
+	struct ROAMING_INFO *prRoamFsmInfo =
+		aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	/* Record current status */
+	COPY_MAC_ADDR(prReportInfo->aucPrevBssid,
+		      prAisBssInfo->aucBSSID);
+	prReportInfo->cPrevRssi =
+		prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
+	prReportInfo->ucPrevChannel = prAisBssInfo->ucPrimaryChannel;
+	if (prRoamFsmInfo->eReason != ROAMING_REASON_POOR_RCPI)
+		prRoamFsmInfo->ucRcpi = dBm_TO_RCPI(prReportInfo->cPrevRssi);
+
+	/* Reset candidate status */
+	COPY_MAC_ADDR(prReportInfo->aucCandBssid, aucZeroMacAddr);
+	prReportInfo->cCandRssi = 0;
+	prReportInfo->ucCandChannel = 0;
+
+	GET_CURRENT_SYSTIME(&prReportInfo->rRoamingStartTime);
+	DBGLOG(AIS, INFO, "Start roaming: %u\n",
+			prReportInfo->rRoamingStartTime);
+}
+
+void roamingRecordCandiStatus(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct BSS_DESC *prBssDesc)
+{
+	struct ROAMING_REPORT_INFO *prReportInfo =
+			aisGetRoamingReport(prAdapter, ucBssIndex);
+
+	COPY_MAC_ADDR(prReportInfo->aucCandBssid, prBssDesc->aucBSSID);
+	prReportInfo->cCandRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
+	prReportInfo->ucCandChannel = prBssDesc->ucChannelNum;
+}
+
+void roamingUpdateSaaFailReason(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, enum ENUM_AA_STATE eAuthAssocState)
+{
+	struct ROAMING_REPORT_INFO *prReportInfo =
+			aisGetRoamingReport(prAdapter, ucBssIndex);
+
+	if (eAuthAssocState >= SAA_STATE_SEND_AUTH1 &&
+	    eAuthAssocState <= SAA_STATE_EXTERNAL_AUTH)
+		prReportInfo->eFailReason = ROAMING_FAIL_REASON_AUTH_FAIL;
+	else if (eAuthAssocState >= SAA_STATE_SEND_ASSOC1 &&
+		 eAuthAssocState <= SAA_STATE_WAIT_ASSOC2)
+		prReportInfo->eFailReason = ROAMING_FAIL_REASON_ASSOC_FAIL;
+	else
+		DBGLOG(AIS, ERROR, "Invalid AuthAssocState [%d]\n",
+				    eAuthAssocState);
+}
 #endif

@@ -311,6 +311,7 @@ struct MSG_SAA_FSM_START {
 struct MSG_SAA_FSM_COMP {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucSeqNum;
+	uint8_t ucAuthAssocState;
 	uint32_t rJoinStatus;
 	struct STA_RECORD *prStaRec;
 	struct SW_RFB *prSwRfb;

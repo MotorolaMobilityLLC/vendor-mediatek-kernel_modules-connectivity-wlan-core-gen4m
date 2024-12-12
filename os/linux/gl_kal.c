@@ -13410,6 +13410,104 @@ u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
 }
 #endif
 
+#if (CFG_SUPPORT_ROAMING == 1)
+void kalRoamingReport(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	u_int8_t fgSuccess)
+{
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct ROAMING_INFO *roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	struct ROAMING_REPORT_INFO *prReportInfo = &roam->rReportInfo;
+	struct net_device *prDevHandler =
+			wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex);
+	struct PARAM_ROAMING_REPORT *log_info;
+	uint32_t size = sizeof(struct PARAM_ROAMING_REPORT);
+	OS_SYSTIME rCurrent;
+
+	GET_CURRENT_SYSTIME(&rCurrent);
+
+	wiphy = wlanGetWiphy();
+	if (!wiphy || !prDevHandler)
+		return;
+
+	if (!wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex))
+		return;
+	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgRoamingReport))
+		return;
+
+	log_info = kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!log_info) {
+		DBGLOG(ROAMING, ERROR,
+				"alloc roaming report log info fail\n");
+		return;
+	}
+
+	kalMemZero(log_info, size);
+	log_info->id = GRID_ROAMING_REPORT;
+	log_info->len = sizeof(struct PARAM_ROAMING_REPORT) - 2;
+
+	kalMemCopy(log_info->name,
+		   prDevHandler->name,
+		   kalStrLen(prDevHandler->name));
+	if (kalStrLen(prDevHandler->name) < IFNAMSIZ)
+		log_info->name[kalStrLen(prDevHandler->name)] = '\0';
+	else
+		log_info->name[IFNAMSIZ - 1] = '\0';
+
+	log_info->status = fgSuccess;
+	log_info->rRoamingTime = rCurrent - prReportInfo->rRoamingStartTime;
+	log_info->roamingReason = (uint8_t)roam->eReason;
+
+	COPY_MAC_ADDR(log_info->aucPreBSSID, prReportInfo->aucPrevBssid);
+	COPY_MAC_ADDR(log_info->aucCandBSSID, prReportInfo->aucCandBssid);
+
+	log_info->ucPreChannel = prReportInfo->ucPrevChannel;
+	log_info->ucCandChannel = prReportInfo->ucCandChannel;
+
+	log_info->cPreRssi = prReportInfo->cPrevRssi;
+	log_info->cCandRssi = prReportInfo->cCandRssi;
+
+	log_info->failReason = (uint8_t)prReportInfo->eFailReason;
+	if (aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))
+		log_info->disconnect = TRUE;
+	else
+		log_info->disconnect = FALSE;
+
+	if (log_info->status)
+		DBGLOG(ROAMING, INFO,
+			"[Roaming report][%s] Status: SUCCESS, Time: %u, Roaming reason: %d, BSSID: "
+			MACSTR "->" MACSTR ", Channel: %d->%d, RSSI: %d->%d\n",
+			log_info->name,
+			log_info->rRoamingTime,
+			log_info->roamingReason,
+			MAC2STR(log_info->aucPreBSSID),
+			MAC2STR(log_info->aucCandBSSID),
+			log_info->ucPreChannel, log_info->ucCandChannel,
+			log_info->cPreRssi, log_info->cCandRssi);
+	else
+		DBGLOG(ROAMING, INFO,
+			"[Roaming report][%s] Status: FAIL, Time: %u, Roaming reason: %d, BSSID: "
+			MACSTR "->" MACSTR
+			", Channel: %d->%d, RSSI: %d->%d, Fail reason: %d, Disconnect: %s\n",
+			log_info->name,
+			log_info->rRoamingTime,
+			log_info->roamingReason,
+			MAC2STR(log_info->aucPreBSSID),
+			MAC2STR(log_info->aucCandBSSID),
+			log_info->ucPreChannel, log_info->ucCandChannel,
+			log_info->cPreRssi, log_info->cCandRssi,
+			log_info->failReason,
+			log_info->disconnect ? "TRUE" : "FALSE");
+
+	mtk_cfg80211_vendor_event_generic_response(
+		wiphy, wdev, size, (uint8_t *)log_info);
+
+	kalMemFree(log_info, VIR_MEM_TYPE, size);
+}
+#endif /* CFG_SUPPORT_ROAMING == 1 */
+
 void kalScanReqLog(struct cfg80211_scan_request *request)
 {
 	char *strbuf = NULL, *pos = NULL, *end = NULL;

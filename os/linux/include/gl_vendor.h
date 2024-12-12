@@ -1523,6 +1523,7 @@ enum PARAM_GENERIC_RESPONSE_ID {
 	GRID_SWPIS_CONNECTIVITY_LOG = 5,
 	GRID_MANAGE_FREQ_LIST = 6,
 	GRID_RESET_FT_PROCESS = 7,
+	GRID_ROAMING_REPORT = 8,
 };
 
 struct PARAM_EXTERNAL_AUTH_INFO {
@@ -1536,6 +1537,23 @@ struct PARAM_EXTERNAL_AUTH_INFO {
 	uint8_t dot11MultiLinkActivated;
 	uint8_t own_ml_addr[PARAM_MAC_ADDR_LEN];
 	uint8_t peer_ml_addr[PARAM_MAC_ADDR_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+struct PARAM_ROAMING_REPORT {
+	uint8_t id;
+	uint8_t len;
+	uint8_t name[IFNAMSIZ];
+	uint8_t status;
+	OS_SYSTIME rRoamingTime;
+	uint8_t roamingReason;
+	uint8_t aucPreBSSID[MAC_ADDR_LEN];
+	uint8_t aucCandBSSID[MAC_ADDR_LEN];
+	uint8_t ucPreChannel;
+	uint8_t ucCandChannel;
+	int8_t cPreRssi;
+	int8_t cCandRssi;
+	uint8_t failReason;
+	uint8_t disconnect;
 } __KAL_ATTRIB_PACKED__;
 
 /*******************************************************************************
