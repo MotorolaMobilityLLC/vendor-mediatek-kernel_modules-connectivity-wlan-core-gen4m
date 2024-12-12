@@ -5207,6 +5207,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 
 	if (!IS_FEATURE_FORCE_ENABLED(ucHe))
 		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
+
+	prP2pBssInfo->ucBssColorInfo = HE_OP_BSSCOLOR_BSS_COLOR_DISABLE;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (fgIsApMode)
@@ -5573,18 +5575,21 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 				IE_ID_EXT(pucIE));
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP ||
-			    IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
-					struct _IE_HE_OP_T *prHeOp;
-
-					prHeOp = (struct _IE_HE_OP_T *) pucIE;
-					if (!prAdapter->rWifiVar.fgSapAddTPEIE)
-						prP2pBssInfo->ucBssColorInfo =
-							prHeOp->ucBssColorInfo;
-				}
-
+			    IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
 				prP2pBssInfo->ucPhyTypeSet |=
 					PHY_TYPE_SET_802_11AX;
+
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
+				struct _IE_HE_OP_T *prHeOp;
+
+				prHeOp = (struct _IE_HE_OP_T *) pucIE;
+				prP2pBssInfo->ucBssColorInfo =
+					prHeOp->ucBssColorInfo;
+				if ((prHeOp->ucBssColorInfo &
+				     HE_OP_BSSCOLOR_BSS_COLOR_DISABLE) == 0)
+					DBGLOG(P2P, TRACE,
+						"bss color=0x%x\n",
+						prHeOp->ucBssColorInfo);
 			}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
