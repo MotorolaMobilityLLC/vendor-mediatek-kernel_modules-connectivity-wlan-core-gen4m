@@ -109,7 +109,7 @@ void TdlsProcessPublicAction(
 	uint8_t ucBssIndex = 0;
 
 	if (!ad || !prSwRfb) {
-		DBGLOG(TDLS, INFO, " ad or prSwRfb are NULL");
+		DBGLOG(TDLS, INFO, " ad or prSwRfb are NULL\n");
 		return;
 	}
 
@@ -117,7 +117,7 @@ void TdlsProcessPublicAction(
 
 	if (!prActFrame ||
 		prActFrame->ucAction != TDLS_FRM_ACTION_DISCOVERY_RSP) {
-		DBGLOG(TDLS, TRACE, " not discovery response, skip");
+		DBGLOG(TDLS, TRACE, " not discovery response, skip\n");
 		return;
 	}
 
@@ -143,7 +143,7 @@ void TdlsProcessPublicAction(
 		prActFrame->aucBSSID[4],
 		prActFrame->aucBSSID[5]);
 
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		prBssInfo = ad->aprBssInfo[i];
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
 			DBGLOG(TDLS, TRACE,
@@ -342,7 +342,7 @@ uint8_t TdlsAllowedBss(
 
 #if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE,
-			"STA ch: %d, band: %d, conn state: %d",
+			"STA ch: %d, band: %d, conn state: %d\n",
 			b->ucPrimaryChannel,
 			b->eBand,
 			b->eConnectionState);
@@ -669,7 +669,7 @@ TdlsUpdateTxRxStat(
 		sta->ulRxBytes += rx_bytes;
 
 #if CFG_SUPPORT_TDLS_LOG
-	DBGLOG(TDLS, INFO,
+	DBGLOG(TDLS, TRACE,
 		"sta["MACSTR"] %s bytes: %ld\n",
 		MAC2STR(prAddr),
 		tx_bytes ? "Tx" : "Rx",
@@ -689,12 +689,12 @@ void TdlsAuto(
 	int32_t rtn_val = 0;
 
 	if (!pAd) {
-		DBGLOG(TDLS, ERROR, "no adapter found");
+		DBGLOG(TDLS, ERROR, "no adapter found\n");
 		return;
 	}
 
 	if (!prMsgHdr) {
-		DBGLOG(TDLS, ERROR, "prMsgHdr is null");
+		DBGLOG(TDLS, ERROR, "prMsgHdr is null\n");
 		return;
 	}
 
@@ -731,7 +731,7 @@ int32_t TdlsAutoImpl(
 
 #if CFG_SUPPORT_NAN
 	if (pAd->fgIsNANRegistered) {
-		DBGLOG(TDLS, INFO,
+		DBGLOG(TDLS, TRACE,
 			"Disable tdls auto for NAN\n");
 		return -1;
 	}
@@ -772,13 +772,13 @@ int32_t TdlsAutoImpl(
 				return 1;
 			case STA_TDLS_SETUP_INPROCESS:
 #if CFG_SUPPORT_TDLS_LOG
-				DBGLOG(TDLS, INFO,
+				DBGLOG(TDLS, TRACE,
 					"TDLS setup in Process\n");
 #endif
 				return 2;
 			default:
 #if CFG_SUPPORT_TDLS_LOG
-				DBGLOG(TDLS, INFO,
+				DBGLOG(TDLS, TRACE,
 					"TDLS setup state %d\n",
 					target_sta->eTdlsStatus);
 #endif
@@ -886,7 +886,7 @@ uint8_t TdlsAllowed(
 
 #if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE,
-			"STA ch: %d, band: %d, conn state: %d",
+			"STA ch: %d, band: %d, conn state: %d\n",
 			bss->ucPrimaryChannel,
 			bss->eBand,
 			bss->eConnectionState);
@@ -914,7 +914,7 @@ uint8_t TdlsNeedAdjustBw(
 
 #if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE,
-			"STA ch: %d, band: %d, conn state: %d",
+			"STA ch: %d, band: %d, conn state: %d\n",
 			bss->ucPrimaryChannel,
 			bss->eBand,
 			bss->eConnectionState);
@@ -1253,7 +1253,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 		return 0;
 	}
 
-	DBGLOG(TDLS, INFO, "prCmd->oper=%d, u4SetBufferLen=%d",
+	DBGLOG(TDLS, INFO, "prCmd->oper=%d, u4SetBufferLen=%d\n",
 		prCmd->oper, u4SetBufferLen);
 
 	switch (prCmd->oper) {
@@ -1316,7 +1316,8 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 	prAdapter->u4TdlsLinkCount = 0;
 	for (i = 0; i < MAXNUM_TDLS_PEER; i++)
 		prAdapter->u4TdlsLinkCount += g_arTdlsLink[i];
-	DBGLOG(TDLS, INFO, "TDLS total link = %d", prAdapter->u4TdlsLinkCount);
+	DBGLOG(TDLS, INFO, "TDLS total link = %d\n",
+		prAdapter->u4TdlsLinkCount);
 
 	return 0;
 }
@@ -1752,7 +1753,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 
 	/* 4. Update packet length */
 	kalSetPacketLength(pvPacket, u4PktLen);
-	DBGLOG(TDLS, INFO, "wlanHardStartXmit, u4PktLen=%d", u4PktLen);
+	DBGLOG(TDLS, INFO, "wlanHardStartXmit, u4PktLen=%d\n", u4PktLen);
 
 	/* 5. send the data frame */
 	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
@@ -2601,7 +2602,7 @@ void TdlsHandleTxDoneStatus(struct ADAPTER *prAdapter,
 					ucBssIndex,
 					prMsduInfo->aucEthDestAddr);
 	if (!prStaRec) {
-		DBGLOG(TDLS, INFO, " prStaRec is NULL");
+		DBGLOG(TDLS, INFO, " prStaRec is NULL\n");
 		return;
 	}
 
