@@ -73,6 +73,9 @@
 #define MDDP_GEN_SWITCH_MSG_TIMEOUT	100 /* msec */
 #endif /* CFG_PCIE_GET_SWITCH */
 
+#define MDDP_EXP_RST_STR	"RST_MDDP_EXCEPTION:%u"
+#define MDDP_EXP_RSN_SIZE	50
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -85,6 +88,10 @@ enum ENUM_MDDP_SUPPORT_MODE {
 	MDDP_SUPPORT_NUM
 };
 
+enum ENUM_MDDP_EXCEPTION {
+	MDDP_EXP_RX_STALL = 10,
+	MDDP_EXP_NUM
+};
 
 struct MDDP_STATUS_SYNC_OPS {
 	void (*rd)(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val);

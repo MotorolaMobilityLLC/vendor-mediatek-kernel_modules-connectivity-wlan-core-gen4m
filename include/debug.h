@@ -99,6 +99,7 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 #define HIF_DRV_SER             BIT(2)
 #define HIF_TRIGGER_FW_DUMP     BIT(3)
 #define HIF_CHK_MD_TX_TIMEOUT   BIT(4)
+#define HIF_CHK_MD_RX_STALL     BIT(5)
 
 #define DUMP_MEM_SIZE 64
 

@@ -235,11 +235,13 @@ end:
 
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint32_t u4TokenId = 0;
 	bool fgHifTxHangFullDump = FALSE;
 
-	prDbgOps = prAdapter->chip_info->prDebugOps;
+	prChipInfo = prAdapter->chip_info;
+	prDbgOps = prChipInfo->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_TIMEOUT) {
 		if (halIsTxTimeout(prAdapter, &u4TokenId)) {
@@ -286,6 +288,12 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 					   prAdapter->u4HifDbgBss,
 					   prAdapter->u4HifDbgReason);
 
+#if CFG_MTK_MDDP_SUPPORT
+	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_RX_STALL) {
+		if (prChipInfo->checkMdRxStall)
+			prChipInfo->checkMdRxStall(prAdapter);
+	}
+#endif
 	prAdapter->u4HifChkFlag = 0;
 	prAdapter->u4HifDbgMod = 0;
 	prAdapter->u4HifDbgBss = 0;

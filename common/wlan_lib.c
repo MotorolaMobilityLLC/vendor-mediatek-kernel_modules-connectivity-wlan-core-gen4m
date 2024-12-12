@@ -3145,6 +3145,9 @@ void wlanReleasePendingOid(struct ADAPTER *prAdapter,
 			}
 
 			prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+#if CFG_MTK_MDDP_SUPPORT
+			prAdapter->u4HifDbgFlag |= HIF_CHK_MD_RX_STALL;
+#endif
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);
 		}
 	} while (FALSE);
