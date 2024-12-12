@@ -239,19 +239,34 @@ ReleaseNanSlotsForSchedulePrep(
 	uint32_t u4SlotBitmap = 0;
 	uint8_t ucAisPhyTypeSet;
 	enum ENUM_BAND eAisBand;
+	union _NAN_BAND_CHNL_CTRL arDwChnl[BAND_NUM] = {
+		[BAND_NULL] = g_rNullChnl,
+		[BAND_2G4] = g_r2gDwChnl,
+		[BAND_5G] = g_r5gDwChnl,
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		[BAND_6G] = g_r5gDwChnl,
+#endif
+	};
 
 	if (event == AIS_CONNECTED) {
-		if (nanSchedGetAisChnlUsage(prAdapter, &rAisChnlInfo,
-					&u4SlotBitmap, &ucAisPhyTypeSet) !=
-				WLAN_STATUS_SUCCESS) {
-			rRetStatus = WLAN_STATUS_FAILURE;
+		/* FIXME: per band trigger,
+		 * otherwise 2G NAN == AIS, but 5G NAN != AIS,
+		 * both 2G/5G will be released
+		 */
+		for (eAisBand = BAND_2G4; eAisBand < BAND_NUM; eAisBand++) {
+			if (nanSchedGetConnChnlUsage(prAdapter,
+				     NETWORK_TYPE_AIS, eAisBand,
+				     &rAisChnlInfo, &u4SlotBitmap,
+				     &ucAisPhyTypeSet) == WLAN_STATUS_SUCCESS &&
+			    nanSchedChkConcurrOp(arDwChnl[eAisBand],
+						 rAisChnlInfo) ==
+				    CNM_CH_CONCURR_MCC) {
 
-		} else {
-			eAisBand = nanRegGetNanChnlBand(rAisChnlInfo);
-			nanSchedReleaseReschedCommitSlot(prAdapter,
-				NAN_SLOT_MASK_TYPE_AIS,
-				nanGetTimelineMgmtIndexByBand(prAdapter,
-				eAisBand));
+				nanSchedReleaseReschedCommitSlot(prAdapter,
+					NAN_SLOT_MASK_TYPE_AIS,
+					nanGetTimelineMgmtIndexByBand(prAdapter,
+					eAisBand));
+			}
 		}
 	} else if (event == AIS_DISCONNECTED) {
 		nanSchedReleaseReschedCommitSlot(prAdapter,

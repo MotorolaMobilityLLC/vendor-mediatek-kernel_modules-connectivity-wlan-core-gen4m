@@ -188,6 +188,13 @@ enum _NAN_SUPPORTED_BAND_BIT {
 	ENUM_SUPPORTED_BN_NUM
 };
 
+/* Porting from FW, TODO: move to correct file */
+enum _ENUM_CNM_CH_CONCURR_T {
+	CNM_CH_CONCURR_MCC,
+	CNM_CH_CONCURR_SCC_NEW,
+	CNM_CH_CONCURR_SCC_CURR,
+	CNM_CH_CONCURR_NUM
+};
 
 struct NAN_EVT_NDL_FLOW_CTRL {
 	uint16_t au2FlowCtrl[NAN_MAX_CONN_CFG];
@@ -766,13 +773,24 @@ struct _NAN_SCHEDULER_T *
 nanGetScheduler(struct ADAPTER *prAdapter);
 
 extern const union _NAN_BAND_CHNL_CTRL g_rNullChnl;
+extern union _NAN_BAND_CHNL_CTRL g_r2gDwChnl;
+extern union _NAN_BAND_CHNL_CTRL g_r5gDwChnl;
 
 void nanUpdateAisBitmap(struct ADAPTER *prAdapter, u_int8_t fgSet);
 
-uint32_t nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
-				 union _NAN_BAND_CHNL_CTRL *prChnl,
-				 uint32_t *pu4SlotBitmap,
-				 uint8_t *ucPhyTypeSet);
+uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
+				  enum ENUM_NETWORK_TYPE eNetworkType,
+				  enum ENUM_BAND eBand,
+				  union _NAN_BAND_CHNL_CTRL *prChnl,
+				  uint32_t *pu4SlotBitmap,
+				  uint8_t *ucPhyTypeSet);
+
+uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
+					    enum ENUM_NETWORK_TYPE eNetworkType,
+					    size_t szTimeline,
+					    union _NAN_BAND_CHNL_CTRL *prChnl,
+					    uint32_t *pu4SlotBitmap,
+					    uint8_t *ucPhyTypeSet);
 
 #if CFG_SUPPORT_NAN_EXT
 uint32_t nanSchedGetVendorAttr(
@@ -833,6 +851,10 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			unsigned char fgReschedForce5G,
 			unsigned char *pfgNotChoose6G);
 #endif
+
+enum _ENUM_CNM_CH_CONCURR_T
+nanSchedChkConcurrOp(union _NAN_BAND_CHNL_CTRL rCurrChnlInfo,
+		     union _NAN_BAND_CHNL_CTRL rNewChnlInfo);
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 void nanSchedReleaseReschedCommitSlot(struct ADAPTER *prAdapter,
