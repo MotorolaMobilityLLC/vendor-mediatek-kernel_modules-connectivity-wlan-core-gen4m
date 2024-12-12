@@ -1358,7 +1358,7 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 					cnmGetTdlsPeerByAddress(prAdapter,
 						prBssInfo->ucBssIndex,
 						prMsduInfo->aucEthDestAddr);
-				if (IS_DLS_STA(prTempStaRec) &&
+				if (prTempStaRec && IS_DLS_STA(prTempStaRec) &&
 				    prTempStaRec->ucStaState == STA_STATE_3) {
 					if (g_arTdlsLink[
 						prTempStaRec->ucTdlsIndex]) {

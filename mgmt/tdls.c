@@ -1136,6 +1136,8 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prBssInfo->ucBssIndex,
 				prCmd->aucPeer);
+		if (prStaRec == NULL)
+			return 0;
 		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 		rResult = TdlsDataFrameSend_SETUP_REQ(prAdapter,
 					prStaRec,
@@ -1191,6 +1193,8 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prBssInfo->ucBssIndex,
 				prCmd->aucPeer);
+		if (prStaRec == NULL)
+			return 0;
 		if (prCmd->u2StatusCode == TDLS_REASON_CODE_UNREACHABLE)
 			g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 
@@ -1263,17 +1267,20 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 				cnmGetTdlsPeerByAddress(prAdapter,
 					prBssInfo->ucBssIndex,
 					prCmd->aucPeerMac);
-				prStaRec->ucTdlsIndex = i;
-				prStaRec->fgTdlsIsNeedWaitTeardownTxDone =
-					FALSE;
-				prStaRec->fgTdlsIsNeedDisableLink = FALSE;
+				if (prStaRec) {
+					prStaRec->ucTdlsIndex = i;
+					prStaRec->fgTdlsIsNeedWaitTeardownTxDone
+						= FALSE;
+					prStaRec->fgTdlsIsNeedDisableLink
+						= FALSE;
 #if CFG_SUPPORT_TDLS_AUTO
-				TdlsAutoSetupTarget(
-					prAdapter,
-					prBssInfo->ucBssIndex,
-					prCmd->aucPeerMac,
-					"Enable Link");
+					TdlsAutoSetupTarget(
+						prAdapter,
+						prBssInfo->ucBssIndex,
+						prCmd->aucPeerMac,
+						"Enable Link");
 #endif
+				}
 				break;
 			}
 		}
@@ -1284,20 +1291,22 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prBssInfo->ucBssIndex,
 				prCmd->aucPeerMac);
-		if (prStaRec->fgTdlsIsNeedWaitTeardownTxDone == TRUE) {
-			prStaRec->fgTdlsIsNeedDisableLink = TRUE;
-			break;
-		}
-		prStaRec->fgTdlsIsNeedDisableLink = FALSE;
-		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
-		if (IS_DLS_STA(prStaRec))
-			cnmStaRecFree(prAdapter, prStaRec);
+		if (prStaRec) {
+			if (prStaRec->fgTdlsIsNeedWaitTeardownTxDone == TRUE) {
+				prStaRec->fgTdlsIsNeedDisableLink = TRUE;
+				break;
+			}
+			prStaRec->fgTdlsIsNeedDisableLink = FALSE;
+			g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
+			if (IS_DLS_STA(prStaRec))
+				cnmStaRecFree(prAdapter, prStaRec);
 #if CFG_SUPPORT_TDLS_AUTO
-		TdlsAutoTeardown(prAdapter,
-			prBssInfo->ucBssIndex,
-			NULL,
-			"Disable Link");
+			TdlsAutoTeardown(prAdapter,
+				prBssInfo->ucBssIndex,
+				NULL,
+				"Disable Link");
 #endif
+		}
 		break;
 	default:
 		return 0;

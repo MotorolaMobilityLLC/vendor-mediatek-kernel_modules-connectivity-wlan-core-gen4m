@@ -2518,12 +2518,12 @@ struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter,
 				&& prStaRec->eStaType == STA_TYPE_DLS_PEER
 				&& EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
 					aucPeerMACAddress)) {
-				break;
+				return prStaRec;
 			}
 		}
 	}
 
-	return prStaRec;
+	return NULL;
 }
 
 #endif
