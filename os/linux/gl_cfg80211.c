@@ -2712,22 +2712,30 @@ void mtk_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 		(struct MSG_P2P_MGMT_FRAME_REGISTER *) NULL;
 #endif
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 	do {
+		if ((wiphy == NULL) || (wdev == NULL))
+			break;
 
-		DBGLOG(INIT, TRACE, "mtk_cfg80211_mgmt_frame_register\n");
+		DBGLOG(INIT, TRACE, "netdev: 0x%p, frame_type: 0x%x, reg: %d\n",
+				wdev->netdev, frame_type, reg);
 
 		WIPHY_PRIV(wiphy, prGlueInfo);
+
+		/* prepare private netdev */
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(wdev->netdev);
 
 		switch (frame_type) {
 		case MAC_FRAME_PROBE_REQ:
 			if (reg) {
-				prGlueInfo->u4OsMgmtFrameFilter |=
+				prNetDevPrivate->u4OsMgmtFrameFilter |=
 					PARAM_PACKET_FILTER_PROBE_REQ;
 				DBGLOG(INIT, TRACE,
 					"Open packet filer probe request\n");
 			} else {
-				prGlueInfo->u4OsMgmtFrameFilter &=
+				prNetDevPrivate->u4OsMgmtFrameFilter &=
 					~PARAM_PACKET_FILTER_PROBE_REQ;
 				DBGLOG(INIT, TRACE,
 					"Close packet filer probe request\n");
@@ -2735,12 +2743,12 @@ void mtk_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 			break;
 		case MAC_FRAME_ACTION:
 			if (reg) {
-				prGlueInfo->u4OsMgmtFrameFilter |=
+				prNetDevPrivate->u4OsMgmtFrameFilter |=
 					PARAM_PACKET_FILTER_ACTION_FRAME;
 				DBGLOG(INIT, TRACE,
 					"Open packet filer action frame.\n");
 			} else {
-				prGlueInfo->u4OsMgmtFrameFilter &=
+				prNetDevPrivate->u4OsMgmtFrameFilter &=
 					~PARAM_PACKET_FILTER_ACTION_FRAME;
 				DBGLOG(INIT, TRACE,
 					"Close packet filer action frame.\n");
@@ -2753,18 +2761,6 @@ void mtk_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 			break;
 		}
 
-		if (prGlueInfo->prAdapter != NULL) {
-
-			set_bit(GLUE_FLAG_FRAME_FILTER_AIS_BIT,
-				&prGlueInfo->ulFlag);
-
-			/* wake up main thread */
-			wake_up_interruptible(&prGlueInfo->waitq);
-
-			if (in_interrupt())
-				DBGLOG(INIT, TRACE,
-						"It is in interrupt level\n");
-		}
 #if 0
 
 		prMgmtFrameRegister =
@@ -8594,6 +8590,7 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 				struct mgmt_frame_regs *upd)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	u_int8_t fgIsP2pNetDevice = FALSE;
 	uint32_t *pu4PacketFilter = NULL;
 
@@ -8611,6 +8608,10 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	fgIsP2pNetDevice = mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev);
 #endif
+	/* prepare private netdev */
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(wdev->netdev);
+
 	DBGLOG(INIT, TRACE,
 		"netdev(0x%p) update management frame filter: 0x%08x\n",
 		wdev->netdev, upd->interface_stypes);
@@ -8665,7 +8666,7 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 					PARAM_PACKET_FILTER_SUPPORTED;
 			}
 		} else {
-			pu4PacketFilter = &prGlueInfo->u4OsMgmtFrameFilter;
+			pu4PacketFilter = &prNetDevPrivate->u4OsMgmtFrameFilter;
 			*pu4PacketFilter = 0;
 		}
 		if (upd->interface_stypes & MASK_MAC_FRAME_PROBE_REQ)
@@ -8681,13 +8682,13 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 			*pu4PacketFilter |= PARAM_PACKET_FILTER_ASSOC_REQ;
 #endif
 
-		set_bit(fgIsP2pNetDevice ?
-			GLUE_FLAG_FRAME_FILTER_BIT :
-			GLUE_FLAG_FRAME_FILTER_AIS_BIT,
-			&prGlueInfo->ulFlag);
+		if (fgIsP2pNetDevice) {
+			set_bit(GLUE_FLAG_FRAME_FILTER_BIT,
+				&prGlueInfo->ulFlag);
 
-		/* wake up main thread */
-		wake_up_interruptible(&prGlueInfo->waitq);
+			/* wake up main thread */
+			wake_up_interruptible(&prGlueInfo->waitq);
+		}
 	} while (FALSE);
 }
 #endif

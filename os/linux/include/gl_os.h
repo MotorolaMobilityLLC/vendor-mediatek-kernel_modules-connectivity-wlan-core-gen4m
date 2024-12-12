@@ -1296,6 +1296,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	unsigned char ucIsNan;
 #endif
 	uint8_t ucMldBssIdx;
+	uint32_t u4OsMgmtFrameFilter;
 };
 
 struct PACKET_PRIVATE_COMMON_DATA {  /* total: 8byte */

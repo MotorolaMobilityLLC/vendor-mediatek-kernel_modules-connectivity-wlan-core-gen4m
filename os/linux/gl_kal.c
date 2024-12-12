@@ -6076,24 +6076,6 @@ int main_thread(void *data)
 		}
 #endif
 
-		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_AIS_BIT,
-				       &prGlueInfo->ulFlag)) {
-			uint32_t i;
-
-			kalTraceBegin("FRAME_FILTER_AIS");
-			for (i = 0; i < KAL_AIS_NUM; i++) {
-				struct AIS_FSM_INFO *prAisFsmInfo =
-				    aisFsmGetInstance(prGlueInfo->prAdapter, i);
-
-				if (!prAisFsmInfo)
-					continue;
-
-				prAisFsmInfo->u4AisPacketFilter =
-					prGlueInfo->u4OsMgmtFrameFilter;
-			}
-			kalTraceEnd();
-		}
-
 #if CFG_SUPPORT_NAN
 		if (test_and_clear_bit(GLUE_FLAG_NAN_MULTICAST_BIT,
 				       &prGlueInfo->ulFlag))
@@ -7936,9 +7918,11 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 	uint8_t ucChnlNum = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
 	enum ENUM_BAND eBand;
+	u_int8_t fgIsP2pNetDevice = FALSE;
 
 	do {
 		struct net_device *prDevHandler;
+		struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 		if ((prGlueInfo == NULL) || (prSwRfb == NULL)) {
 			ASSERT(FALSE);
@@ -7959,15 +7943,22 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		if (prGlueInfo->u4OsMgmtFrameFilter == 0) {
+		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+		if (!prDevHandler)
+			return;
+
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+		fgIsP2pNetDevice = mtk_IsP2PNetDevice(prGlueInfo, prDevHandler);
+#endif
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDevHandler);
+
+		if (!fgIsP2pNetDevice &&
+		    prNetDevPrivate->u4OsMgmtFrameFilter == 0) {
 			DBGLOG(AIS, WARN,
 				"The cfg80211 hasn't do mgmt register!\n");
 			break;
 		}
-
-		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
-		if (!prDevHandler)
-			return;
 
 #if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)
 		kalMemZero(&rRxInfo, sizeof(rRxInfo));
