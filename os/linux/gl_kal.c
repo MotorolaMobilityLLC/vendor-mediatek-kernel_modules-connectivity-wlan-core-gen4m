@@ -13771,17 +13771,6 @@ int _kalSnprintf(char *buf, size_t size, const char *fmt, ...)
 	return (retval < 0)?(0):(retval);
 }
 
-int _kalSprintf(char *buf, const char *fmt, ...)
-{
-	int retval;
-	va_list ap;
-
-	va_start(ap, fmt);
-	retval = vsprintf(buf, fmt, ap);
-	va_end(ap);
-	return (retval < 0)?(0):(retval);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Compare two struct timeval

@@ -2546,7 +2546,6 @@ void kalWlanUeventDeinit(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalSendUevent(struct ADAPTER *prAdapter, const char *src);
 
 int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);
-int _kalSprintf(char *buf, const char *fmt, ...);
 
 uint32_t kalRoundUpPowerOf2(uint32_t v);
 
