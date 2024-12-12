@@ -173,7 +173,15 @@ uint32_t t2lmReqTxDoneCb(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	struct MLD_STA_RECORD *prMldStaRec;
+	struct ACTION_T2LM_REQ_FRAME *prTxFrame;
 
+	if (!prMsduInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (!prMsduInfo->prPacket)
+		return WLAN_STATUS_FAILURE;
+
+	prTxFrame = prMsduInfo->prPacket;
 	prTxDone = prMsduInfo->prTxDone;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -193,6 +201,11 @@ uint32_t t2lmReqTxDoneCb(struct ADAPTER *prAdapter,
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
+#if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldLogT2LMReq(prAdapter, prBssInfo, prStaRec,
+		prTxFrame->ucDialogToken, prMsduInfo->u2HwSeqNum,
+		rTxDoneStatus);
+#endif
 
 	if (rTxDoneStatus != TX_RESULT_SUCCESS &&
 			prAdapter->ucT2LMReqRetryCnt > T2LM_RETRY_LIMIT) {
@@ -217,8 +230,17 @@ uint32_t t2lmRspTxDoneCb(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct MLD_STA_RECORD *prMldStaRec;
 	struct BSS_INFO *prBssInfo;
+	struct ACTION_T2LM_RSP_FRAME *prTxFrame;
 
+	if (!prMsduInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (!prMsduInfo->prPacket)
+		return WLAN_STATUS_FAILURE;
+
+	prTxFrame = prMsduInfo->prPacket;
 	prTxDone = prMsduInfo->prTxDone;
+
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	if (!prStaRec)
 		return WLAN_STATUS_FAILURE;
@@ -236,6 +258,13 @@ uint32_t t2lmRspTxDoneCb(struct ADAPTER *prAdapter,
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
+#if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldLogT2LMResp(prAdapter,
+		prBssInfo,
+		prStaRec,
+		prTxFrame->ucDialogToken,
+		rTxDoneStatus);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -267,6 +296,12 @@ uint32_t t2lmTeardownTxDoneCb(struct ADAPTER *prAdapter,
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
+#if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldLogT2LMTeardown(prAdapter,
+		prBssInfo,
+		prStaRec,
+		rTxDoneStatus);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }

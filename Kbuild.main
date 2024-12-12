@@ -2318,6 +2318,7 @@ else
     ccflags-y += -DCFG_EXT_ROAMING_WTC=0
     ccflags-y += -DCFG_SUPPORT_ROAMING_LOG=0
     ccflags-y += -DCFG_SUPPORT_CONN_LOG=0
+    ccflags-y += -DCFG_SUPPORT_MLD_LOG=0
     ccflags-y += -DCFG_SUPPORT_WPA3_LOG=0
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=0
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=0

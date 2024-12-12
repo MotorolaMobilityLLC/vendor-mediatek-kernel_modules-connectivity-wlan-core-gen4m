@@ -4536,6 +4536,9 @@ uint32_t mldUpdateTidBitmap(struct ADAPTER *prAdapter,
 		DBGLOG(ML, INFO, "\tband=%d,bss=%d,wlan_idx=%d,tid=0x%x\n",
 			prBssInfo->eBand, link->ucBssIdx,
 			link->u2WlanIdx, link->ucTidBitmap);
+#if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldLogT2LMStatus(prAdapter, prStaRec);
+#endif
 		link++;
 	}
 
