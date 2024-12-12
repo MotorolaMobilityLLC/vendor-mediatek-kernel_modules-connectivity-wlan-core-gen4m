@@ -391,6 +391,7 @@ CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE80
 CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
 CONFIG_MTK_WIFI_APF_SUPPORT=y
+CONFIG_MTK_WIFI_FORCE_RECV_RX=y
 endif
 
 ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
@@ -968,6 +969,12 @@ ifeq ($(CONFIG_MTK_WIFI_WFDMA_WB), y)
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_WB=1
 else
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_WB=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_FORCE_RECV_RX), y)
+    ccflags-y += -DCFG_MTK_WIFI_FORCE_RECV_RX=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_FORCE_RECV_RX=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_WIFI_WFDMA_TX_RING_BK_RS), y)

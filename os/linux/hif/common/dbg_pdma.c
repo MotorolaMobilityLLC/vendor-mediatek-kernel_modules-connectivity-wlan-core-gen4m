@@ -869,9 +869,9 @@ u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx)
 	return FALSE;
 }
 
-void halCheckWfdmaStall(struct ADAPTER *prAdapter)
-{
 #if CFG_MTK_WIFI_WFDMA_WB
+void halCheckWfdmaStallForWB(struct ADAPTER *prAdapter)
+{
 	struct GLUE_INFO *prGlueInfo;
 #if defined(_HIF_PCIE)
 	struct BUS_INFO *prBusInfo;
@@ -925,8 +925,50 @@ void halCheckWfdmaStall(struct ADAPTER *prAdapter)
 		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
 	}
-#endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+#if (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
+void halCheckWfdmaStallForceRecvRx(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t i, u4RxCnt = 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	/* skip SER */
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState != ERR_RECOV_STOP_IDLE)
+		return;
+
+	for (i = 0; i < NUM_OF_RX_RING; i++) {
+		prRxRing = &prHifInfo->RxRing[i];
+
+		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prGlueInfo, i);
+
+		if (prRxRing->u4RingSize - 1 == u4RxCnt) {
+			KAL_SET_BIT(i, prAdapter->ulNoMoreRfb);
+			DBGLOG(HAL, WARN,
+			       "Ring[%u] RxCnt[%u] cidx[%u]\n",
+			       i, u4RxCnt, prRxRing->RxCpuIdx);
+			kalSetDrvIntEvent(prGlueInfo);
+			break;
+		}
+	}
+}
+#endif /* CFG_MTK_WIFI_FORCE_RECV_RX */
+
+void halCheckWfdmaStall(struct ADAPTER *prAdapter)
+{
+#if CFG_MTK_WIFI_WFDMA_WB
+	halCheckWfdmaStallForWB(prAdapter);
+#elif (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
+	halCheckWfdmaStallForceRecvRx(prAdapter);
+#endif
+}
+
 
 void halCheckTxTimeout(struct ADAPTER *prAdapter)
 {
