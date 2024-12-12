@@ -2570,7 +2570,9 @@ u_int8_t halRxInsertRecvRfbList(
 #endif /* CFG_RFB_TRACK */
 			if (KAL_FIFO_IN(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 				RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_IN_COUNT);
+#if !CFG_SUPPORT_RX_NAPI_THREADED
 				kalNapiSchedule(prAdapter);
+#endif
 			} else {
 				/* should not enter here */
 				RX_INC_CNT(prRxCtrl,
@@ -2834,6 +2836,12 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		kalTraceEvent("Recv p=%p total:%lu",
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
 	}
+
+#if CFG_SUPPORT_RX_NAPI_THREADED
+	if (prGlueInfo->prRxDirectNapi &&
+	    !KAL_FIFO_IS_EMPTY(&prGlueInfo->rRxKfifoQ))
+		kalNapiSchedule(prAdapter);
+#endif
 
 	HAL_SET_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 

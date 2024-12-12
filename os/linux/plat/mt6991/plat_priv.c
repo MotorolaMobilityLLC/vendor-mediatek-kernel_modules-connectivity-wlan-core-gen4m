@@ -153,7 +153,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxFreeMsduWorkCpu = -1,
 		.fgWifiNappingForceDis = FALSE,
 		.i4DramBoostLv = -1,
-		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
+		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
 	},
 	{
