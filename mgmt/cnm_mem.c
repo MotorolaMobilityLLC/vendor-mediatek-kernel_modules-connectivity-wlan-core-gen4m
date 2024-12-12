@@ -1358,10 +1358,17 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #endif
 
 #if CFG_SUPPORT_MLR
-	if (MLR_BAND_IS_SUPPORT(MLR_GET_BAND(prAdapter, prStaRec))
-		&& MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec)
-		&& MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, prStaRec->ucRCPI)
-		&& (prStaRec->ucStaState == STA_STATE_3)) {
+	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec) &&
+		/* STA MLRV1, MLRP and ALR consider 5G band */
+	    ((MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec) ||
+	      MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec) ||
+	      MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec)) &&
+	     MLR_BAND_IS_SUPPORT(MLR_GET_BAND(prAdapter, prStaRec)) ||
+		/* STA MLRV2 or MLRV1+MLRV2 don't need to consider 5G band */
+	    MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec) ||
+	    MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) &&
+	    MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, prStaRec->ucRCPI) &&
+	    prStaRec->ucStaState == STA_STATE_3) {
 		prCmdContent->ucMlrMode = (prStaRec->ucMlrSupportBitmap &
 			prAdapter->u4MlrSupportBitmap);
 		prCmdContent->ucMlrState = MLR_STATE_START;
@@ -1372,12 +1379,12 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	}
 
 	MLR_DBGLOG(prAdapter, REQ, INFO,
-		"MLR updatestarec StaRec[%u] WIDX[%u] ucStaState[%u] MLR[%d,0x%04x,%d,0x%02x] ucMlrMode[0x%02x] ucMlrState[%u] RCPI=%d(RSSI=%d)\n",
+		"MLR updatestarec StaRec[%u] WIDX[%u] ucStaState[%u] MLR[0x%04x, 0x%02x] ucMlrMode[0x%02x] ucMlrState[%u] RCPI=%d(RSSI=%d)\n",
 		prCmdContent->ucStaIndex,
 		prCmdContent->ucWlanIndex,
 		prCmdContent->ucStaState,
-		prAdapter->ucMlrIsSupport, prAdapter->u4MlrSupportBitmap,
-		prStaRec->fgIsMlrSupported, prStaRec->ucMlrSupportBitmap,
+		prAdapter->u4MlrSupportBitmap,
+		prStaRec->ucMlrSupportBitmap,
 		prCmdContent->ucMlrMode,
 		prCmdContent->ucMlrState,
 		prStaRec->ucRCPI,

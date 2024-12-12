@@ -1179,7 +1179,11 @@ struct UNI_CMD_STAREC_MLR_INFO {
 	uint16_t  u2Length;
 	uint8_t   ucMlrMode;
 	uint8_t   ucMlrState;
-	uint8_t   aucReserved[2];
+	/* MLR state force mode(0:don't care/1:IDLE/2:START)
+	 * only used for REBB segment
+	 */
+	uint8_t   ucMlrStateForceType;
+	uint8_t   aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* t2lm (Tag 0x3E) */
@@ -7648,6 +7652,9 @@ struct UNI_EVENT_MLR_FSM_UPDATE {
 	uint16_t u2WlanIdx;
 	uint8_t ucMlrMode;  /* ENUM_MLR_MODE */
 	uint8_t ucMlrState; /* ENUM_MLR_STATE */
+	/* MLR TXD fixed rate index (only used for REBB segment) */
+	uint8_t ucMlrTxdFrIdx;
+	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 /* EFUSE event Tag */

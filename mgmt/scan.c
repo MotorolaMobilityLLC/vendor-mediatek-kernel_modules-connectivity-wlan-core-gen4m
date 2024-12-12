@@ -5292,20 +5292,29 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			 * BIT[3]->ALR,
 			 * BIT[4]->DUAL_CTS
 			 */
-			/* For 2.4G AP foolproof */
-			prBssDesc->ucMlrSupportBitmap = (prMLR->ucLRBitMap &
-				(!MLR_BAND_IS_SUPPORT(prBssDesc->eBand)
-				? MLR_MODE_NOT_SUPPORT : ~0));
+			prBssDesc->ucMlrSupportBitmap = prMLR->ucLRBitMap;
 
-			prBssDesc->fsIsMlrSupport =
-				MLR_BIT_SUPPORT(prBssDesc
-				->ucMlrSupportBitmap);
+			/* For 2.4G AP foolproof, only MLRv1 */
+			if ((prAdapter->u4MlrSupportBitmap
+				& prBssDesc->ucMlrSupportBitmap)
+				== MLR_MODE_MLR_V1)
+				prBssDesc->ucMlrSupportBitmap =
+					(prMLR->ucLRBitMap &
+					(!MLR_BAND_IS_SUPPORT(prBssDesc->eBand)
+					? MLR_MODE_NOT_SUPPORT : ~0));
 
 			MLR_DBGLOG(prAdapter, SCN, INFO,
 				"MLR beacon - BSSID:" MACSTR
-				" IsMlrS:%d Type|Len|B[0x%02x, 0x%02x, 0x%02x]\n",
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				" ,MLIE Valid:%d|LinkId:%d|Mld Addr:" MACSTR
+#endif
+				" ,MLRIE Type|Len|B[0x%02x, 0x%02x, 0x%02x]\n",
 				MAC2STR(prBssDesc->aucBSSID),
-				prBssDesc->fsIsMlrSupport,
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				prBssDesc->rMlInfo.fgValid,
+				prBssDesc->rMlInfo.ucLinkIndex,
+				MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
+#endif
 				prBssDesc->ucMlrType,
 				prBssDesc->ucMlrLength,
 				prBssDesc->ucMlrSupportBitmap);

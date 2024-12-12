@@ -8144,6 +8144,8 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 	struct PARAM_CUSTOM_KEY_CFG_STRUCT *prKeyCfgInfo;
 	uint8_t *pucKey = NULL;
 	uint8_t aucKey[MAX_CMD_NAME_MAX_LENGTH] = {0};
+	uint32_t u4TargetCfg = 0;
+	int32_t i4Ret = 0;
 
 	DBGLOG(INIT, LOUD, "\n");
 
@@ -8176,6 +8178,20 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 #endif
 	}
 
+#if CFG_SUPPORT_MLR
+	if (kalMemCmp(prKeyCfgInfo->aucKey, "MlrCfg", 6) == 0) {
+		i4Ret = kalkStrtou32(prKeyCfgInfo->aucValue, 0, &u4TargetCfg);
+		if (!i4Ret) {
+			DBGLOG(INIT, INFO, "MLR SET_CFG [%s]:[0x%x]\n",
+				prKeyCfgInfo->aucKey, u4TargetCfg, i4Ret);
+			prAdapter->u4MlrSupportBitmap =
+				prAdapter->u4MlrCapSupportBitmap & u4TargetCfg;
+		} else {
+			DBGLOG(INIT, ERROR,
+				"MLR SET_CFG: Parse error i4Ret[%d]\n", i4Ret);
+		}
+	}
+#endif
 #if CFG_SUPPORT_EASY_DEBUG
 	wlanFeatureToFw(prAdapter, prKeyCfgInfo->u4Flag, pucKey);
 #endif

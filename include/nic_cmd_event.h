@@ -3699,6 +3699,9 @@ struct EVENT_MLR_FSM_UPDATE {
 	uint16_t u2WlanIdx;
 	uint8_t ucMlrMode;
 	uint8_t ucMlrState;
+	/* MLR TXD fixed rate index (only used for REBB segment) */
+	uint8_t ucMlrTxdFrIdx;
+	uint8_t aucReserved[3];
 };
 #endif
 

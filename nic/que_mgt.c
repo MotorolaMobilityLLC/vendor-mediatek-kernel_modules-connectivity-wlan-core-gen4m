@@ -7059,11 +7059,19 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 #endif
 #if CFG_SUPPORT_MLR
 	prStaRec->ucMlrSupportBitmap = prScanResult->ucMlrSupportBitmap;
-	prStaRec->fgIsMlrSupported = prScanResult->fsIsMlrSupport;
 	prStaRec->ucRCPI = prScanResult->ucRCPI;
 	MLR_DBGLOG(prAdapter, WMM, INFO,
-		"MLR beacon - MlrS=%d MlrSB=0x%04x ucRCPI=%d(RSSI=%d)\n",
-		prStaRec->fgIsMlrSupported,
+		"MLR beacon - BSSID:" MACSTR
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		" ,MLIE Valid:%d|LinkId:%d|Mld Addr:" MACSTR
+#endif
+		" ,MlrSB=0x%02x ucRCPI=%d(RSSI=%d)\n",
+		MAC2STR(prScanResult->aucBSSID),
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prScanResult->rMlInfo.fgValid,
+		prScanResult->rMlInfo.ucLinkIndex,
+		MAC2STR(prScanResult->rMlInfo.aucMldAddr),
+#endif
 		prStaRec->ucMlrSupportBitmap,
 		prStaRec->ucRCPI,
 		RCPI_TO_dBm(prStaRec->ucRCPI));

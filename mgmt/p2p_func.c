@@ -4617,13 +4617,9 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 			 * BIT[4]->DUAL_CTS
 			 */
 			prStaRec->ucMlrSupportBitmap = prMLR->ucLRBitMap;
-			prStaRec->fgIsMlrSupported =
-				MLR_BIT_SUPPORT(prStaRec
-				->ucMlrSupportBitmap);
 
 			MLR_DBGLOG(prAdapter, P2P, INFO,
-				"MLR assoc req-IsMlrS:%d Type|Len|B[0x%02x]\n",
-				prStaRec->fgIsMlrSupported,
+				"MLR assoc req - Type|Len|B[0x%02x]\n",
 				prStaRec->ucMlrSupportBitmap);
 		}
 	}
