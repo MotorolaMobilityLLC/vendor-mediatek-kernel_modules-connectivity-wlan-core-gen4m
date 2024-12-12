@@ -421,7 +421,7 @@ static s_int32 hqa_set_tx_path(
 			("%s: tx_path:%d\n", __func__, tx_ant));
 	}
 
-	if (band_idx < TEST_DBDC_BAND_NUM) {
+	if (((int)band_idx >= 0) && (band_idx < TEST_DBDC_BAND_NUM)) {
 		/* Set parameters */
 		serv_test->test_config[band_idx].tx_ant = tx_ant;
 		ret = mt_serv_set_tx_path(serv_test);
@@ -482,7 +482,7 @@ static s_int32 hqa_set_rx_path(
 			("%s: rx_path:%d\n", __func__, rx_ant));
 	}
 
-	if (band_idx < TEST_DBDC_BAND_NUM) {
+	if (((int)band_idx >= 0) && (band_idx < TEST_DBDC_BAND_NUM)) {
 		/* Set parameters */
 		serv_test->test_config[band_idx].rx_ant = rx_ant;
 		ret = mt_serv_set_rx_path(serv_test);
