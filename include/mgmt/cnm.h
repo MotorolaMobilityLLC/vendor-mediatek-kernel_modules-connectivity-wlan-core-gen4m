@@ -997,12 +997,12 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER *prAdapter,
  * @brief	Function to get the status of whether DBDC is enabled for
  *          P2P listening
  *
- * @param	void
+ * @param[in]	prAdapter	Pointer to the adapter structure
  *
  * @return  1 if DBDC is enabled by P2P Listen DBDC, 0 otherwise.
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t cnmDbdcIsP2pListenDbdcEn(void);
+u_int8_t cnmDbdcIsP2pListenDbdcEn(struct ADAPTER *prAdapter);
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -1040,7 +1040,7 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER *prAdapter,
  * @return  True if DBDC privilege lock is requested, otherwise false
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t cnmDBDCIsReqPeivilegeLock(void);
+u_int8_t cnmDBDCIsReqPeivilegeLock(struct ADAPTER *prAdapter);
 #endif /*CFG_SUPPORT_DBDC*/
 
 /*----------------------------------------------------------------------------*/

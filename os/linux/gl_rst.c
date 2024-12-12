@@ -1228,11 +1228,13 @@ void WfsysResetHdlr(struct work_struct *work)
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter;
 	struct mt66xx_hif_driver_data *prHifDrvData;
+	struct net_device *prNetDev;
 
 	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO, rWfsysResetWork);
 	prAdapter = prGlueInfo->prAdapter;
 	prHifDrvData = CONTAINER_OF(&prAdapter->chip_info,
 				    struct mt66xx_hif_driver_data, chip_info);
+	prNetDev  = prGlueInfo->prDevHandler;
 
 	DBGLOG(INIT, STATE, "[SER][L0.5] Reset triggered eWfsysResetState=%d\n",
 				prAdapter->eWfsysResetState);
@@ -1256,7 +1258,7 @@ void WfsysResetHdlr(struct work_struct *work)
 #endif
 		HAL_CANCEL_TX_RX(prAdapter);
 
-		if (wlanOffAtReset() != WLAN_STATUS_SUCCESS)
+		if (wlanOffAtReset(prNetDev) != WLAN_STATUS_SUCCESS)
 			goto FAIL;
 
 		glResetUpdateFlag(FALSE);
@@ -1275,7 +1277,7 @@ void WfsysResetHdlr(struct work_struct *work)
 
 	HAL_RESUME_TX_RX(prAdapter);
 
-	if (wlanOnAtReset() != WLAN_STATUS_SUCCESS)
+	if (wlanOnAtReset(prNetDev) != WLAN_STATUS_SUCCESS)
 		goto FAIL;
 #if CFG_SUPPORT_WED_PROXY
 	wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_ATTACH);
@@ -1401,7 +1403,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 	}
 
 	if (mtk_cfg80211_vendor_event_reset_triggered(
-					(uint32_t) eResetReason) != 0)
+			rst->prGlueInfo, (uint32_t) eResetReason) != 0)
 		DBGLOG(INIT, ERROR, "Send WIFI_EVENT_RESET_TRIGGERED Error!\n");
 
 	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d, ret: %d\n",
@@ -2665,8 +2667,6 @@ EXPORT_SYMBOL(BT_rst_L0_notify_WF_2);
 #endif
 
 #if (CFG_SUPPORT_SER_DEBUGFS == 1)
-static struct dentry *serDbgFsDir;
-
 static int ser_dbgfs_read_dummy(void *data, uint64_t *val)
 {
 	*val = (kalIsResetting() == FALSE) ? 0 : 1;
@@ -2821,8 +2821,13 @@ DEFINE_SIMPLE_ATTRIBUTE(fops_bus_disconnect,
 
 int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo)
 {
-	serDbgFsDir = debugfs_create_dir("mtk_ser_dbgfs", NULL);
-	if (!serDbgFsDir) {
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is null\n");
+		return -1;
+	}
+
+	prGlueInfo->serDbgFsDir = debugfs_create_dir("mtk_ser_dbgfs", NULL);
+	if (!prGlueInfo->serDbgFsDir) {
 		DBGLOG(INIT, ERROR,
 			"serDbgFsDir is null for mtk_ser_dbgfs\n");
 		return -1;
@@ -2830,28 +2835,28 @@ int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo)
 
 	/* /sys/kernel/debug/mtk_ser_dbgfs/L0_reset, mode: wr */
 	if (!debugfs_create_file("L0_reset",
-				 0644, serDbgFsDir, prGlueInfo,
+				 0644, prGlueInfo->serDbgFsDir, prGlueInfo,
 				 &fops_L0_reset))
 		DBGLOG(INIT, WARN,
 			"create L0_reset dgbfs fail\n");
 
 	/* /sys/kernel/debug/mtk_ser_dbgfs/power_ctl, mode: wr */
 	if (!debugfs_create_file("power_ctl",
-				 0644, serDbgFsDir, prGlueInfo,
+				 0644, prGlueInfo->serDbgFsDir, prGlueInfo,
 				 &fops_power_ctl))
 		DBGLOG(INIT, WARN,
 			"create power_ctl dgbfs fail\n");
 
 	/* /sys/kernel/debug/mtk_ser_dbgfs/fw_assert, mode: wr */
 	if (!debugfs_create_file("fw_assert",
-				 0644, serDbgFsDir, prGlueInfo,
+				 0644, prGlueInfo->serDbgFsDir, prGlueInfo,
 				 &fops_fw_assert))
 		DBGLOG(INIT, WARN,
 			"create fw_assert dgbfs fail\n");
 
 	/* /sys/kernel/debug/mtk_ser_dbgfs/conninfra_hang, mode: wr */
 	if (!debugfs_create_file("conninfra_hang",
-				 0644, serDbgFsDir, prGlueInfo,
+				 0644, prGlueInfo->serDbgFsDir, prGlueInfo,
 				 &fops_conninfra_hang))
 		DBGLOG(INIT, WARN,
 			"create conninfra_hang dgbfs fail\n");
@@ -2859,14 +2864,14 @@ int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo)
 #if defined(_HIF_USB)
 	/* /sys/kernel/debug/mtk_ser_dbgfs/bus_hang, mode: wr */
 	if (!debugfs_create_file("bus_hang",
-				 0644, serDbgFsDir, prGlueInfo,
+				 0644, prGlueInfo->serDbgFsDir, prGlueInfo,
 				 &fops_bus_hang))
 		DBGLOG(INIT, WARN,
 			"create bus_hang dgbfs fail\n");
 
 	/* /sys/kernel/debug/mtk_ser_dbgfs/bus_disconnect, mode: wr */
 	if (!debugfs_create_file("bus_disconnect",
-				 0644, serDbgFsDir, prGlueInfo,
+				 0644, prGlueInfo->serDbgFsDir, prGlueInfo,
 				 &fops_bus_disconnect))
 		DBGLOG(INIT, WARN,
 			"create bus_disconnect dgbfs fail\n");

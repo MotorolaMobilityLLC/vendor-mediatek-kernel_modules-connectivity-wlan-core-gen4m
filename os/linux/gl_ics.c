@@ -84,7 +84,7 @@ void ics_log_event_notification(int cmd, int value)
 		return;
 	}
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	WIPHY_PRIV(wlanGetWiphyByWdev(gprWdev[0]), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(ICS, ERROR, "prGlueInfo is NULL return");
 		return;

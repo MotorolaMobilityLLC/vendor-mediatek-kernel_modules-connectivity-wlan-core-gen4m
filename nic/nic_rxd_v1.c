@@ -386,7 +386,7 @@ u_int8_t nic_rxd_v1_sanity_check(
 			DBGLOG(RSN, INFO,
 				"Don't drop eapol or wpi packet\n");
 		} else {
-			nicRxParseDropPkt(prSwRfb);
+			nicRxParseDropPkt(prAdapter, prSwRfb);
 			RX_INC_CNT(prRxCtrl, RX_CIPHER_MISMATCH_DROP_COUNT);
 			fgDrop = TRUE;
 			DBGLOG(RSN, TEMP,

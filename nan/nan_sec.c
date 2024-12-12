@@ -2288,13 +2288,11 @@ nan_sec_hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
  ************************************************
  */
 void
-nan_sec_wpa_supplicant_start(void) {
-	struct GLUE_INFO *prGlueInfo = NULL;
+nan_sec_wpa_supplicant_start(struct GLUE_INFO *prGlueInfo) {
 	struct ADAPTER *prAdapter = NULL;
 
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return;

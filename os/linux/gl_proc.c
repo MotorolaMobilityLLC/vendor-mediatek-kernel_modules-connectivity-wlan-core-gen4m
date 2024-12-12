@@ -125,6 +125,10 @@
 }
 #endif
 
+#if (KERNEL_VERSION(5, 17, 0) <= LINUX_VERSION_CODE)
+#define PDE_DATA(i) pde_data(i)
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -137,10 +141,8 @@ struct _TWT_SMART_STA_T g_TwtSmartStaCtrl;
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static struct GLUE_INFO *g_prGlueInfo_proc;
 static struct proc_dir_entry *gprProcRoot;
 #if (BUILD_QA_DBG)
-static uint32_t u4McrOffset;
 static const char * const apcDbModuleName[DBG_MODULE_NUM] = {
 	[DBG_INIT_IDX] = "INIT",
 	[DBG_HAL_IDX] = "HAL",
@@ -196,11 +198,6 @@ static const char * const apcDbModuleName[DBG_MODULE_NUM] = {
 	[DBG_PASN_IDX] = "PASN",
 };
 #endif /* (BUILD_QA_DBG) */
-
-/* This u32 is only for DriverCmdRead/Write,
- * should not be used by other function
- */
-static int32_t g_i4NextDriverReadLen;
 
 #if (!CFG_MTK_ANDROID_WMT) && (BUILD_QA_DBG)
 #if CFG_WIFI_TXPWR_TBL_DUMP
@@ -317,8 +314,10 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 {
 	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
 	uint32_t u4CopySize = PROC_MAX_BUF_SIZE;
-	struct GLUE_INFO *prGlueInfo = g_prGlueInfo_proc;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Ret = 0;
+
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
 
 	if (buffer == NULL || pucProcBuf == NULL || prGlueInfo == NULL) {
 		i4Ret = 0;
@@ -357,8 +356,8 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	}
 
 	if (kalStrLen(pucProcBuf) > 0)
-		priv_driver_cmds(prGlueInfo->prDevHandler, pucProcBuf,
-			kalStrLen(pucProcBuf));
+		priv_driver_cmds(prGlueInfo, prGlueInfo->prDevHandler,
+			pucProcBuf, kalStrLen(pucProcBuf));
 
 	i4Ret = u4CopySize;
 freeBuf:
@@ -390,9 +389,12 @@ static const struct file_operations drivercmd_ops = {
 static int procCSIDataOpen(struct inode *n, struct file *f)
 {
 	struct CSI_INFO_T *prCSIInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
-	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
-		prCSIInfo = glCsiGetCSIInfo();
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(n);
+
+	if (prGlueInfo && prGlueInfo->prAdapter) {
+		prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 		prCSIInfo->bIncomplete = FALSE;
 	}
 
@@ -402,9 +404,12 @@ static int procCSIDataOpen(struct inode *n, struct file *f)
 static int procCSIDataRelease(struct inode *n, struct file *f)
 {
 	struct CSI_INFO_T *prCSIInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
-	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
-		prCSIInfo = glCsiGetCSIInfo();
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(n);
+
+	if (prGlueInfo && prGlueInfo->prAdapter) {
+		prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 		prCSIInfo->bIncomplete = FALSE;
 	}
 
@@ -420,12 +425,15 @@ static ssize_t procCSIDataRead(struct file *filp,
 	int32_t i4Pos = 0;
 	struct CSI_INFO_T *prCSIInfo = NULL;
 	struct CSI_DATA_T *prTempCSIData = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	u_int8_t bStatus;
 
-	if (g_prGlueInfo_proc && g_prGlueInfo_proc->u4ReadyFlag &&
-			g_prGlueInfo_proc->prAdapter) {
-		prCSIInfo = glCsiGetCSIInfo();
-		temp = glCsiGetCSIBuf();
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(filp));
+
+	if (prGlueInfo && prGlueInfo->u4ReadyFlag &&
+			prGlueInfo->prAdapter) {
+		prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
+		temp = glCsiGetCSIBuf(prGlueInfo);
 	} else {
 		DBGLOG(REQ, WARN, "[CSI] driver is not ready.\n");
 		return 0;
@@ -433,7 +441,7 @@ static ssize_t procCSIDataRead(struct file *filp,
 
 	if (prCSIInfo->bIncomplete == FALSE) {
 
-		wait_event_interruptible(g_prGlueInfo_proc->waitq_csi,
+		wait_event_interruptible(prGlueInfo->waitq_csi,
 			prCSIInfo->u4CSIBufferUsed != 0);
 		if (kalIsHalted() || kalIsResetting()) {
 			DBGLOG(INIT, WARN,
@@ -442,7 +450,7 @@ static ssize_t procCSIDataRead(struct file *filp,
 			return -EFAULT;
 		}
 
-		prTempCSIData = glCsiGetCSIData();
+		prTempCSIData = glCsiGetCSIData(prGlueInfo);
 		if (!prTempCSIData) {
 			DBGLOG(REQ, ERROR, "[CSI] NULL CSI data.\n");
 			return -EFAULT;
@@ -452,7 +460,7 @@ static ssize_t procCSIDataRead(struct file *filp,
 		 * No older CSI data in buffer waiting for reading out,
 		 * so prepare a new one for reading.
 		 */
-		bStatus = wlanPopCSIData(g_prGlueInfo_proc->prAdapter,
+		bStatus = wlanPopCSIData(prGlueInfo->prAdapter,
 			prTempCSIData);
 		if (bStatus)
 			i4Pos = wlanCSIDataPrepare(temp,
@@ -532,12 +540,17 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	uint32_t country = 0;
 	char acCountryStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 	int32_t i4Ret = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(filp));
 
 	/* if *f_pos > 0, it means has read successed last time */
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
+	if (*f_pos > 0 || !buf || !pucProcBuf || !prGlueInfo) {
 		i4Ret = 0;
 		goto freeBuf;
 	}
+	prAdapter = prGlueInfo->prAdapter;
 
 	country = rlmDomainGetCountryCode();
 	rlmDomainU32ToAlpha(country, acCountryStr);
@@ -568,13 +581,17 @@ freeBuf:
 static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	size_t count, loff_t *data)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus;
 	uint32_t u4CopySize = PROC_MAX_BUF_SIZE;
 	int32_t i4Ret = 0;
 
-	if (buffer == NULL || pucProcBuf == NULL) {
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
+
+	if (buffer == NULL || pucProcBuf == NULL || prGlueInfo == NULL) {
 		i4Ret = 0;
 		goto freeBuf;
 	}
@@ -593,6 +610,7 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 		goto freeBuf;
 	}
 	pucProcBuf[u4CopySize] = '\0';
+	prAdapter = prGlueInfo->prAdapter;
 
 	if (regd_is_single_sku_en()) {
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
@@ -601,13 +619,13 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 		prCountrySetting.aucCountryCode[1] = pucProcBuf[1];
 		prCountrySetting.ucCountryLength = 2;
 		prCountrySetting.fgNeedHoldRtnlLock = 1;
-		rStatus = kalIoctl(g_prGlueInfo_proc,
+		rStatus = kalIoctl(prGlueInfo,
 					wlanoidSetCountryCode,
 					&prCountrySetting,
 					sizeof(struct COUNTRY_CODE_SETTING),
 					&u4BufLen);
 	} else {
-		rStatus = kalIoctl(g_prGlueInfo_proc, wlanoidSetCountryCode,
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 			   pucProcBuf, 2, &u4BufLen);
 	}
 
@@ -642,13 +660,15 @@ static const struct file_operations country_ops = {
 static ssize_t procCoreDumpRead(struct file *file, char __user *buf,
 			size_t count, loff_t *f_pos)
 {
-	struct GLUE_INFO *prGlueInfo = g_prGlueInfo_proc;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
 	struct sk_buff *skb = NULL;
 	int copyLen = 0;
 	unsigned long ret_len = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
+
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "procCfgRead prGlueInfo is  NULL\n");
@@ -696,8 +716,10 @@ out:
 
 static unsigned int procCoreDumpPoll(struct file *file, poll_table *wait)
 {
-	struct GLUE_INFO *prGlueInfo = g_prGlueInfo_proc;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	unsigned int mask = 0;
+
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "procCoreDumpPoll prGlueInfo is  NULL\n");
@@ -932,7 +954,7 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 	uint32_t idx_addr, idx_value;
 	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo = { };
 
-	prGlueInfo = g_prGlueInfo_proc;
+	prGlueInfo = (struct GLUE_INFO *) s->private;
 
 	if (prGlueInfo == NULL) {
 		seq_puts(s, "prGlueInfo is null\n");
@@ -985,6 +1007,9 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 
 static int procEfuseDumpOpen(struct inode *inode, struct file *file)
 {
+	struct seq_file *seq = NULL;
+	int32_t i4Ret = 0;
+
 	static const struct seq_operations procEfuseDump_ops = {
 		.start = procEfuseDump_start,
 		.next = procEfuseDump_next,
@@ -992,7 +1017,14 @@ static int procEfuseDumpOpen(struct inode *inode, struct file *file)
 		.show = procEfuseDump_show
 	};
 
-	return seq_open(file, &procEfuseDump_ops);
+	i4Ret = seq_open(file, &procEfuseDump_ops);
+
+	if (i4Ret == 0) {
+		seq = file->private_data;
+		seq->private = PDE_DATA(inode);
+	}
+
+	return i4Ret;
 }
 
 #if KERNEL_VERSION(5, 6, 0) <= CFG80211_VERSION_CODE
@@ -1131,7 +1163,8 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 		return 0;
 	}
 
-	prGlueInfo = g_prGlueInfo_proc;
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
+
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "can't get glue info");
 		return -EFAULT;
@@ -1434,6 +1467,9 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	uint8_t *temp = NULL;
 	uint32_t u4CopySize = PROC_MAX_BUF_SIZE;
 	int32_t i4Ret = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
 
 	if (buffer == NULL || pucProcBuf == NULL) {
 		i4Ret = 0;
@@ -1452,9 +1488,9 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 
 	/*add chip reset cmd for manual test*/
 #if CFG_CHIP_RESET_SUPPORT
-	if (temp[0] == 'R') {
+	if (temp[0] == 'R' && prGlueInfo) {
 		DBGLOG(INIT, INFO, "WIFI trigger reset!!\n");
-		GL_USER_DEFINE_RESET_TRIGGER(g_prGlueInfo_proc->prAdapter,
+		GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
 			RST_CMD_TRIGGER, RST_FLAG_DO_WHOLE_RESET);
 		temp[0] = 'X';
 	}
@@ -1540,16 +1576,17 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	int32_t i4Ret = 0;
 
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(filp));
+
 	/* if *f_ops>0, we should return 0 to make cat command exit */
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
+	if (*f_pos > 0 || !buf || !pucProcBuf || !prGlueInfo) {
 		i4Ret = 0;
 		goto freeBuf;
 	}
 
 	temp = pucProcBuf;
-	prGlueInfo = g_prGlueInfo_proc;
 	rMcrInfo.u4McrData = 0;
-	rMcrInfo.u4McrOffset = u4McrOffset;
+	rMcrInfo.u4McrOffset = prGlueInfo->u4McrOffset;
 
 	rStatus = kalIoctl(prGlueInfo,
 		wlanoidQueryMcrRead, (void *)&rMcrInfo,
@@ -1615,6 +1652,13 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 		return 0;
 	}
 
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return 0;
+	}
+
 	switch (num) {
 	case 2:
 		/* NOTE: Sometimes we want to test if bus will still be ok,
@@ -1622,9 +1666,7 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 		 */
 		/* if (IS_ALIGN_4(rMcrInfo.u4McrOffset)) */
 		{
-			prGlueInfo = g_prGlueInfo_proc;
-
-			u4McrOffset = rMcrInfo.u4McrOffset;
+			prGlueInfo->u4McrOffset = rMcrInfo.u4McrOffset;
 
 			/* rMcrInfo.u4McrOffset, rMcrInfo.u4McrData); */
 
@@ -1637,7 +1679,7 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 	case 1:
 		/* if (IS_ALIGN_4(rMcrInfo.u4McrOffset)) */
 		{
-			u4McrOffset = rMcrInfo.u4McrOffset;
+			prGlueInfo->u4McrOffset = rMcrInfo.u4McrOffset;
 		}
 		break;
 
@@ -1688,7 +1730,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 		goto freeBuf;
 	}
 
-	prGlueInfo = g_prGlueInfo_proc;
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(filp));
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "procCfgRead prGlueInfo is NULL\n");
@@ -1843,12 +1885,19 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 		}
 	}
 
-	prGlueInfo = g_prGlueInfo_proc;
-	/* if g_i4NextDriverReadLen >0,
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(file));
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
+		i4Ret = -EFAULT;
+		goto freeBuf;
+	}
+
+	/* if i4NextDriverReadLen >0,
 	 * the content for next DriverCmdRead will be
-	 * in : pucProcBuf with length : g_i4NextDriverReadLen
+	 * in : pucProcBuf with length : i4NextDriverReadLen
 	 */
-	g_i4NextDriverReadLen =
+	prGlueInfo->i4NextDriverReadLen =
 		priv_driver_set_cfg(prGlueInfo->prDevHandler, pucProcBuf,
 			kalStrLen(pucProcBuf));
 
@@ -1997,7 +2046,7 @@ static ssize_t procTestRead(struct file *filp, char __user *buf,
 		goto freeBuf;
 	}
 
-	prGlueInfo = g_prGlueInfo_proc;
+	prGlueInfo = (struct GLUE_INFO *) PDE_DATA(file_inode(filp));
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
@@ -2051,7 +2100,6 @@ int32_t procInitFs(void)
 {
 	struct proc_dir_entry *prEntry;
 
-	g_i4NextDriverReadLen = 0;
 	prEntry = NULL;
 
 	if (init_net.proc_net == (struct proc_dir_entry *)NULL) {
@@ -2061,7 +2109,7 @@ int32_t procInitFs(void)
 	}
 
 	/*
-	 * Directory: Root (/proc/net/wlan0)
+	 * Directory: Root (/proc/net/wlan)
 	 */
 
 	gprProcRoot = proc_mkdir(PROC_ROOT_NAME, init_net.proc_net);
@@ -2163,42 +2211,49 @@ int32_t procUninitProcFs(void)
  * \return N/A
  */
 /*----------------------------------------------------------------------------*/
-int32_t procRemoveProcfs(void)
+int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo)
 {
 #if (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG)
 #if CFG_SUPPORT_CSI
 	struct CSI_INFO_T *prCSIInfo = NULL;
+#endif /* CFG_SUPPORT_CSI */
+#endif /* (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG) */
+	struct proc_dir_entry *prProcRoot = NULL;
 
-	prCSIInfo = glCsiGetCSIInfo();
+	prProcRoot = gprProcRoot;
+
+#if (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG)
+#if CFG_SUPPORT_CSI
+	prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 	prCSIInfo->u4CSIBufferUsed = 1;
-	wake_up_interruptible(&(g_prGlueInfo_proc->waitq_csi));
-	remove_proc_entry(PROC_CSI_DATA_NAME, gprProcRoot);
+	wake_up_interruptible(&(prGlueInfo->waitq_csi));
+	remove_proc_entry(PROC_CSI_DATA_NAME, prProcRoot);
 #endif
-	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
+	remove_proc_entry(PROC_DRIVER_CMD, prProcRoot);
 #endif /* (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG) */
 
 #if (!CFG_MTK_ANDROID_WMT)
-	remove_proc_entry(PROC_COUNTRY, gprProcRoot);
+	remove_proc_entry(PROC_COUNTRY, prProcRoot);
 #if (CFG_CE_ASSERT_DUMP == 1)
-	remove_proc_entry(PROC_CORE_DUMP, gprProcRoot);
+	remove_proc_entry(PROC_CORE_DUMP, prProcRoot);
 #endif
 #endif /* (!CFG_MTK_ANDROID_WMT) */
 
 #if (!CFG_MTK_ANDROID_WMT) && (BUILD_QA_DBG)
-	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
-	remove_proc_entry(PROC_PKT_DELAY_DBG, gprProcRoot);
+	remove_proc_entry(PROC_EFUSE_DUMP, prProcRoot);
+	remove_proc_entry(PROC_PKT_DELAY_DBG, prProcRoot);
 #if CFG_WIFI_TXPWR_TBL_DUMP
-	remove_proc_entry(PROC_GET_TXPWR_TBL, gprProcRoot);
+	remove_proc_entry(PROC_GET_TXPWR_TBL, prProcRoot);
 #endif
 #endif /* (!CFG_MTK_ANDROID_WMT) && (BUILD_QA_DBG) */
 
 #if (BUILD_QA_DBG)
-	remove_proc_entry(PROC_MCR_ACCESS, gprProcRoot);
-	remove_proc_entry(PROC_CFG, gprProcRoot);
+	remove_proc_entry(PROC_MCR_ACCESS, prProcRoot);
+	remove_proc_entry(PROC_CFG, prProcRoot);
 #endif /* (BUILD_QA_DBG) */
 
 #if (CFG_WIFI_TESTMODE_FW_REDOWNLOAD)
-	remove_proc_entry(PROC_TEST_MODE, gprProcRoot);
+	remove_proc_entry(PROC_TEST_MODE, prProcRoot);
 #endif
 
 	DBGLOG(INIT, INFO, "remove proc fs done\n");
@@ -2207,16 +2262,21 @@ int32_t procRemoveProcfs(void)
 
 int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 {
+#define PROC_CREATE(NAME, MODE, ROOT, OPS) \
+		proc_create_data(NAME, MODE, ROOT, OPS, prGlueInfo)
+
 	struct proc_dir_entry *prEntry;
+	struct proc_dir_entry *prProcRoot;
 
 	DBGLOG(INIT, TRACE, "[%s]\n", __func__);
-	g_prGlueInfo_proc = prGlueInfo;
+
+	prProcRoot = gprProcRoot;
 	prEntry = NULL;
 
 #if (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG)
 #if CFG_SUPPORT_EASY_DEBUG
 	prEntry =
-		proc_create(PROC_DRIVER_CMD, 0664, gprProcRoot, &drivercmd_ops);
+		PROC_CREATE(PROC_DRIVER_CMD, 0664, prProcRoot, &drivercmd_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry for driver command\n\r");
@@ -2226,7 +2286,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_SUPPORT_CSI
 	prEntry =
-	       proc_create(PROC_CSI_DATA_NAME, 0600, gprProcRoot, &csidata_ops);
+	       PROC_CREATE(PROC_CSI_DATA_NAME, 0600, prProcRoot, &csidata_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"[CSI] Unable to create /proc entry csidata\n\r");
@@ -2236,7 +2296,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif /* (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG) */
 
 #if (!CFG_MTK_ANDROID_WMT)
-	prEntry = proc_create(PROC_COUNTRY, 0664, gprProcRoot, &country_ops);
+	prEntry = PROC_CREATE(PROC_COUNTRY, 0664, prProcRoot, &country_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry country\n\r");
@@ -2244,7 +2304,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 	}
 
 #if (CFG_CE_ASSERT_DUMP == 1)
-	prEntry = proc_create(PROC_CORE_DUMP, 0664, gprProcRoot, &coredump_ops);
+	prEntry = PROC_CREATE(PROC_CORE_DUMP, 0664, prProcRoot, &coredump_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry core_dump\n\r");
@@ -2254,8 +2314,8 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif /* (!CFG_MTK_ANDROID_WMT) */
 
 #if (!CFG_MTK_ANDROID_WMT) && (BUILD_QA_DBG)
-	prEntry = proc_create(
-		PROC_PKT_DELAY_DBG, 0664, gprProcRoot, &proc_pkt_delay_dbg_ops);
+	prEntry = PROC_CREATE(
+		PROC_PKT_DELAY_DBG, 0664, prProcRoot, &proc_pkt_delay_dbg_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry pktDelay\n\r");
@@ -2266,7 +2326,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_WIFI_TXPWR_TBL_DUMP
 	prEntry =
-	 proc_create(PROC_GET_TXPWR_TBL, 0664, gprProcRoot, &get_txpwr_tbl_ops);
+	 PROC_CREATE(PROC_GET_TXPWR_TBL, 0664, prProcRoot, &get_txpwr_tbl_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry TXPWR Table\n\r");
@@ -2276,7 +2336,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_SUPPORT_EASY_DEBUG
 	prEntry =
-		proc_create(PROC_EFUSE_DUMP, 0664, gprProcRoot, &efusedump_ops);
+		PROC_CREATE(PROC_EFUSE_DUMP, 0664, prProcRoot, &efusedump_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry efuse\n\r");
@@ -2286,7 +2346,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif /* (!CFG_MTK_ANDROID_WMT) && (BUILD_QA_DBG) */
 
 #if (BUILD_QA_DBG)
-	prEntry = proc_create(PROC_MCR_ACCESS, 0664, gprProcRoot, &mcr_ops);
+	prEntry = PROC_CREATE(PROC_MCR_ACCESS, 0664, prProcRoot, &mcr_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry mcr\n\r");
@@ -2294,7 +2354,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 	}
 
 #if CFG_SUPPORT_EASY_DEBUG
-	prEntry = proc_create(PROC_CFG, 0664, gprProcRoot, &cfg_ops);
+	prEntry = PROC_CREATE(PROC_CFG, 0664, prProcRoot, &cfg_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry for driver cfg\n\r");
@@ -2304,13 +2364,14 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif /* ((BUILD_QA_DBG) */
 
 #if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
-	prEntry = proc_create(PROC_TEST_MODE, 0664, gprProcRoot, &test_ops);
+	prEntry = PROC_CREATE(PROC_TEST_MODE, 0664, prProcRoot, &test_ops);
 	if (!prEntry) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry for test mode\n\r");
 		return -1;
 	}
 #endif
+#undef PROC_CREATE
 
 	DBGLOG(INIT, INFO, "create proc fs done\n");
 	return 0;

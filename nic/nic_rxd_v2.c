@@ -379,7 +379,7 @@ u_int8_t nic_rxd_v2_sanity_check(
 				"Don't drop NAN MC pkt for sec\n");
 #endif
 		} else {
-			nicRxParseDropPkt(prSwRfb);
+			nicRxParseDropPkt(prAdapter, prSwRfb);
 			RX_INC_CNT(prRxCtrl, RX_CIPHER_MISMATCH_DROP_COUNT);
 			fgDrop = TRUE;
 			DBGLOG(RSN, TEMP,

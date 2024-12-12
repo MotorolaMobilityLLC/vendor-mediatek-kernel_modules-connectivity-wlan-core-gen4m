@@ -2019,7 +2019,7 @@ void nicRxIndicateRfbMainToNapi(struct ADAPTER *ad)
 	nicRxIndicatePackets(ad, QUEUE_GET_HEAD(prQue));
 }
 
-void nicRxParseDropPkt(struct SW_RFB *prSwRfb)
+void nicRxParseDropPkt(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	DBGLOG_LIMITED(RX, INFO,
 		"SwRfb:[0x%p:0x%p] PktLen:[%u] BMC:[%u:%u] SecMode:[%u] WlanId:[%u:%u]\n",
@@ -2030,7 +2030,7 @@ void nicRxParseDropPkt(struct SW_RFB *prSwRfb)
 		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
 	);
 
-	StatsRxPktInfoDisplay(prSwRfb);
+	StatsRxPktInfoDisplay(prAdapter, prSwRfb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2215,7 +2215,7 @@ void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
 			prEvent->u2PacketLength);
 	}
 #if (CFG_SUPPORT_STATISTICS == 1)
-	wlanWakeLogEvent(prEvent->ucEID);
+	wlanWakeLogEvent(prAdapter->prGlueInfo, prEvent->ucEID);
 #endif
 	/* Event handler table */
 	u4Size = ARRAY_SIZE(arEventTable);

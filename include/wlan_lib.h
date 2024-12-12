@@ -1958,6 +1958,13 @@ struct TEST_MODE_PL_CAL {
 	uint32_t u4OutData[PLCAL_MAX_CNT];
 };
 
+struct ECO_INFO {
+	uint8_t ucHwVer;
+	uint8_t ucRomVer;
+	uint8_t ucFactoryVer;
+	uint8_t ucEcoVer;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

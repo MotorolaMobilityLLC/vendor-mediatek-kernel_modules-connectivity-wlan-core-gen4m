@@ -532,7 +532,7 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_DBDC
-				|| (cnmDBDCIsReqPeivilegeLock() &&
+				|| (cnmDBDCIsReqPeivilegeLock(prAdapter) &&
 				((eNextState == P2P_ROLE_STATE_REQING_CHANNEL &&
 					(prChnlReqInfo->eChnlReqType ==
 						CH_REQ_TYPE_GO_START_BSS ||
@@ -6096,7 +6096,8 @@ p2pRoleP2pLisStopDbdcDecision(
 
 		DBGLOG(P2P, INFO,
 				"IsP2pListenDbdcEn %u eConnRequest %u\n"
-				, cnmDbdcIsP2pListenDbdcEn(), eConnRequest);
+				, cnmDbdcIsP2pListenDbdcEn(prAdapter)
+				, eConnRequest);
 
 		if (eConnRequest == P2P_CONNECTION_TYPE_GC
 			|| eConnRequest == P2P_CONNECTION_TYPE_GO) {
@@ -6106,7 +6107,7 @@ p2pRoleP2pLisStopDbdcDecision(
 			prP2pDevFsmInfo->fgIsP2pListening = FALSE;
 		}
 
-		if (cnmDbdcIsP2pListenDbdcEn())
+		if (cnmDbdcIsP2pListenDbdcEn(prAdapter))
 			cnmDbdcRuntimeCheckDecision(prAdapter,
 				prAdapter->ucP2PDevBssIdx, TRUE);
 	}

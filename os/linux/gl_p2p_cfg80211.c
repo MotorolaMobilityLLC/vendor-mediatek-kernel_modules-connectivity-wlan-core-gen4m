@@ -175,33 +175,48 @@ int32_t mtk_Netdev_To_DevIdx(struct GLUE_INFO *prGlueInfo,
 
 static void mtk_vif_destructor(struct net_device *dev)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct wireless_dev *prWdev = NULL;
+	struct wireless_dev **pprP2pWdev = NULL;
+	struct wireless_dev **pprP2pRoleWdev = NULL;
+	struct net_device **pprP2pPrDev = NULL;
 	uint32_t u4Idx = 0;
-	if (dev) {
-		DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
-		prWdev = dev->ieee80211_ptr;
-		if (g_P2pPrDev == dev)
-			g_P2pPrDev = NULL;
 
-		free_netdev(dev);
-		/* Expect that the gprP2pWdev isn't freed here */
-		if (prWdev) {
-			/* Role[i] and Dev share the same wdev by default */
-			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
-				if (prWdev == gprP2pWdev[u4Idx])
-					continue;
-				if (prWdev != gprP2pRoleWdev[u4Idx])
-					continue;
-				/* In the initWlan gprP2pRoleWdev[0] is equal to
-				 * gprP2pWdev. And other gprP2pRoleWdev[] should
-				 * be NULL, if the 2nd P2P dev isn't created.
-				 */
-				DBGLOG(P2P, INFO, "Restore role %d\n", u4Idx);
-				gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
-				break;
-			}
-			kfree(prWdev);
+	if (!dev || !dev->ieee80211_ptr)
+		return;
+
+	DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
+	prWdev = dev->ieee80211_ptr;
+
+	if (prWdev) {
+		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+		pprP2pPrDev = &prGlueInfo->p2pPrDev;
+	}
+
+	if (prGlueInfo && pprP2pPrDev && *pprP2pPrDev == dev)
+		*pprP2pPrDev = NULL;
+
+	free_netdev(dev);
+	/* Expect that the pprP2pWdev isn't freed here */
+	if (prGlueInfo && prWdev) {
+		pprP2pWdev = prGlueInfo->prP2pWdev;
+		pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
+
+		/* Role[i] and Dev share the same wdev by default */
+		for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+			if (prWdev == pprP2pWdev[u4Idx])
+				continue;
+			if (prWdev != pprP2pRoleWdev[u4Idx])
+				continue;
+			/* In the initWlan pprP2pRoleWdev[0] is equal to
+			 * pprP2pWdev. And other pprP2pRoleWdev[] should
+			 * be NULL, if the 2nd P2P dev isn't created.
+			 */
+			DBGLOG(P2P, INFO, "Restore role %d\n", u4Idx);
+			pprP2pRoleWdev[u4Idx] = pprP2pWdev[u4Idx];
+			break;
 		}
+		kfree(prWdev);
 	}
 }
 
@@ -232,9 +247,12 @@ static void mtk_p2p_need_remove_iface(
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct MLD_BSS_INFO *mld =
 		(struct MLD_BSS_INFO *) NULL;
+	struct wireless_dev **pprP2pRoleWdev = NULL;
 
 	fsm = p2pGetDefaultRoleFsmInfo(prAdapter,
 		IFTYPE_P2P_CLIENT);
+
+	pprP2pRoleWdev = prAdapter->prGlueInfo->prP2pRoleWdev;
 
 	/* Remove MLO GC/MLO GO before starting SAP */
 	if (fsm && (type == NL80211_IFTYPE_AP)) {
@@ -244,7 +262,7 @@ static void mtk_p2p_need_remove_iface(
 			mld->rBssList.u4NumElem > 1)
 			mtk_p2p_cfg80211_del_iface_impl(
 				wiphy,
-				gprP2pRoleWdev
+				pprP2pRoleWdev
 				[P2P_MAIN_ROLE_INDEX],
 				false);
 	}
@@ -277,6 +295,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct MSG_P2P_UPDATE_DEV_BSS *prMsgUpdateBss = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
+	struct wireless_dev **pprP2pWdev = NULL;
+	struct wireless_dev **pprP2pRoleWdev = NULL;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBss;
 #endif
@@ -319,6 +339,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 	do {
 		prChipInfo = prAdapter->chip_info;
+
+		pprP2pWdev = prGlueInfo->prP2pWdev;
+		pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
 
 		for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
 			prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
@@ -457,12 +480,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prNewNetDevice->destructor = mtk_vif_destructor;
 #endif
 		/* The prOrigWdev is used to do error handle. If return fail,
-		 * set the gprP2pRoleWdev[u4Idx] to original value.
-		 * Expect that the gprP2pRoleWdev[0] = gprP2pWdev, and the
+		 * set the pprP2pRoleWdev[u4Idx] to original value.
+		 * Expect that the pprP2pRoleWdev[0] = pprP2pWdev, and the
 		 * other is NULL.
 		 */
-		prOrigWdev = gprP2pRoleWdev[u4Idx];
-		gprP2pRoleWdev[u4Idx] = prWdev;
+		prOrigWdev = pprP2pRoleWdev[u4Idx];
+		pprP2pRoleWdev[u4Idx] = prWdev;
 		/*prP2pInfo->prRoleWdev[0] = prWdev;*//* TH3 multiple P2P */
 #endif
 
@@ -604,9 +627,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	if (prWdev != NULL) {
 		kfree(prWdev);
 
-		if ((gprP2pRoleWdev[u4Idx] != NULL) &&
-		    (gprP2pRoleWdev[u4Idx] != gprP2pWdev[u4Idx])) {
-			gprP2pRoleWdev[u4Idx] = prOrigWdev;
+		if ((pprP2pRoleWdev[u4Idx] != NULL) &&
+		    (pprP2pRoleWdev[u4Idx] != pprP2pWdev[u4Idx])) {
+			pprP2pRoleWdev[u4Idx] = prOrigWdev;
 		}
 	}
 
@@ -646,6 +669,7 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	uint32_t rStatus;
 	int32_t i4Ret = WLAN_STATUS_SUCCESS;
 	uint8_t fgDoDelIface = FALSE;
+	struct wireless_dev **pprP2pWdev = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -667,6 +691,7 @@ int mtk_p2p_cfg80211_del_iface_impl(
 
 	prAdapter = prGlueInfo->prAdapter;
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
+	pprP2pWdev = prGlueInfo->prP2pWdev;
 
 	/* Both p2p and p2p net device should be in registered state */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -765,7 +790,7 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	else
 		prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
 	/* Restore */
-	prP2pInfo->prWdev = gprP2pWdev[u4Idx];
+	prP2pInfo->prWdev = pprP2pWdev[u4Idx];
 #if 1
 	prScanRequest = prP2pGlueDevInfo->prScanRequest;
 	if ((prScanRequest != NULL) &&

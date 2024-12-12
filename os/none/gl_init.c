@@ -34,9 +34,6 @@
  *****************************************************************************
  */
 
-struct wireless_dev *gprWdev[KAL_AIS_NUM];
-struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
-
 enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 uint8_t g_aucNvram_OnlyPreCal[MAX_CFG_FILE_WIFI_RECAL_SIZE];

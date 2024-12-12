@@ -629,6 +629,39 @@ enum WAIT_TO_PERIOD {
 	WLAN_WAIT_TIME_THREE_QUARTER
 };
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+
+#define WAKE_MAX_CMD_EVENT_NUM		20
+#define WAKE_STR_BUFFER_LEN	(60 + 20 * WAKE_MAX_CMD_EVENT_NUM)
+
+struct WAKE_CMD_T {
+	uint8_t ucCmdId;
+	uint8_t ucFlagIsUesd;
+	uint16_t u2Cnt;
+};
+
+struct WAKE_EVENT_T {
+	uint8_t ucEventId;
+	uint8_t ucFlagIsUesd;
+	uint16_t u2Cnt;
+};
+
+struct WAKE_INFO_T {
+	struct WAKE_CMD_T arCmd[WAKE_MAX_CMD_EVENT_NUM];
+	uint8_t ucCmdCnt;
+	uint32_t u4TotalCmd;
+
+	struct WAKE_EVENT_T arEvent[WAKE_MAX_CMD_EVENT_NUM];
+	uint8_t ucEventCnt;
+	uint32_t u4TotalEvent;
+
+	uint32_t au4TxDataCnt[WLAN_WAKE_MAX_NUM];
+	uint32_t u4TxCnt;
+	uint32_t au4RxDataCnt[WLAN_WAKE_MAX_NUM];
+	uint32_t u4RxCnt;
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1354,13 +1387,13 @@ int32_t connac5x_get_tx_info_from_txv(
 #endif /* CFG_SUPPORT_CONNAC5X == 1 */
 
 #if (CFG_SUPPORT_STATISTICS == 1)
-void wlanWakeStaticsInit(void);
-void wlanWakeStaticsUninit(void);
-uint32_t wlanWakeLogCmd(uint8_t ucCmdId);
-uint32_t wlanWakeLogEvent(uint8_t ucEventId);
-void wlanLogTxData(enum WAKE_DATA_TYPE dataType);
-void wlanLogRxData(enum WAKE_DATA_TYPE dataType);
-uint32_t wlanWakeDumpRes(void);
+void wlanWakeStaticsInit(struct GLUE_INFO *prGlueInfo);
+void wlanWakeStaticsUninit(struct GLUE_INFO *prGlueInfo);
+uint32_t wlanWakeLogCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucCmdId);
+uint32_t wlanWakeLogEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucEventId);
+void wlanLogTxData(struct GLUE_INFO *prGlueInfo, enum WAKE_DATA_TYPE dataType);
+void wlanLogRxData(struct GLUE_INFO *prGlueInfo, enum WAKE_DATA_TYPE dataType);
+uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo);
 #endif
 
 #if (CFG_SUPPORT_RA_GEN == 1)

@@ -834,7 +834,7 @@ void nanMapSdeaCtrlParams(u32 *pIndata,
 void nanMapRangingConfigParams(u32 *pIndata,
 			       struct NanRangingCfg *prNanRangingCfg);
 void
-nanMapNan20RangingReqParams(u32 *pIndata,
+nanMapNan20RangingReqParams(struct ADAPTER *prAdapter, u32 *pIndata,
 			    struct NanRangeResponseCfg *prNanRangeRspCfgParms);
 int mtk_cfg80211_vendor_nan(struct wiphy *wiphy, struct wireless_dev *wdev,
 			    const void *data, int data_len);

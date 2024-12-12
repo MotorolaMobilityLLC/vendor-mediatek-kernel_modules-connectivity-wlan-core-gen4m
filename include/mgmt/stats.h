@@ -199,11 +199,13 @@ void StatsEnvTxTime2Hif(struct ADAPTER *prAdapter,
 void StatsEnvRxTime2Host(struct ADAPTER *prAdapter, void *pvPacket);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
-void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
-void StatsTxPktInfoDisplay(void *pvPacket);
+void StatsRxPktInfoDisplay(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+void StatsTxPktInfoDisplay(struct ADAPTER *prAdapter, void *pvPacket);
 #else
-static inline void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb) { };
-static inline void StatsTxPktInfoDisplay(void *pvPacket) { };
+static inline void StatsRxPktInfoDisplay(struct ADAPTER *prAdapter,
+						struct SW_RFB *prSwRfb) { };
+static inline void StatsTxPktInfoDisplay(struct ADAPTER *prAdapter,
+						void *pvPacket) { };
 #endif
 
 void StatsResetTxRx(void);

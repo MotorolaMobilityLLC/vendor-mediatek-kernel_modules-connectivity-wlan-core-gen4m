@@ -303,7 +303,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo, uint8_t fgIsRtnlLockAcquired)
 	ASSERT(prGlueInfo);
 	ASSERT(prAdapter);
 
-	g_P2pPrDev = NULL;
+	prGlueInfo->p2pPrDev = NULL;
 
 	/* We must guarantee that all p2p net devices are unregistered with
 	 * kernel before the net devices are freed. Otherwise, when p2pLaunch

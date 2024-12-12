@@ -88,7 +88,7 @@ void kalP2pIndicateListenOffloadEvent(
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void kalIdcRegisterRilNotifier(void)
+void kalIdcRegisterRilNotifier(struct GLUE_INFO *prGlueInfo)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

@@ -35,57 +35,74 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static struct CSI_INFO_T rCSIInfo;
-static uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
-static uint8_t g_ucBandIdx = ENUM_BAND_0;
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
 
-uint8_t glCsiGetBandIdx(void)
+uint8_t glCsiGetBandIdx(struct GLUE_INFO *prGlueInfo)
 {
-	return g_ucBandIdx;
+	if (!prGlueInfo)
+		return 0;
+
+	return prGlueInfo->ucCSIBandIdx;
 }
 
-void glCsiSetBandIdx(uint8_t ucBandIdx)
+void glCsiSetBandIdx(struct GLUE_INFO *prGlueInfo, uint8_t ucBandIdx)
 {
-	g_ucBandIdx = ucBandIdx;
+	if (!prGlueInfo)
+		return;
+
+	prGlueInfo->ucCSIBandIdx = ucBandIdx;
 }
 
-struct CSI_INFO_T *glCsiGetCSIInfo(void)
+struct CSI_INFO_T *glCsiGetCSIInfo(struct GLUE_INFO *prGlueInfo)
 {
-	return &rCSIInfo;
+	if (!prGlueInfo)
+		return NULL;
+
+	return &prGlueInfo->rCSIInfo;
 }
 
-uint8_t *glCsiGetCSIBuf(void)
+uint8_t *glCsiGetCSIBuf(struct GLUE_INFO *prGlueInfo)
 {
-	return aucCSIBuf;
+	if (!prGlueInfo)
+		return NULL;
+
+	return prGlueInfo->aucCSIBuf;
 }
 
-struct CSI_DATA_T *glCsiGetCSIData(void)
+struct CSI_DATA_T *glCsiGetCSIData(struct GLUE_INFO *prGlueInfo)
 {
-	return rCSIInfo.prCSIData;
+	if (!prGlueInfo)
+		return NULL;
+
+	return prGlueInfo->rCSIInfo.prCSIData;
 }
 
 void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
 {
-	kalMemZero(&rCSIInfo, sizeof(rCSIInfo));
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "prGlueInfo Empty.\n");
+		return;
+	}
+
+	kalMemZero(&prGlueInfo->rCSIInfo, sizeof(prGlueInfo->rCSIInfo));
 
 	/* init CSI wait queue	*/
 	init_waitqueue_head(&(prGlueInfo->waitq_csi));
-	LINK_INITIALIZE(&(rCSIInfo.rStaList));
-	rCSIInfo.eCSIOutput = CSI_OUTPUT_PROC_FILE;
+	LINK_INITIALIZE(&(prGlueInfo->rCSIInfo.rStaList));
+	prGlueInfo->rCSIInfo.eCSIOutput = CSI_OUTPUT_PROC_FILE;
 }
 
 void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo)
 {
-	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo();
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 
 	glCsiFreeStaList(prGlueInfo);
 
-	if (prCSIInfo->prCSIData) {
+	if (prCSIInfo && prCSIInfo->prCSIData) {
 		kalMemFree(prCSIInfo->prCSIData,
 			   VIR_MEM_TYPE,
 			   sizeof(struct CSI_DATA_T));
@@ -130,8 +147,13 @@ void glCsiSetEnable(struct GLUE_INFO *prGlueInfo,
 int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 			struct CMD_CSI_CONTROL_T *prCSICtrl)
 {
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 	struct CSI_STA *prCSISta = NULL;
+
+	if (!prCSIInfo) {
+		DBGLOG(REQ, ERROR, "CSI data Empty.\n");
+		return -1;
+	}
 
 	/* list full */
 	if (prCSIInfo->ucStaCount >= CSI_MAX_STA_MAC_NUM) {
@@ -184,9 +206,14 @@ int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 			struct CMD_CSI_CONTROL_T *prCSICtrl)
 {
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 	struct CSI_STA *prCSISta = NULL;
 	uint8_t fgIsFound;
+
+	if (!prCSIInfo) {
+		DBGLOG(REQ, ERROR, "CSI data Empty.\n");
+		return -1;
+	}
 
 	/* list empty */
 	if (prCSIInfo->ucStaCount == 0) {
@@ -233,7 +260,7 @@ int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 void glCsiFreeStaList(struct GLUE_INFO *prGlueInfo)
 {
 	struct CSI_STA *prCSISta = NULL;
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 
 	KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_CSI_STA_LIST);
 	while (!LINK_IS_EMPTY(&prCSIInfo->rStaList)) {
@@ -258,7 +285,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 	uint32_t *p32tmp = NULL;
 	struct CSI_DATA_T *prCSIData = NULL;
 	struct CSI_DATA_T *prCSIBuffer;
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = NULL;
 	/* u2Offset is 8 bytes currently, tag 4 bytes + length 4 bytes */
 	uint16_t u2Offset = OFFSET_OF(struct CSI_TLV_ELEMENT, aucbody);
 	uint32_t u4Tmp = 0;
@@ -268,7 +295,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 
 #define CSI_EVENT_MAX_SIZE 2500
 
-	if (!prAdapter)
+	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
 
 	i4EventLen = prEvent->u2PacketLength -
@@ -279,6 +306,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			i4EventLen);
 		return;
 	}
+	prCSIInfo = glCsiGetCSIInfo(prAdapter->prGlueInfo);
 	prCSIData = (struct CSI_DATA_T *)
 			kalMemAlloc(sizeof(struct CSI_DATA_T), VIR_MEM_TYPE);
 
@@ -696,7 +724,7 @@ u_int8_t
 wlanPushCSISegmentData(struct ADAPTER *prAdapter,
 	struct CSI_DATA_T *prCSIData)
 {
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prAdapter->prGlueInfo);
 	struct CSI_DATA_T *prCSISegmentTemp;
 
 #if CFG_CSI_DEBUG
@@ -750,7 +778,7 @@ wlanPushCSISegmentData(struct ADAPTER *prAdapter,
 u_int8_t
 wlanPushCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 {
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prAdapter->prGlueInfo);
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
 
@@ -793,7 +821,7 @@ wlanPushCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 u_int8_t
 wlanPopCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 {
-	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo(prAdapter->prGlueInfo);
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
 

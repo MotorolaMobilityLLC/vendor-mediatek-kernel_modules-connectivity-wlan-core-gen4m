@@ -329,7 +329,8 @@ int android_private_support_driver_cmd(struct net_device *prDev,
 struct ifreq *prReq, int i4Cmd);
 #endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 
-int32_t priv_driver_cmds(struct net_device *prNetDev,
+int32_t priv_driver_cmds(struct GLUE_INFO *prGlueInfo,
+			 struct net_device *prNetDev,
 			 int8_t *pcCommand, int32_t i4TotalLen);
 
 int priv_driver_set_cfg(struct net_device *prNetDev,

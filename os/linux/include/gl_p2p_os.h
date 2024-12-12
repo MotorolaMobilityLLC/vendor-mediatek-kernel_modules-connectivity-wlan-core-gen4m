@@ -72,10 +72,6 @@ extern const struct net_device_ops p2p_netdev_ops;
  ******************************************************************************
  */
 
-extern struct net_device *g_P2pPrDev;
-extern struct wireless_dev *gprP2pWdev[KAL_P2P_NUM];
-extern struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
-
 /******************************************************************************
  *                           P R I V A T E   D A T A
  ******************************************************************************

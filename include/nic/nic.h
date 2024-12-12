@@ -158,13 +158,6 @@ struct INT_EVENT_MAP {
 	uint32_t u4Event;
 };
 
-struct ECO_INFO {
-	uint8_t ucHwVer;
-	uint8_t ucRomVer;
-	uint8_t ucFactoryVer;
-	uint8_t ucEcoVer;
-};
-
 enum ENUM_INT_EVENT_T {
 	INT_EVENT_ABNORMAL,
 	INT_EVENT_SW_INT,
@@ -659,15 +652,15 @@ void nicApplyLinkAddress(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* ECO Version                                                                */
 /*----------------------------------------------------------------------------*/
-uint8_t nicGetChipSwVer(void);
+uint8_t nicGetChipSwVer(struct ADAPTER *prAdapter);
 uint8_t nicGetChipEcoVer(struct ADAPTER *prAdapter);
 u_int8_t nicIsEcoVerEqualTo(struct ADAPTER *prAdapter,
 			    uint8_t ucEcoVer);
 u_int8_t nicIsEcoVerEqualOrLaterTo(struct ADAPTER
 				   *prAdapter, uint8_t ucEcoVer);
-uint8_t nicSetChipHwVer(uint8_t value);
-uint8_t nicSetChipSwVer(uint8_t value);
-uint8_t nicSetChipFactoryVer(uint8_t value);
+uint8_t nicSetChipHwVer(struct ADAPTER *prAdapter, uint8_t value);
+uint8_t nicSetChipSwVer(struct ADAPTER *prAdapter, uint8_t value);
+uint8_t nicSetChipFactoryVer(struct ADAPTER *prAdapter, uint8_t value);
 
 void nicSerStopTxRx(struct ADAPTER *prAdapter);
 void nicSerStopTx(struct ADAPTER *prAdapter);

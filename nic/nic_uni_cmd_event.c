@@ -9399,7 +9399,7 @@ void nicRxProcessUniEventPacket(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_STATISTICS == 1)
-	wlanWakeLogEvent(prEvent->ucEID);
+	wlanWakeLogEvent(prAdapter->prGlueInfo, prEvent->ucEID);
 #endif
 
 	if (IS_UNI_UNSOLICIT_EVENT(prEvent)) {

@@ -50,7 +50,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-u_int8_t fgCmdDumpIsDone = FALSE;
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -149,6 +149,7 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
 				       *prAdapter, uint32_t u4Length)
 #endif
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct CMD_INFO *prCmdInfo = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -159,6 +160,8 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
 	QUEUE_REMOVE_HEAD(&prAdapter->rFreeCmdList, prCmdInfo,
 			  struct CMD_INFO *);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_RESOURCE);
+
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	if (prCmdInfo) {
 		kalMemZero(prCmdInfo, sizeof(struct CMD_INFO));
@@ -193,9 +196,8 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
 		} else {
 			prCmdInfo->pucInfoBuffer = NULL;
 		}
-		fgCmdDumpIsDone = FALSE;
-	} else if (!fgCmdDumpIsDone) {
-		struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+		prGlueInfo->fgCmdDumpIsDone = FALSE;
+	} else if (!prGlueInfo->fgCmdDumpIsDone) {
 		struct QUE *prCmdQue = &prGlueInfo->rCmdQueue;
 		struct QUE *prPendingCmdQue = &prAdapter->rPendingCmdQueue;
 #if CFG_SUPPORT_MULTITHREAD
@@ -204,7 +206,7 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
 #endif
 		struct TX_TCQ_STATUS *prTc = &prAdapter->rTxCtrl.rTc;
 
-		fgCmdDumpIsDone = TRUE;
+		prGlueInfo->fgCmdDumpIsDone = TRUE;
 		cmdBufDumpCmdQueue(prCmdQue, "waiting CMD queue");
 		cmdBufDumpCmdQueue(prPendingCmdQue,
 				   "waiting response CMD queue");

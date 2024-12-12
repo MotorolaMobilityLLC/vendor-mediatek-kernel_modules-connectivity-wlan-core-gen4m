@@ -2658,6 +2658,14 @@ else
     ccflags-y += -DCFG_ASSERTDUMP_BYPASS_CHIP_RESET=0
 endif
 
+# For One driver multi-card support
+# 1: enable, 0: disable
+ifeq ($(CONFIG_SUPPORT_MULTI_CARD), y)
+	ccflags-y += -DCFG_SUPPORT_MULTI_CARD=1
+else
+	ccflags-y += -DCFG_SUPPORT_MULTI_CARD=0
+endif
+
 ccflags-y += -DDBG=0
 ccflags-y += -I$(KO_CODE_PATH)/os -I$(KO_CODE_PATH)/os/$(os)/include
 ccflags-y += -I$(KO_CODE_PATH)/include -I$(KO_CODE_PATH)/include/nic -I$(KO_CODE_PATH)/include/mgmt -I$(KO_CODE_PATH)/include/chips -I$(KO_CODE_PATH)/include/wpa_supp

@@ -1825,7 +1825,8 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 void nicRxEnqueueRfbMainToNapi(struct ADAPTER *ad, struct QUE *prQue);
 void nicRxIndicateRfbMainToNapi(struct ADAPTER *ad);
 
-void nicRxParseDropPkt(struct SW_RFB *prSwRfb);
+void nicRxParseDropPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);

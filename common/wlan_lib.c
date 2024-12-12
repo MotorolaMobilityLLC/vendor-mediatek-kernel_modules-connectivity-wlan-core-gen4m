@@ -2088,7 +2088,7 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER *prAdapter,
 			break;
 		}
 #if (CFG_SUPPORT_STATISTICS == 1)
-		wlanWakeLogCmd(prCmdInfo->ucCID);
+		wlanWakeLogCmd(prAdapter->prGlueInfo, prCmdInfo->ucCID);
 #endif
 		/* 4 <3> handling upon dequeue result */
 		if (eFrameAction == FRAME_ACTION_DROP_PKT) {
@@ -3699,10 +3699,12 @@ uint32_t wlanSetChipEcoInfo(struct ADAPTER *prAdapter)
 #endif
 	} else {
 		/* success */
-		nicSetChipHwVer((uint8_t)(GET_HW_VER(hw_version) & 0xFF));
-		nicSetChipFactoryVer((uint8_t)((GET_HW_VER(hw_version) >> 8) &
-				     0xF));
-		nicSetChipSwVer((uint8_t)GET_FW_VER(sw_version));
+		nicSetChipHwVer(prAdapter,
+				(uint8_t)(GET_HW_VER(hw_version) & 0xFF));
+		nicSetChipFactoryVer(prAdapter,
+				(uint8_t)((GET_HW_VER(hw_version) >> 8) & 0xF));
+		nicSetChipSwVer(prAdapter,
+				(uint8_t)GET_FW_VER(sw_version));
 
 		/* Assign current chip version */
 		prAdapter->chip_info->eco_ver = nicGetChipEcoVer(prAdapter);
@@ -5336,7 +5338,7 @@ uint8_t wlanGetRomVersion(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	ucRomVersion = nicGetChipSwVer();
+	ucRomVersion = nicGetChipSwVer(prAdapter);
 	DBGLOG(INIT, TRACE, "%s: %u\n", __func__, ucRomVersion);
 	return ucRomVersion;
 

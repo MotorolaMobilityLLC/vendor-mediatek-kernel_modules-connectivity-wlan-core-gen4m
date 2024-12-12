@@ -945,7 +945,7 @@ enum nl80211_wpa_versions {
  */
 #if WLAN_INCLUDE_PROC
 int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo);
-int32_t procRemoveProcfs(void);
+int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo);
 
 
 int32_t procInitFs(void);
@@ -969,6 +969,7 @@ void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
 #endif
 
 struct GLUE_INFO *wlanGetGlueInfo(void);
+struct GLUE_INFO *wlanGetGlueInfoByWiphy(struct wiphy *wiphy);
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define wlanSelectQueue(_dev, _skb) \
@@ -1023,7 +1024,6 @@ void *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 #if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
 extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 #endif
-extern uint32_t g_u4DevIdx[KAL_P2P_NUM];
 extern enum ENUM_NVRAM_STATE g_NvramFsm;
 
 extern uint8_t g_aucNvram[];

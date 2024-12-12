@@ -496,7 +496,7 @@ nanMapRangingConfigParams(u32 *pIndata, struct NanRangingCfg *prNanRangingCfg)
 }
 
 void
-nanMapNan20RangingReqParams(u32 *pIndata,
+nanMapNan20RangingReqParams(struct ADAPTER *prAdapter, u32 *pIndata,
 			    struct NanRangeResponseCfg *prNanRangeRspCfgParms)
 {
 	struct NanFWRangeReqMsg *pNanFWRangeReqMsg;
@@ -542,7 +542,7 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -626,7 +626,7 @@ wlanoidNANEnableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	nanExtEnableReq(prAdapter);
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -675,7 +675,7 @@ wlanoidNANDisableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	nanExtDisableReq(prAdapter);
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -726,7 +726,7 @@ wlanoidNANConfigRsp(struct ADAPTER *prAdapter,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -771,7 +771,7 @@ wlanoidNanPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wireless_dev *wdev;
 
 	kalMemZero(&nanPublishRsp, sizeof(struct NanPublishServiceRspMsg));
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -834,7 +834,7 @@ wlanoidNANCancelPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	kalMemZero(&nanPublishCancelRsp,
 		   sizeof(struct NanPublishServiceCancelRspMsg));
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -894,7 +894,7 @@ wlanoidNanSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wireless_dev *wdev;
 
 	kalMemZero(&nanSubscribeRsp, sizeof(struct NanSubscribeServiceRspMsg));
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -955,7 +955,7 @@ wlanoidNANCancelSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	kalMemZero(&nanSubscribeCancelRsp,
 		   sizeof(struct NanSubscribeServiceCancelRspMsg));
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -1011,7 +1011,7 @@ wlanoidNANFollowupRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	kalMemZero(&nanXmitFollowupRsp,
@@ -1674,6 +1674,7 @@ skip:
 				break;
 			case NAN_TLV_TYPE_NAN20_RANGING_REQUEST:
 				nanMapNan20RangingReqParams(
+					prAdapter,
 					(u32 *)outputTlv.value,
 					&pNanPublishReq->range_response_cfg);
 				break;
@@ -2087,6 +2088,7 @@ skip:
 				DBGLOG(NAN, INFO, "fgRangingREQ %d\n",
 					fgRangingREQ);
 				nanMapNan20RangingReqParams(
+					prAdapter,
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->range_response_cfg);
 				break;
@@ -2629,7 +2631,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -2739,7 +2741,7 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 		return -EFAULT;
 	}
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, AIS_DEFAULT_INDEX))
 		->ieee80211_ptr;
 
@@ -2798,7 +2800,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 	uint8_t *tlvs = NULL;
 	size_t message_len = 0;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -2871,7 +2873,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	size_t message_len = 0;
 	uint8_t *tlvs = NULL;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -2978,7 +2980,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	size_t message_len = 0;
 	uint8_t i;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	kalMemZero(&nanPubTerInd, sizeof(struct NanPublishTerminatedIndMsg));
@@ -3045,7 +3047,7 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	size_t message_len = 0;
 	uint8_t i;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	kalMemZero(&nanSubTerInd, sizeof(struct NanSubscribeTerminatedIndMsg));
@@ -3111,7 +3113,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 	uint8_t *tlvs = NULL;
 	size_t message_len = 0;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
@@ -3211,7 +3213,7 @@ mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 	struct NAN_FOLLOW_UP_EVENT *prFollowupEvt;
 	size_t message_len = 0;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
 				AIS_DEFAULT_INDEX))->ieee80211_ptr;
 
@@ -3284,7 +3286,7 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 	struct NanMatchExpiredIndMsg *prNanMatchExpiredInd;
 	size_t message_len = 0;
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 

@@ -81,13 +81,10 @@ extern struct semaphore g_halt_sem;
 extern int g_u4HaltFlag;
 extern int g_u4WlanInitFlag;
 
-extern struct delayed_work sched_workq;
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 extern unsigned int wlan_bat_volt;
 extern bool fgIsTxPowerDecreased;
 #endif
-
-extern u_int8_t wlan_perf_monitor_force_enable;
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -2509,9 +2506,10 @@ int32_t kalSetCpuNumFreq(uint32_t u4CoreNum,
 int32_t kalGetFwFlavor(uint8_t *flavor);
 int32_t kalGetFwFlavorByPlat(uint8_t *flavor);
 int32_t kalGetConnsysVerId(void);
-int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag);
+int32_t kalPerMonSetForceEnableFlag(
+			 struct GLUE_INFO *prGlueInfo, uint8_t uFlag);
 int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo);
-void kalFbNotifierUnReg(void);
+void kalFbNotifierUnReg(struct GLUE_INFO *prGlueInfo);
 int32_t kalGetScpDumpInfo(u64 *addr, unsigned int *size);
 
 #if KERNEL_VERSION(3, 0, 0) <= LINUX_VERSION_CODE
@@ -2728,6 +2726,7 @@ uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
 #endif
 
 uint32_t kalGetChannelFrequency(
+		struct ADAPTER *prAdapter,
 		uint8_t ucChannel,
 		uint8_t ucBand);
 

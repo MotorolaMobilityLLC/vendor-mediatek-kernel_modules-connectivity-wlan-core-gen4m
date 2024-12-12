@@ -864,15 +864,20 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 	}
 }
 
-void statsLogData(uint8_t eventType, enum WAKE_DATA_TYPE wakeType)
+void statsLogData(struct ADAPTER *prAdapter,
+	uint8_t eventType, enum WAKE_DATA_TYPE wakeType)
 {
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
 	if (eventType == EVENT_TX)
-		wlanLogTxData(wakeType);
+		wlanLogTxData(prAdapter->prGlueInfo, wakeType);
 	else if (eventType == EVENT_RX)
-		wlanLogRxData(wakeType);
+		wlanLogRxData(prAdapter->prGlueInfo, wakeType);
 }
 
-static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
+static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
+				  void *pvPacket, uint8_t status,
 			      uint8_t eventType, uint16_t u2SSN)
 
 {
@@ -883,17 +888,17 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 
 	switch (u2EtherType) {
 	case ETH_P_ARP:
-		statsLogData(eventType, WLAN_WAKE_ARP);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_ARP);
 		statsParseARPInfo(pvPacket, pucEthBody, eventType, u2SSN);
 		break;
 
 	case ETH_P_IPV4:
-		statsLogData(eventType, WLAN_WAKE_IPV4);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_IPV4);
 		statsParseIPV4Info(pvPacket, pucEthBody, eventType, u2SSN);
 		break;
 
 	case ETH_P_IPV6:
-		statsLogData(eventType, WLAN_WAKE_IPV6);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_IPV6);
 		statsParseIPV6Info(pvPacket, pucEthBody, eventType, u2SSN);
 		break;
 
@@ -910,7 +915,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 		if (eventType == EVENT_RX)
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_1X);
 
-		statsLogData(eventType, WLAN_WAKE_1X);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_1X);
 		switch (ucEapolType) {
 		case 0: /* eap packet */
 #if (CFG_SUPPORT_CONN_LOG == 1)
@@ -1007,7 +1012,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 		uint16_t u2Length = *(uint16_t *)&pucEthBody[6];
 		uint16_t u2Seq = *(uint16_t *)&pucEthBody[8];
 
-		statsLogData(eventType, WLAN_WAKE_1X);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_1X);
 		switch (eventType) {
 		case EVENT_RX:
 			DBGLOG(RX, INFO,
@@ -1026,7 +1031,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 	}
 #endif
 	case ETH_PRO_TDLS:
-		statsLogData(eventType, WLAN_WAKE_TDLS);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_TDLS);
 		switch (eventType) {
 		case EVENT_RX:
 			DBGLOG(RX, INFO,
@@ -1045,7 +1050,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 		}
 		break;
 	default:
-		statsLogData(eventType, WLAN_WAKE_OTHER);
+		statsLogData(prAdapter, eventType, WLAN_WAKE_OTHER);
 		break;
 	}
 }
@@ -1059,7 +1064,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
  * \retval None
  */
 /*----------------------------------------------------------------------------*/
-void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
+void StatsRxPktInfoDisplay(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 #if (CFG_SUPPORT_STATISTICS == 1)
 	uint8_t *pPkt = NULL;
@@ -1074,7 +1079,8 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 	if (!prSwRfb->pvPacket)
 		return;
 
-	statsParsePktInfo(pPkt, prSwRfb->pvPacket, 0, EVENT_RX, prSwRfb->u2SSN);
+	statsParsePktInfo(prAdapter,
+		pPkt, prSwRfb->pvPacket, 0, EVENT_RX, prSwRfb->u2SSN);
 
 	DBGLOG(RX, TEMP, "RxPkt p=%p ipid=%d\n",
 		prSwRfb, GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket));
@@ -1092,14 +1098,14 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
  * \retval None
  */
 /*----------------------------------------------------------------------------*/
-void StatsTxPktInfoDisplay(void *pvPacket)
+void StatsTxPktInfoDisplay(struct ADAPTER *prAdapter, void *pvPacket)
 {
 #if (CFG_SUPPORT_STATISTICS == 1)
 	uint8_t *pPktBuf;
 
 	kalGetPacketBuf(pvPacket, &pPktBuf);
 	/* No SSN for Tx Pkt, so we just assign 0 */
-	statsParsePktInfo(pPktBuf, pvPacket, 0, EVENT_TX, 0);
+	statsParsePktInfo(prAdapter, pPktBuf, pvPacket, 0, EVENT_TX, 0);
 #endif
 }
 

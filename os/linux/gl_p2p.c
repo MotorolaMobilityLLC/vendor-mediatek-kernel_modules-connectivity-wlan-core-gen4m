@@ -75,11 +75,6 @@
  ******************************************************************************
  */
 
-struct net_device *g_P2pPrDev;
-struct wireless_dev *gprP2pWdev[KAL_P2P_NUM];
-struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
-struct net_device *gPrP2pDev[KAL_P2P_NUM];
-uint32_t g_u4DevIdx[KAL_P2P_NUM];
 
 static const struct iw_priv_args rP2PIwPrivTable[] = {
 	{
@@ -665,15 +660,20 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgDoRegister = FALSE;
 	struct net_device *prDevHandler = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct net_device **pprP2pDev = NULL;
+	u_int32_t *prP2pDevIdx = NULL;
 	u_int8_t ret = FALSE;
 	uint32_t i;
 	int32_t i4RetReg = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
-	prAdapter = prGlueInfo->prAdapter;
-
 	ASSERT(prGlueInfo);
+
+	prAdapter = prGlueInfo->prAdapter;
+	pprP2pDev = prGlueInfo->prP2pDev;
+	prP2pDevIdx = prGlueInfo->u4P2pDevIdx;
+
 	ASSERT(prAdapter);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -714,9 +714,9 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		netif_carrier_off(prDevHandler);
 		netif_tx_stop_all_queues(prDevHandler);
 
-		if (g_u4DevIdx[i]) {
-			prDevHandler->ifindex = g_u4DevIdx[i];
-			g_u4DevIdx[i] = 0;
+		if (prP2pDevIdx[i]) {
+			prDevHandler->ifindex = prP2pDevIdx[i];
+			prP2pDevIdx[i] = 0;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
@@ -736,7 +736,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 			ret = FALSE;
 		} else {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-			gPrP2pDev[i] = prDevHandler;
+			pprP2pDev[i] = prDevHandler;
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			ret = TRUE;
 		}
@@ -1219,6 +1219,11 @@ static void mtk_p2p_vif_destructor(struct net_device *dev)
 
 	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(dev));
 
+	if (!prGlueInfo) {
+		DBGLOG(P2P, WARN, "prGlueInfo is NULL\n");
+		return;
+	}
+
 	if (mtk_Netdev_To_DevIdx(prGlueInfo, dev,
 				 &ucRoleIdx) == WLAN_STATUS_SUCCESS) {
 		if (prGlueInfo->prP2PInfo[ucRoleIdx]->aprRoleHandler ==
@@ -1227,8 +1232,9 @@ static void mtk_p2p_vif_destructor(struct net_device *dev)
 			    NULL;
 		prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler = NULL;
 	}
-	if (g_P2pPrDev == dev)
-		g_P2pPrDev = NULL;
+
+	if (prGlueInfo->p2pPrDev == dev)
+		prGlueInfo->p2pPrDev = NULL;
 	DBGLOG(P2P, INFO, "free %s[%p]\n", dev->name, dev);
 	free_netdev(dev);
 }
@@ -1252,6 +1258,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	uint8_t  ucRegisterNum = 1, i = 0;
 	struct wireless_dev *prP2pWdev = NULL;
 	struct net_device *prP2pDev = NULL;
+	struct wireless_dev **pprP2pWdev = NULL;
 	struct wiphy *prWiphy = NULL;
 	const char *prSetDevName;
 	u_int8_t fgSkipRole = SKIP_ROLE_NONE;
@@ -1304,15 +1311,17 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 				fgIsApMode = TRUE;
 		}
 
-		if (!gprP2pWdev[i])
+		pprP2pWdev = prGlueInfo->prP2pWdev;
+
+		if (!pprP2pWdev[i])
 			glP2pCreateWirelessDevice(prGlueInfo);
 
-		if (!gprP2pWdev[i]) {
-			DBGLOG(P2P, ERROR, "gprP2pWdev[%d] is NULL\n", i);
+		if (!pprP2pWdev[i]) {
+			DBGLOG(P2P, ERROR, "pprP2pWdev[%d] is NULL\n", i);
 			return FALSE;
 		}
 
-		prP2pWdev = gprP2pWdev[i];
+		prP2pWdev = pprP2pWdev[i];
 
 		/* Reset prP2pWdev for the issue that the prP2pWdev doesn't
 		 * reset when the usb unplug/plug.
@@ -1391,17 +1400,31 @@ err_alloc_netdev:
 u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-	struct wiphy *prWiphy = wlanGetWiphy();
+	struct wiphy *prWiphy = NULL;
 	struct wireless_dev *prWdev = NULL;
+	struct wireless_dev **pprOrigWdev = NULL;
+	struct wireless_dev **pprP2pRoleWdev = NULL;
+	struct wireless_dev **pprP2pWdev = NULL;
 	uint8_t	i = 0;
+
+	if (!prGlueInfo) {
+		DBGLOG(P2P, ERROR, "prGlueInfo is NULL\n");
+		return FALSE;
+	}
+
+	pprOrigWdev = wlanGetWirelessDevice(prGlueInfo);
+	prWiphy = wlanGetWiphyByWdev(*pprOrigWdev);
 
 	if (!prWiphy) {
 		DBGLOG(P2P, ERROR, "unable to allocate wiphy for p2p\n");
 		return FALSE;
 	}
 
+	pprP2pWdev = prGlueInfo->prP2pWdev;
+	pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
+
 	for (i = 0 ; i < KAL_P2P_NUM; i++) {
-		if (!gprP2pRoleWdev[i])
+		if (!pprP2pRoleWdev[i])
 			break;
 	}
 
@@ -1419,12 +1442,12 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	/* set priv as pointer to glue structure */
 	prWdev->wiphy = prWiphy;
 
-	gprP2pRoleWdev[i] = prWdev;
+	pprP2pRoleWdev[i] = prWdev;
 	DBGLOG(INIT, TRACE, "glP2pCreateWirelessDevice (%p)\n",
-			gprP2pRoleWdev[i]->wiphy);
+			pprP2pRoleWdev[i]->wiphy);
 
 	/* P2PDev and P2PRole[0] share the same Wdev */
-	gprP2pWdev[i] = gprP2pRoleWdev[i];
+	pprP2pWdev[i] = pprP2pRoleWdev[i];
 
 	return TRUE;
 #else
@@ -1451,6 +1474,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 	uint8_t ucRoleIdx;
 	struct ADAPTER *prAdapter;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
+	struct wireless_dev **pprP2pRoleWdev = NULL;
 	int i4Start = 0, i4End = 0;
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1468,6 +1492,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+	pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
 
 	/* 4 <1> Uninit P2P dev FSM */
 	/* Uninit P2P device FSM */
@@ -1518,8 +1543,8 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 			DBGLOG(P2P, INFO, "aprRoleHandler idx %d set NULL\n",
 					ucRoleIdx);
 
-			/* Expect that gprP2pRoleWdev[ucRoleIdx] has been reset
-			 * as gprP2pWdev or NULL in p2pNetUnregister
+			/* Expect that pprP2pRoleWdev[ucRoleIdx] has been reset
+			 * as pprP2pWdev or NULL in p2pNetUnregister
 			 * (unregister_netdev).
 			 */
 		}
@@ -1527,7 +1552,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 		if (prP2PInfo->prDevHandler) {
 			/* don't free the dev that share with the AIS */
 			if (wlanIsAisDev(prP2PInfo->prDevHandler))
-				gprP2pRoleWdev[ucRoleIdx] = NULL;
+				pprP2pRoleWdev[ucRoleIdx] = NULL;
 			else {
 				if (prAdapter->rP2PNetRegState ==
 					ENUM_NET_REG_STATE_REGISTERED) {
@@ -1772,7 +1797,7 @@ static void p2pSetMulticastList(struct net_device *prDev)
 		return;
 	}
 
-	g_P2pPrDev = prDev;
+	prGlueInfo->p2pPrDev = prDev;
 
 	/* 4  Mark HALT, notify main thread to finish current job */
 	set_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT, &prGlueInfo->ulFlag);
@@ -1799,7 +1824,7 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	GLUE_SPIN_LOCK_DECLARATION();
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	prDev = g_P2pPrDev;
+	prDev = prGlueInfo->p2pPrDev;
 
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 

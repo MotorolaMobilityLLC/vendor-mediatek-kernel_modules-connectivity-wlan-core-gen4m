@@ -2363,6 +2363,79 @@ struct WMM_QUOTA_STATUS {
 	enum ENUM_MBMC_BN eHwBand;
 };
 
+#if CFG_SUPPORT_DBDC
+enum ENUM_DBDC_GUARD_TIMER_T {
+	ENUM_DBDC_GUARD_TIMER_NONE,
+
+	/* Prevent switch too quick */
+	ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME,
+
+	/* Prevent continuously trigger by reconnection */
+	ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN,
+
+	ENUM_DBDC_GUARD_TIMER_NUM
+};
+
+enum ENUM_DBDC_FSM_STATE_T {
+	ENUM_DBDC_FSM_STATE_DISABLE_IDLE,
+	ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE,
+	ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE,
+	ENUM_DBDC_FSM_STATE_ENABLE_GUARD,
+	ENUM_DBDC_FSM_STATE_ENABLE_IDLE,
+	ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE,
+	ENUM_DBDC_FSM_STATE_DISABLE_GUARD,
+	ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_DISABLE,
+	ENUM_DBDC_FSM_STATE_NUM
+};
+
+enum ENUM_OPMODE_STATE_T {
+	ENUM_OPMODE_STATE_DONE,
+	ENUM_OPMODE_STATE_FAIL,
+	ENUM_OPMODE_STATE_WAIT,
+	ENUM_OPMODE_STATE_NUM
+};
+
+struct DBDC_INFO_T {
+	enum ENUM_DBDC_FSM_STATE_T eDbdcFsmCurrState;
+	enum ENUM_DBDC_FSM_STATE_T eDbdcFsmPrevState;
+	enum ENUM_DBDC_FSM_STATE_T eDbdcFsmNextState;
+
+	struct TIMER rDbdcGuardTimer;
+	enum ENUM_DBDC_GUARD_TIMER_T eDdbcGuardTimerType;
+
+	uint8_t fgReqPrivelegeLock;
+	struct LINK rPendingMsgList;
+
+	bool fgDbdcDisableOpmodeChangeDone;
+	enum ENUM_OPMODE_STATE_T eBssOpModeState[MAX_BSSID_NUM];
+
+	/* Set DBDC setting for incoming network */
+	uint8_t ucPrimaryChannel;
+	uint8_t ucWmmQueIdx;
+	enum ENUM_BAND	eRfBand;
+
+	/* Used for iwpriv to force enable DBDC*/
+	bool fgHasSentCmd;
+	bool fgCmdEn;
+
+	/* Used to queue enter/leave A+G event */
+	bool fgPostpondEnterAG;
+	bool fgPostpondLeaveAG;
+
+	/* For debug */
+	OS_SYSTIME rPeivilegeLockTime;
+
+	/* Used to indicated current support DBDCAAMode or not */
+	bool fgIsDBDCAAMode;
+	uint8_t ucBssIdx;
+	u_int8_t fgIsDBDCEnByP2pLis;
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+	/*Used to indicated that MLD & legacy mode current*/
+	uint8_t ucMldConcurrent;
+#endif
+};
+#endif /* CFG_SUPPORT_DBDC */
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -3196,6 +3269,13 @@ struct ADAPTER {
 #if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
 	uint8_t ucForceLinkSort;
 	uint8_t ucForceLinkSortType;
+#endif
+
+#if CFG_SUPPORT_DBDC
+	struct DBDC_INFO_T rDbdcInfo;
+#endif
+#if defined(_HIF_USB)
+	struct TIMER rSerSyncTimer;
 #endif
 };				/* end of _ADAPTER_T */
 /*******************************************************************************

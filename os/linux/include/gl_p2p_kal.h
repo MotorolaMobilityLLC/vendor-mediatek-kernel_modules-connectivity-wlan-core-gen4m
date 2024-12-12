@@ -417,8 +417,8 @@ void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
-void kalIdcRegisterRilNotifier(void);
-void kalIdcUnregisterRilNotifier(void);
+void kalIdcRegisterRilNotifier(struct GLUE_INFO *prGlueInfo);
+void kalIdcUnregisterRilNotifier(struct GLUE_INFO *prGlueInfo);
 void kalIdcGetRilInfo(void);
 #endif
 #if CFG_SUPPORT_IDC_RIL_BRIDGE

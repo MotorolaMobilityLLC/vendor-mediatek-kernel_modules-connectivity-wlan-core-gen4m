@@ -394,6 +394,7 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	unsigned char fgDoUnregister = FALSE;
 	struct ADAPTER *prAdapter = NULL;
 	struct _GL_NAN_INFO_T *prNANInfo = NULL;
+	struct wireless_dev **pprWdev = NULL;
 	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
@@ -420,6 +421,7 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	if (!fgDoUnregister)
 		return TRUE;
 
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 	prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
 	if (prNANInfo == NULL)
 		return FALSE;
@@ -430,9 +432,9 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 
-			if (gprWdev[u4Idx] &&
+			if (pprWdev && pprWdev[u4Idx] &&
 			    (prNANInfo->prDevHandler ==
-			     gprWdev[u4Idx]->netdev))
+			     pprWdev[u4Idx]->netdev))
 				return FALSE;
 		}
 	}
@@ -784,7 +786,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	nanRangingEngineInit(prAdapter);
 
 	/* initialize NAN Security Engine */
-	nan_sec_wpa_supplicant_start();
+	nan_sec_wpa_supplicant_start(prAdapter->prGlueInfo);
 	/*
 	 * Send request to CNM module
 	 *	- If DBDC is going to be enabled/disabled, the request will
@@ -803,7 +805,8 @@ unsigned char
 glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
 	/* whsu, KAL_AIS_NUM at gprWdev */
-	struct wiphy *prWiphy = wlanGetWiphy();
+	struct wireless_dev **pprOrigWdev = wlanGetWirelessDevice(prGlueInfo);
+	struct wiphy *prWiphy = wlanGetWiphyByWdev(*pprOrigWdev);
 	struct wireless_dev *prWdev = NULL;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
@@ -846,6 +849,7 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
 	struct _GL_NAN_INFO_T *prNANInfo = NULL;
+	struct wireless_dev **pprWdev = NULL;
 	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	if (!prGlueInfo) {
@@ -886,6 +890,7 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	nanDevFsmUninit(prGlueInfo->prAdapter, ucIdx);
 
 	/* 4 <3> Free Wiphy & netdev */
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 	prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
 	if (prNANInfo == NULL)
 		return TRUE;
@@ -894,9 +899,9 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 		uint32_t u4Idx = 0;
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 
-			if (gprWdev[u4Idx] &&
+			if (pprWdev && pprWdev[u4Idx] &&
 			    prNANInfo->prDevHandler ==
-				    gprWdev[u4Idx]->netdev) {
+				    pprWdev[u4Idx]->netdev) {
 				if (prNANInfo->prDevHandler != NULL) {
 					free_netdev(prNANInfo->prDevHandler);
 					prNANInfo->prDevHandler = NULL;
@@ -951,6 +956,7 @@ nanLaunch(struct GLUE_INFO *prGlueInfo)
 unsigned char
 nanRemove(struct GLUE_INFO *prGlueInfo)
 {
+	struct wireless_dev **pprWdev = NULL;
 	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	if (prGlueInfo->prAdapter->fgIsNANRegistered == FALSE) {
@@ -960,6 +966,7 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 
 	DBGLOG(NAN, INFO, "fgIsNANRegistered FALSE\n");
 	prGlueInfo->prAdapter->fgIsNANRegistered = FALSE;
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 
 	glUnregisterNAN(prGlueInfo);
 
@@ -973,8 +980,8 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 	uint32_t u4Idx = 0;
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] &&
-		    g_aprNanRoleWdev[ucIdx] == gprWdev[u4Idx]) {
+		if (pprWdev && pprWdev[u4Idx] &&
+		    g_aprNanRoleWdev[ucIdx] == pprWdev[u4Idx]) {
 			/* This is AIS/AP Interface */
 			g_aprNanRoleWdev[ucIdx] = NULL;
 			continue;

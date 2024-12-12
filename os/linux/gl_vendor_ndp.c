@@ -329,7 +329,7 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "Send NDI Create Rsp event\n");
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2CreateRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
@@ -415,7 +415,7 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "Send NDI Delete Rsp event\n");
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	if (wiphy == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] wiphy is NULL\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
@@ -514,7 +514,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "[%s] Send NDP Initiator Rsp event\n", __func__);
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2InitiatorRspLen = (4 * sizeof(uint32_t)) + (1 * sizeof(uint16_t)) +
@@ -620,7 +620,7 @@ nanNdpResponderUserTimeoutEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2ResponderRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
@@ -699,7 +699,7 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2ResponderRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
@@ -786,7 +786,7 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "Send NDI End Rsp event\n");
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2EndRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
@@ -1413,7 +1413,7 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2IndiEventLen = (3 * sizeof(uint32_t)) + (2 * MAC_ADDR_LEN) +
@@ -1547,7 +1547,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2ConfirmEventLen = (4 * sizeof(uint32_t)) + MAC_ADDR_LEN +
@@ -1718,7 +1718,7 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "Send NDP Data Termination event\n");
 
-	wiphy = wlanGetWiphy();
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 	u2ConfirmEventLen = sizeof(uint32_t) + NLMSG_HDRLEN + (2 * NLA_HDRLEN) +

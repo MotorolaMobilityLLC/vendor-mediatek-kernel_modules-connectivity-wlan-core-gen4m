@@ -3131,7 +3131,7 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 					AIS_REQUEST_LOOKING_FOR) {
 				aisDeactivateAllLink(prAdapter, prAisFsmInfo);
 #if CFG_SUPPORT_DBDC
-				if (cnmDBDCIsReqPeivilegeLock()) {
+				if (cnmDBDCIsReqPeivilegeLock(prAdapter)) {
 					DBGLOG(AIS, INFO,
 					"DBDC lock: skip activate\n");
 				} else

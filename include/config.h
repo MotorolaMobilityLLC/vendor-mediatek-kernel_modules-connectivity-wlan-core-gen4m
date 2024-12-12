@@ -658,6 +658,16 @@
 #define CFG_ASSERTDUMP_BYPASS_CHIP_RESET		0
 #endif
 
+/* 1: Enable One Driver Support Multiple Physical Card
+ * 0(default): Disable
+ *
+ * This config is used to distinguish the variable is access from global or
+ * struct GLUE_INFO/ADAPTER to maintain project that non-supported Dual Card
+ */
+#ifndef CFG_SUPPORT_MULTI_CARD
+#define CFG_SUPPORT_MULTI_CARD		0
+#endif
+
 #ifndef CFG_CHIP_RESET_SUPPORT
 #define CFG_CHIP_RESET_SUPPORT		1
 #endif

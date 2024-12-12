@@ -1321,7 +1321,8 @@ __priv_set_struct(struct net_device *prNetDev,
 				return -EFAULT;
 			}
 			aucOidBuf[u4CmdLen] = 0;
-			i4ResultLen = priv_driver_cmds(prNetDev, aucOidBuf,
+			i4ResultLen = priv_driver_cmds(prGlueInfo,
+						       prNetDev, aucOidBuf,
 						       u4CmdLen);
 			if (i4ResultLen > 1) {
 				if (copy_to_user(prIwReqData->data.pointer,
@@ -1366,7 +1367,8 @@ __priv_set_struct(struct net_device *prNetDev,
 			kalMemZero(pCommand, u4CmdLen + 1);
 			kalMemCopy(pCommand, aucOidBuf, u4CmdLen);
 			pCommand[u4CmdLen] = '\0';
-			priv_driver_cmds(prNetDev, pCommand, u4CmdLen);
+			priv_driver_cmds(prGlueInfo,
+					prNetDev, pCommand, u4CmdLen);
 			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
 		}
 		break;
@@ -3125,7 +3127,8 @@ priv_set_driver(struct net_device *prNetDev,
 		/* Please check max length in rIwPrivTable */
 		DBGLOG(REQ, INFO, "%s prIwReqData->data.length = %d\n",
 		    __func__, prIwReqData->data.length);
-		i4BytesWritten = priv_driver_cmds(prNetDev, pcExtra,
+		i4BytesWritten = priv_driver_cmds(prGlueInfo,
+			prNetDev, pcExtra,
 			IW_PRIV_GET_BUF_SIZE /*prIwReqData->data.length */);
 		DBGLOG(REQ, INFO, "%s i4BytesWritten = %d\n", __func__,
 		    i4BytesWritten);
@@ -17163,7 +17166,12 @@ int priv_driver_get_capab_rsdb(struct net_device *prNetDev,
 	uint32_t u4Offset = 0;
 	u_int8_t fgDbDcModeEn = FALSE;
 
-	prGlueInfo = wlanGetGlueInfo();
+	if (!prNetDev) {
+		DBGLOG(REQ, WARN, "prNetDev is NULL\n");
+		return -EFAULT;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
 		return -EFAULT;
@@ -18196,12 +18204,12 @@ int priv_driver_get_survey_dump(struct net_device *prNetDev,
 
 		if (ucChannelNum <= 14) {
 			pChannel = ieee80211_get_channel(
-				wlanGetWiphy(),
+				GLUE_GET_WIPHY(prGlueInfo),
 				ieee80211_channel_to_frequency
 				(ucChannelNum, KAL_BAND_2GHZ));
 		} else {
 			pChannel = ieee80211_get_channel(
-				wlanGetWiphy(),
+				GLUE_GET_WIPHY(prGlueInfo),
 				ieee80211_channel_to_frequency(ucChannelNum,
 				KAL_BAND_5GHZ));
 		}
@@ -22566,15 +22574,20 @@ end:
 	return i4BytesWritten;
 }
 
-int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
+int32_t priv_driver_cmds(struct GLUE_INFO *prGlueInfo,
+			 struct net_device *prNetDev, int8_t *pcCommand,
 			 int32_t i4TotalLen)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	uint8_t ucCmdFound = FALSE;
 	PRIV_CMD_FUNCTION pfHandler = NULL;
 	int8_t *pcTempCmd;
 	int32_t i4CmdSize = i4TotalLen + 1;
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "argument is NULL\n");
+		return -1;
+	}
 
 	if (g_u4HaltFlag) {
 		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
@@ -22652,6 +22665,7 @@ int android_private_support_driver_cmd(struct net_device *prNetDev,
 	struct android_wifi_priv_cmd priv_cmd;
 	char *command = NULL;
 	int ret = 0, bytes_written = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (!prReq->ifr_data)
 		return -EINVAL;
@@ -22673,7 +22687,10 @@ int android_private_support_driver_cmd(struct net_device *prNetDev,
 		goto FREE;
 	}
 
-	bytes_written = priv_driver_cmds(prNetDev, command, priv_cmd.total_len);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	bytes_written = priv_driver_cmds(prGlueInfo, prNetDev,
+						command, priv_cmd.total_len);
 
 	if (bytes_written == -EOPNOTSUPP) {
 		/* Report positive status */
@@ -22761,7 +22778,8 @@ int priv_support_driver_cmd(struct net_device *prNetDev,
 	DBGLOG(REQ, INFO, "%s: driver cmd \"%s\" on %s,(%p,%p)\n", __func__,
 		pcCommand, prReq->ifr_name, prReq, prReq->ifr_data);
 
-	i4BytesWritten = priv_driver_cmds(prNetDev, pcCommand, i4TotalLen);
+	i4BytesWritten = priv_driver_cmds(prGlueInfo, prNetDev,
+						pcCommand, i4TotalLen);
 
 	if (i4BytesWritten == -EOPNOTSUPP) {
 		/* Report positive status */
@@ -22941,7 +22959,7 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "[CSI] argc is %i\n", i4Argc);
 
-	prCSIInfo = glCsiGetCSIInfo();
+	prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 
 	prCSICtrl = (struct CMD_CSI_CONTROL_T *) kalMemAlloc(
 			sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
@@ -22973,7 +22991,7 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 		goto out;
 	}
 	prCSIInfo->ucMode = prCSICtrl->ucMode;
-	prCSICtrl->ucBandIdx = glCsiGetBandIdx();
+	prCSICtrl->ucBandIdx = glCsiGetBandIdx(prGlueInfo);
 
 	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
 		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
@@ -23076,7 +23094,7 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 		eBand = (enum ENUM_MBMC_BN) prCSICtrl->ucValue1;
 		if (eBand < ENUM_BAND_NUM) {
 			DBGLOG(REQ, INFO, "[CSI] set band: %d\n", eBand);
-			glCsiSetBandIdx(eBand);
+			glCsiSetBandIdx(prGlueInfo, eBand);
 			i4BytesWritten = 0;
 			goto out;
 		} else {

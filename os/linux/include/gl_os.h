@@ -25,7 +25,11 @@
  * Flags for LINUX(OS) dependent
  *------------------------------------------------------------------------------
  */
+#if CFG_SUPPORT_MULTI_CARD
+#define CFG_MAX_WLAN_DEVICES 2 /* number of wlan card will coexist */
+#else
 #define CFG_MAX_WLAN_DEVICES 1 /* number of wlan card will coexist */
+#endif
 
 #define CFG_MAX_TXQ_NUM 4 /* number of tx queue for support multi-queue h/w  */
 
@@ -237,6 +241,13 @@ extern struct ADAPTER *g_prAdapter;
 
 #if (CONFIG_WLAN_SERVICE == 1)
 #include "agent.h"
+#endif
+
+#include <linux/miscdevice.h>   /* for misc_register, and SYNTH_MINOR */
+
+#if CFG_SUPPORT_CSI
+#include "nic_cmd_event.h"
+#include "gl_csi.h"
 #endif
 
 extern u_int8_t fgIsMcuOff;
@@ -1206,6 +1217,115 @@ struct GLUE_INFO {
 	cpumask_t hif_cpu_mask;
 #endif
 #endif /* CFG_SUPPORT_TPUT_FACTOR */
+
+	uint32_t u4DevNum;
+
+	const struct firmware *fw_entry;
+
+	struct net_device *prNetDevice;
+
+	struct net_device *p2pPrDev;
+	struct wireless_dev *prP2pWdev[KAL_P2P_NUM];
+	struct wireless_dev *prP2pRoleWdev[KAL_P2P_NUM];
+	struct net_device *prP2pDev[KAL_P2P_NUM];
+	uint32_t u4P2pDevIdx[KAL_P2P_NUM];
+
+	struct service_test *prServiceTest;
+
+	uint8_t aucFbName[WORKER_NAME_STR_MAX];
+	struct notifier_block wlan_fb_notifier;
+	struct notifier_block wlan_netdev_notifier;
+	struct notifier_block inetaddr_notifier;
+#if CFG_POWER_OFF_CTRL_SUPPORT
+	struct notifier_block wf_pdwnc_notifier;
+#endif
+
+#if CFG_SUPPORT_IDC_RIL_BRIDGE || CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+	struct notifier_block ril_notifier_block;
+	int init_ril_notifier;
+#endif
+
+	int32_t u4HaltFlag;
+	struct semaphore halt_sem;
+
+	struct delayed_work workq;
+	/* 20150205 added work queue for sched_scan to avoid
+	 *          cfg80211 stop schedule scan dead loack
+	 */
+	struct delayed_work sched_workq;
+
+#if CFG_ENABLE_EARLY_SUSPEND
+	struct early_suspend wlan_early_suspend_desc;
+#endif
+
+	/* This u32 is only for DriverCmdRead/Write,
+	 * should not be used by other function
+	 */
+	int32_t i4NextDriverReadLen;
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	struct dentry *dbgFsDir;
+#endif
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+	struct dentry *serDbgFsDir;
+#endif
+
+#if CFG_SUPPORT_CSI
+	struct CSI_INFO_T rCSIInfo;
+	uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
+	uint8_t ucCSIBandIdx;
+#endif
+
+	struct miscdevice wlan_object;
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+	struct WAKE_INFO_T *prWakeInfoStatics;
+#endif
+
+	uint32_t u4McrOffset;
+
+	struct lock_class_key rSpinKey[SPIN_LOCK_NUM];
+	struct lock_class_key rMutexKey[MUTEX_NUM];
+#if CFG_SUPPORT_RX_PAGE_POOL
+	struct lock_class_key rMutexPagePoolKey[PAGE_POOL_NUM];
+#endif
+
+	u_int8_t wlan_perf_monitor_force_enable;
+
+	u_int8_t fgCmdDumpIsDone;
+
+	struct ECO_INFO eco_info;
+
+#if CFG_SUPPORT_MULTI_CARD
+	struct wireless_dev *prWdev[KAL_AIS_NUM];
+
+	struct proc_dir_entry *prProcRoot;
+
+#if CFG_SUPPORT_SINGLE_SKU
+	struct mtk_regd_control rMtkRegdControl;
+	u_int8_t bTxBfBackoffExists;
+#endif
+
+	/* public for both Legacy Wi-Fi / P2P access */
+	struct ieee80211_supported_band mtk_band_2ghz;
+	struct ieee80211_supported_band mtk_band_5ghz;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	struct ieee80211_supported_band mtk_band_6ghz;
+#endif
+
+	uint8_t aucMiscName[10];
+
+	struct KAL_HALT_CTRL_T rHaltCtrl;
+
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	/* variable of ics log */
+	struct ics_dev *prIcsDev;
+	uint8_t aucIcsDevSaveName[20];
+#endif
+
+	/* format: "wlanInterfaceName wiphyName" */
+	uint8_t aucWlanLog[25];
+#endif /* CFG_SUPPORT_MULTI_CARD */
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
@@ -1413,6 +1533,10 @@ enum BOOTMODE {
 	FASTBOOT = 99,
 	DOWNLOAD_BOOT = 100,
 	UNKNOWN_BOOT
+};
+
+struct WLANDEV_INFO {
+	struct net_device *prDev;
 };
 
 /*******************************************************************************
@@ -1713,6 +1837,9 @@ enum BOOTMODE {
 #define PCIE_GEN3    3
 #endif
 
+#define GLUE_GET_WIPHY(pr) \
+	pr->prDevHandler->ieee80211_ptr->wiphy
+
 /*----------------------------------------------------------------------------*/
 /* Macros of Data Type Check                                                  */
 /*----------------------------------------------------------------------------*/
@@ -1753,7 +1880,7 @@ static __KAL_INLINE__ void glPacketDataTypeCheck(void)
  */
 #if WLAN_INCLUDE_PROC
 int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo);
-int32_t procRemoveProcfs(void);
+int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo);
 
 
 int32_t procInitFs(void);
@@ -1796,6 +1923,7 @@ void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
 #endif
 
 struct GLUE_INFO *wlanGetGlueInfo(void);
+struct GLUE_INFO *wlanGetGlueInfoByWiphy(struct wiphy *wiphy);
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
@@ -1841,22 +1969,31 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
-int32_t wlanOffAtReset(void);
+int32_t wlanOffAtReset(struct net_device *prDev);
 
-int32_t wlanOnAtReset(void);
+int32_t wlanOnAtReset(struct net_device *prDev);
 #endif
 
 u_int8_t wlanIsProbing(void);
 u_int8_t wlanIsRemoving(void);
 
+uint32_t wlanSearchDevIdx(struct device *prDev);
+int wlanGetDevIdx(struct net_device *prDev);
+struct GLUE_INFO *wlanDevGetGlueInfo(struct device *prDev);
+
+struct semaphore *wlanGetHaltSem(struct GLUE_INFO *prGlueInfo);
+
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************
  */
-extern struct net_device *gPrP2pDev[KAL_P2P_NUM];
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
-extern uint32_t g_u4DevIdx[KAL_P2P_NUM];
+#endif
 extern enum ENUM_NVRAM_STATE g_NvramFsm;
+
+extern struct WLANDEV_INFO arWlanDevInfo[CFG_MAX_WLAN_DEVICES];
+extern uint32_t u4WlanDevNum;
 
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 extern bool fgIsPreOnProcessing;
@@ -1867,13 +2004,13 @@ extern char *gprifnamep2p;
 extern char *gprifnamesta;
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
 
-void wlanRegisterInetAddrNotifier(void);
-void wlanUnregisterInetAddrNotifier(void);
+void wlanRegisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo);
+void wlanUnregisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo);
 void wlanRegisterNetdevNotifier(void);
 void wlanUnregisterNetdevNotifier(void);
 #if CFG_POWER_OFF_CTRL_SUPPORT
-extern void wlanRegisterRebootNotifier(void);
-extern void wlanUnregisterRebootNotifier(void);
+extern void wlanRegisterRebootNotifier(struct GLUE_INFO *prGlueInfo);
+extern void wlanUnregisterRebootNotifier(struct GLUE_INFO *prGlueInfo);
 #endif
 
 #if CFG_MTK_ANDROID_WMT && CFG_TESTMODE_WMT_WIFI_ON_SUPPORT
@@ -1981,7 +2118,7 @@ uint32_t connsysFwLogControl(struct ADAPTER *prAdapter,
 #endif
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 int32_t sysCreateMonDbgFs(struct GLUE_INFO *prGlueInfo);
-void sysRemoveMonDbgFs(void);
+void sysRemoveMonDbgFs(struct GLUE_INFO *prGlueInfo);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
@@ -2004,7 +2141,17 @@ extern void glCustomGenlInit(void);
 extern void glCustomGenlDeinit(void);
 #endif
 
+struct wireless_dev **wlanGetWirelessDevice(struct GLUE_INFO *prGlueInfo);
+
+#if (CFG_MTK_ANDROID_WMT || CFG_MTK_MDDP_SUPPORT) && \
+	(CFG_SUPPORT_MULTI_CARD == 0)
+/*
+ * wlanGetWiphy is only use for feature that no support multi-card case
+ * For the feature can support multi-card case, please use wlanGetWiphyByWdev
+ */
 struct wiphy *wlanGetWiphy(void);
+#endif
+struct wiphy *wlanGetWiphyByWdev(struct wireless_dev *prWdev);
 
 uint8_t wlanGetBssIdx(struct net_device *ndev);
 

@@ -1806,7 +1806,7 @@ int mtk_cfg80211_vendor_comb_matrix(
 	const void *data, int data_len);
 
 int mtk_cfg80211_vendor_event_reset_triggered(
-	uint32_t data);
+	struct GLUE_INFO *prGlueInfo, uint32_t data);
 
 #if CFG_SUPPORT_CSI
 int mtk_cfg80211_vendor_csi_control(

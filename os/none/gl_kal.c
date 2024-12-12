@@ -196,6 +196,7 @@ void kalSetMgmtDirectTxEvent2Hif(
 #endif
 
 uint32_t kalGetChannelFrequency(
+		struct ADAPTER *prAdapter,
 		uint8_t ucChannel,
 		uint8_t ucBand)
 {

@@ -41,7 +41,6 @@
 extern int allocatedMemSize;
 #endif
 
-extern int g_u4HaltFlag;
 extern int g_u4WlanInitFlag;
 
 /*******************************************************************************
@@ -1945,11 +1944,11 @@ u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter);
 #endif
 #endif
 
-int32_t kalHaltLock(uint32_t waitMs);
-int32_t kalHaltTryLock(void);
-void kalHaltUnlock(void);
-void kalSetHalted(u_int8_t fgHalt);
-u_int8_t kalIsHalted(void);
+int32_t kalHaltLock(struct ADAPTER *prAdapter, uint32_t waitMs);
+int32_t kalHaltTryLock(struct GLUE_INFO *prGlueInfo);
+void kalHaltUnlock(struct GLUE_INFO *prGlueInfo);
+void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt);
+u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_MULTITHREAD
 #ifdef CFG_REMIND_IMPLEMENT
@@ -1995,9 +1994,10 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 #endif
 int32_t kalSetCpuNumFreq(uint32_t u4CoreNum,
 			 uint32_t u4Freq);
-int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag);
+int32_t kalPerMonSetForceEnableFlag(
+			 struct GLUE_INFO *prGlueInfo, uint8_t uFlag);
 int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo);
-void kalFbNotifierUnReg(void);
+void kalFbNotifierUnReg(struct GLUE_INFO *prGlueInfo);
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalInitDevWakeup(_prAdapter, _prDev) \
@@ -2095,12 +2095,13 @@ u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo);
 #endif
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-void kalApplyCustomRegulatory(const void *pRegdom,
+void kalApplyCustomRegulatory(struct GLUE_INFO *prGlueInfo,
+	const void *pRegdom,
 	uint8_t fgNeedHoldRtnlLock);
 const void *kalGetDefaultRegWW(void);
 #endif
-uint8_t kalGetRdmVal(uint8_t dfs_region);
-u_int8_t kalIsETSIDfsRegin(void);
+uint8_t kalGetRdmVal(struct ADAPTER *prAdapter, uint8_t dfs_region);
+u_int8_t kalIsETSIDfsRegin(struct ADAPTER *prAdapter);
 #endif
 u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 
@@ -2150,6 +2151,7 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 #define kalIcsWrite(buf, size) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalIndexWrite(buf, size) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
 #define kalWiphy_info(wiphy, format, ...) \
@@ -2207,6 +2209,7 @@ void kalSetMgmtDirectTxEvent2Hif(
 #endif
 
 uint32_t kalGetChannelFrequency(
+		struct ADAPTER *prAdapter,
 		uint8_t ucChannel,
 		uint8_t ucBand);
 
@@ -2373,7 +2376,8 @@ uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
 			 void *prBuf, uint32_t u4Offset,
 			 uint32_t *pu4Size);
 
-int32_t kalGetFwFlavor(uint8_t *flavor);
+int32_t kalGetFwFlavor(struct GLUE_INFO *prGlueInfo,
+			 uint8_t *flavor);
 
 void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,

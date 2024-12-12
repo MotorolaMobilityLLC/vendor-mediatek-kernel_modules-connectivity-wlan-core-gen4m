@@ -1758,7 +1758,7 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
-uint8_t scanGetRnrChannel(
+uint8_t scanGetRnrChannel(struct ADAPTER *prAdapter,
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField)
 {
 	uint8_t ucRnrChNum, ucBand;
@@ -1786,7 +1786,7 @@ uint8_t scanGetRnrChannel(
 	}
 	u4FreqInKHz =
 		kalGetChannelFrequency(
-		prNeighborAPInfoField->ucChannelNum,
+		prAdapter, prNeighborAPInfoField->ucChannelNum,
 		ucBand);
 	ucRnrChNum = nicFreq2ChannelNum(u4FreqInKHz * 1000);
 	return ucRnrChNum;
@@ -1986,7 +1986,8 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 					(prRnr->aucInfoField + u2CurrentLength);
 		ucOpClass = prNeighborAPInfoField->ucOpClass;
 		eRfBand = scanOpClassToBand(ucOpClass);
-		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
+		ucRnrChNum = scanGetRnrChannel(
+			prAdapter, prNeighborAPInfoField);
 
 		/* get TBTT information count and length for
 		*  this neighborAPInfo

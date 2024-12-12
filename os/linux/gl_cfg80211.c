@@ -6385,9 +6385,6 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_suspend\n");
 
-#if (CFG_SUPPORT_STATISTICS == 1)
-	wlanWakeDumpRes();
-#endif
 	if (kalHaltTryLock())
 		return 0;
 
@@ -6396,6 +6393,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+	wlanWakeDumpRes(prGlueInfo);
+#endif
 
 	if (prGlueInfo && prGlueInfo->prAdapter) {
 		prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
@@ -6721,18 +6721,20 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 		     struct net_device *ndev)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct net_device **pprP2pDev = prGlueInfo->prP2pDev;
+	struct wireless_dev **pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
 	uint8_t u4Idx = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
-		if (gprP2pRoleWdev[u4Idx] == NULL)
+		if (pprP2pRoleWdev[u4Idx] == NULL)
 			break;
 	}
 
 	if (u4Idx >= KAL_P2P_NUM) {
-		DBGLOG(INIT, ERROR, "There is no free gprP2pRoleWdev.\n");
+		DBGLOG(INIT, ERROR, "There is no free pprP2pRoleWdev.\n");
 		return -ENOMEM;
 	}
 
@@ -6751,20 +6753,20 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 		prAdapter->rWifiVar.aucP2pInterfaceAddress[u4Idx]);
 
 	/* reference from the glRegisterP2P() */
-	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
-	if (glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev,
+	pprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
+	if (glSetupP2P(prGlueInfo, pprP2pRoleWdev[u4Idx], ndev,
 		u4Idx, TRUE, TRUE, rMacAddr)) {
 		DBGLOG(INIT, ERROR, "glSetupP2P failed\n");
-		gprP2pRoleWdev[u4Idx] = NULL;
+		pprP2pRoleWdev[u4Idx] = NULL;
 		return -EFAULT;
 	}
 
 	prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum++;
 
 	/* reference from p2pNetRegister() */
-	/* The ndev doesn't need register_netdev, only reassign the gPrP2pDev.*/
+	/* The ndev doesn't need register_netdev, only reassign the pprP2pDev.*/
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	gPrP2pDev[u4Idx] = ndev;
+	pprP2pDev[u4Idx] = ndev;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	return 0;
@@ -6788,6 +6790,8 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 {
 	unsigned char u4Idx = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct net_device **pprP2pDev = NULL;
+	struct wireless_dev **pprP2pRoleWdev = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -6796,6 +6800,8 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		return WLAN_STATUS_FAILURE;
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	pprP2pDev = prAdapter->prGlueInfo->prP2pDev;
+	pprP2pRoleWdev = prAdapter->prGlueInfo->prP2pRoleWdev;
 
 	/* init */
 	*pu4SetInfoLen = sizeof(unsigned char);
@@ -6820,8 +6826,8 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	glUnregisterP2P(prAdapter->prGlueInfo, u4Idx, FALSE);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	gPrP2pDev[u4Idx] = NULL;
-	gprP2pRoleWdev[u4Idx] = NULL;
+	pprP2pDev[u4Idx] = NULL;
+	pprP2pRoleWdev[u4Idx] = NULL;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	return 0;
@@ -6951,18 +6957,24 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 static void mtk_vif_destructor(struct net_device *dev)
 {
 	struct wireless_dev *prWdev = NULL;
+	struct wireless_dev **pprWdev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4Idx = 0;
 	if (dev) {
 		DBGLOG(AIS, INFO, "netdev=%p, wdev=%p\n",
 			dev, dev->ieee80211_ptr);
 		prWdev = dev->ieee80211_ptr;
-		if (prWdev)
+		if (prWdev) {
+			WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 			prWdev->netdev = NULL;
+		}
 		free_netdev(dev);
 		if (prWdev) {
+			pprWdev = wlanGetWirelessDevice(prGlueInfo);
+
 			for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-				if (prWdev == gprWdev[u4Idx]) {
-					gprWdev[u4Idx] = NULL;
+				if (pprWdev && prWdev == pprWdev[u4Idx]) {
+					pprWdev[u4Idx] = NULL;
 					kfree(prWdev);
 					break;
 				}
@@ -6988,6 +7000,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	struct wireless_dev *prWdev = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	struct wireless_dev **pprWdev = NULL;
 	uint8_t ucBssIdx = 0;
 	uint32_t rStatus;
 	uint8_t ucAisIndex;
@@ -7004,9 +7017,10 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 
 	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
-		if (gprWdev[ucAisIndex] == NULL)
+		if (pprWdev[ucAisIndex] == NULL)
 			break;
 	}
 
@@ -7124,19 +7138,19 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	}
 
 	/* netdev and wdev are ready */
-	gprWdev[ucAisIndex] = prWdev;
+	pprWdev[ucAisIndex] = prWdev;
 
 	/* prepare aisfsm/bssinfo */
 	kalIoctl(prGlueInfo, wlanoidInitAisFsm, &ucAisIndex, 1, &u4SetInfoLen);
 
 	/* BssIdx should not be 0 if add successfully */
 	ucBssIdx = wlanGetBssIdxByNetInterface(prGlueInfo,
-					       gprWdev[ucAisIndex]->netdev);
+					       pprWdev[ucAisIndex]->netdev);
 	if (ucBssIdx != AIS_DEFAULT_INDEX && ucBssIdx != MAX_BSSID_NUM)
 		return prWdev;
 
 	/* Do uninit flow since wlanoidInitAisFsm failed */
-	gprWdev[ucAisIndex] = NULL;
+	pprWdev[ucAisIndex] = NULL;
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 	cfg80211_unregister_netdevice(prDevHandler);
 #else
@@ -7226,6 +7240,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct ADAPTER *prAdapter;
 	struct net_device *prDevHandler = NULL;
 	struct wireless_dev *prWdev = NULL;
+	struct wireless_dev **pprWdev = NULL;
 	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_DEL_IFACE;
 	uint32_t rStatus;
 	uint8_t ucBssIndex = 0, ucIdx;
@@ -7237,6 +7252,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	ucBssIndex = wlanGetBssIdx(wdev->netdev);
 	prAdapter = prGlueInfo->prAdapter;
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 
 	if (!IS_BSS_INDEX_VALID(ucBssIndex) ||
 	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
@@ -7255,7 +7271,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		 * as driver on/off
 		 */
 		for (ucIdx = 1; ucIdx < KAL_AIS_NUM; ucIdx++) {
-			if (gprWdev[ucIdx] == wdev)
+			if (pprWdev[ucIdx] == wdev)
 				break;
 		}
 		if (ucIdx >= KAL_AIS_NUM) {
@@ -7265,7 +7281,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		}
 	}
 
-	prWdev = gprWdev[ucAisIndex];
+	prWdev = pprWdev[ucAisIndex];
 	prDevHandler = prWdev->netdev;
 
 	/* make sure netdev is disconnected */

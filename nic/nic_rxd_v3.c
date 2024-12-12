@@ -383,7 +383,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 				struct mt66xx_chip_info *prChipInfo;
 
 				rsnTkipHandleMICFailure(prAdapter, prStaRec, 0);
-				nicRxParseDropPkt(prSwRfb);
+				nicRxParseDropPkt(prAdapter, prSwRfb);
 				DBGLOG(RSN, EVENT,
 					"MIC_ERR_PKT, dump RXD and RXP\n");
 				/* dump RXD */
@@ -458,7 +458,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 				"Don't drop NAN MC pkt for sec\n");
 #endif
 		} else {
-			nicRxParseDropPkt(prSwRfb);
+			nicRxParseDropPkt(prAdapter, prSwRfb);
 			RX_INC_CNT(prRxCtrl, RX_CIPHER_MISMATCH_DROP_COUNT);
 			fgDrop = TRUE;
 			DBGLOG(RSN, TEMP,

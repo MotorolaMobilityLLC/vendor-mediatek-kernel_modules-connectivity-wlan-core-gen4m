@@ -568,7 +568,7 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 
 	prGlueInfo->fgIsInSuspendMode = TRUE;
 #if (CFG_SUPPORT_PERMON == 1)
-	if (!wlan_perf_monitor_force_enable)
+	if (!prGlueInfo->wlan_perf_monitor_force_enable)
 		kalPerMonDisable(prGlueInfo);
 #endif
 

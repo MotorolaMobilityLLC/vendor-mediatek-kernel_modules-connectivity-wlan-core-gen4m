@@ -120,9 +120,6 @@ enum ENUM_PCIE_LTR_STATE {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#if defined(_HIF_USB)
-extern struct TIMER rSerSyncTimer;
-#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A

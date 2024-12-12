@@ -648,7 +648,7 @@ uint32_t mt7961GetFwVer(struct ADAPTER *prAdapter)
 {
 	uint32_t u4SwVer = 0;
 
-	u4SwVer = nicGetChipSwVer() + 1;
+	u4SwVer = nicGetChipSwVer(prAdapter) + 1;
 
 	return u4SwVer;
 }

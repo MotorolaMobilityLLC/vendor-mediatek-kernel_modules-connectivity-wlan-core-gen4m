@@ -444,7 +444,7 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 
 	DBGLOG(REQ, TRACE, "Get channel list for band: %d\n", band);
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -548,6 +548,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		int data_len)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	struct nlattr *attr;
@@ -571,7 +572,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 	DBGLOG(REQ, INFO, "Set country code: %c%c\n", country[0],
 	       country[1]);
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -579,6 +580,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
+	prAdapter = prGlueInfo->prAdapter;
 
 	if (regd_is_single_sku_en()) {
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
@@ -631,7 +633,7 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo) {
 		log_dbg(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
@@ -3599,7 +3601,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucBssIdx, int rssi)
 {
-	struct wiphy *wiphy = wlanGetWiphy();
+	struct wiphy *wiphy = GLUE_GET_WIPHY(prGlueInfo);
 	struct net_device *dev = wlanGetNetDev(prGlueInfo,
 			ucBssIdx);
 	struct sk_buff *skb;
@@ -3754,13 +3756,14 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 	uint32_t u4InterfaceIdx;
 	uint32_t u4AisIndex = AIS_DEFAULT_INDEX;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	struct wireless_dev **pprWdev = NULL;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
 	if ((data == NULL) || (data_len == 0))
 		return -EINVAL;
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -3778,17 +3781,23 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 	}
 
 	DBGLOG(REQ, INFO, "primary interface index=%d\n", u4InterfaceIdx);
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 
-	if (gprWdev[AIS_DEFAULT_INDEX] && u4InterfaceIdx ==
-		gprWdev[AIS_DEFAULT_INDEX]->netdev->ifindex)
+	if (!pprWdev) {
+		DBGLOG(REQ, ERROR, "pprWdev is NULL\n");
+		return -EINVAL;
+	}
+
+	if (pprWdev[AIS_DEFAULT_INDEX] && u4InterfaceIdx ==
+		pprWdev[AIS_DEFAULT_INDEX]->netdev->ifindex)
 		u4AisIndex = AIS_DEFAULT_INDEX;
 #if KAL_AIS_NUM > 1
-	else if (gprWdev[AIS_SECONDARY_INDEX] && u4InterfaceIdx ==
-		gprWdev[AIS_SECONDARY_INDEX]->netdev->ifindex)
+	else if (pprWdev[AIS_SECONDARY_INDEX] && u4InterfaceIdx ==
+		pprWdev[AIS_SECONDARY_INDEX]->netdev->ifindex)
 		u4AisIndex = AIS_SECONDARY_INDEX;
 #endif
 	else {
-		DBGLOG(REQ, INFO, "No match with gprWdev\n");
+		DBGLOG(REQ, INFO, "No match with pprWdev\n");
 		return -EINVAL;
 	}
 
@@ -3815,7 +3824,7 @@ int mtk_cfg80211_vendor_set_multista_use_case(
 	if ((data == NULL) || (data_len == 0))
 		return -EINVAL;
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -3866,7 +3875,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	if ((data == NULL) || !data_len)
 		return -EINVAL;
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -4590,7 +4599,7 @@ int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY)) {
 		DBGLOG(REQ, ERROR, "driver is not ready\n");
 		return -EFAULT;
@@ -4715,7 +4724,7 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 	}
 
 #if (CFG_SUPPORT_APF == 1)
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
@@ -4776,7 +4785,7 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
@@ -4869,7 +4878,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
@@ -5347,7 +5356,7 @@ int mtk_cfg80211_vendor_trigger_reset(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)
 {
-	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "Invalid glue info\n");
@@ -5380,7 +5389,7 @@ int mtk_cfg80211_vendor_comb_matrix(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)
 {
-	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	struct sk_buff *skb = NULL;
 	struct ANDROID_T_COMB_MATRIX *pr_comb_matrix = NULL;
 	int32_t i4Status = 0;
@@ -5582,7 +5591,7 @@ int mtk_cfg80211_vendor_get_usable_channel(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)
 {
-	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	struct ADAPTER *prAdapter;
 	struct sk_buff *skb = NULL;
 	struct ANDROID_USABLE_CHANNEL_ARRAY *pr_channel_array = NULL;
@@ -5885,16 +5894,26 @@ end:
  */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_vendor_event_reset_triggered(
-	uint32_t data)
+	struct GLUE_INFO *prGlueInfo, uint32_t data)
 {
-	struct wiphy *wiphy = gprWdev[0]->wiphy;
-	struct wireless_dev *wdev = gprWdev[0];
+	struct wiphy *wiphy = NULL;
+	struct wireless_dev *wdev = NULL;
+	struct wireless_dev **pprWdev = NULL;
 	struct sk_buff *skb;
 
-	if (!wiphy || !wdev || !wdev->netdev) {
+	pprWdev = wlanGetWirelessDevice(prGlueInfo);
+
+	if (!pprWdev) {
+		DBGLOG(REQ, ERROR, "pprWdev is NULL\n");
+		return -EINVAL;
+	}
+
+	wdev = pprWdev[0];
+	if (!wdev || !wdev->netdev || !wdev->wiphy) {
 		DBGLOG(REQ, ERROR, "%s wrong input parameters\n", __func__);
 		return -EINVAL;
 	}
+	wiphy = wdev->wiphy;
 
 	DBGLOG(REQ, INFO, "Reset event report through %s. Reason=[%u]\n",
 			wdev->netdev->name, data);
@@ -5952,7 +5971,7 @@ int mtk_cfg80211_vendor_csi_control(
 	if (!wiphy || !wdev || data == NULL || data_len == 0)
 		return -EINVAL;
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -5965,7 +5984,7 @@ int mtk_cfg80211_vendor_csi_control(
 	       "[CSI] vendor command: data_len=%d, iftype=%d\n", data_len,
 	       wdev->iftype);
 
-	prCSIInfo = glCsiGetCSIInfo();
+	prCSIInfo = glCsiGetCSIInfo(prGlueInfo);
 	prCSICtrl = (struct CMD_CSI_CONTROL_T *) kalMemAlloc(
 			sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
 	if (!prCSICtrl) {
@@ -6095,8 +6114,9 @@ out:
 int mtk_cfg80211_vendor_event_csi_raw_data(
 	struct ADAPTER *prAdapter)
 {
-	struct wiphy *wiphy = gprWdev[0]->wiphy;
-	struct wireless_dev *wdev = gprWdev[0];
+	struct wiphy *wiphy = NULL;
+	struct wireless_dev *wdev = NULL;
+	struct wireless_dev **pprWdev = NULL;
 	struct CSI_INFO_T *prCSIInfo = NULL;
 	struct CSI_DATA_T *prTempCSIData = NULL;
 	struct sk_buff *skb = NULL;
@@ -6104,15 +6124,27 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 	int32_t i4Pos = 0;
 	u_int8_t bStatus;
 
-	if (!wiphy || !wdev || !wdev->netdev) {
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return -EINVAL;
+
+	pprWdev = wlanGetWirelessDevice(prAdapter->prGlueInfo);
+
+	if (!pprWdev) {
+		DBGLOG(REQ, ERROR, "pprWdev is NULL\n");
+		return -EINVAL;
+	}
+
+	wdev = pprWdev[0];
+	if (!wdev || !wdev->netdev || !wdev->wiphy) {
 		DBGLOG(REQ, ERROR,
 			"[CSI] %s wrong input parameters\n", __func__);
 		return -EINVAL;
 	}
+	wiphy = wdev->wiphy;
 
-	prCSIInfo = glCsiGetCSIInfo();
-	prTempCSIData = glCsiGetCSIData();
-	temp = glCsiGetCSIBuf();
+	prCSIInfo = glCsiGetCSIInfo(prAdapter->prGlueInfo);
+	prTempCSIData = glCsiGetCSIData(prAdapter->prGlueInfo);
+	temp = glCsiGetCSIBuf(prAdapter->prGlueInfo);
 
 	if (!prTempCSIData) {
 		DBGLOG(REQ, ERROR, "[CSI] NULL CSI data.\n");

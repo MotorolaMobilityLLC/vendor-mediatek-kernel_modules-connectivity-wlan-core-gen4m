@@ -283,8 +283,8 @@ void kalP2PIndicateSecCheckRsp(struct GLUE_INFO *prGlueInfo,
 #endif
 
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
-void kalIdcRegisterRilNotifier(void);
-void kalIdcUnregisterRilNotifier(void);
+void kalIdcRegisterRilNotifier(struct GLUE_INFO *prGlueInfo);
+void kalIdcUnregisterRilNotifier(struct GLUE_INFO *prGlueInfo);
 void kalIdcGetRilInfo(void);
 #endif
 #if CFG_SUPPORT_IDC_RIL_BRIDGE

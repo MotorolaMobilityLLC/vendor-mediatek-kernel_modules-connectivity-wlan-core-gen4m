@@ -213,23 +213,19 @@ static int net6dev_event(struct notifier_block *nb,
 }
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#if 1       /* unused  */
-static struct notifier_block inetaddr_notifier = {
-	.notifier_call = netdev_event,
-};
-#endif
-
 #if 0				/* CFG_SUPPORT_PASSPOINT */
 static struct notifier_block inet6addr_notifier = {
 	.notifier_call = net6dev_event,
 };
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-void wlanRegisterInetAddrNotifier(void)
+void wlanRegisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo)
 {
+	prGlueInfo->inetaddr_notifier.notifier_call = netdev_event;
+
 #if CFG_ENABLE_NET_DEV_NOTIFY
 
-	register_inetaddr_notifier(&inetaddr_notifier);
+	register_inetaddr_notifier(&prGlueInfo->inetaddr_notifier);
 #if 0				/* CFG_SUPPORT_PASSPOINT */
 	register_inet6addr_notifier(&inet6addr_notifier);
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -237,11 +233,11 @@ void wlanRegisterInetAddrNotifier(void)
 #endif
 }
 
-void wlanUnregisterInetAddrNotifier(void)
+void wlanUnregisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_ENABLE_NET_DEV_NOTIFY
 
-	unregister_inetaddr_notifier(&inetaddr_notifier);
+	unregister_inetaddr_notifier(&prGlueInfo->inetaddr_notifier);
 #if 0				/* CFG_SUPPORT_PASSPOINT */
 	unregister_inetaddr_notifier(&inet6addr_notifier);
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -266,6 +262,8 @@ int glRegisterEarlySuspend(struct early_suspend *prDesc,
 			   late_resume_callback wlanResume)
 {
 	int ret = 0;
+
+	prDesc->level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN;
 
 	if (wlanSuspend != NULL)
 		prDesc->suspend = wlanSuspend;

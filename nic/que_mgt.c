@@ -3854,7 +3854,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		 * Independent pkt is marked in stats,
 		 * so it should be placed before rx reordering
 		 */
-		StatsRxPktInfoDisplay(prCurrSwRfb);
+		StatsRxPktInfoDisplay(prAdapter, prCurrSwRfb);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		if (likely(fgIsHwRROSupport)) {
@@ -4043,7 +4043,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(prReturnedQue);
 
 #else
-	StatsRxPktInfoDisplay(prSwRfbListHead);
+	StatsRxPktInfoDisplay(prAdapter, prSwRfbListHead);
 
 	/* DbgPrint("QM: Enter qmHandleRxPackets()\n"); */
 	return prSwRfbListHead;

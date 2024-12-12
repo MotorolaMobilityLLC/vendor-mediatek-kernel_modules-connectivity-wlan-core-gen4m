@@ -285,11 +285,11 @@ struct CSI_TLV_ELEMENT {
  *                             F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-uint8_t glCsiGetBandIdx(void);
-void glCsiSetBandIdx(uint8_t ucBandIdx);
-struct CSI_INFO_T *glCsiGetCSIInfo(void);
-uint8_t *glCsiGetCSIBuf(void);
-struct CSI_DATA_T *glCsiGetCSIData(void);
+uint8_t glCsiGetBandIdx(struct GLUE_INFO *prGlueInfo);
+void glCsiSetBandIdx(struct GLUE_INFO *prGlueInfo, uint8_t ucBandIdx);
+struct CSI_INFO_T *glCsiGetCSIInfo(struct GLUE_INFO *prGlueInfo);
+uint8_t *glCsiGetCSIBuf(struct GLUE_INFO *prGlueInfo);
+struct CSI_DATA_T *glCsiGetCSIData(struct GLUE_INFO *prGlueInfo);
 void glCsiSupportInit(struct GLUE_INFO *prGlueInfo);
 void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo);
 void glCsiSetEnable(struct GLUE_INFO *prGlueInfo,

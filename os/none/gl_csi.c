@@ -42,17 +42,17 @@ static uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
  *                              F U N C T I O N S
  *******************************************************************************
  */
-struct CSI_INFO_T *glCsiGetCSIInfo(void)
+struct CSI_INFO_T *glCsiGetCSIInfo(struct GLUE_INFO *prGlueInfo)
 {
 	return &rCSIInfo;
 }
 
-uint8_t *glCsiGetCSIBuf(void)
+uint8_t *glCsiGetCSIBuf(struct GLUE_INFO *prGlueInfo)
 {
 	return aucCSIBuf;
 }
 
-struct CSI_DATA_T *glCsiGetCSIData(void)
+struct CSI_DATA_T *glCsiGetCSIData(struct GLUE_INFO *prGlueInfo)
 {
 	return rCSIInfo.prCSIData;
 }

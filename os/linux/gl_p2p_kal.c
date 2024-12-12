@@ -57,6 +57,7 @@
  ******************************************************************************
  */
 struct ieee80211_channel *kalP2pFuncGetChannelEntry(
+		struct GLUE_INFO *prGlueInfo,
 		struct GL_P2P_INFO *prP2pInfo,
 		struct RF_CHANNEL_INFO *prChannelInfo);
 
@@ -1100,7 +1101,8 @@ kalP2PIndicateChannelReady(struct GLUE_INFO *prGlueInfo,
 		rChannelInfo.eBand = eBand;
 
 		prIEEE80211ChnlStruct =
-			kalP2pFuncGetChannelEntry(prGlueInfo->prP2PInfo[0],
+			kalP2pFuncGetChannelEntry(prGlueInfo,
+				prGlueInfo->prP2PInfo[0],
 				&rChannelInfo);
 
 		kalP2pFuncGetChannelType(eSco, &eChnlType);
@@ -1172,7 +1174,8 @@ kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
 		rRfChannelInfo.ucChannelNum = u4ChannelNum;
 
 		prIEEE80211ChnlStruct =
-			kalP2pFuncGetChannelEntry(prGlueP2pInfo,
+			kalP2pFuncGetChannelEntry(prGlueInfo,
+				prGlueP2pInfo,
 				&rRfChannelInfo);
 
 		kalP2pFuncGetChannelType(eSco, &eChnlType);
@@ -1285,7 +1288,8 @@ kalP2PIndicateBssInfo(struct GLUE_INFO *prGlueInfo,
 		}
 
 		prChannelEntry =
-			kalP2pFuncGetChannelEntry(prGlueP2pInfo,
+			kalP2pFuncGetChannelEntry(prGlueInfo,
+				prGlueP2pInfo,
 				prChannelInfo);
 
 		if (prChannelEntry == NULL) {
@@ -2059,13 +2063,14 @@ u_int8_t kalP2pFuncGetChannelType(enum ENUM_CHNL_EXT rChnlSco,
 }				/* kalP2pFuncGetChannelType */
 
 struct ieee80211_channel *kalP2pFuncGetChannelEntry(
+		struct GLUE_INFO *prGlueInfo,
 		struct GL_P2P_INFO *prP2pInfo,
 		struct RF_CHANNEL_INFO *prChannelInfo)
 {
 	struct ieee80211_channel *prTargetChannelEntry =
 		(struct ieee80211_channel *)NULL;
 	uint32_t u4TblSize = 0, u4Idx = 0;
-	struct wiphy *wiphy = wlanGetWiphy();
+	struct wiphy *wiphy = GLUE_GET_WIPHY(prGlueInfo);
 
 	if ((prP2pInfo == NULL) ||
 		(prChannelInfo == NULL) ||
@@ -3111,18 +3116,21 @@ void kalP2pChnlSwitchNotifyWork(struct work_struct *work)
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
 		CONTAINER_OF(work, struct GL_CH_SWITCH_WORK,
 			rChSwitchNotifyWork);
-	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 
-	if (!prGlueInfo ||
-		prGlueInfo->u4ReadyFlag == 0) {
+	prBssInfo =
+		CONTAINER_OF(prWorkContainer, struct BSS_INFO, rGlChSwitchWork);
+	prAdapter = (struct ADAPTER *)
+		((int8_t *) (prBssInfo - prBssInfo->ucBssIndex) -
+		OFFSET_OF(struct ADAPTER, aprBssInfo));
+
+	if (!prAdapter ||
+		!prAdapter->prGlueInfo ||
+		prAdapter->prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
-	prAdapter = prGlueInfo->prAdapter;
-	prBssInfo =
-		CONTAINER_OF(prWorkContainer, struct BSS_INFO, rGlChSwitchWork);
 
 	__kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
 }
@@ -3463,7 +3471,6 @@ void kalSetRilBridgeChannelInfo(
 	} while (FALSE);
 }
 
-static int g_init_ril_notifier;
 static int kalIdcRilNotifier(
 	struct notifier_block *nb,
 	unsigned long size,
@@ -3473,17 +3480,24 @@ static int kalIdcRilNotifier(
 	struct CP_NOTI_INFO *cmd;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	if (!g_init_ril_notifier) {
-		DBGLOG(INIT, ERROR,
-			"Not init ril notifier\n");
+	if (!nb) {
+		DBGLOG(INIT, WARN, "notifier_block invalid!!\n");
 		return NOTIFY_DONE;
 	}
 
-	prGlueInfo = wlanGetGlueInfo();
+	prGlueInfo = CONTAINER_OF(nb,
+				struct GLUE_INFO, ril_notifier_block);
+
 	if (!prGlueInfo ||
 		!prGlueInfo->prAdapter) {
 		DBGLOG(INIT, WARN,
 			   "prGlueInfo invalid!!\n");
+		return NOTIFY_DONE;
+	}
+
+	if (!prGlueInfo->init_ril_notifier) {
+		DBGLOG(INIT, WARN,
+			"Not init ril notifier\n");
 		return NOTIFY_DONE;
 	}
 
@@ -3522,10 +3536,6 @@ static int kalIdcRilNotifier(
 }
 #endif
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
-static struct notifier_block g_ril_notifier_block = {
-	.notifier_call = kalIdcRilNotifier,
-};
-
 void kalIdcGetRilInfo(void)
 {
 	int val = 1;
@@ -3537,26 +3547,41 @@ void kalIdcGetRilInfo(void)
 		sizeof(int), &val);
 }
 
-void kalIdcRegisterRilNotifier(void)
+void kalIdcRegisterRilNotifier(struct GLUE_INFO *prGlueInfo)
 {
-	if (!g_init_ril_notifier) {
+	struct notifier_block *prNotifier = NULL;
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prNotifier = &prGlueInfo->ril_notifier_block;
+	prNotifier->notifier_call = kalIdcRilNotifier;
+
+	if (!prGlueInfo->init_ril_notifier) {
 		DBGLOG(INIT, INFO, "Register RIL Notifier\n");
 
 		register_dev_ril_bridge_event_notifier(
-			&g_ril_notifier_block);
+			prNotifier);
 
 		kalIdcGetRilInfo();
 
-		g_init_ril_notifier = 1;
+		prGlueInfo->init_ril_notifier = 1;
 	}
 }
 
-void kalIdcUnregisterRilNotifier(void)
+void kalIdcUnregisterRilNotifier(struct GLUE_INFO *prGlueInfo)
 {
-	if (!g_init_ril_notifier) {
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	if (!prGlueInfo->init_ril_notifier) {
 		unregister_dev_ril_bridge_event_notifier(
-			&g_ril_notifier_block);
-		g_init_ril_notifier = 0;
+			&prGlueInfo->ril_notifier_block);
+		prGlueInfo->init_ril_notifier = 0;
 		DBGLOG(INIT, INFO, "Unregister RIL Notifier\n");
 	}
 }
@@ -3593,7 +3618,7 @@ __kalP2pGetNl80211ChnlBw(struct RF_CHANNEL_INFO *prRfChnlInfo)
 void kalP2pStopApInterface(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
-	struct wiphy *wiphy = wlanGetWiphy();
+	struct wiphy *wiphy = NULL;
 	struct GL_P2P_INFO *prP2PInfo;
 	struct net_device *prNetdevice;
 	uint8_t ucRoleIdx;
@@ -3601,6 +3626,7 @@ void kalP2pStopApInterface(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prBssInfo)
 		return;
 
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	ucRoleIdx = prBssInfo->u4PrivateData;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
 

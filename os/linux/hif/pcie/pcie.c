@@ -377,7 +377,6 @@ static struct pci_driver mtk_pci_driver = {
 #endif
 };
 
-static struct GLUE_INFO *g_prGlueInfo;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 static u64 g_u8CsrOffset;
 static u32 g_u4CsrSize;
@@ -964,6 +963,8 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	pci_ers_result_t res = PCI_ERS_RESULT_NONE;
 	uint32_t dump = 0;
 	u_int8_t fgNeedReset = FALSE;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, INFO,
 		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
@@ -973,6 +974,13 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 
 	if (!pci_is_enabled(pdev)) {
 		DBGLOG(HAL, INFO, "pcie is disable\n");
+		goto exit;
+	}
+
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo not found\n");
 		goto exit;
 	}
 
@@ -1036,7 +1044,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		if (dump & BIT(10)) {
 			DBGLOG(HAL, ERROR, "pcie SDES detected.\n");
 			g_AERRstTriggered = TRUE;
-			kalSetHifAerResetEvent(g_prGlueInfo);
+			kalSetHifAerResetEvent(prGlueInfo);
 		}
 	}
 
@@ -1061,14 +1069,22 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 #define AER_RST_STR_RXERR		"Whole chip reset by AER - RxErr"
 #define AER_RSN_SIZE			50
 
-	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	static char aucAerRsn[AER_RSN_SIZE];
 	uint32_t pos = 0;
 	char *reason = NULL;
 	enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason;
+	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, L05_rst: %d\n",
 		g_AERL05Rst);
+
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "Device not found\n");
+		return -1;
+	}
 
 	kalMemZero(aucAerRsn, AER_RSN_SIZE);
 	pos = kalScnprintf(aucAerRsn, AER_RSN_SIZE, AER_RST_STR);
@@ -1104,9 +1120,12 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 
 static void mtk_pci_error_resume(struct pci_dev *pdev)
 {
-	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
+
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
 
 	if (!prGlueInfo)
 		return;
@@ -1546,11 +1565,15 @@ static void mtk_wifi_misc_remove(struct platform_device *pdev)
 #if (CFG_CONTROL_ASPM_BY_FW == 1) && (CFG_SUPPORT_PCIE_ASPM == 1)
 static void mtk_pci_setup_aspm(struct pci_dev *pdev)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	u_int8_t fgKeepL0 = FALSE;
+	struct device *prDev = &pdev->dev;
 
-	if (g_prGlueInfo &&
-	    g_prGlueInfo->prAdapter &&
-	    g_prGlueInfo->prAdapter->rWifiVar.fgPcieEnableL1ss == 0)
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
+
+	if (prGlueInfo &&
+	    prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->rWifiVar.fgPcieEnableL1ss == 0)
 		fgKeepL0 = TRUE;
 
 	glBusConfigASPM(pdev, DISABLE_ASPM_L1);
@@ -1907,10 +1930,12 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t drv_own_fail = FALSE;
 	int ret;
+	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, STATE, "mtk_pci_suspend()\n");
 
-	prGlueInfo = g_prGlueInfo;
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
+
 	if (!prGlueInfo) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
 		return -1;
@@ -2076,10 +2101,12 @@ int mtk_pci_resume(struct pci_dev *pdev)
 #if CFG_SUPPORT_WED_PROXY
 	uint32_t ret;
 #endif
+	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, STATE, "mtk_pci_resume()\n");
 
-	prGlueInfo = g_prGlueInfo;
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
+
 	if (!prGlueInfo) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
 		return -1;
@@ -2276,8 +2303,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHif->pdev = (struct pci_dev *)ulCookie;
 	prHif->prDmaDev = prHif->pdev;
-
-	g_prGlueInfo = prGlueInfo;
 
 	pdev = prChipInfo->platform_device;
 	if (pdev)
@@ -3449,6 +3474,8 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct device *prDev = &pdev->dev;
 	int state = 0;
 
 	if (pdev == NULL)
@@ -3456,6 +3483,7 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 
 	glGetChipInfo((void **)&prChipInfo);
 	prBusInfo = prChipInfo->bus_info;
+	prGlueInfo = wlanDevGetGlueInfo(prDev);
 
 	state = mtk_pcie_soft_on(pdev->bus);
 	if (state)
@@ -3466,8 +3494,8 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 
 	pci_restore_state(pdev);
 
-	if (g_prGlueInfo && prBusInfo->initPcieInt)
-		prBusInfo->initPcieInt(g_prGlueInfo);
+	if (prGlueInfo && prBusInfo->initPcieInt)
+		prBusInfo->initPcieInt(prGlueInfo);
 
 	DBGLOG(HAL, LOUD, "done\n");
 	return state;

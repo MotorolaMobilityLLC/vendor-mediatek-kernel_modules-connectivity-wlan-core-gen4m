@@ -83,16 +83,10 @@ static IST_EVENT_FUNCTION apfnEventFuncTable[] = {
 	nicProcessRxInterrupt,	/*!< INT_EVENT_RX       */
 };
 
-struct ECO_INFO g_eco_info = {0xFF};
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-#if defined(_HIF_USB)
-struct TIMER rSerSyncTimer = {
-	.rLinkEntry = {0}
-};
-#endif
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -6017,36 +6011,57 @@ void nicApplyLinkAddress(struct ADAPTER *prAdapter,
 }
 
 #if 1
-uint8_t nicGetChipHwVer(void)
+uint8_t nicGetChipHwVer(struct ADAPTER *prAdapter)
 {
-	return g_eco_info.ucHwVer;
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+
+	return prAdapter->prGlueInfo->eco_info.ucHwVer;
 }
 
-uint8_t nicGetChipSwVer(void)
+uint8_t nicGetChipSwVer(struct ADAPTER *prAdapter)
 {
-	return g_eco_info.ucRomVer;
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+
+	return prAdapter->prGlueInfo->eco_info.ucRomVer;
 }
 
-uint8_t nicGetChipFactoryVer(void)
+uint8_t nicGetChipFactoryVer(struct ADAPTER *prAdapter)
 {
-	return g_eco_info.ucFactoryVer;
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+
+	return prAdapter->prGlueInfo->eco_info.ucFactoryVer;
 }
 
-uint8_t nicSetChipHwVer(uint8_t value)
+uint8_t nicSetChipHwVer(struct ADAPTER *prAdapter, uint8_t value)
 {
-	g_eco_info.ucHwVer = value;
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+
+	prAdapter->prGlueInfo->eco_info.ucHwVer = value;
+
 	return 0;
 }
 
-uint8_t nicSetChipSwVer(uint8_t value)
+uint8_t nicSetChipSwVer(struct ADAPTER *prAdapter, uint8_t value)
 {
-	g_eco_info.ucRomVer = value;
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+
+	prAdapter->prGlueInfo->eco_info.ucRomVer = value;
+
 	return 0;
 }
 
-uint8_t nicSetChipFactoryVer(uint8_t value)
+uint8_t nicSetChipFactoryVer(struct ADAPTER *prAdapter, uint8_t value)
 {
-	g_eco_info.ucFactoryVer = value;
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+
+	prAdapter->prGlueInfo->eco_info.ucFactoryVer = value;
+
 	return 0;
 }
 
@@ -6074,9 +6089,9 @@ uint8_t nicGetChipEcoVer(struct ADAPTER *prAdapter)
 	uint8_t ucEcoVer;
 	uint8_t ucCurSwVer, ucCurHwVer, ucCurFactoryVer;
 
-	ucCurSwVer = nicGetChipSwVer();
-	ucCurHwVer = nicGetChipHwVer();
-	ucCurFactoryVer = nicGetChipFactoryVer();
+	ucCurSwVer = nicGetChipSwVer(prAdapter);
+	ucCurHwVer = nicGetChipHwVer(prAdapter);
+	ucCurFactoryVer = nicGetChipFactoryVer(prAdapter);
 
 	ucEcoVer = 0;
 
@@ -6271,7 +6286,7 @@ void nicSerTimerHandler(struct ADAPTER *prAdapter,
 {
 	halSerSyncTimerHandler(prAdapter);
 	cnmTimerStartTimer(prAdapter,
-		&rSerSyncTimer,
+		&prAdapter->rSerSyncTimer,
 		WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
 }
 #endif
@@ -6304,12 +6319,12 @@ void nicSerInit(struct ADAPTER *prAdapter, const u_int8_t bAtResetFlow)
 	if (prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
 		if (!bAtResetFlow) {
 			cnmTimerInitTimer(prAdapter,
-					  &rSerSyncTimer,
+					  &prAdapter->rSerSyncTimer,
 			      (PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
 					  (uintptr_t) NULL);
 		}
 		cnmTimerStartTimer(prAdapter,
-				   &rSerSyncTimer,
+				   &prAdapter->rSerSyncTimer,
 				   WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
 	}
 #endif /* _HIF_USB */
@@ -6323,7 +6338,7 @@ void nicSerDeInit(struct ADAPTER *prAdapter)
 #endif
 
 #if defined(_HIF_USB)
-	cnmTimerStopTimer(prAdapter, &rSerSyncTimer);
+	cnmTimerStopTimer(prAdapter, &prAdapter->rSerSyncTimer);
 #endif
 }
 /* fos_change begin */
