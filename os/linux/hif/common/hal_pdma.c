@@ -2716,8 +2716,18 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 	if (!RX_GET_FREE_RFB_CNT(prRxCtrl)) {
-		DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u], Ind=%u\n",
-				u4Port, RX_GET_INDICATED_RFB_CNT(prRxCtrl));
+		DBGLOG_LIMITED(RX, WARN,
+			"No More RFB for P[%u], Rfb[%u/%u/%u/%u/%u/%u/%u/%u/%u]\n",
+			u4Port,
+			RX_GET_FREE_RFB_CNT(prRxCtrl),
+			RX_GET_HIF_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_REORDERING_TOTAL_CNT(prGlueInfo->prAdapter),
+			RX_GET_PENDING_RFB_CNT(prGlueInfo->prAdapter),
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
+			kalGetRxFifoCount(prGlueInfo),
+			CFG_RX_MAX_PKT_NUM);
 #if CFG_RFB_RECOVERY
 		kalRxRFBFailRecoveryCheck(prGlueInfo);
 #endif
@@ -2725,6 +2735,10 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		goto end;
 	}
 
+#if CFG_RFB_RECOVERY
+	if (prRxCtrl->u4CheckRFBFailTime)
+		prRxCtrl->u4CheckRFBFailTime = 0;
+#endif
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prGlueInfo, u4Port);
 
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
