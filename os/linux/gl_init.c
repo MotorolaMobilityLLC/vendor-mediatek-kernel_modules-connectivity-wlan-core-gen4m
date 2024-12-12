@@ -7852,6 +7852,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	rlmDomainAntGainInit(prAdapter);
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+
 #if (CFG_VOLT_INFO == 1)
 	kalVnfInit(prAdapter);
 	kalVnfActive(prAdapter);

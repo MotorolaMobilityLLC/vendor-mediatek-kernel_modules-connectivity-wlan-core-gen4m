@@ -13379,7 +13379,12 @@ void rlmTxPwrEnvMaxPwrUpdateArbi(
 		ucNum = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
 
 	for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20; eBwType < ucNum; eBwType++) {
-		if (picTarget[eBwType] > picCompare[eBwType]) {
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+		if (picTarget[eBwType] != picCompare[eBwType])
+#else  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 0*/
+		if (picTarget[eBwType] > picCompare[eBwType])
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+		{
 			picTarget[eBwType] = picCompare[eBwType];
 			*pfgIsChange = TRUE;
 		}
@@ -13441,6 +13446,16 @@ void rlmTxPwrEnvMaxPwrSend(
 	/* Sanity check for null pointer */
 	if (picTxPwrEnvMaxPwr == NULL)
 		return;
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+		return rlmSendTpeLimit(
+				prAdapter,
+				eBand,
+				ucPriCh,
+				ucPwrLmtNum,
+				picTxPwrEnvMaxPwr,
+				fgPwrLmtEnable);
+#endif  /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1 */
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdSize);
 	if (!prCmd) {
@@ -13608,6 +13623,15 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		return WLAN_STATUS_SUCCESS;
 	}
 
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	if (prBssDesc->e6GPwrMode > PWR_MODE_6G_SP) {
+		DBGLOG(RLM, TRACE,
+			"Skip TxPwrEnv update,PwrMode[%d]\n",
+			prBssDesc->e6GPwrMode);
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+
 	rlmTxPwrEnvMaxPwrInit(aicTxPwrEnvMaxTxPwr);
 
 	ucTxPwrEnvIntrpt
@@ -13661,7 +13685,7 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
 			eBwType < ucPwrLmtNum; eBwType++) {
 			DBGLOG(RLM, TRACE,
-				"Parse TPE,Band[%d]Itpt[%d]BW[%d]Lmt\n",
+				"Parse TPE,Band[%d]Itpt[%d]BW[%d]Lmt[%d]\n",
 				eHwBand,
 				ucTxPwrEnvIntrpt,
 				eBwType,
@@ -13676,7 +13700,8 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		if (ucPwrLmtNum > prBssDesc->ucTxPwrEnvPwrLmtNum)
 			prBssDesc->ucTxPwrEnvPwrLmtNum = ucPwrLmtNum;
 
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1) && \
+(CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 0)
 		if (eHwBand == BAND_6G) {
 			rlmTxPwrEnv6GPwrModeHdler(
 				prAdapter,
@@ -13684,7 +13709,7 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 				ucPwrLmtNum,
 				aicTxPwrEnvMaxTxPwr);
 		}
-#endif
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 		/* Set minimum TxPower limit */
 		rlmTxPwrEnvMaxPwrUpdateArbi(
 			prAdapter,

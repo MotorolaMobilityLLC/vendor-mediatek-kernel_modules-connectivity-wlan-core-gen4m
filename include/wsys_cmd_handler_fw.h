@@ -2263,8 +2263,74 @@ enum ENUM_TX_POWER_LIMIT_PER_RATE_CMD_FORMAT_T {
 	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_ANT_SAR = 1,
 	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_1SS_1T = 2,
 	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_LEGACY = 3,
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_VLP = 4,
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_TPE = 5,
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_END
 };
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+#define SINGLE_SKU_SECTION_NUM 35
+struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_VLP {
+	uint8_t u1CentralCh;
+	int8_t i1PwrLimit[SINGLE_SKU_SECTION_NUM];
+};
+
+struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP {
+	/* DWORD_0 - Common info*/
+	uint8_t ucCmdVer;
+	uint8_t aucPadding0[1];
+	uint16_t u2CmdLen;
+
+	/* DWORD_1 - CMD hint*/
+	uint8_t ucNum; /* channel #*/
+	uint8_t eBand; /* 2.4g or 5g*/
+	uint8_t bCmdFinished;
+	/* hint for whether 2.4g/5g tx power limit value all be sent*/
+	uint8_t eLimitType; /* aucPadding1[1]; */
+
+	/* DWORD_2 - Country code*/
+	uint32_t u4CountryCode;
+
+	/* WORD_3 ~ 10 - Padding*/
+	uint8_t aucPadding2[32];
+
+	/* DWORD_11 ~ - Tx power limit values*/
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_VLP rChannelPowerLimit[];
+};
+
+struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_ENV {
+	uint8_t fgPwrLmtEnable;
+	uint8_t ucBand;
+	uint8_t ucPriCh;
+	uint8_t ucPwrLmtNum;
+	int8_t acMaxTxPwrLmt[MAX_ANTENNA_NUM][TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+};
+
+struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_ENV {
+	/* DWORD_0 - Common info*/
+	uint8_t ucCmdVer;
+	uint8_t aucPadding0[1];
+	uint16_t u2CmdLen;
+
+	/* DWORD_1 - CMD hint*/
+	uint8_t ucNum; /* channel #*/
+	uint8_t eBand; /* 2.4g or 5g*/
+	uint8_t bCmdFinished;
+	/* hint for whether 2.4g/5g tx power limit value all be sent*/
+	uint8_t eLimitType; /* aucPadding1[1]; */
+
+	/* DWORD_2 - Country code*/
+	uint32_t u4CountryCode;
+
+	/* WORD_3 ~ 10 - Padding*/
+	uint8_t aucPadding2[32];
+
+	/* DWORD_11 ~ - Tx power limit values*/
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_ENV rTxPowerEnvLimit;
+};
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 
 struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE {
 	/* DWORD_0 - Common info*/

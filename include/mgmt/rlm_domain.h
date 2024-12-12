@@ -1183,6 +1183,47 @@ struct mtk_regd_control {
 	enum ENUM_MBMC_BN eDBDCBand;
 };
 
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+#define WLAN_ANT_GAIN_FILE_BUF_SIZE (2048)
+
+#define POWER_LIMIT_G_BAND_CH_GROUP_0_START   1
+#define POWER_LIMIT_G_BAND_CH_GROUP_0_END    14
+
+#define POWER_LIMIT_A_BAND_CH_GROUP_1_START  36
+#define POWER_LIMIT_A_BAND_CH_GROUP_1_END    50
+#define POWER_LIMIT_A_BAND_CH_GROUP_2_START  52
+#define POWER_LIMIT_A_BAND_CH_GROUP_2_END    64
+#define POWER_LIMIT_A_BAND_CH_GROUP_3_START 100
+#define POWER_LIMIT_A_BAND_CH_GROUP_3_END   144
+#define POWER_LIMIT_A_BAND_CH_GROUP_4_START 149
+#define POWER_LIMIT_A_BAND_CH_GROUP_4_END   181
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define POWER_LIMIT_6G_BAND_CH_GROUP_1_START   1
+#define POWER_LIMIT_6G_BAND_CH_GROUP_1_END    29
+#define POWER_LIMIT_6G_BAND_CH_GROUP_2_START  33
+#define POWER_LIMIT_6G_BAND_CH_GROUP_2_END    61
+#define POWER_LIMIT_6G_BAND_CH_GROUP_3_START  65
+#define POWER_LIMIT_6G_BAND_CH_GROUP_3_END    95
+#define POWER_LIMIT_6G_BAND_CH_GROUP_4_START  97
+#define POWER_LIMIT_6G_BAND_CH_GROUP_4_END   113
+#define POWER_LIMIT_6G_BAND_CH_GROUP_5_START 117
+#define POWER_LIMIT_6G_BAND_CH_GROUP_5_END   185
+#define POWER_LIMIT_6G_BAND_CH_GROUP_6_START 189
+#define POWER_LIMIT_6G_BAND_CH_GROUP_6_END   233
+#endif /* (CFG_SUPPORT_WIFI_6G == 1) */
+
+enum ENUM_POWER_ANT_GAIN_GROUP {
+	POWER_ANT_GAIN_GROUP_1 = 0,
+	POWER_ANT_GAIN_GROUP_2,
+	POWER_ANT_GAIN_GROUP_3,
+	POWER_ANT_GAIN_GROUP_4,
+	POWER_ANT_GAIN_GROUP_5,
+	POWER_ANT_GAIN_GROUP_6,
+	POWER_ANT_GAIN_GROUP_NUM
+};
+#endif /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 struct mtk_regdomain {
 	char country_code[4];
@@ -1572,6 +1613,24 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
 	uint8_t *pfgSupport);
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+uint32_t rlmDomainUpdatePwrLimit_6G_By_PowerMode(struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE ePwrMode6G);
+bool rlmDomainAntGainInit(
+	struct ADAPTER *prAdapter);
+uint32_t rlmDomainAntGainGetGroupGain(
+	uint8_t ucPriCh,
+	enum ENUM_BAND eBand,
+	int8_t *acAntGain);
+void rlmSendTpeLimit(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t ucPwrLmtNum,
+	int8_t *pcTxPwrEnvMaxPwr,
+	uint8_t fgPwrLmtEnable);
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 /*******************************************************************************
  *   F U N C T I O N S
  *******************************************************************************

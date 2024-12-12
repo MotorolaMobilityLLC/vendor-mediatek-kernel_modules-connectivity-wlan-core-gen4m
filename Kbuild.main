@@ -1966,6 +1966,12 @@ else
     ccflags-y += -DCFG_SUPPORT_TX_PWR_ENV=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_CE_6G_PWR_REGULATIONS), y)
+     ccflags-y += -DCFG_SUPPORT_CE_6G_PWR_REGULATIONS=1
+else
+     ccflags-y += -DCFG_SUPPORT_CE_6G_PWR_REGULATIONS=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ifeq ($(CONFIG_MTK_WIFI_6G_SUPPORT), y)
         ifeq ($(CONFIG_MTK_WIFI_SUPPORT_6G_PWR_MODE), y)

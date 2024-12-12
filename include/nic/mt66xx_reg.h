@@ -1626,6 +1626,10 @@ struct mt66xx_chip_info {
 #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
 	char *prTxPwrLimit6G1ss1tFile;
 #endif
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	char *prTxPwrLimit6GVlpFile;
+	char *prTxPwrLimit6GSpFile;
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 #endif
 	uint8_t ucTxPwrLimitBatchSize;
 	u_int8_t is_support_asic_lp;

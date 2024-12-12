@@ -1955,6 +1955,14 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Flags of Tx Power Envelope
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_CE_6G_PWR_REGULATIONS
+#define CFG_SUPPORT_CE_6G_PWR_REGULATIONS 0
+#endif
+
+/*------------------------------------------------------------------------------
  * Single Sku
  *------------------------------------------------------------------------------
  */
@@ -1983,7 +1991,7 @@
 #endif
 
 #ifndef CFG_SUPPORT_SINGLE_SKU_6G_1SS1T
-#define CFG_SUPPORT_SINGLE_SKU_6G_1SS1T 1
+#define CFG_SUPPORT_SINGLE_SKU_6G_1SS1T 0
 #endif
 
 #ifndef CFG_SUPPORT_BW160

@@ -1411,6 +1411,37 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 	}
 };
 
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+#define TX_PWR_ANT_GAIN_ELEMENT_NUM	(2)
+#define TX_PWR_ANT_GAIN_GROUP_NUM	(6)
+
+struct TX_PWR_ANT_GAIN_GROUP {
+	// Group number
+	uint8_t ucGroup;
+	// Antenna gain for each group
+	int8_t rTxPwrAntGainValue[BAND_NUM - 1][TX_PWR_ANT_GAIN_ELEMENT_NUM];
+};
+
+struct TX_PWR_ANT_GAIN_DATA {
+	// Total group number
+	uint8_t ucGroupNum;
+	// Total antenna gain for all group
+	struct TX_PWR_ANT_GAIN_GROUP *rAntGainGroup;
+};
+
+struct TX_PWR_ANT_GAIN_GROUP
+	g_TxPwrAntGainGroupData[TX_PWR_ANT_GAIN_GROUP_NUM] = {0};
+struct TX_PWR_ANT_GAIN_DATA g_TxPwrAntGainData;
+
+const struct TX_PWR_ANT_GAIN_SECTION {
+	uint8_t ucSectionNum;
+	const char *arSectionNames[3];
+} gTx_Pwr_Ant_Gain_Section = {
+	3,
+	{"ant_gain_2g", "ant_gain_5g", "ant_gain_6g"}
+};
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+
 #if (CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1)
 struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 
@@ -6514,7 +6545,7 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData,
 	enum ENUM_TX_POWER_LIMIT_PER_RATE_CMD_FORMAT_T eLimitType
-	)
+)
 {
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prTxPwrLimitPerRateCmd_6G;
@@ -6568,7 +6599,757 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 		u4SetCmdTableMaxSize);
 
 }
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+void rlmDomainTxPwrLimitVlpSetChValues(
+	uint8_t ucVersion,
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_VLP *pCmd,
+	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit)
+{
+	uint16_t section = 0, count = 0;
+
+	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++) {
+		if (rlmDomainTxPwrLimitIsTxBfBackoffSection(ucVersion, section))
+			continue;
+		pCmd->i1PwrLimit[count] =
+			pChTxPwrLimit->rTxPwrLimitValue[section][0];
+		count++;
+	}
+
+	DBGLOG(RLM, TRACE, "ch %d\n", pCmd->u1CentralCh);
+	count = 0;
+	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++) {
+		struct TX_PWR_LIMIT_SECTION *pSection =
+			&gTx_Pwr_Limit_Section[ucVersion];
+		if (rlmDomainTxPwrLimitIsTxBfBackoffSection(ucVersion, section))
+			continue;
+		DBGLOG(RLM, TRACE, "TxPwrLimit[%s]= %d\n",
+			pSection->arSectionNames[section],
+			pCmd->i1PwrLimit[count]);
+		count++;
+	}
+}
+
+void rlmDomainTxPwrLimitVlpSetValues(
+	uint8_t ucVersion,
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP *pSetCmd,
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
+{
+	uint8_t ucIdx = 0;
+	int8_t cChIdx = 0;
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_VLP *pChPwrLimit = NULL;
+	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit = NULL;
+
+	if (pSetCmd == NULL) {
+		DBGLOG(RLM, ERROR, "%s pSetCmd is NULL\n", __func__);
+		return;
+	}
+
+	for (ucIdx = 0; ucIdx < pSetCmd->ucNum; ucIdx++) {
+		pChPwrLimit = &(pSetCmd->rChannelPowerLimit[ucIdx]);
+		cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit,
+			pChPwrLimit->u1CentralCh);
+
+		if (cChIdx == -1) {
+			DBGLOG(RLM, ERROR,
+				"Invalid ch idx found while assigning values\n");
+			continue;
+		}
+		pChTxPwrLimit = &pTxPwrLimit->rChannelTxPwrLimit[cChIdx];
+		rlmDomainTxPwrLimitVlpSetChValues(ucVersion,
+			pChPwrLimit, pChTxPwrLimit);
+	}
+}
+
+void rlmDomainTxPwrLimitSendVlpCmd(
+	struct ADAPTER *prAdapter,
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP *prCmd
+)
+{
+	uint32_t rStatus;
+	uint32_t u4SetQueryInfoLen;
+	uint32_t u4SetCountryTxPwrLimitCmdSize =
+		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP);
+	uint32_t u4ChPwrLimitSize =
+		sizeof(struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_VLP);
+	const uint8_t ucCmdBatchSize =
+		prAdapter->chip_info->ucTxPwrLimitBatchSize;
+
+	uint8_t ucRemainChNum, i, ucTempChNum, prCmdBatchNum;
+	uint32_t u4BufSize = 0;
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP
+		*prTempCmd = NULL;
+	enum ENUM_BAND eBand = 0x3;
+	uint16_t u2ChIdx = 0;
+	u_int8_t bCmdFinished = FALSE;
+
+	if (!prCmd) {
+		DBGLOG(RLM, ERROR, "%s: prCmd is NULL\n", __func__);
+		return;
+	}
+
+	ucRemainChNum = prCmd->ucNum;
+	prCmdBatchNum = (ucRemainChNum +
+			ucCmdBatchSize - 1) /
+			ucCmdBatchSize;
+
+	for (i = 0; i < prCmdBatchNum; i++) {
+		if (i == prCmdBatchNum - 1) {
+			ucTempChNum = ucRemainChNum;
+			bCmdFinished = TRUE;
+		} else {
+			ucTempChNum = ucCmdBatchSize;
+		}
+
+		u4BufSize = u4SetCountryTxPwrLimitCmdSize +
+			ucTempChNum * u4ChPwrLimitSize;
+
+		prTempCmd =
+			cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF, u4BufSize);
+
+		if (!prTempCmd) {
+			DBGLOG(RLM, ERROR,
+				"%s: no buf to send cmd\n", __func__);
+			return;
+		}
+
+		/*copy partial tx pwr limit*/
+		prTempCmd->ucNum = ucTempChNum;
+		prTempCmd->eBand = eBand;
+		prTempCmd->u4CountryCode =
+			rlmDomainGetCountryCode();
+
+		prTempCmd->eLimitType = prCmd->eLimitType;
+
+		prTempCmd->bCmdFinished = bCmdFinished;
+		u2ChIdx = i * ucCmdBatchSize;
+		kalMemCopy(
+			&prTempCmd->rChannelPowerLimit[0],
+			&prCmd->rChannelPowerLimit[u2ChIdx],
+			ucTempChNum * u4ChPwrLimitSize);
+
+		u4SetQueryInfoLen = u4BufSize;
+		/* Update tx max. power info to chip */
+
+		rStatus = wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			u4SetQueryInfoLen,
+			(uint8_t *) prTempCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prTempCmd);
+
+		ucRemainChNum -= ucTempChNum;
+	}
+}
+
+void
+rlmDomainSendTxPwrLimitVlpCmd(struct ADAPTER *prAdapter,
+	uint8_t ucVersion,
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData,
+	enum ENUM_TX_POWER_LIMIT_PER_RATE_CMD_FORMAT_T eLimitType
+	)
+{
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP
+		*prTxPwrLimitVlpCmd;
+
+
+	uint32_t u4SetCmdTableMaxSize = 0;
+	uint32_t u4SetCountryTxPwrLimitCmdSize =
+		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_VLP);
+	uint32_t u4ChPwrLimitSize =
+		sizeof(struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_VLP);
+	uint8_t ch_cnt = TX_PWR_LIMIT_6G_CH_NUM;
+	uint8_t ch_idx = 0;
+	const int8_t *prChannelList = &gTx_Pwr_Limit_6g_Ch[0];
+
+	u4SetCmdTableMaxSize = u4SetCountryTxPwrLimitCmdSize +
+	ch_cnt * u4ChPwrLimitSize;
+
+	prTxPwrLimitVlpCmd =
+	kalMemAlloc(u4SetCmdTableMaxSize, VIR_MEM_TYPE);
+
+	if (!prTxPwrLimitVlpCmd) {
+		DBGLOG(RLM, ERROR,
+		"%s no buf to send cmd\n", __func__);
+		return;
+	}
+
+	/*initialize tx pwr table*/
+	kalMemSet(prTxPwrLimitVlpCmd->rChannelPowerLimit, MAX_TX_POWER,
+		ch_cnt * u4ChPwrLimitSize);
+
+	prTxPwrLimitVlpCmd->ucNum = ch_cnt;
+	prTxPwrLimitVlpCmd->eBand = 0x3;  /* replace 0x3 with macro */
+	prTxPwrLimitVlpCmd->u4CountryCode = rlmDomainGetCountryCode();
+	prTxPwrLimitVlpCmd->eLimitType = eLimitType;
+
+	for (ch_idx = 0; ch_idx < ch_cnt; ch_idx++) {
+		prTxPwrLimitVlpCmd->rChannelPowerLimit[ch_idx].u1CentralCh =
+		prChannelList[ch_idx];
+	}
+
+	/* fill to whole cmd buffer */
+	rlmDomainTxPwrLimitVlpSetValues(ucVersion,
+		prTxPwrLimitVlpCmd,
+		pTxPwrLimitData);
+
+	/* separate single cmd to several cmds due to max cmd size  */
+	rlmDomainTxPwrLimitSendVlpCmd(prAdapter,
+		prTxPwrLimitVlpCmd);
+
+	kalMemFree(prTxPwrLimitVlpCmd, VIR_MEM_TYPE,
+		u4SetCmdTableMaxSize);
+
+}
+
+uint32_t rlmDomainUpdatePwrLimit_6G_By_PowerMode(struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE ePwrMode6G)
+{
+	uint32_t u4Ret = WLAN_STATUS_SUCCESS;
+	uint8_t ucVersion = 0;
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData = NULL;
+	char *prTxPwrLimit6GFile = NULL;
+
+	if (!prAdapter)
+		return WLAN_STATUS_INVALID_DATA;
+
+	pTxPwrLimitData = rlmDomainInitTxPwrLimitData_6G(prAdapter);
+
+	if (!pTxPwrLimitData) {
+		DBGLOG(RLM, ERROR,
+			"Init TxPwrLimitData 6G failed\n");
+		u4Ret = WLAN_STATUS_INVALID_DATA;
+		goto error;
+	}
+
+	/* Update Tx power limit */
+	if (ePwrMode6G == PWR_MODE_6G_SP)
+		prTxPwrLimit6GFile =
+		prAdapter->chip_info->prTxPwrLimit6GSpFile;
+	else if (ePwrMode6G == PWR_MODE_6G_LPI)
+		prTxPwrLimit6GFile =
+		prAdapter->chip_info->prTxPwrLimit6GFile;
+	else {
+		DBGLOG(RLM, ERROR,
+			"Invalid power mode for this API\n");
+		u4Ret = WLAN_STATUS_INVALID_DATA;
+		goto error;
+	}
+
+	if (!rlmDomainGetTxPwrLimit(
+		prTxPwrLimit6GFile,
+		rlmDomainGetCountryCode(),
+		&ucVersion,
+		prAdapter->prGlueInfo,
+		pTxPwrLimitData)) {
+		DBGLOG(RLM, ERROR,
+			"Load TxPwrLimitData6G failed\n");
+		u4Ret = WLAN_STATUS_FAILURE;
+		goto error;
+	}
+
+	/* Update Power table to FW */
+	if (ucVersion == 2 || ucVersion == 3) {
+		rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
+			ucVersion, pTxPwrLimitData,
+			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU);
+	} else
+		DBGLOG(RLM, ERROR,
+		"Unsupported TxPwrLimit6G dat file version %u\n",
+		ucVersion);
+
+error:
+	/* Finish and free memory */
+	if (pTxPwrLimitData && pTxPwrLimitData->rChannelTxPwrLimit)
+		kalMemFree(pTxPwrLimitData->rChannelTxPwrLimit,
+			VIR_MEM_TYPE,
+			sizeof(struct CHANNEL_TX_PWR_LIMIT) *
+			pTxPwrLimitData->ucChNum);
+
+	if (pTxPwrLimitData)
+		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
+			sizeof(struct TX_PWR_LIMIT_DATA));
+
+	return u4Ret;
+}
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+void rlmSendTpeLimit(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t ucPwrLmtNum,
+	int8_t *pcTxPwrEnvMaxPwr,
+	uint8_t fgPwrLmtEnable)
+{
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t u4SetQueryInfoLen = 0, u4BufSize = 0;
+	uint32_t u4SetTxPwrEnvLimitCmdSize =
+		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_ENV);
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_ENV *prTempCmd =
+		NULL;
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
+	int8_t acAntGain[TX_PWR_ANT_GAIN_ELEMENT_NUM] = {0};
+
+	if ((!prAdapter) || (!pcTxPwrEnvMaxPwr) || (!prAdapter->fgTpcEn))
+		return;
+
+	u4BufSize = u4SetTxPwrEnvLimitCmdSize;
+	prTempCmd = cnmMemAlloc(prAdapter,
+			RAM_TYPE_BUF, u4BufSize);
+
+	if (!prTempCmd) {
+		DBGLOG(RLM, ERROR,
+		"[%s] [RLM] Domain: no buf to send cmd\n", __func__);
+		goto err;
+	}
+
+	kalMemZero(prTempCmd, u4BufSize);
+	kalMemSet(prTempCmd->rTxPowerEnvLimit.acMaxTxPwrLmt,
+		MAX_TX_POWER,
+		sizeof(prTempCmd->rTxPowerEnvLimit.acMaxTxPwrLmt));
+
+	/*copy partial tx pwr limit*/
+	prTempCmd->ucNum = 1;
+	prTempCmd->eBand = (uint8_t)eBand;
+	prTempCmd->eLimitType = TXPWR_LIMIT_PER_RATE_CMD_FORMAT_TPE;
+	prTempCmd->bCmdFinished = true;
+	prTempCmd->rTxPowerEnvLimit.fgPwrLmtEnable = fgPwrLmtEnable;
+	prTempCmd->rTxPowerEnvLimit.ucBand = (uint8_t)eBand;
+	prTempCmd->rTxPowerEnvLimit.ucPriCh = ucPriCh;
+	prTempCmd->rTxPowerEnvLimit.ucPwrLmtNum = ucPwrLmtNum;
+	prTempCmd->u2CmdLen = (uint16_t)u4BufSize;
+	u4SetQueryInfoLen = u4BufSize;
+
+	// Get Antenna Gain value
+	rlmDomainAntGainGetGroupGain(ucPriCh, eBand, acAntGain);
+
+	/* Fill in CMD content */
+	for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+			eBwType < ucPwrLmtNum; eBwType++) {
+		prTempCmd->rTxPowerEnvLimit.acMaxTxPwrLmt[ANTENNA_WF0][eBwType]
+			= pcTxPwrEnvMaxPwr[eBwType] - acAntGain[ANTENNA_WF0];
+		prTempCmd->rTxPowerEnvLimit.acMaxTxPwrLmt[ANTENNA_WF1][eBwType]
+			= pcTxPwrEnvMaxPwr[eBwType] - acAntGain[ANTENNA_WF1];
+	}
+
+	DBGLOG(RLM, INFO, "[%d]Send_TPE, En[%u]Band[%u]Ch[%u]Num[%u]\n",
+		__LINE__,
+		prTempCmd->rTxPowerEnvLimit.fgPwrLmtEnable,
+		prTempCmd->rTxPowerEnvLimit.ucBand,
+		prTempCmd->rTxPowerEnvLimit.ucPriCh,
+		prTempCmd->rTxPowerEnvLimit.ucPwrLmtNum);
+
+	for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+			eBwType < TX_PWR_ENV_MAX_TXPWR_BW_NUM; eBwType++) {
+		DBGLOG(RLM, INFO,
+		"[%d][RLM]TPE_Bw[%u]Lmt[%d]Pwr0[%d]Pwr1[%d]Ant0[%d]Ant1[%d]\n",
+		__LINE__,
+		eBwType,
+		pcTxPwrEnvMaxPwr[eBwType],
+		prTempCmd->rTxPowerEnvLimit.acMaxTxPwrLmt[ANTENNA_WF0][eBwType],
+		prTempCmd->rTxPowerEnvLimit.acMaxTxPwrLmt[ANTENNA_WF1][eBwType],
+		acAntGain[ANTENNA_WF0],
+		acAntGain[ANTENNA_WF1]);
+	}
+
+	/* Update tx max. power info to chip */
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			u4SetQueryInfoLen,
+			(uint8_t *) prTempCmd,
+			NULL,
+			0);
+err:
+	cnmMemFree(prAdapter, prTempCmd);
+}
+
+u_int8_t rlmDomainAntGainLoadSetting(
+	uint8_t *pucBuf, uint32_t *pu4Pos, uint32_t u4BufEnd, int BandIdx,
+	struct TX_PWR_ANT_GAIN_DATA *pTxPwrAntGain)
+{
+	uint32_t u4TmpPos = *pu4Pos;
+	char cTmpChar = 0;
+	struct TX_PWR_ANT_GAIN_GROUP *prGroupAntGain = NULL;
+	u_int8_t bNeg = FALSE;
+	int8_t cLimitValue = 0;
+	uint8_t ucIdx = 0, cGroupIdx = 0, ucGroup = 0, ucSectionOffset = 0;
+	uint8_t ucElementNum = TX_PWR_ANT_GAIN_ELEMENT_NUM;
+
+	/* skip blank lines */
+	while (u4TmpPos < u4BufEnd) {
+		cTmpChar = (char)pucBuf[u4TmpPos];
+
+		if (cTmpChar == ' ' || cTmpChar == '\t' ||
+			cTmpChar == '\n' || cTmpChar == '\r') {
+			u4TmpPos++;
+			continue;
+		}
+
+		break;
+	}
+
+	/* current is at the location of 'g',
+	 * check remaining buf length for 'group'
+	 */
+	if (u4TmpPos + 7 >= u4BufEnd) {
+		DBGLOG(RLM, ERROR,
+			"Invalid location of group setting: %u/%u\n",
+			u4TmpPos, u4BufEnd);
+		return FALSE;
+	}
+
+	if ((pucBuf[u4TmpPos] == 'g') && (pucBuf[u4TmpPos+1] == 'r') &&
+		(pucBuf[u4TmpPos+2] == 'o') && (pucBuf[u4TmpPos+3] == 'u') &&
+		(pucBuf[u4TmpPos+4] == 'p')) {
+		/* group1 to group9 */
+		if (pucBuf[u4TmpPos+6] == ',') {
+			ucGroup = (pucBuf[u4TmpPos+5] - '0');
+			ucSectionOffset = 6;
+		} else if (pucBuf[u4TmpPos+7] == ',') {
+			/* group10 to group22 */
+			ucGroup = (pucBuf[u4TmpPos+5] - '0') * 10 +
+						(pucBuf[u4TmpPos + 6] - '0');
+			ucSectionOffset = 7;
+		} else {
+			/* Invalid format */
+			return FALSE;
+		}
+
+		DBGLOG(RLM, INFO,
+			"[%s] [RLM] ucGroup[%u] pucBuf[%c %c]\n",
+			__func__,
+			ucGroup,
+			pucBuf[u4TmpPos+5],
+			pucBuf[u4TmpPos+6]);
+	} else {
+		/* invalid format */
+		*pu4Pos = u4TmpPos;
+		DBGLOG(RLM, ERROR,
+			"[%s] [RLM] Invalid subband setting[%c %c]\n",
+			__func__, pucBuf[u4TmpPos], pucBuf[u4TmpPos + 1]);
+
+		/* goto next line */
+		while (*pu4Pos < u4BufEnd && pucBuf[*pu4Pos] != '\n')
+			(*pu4Pos)++;
+
+		return TRUE;
+	}
+
+	if ((ucGroup == 0) ||
+		(ucGroup > TX_PWR_ANT_GAIN_GROUP_NUM)) {
+		*pu4Pos = u4TmpPos;
+
+		DBGLOG(RLM, ERROR,
+			"[%s] [RLM] Invalid subband setting %u\n",
+			__func__,
+			ucGroup);
+
+		/* goto next line */
+		while (*pu4Pos < u4BufEnd && pucBuf[*pu4Pos] != '\n')
+			(*pu4Pos)++;
+
+		return TRUE;
+	}
+
+	cGroupIdx = (ucGroup - 1);
+
+	// Overwrite group number and get total group
+	pTxPwrAntGain->ucGroupNum = ucGroup;
+
+	// Get group array and set group number
+	prGroupAntGain = &pTxPwrAntGain->rAntGainGroup[cGroupIdx];
+	prGroupAntGain->ucGroup = cGroupIdx;
+
+	u4TmpPos += ucSectionOffset;
+
+	/* read the group antenna gain settings */
+	for (ucIdx = 0; ucIdx < ucElementNum; ucIdx++) {
+
+		/* skip blank and comma */
+		while (u4TmpPos < u4BufEnd) {
+			cTmpChar = (char)pucBuf[u4TmpPos];
+
+			if ((cTmpChar == ' ') ||
+				(cTmpChar == '\t') ||
+				(cTmpChar == ',')) {
+				u4TmpPos++;
+				continue;
+			}
+			break;
+		}
+
+		if (cTmpChar == '\n')
+			break;
+
+		if (u4TmpPos >= u4BufEnd) {
+			*pu4Pos = u4BufEnd;
+			DBGLOG(RLM, ERROR,
+				"Invalid location of ant_gain val: %u/%u\n",
+				u4TmpPos, u4BufEnd);
+			return FALSE;
+		}
+
+		bNeg = FALSE;
+
+		cTmpChar = (char)pucBuf[u4TmpPos];
+
+		if (cTmpChar == '-') {
+			bNeg = TRUE;
+			u4TmpPos++;
+		} else {
+			if ((cTmpChar == 'x') ||
+				(cTmpChar == 'X')) {
+				prGroupAntGain
+				  ->rTxPwrAntGainValue[BandIdx][ucIdx] = 0;
+				u4TmpPos++;
+				continue;
+			}
+		}
+
+		cLimitValue = 0;
+		while (u4TmpPos < u4BufEnd) {
+			cTmpChar = (char)pucBuf[u4TmpPos];
+
+			if (cTmpChar < '0' || cTmpChar > '9')
+				break;
+
+			cLimitValue = (cLimitValue * 10) + (cTmpChar - '0');
+			u4TmpPos++;
+		}
+
+		if (bNeg)
+			cLimitValue = -cLimitValue;
+
+		prGroupAntGain->rTxPwrAntGainValue[BandIdx][ucIdx] =
+			cLimitValue;
+
+		DBGLOG(RLM, ERROR,
+			"ucIdx[%u] AntGain[%d] cLimitValue[%d]\n",
+			ucIdx,
+			prGroupAntGain->rTxPwrAntGainValue[BandIdx][ucIdx],
+			cLimitValue);
+	}
+
+	*pu4Pos = u4TmpPos;
+	return TRUE;
+}
+
+u_int8_t rlmDomainAntGainLoad(
+	uint8_t *prFileName,
+	uint8_t *pucBuf,
+	uint32_t u4BufLen,
+	struct TX_PWR_ANT_GAIN_DATA *pTxPwrAntGainData)
+{
+	uint32_t u4Pos = 0;
+	enum ENUM_BAND eBand = BAND_NULL;
+	int Idx = 0;
+	const struct TX_PWR_ANT_GAIN_SECTION *prSection =
+		&gTx_Pwr_Ant_Gain_Section;
+
+	if ((!prFileName) || (!pucBuf) || (!pTxPwrAntGainData)) {
+		DBGLOG(RLM, ERROR, "[%d]Invalid parameter\n", __LINE__);
+		return FALSE;
+	}
+
+	for (eBand = BAND_2G4; eBand < BAND_NUM ; eBand++) {
+		Idx = eBand - 1;
+		if (!rlmDomainTxPwrLimitSearchSection(
+			prSection->arSectionNames[Idx],
+			pucBuf, &u4Pos, u4BufLen)) {
+			DBGLOG(RLM, ERROR,
+				"Can't find specified section %s in %s\n",
+				prSection->arSectionNames,
+				prFileName);
+			return FALSE;
+		}
+
+		DBGLOG(RLM, INFO, "Find specified section %s in %s\n",
+			prSection->arSectionNames[Idx],
+			prFileName);
+
+		while (!rlmDomainTxPwrLimitSectionEnd(pucBuf,
+			prSection->arSectionNames[Idx],
+			&u4Pos, u4BufLen) &&
+			u4Pos < u4BufLen) {
+			if (!rlmDomainAntGainLoadSetting(pucBuf,
+				&u4Pos, u4BufLen, Idx, pTxPwrAntGainData))
+				return FALSE;
+		}
+	}
+
+	return true;
+
+}
+
+bool rlmDomainAntGainInit(
+	struct ADAPTER *prAdapter)
+{
+	bool bRet = FALSE;
+	uint8_t arFileName[] = "TxPwrLimit_AntGain.dat";
+	uint8_t *pucConfigBuf = NULL;
+	uint32_t u4ConfigReadLen = 0;
+	struct TX_PWR_ANT_GAIN_DATA *pTxPwrAntGainData = NULL;
+	int i = 0, BandIdx = BAND_NULL;
+	struct TX_PWR_ANT_GAIN_GROUP *prAntGainGroup = NULL;
+
+	// Load AntGain file to configBuf
+	bRet = rlmDomainTxPwrLimitLoadFromFile(arFileName,
+		prAdapter, &pucConfigBuf, &u4ConfigReadLen);
+
+	if (bRet == FALSE)
+		goto error;
+
+	// Load Antenna gain table from configBuf to AntGainData
+	pTxPwrAntGainData = &g_TxPwrAntGainData;
+	pTxPwrAntGainData->rAntGainGroup = &g_TxPwrAntGainGroupData[0];
+	if (!rlmDomainAntGainLoad(arFileName,
+		pucConfigBuf, u4ConfigReadLen,
+		pTxPwrAntGainData)) {
+		bRet = FALSE;
+		goto error;
+	}
+
+	DBGLOG(RLM, INFO, "[%d][RLM]Ant_TotalGroup:%u, Read:%u\n",
+		__LINE__,
+		pTxPwrAntGainData->ucGroupNum,
+		u4ConfigReadLen);
+
+	for (i = 0; i < TX_PWR_ANT_GAIN_GROUP_NUM; i++) {
+		for (BandIdx = BAND_2G4; BandIdx < BAND_NUM; BandIdx++) {
+			prAntGainGroup = &pTxPwrAntGainData->rAntGainGroup[i];
+			DBGLOG(RLM, INFO, "[RLM]Ant_Group[%u]=[%d][%d]\n",
+			prAntGainGroup->ucGroup,
+			prAntGainGroup->rTxPwrAntGainValue[BandIdx - 1][0],
+			prAntGainGroup->rTxPwrAntGainValue[BandIdx - 1][1]);
+		}
+	}
+
+error:
+	if (pucConfigBuf)
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
+
+	return bRet;
+}
+
+uint32_t rlmDomainAntGetBandGrp(
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t *pu1BandGrp)
+{
+	if (!pu1BandGrp)  {
+		DBGLOG(RLM, ERROR, "[%d][RLM]Invalid data\n", __LINE__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	switch (eBand) {
+	case BAND_2G4:
+		*pu1BandGrp = POWER_ANT_GAIN_GROUP_1;
+		break;
+
+	case BAND_5G:
+	{
+		if (ucPriCh <= POWER_LIMIT_A_BAND_CH_GROUP_1_END)
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_1;
+		else if ((ucPriCh >= POWER_LIMIT_A_BAND_CH_GROUP_2_START)
+			&& (ucPriCh <= POWER_LIMIT_A_BAND_CH_GROUP_2_END))
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_2;
+		else if ((ucPriCh >= POWER_LIMIT_A_BAND_CH_GROUP_3_START)
+			&& (ucPriCh <= POWER_LIMIT_A_BAND_CH_GROUP_3_END))
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_3;
+		else if (ucPriCh >= POWER_LIMIT_A_BAND_CH_GROUP_4_START)
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_4;
+		else
+			return WLAN_STATUS_NOT_SUPPORTED;
+		break;
+	}
+
+	case BAND_6G:
+	{
+		if (ucPriCh <= POWER_LIMIT_6G_BAND_CH_GROUP_1_END)
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_1;
+		else if ((ucPriCh >= POWER_LIMIT_6G_BAND_CH_GROUP_2_START)
+			&& (ucPriCh <= POWER_LIMIT_6G_BAND_CH_GROUP_2_END))
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_2;
+		else if ((ucPriCh >= POWER_LIMIT_6G_BAND_CH_GROUP_3_START)
+			&& (ucPriCh <= POWER_LIMIT_6G_BAND_CH_GROUP_3_END))
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_3;
+		else if ((ucPriCh >= POWER_LIMIT_6G_BAND_CH_GROUP_4_START)
+			&& (ucPriCh <= POWER_LIMIT_6G_BAND_CH_GROUP_4_END))
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_4;
+		else if ((ucPriCh >= POWER_LIMIT_6G_BAND_CH_GROUP_5_START)
+			&& (ucPriCh <= POWER_LIMIT_6G_BAND_CH_GROUP_5_END))
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_5;
+		else if (ucPriCh >= POWER_LIMIT_6G_BAND_CH_GROUP_6_START)
+			*pu1BandGrp = POWER_ANT_GAIN_GROUP_6;
+		else
+			return WLAN_STATUS_NOT_SUPPORTED;
+		break;
+	}
+
+	default:
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t rlmDomainAntGainGetGroupGain(
+	uint8_t ucPriCh,
+	enum ENUM_BAND eBand,
+	int8_t *acAntGain)
+{
+	struct TX_PWR_ANT_GAIN_GROUP *prAntGainGroup = NULL;
+	int8_t AntIdx = 0, BandIdx = eBand - 1;
+	uint8_t u1BandGrp = POWER_ANT_GAIN_GROUP_1;
+
+	if (!acAntGain)  {
+		DBGLOG(RLM, ERROR, "[%d][RLM]Invalid data\n", __LINE__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	rlmDomainAntGetBandGrp(eBand, ucPriCh, &u1BandGrp);
+	if (u1BandGrp >= POWER_ANT_GAIN_GROUP_NUM)  {
+		DBGLOG(RLM, ERROR,
+			"[%d][RLM]Invalid data, u1BandGrp[%d]\n",
+			__LINE__, u1BandGrp);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	// Initial 0 for invalid group / not found case
+	kalMemSet(&acAntGain[0], 0, TX_PWR_ANT_GAIN_ELEMENT_NUM);
+
+	prAntGainGroup = &g_TxPwrAntGainGroupData[u1BandGrp];
+	for (AntIdx = ANTENNA_WF0; AntIdx < TX_PWR_ANT_GAIN_ELEMENT_NUM;
+		AntIdx++)
+		acAntGain[AntIdx] =
+		prAntGainGroup->rTxPwrAntGainValue[BandIdx][AntIdx];
+
+	DBGLOG(RLM, INFO,
+		"[%d][RLM]GroupNum[%d]BandIdx[%d]Ant0[%d]Ant1[%d]\n",
+		__LINE__,
+		u1BandGrp,
+		BandIdx,
+		acAntGain[ANTENNA_WF0],
+		acAntGain[ANTENNA_WF1]);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 
 void
 rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
@@ -6801,6 +7582,54 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 		}
 	}
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1) */
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	if (prAdapter->chip_info->prTxPwrLimit6GSpFile) {
+		if (!rlmDomainGetTxPwrLimit(
+			prAdapter->chip_info->prTxPwrLimit6GSpFile,
+			rlmDomainGetCountryCode(),
+			&ucVersion,
+			prAdapter->prGlueInfo,
+			pTxPwrLimitData)) {
+			prAdapter->fg6GSupSpFile = FALSE;
+			DBGLOG(RLM, ERROR,
+				"Load %s failed\n",
+				prAdapter->chip_info->prTxPwrLimit6GSpFile);
+		} else {
+			prAdapter->fg6GSupSpFile = TRUE;
+		}
+	}
+
+	if (prAdapter->chip_info->prTxPwrLimit6GVlpFile == NULL)
+		DBGLOG(RLM, ERROR, "prTxPwrLimit6GVlpFile is NULL\n");
+
+	if (prAdapter->chip_info->prTxPwrLimit6GVlpFile) {
+		if (!rlmDomainGetTxPwrLimit(
+			prAdapter->chip_info->prTxPwrLimit6GVlpFile,
+			rlmDomainGetCountryCode(),
+			&ucVersion,
+			prAdapter->prGlueInfo,
+			pTxPwrLimitData)) {
+			prAdapter->fg6GSupVlpFile = FALSE;
+			DBGLOG(RLM, ERROR,
+				"Load %s failed\n",
+				prAdapter->chip_info->prTxPwrLimit6GVlpFile);
+			goto error;
+		}
+
+		 prAdapter->fg6GSupVlpFile = TRUE;
+		/* Prepare to send CMD to FW */
+		if (ucVersion == 2 || ucVersion == 3) {
+			rlmDomainSendTxPwrLimitVlpCmd(prAdapter,
+				ucVersion, pTxPwrLimitData,
+				TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_VLP);
+		} else {
+			DBGLOG(RLM, WARN,
+			"Unsupported %s version %u\n",
+			prAdapter->chip_info->prTxPwrLimit6GVlpFile,
+			ucVersion);
+		}
+	}
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
 
 error:
