@@ -9212,6 +9212,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,
 		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
+
+#if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
+	INIT_UINT(prWifiVar->u4SaQueryMaxTimeout,
+		  "AssocSaQueryMaxTimeout", 1000,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4SaQueryRetryTimeout,
+		  "AssocSaQueryRetryTimeout", 201,
+		  FEATURE_TO_CUSTOMER);
+#endif /* CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT */
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

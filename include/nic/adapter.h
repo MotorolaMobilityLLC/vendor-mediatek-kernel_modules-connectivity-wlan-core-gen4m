@@ -1811,6 +1811,19 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t fgSpPwrLmtBackoff;
 #endif
+
+#if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
+	/* Association SA Query maximum timeout (in TU = 1.024 ms; for MFP)
+	 * (maximum time to wait for a SA Query response)
+	 * dot11AssociationSAQueryMaximumTimeout, 1...4294967295
+	 */
+	uint32_t u4SaQueryMaxTimeout;
+	/* Association SA Query retry timeout (in TU = 1.024 ms; for MFP)
+	 * (time between two subsequent SA Query requests)
+	 * dot11AssociationSAQueryRetryTimeout, 1...4294967295
+	 */
+	uint32_t u4SaQueryRetryTimeout;
+#endif /* CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT */
 };
 
 /* cnm_timer module */

@@ -777,6 +777,13 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->ucULTidBitmap = 0xff;
 			prStaRec->ucDLTidBitmap = 0xff;
 #endif
+
+#if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
+			cnmTimerInitTimer(prAdapter,
+					  &prStaRec->rPmfCfg.rSAQueryTimer,
+					  rsnApStartSaQueryTimer,
+					  (uintptr_t)prStaRec);
+#endif /* CFG_SUPPORT_802_11W */
 			break;
 		}
 	}
@@ -858,6 +865,10 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 
 	if (!prStaRec)
 		return;
+
+#if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
+	cnmTimerStopTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer);
+#endif /* CFG_SUPPORT_802_11W */
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecUnregister(prAdapter, prStaRec);

@@ -482,6 +482,10 @@ void rsnGenerateMMIE(struct ADAPTER *prAdapter,
 		     struct MSDU_INFO *prMsduInfo);
 #endif
 
+#if CFG_SUPPORT_802_11W
+void rsnApStartSaQueryTimer(struct ADAPTER *prAdapter,
+			    uintptr_t ulParamPtr);
+#endif /* CFG_SUPPORT_802_11W */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

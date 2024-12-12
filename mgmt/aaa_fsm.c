@@ -229,11 +229,6 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 						RSN_AKM_SUITE_OWE)
 						break;
 
-					/* AP PMF, if PMF connection,
-					 * ignore Rx auth
-					 */
-					/* Certification 4.3.3.4 */
-
 					if (prAdapter->rWifiVar
 						.fgSapAuthPolicy ==
 						P2P_AUTH_POLICY_RESET)
@@ -242,9 +237,7 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 					else if (rsnCheckBipKeyInstalled(
 						prAdapter,
 						prStaRec)) {
-						DBGLOG(AAA, INFO,
-							"Drop RxAuth\n");
-						return;
+						break;
 					}
 #endif
 				} else if (authFloodingCheck(
@@ -339,150 +332,118 @@ bow_proc:
 			RCPI_MODE_MAX,
 			prSwRfb);
 	}
+
+	if (!fgReplyAuth && prStaRec) {
+		cnmStaRecFree(prAdapter, prStaRec);
+		return;
+	}
+
+	if (!prStaRec) {
+		/* NOTE(Kevin): We should have STA_RECORD_T
+		 * if the status code was successful
+		 */
+		ASSERT(!(u2StatusCode == STATUS_CODE_SUCCESSFUL));
+		return;
+	}
+
 	/* 4 <3> Update STA_RECORD_T and
 	 * reply Auth_2(Response to Auth_1) Frame
 	 */
-	if (fgReplyAuth) {
+#if CFG_SUPPORT_802_11W
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		/* do nothing */
+	} else
+#endif
+	{
+		if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
+			if (prStaRec->eAuthAssocState
+				!= AA_STATE_IDLE) {
+				uint32_t rAuthTime;
+				uint32_t rTimeDiff;
 
-		if (prStaRec) {
+				prP2pConnSettings =
+					prAdapter->rWifiVar
+					.prP2PConnSettings[
+					prBssInfo->u4PrivateData];
 
-			if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
-				if (prStaRec->eAuthAssocState
-					!= AA_STATE_IDLE) {
-					uint32_t rAuthTime;
-					uint32_t rTimeDiff;
-
-					prP2pConnSettings =
-						prAdapter->rWifiVar
-						.prP2PConnSettings[
-						prBssInfo->u4PrivateData];
-
+				DBGLOG(AAA, WARN,
+					"Prev AAState (%d) != IDLE.\n",
+					prStaRec->eAuthAssocState);
+				GET_CURRENT_SYSTIME(&rAuthTime);
+				rTimeDiff = rAuthTime -
+					prStaRec->rUpdateTime;
+				if (p2pFuncIsAPMode(
+					prP2pConnSettings) &&
+					prAuthFrame
+					->u2AuthTransSeqNo ==
+					AUTH_TRANSACTION_SEQ_1 &&
+					rTimeDiff <
+					MIN_AUTH_TIME_DIFF) {
 					DBGLOG(AAA, WARN,
-						"Prev AAState (%d) != IDLE.\n",
-						prStaRec->eAuthAssocState);
-					GET_CURRENT_SYSTIME(&rAuthTime);
-					rTimeDiff = rAuthTime -
-						prStaRec->rUpdateTime;
-					if (p2pFuncIsAPMode(
-						prP2pConnSettings) &&
-						prAuthFrame
-						->u2AuthTransSeqNo ==
-						AUTH_TRANSACTION_SEQ_1 &&
-						rTimeDiff <
-						MIN_AUTH_TIME_DIFF) {
-						DBGLOG(AAA, WARN,
-							"dup auth 1 got.\n",
-						prStaRec->eAuthAssocState);
-						return;
-					}
+						"dup auth 1 got.\n",
+					prStaRec->eAuthAssocState);
+					return;
 				}
-
-				prStaRec->eAuthAssocState =
-					AAA_STATE_SEND_AUTH2;
-			} else {
-				prStaRec->eAuthAssocState = AA_STATE_IDLE;
-
-				/* NOTE(Kevin): Change to STATE_1 */
-				cnmStaRecChangeState(prAdapter,
-					prStaRec, STA_STATE_1);
 			}
 
-			/* Update the record join time. */
-			GET_CURRENT_SYSTIME(&prStaRec->rUpdateTime);
-
-			/* Update Station Record - Status/Reason Code */
-			prStaRec->u2StatusCode = u2StatusCode;
-
-			prStaRec->ucAuthAlgNum = prAuthFrame->u2AuthAlgNum;
+			prStaRec->eAuthAssocState =
+				AAA_STATE_SEND_AUTH2;
 		} else {
-			/* NOTE(Kevin): We should have STA_RECORD_T
-			 * if the status code was successful
-			 */
-			ASSERT(!(u2StatusCode == STATUS_CODE_SUCCESSFUL));
-			return;
+			prStaRec->eAuthAssocState = AA_STATE_IDLE;
+
+			/* NOTE(Kevin): Change to STATE_1 */
+			cnmStaRecChangeState(prAdapter,
+				prStaRec, STA_STATE_1);
 		}
 
-		DBGLOG(AAA, INFO,
-			"u4RsnSelectedAKMSuite=%x, algo=%d\n",
-			prBssInfo->u4RsnSelectedAKMSuite,
-			prStaRec->ucAuthAlgNum);
+		/* Update the record join time. */
+		GET_CURRENT_SYSTIME(&prStaRec->rUpdateTime);
 
-		if (rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) ||
+		/* Update Station Record - Status/Reason Code */
+		prStaRec->u2StatusCode = u2StatusCode;
+
+		prStaRec->ucAuthAlgNum = prAuthFrame->u2AuthAlgNum;
+	}
+
+	DBGLOG(AAA, INFO,
+		"u4RsnSelectedAKMSuite=%x, algo=%d\n",
+		prBssInfo->u4RsnSelectedAKMSuite,
+		prStaRec->ucAuthAlgNum);
+
+	if (rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) ||
 #if CFG_SUPPORT_PASN
-			prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN ||
+		prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN ||
 #endif
-			prBssInfo->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_OWE) {
-			kalP2PIndicateRxMgmtFrame(prAdapter,
-				prAdapter->prGlueInfo,
-				prSwRfb,
-				FALSE,
-				(uint8_t)prBssInfo->u4PrivateData,
-				(uint32_t)prBssInfo->ucLinkIndex);
-			DBGLOG(AAA, INFO, "Forward RxAuth Seq: %d\n",
-				prAuthFrame->u2AuthTransSeqNo);
+		prBssInfo->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_OWE) {
+		kalP2PIndicateRxMgmtFrame(prAdapter,
+			prAdapter->prGlueInfo,
+			prSwRfb,
+			FALSE,
+			(uint8_t)prBssInfo->u4PrivateData,
+			(uint32_t)prBssInfo->ucLinkIndex);
+		DBGLOG(AAA, INFO, "Forward RxAuth Seq: %d\n",
+			prAuthFrame->u2AuthTransSeqNo);
 
 #if CFG_SUPPORT_PASN
-			if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN &&
-				prAuthFrame->u2AuthTransSeqNo ==
-					AUTH_TRANSACTION_SEQ_3) {
-				DBGLOG(AAA, INFO, "Receive PASN AUTH 3\n");
-				prStaRec->eAuthAssocState =
-					SAA_STATE_EXTERNAL_AUTH;
-				cnmTimerStopTimer(prAdapter,
-					&prStaRec->rTxReqDoneOrRxRespTimer);
+		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_PASN &&
+			prAuthFrame->u2AuthTransSeqNo ==
+				AUTH_TRANSACTION_SEQ_3) {
+			DBGLOG(AAA, INFO, "Receive PASN AUTH 3\n");
+			prStaRec->eAuthAssocState =
+				SAA_STATE_EXTERNAL_AUTH;
+			cnmTimerStopTimer(prAdapter,
+				&prStaRec->rTxReqDoneOrRxRespTimer);
 
-				cnmStaRecChangeState(prAdapter, prStaRec,
-					STA_STATE_3);
+			cnmStaRecChangeState(prAdapter, prStaRec,
+				STA_STATE_3);
 
-				return;
-			}
+			return;
+		}
 #endif
-			if (prStaRec && prStaRec->fgIsInUse) {
-				cnmTimerStopTimer(prAdapter,
-					&prStaRec->rTxReqDoneOrRxRespTimer);
-
-				cnmTimerInitTimer(prAdapter,
-					&prStaRec->rTxReqDoneOrRxRespTimer,
-					(PFN_MGMT_TIMEOUT_FUNC)
-					aaaFsmRunEventTxReqTimeOut,
-					(uintptr_t) prStaRec);
-
-				cnmTimerStartTimer(prAdapter,
-					&prStaRec->rTxReqDoneOrRxRespTimer,
-					TU_TO_MSEC(
-					DOT11_RSNA_SAE_RETRANS_PERIOD_TU));
-			}
-			return;
-		}
-
-		/* NOTE: Ignore the return status for AAA */
-		/* 4 <4> Reply  Auth */
-		rStatus = authSendAuthFrame(prAdapter,
-					prStaRec,
-					prBssInfo->ucBssIndex,
-					prSwRfb,
-					AUTH_TRANSACTION_SEQ_2,
-					u2StatusCode);
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			if (prStaRec)
-				cnmStaRecFree(prAdapter, prStaRec);
-			DBGLOG(AAA, WARN, "Send Auth Fail!\n");
-			return;
-		}
-
-		/*sta_rec might be removed
-		 * when client list full, skip timer setting
-		 */
-		/*
-		 * check if prStaRec valid as authSendAuthFrame may free
-		 * StaRec when TX resource is not enough
-		 */
 		if (prStaRec && prStaRec->fgIsInUse) {
 			cnmTimerStopTimer(prAdapter,
 				&prStaRec->rTxReqDoneOrRxRespTimer);
-			/*ToDo:Init Timer to check get
-			 * Auth Txdone avoid sta_rec not clear
-			 */
+
 			cnmTimerInitTimer(prAdapter,
 				&prStaRec->rTxReqDoneOrRxRespTimer,
 				(PFN_MGMT_TIMEOUT_FUNC)
@@ -492,13 +453,50 @@ bow_proc:
 			cnmTimerStartTimer(prAdapter,
 				&prStaRec->rTxReqDoneOrRxRespTimer,
 				TU_TO_MSEC(
-					TX_AUTHENTICATION_RESPONSE_TIMEOUT_TU));
+				DOT11_RSNA_SAE_RETRANS_PERIOD_TU));
 		}
+		return;
+	}
 
+	/* NOTE: Ignore the return status for AAA */
+	/* 4 <4> Reply  Auth */
+	rStatus = authSendAuthFrame(prAdapter,
+				prStaRec,
+				prBssInfo->ucBssIndex,
+				prSwRfb,
+				AUTH_TRANSACTION_SEQ_2,
+				u2StatusCode);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		if (prStaRec)
+			cnmStaRecFree(prAdapter, prStaRec);
+		DBGLOG(AAA, WARN, "Send Auth Fail!\n");
+		return;
+	}
 
+	/*sta_rec might be removed
+	 * when client list full, skip timer setting
+	 */
+	/*
+	 * check if prStaRec valid as authSendAuthFrame may free
+	 * StaRec when TX resource is not enough
+	 */
+	if (prStaRec && prStaRec->fgIsInUse) {
+		cnmTimerStopTimer(prAdapter,
+			&prStaRec->rTxReqDoneOrRxRespTimer);
+		/*ToDo:Init Timer to check get
+		 * Auth Txdone avoid sta_rec not clear
+		 */
+		cnmTimerInitTimer(prAdapter,
+			&prStaRec->rTxReqDoneOrRxRespTimer,
+			(PFN_MGMT_TIMEOUT_FUNC)
+			aaaFsmRunEventTxReqTimeOut,
+			(uintptr_t) prStaRec);
 
-	} else if (prStaRec)
-		cnmStaRecFree(prAdapter, prStaRec);
+		cnmTimerStartTimer(prAdapter,
+			&prStaRec->rTxReqDoneOrRxRespTimer,
+			TU_TO_MSEC(
+				TX_AUTHENTICATION_RESPONSE_TIMEOUT_TU));
+	}
 }				/* end of aaaFsmRunEventRxAuth() */
 
 /*---------------------------------------------------------------------------*/
@@ -932,6 +930,11 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 
 		cnmTimerStopTimer(prAdapter,
 			&prStaRec->rTxReqDoneOrRxRespTimer);
+
+#if CFG_SUPPORT_802_11W
+		if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
+			break;
+#endif
 
 		if (prStaRec->u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 			if (rTxDoneStatus == TX_RESULT_SUCCESS) {

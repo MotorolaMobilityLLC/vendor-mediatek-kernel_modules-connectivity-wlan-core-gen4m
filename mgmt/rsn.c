@@ -3946,16 +3946,17 @@ void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
  *      Called by: AAA module, Handle by Sa Query timeout
  */
 /*----------------------------------------------------------------------------*/
-uint8_t rsnApCheckSaQueryTimeout(struct ADAPTER
-				 *prAdapter, struct STA_RECORD *prStaRec)
+uint8_t rsnApCheckSaQueryTimeout(struct ADAPTER *prAdapter,
+				 struct STA_RECORD *prStaRec)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct BSS_INFO *prBssInfo;
-	uint32_t now;
+	OS_SYSTIME rCurrentTime;
 
-	GET_CURRENT_SYSTIME(&now);
+	GET_CURRENT_SYSTIME(&rCurrentTime);
 
-	if (CHECK_FOR_TIMEOUT(now, prStaRec->rPmfCfg.u4SAQueryStart,
-			      TU_TO_MSEC(SA_QUERY_RETRY_TIMEOUT))) {
+	if (CHECK_FOR_TIMEOUT(rCurrentTime, prStaRec->rPmfCfg.u4SAQueryStart,
+			      TU_TO_MSEC(prWifiVar->u4SaQueryMaxTimeout))) {
 		DBGLOG(RSN, INFO, "association SA Query timed out\n");
 
 		/* XXX PMF TODO how to report STA REC disconnect?? */
@@ -4033,8 +4034,8 @@ void rsnApStartSaQueryTimer(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prStaRec->rPmfCfg.u4SAQueryCount > 0
-	    && rsnApCheckSaQueryTimeout(prAdapter, prStaRec)) {
+	if (prStaRec->rPmfCfg.u4SAQueryCount > 0 &&
+	    rsnApCheckSaQueryTimeout(prAdapter, prStaRec)) {
 		DBGLOG(RSN, INFO,
 		       "MFP: retry max timeout, u4SaQueryCount count =%d\n",
 		       prStaRec->rPmfCfg.u4SAQueryCount);
@@ -4099,11 +4100,12 @@ void rsnApStartSaQueryTimer(struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	DBGLOG(RSN, INFO, "AP Set SA Query timer %d (%d Tu)\n",
-	       prStaRec->rPmfCfg.u4SAQueryCount, SA_QUERY_TIMEOUT);
+		prStaRec->rPmfCfg.u4SAQueryCount,
+		prAdapter->rWifiVar.u4SaQueryRetryTimeout);
 
 	cnmTimerStartTimer(prAdapter,
-		&prStaRec->rPmfCfg.rSAQueryTimer, TU_TO_MSEC(SA_QUERY_TIMEOUT));
-
+		&prStaRec->rPmfCfg.rSAQueryTimer,
+		TU_TO_MSEC(prAdapter->rWifiVar.u4SaQueryRetryTimeout));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4119,20 +4121,19 @@ void rsnApStartSaQueryTimer(struct ADAPTER *prAdapter,
 void rsnApStartSaQuery(struct ADAPTER *prAdapter,
 		       struct STA_RECORD *prStaRec)
 {
-	DBGLOG(RSN, INFO, "rsnApStartSaQuery\n");
+	if (!prStaRec)
+		return;
 
-	if (prStaRec) {
-		cnmTimerStopTimer(prAdapter,
-				  &prStaRec->rPmfCfg.rSAQueryTimer);
-		cnmTimerInitTimer(prAdapter,
-			  &prStaRec->rPmfCfg.rSAQueryTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC)rsnApStartSaQueryTimer,
-			  (uintptr_t) prStaRec);
+	DBGLOG(RSN, INFO, "sta=%u %u, count=%u timeout=%u\n",
+		prStaRec->ucIndex, prStaRec->ucWlanIndex,
+		prStaRec->rPmfCfg.u4SAQueryCount,
+		prAdapter->rWifiVar.u4SaQueryMaxTimeout);
 
-		if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
-			rsnApStartSaQueryTimer(prAdapter,
-						(uintptr_t)prStaRec);
-	}
+	if (prStaRec->rPmfCfg.u4SAQueryCount > 0)
+		rsnApCheckSaQueryTimeout(prAdapter, prStaRec);
+
+	if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
+		rsnApStartSaQueryTimer(prAdapter, (uintptr_t)prStaRec);
 }
 
 /*----------------------------------------------------------------------------*/

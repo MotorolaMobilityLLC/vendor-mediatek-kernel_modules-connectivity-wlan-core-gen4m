@@ -4085,8 +4085,10 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 			(!rsnKeyMgmtSae(prP2pBssInfo->u4RsnSelectedAKMSuite) ||
 			(prAdapter->rWifiVar.fgSapAuthPolicy ==
 			P2P_AUTH_POLICY_IGNORE))) {
-			DBGLOG(P2P, WARN, "PMF Connction, return false\n");
-			return FALSE;
+			DBGLOG(P2P, WARN, "PMF Connction, return true\n");
+			*pprStaRec = prStaRec;
+			*pu2StatusCode = STATUS_CODE_SUCCESSFUL;
+			return TRUE;
 		}
 #endif
 
