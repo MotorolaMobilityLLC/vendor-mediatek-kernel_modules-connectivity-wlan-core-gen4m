@@ -6479,6 +6479,8 @@ u_int8_t kalRetrieveNetworkAddress(struct GLUE_INFO *prGlueInfo,
 		TC1_FAC_NAME(FacReadWifiMacAddr)(prMacAddr);
 		DBGLOG(INIT, INFO,
 			"MAC address: " MACSTR, MAC2STR(prMacAddr));
+#elif CFG_TC10_FEATURE && WLAN_INCLUDE_SYS
+		sysMacAddrOverride(prMacAddr);
 #else
 		if (prGlueInfo->fgNvramAvailable == FALSE) {
 			DBGLOG(INIT, INFO, "glLoadNvram fail\n");

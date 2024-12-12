@@ -3920,10 +3920,6 @@ uint32_t wlanUpdateNetworkAddress(struct ADAPTER
 #endif
 	}
 
-#if WLAN_INCLUDE_SYS
-	sysMacAddrOverride(rMacAddr);
-#endif
-
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress, rMacAddr);
 
 	return WLAN_STATUS_SUCCESS;
