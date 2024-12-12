@@ -173,7 +173,13 @@ uint32_t pasnHandlePasnRequest(struct ADAPTER *prAdapter,
 	pasnInfo->pfPasnDoneCB = pfPasnDoneCB;
 	pasnInfo->pfRangingCtxCB = pfRangingCtxCB;
 	pasnInfo->pvUserData = pvUserData;
-	pasnInfo->fgIsRunning = TRUE;
+
+	/* Update PASN running state only for AUTH action.
+	 * For DELETE action, Supplicant will simply delete security
+	 * context and not sending any response back.
+	 */
+	if (prPasnReq->eAction == PASN_ACTION_AUTH)
+		pasnInfo->fgIsRunning = TRUE;
 
 	return PASN_STATUS_SUCCESS;
 }

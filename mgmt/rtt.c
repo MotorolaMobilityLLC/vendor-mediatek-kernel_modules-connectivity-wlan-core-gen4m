@@ -1029,6 +1029,8 @@ uint32_t rttDeleteSecureCtx(struct ADAPTER *prAdapter,
 		}
 	}
 
+	rttInfo->ucNumPeers -= rPasnReq.ucNumPeers;
+
 	rPasnReq.eAction =
 		QCA_WLAN_VENDOR_PASN_ACTION_DELETE_SECURE_RANGING_CONTEXT;
 
