@@ -2058,7 +2058,11 @@
 #define CFG_REPORT_MAX_TX_RATE	0
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+#if (CFG_TC10_FEATURE == 1)
+#define CFG_STATS_ONE_CMD_PERIOD 200
+#else
 #define CFG_STATS_ONE_CMD_PERIOD 3000
+#endif /* CFG_TC10_FEATURE */
 #endif
 
 /*------------------------------------------------------------------------------

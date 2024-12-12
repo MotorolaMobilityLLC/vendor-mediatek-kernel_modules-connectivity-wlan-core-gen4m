@@ -597,7 +597,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
-	rParam.u4Period = CFG_STATS_ONE_CMD_PERIOD;
+	rParam.u4Period = prAdapter->rWifiVar.u4GetStaCmdPeriod;
 	/* query linkspeed and sta_statistics in one unified cmd */
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 		   wlanoidQueryStatsOneCmd, &rParam,

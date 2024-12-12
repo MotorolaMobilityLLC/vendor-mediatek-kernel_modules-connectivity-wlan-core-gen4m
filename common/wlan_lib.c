@@ -8398,6 +8398,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	INIT_UINT(prWifiVar->u4LlsStatsCmdPeriod, "LinkStatsCmdPeriod",
 		  CFG_STATS_ONE_CMD_PERIOD, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4GetStaCmdPeriod, "GetStaCmdPeriod",
+		  CFG_STATS_ONE_CMD_PERIOD, FEATURE_TO_CUSTOMER);
 #endif
 #endif
 

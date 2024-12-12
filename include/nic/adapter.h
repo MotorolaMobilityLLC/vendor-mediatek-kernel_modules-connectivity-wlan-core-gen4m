@@ -1603,6 +1603,7 @@ struct WIFI_VAR {
 	u_int8_t fgLinkStatsDump;
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	uint32_t u4LlsStatsCmdPeriod;
+	uint32_t u4GetStaCmdPeriod;
 #endif
 #endif /* CFG_SUPPORT_LLS */
 
