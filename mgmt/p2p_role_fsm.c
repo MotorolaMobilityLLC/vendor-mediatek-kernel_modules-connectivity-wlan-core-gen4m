@@ -559,7 +559,7 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 		fgIsTransitionOut = fgIsTransitionOut ? FALSE : TRUE;
 
 		if (!fgIsTransitionOut) {
-			DBGLOG(P2P, STATE,
+			DBGLOG(P2P, VOC,
 				"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
 				prP2pRoleFsmInfo->ucRoleIndex,
 				prP2pRoleFsmInfo->ucBssIndex,

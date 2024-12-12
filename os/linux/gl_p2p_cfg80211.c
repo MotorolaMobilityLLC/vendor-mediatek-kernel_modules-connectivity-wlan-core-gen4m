@@ -2418,7 +2418,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			(struct MSG_HDR *) prP2pStartAPMsg,
 			MSG_SEND_METHOD_BUF);
 
-		DBGLOG(P2P, INFO, "%s\n", aucLogBuf);
+		DBGLOG(P2P, VOC, "%s\n", aucLogBuf);
 
 		i4Rslt = 0;
 		goto exit;
@@ -2925,11 +2925,12 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev,
 	uint32_t waitRet = 0;
 
 	do {
-		if (wiphy == NULL)
+		if (wiphy == NULL ||
+			dev == NULL)
 			break;
 
+		DBGLOG(P2P, VOC, "name: %s\n", dev->name);
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
-
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		netif_carrier_off(dev);
 		netif_tx_stop_all_queues(dev);

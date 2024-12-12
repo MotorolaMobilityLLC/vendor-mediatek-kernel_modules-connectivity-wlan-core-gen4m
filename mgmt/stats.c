@@ -991,11 +991,11 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 				else if ((u2KeyInfo & 0xfff0) == 0x0300)
 					m = 4;
 				if (eventType == EVENT_RX)
-					DBGLOG(RX, INFO,
+					DBGLOG(RX, VOC,
 						"<RX> EAPOL: key, M%d, KeyInfo 0x%04x, SSN:%u\n",
 						m, u2KeyInfo, u2SSN);
 				else
-					DBGLOG(TX, INFO,
+					DBGLOG(TX, VOC,
 					       "<TX> EAPOL: key, M%d, KeyInfo 0x%04x SeqNo: %d\n",
 					       m, u2KeyInfo,
 						GLUE_GET_PKT_SEQ_NO(pvPacket));

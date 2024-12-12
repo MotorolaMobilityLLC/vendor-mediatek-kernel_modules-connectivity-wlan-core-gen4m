@@ -692,7 +692,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 				prMsgChReq[i].eRfChannelWidthFromAP));
 	}
 
-	log_dbg(CNM, INFO,
+	log_dbg(CNM, VOC,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
 	       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID,
 	       prMsgChReq->eRfBand, prMsgChReq->ucPrimaryChannel,
@@ -911,7 +911,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	log_dbg(CNM, INFO,
+	log_dbg(CNM, VOC,
 	       "ChGrant net=%d band=%d token=%d ch=%d bw=%d sco=%d s1=%d s2=%d, u4GrantInterval=%d\n",
 	       prEventBody->ucBssIndex,
 	       prEventBody->ucDBDCBand,

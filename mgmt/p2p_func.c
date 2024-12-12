@@ -3841,9 +3841,9 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 			p2pRemoveAllBssDesc(prAdapter,
 				prP2pBssInfo);
 		}
-
-		DBGLOG(P2P, INFO,
+		DBGLOG(P2P, VOC,
 			"BssMode: %d, reason: %d, SendDeauth %s, type 0x%x, locally_generated: %d\n",
+
 			prP2pBssInfo->eCurrentOPMode, u2ReasonCode,
 			fgSendDeauth == TRUE ? "TRUE" : "FALSE",
 			ucSubType,

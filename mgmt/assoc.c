@@ -2369,9 +2369,10 @@ uint32_t assocSendReAssocRespFrame(struct ADAPTER *prAdapter,
 		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl & MASK_FRAME_TYPE;
-	DBGLOG(SAA, INFO,
+	DBGLOG(SAA, VOC,
 		"Send %sAssoc Resp, SA: " MACSTR ", DA: " MACSTR
 		", Seq: %d, status: %d\n",
+
 		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "Re" : "",
 		MAC2STR(prAssocRspFrame->aucSrcAddr),
 		MAC2STR(prAssocRspFrame->aucDestAddr),
