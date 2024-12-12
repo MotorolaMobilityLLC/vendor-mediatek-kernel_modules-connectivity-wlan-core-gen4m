@@ -2042,10 +2042,12 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 				if (p2pFuncIsDualAPMode(
 					prGlueInfo->prAdapter) &&
 					IS_MLD_BSSINFO_MULTI(prMldBssInfo) &&
-					(((ucRoleIdx == 0) &&
+					(
+#if (CFG_SUPPORT_WIFI_6G == 1)
+					((ucRoleIdx == 0) &&
 					IS_FEATURE_DISABLED(
 					prWifiVar->ucDisallowAcs6G)) ||
-#if (CFG_SUPPORT_WIFI_6G == 1)
+
 					((ucRoleIdx == 1) &&
 					(prAisBssInfo->eBand == BAND_6G)) ||
 #endif /* CFG_SUPPORT_WIFI_6G */

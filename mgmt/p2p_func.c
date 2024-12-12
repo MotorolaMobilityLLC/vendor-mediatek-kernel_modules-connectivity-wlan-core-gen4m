@@ -10441,7 +10441,7 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1)
 	DBGLOG(P2P, INFO, "cross band csa enable\n");
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prNewChannelInfo->eBand == BAND_6G &&
 		(prBssInfo->eBand == BAND_2G4 ||
 		prBssInfo->eBand == BAND_5G))
@@ -10450,6 +10450,7 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		(prNewChannelInfo->eBand == BAND_2G4 ||
 		prNewChannelInfo->eBand == BAND_5G))
 		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+#endif
 #else
 #if CFG_SEND_DEAUTH_DURING_CHNL_SWITCH
 	/* Send deauth frame to clients:
