@@ -958,7 +958,8 @@ void halCheckWfdmaStallForWB(struct ADAPTER *prAdapter)
 #endif
 
 		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
-			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+			GL_DEFAULT_RESET_TRIGGER(
+				prAdapter, RST_WFDMA_RX_TIMEOUT);
 	}
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */

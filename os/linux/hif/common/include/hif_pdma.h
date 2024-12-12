@@ -331,6 +331,8 @@
 
 #define HIF_EMI_SER_STATUS_SIZE		16
 
+#define HIF_RX_DMA_DONE_MAX_FAIL_CNT	3
+
 enum WIFI_MEM_OPER_SETS {
 	/* TRX DESC */
 	WF_MEM_OP_TRX_DESC_ZERO_COPY_PATH = 0,
@@ -731,6 +733,7 @@ struct RTMP_RX_RING {
 	uint32_t hw_cnt_shift;
 	bool fgIsDumpLog;
 	bool fgIsWaitRxDmaDoneTimeout;
+	uint32_t u4RxDmaDoneFailCnt;
 	uint32_t u4LastRxEventWaitDmaDoneCnt;
 	uint32_t u4PendingCnt;
 	uint32_t u4TotalCnt;

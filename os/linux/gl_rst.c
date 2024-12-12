@@ -112,7 +112,7 @@ char * const apucRstReason[RST_REASON_MAX] = {
 	"Chip reset by AER - RxErr",
 	"Chip reset by AER - SDES",
 	"RST_MMIO_READ",
-	"RST_WFDMA_RX_HANG",
+	"RST_WFDMA_RX_TIMEOUT",
 	"RST_MAWD_WAKEUP_FAIL",
 	"RST_RFB_FAIL",
 	"RST_WFDMA_MAP_FAIL",
