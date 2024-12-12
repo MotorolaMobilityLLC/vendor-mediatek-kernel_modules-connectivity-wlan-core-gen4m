@@ -3219,7 +3219,7 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 		if (prBssInfo->ucBcnProtInstalled[u4KeyIndex] == TRUE) {
 			prBssInfo->ucBcnProtInstalled[u4KeyIndex] = FALSE;
 			DBGLOG(RSN, INFO,
-				"Remove BIGTK, key id = %d", u4KeyIndex);
+				"Remove BIGTK, key id = %d\n", u4KeyIndex);
 		} else
 			return WLAN_STATUS_SUCCESS;
 	} else if (!prStaRec) {
@@ -3227,7 +3227,8 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 			fgRemoveWepKey = TRUE;
 
 		if (fgRemoveWepKey) {
-			DBGLOG(RSN, INFO, "Remove wep key id = %d", u4KeyIndex);
+			DBGLOG(RSN, INFO, "Remove wep key id = %d\n",
+				u4KeyIndex);
 			prBssInfo->wepkeyUsed[u4KeyIndex] = FALSE;
 			if (prBssInfo->fgBcDefaultKeyExist &&
 			    prBssInfo->ucBcDefaultKeyIdx == u4KeyIndex) {
@@ -3240,7 +3241,7 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 					prBssInfo->wepkeyWlanIdx);
 			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
 		} else {
-			DBGLOG(RSN, INFO, "Remove group key id = %d",
+			DBGLOG(RSN, INFO, "Remove group key id = %d\n",
 			       u4KeyIndex);
 
 			if (prBssInfo->ucBMCWlanIndexSUsed[u4KeyIndex]) {

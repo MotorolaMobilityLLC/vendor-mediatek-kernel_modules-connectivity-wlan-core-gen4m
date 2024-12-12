@@ -267,6 +267,9 @@ void cmdBufFreeCmdInfo(struct ADAPTER *prAdapter,
 		if (prCmdInfo->pucInfoBuffer) {
 			cnmMemFree(prAdapter, prCmdInfo->pucInfoBuffer);
 			prCmdInfo->pucInfoBuffer = NULL;
+		} else if (prCmdInfo->eCmdType ==
+			   COMMAND_TYPE_MANAGEMENT_FRAME) {
+			/* do nothing */
 		} else {
 			DBGLOG(MEM, WARN, "CMD[0x%x] not freed Buffer NULL!\n",
 				prCmdInfo->ucCID);

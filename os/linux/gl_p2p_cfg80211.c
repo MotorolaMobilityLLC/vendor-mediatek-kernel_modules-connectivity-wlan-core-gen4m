@@ -3548,7 +3548,7 @@ int mtk_p2p_cfg80211_change_station(
 		return 0;
 	}
 
-	DBGLOG(REQ, WARN,
+	DBGLOG(REQ, LOUD,
 		"P2P/AP don't support this function\n");
 
 	return -EFAULT;
@@ -3928,7 +3928,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
-		DBGLOG(REQ, INFO, "[%d] sme->auth_type=%x flags=0x%x",
+		DBGLOG(REQ, INFO, "[%d] sme->auth_type=%x flags=0x%x\n",
 			ucRoleIdx, sme->auth_type, sme->flags);
 
 		switch (sme->auth_type) {
@@ -3948,7 +3948,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 
 		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
 		if (sme->crypto.n_ciphers_pairwise) {
-			DBGLOG(REQ, TRACE,
+			DBGLOG(REQ, INFO,
 				"cipher pairwise (%d)\n",
 				sme->crypto.ciphers_pairwise[0]);
 			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
@@ -3982,7 +3982,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 				return -EINVAL;
 			}
 		} else {
-			DBGLOG(REQ, WARN, "Null cipher pairwise\n");
+			DBGLOG(REQ, TRACE, "Null cipher pairwise\n");
 		}
 
 		kalChannelFormatSwitch(NULL, channel,

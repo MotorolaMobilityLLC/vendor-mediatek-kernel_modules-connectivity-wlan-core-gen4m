@@ -7368,7 +7368,7 @@ void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
 	kalMemCopy(prGlueInfo->rRegInfo.aucMacAddr,
 		prAdapter->rWifiVar.aucMacAddress,
 		PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
-	DBGLOG(INIT, INFO, "prGlueInfo->rRegInfo.aucMacAddr:" MACSTR,
+	DBGLOG(INIT, INFO, "prGlueInfo->rRegInfo.aucMacAddr:" MACSTR "\n",
 		MAC2STR(prGlueInfo->rRegInfo.aucMacAddr));
 #endif
 

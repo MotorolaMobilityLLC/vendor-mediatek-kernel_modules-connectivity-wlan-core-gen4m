@@ -2303,13 +2303,13 @@ int p2pSetMACAddress(struct net_device *prDev, void *addr)
 	sa = (struct sockaddr *)addr;
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prDev, &ucRoleIdx) != 0) {
-		DBGLOG(INIT, WARN, "can't find the matched role");
+		DBGLOG(INIT, WARN, "can't find the matched role\n");
 		goto skip_role;
 	}
 
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
 		ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR, "can't find the matched bss");
+		DBGLOG(INIT, ERROR, "can't find the matched bss\n");
 		goto skip_role;
 	}
 

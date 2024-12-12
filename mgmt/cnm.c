@@ -4816,13 +4816,13 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 	u_int8_t fgIsP2pListening = FALSE;
 #endif
 
-	log_dbg(CNM, INFO, "[DBDC Debug] BSS %u",
+	log_dbg(CNM, INFO, "[DBDC Debug] BSS %u\n",
 	       ucChangedBssIndex);
 
 	/* Only allow runtime switch for dynamic DBDC */
 	if (prAdapter->rWifiVar.eDbdcMode !=
 	    ENUM_DBDC_MODE_DYNAMIC) {
-		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
+		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return\n",
 		       prAdapter->rWifiVar.eDbdcMode);
 		return;
 	}
@@ -4839,7 +4839,7 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			(ucMloType == MLO_MODE_EMLSR ||
 			ucMloType == MLO_MODE_HYMLO)) {
 			log_dbg(CNM, INFO,
-				"mld Clear MLSR Paused Link Flag");
+				"mld Clear MLSR Paused Link Flag\n");
 			mldClearMLSRPausedLinkFlag(prAdapter);
 		}
 #endif
@@ -4847,7 +4847,7 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 		if (fgIsAgConcurrent && prP2pDevFsmInfo) {
 			log_dbg(CNM, INFO,
-				"[DBDC Debug] DBDC %u EnByP2pLis %u",
+				"[DBDC Debug] DBDC %u EnByP2pLis %u\n",
 				prAdapter->rWifiVar.fgDbDcModeEn,
 				g_rDbdcInfo.fgIsDBDCEnByP2pLis);
 
@@ -4874,7 +4874,7 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 								FALSE;
 			}
 
-			log_dbg(CNM, INFO, "[DBDC] En %u p2plis %u EnP2pLisTo %u",
+			log_dbg(CNM, INFO, "[DBDC] En %u p2plis %u EnP2pLisTo %u\n",
 					prAdapter->rWifiVar.fgDbDcModeEn,
 					prP2pDevFsmInfo->fgIsP2pListening,
 					g_rDbdcInfo.fgIsDBDCEnByP2pLis
@@ -5436,8 +5436,10 @@ void cnmWmmIndexDecision(
 			prBssInfo->fgIsWmmInited = TRUE;
 			prBssInfo->ucWmmQueSet = ucWmmIndex;
 
-			DBGLOG(CNM, INFO, "Bss%d assign ucWmmIndex: %d\n",
-				prBssInfo->ucBssIndex, ucWmmIndex);
+			if (!IS_BSS_P2P_DEV(prAdapter, prBssInfo))
+				DBGLOG(CNM, INFO,
+					"Bss%d assign ucWmmIndex: %d\n",
+					prBssInfo->ucBssIndex, ucWmmIndex);
 			return;
 		}
 	}
@@ -5456,7 +5458,16 @@ void cnmFreeWmmIndex(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
-	DBGLOG(CNM, INFO, "[Free] ucWmmQueSet: %d\n", prBssInfo->ucWmmQueSet);
+	if (!prAdapter || !prBssInfo) {
+		DBGLOG(CNM, ERROR, "prAdapter:0x%p prBssInfo:0x%p\n",
+			prAdapter, prBssInfo);
+		return;
+	}
+
+	if (!IS_BSS_P2P_DEV(prAdapter, prBssInfo))
+		DBGLOG(CNM, INFO,
+			"[Free] Bss%d ucWmmQueSet: %d\n",
+			prBssInfo->ucBssIndex, prBssInfo->ucWmmQueSet);
 
 	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
 	prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
@@ -6769,7 +6780,7 @@ int cnmPowerControl(
 		isNeedForceOneNss(level))
 		prAdapter->fgPowerNeedDisconnect = TRUE;
 
-	DBGLOG(CNM, INFO, "ForceOneNss=%d, NeedDisconnect=%d, dbdc=%d",
+	DBGLOG(CNM, INFO, "ForceOneNss=%d, NeedDisconnect=%d, dbdc=%d\n",
 		prAdapter->fgPowerForceOneNss,
 		prAdapter->fgPowerNeedDisconnect,
 		prAdapter->rWifiVar.fgDbDcModeEn);

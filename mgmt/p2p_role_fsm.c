@@ -4571,14 +4571,10 @@ void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 			prBcnUpdateMsg->pucAssocRespIE,
 			prBcnUpdateMsg->u4AssocRespLen);
 
-		if (p2pFuncAssocRespUpdate(prAdapter,
+		p2pFuncAssocRespUpdate(prAdapter,
 			prP2pBssInfo,
 			prBcnUpdateMsg->pucAssocRespIE,
-			prBcnUpdateMsg->u4AssocRespLen) == WLAN_STATUS_FAILURE)
-			DBGLOG(P2P, ERROR,
-				"Nss%d, Update extra IEs for asso resp fail!\n",
-				wlanGetSupportNss(prAdapter,
-				prP2pBssInfo->ucBssIndex));
+			prBcnUpdateMsg->u4AssocRespLen);
 	}
 
 	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
@@ -5097,7 +5093,7 @@ void p2pRoleFsmRunEventMgmtTx(struct ADAPTER *prAdapter,
 
 	fgNeedOffchnlTx = p2pRoleNeedOffchnlTx(prAdapter, prP2pRoleBssInfo,
 			prMgmtTxMsg);
-	DBGLOG(P2P, INFO, "fgNeedOffchnlTx: %d\n", fgNeedOffchnlTx);
+	DBGLOG(P2P, TRACE, "fgNeedOffchnlTx: %d\n", fgNeedOffchnlTx);
 
 	if (!fgNeedOffchnlTx)
 		p2pFuncTxMgmtFrame(prAdapter,

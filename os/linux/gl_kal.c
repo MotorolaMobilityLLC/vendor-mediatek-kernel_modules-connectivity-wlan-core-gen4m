@@ -14143,7 +14143,7 @@ kalSyncTimeToFW(struct ADAPTER *prAdapter, u_int8_t fgInitCmd)
 	if (TIME_AFTER((prAdapter->u4FWLastUpdateTime + 7200), u4Sec))
 		return WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "Sync kernel time %u %u", u4Sec, u4Usec);
+	DBGLOG(INIT, INFO, "Sync kernel time %u %u\n", u4Sec, u4Usec);
 
 	if (prChipInfo->chip_capability &
 	    BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF))
@@ -14161,7 +14161,7 @@ kalSyncTimeToFW(struct ADAPTER *prAdapter, u_int8_t fgInitCmd)
 			prAdapter->u4FWLastUpdateTime = u4Sec;
 	} else
 		DBGLOG(INIT, WARN,
-			"Failed to sync kernel time to FW.");
+			"Failed to sync kernel time to FW.\n");
 
 	return rStatus;
 }

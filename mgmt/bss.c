@@ -1773,7 +1773,7 @@ void bssInitializeClientList(struct ADAPTER *prAdapter,
 	if (!LINK_IS_EMPTY(prStaRecOfClientList))
 		LINK_INITIALIZE(prStaRecOfClientList);
 
-	DBGLOG(BSS, INFO, "Init BSS[%u] Client List\n", prBssInfo->ucBssIndex);
+	DBGLOG(BSS, TRACE, "Init BSS[%u] Client List\n", prBssInfo->ucBssIndex);
 
 	bssCheckClientList(prAdapter, prBssInfo);
 }				/* end of bssClearClientList() */
@@ -1853,7 +1853,7 @@ u_int8_t bssRemoveClient(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(BSS, INFO,
+	DBGLOG(BSS, TRACE,
 	       "Current Client List didn't contain that struct STA_RECORD["
 	       MACSTR "] before removing.\n", MAC2STR(prStaRec->aucMacAddr));
 
@@ -1886,7 +1886,7 @@ struct STA_RECORD *bssRemoveClientByMac(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(BSS, INFO,
+	DBGLOG(BSS, TRACE,
 	       "Current Client List didn't contain that struct STA_RECORD["
 	       MACSTR "] before removing.\n", MAC2STR(pucMac));
 
@@ -1914,7 +1914,7 @@ struct STA_RECORD *bssGetClientByMac(struct ADAPTER *prAdapter,
 			return prCurrStaRec;
 	}
 
-	DBGLOG(BSS, INFO,
+	DBGLOG(BSS, TRACE,
 	       "Current Client List didn't contain that struct STA_RECORD["
 	       MACSTR "] before removing.\n", MAC2STR(pucMac));
 

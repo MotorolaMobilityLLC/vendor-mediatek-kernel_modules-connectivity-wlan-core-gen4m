@@ -11187,7 +11187,7 @@ uint32_t rlmDomain6GPwrModeUpdate(
 	if ((!prAdapter) ||
 	    (ucBssIndex >= MAX_BSSID_NUM) ||
 	    (e6GPwrModeBss >= PWR_MODE_6G_NUM)) {
-		DBGLOG(RLM, ERROR, "invalid parameter, BssIdx[%d]PwrMode[%d]",
+		DBGLOG(RLM, ERROR, "invalid parameter, BssIdx[%d]PwrMode[%d]\n",
 			ucBssIndex,
 			e6GPwrModeBss);
 		return WLAN_STATUS_INVALID_DATA;
@@ -11200,7 +11200,7 @@ uint32_t rlmDomain6GPwrModeUpdate(
 		rlmDomainSendPwrLimitCmd(prAdapter);
 	}
 
-	DBGLOG(RLM, INFO, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]",
+	DBGLOG(RLM, INFO, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]\n",
 			ucBssIndex,
 			e6GPwrModeBss,
 			e6GPwrModeCurr,

@@ -11895,9 +11895,10 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssUpdateBandIdxBitmap(ad, prBssInfo);
 #endif
-	} else
-		DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n",
+	} else {
+		DBGLOG(CNM, ERROR, "ucBssIdx=%d, ucBandIdx=%d\n",
 			ucBssIdx, ucBandIdx);
+	}
 }
 
 void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,

@@ -4369,7 +4369,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetAuthorized,
 			(void *) mac, MAC_ADDR_LEN, &u4BufLen, ucBssIndex);
 
-		DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+		DBGLOG(REQ, INFO, "rStatus: %x\n", rStatus);
 	}
 
 	if (prLinkParams->supported_rates == NULL)
@@ -8465,7 +8465,7 @@ int mtk_cfg_set_rekey_data(struct wiphy *wiphy,
 	}
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) > 0) {
-		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		DBGLOG(REQ, LOUD, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
 #endif

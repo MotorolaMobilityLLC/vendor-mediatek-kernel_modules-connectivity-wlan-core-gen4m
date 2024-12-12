@@ -927,11 +927,11 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint16_t i;
 	enum ENUM_STA_REC_CMD_ACTION eAction;
 
-	log_dbg(CNM, INFO, "BssIdx=%d, StaRecIndexExcluded=%d\n",
-		ucBssIndex, ucStaRecIndexExcluded);
-
 	if (ucBssIndex >= prAdapter->ucSwBssIdNum)
 		return;
+
+	log_dbg(CNM, INFO, "BssIdx=%d, StaRecIndexExcluded=%d\n",
+		ucBssIndex, ucStaRecIndexExcluded);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 

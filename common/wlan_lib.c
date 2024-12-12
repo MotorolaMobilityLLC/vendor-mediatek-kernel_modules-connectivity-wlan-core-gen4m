@@ -3907,13 +3907,13 @@ uint32_t wlanUpdateNetworkAddress(struct ADAPTER
 		/* eFUSE has a valid address, don't do anything */
 		if (prAdapter->fgIsEmbbededMacAddrValid == TRUE) {
 #if CFG_SHOW_MACADDR_SOURCE
-			DBGLOG(INIT, INFO, "Using embedded MAC address");
+			DBGLOG(INIT, INFO, "Using embedded MAC address\n");
 #endif
 			return WLAN_STATUS_SUCCESS;
 		}
 #if CFG_SHOW_MACADDR_SOURCE
 		DBGLOG(INIT, INFO,
-		       "Using dynamically generated MAC address");
+		       "Using dynamically generated MAC address\n");
 #endif
 		/* dynamic generate */
 		u4SysTime = (uint32_t) kalGetTimeTick();
@@ -3926,7 +3926,7 @@ uint32_t wlanUpdateNetworkAddress(struct ADAPTER
 
 	} else {
 #if CFG_SHOW_MACADDR_SOURCE
-		DBGLOG(INIT, INFO, "Using host-supplied MAC address");
+		DBGLOG(INIT, INFO, "Using host-supplied MAC address\n");
 #endif
 	}
 
@@ -4814,7 +4814,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 	struct CMD_NVRAM_SETTING *prCmdNvramSettings;
 
 	if (prRegInfo == NULL) {
-		DBGLOG(INIT, ERROR, "prRegInfo = NULL");
+		DBGLOG(INIT, ERROR, "prRegInfo = NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	ASSERT(prAdapter);
@@ -4845,7 +4845,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
 
-	DBGLOG(INIT, INFO, "Enable5GBand = %d, Detail = [%d,%d,%d]",
+	DBGLOG(INIT, INFO, "Enable5GBand = %d, Detail = [%d,%d,%d]\n",
 		prAdapter->fgEnable5GBand,
 		prRegInfo->ucEnable5GBand,
 		prRegInfo->ucSupport5GBand,

@@ -2773,7 +2773,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			fgPwrMode6GSupport == FALSE) {
 
 			DBGLOG(SCN, WARN, "Skip scan, BSSID["MACSTR
-				"] SSID:%s non support 6G pwr mode[%d],0x%08x",
+				"] SSID:%s non support 6G pwr mode[%d],0x%08x\n",
 				MAC2STR(prWlanBeaconFrame->aucBSSID),
 				rSsid.aucSsid,
 				e6GPwrModeCurr,

@@ -982,18 +982,15 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 					      (MIN_DEAUTH_INTERVAL_MSEC))) {
 
 				i4NewEntryIndex = i;
-			} else
-			if (EQUAL_MAC_ADDR
-				(pucReceiveAddr, prDeauthInfo->aucRxAddr)
-				&& (!pfTxDoneHandler)) {
-
+			} else if (EQUAL_MAC_ADDR(pucReceiveAddr,
+						  prDeauthInfo->aucRxAddr) &&
+				   !pfTxDoneHandler) {
 				return WLAN_STATUS_FAILURE;
 			}
 		}
 
 		/* 4 <3> Update information. */
-		if (i4NewEntryIndex > 0) {
-
+		if (i4NewEntryIndex >= 0) {
 			prDeauthInfo =
 			    &(prAdapter->
 			      rWifiVar.arDeauthInfo[i4NewEntryIndex]);

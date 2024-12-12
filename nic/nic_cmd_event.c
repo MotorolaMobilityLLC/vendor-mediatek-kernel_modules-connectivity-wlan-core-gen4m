@@ -3052,20 +3052,21 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
 	uint8_t ucLinkStatsBssNum = 1;
 
-	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u power=%u,%u",
+	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u power=%u,%u\n",
 			u4HostOffsetInfo, u4HostOffsetAc,
 			u4HostOffsetTxTimePerLevels, u4HostOffsetRxTime,
 			u4HostOffsetChannel,
 			prOffset->u4NumTxPowerLevels, ENUM_BAND_NUM);
 
 	if (!offset) {
-		DBGLOG(INIT, WARN, "NULL offset: offset=0x%08x, offset2=0x%08x",
-				offset, offset2);
+		DBGLOG(INIT, WARN,
+			"NULL offset: offset=0x%08x, offset2=0x%08x\n",
+			offset, offset2);
 		return WLAN_STATUS_FAILURE;
 	}
 	if (!offset2) {
 		DBGLOG(INIT, TRACE,
-				"NULL offset: offset=0x%08x, offset2=0x%08x",
+				"NULL offset: offset=0x%08x, offset2=0x%08x\n",
 				offset, offset2);
 	}
 
@@ -3073,7 +3074,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	if (prOffset->u4OffsetPeerInfo %
 			sizeof(struct STATS_LLS_WIFI_IFACE_STAT)) {
 		DBGLOG(INIT, WARN,
-		       "u4OffsetPeerInfo not multiple of iface, FW: %u, sz=%zu, return fail",
+		       "u4OffsetPeerInfo not multiple of iface, FW: %u, sz=%zu, return fail\n",
 			prOffset->u4OffsetPeerInfo,
 			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
 	} else {
@@ -3085,7 +3086,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	if (prOffset->u4OffsetRadioStat - prOffset->u4OffsetPeerInfo <
 	    sizeof(struct PEER_INFO_RATE_STAT[CFG_STA_REC_NUM])) {
 		DBGLOG(INIT, WARN,
-		       "sizeof ratio stats FW: %u-%u < %u, return fail",
+		       "sizeof ratio stats FW: %u-%u < %u, return fail\n",
 		       prOffset->u4OffsetRadioStat, prOffset->u4OffsetPeerInfo,
 		       sizeof(struct PEER_INFO_RATE_STAT[CFG_STA_REC_NUM]));
 	}
@@ -3100,7 +3101,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	    prOffset->u4OffsetRxTime != u4HostOffsetRxTime ||
 	    prOffset->u4OffsetChannel != u4HostOffsetChannel) {
 		DBGLOG(INIT, WARN,
-		       "Offset not match(FW): %u/%u/%u(:%u)/%u:(%u)/%u/%u/%u",
+		       "Offset not match(FW): %u/%u/%u(:%u)/%u:(%u)/%u/%u/%u\n",
 			prOffset->u4OffsetInfo,
 			prOffset->u4OffsetAc,
 			prOffset->u4OffsetPeerInfo,
@@ -3115,18 +3116,18 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	}
 	if (offset2 && size2 > LLS_RADIO_STAT_MAX_TX_LEVELS *
 			ENUM_BAND_NUM * sizeof(uint32_t)) {
-		DBGLOG(INIT, WARN, "Size 2 too large: %u", size2);
+		DBGLOG(INIT, WARN, "Size 2 too large: %u\n", size2);
 		return WLAN_STATUS_FAILURE;
 	}
 
 	prAdapter->ucLinkStatsBssNum = ucLinkStatsBssNum;
 	if (prAdapter->pucLinkStatsSrcBufAddr) {
-		DBGLOG(INIT, WARN, "LLS EMI stats set, update it.");
+		DBGLOG(INIT, WARN, "LLS EMI stats set, update it.\n");
 		prAdapter->pucLinkStatsSrcBufAddr = NULL;
 	}
 
 	if (prAdapter->pu4TxTimePerLevels) {
-		DBGLOG(INIT, WARN, "LLS EMI PowerLevel set, update it.");
+		DBGLOG(INIT, WARN, "LLS EMI PowerLevel set, update it.\n");
 		prAdapter->pu4TxTimePerLevels = NULL;
 	}
 
@@ -3146,7 +3147,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	prAdapter->prLinkStatsRadioInfo = (struct WIFI_RADIO_CHANNEL_STAT *)
 		&prAdapter->pucLinkStatsSrcBufAddr[prOffset->u4OffsetRadioStat];
 
-	DBGLOG(INIT, INFO, "EMI offset=%x, offset2=%x (%u), BssNum=%u",
+	DBGLOG(INIT, INFO, "EMI offset=%x, offset2=%x (%u), BssNum=%u\n",
 			offset, offset2, size2, prAdapter->ucLinkStatsBssNum);
 #endif
 	return WLAN_STATUS_SUCCESS;

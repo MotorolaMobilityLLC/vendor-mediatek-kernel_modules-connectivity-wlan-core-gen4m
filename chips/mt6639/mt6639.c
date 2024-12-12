@@ -2249,7 +2249,7 @@ static void mt6639WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG1_PRI1_DLY_INT_EN_SHFT;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	DBGLOG(HAL, INFO, "prdc int: %uus, dly int[%u]: %uus, cnt=%u",
+	DBGLOG(HAL, INFO, "prdc int: %uus, dly int[%u]: %uus, cnt=%u\n",
 	       prWifiVar->u4PrdcIntTime * 20,
 	       prWifiVar->fgEnDlyInt,
 	       prWifiVar->u4DlyIntTime * 20,
@@ -3167,7 +3167,7 @@ static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)
 
 	HAL_MCR_RD(ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, TRACE, "0x%08x=0x%08x\n",
 		WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, u4Value);
 	if ((u4Value & 0xFFFF0000) != 0xDEAD0000) {
 		fgResult = FALSE;
@@ -3176,7 +3176,7 @@ static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)
 
 	HAL_MCR_RD(ad, CBTOP_GPIO_MODE5_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, TRACE, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
 	if (((u4Value & CBTOP_GPIO_MODE5_GPIO47_MASK) >>
 	    CBTOP_GPIO_MODE5_GPIO47_SHFT) != 0x0) {
@@ -3186,7 +3186,7 @@ static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)
 
 	HAL_MCR_RD(ad, CBTOP_GPIO_MODE6_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, TRACE, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
 	if (((u4Value & CBTOP_GPIO_MODE6_GPIO49_MASK) >>
 	    CBTOP_GPIO_MODE6_GPIO49_SHFT) != 0x0) {
@@ -3324,7 +3324,7 @@ static uint32_t mt6639_mcu_reset(struct ADAPTER *ad)
 
 static void set_cbinfra_remap(struct ADAPTER *ad)
 {
-	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
+	DBGLOG(INIT, TRACE, "set_cbinfra_remap.\n");
 
 	HAL_MCR_WR(ad,
 		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,

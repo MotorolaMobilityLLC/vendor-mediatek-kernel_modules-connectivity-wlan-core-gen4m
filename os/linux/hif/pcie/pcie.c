@@ -2481,7 +2481,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	}
 
 	if (buf) {
-		DBGLOG(HAL, INFO, "request_irq info: %s", buf);
+		DBGLOG(HAL, INFO, "request_irq info: %s\n", buf);
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 	}
 

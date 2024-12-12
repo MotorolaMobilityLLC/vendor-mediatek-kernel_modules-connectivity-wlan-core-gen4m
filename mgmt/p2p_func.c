@@ -440,11 +440,8 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc =
 			p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
 
-		if (!prBssDesc || !prP2pBssInfo) {
-			DBGLOG(P2P, ERROR,
-				"[%d]: NO Target BSS Descriptor\n", i);
+		if (!prBssDesc || !prP2pBssInfo)
 			continue;
-		}
 
 		/* Renew op trx nss */
 		cnmOpModeGetTRxNss(prAdapter, prP2pBssInfo->ucBssIndex,
@@ -625,7 +622,7 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		DBGLOG(P2P, INFO,
+		DBGLOG(P2P, TRACE,
 			"Update P2P_BSS_INFO_T and apply settings to MAC\n");
 
 		/* 3 <1> Update BSS_INFO_T from AIS_FSM_INFO_T
@@ -677,7 +674,7 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		 * Basic Rate Set/Operational Rate Set
 		 */
 		prP2pBssInfo->ucPhyTypeSet = prStaRec->ucDesiredPhyTypeSet;
-		DBGLOG(P2P, INFO, "prP2pBssInfo->ucPhyTypeSet(%02x)\n",
+		DBGLOG(P2P, INFO, "prP2pBssInfo->ucPhyTypeSet(0x%02x)\n",
 			prP2pBssInfo->ucPhyTypeSet);
 
 		prP2pBssInfo->ucNonHTBasicPhyType =
@@ -2465,7 +2462,7 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 
 		if (!prChnlReqInfo->fgIsChannelRequested)
 			break;
-		DBGLOG(P2P, TRACE, "P2P Release Channel\n");
+
 		prChnlReqInfo->fgIsChannelRequested = FALSE;
 
 		/* 1. return channel privilege to CNM immediately */
@@ -2473,6 +2470,8 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 			cnmMemAlloc(prAdapter,
 			RAM_TYPE_MSG, sizeof(struct MSG_CH_ABORT));
 		if (!prMsgChRelease) {
+			DBGLOG(P2P, ERROR, "Alloc msg (%zu) failed\n",
+				sizeof(struct MSG_CH_ABORT));
 			break;
 		}
 		prMsgChRelease->rMsgHdr.eMsgId = MID_MNY_CNM_CH_ABORT;
@@ -2485,7 +2484,7 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 		else
 			prMsgChRelease->eDBDCBand = ENUM_BAND_AUTO;
 
-		DBGLOG(P2P, INFO,
+		DBGLOG(P2P, TRACE,
 			"P2P abort channel on band %u. ucExtraChReqNum: %d\n",
 			prMsgChRelease->eDBDCBand,
 			prMsgChRelease->ucExtraChReqNum);
@@ -2541,7 +2540,7 @@ void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DBDC
 		prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
 
-		DBGLOG(P2P, INFO,
+		DBGLOG(P2P, TRACE,
 		   "p2pFuncAcquireCh: P2P Request channel on band %u, tokenID: %d, cookie: 0x%llx.\n",
 		   prMsgChReq->eDBDCBand,
 		   prMsgChReq->ucTokenID,
@@ -5166,7 +5165,7 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 			prP2pBssInfo->u4RsnSelectedGroupMgmtCipher =
 				rRsnIe.u4GroupMgmtCipherSuite;
 
-			DBGLOG(RSN, ERROR,
+			DBGLOG(RSN, INFO,
 				"bcn mfpc:%d, mfpr:%d, sha256:%d, akm=0x%04x group=0x%04x\n",
 				prP2pBssInfo->rApPmfCfg.fgMfpc,
 				prP2pBssInfo->rApPmfCfg.fgMfpr,

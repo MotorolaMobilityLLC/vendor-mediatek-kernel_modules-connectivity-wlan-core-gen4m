@@ -259,7 +259,7 @@ void mldGenerateMlIEImpl(struct ADAPTER *prAdapter,
 		if (IS_BSS_APGO(bss)) {
 			if (sta && !kalIsZeroEtherAddr(sta->aucMldAddr)) {
 				DBGLOG(ML, INFO,
-					"Start MLO (TranSeq: %d)", seq);
+					"Start MLO (TranSeq: %d)\n", seq);
 				mldGenerateBasicCommonInfo(prAdapter,
 					prMsduInfo, frame_ctrl);
 			} else {
@@ -268,24 +268,24 @@ void mldGenerateMlIEImpl(struct ADAPTER *prAdapter,
 				 * handle it.
 				 */
 				DBGLOG(ML, INFO,
-					"No MLO (TranSeq: %d)", seq);
+					"No MLO (TranSeq: %d)\n", seq);
 			}
 		} else {
 			if (mld_starec) {
 				DBGLOG(ML, INFO,
-					"Start MLO (TranSeq: %d) linkNum=%d",
+					"Start MLO (TranSeq: %d) linkNum=%d\n",
 					seq, mld_starec->rStarecList.u4NumElem);
 				mldGenerateBasicCommonInfo(prAdapter,
 					prMsduInfo, frame_ctrl);
 			} else {
 				DBGLOG(ML, INFO,
-					"No MLO (TranSeq: %d)", seq);
+					"No MLO (TranSeq: %d)\n", seq);
 			}
 		}
 	}
 		break;
 	default:
-		DBGLOG(ML, INFO,  "invalid frame_ctrl=%d", frame_ctrl);
+		DBGLOG(ML, INFO,  "invalid frame_ctrl=%d\n", frame_ctrl);
 		break;
 	}
 }

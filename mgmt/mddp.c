@@ -1011,7 +1011,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			netdev_priv(prNetdev);
 		if (!prNetDevPrivate->ucMddpSupport) {
-			DBGLOG(NIC, ERROR, "mddp not support\n");
+			DBGLOG(NIC, TRACE, "mddp not support\n");
 			goto exit;
 		}
 	} else {

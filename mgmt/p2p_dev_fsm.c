@@ -1170,7 +1170,7 @@ void p2pDevFsmRunEventMgmtTx(struct ADAPTER *prAdapter,
 	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
 
 	fgNeedOffchnlTx = p2pDevNeedOffchnlTx(prAdapter, prMgmtTxMsg);
-	DBGLOG(P2P, INFO, "fgNeedOffchnlTx: %d\n", fgNeedOffchnlTx);
+	DBGLOG(P2P, TRACE, "fgNeedOffchnlTx: %d\n", fgNeedOffchnlTx);
 
 	if (!fgNeedOffchnlTx)
 		p2pFuncTxMgmtFrame(prAdapter,

@@ -60,6 +60,10 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 #define IS_BSS_NOT_ALIVE(_prAdapter, _prBssInfo) \
 	(!IS_BSS_ALIVE(_prAdapter, _prBssInfo))
 
+#define IS_BSS_P2P_DEV(_prAdapter, _prBssInfo) \
+	(_prAdapter && _prBssInfo && \
+	 _prAdapter->ucP2PDevBssIdx == _prBssInfo->ucBssIndex)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -176,9 +176,6 @@ p2pDevStateInit_REQING_CHANNEL(struct ADAPTER *prAdapter,
 #endif
 		}
 #endif
-		cnmOpModeGetTRxNss(
-			prAdapter, prBssInfo->ucBssIndex,
-			&prBssInfo->ucOpRxNss, &prBssInfo->ucOpTxNss);
 		prChnlReqInfo->u4MaxInterval = prP2pMsgChnlReq->u4Duration;
 		prChnlReqInfo->ucReqChnlNum =
 			prP2pMsgChnlReq->rChannelInfo.ucChannelNum;

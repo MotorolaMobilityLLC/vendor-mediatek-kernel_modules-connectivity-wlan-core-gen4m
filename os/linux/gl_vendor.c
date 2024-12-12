@@ -927,7 +927,7 @@ int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 	ASSERT(wiphy);
 
 	DBGLOG(REQ, INFO,
-		"Get roaming capabilities: max block/allowlist=%d/%d",
+		"Get roaming capabilities: max block/allowlist=%d/%d\n",
 		maxNumOfList[0], maxNumOfList[1]);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(maxNumOfList));
@@ -5380,7 +5380,6 @@ int mtk_cfg80211_vendor_comb_matrix(
 	}
 	kalMemZero(pr_comb_matrix,
 		   sizeof(struct ANDROID_T_COMB_MATRIX));
-	DBGLOG(REQ, WARN, "mtk_cfg80211_vendor_comb_matrix\n");
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "Invalid glue info\n");
@@ -5442,8 +5441,6 @@ int mtk_cfg80211_vendor_comb_matrix(
 		i4Status = -ENOMEM;
 		goto end;
 	}
-	DBGLOG(REQ, ERROR, "sizeof(comb_matrix):%lu\n,",
-		sizeof(struct ANDROID_T_COMB_MATRIX));
 
 	if (unlikely(nla_put(skb,
 		WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MATRIX,
