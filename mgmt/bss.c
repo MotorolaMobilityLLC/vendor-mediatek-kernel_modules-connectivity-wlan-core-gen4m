@@ -1456,11 +1456,6 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 
 exit:
-#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
-	if (prOldMsduInfo)
-		cnmMgtPktFree(prAdapter, prOldMsduInfo);
-#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
-
 	return u4Status;
 }				/* end of bssUpdateBeaconContent() */
 
