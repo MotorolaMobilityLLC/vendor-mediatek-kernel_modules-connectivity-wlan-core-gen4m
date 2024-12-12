@@ -194,20 +194,20 @@ union _NAN_BAND_CHNL_CTRL {
 		uint32_t u4Rsvd : 31;
 	}; /* u4Type to distinguish band or channel */
 
-	struct _NanBandCtrl {
-		uint32_t u4Type : 1;
-		uint32_t u4Rsvd : 23;
+	struct /* _NanBandCtrl */ {
+		uint32_t u4BandType : 1;
+		uint32_t u4BandRsvd : 23;
 		/* Table 99, same to enum NAN_SUPPORTED_BANDS */
 		uint32_t u4BandIdMask : 8;
-	} rBand;
+	} /* rBand */;
 
-	struct _NanChannelCtrl {
-		uint32_t u4Type : 1;
-		uint32_t u4Rsvd : 7;
+	struct /* _NanChannelCtrl */ {
+		uint32_t u4ChnlType : 1;
+		uint32_t u4ChnlRsvd : 7;
 		uint32_t u4OperatingClass : 8;
 		uint32_t u4PrimaryChnl : 8;
 		uint32_t u4AuxCenterChnl : 8;
-	} rChannel;
+	} /* rChannel */;
 
 	uint32_t u4RawData;
 };

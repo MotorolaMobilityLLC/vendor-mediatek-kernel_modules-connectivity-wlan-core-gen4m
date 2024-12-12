@@ -189,8 +189,8 @@ nanGetChannelInfo(
 				u4Idx2 < t->ucNumBandChnlCtrl;
 				u4Idx2++) {
 				chctrl = t->arBandChnlCtrl[u4Idx2];
-				pch = chctrl.rChannel.u4PrimaryChnl;
-				opc = chctrl.rChannel.u4OperatingClass;
+				pch = chctrl.u4PrimaryChnl;
+				opc = chctrl.u4OperatingClass;
 				info[i].channel = pch;
 				info[i].bandwidth = nanRegGetBw(opc);
 				info[i].nss = 2;

@@ -602,11 +602,10 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 	}
 
 	if (ucOperatingClass != REG_INVALID_INFO) {
-		rChnlInfo.rChannel.u4Type =
-			NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
-		rChnlInfo.rChannel.u4OperatingClass = ucOperatingClass;
-		rChnlInfo.rChannel.u4PrimaryChnl = ucPriChannel;
-		rChnlInfo.rChannel.u4AuxCenterChnl = 0; /* Fixme */
+		rChnlInfo.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
+		rChnlInfo.u4OperatingClass = ucOperatingClass;
+		rChnlInfo.u4PrimaryChnl = ucPriChannel;
+		rChnlInfo.u4AuxCenterChnl = 0; /* Fixme */
 	}
 
 	return rChnlInfo;
@@ -700,45 +699,45 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 	    !pucChannelS2)
 		return WLAN_STATUS_FAILURE;
 
-	u2Bw = nanRegGetBw(rChnlInfo.rChannel.u4OperatingClass);
+	u2Bw = nanRegGetBw(rChnlInfo.u4OperatingClass);
 	if (u2Bw == REG_INVALID_INFO)
 		return WLAN_STATUS_FAILURE;
 
-	*pucPriChannel = rChnlInfo.rChannel.u4PrimaryChnl;
+	*pucPriChannel = rChnlInfo.u4PrimaryChnl;
 
-	*peSco = nanRegGetSco(rChnlInfo.rChannel.u4OperatingClass);
+	*peSco = nanRegGetSco(rChnlInfo.u4OperatingClass);
 
 	*pucChannelS1 = *pucChannelS2 = 0;
 	if ((u2Bw == 20) || (u2Bw == 40)) {
 		*peChannelWidth = CW_20_40MHZ;
 #if (CFG_SUPPORT_NAN_6G == 1)
-		if (IS_6G_OP_CLASS(rChnlInfo.rChannel.u4OperatingClass)) {
+		if (IS_6G_OP_CLASS(rChnlInfo.u4OperatingClass)) {
 			*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
-				rChnlInfo.rChannel.u4OperatingClass,
-				rChnlInfo.rChannel.u4PrimaryChnl);
+				rChnlInfo.u4OperatingClass,
+				rChnlInfo.u4PrimaryChnl);
 			}
 #endif
-	} else if ((u2Bw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl == 0)) {
+	} else if ((u2Bw == 80) && (rChnlInfo.u4AuxCenterChnl == 0)) {
 		*peChannelWidth = CW_80MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
-			rChnlInfo.rChannel.u4OperatingClass,
-			rChnlInfo.rChannel.u4PrimaryChnl);
+			rChnlInfo.u4OperatingClass,
+			rChnlInfo.u4PrimaryChnl);
 	} else if (u2Bw == 160) {
 		*peChannelWidth = CW_160MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
-			rChnlInfo.rChannel.u4OperatingClass,
-			rChnlInfo.rChannel.u4PrimaryChnl);
+			rChnlInfo.u4OperatingClass,
+			rChnlInfo.u4PrimaryChnl);
 	} else if (u2Bw == 320) {
 		*peChannelWidth = CW_320_1MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
-			rChnlInfo.rChannel.u4OperatingClass,
-			rChnlInfo.rChannel.u4PrimaryChnl);
-	} else if ((u2Bw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl != 0)) {
+			rChnlInfo.u4OperatingClass,
+			rChnlInfo.u4PrimaryChnl);
+	} else if ((u2Bw == 80) && (rChnlInfo.u4AuxCenterChnl != 0)) {
 		*peChannelWidth = CW_80P80MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
-			rChnlInfo.rChannel.u4OperatingClass,
-			rChnlInfo.rChannel.u4PrimaryChnl);
-		*pucChannelS2 = rChnlInfo.rChannel.u4AuxCenterChnl;
+			rChnlInfo.u4OperatingClass,
+			rChnlInfo.u4PrimaryChnl);
+		*pucChannelS2 = rChnlInfo.u4AuxCenterChnl;
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -748,28 +747,27 @@ enum ENUM_BAND
 nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 {
 	enum ENUM_BAND eBand = BAND_NULL;
+	uint32_t u4BandIdMask;
 
-	if (rNanChnlInfo.rChannel.u4Type ==
-		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
+	if (rNanChnlInfo.u4Type == NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
 #if (CFG_SUPPORT_NAN_6G == 1) || (CFG_SUPPORT_WIFI_6G == 1)
-		if (IS_6G_OP_CLASS(rNanChnlInfo.rChannel.u4OperatingClass))
+		if (IS_6G_OP_CLASS(rNanChnlInfo.u4OperatingClass))
 			eBand = BAND_6G;
 		else
 #endif
-			if (rNanChnlInfo.rChannel.u4PrimaryChnl < 36)
+			if (rNanChnlInfo.u4PrimaryChnl < 36)
 				eBand = BAND_2G4;
 			else
 				eBand = BAND_5G;
 	} else {
-		if (rNanChnlInfo.rBand.u4BandIdMask &
-			BIT(NAN_SUPPORTED_BAND_ID_2P4G))
+		u4BandIdMask = rNanChnlInfo.u4BandIdMask;
+
+		if (u4BandIdMask & BIT(NAN_SUPPORTED_BAND_ID_2P4G))
 			eBand = BAND_2G4;
-		else if (rNanChnlInfo.rBand.u4BandIdMask &
-			BIT(NAN_SUPPORTED_BAND_ID_5G))
+		else if (u4BandIdMask & BIT(NAN_SUPPORTED_BAND_ID_5G))
 			eBand = BAND_5G;
 #if (CFG_SUPPORT_NAN_6G == 1) || (CFG_SUPPORT_WIFI_6G == 1)
-		else if (rNanChnlInfo.rBand.u4BandIdMask &
-			 BIT(NAN_SUPPORTED_BAND_ID_6G))
+		else if (u4BandIdMask & BIT(NAN_SUPPORTED_BAND_ID_6G))
 			eBand = BAND_6G;
 #endif
 	}
@@ -779,10 +777,10 @@ nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 
 u_int8_t nanRegNanChnlBandIsEht(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 {
-	if (rNanChnlInfo.rChannel.u4Type != NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL)
+	if (rNanChnlInfo.u4Type != NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL)
 		return FALSE;
 
-	if (IS_EHT_OP_CLASS(rNanChnlInfo.rChannel.u4OperatingClass))
+	if (IS_EHT_OP_CLASS(rNanChnlInfo.u4OperatingClass))
 		return TRUE;
 
 	return FALSE;

@@ -11158,9 +11158,9 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 				szTimeLineIdx, u4Idx,
 				prNanTimelineMgmt->ucMapId,
 				ChInf.u4RawData,
-				ChInf.rChannel.u4PrimaryChnl,
-				ChInf.rChannel.u4OperatingClass,
-				nanRegGetBw(ChInf.rChannel.u4OperatingClass));
+				ChInf.u4PrimaryChnl,
+				ChInf.u4OperatingClass,
+				nanRegGetBw(ChInf.u4OperatingClass));
 
 			u4Length = sizeof(prChnlTimeline->au4AvailMap);
 			pucContent = (uint8_t *)prChnlTimeline->au4AvailMap;
@@ -11208,9 +11208,9 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 				szTimeLineIdx, u4Idx,
 				prNanTimelineMgmt->ucMapId,
 				ChInf.u4RawData,
-				ChInf.rChannel.u4PrimaryChnl,
-				ChInf.rChannel.u4OperatingClass,
-				nanRegGetBw(ChInf.rChannel.u4OperatingClass));
+				ChInf.u4PrimaryChnl,
+				ChInf.u4OperatingClass,
+				nanRegGetBw(ChInf.u4OperatingClass));
 
 			u4Length = sizeof(prChnlTimeline->au4AvailMap);
 			pucContent = (uint8_t *)prChnlTimeline->au4AvailMap;
@@ -11283,13 +11283,13 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 					continue;
 
 				ChCtl = prAvailEty->arBandChnlCtrl[0];
-				u4OpClass = ChCtl.rChannel.u4OperatingClass;
+				u4OpClass = ChCtl.u4OperatingClass;
 				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 					"[%u][%u] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
 					u4Idx, u4Idx1, prAvailAttr->ucMapId,
 					prAvailEty->rEntryCtrl.u2RawData,
 					ChCtl.u4RawData,
-					ChCtl.rChannel.u4OperatingClass,
+					ChCtl.u4OperatingClass,
 					nanRegGetBw(u4OpClass));
 				for (u4Idx2 = 0;
 					u4Idx2 < prAvailEty->ucNumBandChnlCtrl;
@@ -11299,7 +11299,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 						i4BytesWritten,
 						"[%u] PriChnl:%u\n",
 						u4Idx2,
-						ct.rChannel.u4PrimaryChnl);
+						ct.u4PrimaryChnl);
 				}
 
 				u4Length = sizeof(prAvailEty->au4AvailMap);

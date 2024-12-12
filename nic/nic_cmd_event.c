@@ -6683,7 +6683,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			continue;
 
 		u4OpClass = prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				.rChannel.u4OperatingClass;
+				.u4OperatingClass;
 		if (!nanLinkNeedMlo(prAdapter) &&
 			IS_2G_OP_CLASS(u4OpClass) &&
 			nanSchedGetHighestCommonBand(prAdapter, u2SchId) !=
@@ -6693,7 +6693,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 				   u2SeqNum, u2SchId,
 				   prFlowCtrlEvt->au2RemainingTime[u2SchId],
 				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-					.rChannel.u4OperatingClass);
+					.u4OperatingClass);
 			continue;
 		}
 
@@ -6714,7 +6714,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 				       rCurrentTime -
 				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
 				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				   .rChannel.u4OperatingClass);
+				   .u4OperatingClass);
 		} else {
 			DBGLOG(NAN, INFO,
 			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u\n",
@@ -6724,7 +6724,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 				       rCurrentTime -
 				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
 				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				   .rChannel.u4OperatingClass);
+				   .u4OperatingClass);
 		}
 		prNanFlowCtrlRecord[u2SchId].fgAllow = !!u2RemainingTime;
 		prNanFlowCtrlRecord[u2SchId].u4Time = rCurrentTime;
