@@ -2921,7 +2921,7 @@ uint32_t mltwtSendSetupFrameAllInOne(
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t mltwtGetLinkCount(
+uint8_t mltwtGetLinkCount(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	uint8_t ucTWTFlowId)
@@ -2936,14 +2936,14 @@ uint32_t mltwtGetLinkCount(
 		DBGLOG(TWT_REQUESTER, ERROR,
 			"MLTWT invalid prAdapter\n");
 
-		return WLAN_STATUS_INVALID_DATA;
+		return 0;
 	}
 
 	if (!prBssInfo) {
 		DBGLOG(TWT_REQUESTER, ERROR,
 			"MLTWT invalid prBssInfo\n");
 
-		return WLAN_STATUS_INVALID_DATA;
+		return 0;
 	}
 
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);

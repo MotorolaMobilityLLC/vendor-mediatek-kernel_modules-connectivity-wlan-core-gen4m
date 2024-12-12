@@ -484,7 +484,7 @@ uint32_t mltwtSendSetupFrameAllInOne(
 	struct _TWT_PARAMS_T *prTWTParams,
 	PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
-uint32_t mltwtGetLinkCount(
+uint8_t mltwtGetLinkCount(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	uint8_t ucTWTFlowId);
