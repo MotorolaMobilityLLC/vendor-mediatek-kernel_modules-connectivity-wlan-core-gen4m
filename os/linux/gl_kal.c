@@ -13950,6 +13950,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 				&params.key_mgmt_suite);
 
 		mld_addr_str[0] = '\0';
+#if (CFG_SUPPORT_MLO_EXTERNAL_AUTH_BY_VENDOR_CMD == 0)
 #if (CFG_ADVANCED_80211_MLO == 1) || \
 	KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
 		if (mld_addr) {
@@ -13957,6 +13958,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			kalSnprintf(mld_addr_str, sizeof(mld_addr_str),
 				" MLD[" MACSTR "]", MAC2STR(mld_addr));
 		}
+#endif
 #endif
 
 		DBGLOG(SAA, INFO, "[WPA3] "MACSTR
