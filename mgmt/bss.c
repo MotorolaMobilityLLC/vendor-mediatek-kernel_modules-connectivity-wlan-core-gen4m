@@ -439,19 +439,17 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
 	} else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption)) {
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-	} else if (IS_FEATURE_ENABLED(ucVhtOption) &&
-			prBssInfo->eBand == BAND_2G4 &&
-			prWifiVar->ucVhtIeIn2g &&
-			(prBssInfo->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
-		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-	} else if (!fgIsPureAp &&
-			IS_FEATURE_ENABLED(ucVhtOption) &&
-			((prBssInfo->eBand == BAND_5G)
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			|| (prBssInfo->eBand == BAND_6G)
-#endif
-			)) {
-		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+	} else if (IS_FEATURE_ENABLED(ucVhtOption)) {
+		if (prBssInfo->eBand == BAND_2G4) {
+			if (prWifiVar->ucVhtIeIn2g &&
+			    (prBssInfo->ucPhyTypeSet & PHY_TYPE_SET_802_11N))
+				prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+			else
+				prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
+		} else {
+			if (!fgIsPureAp)
+				prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+		}
 	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
