@@ -145,7 +145,7 @@ struct patch_dl_buf {
 
 struct patch_dl_target {
 	struct patch_dl_buf *patch_region;
-	uint8_t num_of_region;
+	uint32_t num_of_region;
 };
 
 struct WIFI_VER_INFO;
