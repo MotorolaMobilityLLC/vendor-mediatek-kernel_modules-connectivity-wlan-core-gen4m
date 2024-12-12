@@ -7158,7 +7158,8 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 		hqa_frame->id = SERV_OS_HTONS(priv_hqa_cmd_mapping[i].cmd_id);
 		hqa_frame->length = tmp_length;
 		hqa_frame->sequence = 0;
-		memcpy(hqa_frame->data, tmpdata, tmp_length);
+		if (tmp_length > 0)
+			memcpy(hqa_frame->data, tmpdata, tmp_length);
 
 		/*debug use*/
 		data = (u_char *)hqa_frame;

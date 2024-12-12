@@ -14206,6 +14206,9 @@ void setTimeParameter(
 {
 	int8_t aucKey[WLAN_CFG_VALUE_LEN_MAX];
 	int8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
+	uint16_t u2CpyLen = kal_min_t(uint16_t,
+		WLAN_CFG_VALUE_LEN_MAX,
+		CHIP_CONFIG_RESP_SIZE);
 
 	kalMemZero(aucValue, sizeof(aucValue));
 	kalMemZero(aucKey, sizeof(aucKey));
@@ -14219,7 +14222,7 @@ void setTimeParameter(
 	prChipConfigInfo->u2MsgSize = kalStrnLen(aucValue,
 						   WLAN_CFG_VALUE_LEN_MAX);
 	kalStrnCpy(prChipConfigInfo->aucCmd, aucValue,
-		   CHIP_CONFIG_RESP_SIZE);
+		   u2CpyLen);
 }
 
 static uint32_t kalSyncTimeToFwViaCmd(struct ADAPTER *prAdapter,

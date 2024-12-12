@@ -1357,7 +1357,7 @@ __priv_set_struct(struct net_device *prNetDev,
 				break;
 			}
 			aucOidBuf[u4CmdLen] = 0;
-			if (strlen(aucOidBuf) <= 0) {
+			if (strnlen(aucOidBuf, u4CmdLen) <= 0) {
 				status = -EFAULT;
 				break;
 			}
