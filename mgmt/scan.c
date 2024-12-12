@@ -4214,6 +4214,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 #endif
 	uint32_t u4Idx = 0;
 	struct WLAN_INFO *prWlanInfo;
+	struct BSS_INFO *prBssInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4228,6 +4229,18 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		prSwRfb->u2HeaderLen != sizeof(struct WLAN_MAC_HEADER)) {
 		log_dbg(SCN, ERROR,
 			"Ignore invalid Beacon or Probe Response\n");
+		return rStatus;
+	}
+
+	if (prSwRfb->prStaRec)
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prSwRfb->prStaRec->ucBssIndex);
+	if (prBssInfo &&
+	    ((IS_BSS_P2P(prBssInfo) && prBssInfo->fgIsSwitchingChnl) ||
+	     IS_AIS_CH_SWITCH(prBssInfo))) {
+		log_dbg(SCN, TRACE,
+			"drop GO/AP beaon during CSA, BssIdx = %d\n",
+			prBssInfo->ucBssIndex);
 		return rStatus;
 	}
 
