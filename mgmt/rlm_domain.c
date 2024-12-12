@@ -3263,7 +3263,15 @@ uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size)
 	return u4CountryCode;
 }
 
+uint16_t rlmDomainReverseAlpha2(uint16_t Alpha2)
+{
+	uint16_t u2CountryCode = 0;
 
+	u2CountryCode = (Alpha2 & 0x00ff) << 8;
+	u2CountryCode |= (Alpha2 & 0xff00) >> 8;
+
+	return u2CountryCode;
+}
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 
@@ -3333,6 +3341,7 @@ void rlmDomainCountryCodeUpdate(
 	uint8_t fgNeedHoldRtnlLock)
 {
 	uint32_t u4FinalCountryCode = u4CountryCode;
+	uint16_t u2CountryCode;
 	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 #ifdef CFG_SUPPORT_BT_SKU
 	typedef void (*bt_fn_t) (char *);
@@ -3376,8 +3385,22 @@ void rlmDomainCountryCodeUpdate(
 	if (!regd_is_single_sku_en())
 		return;
 
-	prAdapter->rWifiVar.u2CountryCode =
-		(uint16_t)rlmDomainGetCountryCode();
+	u2CountryCode = (uint16_t)rlmDomainGetCountryCode();
+	prAdapter->rWifiVar.u2CountryCode = u2CountryCode;
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	u2CountryCode = rlmDomainReverseAlpha2(u2CountryCode);
+	if ((u2CountryCode == COUNTRY_CODE_US)
+		|| (u2CountryCode == COUNTRY_CODE_CA)) {
+		prAdapter->fgTpcEn = TRUE;
+		DBGLOG(RLM, INFO,
+		"TPC flag is enabled for 6GHz in Country(%c%c)\n",
+				((u2CountryCode & 0xff00) >> 8),
+				(u2CountryCode & 0x00ff));
+	} else {
+		prAdapter->fgTpcEn = FALSE;
+	}
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 	/* Send commands to firmware */
 	rlmDomainSendCmd(prAdapter, TRUE);
@@ -12184,6 +12207,9 @@ uint32_t rlmDomain6GPwrModeUpdate(
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeBss)
 {
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr = PWR_MODE_6G_LPI;
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeFinal = PWR_MODE_6G_LPI;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 	/* Sanity check parameter */
 	if ((!prAdapter) ||
@@ -12194,6 +12220,23 @@ uint32_t rlmDomain6GPwrModeUpdate(
 			e6GPwrModeBss);
 		return WLAN_STATUS_INVALID_DATA;
 	}
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	e6GPwrModeCurr = rlmDomainGetCurr6GPwrMode(prAdapter);
+	prAdapter->e6GPwrMode[ucBssIndex] = e6GPwrModeBss;
+	e6GPwrModeFinal = rlmDomainGetCurr6GPwrMode(prAdapter);
+
+	if (prAdapter->e6GPwrModeCurr != e6GPwrModeFinal) {
+		/* Resend power limit */
+		DBGLOG(RLM, INFO, "Set to 6GPwrMode[%u->%u]Curr[%u]",
+			prAdapter->e6GPwrModeCurr,
+			e6GPwrModeFinal,
+			e6GPwrModeCurr);
+		prAdapter->e6GPwrModeCurr = e6GPwrModeFinal;
+		rlmDomainUpdatePwrLimit_6G_By_PowerMode(
+				prAdapter, e6GPwrModeFinal);
+	}
+#else
 	e6GPwrModeCurr = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
 	prAdapter->e6GPwrMode[ucBssIndex] = e6GPwrModeBss;
 
@@ -12201,6 +12244,7 @@ uint32_t rlmDomain6GPwrModeUpdate(
 		/* Resend power limit  */
 		rlmDomainSendPwrLimitCmd(prAdapter);
 	}
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 	DBGLOG(RLM, INFO, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]\n",
 			ucBssIndex,
@@ -12551,6 +12595,196 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get 6G power mode, default use LPI
+ *
+ * \param[in] prAdapter
+ *
+ * \return value : 6G power mode
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomainGetCurr6GPwrMode(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo;
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = 0;
+	uint8_t fgUseDefault = TRUE;
+
+	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+		/* 1. For normal mode will check whether the net is active or
+		 *    not but test mode will not check
+		 * 2. 6G power mode priority: LPI > SP
+		 */
+		if ((((prAdapter->fgTestMode != TRUE) &&
+			(prBssInfo->fgIsNetActive)) ||
+			(prAdapter->fgTestMode == TRUE)) &&
+			(prBssInfo->eBand == BAND_6G) &&
+			(prAdapter->e6GPwrMode[ucBssIdx] >= e6GPwrMode) &&
+			(prAdapter->e6GPwrMode[ucBssIdx] < PWR_MODE_6G_VLP)) {
+			e6GPwrMode = prAdapter->e6GPwrMode[ucBssIdx];
+			fgUseDefault = FALSE;
+			DBGLOG(RLM, LOUD, "Valid BSS[%u]6GPwrMode[%u]Final[%u]",
+				ucBssIdx,
+				prAdapter->e6GPwrMode[ucBssIdx],
+				e6GPwrMode);
+		}
+	}
+
+	if (fgUseDefault)
+		return PWR_MODE_6G_LPI; /* default mode */
+	else
+		return e6GPwrMode;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is used to check whether the Config and TxPwrLimit file
+ *       support the current 6G power mode or not.
+ *
+ * \param[in] prAdapter
+ * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] pfgSupport : Pointer of flag to indicate the support or not
+ *
+ * \return value : Enum of supported 6G Power mode
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmDomain6GPwrModeCfgSupportChk(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t *pfgSupport)
+{
+	struct WIFI_VAR *prWifiVar;
+	enum ENUM_PWR_MODE_6G_TYPE e6FPwrModeFinal;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL\n");
+		*pfgSupport = FALSE;
+		return e6GPwrMode;
+	}
+
+	if (e6GPwrMode >= PWR_MODE_6G_NUM) {
+		*pfgSupport = FALSE;
+		DBGLOG(RLM, ERROR, "Invalid 6GPwrMode[%u]", e6GPwrMode);
+		return e6GPwrMode;
+	}
+
+	prWifiVar = &prAdapter->rWifiVar;
+	if (prWifiVar->fgPwrRdutMd) {
+		*pfgSupport = TRUE;
+		DBGLOG(RLM, TRACE, "PwrRdutMd is enabled");
+		return e6GPwrMode;
+	}
+
+	if ((e6GPwrMode < PWR_MODE_6G_SP)
+		|| (e6GPwrMode > PWR_MODE_6G_VLP)) {
+		e6FPwrModeFinal = e6GPwrMode;
+		*pfgSupport = TRUE;
+	} else if ((e6GPwrMode == PWR_MODE_6G_LPI)
+		&& (prWifiVar->fgLpiSup6G)) {
+		e6FPwrModeFinal = PWR_MODE_6G_LPI;
+		*pfgSupport = TRUE;
+	} else if ((e6GPwrMode == PWR_MODE_6G_SP)
+		&& (prAdapter->fg6GSupSpFile)
+		&& (prWifiVar->fgSpSup6G)) {
+		e6FPwrModeFinal = PWR_MODE_6G_SP;
+		*pfgSupport = TRUE;
+	} else if ((e6GPwrMode <= PWR_MODE_6G_VLP)
+		&& (prAdapter->fg6GSupVlpFile)
+		&& (prWifiVar->fgVlpSup6G)) {
+		e6FPwrModeFinal = PWR_MODE_6G_VLP;
+		*pfgSupport = TRUE;
+	} else {
+		e6FPwrModeFinal = e6GPwrMode;
+		*pfgSupport = FALSE;
+	}
+
+	DBGLOG(RLM, TRACE,
+	"PwrMode[%u->%u]File[%u %u]Cfg[%u %u %u]RdutMd[%u]Support[%u]\n",
+		e6GPwrMode,
+		e6FPwrModeFinal,
+		prAdapter->fg6GSupSpFile,
+		prAdapter->fg6GSupVlpFile,
+		prWifiVar->fgSpSup6G,
+		prWifiVar->fgVlpSup6G,
+		prWifiVar->fgLpiSup6G,
+		prWifiVar->fgPwrRdutMd,
+		*pfgSupport);
+
+	return e6FPwrModeFinal;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is used to check whether the Config, TxPwrLimit file
+ *       and Country support the current 6G power mode or not.
+ *
+ * \param[in] prAdapter
+ * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] pe6GPwrModeFinal : Enum of 6G Power mode
+ * \param[in] eBand : RF Band index
+ * \param[in] ucChnlNum : Center Channel
+ *
+ * \return 6G power mode support status
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmDomain6GPwrModeSupportChk(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	enum ENUM_PWR_MODE_6G_TYPE *pe6GPwrModeFinal,
+	enum ENUM_BAND eBand,
+	uint8_t ucChnlNum)
+{
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeFinal;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	uint16_t u2CountryCode = 0;
+	u_int8_t fgPwrMode6GSupport = TRUE;
+
+	if (prAdapter->rWifiVar.fgPwrRdutMd) {
+		DBGLOG(RLM, TRACE, "PwrRdutMd is enabled");
+		return TRUE;
+	}
+
+	e6GPwrModeFinal =
+	rlmDomain6GPwrModeCfgSupportChk(
+			prAdapter,
+			e6GPwrMode,
+			&fgPwrMode6GSupport);
+
+	if (pe6GPwrModeFinal)
+		*pe6GPwrModeFinal = e6GPwrModeFinal;
+
+	if (fgPwrMode6GSupport == FALSE) {
+		DBGLOG(RLM, TRACE,
+		"Config isn't support PwrMode[%u] in 6GHz band\n",
+		e6GPwrMode);
+		return FALSE;
+	}
+
+	u2CountryCode = rlmDomainReverseAlpha2(
+		prAdapter->rWifiVar.u2CountryCode);
+	u4Status = rlmDomain6GPwrModeCountrySupportChk(
+			eBand,
+			ucChnlNum,
+			u2CountryCode,
+			e6GPwrModeFinal,
+			&fgPwrMode6GSupport);
+
+	if (u4Status == WLAN_STATUS_SUCCESS
+		&& fgPwrMode6GSupport == FALSE) {
+		DBGLOG(RLM, TRACE,
+		"Country(%c%c) channel[%u] can't support PwrMode[%u]\n",
+			((u2CountryCode & 0xff00) >> 8),
+			(u2CountryCode & 0x00ff),
+			ucChnlNum,
+			e6GPwrModeFinal);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #endif

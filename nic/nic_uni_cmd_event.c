@@ -2647,6 +2647,7 @@ uint32_t nicUniCmdBssInfoTagHe(struct ADAPTER *ad,
 		HE_OP_PARAM0_DEFAULT_PE_DUR_SHFT);
 	tag->fgErSuDisable = (bss->ucHeOpParams[2] &
 		(1 << HE_OP_PARAM2_ER_SU_DISABLE_SHFT)) ? TRUE : FALSE;
+	tag->uc6GPwrRegBitMap = cmd->uc6GPwrRegBitMap;
 
 	return tag->u2Length;
 }

@@ -2484,6 +2484,50 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 };
 #endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
+	{
+		{'U', 'S'},
+		{
+			/* UNII-5 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-6 */
+			{{SP_NON_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-7 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-8 */
+			{{SP_NON_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}}
+		}
+	},
+	{
+		{'C', 'A'},
+		{
+			/* UNII-5 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-6 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-7 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-8 */
+			{{SP_NON_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}}
+		}
+	},
+	{
+		/* Default */
+		{0, 0},
+		{
+			/* UNII-5 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-6 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-7 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
+			/* UNII-8 */
+			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}}
+		}
+	}
+};
+#else
 struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
 	{
 		/* Default */
@@ -2496,6 +2540,7 @@ struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
 		}
 	}
 };
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #define COUNTRY_PWR_MODE_6G_SUPPORT_TABLE_SIZE \
 		(sizeof(g_rCountryPwrMode6GSupport) \
 			/ sizeof(struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE))

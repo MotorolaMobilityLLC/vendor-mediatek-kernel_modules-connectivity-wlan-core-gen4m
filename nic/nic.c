@@ -2208,6 +2208,24 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 	prBssInfo->fgFirstArp = TRUE;
 
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	/* Since SAP will repeatly activate & deactivate netowork,
+	 * we need to update 6G power mode here
+	 */
+	if ((ucBssIndex < MAX_BSSID_NUM)
+		&& IS_BSS_APGO(prBssInfo)) {
+		if (prBssInfo->eBand == BAND_6G)
+			rlmDomain6GPwrModeUpdate(
+				prAdapter, ucBssIndex,
+				PWR_MODE_6G_VLP);
+		else
+			rlmDomain6GPwrModeUpdate(
+				prAdapter, ucBssIndex,
+				PWR_MODE_6G_LPI);
+	}
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+
 #if CFG_SAP_RPS_SUPPORT
 	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
 		p2pFuncRpsAisCheck(prAdapter,
@@ -2606,6 +2624,9 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	uint32_t u4Status;
 	struct BSS_INFO *prBssInfo;
 	struct CMD_SET_BSS_INFO rCmdSetBssInfo;
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	struct BSS_DESC *prBssDesc = NULL;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
@@ -2852,6 +2873,24 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 		rCmdSetBssInfo.u2HeBasicMcsSet =
 			prBssInfo->u2HeBasicMcsSet;
 	}
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	if ((prBssInfo->eBand == BAND_6G) && IS_BSS_AIS(prBssInfo))
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	else if ((prBssInfo->eBand == BAND_6G) && IS_BSS_P2P(prBssInfo))
+		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIndex);
+	else
+		prBssDesc = NULL;
+
+	if ((prBssDesc && prBssDesc->e6GPwrMode == PWR_MODE_6G_VLP) ||
+		((prBssInfo->eBand == BAND_6G) && IS_BSS_APGO(prBssInfo)))
+		rlmDomain6GPwrModeUpdate(prAdapter,
+			ucBssIndex, PWR_MODE_6G_VLP);
+
+	if (prAdapter->fgTpcEn)
+		rCmdSetBssInfo.uc6GPwrRegBitMap |= BIT(PWR_REG_6G_TPC);
+	if (prAdapter->e6GPwrMode[ucBssIndex] == PWR_MODE_6G_VLP)
+		rCmdSetBssInfo.uc6GPwrRegBitMap |= BIT(PWR_REG_6G_VLP);
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
@@ -2862,7 +2901,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 #define TEMP_LOG_TEMPLATE \
 	"Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] " \
 	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u:%u] " \
-	"eBand[%u] Bw[%u] NetIfTh[%u:%u]\n"
+	"eBand[%u] Bw[%u] NetIfTh[%u:%u] 6GPwrReg[%u]\n"
 
 	DBGLOG(BSS, INFO,
 	       TEMP_LOG_TEMPLATE,
@@ -2879,7 +2918,8 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	       prBssInfo->eBand,
 	       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex),
 	       prBssInfo->u4TxStopTh,
-	       prBssInfo->u4TxStartTh);
+	       prBssInfo->u4TxStartTh,
+	       rCmdSetBssInfo.uc6GPwrRegBitMap);
 #undef TEMP_LOG_TEMPLATE
 
 	u4Status = wlanSendSetQueryCmd(prAdapter,

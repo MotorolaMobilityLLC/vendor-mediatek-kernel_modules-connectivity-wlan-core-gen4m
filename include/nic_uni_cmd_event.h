@@ -460,7 +460,8 @@ struct UNI_CMD_BSSINFO_HE {
 	uint8_t  ucDefaultPEDuration;
 	uint8_t fgErSuDisable; /* for mobile segment */
 	uint16_t au2MaxNssMcs[3];
-	uint8_t  aucPadding[2];
+	uint8_t uc6GPwrRegBitMap;
+	uint8_t  aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo 11v MBSSID information (Tag6) */

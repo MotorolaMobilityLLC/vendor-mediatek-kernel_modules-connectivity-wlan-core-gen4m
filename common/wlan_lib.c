@@ -9517,6 +9517,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	INIT_UINT(prWifiVar->fgLpiSup6G,
+		"LpiSup6G", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgSpSup6G,
+		"SpSup6G", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgVlpSup6G,
+		"VlpSup6G", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgPwrRdutMd,
+		"PwrRdutMd", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+
 #if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
 	INIT_UINT(prWifiVar->u4SaQueryMaxTimeout,
 		  "AssocSaQueryMaxTimeout", 1000,

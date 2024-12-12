@@ -1251,6 +1251,14 @@ struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE {
 	uint8_t aucCountryCode[2];
 	struct PWR_MODE_6G_SUBAND_SUPPROT rSubBand[SUBBAND_6G_NUM];
 };
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+enum ENUM_PWR_REG_6G_BIT {
+	PWR_REG_6G_TPC = 0,   /* Enable TPC algo in firmware */
+	PWR_REG_6G_VLP = 1,   /* Bss need to use VLP pwr mode */
+	PWR_REG_6G_NUM        /* Number should not be greater than 8 */
+};
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
@@ -1476,6 +1484,7 @@ u32 rlmDomainGetCountryCode(void);
 void rlmDomainAssert(u_int8_t cond);
 void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha);
 uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size);
+uint16_t rlmDomainReverseAlpha2(uint16_t Alpha2);
 uint8_t rlmDomainCountryCodeUpdateSanity(
 	struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER **prAdapter);
@@ -1538,6 +1547,55 @@ int32_t txPwrParseTagChainAbs(
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get 6G power mode, default use LPI
+ *
+ * \param[in] prAdapter
+ *
+ * \return value : 6G power mode
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomainGetCurr6GPwrMode(
+	struct ADAPTER *prAdapter);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is used to check whether the Config and TxPwrLimit file
+ *       support the current 6G power mode or not.
+ *
+ * \param[in] prAdapter
+ * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] pfgSupport : Pointer of flag to indicate the support or not
+ *
+ * \return value : Enum of supported 6G Power mode
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmDomain6GPwrModeCfgSupportChk(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t *pfgSupport);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is used to check whether the Config, TxPwrLimit file
+ *       and Country support the current 6G power mode or not.
+ *
+ * \param[in] prAdapter
+ * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] pe6GPwrModeFinal : Enum of 6G Power mode
+ * \param[in] eBand : RF Band index
+ * \param[in] ucChnlNum : Center Channel
+ *
+ * \return 6G power mode support status
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmDomain6GPwrModeSupportChk(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	enum ENUM_PWR_MODE_6G_TYPE *pe6GPwrModeFinal,
+	enum ENUM_BAND eBand,
+	uint8_t ucChnlNum);
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This func is use to update 6G power mode, when the power mode have

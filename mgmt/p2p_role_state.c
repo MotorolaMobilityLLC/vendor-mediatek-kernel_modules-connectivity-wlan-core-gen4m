@@ -143,9 +143,39 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 				== OP_MODE_ACCESS_POINT) {
 				struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
 					&(prP2pRoleFsmInfo->rChnlReqInfo);
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+				u_int8_t fgIsAbort;
+
+				if (prP2pChnlReqInfo->eBand == BAND_6G) {
+					if (rlmDomain6GPwrModeSupportChk(
+					prAdapter, PWR_MODE_6G_VLP, NULL,
+					prP2pChnlReqInfo->eBand,
+					prP2pChnlReqInfo->ucReqChnlNum)) {
+						fgIsAbort = FALSE;
+						rlmDomain6GPwrModeUpdate(
+						prAdapter,
+						prP2pRoleFsmInfo->ucBssIndex,
+						PWR_MODE_6G_VLP);
+					} else {
+						fgIsAbort = TRUE;
+						DBGLOG(P2P, ERROR,
+						"GO can't support VLP in 6GHz\n");
+					}
+				} else {
+					fgIsAbort = FALSE;
+					rlmDomain6GPwrModeUpdate(
+						prAdapter,
+						prP2pRoleFsmInfo->ucBssIndex,
+						PWR_MODE_6G_LPI);
+				}
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 				if (IS_NET_PWR_STATE_ACTIVE(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex)) {
+					prP2pRoleFsmInfo->ucBssIndex)
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+					&& (fgIsAbort == FALSE)
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+					) {
 					p2pFuncStartGO(prAdapter,
 						prP2pRoleBssInfo,
 					&(prP2pRoleFsmInfo->rConnReqInfo),

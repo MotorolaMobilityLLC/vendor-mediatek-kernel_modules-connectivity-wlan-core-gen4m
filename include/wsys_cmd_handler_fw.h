@@ -962,7 +962,8 @@ struct CMD_SET_BSS_INFO {
 	uint8_t  ucHiddenSsidMode;
 	uint8_t  ucDisconnectDetectThreshold;
 	uint8_t  ucIotApAct;
-	uint8_t  aucPadding1[2];
+	uint8_t  uc6GPwrRegBitMap;
+	uint8_t  aucPadding1[1];
 	uint32_t u4PrivateData;
 	struct CMD_SET_BSS_RLM_PARAM rBssRlmParam; /*68*/
 	uint8_t  ucDBDCBand;  /*90, ENUM_CMD_REQ_DBDC_BAND_T*/

@@ -5144,6 +5144,10 @@ static u_int8_t isIfaceTypeSupportChannel(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 #endif /* CFG_SUPPORT_WIFI_6G */
 
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	u2CountryCode = rlmDomainReverseAlpha2(u2CountryCode);
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+
 	if (iface & (IFACE_MODE_STA | IFACE_MODE_P2P_CLIENT | IFACE_MODE_TDLS |
 		IFACE_MODE_NAN)){
 		/* do nothing */

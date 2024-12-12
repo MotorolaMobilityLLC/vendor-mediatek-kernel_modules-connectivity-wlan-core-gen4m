@@ -7545,6 +7545,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++)
 		prAdapter->e6GPwrMode[ucBssIdx] = PWR_MODE_6G_LPI;
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	prAdapter->e6GPwrModeCurr = PWR_MODE_6G_LPI;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 #if CFG_SUPPORT_WED_PROXY
@@ -8283,6 +8286,9 @@ int32_t wlanOnAtReset(struct net_device *prDev)
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 		for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++)
 			prAdapter->e6GPwrMode[ucBssIdx] = PWR_MODE_6G_LPI;
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+		prAdapter->e6GPwrModeCurr = PWR_MODE_6G_LPI;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 		/* Need re-init rPendComp.done = 0, due to racing issue

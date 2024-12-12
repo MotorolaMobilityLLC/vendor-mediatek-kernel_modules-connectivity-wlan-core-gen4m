@@ -1888,7 +1888,13 @@ struct WIFI_VAR {
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t fgSpPwrLmtBackoff;
-#endif
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	u_int8_t fgLpiSup6G;
+	u_int8_t fgSpSup6G;
+	u_int8_t fgVlpSup6G;
+	u_int8_t fgPwrRdutMd;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
 	/* Association SA Query maximum timeout (in TU = 1.024 ms; for MFP)
@@ -3237,7 +3243,14 @@ struct ADAPTER {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode[MAX_BSSID_NUM];
 	u_int8_t fg6GPwrModeForce;
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr;
+	u_int8_t fg6GSupSpFile;
+	u_int8_t fg6GSupVlpFile;
+	u_int8_t fgTpcEn;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
+
 	OS_SYSTIME rRsnFwDumpTime;
 #if CFG_SUPPORT_WED_PROXY
 	void *prWedInfo;

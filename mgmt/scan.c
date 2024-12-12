@@ -2804,16 +2804,23 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					uc6GHeRegInfo);
 		fg6GPwrModeValid = TRUE;
 
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+		fgPwrMode6GSupport =
+		rlmDomain6GPwrModeSupportChk(
+				prAdapter, e6GPwrModeCurr,
+				&e6GPwrModeCurr,
+				eHwBand, ucChnlNum);
+#else
 		u4Status = rlmDomain6GPwrModeCountrySupportChk(
 				eHwBand,
 				ucChnlNum,
 				prAdapter->rWifiVar.u2CountryCode,
 				e6GPwrModeCurr,
 				&fgPwrMode6GSupport);
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 		if (u4Status == WLAN_STATUS_SUCCESS &&
 			fgPwrMode6GSupport == FALSE) {
-
 			DBGLOG(SCN, WARN, "Skip scan, BSSID["MACSTR
 				"] SSID:%s non support 6G pwr mode[%d],0x%08x\n",
 				MAC2STR(prWlanBeaconFrame->aucBSSID),

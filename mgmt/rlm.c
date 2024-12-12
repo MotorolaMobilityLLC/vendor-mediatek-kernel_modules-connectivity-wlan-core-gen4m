@@ -13882,6 +13882,18 @@ static void rlmFillRegConnectivityIE(struct ADAPTER *prAdapter,
 	struct _REG_CONNECTIVITY_FIELD *prRegConnectivityField;
 	uint32_t u4OverallLen =
 		OFFSET_OF(struct _IE_REG_CONNECTIVITY_T, aucVarInfo[0]);
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_SP;
+	uint8_t fgSupport;
+	uint8_t fgLPISupport = FALSE;
+	uint8_t fgSPSupport = FALSE;
+	uint8_t fgLPISPSupport = FALSE;
+	uint16_t u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	u2CountryCode = rlmDomainReverseAlpha2(u2CountryCode);
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -13908,13 +13920,6 @@ static void rlmFillRegConnectivityIE(struct ADAPTER *prAdapter,
 	 *	  operating as a fixed client device
 	 */
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_SP;
-	uint8_t fgSupport;
-	uint8_t fgLPISupport = FALSE;
-	uint8_t fgSPSupport = FALSE;
-	uint8_t fgLPISPSupport = FALSE;
-
 	for (e6GPwrMode = PWR_MODE_6G_LPI_SP;
 		 e6GPwrMode < PWR_MODE_6G_NUM;
 		 e6GPwrMode++) {
@@ -13923,7 +13928,7 @@ static void rlmFillRegConnectivityIE(struct ADAPTER *prAdapter,
 		rlmDomain6GPwrModeCountrySupportChk(
 				BAND_6G,
 				37,
-				prAdapter->rWifiVar.u2CountryCode,
+				u2CountryCode,
 				e6GPwrMode,
 				&fgSupport);
 
