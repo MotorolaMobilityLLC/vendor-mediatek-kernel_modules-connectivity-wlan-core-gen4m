@@ -9626,6 +9626,10 @@ uint32_t kalAddMdnsRecord(struct GLUE_INFO *prGlueInfo,
 	uint16_t u2MdnsUsedSize = 0;
 	uint16_t u2MaxAvailMdnsSize = 0;
 	uint16_t u2UplRecordSize = 0;
+	int j, i;
+	uint8_t CurNameLen, CmpNameLen;
+	uint8_t *prCurName;
+	uint8_t *prCmpName;
 
 	if (prGlueInfo == NULL || prMdnsUplayerInfo == NULL) {
 		DBGLOG(REQ, ERROR,
@@ -9644,6 +9648,33 @@ uint32_t kalAddMdnsRecord(struct GLUE_INFO *prGlueInfo,
 
 	prMdnsInfo = &prGlueInfo->prAdapter->rMdnsInfo;
 	prMdnsRecordList = &prMdnsInfo->rMdnsRecordList;
+
+	LINK_FOR_EACH_ENTRY(prMdnsParamEntry, prMdnsRecordList,
+		rLinkEntry, struct MDNS_PARAM_ENTRY_T) {
+		for (i = 0; i < MDNS_QURTRY_NUMBER; ++i) {
+			CurNameLen =
+			prMdnsParamEntry->mdns_param.query[i].name_length;
+			prCurName =
+			prMdnsParamEntry->mdns_param.query[i].name;
+
+			for (j = 0; j < MDNS_QURTRY_NUMBER; ++j) {
+				CmpNameLen =
+			prMdnsUplayerInfo->mdns_param.query[j].name_length;
+				prCmpName =
+				prMdnsUplayerInfo->mdns_param.query[j].name;
+				if ((CurNameLen != CmpNameLen) ||
+					(CurNameLen == 0) ||
+					(CmpNameLen == 0))
+					continue;
+				if (kalMemCmp(prCurName, prCmpName,
+					CmpNameLen) == 0) {
+					DBGLOG(REQ, ERROR,
+					"mdns record has been in the buffer.\n");
+					return WLAN_STATUS_FAILURE;
+				}
+			}
+		}
+	}
 
 	prMdnsParamEntry = mdnsAllocateParamEntry(prGlueInfo->prAdapter);
 	if (prMdnsParamEntry == NULL) {
