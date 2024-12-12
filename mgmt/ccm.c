@@ -243,7 +243,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		} else
 			__ccmChannelSwitchProducer(prAdapter, prTargetBss,
 						   pucSrcFunc);
-	} else if (IS_BSS_APGO(prTargetBss))
+	} else if (IS_BSS_APGO(prTargetBss) || IS_BSS_NAN(prTargetBss))
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
 		__ccmChannelSwitchProducer(prAdapter, prTargetBss, pucSrcFunc);
 }

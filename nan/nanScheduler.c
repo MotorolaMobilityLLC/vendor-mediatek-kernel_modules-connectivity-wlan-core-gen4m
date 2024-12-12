@@ -5781,6 +5781,12 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	else if (fgEn5gL)
 		g_rPreferredChnl[szTimeLineIdx] = g_r5gDwChnl;
 
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+	nanUpdateMbmcIdx(prAdapter,
+		nanGetBssIdxbyBand(prAdapter, BAND_5G),
+		(uint8_t)NAN_BSS_INDEX_BAND1);
+#endif
+
 #if (CFG_SUPPORT_NAN_6G == 1)
 	if (prNanScheduler->fgEn6g)
 		g_rPreferredChnl[szTimeLineIdx] = g_r6gDefChnl;
@@ -16445,6 +16451,47 @@ uint32_t nanSchedGetCurrentNegoTransIdx(struct ADAPTER *prAdapter)
 			 prNegoCtrl->ucNegoTransHeadPos - 1;
 
 	return u4NegoTransIdx;
+}
+
+void nanUpdateMbmcIdx(struct ADAPTER *ad,
+	uint8_t ucBssIdx,
+	uint8_t ucBandIdx)
+{
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(ad,
+		ucBssIdx);
+
+	if (prBssInfo) {
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+		if (prBssInfo->eBand == BAND_5G)
+			prBssInfo->ucPrimaryChannel =
+				g_r5gDwChnl.u4PrimaryChnl;
+		if (prBssInfo->eBand == BAND_2G4)
+			prBssInfo->ucPrimaryChannel =
+				g_r2gDwChnl.u4PrimaryChnl;
+#else
+		prBssInfo->ucPrimaryChannel = 149;
+#endif
+
+		DBGLOG(CNM, VOC,
+			"bss[%d]=%d, eHwBandIdx=%d, ucBandIdx=%d\n",
+			ucBssIdx,
+			prBssInfo->ucPrimaryChannel,
+			prBssInfo->eHwBandIdx,
+			ucBandIdx);
+
+#ifdef NAN_UNUSED
+		if (prBssInfo->eHwBandIdx != ucBandIdx &&
+		    prBssInfo->eHwBandIdx != ENUM_BAND_AUTO)
+			nicUniUpdateStaRecFastAll(ad, prBssInfo);
+#endif
+		prBssInfo->eBackupHwBandIdx = prBssInfo->eHwBandIdx;
+		prBssInfo->eHwBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssUpdateBandIdxBitmap(ad, prBssInfo);
+#endif
+	} else
+		DBGLOG(CNM, ERROR, "ucBssIdx=%d, ucBandIdx=%d\n",
+			ucBssIdx, ucBandIdx);
 }
 
 #endif /* CFG_SUPPORT_NAN */

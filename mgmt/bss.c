@@ -943,6 +943,8 @@ const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+	else if (IS_BSS_NAN(bss))
+		return "NAN";
 	else if (IS_BSS_BOW(bss))
 		return "BOW";
 

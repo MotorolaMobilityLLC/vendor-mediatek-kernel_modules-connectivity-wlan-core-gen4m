@@ -402,32 +402,6 @@ void nanMldBssUninit(struct ADAPTER *prAdapter)
 	}
 }
 
-void nanUpdateMbmcIdx(struct ADAPTER *ad,
-	uint8_t ucBssIdx,
-	uint8_t ucBandIdx)
-{
-	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(ad,
-		ucBssIdx);
-
-	if (prBssInfo) {
-		DBGLOG(CNM, VOC,
-			"ucBssIdx=%d, eHwBandIdx=%d, ucBandIdx=%d\n",
-			ucBssIdx, prBssInfo->eHwBandIdx, ucBandIdx);
-#ifdef NAN_UNUSED
-		if (prBssInfo->eHwBandIdx != ucBandIdx &&
-		    prBssInfo->eHwBandIdx != ENUM_BAND_AUTO)
-			nicUniUpdateStaRecFastAll(ad, prBssInfo);
-#endif
-		prBssInfo->eBackupHwBandIdx = prBssInfo->eHwBandIdx;
-		prBssInfo->eHwBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldBssUpdateBandIdxBitmap(ad, prBssInfo);
-#endif
-	} else
-		DBGLOG(CNM, ERROR, "ucBssIdx=%d, ucBandIdx=%d\n",
-			ucBssIdx, ucBandIdx);
-}
-
 void nanMldBssRegister(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prNanBssInfo)
 {

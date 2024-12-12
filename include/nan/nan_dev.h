@@ -61,6 +61,7 @@ void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
 		struct CMD_INFO *prCmdInfo,
 		uint8_t *pucEventBuf);
 
+u_int8_t nanIsOn(struct ADAPTER *prAdapter);
 uint8_t nanIsEhtSupport(struct ADAPTER *prAdapter);
 uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter);
 

@@ -173,10 +173,6 @@ uint8_t aisCheckNeedDriverRoaming(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 #endif
 
-#if CFG_SUPPORT_NAN
-static uint8_t aisIsNanOn(struct ADAPTER *ad);
-#endif
-
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -5047,7 +5043,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			/* early abort for NAN */
 			if (prAdapter->rWifiVar.fgAisEarlyAbort
 #if CFG_SUPPORT_NAN
-			    || aisIsNanOn(prAdapter)
+			    || nanIsOn(prAdapter)
 #endif
 			) {
 				DBGLOG(AIS, WARN,
@@ -8509,13 +8505,6 @@ aisFunAddTxReq2Queue(struct ADAPTER *prAdapter,
 
 	return TRUE;
 }
-
-#if CFG_SUPPORT_NAN
-uint8_t aisIsNanOn(struct ADAPTER *ad)
-{
-	return ad->rNanDiscType != NAN_UNINIT_DISC;
-}
-#endif
 
 static uint32_t
 aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,

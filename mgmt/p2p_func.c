@@ -7737,8 +7737,7 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 	}
 
 #if CFG_SUPPORT_NAN
-	if ((prAdapter->rNanDiscType !=
-		NAN_UNINIT_DISC)) {
+	if (nanIsOn(prAdapter)) {
 		*ucStaChannelNum =
 			AP_DEFAULT_CHANNEL_2G;
 		*eStaBand = BAND_2G4;
@@ -7781,8 +7780,7 @@ void p2pFuncCrossBandChannelSwitchCheck(
 {
 #if CFG_SUPPORT_DBDC
 #if CFG_SUPPORT_NAN
-	if ((prAdapter->rNanDiscType !=
-		NAN_UNINIT_DISC)) {
+	if (nanIsOn(prAdapter)) {
 		if (*eStaBand != BAND_2G4) {
 			*ucStaChannelNum =
 				AP_DEFAULT_CHANNEL_2G;

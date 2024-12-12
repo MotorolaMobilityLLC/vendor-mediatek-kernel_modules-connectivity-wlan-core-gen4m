@@ -928,9 +928,17 @@ nanDevSendEnableRequest(
 		prAdapter->ucNanSapCh = 0;
 
 #if CFG_ENABLE_WIFI_DIRECT
-		if (prAdapter->rWifiVar.fgNanConcurrency)
-			p2pFuncSwitchSapChannel(prAdapter,
-				P2P_DEFAULT_SCENARIO);
+		if (prAdapter->rWifiVar.fgNanConcurrency) {
+			for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+				prNANSpecInfo = prAdapter->rWifiVar
+						.aprNanSpecificBssInfo[ucIdx];
+				prnanBssInfo = prAdapter->aprBssInfo[
+					prNANSpecInfo->ucBssIndex];
+
+				ccmChannelSwitchProducer(prAdapter,
+						prnanBssInfo, __func__);
+			}
+		}
 #endif
 
 		/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
@@ -1157,6 +1165,14 @@ void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
 }
 #endif
 
+u_int8_t nanIsOn(struct ADAPTER *ad)
+{
+	if (!ad)
+		return FALSE;
+
+	return ad->rNanDiscType != NAN_UNINIT_DISC;
+}
+
 uint8_t nanIsEhtSupport(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_NAN_11BE == 1)
@@ -1227,7 +1243,7 @@ u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_NAN && CFG_ENABLE_WIFI_DIRECT
 	return nanIsSapOrP2pActive(prAdapter) &&
-		(prAdapter->rNanDiscType != NAN_UNINIT_DISC);
+		nanIsOn(prAdapter);
 #else
 	return FALSE;
 #endif

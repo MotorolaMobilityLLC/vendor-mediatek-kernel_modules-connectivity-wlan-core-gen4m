@@ -851,4 +851,8 @@ void nanSchedNegoUpdateNegoResult(struct ADAPTER *prAdapter);
 
 uint32_t nanSchedGetCurrentNegoTransIdx(struct ADAPTER *prAdapter);
 
+void nanUpdateMbmcIdx(struct ADAPTER *ad,
+	uint8_t ucBssIdx,
+	uint8_t ucBandIdx);
+
 #endif /* _NAN_SCHEDULER_H_ */
