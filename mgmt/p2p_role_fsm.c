@@ -1536,6 +1536,10 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand;
 	uint8_t ucChannelNum;
 	enum ENUM_CHNL_EXT eSco;
+	struct BSS_INFO *prBssInfo;
+	struct P2P_CONNECTION_SETTINGS *prP2PConnSettings;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t ucRfBw;
 
 	prP2pStartAPMsg = (struct MSG_P2P_START_AP *) prMsgHdr;
 
@@ -1565,33 +1569,31 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
 	eSco = prP2pConnReqInfo->eChnlExt;
 
-#if (CFG_MTK_ANDROID_WMT == 1)
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-	    .prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx]))
-#endif
-	{
-		if ((eBand == BAND_5G) &&
-			rlmDomainIsLegalDfsChannel(
-			prAdapter,
-			eBand,
-			ucChannelNum))
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prP2pRoleFsmInfo->ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	prP2PConnSettings =
+		prWifiVar->prP2PConnSettings[prBssInfo->u4PrivateData];
+	if (p2pFuncIsAPMode(prP2PConnSettings))
+		ucRfBw = prWifiVar->ucAp5gBandwidth;
+	else
+		ucRfBw = prWifiVar->ucP2p5gBandwidth;
+
+	/* whether to do RDD */
+	if (eBand == BAND_5G &&
+	    rlmDomainIsLegalDfsChannel(prAdapter, eBand, ucChannelNum))
+		bSkipRdd = FALSE;
+	else if (eBand == BAND_5G && ucRfBw >= MAX_BW_160MHZ) {
+		/* Downgrade */
+		if (p2pFuncIsDualAPMode(prAdapter) && ucRfBw >= MAX_BW_160MHZ)
+			ucRfBw = MAX_BW_80MHZ;
+
+		/* Revise to VHT OP BW */
+		if (nicGetS1(eBand, ucChannelNum, eSco, ucRfBw) &&
+		    ucRfBw >= MAX_BW_160MHZ)
 			bSkipRdd = FALSE;
-		else if ((eBand == BAND_5G) &&
-			(prAdapter->rWifiVar.ucAp5gBandwidth >=
-			MAX_BW_160MHZ)) {
-			uint8_t ucRfBw =
-				prAdapter->rWifiVar.ucAp5gBandwidth;
-
-			/* Downgrade */
-			if (p2pFuncIsDualAPMode(prAdapter) &&
-				(ucRfBw >= MAX_BW_160MHZ))
-				ucRfBw = MAX_BW_80MHZ;
-
-			/* Revise to VHT OP BW */
-			if (nicGetS1(eBand, ucChannelNum, eSco, ucRfBw) &&
-				(ucRfBw >= MAX_BW_160MHZ))
-				bSkipRdd = FALSE;
-		}
 	}
 
 	/* STA+SAP will follow STA BW */

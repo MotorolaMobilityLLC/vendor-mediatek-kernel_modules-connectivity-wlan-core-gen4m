@@ -5921,7 +5921,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 
 	fgIsBssAlive = IS_BSS_ALIVE(prAdapter, prBssInfo);
 #if CFG_ENABLE_WIFI_DIRECT
-	if (fgIsBssAlive && IS_BSS_APGO(prBssInfo)) {
+	if (fgIsBssAlive && IS_BSS_APGO(prBssInfo) && prP2PInfo) {
 		/*
 		 * For ap or p2p go, need to check other flags to ensure the
 		 * bss is ready for handling the op mode change.
@@ -5934,10 +5934,14 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		 * until op channel is granted, and rlm update command will be
 		 * updated at the end of the bss's starting flow.
 		 */
-		if (prP2PInfo && prP2PInfo->fgChannelSwitchReq)
+		if (prP2PInfo->fgChannelSwitchReq)
 			fgIsBssAlive = FALSE;
 		else if (!prBssInfo->fgIsApGoGranted)
 			fgIsBssAlive = FALSE;
+		DBGLOG(P2P, WARN,
+		       "assume bss not alive, fgChannelSwitchReq:%u, fgIsApGoGranted:%u\n",
+		       prP2PInfo->fgChannelSwitchReq,
+		       prBssInfo->fgIsApGoGranted);
 	}
 #endif
 
