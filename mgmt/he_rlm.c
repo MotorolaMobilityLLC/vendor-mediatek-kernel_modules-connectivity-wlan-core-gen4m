@@ -361,10 +361,19 @@ static uint8_t heRlmFillPPEThreshold(
 	uint8_t *pPPEThreshold)
 {
 	uint8_t ucRUIdxSize = 0, ucLen;
-	uint8_t ucSupportedNss =
-		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
 	uint8_t ucMaxBw =
 		cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	uint8_t ucSupportedNss =
+		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+
+	/* Fix coverity issue :
+	 * if wlanGetSupportNss() returns 0, -1 will overflow.
+	 * Because ucSupportedNss is unsigned int.
+	 */
+	if (ucSupportedNss > 0)
+		ucSupportedNss -= 1;
+	else
+		ucSupportedNss = 0;
 
 	kalMemZero((void *) pPPEThreshold, sizeof(struct _PPE_THRESHOLD_FIELD));
 
@@ -427,8 +436,7 @@ void heRlmFillHeCapIE(
 	uint8_t *pPPEThreshold;
 #endif
 #if ((CFG_SUPPORT_BFEE == 1) || (CFG_SUPPORT_HE_ER == 1))
-	uint8_t ucSupportedNss =
-		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
+	uint8_t ucSupportedNss = 0;
 #endif
 	u_int8_t fgTxStbcEn = TRUE;
 
@@ -438,6 +446,19 @@ void heRlmFillHeCapIE(
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 	ASSERT(prMsduInfo);
+
+#if ((CFG_SUPPORT_BFEE == 1) || (CFG_SUPPORT_HE_ER == 1))
+	ucSupportedNss =
+		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	/* Fix coverity issue :
+	 * if wlanGetSupportNss() returns 0, -1 will overflow.
+	 * Because ucSupportedNss is unsigned int.
+	 */
+	if (ucSupportedNss > 0)
+		ucSupportedNss -= 1;
+	else
+		ucSupportedNss = 0;
+#endif
 
 	prChipInfo = prAdapter->chip_info;
 
