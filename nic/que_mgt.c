@@ -5012,12 +5012,25 @@ static struct SW_RFB *getReorderingIndexCache(
 	uint16_t i;
 	const struct QUE *prReorderQue;
 	struct SW_RFB **prCacheIndex = prReorderQueParm->prCacheIndex;
+	struct SW_RFB *prRetSwRfb;
 	uint16_t u2WinStart = prReorderQueParm->u2WinStart;
+	uint16_t u2SSN;
 
 	for (i = prSwRfb->u2SSN;
 	     SEQ_SMALLER(u2WinStart, i) || u2WinStart == i; SEQ_DEC(i)) {
-		if (prCacheIndex[i & HALF_SEQ_MASK])
-			return prCacheIndex[i & HALF_SEQ_MASK];
+		prRetSwRfb = prCacheIndex[i & HALF_SEQ_MASK];
+		if (!prRetSwRfb)
+			continue;
+
+		u2SSN = prRetSwRfb->u2SSN & HALF_SEQ_MASK;
+		if (u2SSN == (i & HALF_SEQ_MASK))
+			return prRetSwRfb;
+
+		/* clear incorrect SwRfb cache */
+		DBGLOG(QM, WARN,
+		       "QM: incorrect SwRfb cache 0x%x != 0x%x\n",
+		       prRetSwRfb->u2SSN, i);
+		clearReorderingIndexCache(prReorderQueParm, prRetSwRfb);
 	}
 #endif
 	/* Not found, fallback */
