@@ -2389,7 +2389,8 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 	struct MSG_P2P_RADAR_DETECT *prMsgP2pRddDetMsg;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
-
+	uint8_t ucCsaDeauthClientOri =
+		prAdapter->rWifiVar.ucCsaDeauthClient;
 
 	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet\n");
 
@@ -2505,17 +2506,21 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		if (IS_NET_PWR_STATE_ACTIVE(
 			prAdapter,
 			prP2pBssInfo->ucBssIndex)) {
+
 			prAdapter->rWifiVar.ucAp5gBandwidth =
 				MAX_BW_80MHZ;
-
 			rlmGetChnlInfoForCSA(prAdapter,
 				BAND_5G, ucChannelNum,
 				prP2pBssInfo->ucBssIndex,
 				&prP2pConnReqInfo->rChannelInfo);
-
+			prAdapter->rWifiVar.ucCsaDeauthClient =
+				FEATURE_DISABLED;
 			cnmSapChannelSwitchReq(prAdapter,
 				&prP2pConnReqInfo->rChannelInfo,
 				prP2pBssInfo->u4PrivateData);
+			prAdapter->rWifiVar.ucCsaDeauthClient =
+				ucCsaDeauthClientOri;
+
 			kalP2PTxCarrierOn(prAdapter->prGlueInfo,
 					prP2pBssInfo);
 		} else {
