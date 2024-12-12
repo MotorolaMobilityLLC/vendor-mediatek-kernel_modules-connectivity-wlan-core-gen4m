@@ -6985,7 +6985,7 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "Txfail:%u",
 			report->u4TxFail);
 
-	DBGLOG(HAL, INFO, "%s\n", buf);
+	DBGLOG(HAL, VOC, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 #endif
 }

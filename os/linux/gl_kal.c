@@ -11767,7 +11767,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_TX_FREE_SKB_WORK
 	pos += composeTxFreeSkbQ(prAdapter, pos, end);
 #endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-	DBGLOG(SW4, INFO, "%s", buf);
+	DBGLOG(SW4, VOC, "%s\n", buf);
 
 	/**
 	 * Sentence 2.

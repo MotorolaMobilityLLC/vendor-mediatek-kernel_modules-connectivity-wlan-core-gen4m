@@ -796,7 +796,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #define TEMP_LOG_TEMPLATE \
 	"link speed=%u/%u, bw=%u/%u, rssi=%d, BSSID:[" MACSTR "], idx=%u," \
 	"TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n"
-			DBGLOG(REQ, TRACE,
+			DBGLOG(REQ, VOC,
 				TEMP_LOG_TEMPLATE,
 				sinfo->txrate.legacy, sinfo->rxrate.legacy,
 				sinfo->txrate.bw, sinfo->rxrate.bw,
