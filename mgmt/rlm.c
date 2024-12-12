@@ -4606,15 +4606,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				break;
 			}
 
-#if CFG_SUPPORT_ROAMING
-			if (IS_BSS_AIS(prBssInfo) &&
-			    roamingFsmCheckIfRoaming(
-				    prAdapter, prBssInfo->ucBssIndex)) {
-				DBGLOG(RLM, INFO,
-					"Ignore csa beacon frame when roaming\n");
+			if (rlmIsCsaAllow(prAdapter, prBssInfo) == FALSE)
 				break;
-			}
-#endif
 
 			/* Mode 1 implies that addressed AP is advised to
 			 * transmit no further frames on current channel
@@ -4686,15 +4679,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				break;
 			}
 
-#if CFG_SUPPORT_ROAMING
-			if (IS_BSS_AIS(prBssInfo) &&
-			    roamingFsmCheckIfRoaming(
-				    prAdapter, prBssInfo->ucBssIndex)) {
-				DBGLOG(RLM, INFO,
-					"Ignore csa beacon frame when roaming\n");
+			if (rlmIsCsaAllow(prAdapter, prBssInfo) == FALSE)
 				break;
-			}
-#endif
 
 			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prExCSAIE->ucChannelSwitchCount;
@@ -6320,9 +6306,10 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				if (IS_AIS_ROAMING(prAdapter,
 					prBssInfo->ucBssIndex) ||
 				    IS_AIS_OFF_CHNL(prAdapter,
-					prBssInfo->ucBssIndex)) {
+					prBssInfo->ucBssIndex) ||
+				    IS_AIS_CH_SWITCH(prBssInfo)) {
 					DBGLOG(RLM, INFO,
-						"Ignore rlm update when roaming/offchnl\n");
+						"Ignore rlm update when roaming/offchnl/csa\n");
 					continue;
 				}
 
@@ -8216,6 +8203,28 @@ static void msmtComposeReportFrame(struct ADAPTER *prAdapter,
 
 } /* end of msmtComposeReportFrame() */
 
+u_int8_t rlmIsCsaAllow(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	if (IS_BSS_AIS(prBssInfo)) {
+#if CFG_SUPPORT_ROAMING
+		if (roamingFsmCheckIfRoaming(prAdapter,
+				prBssInfo->ucBssIndex)) {
+			DBGLOG(RLM, INFO,
+				"Ignore csa IE when roaming\n");
+			return FALSE;
+		}
+#endif
+		if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
+			DBGLOG(RLM, INFO,
+				"Ignore csa IE when not connected yet\n");
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams,
@@ -8433,19 +8442,8 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			break;
 		}
 
-		if (IS_BSS_AIS(prBssInfo)) {
-			if (aisFsmIsInProcessPostpone(prAdapter,
-				prBssInfo->ucBssIndex))
-				break;
-#if CFG_SUPPORT_ROAMING
-			if (roamingFsmCheckIfRoaming(prAdapter,
-				prBssInfo->ucBssIndex)) {
-				DBGLOG(RLM, INFO,
-					"Ignore csa action frame when roaming\n");
-				break;
-			}
-#endif
-		}
+		if (rlmIsCsaAllow(prAdapter, prBssInfo) == FALSE)
+			break;
 
 		IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 		{
@@ -8624,19 +8622,8 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	if (IS_BSS_AIS(prBssInfo)) {
-		if (aisFsmIsInProcessPostpone(prAdapter,
-			prBssInfo->ucBssIndex))
-			return;
-#if CFG_SUPPORT_ROAMING
-		if (roamingFsmCheckIfRoaming(prAdapter,
-			prBssInfo->ucBssIndex)) {
-			DBGLOG(RLM, INFO,
-				"Ignore csa action frame when roaming\n");
-			return;
-		}
-#endif
-	}
+	if (rlmIsCsaAllow(prAdapter, prBssInfo) == FALSE)
+		return;
 
 	prCSAParams = &prBssInfo->CSAParams;
 	if (prBssInfo->fgIsSwitchingChnl) {
@@ -10482,9 +10469,10 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		}
 
 		if (IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex) ||
-		    IS_AIS_OFF_CHNL(prAdapter, prBssInfo->ucBssIndex)) {
+		    IS_AIS_OFF_CHNL(prAdapter, prBssInfo->ucBssIndex) ||
+		    IS_AIS_CH_SWITCH(prBssInfo)) {
 			DBGLOG(RLM, INFO,
-				"Ignore rlm update when roaming/offchnl\n");
+				"Ignore rlm update when roaming/offchnl/csa\n");
 			fgSkipRlmSync = TRUE;
 		}
 

@@ -5819,6 +5819,10 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	prAisSpecBssInfo->fgPoorRcpiArea = FALSE;
 #endif
 
+	/* reset CSA related flag */
+	prAisBssInfo->fgIsAisCsaPending = FALSE;
+	prAisBssInfo->fgIsAisSwitchingChnl = FALSE;
+
 	/* 4 <4.2> Update HT information and set channel */
 	/* Record HT related parameters in rStaRec and rBssInfo
 	 * Note: it shall be called before nicUpdateBss()

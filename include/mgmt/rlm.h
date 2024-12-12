@@ -679,6 +679,9 @@ void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 			  struct MSDU_INFO *prMsduInfo);
 #endif
 #if CFG_SUPPORT_DFS
+u_int8_t rlmIsCsaAllow(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+
 void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams,

@@ -101,9 +101,13 @@
 #define IS_AIS_ROAMING(_adapter, _bss_idx) (FALSE)
 #endif
 
+#if CFG_SUPPORT_DFS
 #define IS_AIS_CH_SWITCH(_bss_info) \
 	(IS_BSS_AIS(_bss_info) && \
 	(_bss_info->fgIsAisCsaPending || _bss_info->fgIsAisSwitchingChnl))
+#else
+#define IS_AIS_CH_SWITCH(_bss_info) (FALSE)
+#endif
 
 #define IS_AIS_OFF_CHNL(_adapter, _bss_idx) \
 	(IS_BSS_INDEX_AIS(_adapter, _bss_idx) && \
