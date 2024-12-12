@@ -2287,8 +2287,8 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     EXT_DIR     := ext/
     #EXT_DIR     := ../gen4m_ext/
-    CONFIG_MTK_WIFI_NAN=n
-    CONFIG_MTK_WIFI_NAN_EXT=n
+    CONFIG_MTK_WIFI_NAN=y
+    CONFIG_MTK_WIFI_NAN_EXT=y
     ccflags-y += -DCFG_REUSE_RSN_IE=1
     ccflags-y += -DCFG_EXT_VERSION=3
     ccflags-y += -DCFG_EXT_FEATURE=1
