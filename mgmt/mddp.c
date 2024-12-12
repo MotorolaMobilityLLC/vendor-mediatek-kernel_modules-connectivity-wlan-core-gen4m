@@ -1937,6 +1937,11 @@ static void mddpResetGlobalVariable(void)
 
 void __mddpNotifyWifiOnStart(void)
 {
+	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_END) {
+		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
+		return;
+	}
+
 #if CFG_MTK_CCCI_SUPPORT
 	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
 #endif
@@ -2044,6 +2049,12 @@ int32_t mddpNotifyWifiOnEnd(void)
 void __mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
+
+	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_END &&
+	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_END_QOS) {
+		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
+		return;
+	}
 
 	DBGLOG(INIT, INFO, "md off start.\n");
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_AOP) {
