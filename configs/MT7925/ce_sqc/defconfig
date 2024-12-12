@@ -1,9 +1,6 @@
 # Note:  To disable feature, please set CONFIG_AAA=n.
 #        "# CONFIG_AAA is not set" won't work.
 
-CONFIG_SUPPORT_MLO_HYBRID=y
-CONFIG_SUPPORT_FORCE_LINK_SORT=y
-
 # VLP / SP Feature
 CONFIG_MTK_WIFI_SUPPORT_TXPWR_ENV=y
 CONFIG_MTK_WIFI_SUPPORT_6G_PWR_MODE=y
