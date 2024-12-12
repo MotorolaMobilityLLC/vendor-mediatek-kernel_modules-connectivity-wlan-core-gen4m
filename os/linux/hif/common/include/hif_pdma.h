@@ -1621,6 +1621,7 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 		   struct mt66xx_hif_driver_data *prDriverData);
 #endif
 #if CFG_SUPPORT_HIF_REG_WORK
+void wf_reg_enable(u_int8_t fgEn);
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value);
 int32_t wf_reg_write_wrapper(void *priv,

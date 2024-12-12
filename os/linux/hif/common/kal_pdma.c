@@ -66,6 +66,9 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+#if CFG_SUPPORT_HIF_REG_WORK
+static u_int8_t g_fgIsEnHifRegWork;
+#endif
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -3099,6 +3102,11 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 }
 
 #if CFG_SUPPORT_HIF_REG_WORK
+void wf_reg_enable(u_int8_t fgEn)
+{
+	g_fgIsEnHifRegWork = fgEn;
+}
+
 int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 {
 	int32_t ret = 0, i;
@@ -3160,6 +3168,12 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 	struct CHIP_DBG_OPS *prDebugOps;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
+
+	if (!g_fgIsEnHifRegWork) {
+		DBGLOG_LIMITED(HAL, WARN, "work is uninit\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
 	if (!glue) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");

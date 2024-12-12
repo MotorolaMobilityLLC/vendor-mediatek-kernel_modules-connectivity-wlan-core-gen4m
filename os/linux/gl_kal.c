@@ -19222,6 +19222,7 @@ inline void kalHifRegWorkInit(struct GLUE_INFO *pr)
 #if CFG_MTK_WIFI_MBU
 	pr->u4MbuTimeoutCnt = 0;
 #endif
+	wf_reg_enable(TRUE);
 }
 
 inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
@@ -19250,6 +19251,7 @@ inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
 		       GLUE_GET_REF_CNT(pr->u4HifRegReqCnt));
 	}
 
+	wf_reg_enable(FALSE);
 	kalWorkUninit(pr, HIF_REG_WORK);
 	if (pr->prHifRegFifoBuf) {
 		kalMemFree(pr->prHifRegFifoBuf,
