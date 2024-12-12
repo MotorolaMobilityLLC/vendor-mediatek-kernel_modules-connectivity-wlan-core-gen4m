@@ -13835,6 +13835,11 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (mldIsMultiLinkFormed(prAdapter, prStaRec))
 		mld_addr = prStaRec->aucMldAddr;
+
+#if (CFG_SUPPORT_MLO_EXTERNAL_AUTH_BY_VENDOR_CMD == 1)
+	fgConnReqMloSupport = FALSE;
+#endif
+
 #endif /* (CFG_SUPPORT_802_11BE_MLO == 1) */
 
 	if (mld_addr == NULL || fgConnReqMloSupport) {

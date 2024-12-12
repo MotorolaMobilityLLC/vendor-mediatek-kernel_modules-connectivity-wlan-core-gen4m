@@ -7631,7 +7631,8 @@ int mtk_cfg_add_key(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int i4LinkId = MLD_LINK_ID_NONE;
 
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	i4LinkId = link_id;
 #endif
 
@@ -7671,7 +7672,8 @@ int mtk_cfg_get_key(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int i4LinkId = MLD_LINK_ID_NONE;
 
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	i4LinkId = link_id;
 #endif
 
@@ -7708,7 +7710,8 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int i4LinkId = MLD_LINK_ID_NONE;
 
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	i4LinkId = link_id;
 #endif
 
@@ -7745,7 +7748,8 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int i4LinkId = MLD_LINK_ID_NONE;
 
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	i4LinkId = link_id;
 #endif
 
@@ -7817,7 +7821,8 @@ int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int i4LinkId = MLD_LINK_ID_NONE;
 
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	i4LinkId = link_id;
 #endif
 
