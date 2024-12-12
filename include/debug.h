@@ -699,6 +699,38 @@ enum WAIT_TO_PERIOD {
 #define DBGDUMP_MEM32(_Module, _Class, _Title, _StartAddr, _Length)
 #define DBGDUMP_MEM128(_Module, _Class, _Title, _StartAddr, _Length)
 #else
+#if CFG_SUPPORT_SA_LOG
+#define DBG_LOG_CLASS_SALOG \
+	(DBG_CLASS_ERROR | \
+	DBG_CLASS_WARN | \
+	DBG_CLASS_STATE | \
+	DBG_CLASS_EVENT)
+
+#define DBGLOG(_Mod, _Clz, _Fmt, ...) \
+	do { \
+		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+			DBG_CLASS_##_Clz) == 0) \
+			break; \
+		LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+			KAL_GET_CURRENT_THREAD_ID(), \
+			__func__, ##__VA_ARGS__); \
+		if ((DBG_CLASS_##_Clz & DBG_LOG_CLASS_SALOG) && \
+			(get_wifi_standalone_log_mode() == 1)) \
+			pr_info(WLAN_TAG _Fmt, ##__VA_ARGS__); \
+	} while (0)
+#define DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
+	do { \
+		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+			DBG_CLASS_##_Clz) == 0) \
+			break; \
+		LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+			KAL_GET_CURRENT_THREAD_ID(), \
+			__func__, ##__VA_ARGS__); \
+		if ((DBG_CLASS_##_Clz & DBG_LOG_CLASS_SALOG) && \
+			(get_wifi_standalone_log_mode() == 1)) \
+			pr_info_ratelimited(WLAN_TAG _Fmt, ##__VA_ARGS__); \
+	} while (0)
+#else
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
 		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
@@ -717,6 +749,7 @@ enum WAIT_TO_PERIOD {
 			KAL_GET_CURRENT_THREAD_ID(), \
 			__func__, ##__VA_ARGS__); \
 	} while (0)
+#endif
 #define TOOL_PRINTLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
 		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
