@@ -245,7 +245,7 @@ void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
 void soc3_0_WfdmaAxiCtrl(struct ADAPTER *prAdapter);
 
 int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter);
-int soc3_0_CheckBusHang(void *adapter,
+int soc3_0_CheckBusNoAck(void *adapter,
 	uint8_t ucWfResetEnable);
 void soc3_0_DumpBusStatus(struct ADAPTER *prAdapter);
 

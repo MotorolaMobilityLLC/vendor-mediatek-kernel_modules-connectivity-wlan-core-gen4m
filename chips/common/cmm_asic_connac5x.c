@@ -417,8 +417,8 @@ u_int8_t asicConnac5xWfdmaIsNeedReInit(
 
 #if 0
 	/* for bus hang debug purpose */
-	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang((void *) prAdapter, TRUE);
+	if (prAdapter->chip_info->checkbusNoAck)
+		prAdapter->chip_info->checkbusNoAck((void *) prAdapter, TRUE);
 #endif
 
 	fgNeedReInit = asicConnac5xWfdmaDummyCrRead(prAdapter, &u4RegValue);

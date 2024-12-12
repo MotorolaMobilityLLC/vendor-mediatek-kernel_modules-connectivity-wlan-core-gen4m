@@ -106,7 +106,7 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter);
 
-static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
+static int soc7_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable);
 static void soc7_0_DumpBusStatus(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -712,7 +712,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.get_sw_interrupt_status = soc7_0_get_sw_interrupt_status,
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
-	.checkbushang = soc7_0_CheckBusHang,
+	.checkbusNoAck = soc7_0_CheckBusNoAck,
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.calDebugCmd = wlanCalDebugCmd,
 #endif
@@ -2644,7 +2644,7 @@ static void soc7_0_DumpBusStatus(struct ADAPTER *prAdapter)
 	soc7_0_DumpHostCr(prAdapter);
 }
 
-static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
+static int soc7_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable)
 {
 	struct ADAPTER *prAdapter = (struct ADAPTER *) adapter;
 	int ret = 1;

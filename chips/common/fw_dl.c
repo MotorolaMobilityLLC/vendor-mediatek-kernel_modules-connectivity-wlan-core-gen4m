@@ -1458,8 +1458,8 @@ uint32_t wlanFwImageSendStart(struct ADAPTER *prAdapter,
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		goto exit;
 
-	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang((void *) prAdapter, FALSE);
+	if (prAdapter->chip_info->checkbusNoAck)
+		prAdapter->chip_info->checkbusNoAck((void *) prAdapter, FALSE);
 
 	if (rEvent.ucStatus != 0) {
 		DBGLOG(INIT, ERROR, "Event status: %d\n", rEvent.ucStatus);
@@ -1519,8 +1519,8 @@ uint32_t wlanRamCodeDynMemMapSendComplete(struct ADAPTER *prAdapter,
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		goto exit;
 
-	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang((void *) prAdapter, FALSE);
+	if (prAdapter->chip_info->checkbusNoAck)
+		prAdapter->chip_info->checkbusNoAck((void *) prAdapter, FALSE);
 
 	if (rEvent.ucStatus != 0) {
 		DBGLOG(INIT, ERROR, "Event status: %d\n", rEvent.ucStatus);
@@ -1882,8 +1882,8 @@ uint32_t wlanFwImageDownload(struct ADAPTER
 	uint8_t *pucManifestBuffer = NULL;
 	uint32_t u4ManifestSize = 0;
 
-	if (prAdapter->chip_info->checkbushang) {
-		if (prAdapter->chip_info->checkbushang((void *) prAdapter,
+	if (prAdapter->chip_info->checkbusNoAck) {
+		if (prAdapter->chip_info->checkbusNoAck((void *) prAdapter,
 				TRUE) != 0) {
 			DBGLOG(INIT, WARN, "Check bus hang failed.\n");
 			rCfgStatus = WLAN_STATUS_FAILURE;
@@ -1945,8 +1945,8 @@ uint32_t wlanConnacFormatDownload(struct ADAPTER
 	}
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
-	if (prAdapter->chip_info->checkbushang) {
-		if (prAdapter->chip_info->checkbushang((void *) prAdapter,
+	if (prAdapter->chip_info->checkbusNoAck) {
+		if (prAdapter->chip_info->checkbusNoAck((void *) prAdapter,
 				TRUE) != 0) {
 			DBGLOG(INIT, WARN, "Check bus hang failed.\n");
 			rDlStatus = WLAN_STATUS_FAILURE;

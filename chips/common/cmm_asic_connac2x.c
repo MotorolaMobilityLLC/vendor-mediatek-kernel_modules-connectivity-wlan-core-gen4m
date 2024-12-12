@@ -468,8 +468,8 @@ u_int8_t asicConnac2xWfdmaIsNeedReInit(
 		return FALSE;
 
 	/* for bus hang debug purpose */
-	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang((void *) prAdapter, TRUE);
+	if (prAdapter->chip_info->checkbusNoAck)
+		prAdapter->chip_info->checkbusNoAck((void *) prAdapter, TRUE);
 
 	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgNeedReInit);
 

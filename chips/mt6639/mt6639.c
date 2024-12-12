@@ -240,7 +240,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
 static void mt6639_mcu_deinit(struct ADAPTER *ad);
 static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
-static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
+static int mt6639_CheckBusNoAck(void *priv, uint8_t rst_enable);
 static void mt6639_CheckMcuOff(struct ADAPTER *ad);
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
@@ -1180,7 +1180,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
-	.checkbushang = mt6639_CheckBusHang,
+	.checkbusNoAck = mt6639_CheckBusNoAck,
 	.checkmcuoff = mt6639_CheckMcuOff,
 	.setCrypto = mt6639_set_crypto,
 	.rEmiInfo = {
@@ -3776,7 +3776,7 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter)
 #endif /* IS_MOBILE_SEGMENT || (CFG_MTK_SUPPORT_LIGHT_MDDP == 1) */
 
 #if IS_MOBILE_SEGMENT
-static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
+static int mt6639_CheckBusNoAck(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;
 	struct mt66xx_chip_info *chip_info = NULL;

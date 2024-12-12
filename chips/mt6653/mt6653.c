@@ -226,7 +226,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad);
 static void mt6653_mcu_deinit(struct ADAPTER *ad);
 static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter);
-static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable);
+static int mt6653_CheckBusNoAck(void *priv, uint8_t rst_enable);
 static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter);
 static void mt6653WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
@@ -1323,7 +1323,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
-	.checkbushang = mt6653_CheckBusHang,
+	.checkbusNoAck = mt6653_CheckBusNoAck,
 	.rEmiInfo = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
@@ -4586,7 +4586,7 @@ static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter)
 	return 0;
 }
 
-static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable)
+static int mt6653_CheckBusNoAck(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;
 	u_int8_t readable = TRUE;

@@ -7432,7 +7432,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
 #endif
 
-	coredump_register_bushang_chk_cb(prAdapter->chip_info->checkbushang);
+	coredump_register_busNoAck_chk_cb(prAdapter->chip_info->checkbusNoAck);
 
 #if CFG_SUPPORT_PERSIST_NETDEV
 	for (i = 0; i < KAL_AIS_NUM; i++) {
@@ -8547,7 +8547,7 @@ static void wlanRemove(void)
 	}
 	prAdapter = prGlueInfo->prAdapter;
 
-	coredump_register_bushang_chk_cb(NULL);
+	coredump_register_busNoAck_chk_cb(NULL);
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;

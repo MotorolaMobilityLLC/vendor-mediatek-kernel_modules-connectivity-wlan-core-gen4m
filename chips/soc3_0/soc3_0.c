@@ -1221,7 +1221,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.calDebugCmd = wlanCalDebugCmd,
 #endif
-	.checkbushang = soc3_0_CheckBusHang,
+	.checkbusNoAck = soc3_0_CheckBusNoAck,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if CFG_MTK_ANDROID_WMT
 	.rEmiInfo = {
@@ -1341,7 +1341,7 @@ int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 {
 	int value = 0, ret = 0;
 
-	soc3_0_CheckBusHang(NULL, FALSE);
+	soc3_0_CheckBusNoAck(NULL, FALSE);
 	if (g_IsWfsysBusNoAck == TRUE) {
 		DBGLOG(HAL, INFO,
 			"Already trigger conninfra whole chip reset.\n");
@@ -1920,7 +1920,7 @@ void soc3_0_DumpBusStatus(struct ADAPTER *prAdapter)
 	soc3_0_DumpHostCr(prAdapter, conninfra_reg_readable());
 }
 
-int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
+int soc3_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable)
 {
 	int ret = 1;
 	int conninfra_read_ret = 0;

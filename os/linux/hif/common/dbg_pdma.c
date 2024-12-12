@@ -259,6 +259,9 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint32_t u4TokenId = 0;
 	bool fgHifTxHangFullDump = FALSE;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint32_t ret = 0;
+#endif /* CFG_SUPPORT_CONNAC2X */
 
 	prChipInfo = prAdapter->chip_info;
 	prDbgOps = prChipInfo->prDebugOps;
@@ -279,6 +282,16 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 				prAdapter->u4HifTxHangDumpBitmap |=
 					BIT(prAdapter->u4HifTxHangDumpIdx);
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+				/* for debug purpose */
+				if (prChipInfo->checkbusNoAck) {
+					ret = prChipInfo->checkbusNoAck(
+						(void *) prAdapter, TRUE);
+					if (ret != 0)
+						goto end_dump;
+				}
+#endif /* CFG_SUPPORT_CONNAC2X */
 
 				if (prDbgOps && prDbgOps->dumpWfBusSectionA)
 					prDbgOps->dumpWfBusSectionA(prAdapter);
@@ -314,6 +327,11 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			prChipInfo->checkMdRxStall(prAdapter);
 	}
 #endif
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+end_dump:
+#endif /* CFG_SUPPORT_CONNAC2X */
+
 	prAdapter->u4HifChkFlag = 0;
 	prAdapter->u4HifDbgMod = 0;
 	prAdapter->u4HifDbgBss = 0;
@@ -358,14 +376,14 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	/* need to check Bus readable */
-	if (prAdapter->chip_info->checkbushang) {
+	if (prAdapter->chip_info->checkbusNoAck) {
 		uint32_t ret = 0;
 
-		ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
+		ret = prAdapter->chip_info->checkbusNoAck((void *) prAdapter,
 				TRUE);
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR,
-				"return due to checkbushang fail %d\n", ret);
+				"return due to checkbusNoAck fail %d\n", ret);
 			return;
 		}
 	}

@@ -1662,7 +1662,7 @@ struct mt66xx_chip_info {
 	uint32_t (*dmashdlQuotaDecision)(struct ADAPTER *prAdapter,
 		uint8_t ucWmmIndex);
 	u_int8_t is_support_nvram_fragment;
-	int (*checkbushang)(void *prAdapter,
+	int (*checkbusNoAck)(void *prAdapter,
 		uint8_t ucWfResetEnable);
 	void (*checkmcuoff)(struct ADAPTER *prAdapter);
 	uint32_t u4ADieVer;

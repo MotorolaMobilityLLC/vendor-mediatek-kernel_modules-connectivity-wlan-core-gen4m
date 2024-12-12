@@ -115,8 +115,8 @@ static int coredump_check_reg_readable(void)
 		ret = 0;
 	}
 
-	if (ctx->fn_check_bus_hang) {
-		if (ctx->fn_check_bus_hang(NULL, 0) != 0) {
+	if (ctx->fn_check_bus_no_ack) {
+		if (ctx->fn_check_bus_no_ack(NULL, 0) != 0) {
 			DBGLOG(INIT, ERROR, "bus check failed.\n");
 			ret = 0;
 		}
@@ -286,11 +286,11 @@ exit:
 	return ret;
 }
 
-void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb)
+void coredump_register_busNoAck_chk_cb(busNoAck_chk_func_cb cb)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 
-	ctx->fn_check_bus_hang = cb;
+	ctx->fn_check_bus_no_ack = cb;
 }
 
 static int coredump_add_cdev(struct coredump_ctx *ctx)
@@ -582,7 +582,7 @@ void wifi_coredump_deinit(void)
 
 	ctx->handler = NULL;
 	coredump_del_cdev(ctx);
-	ctx->fn_check_bus_hang = NULL;
+	ctx->fn_check_bus_no_ack = NULL;
 	ctx->priv = NULL;
 }
 
@@ -640,8 +640,8 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 	else
 		mem->mem_region_num = ctrl_blk.mem_region_num;
 
-	if (chip_info->checkbushang) {
-		if (chip_info->checkbushang(glue->prAdapter, TRUE)) {
+	if (chip_info->checkbusNoAck) {
+		if (chip_info->checkbusNoAck(glue->prAdapter, TRUE)) {
 			DBGLOG(INIT, INFO, "Bus check failed.\n");
 			mem->mem_region_num = 0;
 		}
