@@ -710,7 +710,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	prStaRec = prBssInfo->prStaRecOfAP;
 	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
 	/* set not_in_use link RSSI to -127 */
-	if (prMldStaRec && !(prMldStaRec->u4ActiveStaBitmap &
+	if (prMldStaRec && !(prMldStaRec->u8ActiveStaBitmap &
 		BIT(prStaRec->ucIndex))) {
 		sinfo->signal = -127;
 	}
