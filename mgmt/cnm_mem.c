@@ -859,17 +859,6 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
-#if CFG_SUPPORT_RTT
-	if (IS_STA_RTT_TYPE(prStaRec)) {
-		log_dbg(CNM, INFO,
-			"Don't free StaRec for RTT, BssIdx=%d, StaRecIdx=%d, InUse=%d\n",
-			prStaRec->ucBssIndex,
-			prStaRec->ucIndex,
-			prStaRec->fgIsInUse);
-		return;
-	}
-#endif
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecUnregister(prAdapter, prStaRec);
 #endif
@@ -932,6 +921,27 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
+
+#if CFG_SUPPORT_RTT
+		if (IS_STA_RTT_TYPE(prStaRec)) {
+			log_dbg(CNM, INFO,
+				"Don't free StaRec for RTT, BssIdx=%d, StaRecIdx=%d, InUse=%d\n",
+				prStaRec->ucBssIndex,
+				prStaRec->ucIndex,
+				prStaRec->fgIsInUse);
+
+			ucStaRecIndexExcluded = prStaRec->ucIndex;
+			continue;
+		}
+#endif
+
+		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex
+			&& i != ucStaRecIndexExcluded)
+			cnmStaRoutinesForAbort(prAdapter, prStaRec);
+	}	/* end of for loop */
+
 	if (ucStaRecIndexExcluded < CFG_STA_REC_NUM)
 		eAction = STA_REC_CMD_ACTION_BSS_EXCLUDE_STA;
 	else
@@ -940,14 +950,6 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	cnmStaSendRemoveCmd(prAdapter,
 		eAction,
 		ucStaRecIndexExcluded, ucBssIndex);
-
-	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
-
-		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex
-			&& i != ucStaRecIndexExcluded)
-			cnmStaRoutinesForAbort(prAdapter, prStaRec);
-	}	/* end of for loop */
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/* To do: Confirm if it is invoked here or other location, but it should
