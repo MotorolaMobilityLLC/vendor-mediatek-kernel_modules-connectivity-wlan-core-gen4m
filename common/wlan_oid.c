@@ -715,7 +715,7 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 			if (IS_FEATURE_ENABLED(
 				prAdapter->rWifiVar.ucTWTRequester))
 				twtPlannerCheckTeardownSuspend(prAdapter,
-					TRUE, FALSE);
+					TRUE, FALSE, TEARDOWN_BY_OTHERS);
 #endif
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,

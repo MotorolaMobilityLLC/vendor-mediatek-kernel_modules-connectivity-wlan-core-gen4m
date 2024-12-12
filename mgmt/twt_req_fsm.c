@@ -288,6 +288,13 @@ twtReqFsmSteps(
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				eNextState = TWT_REQ_STATE_IDLE;
 				fgIsTransition = TRUE;
+
+#ifdef CFG_SUPPORT_TWT_EXT
+				twtEventNotify(prAdapter, prStaRec->ucBssIndex,
+					ucTWTFlowId, prTWTParams,
+					ENUM_TWT_EVENT_NEGOTIATION,
+					1, SETUP_OTHERS, 0);
+#endif
 			}
 
 			break;
@@ -378,6 +385,7 @@ twtReqFsmSteps(
 				FALSE,
 				NULL, NULL /* handle TWT cmd timeout? */);
 
+#ifndef CFG_SUPPORT_TWT_EXT
 			rStatus = twtSendInfoFrame(
 					prAdapter, prStaRec, ucTWTFlowId,
 					prNextTWTInfo, twtReqFsmRunEventTxDone);
@@ -386,7 +394,22 @@ twtReqFsmSteps(
 				eNextState = TWT_REQ_STATE_IDLE;
 				fgIsTransition = TRUE;
 			}
-
+#else
+			if (IS_FEATURE_ENABLED
+				(prAdapter->rWifiVar.fgTWTInfoEnable)) {
+				rStatus = twtSendInfoFrame(
+					prAdapter, prStaRec, ucTWTFlowId,
+					prNextTWTInfo,
+					twtReqFsmRunEventTxDone);
+				if (rStatus != WLAN_STATUS_SUCCESS) {
+					eNextState = TWT_REQ_STATE_IDLE;
+					fgIsTransition = TRUE;
+				}
+			} else {
+				eNextState = TWT_REQ_STATE_IDLE;
+				fgIsTransition = TRUE;
+			}
+#endif
 			break;
 
 		case TWT_REQ_STATE_SUSPENDED:
@@ -398,11 +421,24 @@ twtReqFsmSteps(
 			}
 
 			preTwtType = (enum _ENUM_TWT_TYPE_T *)pParam;
-
+#ifndef CFG_SUPPORT_TWT_EXT
 			twtReqFsmSendEvent(prAdapter, prStaRec,
 				ucTWTFlowId, (*preTwtType),
 				MID_TWT_REQ_IND_SUSPEND_DONE);
-
+#else
+			if (IS_FEATURE_ENABLED
+				(prAdapter->rWifiVar.fgTWTInfoEnable)) {
+				twtReqFsmSendEvent(prAdapter, prStaRec,
+					ucTWTFlowId, (*preTwtType),
+					MID_TWT_REQ_IND_SUSPEND_DONE);
+			} else {
+				if (ePreState != TWT_REQ_STATE_SUSPENDED) {
+					twtReqFsmSendEvent(prAdapter, prStaRec,
+						ucTWTFlowId, (*preTwtType),
+						MID_TWT_REQ_IND_SUSPEND_DONE);
+				}
+			}
+#endif
 			break;
 
 		case TWT_REQ_STATE_RX_TEARDOWN:
@@ -799,6 +835,9 @@ void twtReqFsmRunEventSuspend(
 	struct _MSG_TWT_REQFSM_SUSPEND_T *prTWTReqFsmSuspendMsg;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTWTFlowId;
+#ifdef CFG_SUPPORT_TWT_EXT
+	enum _ENUM_TWT_TYPE_T eTwtType = ENUM_TWT_TYPE_DEFAULT;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_REQUESTER, ERROR,
@@ -843,8 +882,23 @@ void twtReqFsmRunEventSuspend(
 		return;
 	}
 
+#ifndef CFG_SUPPORT_TWT_EXT
 	twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_SUSPENDING,
 		ucTWTFlowId, NULL);
+#else
+	if (ucTWTFlowId != TWT_MAX_FLOW_NUM - 1)
+		eTwtType = ENUM_TWT_TYPE_ITWT;
+	else
+		eTwtType = ENUM_TWT_TYPE_DEFAULT;
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgTWTInfoEnable)) {
+		twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_SUSPENDING,
+			ucTWTFlowId, &eTwtType);
+	} else {
+		twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_SUSPENDED,
+			ucTWTFlowId, &eTwtType);
+	}
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -992,6 +1046,20 @@ twtReqFsmRunEventTxDone(
 
 		eTwtType = ENUM_TWT_TYPE_ITWT;
 
+#ifdef CFG_SUPPORT_TWT_EXT
+		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				prStaRec->ucBssIndex);
+
+			if (prBssInfo) {
+				cnmTimerStopTimer(prAdapter,
+					&prBssInfo->rTwtWaitRspTimer);
+				cnmTimerStartTimer(prAdapter,
+					&prBssInfo->rTwtWaitRspTimer, 500);
+			}
+		}
+
+#endif
 		twtReqFsmSteps(prAdapter,
 			prStaRec, eNextState, ucTWTFlowId, &eTwtType);
 
@@ -1073,6 +1141,19 @@ twtReqFsmRunEventTxDone(
 			cnmTimerStopTimer(
 				prAdapter,
 				&(prStaRec->rTwtFsmTeardownTimeoutTimer));
+#endif
+
+#ifdef CFG_SUPPORT_TWT_EXT
+		/*
+		 * if (rTxDoneStatus != TX_RESULT_SUCCESS)
+		 * prAdapter->ucTWTTearDownReason = TEARDOWN_NORSP;
+		 */
+
+		twtEventNotify(prAdapter, prStaRec->ucBssIndex,
+			ucTWTFlowId, NULL,
+			ENUM_TWT_EVENT_TEARDOWN,
+			0, prAdapter->ucTWTTearDownReason, 0);
+
 #endif
 
 		break;
@@ -1280,11 +1361,27 @@ void twtReqFsmRunEventRxSetup(
 	uint8_t ucTWTFlowId,
 	enum _ENUM_TWT_TYPE_T eTwtType)
 {
+
+#ifdef CFG_SUPPORT_TWT_EXT
+	struct BSS_INFO *prBssInfo = NULL;
+#endif
+
 	if (!IS_AP_STA(prStaRec))
 		return;
 
 	switch (prStaRec->aeTWTReqState) {
 	case TWT_REQ_STATE_WAIT_RSP:
+
+#ifdef CFG_SUPPORT_TWT_EXT
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
+		if (prBssInfo != NULL) {
+			cnmTimerStopTimer(prAdapter,
+				&prBssInfo->rTwtWaitRspTimer);
+		}
+
+#endif
+
 		/* transition to the IDLE state */
 		twtReqFsmSteps(prAdapter,
 			prStaRec, TWT_REQ_STATE_IDLE, ucTWTFlowId,
@@ -1310,6 +1407,9 @@ void twtReqFsmRunEventRxTeardown(
 
 	switch (prStaRec->aeTWTReqState) {
 	case TWT_REQ_STATE_IDLE:
+#ifdef CFG_SUPPORT_TWT_EXT
+		prAdapter->ucTWTTearDownReason = TEARDOWN_BY_PEER;
+#endif
 #if (CFG_SUPPORT_BTWT == 1)
 		if (GET_TWT_TEARDOWN_NEGO(ucTWTFlowId) == 3) {
 			/*

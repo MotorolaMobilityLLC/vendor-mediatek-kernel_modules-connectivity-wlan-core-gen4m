@@ -575,6 +575,10 @@ struct BSS_INFO {
 	struct _TWT_HOTSPOT_STA_NODE arTWTSta[TWT_MAX_FLOW_NUM];
 #endif
 
+#ifdef CFG_SUPPORT_TWT_EXT
+	struct TIMER rTwtWaitRspTimer;
+#endif
+
 	/* Buffer for WPA2 PMKID */
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
 	struct LINK rPmkidCache;
@@ -1014,6 +1018,9 @@ struct WIFI_VAR {
 	uint8_t ucTWTStaBandBitmap;
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 	uint32_t u4TwtCnmAbortTimeoutMs;
+#endif
+#ifdef CFG_SUPPORT_TWT_EXT
+	uint8_t fgTWTInfoEnable;
 #endif
 #endif
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
@@ -2862,6 +2869,9 @@ struct ADAPTER {
 #endif
 #if (CFG_SUPPORT_TWT == 1)
 	struct _TWT_PLANNER_T rTWTPlanner;
+#ifdef CFG_SUPPORT_TWT_EXT
+	uint8_t ucTWTTearDownReason;
+#endif
 #endif
 
 #if CFG_SUPPORT_WIFI_SYSDVT

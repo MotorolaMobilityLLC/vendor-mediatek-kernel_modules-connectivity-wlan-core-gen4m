@@ -3299,11 +3299,22 @@ nicConfigPowerSaveProfile(struct ADAPTER *prAdapter,
 	prBssInfo->ePwrMode = ePwrMode;
 
 #ifdef CFG_SUPPORT_TWT_EXT
-	if (ucCaller == PS_CALLER_COMMON && ePwrMode == Param_PowerModeCAM) {
-		if (IS_FEATURE_ENABLED(
-			prAdapter->rWifiVar.ucTWTRequester))
-			twtPlannerCheckTeardownSuspend(prAdapter,
-				TRUE, TRUE);
+	if (IS_BSS_AIS(prBssInfo)) {
+		if (ucCaller == PS_CALLER_COMMON &&
+			ePwrMode == Param_PowerModeCAM) {
+			if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucTWTRequester))
+				twtPlannerCheckTeardownSuspend(prAdapter,
+					TRUE, TRUE, TEARDOWN_BY_PSDISABLE);
+		} else if (ucCaller == PS_CALLER_COMMON &&
+					ePwrMode == Param_PowerModeFast_PSP) {
+			if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucTWTRequester))
+				twtEventNotify(prAdapter, ucBssIndex,
+					0, NULL,
+					ENUM_TWT_EVENT_NOTIFICATION,
+					0, NOTIFI_READY, 0);
+		}
 	}
 #endif
 

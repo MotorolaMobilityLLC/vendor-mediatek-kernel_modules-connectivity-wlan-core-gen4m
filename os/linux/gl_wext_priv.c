@@ -18269,6 +18269,11 @@ int priv_driver_set_twtparams(
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
 	uint64_t u8Val = 0x0;
+#ifdef CFG_SUPPORT_TWT_EXT
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct STA_RECORD *prStaRec = NULL;
+#endif
+#endif
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -18363,6 +18368,18 @@ int priv_driver_set_twtparams(
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
 		rTWTCtrl.ucCtrlAction = (uint8_t)au4Setting[0];
 		rTWTCtrl.ucTWTFlowId = (uint8_t)au4Setting[1];
+
+#ifdef CFG_SUPPORT_TWT_EXT
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (IS_TWT_PARAM_ACTION_DEL(au4Setting[0])) {
+			prStaRec = twtmldGetActiveStaRec(prAdapter,
+				prNetDevPrivate->ucBssIdx);
+			if (prStaRec)
+				rTWTCtrl.ucBssIdx = prStaRec->ucBssIndex;
+		}
+#endif
+#endif
+
 	}
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	else if (IS_TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS(au4Setting[0])
@@ -18952,7 +18969,8 @@ int priv_driver_set_twtparams(
 	}
 #ifdef CFG_SUPPORT_TWT_EXT
 	else if ((i4Argc == CMD_TWT_ACTION_FIFTEEN_PARAMS) &&
-		(IS_TWT_PARAM_ACTION_ADD(au4Setting[0]))) {
+		(IS_TWT_PARAM_ACTION_ADD(au4Setting[0])
+			|| IS_TWT_PARAM_ACTION_ADD_BYPASS(au4Setting[0]))) {
 		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO,
 			"TWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
@@ -19001,7 +19019,20 @@ int priv_driver_set_twtparams(
 		prTWTParams->ucWakeDurMin = (uint8_t) au4Setting[12];
 		prTWTParams->ucWakeDurMax = (uint8_t) au4Setting[13];
 
+		prTWTParams->fgByPassNego =
+			IS_TWT_PARAM_ACTION_ADD_BYPASS(au4Setting[0])
+				? TRUE : FALSE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prStaRec = twtmldGetActiveStaRec(prAdapter,
+			prNetDevPrivate->ucBssIdx);
+		if (prStaRec)
+			rTWTCtrl.ucBssIdx = prStaRec->ucBssIndex;
+		else
+			rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+#else
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+#endif
 		rTWTCtrl.ucCtrlAction = au4Setting[0];
 		rTWTCtrl.ucTWTFlowId = au4Setting[1];
 	}

@@ -2466,6 +2466,13 @@ omac_choosed:
 				(PFN_MGMT_TIMEOUT_FUNC) rlmObssScanTimeout,
 				(uintptr_t) prBssInfo);
 
+#ifdef CFG_SUPPORT_TWT_EXT
+			cnmTimerInitTimer(prAdapter,
+				&prBssInfo->rTwtWaitRspTimer,
+				(PFN_MGMT_TIMEOUT_FUNC) twtWaitRspTimeout,
+				(uintptr_t)ucBssIndex);
+#endif
+
 			prBssInfo->u4PowerSaveFlag = 0;
 			prBssInfo->ePwrMode = Param_PowerModeCAM;
 			prBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
@@ -2506,6 +2513,10 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaDoneTimer);
 #endif
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rObssScanTimer);
+
+#ifdef CFG_SUPPORT_TWT_EXT
+	cnmTimerStopTimer(prAdapter, &prBssInfo->rTwtWaitRspTimer);
+#endif
 
 	prBssInfo->fgIsInUse = FALSE;
 	kalCsaNotifyWorkDeinit(prAdapter,

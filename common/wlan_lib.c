@@ -7645,6 +7645,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucTWTStaBandBitmap, "TWTStaBandBitmap",
 		  BIT(BAND_2G4) | BIT(BAND_5G), FEATURE_TO_CUSTOMER);
 #endif
+#ifdef CFG_SUPPORT_TWT_EXT
+	INIT_UINT(prWifiVar->fgTWTInfoEnable,
+		"TWTInfoEnable", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+#endif
 #endif
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)

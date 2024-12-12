@@ -2060,6 +2060,15 @@ void p2pRoleFsmDelIface(
 
 		p2pRoleFsmHandleBssUnlink(prAdapter, ucRoleIdx);
 
+#ifdef CFG_SUPPORT_TWT_EXT
+		if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucTWTRequester))
+			twtEventNotify(prAdapter, 0,
+				0, NULL,
+				ENUM_TWT_EVENT_NOTIFICATION,
+				0, NOTIFI_READY, 0);
+#endif
+
 		p2pRoleFsmDelIfaceDone(prAdapter, ucRoleIdx);
 	}
 
@@ -3489,7 +3498,7 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			if (IS_FEATURE_ENABLED(
 				prAdapter->rWifiVar.ucTWTRequester))
 				twtPlannerCheckTeardownSuspend(prAdapter,
-					FALSE, TRUE);
+					FALSE, TRUE, TEARDOWN_BY_MLCHANNEL);
 #endif
 		} else {
 			DBGLOG(P2P, ERROR,
@@ -4319,12 +4328,6 @@ p2pRoleFsmRunEventAAACompleteImpl(struct ADAPTER *prAdapter,
 		if (eOriMediaState != prP2pBssInfo->eConnectionState)
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
-#ifdef CFG_SUPPORT_TWT_EXT
-		if (IS_FEATURE_ENABLED(
-			prAdapter->rWifiVar.ucTWTRequester))
-			twtPlannerCheckTeardownSuspend(prAdapter,
-				FALSE, TRUE);
-#endif
 	} while (FALSE);
 
 	return rStatus;

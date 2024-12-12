@@ -13348,6 +13348,10 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 					state->ucLinkState,
 					state->ucReason);
 #endif
+#ifdef CFG_SUPPORT_TWT_EXT
+				twtmldCheckTeardown(ad,
+					prMldStaRec->u4ActiveStaBitmap);
+#endif
 			}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 		}
@@ -15081,7 +15085,14 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #endif
 		}
 			break;
-
+		case UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT: {
+#ifdef CFG_SUPPORT_TWT_EXT
+			struct UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT_T *info =
+			(struct UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT_T *) tag;
+			LeakyApEvent(ad, info->ucDectionType);
+#endif
+		}
+			break;
 #if (CFG_PCIE_GEN_SWITCH == 1)
 		case UNI_EVENT_UPDATE_LP_GEN_SWITCH: {
 			struct UNI_EVENT_UPDATE_LP_GEN_SWITCH_T *info =

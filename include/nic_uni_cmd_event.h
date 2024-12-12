@@ -9015,6 +9015,7 @@ struct UNI_EVENT_UPDATE_LP {
 enum ENUM_UNI_EVENT_UPDATE_LP_TAG {
 	UNI_EVENT_UPDATE_LP_TX_DELAY = 0,
 	UNI_EVENT_UPDATE_LP_GEN_SWITCH,
+	UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT = 3,
 	UNI_EVENT_UPDATE_LP_TAG_NUM
 };
 
@@ -9040,6 +9041,22 @@ struct UNI_EVENT_UPDATE_LP_TX_DELAY_T {
 	uint8_t ucDelay;
 	uint8_t aucPadding[3];
 	uint32_t u4PktCnt;
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * This structure is used for UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT tag(0x03)
+ * of UNI_EVENT_UPDATE_LP event (0x77) to identify leaky AP detection status
+ *
+ * @param[in] u2Tag         Tag id
+ * @param[in] u2Length      The length of this TLV
+ * @param[in] ucDectionType Leaky AP Detection Type
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT_T {
+uint16_t     u2Tag;
+uint16_t     u2Length;
+uint8_t      ucDectionType;
+uint8_t      aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
 

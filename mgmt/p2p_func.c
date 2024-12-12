@@ -2160,6 +2160,13 @@ SKIP_START_RDD:
 			}
 		}
 
+#ifdef CFG_SUPPORT_TWT_EXT
+		if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucTWTRequester))
+			twtPlannerCheckTeardownSuspend(prAdapter,
+				FALSE, TRUE, TEARDOWN_BY_MLCHANNEL);
+#endif
+
 #if CFG_AP_80211KVR_INTERFACE
 		/* 5. BSS status notification */
 		p2pFunMulAPAgentBssStatusNotification(prAdapter,

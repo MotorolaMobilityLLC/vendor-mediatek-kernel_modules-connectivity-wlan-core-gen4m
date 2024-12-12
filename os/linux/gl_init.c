@@ -5510,6 +5510,19 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 		wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
 	}
 
+#ifdef CFG_SUPPORT_TWT_EXT
+	if (IS_FEATURE_ENABLED(
+			prGlueInfo->prAdapter->rWifiVar.ucTWTRequester)) {
+		if (fgEnable) {
+			twtPlannerCheckTeardownSuspend(prGlueInfo->prAdapter,
+				TRUE, FALSE, TEARDOWN_BY_OTHERS);
+		} else {
+			twtPlannerCheckResume(prGlueInfo->prAdapter);
+		}
+	}
+
+#endif
+
 #if CFG_SUPPORT_NAN
 	if (prGlueInfo->prAdapter->fgIsNANRegistered) {
 		if (fgEnable) {
@@ -7560,8 +7573,18 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable,
 #endif
 
 #ifdef CFG_SUPPORT_TWT_EXT
-	if (ucEnable)
-		twt_teardown_all(wlanGetWiphy(), prGlueInfo->prAdapter);
+	if (ucEnable) {
+		if (IS_FEATURE_ENABLED(
+			prGlueInfo->prAdapter->rWifiVar.ucTWTRequester))
+			twtPlannerCheckTeardownSuspend(prGlueInfo->prAdapter,
+				TRUE, TRUE, TEARDOWN_BY_MLCONNECT);
+	} else {
+		if (IS_FEATURE_ENABLED(
+			prGlueInfo->prAdapter->rWifiVar.ucTWTRequester))
+			twtEventNotify(prGlueInfo->prAdapter, 0, 0, NULL,
+				ENUM_TWT_EVENT_NOTIFICATION,
+				0, NOTIFI_READY, 0);
+	}
 #endif
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,

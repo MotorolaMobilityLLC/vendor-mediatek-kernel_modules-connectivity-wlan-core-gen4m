@@ -1190,6 +1190,10 @@ uint32_t twtPlannerReset(
 			return WLAN_STATUS_INVALID_DATA;
 		}
 
+#ifdef CFG_SUPPORT_TWT_EXT
+		cnmTimerStopTimer(prAdapter, &prBssInfo->rTwtWaitRspTimer);
+#endif
+
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 		if (!prStaRec) {
@@ -1402,6 +1406,11 @@ void twtPlannerGetTsfDone(
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 	enum _ENUM_TWT_TYPE_T eTwtType;
 #endif
+#ifdef CFG_SUPPORT_TWT_EXT
+	uint8_t ucAgrtTblIdx;
+	struct _TWT_PARAMS_T rTWTParams;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1592,6 +1601,7 @@ void twtPlannerGetTsfDone(
 	case TWT_GET_TSF_FOR_RESUME_AGRT:
 		ucNextTWTSize = prGetTsfCtxt->rNextTWT.ucNextTWTSize;
 
+#ifndef CFG_SUPPORT_TWT_EXT
 		/* To have mantissa alignment from TWT wake time::Begin */
 		prTWTFlow = twtPlannerFlowFindById(
 					prStaRec,
@@ -1670,6 +1680,91 @@ void twtPlannerGetTsfDone(
 		twtPlannerSendReqResume(prAdapter,
 			prStaRec, prGetTsfCtxt->ucTWTFlowId,
 			u8NextTWT, ucNextTWTSize);
+#else
+		rWlanStatus = twtPlannerDrvAgrtGet(
+			prAdapter, prBssInfo->ucBssIndex,
+			prGetTsfCtxt->ucTWTFlowId, &ucAgrtTblIdx, &rTWTParams);
+
+		if (rWlanStatus) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"No agrt to resume Bss %u flow %u\n",
+				prBssInfo->ucBssIndex,
+				prGetTsfCtxt->ucTWTFlowId);
+			return;
+		}
+
+		if (rTWTParams.fgByPassNego == FALSE) {
+			/* To have mantissa alignment from wake time::Begin */
+			prTWTFlow = twtPlannerFlowFindById(
+						prStaRec,
+						prGetTsfCtxt->ucTWTFlowId,
+						ENUM_TWT_TYPE_ITWT);
+
+			if (prTWTFlow == NULL) {
+				DBGLOG(TWT_PLANNER, ERROR,
+					"prTWTFlow is NULL.\n");
+
+				return;
+			}
+
+			prTWTParams = &(prTWTFlow->rTWTPeerParams);
+
+			u8twt_interval =
+				((u_int64_t)(prTWTParams->u2WakeIntvalMantiss))
+				<< prTWTParams->ucWakeIntvalExponent;
+
+			u8Temp = u8CurTsf +
+				prGetTsfCtxt->rNextTWT.u8NextTWT +
+				u8twt_interval - prTWTParams->u8TWT;
+
+			DBGLOG(TWT_PLANNER, WARN,
+				"TWT Info Frame[0] TWT resp 0x%x 0x%x u8Temp 0x%x 0x%x\n",
+				CPU_TO_LE32(prTWTParams->u8TWT & 0xFFFFFFFF),
+				CPU_TO_LE32(
+					(uint32_t)(prTWTParams->u8TWT >> 32)),
+				CPU_TO_LE32(u8Temp & 0xFFFFFFFF),
+				CPU_TO_LE32((uint32_t)(u8Temp >> 32)));
+
+			u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+			u8NextTWT = u8CurTsf +
+				prGetTsfCtxt->rNextTWT.u8NextTWT +
+				u8twt_interval - u8Mod;
+
+			DBGLOG(TWT_PLANNER, WARN,
+				"TWT Info Frame[1] u8Mod 0x%x 0x%x\n",
+					CPU_TO_LE32(u8Mod & 0xFFFFFFFF),
+					CPU_TO_LE32((uint32_t)(u8Mod >> 32)));
+			/* To have mantissa alignment from TWT wake time::End */
+
+			if (((u8NextTWT & 0xFFFFFFFF00000000) != 0) &&
+				(g_IsWfaTestBed == 0))
+				ucNextTWTSize = 3;
+
+			DBGLOG(TWT_REQUESTER, WARN,
+			"TWT Info Frame[2] %d Tgt[0x%x 0x%x] Cur[0x%x 0x%x] Input[0x%x 0x%x]\n",
+			ucNextTWTSize,
+			(uint32_t)(u8NextTWT & 0x00000000FFFFFFFF),
+			(uint32_t)((u8NextTWT & 0xFFFFFFFF00000000) >> 32),
+			(uint32_t)(u8CurTsf & 0x00000000FFFFFFFF),
+			(uint32_t)((u8CurTsf & 0xFFFFFFFF00000000) >> 32),
+			(uint32_t)(prGetTsfCtxt->rNextTWT.u8NextTWT &
+					0x00000000FFFFFFFF),
+			(uint32_t)((prGetTsfCtxt->rNextTWT.u8NextTWT &
+					0xFFFFFFFF00000000) >> 32));
+
+			/* Start the process to resume this TWT agreement */
+			twtPlannerSendReqResume(prAdapter,
+				prStaRec, prGetTsfCtxt->ucTWTFlowId,
+				u8NextTWT, ucNextTWTSize);
+
+		} else {
+			u8NextTWT = u8CurTsf + TSF_OFFSET_FOR_EMU;
+			twtPlannerSendReqResume(prAdapter,
+				prStaRec, prGetTsfCtxt->ucTWTFlowId,
+				u8NextTWT, ucNextTWTSize);
+		}
+#endif
 
 		break;
 
@@ -3005,6 +3100,12 @@ void twtPlannerRxNegoResult(
 				"Rx nego id %d\n",
 				ucTWTFlowId);
 			/* prAdapter->fgEnOnlineScan = FALSE; */
+
+			prAdapter->ucTWTTearDownReason = TEARDOWN_BY_DEFAULT;
+			twtEventNotify(prAdapter, prStaRec->ucBssIndex,
+				ucTWTFlowId, prTWTResult,
+				ENUM_TWT_EVENT_NEGOTIATION,
+				0, SETUP_ACCEPT, 0);
 		} else {
 			/*
 			 * The TWT parameters suggested by AP
@@ -3021,6 +3122,11 @@ void twtPlannerRxNegoResult(
 
 			twtPlannerSendReqTeardown(prAdapter,
 				prStaRec, ucTWTFlowId);
+
+			twtEventNotify(prAdapter, prStaRec->ucBssIndex,
+				ucTWTFlowId, prTWTResult,
+				ENUM_TWT_EVENT_NEGOTIATION,
+				1, SETUP_NOTACCEPT, 0);
 		}
 
 		break;
@@ -3050,6 +3156,13 @@ void twtPlannerRxNegoResult(
 		twtSendTeardownFrame(
 			prAdapter, prStaRec, ucTWTFlowId,
 			NULL);
+#endif
+
+#ifdef CFG_SUPPORT_TWT_EXT
+		twtEventNotify(prAdapter, prStaRec->ucBssIndex,
+			ucTWTFlowId, prTWTResult,
+			ENUM_TWT_EVENT_NEGOTIATION,
+			1, SETUP_REJECT, 0);
 #endif
 
 		break;

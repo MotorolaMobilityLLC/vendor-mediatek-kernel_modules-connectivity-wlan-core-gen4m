@@ -4958,6 +4958,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 
 #ifdef CFG_SUPPORT_TWT_EXT
 				twtPlannerReset(prAdapter, prAisBssInfo);
+				/* Clear Teardown Reason in reconnecting */
+				prAdapter->ucTWTTearDownReason =
+					TEARDOWN_BY_DEFAULT;
 #endif
 				kalRoamingReport(
 					prAdapter, ucBssIndex, TRUE);
@@ -6472,6 +6475,10 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_TWT == 1)
 	twtPlannerReset(prAdapter, prAisBssInfo);
+#ifdef CFG_SUPPORT_TWT_EXT
+	/* Clear Teardown Reason in disconnecting */
+	prAdapter->ucTWTTearDownReason = TEARDOWN_BY_DEFAULT;
+#endif
 #endif
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE

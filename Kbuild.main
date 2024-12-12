@@ -2348,6 +2348,9 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=1
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=1
     ccflags-y += -DCFG_SUPPORT_NAN_LOG=1
+    ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
+        ccflags-y += -DCFG_SUPPORT_TWT_EXT=1
+    endif
     ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
         CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
         CONFIG_MTK_WIFI_IGMP_OFLD_SUPPORT=y
