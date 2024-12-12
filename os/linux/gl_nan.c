@@ -520,7 +520,7 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 
 	prNetDevPriv->ucIsNan = TRUE;
 	/* register callback functions */
-	prNanDev->needed_headroom += NIC_TX_HEAD_ROOM;
+	prNanDev->needed_headroom += wlanGetTxNeededHeadRoom(prAdapter);
 	prNanDev->netdev_ops = &nan_netdev_ops;
 
 #if defined(_HIF_SDIO)

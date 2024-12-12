@@ -1029,9 +1029,6 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _pvPacket)
 #define kalPacketAlloc(_prGlueInfo, _u4Size, _fgIsTx, _ppucData) \
 ((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo))
 
-#define kalPacketAllocWithHeadroom(_prGlueInfo, _u4Size, _ppucData) \
-((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo))
-
 #define kalGetUIntRealTime() \
 ((uint64_t) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__))
 
@@ -1061,9 +1058,6 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 		     u_int8_t fgIsTx,
 		     uint8_t **ppucData);
 
-void *kalPacketAllocWithHeadroom(struct GLUE_INFO
-				 *prGlueInfo,
-				 uint32_t u4Size, uint8_t **ppucData);
 uint64_t kalGetUIntRealTime(void);
 #endif
 

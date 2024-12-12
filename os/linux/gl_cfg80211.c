@@ -2009,7 +2009,6 @@ int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 				 int link_id, u64 *cookie)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 	struct sk_buff *prSkb;
 	struct ethhdr *prEthHdr;
@@ -2032,7 +2031,6 @@ int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 		goto exit;
 	}
 
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 		netdev_priv(dev);
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
@@ -2067,8 +2065,7 @@ int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	}
 #endif
 
-	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-		prChipInfo->txd_append_size;
+	u4TxHeadRoomSize = wlanGetTxNeededHeadRoom(prGlueInfo->prAdapter);
 	u4SkbSize = u4TxHeadRoomSize + sizeof(struct ethhdr) + len;
 	prSkb = dev_alloc_skb(u4SkbSize);
 	if (!prSkb) {
@@ -6999,7 +6996,6 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct net_device *prDevHandler = NULL;
 	struct wireless_dev *prWdev = NULL;
-	struct mt66xx_chip_info *prChipInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	struct wireless_dev **pprWdev = NULL;
 	uint8_t ucBssIdx = 0;
@@ -7017,7 +7013,6 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 		return ERR_PTR(-EINVAL);
 
 	prAdapter = prGlueInfo->prAdapter;
-	prChipInfo = prAdapter->chip_info;
 	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 
 	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
@@ -7071,9 +7066,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	prDevHandler->tx_queue_len = 3000;
 	DBGLOG(INIT, INFO, "net_device prDev(0x%p) allocated\n", prDevHandler);
 
-	prDevHandler->needed_headroom =
-		NIC_TX_DESC_AND_PADDING_LENGTH +
-		prChipInfo->txd_append_size;
+	prDevHandler->needed_headroom = wlanGetTxNeededHeadRoom(prAdapter);
 	prDevHandler->netdev_ops = &wlan_netdev_ops;
 #ifdef CONFIG_WIRELESS_EXT
 	prDevHandler->wireless_handlers = &wext_handler_def;

@@ -2718,6 +2718,12 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+#if CFG_DEDICATED_TXD
+	if (prTxDescOps->fillNicAppend)
+		prTxDescOps->fillNicAppend(prGlueInfo->prAdapter, prMsduInfo,
+				pucBufferTxD + NIC_TX_DESC_AND_PADDING_LENGTH);
+#endif /* CFG_DEDICATED_TXD */
+
 	if (prTxDescOps->fillHifAppend)
 		prTxDescOps->fillHifAppend(prGlueInfo->prAdapter,
 			prMsduInfo, prDataToken->u4Token,
@@ -4574,15 +4580,21 @@ u_int8_t halIsValidDataFormat(
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct TX_DESC_OPS_T *prTxDescOps;
+#if !CFG_DEDICATED_TXD
 	struct sk_buff *prSkb;
+#endif /* !CFG_DEDICATED_TXD */
 	void *prTxDesc;
 	uint32_t u4TxDumpSize;
 	uint8_t ucFormat = 0;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prTxDescOps = prChipInfo->prTxDescOps;
+#if CFG_DEDICATED_TXD
+	prTxDesc = prMsduInfo->aucDedicatedTxd;
+#else /* CFG_DEDICATED_TXD */
 	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
 	prTxDesc = prSkb->data;
+#endif /* CFG_DEDICATED_TXD */
 	u4TxDumpSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
 
@@ -4602,6 +4614,30 @@ u_int8_t halIsValidDataFormat(
 	}
 
 	return TRUE;
+}
+
+static u_int8_t halIsValidLength(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint32_t u4TotalLen)
+{
+#if CFG_DEDICATED_TXD
+	/* note that there is no txd in prSkb->data */
+	uint32_t u4HifTxMaxSize = NIC_TX_MAX_SIZE_PER_FRAME;
+#else /* CFG_DEDICATED_TXD */
+	uint32_t u4HifTxMaxSize = HIF_TX_MAX_SIZE_PER_FRAME
+				+ wlanGetTxdAppendSize(prAdapter);
+#endif /* CFG_DEDICATED_TXD */
+
+	if (u4TotalLen <= u4HifTxMaxSize)
+		return TRUE;
+
+	DBGLOG(HAL, ERROR,
+		"BSS[%u] STA[%u] eSrc[%u] PType[%u] Len[%u] HifTxMaxSize[%u]\n",
+		prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex,
+		prMsduInfo->eSrc, prMsduInfo->ucPacketType,
+		u4TotalLen, u4HifTxMaxSize);
+
+	return FALSE;
 }
 
 bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
@@ -4647,7 +4683,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		return false;
 	}
 
-	if (u4TotalLen <= (HIF_TX_MAX_SIZE_PER_FRAME + u4TxDescAppendSize)) {
+	if (halIsValidLength(prAdapter, prMsduInfo, u4TotalLen)) {
 
 		/* Acquire MSDU token */
 		prToken = halAcquireMsduToken(prAdapter,
@@ -4682,17 +4718,6 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 			halReturnMsduToken(prAdapter, prToken->u4Token);
 			return false;
 		}
-
-	} else {
-		DBGLOG(HAL, ERROR, "u4Len=%u, 0x%p, txd_append_size=%d\n",
-			u4TotalLen, prSkb,
-			prAdapter->chip_info->txd_append_size);
-
-		DBGLOG(HAL, ERROR, "%u,%u,%u,%u,%u,%u,%u,%u\n",
-			prMsduInfo->eSrc, prMsduInfo->ucUserPriority,
-			prMsduInfo->ucTC, prMsduInfo->ucPacketType,
-			prMsduInfo->ucStaRecIndex, prMsduInfo->ucBssIndex,
-			prMsduInfo->ucWlanIndex, prMsduInfo->ucPacketFormat);
 	}
 
 	if (prCurList) {

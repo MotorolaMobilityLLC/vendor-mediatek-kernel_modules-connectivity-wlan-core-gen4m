@@ -2143,6 +2143,8 @@ uint32_t wlanGetThreadWakeUp(struct ADAPTER *prAdapter);
 
 uint32_t wlanGetTxdAppendSize(struct ADAPTER *prAdapter);
 
+uint32_t wlanGetTxNeededHeadRoom(struct ADAPTER *prAdapter);
+
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
 /*----------------------------------------------------------------------------*/

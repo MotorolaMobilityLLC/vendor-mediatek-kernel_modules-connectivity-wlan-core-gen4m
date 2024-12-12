@@ -196,11 +196,6 @@
 /*Customization: sk_buff mark for special packet that need raise priority */
 #define NIC_TX_SKB_PRIORITY_MARK_BIT	31 /*Mediatek define, 0x80000000*/
 
-#define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
-#define NIC_TX_HEAD_ROOM \
-	(NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
-	+ HW_MAC_TX_DESC_APPEND_T_LENGTH)
-
 #define NIC_MSDU_REPORT_DUMP_TIMEOUT		5	/* sec */
 #define NIC_MSDU_REPORT_TIMEOUT_SER_TIME	20	/* sec */
 #define NIC_MSDU_REPORT_DISABLE_SER_TIME	0
@@ -883,6 +878,10 @@ struct MSDU_INFO {
 
 	/* Compose TxDesc in main_thread and place here */
 	uint8_t *aucTxDescBuffer;
+
+#if CFG_DEDICATED_TXD
+	uint8_t aucDedicatedTxd[NIC_TX_DESC_AND_PADDING_LENGTH];
+#endif /* CFG_DEDICATED_TXD */
 
 
 #if CFG_SUPPORT_NAN

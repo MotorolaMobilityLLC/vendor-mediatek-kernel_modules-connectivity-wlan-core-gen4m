@@ -1796,6 +1796,7 @@ uint32_t nicTxGetMsduPendingCnt(struct ADAPTER
 
 #endif
 
+#if !CFG_DEDICATED_TXD
 void nicTxComposeDescAppend(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo,
 			    uint8_t *prTxDescBuffer)
@@ -1806,6 +1807,7 @@ void nicTxComposeDescAppend(struct ADAPTER *prAdapter,
 		prChipInfo->prTxDescOps->fillNicAppend(prAdapter,
 			prMsduInfo, prTxDescBuffer);
 }
+#endif /* !CFG_DEDICATED_TXD */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1937,6 +1939,7 @@ u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
 	return FALSE;
 }
 
+#if !CFG_DEDICATED_TXD
 static bool nicIsNeedTXDAppend(struct MSDU_INFO *prMsduInfo)
 {
 	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
@@ -1949,6 +1952,7 @@ static bool nicIsNeedTXDAppend(struct MSDU_INFO *prMsduInfo)
 
 	return FALSE;
 }
+#endif /* CFG_DEDICATED_TXD */
 
 static bool nicIsNanStaRecTxAllowed(
 	struct ADAPTER *prAdapter,
@@ -2052,10 +2056,17 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 			DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
 		prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
 			prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
+
+		/*
+		 * when CFG_DEDICATED_TXD is enabled,
+		 * there is no txd_append inside prTxDesc
+		 */
+#if !CFG_DEDICATED_TXD
 		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
 			kalMemCopy(prTxDesc, prTxDescTemplate,
 				u4TxDescLength + prChipInfo->txd_append_size);
 		else
+#endif /* !CFG_DEDICATED_TXD */
 			kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength);
 
 #if defined(_HIF_USB)
@@ -2088,10 +2099,12 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		nicTxComposeDesc(prAdapter, prMsduInfo, u4TxDescLength,
 				 FALSE, prTxDescBuffer);
 
+#if !CFG_DEDICATED_TXD
 		/* Compose TxD append */
 		if (nicIsNeedTXDAppend(prMsduInfo))
 			nicTxComposeDescAppend(prAdapter, prMsduInfo,
 					       prTxDescBuffer + u4TxDescLength);
+#endif /* !CFG_DEDICATED_TXD */
 	}
 
 	/*
@@ -2189,9 +2202,10 @@ void
 nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		  struct MSDU_INFO *prMsduInfo)
 {
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint8_t *pucOutputBuf = NULL;
+#if !CFG_DEDICATED_TXD
 	int16_t i2HeadLength;
+#endif /* !CFG_DEDICATED_TXD */
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (isEapolBeforeKeyReady(prAdapter, prMsduInfo)) {
@@ -2218,8 +2232,11 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 
 	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
 
+#if CFG_DEDICATED_TXD
+	pucOutputBuf = prMsduInfo->aucDedicatedTxd;
+#else /* CFG_DEDICATED_TXD */
 	i2HeadLength = NIC_TX_DESC_AND_PADDING_LENGTH
-			+ prChipInfo->txd_append_size;
+			+ wlanGetTxdAppendSize(prAdapter);
 
 	if (prMsduInfo->fgIsMovePkt)
 		kalGetPacketBuf(prMsduInfo->prPacket, &pucOutputBuf);
@@ -2229,6 +2246,7 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 
 	if (pucOutputBuf == NULL)
 		return;
+#endif /* CFG_DEDICATED_TXD */
 
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
 	/* dump TXD to debug TX issue */
@@ -2238,26 +2256,6 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		if (prDbgOps && prDbgOps->dumpTxdInfo)
 			prDbgOps->dumpTxdInfo(prAdapter, pucOutputBuf);
 	}
-}
-
-void
-nicTxCopyDesc(struct ADAPTER *prAdapter,
-	      uint8_t *pucTarTxDesc, uint8_t *pucSrcTxDesc,
-	      uint8_t *pucTxDescLength)
-{
-	struct TX_DESC_OPS_T *prTxDescOps;
-	uint8_t ucTxDescLength;
-
-	prTxDescOps = prAdapter->chip_info->prTxDescOps;
-	if (prTxDescOps->nic_txd_long_format_op(pucSrcTxDesc, FALSE))
-		ucTxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-	else
-		ucTxDescLength = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
-
-	kalMemCopy(pucTarTxDesc, pucSrcTxDesc, ucTxDescLength);
-
-	if (pucTxDescLength)
-		*pucTxDescLength = ucTxDescLength;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2315,7 +2313,15 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 	prMsduInfo->ucPID = NIC_TX_DESC_PID_RESERVED;
 
 	u4TxDescSize = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+#if CFG_DEDICATED_TXD
+	/*
+	 * when CFG_DEDICATED_TXD is enabled,
+	 * there is no txd_append inside prTxDesc
+	 */
+	u4TxDescAppendSize = 0;
+#else /* CFG_DEDICATED_TXD */
 	u4TxDescAppendSize = prChipInfo->txd_append_size;
+#endif /* CFG_DEDICATED_TXD */
 
 	DBGLOG(QM, INFO,
 	       "Generate TXD template for STA[%u] QoS[%u]\n",
@@ -2355,9 +2361,11 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 				prAdapter, prMsduInfo, u4TxDescSize, TRUE,
 				(uint8_t *) prTxDesc);
 
+#if !CFG_DEDICATED_TXD
 			/* Fill TxD append */
 			nicTxComposeDescAppend(prAdapter, prMsduInfo,
 				((uint8_t *)prTxDesc + u4TxDescSize));
+#endif /* !CFG_DEDICATED_TXD */
 
 			prStaRec->aprTxDescTemplate[ucTid] = prTxDesc;
 		}
@@ -2392,9 +2400,11 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 				prAdapter, prMsduInfo, u4TxDescSize, TRUE,
 				(uint8_t *) prTxDesc);
 
+#if !CFG_DEDICATED_TXD
 			/* Fill TxD append */
 			nicTxComposeDescAppend(prAdapter, prMsduInfo,
 				((uint8_t *)prTxDesc + u4TxDescSize));
+#endif /* !CFG_DEDICATED_TXD */
 
 			for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
 				prStaRec->aprTxDescTemplate[ucTid] = prTxDesc;
@@ -4146,8 +4156,12 @@ uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 			prNextMsduInfo = QUEUE_GET_NEXT_ENTRY(
 					&prMsduInfoHead->rQueEntry);
 
-			u4TxDescAppendSize =
-				prAdapter->chip_info->txd_append_size;
+			/*
+			 * Although the length for TXD becomes useless when
+			 * CFG_DEDICATED_TXD is enabled, we didn't change the
+			 * u4TotLen to maintain the consistency.
+			 */
+			u4TxDescAppendSize = wlanGetTxdAppendSize(prAdapter);
 			u4TotLen = NIC_TX_DESC_AND_PADDING_LENGTH
 				+ u4TxDescAppendSize
 				+ prMsduInfoHead->u2FrameLength;
@@ -4348,6 +4362,16 @@ struct MSDU_INFO *nicAllocMgmtPktForDataQ(struct ADAPTER *prAdapter,
 		/* Mark this MSDU will send by data Q */
 		prRetMsduInfo->u4MgmtLength = u4Length;
 		prRetMsduInfo->fgMgmtUseDataQ = TRUE;
+#if CFG_DEDICATED_TXD
+		/*
+		 * TXD is moving to aucDedicatedTxd when CFG_DEDICATED_TXD is
+		 * enabled, so we need to do some redirection and let Mgmt by
+		 * DataQ aligns with the Data pkt.
+		 */
+		prRetMsduInfo->prPacket = prRetMsduInfo->prHead;
+		prRetMsduInfo->aucTxDescBuffer = prRetMsduInfo->aucDedicatedTxd;
+
+#endif /* CFG_DEDICATED_TXD */
 	}
 #else
 	prRetMsduInfo = cnmMgtPktAlloc(prAdapter, u4Length);

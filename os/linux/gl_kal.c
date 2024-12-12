@@ -1157,47 +1157,6 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 /*!
  * \brief Only handles driver own creating packet (coalescing buffer).
  *
- * \param prGlueInfo   Pointer of GLUE Data Structure
- * \param u4Size       Pointer of Packet Handle
- * \param ppucData     Status Code for OS upper layer
- *
- * \return NULL: Failed to allocate skb, Not NULL get skb
- */
-/*----------------------------------------------------------------------------*/
-void *kalPacketAllocWithHeadroom(struct GLUE_INFO
-		 *prGlueInfo, uint32_t u4Size, uint8_t **ppucData)
-{
-	struct sk_buff *prSkb = dev_alloc_skb(u4Size);
-
-	if (!prSkb) {
-		DBGLOG(TX, WARN, "alloc skb failed\n");
-		return NULL;
-	}
-
-	/*
-	 * Reserve NIC_TX_HEAD_ROOM as this skb
-	 * is allocated by driver instead of kernel.
-	 */
-	skb_reserve(prSkb, NIC_TX_HEAD_ROOM);
-
-	*ppucData = (uint8_t *) (prSkb->data);
-
-	kalResetPacket(prGlueInfo, (void *) prSkb);
-#if DBG
-	{
-		uint32_t *pu4Head = (uint32_t *) &prSkb->cb[0];
-		*pu4Head = (uint32_t) prSkb->head;
-		DBGLOG(RX, TRACE, "prSkb->head = %#lx, prSkb->cb = %#lx\n",
-		       (uint32_t) prSkb->head, *pu4Head);
-	}
-#endif
-	return (void *) prSkb;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Only handles driver own creating packet (coalescing buffer).
- *
  * \param pvPacket	socket buffer (skb)
  * \return			length of socket buffer (skb)
  */
@@ -3953,7 +3912,6 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	struct sk_buff *prSkbNew = NULL;
 	struct sk_buff *prSkb = NULL;
 	uint32_t u4SkbLen = 0;
-	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxHeadRoomSize = 0;
 	struct ADAPTER *prAdapter = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -3963,9 +3921,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-		prChipInfo->txd_append_size;
+	u4TxHeadRoomSize = wlanGetTxNeededHeadRoom(prAdapter);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(INIT, INFO, "GLUE_FLAG_HALT skip tx\n");
@@ -4046,8 +4002,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		if (!prSkbNew) {
 			dev_kfree_skb(prOrgSkb);
 			DBGLOG(INIT, ERROR,
-				"prChipInfo = %pM, u4TxHeadRoomSize: %u\n",
-				prChipInfo, u4TxHeadRoomSize);
+				"u4TxHeadRoomSize: %u\n", u4TxHeadRoomSize);
 			return WLAN_STATUS_NOT_ACCEPTED;
 		}
 		dev_kfree_skb(prOrgSkb);
@@ -19470,7 +19425,6 @@ void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 {
 #if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
 	(CFG_SUPPORT_CONTROL_PORT_OVER_NL80211 == 1)
-	struct mt66xx_chip_info *prChipInfo;
 	struct net_device *prNetDev;
 	struct wireless_dev *prWdev;
 	uint8_t *pucData = NULL;
@@ -19481,9 +19435,7 @@ void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prMsduInfo)
 		return;
 
-	prChipInfo = prAdapter->chip_info;
-	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-		prChipInfo->txd_append_size;
+	u4TxHeadRoomSize = wlanGetTxNeededHeadRoom(prAdapter);
 	prNetDev = wlanGetNetDev(prAdapter->prGlueInfo,
 				 prMsduInfo->ucBssIndex);
 	if (!prNetDev) {

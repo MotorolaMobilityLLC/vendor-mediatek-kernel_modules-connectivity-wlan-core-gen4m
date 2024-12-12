@@ -3100,6 +3100,15 @@ uint32_t wlanGetTxdAppendSize(struct ADAPTER *prAdapter)
 	return prAdapter->chip_info->txd_append_size;
 }
 
+uint32_t wlanGetTxNeededHeadRoom(struct ADAPTER *prAdapter)
+{
+#if CFG_DEDICATED_TXD
+	return 0;
+#else /* CFG_DEDICATED_TXD */
+	return NIC_TX_DESC_AND_PADDING_LENGTH + wlanGetTxdAppendSize(prAdapter);
+#endif /* CFG_DEDICATED_TXD */
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

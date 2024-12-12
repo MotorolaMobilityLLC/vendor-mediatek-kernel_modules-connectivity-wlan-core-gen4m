@@ -1463,7 +1463,7 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
+	pvPacket = kalPacketAlloc(prGlueInfo, 1600, TRUE, &pPkt);
 
 	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
@@ -1597,7 +1597,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	pvPacket = kalPacketAlloc(prGlueInfo, 512, TRUE, &pPkt);
 	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
 	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
@@ -1788,7 +1788,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	}
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	pvPacket = kalPacketAlloc(prGlueInfo, 512, TRUE, &pPkt);
 	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
 	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
@@ -1992,7 +1992,7 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	pvPacket = kalPacketAlloc(prGlueInfo, 512, TRUE, &pPkt);
 	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
 	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
@@ -2132,7 +2132,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
 	/* make up frame content */
-	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	pvPacket = kalPacketAlloc(prGlueInfo, 512, TRUE, &pPkt);
 	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
 	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);

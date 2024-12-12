@@ -383,7 +383,20 @@
 #define FW_DROP_SSN_MAX                        10
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 
-#define CFG_SUPPORT_SKB_CLONED_COPY		1
+/*
+ * Since skb of TCP pkt is cloned after enabling TSO,
+ * we need to decouple txd from skb headroom to prevent unnecessary skb_copy
+ * due to CFG_SUPPORT_SKB_CLONED_COPY.
+ */
+#ifndef CFG_DEDICATED_TXD
+#define CFG_DEDICATED_TXD                       0
+#endif /* CFG_DEDICATED_TXD */
+
+#if CFG_DEDICATED_TXD
+#define CFG_SUPPORT_SKB_CLONED_COPY             0
+#else /* CFG_DEDICATED_TXD */
+#define CFG_SUPPORT_SKB_CLONED_COPY             1
+#endif /* CFG_DEDICATED_TXD */
 
 /* Support windows Scatter/gather IO (NETIF_F_SG) */
 #ifndef CFG_SUPPORT_TX_SG

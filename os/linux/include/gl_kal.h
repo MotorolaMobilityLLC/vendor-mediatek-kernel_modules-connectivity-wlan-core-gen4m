@@ -1692,10 +1692,6 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 		     u_int8_t fgIsTx,
 		     uint8_t **ppucData);
 
-void *kalPacketAllocWithHeadroom(struct GLUE_INFO
-				 *prGlueInfo,
-				 uint32_t u4Size, uint8_t **ppucData);
-
 uint32_t kalQueryPacketLength(void *pvPacket);
 
 void kalSetPacketLength(void *pvPacket, uint32_t u4len);

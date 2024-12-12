@@ -293,7 +293,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
 	struct MSG_P2P_UPDATE_DEV_BSS *prMsgUpdateBss = NULL;
-	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
 	struct wireless_dev **pprP2pWdev = NULL;
 	struct wireless_dev **pprP2pRoleWdev = NULL;
@@ -338,8 +337,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	}
 
 	do {
-		prChipInfo = prAdapter->chip_info;
-
 		pprP2pWdev = prGlueInfo->prP2pWdev;
 		pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
 
@@ -454,9 +451,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prP2pInfo->u4LinkId = 0;
 		*((struct GLUE_INFO **) netdev_priv(prNewNetDevice)) =
 			prGlueInfo;
-		prNewNetDevice->needed_headroom =
-			NIC_TX_DESC_AND_PADDING_LENGTH +
-			prChipInfo->txd_append_size;
+		prNewNetDevice->needed_headroom = wlanGetTxNeededHeadRoom(
+							prAdapter);
 		prNewNetDevice->netdev_ops = &p2p_netdev_ops;
 
 		prHif = &prGlueInfo->rHifInfo;

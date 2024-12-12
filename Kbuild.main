@@ -1897,6 +1897,12 @@ else
     ccflags-y += -DCFG_TX_GSO=0
 endif
 
+ifeq ($(CONFIG_DEDICATED_TXD), y)
+    ccflags-y += -DCFG_DEDICATED_TXD=1
+else
+    ccflags-y += -DCFG_DEDICATED_TXD=0
+endif
+
 ifeq ($(CONFIG_ADJUST_NETIF_TH_BY_BAND), y)
     ccflags-y += -DCFG_ADJUST_NETIF_TH_BY_BAND=1
 else

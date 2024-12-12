@@ -982,7 +982,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct GL_P2P_INFO *prP2PInfo = NULL;
 	struct GL_HIF_INFO *prHif = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
-	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBss;
@@ -1017,8 +1016,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		DBGLOG(INIT, ERROR, "u4Idx(%d) is out of range!!\n", u4Idx);
 		return -1;
 	}
-
-	prChipInfo = prAdapter->chip_info;
 
 	/*0. allocate p2pinfo */
 	if (p2PAllocInfo(prGlueInfo, u4Idx) != TRUE) {
@@ -1066,8 +1063,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	}
 
 	/* register callback functions */
-	prP2pDev->needed_headroom =
-		NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
+	prP2pDev->needed_headroom = wlanGetTxNeededHeadRoom(prAdapter);
 	prP2pDev->netdev_ops = &p2p_netdev_ops;
 
 #if defined(_HIF_SDIO)

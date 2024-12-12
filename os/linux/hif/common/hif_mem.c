@@ -1418,11 +1418,37 @@ bool halCopyPathCopyEvent(struct GL_HIF_INFO *prHifInfo,
 	return true;
 }
 
+#if CFG_DEDICATED_TXD
+static uint32_t halCopyPathCopyTxd(struct MSDU_TOKEN_ENTRY *prToken)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct MSDU_INFO *prMsduInfo = prToken->prMsduInfo;
+	uint32_t u4CopyLen = 0;
+
+	glGetChipInfo((void **)&prChipInfo);
+
+	/* copy txd */
+	memcpy(prToken->prPacket, prMsduInfo->aucDedicatedTxd,
+			NIC_TX_DESC_AND_PADDING_LENGTH);
+	u4CopyLen += NIC_TX_DESC_AND_PADDING_LENGTH;
+	/* skip txd_append, fill in halTxUpdateCutThroughDesc */
+	if (prChipInfo)
+		u4CopyLen += prChipInfo->txd_append_size;
+
+	return u4CopyLen;
+}
+#endif /* CFG_DEDICATED_TXD */
+
 bool halCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
 			  void *pucSrc, uint32_t u4Len)
 {
-	memcpy(prToken->prPacket, pucSrc, u4Len);
+	uint32_t u4CopyLen = 0;
 
+#if CFG_DEDICATED_TXD
+	u4CopyLen = halCopyPathCopyTxd(prToken);
+#endif /* CFG_DEDICATED_TXD */
+
+	memcpy(prToken->prPacket + u4CopyLen, pucSrc, u4Len);
 	return true;
 }
 
@@ -1435,6 +1461,10 @@ bool halCopyPathCopyTxDataSG(struct MSDU_TOKEN_ENTRY *prToken,
 	uint32_t u4CopyLen = 0;
 	uint32_t i;
 
+#if CFG_DEDICATED_TXD
+	u4CopyLen = halCopyPathCopyTxd(prToken);
+#endif /* CFG_DEDICATED_TXD */
+
 	/*
 	 * Please note that skb->data only have header after SG is enabled.
 	 * For Non-SG, prSkb->data_len == 0
@@ -1445,11 +1475,11 @@ bool halCopyPathCopyTxDataSG(struct MSDU_TOKEN_ENTRY *prToken,
 	 *   => __skb_pagelen(prSkb) => other payload.
 	 */
 	/* copy header */
-	memcpy(prToken->prPacket, prSkb->data, skb_headlen(prSkb));
+	memcpy(prToken->prPacket + u4CopyLen, prSkb->data, skb_headlen(prSkb));
+	u4CopyLen += skb_headlen(prSkb);
 	if (!skb_is_nonlinear(prSkb))
 		goto skip;
 
-	u4CopyLen = skb_headlen(prSkb);
 	for (i = 0; i < skb_shinfo(prSkb)->nr_frags; i++) {
 		skb_frag_t *frag = &skb_shinfo(prSkb)->frags[i];
 

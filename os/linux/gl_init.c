@@ -5266,9 +5266,7 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 		netdev_priv(prDevHandler);
 	prNetDevPrivate->prGlueInfo = prGlueInfo;
 
-	prDevHandler->needed_headroom =
-		NIC_TX_DESC_AND_PADDING_LENGTH +
-		prChipInfo->txd_append_size;
+	prDevHandler->needed_headroom = wlanGetTxNeededHeadRoom(prAdapter);
 	prDevHandler->netdev_ops = &wlan_netdev_ops;
 #ifdef CONFIG_WIRELESS_EXT
 	prDevHandler->wireless_handlers = &wext_handler_def;
