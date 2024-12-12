@@ -64,6 +64,9 @@ void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
 uint8_t nanIsEhtSupport(struct ADAPTER *prAdapter);
 uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter);
 
+void nanConcurrencyHandler(struct ADAPTER *prAdapter);
+void nanBackToNormal(struct ADAPTER *prAdapter);
+
 /*========================= FUNCTIONs ============================*/
 #endif
 #endif /* __NAN_DEV_H__ */

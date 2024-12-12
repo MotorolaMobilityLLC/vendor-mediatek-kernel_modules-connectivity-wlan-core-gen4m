@@ -709,6 +709,12 @@ wlanoidNANDisableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 
+#if CFG_ENABLE_WIFI_DIRECT
+	if (prAdapter->rWifiVar.fgNanConcurrency)
+		p2pFuncSwitchSapChannel(prAdapter,
+			P2P_DEFAULT_SCENARIO);
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 

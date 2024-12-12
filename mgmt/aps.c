@@ -524,6 +524,11 @@ uint8_t apsCanFormMld(struct ADAPTER *ad,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
 
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+	if (nanIsConcurrency(ad))
+		return FALSE;
+#endif
+
 	if (!mldIsMultiLinkEnabled(ad, NETWORK_TYPE_AIS, bidx) ||
 	    !aisSecondLinkAvailable(ad, bidx))
 		return FALSE;

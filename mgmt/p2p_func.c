@@ -7727,6 +7727,35 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 #endif
 		return TRUE;
 	}
+
+#if CFG_SUPPORT_NAN
+	if ((prAdapter->rNanDiscType !=
+		NAN_UNINIT_DISC)) {
+		*ucStaChannelNum =
+			AP_DEFAULT_CHANNEL_2G;
+		*eStaBand = BAND_2G4;
+		prAdapter->ucNanSapCh =
+			*ucSapChannelNum;
+		prAdapter->eNanSapBand =
+			*eSapBand;
+		DBGLOG(NAN, VOC,
+			"[SCC] StaCH:%d,SapCH:%d\n",
+			*ucStaChannelNum,
+			*ucSapChannelNum);
+		return TRUE;
+	} else if (prAdapter->ucNanSapCh) {
+		*ucStaChannelNum =
+			prAdapter->ucNanSapCh;
+		*eStaBand =
+			prAdapter->eNanSapBand;
+		DBGLOG(NAN, VOC,
+			"[SCC] StaCH:%d,SapCH:%d\n",
+			*ucStaChannelNum,
+			*ucSapChannelNum);
+		return TRUE;
+	}
+#endif
+
 	return FALSE;
 }
 void p2pFuncCrossBandChannelSwitchCheck(
@@ -7742,9 +7771,8 @@ void p2pFuncCrossBandChannelSwitchCheck(
 #endif
 	u_int8_t *fgDbDcModeEn)
 {
-
 #if CFG_SUPPORT_DBDC
-#if (CFG_SUPPORT_NAN == 1)
+#if CFG_SUPPORT_NAN
 	if ((prAdapter->rNanDiscType !=
 		NAN_UNINIT_DISC)) {
 		if (*eStaBand != BAND_2G4) {
@@ -7752,10 +7780,32 @@ void p2pFuncCrossBandChannelSwitchCheck(
 				AP_DEFAULT_CHANNEL_2G;
 			*eStaBand = BAND_2G4;
 		}
+		prAdapter->ucNanSapCh =
+			*ucSapChannelNum;
+		prAdapter->eNanSapBand =
+			*eSapBand;
 		*fgDbDcModeEn = FALSE;
+		DBGLOG(NAN, VOC,
+			"[SCC][Bss%d]StaCH:%d,SapCH:%d\n",
+			prP2pBssInfo->ucBssIndex,
+			*ucStaChannelNum,
+			*ucSapChannelNum);
+		return;
+	} else if (prAdapter->ucNanSapCh) {
+		*ucStaChannelNum =
+			prAdapter->ucNanSapCh;
+		*eStaBand =
+			prAdapter->eNanSapBand;
+		prAdapter->ucNanSapCh = 0;
+		*fgDbDcModeEn = FALSE;
+		DBGLOG(NAN, VOC,
+			"[SCC][Bss%d]StaCH:%d,SapCH:%d\n",
+			prP2pBssInfo->ucBssIndex,
+			*ucStaChannelNum,
+			*ucSapChannelNum);
 		return;
 	}
-#endif /* CFG_SUPPORT_NAN */
+#endif
 #endif
 
 #if CFG_SUPPORT_DBDC

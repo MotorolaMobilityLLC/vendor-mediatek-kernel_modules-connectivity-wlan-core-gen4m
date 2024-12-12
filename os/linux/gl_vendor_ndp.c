@@ -234,9 +234,7 @@ uint32_t nanOidDataRequest(
 		sizeof(struct _NAN_CMD_DATA_REQUEST))
 		return WLAN_STATUS_INVALID_DATA;
 
-#if CFG_SUPPORT_NAN_EXT
-	nanAdsdcBackToNormal(prAdapter);
-#endif
+	nanBackToNormal(prAdapter);
 
 	rStatus = nanCmdDataRequest(prAdapter,
 		prNanCmdDataRequest,
@@ -272,9 +270,7 @@ uint32_t nanOidDataResponse(
 		sizeof(struct _NAN_CMD_DATA_RESPONSE))
 		return WLAN_STATUS_INVALID_DATA;
 
-#if CFG_SUPPORT_NAN_EXT
-	nanAdsdcBackToNormal(prAdapter);
-#endif
+	nanBackToNormal(prAdapter);
 
 	rStatus = nanCmdDataResponse(prAdapter, prNanCmdDataResponse);
 

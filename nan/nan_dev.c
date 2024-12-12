@@ -915,7 +915,13 @@ nanDevSendEnableRequest(
 		else
 			nanDevGenEnableRequest(prAdapter);
 	} else {
-		p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
+		prAdapter->ucNanSapCh = 0;
+
+#if CFG_ENABLE_WIFI_DIRECT
+		if (prAdapter->rWifiVar.fgNanConcurrency)
+			p2pFuncSwitchSapChannel(prAdapter,
+				P2P_DEFAULT_SCENARIO);
+#endif
 
 		/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
 		if (!p2pFuncIsSapCsa(prAdapter))
@@ -1159,6 +1165,63 @@ uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter)
 		FEATURE_FORCE_ENABLED);
 #else
 	return 0;
+#endif
+}
+
+void nanBackToNormal(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+#if CFG_SUPPORT_NAN_EXT
+	nanAdsdcBackToNormal(prAdapter);
+#endif
+}
+
+struct BSS_INFO *nanIsSapOrP2pActive(struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
+
+	if (!prAdapter)
+		return NULL;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (prBssInfo &&
+		    IS_BSS_P2P(prBssInfo) &&
+		    IS_BSS_ALIVE(prAdapter, prBssInfo))
+			return prBssInfo;
+	}
+
+	return NULL;
+}
+
+void nanConcurrencyHandler(struct ADAPTER *prAdapter)
+{
+	nanBackToNormal(prAdapter);
+
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+	if ((aisGetLinkNum(
+		aisGetDefaultAisInfo(prAdapter)) > 1) &&
+		nanIsSapOrP2pActive(prAdapter))
+		aisBssBeaconTimeout(prAdapter,
+		aisGetDefaultLinkBssIndex(prAdapter));
+#endif
+}
+
+u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter)
+		return FALSE;
+
+#if CFG_SUPPORT_NAN && CFG_ENABLE_WIFI_DIRECT
+	return nanIsSapOrP2pActive(prAdapter) &&
+		(prAdapter->rNanDiscType != NAN_UNINIT_DISC);
+#else
+	return FALSE;
 #endif
 }
 

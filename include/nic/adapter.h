@@ -2525,6 +2525,9 @@ struct ADAPTER {
 
 	/* Store customizable AIS (to AP) time slots */
 	struct _NAN_AIS_BITMAP arNanAisSlots[NAN_BAND_NUM];
+
+	uint8_t ucNanSapCh;
+	enum ENUM_BAND eNanSapBand;
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
