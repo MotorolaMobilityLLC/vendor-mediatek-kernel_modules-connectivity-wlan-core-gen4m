@@ -384,6 +384,10 @@
 #define CFG_SUPPORT_WIFI_6G			0
 #endif
 
+#ifndef CFG_SUPPORT_UNII4
+#define CFG_SUPPORT_UNII4			0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Buffer mode SUPPORT
  *------------------------------------------------------------------------------
@@ -874,17 +878,23 @@
 					MAX_5G_BAND_CHN_NUM + \
 					MAX_6G_BAND_CHN_NUM)
 
+#define MAX_2G_BAND_CHN_NUM		14
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
-#define MAX_2G_BAND_CHN_NUM		14
-#define MAX_5G_BAND_CHN_NUM		25
 #define MAX_6G_BAND_CHN_NUM		60 /* will be 60 for full channel set */
-#define MAX_PER_BAND_CHN_NUM		60
 #else
-#define MAX_2G_BAND_CHN_NUM		14
-#define MAX_5G_BAND_CHN_NUM		25
 #define MAX_6G_BAND_CHN_NUM		0
-#define MAX_PER_BAND_CHN_NUM		25
-#endif
+#endif /* if (CFG_SUPPORT_WIFI_6G == 1) */
+
+#if (CFG_SUPPORT_UNII4 == 1)
+#define MAX_5G_BAND_CHN_NUM		28
+#else
+#define MAX_5G_BAND_CHN_NUM		25
+#endif /* if (CFG_SUPPORT_UNII4 == 1) */
+
+#define MAX_PER_BAND_CHN_NUM \
+((MAX_6G_BAND_CHN_NUM) > (MAX_5G_BAND_CHN_NUM) ? \
+(MAX_6G_BAND_CHN_NUM) : (MAX_5G_BAND_CHN_NUM))
 
 #define ACS_PRINT_BUFFER_LEN		200
 

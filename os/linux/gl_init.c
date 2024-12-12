@@ -839,7 +839,13 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 	CHAN5G(153, 0),
 	CHAN5G(157, 0),
 	CHAN5G(161, 0),
-	CHAN5G(165, 0)
+	CHAN5G(165, 0),
+#if (CFG_SUPPORT_UNII4 == 1)
+	/* UNII-4 */
+	CHAN5G(169, 0),
+	CHAN5G(173, 0),
+	CHAN5G(177, 0)
+#endif
 };
 #else
 static struct ieee80211_channel mtk_5ghz_channels[] = {
@@ -871,7 +877,13 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 	CHAN5G(153, 0),
 	CHAN5G(157, 0),
 	CHAN5G(161, 0),
-	CHAN5G(165, 0)
+	CHAN5G(165, 0),
+#if (CFG_SUPPORT_UNII4 == 1)
+	/* UNII-4 */
+	CHAN5G(169, 0),
+	CHAN5G(173, 0),
+	CHAN5G(177, 0)
+#endif
 };
 #endif
 

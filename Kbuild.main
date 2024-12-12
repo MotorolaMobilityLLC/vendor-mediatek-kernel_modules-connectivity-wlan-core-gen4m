@@ -1254,6 +1254,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
             ccflags-y += -DCFG_MTK_WIFI_SUPPORT_UDS_FWDL=1
         endif
     endif
+    ccflags-y += -DCFG_SUPPORT_UNII4=1
 else
     CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0

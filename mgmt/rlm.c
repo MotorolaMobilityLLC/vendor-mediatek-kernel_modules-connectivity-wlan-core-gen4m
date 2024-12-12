@@ -11316,6 +11316,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 	} else if (prBssInfo->eBand == BAND_5G) {
+#if (CFG_SUPPORT_UNII4 == 0)
 		/* It can only use BW20 for CH165 */
 		if ((ucChannelWidth != MAX_BW_20MHZ) &&
 			(prBssInfo->ucPrimaryChannel == 165)) {
@@ -11324,7 +11325,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			       prBssInfo->ucBssIndex, ucChannelWidth);
 			return FALSE;
 		}
-
+#endif
 		if ((ucChannelWidth == MAX_BW_160MHZ) &&
 		    ((prBssInfo->ucPrimaryChannel < 36) ||
 		     ((prBssInfo->ucPrimaryChannel > 64) &&

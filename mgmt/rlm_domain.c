@@ -847,9 +847,16 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{121, BAND_5G, CHNL_SPAN_20, 100, 5, TRUE}
 			,	/*CH_SET_UNII_MID_100_116 */
 			{121, BAND_5G, CHNL_SPAN_20, 132, 4, TRUE}
-			,	/*CH_SET_UNII_MID_132_144 */
+				/*CH_SET_UNII_MID_132_144 */
+#if (CFG_SUPPORT_UNII4 == 0)
+			,
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 				/*CH_SET_UNII_UPPER_149_165 */
+#else
+			,
+			{125, BAND_5G, CHNL_SPAN_20, 149, 8, FALSE}
+				/*CH_SET_UNII_UPPER_149_177 */
+#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			,
 			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
@@ -2977,6 +2984,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 				DBGLOG(RLM, WARN, "Rf: PriOffSet=%d, W=%d\n",
 				       u4PrimaryOffset, eChannelWidth);
 			}
+#if (CFG_SUPPORT_UNII4 == 0)
 			if (ucPriChannel == 165 && eBand == BAND_5G) {
 				fgValidBW = FALSE;
 				DBGLOG(RLM, WARN,
@@ -2984,6 +2992,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 				       u4PrimaryOffset, eChannelWidth,
 				       ucPriChannel);
 			}
+#endif
 		} else if (eChannelWidth == CW_160MHZ) {
 			u4PrimaryOffset = CAL_CH_OFFSET_160M(ucPriChannel,
 							     ucCenterCh);
@@ -12067,6 +12076,10 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter,
 		case 140:
 		case 149:
 		case 157:
+#if (CFG_SUPPORT_UNII4 == 1)
+		case 169:
+		case 177:
+#endif
 			eSCO = CHNL_EXT_SCA;
 			break;
 		case 40:
@@ -12081,9 +12094,12 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter,
 		case 144:
 		case 153:
 		case 161:
+#if (CFG_SUPPORT_UNII4 == 1)
+		case 165:
+		case 173:
+#endif
 			eSCO = CHNL_EXT_SCB;
 			break;
-		case 165:
 		default:
 			eSCO = CHNL_EXT_SCN;
 			break;

@@ -1898,10 +1898,15 @@ void nicReviseBwByCh(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t *bw)
 		if (ucCh >= 36 && ucCh <= 128 && *bw >= MAX_BW_320_1MHZ)
 			/* downgrade to 5G default BW */
 			eNewBw = MAX_BW_80MHZ;
+#if (CFG_SUPPORT_UNII4 == 0)
 		else if (ucCh >= 132 && ucCh <= 161 && *bw >= MAX_BW_160MHZ)
 			eNewBw = MAX_BW_80MHZ;
 		else if (ucCh == 165)
 			eNewBw = MAX_BW_20MHZ;
+#else
+		else if (ucCh >= 132 && ucCh <= 177 && *bw >= MAX_BW_160MHZ)
+			eNewBw = MAX_BW_80MHZ;
+#endif
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eBand == BAND_6G) {
@@ -2052,8 +2057,14 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 				 ucPriCh >= 5 && ucPriCh <= 13)
 				return ucPriCh - 2;
 		} else if (eBand == BAND_5G) {
-			if (ucPriCh >= 36 && ucPriCh <= 161)
+			if (ucPriCh >= 36 && ucPriCh <= 144)
 				return 38 + 8 * ((ucPriCh - 36) / 8);
+#if (CFG_SUPPORT_UNII4 == 0)
+			else if (ucPriCh >= 149 && ucPriCh <= 161)
+#else
+			else if (ucPriCh >= 149 && ucPriCh <= 177)
+#endif
+				return 151 + 8 * ((ucPriCh - 149) / 8);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		} else if (eBand == BAND_6G) {
 			if (ucPriCh >= 1 && ucPriCh <= 229)
@@ -2069,6 +2080,10 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 				return 42 + 16 * ((ucPriCh - 36) / 16);
 			else if (ucPriCh >= 149 && ucPriCh <= 161)
 				return 155;
+#if (CFG_SUPPORT_UNII4 == 1)
+			else if (ucPriCh >= 165 && ucPriCh <= 177)
+				return 171;
+#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		} else if (eBand == BAND_6G) {
 			if (ucPriCh >= 1 && ucPriCh <= 221)
