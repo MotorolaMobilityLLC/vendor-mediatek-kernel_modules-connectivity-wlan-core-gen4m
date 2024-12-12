@@ -1067,8 +1067,18 @@ link_chosed:
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey,
 		&rKey, rKey.u4Length, &u4BufLen);
 
-	if (rStatus == WLAN_STATUS_SUCCESS)
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+		struct BSS_INFO *prBssInfo;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+						  ucBssIdx);
+		if (prBssInfo && key_index >= 6 && key_index <= 7)
+			prBssInfo->ucBcnProtInstalled[key_index] = TRUE;
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
+
 		i4Rslt = 0;
+	}
 
 	return i4Rslt;
 }
