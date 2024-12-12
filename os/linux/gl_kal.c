@@ -12240,6 +12240,115 @@ void kalTputFactorUpdate(struct ADAPTER *prAdapter)
 }
 #endif
 
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+void kalReportMlChnlCond(struct ADAPTER *prAdapter,
+	struct ML_CHNL_COND_RESULT *prMlChnlCond,
+	uint8_t ucLinkNum)
+{
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct PARAM_ML_CHNL_COND_REPORT *log_info = NULL;
+	uint32_t size = sizeof(struct PARAM_ML_CHNL_COND_REPORT);
+	struct BSS_INFO *prBssInfo;
+	uint8_t i, j, ucBssIdx, ucLinkId, offset = 0;
+	struct ML_CHNL_COND_RESULT *prRes;
+	struct MLD_STA_RECORD *prMldStaRec;
+	struct STA_RECORD *cur;
+	char buf[256];
+
+	wiphy = wlanGetWiphy();
+	if (!wiphy)
+		goto end;
+
+	log_info = kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!log_info) {
+		DBGLOG(ML, ERROR,
+				"alloc roaming report log info fail\n");
+		goto end;
+	}
+
+	kalMemZero(log_info, size);
+	log_info->id = GRID_ML_CHNL_COND_REPORT;
+	log_info->len = sizeof(struct PARAM_ML_CHNL_COND_REPORT) - 2;
+	log_info->link_num = ucLinkNum;
+	DBGLOG(ML, INFO, "link num=%u\n", ucLinkNum);
+
+	for (i = 0; i < ucLinkNum; i++) {
+		prRes = &prMlChnlCond[i];
+		ucBssIdx = prRes->ucBssIdx;
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		ucLinkId = MLD_LINK_ID_NONE;
+
+		if (!prBssInfo) {
+			DBGLOG(ML, WARN, "\t[%u] bss=%u not found\n",
+				i, ucBssIdx);
+			goto end;
+		}
+
+		if (!wlanGetNetDev(prAdapter->prGlueInfo, ucBssIdx))
+			goto end;
+
+		prMldStaRec = aisGetMldStaRec(prAdapter, ucBssIdx);
+		if (!prMldStaRec) {
+			DBGLOG(ML, WARN,
+				"\t[%u] bss=%u mldStarec not found\n",
+				i, ucBssIdx);
+			goto end;
+		}
+
+		LINK_FOR_EACH_ENTRY(cur, &prMldStaRec->rStarecList,
+			rLinkEntryMld, struct STA_RECORD) {
+			if (cur->ucBssIndex == ucBssIdx) {
+				ucLinkId = cur->ucLinkId;
+				break;
+			}
+		}
+
+		if (ucLinkId == MLD_LINK_ID_NONE) {
+			DBGLOG(ML, WARN,
+				"\t[%u] bss=%u, mldStarec=%u starec not found\n",
+				i, ucBssIdx, prMldStaRec->ucIdx);
+			goto end;
+		}
+
+		if (!wdev)
+			wdev = wlanGetNetDev(prAdapter->prGlueInfo,
+				ucBssIdx)->ieee80211_ptr;
+
+		log_info->mlChnlInfo[i].ucLinkId = ucLinkId;
+		log_info->mlChnlInfo[i].ucP20Cnt = prRes->ucP20Cnt;
+		log_info->mlChnlInfo[i].cRssi = prRes->cRssi;
+		kalMemCopy(log_info->mlChnlInfo[i].au4ccaRatio,
+			prRes->au4ccaRatio,
+			sizeof(log_info->mlChnlInfo[i].au4ccaRatio));
+
+		kalMemZero(buf, sizeof(buf));
+		for (j = 0; j < prRes->ucP20Cnt; j++)
+			offset += kalSnprintf(buf + offset,
+				sizeof(buf) - offset,
+				"%u ", log_info->mlChnlInfo[i].au4ccaRatio[j]);
+
+		DBGLOG(ML, INFO,
+			"\tbss=%u,link=%u,p20_cnt=%u,rssi=%d,ratio=%s\n",
+			ucBssIdx,
+			log_info->mlChnlInfo[i].ucLinkId,
+			log_info->mlChnlInfo[i].ucP20Cnt,
+			log_info->mlChnlInfo[i].cRssi, buf);
+	}
+
+	if (!wdev)
+		goto end;
+
+	mtk_cfg80211_vendor_event_generic_response(
+		wiphy, wdev, size, (uint8_t *)log_info);
+
+end:
+	if (log_info)
+		kalMemFree(log_info, VIR_MEM_TYPE, size);
+	prAdapter->fgChnlCondEnabled = FALSE;
+}
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+
 #if CFG_SUPPORT_MCC_BOOST_CPU
 void kalMccBoostCheck(struct ADAPTER *prAdapter, uint32_t u4TputLv)
 {

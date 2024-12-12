@@ -11533,6 +11533,36 @@ done:
 			       u4QueryInfoLen, u4Status);
 }
 #endif /* CFG_SUPPORT_MLC */
+
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+void nicUniCmdEventGetMlChnlCond(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_STATISTICS *evt =
+		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
+	struct UNI_EVENT_GET_ML_CHNL_COND *tag =
+		(struct UNI_EVENT_GET_ML_CHNL_COND *) evt->aucTlvBuffer;
+	struct PARAM_QUERY_ML_CHNL_COND *prParam;
+
+	if (uni_evt->ucEID != UNI_EVENT_ID_STATISTICS ||
+	    tag->u2Tag != UNI_EVENT_STATISTICS_TAG_GET_ML_CHNL_COND) {
+		DBGLOG(ML, WARN,
+			"Ignore Event[%d] CID[0x%x] OID[%d] TagId[%d]\n",
+			uni_evt->ucEID, prCmdInfo->ucCID,
+			prCmdInfo->fgIsOid, tag->u2Tag);
+		return;
+	}
+
+	prParam = prCmdInfo->pvInformationBuffer;
+	prParam->u4Status = tag->u4Status;
+
+	if (prCmdInfo->fgIsOid)
+		/* Update Query Information Length */
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       0, WLAN_STATUS_SUCCESS);
+}
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 /*******************************************************************************
@@ -14204,6 +14234,10 @@ void nicUniUnsolicitStatsEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint16_t offset = 0;
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+	struct ML_CHNL_COND_RESULT arMlChnlCond[MLD_LINK_MAX];
+	uint8_t ucMlChnlCondLinkNum = 0;
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 
 	/* underflow check */
 	if (data_len < fixed_len) {
@@ -14222,6 +14256,18 @@ void nicUniUnsolicitStatsEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			nicUniEventUevent(ad, tlv->aucBuffer);
 		}
 			break;
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+		case UNI_EVENT_STATISTICS_TAG_GET_ML_CHNL_COND_RESULT: {
+			struct UNI_EVENT_GET_ML_CHNL_COND_RESULT *tlv =
+				(struct UNI_EVENT_GET_ML_CHNL_COND_RESULT *)
+					tag;
+			kalMemCopy(&arMlChnlCond[ucMlChnlCondLinkNum],
+				&tlv->rChnlCond,
+				sizeof(struct ML_CHNL_COND_RESULT));
+			ucMlChnlCondLinkNum++;
+		}
+			break;
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 		default:
 			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
 			break;
@@ -14230,6 +14276,11 @@ void nicUniUnsolicitStatsEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 	if (tags_len != offset)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+	if (ucMlChnlCondLinkNum != 0)
+		kalReportMlChnlCond(ad, arMlChnlCond, ucMlChnlCondLinkNum);
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 }
 
 void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)

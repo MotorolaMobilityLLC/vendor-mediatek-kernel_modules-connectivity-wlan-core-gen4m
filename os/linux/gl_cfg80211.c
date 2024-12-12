@@ -6379,6 +6379,52 @@ int testmode_get_ml_link_state(struct wiphy *wiphy,
 		buf, i4BytesWritten + 1);
 }
 
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus;
+	struct PARAM_QUERY_ML_CHNL_COND rParam = {0};
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4SetInfoLen;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
+	if (unlikely(ucBssIndex >= BSSID_NUM))
+		return WLAN_STATUS_FAILURE;
+
+	/* previoud command not done yet. */
+	if (prAdapter->fgChnlCondEnabled)
+		return WLAN_STATUS_RESOURCES;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidGetMlChnlCond, &rParam,
+				sizeof(rParam), &u4SetInfoLen,
+				ucBssIndex);
+
+	DBGLOG(REQ, TRACE, "rStatus=%u, status:%u",
+			rStatus, rParam.u4Status);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		rStatus = WLAN_STATUS_FAILURE;
+	else
+		rStatus = rParam.u4Status;
+
+	return rStatus;
+}
+#endif  /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 int32_t mtk_cfg80211_process_str_cmd_reply(

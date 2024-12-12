@@ -3851,7 +3851,14 @@ union PARAM_MLC {
 
 #endif /* CFG_SUPPORT_MLC */
 
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+struct PARAM_QUERY_ML_CHNL_COND {
+	uint32_t u4Status;
+};
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
+
+
 
 /* This structure is a replication of struct EXT_EVENT_SER_T.
  * Thus, we are able to simply do memory copy from EXT_EVENT_SER_T to
@@ -4545,6 +4552,13 @@ wlanoidGetMldRec(struct ADAPTER *prAdapter,
 		    void *pvQueryBuffer,
 		    uint32_t u4QueryBufferLen,
 		    uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidGetMlChnlCond(struct ADAPTER
+				  *prAdapter,
+				  void *pvQueryBuffer,
+				  uint32_t u4QueryBufferLen,
+				  uint32_t *pu4QueryInfoLen);
 #endif
 #endif
 

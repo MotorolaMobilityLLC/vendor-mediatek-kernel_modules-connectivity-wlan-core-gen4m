@@ -1815,6 +1815,12 @@ void kalNanIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				     uint32_t eStatus, uint8_t ucRoleIdx);
 #endif
 
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+void kalReportMlChnlCond(struct ADAPTER *prAdapter,
+				struct ML_CHNL_COND_RESULT *prMlChnlCond,
+				uint8_t ucLinkNum);
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+
 void
 kalIndicateStatusAndComplete(struct GLUE_INFO
 			     *prGlueInfo,

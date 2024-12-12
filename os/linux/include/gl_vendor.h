@@ -1469,7 +1469,8 @@ enum PARAM_GENERIC_RESPONSE_ID {
 	GRID_TWT_TEARDOWN = 10,
 	GRID_TWT_NOTIFICATION = 11,
 	GRID_SCHED_TEARDOWN = 12,
-	GRID_SCHED_LEAKYAP = 13
+	GRID_SCHED_LEAKYAP = 13,
+	GRID_ML_CHNL_COND_REPORT = 14,
 };
 
 struct PARAM_EXTERNAL_AUTH_INFO {
@@ -1502,6 +1503,22 @@ struct PARAM_ROAMING_REPORT {
 	uint8_t disconnect;
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+struct ML_CHNL_COND_INFO {
+	uint8_t ucLinkId;
+	uint8_t ucP20Cnt;
+	int8_t cRssi;
+	uint8_t ucReserved;
+	uint32_t au4ccaRatio[ML_CHNL_COND_MAX_P20_NUM];
+} __KAL_ATTRIB_PACKED__;
+
+struct PARAM_ML_CHNL_COND_REPORT {
+	uint8_t id;
+	uint8_t len;
+	uint8_t link_num;
+	struct ML_CHNL_COND_INFO mlChnlInfo[MLD_LINK_MAX];
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************

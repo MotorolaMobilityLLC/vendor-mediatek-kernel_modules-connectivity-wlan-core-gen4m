@@ -2740,6 +2740,15 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.policy    = NULL
 	},
 #endif
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+	{
+		.pcCmdStr  = CMD_GET_ML_CHANNEL_COND,
+		.pfHandler = testmode_get_ml_chnl_condition,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL
+	},
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 };
 
 /* Debug only, unavailable in user load */

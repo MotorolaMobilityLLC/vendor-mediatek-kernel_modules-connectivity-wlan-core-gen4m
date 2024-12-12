@@ -3181,6 +3181,9 @@ struct ADAPTER {
 	uint8_t ucT2LMTxDialogToken;
 	uint8_t ucT2LMRxDialogToken;
 	uint8_t ucT2LMReqRetryCnt;
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+	bool fgChnlCondEnabled;
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	uint8_t ucEpcsTxDialogToken;

@@ -881,7 +881,10 @@ int testmode_set_ml_link_state(struct wiphy *wiphy,
 int testmode_get_ml_link_state(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #endif
-
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

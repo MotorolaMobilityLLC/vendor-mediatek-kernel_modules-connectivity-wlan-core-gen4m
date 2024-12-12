@@ -1958,6 +1958,15 @@ struct TEST_MODE_PL_CAL {
 	uint32_t u4OutData[PLCAL_MAX_CNT];
 };
 
+#define ML_CHNL_COND_MAX_P20_NUM 16
+struct ML_CHNL_COND_RESULT {
+	uint8_t ucBssIdx;
+	uint8_t ucP20Cnt;
+	int8_t cRssi;
+	uint8_t ucReserved;
+	uint32_t au4ccaRatio[ML_CHNL_COND_MAX_P20_NUM];
+};
+
 struct ECO_INFO {
 	uint8_t ucHwVer;
 	uint8_t ucRomVer;

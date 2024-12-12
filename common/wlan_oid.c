@@ -7827,6 +7827,125 @@ wlanoidGetMldRec(struct ADAPTER *prAdapter,
 
 	return status;
 }
+
+#if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
+uint32_t
+wlanoidGetMlChnlCond(struct ADAPTER
+				  *prAdapter,
+				  void *pvQueryBuffer,
+				  uint32_t u4QueryBufferLen,
+				  uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rResult;
+#ifndef CFG_SUPPORT_UNIFIED_COMMAND
+	rResult = WLAN_STATUS_NOT_SUPPORTED;
+#else /* CFG_SUPPORT_UNIFIED_COMMAND */
+	rResult = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex, max_cmd_len, ucLinkId = MLD_LINK_ID_NONE;
+	struct BSS_INFO *prBssInfo;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+	struct STA_RECORD *cur;
+
+	struct PARAM_QUERY_ML_CHNL_COND *prParam;
+	struct UNI_CMD_GET_STATISTICS *uni_cmd;
+	struct UNI_CMD_GET_ML_CHNL_COND *tag;
+
+	if (!pvQueryBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_QUERY_ML_CHNL_COND))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prParam = (struct PARAM_QUERY_ML_CHNL_COND *)pvQueryBuffer;
+	max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
+		sizeof(struct UNI_CMD_GET_ML_CHNL_COND);
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (unlikely(ucBssIndex >= BSSID_NUM)) {
+		prParam->u4Status = WLAN_STATUS_INVALID_DATA;
+		return rResult;
+	}
+
+	uni_cmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
+		prParam->u4Status = WLAN_STATUS_FAILURE;
+		return rResult;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		prParam->u4Status = WLAN_STATUS_INVALID_DATA;
+		goto chnl_cond_end;
+	}
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) !=
+		MEDIA_STATE_CONNECTED) {
+		prParam->u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto chnl_cond_end;
+	}
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prMldBssInfo) {
+		DBGLOG(REQ, INFO, "no mld bss\n");
+		prParam->u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto chnl_cond_end;
+	}
+
+	/* device not supporting MLO */
+	prMldStaRec = aisGetMldStaRec(prAdapter, ucBssIndex);
+	if (!prMldStaRec) {
+		DBGLOG(REQ, INFO, "no mld starec\n");
+		prParam->u4Status = WLAN_STATUS_NOT_SUPPORTED;
+		goto chnl_cond_end;
+	}
+
+	LINK_FOR_EACH_ENTRY(cur, &prMldStaRec->rStarecList,
+		rLinkEntryMld, struct STA_RECORD) {
+		if (cur->ucBssIndex == ucBssIndex) {
+			ucLinkId = cur->ucLinkId;
+			break;
+		}
+	}
+
+	if (ucLinkId == MLD_LINK_ID_NONE) {
+		DBGLOG(REQ, INFO, "invalid link idx\n");
+		prParam->u4Status = WLAN_STATUS_NOT_SUPPORTED;
+		goto chnl_cond_end;
+	}
+
+	/* prepare unified cmd tags */
+	tag = (struct UNI_CMD_GET_ML_CHNL_COND *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_GET_ML_CHNL_COND;
+	tag->u2Length = sizeof(*tag);
+	tag->ucBssIdx = ucBssIndex;
+
+	rResult = wlanSendSetQueryUniCmd(prAdapter,
+			UNI_CMD_ID_GET_STATISTICS,
+			FALSE,
+			TRUE,
+			TRUE,
+			nicUniCmdEventGetMlChnlCond,
+			nicUniCmdTimeoutCommon,
+			max_cmd_len,
+			(void *)uni_cmd,
+			pvQueryBuffer, u4QueryBufferLen);
+
+	DBGLOG(REQ, TRACE, "rResult=%u, pvQueryBuffer=%p",
+			rResult, pvQueryBuffer);
+
+chnl_cond_end:
+	if (uni_cmd)
+		cnmMemFree(prAdapter, uni_cmd);
+
+	DBGLOG(REQ, INFO, "rResult=%u, pvQueryBuffer=%p",
+			rResult, pvQueryBuffer);
+#endif /* CFG_SUPPORT_UNIFIED_COMMAND */
+	return rResult;
+} /* wlanoidGetMlChnlCond */
+#endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif
 #endif
 
