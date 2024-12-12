@@ -14446,36 +14446,42 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 
 void kalPrintSALog(const char *fmt, ...)
 {
-	char buffer[WIFI_LOG_MSG_BUFFER] = {0};
-	int ret = 0;
+	char buffer[WIFI_LOG_MAX_MSG_PER_LINE * 2] = {0};
+	char *pcLog = buffer;
+	int ret;
 	va_list args;
+	size_t szStrlen;
+	size_t szRemain;
+	char tmp; /* store newline replacement */
 
 	va_start(args, fmt);
-	ret = vsnprintf(buffer, WIFI_LOG_MSG_BUFFER, fmt, args);
+	ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
 	if (ret < 0) {
-		LOG_FUNC("vsnprintf failed, ret: %d",
-			ret);
+		LOG_FUNC("vsnprintf failed, ret: %d", ret);
+		va_end(args);
+		return;
 	}
 	va_end(args);
 
-	if (strlen(buffer) < WIFI_LOG_MSG_MAX) {
-		buffer[strlen(buffer)] = '\n';
-		kalPrintUTC(buffer,
-			strlen(buffer));
-	} else {
-		char sub_buffer[WIFI_LOG_MSG_MAX];
+	szStrlen = strlen(buffer);
+	if (szStrlen >= 1 && buffer[szStrlen - 1] == '\n')
+		buffer[szStrlen - 1] = '\0'; /* always append \n below */
+	szRemain = strlen(buffer);
 
-		strncpy(sub_buffer, buffer,
-			WIFI_LOG_MSG_MAX - 1);
-		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\n';
-		kalPrintUTC(sub_buffer,
-			WIFI_LOG_MSG_MAX);
+	while (pcLog[0] != '\0') {
+		if (szRemain >= WIFI_LOG_MAX_MSG_PER_LINE &&
+		    pcLog[WIFI_LOG_MAX_MSG_PER_LINE - 1] != '\0')
+			szStrlen = WIFI_LOG_MAX_MSG_PER_LINE - 1;
+		else
+			szStrlen = strlen(pcLog);
 
-		strncpy(sub_buffer, buffer + WIFI_LOG_MSG_MAX - 1,
-			WIFI_LOG_MSG_MAX - 1);
-		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\n';
-		kalPrintUTC(sub_buffer,
-			WIFI_LOG_MSG_MAX);
+		tmp = pcLog[szStrlen];
+		pcLog[szStrlen] = '\n';
+		kalPrintUTC(pcLog, szStrlen + 1);
+		szRemain -= szStrlen;
+
+		pcLog[szStrlen] = tmp;
+		pcLog += szStrlen;
 	}
 }
 #endif /* CFG_SUPPORT_SA_LOG */

@@ -208,8 +208,7 @@ extern bool fgIsTxPowerDecreased;
 #endif
 
 #if CFG_SUPPORT_SA_LOG
-#define WIFI_LOG_MSG_MAX	(512)
-#define WIFI_LOG_MSG_BUFFER	(WIFI_LOG_MSG_MAX * 2)
+#define WIFI_LOG_MAX_MSG_PER_LINE (512)
 #endif
 
 #define KAL_TRACE __builtin_return_address(0)
