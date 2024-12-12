@@ -1281,10 +1281,15 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 			break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		case KAL_BAND_6GHZ:
+			/* PSC channel list : 5、21、37、53、69、85、
+			 * 101、117、133、149、165、181、197、213、229
+			 */
+
 			/* 6g only scan PSC channel if OnlyScan6g not enabled */
 			if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.
 				fgEnOnlyScan6g))
-				if (((u4channel - 5) % 16) != 0)
+				if ((u4channel < 5) ||
+					(((u4channel - 5) % 16) != 0))
 					continue;
 
 #if WLAN_INCLUDE_SYS
