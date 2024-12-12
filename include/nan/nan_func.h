@@ -119,7 +119,8 @@ uint32_t nanGetFcSlots(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Bitmap = 0;
 
-	DBGLOG(NAN, TRACE, "FC slots: %02x-%02x-%02x-%02x\n",
+	DBGLOG(NAN, TEMP,
+	       "FC slots: %02x-%02x-%02x-%02x\n",
 	       ((uint8_t *)&u4Bitmap)[0], ((uint8_t *)&u4Bitmap)[1],
 	       ((uint8_t *)&u4Bitmap)[2], ((uint8_t *)&u4Bitmap)[3]);
 
@@ -141,27 +142,15 @@ uint32_t nanGetTimelineFcSlots(struct ADAPTER *prAdapter, size_t szTimelineIdx,
 	return u4Bitmap;
 }
 
+/*
+ * @szSlotIdx: slot index [0..512) representing the range in 0~8192 TU
+ */
 static inline
 u_int8_t nanIsChnlSwitchSlot(struct ADAPTER *prAdapter,
 			     unsigned char fgPrintLog,
-			     size_t szTimeLineIdx,
+			     size_t szTimelineIdx,
 			     size_t szSlotIdx)
 {
-	const uint32_t u4Def5GNDCSlotIdx = NAN_5G_DW_INDEX + 1;
-	const size_t sz5gTimeLineIdx =
-		nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
-
-	/**
-	 * change 9452466
-	 * Reason:
-	 *   8: DW
-	 *   9: NDC
-	 *   10: channel switch
-	 */
-	if (szTimeLineIdx == sz5gTimeLineIdx &&
-	    szSlotIdx % NAN_SLOTS_PER_DW_INTERVAL == u4Def5GNDCSlotIdx + 1)
-		return TRUE;
-
 	return FALSE;
 }
 

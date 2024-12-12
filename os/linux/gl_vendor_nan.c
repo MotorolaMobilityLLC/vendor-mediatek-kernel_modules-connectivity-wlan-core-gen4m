@@ -624,6 +624,7 @@ wlanoidNANEnableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 
+	nanSchedUpdateP2pAisMcc(prAdapter);
 	nanExtEnableReq(prAdapter);
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);

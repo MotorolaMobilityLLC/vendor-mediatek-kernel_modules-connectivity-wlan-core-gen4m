@@ -4558,12 +4558,6 @@ void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.prP2PConnSettings
 		[prSwitchOpMode->ucRoleIdx], FALSE);
 
-#if CFG_SUPPORT_NAN
-	if (prSwitchOpMode->eIftype == IFTYPE_P2P_CLIENT ||
-		prSwitchOpMode->eIftype == IFTYPE_P2P_GO)
-		nanConcurrencyHandler(prAdapter);
-#endif
-
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventSwitchOPMode */

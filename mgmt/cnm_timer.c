@@ -660,7 +660,7 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 		}
 	}	/* end of for loop */
 
-	log_dbg(CNM, TRACE, "loop end");
+	log_dbg(CNM, TRACE, "loop end\n");
 	gDoTimeOut = false;
 
 	/* Setup the prNext timeout event. It is possible the timer was already

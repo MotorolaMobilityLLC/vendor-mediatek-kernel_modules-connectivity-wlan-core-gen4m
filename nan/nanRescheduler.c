@@ -18,6 +18,7 @@
  *******************************************************************************
  */
 #if (CFG_SUPPORT_NAN == 1)
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -43,50 +44,26 @@
 #include "nanRescheduler.h"
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE  == 1)
-#define LOGSTR_INIT "[RESCHEDULE_TRACE] (INIT RESCHEDULER)\n"
-#define LOGSTR_DEINIT "[RESCHEDULE_TRACE] (DEINIT RESCHEDULER)\n"
-#define LOGSTR_TOKEN_INFO "---[RESCHEDULE_TRACE] LVL2: TOKEN(ucTokenID:%u) INFO :)\n"
-#define LOGSTR_LVL1_SKIP "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:RESCHEDULE REQUESTED but NO NDL. SKIP\n"
-#define LOGSTR_LVL1_CHECKING "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING RESCHEDULE NEEDED\n"
-#define LOGSTR_LVL1_CHECK_PENDING "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING PENDING RESCHEDULE TOKEN\n"
-#define LOGSTR_LVL1_TRIG "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:EXTERNAL RESCHEDULE REQUEST\n"
-#define LOGSTR_LVL1_NOTOKEN "<-[RESCHEDULE_TRACE] LVL1:NO PENDING RESCHEDULE TOKEN\n"
-#define LOGSTR_LVL2_GENTOKEN "-->[RESCHEDULE_TRACE] LVL2:GENERATE TOKEN(ucTokenID:%u, source:%s)\n"
-#define LOGSTR_LVL2_NONDL "<--[RESCHEDULE_TRACE] LVL2:NO NDL in TOKEN(ucTokenID:%u, source:%s)\n"
-#define LOGSTR_LVL2_DONE "<--[RESCHEDULE_TRACE] LVL2:Reschedule for Token(%u)->event(%s) is ALL DONE\n"
-#define LOGSTR_LVL2_NEXT "-->[RESCHEDULE_TRACE] LVL2:dequeue next TOKEN(ucTokenID:%u, source:%s)\n"
-#define LOGSTR_LVL2_NOTOKEN "<--[RESCHEDULE_TRACE] LVL2:No more token. END\n"
-#define LOGSTR_LVL2_END "---[RESCHEDULE_TRACE] LVL2: ---------------------------\n"
-#define LOGSTR_LVL3_START \
-"--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"MACSTR") START!\n"
-#define LOGSTR_LVL3_FAIL \
-"<---[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"MACSTR") is FAILED.\n"
-#define LOGSTR_LVL3_NEXT \
-"--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE next NDL(MAC:"MACSTR") START!\n"
-#define LOGSTR_LVL3_DONE \
-"<---[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"MACSTR") is DONE.\n"
-#define LOGSTR_LVL1_NONEED "<-[RESCHEDULE_TRACE] LVL1:RESCHEDULE NOT NEEDED\n"
-#define LOGSTR_ETC1 "[RESCHEDULE_TRACE] INFO: it is not NDL reschedule(req) from this module.\n"
-#define LOGSTR_ETC2 "[RESCHEDULE_TRACE] INFO: peer requested reschedule.\n"
 
 /*sync with enum RESCHEDULE_SOURCE */
-const char *RESCHEDULE_SOURCE_dbgstr[] = {
-	"RESCHEDULE_NULL",
-	"AIS_CONNECTED",
-	"AIS_DISCONNECTED",
-	"NEW_NDL",
-	"REMOVE_NDL"
+static const char * const RESCHEDULE_SRC[] = {
+	[RESCHEDULE_NULL] = "RESCHEDULE_NULL",
+	[AIS_CONNECTED] = "AIS_CONNECTED",
+	[AIS_DISCONNECTED] = "AIS_DISCONNECTED",
+	[NEW_NDL] = "NEW_NDL",
+	[REMOVE_NDL] = "REMOVE_NDL",
+	[P2P_CONNECTED] = "P2P_CONNECTED",
+	[P2P_DISCONNECTED] = "P2P_DISCONNECTED",
 };
 
 static int GetActiveNDPNum(const struct _NAN_NDL_INSTANCE_T *prNDL);
-static struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *
-GenReScheduleToken(
-	struct ADAPTER *prAdapter,
-	const uint8_t fgRescheduleInputNDL,
-	const enum RESCHEDULE_SOURCE event,
-	const struct _NAN_NDL_INSTANCE_T *prNDL);
+static struct _NAN_RESCHEDULE_TOKEN_T *
+GenReScheduleToken(struct ADAPTER *prAdapter,
+		   uint8_t fgRescheduleInputNDL,
+		   enum RESCHEDULE_SOURCE event,
+		   const struct _NAN_NDL_INSTANCE_T *prNDL);
 
-static struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T*
+static struct _NAN_RESCHEDULE_TOKEN_T *
 getOngoing_RescheduleToken(struct ADAPTER *prAdapter);
 static struct _NAN_RESCHED_NDL_INFO*
 getOngoing_RescheduleNDL(struct ADAPTER *prAdapter);
@@ -96,8 +73,7 @@ static struct _NAN_RESCHED_NDL_INFO*
 getNewState_RescheduleNDL_reorder(struct ADAPTER *prAdapter);
 static void
 FreeReScheduleToken(struct ADAPTER *prAdapter,
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prReScheduleToken);
+		    struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken);
 static void FreeReScheduleNdlInfo(struct ADAPTER *prAdapter,
 	struct _NAN_RESCHED_NDL_INFO *reSchedNdlInfo);
 
@@ -147,92 +123,81 @@ static uint8_t ChkShrinkCond(struct _NAN_RESCHED_NDL_INFO *ReSchedNdlInfo)
 	return shrinkCondition;
 }
 
-static struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *
-GenReScheduleToken(
-	struct ADAPTER *prAdapter,
-	const uint8_t fgRescheduleInputNDL,
-	const enum RESCHEDULE_SOURCE event,
-	const struct _NAN_NDL_INSTANCE_T *prNDL)
+static struct _NAN_RESCHEDULE_TOKEN_T *
+GenReScheduleToken(struct ADAPTER *prAdapter,
+		   uint8_t fgRescheduleInputNDL,
+		   enum RESCHEDULE_SOURCE event,
+		   const struct _NAN_NDL_INSTANCE_T *prNDL)
 {
-
-	uint8_t ucNdlIdx;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prReScheduleToken = NULL;
-	struct _NAN_DATA_PATH_INFO_T *prDpInfo =
-		&(prAdapter->rDataPathInfo);
+	uint8_t ucNdlIndex;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken;
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo =
+					&prAdapter->rDataPathInfo;
+	struct _NAN_NDL_INSTANCE_T *prReschedNDL;
 	static uint8_t uReSchedTokenID;
-	struct _NAN_RESCHED_NDL_INFO *prReSchedNdlInfo = NULL;
+	struct _NAN_RESCHED_NDL_INFO *prReSchedNdlInfo;
 
-	prReScheduleToken =
-		(struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *)
-		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-		sizeof(struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T));
+	prReScheduleToken = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(*prReScheduleToken));
+	if (!prReScheduleToken)
+		return NULL;
 
-	if (prReScheduleToken) {
-		uReSchedTokenID = uReSchedTokenID % 100;
-		prReScheduleToken->ucTokenID = uReSchedTokenID++;
-		DBGLOG(NAN, INFO, LOGSTR_TOKEN_INFO,
-			prReScheduleToken->ucTokenID);
-		prReScheduleToken->ucRescheduleEvent = event;
+	uReSchedTokenID = uReSchedTokenID % 100;
+	prReScheduleToken->ucTokenID = uReSchedTokenID++;
+	DBGLOG(NAN, INFO,
+	       "---[RESCHEDULE_TRACE] LVL2: TOKEN(ucTokenID:%u) INFO :)\n",
+	       prReScheduleToken->ucTokenID);
+	prReScheduleToken->ucEvent = event;
 #if (CFG_SUPPORT_NAN_11BE == 1)
-		prReScheduleToken->fgIsEhtReschedule = prNDL ?
-			prNDL->fgIsEhtReschedule :
-			FALSE;
+	prReScheduleToken->fgIsEhtReschedule =
+		prNDL ? prNDL->fgIsEhtReschedule : FALSE;
 #endif
-		LINK_INITIALIZE(&(prReScheduleToken->rReSchedNdlList));
-		for (ucNdlIdx = 0; ucNdlIdx < NAN_MAX_SUPPORT_NDL_NUM;
-		     ucNdlIdx++) {
-			if (prDpInfo->arNDL[ucNdlIdx].fgNDLValid == TRUE &&
-			    ChkEnqCond(
-			    prDpInfo->arNDL[ucNdlIdx].eCurrentNDLMgmtState)
-			    == TRUE) {
-				if (prNDL != NULL &&
-				    fgRescheduleInputNDL == FALSE &&
-				    prNDL == &prDpInfo->arNDL[ucNdlIdx]) {
-					/*
-					 * this is NDL triggered this reschedule
-					 * (eg., newly connected device.
-					 * not existing device)
-					 * skip this NDL.
-					 */
-					continue;
-				}
-				prReSchedNdlInfo =
-					cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					sizeof(struct _NAN_RESCHED_NDL_INFO));
+	LINK_INITIALIZE(&(prReScheduleToken->rReSchedNdlList));
+	for (ucNdlIndex = 0; ucNdlIndex < NAN_MAX_SUPPORT_NDL_NUM;
+			ucNdlIndex++) {
+		prReschedNDL = &prDataPathInfo->arNDL[ucNdlIndex];
 
-				if (!prReSchedNdlInfo) {
-					DBGLOG(NAN, ERROR,
-					       "Failed to generate a prReSchedNdlInfo.");
-					continue;
-				}
+		if (prReschedNDL->fgNDLValid == FALSE ||
+		    ChkEnqCond(prReschedNDL->eCurrentNDLMgmtState) == FALSE)
+			continue;
 
-				prReSchedNdlInfo->eNdlRescheduleState =
-					NDL_RESCHEDULE_STATE_NEW;
-				prReSchedNdlInfo->prNDL =
-				&prDpInfo->arNDL[ucNdlIdx];
-				LINK_INSERT_TAIL(
-					&prReScheduleToken->rReSchedNdlList,
-					&prReSchedNdlInfo->rLinkEntry);
-				DBGLOG(NAN, INFO,
-				      "---[RESCHEDULE_TRACE] LVL2: ucNdlIndex#%u:NDL(MAC:"
-				      MACSTR ")\n",
-				      ucNdlIdx,
-				      MAC2STR(
-				      prReSchedNdlInfo->prNDL->aucPeerMacAddr));
-			}
+		if (prNDL && !fgRescheduleInputNDL && prNDL == prReschedNDL) {
+			/*
+			 * this is NDL triggered this reschedule
+			 * (eg., newly connected device.
+			 * not existing device)
+			 * skip this NDL.
+			 */
+			continue;
 		}
-		DBGLOG(NAN, INFO,
-			LOGSTR_LVL2_END);
+		prReSchedNdlInfo = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(*prReSchedNdlInfo));
+		if (prReSchedNdlInfo) {
+			prReSchedNdlInfo->eNdlRescheduleState =
+				NDL_RESCHEDULE_STATE_NEW;
+			prReSchedNdlInfo->prNDL = prReschedNDL;
+			LINK_INSERT_TAIL(&prReScheduleToken->rReSchedNdlList,
+					 &prReSchedNdlInfo->rLinkEntry);
+			DBGLOG(NAN, INFO,
+			       "---[RESCHEDULE_TRACE] LVL2: ucNdlIndex#%u:NDL(MAC:"
+			       MACSTR")\n",
+			       ucNdlIndex,
+			       prReSchedNdlInfo->prNDL->aucPeerMacAddr);
+		} else {
+			DBGLOG(NAN, ERROR,
+			       "Failed to generate a prReSchedNdlInfo.");
+		}
 	}
+	DBGLOG(NAN, INFO,
+	       "---[RESCHEDULE_TRACE] LVL2: ---------------------------\n");
+
 	return prReScheduleToken;
 }
 
 uint32_t
-ReleaseNanSlotsForSchedulePrep(
-	struct ADAPTER *prAdapter,
-	const enum RESCHEDULE_SOURCE event,
-	u_int8_t fgIsEhtRescheduleNewNDL)
+ReleaseNanSlotsForSchedulePrep(struct ADAPTER *prAdapter,
+			       enum RESCHEDULE_SOURCE event,
+			       u_int8_t fgIsEhtRescheduleNewNDL)
 {
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	union _NAN_BAND_CHNL_CTRL rAisChnlInfo = {0};
@@ -271,12 +236,10 @@ ReleaseNanSlotsForSchedulePrep(
 	} else if (event == AIS_DISCONNECTED) {
 		nanSchedReleaseReschedCommitSlot(prAdapter,
 			NAN_SLOT_MASK_TYPE_AIS,
-			nanGetTimelineMgmtIndexByBand(prAdapter,
-			BAND_2G4));
+			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4));
 		nanSchedReleaseReschedCommitSlot(prAdapter,
 			NAN_SLOT_MASK_TYPE_AIS,
-			nanGetTimelineMgmtIndexByBand(prAdapter,
-			BAND_5G));
+			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G));
 	} else if (event == NEW_NDL) {
 		uint32_t u4ReschedSlot = 0;
 
@@ -290,8 +253,7 @@ ReleaseNanSlotsForSchedulePrep(
 
 		nanSchedReleaseReschedCommitSlot(prAdapter,
 			u4ReschedSlot,
-			nanGetTimelineMgmtIndexByBand(prAdapter,
-			BAND_5G));
+			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G));
 	} else if (event == REMOVE_NDL) {
 /* Only need release if REMOVE_NDL condition recover to customer requirement */
 #ifdef NAN_UNUSED
@@ -307,16 +269,37 @@ ReleaseNanSlotsForSchedulePrep(
 		nanSchedReleaseUnusedCommitSlot(prAdapter);
 		nanSchedCmdUpdateAvailability(prAdapter);
 #endif
+	} else if (event == P2P_CONNECTED) {
+		/* Move to AIS+NAN+P2P or NAN+P2P */
+		for (eAisBand = BAND_2G4; eAisBand < BAND_NUM; eAisBand++) {
+			/* TODO: distinguish P2P from SAP? */
+			if (nanSchedGetConnChnlUsage(prAdapter,
+				     NETWORK_TYPE_P2P, eAisBand,
+				     &rAisChnlInfo, &u4SlotBitmap,
+				     &ucAisPhyTypeSet) == WLAN_STATUS_SUCCESS) {
+				nanSchedReleaseReschedCommitSlot(prAdapter,
+					NAN_SLOT_MASK_TYPE_DEFAULT,
+					nanGetTimelineMgmtIndexByBand(prAdapter,
+								eAisBand));
+			}
+		}
+	} else if (event == P2P_DISCONNECTED) {
+		/* Go back to AIS+NAN or NAN only */
+		DBGLOG(NAN, WARN, "Not release slot when P2P disconnected\n");
+		/* Not release committed forcely,
+		 * but still need to release unused commit slot
+		 */
+		nanSchedReleaseUnusedCommitSlot(prAdapter);
+		nanSchedCmdUpdateAvailability(prAdapter);
 	}
 	return rRetStatus;
 }
-
 
 struct _NAN_RESCHED_NDL_INFO*
 getOngoing_RescheduleNDL(struct ADAPTER *prAdapter)
 {
 	struct _NAN_RESCHED_NDL_INFO *ReSchedNdlInfo = NULL;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *reschedToken =
+	struct _NAN_RESCHEDULE_TOKEN_T *reschedToken =
 		getOngoing_RescheduleToken(prAdapter);
 	if (reschedToken) {
 		ReSchedNdlInfo = LINK_PEEK_HEAD(
@@ -331,11 +314,12 @@ getOngoing_RescheduleNDL(struct ADAPTER *prAdapter)
 	else
 		return NULL;
 }
+
 struct _NAN_RESCHED_NDL_INFO*
 getNewState_RescheduleNDL(struct ADAPTER *prAdapter)
 {
 	struct _NAN_RESCHED_NDL_INFO *ReSchedNdlInfo = NULL;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *reschedToken =
+	struct _NAN_RESCHEDULE_TOKEN_T *reschedToken =
 		getOngoing_RescheduleToken(prAdapter);
 	if (reschedToken) {
 		ReSchedNdlInfo = LINK_PEEK_HEAD(
@@ -361,7 +345,7 @@ getNewState_RescheduleNDL_reorder(struct ADAPTER *prAdapter)
 {
 	struct _NAN_RESCHED_NDL_INFO *ReSchedNdlInfo = NULL;
 	struct _NAN_RESCHED_NDL_INFO *prNDLInfo;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *reschedToken =
+	struct _NAN_RESCHEDULE_TOKEN_T *reschedToken =
 		getOngoing_RescheduleToken(prAdapter);
 
 	if (reschedToken) {
@@ -381,22 +365,20 @@ getNewState_RescheduleNDL_reorder(struct ADAPTER *prAdapter)
 	}
 	return getNewState_RescheduleNDL(prAdapter);
 }
-struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T*
+
+struct _NAN_RESCHEDULE_TOKEN_T *
 getOngoing_RescheduleToken(struct ADAPTER *prAdapter)
 {
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-	*prReScheduleToken = NULL;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken = NULL;
 	prReScheduleToken =
 	LINK_PEEK_HEAD(
 		&(prAdapter->rDataPathInfo.rReScheduleTokenList),
-		struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T,
-		rLinkEntry);
+		struct _NAN_RESCHEDULE_TOKEN_T, rLinkEntry);
 	return prReScheduleToken;
 }
 
-
 static void FreeReScheduleToken(struct ADAPTER *prAdapter,
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *prReScheduleToken)
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken)
 {
 	struct _NAN_RESCHED_NDL_INFO *prReSchedNdlInfo = NULL;
 
@@ -411,355 +393,450 @@ static void FreeReScheduleToken(struct ADAPTER *prAdapter,
 	}
 	cnmMemFree(prAdapter, prReScheduleToken);
 }
+
 static void FreeReScheduleNdlInfo(struct ADAPTER *prAdapter,
 	struct _NAN_RESCHED_NDL_INFO *reSchedNdlInfo)
 {
 	cnmMemFree(prAdapter, reSchedNdlInfo);
 }
+
+
+static void handleAisP2pConnected(struct ADAPTER *prAdapter,
+				  enum RESCHEDULE_SOURCE event,
+				  struct _NAN_NDL_INSTANCE_T *prNDL)
+{
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	struct LINK *prReScheduleTokenList;
+	struct _NAN_RESCHED_NDL_INFO *prOngoingNDLInfo;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken;
+	struct _NAN_RESCHED_NDL_INFO *prNextNDLInfo;
+
+	prDataPathInfo = &prAdapter->rDataPathInfo;
+	prReScheduleTokenList = &prDataPathInfo->rReScheduleTokenList;
+	prOngoingNDLInfo = getOngoing_RescheduleNDL(prAdapter);
+
+	DBGLOG(NAN, VOC,
+	       "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING RESCHEDULE NEEDED\n",
+	       RESCHEDULE_SRC[event]);
+
+	if (!nanCheckIsNeedReschedule(prAdapter, event, NULL)) {
+		DBGLOG(NAN, INFO,
+		       "<-[RESCHEDULE_TRACE] LVL1:RESCHEDULE NOT NEEDED\n");
+		return;
+	}
+
+	/* nanCheckIsNeedReschedule() returns TRUE */
+	prReScheduleToken = GenReScheduleToken(prAdapter, FALSE, event, NULL);
+	if (!prReScheduleToken) {
+		DBGLOG(NAN, ERROR, "Failed to generate a ReScheduleToken.");
+		return;
+	}
+
+	if (LINK_IS_EMPTY(&prReScheduleToken->rReSchedNdlList)) {
+		DBGLOG(NAN, INFO,
+		       "<--[RESCHEDULE_TRACE] LVL2:NO NDL in TOKEN(ucTokenID:%u, source:%s)\n",
+		       prReScheduleToken->ucTokenID,
+		       RESCHEDULE_SRC[event]);
+		FreeReScheduleToken(prAdapter, prReScheduleToken);
+		return;
+	}
+
+	DBGLOG(NAN, INFO,
+	       "-->[RESCHEDULE_TRACE] LVL2:GENERATE TOKEN(ucTokenID:%u, source:%s)\n",
+	       prReScheduleToken->ucTokenID,
+	       RESCHEDULE_SRC[event]);
+
+	ReleaseNanSlotsForSchedulePrep(prAdapter, event, FALSE);
+
+	LINK_INSERT_TAIL(prReScheduleTokenList,
+			 &prReScheduleToken->rLinkEntry);
+
+	prNextNDLInfo = getNewState_RescheduleNDL_reorder(prAdapter);
+	/*
+	 * if there is ongoing reschedule ahead,
+	 * it just push it back and processes
+	 * it later. else case handle it directly
+	 */
+	if (prNextNDLInfo) {
+		prNextNDLInfo->eNdlRescheduleState =
+			NDL_RESCHEDULE_STATE_NEGO_ONGOING;
+		DBGLOG(NAN, VOC,
+		       "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"
+		       MACSTR") START!\n",
+		       MAC2STR(prNextNDLInfo->prNDL->aucPeerMacAddr));
+		nanUpdateNdlScheduleV2(prAdapter, prNextNDLInfo->prNDL);
+	}
+}
+
 static void handleRemoveNDL(struct ADAPTER *prAdapter,
 		enum RESCHEDULE_SOURCE event,
 		struct _NAN_NDL_INSTANCE_T *prNDL)
 {
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prReScheduleToken = NULL;
-	struct _NAN_RESCHED_NDL_INFO *prNxtNdl;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken = NULL;
+	struct _NAN_RESCHED_NDL_INFO *prNextNDLInfo;
+	struct _NAN_NDL_INSTANCE_T *prNextNDL;
 	struct _NAN_RESCHED_NDL_INFO *prOngoingNDLInfo;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prOngoReschT = NULL;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prNextReScheduleToken = NULL;
+	struct _NAN_RESCHEDULE_TOKEN_T *prOngoingToken = NULL;
+	struct _NAN_RESCHEDULE_TOKEN_T *prNextToken = NULL;
 
 	prOngoingNDLInfo = getOngoing_RescheduleNDL(prAdapter);
-	prOngoReschT =
-		getOngoing_RescheduleToken(prAdapter);
-	if (prNDL && prOngoingNDLInfo &&
-			prNDL == prOngoingNDLInfo->prNDL) {
-		DBGLOG(NAN, INFO, LOGSTR_LVL3_FAIL,
-				MAC2STR(prNDL->aucPeerMacAddr));
+	prOngoingToken = getOngoing_RescheduleToken(prAdapter);
+	if (prNDL && prOngoingNDLInfo && prNDL == prOngoingNDLInfo->prNDL) {
+		DBGLOG(NAN, INFO,
+		       "<---[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"
+		       MACSTR") is FAILED.\n",
+		       MAC2STR(prNDL->aucPeerMacAddr));
 		LINK_REMOVE_HEAD(
-			&(prOngoReschT->rReSchedNdlList),
+			&(prOngoingToken->rReSchedNdlList),
 			prOngoingNDLInfo,
 			struct _NAN_RESCHED_NDL_INFO*);
 		FreeReScheduleNdlInfo(prAdapter, prOngoingNDLInfo);
-		if (LINK_IS_EMPTY(&(prOngoReschT->rReSchedNdlList))
-		    == FALSE) {
+		if (LINK_IS_EMPTY(&prOngoingToken->rReSchedNdlList) ==
+		    FALSE)	{
 			/* get next NDL */
-			prNxtNdl =
+			prNextNDLInfo =
 				getNewState_RescheduleNDL_reorder(prAdapter);
-			if (prNxtNdl) {
-				prNxtNdl->eNdlRescheduleState =
+			if (prNextNDLInfo) {
+				prNextNDL = prNextNDLInfo->prNDL;
+
+				prNextNDLInfo->eNdlRescheduleState =
 					NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-				DBGLOG(NAN, INFO, LOGSTR_LVL3_NEXT,
-				       MAC2STR(
-				       prNxtNdl->prNDL->aucPeerMacAddr));
-				nanUpdateNdlScheduleV2(prAdapter,
-						       prNxtNdl->prNDL);
+				DBGLOG(NAN, INFO,
+				       "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE next NDL(MAC:"
+				       MACSTR") START!\n",
+				       MAC2STR(prNextNDL->aucPeerMacAddr));
+				nanUpdateNdlScheduleV2(prAdapter, prNextNDL);
 			}
 		} else {
 			LINK_REMOVE_HEAD(
-			&(prAdapter->rDataPathInfo.rReScheduleTokenList),
-			prNextReScheduleToken,
-			struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T*);
-			if (prNextReScheduleToken != NULL)
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_DONE,
-				prNextReScheduleToken->ucTokenID,
-				RESCHEDULE_SOURCE_dbgstr[
-				prNextReScheduleToken->ucRescheduleEvent]);
-			FreeReScheduleToken(prAdapter, prOngoReschT);
+				&prAdapter->rDataPathInfo.rReScheduleTokenList,
+				prNextToken,
+				struct _NAN_RESCHEDULE_TOKEN_T *);
+			if (prNextToken != NULL)
+				DBGLOG(NAN, INFO,
+				       "<--[RESCHEDULE_TRACE] LVL2:Reschedule for Token(%u)->event(%s) is ALL DONE\n",
+				       prNextToken->ucTokenID,
+				       RESCHEDULE_SRC[prNextToken->ucEvent]);
+			FreeReScheduleToken(prAdapter,
+				prOngoingToken);
 			if (LINK_IS_EMPTY(
-			    &(prAdapter->rDataPathInfo.rReScheduleTokenList))
-			    == FALSE) {
-				prOngoReschT =
+				&prAdapter->rDataPathInfo.rReScheduleTokenList)
+				    == FALSE) {
+				prOngoingToken =
 					getOngoing_RescheduleToken(prAdapter);
-				prNxtNdl =
+				prNextNDLInfo =
 					getNewState_RescheduleNDL_reorder(
 						  prAdapter);
-				if (prNxtNdl) {
-					prNxtNdl->eNdlRescheduleState =
+				if (prNextNDLInfo) {
+					prNextNDL = prNextNDLInfo->prNDL;
+
+					prNextNDLInfo->eNdlRescheduleState =
 					    NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-					if (prOngoReschT)
+					if (prOngoingToken)
 						DBGLOG(NAN, INFO,
-						LOGSTR_LVL2_NEXT,
-						prOngoReschT->ucTokenID,
-						RESCHEDULE_SOURCE_dbgstr[
-						prOngoReschT->ucRescheduleEvent]
-						);
-					DBGLOG(NAN, INFO, LOGSTR_LVL3_NEXT,
-					       MAC2STR(
-					       prNxtNdl->prNDL->aucPeerMacAddr)
-					       );
+						      "-->[RESCHEDULE_TRACE] LVL2:dequeue next TOKEN(ucTokenID:%u, source:%s)\n",
+						      prOngoingToken->ucTokenID,
+						      RESCHEDULE_SRC[
+						      prOngoingToken->ucEvent]);
+					DBGLOG(NAN, INFO,
+					    "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE next NDL(MAC:"
+					    MACSTR") START!\n",
+					    MAC2STR(prNextNDL->aucPeerMacAddr));
 					nanUpdateNdlScheduleV2(prAdapter,
-							       prNxtNdl->prNDL);
+							       prNextNDL);
 				}
 			} else {
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_NOTOKEN);
+				DBGLOG(NAN, INFO,
+				       "<--[RESCHEDULE_TRACE] LVL2:No more token. END\n");
 			}
 
 		}
 	} else {
-		DBGLOG(NAN, VOC, LOGSTR_LVL1_CHECKING,
-				RESCHEDULE_SOURCE_dbgstr[event]);
+		DBGLOG(NAN, VOC,
+		       "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING RESCHEDULE NEEDED\n",
+		       RESCHEDULE_SRC[event]);
 
-		if (nanCheckIsNeedReschedule(prAdapter, event, NULL)) {
-			/* create reschedToken with event */
-			prReScheduleToken =
+		if (!nanCheckIsNeedReschedule(prAdapter, event, NULL)) {
+			DBGLOG(NAN, INFO,
+			       "<-[RESCHEDULE_TRACE] LVL1:RESCHEDULE NOT NEEDED\n");
+			return;
+		}
+
+		/* create reschedToken with event */
+		prReScheduleToken =
 			GenReScheduleToken(prAdapter, FALSE, event, NULL);
-			if (prReScheduleToken)
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_GENTOKEN,
-				prReScheduleToken->ucTokenID,
-				RESCHEDULE_SOURCE_dbgstr[event]);
-			if (prReScheduleToken &&
-				LINK_IS_EMPTY(
-				&prReScheduleToken->rReSchedNdlList) == FALSE) {
-				ReleaseNanSlotsForSchedulePrep(prAdapter,
-					event, FALSE);
-				/* enqueue NDLs to be rescheduled */
-				LINK_INSERT_TAIL(
-				&prAdapter->rDataPathInfo.rReScheduleTokenList,
-				&prReScheduleToken->rLinkEntry);
-				prNxtNdl =
-				getNewState_RescheduleNDL_reorder(prAdapter);
-				if (prNxtNdl) {
-					prNxtNdl->eNdlRescheduleState =
-					    NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-					DBGLOG(NAN, VOC, LOGSTR_LVL3_START,
-					       MAC2STR(
-					       prNxtNdl->prNDL->aucPeerMacAddr)
-					       );
-					nanUpdateNdlScheduleV2(prAdapter,
-							       prNxtNdl->prNDL);
-				}
-			} else {
-				if (prReScheduleToken) {
-					DBGLOG(NAN, INFO, LOGSTR_LVL2_NONDL,
-					prReScheduleToken->ucTokenID,
-					RESCHEDULE_SOURCE_dbgstr[event]);
-					FreeReScheduleToken(prAdapter,
-						prReScheduleToken);
-				}
-			}
-		} else {
-			DBGLOG(NAN, INFO, LOGSTR_LVL1_NONEED);
+
+		if (!prReScheduleToken) {
+			DBGLOG(NAN, ERROR,
+			       "Failed to generate a ReScheduleToken.");
+			return;
+		}
+
+		DBGLOG(NAN, INFO,
+		       "-->[RESCHEDULE_TRACE] LVL2:GENERATE TOKEN(ucTokenID:%u, source:%s)\n",
+		       prReScheduleToken->ucTokenID,
+		       RESCHEDULE_SRC[event]);
+
+		if (LINK_IS_EMPTY(&prReScheduleToken->rReSchedNdlList)) {
+			DBGLOG(NAN, INFO,
+			       "<--[RESCHEDULE_TRACE] LVL2:NO NDL in TOKEN(ucTokenID:%u, source:%s)\n",
+			       prReScheduleToken->ucTokenID,
+			       RESCHEDULE_SRC[event]);
+			FreeReScheduleToken(prAdapter, prReScheduleToken);
+		}
+
+		ReleaseNanSlotsForSchedulePrep(prAdapter, event, FALSE);
+		/* enqueue NDLs to be rescheduled */
+		LINK_INSERT_TAIL(&prAdapter->rDataPathInfo.rReScheduleTokenList,
+				 &prReScheduleToken->rLinkEntry);
+		prNextNDLInfo = getNewState_RescheduleNDL_reorder(prAdapter);
+		if (prNextNDLInfo) {
+			prNextNDL = prNextNDLInfo->prNDL;
+
+			prNextNDLInfo->eNdlRescheduleState =
+				NDL_RESCHEDULE_STATE_NEGO_ONGOING;
+			DBGLOG(NAN, VOC,
+			       "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"
+			       MACSTR") START!\n",
+			       MAC2STR(prNextNDL->aucPeerMacAddr));
+			nanUpdateNdlScheduleV2(prAdapter, prNextNDL);
 		}
 	}
-
 }
+
 static void handleNewNDL(struct ADAPTER *prAdapter,
-	enum RESCHEDULE_SOURCE event, struct _NAN_NDL_INSTANCE_T *prNDL)
+			 enum RESCHEDULE_SOURCE event,
+			 struct _NAN_NDL_INSTANCE_T *prNDL)
 {
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prReScheduleToken = NULL;
+
+	struct LINK *prReScheduleTokenList;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken;
 	struct _NAN_RESCHED_NDL_INFO *prNextNDLInfo;
+	struct _NAN_NDL_INSTANCE_T *prNextNDL;
 	struct _NAN_RESCHED_NDL_INFO *prOngoingNDLInfo;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prOngoingReScheduleToken = NULL;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prNextReScheduleToken = NULL;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prNxtTk = NULL;
+	struct _NAN_RESCHEDULE_TOKEN_T *prOngoingToken;
+	struct _NAN_RESCHEDULE_TOKEN_T *prNextToken = NULL;
 	uint8_t ucNDPNum;
 
 	ucNDPNum = GetActiveNDPNum(prNDL);
 	prOngoingNDLInfo = getOngoing_RescheduleNDL(prAdapter);
-	prOngoingReScheduleToken = getOngoing_RescheduleToken(prAdapter);
+	prOngoingToken = getOngoing_RescheduleToken(prAdapter);
 
-	if ((ucNDPNum > 0) && (prOngoingNDLInfo) &&
-		(prOngoingNDLInfo->prNDL  == prNDL) &&
-		(prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR)) {
+	prReScheduleTokenList = &prAdapter->rDataPathInfo.rReScheduleTokenList;
+
+	if (ucNDPNum > 0 && prOngoingNDLInfo &&
+	    prOngoingNDLInfo->prNDL  == prNDL &&
+	    prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR) {
 		/*
 		 * In this case : input prNDL is result from
 		 * "NEW_NDL initiated NDL reschedule".
 		 * so do not generate reScheduleToken again.
 		 * but process Ongoing reScheduleToken.
 		 */
-		DBGLOG(NAN, VOC, LOGSTR_LVL3_DONE,
-			MAC2STR(prNDL->aucPeerMacAddr));
+		DBGLOG(NAN, VOC,
+		       "<---[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"
+		       MACSTR") is DONE.\n",
+		       MAC2STR(prNDL->aucPeerMacAddr));
 		prOngoingNDLInfo->eNdlRescheduleState =
 			NDL_RESCHEDULE_STATE_ESTABLISHED;
 		/* dequeue completed NDL from rReSchedNdlList. */
-		LINK_REMOVE_HEAD(&(prOngoingReScheduleToken->rReSchedNdlList),
+		LINK_REMOVE_HEAD(&(prOngoingToken->rReSchedNdlList),
 			prNextNDLInfo, struct _NAN_RESCHED_NDL_INFO*);
 		FreeReScheduleNdlInfo(prAdapter, prOngoingNDLInfo);
 
-
 		/* reschedule next NDL from reschedule queue(rReSchedNdlList) */
-		if (LINK_IS_EMPTY(
-			&(prOngoingReScheduleToken->rReSchedNdlList)) ==
+		if (LINK_IS_EMPTY(&prOngoingToken->rReSchedNdlList) ==
 			FALSE) {
 			/* -> get next NDL */
 			prNextNDLInfo =
 				getNewState_RescheduleNDL_reorder(prAdapter);
 			if (prNextNDLInfo) {
+				prNextNDL = prNextNDLInfo->prNDL;
+
 				prNextNDLInfo->eNdlRescheduleState =
 					NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-				DBGLOG(NAN, INFO, LOGSTR_LVL3_NEXT,
-				       MAC2STR(
-				       prNextNDLInfo->prNDL->aucPeerMacAddr));
-				nanUpdateNdlScheduleV2(prAdapter,
-				prNextNDLInfo->prNDL);
+				DBGLOG(NAN, INFO,
+				       "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE next NDL(MAC:"
+				       MACSTR") START!\n",
+				       MAC2STR(prNextNDL->aucPeerMacAddr));
+				nanUpdateNdlScheduleV2(prAdapter, prNextNDL);
 			}
 		} else {
-			LINK_REMOVE_HEAD(
-			&(prAdapter->rDataPathInfo.rReScheduleTokenList),
-			prNextReScheduleToken,
-			struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T*);
-			if (prNextReScheduleToken != NULL)
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_DONE,
-				prNextReScheduleToken->ucTokenID,
-				RESCHEDULE_SOURCE_dbgstr[
-				prNextReScheduleToken->ucRescheduleEvent]);
+			LINK_REMOVE_HEAD(prReScheduleTokenList, prNextToken,
+					 struct _NAN_RESCHEDULE_TOKEN_T *);
+			if (prNextToken != NULL)
+				DBGLOG(NAN, INFO,
+				       "<--[RESCHEDULE_TRACE] LVL2:Reschedule for Token(%u)->event(%s) is ALL DONE\n",
+				       prNextToken->ucTokenID,
+				       RESCHEDULE_SRC[prNextToken->ucEvent]);
 			FreeReScheduleToken(prAdapter,
-				prOngoingReScheduleToken);
+					    prOngoingToken);
 			/* 1. dequeue next ReschedToken from
-			 * &prAdapter->rDataPathInfo.
-			 * rReScheduleTokenList.
-			 * And  reschedule new NDL.
+			 * &prAdapter->rDataPathInfo.rReScheduleTokenList.
+			 * And reschedule new NDL.
 			 */
-			if (LINK_IS_EMPTY(
-			    &(prAdapter->rDataPathInfo.rReScheduleTokenList))
-			    == FALSE) {
-				prNextReScheduleToken =
+			if (LINK_IS_EMPTY(prReScheduleTokenList) == FALSE) {
+				prNextToken =
 					getOngoing_RescheduleToken(prAdapter);
 				prNextNDLInfo =
 					getNewState_RescheduleNDL_reorder(
 							  prAdapter);
 				if (prNextNDLInfo) {
+					prNextNDL = prNextNDLInfo->prNDL;
+
 					prNextNDLInfo->eNdlRescheduleState =
-					NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-					if (prNextReScheduleToken) {
-						prNxtTk = prNextReScheduleToken;
+					      NDL_RESCHEDULE_STATE_NEGO_ONGOING;
+					if (prNextToken)
 						DBGLOG(NAN, INFO,
-						LOGSTR_LVL2_NEXT,
-						prNxtTk->ucTokenID,
-						RESCHEDULE_SOURCE_dbgstr[
-						prNxtTk->ucRescheduleEvent]);
-					}
-					DBGLOG(NAN, INFO, LOGSTR_LVL3_NEXT,
-					MAC2STR(
-					prNextNDLInfo->prNDL->aucPeerMacAddr));
+						       "-->[RESCHEDULE_TRACE] LVL2:dequeue next TOKEN(ucTokenID:%u, source:%s)\n",
+						       prNextToken->ucTokenID,
+						       RESCHEDULE_SRC[
+						       prNextToken->ucEvent]);
+					DBGLOG(NAN, INFO,
+					    "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE next NDL(MAC:"
+					    MACSTR") START!\n",
+					    MAC2STR(prNextNDL->aucPeerMacAddr));
 					nanUpdateNdlScheduleV2(prAdapter,
-						prNextNDLInfo->prNDL);
+							       prNextNDL);
 				}
 			} else {
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_NOTOKEN);
+				DBGLOG(NAN, INFO,
+				       "<--[RESCHEDULE_TRACE] LVL2:No more token. END\n");
 			}
 
 		}
-	} else if ((ucNDPNum > 0) && (prOngoingNDLInfo) &&
-		(prOngoingNDLInfo) && (prOngoingNDLInfo->prNDL != prNDL) &&
-		(prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR)) {
-		DBGLOG(NAN, INFO, LOGSTR_ETC1);
-	} else if ((ucNDPNum > 0) &&  (prOngoingNDLInfo == NULL) &&
-		prNDL->eNDLRole == NAN_PROTOCOL_RESPONDER) {
+	} else if (ucNDPNum > 0 && prOngoingNDLInfo &&
+		   prOngoingNDLInfo && prOngoingNDLInfo->prNDL != prNDL &&
+		   prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR) {
+		DBGLOG(NAN, INFO,
+		       "[RESCHEDULE_TRACE] INFO: it is not NDL reschedule(req) from this module.\n");
+	} else if (ucNDPNum > 0 &&  prOngoingNDLInfo == NULL &&
+		   prNDL->eNDLRole == NAN_PROTOCOL_RESPONDER) {
 		/*
 		 * In this case : input prNDL is result from
 		 * peer initiated Schedule update
 		 */
-		DBGLOG(NAN, INFO, LOGSTR_ETC2);
+		DBGLOG(NAN, INFO,
+		       "[RESCHEDULE_TRACE] INFO: peer requested reschedule.\n");
 	} else if (ucNDPNum == 0) {
 		/*
 		 * in this case : this is real NDL creation
 		 * from new connection(not by reschedule)
 		 */
-		DBGLOG(NAN, VOC, LOGSTR_LVL1_CHECK_PENDING,
-			RESCHEDULE_SOURCE_dbgstr[event]);
-		prNextNDLInfo =
-		getNewState_RescheduleNDL_reorder(prAdapter);
+		DBGLOG(NAN, VOC,
+		       "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING PENDING RESCHEDULE TOKEN\n",
+		       RESCHEDULE_SRC[event]);
+		prNextNDLInfo = getNewState_RescheduleNDL_reorder(prAdapter);
 		if (prNextNDLInfo != NULL) {
+			prNextNDL = prNextNDLInfo->prNDL;
+
 			prReScheduleToken =
 				getOngoing_RescheduleToken(prAdapter);
 			if (prReScheduleToken &&
-				LINK_IS_EMPTY(
-				&prReScheduleToken->rReSchedNdlList) == FALSE) {
+			    LINK_IS_EMPTY(&prReScheduleToken->rReSchedNdlList)
+			    == FALSE) {
 				prNextNDLInfo->eNdlRescheduleState =
 					NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-				DBGLOG(NAN, VOC, LOGSTR_LVL3_START,
-				MAC2STR(prNextNDLInfo->prNDL->aucPeerMacAddr));
-				nanUpdateNdlScheduleV2(prAdapter,
-					prNextNDLInfo->prNDL);
+				DBGLOG(NAN, VOC,
+				       "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"
+				       MACSTR") START!\n",
+				       MAC2STR(prNextNDL->aucPeerMacAddr));
+				nanUpdateNdlScheduleV2(prAdapter, prNextNDL);
 			}
 		} else {
-			DBGLOG(NAN, VOC, LOGSTR_LVL1_NOTOKEN);
+			DBGLOG(NAN, VOC,
+			       "<-[RESCHEDULE_TRACE] LVL1:NO PENDING RESCHEDULE TOKEN\n");
 		}
 	} /* ucNDPNum == 0 */
-
 }
+
+static void handleP2pConnected(struct ADAPTER *prAdapter,
+			       enum RESCHEDULE_SOURCE event,
+			       struct _NAN_NDL_INSTANCE_T *prNDL)
+{
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	struct LINK *prReScheduleTokenList;
+	struct _NAN_RESCHED_NDL_INFO *prOngoingNDLInfo;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken;
+	struct _NAN_RESCHED_NDL_INFO *prNextNDLInfo;
+
+	prDataPathInfo = &prAdapter->rDataPathInfo;
+	prReScheduleTokenList = &prDataPathInfo->rReScheduleTokenList;
+	prOngoingNDLInfo = getOngoing_RescheduleNDL(prAdapter);
+
+	DBGLOG(NAN, VOC,
+	       "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING RESCHEDULE NEEDED\n",
+	       RESCHEDULE_SRC[event]);
+
+	if (!nanCheckIsNeedReschedule(prAdapter, event, NULL)) {
+		DBGLOG(NAN, INFO,
+		       "<-[RESCHEDULE_TRACE] LVL1:RESCHEDULE NOT NEEDED\n");
+		return;
+	}
+
+	/* nanCheckIsNeedReschedule() returns TRUE */
+	prReScheduleToken = GenReScheduleToken(prAdapter, FALSE, event, NULL);
+	if (!prReScheduleToken) {
+		DBGLOG(NAN, ERROR, "Failed to generate a ReScheduleToken.");
+		return;
+	}
+
+	if (LINK_IS_EMPTY(&prReScheduleToken->rReSchedNdlList)) {
+		DBGLOG(NAN, INFO,
+		       "<--[RESCHEDULE_TRACE] LVL2:NO NDL in TOKEN(ucTokenID:%u, source:%s)\n",
+		       prReScheduleToken->ucTokenID,
+		       RESCHEDULE_SRC[event]);
+		FreeReScheduleToken(prAdapter, prReScheduleToken);
+		return;
+	}
+
+	DBGLOG(NAN, INFO,
+	       "-->[RESCHEDULE_TRACE] LVL2:GENERATE TOKEN(ucTokenID:%u, source:%s)\n",
+	       prReScheduleToken->ucTokenID,
+	       RESCHEDULE_SRC[event]);
+
+	ReleaseNanSlotsForSchedulePrep(prAdapter, event, FALSE);
+
+	LINK_INSERT_TAIL(prReScheduleTokenList,
+			 &prReScheduleToken->rLinkEntry);
+
+	prNextNDLInfo = getNewState_RescheduleNDL_reorder(prAdapter);
+	/*
+	 * if there is ongoing reschedule ahead,
+	 * it just push it back and processes
+	 * it later. else case handle it directly
+	 */
+	if (prNextNDLInfo) {
+		prNextNDLInfo->eNdlRescheduleState =
+			NDL_RESCHEDULE_STATE_NEGO_ONGOING;
+		DBGLOG(NAN, VOC,
+		       "--->[RESCHEDULE_TRACE] LVL3:RESCHEDULE(MAC:"
+		       MACSTR") START!\n",
+		       MAC2STR(prNextNDLInfo->prNDL->aucPeerMacAddr));
+		nanUpdateNdlScheduleV2(prAdapter, prNextNDLInfo->prNDL);
+	}
+}
+
 void nanRescheduleNdlIfNeeded(struct ADAPTER *prAdapter,
 	enum RESCHEDULE_SOURCE event,
 	struct _NAN_NDL_INSTANCE_T *prNDL)
 {
-	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo = NULL;
-	struct LINK *prReScheduleTokenList = NULL;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prReScheduleToken = NULL;
-	struct _NAN_RESCHED_NDL_INFO *prNextNDLInfo;
-	struct _NAN_RESCHED_NDL_INFO *prNxtNDL;
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 	struct _NAN_RESCHED_NDL_INFO *prOngoingNDLInfo;
 
-	prDataPathInfo = &(prAdapter->rDataPathInfo);
-	prReScheduleTokenList =
-		&(prDataPathInfo->rReScheduleTokenList);
-	prOngoingNDLInfo =
-		getOngoing_RescheduleNDL(prAdapter);
-
-	DBGLOG(NAN, INFO, "[%s] Enter event=%u\n", __func__, event);
-	if (prDataPathInfo->ucNDLNum == 0 &&
-		prOngoingNDLInfo == NULL) {
-		DBGLOG(NAN, VOC, LOGSTR_LVL1_SKIP,
-			RESCHEDULE_SOURCE_dbgstr[event]);
+	prDataPathInfo = &prAdapter->rDataPathInfo;
+	prOngoingNDLInfo = getOngoing_RescheduleNDL(prAdapter);
+	DBGLOG(NAN, INFO, "Enter event=%u\n", event);
+	if (prDataPathInfo->ucNDLNum == 0 && prOngoingNDLInfo == NULL) {
+		DBGLOG(NAN, VOC,
+		       "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:RESCHEDULE REQUESTED but NO NDL. SKIP\n",
+		       RESCHEDULE_SRC[event]);
 		return;
 	}
 	switch (event) {
 	case AIS_CONNECTED:
-	/*
-	 * "case AIS_DISCONNECTED:"
-	 * is not handleed temporarily
-	 */
-		DBGLOG(NAN, VOC, LOGSTR_LVL1_CHECKING,
-			RESCHEDULE_SOURCE_dbgstr[event]);
-		if (nanCheckIsNeedReschedule(prAdapter, event, NULL)) {
-			prReScheduleToken =
-			GenReScheduleToken(prAdapter, FALSE, event, NULL);
-			if (prReScheduleToken)
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_GENTOKEN,
-				       prReScheduleToken->ucTokenID,
-				       RESCHEDULE_SOURCE_dbgstr[event]);
-			if (prReScheduleToken &&
-				LINK_IS_EMPTY(
-				&prReScheduleToken->rReSchedNdlList) == FALSE) {
-				ReleaseNanSlotsForSchedulePrep(prAdapter,
-					event, FALSE);
-
-				LINK_INSERT_TAIL(prReScheduleTokenList,
-					&(prReScheduleToken->rLinkEntry));
-				prNextNDLInfo =
-				getNewState_RescheduleNDL_reorder(prAdapter);
-				/*
-				 * if there is ongoing reschedule ahead,
-				 * it just push it back and processes
-				 * it later. else case handle it directly
-				 */
-				if (prNextNDLInfo) {
-					prNextNDLInfo->eNdlRescheduleState =
-					    NDL_RESCHEDULE_STATE_NEGO_ONGOING;
-					prNxtNDL = prNextNDLInfo;
-					DBGLOG(NAN, VOC, LOGSTR_LVL3_START,
-					       MAC2STR(
-					       prNxtNDL->prNDL->aucPeerMacAddr)
-					       );
-					nanUpdateNdlScheduleV2(prAdapter,
-					    prNextNDLInfo->prNDL);
-				}
-			} else {
-				DBGLOG(NAN, INFO, LOGSTR_LVL2_NONDL,
-					prReScheduleToken->ucTokenID,
-					RESCHEDULE_SOURCE_dbgstr[event]);
-				FreeReScheduleToken(prAdapter,
-					prReScheduleToken);
-			}
-		} else {
-			DBGLOG(NAN, INFO, LOGSTR_LVL1_NONEED);
-		}
+	case P2P_CONNECTED:
+		handleAisP2pConnected(prAdapter, event, prNDL);
 		break;
 
 	case REMOVE_NDL:
@@ -769,53 +846,57 @@ void nanRescheduleNdlIfNeeded(struct ADAPTER *prAdapter,
 	case NEW_NDL:
 		handleNewNDL(prAdapter, event, prNDL);
 		break;
+
+	case P2P_DISCONNECTED: /* not handleed temporarily */
+	case AIS_DISCONNECTED: /* not handleed temporarily */
 	default:
 		break;
 	}
 }
 
 void nanRescheduleEnqueueNewToken(struct ADAPTER *prAdapter,
-	enum RESCHEDULE_SOURCE event,
-	struct _NAN_NDL_INSTANCE_T *prNDL)
+				  enum RESCHEDULE_SOURCE event,
+				  struct _NAN_NDL_INSTANCE_T *prNDL)
 {
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-		*prReScheduleToken = NULL;
-	DBGLOG(NAN, VOC, LOGSTR_LVL1_TRIG,
-		RESCHEDULE_SOURCE_dbgstr[event]);
-	prReScheduleToken =
-		GenReScheduleToken(prAdapter, FALSE, event, prNDL);
-	if (prReScheduleToken) {
-		DBGLOG(NAN, INFO, LOGSTR_LVL2_GENTOKEN,
-				prReScheduleToken->ucTokenID,
-				RESCHEDULE_SOURCE_dbgstr[event]);
-		if (LINK_IS_EMPTY(
-		    &prReScheduleToken->rReSchedNdlList) == FALSE) {
-			LINK_INSERT_TAIL(
-			&(prAdapter->rDataPathInfo.rReScheduleTokenList),
-			&prReScheduleToken->rLinkEntry);
-		} else {
-			DBGLOG(NAN, INFO, LOGSTR_LVL2_NONDL,
-			prReScheduleToken->ucTokenID,
-			RESCHEDULE_SOURCE_dbgstr[event]);
-			FreeReScheduleToken(prAdapter,
-				prReScheduleToken);
-		}
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken;
+	struct LINK *prReScheduleTokenList;
+
+	DBGLOG(NAN, VOC,
+	       "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:EXTERNAL RESCHEDULE REQUEST\n",
+	       RESCHEDULE_SRC[event]);
+	prReScheduleToken = GenReScheduleToken(prAdapter, FALSE, event, prNDL);
+
+	if (!prReScheduleToken) {
+		DBGLOG(NAN, ERROR, "Failed to generate a ReScheduleToken.");
+		return;
+	}
+
+	DBGLOG(NAN, INFO,
+	       "-->[RESCHEDULE_TRACE] LVL2:GENERATE TOKEN(ucTokenID:%u, source:%s)\n",
+	       prReScheduleToken->ucTokenID, RESCHEDULE_SRC[event]);
+
+	prReScheduleTokenList = &prAdapter->rDataPathInfo.rReScheduleTokenList;
+	if (LINK_IS_EMPTY(&prReScheduleToken->rReSchedNdlList) == FALSE) {
+		LINK_INSERT_TAIL(prReScheduleTokenList,
+				 &prReScheduleToken->rLinkEntry);
 	} else {
-		DBGLOG(NAN, ERROR,
-			"Failed to generate a ReScheduleToken.");
+		DBGLOG(NAN, INFO,
+		       "<--[RESCHEDULE_TRACE] LVL2:NO NDL in TOKEN(ucTokenID:%u, source:%s)\n",
+		       prReScheduleToken->ucTokenID,
+		       RESCHEDULE_SRC[event]);
+		FreeReScheduleToken(prAdapter, prReScheduleToken);
 	}
 }
 
 enum RESCHEDULE_SOURCE
 nanRescheduleGetOngoingTokenEvent(struct ADAPTER *prAdapter)
 {
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T
-	*reschedToken = NULL;
+	struct _NAN_RESCHEDULE_TOKEN_T *reschedToken = NULL;
 
-	reschedToken =
-		getOngoing_RescheduleToken(prAdapter);
+	reschedToken = getOngoing_RescheduleToken(prAdapter);
+
 	if (reschedToken)
-		return reschedToken->ucRescheduleEvent;
+		return reschedToken->ucEvent;
 	else
 		return RESCHEDULE_NULL;
 }
@@ -825,7 +906,7 @@ nanRescheduleInit(struct ADAPTER *prAdapter)
 {
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 
-	DBGLOG(NAN, INFO, LOGSTR_INIT);
+	DBGLOG(NAN, INFO, "[RESCHEDULE_TRACE] (INIT RESCHEDULER)\n");
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 	LINK_INITIALIZE(&(prDataPathInfo->rReScheduleTokenList));
 	nanSchedRegisterReschedInf(getOngoing_RescheduleToken);
@@ -835,14 +916,14 @@ void
 nanRescheduleDeInit(struct ADAPTER *prAdapter)
 {
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *prReScheduleToken;
+	struct _NAN_RESCHEDULE_TOKEN_T *prReScheduleToken;
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
-	DBGLOG(NAN, INFO, LOGSTR_DEINIT);
+	DBGLOG(NAN, INFO, "[RESCHEDULE_TRACE] (DEINIT RESCHEDULER)\n");
 	while (!LINK_IS_EMPTY(&prDataPathInfo->rReScheduleTokenList)) {
 		LINK_REMOVE_HEAD(
 		&prDataPathInfo->rReScheduleTokenList, prReScheduleToken,
-		struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *);
+		struct _NAN_RESCHEDULE_TOKEN_T *);
 		FreeReScheduleToken(prAdapter, prReScheduleToken);
 	}
 	nanSchedUnRegisterReschedInf();

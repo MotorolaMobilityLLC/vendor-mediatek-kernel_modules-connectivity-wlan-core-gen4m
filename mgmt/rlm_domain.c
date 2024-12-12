@@ -2730,22 +2730,21 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 			continue;
 #endif
 
-		if (prSubband->ucBand == eBand) {
-			for (j = 0; j < prSubband->ucNumChannels; j++) {
-				if ((prSubband->ucFirstChannelNum + j *
-				    prSubband->ucChannelSpan) == ucChannel) {
+		if (prSubband->ucBand != eBand)
+			continue;
 
-					if (!kalIsValidChnl(
-							prAdapter->prGlueInfo,
-							ucChannel,
-							prSubband->ucBand)) {
-						DBGLOG(RLM, INFO,
-							   "Not support ch%d!\n",
-							   ucChannel);
-						return FALSE;
-					} else
-						return TRUE;
-				}
+		for (j = 0; j < prSubband->ucNumChannels; j++) {
+			if (prSubband->ucFirstChannelNum +
+			    j * prSubband->ucChannelSpan != ucChannel)
+				continue;
+
+			if (!kalIsValidChnl(prAdapter->prGlueInfo,
+					    ucChannel, prSubband->ucBand)) {
+				DBGLOG(RLM, INFO, "Not support ch(%d) b(%d)!\n",
+				       ucChannel, eBand);
+				return FALSE;
+			} else {
+				return TRUE;
 			}
 		}
 	}

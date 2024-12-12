@@ -566,13 +566,14 @@ struct _NAN_RESCHED_NDL_INFO {
 	enum _ENUM_NDL_RESCHEDULE_STATE_T eNdlRescheduleState;
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 };
-struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T {
+
+struct _NAN_RESCHEDULE_TOKEN_T {
 	struct LINK_ENTRY rLinkEntry;
 
 	 /* list head to point the list of NDLs need to be rescheduled */
 	struct LINK rReSchedNdlList;
 	uint8_t ucTokenID;
-	uint8_t ucRescheduleEvent;
+	uint8_t ucEvent;
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	uint8_t fgIsEhtReschedule;
 #endif

@@ -468,6 +468,8 @@ enum RESCHEDULE_SOURCE {
 	AIS_DISCONNECTED,
 	NEW_NDL,
 	REMOVE_NDL,
+	P2P_CONNECTED,
+	P2P_DISCONNECTED,
 };
 
 /*******************************************************************************

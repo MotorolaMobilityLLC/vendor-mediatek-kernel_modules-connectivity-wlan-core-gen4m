@@ -1705,6 +1705,11 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 					GFP_KERNEL);
 			}
 			prP2pConnInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
+#if (CFG_SUPPORT_NAN == 1)
+			/* TODO: GC connected */
+			DBGLOG(INIT, INFO, "GC connected\n");
+			nanConcurrencyHandler(prAdapter);
+#endif
 		} else {
 			DBGLOG(INIT, INFO,
 				"indicate disconnection event to kernel, reason=%d, locally_generated=%d\n",

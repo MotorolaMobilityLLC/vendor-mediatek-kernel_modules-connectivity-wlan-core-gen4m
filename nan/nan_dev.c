@@ -8,6 +8,10 @@
 #include "precomp.h"
 #include "nan/nan_sec.h"
 
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+#include "nanRescheduler.h"
+#endif
+
 #define NAN_SKIP_BOOT_REQ_CH (1)
 
 void nanResetMemory(void)
@@ -1237,7 +1241,10 @@ void nanConcurrencyHandler(struct ADAPTER *prAdapter)
 		aisGetDefaultLinkBssIndex(prAdapter));
 #endif
 
+	DBGLOG(NAN, STATE, "NAN handle P2P status changed\n");
+	nanSchedUpdateP2pAisMcc(prAdapter);
 	nanSetFlashCommunication(prAdapter, FALSE);
+	nanRescheduleNdlIfNeeded(prAdapter, P2P_CONNECTED, NULL);
 }
 
 u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)

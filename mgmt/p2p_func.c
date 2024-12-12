@@ -2132,6 +2132,12 @@ SKIP_START_RDD:
 		}
 #endif
 
+#if (CFG_SUPPORT_NAN == 1)
+		/* TODO: P2P GO/SAP channel requested */
+		DBGLOG(INIT, INFO, "GO/SAP channel requested\n");
+		nanConcurrencyHandler(prAdapter);
+#endif
+
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
 		/* Wait for fw's setup done event and continue to
 		 * notify carrier_on & start all tx queues to

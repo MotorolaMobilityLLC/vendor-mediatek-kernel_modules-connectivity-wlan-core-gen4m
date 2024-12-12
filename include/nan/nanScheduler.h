@@ -131,20 +131,29 @@
 #define NAN_FULL_SLOT_INDEX(__szDwIdx, __szSlotIdx) \
 	((__szDwIdx) * NAN_SLOTS_PER_DW_INTERVAL + (__szSlotIdx))
 
-#define NAN_SLOT_IS_AIS(_szSlotIdx)	\
+#define NAN_SLOT_IS_AIS(_szSlotIdx)					\
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_AIS)
-#define NAN_SLOT_IS_NDL(_adapter, _szSlotIdx)	\
+#define NAN_SLOT_IS_NDL(_adapter, _szSlotIdx)				\
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & nanGetNdlSlots(_adapter))
-#define NAN_SLOT_IS_FC(_adapter, _szSlotIdx)	\
+#define NAN_SLOT_IS_FC(_adapter, _szSlotIdx)				\
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & nanGetFcSlots(_adapter))
-
-#define NAN_SLOT_IS_M2_CH_SWITCH(_szSlotIdx) \
-	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_M2_CH_SWITCH)
-#define NAN_SLOT_IS_M4_CH_SWITCH(_szSlotIdx)\
-	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_M4_CH_SWITCH)
-#define NAN_SLOT_TIMELINE_IS_FC(_adapter, _szTimelineIdx, _szSlotIdx) \
-	(BIT(_szSlotIdx) & \
+#define NAN_SLOT_TIMELINE_IS_FC(_adapter, _szTimelineIdx, _szSlotIdx)	\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) &				\
 	 nanGetTimelineFcSlots(_adapter, _szTimelineIdx, _szSlotIdx))
+#define NAN_SLOT_IS_NDC(_szTimeLineIdx, _szSlotIdx)			\
+	(_szTimeLineIdx ==						\
+		 nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G) &&	\
+	  NAN_SLOT_INDEX(_szSlotIdx) == NAN_5G_DEFAULT_NDC_INDEX ||	\
+	 _szTimeLineIdx ==						\
+		 nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4) &&	\
+	 NAN_SLOT_INDEX(_szSlotIdx) == NAN_2G_DEFAULT_NDC_INDEX)
+
+#define NAN_SLOT_IS_NDC_BY_BAND(_szTimeLineIdx, _szSlotIdx, _band)	\
+	(_szTimeLineIdx ==						\
+		 nanGetTimelineMgmtIndexByBand(prAdapter, _band) &&	\
+	 NAN_SLOT_INDEX(_szSlotIdx) ==					\
+		 (_band == BAND_2G4 ? NAN_2G_DEFAULT_NDC_INDEX :	\
+				      NAN_5G_DEFAULT_NDC_INDEX))
 
 /* Limited log */
 #define NAN_DW_DBGLOG(Mod, Clz, Print, Index, Fmt, ...)			\
@@ -483,6 +492,12 @@ struct _NAN_CUST_FAW_ENTRY {
 	uint32_t u4Bitmap;
 };
 
+struct NAN_P2P_AIS_MCC_RECORD {
+	u_int8_t fgIsP2pAisMCC;
+	union _NAN_BAND_CHNL_CTRL rAisChnlInfo;
+	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
+};
+
 /* NAN Scheduler Control Block */
 struct _NAN_SCHEDULER_T {
 	unsigned char fgInit;
@@ -522,6 +537,9 @@ struct _NAN_SCHEDULER_T {
 	uint8_t ucNdcBand; /* band bitmap of NDC, enum NAN_BSS_ROLE_INDEX */
 
 	struct _NAN_CUST_FAW_ENTRY arCustFawEntry[20];
+
+	/* Store P2P/AIS channel info by timeline index */
+	struct NAN_P2P_AIS_MCC_RECORD arP2pAisMcc[NAN_TIMELINE_MGMT_SIZE];
 };
 
 uint8_t *nanGetNanIEBuffer(void);
@@ -796,6 +814,9 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 					    uint32_t *pu4SlotBitmap,
 					    uint8_t *ucPhyTypeSet);
 
+uint8_t nanSchedGetConnBands(struct ADAPTER *prAdapter,
+			     enum ENUM_NETWORK_TYPE eNetworkType);
+
 #if CFG_SUPPORT_NAN_EXT
 uint32_t nanSchedGetVendorAttr(
 	struct ADAPTER *prAdapter,
@@ -846,14 +867,6 @@ u_int8_t nanCheckIsNeedReschedule(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_NAN_RESCHEDULE_CHANNEL_SELECTION == 1)
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					uint8_t fgChkRmtCondSlot);
-
-union _NAN_BAND_CHNL_CTRL
-nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
-			unsigned char fgPrintLog,
-			size_t szTimeLineIdx,
-			size_t szSlotIdx,
-			unsigned char fgReschedForce5G,
-			unsigned char *pfgNotChoose6G);
 #endif
 
 enum _ENUM_CNM_CH_CONCURR_T
@@ -862,11 +875,11 @@ nanSchedChkConcurrOp(union _NAN_BAND_CHNL_CTRL rCurrChnlInfo,
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 void nanSchedReleaseReschedCommitSlot(struct ADAPTER *prAdapter,
-					uint32_t u4ReschedSlot,
-					size_t szTimeLineIdx);
+				      uint32_t u4ReschedSlot,
+				      size_t szTimeLineIdx);
 
 void nanSchedRegisterReschedInf(
-	struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T*
+	struct _NAN_RESCHEDULE_TOKEN_T *
 		(*fnGetRescheduleToken)(struct ADAPTER *prAdapter)
 );
 
@@ -876,6 +889,14 @@ void nanSchedUnRegisterReschedInf(void);
 #if (CFG_SUPPORT_NAN_11BE == 1)
 uint8_t nanSchedCheckEHTSlotExist(struct ADAPTER *prAdapter);
 #endif
+
+void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter);
+
+u_int8_t nanIsFollowP2pInNonSocialChannel(struct ADAPTER *prAdapter,
+					  size_t szTimelineIdx,
+					  union _NAN_BAND_CHNL_CTRL *prP2pChnl);
+
+uint8_t nanGetP2pActiveChannel(struct ADAPTER *prAdapter, enum ENUM_BAND eBand);
 
 uint32_t
 nanSchedDbgDumpTimelineDb(struct ADAPTER *prAdapter, const char *pucFunction,
