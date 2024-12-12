@@ -7586,8 +7586,10 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 	struct timespec64 rTimeout, rTime = {0};
 	u_int8_t fgIsTimeout = FALSE;
 
-	if (!prThread)
+	if (!prThread) {
+		DBGLOG(INIT, INFO, "thread already stop");
 		return;
+	}
 
 	rTimeout.tv_sec = 10;
 	rTimeout.tv_nsec = 0;
@@ -7877,6 +7879,13 @@ int32_t wlanOnAtReset(void)
 		wlanWakeStaticsInit();
 #endif
 
+		DBGLOG(INIT, INFO, "reinit thread's completion\n");
+#if (CFG_SUPPORT_MULTITHREAD == 1)
+		reinit_completion(&prGlueInfo->rHifHaltComp);
+		reinit_completion(&prGlueInfo->rRxHaltComp);
+#endif
+		reinit_completion(&prGlueInfo->rHaltComp);
+
 		if (prGlueInfo->i4TxPendingCmdNum != 0) {
 			DBGLOG(INIT, INFO, "wlanOnReset clear %d command\n",
 				prGlueInfo->i4TxPendingCmdNum);
@@ -8019,6 +8028,7 @@ int32_t wlanOnAtReset(void)
 		}
 #endif
 	}
+
 	return rStatus;
 }
 #endif
