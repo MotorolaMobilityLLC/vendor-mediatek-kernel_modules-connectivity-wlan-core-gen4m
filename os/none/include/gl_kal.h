@@ -771,6 +771,10 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 #define kal_tasklet_schedule(_rTasklet) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+
+#define kalGetRxFifoCount(_prGlueInfo)	\
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Notify OS with SendComplete event of the specific packet.

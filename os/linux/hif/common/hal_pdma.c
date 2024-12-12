@@ -6822,7 +6822,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			RX_GET_PENDING_RFB_CNT(prAdapter),
 			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
 			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
-			KAL_GET_FIFO_CNT(prGlueInfo),
+			kalGetRxFifoCount(prGlueInfo),
 			CFG_RX_MAX_PKT_NUM);
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,

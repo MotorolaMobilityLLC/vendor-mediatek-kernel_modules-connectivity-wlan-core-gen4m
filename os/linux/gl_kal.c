@@ -2294,6 +2294,16 @@ skip_gro:
 	return WLAN_STATUS_SUCCESS;
 }
 
+unsigned int kalGetRxFifoCount(struct GLUE_INFO *prGlueInfo)
+{
+#if CFG_SUPPORT_RX_NAPI
+	return (unsigned int)
+		(KAL_FIFO_LEN((&prGlueInfo->rRxKfifoQ)) / sizeof(void *));
+#else
+	return 0;
+#endif
+}
+
 #if CFG_RFB_RECOVERY
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2325,7 +2335,7 @@ void kalRxRFBFailRecoveryCheck(struct GLUE_INFO *prGlueInfo)
 			RX_GET_PENDING_RFB_CNT(prGlueInfo->prAdapter),
 			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
 			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
-			KAL_GET_FIFO_CNT(prGlueInfo),
+			kalGetRxFifoCount(prGlueInfo),
 			CFG_RX_MAX_PKT_NUM);
 
 		if (prRxCtrl->u4CheckRFBFailTime
@@ -11628,7 +11638,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.u4NapiDelayCntTh,
 		prAdapter->rWifiVar.u4NapiDelayTimeout,
 		glue->ulNapiDelayFlag,
-		KAL_GET_FIFO_CNT(glue),
+		kalGetRxFifoCount(glue),
 #endif /* CFG_NAPI_DELAY */
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		prAdapter->rWifiVar.fgEnableRro,
@@ -15062,7 +15072,7 @@ static u_int8_t kalIsNapiDelay(struct GLUE_INFO *pr)
 		return TRUE;
 
 	/* start timer when delay napi, skip schedule */
-	if (KAL_GET_FIFO_CNT(pr) < prWifiVar->u4NapiDelayCntTh) {
+	if (kalGetRxFifoCount(pr) < prWifiVar->u4NapiDelayCntTh) {
 		kalNapiDelayTimerStart(pr, prWifiVar->u4NapiDelayTimeout);
 		return TRUE;
 	}
@@ -15181,10 +15191,10 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	nicRxIndicateRfbMainToNapi(prAdapter);
 
 #if CFG_NAPI_DELAY
-	DBGLOG(RX, TEMP, "FIFO_CNT:%u\n", KAL_GET_FIFO_CNT(prGlueInfo));
+	DBGLOG(RX, TEMP, "FIFO_CNT:%u\n", kalGetRxFifoCount(prGlueInfo));
 #endif /* CFG_NAPI_DELAY */
 
-	u4Cnt = KAL_GET_FIFO_CNT(prGlueInfo);
+	u4Cnt = kalGetRxFifoCount(prGlueInfo);
 	while ((work_done <= u4Cnt) &&
 	       KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {

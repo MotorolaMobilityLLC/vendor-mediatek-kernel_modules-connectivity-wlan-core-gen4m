@@ -1290,7 +1290,7 @@ struct ACTION_FRAME_SIZE_MAP {
 	+ RX_GET_PENDING_RFB_CNT(prGlueInfo->prAdapter) \
 	+ RX_GET_INDICATED_RFB_CNT(&prGlueInfo->prAdapter->rRxCtrl) \
 	+ RX_GET_UNUSE_RFB_CNT(&prGlueInfo->prAdapter->rRxCtrl) \
-	+ KAL_GET_FIFO_CNT(prGlueInfo))
+	+ kalGetRxFifoCount(prGlueInfo))
 
 #define FILE_AND_LINE_NUMBER \
 	(__FILE__ ":" STRLINE(__LINE__))

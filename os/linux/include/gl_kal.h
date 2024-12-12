@@ -979,14 +979,6 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	kfifo_is_empty((_prFiFoQ))
 #define KAL_FIFO_IS_FULL(_prFiFoQ) \
 	kfifo_is_full((_prFiFoQ))
-#if CFG_SUPPORT_RX_NAPI
-#define KAL_GET_FIFO_CNT(_prGlueInfo) \
-	((unsigned int) (KAL_FIFO_LEN((&_prGlueInfo->rRxKfifoQ)) \
-		/ sizeof(void *)))
-#else
-#define KAL_GET_FIFO_CNT(_prGlueInfo) (0)
-#endif
-
 
 #define KAL_MB_RW() \
 ({ \
@@ -1254,6 +1246,8 @@ char *strtok_r(char *s, const char *delim, char **last);
 
 #define kal_max_t(_type, _v1, _v2) max_t(_type, _v1, _v2)
 #define kal_min_t(_type, _v1, _v2) min_t(_type, _v1, _v2)
+
+unsigned int kalGetRxFifoCount(struct GLUE_INFO *prGlueInfo);
 
 /*----------------------------------------------------------------------------*/
 /*!
