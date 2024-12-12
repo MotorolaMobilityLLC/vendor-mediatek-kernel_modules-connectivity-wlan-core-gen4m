@@ -6135,7 +6135,7 @@ void aisFsmRemoveAllBssDesc(struct ADAPTER *prAdapter,
 					prAisBssInfo->aucBSSID)) {
 					DBGLOG(AIS, INFO,
 						""MACSTR" set BTO flag",
-						prBssDesc->aucBSSID);
+						MAC2STR(prBssDesc->aucBSSID));
 					prBssDesc->fgIsInBTO = TRUE;
 					break;
 				}

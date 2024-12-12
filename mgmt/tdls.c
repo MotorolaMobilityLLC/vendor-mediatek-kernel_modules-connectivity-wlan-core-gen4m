@@ -210,7 +210,7 @@ TdlsApStaForEach(struct ADAPTER *pAd,
 				    IS_UCAST_MAC_ADDR(p->aucAddr)) {
 					DBGLOG(TDLS, TRACE,
 						MACSTR", MaxTP: %d Bytes/s\n",
-						p->aucAddr,
+						MAC2STR(p->aucAddr),
 						p->u4Throughput);
 					*pprOut = p;
 					i4Max_tp = p->u4Throughput;
@@ -358,7 +358,7 @@ uint32_t TdlsAutoSetup(
 	DBGLOG(TDLS, INFO,
 		"[%d] Build up "MACSTR", %d\n",
 		bss,
-		sta->aucAddr,
+		MAC2STR(sta->aucAddr),
 		sta->u4Throughput);
 
 	kalTdlsOpReq(
@@ -407,7 +407,7 @@ uint32_t TdlsAutoTeardown(
 		DBGLOG(TDLS, INFO,
 			"[%d] Teardown "MACSTR" due to %s, %d\n",
 			bss,
-			sta->aucAddr,
+			MAC2STR(sta->aucAddr),
 			reason,
 			sta->u4Throughput);
 	else
@@ -533,7 +533,7 @@ TdlsAutoSetupTarget(
 
 	DBGLOG(TDLS, INFO,
 		"Create TDLS peer["MACSTR"] reason %s\n",
-		prTdlsPeer->aucAddr, prReason);
+		MAC2STR(prTdlsPeer->aucAddr), prReason);
 
 	b->prTdlsHash[STA_TDLS_HASH_SIZE] = prTdlsPeer;
 	prTdlsPeer->eTdlsStatus = STA_TDLS_LINK_ENABLE;
@@ -576,7 +576,7 @@ TdlsUpdateTxRxStat(
 #if CFG_SUPPORT_TDLS_LOG
 	DBGLOG(TDLS, INFO,
 		"sta["MACSTR"] %s bytes: %ld\n",
-		prAddr,
+		MAC2STR(prAddr),
 		tx_bytes ? "Tx" : "Rx",
 		tx_bytes ? tx_bytes : rx_bytes);
 #endif

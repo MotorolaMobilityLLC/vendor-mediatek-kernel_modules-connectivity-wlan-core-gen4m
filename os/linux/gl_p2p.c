@@ -2320,7 +2320,7 @@ skip_role:
 	} else {
 		DBGLOG(INIT, WARN,
 			"Unmatch net_device %s, new " MACSTR " not set.\n",
-			prDev->name, sa->sa_data);
+			prDev->name, MAC2STR(sa->sa_data));
 	}
 
 	return WLAN_STATUS_SUCCESS;

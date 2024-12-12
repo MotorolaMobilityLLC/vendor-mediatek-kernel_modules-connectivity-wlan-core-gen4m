@@ -980,7 +980,7 @@ void kalUpdateMACAddress(struct GLUE_INFO *prGlueInfo,
 
 	DBGLOG(INIT, INFO,
 			MACSTR ", " MACSTR ".\n",
-			prGlueInfo->prDevHandler->dev_addr,
+			MAC2STR(prGlueInfo->prDevHandler->dev_addr),
 			MAC2STR(pucMacAddr));
 
 	if (UNEQUAL_MAC_ADDR(prGlueInfo->prDevHandler->dev_addr,

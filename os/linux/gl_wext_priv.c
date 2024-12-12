@@ -21124,10 +21124,10 @@ int32_t priv_driver_MulAPAgent_sta_report_info(
 		sStaAssocMetricsResp->uIfIndex);
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] mBssid = " MACSTR "\n",
-		sStaAssocMetricsResp->mBssid);
+		MAC2STR(sStaAssocMetricsResp->mBssid));
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] mStaMac = " MACSTR "\n",
-		sStaAssocMetricsResp->mStaMac);
+		MAC2STR(sStaAssocMetricsResp->mStaMac));
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] uBytesSent = %llu\n",
 		sStaAssocMetricsResp->uBytesSent);
@@ -21451,7 +21451,7 @@ int32_t priv_driver_MulAPAgent_set_allow_sta(
 		DBGLOG(INIT, INFO,
 			"Removing MAC="MACSTR
 			" from BlockList !! P2P NUM=%d\n",
-			&aucMacAddr[0], i);
+			MAC2STR(aucMacAddr), i);
 		i4Ret |= kalP2PSetBlockList(prGlueInfo,
 			aucMacAddr, 0, i);
 	}
@@ -21505,7 +21505,7 @@ int32_t priv_driver_MulAPAgent_set_block_sta(
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		DBGLOG(INIT, INFO,
 			"Adding MAC="MACSTR" to BlockList !! P2P NUM=%d\n",
-			&aucMacAddr[0], i);
+			MAC2STR(aucMacAddr), i);
 		i4Ret |= kalP2PSetBlockList(prGlueInfo, aucMacAddr, 1, i);
 	}
 exit:
@@ -21595,7 +21595,7 @@ int32_t priv_driver_MulAPAgent_beacon_report_request(
 
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] aucPeerMac = " MACSTR"\n",
-		prSetBcnRepReqInfo->aucPeerMac);
+		MAC2STR(prSetBcnRepReqInfo->aucPeerMac));
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] u2Repetition = %u\n",
 		prSetBcnRepReqInfo->u2Repetition);
@@ -21607,7 +21607,7 @@ int32_t priv_driver_MulAPAgent_beacon_report_request(
 		prSetBcnRepReqInfo->ucOperClass);
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] aucBssid = " MACSTR "\n",
-		prSetBcnRepReqInfo->aucBssid);
+		MAC2STR(prSetBcnRepReqInfo->aucBssid));
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] ucChannel = %u\n",
 		prSetBcnRepReqInfo->ucChannel);
@@ -21773,7 +21773,7 @@ int32_t priv_driver_MulAPAgent_BTM_request(
 
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] aucPeerMac = " MACSTR "\n",
-		prSetBtmReqInfo->aucPeerMac);
+		MAC2STR(prSetBtmReqInfo->aucPeerMac));
 	DBGLOG(REQ, INFO,
 		"[SAP_Test] u4EssImm = %u\n",
 		prSetBtmReqInfo->ucEssImm);

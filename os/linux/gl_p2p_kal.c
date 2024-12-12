@@ -2294,8 +2294,8 @@ void kalP2PCatBlockList(struct GLUE_INFO *prGlueInfo, bool flag)
 			DBGLOG(INIT, INFO,
 				"ucRoleIndex[%d]-BlockList[%d] MA="MACSTR"\n",
 				ucRoleIndex, i,
-				&(prGlueInfo->prP2PInfo[ucRoleIndex]
-				->aucBlockMACList[i]));
+				MAC2STR(&(prGlueInfo->prP2PInfo[ucRoleIndex]
+				->aucBlockMACList[i])));
 		}
 	}
 }
@@ -3223,7 +3223,7 @@ void kalSetP2pRoleMac(
 		      prAdapter->rWifiVar.aucP2pInterfaceAddress[ucRoleIdx]);
 
 	DBGLOG(P2P, TRACE, "Set Bss[%d], macAddr: " MACSTR "\n",
-		prP2pBssInfo->ucBssIndex, prP2pBssInfo->aucOwnMacAddr);
+		prP2pBssInfo->ucBssIndex, MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 }
 
 void kalSetP2pDevMac(
@@ -3238,7 +3238,7 @@ void kalSetP2pDevMac(
 		      prP2PInfo->prDevHandler->dev_addr);
 
 	DBGLOG(P2P, TRACE, "Set Bss[%d], macAddr: " MACSTR "\n",
-		prP2pBssInfo->ucBssIndex, prP2pBssInfo->aucOwnMacAddr);
+		prP2pBssInfo->ucBssIndex, MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 }
 
 void *kalGetP2pNetHdl(struct GLUE_INFO *prGlueInfo,

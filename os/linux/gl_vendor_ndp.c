@@ -1450,7 +1450,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, INFO, "NDP Data Confirm event, ndp instance: %d,",
 		u4Id);
 	DBGLOG(NAN, INFO, "peer MAC addr : "MACSTR "rsp reason code: %d,",
-		prNDP->aucPeerNDIAddr, prNDP->ucReasonCode);
+		MAC2STR(prNDP->aucPeerNDIAddr), prNDP->ucReasonCode);
 	DBGLOG(NAN, INFO, "protocol reason code: %d\n ",
 		prNDP->eDataPathFailReason);
 

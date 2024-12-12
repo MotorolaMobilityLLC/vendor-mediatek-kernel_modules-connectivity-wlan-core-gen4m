@@ -11421,7 +11421,7 @@ void p2pFuncSetAclPolicy(
 			prBssInfo->u4PrivateData,
 			prCmdAclPolicy->ucBssIdx,
 			prCmdAclPolicy->ucPolicy,
-			prCmdAclPolicy->aucAddr);
+			MAC2STR(prCmdAclPolicy->aucAddr));
 	} else
 		DBGLOG(P2P, INFO,
 			"[Role%d][%d] Policy:%d\n",
