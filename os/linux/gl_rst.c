@@ -1356,6 +1356,11 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
 		g_IsWfsysBusNoAck = FALSE;
+#if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+		update_whole_chip_rst_status(0);
+#endif
+#endif
 		complete(&g_RstOnComp);
 	}
 #endif
@@ -1844,6 +1849,14 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	struct mt66xx_chip_info *chip = NULL;
 	struct CHIP_DBG_OPS *dbg_ops = NULL;
 
+#if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
+#if !CFG_SUPPORT_CONNAC1X
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+	update_whole_chip_rst_status(1);
+#endif
+#endif
+#endif
+
 	DBGLOG(INIT, INFO,
 		"drv:%d, reason:%s, reset_type:%d\n",
 		drv, reason, reset_type);
@@ -1859,12 +1872,14 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 		kalMsleep(100);
 	}
+#endif
 
+	g_IsWholeChipRst = TRUE;
+#if CFG_MTK_ANDROID_WMT
 	wfsys_lock();
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		glResetOnEndUpdateFlag(TRUE);
-		g_IsWholeChipRst = TRUE;
 		wfsys_unlock();
 		goto exit;
 	}
@@ -1905,7 +1920,6 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			kalMsleep(100);
 		}
-		g_IsWholeChipRst = TRUE;
 
 		/* If wifi is off, skip off flow after previous reset end */
 		if (!get_wifi_powered_status()) {
@@ -1923,7 +1937,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			kalMsleep(100);
 		}
-		g_IsWholeChipRst = TRUE;
+		fgIsDrvTriggerWholeChipReset = FALSE;
 
 		dbg_ops = prAdapter->chip_info->prDebugOps;
 		if (dbg_ops && dbg_ops->dumpBusStatus)
