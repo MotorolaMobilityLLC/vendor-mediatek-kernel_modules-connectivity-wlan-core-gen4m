@@ -2338,6 +2338,7 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 {
 	struct mt66xx_chip_info *chip_info = NULL;
 	struct CHIP_DBG_OPS *debug_ops = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	u_int8_t readable = TRUE;
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	int ret = 0;
@@ -2356,14 +2357,26 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 
 	chip_info = ad->chip_info;
 	debug_ops = chip_info->prDebugOps;
+	prHifInfo = &ad->prGlueInfo->rHifInfo;
 
-	if (debug_ops) {
-		if (GLUE_GET_REF_CNT(debug_ops->fgIsDebugSopOnGoing)) {
+	if (prHifInfo) {
+		if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
 			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
 			return;
 		}
-		GLUE_SET_REF_CNT(1, debug_ops->fgIsDebugSopOnGoing);
+		GLUE_SET_REF_CNT(1, prHifInfo->fgIsDebugSopOnGoing);
 	}
+
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	if (prHifInfo && prHifInfo->fgEnablePcieCfgDump) {
+		mtk_pcie_disable_cfg_dump(0);
+		prHifInfo->fgEnablePcieCfgDump = FALSE;
+	} else if (prHifInfo == NULL)
+		mtk_pcie_disable_cfg_dump(0);
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
+#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
+
 
 
 	DBGLOG(HAL, INFO, "Phase1: Trigger PCIe Scan Dump.\n");
@@ -2461,8 +2474,8 @@ dump_end:
 	fgTriggerDebugSop = FALSE;
 #endif
 
-	if (debug_ops)
-		GLUE_SET_REF_CNT(0, debug_ops->fgIsDebugSopOnGoing);
+	if (prHifInfo)
+		GLUE_SET_REF_CNT(0, prHifInfo->fgIsDebugSopOnGoing);
 }
 #endif
 

@@ -129,7 +129,8 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_SER_INT)
 
 #define HIF_FLAG \
-	(HIF_FLAG_MSI_RECOVERY | HIF_FLAG_ALL_TOKENS_UNUSED)
+	(HIF_FLAG_MSI_RECOVERY | HIF_FLAG_ALL_TOKENS_UNUSED | \
+	HIF_FLAG_AER_RESET)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -2184,6 +2185,8 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr);
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetMddpEvent(struct GLUE_INFO *pr);
+
+void kalSetHifAerResetEvent(struct GLUE_INFO *pr);
 
 void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr);
 

@@ -983,6 +983,13 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
 #endif
+
+		/* SDES trigger reset directly */
+		if (dump & BIT(10)) {
+			DBGLOG(HAL, ERROR, "pcie SDES detected.\n");
+			g_AERRstTriggered = TRUE;
+			kalSetHifAerResetEvent(g_prGlueInfo);
+		}
 	}
 
 exit:
@@ -1061,6 +1068,14 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 	kalSetHifDbgEvent(prGlueInfo);
 }
 #endif
+
+void mtk_trigger_aer_slot_reset(void)
+{
+#if CFG_MTK_WIFI_AER_RESET
+	mtk_pci_error_slot_reset(NULL);
+#endif /* CFG_MTK_WIFI_AER_RESET */
+}
+
 
 u_int8_t mtk_get_aer_triggered(void)
 {

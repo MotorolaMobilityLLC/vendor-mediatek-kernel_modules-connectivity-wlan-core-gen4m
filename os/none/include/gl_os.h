@@ -98,6 +98,7 @@ extern u_int8_t fgIsPcieDataTransDisabled;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 extern u_int8_t fgTriggerDebugSop;
 #endif
+extern u_int32_t u4SdesDetectTime;
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -206,6 +207,9 @@ extern u_int8_t fgTriggerDebugSop;
 #define GLUE_FLAG_CNS_PWR_LEVEL			BIT(21)
 #define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
 #endif
+
+#define HIF_FLAG_AER_RESET		BIT(0)
+#define HIF_FLAG_AER_RESET_BIT	(0)
 
 #define HIF_FLAG_MSI_RECOVERY		BIT(1)
 #define HIF_FLAG_MSI_RECOVERY_BIT	(1)

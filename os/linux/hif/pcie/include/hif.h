@@ -362,13 +362,14 @@ struct GL_HIF_INFO {
 	irq_handler_t irq_handler;
 	irq_handler_t irq_handler_thread;
 #endif
-
 #if CFG_SUPPORT_HIF_RX_NAPI
 	struct HIF_NAPI_DEVICE rNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
-	bool fgEnablePcieCfgDump;
+	u_int8_t fgEnablePcieCfgDump;
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
+	u_int8_t fgIsDebugSopOnGoing;
 };
 
 struct BUS_INFO {
@@ -738,6 +739,7 @@ extern int mtk_pcie_disable_cfg_dump(int port);
 uint8_t halPcieIsPcieProbed(void);
 u_int8_t pcie_check_status_is_linked(void);
 u_int8_t mtk_get_aer_triggered(void);
+void mtk_trigger_aer_slot_reset(void);
 void glUpdateRxCopyMemOps(
 	struct HIF_MEM_OPS *prMemOps);
 int halSetMemOps(

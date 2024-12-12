@@ -5835,6 +5835,11 @@ int hif_thread(void *data)
 #endif
 
 #if defined(_HIF_PCIE)
+		/* HIF thread trigger whole chip reset */
+		if (test_and_clear_bit(HIF_FLAG_AER_RESET_BIT,
+				       &prGlueInfo->ulHifFlag))
+			mtk_trigger_aer_slot_reset();
+
 		if (test_and_clear_bit(HIF_FLAG_MSI_RECOVERY_BIT,
 				       &prGlueInfo->ulHifFlag)) {
 			struct BUS_INFO *prBusInfo =
@@ -7205,6 +7210,14 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr)
 {
 	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetHifAerResetEvent(struct GLUE_INFO *pr)
+{
+	set_bit(HIF_FLAG_AER_RESET_BIT, &pr->ulHifFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
