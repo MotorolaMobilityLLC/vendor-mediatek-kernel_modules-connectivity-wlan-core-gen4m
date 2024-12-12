@@ -22799,7 +22799,7 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 	uint8_t aucTestMacAddr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct RTT_CAPABILITIES rRttCapabilities;
-	struct PARAM_RTT_REQUEST rttReq;
+	struct PARAM_RTT_REQUEST *rttReq = NULL;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4BufLen;
 	uint8_t ucType = 0;
@@ -22835,11 +22835,16 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 				&u4BufLen);
 	}
 
+	rttReq = kalMemAlloc(sizeof(struct PARAM_RTT_REQUEST), VIR_MEM_TYPE);
+	if (!rttReq) {
+		DBGLOG(RTT, ERROR, "fail to alloc memory for rttReq.\n");
+		return -1;
+	}
 	/* test CMD_ID_RTT_RANGE_REQUEST: 11mc/11az ranging */
 	if (ucType == 1 /* mc */ || ucType == 2 /* az */) {
-		kalMemZero(&rttReq, sizeof(rttReq));
-		rttReq.fgEnable = true;
-		rttReq.ucConfigNum = 1;
+		kalMemZero(rttReq, sizeof(struct PARAM_RTT_REQUEST));
+		rttReq->fgEnable = true;
+		rttReq->ucConfigNum = 1;
 
 		/* Peer mac */
 		if (i4Argc > 2)
@@ -22870,54 +22875,55 @@ int priv_driver_set_rtt(struct net_device *prNetDev,
 			u4Ret = kalkStrtou8(apcArgv[8], 0,
 					&ucForceReplyI2rLmr);
 
-		COPY_MAC_ADDR(rttReq.arRttConfigs[0].aucAddr, aucTestMacAddr);
-		rttReq.arRttConfigs[0].eType = (ucType == 1) ?
+		COPY_MAC_ADDR(rttReq->arRttConfigs[0].aucAddr, aucTestMacAddr);
+		rttReq->arRttConfigs[0].eType = (ucType == 1) ?
 			RTT_TYPE_2_SIDED : RTT_TYPE_2_SIDED_11AZ_NTB;
-		rttReq.arRttConfigs[0].ePeer = RTT_PEER_AP;
-		rttReq.arRttConfigs[0].rChannel.width =
+		rttReq->arRttConfigs[0].ePeer = RTT_PEER_AP;
+		rttReq->arRttConfigs[0].rChannel.width =
 			(enum WIFI_CHANNEL_WIDTH) ucWidth;
-		rttReq.arRttConfigs[0].rChannel.center_freq =
+		rttReq->arRttConfigs[0].rChannel.center_freq =
 			u4Freq ? u4Freq : 5180;
-		rttReq.arRttConfigs[0].rChannel.center_freq0 = 0;
-		rttReq.arRttConfigs[0].rChannel.center_freq1 = 0;
-		rttReq.arRttConfigs[0].u2BurstPeriod = 0;
-		rttReq.arRttConfigs[0].u2NumBurstExponent = 0;
-		rttReq.arRttConfigs[0].u2PreferencePartialTsfTimer = 0;
-		rttReq.arRttConfigs[0].ucNumFramesPerBurst = 14;
-		rttReq.arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
-		rttReq.arRttConfigs[0].ucNumRetriesPerFtmr = 0;
-		rttReq.arRttConfigs[0].ucLciRequest = 0;
-		rttReq.arRttConfigs[0].ucLcrRequest = 0;
-		rttReq.arRttConfigs[0].ucBurstDuration = 11;
-		rttReq.arRttConfigs[0].ePreamble = WIFI_RTT_PREAMBLE_VHT;
-		rttReq.arRttConfigs[0].eBw = rttBssBwToRttBw(ucWidth);
-		rttReq.arRttConfigs[0].ucASAP = 1;
-		rttReq.arRttConfigs[0].ucFtmMinDeltaTime = 40;
+		rttReq->arRttConfigs[0].rChannel.center_freq0 = 0;
+		rttReq->arRttConfigs[0].rChannel.center_freq1 = 0;
+		rttReq->arRttConfigs[0].u2BurstPeriod = 0;
+		rttReq->arRttConfigs[0].u2NumBurstExponent = 0;
+		rttReq->arRttConfigs[0].u2PreferencePartialTsfTimer = 0;
+		rttReq->arRttConfigs[0].ucNumFramesPerBurst = 14;
+		rttReq->arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
+		rttReq->arRttConfigs[0].ucNumRetriesPerFtmr = 0;
+		rttReq->arRttConfigs[0].ucLciRequest = 0;
+		rttReq->arRttConfigs[0].ucLcrRequest = 0;
+		rttReq->arRttConfigs[0].ucBurstDuration = 11;
+		rttReq->arRttConfigs[0].ePreamble = WIFI_RTT_PREAMBLE_VHT;
+		rttReq->arRttConfigs[0].eBw = rttBssBwToRttBw(ucWidth);
+		rttReq->arRttConfigs[0].ucASAP = 1;
+		rttReq->arRttConfigs[0].ucFtmMinDeltaTime = 40;
 
 		/* 11az configruation */
-		rttReq.arRttConfigs[0].ucI2rLmrFeedback = ucI2rLmrFeedback;
-		rttReq.arRttConfigs[0].ucImmeR2iFeedback = ucImmeR2iFeedback;
-		rttReq.arRttConfigs[0].ucImmeI2rFeedback = ucImmeI2rFeedback;
-		rttReq.arRttConfigs[0].ucForceReplyI2rLmr = ucForceReplyI2rLmr;
+		rttReq->arRttConfigs[0].ucI2rLmrFeedback = ucI2rLmrFeedback;
+		rttReq->arRttConfigs[0].ucImmeR2iFeedback = ucImmeR2iFeedback;
+		rttReq->arRttConfigs[0].ucImmeI2rFeedback = ucImmeI2rFeedback;
+		rttReq->arRttConfigs[0].ucForceReplyI2rLmr = ucForceReplyI2rLmr;
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
-				&rttReq,
+				rttReq,
 				sizeof(struct PARAM_RTT_REQUEST),
 				&u4BufLen);
 	}
 
 	/* test CMD_ID_RTT_RANGE_REQUEST: cancel ranging */
 	if (ucType == 3) {
-		kalMemZero(&rttReq, sizeof(rttReq));
-		rttReq.fgEnable = false;
+		kalMemZero(rttReq, sizeof(struct PARAM_RTT_REQUEST));
+		rttReq->fgEnable = false;
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
-				&rttReq,
+				rttReq,
 				sizeof(struct PARAM_RTT_REQUEST),
 				&u4BufLen);
 	}
 
 out:
+	kalMemFree(rttReq, VIR_MEM_TYPE, sizeof(struct PARAM_RTT_REQUEST));
 	return (rStatus == WLAN_STATUS_SUCCESS) ? 0 : -1;
 }
 #endif

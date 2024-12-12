@@ -1188,7 +1188,8 @@ int mtk_cfg80211_vendor_set_rtt_config(
 	uint32_t rStatus, u4BufLen;
 	int tmp, err;
 	uint8_t i = 0;
-	struct PARAM_RTT_REQUEST request;
+	struct PARAM_RTT_REQUEST *request;
+	int ret = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(REQ, INFO, "vendor command\r\n");
 
@@ -1213,30 +1214,38 @@ int mtk_cfg80211_vendor_set_rtt_config(
 		return -EINVAL;
 	}
 
-	kalMemZero(&request, sizeof(struct PARAM_RTT_REQUEST));
-	request.fgEnable = true;
+	request = kalMemAlloc(sizeof(struct PARAM_RTT_REQUEST), VIR_MEM_TYPE);
+	if (!request) {
+		DBGLOG(RTT, ERROR, "fail to alloc memory for request.\n");
+		return -EFAULT;
+	}
+	kalMemZero(request, sizeof(struct PARAM_RTT_REQUEST));
+	request->fgEnable = true;
 
 	if (attrs[RTT_ATTRIBUTE_TARGET_CNT]) {
-		request.ucConfigNum =
+		request->ucConfigNum =
 			nla_get_u8(attrs[RTT_ATTRIBUTE_TARGET_CNT]);
-		DBGLOG(RTT, INFO, "TARGET_CNT = %u\n", request.ucConfigNum);
+		DBGLOG(RTT, INFO, "TARGET_CNT = %u\n", request->ucConfigNum);
 	} else {
 		DBGLOG(RTT, ERROR, "No RTT_ATTRIBUTE_TARGET_CNT\n");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto RETURN;
 	}
 
 	if (!attrs[RTT_ATTRIBUTE_TARGET_INFO]) {
 		DBGLOG(RTT, ERROR, "No RTT_ATTRIBUTE_TARGET_INFO\n");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto RETURN;
 	}
 
 	nla_for_each_nested(attr, attrs[RTT_ATTRIBUTE_TARGET_INFO], tmp) {
 		struct RTT_CONFIG *config = NULL;
 
-		if (i >= request.ucConfigNum || i >= CFG_RTT_MAX_CANDIDATES) {
+		if (i >= request->ucConfigNum || i >= CFG_RTT_MAX_CANDIDATES) {
 			DBGLOG(RTT, ERROR, "Wrong num %hhu/%hhu/%d\n",
-				i, request.ucConfigNum, CFG_RTT_MAX_CANDIDATES);
-			return -EINVAL;
+			      i, request->ucConfigNum, CFG_RTT_MAX_CANDIDATES);
+			ret = -EINVAL;
+			goto RETURN;
 		}
 
 		err = NLA_PARSE(tb, RTT_ATTRIBUTE_TARGET_BW,
@@ -1244,10 +1253,11 @@ int mtk_cfg80211_vendor_set_rtt_config(
 				nla_set_rtt_config_policy);
 		if (err) {
 			DBGLOG(RTT, WARN, "Wrong RTT ATTR, %d\n", err);
-			return err;
+			ret = err;
+			goto RETURN;
 		}
 
-		config = &request.arRttConfigs[i++];
+		config = &request->arRttConfigs[i++];
 		if (tb[RTT_ATTRIBUTE_TARGET_MAC]) {
 			COPY_MAC_ADDR(config->aucAddr,
 				nla_data(tb[RTT_ATTRIBUTE_TARGET_MAC]));
@@ -1323,23 +1333,26 @@ int mtk_cfg80211_vendor_set_rtt_config(
 			config->ePreamble, config->eBw);
 	}
 
-	if (i != request.ucConfigNum) {
+	if (i != request->ucConfigNum) {
 		DBGLOG(RTT, ERROR, "Config Num not match %hhu/%hhu\n",
-			i, request.ucConfigNum);
-		return -EINVAL;
+			i, request->ucConfigNum);
+		ret = -EINVAL;
+		goto RETURN;
 	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
-			   &request,
+			   request,
 			   sizeof(struct PARAM_RTT_REQUEST),
 			   &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RTT, ERROR, "RTT request error:%x\n", rStatus);
-		return -EFAULT;
+		ret = -EFAULT;
 	}
 
-	return WLAN_STATUS_SUCCESS;
+RETURN:
+	kalMemFree(request, VIR_MEM_TYPE, sizeof(struct PARAM_RTT_REQUEST));
+	return ret;
 }
 
 int mtk_cfg80211_vendor_cancel_rtt_config(
@@ -1347,12 +1360,13 @@ int mtk_cfg80211_vendor_cancel_rtt_config(
 	const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct PARAM_RTT_REQUEST request;
+	struct PARAM_RTT_REQUEST *request;
 	struct nlattr *attr;
 	struct nlattr *attrs = (struct nlattr *) data;
 	int tmp;
 	uint8_t i = 0;
 	uint32_t rStatus, u4BufLen;
+	int ret = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(REQ, INFO, "vendor command\r\n");
 
@@ -1371,48 +1385,61 @@ int mtk_cfg80211_vendor_cancel_rtt_config(
 		return -EFAULT;
 	}
 
-	request.fgEnable = false;
+	request = kalMemAlloc(sizeof(struct PARAM_RTT_REQUEST), VIR_MEM_TYPE);
+	if (!request) {
+		DBGLOG(RTT, ERROR, "fail to alloc memory for request.\n");
+		return -EFAULT;
+	}
+	kalMemZero(request, sizeof(struct PARAM_RTT_REQUEST));
+	request->fgEnable = false;
 
 	attr = nla_find(attrs, data_len, RTT_ATTRIBUTE_TARGET_CNT);
 	if (attr) {
-		request.ucConfigNum = nla_get_u8(attr);
-		DBGLOG(RTT, INFO, "TARGET_CNT = %u\n", request.ucConfigNum);
+		request->ucConfigNum = nla_get_u8(attr);
+		DBGLOG(RTT, INFO, "TARGET_CNT = %u\n", request->ucConfigNum);
 	} else {
 		DBGLOG(RTT, ERROR, "No RTT_ATTRIBUTE_TARGET_CNT\n");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto RETURN;
 	}
 
-	DBGLOG(RTT, INFO, "Cancel RTT=%u\n", request.ucConfigNum);
+	DBGLOG(RTT, INFO, "Cancel RTT=%u\n", request->ucConfigNum);
 
 	nla_for_each_attr(attr, attrs, data_len, tmp) {
 		if (attr->nla_type == RTT_ATTRIBUTE_TARGET_MAC) {
 			struct RTT_CONFIG *config = NULL;
 
-			if (i >= request.ucConfigNum ||
-				i >= CFG_RTT_MAX_CANDIDATES)
-				return -EINVAL;
+			if (i >= request->ucConfigNum ||
+				i >= CFG_RTT_MAX_CANDIDATES) {
+				ret = -EINVAL;
+				goto RETURN;
+			}
 
-			config = &request.arRttConfigs[i++];
+			config = &request->arRttConfigs[i++];
 			COPY_MAC_ADDR(config->aucAddr, nla_data(attr));
 			DBGLOG(RTT, TRACE, "MAC=" MACSTR "\n",
 				MAC2STR(config->aucAddr));
 		}
 	}
 
-	if (i != request.ucConfigNum)
-		return -EINVAL;
+	if (i != request->ucConfigNum) {
+		ret = -EINVAL;
+		goto RETURN;
+	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
-			   &request,
+			   request,
 			   sizeof(struct PARAM_RTT_REQUEST),
 			   &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RTT, WARN, "RTT request error:%x\n", rStatus);
-		return -EFAULT;
+		ret = -EFAULT;
 	}
 
-	return WLAN_STATUS_SUCCESS;
+RETURN:
+	kalMemFree(request, VIR_MEM_TYPE, sizeof(struct PARAM_RTT_REQUEST));
+	return ret;
 }
 #endif /* CFG_SUPPORT_RTT */
 
