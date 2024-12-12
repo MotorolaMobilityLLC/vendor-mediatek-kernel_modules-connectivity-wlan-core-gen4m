@@ -169,6 +169,7 @@
 #define CMD_GET_BAINFO			"GET_BAINFO"
 #define CMD_GET_SER			"GET_SER"
 #if BUILD_QA_DBG
+#define CMD_SET_EMI			"SET_EMI"
 #define CMD_GET_EMI			"GET_EMI"
 #endif
 #define CMD_QUERY_THERMAL_TEMP		"QUERY_THERMAL_TEMP"

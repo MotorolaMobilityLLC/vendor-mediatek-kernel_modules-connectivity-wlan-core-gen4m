@@ -949,6 +949,8 @@ int32_t priv_driver_get_mcs_info(struct net_device *prNetDev,
 #endif /* CFG_WIFI_GET_MCS_INFO */
 int priv_driver_get_ser_info(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_emi_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_get_emi_info(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_query_thermal_temp(struct net_device *prNetDev,

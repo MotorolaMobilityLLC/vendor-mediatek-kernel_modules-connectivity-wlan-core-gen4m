@@ -17001,13 +17001,69 @@ end:
 
 } /* priv_driver_get_ser_info */
 
+int priv_driver_set_emi_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4Offset = 0, u4Value = 0;
+	int32_t i4BytesWritten = -1;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret = 0;
+
+	if (!prNetDev)
+		goto exit;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto exit;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		goto exit;
+	}
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Offset);
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse apcArgv[1] error u4Ret=%d\n", u4Ret);
+		goto exit;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Value);
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse apcArgv[2] error u4Ret=%d\n", u4Ret);
+		goto exit;
+	}
+
+	DBGLOG(REQ, INFO, "offset: 0x%x, value: 0x%x\n",
+		u4Offset, u4Value);
+
+	if (emi_mem_write(prGlueInfo->prAdapter->chip_info, u4Offset, &u4Value,
+			  sizeof(u4Value))) {
+		DBGLOG(REQ, ERROR, "emi_mem_write failed.\n");
+		goto exit;
+	}
+
+	i4BytesWritten = 0;
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				      i4TotalLen - i4BytesWritten,
+				      "OK");
+
+exit:
+	return i4BytesWritten;
+}
+
 int priv_driver_get_emi_info(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t *buf = NULL;
 	uint32_t offset = 0, size = 0, idx = 0;
-	int32_t i4BytesWritten = 0;
+	int32_t i4BytesWritten = -1;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4ArgNum = 3;
@@ -17019,6 +17075,11 @@ int priv_driver_get_emi_info(struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		goto exit;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		goto exit;
+	}
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -17054,6 +17115,7 @@ int priv_driver_get_emi_info(struct net_device *prNetDev,
 		goto exit;
 	}
 	DBGLOG_MEM32(REQ, DEBUG, buf, size);
+	i4BytesWritten = 0;
 	while (idx < size) {
 		if ((idx % 16) == 0)
 			i4BytesWritten += kalSnprintf(

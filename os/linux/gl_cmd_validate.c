@@ -1953,6 +1953,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 	{
+		.pcCmdStr  = CMD_SET_EMI,
+		.pfHandler = priv_driver_set_emi_info,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = u32_policy,
+		.u4PolicySize = ARRAY_SIZE(u32_policy)
+	},
+	{
 		.pcCmdStr  = CMD_GET_EMI,
 		.pfHandler = priv_driver_get_emi_info,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
