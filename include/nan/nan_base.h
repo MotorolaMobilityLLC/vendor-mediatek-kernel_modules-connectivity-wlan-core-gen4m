@@ -400,7 +400,7 @@ enum NAN_SUPPORTED_BANDS {
 #define NAN_SCID_DEFAULT_LEN 16
 
 /* Anchor Master rank length */
-#define ANCHOR_MASTR_RANK_NUM 8
+#define ANCHOR_MASTER_RANK_NUM 8
 
 /* Ranging Info Attribute - Location Info Availability */
 #define NAN_RANGING_LOCAL_COORDINATE_PRESENT BIT(0)
@@ -700,7 +700,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_CLUSTER_T {
 	uint8_t ucId;
 	uint16_t u2Length;
-	uint8_t aucAnchorMastrRank[ANCHOR_MASTR_RANK_NUM];
+	uint8_t aucAnchorMasterRank[ANCHOR_MASTER_RANK_NUM];
 	uint8_t ucHopCount;
 	uint32_t u4AMBTT;
 } __KAL_ATTRIB_PACKED__;

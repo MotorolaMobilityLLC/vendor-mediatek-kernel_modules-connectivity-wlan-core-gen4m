@@ -58,8 +58,6 @@
 #define LOGSTR_INIT "[RESCHEDULE_TRACE] (INIT RESCHEDULER)\n"
 #define LOGSTR_DEINIT "[RESCHEDULE_TRACE] (DEINIT RESCHEDULER)\n"
 #define LOGSTR_TOKEN_INFO "---[RESCHEDULE_TRACE] LVL2: TOKEN(ucTokenID:%u) INFO :)\n"
-#define LOGSTR_NDL_INFO \
-"---[RESCHEDULE_TRACE] LVL2: ucNdlIndex#%u:NDL(MAC:"MACSTR")\n"
 #define LOGSTR_LVL1_SKIP "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:RESCHEDULE REQUESTED but NO NDL. SKIP\n"
 #define LOGSTR_LVL1_CHECKING "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING RESCHEDULE NEEDED\n"
 #define LOGSTR_LVL1_CHECK_PENDING "->[RESCHEDULE_TRACE] LVL1:EVENT=%s:CHECKING PENDING RESCHEDULE TOKEN\n"
@@ -175,7 +173,7 @@ GenReScheduleToken(
 	struct _NAN_DATA_PATH_INFO_T *prDpInfo =
 		&(prAdapter->rDataPathInfo);
 	static uint8_t uReSchedTokenID;
-	struct _NAN_RESCHED_NDL_INFO *prReScheNdlInf = NULL;
+	struct _NAN_RESCHED_NDL_INFO *prReSchedNdlInfo = NULL;
 
 	prReScheduleToken =
 		(struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T *)
@@ -211,27 +209,29 @@ GenReScheduleToken(
 					 */
 					continue;
 				}
-				prReScheNdlInf =
-					(struct _NAN_RESCHED_NDL_INFO *)
+				prReSchedNdlInfo =
 					cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 					sizeof(struct _NAN_RESCHED_NDL_INFO));
-				if (prReScheNdlInf) {
-					prReScheNdlInf->eNdlRescheduleState =
-						NDL_RESCHEDULE_STATE_NEW;
-					prReScheNdlInf->prNDL =
-					&prDpInfo->arNDL[ucNdlIdx];
-					LINK_INSERT_TAIL(
-					&(prReScheduleToken->rReSchedNdlList),
-					&(prReScheNdlInf->rLinkEntry));
-					DBGLOG(NAN, INFO,
-					LOGSTR_NDL_INFO,
-					ucNdlIdx,
-					prReScheNdlInf->prNDL->aucPeerMacAddr);
-				} else {
+
+				if (!prReSchedNdlInfo) {
 					DBGLOG(NAN, ERROR,
-					       "Failed to generate a prReScheNdlInf."
-					       );
+					       "Failed to generate a prReSchedNdlInfo.");
+					continue;
 				}
+
+				prReSchedNdlInfo->eNdlRescheduleState =
+					NDL_RESCHEDULE_STATE_NEW;
+				prReSchedNdlInfo->prNDL =
+				&prDpInfo->arNDL[ucNdlIdx];
+				LINK_INSERT_TAIL(
+					&prReScheduleToken->rReSchedNdlList,
+					&prReSchedNdlInfo->rLinkEntry);
+				DBGLOG(NAN, INFO,
+				      "---[RESCHEDULE_TRACE] LVL2: ucNdlIndex#%u:NDL(MAC:"
+				      MACSTR ")\n",
+				      ucNdlIdx,
+				      MAC2STR(
+				      prReSchedNdlInfo->prNDL->aucPeerMacAddr));
 			}
 		}
 		DBGLOG(NAN, INFO,

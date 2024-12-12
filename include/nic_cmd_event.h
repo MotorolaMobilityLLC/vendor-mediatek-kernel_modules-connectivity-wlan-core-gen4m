@@ -3812,7 +3812,7 @@ struct _NAN_EVENT_REPORT_BEACON {
 	uint8_t ucRate;
 	uint8_t ucHwChnl;
 	uint8_t ucBw;
-	uint8_t aucAnchorMastrRank[ANCHOR_MASTR_RANK_NUM];
+	uint8_t aucAnchorMasterRank[ANCHOR_MASTER_RANK_NUM];
 	uint8_t aucReserved[5];
 	uint8_t aucBeaconFrame[];
 };

@@ -6994,7 +6994,7 @@ u_int8_t mqmIsEdcaParamsChanged(struct ADAPTER *prAdapter,
 	if (*pucWmmParamSetCount != (ucQosInfo &
 			WMM_QOS_INFO_PARAM_SET_CNT)) {
 		DBGLOG(QM, INFO,
-		       "IE count changed (%d -> %d) but Param unchanged\n",
+		       "IE count changed (%u -> %lu) but Param unchanged\n",
 		       *pucWmmParamSetCount,
 		       ucQosInfo & WMM_QOS_INFO_PARAM_SET_CNT);
 		*pucWmmParamSetCount = ucQosInfo & WMM_QOS_INFO_PARAM_SET_CNT;

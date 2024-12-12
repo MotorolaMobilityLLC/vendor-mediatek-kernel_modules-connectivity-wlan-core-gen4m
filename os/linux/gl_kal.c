@@ -11167,7 +11167,7 @@ static u_int8_t wlanIsFirstNetInterfaceByNetdev(struct GLUE_INFO *prGlueInfo,
 	return i == ucBssIndex;
 }
 
-static uint32_t calcualteTput(struct ADAPTER *prAdapter,
+static uint32_t calculateTput(struct ADAPTER *prAdapter,
 			      uint64_t *throughput, int32_t period,
 			      signed long txDiffBytes[static MAX_BSSID_NUM],
 			      signed long txDiffPkts[static MAX_BSSID_NUM],
@@ -11544,7 +11544,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		goto done;
 	}
 
-	ret = calcualteTput(prAdapter, &throughput, period,
+	ret = calculateTput(prAdapter, &throughput, period,
 			    txDiffBytes, txDiffPkts, rxDiffBytes, rxDiffPkts);
 	if (ret != WLAN_STATUS_SUCCESS)
 		goto done;
