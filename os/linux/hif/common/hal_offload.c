@@ -1216,7 +1216,7 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 				prHifInfo, &rDmaBuf, 0, u4Cnt);
 		if (!prSkb) {
 			DBGLOG(HAL, ERROR,
-			       "can't allocate rx %lu size packet\n",
+			       "can't allocate rx %u size packet\n",
 			       CFG_RX_MAX_PKT_SIZE);
 			break;
 		}

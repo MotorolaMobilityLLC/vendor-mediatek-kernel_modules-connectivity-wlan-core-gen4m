@@ -369,7 +369,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_HOST_CSR)) {
-		if (prDbgOps->showCsrInfo) {
+		if (prDbgOps && prDbgOps->showCsrInfo) {
 			bool fgIsClkEn = prDbgOps->showCsrInfo(prAdapter);
 
 			if (!fgIsClkEn)

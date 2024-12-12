@@ -741,10 +741,15 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	} else if (IS_CONN_MCU_BUS_CR_ADDR(u4Register)) {
 		/* Dynamic remap */
-		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT,
 			AP2WF_DYNAMIC_REMAP_NO_1,
 			CONN_MCU_BUS_CR_BASE_ADDR);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR,
+			       "Write fail: AP2WF_DYNAMIC_REMAP_NO_1\n");
+			return FALSE;
+		}
 		u4Register &= BITS(0, 15);
 		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
 
@@ -762,10 +767,15 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	} else if (IS_WF_MCUSYS_VDNR_ADDR(u4Register)) {
 		/* Dynamic remap */
-		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT,
 			AP2WF_DYNAMIC_REMAP_NO_1,
 			WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_START);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR,
+			       "Write fail: AP2WF_DYNAMIC_REMAP_NO_1\n");
+			return FALSE;
+		}
 		u4Register &= BITS(0, 15);
 		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
 
@@ -863,10 +873,15 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	} else if (IS_CONN_MCU_BUS_CR_ADDR(u4Register)) {
 		/* Dynamic remap */
-		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT,
 			AP2WF_DYNAMIC_REMAP_NO_1,
 			CONN_MCU_BUS_CR_BASE_ADDR);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR,
+			       "Write fail: AP2WF_DYNAMIC_REMAP_NO_1\n");
+			return FALSE;
+		}
 		u4Register &= BITS(0, 15);
 		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
 
@@ -884,10 +899,15 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	} else if (IS_WF_MCUSYS_VDNR_ADDR(u4Register)) {
 		/* Dynamic remap */
-		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT,
 			AP2WF_DYNAMIC_REMAP_NO_1,
 			WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_START);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR,
+			       "Write fail: AP2WF_DYNAMIC_REMAP_NO_1\n");
+			return FALSE;
+		}
 		u4Register &= BITS(0, 15);
 		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
 
