@@ -2650,6 +2650,12 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 
 	if (u4Status & BIT(SW_INT_WHOLE_RESET))
 		handle_whole_chip_reset(prAdapter);
+
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (u4Status & BIT(SW_INT_PMIC_RESET))
+		connv3_trigger_pmic_irq(CONNV3_DRV_TYPE_WIFI,
+			"fw trigger PMIC reset");
+#endif
 #endif
 
 #if defined(_HIF_PCIE)

@@ -1885,9 +1885,14 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		kalSetRstEvent(TRUE);
 	}
 
+	DBGLOG(INIT, INFO, "g_RstOffComp.done= %d\n",
+		g_RstOffComp.done);
+	if (g_RstOffComp.done != 0)
+		kalSendAeeWarning("WLAN", "reset off failed\n");
+
 	wait_for_completion(&g_RstOffComp);
 exit:
-	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+	DBGLOG(INIT, INFO, "Wi-Fi is off successfully\n");
 
 	if (reset_type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
 		glGetChipInfo((void **)&chip);
@@ -1919,7 +1924,10 @@ int wlan_post_reset_on_v3(unsigned int type)
 
 	DBGLOG(INIT, INFO, "type: %d\n", type);
 
-	if (type != CONNV3_CHIP_RST_POST_ACTION_NOTHING)
+	/* 0: CONNV3_CHIP_RST_POST_ACTION_NOTHING
+	 * 1: CONNV3_CHIP_RST_POST_ACTION_PMIC_SHUTDOWN
+	 */
+	if (type > 1)
 		goto exit;
 
 	ret = wlanFuncPreOnImpl();

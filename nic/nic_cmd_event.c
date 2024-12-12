@@ -3283,7 +3283,9 @@ uint32_t nicCfgGetSwSyncEMIOffset(struct ADAPTER *prAdapter,
 			break;
 		}
 		default:
-			break;
+			DBGLOG(INIT, WARN, "Get Invalid TAG:%d\n",
+				prInfo[u4Idx].tag);
+			return WLAN_STATUS_NOT_ACCEPTED;
 		}
 	}
 	return WLAN_STATUS_SUCCESS;
@@ -3731,10 +3733,12 @@ uint32_t nicEventQueryTxResource_v2(struct ADAPTER
 	return nicEventQueryTxResource_v1(prAdapter, pucEventBuf);
 }
 
-void nicParsingNicCapV2(struct ADAPTER *prAdapter,
+uint32_t nicParsingNicCapV2(struct ADAPTER *prAdapter,
 	uint32_t u4Type, uint8_t *pucEventBuf)
 {
+	uint32_t u4RetStatus = WLAN_STATUS_FAILURE;
 	uint32_t table_idx;
+	u_int8_t fgTagFound = FALSE;
 
 	for (table_idx = 0; table_idx < ARRAY_SIZE(gNicCapabilityV2InfoTable);
 	     table_idx++) {
@@ -3742,11 +3746,17 @@ void nicParsingNicCapV2(struct ADAPTER *prAdapter,
 		/* find the corresponding tag's handler */
 		if (gNicCapabilityV2InfoTable[table_idx].tag_type == u4Type &&
 		    gNicCapabilityV2InfoTable[table_idx].hdlr != NULL) {
-			gNicCapabilityV2InfoTable[table_idx].hdlr(
+			u4RetStatus = gNicCapabilityV2InfoTable[table_idx].hdlr(
 				prAdapter, pucEventBuf);
+			fgTagFound = TRUE;
 			break;
 		}
 	}
+
+	if (!fgTagFound)
+		DBGLOG(INIT, ERROR, "Find TAG: %d failed\n", u4Type);
+
+	return u4RetStatus;
 }
 
 void nicCmdEventQueryNicCapabilityV2(struct ADAPTER *prAdapter,
@@ -3757,6 +3767,9 @@ void nicCmdEventQueryNicCapabilityV2(struct ADAPTER *prAdapter,
 	struct NIC_CAPABILITY_V2_ELEMENT *prElement;
 	uint32_t tag_idx, offset;
 	uint16_t u2TotalElementNum;
+
+	if (pucEventBuf == NULL)
+		return;
 
 	offset = 0;
 	u2TotalElementNum = ARRAY_SIZE(gNicCapabilityV2InfoTable);
