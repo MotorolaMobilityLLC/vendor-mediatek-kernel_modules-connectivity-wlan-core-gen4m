@@ -138,8 +138,7 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *set, uint8_t ucBssIndex);
 static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
-	uint8_t ucBssidx);
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx);
 #endif
 
 /*******************************************************************************
@@ -1845,21 +1844,18 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 
 static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
-	uint8_t ucBssidx)
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx)
 {
 	uint32_t u4TotalScore = 0;
 	uint32_t u4TotalTput = 0;
 	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
 	uint8_t i;
-	uint8_t ucRfBandBmap = 0;
 	enum ENUM_MLO_MODE eMloMode = MLO_MODE_NUM;
 	uint8_t ucMaxSimuLinks = 0;
 
 	for (i = 0; i < ucLinkNum; i++) {
 		u4TotalScore += arLinks[i]->u2Score;
 		u4TotalTput += arLinks[i]->u4Tput;
-		ucRfBandBmap |= BIT(arLinks[i]->eBand);
 	}
 
 	if (ucLinkNum > 1) {
@@ -1890,21 +1886,13 @@ static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	}
 #endif
 
-
-	if (u4TotalScore > prAp->u4TotalScore) {
-		kalMemCopy(prAp->aprTarget, arLinks, sizeof(prAp->aprTarget));
-		prAp->ucLinkNum = ucLinkNum;
-		prAp->u4TotalScore = u4TotalScore;
-		prAp->u4TotalTput = u4TotalTput;
-		prAp->eMloMode = eMloMode;
-		prAp->ucMaxSimuLinks = ucMaxSimuLinks;
-
-		DBGLOG(APS, INFO,
-			"CAND[%d] RfBandBmap[0x%x] num[%d] score[%d] tput[%d] mode[%d] simu[%d]\n",
-			prAp->u4Index, ucRfBandBmap, prAp->ucLinkNum,
-			prAp->u4TotalScore, prAp->u4TotalTput,
-			prAp->eMloMode, prAp->ucMaxSimuLinks);
-	}
+	kalMemCopy(prScoreInfo->aprTarget, arLinks,
+		sizeof(prScoreInfo->aprTarget));
+	prScoreInfo->ucLinkNum = ucLinkNum;
+	prScoreInfo->u4TotalScore = u4TotalScore;
+	prScoreInfo->u4TotalTput = u4TotalTput;
+	prScoreInfo->eMloMode = eMloMode;
+	prScoreInfo->ucMaxSimuLinks = ucMaxSimuLinks;
 }
 
 #endif /* CFG_SUPPORT_802_11BE_MLO */

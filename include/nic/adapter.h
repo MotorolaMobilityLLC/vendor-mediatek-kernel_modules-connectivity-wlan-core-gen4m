@@ -1565,6 +1565,7 @@ struct WIFI_VAR {
 	uint8_t ucRBTMDelta;
 	uint8_t ucRssiWeight;
 	uint8_t ucCUWeight;
+	uint8_t ucRCMloTpPref;
 	int8_t cB1RssiFactorVal1;
 	int8_t cB1RssiFactorVal2;
 	int8_t cB1RssiFactorVal3;

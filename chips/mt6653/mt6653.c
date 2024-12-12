@@ -242,8 +242,7 @@ static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
-	uint8_t ucBssidx);
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx);
 static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *prSet,
 		uint8_t ucBssidx);
@@ -4762,8 +4761,7 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
-	uint8_t ucBssidx)
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx)
 {
 	uint32_t u4TotalScore = 0;
 	uint32_t u4TotalTput = 0;
@@ -4819,20 +4817,13 @@ static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 		break;
 	}
 
-	if (u4TotalScore > prAp->u4TotalScore) {
-		kalMemCopy(prAp->aprTarget, arLinks, sizeof(prAp->aprTarget));
-		prAp->ucLinkNum = ucLinkNum;
-		prAp->u4TotalScore = u4TotalScore;
-		prAp->u4TotalTput = u4TotalTput;
-		prAp->eMloMode = eMloMode;
-		prAp->ucMaxSimuLinks = ucMaxSimuLinks;
-
-		DBGLOG(APS, TRACE,
-			"CAND[%d] RfBandBmap[0x%x] num[%d] score[%d] tput[%d] mode[%d] simu[%d]\n",
-			prAp->u4Index, ucRfBandBmap, prAp->ucLinkNum,
-			prAp->u4TotalScore, prAp->u4TotalTput,
-			prAp->eMloMode, prAp->ucMaxSimuLinks);
-	}
+	kalMemCopy(prScoreInfo->aprTarget, arLinks,
+		sizeof(prScoreInfo->aprTarget));
+	prScoreInfo->ucLinkNum = ucLinkNum;
+	prScoreInfo->u4TotalScore = u4TotalScore;
+	prScoreInfo->u4TotalTput = u4TotalTput;
+	prScoreInfo->eMloMode = eMloMode;
+	prScoreInfo->ucMaxSimuLinks = ucMaxSimuLinks;
 }
 
 static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,

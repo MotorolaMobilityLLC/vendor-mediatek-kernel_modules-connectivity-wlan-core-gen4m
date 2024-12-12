@@ -30,6 +30,7 @@
 struct BSS_DESC;
 struct BSS_DESC_SET;
 struct AP_COLLECTION;
+struct AP_SCORE_INFO;
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -1698,8 +1699,7 @@ struct mt66xx_chip_info {
 		uint8_t ucBssIndex);
 	void (*apsUpdateTotalScore)(struct ADAPTER *prAdapter,
 		struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-		enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
-		uint8_t ucBssidx);
+		struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx);
 	void (*apsFillBssDescSet)(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *prSet,
 		uint8_t ucBssidx);

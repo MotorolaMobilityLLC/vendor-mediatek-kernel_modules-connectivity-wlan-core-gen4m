@@ -4472,7 +4472,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
 
 	DBGLOG(AIS, INFO,
-	       "ucJoinFailureCount=%d %d %d, Status=%d Reason=%d, eConnectionState=%d",
+	       "ucJoinFailureCount=%d %d %d, Status=%d Reason=%d, eConnectionState=%d\n",
 	       prStaRec->ucJoinFailureCount,
 	       prBssDesc->ucJoinFailureCount,
 	       prBssDesc->ucTempRejectCount,

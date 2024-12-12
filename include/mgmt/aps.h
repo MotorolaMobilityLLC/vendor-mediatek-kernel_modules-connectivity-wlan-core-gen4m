@@ -19,8 +19,8 @@
  */
 
 struct CU_INFO {
-	uint32_t ucTotalCount;
-	uint32_t ucTotalCu;
+	uint32_t u4TotalCount;
+	uint32_t u4TotalCu;
 	enum ENUM_BAND eBand;
 };
 
@@ -61,6 +61,18 @@ struct AP_COLLECTION {
 	uint32_t u4TotalTput;
 	uint32_t u4TotalScore;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
+};
+
+struct AP_SCORE_INFO {
+	struct BSS_DESC *aprTarget[APS_LINK_MAX];
+	uint8_t ucLinkNum;
+	enum ENUM_MLO_LINK_PLAN eLinkPlan;
+	uint8_t fgIsMatchBssid;
+	uint8_t fgIsMatchBssidHint;
+	enum ENUM_MLO_MODE eMloMode;
+	uint8_t ucMaxSimuLinks;
+	uint32_t u4TotalTput;
+	uint32_t u4TotalScore;
 };
 
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

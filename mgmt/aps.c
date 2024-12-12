@@ -88,9 +88,9 @@
 
 #define APS_AMSDU_HT_3K                         (3839)
 #define APS_AMSDU_HT_8K                         (7935)
-#define APS_AMSDU_VHT_HE_3K                     (3895)
-#define APS_AMSDU_VHT_HE_8K                     (7991)
-#define APS_AMSDU_VHT_HE_11K                    (11454)
+#define APS_AMSDU_VHT_HE_EHT_3K                 (3895)
+#define APS_AMSDU_VHT_HE_EHT_8K                 (7991)
+#define APS_AMSDU_VHT_HE_EHT_11K                (11454)
 
 #define WEIGHT_GBAND_COEX_DOWNGRADE		70 /* 0~100 */
 #define CU_6G_INDEX_OFFSET			256
@@ -262,6 +262,176 @@ enum ENUM_BAND g_aeLinkPlan[MLO_LINK_PLAN_NUM][APS_LINK_MAX] = {
 	{BAND_2G4, BAND_5G, BAND_6G},
 	{BAND_2G4, BAND_6G, BAND_6G},
 #endif
+};
+
+/* Minimum SNR required to achieve a certain bitrate. */
+struct minsnr_bitrate_entry {
+	int minsnr;
+	unsigned int bitrate; /* in Mbps */
+};
+
+/* VHT needs to be enabled in order to achieve MCS8 and MCS9 rates. */
+static const int vht_mcs = 8;
+
+static const struct minsnr_bitrate_entry vht20_table[] = {
+	{ 0, 0 },
+	{ 2, 6500 },   /* HT20 MCS0 */
+	{ 5, 13000 },  /* HT20 MCS1 */
+	{ 9, 19500 },  /* HT20 MCS2 */
+	{ 11, 26000 }, /* HT20 MCS3 */
+	{ 15, 39000 }, /* HT20 MCS4 */
+	{ 18, 52000 }, /* HT20 MCS5 */
+	{ 20, 58500 }, /* HT20 MCS6 */
+	{ 25, 65000 }, /* HT20 MCS7 */
+	{ 29, 78000 }, /* VHT20 MCS8 */
+	{ -1, 78000 }  /* SNR > 29 */
+};
+
+static const struct minsnr_bitrate_entry vht40_table[] = {
+	{ 0, 0 },
+	{ 5, 13500 },   /* HT40 MCS0 */
+	{ 8, 27000 },   /* HT40 MCS1 */
+	{ 12, 40500 },  /* HT40 MCS2 */
+	{ 14, 54000 },  /* HT40 MCS3 */
+	{ 18, 81000 },  /* HT40 MCS4 */
+	{ 21, 108000 }, /* HT40 MCS5 */
+	{ 23, 121500 }, /* HT40 MCS6 */
+	{ 28, 135000 }, /* HT40 MCS7 */
+	{ 32, 162000 }, /* VHT40 MCS8 */
+	{ 34, 180000 }, /* VHT40 MCS9 */
+	{ -1, 180000 }  /* SNR > 34 */
+};
+
+static const struct minsnr_bitrate_entry vht80_table[] = {
+	{ 0, 0 },
+	{ 8, 29300 },   /* VHT80 MCS0 */
+	{ 11, 58500 },  /* VHT80 MCS1 */
+	{ 15, 87800 },  /* VHT80 MCS2 */
+	{ 17, 117000 }, /* VHT80 MCS3 */
+	{ 21, 175500 }, /* VHT80 MCS4 */
+	{ 24, 234000 }, /* VHT80 MCS5 */
+	{ 26, 263300 }, /* VHT80 MCS6 */
+	{ 31, 292500 }, /* VHT80 MCS7 */
+	{ 35, 351000 }, /* VHT80 MCS8 */
+	{ 37, 390000 }, /* VHT80 MCS9 */
+	{ -1, 390000 }  /* SNR > 37 */
+};
+
+
+static const struct minsnr_bitrate_entry vht160_table[] = {
+	{ 0, 0 },
+	{ 11, 58500 },  /* VHT160 MCS0 */
+	{ 14, 117000 }, /* VHT160 MCS1 */
+	{ 18, 175500 }, /* VHT160 MCS2 */
+	{ 20, 234000 }, /* VHT160 MCS3 */
+	{ 24, 351000 }, /* VHT160 MCS4 */
+	{ 27, 468000 }, /* VHT160 MCS5 */
+	{ 29, 526500 }, /* VHT160 MCS6 */
+	{ 34, 585000 }, /* VHT160 MCS7 */
+	{ 38, 702000 }, /* VHT160 MCS8 */
+	{ 40, 780000 }, /* VHT160 MCS9 */
+	{ -1, 780000 }  /* SNR > 37 */
+};
+
+/* EHT needs to be enabled in order to achieve MCS12 and MCS13 rates. */
+#define EHT_MCS 12
+
+static const struct minsnr_bitrate_entry he20_table[] = {
+	{ 0, 0 },
+	{ 2, 8600 },    /* HE20 MCS0 */
+	{ 5, 17200 },   /* HE20 MCS1 */
+	{ 9, 25800 },   /* HE20 MCS2 */
+	{ 11, 34400 },  /* HE20 MCS3 */
+	{ 15, 51600 },  /* HE20 MCS4 */
+	{ 18, 68800 },  /* HE20 MCS5 */
+	{ 20, 77400 },  /* HE20 MCS6 */
+	{ 25, 86000 },  /* HE20 MCS7 */
+	{ 29, 103200 }, /* HE20 MCS8 */
+	{ 31, 114700 }, /* HE20 MCS9 */
+	{ 34, 129000 }, /* HE20 MCS10 */
+	{ 36, 143400 }, /* HE20 MCS11 */
+	{ 39, 154900 }, /* EHT20 MCS12 */
+	{ 42, 172100 }, /* EHT20 MCS13 */
+	{ -1, 172100 }  /* SNR > 42 */
+};
+
+static const struct minsnr_bitrate_entry he40_table[] = {
+	{ 0, 0 },
+	{ 5, 17200 },   /* HE40 MCS0 */
+	{ 8, 34400 },   /* HE40 MCS1 */
+	{ 12, 51600 },  /* HE40 MCS2 */
+	{ 14, 68800 },  /* HE40 MCS3 */
+	{ 18, 103200 }, /* HE40 MCS4 */
+	{ 21, 137600 }, /* HE40 MCS5 */
+	{ 23, 154900 }, /* HE40 MCS6 */
+	{ 28, 172100 }, /* HE40 MCS7 */
+	{ 32, 206500 }, /* HE40 MCS8 */
+	{ 34, 229400 }, /* HE40 MCS9 */
+	{ 37, 258100 }, /* HE40 MCS10 */
+	{ 39, 286800 }, /* HE40 MCS11 */
+	{ 42, 309500 }, /* EHT40 MCS12 */
+	{ 45, 344100 }, /* EHT40 MCS13 */
+	{ -1, 344100 }  /* SNR > 45 */
+};
+
+static const struct minsnr_bitrate_entry he80_table[] = {
+	{ 0, 0 },
+	{ 8, 36000 },   /* HE80 MCS0 */
+	{ 11, 72100 },  /* HE80 MCS1 */
+	{ 15, 108100 }, /* HE80 MCS2 */
+	{ 17, 144100 }, /* HE80 MCS3 */
+	{ 21, 216200 }, /* HE80 MCS4 */
+	{ 24, 288200 }, /* HE80 MCS5 */
+	{ 26, 324300 }, /* HE80 MCS6 */
+	{ 31, 360300 }, /* HE80 MCS7 */
+	{ 35, 432400 }, /* HE80 MCS8 */
+	{ 37, 480400 }, /* HE80 MCS9 */
+	{ 40, 540400 }, /* HE80 MCS10 */
+	{ 42, 600500 }, /* HE80 MCS11 */
+	{ 45, 648500 }, /* EHT80 MCS12 */
+	{ 48, 720600 }, /* EHT80 MCS13 */
+	{ -1, 720600 }  /* SNR > 48 */
+};
+
+
+static const struct minsnr_bitrate_entry he160_table[] = {
+	{ 0, 0 },
+	{ 11, 72100 },   /* HE160 MCS0 */
+	{ 14, 144100 },  /* HE160 MCS1 */
+	{ 18, 216200 },  /* HE160 MCS2 */
+	{ 20, 288200 },  /* HE160 MCS3 */
+	{ 24, 432400 },  /* HE160 MCS4 */
+	{ 27, 576500 },  /* HE160 MCS5 */
+	{ 29, 648500 },  /* HE160 MCS6 */
+	{ 34, 720600 },  /* HE160 MCS7 */
+	{ 38, 864700 },  /* HE160 MCS8 */
+	{ 40, 960800 },  /* HE160 MCS9 */
+	{ 43, 1080900 }, /* HE160 MCS10 */
+	{ 45, 1201000 }, /* HE160 MCS11 */
+	{ 48, 1297100 }, /* EHT160 MCS12 */
+	{ 51, 1441200 }, /* EHT160 MCS13 */
+	{ -1, 1441200 }  /* SNR > 51 */
+};
+
+/* See IEEE P802.11be/D2.0, Table 36-86: EHT-MCSs for 4x996-tone RU, NSS,u = 1
+ */
+static const struct minsnr_bitrate_entry eht320_table[] = {
+	{ 0, 0 },
+	{ 14, 144100 },   /* EHT320 MCS0 */
+	{ 17, 288200 },   /* EHT320 MCS1 */
+	{ 21, 432400 },   /* EHT320 MCS2 */
+	{ 23, 576500 },   /* EHT320 MCS3 */
+	{ 27, 864700 },   /* EHT320 MCS4 */
+	{ 30, 1152900 },  /* EHT320 MCS5 */
+	{ 32, 1297100 },  /* EHT320 MCS6 */
+	{ 37, 1441200 },  /* EHT320 MCS7 */
+	{ 41, 1729400 },  /* EHT320 MCS8 */
+	{ 43, 1921500 },  /* EHT320 MCS9 */
+	{ 46, 2161800 },  /* EHT320 MCS10 */
+	{ 48, 2401900 },  /* EHT320 MCS11 */
+	{ 51, 2594100 },  /* EHT320 MCS12 */
+	{ 54, 2882400 },  /* EHT320 MCS13 */
+	{ -1, 2882400 }   /* SNR > 54 */
 };
 
 /*******************************************************************************
@@ -558,25 +728,6 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 {
 	uint16_t bssAmsduLen = 0, amsduLen = 0;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (bss->eBand == BAND_6G) {
-		bssAmsduLen = (bss->u2MaximumMpdu &
-			HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
-
-		if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_8K)
-			amsduLen = APS_AMSDU_VHT_HE_8K;
-		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_11K)
-			amsduLen = APS_AMSDU_VHT_HE_11K;
-		else if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_3K)
-			amsduLen = APS_AMSDU_VHT_HE_3K;
-		else {
-			DBGLOG(APS, INFO,
-				"Unexpected HE maximum mpdu length\n");
-			amsduLen = APS_AMSDU_VHT_HE_3K;
-		}
-		return amsduLen;
-	}
-#endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (bss->fgIsEHTPresent == TRUE &&
 	    (ad->rWifiVar.fgDisSecurityCheck ||
@@ -585,46 +736,224 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
 
 		if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_8K)
-			amsduLen = APS_AMSDU_VHT_HE_8K;
+			amsduLen = APS_AMSDU_VHT_HE_EHT_8K;
 		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_11K)
-			amsduLen = APS_AMSDU_VHT_HE_11K;
+			amsduLen = APS_AMSDU_VHT_HE_EHT_11K;
 		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_3K)
-			amsduLen = APS_AMSDU_VHT_HE_3K;
+			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
 		else {
 			DBGLOG(APS, INFO,
-				"Unexpected HE maximum mpdu length\n");
-			amsduLen = APS_AMSDU_VHT_HE_3K;
+			       "Unexpected EHT maximum mpdu length, %d\n",
+			       bssAmsduLen);
+			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
 		}
 		return amsduLen;
 	}
 #endif
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (bss->eBand == BAND_6G) {
+		bssAmsduLen = (bss->u2MaximumMpdu &
+			HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
+
+		if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_8K)
+			amsduLen = APS_AMSDU_VHT_HE_EHT_8K;
+		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_11K)
+			amsduLen = APS_AMSDU_VHT_HE_EHT_11K;
+		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_3K)
+			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
+		else {
+			DBGLOG(APS, INFO,
+				"Unexpected HE maximum mpdu length\n");
+			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
+		}
+		return amsduLen;
+	}
+#endif
+
 	if (bss->u2MaximumMpdu) {
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			VHT_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
 		if (bss->fgIsVHTPresent) {
 			if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_8K)
-				amsduLen = APS_AMSDU_VHT_HE_8K;
+				amsduLen = APS_AMSDU_VHT_HE_EHT_8K;
 			else if (bssAmsduLen ==
 				VHT_CAP_INFO_MAX_MPDU_LEN_11K)
-				amsduLen = APS_AMSDU_VHT_HE_11K;
+				amsduLen = APS_AMSDU_VHT_HE_EHT_11K;
 			else if (bssAmsduLen ==
 				VHT_CAP_INFO_MAX_MPDU_LEN_3K)
-				amsduLen = APS_AMSDU_VHT_HE_3K;
+				amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
 			else {
 				DBGLOG(APS, INFO,
 					"Unexpected VHT maximum mpdu length\n");
-				amsduLen = APS_AMSDU_VHT_HE_3K;
+				amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
 			}
 		} else
 			amsduLen = APS_AMSDU_HT_8K;
 	} else {
 		if (bss->fgIsVHTPresent)
-			amsduLen = APS_AMSDU_VHT_HE_3K;
+			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
 		else
 			amsduLen = APS_AMSDU_HT_3K;
 	}
 
 	return amsduLen;
+}
+
+static unsigned int interpolate_rate(int snr, int snr0, int snr1,
+				     int rate0, int rate1)
+{
+	return rate0 + (snr - snr0) * (rate1 - rate0) / (snr1 - snr0);
+}
+
+static unsigned int max_rate(const struct minsnr_bitrate_entry table[],
+			     int snr, bool vht)
+{
+	const struct minsnr_bitrate_entry *prev, *entry = table;
+
+	while ((entry->minsnr != -1) &&
+	       (snr >= entry->minsnr) &&
+	       (vht || entry - table <= vht_mcs))
+		entry++;
+	if (entry == table)
+		return entry->bitrate;
+	prev = entry - 1;
+	if (entry->minsnr == -1 || (!vht && entry - table > vht_mcs))
+		return prev->bitrate;
+	return interpolate_rate(snr, prev->minsnr, entry->minsnr, prev->bitrate,
+				entry->bitrate);
+}
+
+static unsigned int max_he_eht_rate(const struct minsnr_bitrate_entry table[],
+				    int snr, bool eht)
+{
+	const struct minsnr_bitrate_entry *prev, *entry = table;
+
+	while (entry->minsnr != -1 && snr >= entry->minsnr &&
+	       (eht || entry - table <= EHT_MCS))
+		entry++;
+	if (entry == table)
+		return 0;
+	prev = entry - 1;
+	if (entry->minsnr == -1 || (!eht && entry - table > EHT_MCS))
+		return prev->bitrate;
+	return interpolate_rate(snr, prev->minsnr, entry->minsnr,
+				prev->bitrate, entry->bitrate);
+}
+
+uint32_t apsGetMaxRate(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
+{
+	uint32_t rate = 5400; /* basic rate */
+	/* TODO: get noise or snr when scan done */
+	int32_t noise = bss->eBand == BAND_2G4 ? -89 : -92;
+	int32_t snr = RCPI_TO_dBm(bss->ucRCPI) - noise;
+	int32_t bw = MAX_BW_20MHZ, sta_bw = MAX_BW_20MHZ, ap_bw = MAX_BW_20MHZ;
+	int32_t	gen = 0, sta_gen = 0, ap_gen = 0;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+
+	if (prWifiVar->ucStaHt)
+		sta_gen = 4;
+	if (bss->fgIsHTPresent)
+		ap_gen = 4;
+
+	if (prWifiVar->ucStaVht)
+		sta_gen = 5;
+	if (bss->fgIsVHTPresent)
+		ap_gen = 5;
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (prWifiVar->ucStaVht)
+		sta_gen = 6;
+	if (bss->fgIsHEPresent)
+		ap_gen = 6;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prWifiVar->ucStaEht)
+		sta_gen = 7;
+	if (bss->fgIsEHTPresent == TRUE &&
+	    (prWifiVar->fgDisSecurityCheck ||
+	     rsnIsKeyMgmtForEht(ad, bss, bidx)))
+		ap_gen = 7;
+#endif
+
+	if (bss->eBand == BAND_2G4)
+		sta_bw = prWifiVar->ucSta2gBandwidth;
+	if (bss->eBand == BAND_5G)
+		sta_bw = prWifiVar->ucSta5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (bss->eBand == BAND_6G)
+		sta_bw = prWifiVar->ucSta6gBandwidth;
+#endif
+	ap_bw = rlmGetBssOpBwByChannelWidth(bss->eSco, bss->eChannelWidth);
+
+	/* get min wifi generation & bandwidth */
+	gen = kal_min_t(int32_t, ap_gen, sta_gen);
+	bw = kal_min_t(int32_t, ap_bw, sta_bw);
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (gen == 7) {
+		uint32_t boost = 30;
+
+		if (bw == MAX_BW_320_2MHZ || bw == MAX_BW_320_1MHZ)
+			rate = max_he_eht_rate(eht320_table, snr, TRUE);
+		else if (bw == MAX_BW_160MHZ || bw == MAX_BW_80_80_MHZ)
+			rate = max_he_eht_rate(he160_table, snr, TRUE);
+		else if (bw == MAX_BW_80MHZ)
+			rate = max_he_eht_rate(he80_table, snr, TRUE);
+		else if (bw == MAX_BW_40MHZ)
+			rate = max_he_eht_rate(he40_table, snr, TRUE);
+		else
+			rate = max_he_eht_rate(he20_table, snr, TRUE);
+		rate += boost;
+
+		goto done;
+	}
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (gen == 6) {
+		uint32_t boost = 20;
+
+		if (bw == MAX_BW_160MHZ || bw == MAX_BW_80_80_MHZ)
+			rate = max_he_eht_rate(he160_table, snr, FALSE);
+		else if (bw == MAX_BW_80MHZ)
+			rate = max_he_eht_rate(he80_table, snr, FALSE);
+		else if (bw == MAX_BW_40MHZ)
+			rate = max_he_eht_rate(he40_table, snr, FALSE);
+		else
+			rate = max_he_eht_rate(he20_table, snr, FALSE);
+		rate += boost;
+
+		goto done;
+	}
+#endif
+
+	if (gen == 5) {
+		uint32_t boost = 10;
+
+		if (bw == MAX_BW_160MHZ || bw == MAX_BW_80_80_MHZ)
+			rate = max_rate(vht160_table, snr, TRUE) + boost;
+		else if (bw == MAX_BW_80MHZ)
+			rate = max_rate(vht80_table, snr, TRUE) + boost;
+		else if (bw == MAX_BW_40MHZ)
+			rate = max_rate(vht40_table, snr, TRUE) + boost;
+		else
+			rate = max_rate(vht20_table, snr, TRUE) + boost;
+		rate += boost;
+
+		goto done;
+	}
+
+	if (gen == 4) {
+		if (bw == MAX_BW_40MHZ)
+			rate = max_rate(vht40_table, snr, FALSE);
+		else
+			rate = max_rate(vht20_table, snr, FALSE);
+		goto done;
+	}
+
+done:
+	return rate;
 }
 
 void apsRecordCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss,
@@ -641,8 +970,8 @@ void apsRecordCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss,
 #endif
 
 	aps->arCuInfo[u2CuOffset].eBand = bss->eBand;
-	aps->arCuInfo[u2CuOffset].ucTotalCount++;
-	aps->arCuInfo[u2CuOffset].ucTotalCu += bss->ucChnlUtilization;
+	aps->arCuInfo[u2CuOffset].u4TotalCount++;
+	aps->arCuInfo[u2CuOffset].u4TotalCu += bss->ucChnlUtilization;
 }
 
 struct RF_CHANNEL_INFO apsGetRfChannelInfo(struct ADAPTER *prAdapter,
@@ -766,22 +1095,20 @@ uint8_t apsGetCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 		u2CuOffset = CU_6G_INDEX_OFFSET + bss->ucChannelNum;
 #endif
 
-	return aps->arCuInfo[u2CuOffset].ucTotalCount == 0 ? 0 :
-	       aps->arCuInfo[u2CuOffset].ucTotalCu /
-	       aps->arCuInfo[u2CuOffset].ucTotalCount;
+	return aps->arCuInfo[u2CuOffset].u4TotalCount == 0 ? 0 :
+	       aps->arCuInfo[u2CuOffset].u4TotalCu /
+	       aps->arCuInfo[u2CuOffset].u4TotalCount;
 }
 
 static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint8_t bidx)
 {
 	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
-	uint8_t fgIsGBandCoex = aps->fgIsGBandCoex;
-	uint8_t rcpi = 0, ppduDuration = 5, ucChannelCuInfo = 0;
+	uint8_t fgIsGBandCoex = aps->fgIsGBandCoex, ucChannelCuInfo = 0;
 	uint16_t amsduByte = apsGetAmsduByte(ad, bss, bidx);
-	uint16_t baSize = mpduLen[bss->eChannelWidth];
-	uint16_t slot = 0;
-	uint32_t airTime = 0, idle = 0, ideal = 0, tput = 0, est = 0;
-	int32_t a = 0, b = 0, delta = 5;
+	uint32_t baSize = 32, slot = 0, rcpi = 0, ppduDuration = 5;
+	uint32_t airTime = 0, ideal = 0, tput = 0, est = 0;
+	int32_t idle = 0, a = 0, b = 0, delta = 5;
 	uint8_t *pucIEs = NULL;
 
 	if (aps->ucConsiderEsp) {
@@ -795,6 +1122,42 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		airTime = airTime >> 1;
 		if (pucIEs[2])
 			ppduDuration = pucIEs[2];
+
+		/* Unit: kbps */
+		ideal = baSize * amsduByte * 8 / ppduDuration;
+		rcpi = bss->ucRCPI;
+		/* Consider the TxPwr only when the RCPI is sufficiently good */
+		if (bss->fgExistTxPwr && bss->cTransmitPwr < 0 && rcpi > 100)
+			rcpi = rcpi - (bss->cTransmitPwr > -10 ?
+				bss->cTransmitPwr : -10);
+
+		rcpi = rcpi > 220 ? 220 : rcpi;
+		/* Adjust RCPI based on simultaneous equation */
+		if (rcpi > 100) {
+			/* RCPI from 220 to 100, peak(1) to breakpoint
+			 * (1 - delta/100), y = ax + b, through 2 points
+			 * (220, 1) (100, 1 - delta /100)
+			 */
+			a = (delta * 60000 / 100) / 120;
+			b = 60000 - ((delta * 60000 / 100) * (220 / 120));
+		} else if (rcpi >= 50) {
+			/* RCPI from 100 to 50, breakpoint(1 - delta /100) to
+			 * zero(0) y = ax + b, through 2 points
+			 * (100, 1 - delta /100) (50, 0)
+			 */
+			a = (60000 - (delta * 60000 / 100)) / 50;
+			b = (delta * 60000 / 100) - 60000;
+		} else {
+			/* RCPI less than 50, estimated tput will be zero */
+			a = 0;
+			b = 0;
+		}
+		tput = (uint32_t)((uint64_t)ideal *
+			(uint64_t)(a * rcpi + b) / 60000);
+		est = PERCENTAGE(airTime, 255) * tput / 100;
+
+		if (bss->fgIsRWMValid && bss->u2ReducedWanMetrics < est)
+			est = bss->u2ReducedWanMetrics;
 	} else {
 		if (bss->fgExistBssLoadIE) {
 			airTime = 255 - bss->ucChnlUtilization;
@@ -808,58 +1171,15 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 
 				/* 90000 ms = 90ms dwell time to micro sec */
 				idle = (slot * 9 * 100) / (90000);
-				airTime  = idle > 100 ? 100 : idle;
-				/* Give a default value of air time */
-				if (airTime == 0)
-					airTime = 45;
+				airTime  = kal_max_t(int32_t, idle, 50);
 
 				/* nomalized to 0~255 */
 				airTime = airTime * 255 / 100;
 			}
-
-#if (CFG_EXT_ROAMING == 1)
-			/* Cannot find any CU info in the same channel */
-			if (ucChannelCuInfo == 0) {
-				/* Apply default CU(50%) */
-				ucChannelCuInfo = 128;
-			}
-#endif
 		}
-	}
 
-	/* Unit: mbps */
-	ideal = baSize * amsduByte * 8 / ppduDuration;
-	rcpi = bss->ucRCPI;
-	/* Consider the TxPwr only when the RCPI is sufficiently good */
-	if (bss->fgExistTxPwr && bss->cTransmitPwr < 0 && rcpi > 100)
-		rcpi = rcpi -
-			(bss->cTransmitPwr > -10 ? bss->cTransmitPwr : -10);
-
-	rcpi = rcpi > 220 ? 220 : rcpi;
-	/* Adjust RCPI based on simultaneous equation */
-	if (rcpi > 100) {
-		/* RCPI from 220 to 100, peak(1) to breakpoint(1 - delta/100)
-		 * y = ax + b, through 2 points (220, 1) (100, 1 - delta /100)
-		 */
-		a = (delta * 60000 / 100) / 120;
-		b = 60000 - ((delta * 60000 / 100) * (220 / 120));
-	} else if (rcpi >= 50) {
-		/* RCPI from 100 to 50, breakpoint(1 - delta /100) to zero(0)
-		 * y = ax + b, through 2 points (100, 1 - delta /100) (50, 0)
-		 */
-		a = (60000 - (delta * 60000 / 100)) / 50;
-		b = (delta * 60000 / 100) - 60000;
-	} else {
-		/* RCPI less than 50, estimated tput will be zero */
-		a = 0;
-		b = 0;
-	}
-	tput = (uint32_t)((uint64_t)ideal * (uint64_t)(a * rcpi + b) / 60000);
-	est = PERCENTAGE(airTime, 255) * tput / 100;
-
-	if (aps->ucConsiderEsp) {
-		if (bss->fgIsRWMValid && bss->u2ReducedWanMetrics < est)
-			est = bss->u2ReducedWanMetrics;
+		tput = apsGetMaxRate(ad, bss, bidx); /* kbps */
+		est = PERCENTAGE(airTime, 255) * tput / 100;
 	}
 
 #if (CFG_EXT_ROAMING == 1)
@@ -874,10 +1194,12 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_MCC_DOWNGRADE / 100);
 
 	DBGLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d]\n",
-		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
-		a, b, rcpi, tput, airTime, slot,
-		fgIsGBandCoex, bss->fgIsMCC, bss->cTransmitPwr);
+		"] EST:%d tput[%d] bw[%d] rssi[%d] CU[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
+		MAC2STR(bss->aucBSSID), est, tput,
+		rlmGetBssOpBwByChannelWidth(bss->eSco, bss->eChannelWidth),
+		RCPI_TO_dBm(bss->ucRCPI), ucChannelCuInfo, airTime, slot,
+		fgIsGBandCoex, bss->fgIsMCC, bss->cTransmitPwr,
+		ideal, baSize, amsduByte, a, b);
 
 	return est;
 }
@@ -1787,7 +2109,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
+uint8_t apsIntraNeedReplaceCandi(struct ADAPTER *ad,
 	struct BSS_DESC *cand, struct BSS_DESC *curr,
 	uint16_t cand_score, uint16_t curr_score,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
@@ -1896,7 +2218,7 @@ try_again:
 		}
 
 		score = bss->u2Score;
-		if (apsIntraNeedReplace(ad, cand, bss,
+		if (apsIntraNeedReplaceCandi(ad, cand, bss,
 			goal_score, score, reason, bidx)) {
 			cand = bss;
 			goal_score = score;
@@ -1923,47 +2245,38 @@ done:
 	return cand;
 }
 
-void apsUpdateTotalScore(struct ADAPTER *ad,
-	struct BSS_DESC *links[], uint8_t link_num,
-	enum ENUM_MLO_LINK_PLAN curr_plan,
-	struct AP_COLLECTION *ap, uint8_t bidx)
+void apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx)
 {
-	uint32_t total_score = 0;
-	uint32_t total_tput = 0;
+	uint32_t u4TotalScore = 0;
+	uint32_t u4TotalTput = 0;
 #if (CFG_EXT_ROAMING == 0)
 	uint8_t i;
 
-	for (i = 0; i < link_num; i++) {
-		total_score += links[i]->u2Score;
-		total_tput += links[i]->u4Tput;
+	for (i = 0; i < ucLinkNum; i++) {
+		u4TotalScore += arLinks[i]->u2Score;
+		u4TotalTput += arLinks[i]->u4Tput;
 	}
 #else
-	total_score = links[0]->u2Score;
-	total_tput = links[0]->u4Tput;
+	u4TotalScore = arLinks[0]->u2Score;
+	u4TotalTput = arLinks[0]->u4Tput;
 
-	if (link_num > 1) {
-		total_score =
-			total_score * (ad->rWifiVar.ucRCMloTpPref + 100) / 100;
-		total_tput =
-			total_tput * (ad->rWifiVar.ucRCMloTpPref + 100) / 100;
+	if (ucLinkNum > 1) {
+		u4TotalScore = u4TotalScore *
+			(prAdapter->rWifiVar.ucRCMloTpPref + 100) / 100;
+		u4TotalTput = u4TotalTput *
+			(prAdapter->rWifiVar.ucRCMloTpPref + 100) / 100;
 	}
 #endif
 
-	if (total_score > ap->u4TotalScore) {
-		kalMemCopy(ap->aprTarget, links, sizeof(ap->aprTarget));
-		ap->ucLinkNum = link_num;
-		ap->u4TotalScore = total_score;
-		ap->u4TotalTput = total_tput;
-		ap->eMloMode = MLO_MODE_STR;
-		ap->ucMaxSimuLinks = link_num - 1;
-
-		DBGLOG(APS, TRACE,
-			"CAND[%d] num[%d,%s] score[%d] tput[%d] mode[%d] simu[%d]\n",
-			ap->u4Index, ap->ucLinkNum,
-			apsGetLinkPlanStr(curr_plan),
-			ap->u4TotalScore, ap->u4TotalTput, ap->eMloMode,
-			ap->ucMaxSimuLinks);
-	}
+	kalMemCopy(prScoreInfo->aprTarget, arLinks,
+		sizeof(prScoreInfo->aprTarget));
+	prScoreInfo->ucLinkNum = ucLinkNum;
+	prScoreInfo->u4TotalScore = u4TotalScore;
+	prScoreInfo->u4TotalTput = u4TotalTput;
+	prScoreInfo->eMloMode = MLO_MODE_STR;
+	prScoreInfo->ucMaxSimuLinks = ucLinkNum - 1;
 }
 
 uint32_t apsSortGetScore(struct BSS_DESC *candi)
@@ -1972,13 +2285,12 @@ uint32_t apsSortGetScore(struct BSS_DESC *candi)
 		if (candi->fgIsMatchBssid || candi->fgIsMatchBssidHint)
 			return UINT_MAX;
 		else if (!candi->fgDriverGen)
-			return candi->u2Score;
+			return candi->u4Tput;
 	}
 	return 0;
 }
 
-uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
-	enum ENUM_MLO_LINK_PLAN *curr_plan)
+uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[])
 {
 	struct BSS_DESC *bss;
 	int i, j;
@@ -2004,8 +2316,6 @@ uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
 		if (candi[i])
 			link_num++;
 	}
-
-	*curr_plan = apsLinksToLinkPlan(candi, link_num);
 
 	return link_num;
 }
@@ -2142,6 +2452,61 @@ uint8_t apsLinkPlanAllow(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	return TRUE;
 }
 
+uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
+	struct AP_COLLECTION *ap, struct AP_SCORE_INFO *score_info,
+	enum ENUM_ROAMING_REASON reason, uint8_t min_rfband_bmap, uint8_t bidx)
+{
+	uint8_t rfband_bmap = 0;
+	int i;
+
+	/* find matched link plan by final link combination */
+	score_info->eLinkPlan = apsLinksToLinkPlan(score_info->aprTarget,
+			score_info->ucLinkNum);
+	if (!apsLinkPlanAllow(ad, ap, score_info->eLinkPlan))
+		return FALSE;
+
+	for (i = 0; i < score_info->ucLinkNum; i++) {
+		struct BSS_DESC *bss = score_info->aprTarget[i];
+
+		if (bss) {
+			rfband_bmap |= BIT(bss->eBand);
+			if (bss->fgIsMatchBssid)
+				score_info->fgIsMatchBssid = TRUE;
+			if (bss->fgIsMatchBssidHint)
+				score_info->fgIsMatchBssidHint = TRUE;
+		}
+	}
+
+#if (CFG_EXT_ROAMING == 1)
+	if (reason == ROAMING_REASON_IDLE &&
+	    rfband_bmap <= min_rfband_bmap)
+		return FALSE;
+#endif
+
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+	if (mldNeedSingleBandMlsr56(ad, score_info->eLinkPlan) &&
+	    score_info->ucLinkNum == 2) {
+		score_info->eMloMode = MLO_MODE_SB_MLSR;
+		score_info->ucMaxSimuLinks = 0;
+		DBGLOG(APS, INFO, "Force to select MLSR 5+6\n");
+		return TRUE;
+	}
+#endif
+
+	if ((!score_info->fgIsMatchBssid && ap->fgIsMatchBssid) ||
+	    (!score_info->fgIsMatchBssidHint && ap->fgIsMatchBssidHint))
+		return FALSE;
+
+	if ((score_info->fgIsMatchBssid && !ap->fgIsMatchBssid) ||
+	    (score_info->fgIsMatchBssidHint && !ap->fgIsMatchBssidHint) ||
+	    (score_info->u4TotalTput > ap->u4TotalTput) ||
+	    (score_info->u4TotalTput == ap->u4TotalTput &&
+	     score_info->ucLinkNum > ap->ucLinkNum))
+		return TRUE;
+
+	return FALSE;
+}
+
 void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint16_t min_score, uint8_t min_rfband_bmap,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
@@ -2274,14 +2639,12 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 	/* select highest score link plan */
 	for (i = 0; i < MLO_LINK_PLAN_NUM; i++) {
+		struct AP_SCORE_INFO score_info = {0};
 		struct BSS_DESC *candi[APS_LINK_MAX] = {0};
 		uint8_t found = FALSE;
 		uint32_t akm = 0;
 		uint16_t best = 0;
 		uint8_t link_num;
-#if (CFG_EXT_ROAMING == 1)
-		uint8_t rfband_bmap;
-#endif
 
 		/* skip disallowed plan */
 		if (!(allow_plan_bitmap & BIT(i)))
@@ -2339,31 +2702,37 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			}
 		}
 
-		link_num = apsSortTrimCandiByScore(ad, candi, &curr_plan);
+		/* sort links by score */
+		link_num = apsSortTrimCandiByScore(ad, candi);
 
-#if (CFG_EXT_ROAMING == 1)
-		rfband_bmap = apsLinksToRfBandBmap(
-			ap->aprTarget, ap->ucLinkNum);
-		if (reason == ROAMING_REASON_IDLE &&
-		    rfband_bmap <= min_rfband_bmap)
-			continue;
-#endif
-
+		/* update total score/mode/max simu.. of link plan */
 		if (prChipInfo->apsUpdateTotalScore)
 			prChipInfo->apsUpdateTotalScore(ad,
-				candi, link_num, curr_plan, ap, bidx);
+				candi, link_num, &score_info, bidx);
 		else
 			apsUpdateTotalScore(ad,
-				candi, link_num, curr_plan, ap, bidx);
+				candi, link_num, &score_info, bidx);
 
-#if (CFG_SINGLE_BAND_MLSR_56 == 1)
-		if (mldNeedSingleBandMlsr56(ad, curr_plan) && link_num == 2) {
-			kalMemCopy(ap->aprTarget, candi, sizeof(ap->aprTarget));
-			ap->ucLinkNum = 2;
-			ap->eMloMode = MLO_MODE_SB_MLSR;
-			ap->ucMaxSimuLinks = 0;
+		if (apsIntraNeedReplace(ad, ap, &score_info, reason,
+			min_rfband_bmap, bidx)) {
+			kalMemCopy(ap->aprTarget, score_info.aprTarget,
+				sizeof(ap->aprTarget));
+			ap->ucLinkNum = score_info.ucLinkNum;
+			ap->u4TotalScore = score_info.u4TotalScore;
+			ap->u4TotalTput = score_info.u4TotalTput;
+			ap->eMloMode = score_info.eMloMode;
+			ap->ucMaxSimuLinks = score_info.ucMaxSimuLinks;
+			ap->eLinkPlan = score_info.eLinkPlan;
+			ap->fgIsMatchBssid = score_info.fgIsMatchBssid;
+			ap->fgIsMatchBssidHint = score_info.fgIsMatchBssidHint;
+
+			DBGLOG(APS, TRACE,
+				"CAND[%d] num[%d,%s] score[%d] tput[%d] mode[%d] simu[%d]\n",
+				ap->u4Index, ap->ucLinkNum,
+				apsGetLinkPlanStr(ap->eLinkPlan),
+				ap->u4TotalScore, ap->u4TotalTput,
+				ap->eMloMode, ap->ucMaxSimuLinks);
 		}
-#endif
 	}
 
 	if (ap->ucLinkNum == 0)
@@ -2379,12 +2748,6 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 		if (IS_AIS_CONN_BSSDESC(ais, cand))
 			k++;
-
-		if (cand->fgIsMatchBssid)
-			ap->fgIsMatchBssid = TRUE;
-
-		if (cand->fgIsMatchBssidHint)
-			ap->fgIsMatchBssidHint = TRUE;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mld_addr = cand->rMlInfo.aucMldAddr;
@@ -2410,8 +2773,6 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 	if (k == ap->ucLinkNum)
 		ap->fgIsAllLinkConnected = TRUE;
-
-	ap->eLinkPlan = apsLinksToLinkPlan(ap->aprTarget, ap->ucLinkNum);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	block_bmap = ap->prBlock ? ap->prBlock->u4BlockBmap : 0;
@@ -2491,21 +2852,7 @@ uint32_t apsCalculateFinalScore(struct ADAPTER *ad,
 
 #if (CFG_EXT_ROAMING == 1)
 	/* Customization */
-	switch (reason) {
-#if CFG_SUPPORT_ROAMING
-	case ROAMING_REASON_POOR_RCPI:
-	case ROAMING_REASON_INACTIVE:
-	case ROAMING_REASON_RETRY:
-	case ROAMING_REASON_HIGH_CU:
-	case ROAMING_REASON_BTM:
-		score = ap->u4TotalTput;
-		break;
-#endif
-	default:
-		score = ap->u4TotalScore;
-		break;
-	}
-
+	score = ap->u4TotalTput;
 #else
 	/* Common */
 	switch (reason) {
