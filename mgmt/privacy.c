@@ -232,7 +232,8 @@ u_int8_t secCheckClassError(struct ADAPTER *prAdapter,
 
 	if (ucClassErr || ucAisDisconnect) {
 		if (EAPOL_KEY_NOT_KEY !=
-			secGetEapolKeyType((uint8_t *) prSwRfb->pvHeader)) {
+		    secGetEapolKeyType((uint8_t *) prSwRfb->pvHeader) ||
+		    secIsEapPacket((uint8_t *) prSwRfb->pvHeader)) {
 			DBGLOG(RSN, WARN,
 			       "EAPOL key found, return TRUE back");
 			return TRUE;
@@ -1428,11 +1429,9 @@ void secPostUpdateAddr(struct ADAPTER *prAdapter,
 	}
 }
 
-/* return the type of Eapol frame. */
 uint8_t *secGetEthBody(uint8_t *pucPkt)
 {
 	uint8_t *pucEthBody = NULL;
-	uint8_t ucEapolType;
 	uint16_t u2EtherTypeLen;
 	uint8_t ucEthTypeLenOffset = ETHER_HEADER_LEN - ETHER_TYPE_LEN;
 
@@ -1446,22 +1445,27 @@ uint8_t *secGetEthBody(uint8_t *pucPkt)
 	if (u2EtherTypeLen != ETH_P_1X)
 		return NULL;
 	pucEthBody = &pucPkt[ucEthTypeLenOffset + ETHER_TYPE_LEN];
-	ucEapolType = pucEthBody[1];
-	if (ucEapolType != 3)	/* eapol key type */
-		return NULL;
 
 	return pucEthBody;
 }
 
+/* return the type of Eapol frame. */
 enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
 {
 	uint8_t *pucEthBody = NULL;
+	uint8_t ucEapolType;
 	uint16_t u2KeyInfo = 0;
 
 	do {
-		ASSERT_BREAK(pucPkt != NULL);
+		if (pucPkt == NULL)
+			return EAPOL_KEY_NOT_KEY;
+
 		pucEthBody = secGetEthBody(pucPkt);
 		if (!pucEthBody)
+			break;
+
+		ucEapolType = pucEthBody[1];
+		if (ucEapolType != 3)	/* not eapol key type */
 			break;
 		WLAN_GET_FIELD_BE16(&pucEthBody[5], &u2KeyInfo);
 
@@ -1477,6 +1481,26 @@ enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
 	} while (FALSE);
 
 	return EAPOL_KEY_NOT_KEY;
+}
+
+uint8_t secIsEapPacket(uint8_t *pucPkt)
+{
+	uint8_t *pucEthBody = NULL;
+	uint8_t ucEapolType;
+
+	if (pucPkt == NULL)
+		return FALSE;
+
+	pucEthBody = secGetEthBody(pucPkt);
+	if (!pucEthBody)
+		return FALSE;
+
+	ucEapolType = pucEthBody[1];
+	/* eap packet */
+	if (ucEapolType == 0)
+		return TRUE;
+
+	return FALSE;
 }
 
 void secHandleNoWtbl(struct ADAPTER *prAdapter,

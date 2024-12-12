@@ -953,6 +953,9 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	roamingFsmInit(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
 
+#if CFG_STAINFO_FEATURE
+	prAisFsmInfo->u2ConnRejectStatus = STATUS_CODE_UNSPECIFIED_FAILURE;
+#endif
 
 	/* 4 <1.1> Initiate FSM - Timer INIT */
 	cnmTimerInitTimer(prAdapter,
@@ -1450,6 +1453,9 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 	/* init to prevent returning status success due to join timeout. */
 	prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
+#if CFG_STAINFO_FEATURE
+	prAisFsmInfo->u2ConnRejectStatus = STATUS_CODE_UNSPECIFIED_FAILURE;
+#endif
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	if (aisGetMainLinkBssInfo(prAisFsmInfo)->eConnectionState ==

@@ -4480,11 +4480,13 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 };
 #else
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
+#if (KAL_AIS_NUM != 1)
 	{
 		.max_ifaces = 2,
 		.num_iface_limits = ARRAY_SIZE(sta_sta),
 		.iface_limits = sta_sta,
 	},
+#endif
 	{
 		.max_ifaces = 1,
 		.num_iface_limits = ARRAY_SIZE(ap_ap),

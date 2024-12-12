@@ -638,6 +638,7 @@ struct AIS_FSM_INFO {
 #if CFG_STAINFO_FEATURE
 	/* roaming count */
 	uint16_t u2ConnectedCount;
+	uint16_t u2ConnRejectStatus;
 #endif
 	uint8_t ucIsSapCsaPending;
 };

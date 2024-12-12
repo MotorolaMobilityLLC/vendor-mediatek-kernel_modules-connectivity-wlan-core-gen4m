@@ -2962,7 +2962,7 @@
 #define CFG_WIFI_IGTK_GTK_SEPARATE	1
 #endif
 
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if (CFG_MTK_ANDROID_WMT == 1) && (CFG_TC10_FEATURE == 0)
 #define CFG_WIFI_EHT_H2E_CHK		0
 #else
 #define CFG_WIFI_EHT_H2E_CHK		1
