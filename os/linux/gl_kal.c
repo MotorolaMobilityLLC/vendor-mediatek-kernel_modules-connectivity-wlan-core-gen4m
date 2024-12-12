@@ -14236,6 +14236,8 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 	struct rtc_time tm;
 	struct timespec64 tv = { 0 };
 	char s[SA_LOG_TIMEBUF_LEN] = {0};
+	char timesync[SA_LOG_TIMEBUF_LEN] = {0};
+	static u_int16_t printTimeSyncCount;
 
 	ktime_get_real_ts64(&tv);
 	rtc_time64_to_tm(tv.tv_sec, &tm);
@@ -14243,18 +14245,38 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 	ts = local_clock();
 	rem_nsec = do_div(ts, 1000000000);
 
+	printTimeSyncCount++;
+	if (printTimeSyncCount % 1000 == 0) {
+		printTimeSyncCount = 0;
+		ret = snprintf(timesync, SA_LOG_TIMEBUF_LEN,
+			"[%5lu.%06lu] %d-%02d-%02d %02d:%02d:%02d.%06u UTC;android time %d-%02d-%02d %02d:%02d:%02d.%06u\n",
+			(unsigned long)ts,
+			rem_nsec / 1000,
+			tm.tm_year + 1900,
+			tm.tm_mon + 1,
+			tm.tm_mday,
+			tm.tm_hour,
+			tm.tm_min,
+			tm.tm_sec,
+			(unsigned int)KAL_GET_USEC(tv),
+			tm.tm_year + 1900,
+			tm.tm_mon + 1,
+			tm.tm_mday,
+			tm.tm_hour,
+			tm.tm_min,
+			tm.tm_sec,
+			(unsigned int)KAL_GET_USEC(tv));
+		if (ret < 0)
+			LOG_FUNC("snprintf failed, ret: %d", ret);
+		else
+			wifi_salog_write(timesync, strlen(timesync));
+	}
+
 	ret = snprintf(s,
 		SA_LOG_TIMEBUF_LEN,
-		"[%5lu.%06lu] %d-%02d-%02d %02d:%02d:%02d.%06u %s",
+		"[%5lu.%06lu] %s",
 		(unsigned long)ts,
 		rem_nsec / 1000,
-		tm.tm_year + 1900,
-		tm.tm_mon + 1,
-		tm.tm_mday,
-		tm.tm_hour,
-		tm.tm_min,
-		tm.tm_sec,
-		(unsigned int)KAL_GET_USEC(tv),
 		KAL_GET_CURRENT_THREAD_NAME());
 	if (ret < 0) {
 		LOG_FUNC("snprintf failed, ret: %d",
@@ -14282,6 +14304,7 @@ void kalPrintSALog(const char *fmt, ...)
 	va_end(args);
 
 	if (strlen(buffer) < WIFI_LOG_MSG_MAX) {
+		buffer[strlen(buffer)] = '\n';
 		kalPrintUTC(buffer,
 			strlen(buffer));
 	} else {
@@ -14289,13 +14312,13 @@ void kalPrintSALog(const char *fmt, ...)
 
 		strncpy(sub_buffer, buffer,
 			WIFI_LOG_MSG_MAX - 1);
-		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
+		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\n';
 		kalPrintUTC(sub_buffer,
 			WIFI_LOG_MSG_MAX);
 
 		strncpy(sub_buffer, buffer + WIFI_LOG_MSG_MAX - 1,
 			WIFI_LOG_MSG_MAX - 1);
-		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
+		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\n';
 		kalPrintUTC(sub_buffer,
 			WIFI_LOG_MSG_MAX);
 	}
