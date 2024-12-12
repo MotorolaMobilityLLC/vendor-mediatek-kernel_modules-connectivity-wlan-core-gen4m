@@ -2073,7 +2073,7 @@ void mt6653_dumpWfsyscpupcrViaBT(struct ADAPTER *ad)
 
 #endif
 
-void mt6653_dumpCbInfraReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
+void mt6653_dumpCbInfraReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	/* SectionA - cb_infra vlp */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_a,
@@ -2200,60 +2200,8 @@ void mt6653_dumpPcGprLog(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 		fgIsDumpViaBt);
 }
 
-void mt6653_dumpRV55CoreReg(struct ADAPTER *ad)
-{
-#define GENERAL_LOG_NUM			32
-#define CTRL_LOG_NUM			5
-
-	uint32_t i = 0, idx = 0;
-	uint32_t val = 0;
-	uint32_t general_dump[GENERAL_LOG_NUM];
-	uint32_t ctl_status_dump[CTRL_LOG_NUM];
-
-	if (!mt6653_is_ap2conn_off_readable(ad) ||
-	    !mt6653_is_conn2wf_readable(ad))
-		return;
-
-	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
-	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_general_dump_list); i++) {
-		if (n45_general_dump_list[i].read) {
-			HAL_RMCR_RD(PLAT_DBG, ad,
-				   n45_general_dump_list[i].addr,
-				   &val);
-			general_dump[idx++] = val;
-		} else {
-			HAL_MCR_WR_FIELD(PLAT_DBG, ad,
-				n45_general_dump_list[i].addr,
-				n45_general_dump_list[i].value,
-				n45_general_dump_list[i].shift,
-				n45_general_dump_list[i].mask);
-		}
-	}
-	connac3x_dump_format_memory32(general_dump,
-		GENERAL_LOG_NUM,
-		"RV55 General Purpose Registers");
-
-	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
-	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_ctrl_status_dump_list); i++) {
-		if (n45_ctrl_status_dump_list[i].read) {
-			HAL_RMCR_RD(PLAT_DBG, ad,
-				   n45_ctrl_status_dump_list[i].addr,
-				   &val);
-			ctl_status_dump[idx++] = val;
-		} else {
-			HAL_MCR_WR_FIELD(PLAT_DBG, ad,
-				n45_ctrl_status_dump_list[i].addr,
-				n45_ctrl_status_dump_list[i].value,
-				n45_ctrl_status_dump_list[i].shift,
-				n45_ctrl_status_dump_list[i].mask);
-		}
-	}
-	connac3x_dump_format_memory32(ctl_status_dump,
-		CTRL_LOG_NUM,
-		"RV55 Control & Status Registers");
-}
-
-void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
+void mt6653_dumpWfTopReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
+	u_int8_t fgIsReadable)
 {
 	/* SectionA - Dump wf_top_misc_on monflg */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_a,
@@ -2263,6 +2211,9 @@ void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_b,
 		fgIsDumpViaBt);
 
+	if (!fgIsReadable)
+		return;
+
 	/* SectionC - Dump wf_top_cfg_on debug CR */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_c,
 		fgIsDumpViaBt);
@@ -2271,20 +2222,20 @@ void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d,
 		fgIsDumpViaBt);
 
-	/* SectionE - Dump wf_top_rgu_von monflg */
-	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e,
-		fgIsDumpViaBt);
-
 	/* SectionF - Dump wf_top_slpprot_on debug CR */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_f,
 		fgIsDumpViaBt);
 }
 
-void mt6653_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
+void mt6653_dumpWfBusReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
+	u_int8_t fgIsReadable)
 {
 	/* SectionA - Dump VDNR timeout host side info */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_a,
 		fgIsDumpViaBt);
+
+	if (!fgIsReadable)
+		return;
 
 	/* SectionB - Dump VDNR timeout wf side info */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_b,
@@ -2332,6 +2283,35 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 	DBGLOG(HAL, INFO, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
 		WFDrvOwnStat, MDDrvOwnStat);
 #endif
+}
+
+static void mt6653_DumpBusStatusByLayer(struct ADAPTER *ad,
+	u_int8_t fgIsDumpViaBt)
+{
+	u_int8_t readable = TRUE;
+
+	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
+		MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
+
+	/* 1. readable check */
+	if (!mt6653_is_ap2conn_off_readable(ad))
+		readable = FALSE;
+
+	if (!fgIsDumpViaBt &&
+		!mt6653_is_conn2wf_readable(ad))
+		readable = FALSE;
+
+	/* 2. dump by readable check */
+	mt6653_dumpCbInfraReg(ad, fgIsDumpViaBt);
+	mt6653_dumpWfTopReg(ad, fgIsDumpViaBt, readable);
+	mt6653_dumpWfBusReg(ad, fgIsDumpViaBt, readable);
+	mt6653_dumpPcGprLog(ad, fgIsDumpViaBt);
+	if (fgIsDumpViaBt) {
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+		/*mt6653_dumpWfsyscpupcrViaBT(ad);*/
+#endif
+	} else
+		mt6653_dumpWfsyscpupcr(ad);
 }
 
 void mt6653_DumpBusStatus(struct ADAPTER *ad)
@@ -2421,15 +2401,7 @@ start_dump_via_pcie:
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6653_dumpConninfraBus(ad, FALSE);
 #endif
-
-	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
-			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
-	mt6653_dumpCbInfraReg(ad, FALSE);
-	mt6653_dumpWfTopReg(ad, FALSE);
-	mt6653_dumpWfBusReg(ad, FALSE);
-	mt6653_dumpPcGprLog(ad, FALSE);
-	mt6653_dumpWfsyscpupcr(ad);
-	mt6653_dumpRV55CoreReg(ad);
+	mt6653_DumpBusStatusByLayer(ad, FALSE);
 
 	/* skip dump via BT if had dump via PCIe */
 	goto dump_end;
@@ -2453,13 +2425,7 @@ start_dump_via_bt:
 
 	mt6653_dumpConninfraBus(ad, TRUE);
 	mt6653_dumpPcieReg();
-	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
-			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
-	mt6653_dumpCbInfraReg(ad, TRUE);
-	mt6653_dumpWfTopReg(ad, TRUE);
-	mt6653_dumpWfBusReg(ad, TRUE);
-	mt6653_dumpPcGprLog(ad, TRUE);
-	mt6653_dumpWfsyscpupcrViaBT(ad);
+	mt6653_DumpBusStatusByLayer(ad, TRUE);
 
 	/* Notify BT to end */
 	ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_WIFI,
@@ -2477,7 +2443,7 @@ dump_end:
 	if (prHifInfo)
 		GLUE_SET_REF_CNT(0, prHifInfo->fgIsDebugSopOnGoing);
 }
-#endif
+#endif /* _HIF_PCIE */
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int mt6653_get_rx_rate_info(const uint32_t *prRxV,
