@@ -3044,44 +3044,11 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 			eScoOrigin, eScoModify);
 	}
 
-	/* Revise S1 */
-	rlmReviseS1(pucS1, *pucPrimaryCh, *peChannelWidth, *peExtend);
-
 	if (eChBwOrigin != *peChannelWidth ||
 	    ucS1Origin != *pucS1) {
 		DBGLOG(RLM, INFO, "Change BW[%d->%d], S1[%d->%d]\n",
 			eChBwOrigin, *peChannelWidth,
 			ucS1Origin, *pucS1);
-	}
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Revise S1
- *
- * \param[in]
- *
- * \return none
- */
-/*----------------------------------------------------------------------------*/
-
-void rlmReviseS1(
-	uint8_t *pucS1,
-	uint8_t ucPrimaryCh,
-	enum ENUM_CHANNEL_WIDTH eChBw,
-	enum ENUM_CHNL_EXT eSco)
-{
-	if (eChBw == CW_20_40MHZ) {
-		/* For BW20 Case*/
-		if (eSco == CHNL_EXT_SCN)
-			*pucS1 = ucPrimaryCh;
-		/* For BW40 + SCA Case*/
-		else if (eSco == CHNL_EXT_SCA &&
-					ucPrimaryCh < UNII8_UPPER_BOUND)
-			*pucS1 = ucPrimaryCh + CHNL_SPAN_10;
-		/* For BW40 + SCB Case*/
-		else if (eSco == CHNL_EXT_SCB && ucPrimaryCh > 4)
-			*pucS1 = ucPrimaryCh - CHNL_SPAN_10;
 	}
 }
 
@@ -7298,6 +7265,15 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 	case BW_20:
 	case BW_40:
 		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		/* For 2G BW40 CSA, we can only get SCO info
+		 * from Operating class
+		 */
+		if (prCSAParams->eCsaBand == BAND_2G4) {
+			if (ucNewOperatingClass == 83)
+				prCSAParams->eSco = CHNL_EXT_SCA;
+			else if (ucNewOperatingClass == 84)
+				prCSAParams->eSco = CHNL_EXT_SCB;
+		}
 		break;
 	case BW_80:
 		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_80;

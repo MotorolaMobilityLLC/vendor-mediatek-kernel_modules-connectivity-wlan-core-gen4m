@@ -637,12 +637,6 @@ void rlmReviseMaxBw(
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
 
-void rlmReviseS1(
-	uint8_t *pucS1,
-	uint8_t ucPrimaryCh,
-	enum ENUM_CHANNEL_WIDTH eChBw,
-	enum ENUM_CHNL_EXT eSco);
-
 enum ENUM_CHNL_EXT rlmReviseSco(
 	enum ENUM_CHANNEL_WIDTH eChannelWidth,
 	uint8_t ucPrimaryCh,

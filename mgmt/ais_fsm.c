@@ -10585,11 +10585,6 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 			rlmGetBssOpBwByChannelWidth(prSubReq->eRfSco,
 				prSubReq->eRfChannelWidth));
 
-		rlmReviseS1(
-			&(prSubReq->ucRfCenterFreqSeg1FromAP),
-			prBssDesc->ucChannelNum,
-			prBssDesc->eChannelWidth,
-			prBssDesc->eSco);
 		prSubReq->ucRfCenterFreqSeg2FromAP = 0;
 
 		rlmReviseMaxBw(prAdapter,
@@ -11480,11 +11475,6 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 				prBssDesc->ucChannelNum,
 				prBssDesc->eSco,
 				prBssDesc->eChannelWidth);
-		rlmReviseS1(
-			&(prMsgChReq->ucRfCenterFreqSeg1FromAP),
-			prBssDesc->ucChannelNum,
-			prBssDesc->eChannelWidth,
-			prBssDesc->eSco);
 		prMsgChReq->ucRfCenterFreqSeg2FromAP = 0;
 	}
 
