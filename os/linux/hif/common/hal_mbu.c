@@ -241,7 +241,8 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	prMbuInfo = &prChipInfo->bus_info->rSwEmiRingInfo;
 	prEmi = prMbuInfo->prMbuEmiData;
 
-	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi)
+	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi ||
+	    !prAdapter->fgIsFwDownloaded)
 		return FALSE;
 
 	if (!prRemap) {

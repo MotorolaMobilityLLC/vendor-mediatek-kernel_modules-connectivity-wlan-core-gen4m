@@ -1439,8 +1439,7 @@ static u_int8_t kalIsNoMmioReadReason(enum HIF_DEV_REG_REASON eReason,
 	    prChipInfo->bus_info->rSwEmiRingInfo.fgIsEnable &&
 	    prChipInfo->isNoMmioReadReason &&
 	    prChipInfo->isNoMmioReadReason(prChipInfo, eReason)) {
-		kalDevRegReadByEmi(prGlueInfo, u4Register, pu4Value);
-		return TRUE;
+		return kalDevRegReadByEmi(prGlueInfo, u4Register, pu4Value);
 	}
 #endif
 	return FALSE;
