@@ -2213,7 +2213,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 {
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
-	uint8_t i = 0;
+	uint32_t i = 0;
 	int ret = 0;
 	uint32_t pos = 0;
 	char *buf;
