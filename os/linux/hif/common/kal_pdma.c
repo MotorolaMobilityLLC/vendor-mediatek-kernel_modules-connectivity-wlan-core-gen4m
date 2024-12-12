@@ -3048,6 +3048,12 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 {
 	int32_t ret = 0, i;
 
+	if (kalIsResetting()) {
+		DBGLOG_LIMITED(HAL, WARN, "is resetting\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	GLUE_INC_REF_CNT(glue->u4HifRegReqCnt);
 
 	if (!glue->prHifRegFifoBuf) {
