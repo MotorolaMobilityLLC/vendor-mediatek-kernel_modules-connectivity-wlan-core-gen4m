@@ -395,6 +395,10 @@ static void halPcieResumeCmd(struct ADAPTER *prAdapter);
 static irqreturn_t mtk_wifi_isr(int irq, void *dev_instance);
 static irqreturn_t mtk_wifi_isr_thread(int irq, void *dev_instance);
 
+#if CFG_MTK_WIFI_PCIE_SR
+extern u_int8_t fgIsL2Finished;
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -1734,6 +1738,9 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #if CFG_MTK_WIFI_AER_RESET
 	g_AERRstTriggered = FALSE;
 	g_AERL05Rst = FALSE;
+#endif
+#if CFG_MTK_WIFI_PCIE_SR
+	fgIsL2Finished = FALSE;
 #endif
 	pci_set_master(pdev);
 

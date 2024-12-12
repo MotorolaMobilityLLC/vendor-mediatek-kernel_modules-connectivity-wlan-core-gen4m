@@ -89,6 +89,10 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t *pu4Value);
 static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t u4Value);
+
+#if CFG_MTK_WIFI_PCIE_SR
+extern u_int8_t fgIsL2Finished;
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -3276,6 +3280,14 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 	ret = wf_reg_sanity_check(prGlueInfo);
 	if (ret)
 		goto exit;
+
+#if CFG_MTK_WIFI_PCIE_SR
+	if (!fgIsL2Finished) {
+		DBGLOG_LIMITED(HAL, WARN, "L2 Not finished.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+#endif
 
 	if (kalIsResetting() && glGetRstReason() == RST_DRV_OWN_FAIL) {
 		DBGLOG_LIMITED(HAL, WARN, "Reset Reason: RST_DRV_OWN_FAIL\n");
