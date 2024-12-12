@@ -391,6 +391,7 @@ struct P2P_ROLE_FSM_INFO {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prP2pMldBssInfo;
 #endif
+	OS_SYSTIME rGoReqChnlTime;
 };
 
 /*========================= Initial ============================*/
@@ -476,6 +477,11 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 
 void p2pRoleFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
+
+u_int8_t p2pRoleFsmExtendChnlTimer(struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		uint8_t ucChannelNum,
+		enum ENUM_MBMC_BN *eHwBandIdx);
 
 void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 		uintptr_t ulParamPtr);

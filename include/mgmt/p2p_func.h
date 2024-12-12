@@ -399,6 +399,13 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx, uint8_t fgNonTxLink, uint8_t fgHide,
 	struct WLAN_BEACON_FRAME *prProbeRspFrame);
 
+struct MSDU_INFO *p2pFuncAllocateDirectTxMsdu(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMgmtTxMsdu, uint16_t u2FrameLength);
+
+enum ENUM_P2P_CONNECT_STATE
+p2pFuncTagMgmtFrame(struct MSDU_INFO *prMgmtTxMsdu,
+		uint64_t u8Cookie);
+
 void
 p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMgmtTxMsdu,

@@ -680,6 +680,54 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 	} while (fgIsTransitionOut);
 }
 
+u_int8_t p2pRoleFsmExtendChnlTimer(struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		uint8_t ucChannelNum,
+		enum ENUM_MBMC_BN *eHwBandIdx)
+{
+	struct BSS_INFO *prP2pGoBssInfo;
+	OS_SYSTIME rCurSysTime, rp2pRoleReqChnlTimerDiff;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo;
+
+	prP2pGoBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prP2pRoleFsmInfo->ucBssIndex);
+	if (!prP2pGoBssInfo)
+		return FALSE;
+	else if (!timerPendingTimer(
+		&prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer))
+		return FALSE;
+	else if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+			prP2pGoBssInfo->u4PrivateData]))
+		return FALSE;
+
+	/* check if p2p dev would tx in the same channel as GO */
+	prChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
+	if ((!prChnlReqInfo->fgIsChannelRequested) ||
+		(prP2pGoBssInfo->ucPrimaryChannel != ucChannelNum))
+		return FALSE;
+
+	rCurSysTime = kalGetTimeTick();
+	rp2pRoleReqChnlTimerDiff = rCurSysTime -
+		prP2pRoleFsmInfo->rGoReqChnlTime;
+
+	/* extend timer to protect potential auth,assoc pkt */
+	if ((prAdapter->rWifiVar.u4P2pChnlHoldTime >=
+		P2P_EXTEND_ROLE_REQ_CHNL_TIME_DIFF_MS) &&
+		((prAdapter->rWifiVar.u4P2pChnlHoldTime
+			- rp2pRoleReqChnlTimerDiff) <
+			P2P_EXTEND_ROLE_REQ_CHNL_TIME_DIFF_MS)
+			){
+		DBGLOG(P2P, TRACE, "extend role req chnl timer\n");
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+		cnmTimerStartTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
+			P2P_EXTEND_ROLE_REQ_CHNL_TIME_DIFF_MS);
+	}
+	*eHwBandIdx = prP2pGoBssInfo->eHwBandIdx;
+	return TRUE;
+}
+
 void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 		uintptr_t ulParamPtr)
 {
@@ -4002,6 +4050,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 			case CH_REQ_TYPE_GO_START_BSS:
 				prBssInfo->fgIsApGoGranted = TRUE;
 				eNextState = P2P_ROLE_STATE_IDLE;
+				prP2pRoleFsmInfo->rGoReqChnlTime =
+					kalGetTimeTick();
 				break;
 			case CH_REQ_TYPE_OFFCHNL_TX:
 				eNextState = P2P_ROLE_STATE_OFF_CHNL_TX;

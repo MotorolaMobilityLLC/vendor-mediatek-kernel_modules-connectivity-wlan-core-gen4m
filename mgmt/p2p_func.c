@@ -1463,7 +1463,7 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				MAC_TX_RESERVED_FIELD);
 
 		u8GlCookie = *pu8GlCookie;
-
+		eConnState = p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
 		prWlanHdr = (struct WLAN_MAC_HEADER *)
 			((uintptr_t) prMgmtTxMsdu->prPacket +
 			MAC_TX_RESERVED_FIELD);
@@ -1661,6 +1661,25 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
 			break;
+		case MAC_FRAME_ACTION: {
+			struct MSDU_INFO *prNewMgmtTxMsdu;
+
+			if ((eConnState != P2P_CNN_NORMAL) &&
+				(eConnState - 1) == P2P_PROV_DISC_RESP) {
+				prNewMgmtTxMsdu =
+					p2pFuncAllocateDirectTxMsdu(
+					prAdapter,
+					prMgmtTxMsdu,
+					prMgmtTxMsdu->u2FrameLength);
+				if (prNewMgmtTxMsdu) {
+					cnmMgtPktFree(prAdapter,
+						prMgmtTxMsdu);
+					prMgmtTxMsdu = prNewMgmtTxMsdu;
+				}
+			}
+			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
+			break;
+		}
 		default:
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			break;
@@ -1694,7 +1713,6 @@ drop:
 		DBGLOG(P2P, LOUD, "ucRetryLimit = %u, u4TxLifeTimeInMs = %u\n",
 			ucRetryLimit, u4TxLifeTimeInMs);
 
-		eConnState = p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
 		prAdapter->prP2pInfo->eConnState = eConnState;
 
 		/* Bufferable MMPDUs are suggested to be queued */
@@ -6144,6 +6162,47 @@ void p2pGenerateVendorIE(struct ADAPTER *prAdapter,
 		->u2VenderIELen;
 }
 #endif
+
+struct MSDU_INFO *p2pFuncAllocateDirectTxMsdu(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMgmtTxMsdu, uint16_t u2FrameLength)
+{
+	struct MSDU_INFO *prRetMsduInfo = NULL;
+	uint64_t *pu8GlOldCookie = (uint64_t *) NULL;
+	uint64_t *pu8GlNewCookie = (uint64_t *) NULL;
+	void *prPacket;
+
+	prRetMsduInfo = nicAllocMgmtPktForDataQ(
+		prAdapter, (int32_t)(u2FrameLength +
+					sizeof(uint64_t) +
+					MAC_TX_RESERVED_FIELD));
+	if (prRetMsduInfo == NULL) {
+		DBGLOG(P2P, WARN,
+			"No packet for sending new prov desc resp, use original one\n");
+		return NULL;
+	}
+
+	/* copy packet*/
+	prPacket = (struct WLAN_MAC_HEADER *)(prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD);
+
+	kalMemCopy(prRetMsduInfo->prPacket + MAC_TX_RESERVED_FIELD,
+		(uint8_t *) prPacket,
+		u2FrameLength);
+	/* copy cookie*/
+	prRetMsduInfo->u2FrameLength = u2FrameLength;
+	pu8GlOldCookie = (uint64_t *) ((uintptr_t)prMgmtTxMsdu->prPacket +
+			(uintptr_t)prMgmtTxMsdu->u2FrameLength +
+			MAC_TX_RESERVED_FIELD);
+	pu8GlNewCookie = (uint64_t *) ((uintptr_t)prRetMsduInfo->prPacket +
+			(uintptr_t)prRetMsduInfo->u2FrameLength +
+			MAC_TX_RESERVED_FIELD);
+	*pu8GlNewCookie = *pu8GlOldCookie;
+
+	nicTxConfigPktControlFlag(prRetMsduInfo,
+		MSDU_CONTROL_FLAG_FORCE_TX,
+		TRUE);
+	return prRetMsduInfo;
+}
 
 struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx, uint8_t fgNonTxLink, uint8_t fgHide,

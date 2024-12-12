@@ -1128,6 +1128,12 @@ p2pDevNeedOffchnlTx(struct ADAPTER *prAdapter,
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 			(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct BSS_INFO *prP2pDevBssInfo = NULL;
+	uint8_t i;
+	enum ENUM_P2P_CONNECT_STATE eCNNState;
+	uint64_t *pu8GlCookie = (uint64_t *) NULL;
+	enum ENUM_MBMC_BN eHwBandIdx;
 
 	if (prAdapter == NULL || prMgmtTxMsg == NULL)
 		return FALSE;
@@ -1154,6 +1160,48 @@ p2pDevNeedOffchnlTx(struct ADAPTER *prAdapter,
 			p2pFuncCheckOnRocChnl(&(prMgmtTxMsg->rChannelInfo),
 					prChnlReqInfo))
 		return FALSE;
+
+	pu8GlCookie =
+		(uint64_t *) ((uintptr_t)
+			prMgmtTxMsg->prMgmtMsduInfo->prPacket +
+			(uintptr_t)
+			prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength +
+			MAC_TX_RESERVED_FIELD);
+
+	eCNNState = p2pFuncTagMgmtFrame(prMgmtTxMsg->prMgmtMsduInfo,
+		*pu8GlCookie);
+
+	/* return False and when GO hold the channel to allow p2p dev
+	 * tx provion resp instead of waiting GO to released the channel
+	 * which would cause connection failed when need to tx provision
+	 * resp in autoGO scenario
+	 */
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		if ((eCNNState != P2P_CNN_NORMAL) &&
+			((eCNNState - 1) != P2P_PROV_DISC_RESP))
+			break;
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, i);
+		if (!prP2pRoleFsmInfo)
+			continue;
+
+		if (p2pRoleFsmExtendChnlTimer(prAdapter,
+			prP2pRoleFsmInfo,
+			prMgmtTxMsg->rChannelInfo.ucChannelNum,
+			&eHwBandIdx)){
+			prP2pDevBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter,
+					prP2pDevFsmInfo->ucBssIndex);
+			if (!prP2pDevBssInfo)
+				continue;
+			prP2pDevBssInfo->eHwBandIdx = eHwBandIdx;
+			DBGLOG(P2P, TRACE,
+				"Tx dev mgmt frame on state:%d, Bss:%d\n",
+				prP2pDevFsmInfo->eCurrentState,
+				prP2pRoleFsmInfo->ucBssIndex);
+			return FALSE;
+		}
+	}
 
 	return TRUE;
 }				/* p2pDevNeedOffchnlTx */
