@@ -10260,7 +10260,10 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		if (!nicIsChBwValid(eBand, aucChannelList[i].ucChannelNum,
+		if (!nicIsChBwValid(prAdapter, eBand,
+				    aucChannelList[i].ucChannelNum,
+				    nicGetSco(prAdapter, eBand,
+					      aucChannelList[i].ucChannelNum),
 				    eChnlBw))
 			continue;
 

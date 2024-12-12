@@ -1865,17 +1865,49 @@ uint8_t nicGetSecCh(struct ADAPTER *prAdapter,
 	return ucSecondCh;
 }
 
-u_int8_t nicIsChBwValid(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t bw)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if all channels covered by bandwidth are supported in country.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t nicIsChBwValid(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+			uint8_t ucCh, enum ENUM_CHNL_EXT eSco, uint8_t bw)
 {
-	uint8_t ucOriBw = bw;
+	uint8_t ucChNum;
+	enum ENUM_CHNL_SPAN eSpan;
+	uint8_t ucHeadCh, ucCenterCh, i;
 
-	nicReviseBwByCh(eBand, ucCh, &bw);
-
-	if (ucOriBw != bw) {
-		DBGLOG(NIC, WARN, "band:%u ch:%u bw:%s invalid",
-		       eBand, ucCh, apucOpBw[ucOriBw]);
+	if (bw >= MAX_BW_UNKNOWN || bw == MAX_BW_80_80_MHZ) {
+		DBGLOG(NIC, ERROR, "invalid Bw\n");
 		return FALSE;
 	}
+
+	if (eBand == BAND_2G4)
+		eSpan = CHNL_SPAN_5;
+	else
+		eSpan = CHNL_SPAN_20;
+
+	ucCenterCh = nicGetCenterCh(eBand, ucCh, eSco, bw);
+
+	if (ucCenterCh == 0)
+		return FALSE;
+
+	if (bw == MAX_BW_20MHZ)
+		ucChNum = 1;
+	else if (bw <= MAX_BW_160MHZ)
+		ucChNum = 1 << bw;
+	else /* MAX_BW_320_1MHZ || MAX_BW_320_2MHZ */
+		ucChNum = 1 << 4;
+
+	if (bw == MAX_BW_20MHZ)
+		ucHeadCh = ucCh;
+	else
+		ucHeadCh = ucCenterCh - 2 - (ucChNum / 2 - 1) * eSpan;
+
+	for (i = 0; i < ucChNum; ++i)
+		if (!rlmDomainIsLegalChannel(prAdapter, eBand,
+					     ucHeadCh + i * eSpan))
+			return FALSE;
 
 	return TRUE;
 }
@@ -1886,54 +1918,38 @@ u_int8_t nicIsChBwValid(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t bw)
  *        can support.
  */
 /*----------------------------------------------------------------------------*/
-void nicReviseBwByCh(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t *bw)
+void nicReviseBwByCh(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+		     uint8_t ucCh, enum ENUM_CHNL_EXT eSco, uint8_t *bw)
 {
-	uint8_t eNewBw = *bw;
-
 	if (*bw >= MAX_BW_UNKNOWN) {
-		DBGLOG(NIC, ERROR, "unknown bandwidth");
+		DBGLOG(NIC, ERROR, "unknown bandwidth\n");
 		return;
 	}
 
-	if (eBand == BAND_2G4 && *bw >= MAX_BW_80MHZ) {
-		if (ucCh >= 1 && ucCh <= 13 && *bw >= MAX_BW_80MHZ)
-			/* downgrade to 2G default BW */
-			eNewBw = MAX_BW_20MHZ;
-		else if (ucCh == 14 && *bw >= MAX_BW_40MHZ)
-			eNewBw = MAX_BW_20MHZ;
-	} else if (eBand == BAND_5G) {
-		if (ucCh >= 36 && ucCh <= 128 && *bw >= MAX_BW_320_1MHZ)
-			/* downgrade to 5G default BW */
-			eNewBw = MAX_BW_80MHZ;
-#if (CFG_SUPPORT_UNII4 == 0)
-		else if (ucCh >= 132 && ucCh <= 161 && *bw >= MAX_BW_160MHZ)
-			eNewBw = MAX_BW_80MHZ;
-		else if (ucCh == 165)
-			eNewBw = MAX_BW_20MHZ;
-#else
-		else if (ucCh >= 132 && ucCh <= 177 && *bw >= MAX_BW_160MHZ)
-			eNewBw = MAX_BW_80MHZ;
-#endif
-	}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	else if (eBand == BAND_6G) {
-		if (ucCh >= 1 && ucCh <= 29 && *bw == MAX_BW_320_2MHZ)
-			eNewBw = MAX_BW_320_1MHZ;
-		else if (ucCh >= 193 && ucCh <= 221 && *bw == MAX_BW_320_1MHZ)
-			eNewBw = MAX_BW_320_2MHZ;
-		else if (ucCh >= 225 && ucCh <= 229 && *bw >= MAX_BW_80MHZ)
-			/* downgrade to 2G default BW */
-			eNewBw = MAX_BW_20MHZ;
-		else if (ucCh == 233)
-			eNewBw = MAX_BW_20MHZ;
-	}
-#endif
+	/* end of recursive */
+	if (*bw == MAX_BW_20MHZ)
+		goto valid;
 
-	if (*bw != eNewBw) {
-		DBGLOG(NIC, LOUD, "b:%u c:%u not support %s, fallback to %s",
-		       eBand, ucCh, apucOpBw[*bw], apucOpBw[eNewBw]);
-		*bw = eNewBw;
+	if (!nicIsChBwValid(prAdapter, eBand, ucCh, eSco, *bw)) {
+		/* half BW */
+		if (*bw <= MAX_BW_160MHZ)
+			*bw = *bw - 1;
+		else if (*bw == MAX_BW_320_1MHZ || *bw == MAX_BW_320_2MHZ)
+			*bw = MAX_BW_160MHZ;
+		else if (*bw == MAX_BW_80_80_MHZ)
+			*bw = MAX_BW_80MHZ;
+		else {
+			DBGLOG(NIC, ERROR, "invalid bw\n");
+			return;
+		}
+
+		nicReviseBwByCh(prAdapter, eBand, ucCh, eSco, bw);
+		return;
 	}
+
+valid:
+	DBGLOG(NIC, TRACE, "final band:%u, ch:%u, sco:%u, bw:%s",
+	       eBand, ucCh, eSco, apucOpBw[*bw]);
 }
 
 uint32_t nicGetS1Freq(enum ENUM_BAND eBand, uint8_t ucPrimaryChannel,
@@ -1974,11 +1990,13 @@ uint8_t nicGetS2(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 	u_int8_t fgIsPriChAtRight;
 	uint8_t ucS1;
 
-	/* Caller should do nicReviseBwByCh first to get right BW */
-	if (!nicIsChBwValid(eBand, ucPriCh, ucBw)) {
-		KAL_WARN_ON(TRUE);
+	/* Caller should do nicReviseBwByCh or nicIsChBwValid first
+	 * to get valid ch/bw.
+	 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G && ucPriCh == 2 && ucBw >= MAX_BW_40MHZ)
 		goto fail;
-	}
+#endif
 
 	switch (ucBw) {
 	case MAX_BW_20MHZ:
@@ -1988,8 +2006,12 @@ uint8_t nicGetS2(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 	case MAX_BW_80_80_MHZ:
 		if (eBand == BAND_5G)
 			fgIsPriChAtRight = ((ucPriCh - 36) / 16) % 2;
-		else /* 6G */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
 			fgIsPriChAtRight = ((ucPriCh - 1) / 16) % 2;
+#endif
+		else /* 2G */
+			goto fail;
 
 		/* sco no matter */
 		ucS1 = nicGetS1(eBand, ucPriCh, CHNL_EXT_RES, ucBw);
@@ -2001,21 +2023,20 @@ uint8_t nicGetS2(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 		}
 		break;
 	case MAX_BW_160MHZ:
-		if (eBand == BAND_5G) {
-			if (ucPriCh >= 36 && ucPriCh <= 128)
-				return 50 + 32 * ((ucPriCh - 36) / 32);
-		} else { /* 6G */
-			if (ucPriCh >= 1 && ucPriCh <= 221)
-				return 15 + 32 * ((ucPriCh - 1) / 32);
-		}
+		if (eBand == BAND_5G && ucPriCh >= 36 && ucPriCh <= 128)
+			return 50 + 32 * ((ucPriCh - 36) / 32);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G && ucPriCh >= 1 && ucPriCh <= 221)
+			return 15 + 32 * ((ucPriCh - 1) / 32);
+#endif
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case MAX_BW_320_1MHZ:
-		if (ucPriCh >= 1 && ucPriCh <= 189)
+		if (eBand == BAND_6G && ucPriCh >= 1 && ucPriCh <= 189)
 			return 31 + 64 * ((ucPriCh - 1) / 64);
 		break;
 	case MAX_BW_320_2MHZ:
-		if (ucPriCh >= 33 && ucPriCh <= 221)
+		if (eBand == BAND_6G && ucPriCh >= 33 && ucPriCh <= 221)
 			return 63 + 64 * ((ucPriCh - 33) / 64);
 		break;
 #endif
@@ -2024,8 +2045,8 @@ uint8_t nicGetS2(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 	}
 
 fail:
-	DBGLOG(NIC, WARN, "get S2 fail, band=%u, ch=%u, bw=%u",
-	       eBand, ucPriCh, ucBw);
+	DBGLOG(NIC, WARN, "get S2 fail, band=%u, ch=%u, bw=%s\n",
+	       eBand, ucPriCh, apucOpBw[ucBw]);
 	return 0;
 }
 
@@ -2043,11 +2064,13 @@ fail:
 uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 		 uint8_t ucSco, uint8_t ucBw)
 {
-	/* Caller should do nicReviseBwByCh first to get right BW */
-	if (!nicIsChBwValid(eBand, ucPriCh, ucBw)) {
-		KAL_WARN_ON(TRUE);
+	/* Caller should do nicReviseBwByCh or nicIsChBwValid first
+	 * to get valid ch/bw.
+	 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G && ucPriCh == 2 && ucBw >= MAX_BW_40MHZ)
 		goto fail;
-	}
+#endif
 
 	switch (ucBw) {
 	case MAX_BW_20MHZ:
@@ -2055,7 +2078,7 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 	case MAX_BW_40MHZ:
 		if (eBand == BAND_2G4) {
 			if (ucSco == CHNL_EXT_SCN || ucSco == CHNL_EXT_RES)
-				break;
+				goto fail;
 
 			if (ucSco == CHNL_EXT_SCA &&
 			    ucPriCh >= 1 && ucPriCh <= 9)
@@ -2073,9 +2096,8 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 #endif
 				return 151 + 8 * ((ucPriCh - 149) / 8);
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (eBand == BAND_6G) {
-			if (ucPriCh >= 1 && ucPriCh <= 229)
-				return 3 + 8 * ((ucPriCh - 1) / 8);
+		} else if (eBand == BAND_6G && ucPriCh >= 1 && ucPriCh <= 229) {
+			return 3 + 8 * ((ucPriCh - 1) / 8);
 #endif
 		}
 		break;
@@ -2092,24 +2114,19 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 				return 171;
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (eBand == BAND_6G) {
-			if (ucPriCh >= 1 && ucPriCh <= 221)
-				return 7 + 16 * ((ucPriCh - 1) / 16);
+		} else if (eBand == BAND_6G && ucPriCh >= 1 && ucPriCh <= 221) {
+			return 7 + 16 * ((ucPriCh - 1) / 16);
 #endif
 		}
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case MAX_BW_320_1MHZ:
-		if (eBand == BAND_6G) {
-			if (ucPriCh >= 1 && ucPriCh <= 189)
-				return 15 + 32 * ((ucPriCh - 1) / 32);
-		}
+		if (eBand == BAND_6G && ucPriCh >= 1 && ucPriCh <= 189)
+			return 15 + 32 * ((ucPriCh - 1) / 32);
 		break;
 	case MAX_BW_320_2MHZ:
-		if (eBand == BAND_6G) {
-			if (ucPriCh >= 33 && ucPriCh <= 221)
-				return 47 + 32 * ((ucPriCh - 33) / 32);
-		}
+		if (eBand == BAND_6G && ucPriCh >= 33 && ucPriCh <= 221)
+			return 47 + 32 * ((ucPriCh - 33) / 32);
 		break;
 #endif
 	default:
@@ -2117,8 +2134,8 @@ uint8_t nicGetS1(enum ENUM_BAND eBand, uint8_t ucPriCh,
 	}
 
 fail:
-	DBGLOG(NIC, WARN, "get S1 fail, band=%u, ch=%u, sco=%u, bw=%u",
-	       eBand, ucPriCh, ucSco, ucBw);
+	DBGLOG(NIC, WARN, "get S1 fail, band=%u, ch=%u, sco=%u, bw=%s\n",
+	       eBand, ucPriCh, ucSco, apucOpBw[ucBw]);
 	return 0;
 }
 
@@ -2131,17 +2148,13 @@ fail:
 uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucSco,
 		       uint8_t ucBw)
 {
-	uint8_t ucS1;
-
-	if (ucBw >= MAX_BW_UNKNOWN) {
-		DBGLOG(NIC, WARN, "invalid bw %u", ucBw);
+	if (ucBw >= MAX_BW_UNKNOWN || ucBw == MAX_BW_80_80_MHZ) {
+		DBGLOG(NIC, WARN, "invalid bw %u\n", ucBw);
 		return 0;
 	}
 
-	ucS1 = nicGetS1(eBand, ucPriCh, ucSco, ucBw);
-
-	if (ucBw <= MAX_BW_80MHZ || ucBw == MAX_BW_80_80_MHZ)
-		return ucS1;
+	if (ucBw <= MAX_BW_80MHZ)
+		return nicGetS1(eBand, ucPriCh, ucSco, ucBw);
 	else
 		return nicGetS2(eBand, ucPriCh, ucBw);
 }

@@ -4050,8 +4050,9 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				/* Renew BW */
 				eNewBw = cnmGetDbdcBwCapability(prAdapter,
 						prBssInfo->ucBssIndex);
-				nicReviseBwByCh(prBssInfo->eBand,
-					prBssInfo->ucPrimaryChannel, &eNewBw);
+				nicReviseBwByCh(prAdapter, prBssInfo->eBand,
+					prBssInfo->ucPrimaryChannel,
+					prBssInfo->eBssSCO, &eNewBw);
 				prBssInfo->ucVhtChannelWidth =
 					rlmGetVhtOpBwByBssOpBw(eNewBw);
 

@@ -405,10 +405,11 @@ uint8_t nicGetSecCh(struct ADAPTER *prAdapter,
 		enum ENUM_CHNL_EXT eSCO,
 		uint8_t ucPrimaryCh);
 
-u_int8_t nicIsChBwValid(enum ENUM_BAND eBand, uint8_t ucCh, uint8_t bw);
+u_int8_t nicIsChBwValid(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+			uint8_t ucCh, enum ENUM_CHNL_EXT eSco, uint8_t bw);
 
-void nicReviseBwByCh(enum ENUM_BAND eBand, uint8_t ucCh,
-		     uint8_t *bw);
+void nicReviseBwByCh(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+		     uint8_t ucCh, enum ENUM_CHNL_EXT eSco, uint8_t *bw);
 
 uint32_t nicGetS1Freq(enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,

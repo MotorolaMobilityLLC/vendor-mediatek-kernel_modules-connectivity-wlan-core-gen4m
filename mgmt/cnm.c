@@ -5717,8 +5717,9 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		nicReviseBwByCh(prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
-				&ucOpMaxBw);
+		nicReviseBwByCh(prAdapter, prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBssSCO, &ucOpMaxBw);
 
 		/* The limited BW is decided by DRV/FW capability.
 		 * It should be modified if someday BW_80_80 or
