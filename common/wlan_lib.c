@@ -9642,7 +9642,8 @@ void wlanCfgSetChip(struct ADAPTER *prAdapter)
 		rChipConfigInfo.u2MsgSize = kalStrnLen(aucValue,
 						       WLAN_CFG_VALUE_LEN_MAX);
 		kalStrnCpy(rChipConfigInfo.aucCmd, aucValue,
-			   CHIP_CONFIG_RESP_SIZE);
+		  kal_min_t(uint32_t, CHIP_CONFIG_RESP_SIZE,
+					WLAN_CFG_VALUE_LEN_MAX));
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetChipConfig,
 				   &rChipConfigInfo, sizeof(rChipConfigInfo),
