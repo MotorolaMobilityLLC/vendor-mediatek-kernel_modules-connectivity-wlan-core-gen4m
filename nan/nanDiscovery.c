@@ -256,9 +256,9 @@ nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 	prPublishReq->sdea_service_specific_info_len =
 		msg->sdea_service_specific_info_len;
 	if (prPublishReq->sdea_service_specific_info_len >
-	    NAN_FW_SDEA_SPECIFIC_INFO_LEN)
+	    NAN_MAX_SDEA_LEN)
 		prPublishReq->sdea_service_specific_info_len =
-			NAN_FW_SDEA_SPECIFIC_INFO_LEN;
+			NAN_MAX_SDEA_LEN;
 	kalMemCopy(prPublishReq->sdea_service_specific_info,
 		   msg->sdea_service_specific_info,
 		   prPublishReq->sdea_service_specific_info_len);
@@ -512,9 +512,9 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	prPublishReq->sdea_service_specific_info_len =
 		msg->sdea_service_specific_info_len;
 	if (prPublishReq->sdea_service_specific_info_len >
-	    NAN_FW_SDEA_SPECIFIC_INFO_LEN)
+	    NAN_MAX_SDEA_LEN)
 		prPublishReq->sdea_service_specific_info_len =
-			NAN_FW_SDEA_SPECIFIC_INFO_LEN;
+			NAN_MAX_SDEA_LEN;
 	kalMemCopy(prPublishReq->sdea_service_specific_info,
 		   msg->sdea_service_specific_info,
 		   prPublishReq->sdea_service_specific_info_len);
@@ -874,9 +874,10 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	prSubscribeReq->sdea_service_specific_info_len =
 		msg->sdea_service_specific_info_len;
 	if (prSubscribeReq->sdea_service_specific_info_len >
-	    NAN_FW_SDEA_SPECIFIC_INFO_LEN)
+	    NAN_MAX_SDEA_LEN)
 		prSubscribeReq->sdea_service_specific_info_len =
-			NAN_FW_SDEA_SPECIFIC_INFO_LEN;
+			NAN_MAX_SDEA_LEN;
+
 	DBGLOG(INIT, INFO,
 		"nan: sdea_service_specific_info_len = %d\n",
 		prSubscribeReq->sdea_service_specific_info_len);

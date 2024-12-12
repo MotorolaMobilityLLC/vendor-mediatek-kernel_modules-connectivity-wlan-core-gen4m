@@ -559,7 +559,7 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	nanCapabilitiesRsp.max_service_specific_info_len =
 		NAN_MAX_SERVICE_SPECIFIC_INFO_LEN;
 	nanCapabilitiesRsp.max_sdea_service_specific_info_len =
-		NAN_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN;
+		NAN_FW_MAX_FOLLOW_UP_SDEA_LEN;
 	nanCapabilitiesRsp.max_scid_len = NAN_MAX_SCID_BUF_LEN;
 	nanCapabilitiesRsp.max_total_match_filter_len =
 		(NAN_FW_MAX_MATCH_FILTER_LEN * 2);
@@ -2064,7 +2064,7 @@ skip:
 				break;
 			case NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO:
 				if (outputTlv.length >
-					NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN) {
+					NAN_MAX_SDEA_LEN) {
 					DBGLOG(NAN, ERROR,
 						"outputTlv.length is invalid!\n");
 					kfree(pNanSubscribeReq);
@@ -2365,7 +2365,7 @@ skip:
 				break;
 			case NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO:
 				if (outputTlv.length >
-					NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN) {
+					NAN_FW_MAX_FOLLOW_UP_SDEA_LEN) {
 					DBGLOG(NAN, ERROR,
 						"outputTlv.length is invalid!\n");
 					kfree(pNanXmitFollowupReq);
@@ -3149,18 +3149,27 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 		prFollowupEvt->requestor_instance_id;
 	prNanFollowupInd->followupIndParams.window = prFollowupEvt->dw_or_faw;
 
-	DBGLOG(NAN, VOC, "[%s] matchHandle: %d, window:%d\n", __func__,
+	DBGLOG(NAN, VOC,
+	       "[%s] matchHandle: %d, window:%d, ServiceLen(%d,%d)\n",
+	       __func__,
 	       prNanFollowupInd->followupIndParams.matchHandle,
-	       prNanFollowupInd->followupIndParams.window);
+	       prNanFollowupInd->followupIndParams.window,
+	       prFollowupEvt->service_specific_info_len,
+	       prFollowupEvt->sdea_service_specific_info_len);
 
 	tlvs = prNanFollowupInd->ptlv;
 	/* Add TLV datas */
 	tlvs = nanAddTlv(NAN_TLV_TYPE_MAC_ADDRESS, MAC_ADDR_LEN,
 			 prFollowupEvt->addr, tlvs);
 
-	tlvs = nanAddTlv(NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO,
+	if (prFollowupEvt->service_specific_info_len > 0)
+		tlvs = nanAddTlv(NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO,
 			 prFollowupEvt->service_specific_info_len,
 			 prFollowupEvt->service_specific_info, tlvs);
+	if (prFollowupEvt->sdea_service_specific_info_len > 0)
+		tlvs = nanAddTlv(NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO,
+			 prFollowupEvt->sdea_service_specific_info_len,
+			 prFollowupEvt->sdea_service_specific_info, tlvs);
 
 	DBGLOG(NAN, VOC,
 		"pub/subid: %d, addr: %02x:%02x:%02x:%02x:%02x:%02x, specific_info[0]: %02x\n",

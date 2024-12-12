@@ -42,10 +42,16 @@
 #define NAN_MAX_SERVICE_NAME_LEN 255
 #define NAN_MAX_MATCH_FILTER_LEN 255
 #define NAN_MAX_SERVICE_SPECIFIC_INFO_LEN 255
-#define NAN_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN 255
+#define NAN_MAX_SDEA_LEN 255
 
 #define NAN_FW_MAX_MATCH_FILTER_LEN 255
 #define NAN_FW_MAX_SERVICE_SPECIFIC_INFO_LEN 255
+#if (CFG_SUPPORT_NAN_EXT == 1)
+/* May be extend to 1400 for the future */
+#define NAN_FW_MAX_FOLLOW_UP_SDEA_LEN  255
+#else
+#define NAN_FW_MAX_FOLLOW_UP_SDEA_LEN  255
+#endif
 #define NAN_FW_MAX_SCID_BUF_LEN 128
 #define NAN_FW_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN 255
 
@@ -67,12 +73,22 @@
 #define NAN_FW_SDEA_SPECIFIC_INFO_LEN 255
 #define NAN_SECURITY_MIN_PASSPHRASE_LEN 8
 #define NAN_SECURITY_MAX_PASSPHRASE_LEN 63
+
+#if (CFG_SUPPORT_NAN_EXT == 1)
 /* Max publish + subscribe numbers 12 */
 #define NAN_MAX_PUBLISH_NUM 6
 #define NAN_MAX_SUBSCRIBE_NUM 6
 #define NAN_MAX_QUEUE_FOLLOW_UP 6
 /* MAX 6 queued follow up messages and 6 solicited publish */
 #define NUM_OF_NAN_POST_PROCESS 12
+#else
+/* Max publish + subscribe numbers 4 */
+#define NAN_MAX_PUBLISH_NUM 2
+#define NAN_MAX_SUBSCRIBE_NUM 2
+#define NAN_MAX_QUEUE_FOLLOW_UP 2
+/* MAX 2 queued follow up messages and 2 solicited publish */
+#define NUM_OF_NAN_POST_PROCESS 4
+#endif
 
 #if (CFG_SUPPORT_NAN_DBDC == 1)
 #define NAN_MAX_NDP_SESSIONS 8
@@ -1197,7 +1213,7 @@ struct NanPublishRequest {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_MAX_SDEA_LEN];
 } __KAL_ATTRIB_PACKED__;
 
 /* Publish Cancel Msg Structure
@@ -1370,7 +1386,7 @@ struct NanSubscribeRequest {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_MAX_SDEA_LEN];
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Subscribe Cancel Structure
@@ -1416,7 +1432,7 @@ struct NanTransmitFollowupRequest {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_FW_MAX_FOLLOW_UP_SDEA_LEN];
 } __KAL_ATTRIB_PACKED__;
 
 /* Stats Request structure
@@ -1919,7 +1935,7 @@ struct NanMatchInd {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_MAX_SDEA_LEN];
 } __KAL_ATTRIB_PACKED__;
 
 /* MatchExpired Indication
@@ -1986,7 +2002,7 @@ struct NanFollowupInd {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_FW_MAX_FOLLOW_UP_SDEA_LEN];
 } __KAL_ATTRIB_PACKED__;
 
 /* Event data notifying the Mac address of the Discovery engine.

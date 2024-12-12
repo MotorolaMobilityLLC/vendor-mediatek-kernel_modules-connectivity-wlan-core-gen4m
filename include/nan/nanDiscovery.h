@@ -53,7 +53,7 @@ struct NAN_FOLLOW_UP_EVENT {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_FW_MAX_FOLLOW_UP_SDEA_LEN];
 
 	/* Tx status */
 	uint32_t tx_status;
@@ -226,7 +226,7 @@ struct NanFWPublishRequest {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_FW_SDEA_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_MAX_SDEA_LEN];
 
 	/* Nan Security Key Info is optional in Discovery phase.
 	 * PMK or passphrase info can be passed during
@@ -396,7 +396,7 @@ struct NanFWSubscribeRequest {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_FW_SDEA_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_MAX_SDEA_LEN];
 
 	uint8_t service_name_hash[NAN_SERVICE_HASH_LENGTH];
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
@@ -429,7 +429,7 @@ struct NanFWTransmitFollowupRequest {
 
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
-	uint8_t sdea_service_specific_info[NAN_FW_SDEA_SPECIFIC_INFO_LEN];
+	uint8_t sdea_service_specific_info[NAN_FW_MAX_FOLLOW_UP_SDEA_LEN];
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 struct service_specificy_info {
