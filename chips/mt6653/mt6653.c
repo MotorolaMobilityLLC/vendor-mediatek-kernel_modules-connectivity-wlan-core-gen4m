@@ -1211,6 +1211,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if CFG_MTK_WIFI_SW_EMI_RING
 	.is_en_sw_emi_read = TRUE,
 #endif
+	.fgDumpViaBtOnlyForDbgSOP = TRUE,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.is_support_wfdma_write_back = TRUE,
