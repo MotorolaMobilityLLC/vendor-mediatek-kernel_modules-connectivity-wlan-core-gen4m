@@ -465,6 +465,8 @@ struct BSS_DESC {
 	uint16_t u2Score;
 	uint32_t u4Tput;
 	uint8_t fgPicked;
+	uint8_t fgIsMatchBssid;
+	uint8_t fgIsMatchBssidHint;
 
 #if CFG_SUPPORT_802_11K
 	struct NEIGHBOR_AP *prNeighbor;

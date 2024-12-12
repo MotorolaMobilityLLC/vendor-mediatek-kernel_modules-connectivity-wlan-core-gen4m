@@ -1753,6 +1753,8 @@ struct BSS_DESC *apsIntraUpdateCandi(struct ADAPTER *ad,
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(ais);
+	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
+	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	struct LINK *link = &ap->arLinks[eBand];
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	struct BSS_DESC *bss, *cand = NULL;
@@ -1778,6 +1780,43 @@ try_again:
 
 		if (!search_blk && link->u4NumElem > 1 && bss->prBlock)
 			continue;
+
+		if (policy == CONNECT_BY_BSSID) {
+			if (EQUAL_MAC_ADDR(bss->aucBSSID,
+					   conn->aucBSSID)) {
+				bss->fgIsMatchBssid = TRUE;
+				cand = bss;
+				break;
+			}
+			continue;
+		} else if (policy == CONNECT_BY_BSSID_HINT) {
+			uint8_t oce = FALSE;
+			uint8_t chnl = nicFreq2ChannelNum(
+					conn->u4FreqInMHz * 1000);
+
+#if CFG_SUPPORT_MBO
+			oce = ad->rWifiVar.u4SwTestMode ==
+				ENUM_SW_TEST_MODE_SIGMA_OCE;
+#endif
+			if (!oce && EQUAL_MAC_ADDR(bss->aucBSSID,
+				conn->aucBSSIDHint) &&
+			    (chnl == 0 || chnl == bss->ucChannelNum)) {
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+				if (IS_CHANNEL_IN_DESENSE_RANGE(
+					ad,
+					bss->ucChannelNum,
+					bss->eBand)) {
+					DBGLOG(APS, INFO,
+						"Do network selection even match bssid_hint\n");
+				} else
+#endif
+				{
+					bss->fgIsMatchBssidHint = TRUE;
+					cand = bss;
+					break;
+				}
+			}
+		}
 
 		if (!apsIsBssQualify(ad, bss, reason, min_score,
 			bss->u2Score, bidx))
@@ -1886,7 +1925,14 @@ uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
 		uint16_t score = 0;
 
 		bss = candi[i];
-		score = (bss && !bss->fgDriverGen) ? bss->u2Score : 0;
+		if (bss) {
+			if (bss->fgIsMatchBssid)
+				score = BSS_MATCH_BSSID_SCORE;
+			else if (bss->fgIsMatchBssidHint)
+				score = BSS_MATCH_BSSID_HINT_SCORE;
+			else if (!bss->fgDriverGen)
+				score = bss->u2Score;
+		}
 
 		for (j = i - 1; j >= 0 && (candi[j] ?
 			candi[j]->u2Score : 0) < score; j--)
@@ -1978,8 +2024,6 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint16_t min_score, enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	struct mt66xx_chip_info *prChipInfo = ad->chip_info;
-	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
-	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	enum ENUM_MLO_LINK_PLAN curr_plan;
 	struct BSS_DESC *bss;
@@ -1996,6 +2040,8 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				apsCalculateApScore(ad, bss, reason, bidx);
 			bss->u4Tput =
 				apsGetEstimatedTput(ad, bss, bidx);
+			bss->fgIsMatchBssid = FALSE;
+			bss->fgIsMatchBssidHint = FALSE;
 
 #if (CFG_SUPPORT_ROAMING_LOG == 1)
 			if (roamingFsmIsDiscovering(ad, bidx)) {
@@ -2006,38 +2052,6 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 					bss->u2Score, bss->u4Tput);
 			}
 #endif
-
-			if (policy == CONNECT_BY_BSSID) {
-				if (EQUAL_MAC_ADDR(bss->aucBSSID,
-						   conn->aucBSSID))
-					bss->u2Score = BSS_MATCH_BSSID_SCORE;
-			} else if (policy == CONNECT_BY_BSSID_HINT) {
-				uint8_t oce = FALSE;
-				uint8_t chnl = nicFreq2ChannelNum(
-						conn->u4FreqInMHz * 1000);
-
-#if CFG_SUPPORT_MBO
-				oce = ad->rWifiVar.u4SwTestMode ==
-					ENUM_SW_TEST_MODE_SIGMA_OCE;
-#endif
-				if (!oce && EQUAL_MAC_ADDR(bss->aucBSSID,
-					conn->aucBSSIDHint) &&
-				    (chnl == 0 || chnl == bss->ucChannelNum)) {
-#if (CFG_SUPPORT_AVOID_DESENSE == 1)
-					if (IS_CHANNEL_IN_DESENSE_RANGE(
-						ad,
-						bss->ucChannelNum,
-						bss->eBand)) {
-						DBGLOG(APS, INFO,
-							"Do network selection even match bssid_hint\n");
-					} else
-#endif
-					{
-						bss->u2Score =
-						     BSS_MATCH_BSSID_HINT_SCORE;
-					}
-				}
-			}
 		}
 	}
 
@@ -2192,10 +2206,10 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 			if (cand->fgIsConnected & bmap)
 				k++;
 
-			if (cand->u2Score == BSS_MATCH_BSSID_SCORE)
+			if (cand->fgIsMatchBssid)
 				ap->fgIsMatchBssid = TRUE;
 
-			if (cand->u2Score == BSS_MATCH_BSSID_HINT_SCORE)
+			if (cand->fgIsMatchBssidHint)
 				ap->fgIsMatchBssidHint = TRUE;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -2210,9 +2224,9 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 				apucBandStr[cand->eBand],
 				MAC2STR(mld_addr),
 				cand->u2Score, cand->u4Tput,
-				ap->aprTarget[i]->fgIsConnected,
-				cand->u2Score == BSS_MATCH_BSSID_SCORE,
-				cand->u2Score == BSS_MATCH_BSSID_HINT_SCORE,
+				cand->fgIsConnected,
+				cand->fgIsMatchBssid,
+				cand->fgIsMatchBssidHint,
 				cand->prBlock != NULL,
 				ap->eMloMode, ap->ucMaxSimuLinks);
 		}
