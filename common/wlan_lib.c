@@ -12287,7 +12287,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 				   uint8_t ucCoveredRange)
 {
 	uint8_t ucIdx, ucStart, ucEnd;
-	u_int8_t bIsABand = FALSE;
+	u_int8_t fgIsABand = FALSE;
 	uint8_t ucLeftNeighborChannel, ucRightNeighborChannel,
 		ucLeftNeighborChannel2 = 0, ucRightNeighborChannel2 = 0,
 		ucLeftestCoveredChannel, ucRightestCoveredChannel;
@@ -12301,18 +12301,13 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	ucLeftNeighborChannel = ucLeftestCoveredChannel ?
 				ucLeftestCoveredChannel - 1 : 0;
 
-	if (prBssDesc->eBand == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		|| prBssDesc->eBand == BAND_6G
-#endif
-	) {
-		bIsABand = TRUE;
-	}
+	fgIsABand = cnmGet80211Band(prBssDesc->eBand) == BAND_80211_A;
 
 	/* align leftest covered ch and left neighbor ch to valid 5g ch */
-	if (bIsABand) {
+	if (fgIsABand) {
 		ucLeftestCoveredChannel += 2;
-		ucLeftNeighborChannel -= 1;
+		if (likely(ucLeftNeighborChannel > 0)) /* Coverity underflow */
+			ucLeftNeighborChannel -= 1;
 	} else {
 		/* we select the nearest 2 ch to the leftest covered ch as left
 		 * neighbor chs
@@ -12366,7 +12361,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	ucRightNeighborChannel = ucRightestCoveredChannel + 1;
 
 	/* align rightest covered ch and right neighbor ch to valid 5g ch */
-	if (bIsABand) {
+	if (fgIsABand) {
 		ucRightestCoveredChannel -= 2;
 		ucRightNeighborChannel += 1;
 	} else {
@@ -12473,7 +12468,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (bIsABand)
+	if (fgIsABand)
 		return;
 
 	/* Only necesaary for 2.5G */
