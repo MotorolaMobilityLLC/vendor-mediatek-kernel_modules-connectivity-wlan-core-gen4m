@@ -1450,6 +1450,21 @@ void asicConnac3xWfdmaInitForUSB(
 
 uint8_t asicConnac3xUsbEventEpDetected(struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo;
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		goto out;
+	}
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
+
+out:
+	/* CONNAC3 EVT use PSE, expect that the EVT is always from the EP4 */
 	return USB_DATA_EP_IN;
 }
 
