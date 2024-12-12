@@ -613,6 +613,12 @@ int32_t TdlsAuto(
 	if (!b)
 		return -1;
 
+	/* no need to support TDLS when BSS is MLO */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (b->ucPhyTypeSet & PHY_TYPE_BIT_EHT)
+		return -1;
+#endif
+
 	if (TIME_BEFORE(kalGetJiffies(),
 		b->ulLastUpdate + SAMPLING_UT)) {
 		TdlsUpdateTxRxStat(
