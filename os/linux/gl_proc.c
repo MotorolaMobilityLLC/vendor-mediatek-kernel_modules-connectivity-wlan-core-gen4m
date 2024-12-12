@@ -84,6 +84,10 @@
 #endif
 #endif /* (BUILD_QA_DBG) */
 
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#define PROC_TEST_MODE				"testMode"
+#endif
+
 #define PROC_MCR_ACCESS_MAX_USER_INPUT_LEN      20
 #define PROC_RX_STATISTICS_MAX_USER_INPUT_LEN   10
 #define PROC_TX_STATISTICS_MAX_USER_INPUT_LEN   10
@@ -1965,6 +1969,71 @@ static const struct file_operations auto_twt_smart_ops = {
 #endif
 #endif /* (BUILD_QA_DBG) */
 
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+static ssize_t procTestRead(struct file *filp, char __user *buf,
+	size_t count, loff_t *f_pos)
+{
+	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
+	uint32_t u4CopySize;
+	struct GLUE_INFO *prGlueInfo;
+	u_int8_t isTest = 0;
+	int32_t i4Ret = 0;
+
+	/* if *f_pos > 0, it means has read succceeded last time */
+	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
+		i4Ret = 0;
+		goto freeBuf;
+	}
+
+	prGlueInfo = g_prGlueInfo_proc;
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
+		i4Ret = 0;
+		goto freeBuf;
+	}
+
+
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(REQ, WARN, "prAdapter is NULL\n");
+		i4Ret = 0;
+		goto freeBuf;
+	}
+
+	isTest = wlanQueryTestMode(prGlueInfo->prAdapter);
+
+	kalSnprintf(pucProcBuf, PROC_MAX_BUF_SIZE, "WiFi Operation Mode: %s\n",
+				isTest == 0 ? "MP Mode" : "Test Mode");
+
+	u4CopySize = kalStrLen(pucProcBuf);
+	u4CopySize = (u4CopySize > count) ? count : u4CopySize;
+
+	if (copy_to_user(buf, pucProcBuf, u4CopySize)) {
+		DBGLOG(REQ, WARN, "copy to user failed\n");
+		i4Ret = -EFAULT;
+		goto freeBuf;
+	}
+	*f_pos += u4CopySize;
+	i4Ret = u4CopySize;
+freeBuf:
+	if (pucProcBuf)
+		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
+	return i4Ret;
+}
+#if KERNEL_VERSION(5, 6, 0) <= CFG80211_VERSION_CODE
+static const struct proc_ops test_ops = {
+	.proc_read = procTestRead,
+};
+#else
+static const struct file_operations test_ops = {
+	.owner = THIS_MODULE,
+	.read = procTestRead,
+};
+#endif
+#endif /* CFG_TESTMODE_L0P5_FWDL_SUPPORT */
+
+
+
 int32_t procInitFs(void)
 {
 	struct proc_dir_entry *prEntry;
@@ -2115,6 +2184,10 @@ int32_t procRemoveProcfs(void)
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 #endif /* (BUILD_QA_DBG) */
 
+#if (CFG_TESTMODE_L0P5_FWDL_SUPPORT)
+	remove_proc_entry(PROC_TEST_MODE, gprProcRoot);
+#endif
+
 	DBGLOG(INIT, INFO, "remove proc fs done\n");
 	return 0;
 } /* end of procRemoveProcfs() */
@@ -2216,6 +2289,15 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 	}
 #endif
 #endif /* ((BUILD_QA_DBG) */
+
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	prEntry = proc_create(PROC_TEST_MODE, 0664, gprProcRoot, &test_ops);
+	if (!prEntry) {
+		DBGLOG(INIT, ERROR,
+			"Unable to create /proc entry for test mode\n\r");
+		return -1;
+	}
+#endif
 
 	DBGLOG(INIT, INFO, "create proc fs done\n");
 	return 0;

@@ -1247,6 +1247,7 @@ void WfsysResetHdlr(struct work_struct *work)
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 
 #if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	prGlueInfo->fgTestL0P5Done = TRUE;
 	wake_up_interruptible(&prGlueInfo->waitQTestFwDl);
 #endif
 

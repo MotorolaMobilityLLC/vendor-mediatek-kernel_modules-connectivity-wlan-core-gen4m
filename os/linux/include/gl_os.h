@@ -1148,9 +1148,16 @@ struct GLUE_INFO {
 #endif
 
 #if CFG_TESTMODE_L0P5_FWDL_SUPPORT
-	bool fgTestFwDl;
+	/* Flag indicating if test-mode L0.5 firmware download is initiated */
+	u_int8_t fgTestFwDl;
+	/* Flag denoting the completion of the L0.5 firmware download process */
+	u_int8_t fgTestL0P5Done;
+	/* Wait queue for synchronization during test-mode L0.5 reset */
 	wait_queue_head_t waitQTestFwDl;
+	/* Thread responsible for handling test-mode transition */
+	struct task_struct *prTestFwDlThread;
 #endif
+
 #if CFG_SUPPORT_HIF_REG_WORK
 	struct kfifo rHifRegFifo;
 	spinlock_t rHifRegFifoLock;
