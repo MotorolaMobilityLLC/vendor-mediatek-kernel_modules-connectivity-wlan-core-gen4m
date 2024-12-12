@@ -6317,14 +6317,24 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	STR_CMD_FUNCTION pfHandler = NULL;
 
-	WIPHY_PRIV(wiphy, prGlueInfo);
-
 	if (data == NULL || len == 0) {
 		DBGLOG(INIT, TRACE, "%s data or len is invalid\n", __func__);
 		return -EINVAL;
 	}
 
 	DBGLOG(REQ, INFO, "cmd: %s, len: %d\n", cmd, len);
+	if (kalIsResetOnEnd() == TRUE) {
+		DBGLOG(INIT, WARN, "WiFi is resetting\n");
+		return -EBUSY;
+	}
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+	    WLAN_DRV_READY_CHECK_HIF_SUSPEND |
+	    WLAN_DRV_READY_CHECK_RESET)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
 
 	pfHandler = get_str_cmd_handler(cmd, len);
 	if (pfHandler != NULL) {
