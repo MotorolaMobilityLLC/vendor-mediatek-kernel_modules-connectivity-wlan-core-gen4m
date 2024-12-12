@@ -5346,6 +5346,22 @@ wlanoidQueryRxStatistics(struct ADAPTER *prAdapter,
 }
 
 uint32_t
+wlanoidQueryRxStatTlv(struct ADAPTER *prAdapter,
+			 void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			 uint32_t *pu4QueryInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+
+	return nicUniCmdTestmodeRxStatTlv(prAdapter,
+		pvQueryBuffer,
+		u4QueryBufferLen);
+#else
+	DBGLOG(OID, WARN, "NOT supported.\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+uint32_t
 wlanoidManualAssoc(struct ADAPTER *prAdapter,
 		   void *pvSetBuffer, uint32_t u4SetBufferLen,
 		   uint32_t *pu4SetInfoLen) {

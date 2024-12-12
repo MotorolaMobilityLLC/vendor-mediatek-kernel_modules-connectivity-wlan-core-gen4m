@@ -370,6 +370,15 @@ enum {
 	TEST_RX_STAT_NUM
 };
 
+/* Tool RX INFO Tag */
+/* Band Tag (1<<12)|n */
+/* Path Tag (1<<13)|n */
+/* User Tag (1<<14)|n */
+/* Comm Tag (1<<15)|n */
+enum {
+	TEST_RX_STAT_TAG_NUM
+};
+
 /*****************************************************************************
  *	Data struct definition
  *****************************************************************************/
@@ -933,6 +942,10 @@ struct GNU_PACKED hqa_comm_rx_stat {
 #define GET_CAPABILITY_TAG_PHY_EXT	2
 #define GET_CAPABILITY_TAG_PHY_EXT_LEN	16
 
+/* phy capability rx info */
+#define GET_CAPABILITY_TAG_RX_INFO	3
+#define GET_CAPABILITY_TAG_RX_INFO_LEN	64
+
 struct test_capability_ph_cap {
 	/* header */
 	u_int32 tag;		/* GET_CAPABILITY_TAG_PHY */
@@ -1014,11 +1027,23 @@ struct test_capability_ext_cap {
 	u_int32 reserved[15];
 };
 
+struct test_capability_rx_info_cap {
+	/* header */
+	u_int32 tag;		/* GET_CAPABILITY_TAG_RX_INFO */
+	u_int32 tag_len;	/* GET_CAPABILITY_TAG_RX_INFO_LEN */
+
+	/* content: GET_CAPABILITY_TAG_RX_INFO_LEN */
+
+	/* reserved 64 */
+	u_int32 rx_info[64];
+};
+
 struct test_capability {
 	u_int32 version;
 	u_int32 tag_num;
 	struct test_capability_ph_cap ph_cap;
 	struct test_capability_ext_cap ext_cap;
+	struct test_capability_rx_info_cap rx_info_cap;
 };
 
 /* Test mps for service */

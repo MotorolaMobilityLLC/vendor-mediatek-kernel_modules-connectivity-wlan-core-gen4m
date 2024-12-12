@@ -4389,6 +4389,11 @@ wlanoidQueryRxStatistics(struct ADAPTER *prAdapter,
 			 uint32_t *pu4QueryInfoLen);
 
 uint32_t
+wlanoidQueryRxStatTlv(struct ADAPTER *prAdapter,
+			 void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			 uint32_t *pu4QueryInfoLen);
+
+uint32_t
 wlanoidManualAssoc(struct ADAPTER *prAdapter,
 		   void *pvSetBuffer,
 		   uint32_t u4SetBufferLen,

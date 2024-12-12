@@ -7248,6 +7248,64 @@ uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdTestmodeRxStatTlv(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen)
+{
+	struct UNI_CMD_TESTMODE_RX_STAT *uni_cmd;
+	struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL buf = {0};
+	struct RFTEST_RX_STAT_INFO_TLV *pst_rx_info;
+	uint32_t max_cmd_len = 0;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	pst_rx_info = (struct RFTEST_RX_STAT_INFO_TLV *)pvQueryBuffer;
+
+	if (pst_rx_info->ucTagNum == 0) {
+		DBGLOG(RFTEST, ERROR, "Invalid data TagNum[%d]\n",
+			pst_rx_info->ucTagNum);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_RX_STAT) +
+		(pst_rx_info->ucTagNum *
+			sizeof(struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL));
+
+	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+
+	if (!uni_cmd) {
+		DBGLOG(RFTEST, ERROR,
+		       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd->u1BandIdx = pst_rx_info->ucDbdcIdx;
+
+	buf.u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_TLV;
+	buf.u2Length =
+		sizeof(struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL) +
+		sizeof(struct UNI_CMD_TESTMODE_RX_STAT);
+	buf.u1DbdcIdx = pst_rx_info->ucDbdcIdx;
+	kalMemCopy(uni_cmd->aucTlvBuffer, (uint8_t *)&buf,
+			sizeof(struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL));
+
+	status = wlanSendSetQueryUniCmd(ad,
+				UNI_CMD_ID_TESTMODE_RX_STAT,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicUniEventQueryRxStatInfoTlv,
+				nicUniCmdTimeoutCommon,
+				max_cmd_len,
+				(void *)uni_cmd,
+				pvQueryBuffer,
+				u4QueryBufferLen);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
+
 #endif
 
 uint32_t nicUniCmdSR(struct ADAPTER *ad,
@@ -10852,7 +10910,50 @@ void nicUniEventQueryRxStatAllCon3(struct ADAPTER
 			WLAN_STATUS_SUCCESS);
 	}
 }
+
 #endif
+
+void nicUniEventQueryRxStatInfoTlv(struct ADAPTER
+	  *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct GLUE_INFO *pr_glue_info = prAdapter->prGlueInfo;
+	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_TESTMODE_RX_STAT);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	struct RFTEST_RX_STAT_INFO_TLV *pst_rx_info = NULL;
+
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(RFTEST, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		return;
+	}
+
+	if (prCmdInfo->pvInformationBuffer) {
+		pst_rx_info =
+			(struct RFTEST_RX_STAT_INFO_TLV *)
+			prCmdInfo->pvInformationBuffer;
+	} else {
+		DBGLOG(RFTEST, ERROR, "pvInformationBuffer is NULL.\n");
+		return;
+	}
+
+	if (data_len > sizeof(pst_rx_info->au4Data)) {
+		DBGLOG(RFTEST, ERROR, "data_len(%d) invalid\n", data_len);
+		return;
+	}
+
+	memcpy((uint8_t *)(pst_rx_info->au4Data), data, data_len);
+	pst_rx_info->u4EvtLen = data_len;
+
+	if (prCmdInfo->fgIsOid) {
+		kalOidComplete(pr_glue_info,
+			prCmdInfo,
+			data_len,
+			WLAN_STATUS_SUCCESS);
+	}
+}
+
 #endif
 void nicUniEventBugReport(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)

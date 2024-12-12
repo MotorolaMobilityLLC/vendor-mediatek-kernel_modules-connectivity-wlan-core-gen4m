@@ -15294,6 +15294,27 @@ uint32_t wlanQueryThermalTempV2(struct ADAPTER *ad,
 	return status;
 }
 
+uint32_t wlanQueryRxInfoTlv(struct ADAPTER *ad,
+	struct RFTEST_RX_STAT_INFO_TLV *pstRxInfo)
+{
+	uint32_t u4status = WLAN_STATUS_SUCCESS;
+#if CFG_SUPPORT_QA_TOOL
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	PFN_OID_HANDLER_FUNC handler = NULL;
+
+	uint32_t u4len = 0;
+
+	if (!pstRxInfo)
+		return WLAN_STATUS_FAILURE;
+
+	handler = wlanoidQueryRxStatTlv;
+
+	u4status = kalIoctl(glue, handler,
+		pstRxInfo, sizeof(*pstRxInfo), &u4len);
+#endif
+	return u4status;
+}
+
 uint32_t wlanSetRFTestModeCMD(struct GLUE_INFO *prGlueInfo, bool fgEn)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;

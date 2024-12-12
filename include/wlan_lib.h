@@ -289,6 +289,8 @@ struct TPENHANCE_PKT_MAP {
 #define MAX_CMD_VALUE_LENGTH		1
 #define MAX_CMD_RESERVE_LENGTH		1
 
+#define TEST_RX_INFO_TAG_MAX_NUM 64
+
 #define CMD_FORMAT_V1_LENGTH	\
 	(MAX_CMD_NAME_MAX_LENGTH + MAX_CMD_VALUE_MAX_LENGTH + \
 	MAX_CMD_TYPE_LENGTH + MAX_CMD_STRING_LENGTH + MAX_CMD_VALUE_LENGTH + \
@@ -1732,6 +1734,15 @@ struct THERMAL_TEMP_DATA_V2 {
 	uint8_t *pu1SensorResult;
 };
 
+struct RFTEST_RX_STAT_INFO_TLV {
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	uint8_t	ucTagNum;
+	uint32_t au4TagInfo[TEST_RX_INFO_TAG_MAX_NUM];
+	uint32_t au4Data[1024];
+	uint32_t u4EvtLen;
+};
+
 /* channel operating width */
 enum WIFI_CHANNEL_WIDTH {
 	WIFI_CHAN_WIDTH_20 = 0,
@@ -2261,6 +2272,9 @@ uint32_t
 wlanQueryStatistics(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
+
+uint32_t wlanQueryRxInfoTlv(struct ADAPTER *ad,
+	struct RFTEST_RX_STAT_INFO_TLV *pstRxInfoSin);
 
 /*----------------------------------------------------------------------------*/
 /* query NIC resource information from chip and reset Tx resource for normal  */

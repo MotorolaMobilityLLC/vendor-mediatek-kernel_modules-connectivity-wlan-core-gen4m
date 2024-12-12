@@ -5,6 +5,7 @@
 
 #include "precomp.h"
 #include "agent.h"
+#include "nic_uni_cmd_event.h"
 
 u_char *agnt_rstrtok;
 int8_t g_hqa_frame_ctrl;
@@ -2753,6 +2754,172 @@ error1:
 	return ret;
 }
 
+static s_int32 hqa_get_rx_statistics_tlv(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 band_idx = 0, rx_info_tag_num = 0;
+	u_int32 dw_idx = 0, dw_cnt = 0, buf = 0;
+	boolean dbdc_mode = FALSE;
+	uint32_t total_evt_len = 0, tag_id;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_TESTMODE_RX_STAT);
+	uint16_t data_len = 0, tags_len = 0, offset = 0;
+	u_int8 *ptr = NULL;
+	u_char *data = hqa_frame->data;
+	u_int32 *p_total_evt_data = NULL, *p_data = NULL;
+	uint8_t *tag = NULL;
+	struct test_capability capability;
+	struct GLUE_INFO *glue = wlanGetGlueInfo();
+	struct ADAPTER *ad = NULL;
+	struct RFTEST_RX_STAT_INFO_TLV *st_rx_info_sin = NULL;
+	struct UNI_EVENT_TESTMODE_RX_STAT *pst_rx_stat = NULL;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR, ("%s\n", __func__));
+
+	if (glue == NULL) {
+		ret = SERV_STATUS_AGENT_FAIL;
+		goto error1;
+	}
+
+	ad = glue->prAdapter;
+
+	/* Request format type */
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+
+	if (band_idx >= TEST_DBDC_BAND_NUM)
+		band_idx = 0;
+
+	ret = sys_ad_alloc_mem((u_char **)&st_rx_info_sin,
+			sizeof(struct RFTEST_RX_STAT_INFO_TLV));
+	if ((ret != SERV_STATUS_SUCCESS) ||
+		(st_rx_info_sin == NULL)) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("%s: memory allocation fail for rx stat.\n",
+		__func__));
+		goto error1;
+	}
+
+	st_rx_info_sin->ucDbdcIdx = band_idx;
+
+	/* get content */
+	ret = mt_serv_get_capability(serv_test, &capability);
+
+	while (rx_info_tag_num < TEST_RX_INFO_TAG_MAX_NUM) {
+		if (capability.rx_info_cap.rx_info[rx_info_tag_num] == 0)
+			break;
+
+		st_rx_info_sin->au4TagInfo[rx_info_tag_num] =
+			capability.rx_info_cap.rx_info[rx_info_tag_num];
+
+		rx_info_tag_num++;
+	}
+
+	/* check dbdc mode condition */
+	dbdc_mode = IS_TEST_DBDC(serv_test->test_winfo);
+
+	if (rx_info_tag_num > TEST_RX_INFO_TAG_MAX_NUM) {
+		rx_info_tag_num = TEST_RX_INFO_TAG_MAX_NUM;
+		SERV_LOG(SERV_DBG_CAT_TEST,
+			SERV_DBG_LVL_ERROR, ("%s, rx_info_tag_num = %d\n",
+			__func__, rx_info_tag_num));
+	}
+
+	st_rx_info_sin->ucTagNum = rx_info_tag_num;
+
+	ret = wlanQueryRxInfoTlv(ad, st_rx_info_sin);
+
+	if (ret != SERV_STATUS_SUCCESS) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("%s: wlanQueryRxInfoTlv fail(0x%x)\n",
+		__func__, ret));
+		goto error1;
+	}
+	ret = sys_ad_alloc_mem((u_char **)&p_total_evt_data,
+			SERV_IOCTLBUFF);
+
+	if (p_total_evt_data == NULL) {
+		DBGLOG(RFTEST, ERROR, "Alloc pu4TotalEvtElmemt failed.\n");
+		goto error1;
+	}
+	data_len = st_rx_info_sin->u4EvtLen;
+	tags_len = data_len - fixed_len;
+	pst_rx_stat =
+	(struct UNI_EVENT_TESTMODE_RX_STAT *)(&(st_rx_info_sin->au4Data[0]));
+
+	p_data = p_total_evt_data;
+	/* fill Tag Number */
+	*p_data = (uint32_t)(pst_rx_stat->u1TagNum);
+	p_data++;
+	total_evt_len += sizeof(uint32_t);
+
+	tag = (uint8_t *)&st_rx_info_sin->au4Data[0] + fixed_len;
+
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		if ((total_evt_len + TAG_LEN(tag) +
+			sizeof(uint32_t)) > 1024) {
+			DBGLOG(RFTEST, WARN,
+				"Event length is too long(%d)\n",
+				(total_evt_len + TAG_LEN(tag)));
+			break;
+		}
+		tag_id = (uint32_t)(((TAG_ID(tag) & 0xf000) << 16) |
+			(TAG_ID(tag) & 0x000f));
+
+		/* pack for tool */
+		/* TLV Tag */
+		*p_data = tag_id;
+		/* TLV Length exclude hdr */
+		*(p_data+1) = (uint32_t)(TAG_LEN(tag)-4);
+		/* TLV value */
+		kalMemCopy((uint8_t *)(p_data+2),
+			TAG_DATA(tag),
+			(TAG_LEN(tag)-4));
+
+		/* inband cmd tag and len is 16 bits */
+		p_data +=
+		((TAG_LEN(tag)+sizeof(uint32_t))/sizeof(uint32_t));
+		total_evt_len += (TAG_LEN(tag)+sizeof(uint32_t));
+	}
+
+	memcpy(st_rx_info_sin->au4Data,
+		p_total_evt_data, total_evt_len);
+
+	if (tags_len != offset)
+		DBGLOG(RFTEST, ERROR, "tags_len(%d) != offset(%d)\n",
+			tags_len, offset);
+
+	sys_ad_free_mem(p_total_evt_data);
+
+	ptr = hqa_frame->data;
+	dw_cnt = total_evt_len >> 2;
+	if (dw_cnt > (SERV_IOCTLBUFF >> 2)) {
+		SERV_LOG(SERV_DBG_CAT_TEST,
+			SERV_DBG_LVL_ERROR,
+			("%s, dw_cnt(%d) is bigger than 1024\n",
+		__func__, dw_cnt));
+		dw_cnt = SERV_IOCTLBUFF >> 2;
+	}
+
+	for (dw_idx = 0; dw_idx < dw_cnt; dw_idx++) {
+		buf = SERV_OS_HTONL(st_rx_info_sin->au4Data[dw_idx]);
+		sys_ad_move_mem(ptr, &buf, sizeof(buf));
+		ptr += 4;
+	}
+
+	//update event length
+	update_hqa_frame(hqa_frame, (2 + st_rx_info_sin->u4EvtLen), ret);
+	sys_ad_free_mem(st_rx_info_sin);
+	return ret;
+
+error1:
+	update_hqa_frame(hqa_frame, 2, ret);
+	if (st_rx_info_sin != NULL)
+		sys_ad_free_mem(st_rx_info_sin);
+	return ret;
+
+}
+
 static s_int32 hqa_get_capability(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -2774,6 +2941,8 @@ static s_int32 hqa_get_capability(
 	capability.ph_cap.tag_len = GET_CAPABILITY_TAG_PHY_LEN;
 	capability.ext_cap.tag = GET_CAPABILITY_TAG_PHY_EXT;
 	capability.ext_cap.tag_len = GET_CAPABILITY_TAG_PHY_EXT_LEN;
+	capability.rx_info_cap.tag = GET_CAPABILITY_TAG_RX_INFO;
+	capability.rx_info_cap.tag_len = GET_CAPABILITY_TAG_RX_INFO_LEN;
 
 	/* get content */
 	ret = mt_serv_get_capability(serv_test, &capability);
@@ -5273,6 +5442,7 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x1c,	hqa_get_rx_statistics_all},
 	{0x1d,	hqa_get_capability},
 	{0x1e,	hqa_get_rf_type_capability},
+	{0x1f,	hqa_get_rx_statistics_tlv},
 	{0x21,	legacy_function},
 	{0x22,	hqa_check_efuse_mode_type},
 	{0x23,	hqa_check_efuse_nativemode_type},

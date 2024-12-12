@@ -4398,8 +4398,8 @@ struct UNI_CMD_TESTMODE_PL_CAL {
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_RX_STAT {
 	/* fix field*/
-	uint8_t aucPadding[4];
-
+	uint8_t u1BandIdx;
+	uint8_t ucReserved[3];
 	/* tlv */
 	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
@@ -4415,6 +4415,7 @@ struct UNI_CMD_TESTMODE_RX_STAT {
 enum ENUM_UNI_CMD_TESTMODE_RX_TAG {
 	UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL = 0x8,
 	UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2 = 0x9,
+	UNI_CMD_TESTMODE_RX_TAG_GET_STAT_TLV = 0xA,
 	UNI_CMD_TESTMODE_RX_TAG_NUM,
 };
 
@@ -7913,7 +7914,8 @@ struct UNI_EVENT_TESTMODE_PL_CAL {
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_RX_STAT {
 	/* fix field */
-	uint8_t au1Reserved[4];
+	uint8_t u1TagNum;
+	uint8_t au1Reserved[3];
 
 	/* tlv */
 	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
@@ -7930,7 +7932,6 @@ enum UNI_EVENT_TESTMODE_RX_STAT_TAG {
 	UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL = 0x6,
 	UNI_EVENT_TESTMODE_RX_STAT_TAG_NUM
 };
-
 /** @addtogroup UNI_EVENT_ID_TESTMODE_RX_STAT_ALL
  * @{
  */
@@ -9560,6 +9561,10 @@ uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdTestmodeRxStatTlv(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen);
+
 #endif
 uint32_t nicUniCmdSetTxAmpdu(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
@@ -9803,6 +9808,8 @@ void nicUniEventQueryRxStatAll(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventQueryRxStatAllCon3(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQueryRxStatInfoTlv(struct ADAPTER
+	  *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventBugReport(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventLinkStats(struct ADAPTER *prAdapter,
