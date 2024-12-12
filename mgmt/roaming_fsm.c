@@ -266,7 +266,8 @@ uint32_t roamingFsmSendFtActionFrame(struct ADAPTER *prAdapter,
 	DBGDUMP_MEM8(ROAMING, INFO, "FT request\n",
 		prMsduInfo->prPacket, pos - (uint8_t *)prTxFrame);
 
-	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo,
+		AIS_ACTION_FRAME_TX_LIFE_TIME_MS);
 	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 

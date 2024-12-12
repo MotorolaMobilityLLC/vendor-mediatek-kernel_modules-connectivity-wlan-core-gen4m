@@ -2154,14 +2154,6 @@ aisState_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (timerPendingTimer(&prAisFsmInfo->rChannelTimeoutTimer)) {
-		cnmTimerStopTimer(prAdapter,
-				&prAisFsmInfo->rChannelTimeoutTimer);
-	}
-
-	cnmTimerStartTimer(prAdapter,
-			&prAisFsmInfo->rChannelTimeoutTimer,
-			prOffChnlTxPkt->u4Duration);
 	aisFuncTxMgmtFrame(prAdapter,
 			prMgmtTxInfo,
 			prOffChnlTxPkt->prMgmtTxMsdu,
@@ -3221,7 +3213,6 @@ send_msg:
 			aisReqJoinChPrivilege(prAdapter,
 				prAisFsmInfo,
 				&prAisFsmInfo->ucSeqNumOfChReq);
-			prAisFsmInfo->fgIsChannelRequested = TRUE;
 			break;
 
 		case AIS_STATE_JOIN: {
@@ -3357,6 +3348,17 @@ send_msg:
 
 			prAisFsmInfo->ucSeqNumOfChReq = cnmIncreaseTokenId(prAdapter);
 
+			/* stop Tx to avoid sending data but FW already change
+			 * own mac when band swapped
+			 */
+			if (prAisBssInfo->prStaRecOfAP) {
+				qmSetStaRecTxAllowed(prAdapter,
+					   prAisBssInfo->prStaRecOfAP,
+					   FALSE);
+				DBGLOG(AIS, INFO,
+					"[TxMgmt] TxAllowed = FALSE\n");
+			}
+
 			/* filling */
 			prMsgChReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 			prMsgChReq->ucBssIndex =
@@ -3379,6 +3381,8 @@ send_msg:
 
 			prAisFsmInfo->ucChReqNum = 1;
 			prAisFsmInfo->fgIsChannelRequested = TRUE;
+			prAisFsmInfo->ucBssIndexOfChReq =
+				prAisBssInfo->ucBssIndex;
 
 			break;
 
@@ -3398,10 +3402,19 @@ send_msg:
 
 			if (!aisState_OFF_CHNL_TX(prAdapter, ucBssIndex)) {
 				if (prAisBssInfo->eConnectionState ==
-						MEDIA_STATE_CONNECTED)
+						MEDIA_STATE_CONNECTED) {
+					/* restore txallow status */
+					if (prAisBssInfo->prStaRecOfAP) {
+						qmSetStaRecTxAllowed(prAdapter,
+						     prAisBssInfo->prStaRecOfAP,
+						     TRUE);
+						DBGLOG(AIS, INFO,
+						 "[TxMgmt] TxAllowed = TRUE\n");
+					}
 					eNextState = AIS_STATE_NORMAL_TR;
-				else
+				} else {
 					eNextState = AIS_STATE_IDLE;
+				}
 				fgIsTransition = TRUE;
 			}
 			break;
@@ -6903,24 +6916,34 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			complete(&prAdapter->prGlueInfo->rAisChGrntComp);
 		}
 #endif
+
+		/*
+		 * set timeout timer in cases upper layer
+		 * cancel_remain_on_channel never comes
+		 */
+		if (timerPendingTimer(&prAisFsmInfo->rChannelTimeoutTimer)) {
+			cnmTimerStopTimer(prAdapter,
+					&prAisFsmInfo->rChannelTimeoutTimer);
+		}
+		cnmTimerStartTimer(prAdapter,
+				&prAisFsmInfo->rChannelTimeoutTimer,
+				prAisFsmInfo->u4ChGrantedInterval -
+				AIS_JOIN_CH_GRANT_THRESHOLD);
+
+		DBGLOG(AIS, INFO, "Start %s Timer!\n",
+			prAisFsmInfo->rChReqInfo.eReqType ==
+			CH_REQ_TYPE_OFFCHNL_TX ? "TxMgmt" : "ROC");
+
 		if (prAisFsmInfo->rChReqInfo.eReqType ==
 				CH_REQ_TYPE_OFFCHNL_TX) {
 			aisFsmSteps(prAdapter, AIS_STATE_OFF_CHNL_TX,
 				ucBssIndex);
 		} else {
-			/*
-			 * 3.1 set timeout timer in cases upper layer
-			 * cancel_remain_on_channel never comes
-			 */
-			cnmTimerStartTimer(prAdapter,
-					&prAisFsmInfo->rChannelTimeoutTimer,
-					prAisFsmInfo->u4ChGrantedInterval);
-
-			/* 3.2 switch to remain_on_channel state */
+			/* switch to remain_on_channel state */
 			aisFsmSteps(prAdapter, AIS_STATE_REMAIN_ON_CHANNEL,
 				ucBssIndex);
 
-			/* 3.3. indicate upper layer for channel ready */
+			/* indicate upper layer for channel ready */
 			kalReadyOnChannel(prAdapter->prGlueInfo,
 					prAisFsmInfo->rChReqInfo.u8Cookie,
 					prAisFsmInfo->rChReqInfo.eBand,
@@ -6981,7 +7004,7 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 		kalMemZero(prMsgChAbort, sizeof(struct MSG_CH_ABORT));
 		prMsgChAbort->rMsgHdr.eMsgId = MID_MNY_CNM_CH_ABORT;
-		prMsgChAbort->ucBssIndex = ucBssIndex;
+		prMsgChAbort->ucBssIndex = prAisFsmInfo->ucBssIndexOfChReq;
 		prMsgChAbort->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
 		prMsgChAbort->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
 #if CFG_SUPPORT_DBDC
@@ -8323,7 +8346,7 @@ aisFunAddTxReq2Queue(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-static void
+static uint32_t
 aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
 		struct AIS_FSM_INFO *prAisFsmInfo,
 		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
@@ -8344,39 +8367,21 @@ aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
 		goto error;
 
 	if (prOffChnlTxReq == NULL)
-		return;
+		goto error;
 
-	switch (prAisFsmInfo->eCurrentState) {
-	case AIS_STATE_OFF_CHNL_TX:
-		if (prAisFsmInfo->fgIsChannelGranted &&
-				prAisFsmInfo->rChReqInfo.ucChannelNum ==
-				prMgmtTxMsg->rChannelInfo.ucChannelNum &&
-				prMgmtTxReqInfo->rTxReqLink.u4NumElem == 1) {
-			aisFsmSteps(prAdapter, AIS_STATE_OFF_CHNL_TX,
-				ucBssIndex);
-		} else {
-			log_dbg(P2P, INFO, "tx ch: %d, current ch: %d, granted: %d, tx link num: %d",
-				prMgmtTxMsg->rChannelInfo.ucChannelNum,
-				prAisFsmInfo->rChReqInfo.ucChannelNum,
-				prAisFsmInfo->fgIsChannelGranted,
-				prMgmtTxReqInfo->rTxReqLink.u4NumElem);
-		}
-		break;
-	default:
-		if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq,
-			ucBssIndex))
-			goto error;
-		break;
-	}
+	if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq,
+		ucBssIndex))
+		goto error;
 
-	return;
-
+	return WLAN_STATUS_SUCCESS;
 error:
 	LINK_REMOVE_KNOWN_ENTRY(
 			&(prMgmtTxReqInfo->rTxReqLink),
 			&prOffChnlTxReq->rLinkEntry);
 	cnmPktFree(prAdapter, prOffChnlTxReq->prMgmtTxMsdu);
 	cnmMemFree(prAdapter, prOffChnlTxReq);
+
+	return WLAN_STATUS_RESOURCES;
 }
 
 static u_int8_t
@@ -8418,6 +8423,8 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
 			(struct MSG_MGMT_TX_REQUEST *) NULL;
+	struct BSS_INFO *prAisBssInfo;
+	uint32_t u4Status;
 	uint8_t ucBssIndex = 0;
 
 	if (!prAdapter || !prMsgHdr)
@@ -8426,21 +8433,46 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
 	ucBssIndex = prMgmtTxMsg->ucBssIdx;
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	if (prAisFsmInfo == NULL)
 		goto exit;
 
-	if (!aisFunNeedOffchnlTx(prAdapter, prMgmtTxMsg))
+	if (!aisFunNeedOffchnlTx(prAdapter, prMgmtTxMsg)) {
 		aisFuncTxMgmtFrame(prAdapter,
 				&prAisFsmInfo->rMgmtTxInfo,
 				prMgmtTxMsg->prMgmtMsduInfo,
 				prMgmtTxMsg->u8Cookie,
 				ucBssIndex);
-	else
-		aisFunHandleOffchnlTxReq(prAdapter,
+	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE ||
+		   prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR ||
+		   aisFsmIsSwitchChannel(prAdapter, prAisFsmInfo)) {
+		u4Status = aisFunHandleOffchnlTxReq(prAdapter,
 				prAisFsmInfo,
 				prMgmtTxMsg,
 				ucBssIndex);
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(AIS, WARN, "Handle TX mgmt failed.\n",
+				aisGetFsmState(prAisFsmInfo->eCurrentState));
+			kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
+				  prMgmtTxMsg->u8Cookie,
+				  FALSE,
+				  prMgmtTxMsg->prMgmtMsduInfo->prPacket,
+				  (uint32_t)
+				  prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength,
+				  ucBssIndex);
+		}
+	} else {
+		DBGLOG(AIS, WARN, "Disable TX mgmt when state=%s.\n",
+			aisGetFsmState(prAisFsmInfo->eCurrentState));
+		kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
+			  prMgmtTxMsg->u8Cookie,
+			  FALSE,
+			  prMgmtTxMsg->prMgmtMsduInfo->prPacket,
+			  (uint32_t)
+			  prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength,
+			  ucBssIndex);
+	}
 
 exit:
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -8665,6 +8697,9 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 		prMgmtTxReqInfo->prMgmtTxMsdu = prMgmtTxMsdu;
 		prMgmtTxReqInfo->fgIsMgmtTxRequested = TRUE;
 
+		if (prWlanHdr->u2FrameCtrl == MAC_FRAME_ACTION)
+			nicTxSetPktLifeTime(prAdapter, prMgmtTxMsdu,
+				AIS_ACTION_FRAME_TX_LIFE_TIME_MS);
 
 		nicTxConfigPktControlFlag(prMgmtTxMsdu,
 					  MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
@@ -9494,15 +9529,17 @@ void aisFsmRunEventCancelTxWait(struct ADAPTER *prAdapter,
 	aisRestoreBandIdx(prAdapter, prAisBssInfo);
 	aisFsmReleaseCh(prAdapter, ucBssIndex);
 
-	if (timerPendingTimer(&prAisFsmInfo->rDeauthDoneTimer)) {
-		DBGLOG(AIS, INFO,
-			"[AIS%d][%d] DEAUTH frame is transmitting.\n",
-			prAisFsmInfo->ucAisIndex, ucBssIndex);
-	} else if (prAisBssInfo->eConnectionState ==
-			MEDIA_STATE_CONNECTED)
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+		/* restore txallow status */
+		if (prAisBssInfo->prStaRecOfAP) {
+			qmSetStaRecTxAllowed(prAdapter,
+				prAisBssInfo->prStaRecOfAP, TRUE);
+			DBGLOG(AIS, INFO, "[TxMgmt] TxAllowed = TRUE\n");
+		}
 		aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR, ucBssIndex);
-	else
+	} else {
 		aisFsmSteps(prAdapter, AIS_STATE_IDLE, ucBssIndex);
+	}
 
 exit:
 	if (prMsgHdr)
@@ -10499,6 +10536,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 	*ucChTokenId = cnmIncreaseTokenId(prAdapter);
 	prAisFsmInfo->ucChReqNum = ucReqChNum;
+	prAisFsmInfo->fgIsChannelRequested = TRUE;
 	prMsgChReq->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -10545,6 +10583,9 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 			prBss->prStaRecOfAP->fgIsTxAllowed = FALSE;
 
 		prSubReq = (struct MSG_CH_REQ *)&prMsgChReq[i];
+
+		if (i == 0)
+			prAisFsmInfo->ucBssIndexOfChReq = prBss->ucBssIndex;
 
 		prSubReq->ucBssIndex = prBss->ucBssIndex;
 #if CFG_SUPPORT_DBDC
@@ -11419,6 +11460,8 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	*ucChTokenId = cnmIncreaseTokenId(prAdapter);
 	prAisFsmInfo->ucChReqNum = 1;
 	prAisFsmInfo->fgIsChannelRequested = TRUE;
+	prAisFsmInfo->ucBssIndexOfChReq = prBss->ucBssIndex;
+
 	prMsgChReq->ucExtraChReqNum = 0;
 
 	prMsgChReq->ucBssIndex = prBss->ucBssIndex;
