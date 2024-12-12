@@ -2914,6 +2914,9 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	struct ieee80211_channel *chan = NULL;
 	enum nl80211_channel_type rChannelType;
 	uint8_t linkIdx = 0;
+#if CFG_SUPPORT_CCM
+	uint32_t u4BufLen = 0;
+#endif
 
 	if (!prAdapter || !prBssInfo)
 		return;
@@ -2936,6 +2939,15 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	}
 
 	prP2PInfo->fgChannelSwitchReq = false;
+
+#if CFG_SUPPORT_CCM
+	/* Call CCM check if any BSS want to CSA,
+	 * Should be triggered after fgChannelSwitchReq set to false.
+	 */
+	DBGLOG(P2P, TRACE, "CSA done, re-trigger to notify other GO/SAP");
+	kalIoctl(prAdapter->prGlueInfo, wlanoidCcmRetrigger, prBssInfo,
+			    sizeof(struct BSS_INFO), &u4BufLen);
+#endif /* CFG_SUPPORT_CCM */
 
 	if ((prP2PInfo->aprRoleHandler != NULL) &&
 		(prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler))

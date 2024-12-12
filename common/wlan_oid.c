@@ -19358,3 +19358,36 @@ wlanoidSetDefaultBcnKey(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_SAP_BCN_PROT */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+
+
+#if CFG_SUPPORT_CCM
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Re-trigger CCM when CSA finished.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)pvQueryBuffer;
+
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "no adapter found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR, "no BssInfo found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* do not support CSA by upper layer within CCM */
+	if (LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList))
+		ccmChannelSwitchProducer(prAdapter, prBssInfo, __func__);
+	else
+		ccmChannelSwitchConsumer(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_CCM */

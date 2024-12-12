@@ -5810,4 +5810,10 @@ wlandioStopPcieStatus(struct ADAPTER *prAdapter,
 		uint8_t ucPcieStatus);
 #endif
 
+#if CFG_SUPPORT_CCM
+uint32_t
+wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
+#endif
+
 #endif /* _WLAN_OID_H */
