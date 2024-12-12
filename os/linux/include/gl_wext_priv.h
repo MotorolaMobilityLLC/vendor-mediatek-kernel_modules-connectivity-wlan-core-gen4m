@@ -1094,6 +1094,10 @@ int priv_driver_get_drv_mcr_directly(struct net_device *prNetDev,
 int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
+int priv_driver_set_tasar(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 int priv_driver_set_atxop(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen);
 int priv_driver_show_tr_info(struct net_device *prNetDev,

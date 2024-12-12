@@ -3131,6 +3131,16 @@ else
     ccflags-y += -DCFG_SUPPORT_PWR_LMT_EMI=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_TAS_HOST_CONTROL), y)
+    ifeq ($(CONFIG_WIFI_DX5), y)
+        ccflags-y += -DCFG_SUPPORT_TAS_HOST_CONTROL=1
+    else
+        ccflags-y += -DCFG_SUPPORT_TAS_HOST_CONTROL=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_TAS_HOST_CONTROL=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_PHY_ICS_V3), y)
     ccflags-y += -DCFG_SUPPORT_PHY_ICS_V3=1
 else
@@ -3327,6 +3337,7 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)rate.o \
 		$(MGMT_DIR)rlm.o \
 		$(MGMT_DIR)rlm_domain.o \
+		$(MGMT_DIR)rlm_tasar.o \
 		$(MGMT_DIR)reg_rule.o \
 		$(MGMT_DIR)rlm_obss.o \
 		$(MGMT_DIR)rlm_protection.o \

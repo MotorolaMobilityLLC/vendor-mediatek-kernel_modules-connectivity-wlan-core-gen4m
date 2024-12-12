@@ -91,6 +91,7 @@
 #include <linux/of.h>
 #endif
 
+#include "rlm_tasar.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -7858,6 +7859,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
 	rlmDomainAntGainInit(prAdapter);
 #endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+
+#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
+	tasarInit(prAdapter);
+#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 
 #if (CFG_VOLT_INFO == 1)
 	kalVnfInit(prAdapter);

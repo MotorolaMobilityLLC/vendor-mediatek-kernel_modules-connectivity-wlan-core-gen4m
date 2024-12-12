@@ -64,6 +64,8 @@
  * #endif
  */
 
+#include "rlm_tasar.h"
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -23888,6 +23890,45 @@ int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+
+#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
+int priv_driver_set_tasar(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4BytesWritten = 0, i4Argc = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct tasar_scenrio_ctrl rScenrio = {0};
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "[TAS] command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "[TAS] argc is %i\n", i4Argc);
+
+	if (kalStrLen(apcArgv[1]) != 2)
+		return i4BytesWritten;
+
+	/* Country Code */
+	rScenrio.u2CountryCode += (uint16_t) apcArgv[1][0] << 8;
+	rScenrio.u2CountryCode += (uint16_t) apcArgv[1][1];
+	DBGLOG(REQ, LOUD, "[TAS] CC:%d\n", rScenrio.u2CountryCode);
+
+	/* ECI */
+	if (kalkStrtou32(apcArgv[2], 0, &rScenrio.u4Eci)) {
+		DBGLOG(REQ, ERROR, "[TAS] u4Eci parse error\n");
+		return i4BytesWritten;
+	}
+
+	tasarUpdateScenrio(prAdapter, rScenrio);
+	return i4BytesWritten;
+}
+#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 
 int priv_driver_show_tr_info(struct net_device *prNetDev,
 			     char *pcCommand, int i4TotalLen)

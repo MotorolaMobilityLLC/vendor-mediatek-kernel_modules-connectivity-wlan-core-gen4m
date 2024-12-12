@@ -2369,6 +2369,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
+	{
+		.pcCmdStr  = CMD_SET_TASAR,
+		.pfHandler = priv_driver_set_tasar,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 	{
 		.pcCmdStr  = CMD_SET_ATXOP_SHARING,
 		.pfHandler = priv_driver_set_atxop,

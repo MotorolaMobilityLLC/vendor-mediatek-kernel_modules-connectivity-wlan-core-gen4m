@@ -29,6 +29,7 @@
 #if CFG_SUPPORT_TDLS_AUTO
 #include "tdls_auto.h"
 #endif
+#include "rlm_tasar.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3294,6 +3295,10 @@ struct ADAPTER {
 #if defined(_HIF_USB)
 	struct TIMER rSerSyncTimer;
 #endif
+#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
+	struct tasar_config rTasarCfg;
+	struct tasar_scenrio_ctrl rTasarScenrio;
+#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A
