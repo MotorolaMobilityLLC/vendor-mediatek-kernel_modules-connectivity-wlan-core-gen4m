@@ -2210,7 +2210,8 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 	cmd = (struct CMD_REMOVE_STA_RECORD *) info->pucInfoBuffer;
 	if (cmd->ucActionType == STA_REC_CMD_ACTION_STA ||
 	    cmd->ucActionType == STA_REC_CMD_ACTION_BSS_EXCLUDE_STA) {
-		if (cmd->ucStaIndex < CFG_STA_REC_NUM)
+		if (cmd->ucStaIndex < CFG_STA_REC_NUM &&
+		    ad->arStaRec[cmd->ucStaIndex].fgIsInUse)
 			widx = ad->arStaRec[cmd->ucStaIndex].ucWlanIndex;
 		else
 			return WLAN_STATUS_INVALID_DATA;

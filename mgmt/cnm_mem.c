@@ -862,7 +862,7 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 {
 	ASSERT(prAdapter);
 
-	if (!prStaRec)
+	if (!prStaRec || !prStaRec->fgIsInUse)
 		return;
 
 #if CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT
