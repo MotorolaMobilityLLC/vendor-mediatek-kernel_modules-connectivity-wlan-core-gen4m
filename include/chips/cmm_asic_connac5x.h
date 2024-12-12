@@ -1524,7 +1524,7 @@ u_int8_t conn2_rst_L0_notify_step2(void);
 #endif
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 u_int8_t is_pwr_on_notify_processing(void);
 #endif
 #endif

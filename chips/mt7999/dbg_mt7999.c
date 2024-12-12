@@ -27,7 +27,7 @@
 #include "coda/mt7999/wf_wfdma_host_dma0.h"
 #include "coda/mt7999/wf_hif_dmashdl_top.h"
 #include "coda/mt7999/wf_wfdma_ext_wrap_csr.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 
@@ -1470,7 +1470,7 @@ void mt7999_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 }
 
 #if defined(_HIF_PCIE)
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 
 void mt7999_dumpPcieReg(void)
 {
@@ -2155,7 +2155,7 @@ void mt7999_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 
 static void mt7999_dumpConninfraBus(struct ADAPTER *ad)
 {
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	uint32_t WFDrvOwnStat = 0, MDDrvOwnStat = 0;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
@@ -2166,7 +2166,7 @@ static void mt7999_dumpConninfraBus(struct ADAPTER *ad)
 		return;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	prDebugOps = ad->chip_info->prDebugOps;
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt(ad);
@@ -2188,7 +2188,7 @@ void mt7999_DumpBusStatus(struct ADAPTER *ad)
 	struct mt66xx_chip_info *chip_info = NULL;
 	struct CHIP_DBG_OPS *debug_ops = NULL;
 	u_int8_t readable = TRUE;
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	int ret = 0;
 	u_int8_t dumpViaBt = 0;
 	u_int8_t fgIsBusAccessFailedBak = 0;
@@ -2217,7 +2217,7 @@ void mt7999_DumpBusStatus(struct ADAPTER *ad)
 
 
 	DBGLOG(HAL, INFO, "Phase1: Trigger PCIe Scan Dump.\n");
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	/* Notify BT to start */
 	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
 		CONNV3_DRV_TYPE_BT);
@@ -2245,7 +2245,7 @@ start_dump_via_pcie:
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (debug_ops && debug_ops->checkDumpViaBt)
 		dumpViaBt = debug_ops->checkDumpViaBt(ad);
 	if (readable == FALSE || dumpViaBt)
@@ -2255,7 +2255,7 @@ start_dump_via_pcie:
 		goto start_dump_via_bt;
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	mt7999_dumpConninfraBus(ad);
 #endif
 
@@ -2273,7 +2273,7 @@ start_dump_via_pcie:
 
 start_dump_via_bt:
 	DBGLOG(HAL, INFO, "Phase3: Trigger Wi-Fi dump via BT.\n");
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
@@ -2312,7 +2312,7 @@ start_dump_via_bt:
 
 
 dump_end:
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	fgTriggerDebugSop = FALSE;
 #endif
 

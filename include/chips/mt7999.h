@@ -194,7 +194,7 @@ uint8_t mt7999_get_mbu_timeout_status(void);
 #endif
 #endif
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 void mt7999_dumpPcieReg(void);
 bool mt7999_CheckDumpViaBt(struct ADAPTER *prAdapter);
 #endif
