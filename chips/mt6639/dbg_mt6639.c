@@ -2019,7 +2019,65 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 #endif
 }
 
-void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
+void mt6639_dump_mcr_rd(struct ADAPTER *ad,
+			uint32_t addr,
+			uint32_t *val,
+			u_int8_t is_bt)
+{
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (is_bt) {
+		connv3_hif_dbg_read(
+			CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			addr, val);
+	} else
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+	{
+		HAL_MCR_RD(ad, addr, val);
+	}
+}
+
+void mt6639_dump_mcr_wr(struct ADAPTER *ad,
+			uint32_t addr,
+			uint32_t val,
+			u_int8_t is_bt)
+{
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (is_bt) {
+		connv3_hif_dbg_write(
+			CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			addr, val);
+	} else
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+	{
+		HAL_MCR_WR(ad, addr, val);
+	}
+}
+
+void mt6639_dump_mcr_wr_field(struct ADAPTER *ad,
+			      uint32_t addr,
+			      uint32_t val,
+			      uint32_t shift,
+			      uint32_t mask,
+			      u_int8_t is_bt)
+{
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (is_bt) {
+		uint32_t tmp = 0;
+
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+				    addr, &tmp);
+		tmp &= (~mask);
+		tmp |= (val << shift) & mask;
+		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+				     addr, tmp);
+	} else
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+	{
+		HAL_MCR_WR_FIELD(ad, addr, val, shift, mask);
+	}
+}
+
+void _mt6639_dumpWfsyscpupcr(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 #define CPUPCR_LOG_NUM	5
 #define CPUPCR_BUF_SZ	50
@@ -2032,31 +2090,38 @@ void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
 	char log_buf_pc[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
 	char log_buf_lp[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
 
-	HAL_MCR_WR_FIELD(ad,
+	mt6639_dump_mcr_wr_field(ad,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 		0x3F,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_SHFT,
-		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK);
-	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK,
+		fgIsDumpViaBt);
+	mt6639_dump_mcr_wr_field(ad,
 		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
 		0x3F,
 		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
-		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK);
-	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK,
+		fgIsDumpViaBt);
+	mt6639_dump_mcr_wr_field(ad,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
 		0x0,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
-		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK,
+		fgIsDumpViaBt);
 
 	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
 		log_sec = kalGetTimeTickNs();
 		log_nsec = do_div(log_sec, 1000000000)/1000;
-		HAL_MCR_RD(ad,
-			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
-			   &var_pc);
-		HAL_MCR_RD(ad,
-			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
-			   &var_lp);
+		mt6639_dump_mcr_rd(
+			ad,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			&var_pc,
+			fgIsDumpViaBt);
+		mt6639_dump_mcr_rd(
+			ad,
+			CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			&var_lp,
+			fgIsDumpViaBt);
 
 		kalSnprintf(log_buf_pc[i],
 			    CPUPCR_BUF_SZ,
@@ -2088,7 +2153,12 @@ void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
 		log_buf_lp[4]);
 }
 
-void mt6639_dumpPcGprLog(struct ADAPTER *ad)
+void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
+{
+	_mt6639_dumpWfsyscpupcr(ad, FALSE);
+}
+
+void mt6639_dumpPcGprLog(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 #define PC_LOG_NUM			35
 #define GPR_LOG_NUM			35
@@ -2099,40 +2169,50 @@ void mt6639_dumpPcGprLog(struct ADAPTER *ad)
 
 	DBGLOG(HAL, INFO, "Dump PC log / GPR log\n");
 
-	HAL_MCR_WR_FIELD(ad,
+	mt6639_dump_mcr_wr_field(
+		ad,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
 		0x0,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
-		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK,
+		fgIsDumpViaBt);
 
 	kalMemZero(pc_dump, sizeof(pc_dump));
 	for (i = 0; i < PC_LOG_NUM; i++) {
-		HAL_MCR_WR_FIELD(ad,
+		mt6639_dump_mcr_wr_field(
+			ad,
 			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
 			i,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
-		HAL_MCR_RD(ad,
-			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
-			   &pc_dump[i]);
+	CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
+	CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK,
+			fgIsDumpViaBt);
+		mt6639_dump_mcr_rd(
+			ad,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			&pc_dump[i],
+			fgIsDumpViaBt);
 	}
 	connac3x_dump_format_memory32(pc_dump, PC_LOG_NUM, "PC log");
 
 	kalMemZero(gpr_dump, sizeof(gpr_dump));
 	for (i = 0; i < GPR_LOG_NUM; i++) {
-		HAL_MCR_WR_FIELD(ad,
+		mt6639_dump_mcr_wr_field(
+			ad,
 			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
 			i,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK);
-		HAL_MCR_RD(ad,
-			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
-			   &gpr_dump[i]);
+	CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
+	CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK,
+			fgIsDumpViaBt);
+		mt6639_dump_mcr_rd(
+			ad,
+			CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			&gpr_dump[i],
+			fgIsDumpViaBt);
 	}
 	connac3x_dump_format_memory32(gpr_dump, GPR_LOG_NUM, "GPR log");
 }
 
-void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
+void mt6639_dumpN45CoreReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 #define GENERAL_LOG_NUM			32
 #define CTRL_LOG_NUM			5
@@ -2149,16 +2229,20 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
 	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
 	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_general_dump_list); i++) {
 		if (n45_general_dump_list[i].read) {
-			HAL_MCR_RD(ad,
-				   n45_general_dump_list[i].addr,
-				   &val);
+			mt6639_dump_mcr_rd(
+				ad,
+				n45_general_dump_list[i].addr,
+				&val,
+				fgIsDumpViaBt);
 			general_dump[idx++] = val;
 		} else {
-			HAL_MCR_WR_FIELD(ad,
+			mt6639_dump_mcr_wr_field(
+				ad,
 				n45_general_dump_list[i].addr,
 				n45_general_dump_list[i].value,
 				n45_general_dump_list[i].shift,
-				n45_general_dump_list[i].mask);
+				n45_general_dump_list[i].mask,
+				fgIsDumpViaBt);
 		}
 	}
 	connac3x_dump_format_memory32(general_dump,
@@ -2168,16 +2252,19 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
 	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
 	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_ctrl_status_dump_list); i++) {
 		if (n45_ctrl_status_dump_list[i].read) {
-			HAL_MCR_RD(ad,
-				   n45_ctrl_status_dump_list[i].addr,
-				   &val);
+			mt6639_dump_mcr_rd(
+				ad,
+				n45_ctrl_status_dump_list[i].addr,
+				&val,
+				fgIsDumpViaBt);
 			ctl_status_dump[idx++] = val;
 		} else {
-			HAL_MCR_WR_FIELD(ad,
+			mt6639_dump_mcr_wr_field(ad,
 				n45_ctrl_status_dump_list[i].addr,
 				n45_ctrl_status_dump_list[i].value,
 				n45_ctrl_status_dump_list[i].shift,
-				n45_ctrl_status_dump_list[i].mask);
+				n45_ctrl_status_dump_list[i].mask,
+				fgIsDumpViaBt);
 		}
 	}
 	connac3x_dump_format_memory32(ctl_status_dump,
@@ -2185,7 +2272,7 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
 		"N45 Control & Status Registers");
 }
 
-static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
+static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
 	uint32_t au4List[] = {
@@ -2197,7 +2284,7 @@ static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
 
 	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR;
 	u4WrVal = 0x00000001;
-	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
 	DBGLOG(HAL, INFO,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
@@ -2206,8 +2293,8 @@ static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
 	u4RdAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR;
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4WrVal = au4List[u4Idx];
-		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
+		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 		DBGLOG(HAL, INFO,
 			"=PSOP_3_1_A%d=0x%08X=0x%08X\n",
 			indexA,
@@ -2217,7 +2304,7 @@ static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
 	}
 }
 
-static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
+static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	uint32_t indexB = 1;
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
@@ -2228,7 +2315,7 @@ static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
 
 	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR;
 	u4WrVal = 0x00000001;
-	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
 	DBGLOG(HAL, INFO,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
@@ -2237,8 +2324,8 @@ static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
 	u4RdAddr = CONN_DBG_CTL_WF_VON_DEBUG_OUT_ADDR;
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4WrVal = au4List[u4Idx];
-		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
+		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 		DBGLOG(HAL, INFO,
 			"=PSOP_3_1_B%d=0x%08X=0x%08X\n",
 			indexB,
@@ -2248,7 +2335,7 @@ static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
 	}
 }
 
-static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad)
+static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	uint32_t u4RdAddr, u4Val = 0, u4Idx;
 	uint32_t indexC = 1;
@@ -2291,7 +2378,7 @@ static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad)
 
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
-		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 		DBGLOG(HAL, INFO,
 			"=PSOP_3_1_C%d=0x%08X=0x%08X\n",
 			indexC,
@@ -2301,19 +2388,19 @@ static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad)
 	}
 }
 
-void mt6639_dumpWfTopReg(struct ADAPTER *ad)
+void mt6639_dumpWfTopReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	/* Section A: Dump wf_top_misc_on monflag */
-	mt6639_dumpWfTopMiscOn(ad);
+	mt6639_dumpWfTopMiscOn(ad, fgIsDumpViaBt);
 
 	/* Section B: Dump wf_top_misc_von monflag */
-	mt6639_dumpWfTopMiscVon(ad);
+	mt6639_dumpWfTopMiscVon(ad, fgIsDumpViaBt);
 
 	/* Section C: Dump wf_top_cfg_on debug CR */
-	mt6639_dumpWfTopCfgon(ad);
+	mt6639_dumpWfTopCfgon(ad, fgIsDumpViaBt);
 }
 
-void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
+void _mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
 	uint32_t au4List[] = {
@@ -2326,8 +2413,8 @@ void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 	u4RdAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR;
 	u4WrAddr = CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR;
 	u4WrVal = 0x4;
-	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
+	mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
 	DBGLOG(HAL, INFO,
 		"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
 		indexA,
@@ -2339,8 +2426,8 @@ void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 	u4RdAddr = CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR;
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4WrVal = au4List[u4Idx];
-		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
+		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 		DBGLOG(HAL, INFO,
 			"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
 			indexA,
@@ -2350,7 +2437,13 @@ void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 	}
 }
 
-static void mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
+void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
+{
+	_mt6639_dumpHostVdnrTimeoutInfo(ad, FALSE);
+}
+
+static void mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad,
+					 u_int8_t fgIsDumpViaBt)
 {
 	uint32_t u4RdAddr, u4Val = 0, u4Idx;
 	uint32_t indexB = 2;
@@ -2374,7 +2467,7 @@ static void mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
 
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
-		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 		DBGLOG(HAL, INFO,
 			"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
 			indexB,
@@ -2384,7 +2477,8 @@ static void mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
 	}
 }
 
-static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
+static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad,
+					 u_int8_t fgIsDumpViaBt)
 {
 	uint32_t u4RdAddr, u4Val = 0, u4Idx;
 	uint32_t indexC = 1;
@@ -2400,7 +2494,7 @@ static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
-		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 		DBGLOG(HAL, INFO,
 			"=PSOP_4_1_C%d=0x%08X=0x%08X\n",
 			indexC,
@@ -2410,44 +2504,45 @@ static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 	}
 }
 
-void mt6639_dumpWfBusReg(struct ADAPTER *ad)
+void mt6639_dumpWfBusReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 	/* Section A: Dump VDNR timeout host side info */
-	mt6639_dumpHostVdnrTimeoutInfo(ad);
+	_mt6639_dumpHostVdnrTimeoutInfo(ad, fgIsDumpViaBt);
 
 	/* Section B: Dump VDNR timeout wf side info */
-	mt6639_dumpWfVdnrTimeoutInfo(ad);
+	mt6639_dumpWfVdnrTimeoutInfo(ad, fgIsDumpViaBt);
 
 	/* Section C: Dump AHB APB timeout info */
-	mt6639_dumpAhbApbTimeoutInfo(ad);
+	mt6639_dumpAhbApbTimeoutInfo(ad, fgIsDumpViaBt);
 }
 
-static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
+static void mt6639_dumpConninfraBus(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	uint32_t WFDrvOwnStat = 0, MDDrvOwnStat = 0;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	bool dumpViaBt = FALSE;
-#endif
 
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	prDebugOps = ad->chip_info->prDebugOps;
-	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt(ad);
-
-	connv3_conninfra_bus_dump(dumpViaBt ?
+	connv3_conninfra_bus_dump(fgIsDumpViaBt ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
 
-	HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR, &WFDrvOwnStat);
-	HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR, &MDDrvOwnStat);
+	if (fgIsDumpViaBt) {
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR, &WFDrvOwnStat);
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR, &MDDrvOwnStat);
+	} else {
+		HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+			   &WFDrvOwnStat);
+		HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
+			   &MDDrvOwnStat);
+	}
 	DBGLOG(HAL, INFO, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
 		WFDrvOwnStat, MDDrvOwnStat);
-#endif
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 }
 
 void mt6639_DumpBusHangCr(struct ADAPTER *ad)
@@ -2458,9 +2553,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	int ret = 0;
 	u_int8_t dumpViaBt = 0;
-	u_int8_t fgIsBusAccessFailedBak = 0;
 #endif
-
 
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
@@ -2518,16 +2611,14 @@ start_dump_via_pcie:
 		goto start_dump_via_bt;
 #endif
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
-	mt6639_dumpConninfraBus(ad);
-#endif
+	mt6639_dumpConninfraBus(ad, FALSE);
 	mt6639_dumpCbtopReg(ad);
 	mt6639_dumpWfsyscpupcr(ad);
-	mt6639_dumpPcGprLog(ad);
+	mt6639_dumpPcGprLog(ad, FALSE);
 	mt6639_dumpHostVdnrTimeoutInfo(ad);
-	mt6639_dumpN45CoreReg(ad);
-	mt6639_dumpWfTopReg(ad);
-	mt6639_dumpWfBusReg(ad);
+	mt6639_dumpN45CoreReg(ad, FALSE);
+	mt6639_dumpWfTopReg(ad, FALSE);
+	mt6639_dumpWfBusReg(ad, FALSE);
 
 start_dump_via_bt:
 	DBGLOG(HAL, INFO, "Phase3: Trigger Wi-Fi dump via BT.\n");
@@ -2545,21 +2636,15 @@ start_dump_via_bt:
 		DBGLOG(HAL, INFO, "start BT dump.\n");
 
 	/* force do dump via BT */
-	fgTriggerDebugSop = TRUE;
-	fgIsBusAccessFailedBak = fgIsBusAccessFailed;
-	fgIsBusAccessFailed = TRUE;
-
-	mt6639_dumpConninfraBus(ad);
+	mt6639_dumpConninfraBus(ad, TRUE);
 	mt6639_dumpPcieReg();
 	mt6639_dumpCbtopReg(ad);
-	mt6639_dumpWfsyscpupcr(ad);
-	mt6639_dumpPcGprLog(ad);
-	mt6639_dumpHostVdnrTimeoutInfo(ad);
-	mt6639_dumpN45CoreReg(ad);
-	mt6639_dumpWfTopReg(ad);
-	mt6639_dumpWfBusReg(ad);
-
-	fgIsBusAccessFailed = fgIsBusAccessFailedBak;
+	_mt6639_dumpWfsyscpupcr(ad, TRUE);
+	mt6639_dumpPcGprLog(ad, TRUE);
+	_mt6639_dumpHostVdnrTimeoutInfo(ad, TRUE);
+	mt6639_dumpN45CoreReg(ad, TRUE);
+	mt6639_dumpWfTopReg(ad, TRUE);
+	mt6639_dumpWfBusReg(ad, TRUE);
 
 	/* Notify BT to end */
 	ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_WIFI,
@@ -5363,10 +5448,10 @@ static void mt6639_dumpConninfraReg(struct ADAPTER *ad)
 static void mt6639_dumpWfsysReg(struct ADAPTER *ad)
 {
 	/* Section A: Dump wf_top_misc_on monflag */
-	mt6639_dumpWfTopMiscOn(ad);
+	mt6639_dumpWfTopMiscOn(ad, FALSE);
 
 	/* Section B: Dump wf_top_misc_von monflag */
-	mt6639_dumpWfTopMiscVon(ad);
+	mt6639_dumpWfTopMiscVon(ad, FALSE);
 
 	/* Section A: Dump VDNR timeout host side info */
 	mt6639_dumpHostVdnrTimeoutInfo(ad);
@@ -5375,13 +5460,13 @@ static void mt6639_dumpWfsysReg(struct ADAPTER *ad)
 		return;
 
 	/* Section C: Dump wf_top_cfg_on debug CR */
-	mt6639_dumpWfTopCfgon(ad);
+	mt6639_dumpWfTopCfgon(ad, FALSE);
 
 	/* Section B: Dump VDNR timeout wf side info */
-	mt6639_dumpWfVdnrTimeoutInfo(ad);
+	mt6639_dumpWfVdnrTimeoutInfo(ad, FALSE);
 
 	/* Section C: Dump AHB APB timeout info */
-	mt6639_dumpAhbApbTimeoutInfo(ad);
+	mt6639_dumpAhbApbTimeoutInfo(ad, FALSE);
 }
 
 static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
@@ -5467,10 +5552,10 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 
 	/* 3. WF_TOP_debug status */
 	/* Section A: Dump wf_top_misc_on monflag */
-	mt6639_dumpWfTopMiscOn(ad);
+	mt6639_dumpWfTopMiscOn(ad, FALSE);
 
 	/* Section B: Dump wf_top_misc_von monflag */
-	mt6639_dumpWfTopMiscVon(ad);
+	mt6639_dumpWfTopMiscVon(ad, FALSE);
 
 	/* 4.CONN_INFRA status */
 	/* Dump on domain */
