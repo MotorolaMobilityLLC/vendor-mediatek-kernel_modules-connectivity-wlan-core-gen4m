@@ -2163,14 +2163,14 @@ else
 endif
 
 # Disable ASSERT() for user load, enable for others
-$(info CONFIG_MTK_WIFI_PRODUCT: $(CONFIG_MTK_WIFI_PRODUCT))
+$(info CONFIG_MTK_WIFI_DEBUG: $(CONFIG_MTK_WIFI_DEBUG))
 ifneq ($(CONFIG_BUILD_NONE_STA), y)
     ifeq ($(TARGET_BUILD_VARIANT),user)
         ccflags-y += -DBUILD_QA_DBG=0
-    else ifeq ($(CONFIG_MTK_WIFI_PRODUCT),y)
-        ccflags-y += -DBUILD_QA_DBG=0
-    else
+    else ifeq ($(CONFIG_MTK_WIFI_DEBUG),y)
         ccflags-y += -DBUILD_QA_DBG=1
+    else
+        ccflags-y += -DBUILD_QA_DBG=0
     endif
 else
      ccflags-y += -DBUILD_QA_DBG=0

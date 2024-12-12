@@ -52,6 +52,8 @@ export CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=$(wifi_dl_dyn_mem_map)
 export CONFIG_MTK_WIFI_ROM_PATCH_NO_SEM_CTRL=$(wifi_rom_patch_no_sem_ctrl)
 #need to support these 3 CONFIG_ in Android.mk::End
 
+# 1: Enable ioctl/cfg Debug cmd
+export CONFIG_MTK_WIFI_DEBUG=y
 ##############################################################
 # Compile options
 ##############################################################
