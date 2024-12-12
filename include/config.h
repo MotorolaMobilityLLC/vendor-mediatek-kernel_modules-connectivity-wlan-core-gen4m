@@ -2572,6 +2572,10 @@
 #define CFG_MTK_WIFI_WFDMA_WB			0
 #endif
 
+#ifndef CFG_MTK_WIFI_WFDMA_4_TX_DATA_RING
+#define CFG_MTK_WIFI_WFDMA_4_TX_DATA_RING			0
+#endif
+
 #ifndef CFG_MTK_WIFI_FORCE_RECV_RX
 #define CFG_MTK_WIFI_FORCE_RECV_RX			0
 #endif

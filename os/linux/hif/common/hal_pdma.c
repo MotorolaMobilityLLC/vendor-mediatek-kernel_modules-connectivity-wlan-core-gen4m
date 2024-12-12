@@ -136,6 +136,24 @@ uint8_t halRingDataSelectByWmmIndex(
 			u2Port = TX_RING_DATA0;
 			break;
 		}
+	} else if (bus_info->tx_ring0_data_idx != bus_info->tx_ring2_data_idx) {
+		switch (ucWmmIndex) {
+		case 0:
+			u2Port = TX_RING_DATA0;
+			break;
+
+		case 1:
+			u2Port = TX_RING_DATA1;
+			break;
+
+		case 2:
+			u2Port = TX_RING_DATA2;
+			break;
+
+		default:
+			u2Port = TX_RING_DATA0;
+			break;
+		}
 	} else if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
 		u2Port = (ucWmmIndex % 2) ?
 			TX_RING_DATA1 : TX_RING_DATA0;

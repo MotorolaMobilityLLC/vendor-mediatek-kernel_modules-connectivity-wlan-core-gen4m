@@ -1047,7 +1047,8 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	prMddpTxd->sta_mode = prStaRec->eStaType;
 	prMddpTxd->bss_id = prStaRec->ucBssIndex;
 	/* TODO: Create a new msg for DMASHDL BMP */
-	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
+	prMddpTxd->wmmset = halRingDataSelectByWmmIndex(prAdapter,
+		prBssInfo->ucWmmQueSet);
 	if (prNetdev) {
 		kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
 			   sizeof(prMddpTxd->nw_if_name));
