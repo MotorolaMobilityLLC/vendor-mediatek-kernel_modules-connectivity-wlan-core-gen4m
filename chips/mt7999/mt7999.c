@@ -40,11 +40,9 @@
 #include "coda/mt7999/vlp_uds_ctrl.h"
 #include "coda/mt7999/mawd_reg.h"
 #include "coda/mt7999/wf_rro_top.h"
-#include "coda/mt7999/wf_top_cfg_on.h"
 #include "hal_dmashdl_mt7999.h"
 #include "coda/mt7999/wf2ap_conn_infra_on_ccif4.h"
 #include "coda/mt7999/ap2wf_conn_infra_on_ccif4.h"
-#include "coda/mt7999/wf_top_cfg_on.h"
 #include "coda/mt7999/wf_wtblon_top.h"
 #include "coda/mt7999/wf_uwtbl_top.h"
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
@@ -79,6 +77,9 @@
 #endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 
 #include "wlan_hw_dbg.h"
+#include "coda/mt7999/wf_top_cfg_vlp.h"
+#include "coda/mt7999/wf_top_cfg_von.h"
+#include "coda/mt7999/wf_top_mcu_cfg.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -272,9 +273,6 @@ static void mt7999CheckMdRxStall(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt7999_is_AA_DBDC_enable(void);
-#endif
-#if CFG_MTK_WIFI_PCIE_SR
-u_int8_t fgIsL2Finished = FALSE;
 #endif
 
 /*******************************************************************************
@@ -945,7 +943,9 @@ struct CHIP_DBG_OPS mt7999_DebugOps = {
 	.show_wfdma_wrapper_info = mt7999_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt7999_dumpWfsyscpupcr,
 	.dumpBusStatus = mt7999_DumpBusStatus,
+#if CFG_SUPPORT_PCIE_ASPM
 	.dumpPcieStatus = mt7999DumpPcieDateFlowStatus,
+#endif /* CFG_SUPPORT_PCIE_ASPM */
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	.dumpPcieCr = mt7999_dumpPcieReg,
 	.checkDumpViaBt = mt7999_CheckDumpViaBt,
@@ -3486,11 +3486,15 @@ void *pcie_vir_addr;
 
 static void mt7999InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
-	uint32_t u4WrVal = 0x08021000, u4Val = 0;
-
 #if CFG_SUPPORT_PCIE_ASPM_EP
+	uint32_t u4WrVal = 0x08021000;
+#if CFG_SUPPORT_PCIE_ASPM
+	uint32_t u4Val = 0;
+#endif /* CFG_SUPPORT_PCIE_ASPM */
+
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
-#endif
+
+#if CFG_SUPPORT_PCIE_ASPM
 	if (!pcie_vir_addr) {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
 		return;
@@ -3501,6 +3505,8 @@ static void mt7999InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(HAL, INFO,
 	       "pcie_addr=0x%llx, write 0x74=[0x%08x], read 0x74=[0x%08x]\n",
 	       (uint64_t)pcie_vir_addr, u4WrVal, u4Val);
+#endif /* CFG_SUPPORT_PCIE_ASPM */
+#endif /* CFG_SUPPORT_PCIE_ASPM_EP */
 }
 
 static void mt7999PcieHwControlVote(
@@ -3541,6 +3547,7 @@ static u_int8_t mt7999SetL1ssEnable(struct ADAPTER *prAdapter,
 	else
 		return FALSE;
 }
+
 static uint32_t mt7999ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				u_int8_t fgEn, u_int enable_role)
 {
@@ -3786,13 +3793,6 @@ static u_int8_t mt7999DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 				u4RegVal[1], u4RegVal[2]);
 			return FALSE;
 		}
-
-#if CFG_MTK_WIFI_PCIE_SR
-		if (!fgIsL2Finished) {
-			DBGLOG(HAL, INFO, "L2 not finished\n");
-			return FALSE;
-		}
-#endif
 	}
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
@@ -4019,7 +4019,7 @@ u_int8_t mt7999_is_conn2wf_readable(struct ADAPTER *ad)
 	}
 
 	HAL_RMCR_RD(PLAT_DBG, ad,
-		   WF_TOP_CFG_IP_VERSION_ADDR,
+		   WF_TOP_MCU_CFG_IP_VERSION_ADDR,
 		   &value);
 	if (value != MT7999_WF_VERSION_ID) {
 		DBGLOG(HAL, ERROR,
@@ -4047,15 +4047,17 @@ static u_int8_t mt7999_check_recovery_needed(struct ADAPTER *ad)
 	u_int8_t fgResult = FALSE;
 
 	/*
-	 * if (0x81021604[31:16]==0xdead &&
+	 * if (0x81021078[31:16]==0xdead &&
 	 *     (0x70005350[30:28]!=0x0 || 0x70005360[6:4]!=0x0)) == 0x1
 	 * do recovery flow
 	 */
 
-	HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
-		&u4Value);
+	HAL_RMCR_RD(ONOFF_READ, ad,
+		    WF_TOP_CFG_VLP_WFSYS_MCU_ROMCODE_INDEX_SW_FLAG_ADDR,
+		    &u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
-		WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, u4Value);
+		WF_TOP_CFG_VLP_WFSYS_MCU_ROMCODE_INDEX_SW_FLAG_ADDR,
+		u4Value);
 	if ((u4Value & 0xFFFF0000) != 0xDEAD0000) {
 		fgResult = FALSE;
 		goto exit;
@@ -4256,7 +4258,8 @@ static uint32_t mt7999_mcu_check_idle(struct ADAPTER *ad)
 			break;
 		}
 
-		HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+		HAL_RMCR_RD(ONOFF_READ, ad,
+			WF_TOP_CFG_VLP_WFSYS_MCU_ROMCODE_INDEX_SW_FLAG_ADDR,
 			&u4Value);
 
 		if ((u4Value == MCU_IDLE)
@@ -4278,14 +4281,12 @@ exit:
 
 static uint32_t mt7999_mcu_init(struct ADAPTER *ad)
 {
+#if (CFG_MTK_FPGA_PLATFORM != 1)
 	uint32_t u4Value = 0;
+#endif /* CFG_MTK_FPGA_PLATFORM */
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
-
-#if CFG_MTK_WIFI_PCIE_SR
-	fgIsL2Finished = FALSE;
-#endif
 
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
@@ -4300,8 +4301,10 @@ static uint32_t mt7999_mcu_init(struct ADAPTER *ad)
 		goto exit;
 	}
 
+#if (CFG_MTK_FPGA_PLATFORM != 1)
 	HAL_MCR_WR(ad,
 		CB_INFRA_SLP_CTRL_CB_INFRA_SLP_PROT_SW_CTRL_ADDR, 0x0);
+#endif /* CFG_MTK_FPGA_PLATFORM */
 #if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
 	rStatus = mt7999_mcu_reset(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
@@ -4332,7 +4335,7 @@ static uint32_t mt7999_mcu_init(struct ADAPTER *ad)
 	pcie_vir_addr = ioremap(0x16910000, 0x2000);
 #endif
 	spin_lock_init(&rPCIELock);
-#endif
+#endif /* CFG_SUPPORT_PCIE_ASPM */
 
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -4343,6 +4346,7 @@ dump:
 		if (prDbgOps && prDbgOps->dumpBusStatus)
 			prDbgOps->dumpBusStatus(ad);
 
+#if (CFG_MTK_FPGA_PLATFORM != 1)
 		/* Clock detection for ULPOSC */
 		HAL_MCR_WR(ad,
 			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
@@ -4371,6 +4375,7 @@ dump:
 			"0x%08x=0x%08x\n",
 			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
 			u4Value);
+#endif /* CFG_MTK_FPGA_PLATFORM */
 	}
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	if (prChipInfo->sw_sync_emi_info)
@@ -4562,80 +4567,12 @@ exit:
 	return readable ? 0 : 1;
 }
 
-#if CFG_MTK_WIFI_PCIE_SR
-static uint32_t mt7999_EnterL2(struct ADAPTER *prAdapter)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct pci_dev *dev = NULL;
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-	int ret;
-
-	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
-		goto exit;
-	}
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	dev = prGlueInfo->rHifInfo.pdev;
-	ret = mtk_pcie_enter_L2(dev);
-	if (ret)
-		goto exit;
-
-	u4Status = WLAN_STATUS_SUCCESS;
-exit:
-	return u4Status;
-}
-
-static uint32_t mt7999_ExitL2(struct ADAPTER *prAdapter)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct pci_dev *dev = NULL;
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-	int ret;
-
-	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
-		goto exit;
-	}
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	dev = prGlueInfo->rHifInfo.pdev;
-	ret = mtk_pcie_exit_L2(dev);
-	if (ret)
-		goto exit;
-
-	u4Status = WLAN_STATUS_SUCCESS;
-exit:
-	return u4Status;
-}
-#endif
-
 static uint32_t mt7999_wlanDownloadPatch(struct ADAPTER *prAdapter)
 {
 	uint32_t status = wlanDownloadPatch(prAdapter);
 
-	if (status == WLAN_STATUS_SUCCESS) {
+	if (status == WLAN_STATUS_SUCCESS)
 		wifi_coredump_set_enable(TRUE);
-
-#if CFG_MTK_WIFI_PCIE_SR
-		/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
-		if (kalIsSupportPcieL2()) {
-			HAL_MCR_WR(prAdapter,
-				CB_INFRA_SLP_CTRL_CB_INFRA_SLP_PROT_SW_CTRL_ADDR,
-				0x800);
-			kalUsleep(5000);
-			mt7999_EnterL2(prAdapter);
-			msleep(100);
-			status = mt7999_ExitL2(prAdapter);
-			if (status != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, ERROR, "Exit L2 failed\n");
-			HAL_MCR_WR(prAdapter,
-				CB_INFRA_SLP_CTRL_CB_INFRA_SLP_PROT_SW_CTRL_ADDR,
-				0x0);
-		}
-		fgIsL2Finished = TRUE;
-#endif
-	}
 
 	return status;
 }

@@ -17,7 +17,6 @@
 #include "coda/mt7999/conn_mcu_confg_ls.h"
 #include "coda/mt7999/top_misc.h"
 #include "coda/mt7999/wf_mcusys_vdnr_gen_bus_u_debug_ctrl_ao.h"
-#include "coda/mt7999/wf_top_cfg_on.h"
 #include "coda/mt7999/conn_bus_cr.h"
 #include "coda/mt7999/conn_cfg_on.h"
 #include "coda/mt7999/conn_clkgen_top.h"
