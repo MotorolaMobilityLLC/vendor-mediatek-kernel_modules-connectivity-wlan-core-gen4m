@@ -896,6 +896,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		/* bit[6]: Completion timeout status */
 		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
+			fgIsBusAccessFailed = TRUE;
 			if (pcie_check_status_is_linked(pdev) == TRUE) {
 #if CFG_MTK_WIFI_AER_L05_RESET
 				g_AERL05Rst = TRUE;
