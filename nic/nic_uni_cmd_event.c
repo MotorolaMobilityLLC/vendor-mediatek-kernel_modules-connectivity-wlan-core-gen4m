@@ -6779,9 +6779,6 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 	case MLC_MODE_ACTIVE_NUM:
 		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_ACTIVE_NUM);
 		break;
-	case MLC_MODE_GAMING:
-		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_GAMING);
-		break;
 	case MLC_MODE_LOW_POWER:
 		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_LOW_POWER);
 		break;
@@ -6861,12 +6858,6 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_ACTIVE_NUM;
 		tag->u2Length = sizeof(*tag);
 		tag->ucActiveLinkNum = (uint8_t) prMlcReq->u4Data1;
-	} else if (prMlcReq->eMlcMode == MLC_MODE_GAMING) {
-		struct UNI_CMD_MLC_REQ_GAMING *tag;
-
-		tag = (struct UNI_CMD_MLC_REQ_GAMING *) pos;
-		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_GAMING;
-		tag->u2Length = sizeof(*tag);
 	} else if (prMlcReq->eMlcMode == MLC_MODE_LOW_POWER) {
 		struct UNI_CMD_MLC_REQ_LOW_POWER *tag;
 

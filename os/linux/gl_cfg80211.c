@@ -6305,8 +6305,6 @@ int testmode_set_ml_link_state(struct wiphy *wiphy,
 
 		rMlcParam.rReq.eMlcMode = MLC_MODE_ACTIVE_NUM;
 		rMlcParam.rReq.u4Data1 = u4Param;
-	} else if (u4Mode == MLC_MODE_GAMING) {
-		rMlcParam.rReq.eMlcMode = MLC_MODE_GAMING;
 	} else if (u4Mode == MLC_MODE_LOW_POWER) {
 		rMlcParam.rReq.eMlcMode = MLC_MODE_LOW_POWER;
 	} else if (u4Mode == MLC_MODE_LOW_LATENCY) {
