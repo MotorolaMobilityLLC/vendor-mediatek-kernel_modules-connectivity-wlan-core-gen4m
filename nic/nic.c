@@ -3416,6 +3416,11 @@ uint32_t nicEnterCtiaMode(struct ADAPTER *prAdapter,
 	uint32_t u4Level = 0;
 #endif
 	u_int8_t fgEnCmdEvtSetting = 0;
+#if CFG_CONTROL_ASPM_BY_FW
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GL_HIF_INFO *prHifInfo;
+#endif
+#endif
 
 	DBGLOG(INIT, TRACE, "nicEnterCtiaMode: %d\n", fgEnterCtia);
 
@@ -3423,6 +3428,11 @@ uint32_t nicEnterCtiaMode(struct ADAPTER *prAdapter,
 
 	rWlanStatus = WLAN_STATUS_SUCCESS;
 	kalMemZero(&rCmdSwCtrl, sizeof(struct CMD_SW_DBG_CTRL));
+#if CFG_CONTROL_ASPM_BY_FW
+#if CFG_SUPPORT_PCIE_ASPM
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif
+#endif
 
 	if (fgEnterCtia) {
 		/* 1. Disable On-Lin Scan */
@@ -3474,6 +3484,13 @@ uint32_t nicEnterCtiaMode(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_TWT == 1)
 		/* 7. Disable TWT under CTIA mode */
 		prAdapter->rWifiVar.ucTWTRequester = 0;
+#endif
+
+		/* keep PCIE L0 */
+#if CFG_CONTROL_ASPM_BY_FW
+#if CFG_SUPPORT_PCIE_ASPM
+		glBusConfigASPM(prHifInfo->pdev, DISABLE_ASPM_L1);
+#endif
 #endif
 	} else {
 		/* 1. Enaable On-Lin Scan */
@@ -3530,6 +3547,16 @@ uint32_t nicEnterCtiaMode(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_TWT == 1)
 		/* 7. Enable TWT support after CTIA mode */
 		prAdapter->rWifiVar.ucTWTRequester = 1;
+#endif
+
+#if CFG_CONTROL_ASPM_BY_FW
+#if CFG_SUPPORT_PCIE_ASPM
+		glBusConfigASPM(prHifInfo->pdev, DISABLE_ASPM_L1);
+		glBusConfigASPML1SS(prHifInfo->pdev,
+			PCI_L1PM_CTR1_ASPM_L12_EN |
+			PCI_L1PM_CTR1_ASPM_L11_EN);
+		glBusConfigASPM(prHifInfo->pdev, ENABLE_ASPM_L1);
+#endif
 #endif
 	}
 
