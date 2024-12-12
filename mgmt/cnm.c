@@ -374,6 +374,12 @@ cnmWmmQuotaSetMaxQuota(
 	uint32_t u4ReqQuota
 );
 
+#if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
+static void
+cnmDbdcDisableGuardTimeImmediately(
+	struct ADAPTER *prAdapter
+);
+#endif
 /*******************************************************************************
  *                           P R I V A T E   D A T A 2
  *******************************************************************************
@@ -3501,6 +3507,32 @@ void cnmCtrlDynamicMaxQuota(struct ADAPTER *prAdapter)
 }
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 
+#if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
+void cnmDbdcDisableGuardTimeImmediately(
+	struct ADAPTER *prAdapter)
+{
+	struct DBDC_INFO_T *prDbdcInfo;
+
+	if (!prAdapter) {
+		log_dbg(CNM, INFO,
+			"[DBDC] prAdapter is NULL\n");
+		return;
+	}
+
+	prDbdcInfo = &prAdapter->rDbdcInfo;
+
+	if (timerPendingTimer(&prDbdcInfo->rDbdcGuardTimer)) {
+		log_dbg(CNM, INFO,
+			"[DBDC] Stop Guard Timer type %u\n",
+			prDbdcInfo->eDdbcGuardTimerType);
+		cnmTimerStopTimer(prAdapter,
+			&prDbdcInfo->rDbdcGuardTimer);
+		cnmDbdcGuardTimerCallback(prAdapter,
+			(uintptr_t)NULL);
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    MT6632 HW capability will change between BW160+NSS2 and BW80+NSS1
@@ -3972,6 +4004,9 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(struct ADAPTER *prAdapter)
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
 	DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
+#if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
+	cnmDbdcDisableGuardTimeImmediately(prAdapter);
+#endif
 }
 
 static void
@@ -4026,6 +4061,9 @@ cnmDbdcFsmEntryFunc_DISABLE_GUARD(struct ADAPTER *prAdapter)
 	DBDC_SET_GUARD_TIME(prAdapter, DBDC_DISABLE_GUARD_TIME);
 
 	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
+#if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
+	cnmDbdcDisableGuardTimeImmediately(prAdapter);
+#endif
 }
 
 static void
@@ -4227,6 +4265,10 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 		break;
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+#if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
+		prDbdcInfo->eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
+#else
 		/* Exit DBDC if non A+G */
 		if (!cnmDbdcIsConcurrent(prAdapter, NULL)) {
 			prDbdcInfo->eDbdcFsmNextState =
@@ -4235,6 +4277,7 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 			prDbdcInfo->eDbdcFsmNextState =
 				ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
 		}
+#endif
 		break;
 
 	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
