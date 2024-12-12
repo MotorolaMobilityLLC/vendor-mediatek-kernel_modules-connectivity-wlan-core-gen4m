@@ -16110,6 +16110,10 @@ int priv_driver_get_version(struct net_device *prNetDev,
 		NIC_DRIVER_SERIAL_VERSION,
 		DRIVER_BUILD_DATE);
 
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+		"WiFi Operation Mode: %s\n",
+		prAdapter->fgTestMode == 0 ? "MP Mode" : "Test Mode");
+
 	i4BytesWritten = (int32_t)u4Offset;
 
 	return i4BytesWritten;
