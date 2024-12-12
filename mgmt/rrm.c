@@ -194,7 +194,7 @@ void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct ACTION_NEIGHBOR_REPORT_FRAME, aucInfoElem);
 	/* 3 Compose the frame body's frame. */
 	prTxFrame->ucDialogToken = ucDialogToken++;
-	u2TxFrameLen -= sizeof(*prTxFrame) - 1;
+	u2TxFrameLen -= sizeof(*prTxFrame);
 	pucPayload = &prTxFrame->aucInfoElem[0];
 	while (prSubIEs && u2TxFrameLen >= (prSubIEs->rSubIE.ucLength + 2)) {
 		kalMemCopy(pucPayload, &prSubIEs->rSubIE,

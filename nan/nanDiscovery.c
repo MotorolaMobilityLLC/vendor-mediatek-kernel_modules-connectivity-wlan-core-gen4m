@@ -1239,13 +1239,12 @@ nanDiscUpdateSecContextInfoAttr(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	pucSecContextList = prAttrSecContextInfo->aucSecurityContextIDList;
 	i4RemainLength = prAttrSecContextInfo->u2Length;
 
-	while (i4RemainLength >
-	       (sizeof(struct _NAN_SECURITY_CONTEXT_ID_T) - 1)) {
+	while (i4RemainLength > (sizeof(struct _NAN_SECURITY_CONTEXT_ID_T))) {
 		prSecContext =
 			(struct _NAN_SECURITY_CONTEXT_ID_T *)pucSecContextList;
 		i4RemainLength -=
 			(prSecContext->u2SecurityContextIDTypeLength +
-			 sizeof(struct _NAN_SECURITY_CONTEXT_ID_T) - 1);
+			 sizeof(struct _NAN_SECURITY_CONTEXT_ID_T));
 
 		if (prSecContext->ucSecurityContextIDType != 1)
 			continue;

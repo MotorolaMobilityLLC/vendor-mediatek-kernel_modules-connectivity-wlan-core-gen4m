@@ -3668,7 +3668,7 @@ uint8_t nicIsActionFrameValid(struct SW_RFB *prSwRfb)
 	uint16_t u2ActionIndex = 0, u2ExpectedLen = 0;
 	uint32_t u4Idx;
 
-	if (prSwRfb->u2PacketLen < sizeof(struct WLAN_ACTION_FRAME) - 1)
+	if (prSwRfb->u2PacketLen < sizeof(struct WLAN_ACTION_FRAME))
 		return FALSE;
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
