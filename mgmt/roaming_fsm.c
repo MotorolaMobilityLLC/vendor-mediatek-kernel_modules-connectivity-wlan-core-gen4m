@@ -1111,6 +1111,7 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
+	struct STA_RECORD *prStaRec;
 
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
@@ -1125,6 +1126,14 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 		DBGLOG(ROAMING, INFO,
 			"Current State = %d, Ignore discovery\n",
 			prRoamingFsmInfo->eCurrentState);
+		return;
+	}
+
+	/* The STA is about to disconnect, e.g., receiving deauthentication */
+	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
+	if (!prStaRec || prStaRec->ucStaState < STA_STATE_3) {
+		DBGLOG(ROAMING, INFO,
+			"prStaRec State < STATE3, Ignore roaming request.\n");
 		return;
 	}
 

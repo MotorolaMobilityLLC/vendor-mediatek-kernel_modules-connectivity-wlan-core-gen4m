@@ -1738,9 +1738,16 @@ saaSendDisconnectMsgHandler(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
+		if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
+			DBGLOG(SAA, INFO, "[SAA] Stop rJoinTimeoutTimer\n");
+
 			cnmTimerStopTimer(prAdapter,
 				&prAisFsmInfo->rJoinTimeoutTimer);
+
+			/* Release Channel */
+			aisFsmReleaseCh(prAdapter,
+			       aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
+		}
 
 		/* NOTE(Kevin): Change state immediately to
 		 * avoid starvation of MSG buffer because of too
