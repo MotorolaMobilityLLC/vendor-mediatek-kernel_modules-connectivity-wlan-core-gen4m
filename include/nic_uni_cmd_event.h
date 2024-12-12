@@ -5552,10 +5552,11 @@ struct UNI_CMD_FACT_CAL_RAPID_GET {
 	uint32_t u4Data;
 	uint32_t u4SeqNum;
 	uint32_t u4BufDataLength;
+	uint32_t u4Channel;
 	uint8_t u1CalType;
 	uint8_t u1Done;
 	uint8_t u1Band;
-	uint8_t u1Channel;
+	uint8_t u1Rsvd;
 	uint8_t u1BufData[FACT_CAL_DATA_BUF_MAXSIZE];
 } __KAL_ATTRIB_PACKED__;
 
@@ -9135,10 +9136,11 @@ struct UNI_CMD_FACT_CAL_DATA {
 	uint32_t u4Data;
 	uint32_t u4SeqNum;
 	uint32_t u4BufDataLength;
+	uint32_t u4Channel;
 	uint8_t ucCalType;
 	uint8_t ucDone;
 	uint8_t ucBand;
-	uint8_t ucChannel;
+	uint8_t u1Rsvd;
 	uint8_t aucBufData[FACT_CAL_DATA_BUF_MAXSIZE];
 } __KAL_ATTRIB_PACKED__;
 

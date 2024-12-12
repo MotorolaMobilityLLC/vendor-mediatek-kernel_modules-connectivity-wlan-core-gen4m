@@ -9339,7 +9339,7 @@ uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 		tag->u4Data = prCalData->u4Data;
 		tag->u1CalType = prCalData->ucCalType;
 		tag->u1Band = prCalData->ucBand;
-		tag->u1Channel = prCalData->ucChannel;
+		tag->u4Channel = prCalData->u4Channel;
 		break;
 	}
 
@@ -9350,6 +9350,7 @@ uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 		tag->u2Tag = UNI_CMD_FACT_CAL_TAG_RAPID_SET;
 		tag->u2Length = sizeof(*tag);
 		tag->u1CalType = prCalData->ucCalType;
+		tag->u4Data = prCalData->u4Data;
 		tag->u4SeqNum = prCalData->u4SeqNum;
 		tag->u1Done = prCalData->ucDone;
 		if (prCalData->u4BufDataLength <= FACT_CAL_DATA_BUF_MAXSIZE)
@@ -15265,6 +15266,13 @@ void nicUniEventGetFactCalData(struct ADAPTER *prAdapter,
 	uint8_t *data = GET_UNI_EVENT_DATA(uni_evt);
 
 	DBGLOG(NIC, DEBUG, "EVENT_ID_ONE_TIME_CAL\n");
+
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		return;
+	}
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;

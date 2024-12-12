@@ -857,13 +857,18 @@ uint32_t rlmFactCalUpdateStruct(struct ADAPTER *prAdapter,
 		struct UNI_EVENT_FACT_CAL_RAPID_GET_DATA *prCalData);
 
 uint32_t rlmFactCalGetBufInfo(struct ADAPTER *prAdapter,
-		struct FACT_CAL_DATA_BUF *prCalData);
+		struct FACT_CAL_DATA_BUF *prCalData, uint32_t u4CalDataIdx);
 
 uint32_t rlmFactCalGet(struct ADAPTER *prAdapter,
-			uint32_t u4CalType, uint8_t u4Band, uint8_t channel);
+			uint32_t u4CalType, uint8_t u4Band, uint32_t u4Channel);
 
-uint32_t rlmFactCalSet(struct ADAPTER *prAdapter, uint32_t u4Action,
-			uint32_t u4CalType, uint32_t u4CalParam);
+uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
+			uint32_t u4CalType, uint8_t u1Band, uint32_t u4Channel);
+
+uint32_t rlmFactCalSetCalDataForSend(struct ADAPTER *prAdapter,
+			uint32_t u4CalType, uint8_t u1Band,
+			uint32_t u4Channel,
+			uint32_t u4CalDataIdx);
 
 uint32_t rlmFactCalSetByPassCal(struct ADAPTER *prAdapter, uint32_t u4Enable);
 

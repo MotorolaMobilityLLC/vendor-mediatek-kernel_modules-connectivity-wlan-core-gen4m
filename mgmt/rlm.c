@@ -3024,7 +3024,7 @@ static uint32_t rlmFactCalGetChIdx(enum FACT_CAL_BAND eBand,
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t rlmFactCalCh2Group(enum FACT_CAL_BAND eBand,
-				uint8_t ucChannel, uint8_t *pucGroup)
+				uint32_t u4Channel, uint8_t *pucGroup)
 {
 	uint8_t ucGrpDefIdx = 0, ucIndex = 0;
 	uint16_t u2Freq = 0;
@@ -3038,25 +3038,25 @@ static uint32_t rlmFactCalCh2Group(enum FACT_CAL_BAND eBand,
 		*pucGroup = 0;
 		return WLAN_STATUS_SUCCESS;
 	} else if (eBand == FACT_CAL_BAND_5G) {
-		u2Freq = 5000 + ucChannel * 5;
+		u2Freq = 5000 + u4Channel * 5;
 		for (ucIndex = 0; ucIndex < ARRAY_SIZE(auc5G160Ch); ucIndex++) {
-			if (ucChannel == auc5G160Ch[ucIndex]) {
+			if (u4Channel == auc5G160Ch[ucIndex]) {
 				fg160MCh = TRUE;
 				break;
 			}
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	} else if (eBand == FACT_CAL_BAND_6G) {
-		u2Freq = 5950 + ucChannel * 5;
+		u2Freq = 5950 + u4Channel * 5;
 		for (ucIndex = 0; ucIndex < ARRAY_SIZE(auc6G160Ch); ucIndex++) {
-			if (ucChannel == auc6G160Ch[ucIndex]) {
+			if (u4Channel == auc6G160Ch[ucIndex]) {
 				fg160MCh = TRUE;
 				break;
 			}
 		}
 #endif
 	} else {
-		DBGLOG(RLM, ERROR, "Error eBand %u ch%u\n", eBand, ucChannel);
+		DBGLOG(RLM, ERROR, "Error eBand %u ch%u\n", eBand, u4Channel);
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -3093,13 +3093,13 @@ static uint32_t rlmFactCalCh2Group(enum FACT_CAL_BAND eBand,
 	if (*pucGroup <= 0) {
 		DBGLOG(RLM, ERROR,
 			"Error: find no group for eBand %u ch%u\n",
-			eBand, ucChannel);
+			eBand, u4Channel);
 		return WLAN_STATUS_FAILURE;
 	}
 
 	DBGLOG(RLM, INFO,
 		"Get group %u for eBand %u ch%u\n",
-		*pucGroup, eBand, ucChannel);
+		*pucGroup, eBand, u4Channel);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3443,7 +3443,7 @@ static uint32_t rlmFactCalSendCmd(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmFactCalGet(struct ADAPTER *prAdapter,
-			uint32_t u4CalType, uint8_t u1Band, uint8_t u1Channel)
+			uint32_t u4CalType, uint8_t u1Band, uint32_t u4Channel)
 {
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 	struct UNI_CMD_FACT_CAL_DATA *prCalDataForSend = NULL;
@@ -3461,7 +3461,7 @@ uint32_t rlmFactCalGet(struct ADAPTER *prAdapter,
 	if (u4CalType == FACT_CAL_TYPE_SETCHANNEL) {
 		prCalDataForSend->ucCalType = FACT_CAL_TYPE_SETCHANNEL;
 		prCalDataForSend->ucBand = u1Band;
-		prCalDataForSend->ucChannel = u1Channel;
+		prCalDataForSend->u4Channel = u4Channel;
 		if (rlmFactCalSendCmd(
 			prAdapter, FACT_CAL_ACTION_GET, prCalDataForSend)
 			!= WLAN_STATUS_SUCCESS)
@@ -3470,7 +3470,7 @@ uint32_t rlmFactCalGet(struct ADAPTER *prAdapter,
 	} else if (u4CalType == FACT_CAL_TYPE_POWERON) {
 		prCalDataForSend->ucCalType = FACT_CAL_TYPE_POWERON;
 		prCalDataForSend->ucBand = u1Band;
-		prCalDataForSend->ucChannel = u1Channel;
+		prCalDataForSend->u4Channel = u4Channel;
 		if (rlmFactCalSendCmd(
 			prAdapter, FACT_CAL_ACTION_GET, prCalDataForSend)
 			!= WLAN_STATUS_SUCCESS)
@@ -3493,6 +3493,9 @@ uint32_t rlmFactCalGet(struct ADAPTER *prAdapter,
 			!= WLAN_STATUS_SUCCESS)
 			goto GET_FAIL;
 		u4Status = WLAN_STATUS_SUCCESS;
+	} else {
+		DBGLOG(RLM, ERROR, "[FACT_CAL][GET] No such cal type!\n");
+		u4Status = WLAN_STATUS_FAILURE;
 	}
 
 GET_FAIL:
@@ -3511,16 +3514,214 @@ GET_FAIL:
  * \param[in] prAdapter
  *            u4Action
  *            u4CalType
- *            u4IsRelatedAll
- *            u4CalParam
+ *            u1Band: FACT_CAL_BAND: 2G=0, 5G=1, 6G=2
+ *            u1Channel: Center channel
  *
  * \return WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rlmFactCalSet(struct ADAPTER *prAdapter, uint32_t u4Action,
-			uint32_t u4CalType, uint32_t u4CalParam)
+uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
+			uint32_t u4CalType, uint8_t u1Band, uint32_t u4Channel)
 {
-	return WLAN_STATUS_FAILURE;
+	uint32_t u4Idx = 0, u4Status = WLAN_STATUS_FAILURE;
+	uint8_t u1tmpCh = 0;
+	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
+	struct FACT_CAL_CH *prFileCh = NULL;
+
+	prFactCalFile = &prAdapter->rFactCalFile;
+
+	if (u4CalType == FACT_CAL_TYPE_SETCHANNEL) {
+		// Set correspond group for channel and all paths
+		u4Status = rlmFactCalSetCalDataForSend(
+			prAdapter,
+			FACT_CAL_TYPE_GROUP,
+			u1Band,
+			u4Channel,
+			FACT_CAL_DATA_INVALID_IDX);
+
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			DBGLOG(RLM, ERROR,
+				"Set CH%d group fail!\n", u4Channel);
+
+		for (u4Idx = 0; u4Idx < FACT_CAL_CH_NUM_ALL; u4Idx++) {
+			prFileCh = &prFactCalFile->channel_t->rChCalData[u4Idx];
+			u1tmpCh =
+				((prFileCh->rFactCalBufInfo.u4CalParam)
+					& FACT_CAL_CENT_CH_PARAM_CHAN_MASK);
+
+			if (u1tmpCh == u4Channel) {
+				u4Status = rlmFactCalSetCalDataForSend(
+					prAdapter,
+					FACT_CAL_TYPE_CHANNEL,
+					u1Band, u4Channel, u4Idx);
+				if (u4Status != WLAN_STATUS_SUCCESS)
+					DBGLOG(RLM, ERROR,
+					"Set CH%d channel fail!\n",
+					u4Channel);
+			}
+		}
+	} else if (u4CalType == FACT_CAL_TYPE_POWERON) {
+		// Set correspond COMMON A/G band
+		for (u4Idx = 0; u4Idx < FACT_CAL_COMMON_BAND_NUM; u4Idx++) {
+			u4Status = rlmFactCalSetCalDataForSend(
+				prAdapter,
+				FACT_CAL_TYPE_COMMON,
+				u4Idx,
+				u4Channel,
+				FACT_CAL_DATA_INVALID_IDX);
+			if (u4Status != WLAN_STATUS_SUCCESS) {
+				DBGLOG(RLM, ERROR,
+					"Set BAND%d COMMON fail!\n", u4Idx);
+				break;
+			}
+		}
+	} else {
+		DBGLOG(RLM, ERROR, "[FACT_CAL][SET] No such cal type!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t rlmFactCalSetCalDataForSend(
+			struct ADAPTER *prAdapter,
+			uint32_t u4CalType,
+			uint8_t u1Band, uint32_t u4Channel,
+			uint32_t u4CalDataIdx)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE, u4CalParam = 0;
+	struct FACT_CAL_DATA_BUF rCalData;
+	uint8_t ucGroup = 0, ucBufIdx = 0, ucBufSeq = 0;
+	struct UNI_CMD_FACT_CAL_DATA *prCalDataForSend = NULL;
+	uint32_t u4leaveLength = 0, u4Offset = 0, u4SeqNumPerBuf = 0;
+
+	rCalData.ucCalType = (uint8_t) u4CalType;
+
+	// Construct Cal. param by cal type and channel
+	if (u4CalType == FACT_CAL_TYPE_GROUP) {
+		rlmFactCalCh2Group(u1Band, u4Channel, &ucGroup);
+		u4CalParam = ucGroup;
+	} else if (u4CalType == FACT_CAL_TYPE_CHANNEL) {
+		u4CalParam = u4Channel;
+		u4CalParam |= u1Band << FACT_CAL_CENT_CH_PARAM_RF_BAND_OFFSET;
+	} else if (u4CalType == FACT_CAL_TYPE_COMMON) {
+		u4CalParam = u1Band;
+	}
+
+	rCalData.u4CalParam = u4CalParam;
+
+	if (rlmFactCalGetBufInfo(prAdapter, &rCalData, u4CalDataIdx)
+		!= WLAN_STATUS_SUCCESS)
+		return WLAN_STATUS_FAILURE;
+
+	if (rCalData.fgValid == FALSE) {
+		DBGLOG(RLM, ERROR, "Cal type %d, u4CalParam=%x is invalid\n",
+				u4CalType, u4CalParam);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prCalDataForSend = kalMemAlloc(
+		sizeof(struct UNI_CMD_FACT_CAL_DATA), VIR_MEM_TYPE);
+	if (prCalDataForSend) {
+		kalMemZero(prCalDataForSend,
+			sizeof(struct UNI_CMD_FACT_CAL_DATA));
+	} else {
+		DBGLOG(RLM, ERROR, "Memory alloc failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(RLM, INFO, "Buf Config Content\n");
+	DBGLOG_MEM8(RLM, LOUD, rCalData.pBufCfg, rCalData.u4BufCfgLen);
+	for (ucBufIdx = 0 ; ucBufIdx < rCalData.u4BufNum ; ucBufIdx++) {
+		DBGLOG(RLM, INFO,
+			"[0]addr 0x%x, [1]length %d, [2]other1: 0x%x, other2:[3]0x%x\n",
+			rCalData.pBufCfg[ucBufIdx*4 + 0],
+			rCalData.pBufCfg[ucBufIdx*4 + 1],
+			rCalData.pBufCfg[ucBufIdx*4 + 2],
+			rCalData.pBufCfg[ucBufIdx*4 + 3]);
+	}
+	DBGLOG(RLM, INFO,
+		"Valid=%d, CalType 0x%X, CalParam 0x%X, TotalBufNum %d, SegBufNumBuf %d, buf Addr=0x%p, datalen=%d\n",
+		rCalData.fgValid, rCalData.ucCalType,
+		rCalData.u4CalParam, rCalData.u4BufNum,
+		rCalData.u4BufSeqNum, rCalData.pBuf,
+		rCalData.u4BufLen);
+	DBGLOG_MEM8(RLM, LOUD, rCalData.pBuf, rCalData.u4BufLen);
+
+	u4Offset = 0;
+	/* Get Seq Number per Buf */
+	u4SeqNumPerBuf = rCalData.u4BufSeqNum/rCalData.u4BufNum;
+	for (ucBufIdx = 0 ; ucBufIdx < rCalData.u4BufNum; ucBufIdx++) {
+		/* 1. Send buffer config header */
+		prCalDataForSend->ucCalType = rCalData.ucCalType;
+		prCalDataForSend->u4Data = rCalData.u4CalParam;
+		prCalDataForSend->ucBand = u1Band;
+		prCalDataForSend->u4Channel = u4Channel;
+		prCalDataForSend->u4SeqNum = 0;
+		prCalDataForSend->ucDone = FALSE;
+		prCalDataForSend->u4BufDataLength =
+			FACT_CAL_DATA_BUF_CFG_U8_LEN;
+		kalMemCopy(prCalDataForSend->aucBufData,
+			rCalData.pBufCfg +
+			ucBufIdx*FACT_CAL_DATA_BUF_CFG_U32_LEN,
+			FACT_CAL_DATA_BUF_CFG_U8_LEN);
+
+		DBGLOG_MEM8(RLM, LOUD,
+			rCalData.pBufCfg +
+			ucBufIdx*FACT_CAL_DATA_BUF_CFG_U32_LEN,
+			FACT_CAL_DATA_BUF_CFG_U8_LEN);
+
+		u4Status =
+			nicUniCmdFactCal(prAdapter,
+				FACT_CAL_ACTION_SET,
+				prCalDataForSend);
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto SEND_FAIL;
+
+		/* 2. Send Cal Data */
+		u4leaveLength = rCalData.pBufCfg[ucBufIdx*4 + 1];
+		for (ucBufSeq = 0; ucBufSeq < u4SeqNumPerBuf; ucBufSeq++) {
+			prCalDataForSend->u4SeqNum++;
+			prCalDataForSend->ucDone = FALSE;
+			if (u4leaveLength <= FACT_CAL_DATA_BUF_LEN)
+				prCalDataForSend->u4BufDataLength =
+					u4leaveLength;
+			else {
+				prCalDataForSend->u4BufDataLength =
+					FACT_CAL_DATA_BUF_LEN;
+				u4leaveLength -= FACT_CAL_DATA_BUF_LEN;
+			}
+			kalMemCopy(
+				prCalDataForSend->aucBufData,
+				rCalData.pBuf + u4Offset,
+				prCalDataForSend->u4BufDataLength);
+			u4Offset += prCalDataForSend->u4BufDataLength;
+
+			DBGLOG_MEM8(RLM, LOUD,
+				prCalDataForSend->aucBufData,
+				prCalDataForSend->u4BufDataLength);
+
+			u4Status =
+				nicUniCmdFactCal(prAdapter,
+				FACT_CAL_ACTION_SET, prCalDataForSend);
+			if (u4Status != WLAN_STATUS_SUCCESS)
+				goto SEND_FAIL;
+		}
+	}
+
+	/* Send Done */
+	prCalDataForSend->u4SeqNum++;
+	prCalDataForSend->ucDone = TRUE;
+	prCalDataForSend->u4BufDataLength = 0;
+	u4Status =
+		nicUniCmdFactCal(prAdapter,
+		FACT_CAL_ACTION_SET, prCalDataForSend);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto SEND_FAIL;
+
+SEND_FAIL:
+	kalMemFree(prCalDataForSend, VIR_MEM_TYPE,
+			sizeof(struct UNI_EVENT_FACT_CAL_GET_DATA));
+	return u4Status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3662,8 +3863,53 @@ uint32_t rlmFactCalHandler(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmFactCalGetBufInfo(struct ADAPTER *prAdapter,
-		struct FACT_CAL_DATA_BUF *prCalData)
+		struct FACT_CAL_DATA_BUF *prCalData, uint32_t u4CalDataIdx)
 {
+	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
+	struct FACT_CAL_BUF_INFO *prFileBufInfo = NULL;
+	struct FACT_CAL_COM *prFileCom = NULL;
+	struct FACT_CAL_GRP *prFileGrp = NULL;
+	struct FACT_CAL_CH *prFileCh = NULL;
+	uint8_t ucBand = 0;
+	uint32_t u4Group = 0;
+
+	prFactCalFile = &prAdapter->rFactCalFile;
+
+	switch (prCalData->ucCalType) {
+	case FACT_CAL_TYPE_COMMON:
+		ucBand = prCalData->u4CalParam & FACT_CAL_PARAM_COMMON_MASK;
+		prFileCom =
+			&prFactCalFile->common_t->rComCalData[ucBand];
+		prFileBufInfo = &prFileCom->rFactCalBufInfo;
+
+		prCalData->pBuf = prFileCom->aucCalData;
+		prCalData->u4BufLen = prFileBufInfo->u4BufDataLength;
+		break;
+	case FACT_CAL_TYPE_GROUP:
+		u4Group = prCalData->u4CalParam & FACT_CAL_PARAM_GROUP_MASK;
+		prFileGrp = &prFactCalFile->group_t->rGrpCalData[u4Group];
+		prFileBufInfo = &prFileGrp->rFactCalBufInfo;
+
+		prCalData->pBuf = prFileGrp->aucCalData;
+		prCalData->u4BufLen = prFileBufInfo->u4BufDataLength;
+		break;
+	case FACT_CAL_TYPE_CHANNEL:
+		prFileCh = &prFactCalFile->channel_t->rChCalData[u4CalDataIdx];
+		prFileBufInfo = &prFileCh->rFactCalBufInfo;
+
+		prCalData->pBuf = prFileCh->aucCalData;
+		prCalData->u4BufLen = prFileBufInfo->u4BufDataLength;
+		break;
+	case FACT_CAL_TYPE_NUM:
+	default:
+		DBGLOG(RLM, ERROR, "Error type %u\n", prCalData->ucCalType);
+		break;
+	}
+	prCalData->fgValid = prFileBufInfo->fgValid;
+	prCalData->u4BufNum = prFileBufInfo->u4TotalBufNum;
+	prCalData->u4BufSeqNum = prFileBufInfo->u4BufSeqNum;
+	prCalData->pBufCfg = prFileBufInfo->au4BufCfgInfo;
+	prCalData->u4BufCfgLen = prFileBufInfo->u4TotalBufNum*16;
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -3744,11 +3990,13 @@ uint32_t rlmFactCalUpdateStruct(struct ADAPTER *prAdapter,
 			&(((struct FACT_CAL_CH *)prFileBuf)->rFactCalBufInfo);
 		pucFileBufCalData = &(((struct FACT_CAL_CH *) prFileBuf)->
 		aucCalData[prFileBufInfo->u4BufDataLength]);
+
 		if (eAction == FACT_CAL_STORE_DATA_HEAD) {
 			prFileBufInfo->u4BufDataLength = 0;
 			kalMemZero(pucFileBufCalData, FACT_CAL_BUF_LEN_CH);
 			kalMemZero(prFileBufInfo->au4BufCfgInfo,
 			sizeof(prFileBufInfo->au4BufCfgInfo));
+
 		}
 		u4MaxDataLen = FACT_CAL_BUF_LEN_CH;
 		break;
