@@ -7085,7 +7085,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #endif
 		prLatencyReport = &prStats->rDiff;
 		DBGLOG(HAL, INFO,
-			"WFD Credit: [%lu,%lu,%lu,%lu]\n",
+			"WFD Credit: [%u,%u,%u,%u]\n",
 			prTokenInfo->u4TxCredit[0], prTokenInfo->u4TxCredit[1],
 			prTokenInfo->u4TxCredit[2], prTokenInfo->u4TxCredit[3]);
 	}
