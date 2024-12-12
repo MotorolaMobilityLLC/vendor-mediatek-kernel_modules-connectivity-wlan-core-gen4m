@@ -189,6 +189,14 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			p2pRoleFsmRunEventWaitNextReqChnlTimeout,
 			(uintptr_t) prP2pRoleFsmInfo);
 
+#if CFG_SAP_RPS_SUPPORT
+		cnmTimerInitTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRpsEnterTimer),
+			(PFN_MGMT_TIMEOUT_FUNC)
+			p2pFsmRunEventRpsCountdownTimeOut,
+			(uintptr_t)prP2pBssInfo);
+#endif
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		p2pFuncRadarInfoInit();
 #endif
@@ -273,6 +281,11 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 		/* ensure the timer be stopped */
 		cnmTimerStopTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+
+#if CFG_SAP_RPS_SUPPORT
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRpsEnterTimer));
+#endif
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 		cnmTimerStopTimer(prAdapter,

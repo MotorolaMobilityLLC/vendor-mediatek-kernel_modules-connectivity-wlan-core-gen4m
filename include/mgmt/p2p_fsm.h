@@ -45,4 +45,8 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 
 void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
 	uintptr_t ulParamPtr);
+#if CFG_SAP_RPS_SUPPORT
+void p2pFsmRunEventRpsCountdownTimeOut(struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr);
+#endif
 #endif /* _P2P_FSM_H */

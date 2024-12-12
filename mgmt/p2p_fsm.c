@@ -456,4 +456,29 @@ void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
 	cnmCsaResetParams(prAdapter, prP2pBssInfo);
 	kalP2pStopApInterface(prAdapter, prP2pBssInfo);
 }
+#if CFG_SAP_RPS_SUPPORT
+void p2pFsmRunEventRpsCountdownTimeOut(struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr)
+{
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *)ulParamPtr;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+
+	if (!prP2pBssInfo)
+		return;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prAdapter, prP2pBssInfo->u4PrivateData);
+
+	DBGLOG(P2P, WARN,
+		"[%d] RPS Count down timeout\n",
+		prP2pBssInfo->ucBssIndex);
+	prAdapter->rWifiVar.fgSapRpsSwitch = TRUE;
+	cnmTimerStopTimer(prAdapter,
+		&(prP2pRoleFsmInfo->rP2pRpsEnterTimer));
+	p2pSetSapRps(prAdapter, TRUE,
+		prAdapter->rWifiVar.ucSapRpsPhase,
+		prP2pBssInfo->ucBssIndex);
+
+}
+#endif
 #endif /* CFG_ENABLE_WIFI_DIRECT */
