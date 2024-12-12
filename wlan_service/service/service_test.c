@@ -490,19 +490,17 @@ s_int32 mt_serv_stop(struct service_test *serv_test)
 s_int32 mt_serv_set_channel(struct service_test *serv_test)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	u_int8 ctrl_band_idx = serv_test->ctrl_band_idx;
 	struct test_configuration *configs;
 	struct test_wlan_info *winfos = serv_test->test_winfo;
 	struct test_operation *ops = serv_test->test_op;
 	struct serv_chip_cap *cap = &winfos->chip_cap;
-	s_int32 ant_loop;
-	u_char ant_mask = 0;
-	u_int32 tx_stream_num = 0, max_stream_num = 0;
+	u_int8 ant_loop;
+	u_int8 ant_mask = 0;
+	u_int8 tx_stream_num = 0, max_stream_num = 0;
 	s_int8 ch_offset = 0;
-#if 0
-	u_char tmp = 0;
-#endif
-	u_char pri_sel = 0, channel = 0, channel_2nd = 0;
+
+	u_int8 pri_sel = 0, channel = 0, channel_2nd = 0;
 	const s_int8 bw40_sel[] = { -2, 2};
 	const s_int8 bw80_sel[] = { -6, -2, 2, 6};
 	const s_int8 bw160_sel[] = { -14, -10, -6, -2, 2, 6, 10, 14};
@@ -620,14 +618,6 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 		if (!channel_2nd)
 			goto error2;
 
-#if 0
-		/* swap control channel to be in order */
-		if (channel_2nd < channel) {
-			tmp = channel;
-			channel = channel_2nd;
-			channel_2nd = tmp;
-		}
-#endif
 		/* TODO: bw80+80 primary select definition */
 		if (pri_sel < 4) {
 			configs->ctrl_ch = channel + bw80_sel[pri_sel];
