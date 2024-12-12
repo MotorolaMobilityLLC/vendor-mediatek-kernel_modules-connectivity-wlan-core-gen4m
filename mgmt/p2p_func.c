@@ -6887,7 +6887,8 @@ void p2pFuncGenerateP2p_IEForAssocRsp(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
-
+	struct BSS_INFO *prBssInfo;
+	u_int8_t fgIsApMode;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -6897,7 +6898,14 @@ void p2pFuncGenerateP2p_IEForAssocRsp(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (IS_STA_IN_P2P(prAdapter, prStaRec)) {
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prMsduInfo->ucBssIndex);
+	fgIsApMode = prBssInfo != NULL ?
+		p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]) :
+		FALSE;
+
+	if (IS_STA_IN_P2P(prAdapter, prStaRec) && !fgIsApMode) {
 		DBGLOG(P2P, TRACE, "Generate NULL P2P IE for Assoc Rsp.\n");
 
 		p2pFuncGenerateP2P_IE(prAdapter,
@@ -6910,7 +6918,6 @@ void p2pFuncGenerateP2p_IEForAssocRsp(struct ADAPTER *prAdapter,
 			sizeof(txAssocRspAttributesTable) /
 			sizeof(struct APPEND_VAR_ATTRI_ENTRY));
 	} else {
-
 		DBGLOG(P2P, TRACE, "Legacy device, no P2P IE.\n");
 	}
 }				/* p2pFuncGenerateP2p_IEForAssocRsp */
