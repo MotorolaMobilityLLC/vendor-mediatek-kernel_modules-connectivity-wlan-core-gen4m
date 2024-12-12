@@ -10255,17 +10255,20 @@ void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
+	uint32_t *au4SafeChnl;
+
 	if (!prAdapter || !prAcsReqInfo)
 		return;
 
+	au4SafeChnl = prAcsReqInfo->au4SafeChnl;
 	prAcsReqInfo->ucPrimaryCh =
 		p2pFunGetAcsBestCh(prAdapter,
-				   prAcsReqInfo->eBand,
-				   prAcsReqInfo->eChnlBw,
-				   BITS(0, 31),
-				   BITS(0, 31),
-				   BITS(0, 31),
-				   BITS(0, 31));
+			prAcsReqInfo->eBand,
+			prAcsReqInfo->eChnlBw,
+			au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_2G4],
+			au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_0],
+			au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_1],
+			au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G]);
 
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo, prAcsReqInfo);
 }
