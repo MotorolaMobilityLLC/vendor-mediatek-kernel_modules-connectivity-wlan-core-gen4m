@@ -295,9 +295,9 @@ void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 	uint32_t idx, u4DefVal;
 	uint32_t u4MinQuota = 0, u4MaxQuota = 0;
 	u_int8_t fgSetQuota = TRUE;
+	uint32_t u4Val = 0, u4Addr = 0;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4Val = 0, u4Addr = 0;
 #endif
 
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 && CFG_SUPPORT_WIFI_6G == 1)
@@ -366,6 +366,10 @@ WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_PSEBF_BL_TH2_NOBMIN_RASIGN_ENA_MASK |
 		rMt6653DmashdlCfg.u2HifAckCntTh,
 		rMt6653DmashdlCfg.u2HifGupActMap,
 		u4DefVal);
+
+	u4Addr = WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR;
+	u4Val = 0xEFF;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
