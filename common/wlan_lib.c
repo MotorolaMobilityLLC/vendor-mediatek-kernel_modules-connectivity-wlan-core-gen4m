@@ -7628,6 +7628,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  T2LM_ALL_TIDS_SAME_LINK, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4T2LMMarginMs, "T2LMMarginMs", 250,
 		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4T2LMMapValue, "T2LMMapValue", 0,
+		  FEATURE_DEBUG_ONLY);
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	INIT_UINT(prWifiVar->fgEnEpcs, "EnableEpcs", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);

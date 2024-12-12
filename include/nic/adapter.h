@@ -957,6 +957,7 @@ struct WIFI_VAR {
 	uint8_t ucMaxSimuLinksCap;
 	uint8_t ucT2LMNegotiationSupport;
 	uint32_t u4T2LMMarginMs;
+	uint32_t u4T2LMMapValue;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
 	uint8_t aucMloSapPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
 	uint32_t au4MloP2p2ndLinkFreqs[MAX_CHN_NUM];

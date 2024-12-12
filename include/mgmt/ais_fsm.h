@@ -988,6 +988,8 @@ void aisRemoveMldBlockList(struct ADAPTER *prAdapter,
 void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec);
 struct MLD_BLOCKLIST_ITEM *aisQueryMldBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
+uint16_t aisGetNeighborMldAPPrefLinks(
+	struct ADAPTER *prAdapter, struct BSS_DESC *bss, uint8_t ucBssIndex);
 #endif
 
 /* Support 11K */

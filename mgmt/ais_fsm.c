@@ -9222,9 +9222,6 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc;
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	struct CMD_ROAMING_TRANSIT rRoamingData;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_STA_RECORD *prMldStarec;
-#endif
 	uint8_t ucBssIndex = 0;
 	uint8_t ucReqMode = 0;
 
@@ -9265,36 +9262,46 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 		(prBssDesc->rMlInfo.u2MldCap & MLD_CAP_TID_TO_LINK_NEGO_MASK) >>
 		MLD_CAP_TID_TO_LINK_NEGO_SHIFT);
 
-	prMldStarec = mldStarecGetByStarec(prAdapter,
-				aisGetMainLinkStaRec(prAisFsmInfo));
-
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	/* prefer using t2lm for multi link */
 	if (prAdapter->rWifiVar.ucT2LMNegotiationSupport &&
+	    !prAdapter->rWifiVar.fgRoamByBTM &&
 	    (prBssDesc->rMlInfo.u2MldCap & MLD_CAP_TID_TO_LINK_NEGO_MASK) &&
-	    !(ucReqMode & WNM_BSS_TM_REQ_BSS_TERMINATION_INCLUDED) &&
-	    prMldStarec && prMldStarec->rStarecList.u4NumElem > 1) {
-		struct NEIGHBOR_AP *prNei;
+	    !(ucReqMode & WNM_BSS_TM_REQ_BSS_TERMINATION_INCLUDED)) {
+		struct MLD_STA_RECORD *prMldStarec;
+		uint16_t u2PrefLinks;
 
-		prNei = aisGetNeighborAPEntry(prAdapter,
-			prBssDesc, ucBssIndex);
-		if ((prNei && prNei->ucPreference == 0) ||
-		     (ucReqMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT)) {
-#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+		prMldStarec = mldStarecGetByStarec(prAdapter,
+			aisGetMainLinkStaRec(prAisFsmInfo));
+		if (!prMldStarec || !IS_MLD_STAREC_MULTI(prMldStarec))
+			goto skip_t2lm;
+
+		u2PrefLinks = aisGetNeighborMldAPPrefLinks(
+			prAdapter, prBssDesc, ucBssIndex);
+
+		if (u2PrefLinks || prAdapter->rWifiVar.u4T2LMMapValue) {
 			int i;
 			struct T2LM_INFO *prT2LMParams;
 			struct BSS_INFO *prBssInfo;
-			uint8_t u2NonPrefLinks;
+			uint16_t u2MapValue;
 
-			u2NonPrefLinks = BIT(prBssDesc->rMlInfo.ucLinkId);
-			if (prNei && prNei->ucPreference == 0)
-				u2NonPrefLinks |= prNei->u2ValidLinks;
-
-			if ((u2NonPrefLinks & prMldStarec->u2ValidLinks) ==
-			    prMldStarec->u2ValidLinks) {
+			/* skip t2lm if
+			 * 1. all links are not preferred (AB->another AP)
+			 * 2. there are links not in validlinks (AB->BC)
+			 */
+			if ((u2PrefLinks & prMldStarec->u2ValidLinks) == 0 ||
+			    (u2PrefLinks & ~prMldStarec->u2ValidLinks) != 0) {
 				DBGLOG(AIS, WARN,
-				     "Skip t2lm all links are NonPref=0x%x mld=0x%x\n",
-				     u2NonPrefLinks, prMldStarec->u2ValidLinks);
+				     "Skip t2lm, ValidLinks=0x%x PrefLinks=0x%x\n",
+				     prMldStarec->u2ValidLinks, u2PrefLinks);
 				goto skip_t2lm;
+			}
+
+			if (prAdapter->rWifiVar.u4T2LMMapValue != 0) {
+				u2MapValue = prAdapter->rWifiVar.u4T2LMMapValue;
+			} else {
+				u2MapValue =
+				    u2PrefLinks & prMldStarec->u2ValidLinks;
 			}
 
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -9313,20 +9320,17 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 			prT2LMParams->ucLMSize = 1;
 			prT2LMParams->ucLMIndicator = 255;
 			for (i = 0; i < MAX_NUM_T2LM_TIDS; i++)
-				prT2LMParams->au2LMTid[i] =
-				    ~u2NonPrefLinks & prMldStarec->u2ValidLinks;
+				prT2LMParams->au2LMTid[i] = u2MapValue;
 
 			DBGLOG(AIS, INFO,
-			      "Send t2lm for load balance NonPref=0x%x mld=0x%x\n",
-			      u2NonPrefLinks, prMldStarec->u2ValidLinks);
+			      "Send t2lm for load balance ValidLinks=0x%x PrefLinks=0x%x LinkId=%d T2LMMapValue=0x%x\n",
+			      prMldStarec->u2ValidLinks, u2PrefLinks,
+			      prBssDesc->rMlInfo.ucLinkId, u2MapValue);
 
 			t2lmSend(prAdapter, TID2LINK_REQUEST,
 					prBssInfo, prT2LMParams);
 			kalMemFree(prT2LMParams, VIR_MEM_TYPE,
 				sizeof(struct prT2LMParams));
-#else
-			goto skip_t2lm;
-#endif
 			/* per spec, no need to send btm if already send t2lm */
 		} else if (prBtmParam->fgPendingResponse) {
 			prBtmParam->fgPendingResponse = false;
@@ -9343,7 +9347,8 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 		return;
 	}
 skip_t2lm:
-#endif
+#endif /* CFG_SUPPORT_802_11BE_T2LM */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	if (ucReqMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
 #if CFG_SUPPORT_MBO
@@ -9495,6 +9500,41 @@ uint8_t aisCollectNeighborMld(struct ADAPTER *prAdapter,
 	}
 
 	return FALSE;
+}
+
+uint16_t aisGetNeighborMldAPPrefLinks(
+	struct ADAPTER *prAdapter, struct BSS_DESC *bss, uint8_t ucBssIndex)
+{
+	struct LINK *prNeighborAPLink =
+		&aisGetAisSpecBssInfo(prAdapter, ucBssIndex)
+		->rNeighborApList.rUsingLink;
+	struct NEIGHBOR_AP *prNeighborAP = NULL;
+	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
+	uint16_t u2PrefLinks = 0;
+	uint8_t ucReqMode = 0;
+
+	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+	ucReqMode = prBtmParam->ucRequestMode;
+
+	LINK_FOR_EACH_ENTRY(prNeighborAP, prNeighborAPLink, rLinkEntry,
+			    struct NEIGHBOR_AP)
+	{
+		if (bss->rMlInfo.fgValid && prNeighborAP->fgIsMld &&
+		   EQUAL_MAC_ADDR(prNeighborAP->aucMldAddr,
+				  bss->rMlInfo.aucMldAddr)) {
+			if (prNeighborAP->fgPrefPresence &&
+			    prNeighborAP->ucPreference != 0)
+				u2PrefLinks |= prNeighborAP->u2ValidLinks;
+
+			DBGLOG(AIS, INFO,
+				"neighbor validlinks=0x%x pref=%d reqmode=0x%x => Pref_links=0x%\n",
+				prNeighborAP->u2ValidLinks,
+				prNeighborAP->ucPreference,
+				ucReqMode, u2PrefLinks);
+		}
+	}
+
+	return u2PrefLinks;
 }
 #endif
 
