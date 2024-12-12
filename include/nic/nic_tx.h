@@ -2167,4 +2167,7 @@ void nicTxForceAmsduForCert(struct ADAPTER *prAdapter,
 				u_int8_t *prTxDescBuffer);
 
 uint32_t nicTxGetFrameLength(struct MSDU_INFO *prMsduInfo);
+
+void nicRefillPendingPktTxdForCsa(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec);
 #endif /* _NIC_TX_H */

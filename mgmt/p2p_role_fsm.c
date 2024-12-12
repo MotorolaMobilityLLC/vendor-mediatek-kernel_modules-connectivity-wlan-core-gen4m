@@ -84,23 +84,7 @@ p2pRoleFsmStaCsaUpdt(struct ADAPTER *prAdapter,
 	if (prClientList && prClientList->u4NumElem > 0) {
 		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
 				rLinkEntry, struct STA_RECORD) {
-			if (HAL_IS_TX_DIRECT(prAdapter)) {
-				nicTxDirectClearStaAcmQ(prAdapter,
-					prCurrStaRec->ucIndex);
-				nicTxDirectClearStaPendQ(prAdapter,
-					prCurrStaRec->ucIndex);
-				nicTxDirectClearStaPsQ(prAdapter,
-					prCurrStaRec->ucIndex);
-			} else {
-				struct MSDU_INFO *prFlushedTxPacketList = NULL;
-
-				prFlushedTxPacketList =
-					qmFlushStaTxQueues(prAdapter,
-					prCurrStaRec->ucIndex);
-				if (prFlushedTxPacketList)
-					wlanProcessQueuedMsduInfo(prAdapter,
-						prFlushedTxPacketList);
-			}
+			nicRefillPendingPktTxdForCsa(prAdapter, prCurrStaRec);
 			qmSetStaRecTxAllowed(prAdapter, prCurrStaRec, TRUE);
 		}
 	}

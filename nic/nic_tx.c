@@ -7152,3 +7152,36 @@ uint32_t nicTxGetFrameLength(struct MSDU_INFO *prMsduInfo)
 	return prMsduInfo->u2FrameLength;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Refill TXD from old channel to new channel with same starec idx.
+ */
+/*----------------------------------------------------------------------------*/
+void nicRefillPendingPktTxdForCsa(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec)
+{
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		DBGLOG(RLM, TRACE, "Starec[%d] refill pending pkt TXD.\n",
+		       prStaRec->ucIndex);
+		nicTxDirectMoveStaAcmQ(
+			prAdapter, prStaRec->ucIndex, prStaRec->ucIndex);
+		nicTxDirectMoveStaPendQ(
+			prAdapter, prStaRec->ucIndex, prStaRec->ucIndex);
+		nicTxDirectMoveStaPsQ(
+			prAdapter, prStaRec->ucIndex, prStaRec->ucIndex);
+		nicTxDirectMoveBssAbsentQ(
+			prAdapter, prStaRec->ucBssIndex,
+			prStaRec->ucIndex, prStaRec->ucIndex);
+	} else {
+		struct MSDU_INFO *prFlushedTxPacketList;
+
+		DBGLOG(RLM, TRACE,
+		       "Starec[%d] Flush TX queue filled at old channel.\n",
+		       prStaRec->ucIndex);
+		prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
+						prStaRec->ucIndex);
+		if (prFlushedTxPacketList)
+			wlanProcessQueuedMsduInfo(prAdapter,
+						  prFlushedTxPacketList);
+	}
+}

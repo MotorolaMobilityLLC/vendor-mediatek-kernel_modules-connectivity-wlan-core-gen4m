@@ -5390,9 +5390,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		if (IS_BSS_AIS(prBssInfo)) {
 			cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaDoneTimer);
-			if (prCSAParams->fgIsCrossBand)
-				aisFunFlushTxQueue(prAdapter, prStaRec);
 		}
+		nicRefillPendingPktTxdForCsa(prAdapter, prStaRec);
 
 		if (prCSAParams->fgHasStopTx) {
 			kalIndicateAllQueueTxAllowed(
