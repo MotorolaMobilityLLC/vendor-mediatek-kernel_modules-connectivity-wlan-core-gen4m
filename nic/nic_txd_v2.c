@@ -372,6 +372,11 @@ void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		/* Must set No ACK to mask retry bit in FC */
 		HAL_MAC_CONNAC2X_TXD_SET_NO_ACK(prTxDesc);
 	}
+
+	/* HW AMSDU CAP */
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+		HAL_MAC_CONNAC2X_TXD_UNSET_HW_AMSDU(prTxDesc);
+
 	/* WLAN index */
 	prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
 		prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);

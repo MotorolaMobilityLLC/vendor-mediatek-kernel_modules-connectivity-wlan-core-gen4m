@@ -616,6 +616,10 @@ void nic_txd_v5_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		HAL_MAC_CONNAC5X_TXD_SET_NO_ACK(prTxDesc);
 	}
 
+	/* HW AMSDU CAP */
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+		HAL_MAC_CONNAC5X_TXD_UNSET_HW_AMSDU(prTxDesc);
+
 	/* Protection */
 	if (secIsProtectedFrame(prAdapter, prMsduInfo, prStaRec)) {
 		/* Update Packet option, */
