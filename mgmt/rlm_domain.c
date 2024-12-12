@@ -11193,7 +11193,7 @@ static uint32_t rlmDomainGetSubBandIdx(enum ENUM_BAND eBand,
 	}
 	rlmDomainGetSubBandDefPwrIdx(u1Idx, pu1SubBandIdx);
 
-	DBGLOG(RLM, TRACE, "Band[%d],Ch[%d],SubBandIdx[%d]",
+	DBGLOG(RLM, TRACE, "Band[%d],Ch[%d],SubBandIdx[%d]\n",
 		eBand, ucCenterCh, *pu1SubBandIdx);
 
 	return WLAN_STATUS_SUCCESS;
@@ -11386,7 +11386,7 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 	if ((eBand != BAND_6G) ||
 		(e6GPwrMode > PWR_MODE_6G_NUM)) {
 		DBGLOG(RLM, ERROR,
-			"Invalid data band[%d]PwrMode[%d]",
+			"Invalid data band[%d]PwrMode[%d]\n",
 			eBand,
 			e6GPwrMode);
 		return WLAN_STATUS_INVALID_DATA;
@@ -11396,7 +11396,7 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 	if ((u1SubBand < PWR_LMT_SUBBAND_PWR_UNII5) ||
 	      (u1SubBand > PWR_LMT_SUBBAND_PWR_UNII8)) {
 		DBGLOG(RLM, ERROR,
-			"Invalid 6G subband idx[%d]",
+			"Invalid 6G subband idx[%d]\n",
 			u1SubBand);
 		return WLAN_STATUS_INVALID_DATA;
 	}
@@ -11453,7 +11453,7 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 		fgCcNull = TRUE;
 
 	DBGLOG(RLM, TRACE,
-		"Country(%c%c)Band[%d]6GSubBand[%d]PwrMode[%d]Support[%d]",
+		"Country(%c%c)Band[%d]6GSubBand[%d]PwrMode[%d]Support[%d]\n",
 		fgCcNull ? '0' : ((u2CountryCode & 0xff00) >> 8),
 		fgCcNull ? '0' : (u2CountryCode & 0x00ff),
 		eBand,

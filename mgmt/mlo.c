@@ -683,12 +683,13 @@ uint8_t *mldGenerateBasicCommonInfo(
 void mldHandleRnrMlParam(struct IE_RNR *rnr,
 	struct MULTI_LINK_INFO *prMlInfo, uint8_t fgOverride)
 {
-	uint8_t i, j, band;
+	uint8_t i, j;
 	uint8_t *pos = NULL;
 	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	uint32_t u4MldParam = 0;
 	struct STA_PROFILE *prProfile = NULL;
+	enum ENUM_BAND eBand;
 
 	pos = rnr->aucInfoField;
 	do {
@@ -696,7 +697,7 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 			(struct NEIGHBOR_AP_INFO_FIELD *)pos;
 
 		/* get channel number for this neighborAPInfo */
-		scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
+		eBand = scanOpClassToBand(prNeighborAPInfoField->ucOpClass);
 		u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
 					TBTT_INFO_HDR_COUNT)
 					>> TBTT_INFO_HDR_COUNT_OFFSET)
@@ -775,7 +776,7 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 				  rStaProfiles[prMlInfo->ucProfNum++];
 				prProfile->ucLinkId = ucMldLinkId;
 			}
-			prProfile->rChnlInfo.eBand = band;
+			prProfile->rChnlInfo.eBand = eBand;
 			prProfile->rChnlInfo.ucChannelNum =
 				prNeighborAPInfoField->ucChannelNum;
 
@@ -2933,13 +2934,14 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	}
 
 	if (!ie) {
-		DBGLOG(ML, WARN, "%s no target, complete=%d",
+		DBGLOG(ML, WARN, "%s no target, complete=%d\n",
 			pucDesc, prSta->ucComplete);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
 	if (pucDesc)
-		DBGLOG(ML, TRACE, "%s complete=%d", pucDesc, prSta->ucComplete);
+		DBGLOG(ML, TRACE, "%s complete=%d\n",
+			pucDesc, prSta->ucComplete);
 
 	if (mldParseProfile(ie, ie_len, prSta->aucIEbuf, prSta->u2IEbufLen,
 		ies, &ie_count, MAX_DUP_IE_COUNT, FALSE) < 0)
@@ -3050,11 +3052,11 @@ done:
 		prSta->rChnlInfo.eBand;
 
 	DBGLOG(ML, INFO,
-		"Dump duplicated SwRFB for id=%d addr="
+		"Duplicated SwRFB for id=%d addr="
 		MACSTR " len=%d, chnl=%d, band=%d\n",
 		prSta->ucLinkId, MAC2STR(addr),
 		offset, prDst->ucChnlNum, prDst->eRfBand);
-	DBGLOG_MEM8(ML, INFO, pos, offset);
+	DBGDUMP_MEM8(ML, TRACE, "Duplicated SwRFB\n", pos, offset);
 
 	return WLAN_STATUS_SUCCESS;
 }

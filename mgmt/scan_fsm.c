@@ -362,8 +362,8 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 
 	prCmdScanReq->ucShortSSIDNum = prScanParam->ucShortSSIDNum;
 	for (i = 0; i < prCmdScanReq->ucShortSSIDNum; i++) {
-		kalMemCopy(&prCmdScanReq->aucShortSSID[i],
-			&prScanParam->aucShortSSID[i],
+		kalMemCopy(prCmdScanReq->aucShortSSID[i],
+			prScanParam->aucShortSSID[i],
 			MAX_SHORT_SSID_LEN);
 	}
 #endif
@@ -1145,88 +1145,113 @@ cleanup:
 #endif
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
-void scnCopyRnrScanParam(struct SCAN_PARAM *prScanParam,
+void scnSetRnrScanParam(struct SCAN_PARAM *prScanParam,
 	struct NEIGHBOR_AP_PARAM *prNeighborParam)
 {
+	uint8_t fgRnrChnlScan, ucBssidCnt = 0;
+	uint16_t i;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
-	uint8_t i = 0, ucBssidCnt = 0;
-
-	prScanParam->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-	prScanParam->fgOobRnrParseEn = FALSE;
-
-	prScanParam->ucSSIDType = prNeighborParam->ucSSIDType;
-	prScanParam->ucSSIDNum = prNeighborParam->ucSSIDNum;
-	prScanParam->ucShortSSIDNum =
-		prNeighborParam->ucShortSSIDNum;
-	prScanParam->eScanChannel =
-		prNeighborParam->eScanChannel;
-	prScanParam->ucChannelListNum =
-		prNeighborParam->ucChannelListNum;
-	prScanParam->ucScnFuncMask =
-		prNeighborParam->ucScnFuncMask;
-	prScanParam->u2IELen = prNeighborParam->u2IELen;
-
-	kalMemCopy(prScanParam->aucIE, prNeighborParam->aucIE,
-			prNeighborParam->u2IELen);
-
-	for (i = 0; i < prNeighborParam->ucSSIDNum &&
-		i < CFG_SCAN_SSID_MAX_NUM; i++) {
-		prScanParam->ucSpecifiedSSIDLen[i] =
-		prNeighborParam->ucSpecifiedSSIDLen[i];
-		COPY_SSID(prScanParam->aucSpecifiedSSID[i],
-			prScanParam->ucSpecifiedSSIDLen[i],
-			prNeighborParam->aucSpecifiedSSID[i],
-			prNeighborParam->ucSpecifiedSSIDLen[i]);
-	}
-
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	for (i = 0; i < prNeighborParam->ucShortSSIDNum &&
-		i < CFG_SCAN_OOB_MAX_NUM; i++) {
-		kalMemCopy(&prScanParam->aucShortSSID[i],
-			&prNeighborParam->aucShortSSID[i],
-			MAX_SHORT_SSID_LEN);
-	}
+	uint16_t j;
 #endif
 
-	for (i = 0; i < CFG_SCAN_OOB_MAX_NUM; i++) {
-		if (!EQUAL_MAC_ADDR(prNeighborParam->aucBSSID[i],
-			aucNullAddr)) {
-			prScanParam->ucBssidMatchCh[ucBssidCnt] =
-				prNeighborParam->ucBssidMatchCh[i];
-			prScanParam->ucBssidMatchSsidInd[ucBssidCnt] =
-				prNeighborParam->ucBssidMatchSsidInd[i];
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-			prScanParam->ucBssidMatchShortSsidInd[ucBssidCnt] =
-				prNeighborParam->ucBssidMatchShortSsidInd[i];
-#endif
+	fgRnrChnlScan = prNeighborParam->ucSSIDType &
+		(SCAN_REQ_SSID_SPECIFIED | SCAN_REQ_SSID_SPECIFIED_ONLY);
+
+	if (fgRnrChnlScan) {
+		/* rnr chl scan can copy param directly */
+		prScanParam->ucSSIDType = prNeighborParam->ucSSIDType;
+		prScanParam->eScanChannel = prNeighborParam->eScanChannel;
+		prScanParam->ucScnFuncMask = prNeighborParam->ucScnFuncMask;
+
+		prScanParam->ucChannelListNum =
+			prNeighborParam->ucChannelListNum;
+		prScanParam->ucSSIDNum = prNeighborParam->ucSSIDNum;
+		prScanParam->ucShortSSIDNum = 0;
+
+		kalMemCopy(prScanParam->arChnlInfoList,
+			prNeighborParam->arChnlInfoList,
+			sizeof(prScanParam->arChnlInfoList));
+
+		kalMemCopy(prScanParam->ucSpecifiedSSIDLen,
+			prNeighborParam->ucSpecifiedSSIDLen,
+			sizeof(prScanParam->ucSpecifiedSSIDLen));
+
+		kalMemCopy(prScanParam->aucSpecifiedSSID,
+			prNeighborParam->aucSpecifiedSSID,
+			sizeof(prScanParam->aucSpecifiedSSID));
+
+		/* reset to indicate this param is handled */
+		prNeighborParam->ucChannelListNum = 0;
+	} else {
+		uint8_t ucRnrChNum;
+		enum ENUM_BAND eBand;
+
+		ucRnrChNum = prNeighborParam->arChnlInfoList[0].ucChannelNum;
+		eBand = prNeighborParam->arChnlInfoList[0].eBand;
+
+		prScanParam->ucSSIDType = prNeighborParam->ucSSIDType;
+		prScanParam->eScanChannel = prNeighborParam->eScanChannel;
+		prScanParam->ucScnFuncMask = prNeighborParam->ucScnFuncMask;
+
+		/* don't add same chnl to the newest nbr ap param */
+		for (i = 0; i < prScanParam->ucChannelListNum; i++) {
+			if (ucRnrChNum == prScanParam
+				->arChnlInfoList[i].ucChannelNum &&
+			    eBand == prScanParam
+				->arChnlInfoList[i].eBand)
+				break;
+		}
+
+		if (i == prScanParam->ucChannelListNum) {
+			struct RF_CHANNEL_INFO *prRfChnlInfo;
+
+			prRfChnlInfo = &prScanParam->arChnlInfoList[
+				prScanParam->ucChannelListNum];
+			prScanParam->ucChannelListNum++;
+			prRfChnlInfo->eBand = eBand;
+			prRfChnlInfo->ucChannelNum = ucRnrChNum;
+		}
+
+		for (i = prNeighborParam->ucBssidStartIdx;
+			i < prNeighborParam->ucBssidNum &&
+			prScanParam->ucBssidNum <
+				ARRAY_SIZE(prScanParam->aucBSSID); i++) {
+			uint8_t *pucShortSSID;
+
+			ucBssidCnt = prScanParam->ucBssidNum;
+			pucShortSSID = prNeighborParam->aucShortSSID[i];
+
 			COPY_MAC_ADDR(prScanParam->aucBSSID[ucBssidCnt],
 				prNeighborParam->aucBSSID[i]);
-			ucBssidCnt++;
-		}
-	}
+			prScanParam->ucBssidMatchCh[ucBssidCnt] = ucRnrChNum;
 
-	while (ucBssidCnt < CFG_SCAN_OOB_MAX_NUM) {
-		prScanParam->ucBssidMatchCh[ucBssidCnt] = 0;
-		prScanParam->ucBssidMatchSsidInd[ucBssidCnt]
-			= CFG_SCAN_OOB_MAX_NUM;
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-		prScanParam->ucBssidMatchShortSsidInd[ucBssidCnt]
-			= CFG_SCAN_OOB_MAX_NUM;
+			if (kalMemCmp(pucShortSSID, aucNullAddr,
+				       MAX_SHORT_SSID_LEN) != 0) {
+				for (j = 0; j < prScanParam->ucShortSSIDNum;
+						j++) {
+					if (kalMemCmp(pucShortSSID,
+						prScanParam->aucShortSSID[j],
+						MAX_SHORT_SSID_LEN) == 0)
+						break;
+				}
+
+				if (j == prScanParam->ucShortSSIDNum) {
+					kalMemCopy(
+						prScanParam->aucShortSSID[j],
+						pucShortSSID,
+						MAX_SHORT_SSID_LEN);
+					prScanParam->ucShortSSIDNum++;
+					prScanParam->ucBssidMatchShortSsidInd[
+						ucBssidCnt] = j;
+				}
+			}
 #endif
-		COPY_MAC_ADDR(prScanParam->aucBSSID[ucBssidCnt],
-			aucNullAddr);
-		ucBssidCnt++;
-	}
 
-	for (i = 0; i < prNeighborParam->ucChannelListNum; i++) {
-		struct RF_CHANNEL_INFO *prRfChnlInfo;
-
-		prRfChnlInfo =
-			&prNeighborParam->arChnlInfoList[i];
-		prScanParam->arChnlInfoList[i].eBand =
-			prRfChnlInfo->eBand;
-		prScanParam->arChnlInfoList[i].ucChannelNum =
-			prRfChnlInfo->ucChannelNum;
+			prScanParam->ucBssidNum++;
+			prNeighborParam->ucBssidStartIdx++;
+		}
 	}
 }
 #endif
@@ -1312,26 +1337,74 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
+		uint8_t fgNeedRnrScan = FALSE;
+
+		prScanParam->fgOobRnrParseEn = FALSE;
+
 		if (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
+			fgNeedRnrScan = TRUE;
+
+			prScanParam->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+			prScanParam->ucSeqNum = prScanDone->ucSeqNum;
+			prScanParam->ucBssidNum = 0;
+			prScanParam->ucChannelListNum = 0;
+			prScanParam->ucShortSSIDNum = 0;
+			prScanParam->u2ChannelDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
+			prScanParam->u2ChannelMinDwellTime =
+				SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
+
+			/* Init value = CFG_SCAN_OOB_MAX_NUM, if init value = 0
+			 * will let FW confuse to match SSID ind 0.
+			 */
+			kalMemSet(prScanParam->ucBssidMatchSsidInd,
+				CFG_SCAN_OOB_MAX_NUM,
+				sizeof(prScanParam->ucBssidMatchSsidInd));
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			kalMemSet(prScanParam->ucBssidMatchShortSsidInd,
+			      CFG_SCAN_OOB_MAX_NUM,
+			      sizeof(prScanParam->ucBssidMatchShortSsidInd));
+#endif
+		}
+
+		while (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
 			struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-			struct AIS_FSM_INFO *prAisFsmInfo;
 			struct NEIGHBOR_AP_PARAM *prNeighborParam;
 
 			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
 			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
 
 			prNeighborParam = &prNeighborAPInfo->rNeighborParam;
-			scnCopyRnrScanParam(prScanParam, prNeighborParam);
+			scnSetRnrScanParam(prScanParam, prNeighborParam);
 
-			/* restore for later scan done event */
-			prScanParam->ucSeqNum = prScanDone->ucSeqNum;
-			cnmMemFree(prAdapter, prNeighborAPInfo);
+			/* rnr chnl scan handle param one by one */
+			if (prNeighborParam->ucChannelListNum == 0) {
+				cnmMemFree(prAdapter, prNeighborAPInfo);
+				break;
+			}
 
+			if (prNeighborParam->ucBssidStartIdx <
+			    prNeighborParam->ucBssidNum) {
+				LINK_INSERT_HEAD(
+					&prScanInfo->rNeighborAPInfoList,
+					&prNeighborAPInfo->rLinkEntry);
+			} else {
+				cnmMemFree(prAdapter, prNeighborAPInfo);
+			}
+
+			/* trigger rnr bssid scan when full */
+			if (prScanParam->ucBssidNum == CFG_SCAN_OOB_MAX_NUM)
+				break;
+		}
+
+		if (fgNeedRnrScan) {
 			/* Restart ScanDone timer to avoid RNR scan
 			 * causing scan timeout
 			 */
 			if (IS_BSS_INDEX_AIS(prAdapter,
 						prScanParam->ucBssIndex)) {
+				struct AIS_FSM_INFO *prAisFsmInfo;
+
 				prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
 					prScanParam->ucBssIndex);
 #if CFG_SUPPORT_LLW_SCAN

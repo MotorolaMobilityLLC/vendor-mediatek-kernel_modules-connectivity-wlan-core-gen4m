@@ -556,6 +556,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t ucPerScanChCnt;
 #endif
 
+	uint8_t ucBssidNum;
 	uint8_t aucBSSID[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
 
 	enum ENUM_MSG_ID eMsgId;
@@ -840,6 +841,9 @@ struct AGPS_AP_LIST {
 #endif
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
+
+#define MAXIMUM_RNR_BSSID_LIST		16
+
 struct NEIGHBOR_AP_PARAM {
 	/* Specified SSID Type */
 	uint8_t ucSSIDType;
@@ -851,30 +855,22 @@ struct NEIGHBOR_AP_PARAM {
 
 	/* Specified SSID */
 	uint8_t aucSpecifiedSSID[CFG_SCAN_SSID_MAX_NUM][ELEM_MAX_LEN_SSID];
-	uint8_t aucBSSID[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
+
+	uint8_t ucBssidNum;
+	uint8_t aucBSSID[MAXIMUM_RNR_BSSID_LIST][MAC_ADDR_LEN];
+	uint8_t ucBssidStartIdx;
 
 	/* channel information */
 	enum ENUM_SCAN_CHANNEL eScanChannel;
 	uint8_t ucChannelListNum;
-	struct RF_CHANNEL_INFO arChnlInfoList[CFG_SCAN_SSID_MAX_NUM];
+	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
 
 	/* random mac */
 	uint8_t ucScnFuncMask;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 
-	/* For 6G OOB discovery*/
-	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
-	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
-
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	/* short SSID */
-	uint8_t aucShortSSID[CFG_SCAN_OOB_MAX_NUM][MAX_SHORT_SSID_LEN];
-	uint8_t ucBssidMatchShortSsidInd[CFG_SCAN_OOB_MAX_NUM];
-#endif
-
-	/* Information Element */
-	uint16_t u2IELen;
-	uint8_t aucIE[MAX_IE_LENGTH];
+	uint8_t aucShortSSID[MAXIMUM_RNR_BSSID_LIST][MAX_SHORT_SSID_LEN];
 };
 
 struct NEIGHBOR_AP_INFO {
@@ -962,6 +958,11 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 struct BSS_DESC *scanSearchBssDescByBssid(struct ADAPTER *prAdapter,
 					  uint8_t aucBSSID[]);
 
+
+struct BSS_DESC *
+scanSearchBssDescByBssidAndChnl(struct ADAPTER *prAdapter,
+	uint8_t aucBSSID[], enum ENUM_BAND eBand, uint8_t ucChannel);
+
 struct BSS_DESC *
 scanSearchBssDescByBssidAndSsid(struct ADAPTER *prAdapter,
 				uint8_t aucBSSID[],
@@ -981,6 +982,12 @@ scanSearchBssDescByTAAndSsid(struct ADAPTER *prAdapter,
 struct BSS_DESC *
 scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
 				  uint8_t ucLinkId,
+				  uint8_t aucMldAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid);
+
+uint8_t
+scanSearchBssDescCountByMldAddrSsid(struct ADAPTER *prAdapter,
 				  uint8_t aucMldAddr[],
 				  u_int8_t fgCheckSsid,
 				  struct PARAM_SSID *prSsid);
@@ -1224,7 +1231,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 	enum ENUM_BAND eHwBand);
 #endif
 
-void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);
+enum ENUM_BAND scanOpClassToBand(uint8_t ucOpClass);
 
 void updateLinkStatsApRec(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc);
