@@ -879,7 +879,7 @@ struct _IE_REG_CONNECTIVITY_T {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
 	u_int8_t  ucExtId;
-	u_int8_t  aucVarInfo[0];
+	u_int8_t  aucVarInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

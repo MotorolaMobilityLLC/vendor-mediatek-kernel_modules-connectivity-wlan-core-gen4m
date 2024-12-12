@@ -3848,7 +3848,7 @@ struct _IE_RTWT_T {
 	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
 	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
 	uint16_t u2BTWTInfo;	/* BTWT Info */
-	uint8_t uc_arRTWTTrafficInfo[0];  /* optional RTWT traffic info */
+	uint8_t uc_arRTWTTrafficInfo[];  /* optional RTWT traffic info */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3858,7 +3858,7 @@ struct _IE_RTWT_PARAMS_T {
 	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
 	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
 	uint16_t u2BTWTInfo;	/* BTWT Info */
-	uint8_t uc_arRTWTTrafficInfo[0];  /* optional RTWT traffic info */
+	uint8_t uc_arRTWTTrafficInfo[];  /* optional RTWT traffic info */
 } __KAL_ATTRIB_PACKED__;
 
 #endif

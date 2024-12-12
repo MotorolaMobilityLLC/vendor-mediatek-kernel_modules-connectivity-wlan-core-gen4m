@@ -254,7 +254,7 @@ struct CMD_CSI_CONTROL_T {
 struct CSI_TLV_ELEMENT {
 	uint32_t tag_type;
 	uint32_t body_len;
-	uint8_t aucbody[0];
+	uint8_t aucbody[];
 };
 
 /*******************************************************************************

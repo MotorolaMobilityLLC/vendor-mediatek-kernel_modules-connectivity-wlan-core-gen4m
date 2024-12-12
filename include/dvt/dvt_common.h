@@ -189,7 +189,7 @@ struct SYSDVT_CTRL_EXT_T {
 	uint32_t u4FeatureIdx;	/* Feature  ID */
 	uint32_t u4Type;	/* Test case  ID (Type) */
 	uint32_t u4Lth;	/* dvt parameter's data struct size (Length) */
-	uint8_t u1cBuffer[0];	/* dvt parameter's data struct (Value) */
+	uint8_t u1cBuffer[];	/* dvt parameter's data struct (Value) */
 };
 
 struct SYS_DVT_HANDLER {

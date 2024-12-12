@@ -3782,7 +3782,7 @@ struct UNI_CMD_HM {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *
 	 *   TAG                            | ID   |
@@ -4534,7 +4534,7 @@ struct UNI_CMD_PHY_CTRL_LIST_DUMP {
 	uint8_t aucReserved[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *
 	 *   TAG                             | ID  | structure
@@ -5373,7 +5373,7 @@ struct UNI_CMD_FACT_CAL {
 	uint8_t aucRsvd[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 /**< the TLVs included in this field:
  *
@@ -5597,7 +5597,7 @@ struct UNI_CMD_MLC {
 	uint8_t ucReserved[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_CMD_MLC_TAG {
@@ -5691,7 +5691,7 @@ struct UNI_CMD_COEX_T {
 	uint8_t ucReserved[4];
 
 /* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 /**< the TLVs included in this field:
  *   TAG                        | ID  | structure
  *   ---------------------------|-----|--------------
@@ -8432,7 +8432,7 @@ struct UNI_EVENT_NAN {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 
 } __KAL_ATTRIB_PACKED__;
 
@@ -8883,7 +8883,7 @@ struct UNI_EVENT_PHY_LIST_DUMP {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_PHY_LIST_DUMP_TAG {
@@ -8995,7 +8995,7 @@ struct UNI_EVENT_FACT_CAL {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Update Factory Calibration event tags */
@@ -9157,7 +9157,7 @@ struct UNI_CMD_UPDATE_LP {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Gen Switch command TLV List */
@@ -9184,7 +9184,7 @@ struct UNI_EVENT_MLC {
 	uint8_t aucReserved[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_MLC_TAG {

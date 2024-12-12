@@ -190,7 +190,7 @@ struct mddpw_md_notify_info_t {
 	uint8_t         version;      /* current ver = 0 */
 	uint8_t         info_type;    /* ref enum mddp_md_notify_info_type */
 	uint8_t         buf_len;      /* length start from buf[0] */
-	uint8_t         buf[0];       /* content that MD need to send to DRV */
+	uint8_t         buf[];       /* content that MD need to send to DRV */
 };
 
 struct mddpw_coex_intf_info_t {

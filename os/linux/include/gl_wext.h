@@ -168,7 +168,7 @@ struct iw_encode_ext {
 				 */
 	__u16 alg;		/*!< IW_ENCODE_ALG_* */
 	__u16 key_len;
-	__u8 key[0];
+	__u8 key[];
 };
 
 #define SIOCSIWPMKSA        0x8B36	/* PMKSA cache operation */

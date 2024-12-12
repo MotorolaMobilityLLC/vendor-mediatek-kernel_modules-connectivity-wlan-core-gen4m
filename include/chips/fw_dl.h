@@ -316,7 +316,7 @@ struct PATCH_FORMAT_T {
 	 * the middle of other struct, which may make the size of struct
 	 * hard to be calculate for different compiler
 	 */
-	/* uint8_t ucPatchImage[0]; */
+	/* uint8_t ucPatchImage[]; */
 } __KAL_ATTRIB_PACKED__;
 
 struct PATCH_FORMAT_V2_T {

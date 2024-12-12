@@ -85,7 +85,7 @@ struct EHT_OP_INFO {
 	 * if use zero-arry to calculate size with OFFSET_OF
 	 * please use packed and sizeof
 	 */
-	/* u_int8_t  aucVarInfo[0]; */
+	/* u_int8_t  aucVarInfo[]; */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

@@ -923,7 +923,7 @@ struct HW_MAC_RX_RPT_BLK {
 	 * if use zero-arry to calculate size with OFFSET_OF
 	 * please use packed and sizeof
 	 */
-	/* uint32_t u4Rxv[0]; */
+	/* uint32_t u4Rxv[]; */
 };
 
 struct HW_MAC_RX_REPORT {

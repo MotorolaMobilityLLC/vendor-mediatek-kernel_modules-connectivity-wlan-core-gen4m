@@ -230,13 +230,13 @@ struct iw_p2p_cmd_send_sd_response {
 	uint8_t fgNeedTxDoneIndication;
 	uint8_t ucSeqNum;
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct iw_p2p_cmd_get_sd_request {
 	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct iw_p2p_cmd_send_service_discovery_request {
@@ -244,13 +244,13 @@ struct iw_p2p_cmd_send_service_discovery_request {
 	uint8_t fgNeedTxDoneIndication;
 	uint8_t ucSeqNum;
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct iw_p2p_cmd_get_sd_response {
 	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct iw_p2p_cmd_terminate_sd_phase {

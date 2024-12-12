@@ -511,7 +511,7 @@ struct CONNAC2X_WIFI_CMD {
 	uint8_t ucReserved2[3];
 	uint32_t au4Reserved3[4];	/* padding fields */
 
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
@@ -531,7 +531,7 @@ struct CONNAC2X_WIFI_UNI_CMD {
 	uint8_t ucOption;	/* CID option */
 
 	uint8_t aucReserved2[4];
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 #endif
 
