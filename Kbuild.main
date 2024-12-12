@@ -740,6 +740,7 @@ endif
 ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
     CONFIG_BAND_NUM=3
     CONFIG_IFACE_CONCURRENT_MODE=2
+    CONFIG_MTK_WIFI_11BE_EMLSR=y
     ccflags-y += -DCFG_P2P_NUM=3
     ccflags-y += -DCFG_STA_NUM=3
 endif
