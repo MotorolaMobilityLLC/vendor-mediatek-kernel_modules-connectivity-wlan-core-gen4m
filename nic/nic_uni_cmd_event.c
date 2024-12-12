@@ -684,7 +684,7 @@ uint32_t nicUniCmdScanTagShortSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct PARAM_SSID arShortSSID;
 	uint8_t i;
 	uint8_t *pos = tag->aucSsidBuffer;
-	uint8_t short_ssid_num = KAL_MIN((int)cmd->ucShortSSIDNum,
+	uint32_t short_ssid_num = kal_min_t(uint32_t, cmd->ucShortSSIDNum,
 					CFG_SCAN_OOB_MAX_NUM);
 	uint16_t len = sizeof(*tag) +
 		short_ssid_num * sizeof(struct PARAM_SSID);
