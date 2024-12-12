@@ -9152,8 +9152,6 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgSapGoSkipObss,
 		"SapGoSkipObss", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->fgP2pGcCsa, "P2pGcCsa", FEATURE_ENABLED,
-		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgSkipP2pIe, "SkipP2pIe", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgSkipP2pProbeResp,

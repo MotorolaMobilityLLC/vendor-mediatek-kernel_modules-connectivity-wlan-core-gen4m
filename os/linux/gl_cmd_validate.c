@@ -916,14 +916,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 	},
 #if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
 	{
-		.pcCmdStr  = CMD_CSA_EX_EVENT,
-		.pfHandler = priv_driver_set_csa_ex_event,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
-		.policy    = set_cas_ex_policy,
-		.u4PolicySize = ARRAY_SIZE(set_cas_ex_policy)
-	},
-	{
 		.pcCmdStr  = CMD_CSA,
 		.pfHandler = priv_driver_set_csa,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,

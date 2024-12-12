@@ -6542,61 +6542,6 @@ p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 	}
 }
 
-#if 0 /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
-uint32_t
-p2pFuncCalculateExtra_IELenForBeacon(struct ADAPTER *prAdapter,
-		ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex,
-		struct STA_RECORD *prStaRec)
-{
-
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpeBssInfo =
-		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
-	uint32_t u4IELen = 0;
-
-	do {
-		ASSERT_BREAK((prAdapter != NULL)
-			&& (eNetTypeIndex == NETWORK_TYPE_P2P_INDEX));
-
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2pFsmInfo))
-			break;
-
-		prP2pSpeBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo;
-
-		u4IELen = prP2pSpeBssInfo->u2IELenForBCN;
-
-	} while (FALSE);
-
-	return u4IELen;
-}				/* p2pFuncCalculateP2p_IELenForBeacon */
-
-void p2pFuncGenerateExtra_IEForBeacon(struct ADAPTER *prAdapter,
-		struct MSDU_INFO *prMsduInfo)
-{
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpeBssInfo =
-		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
-	uint8_t *pucIEBuf = (uint8_t *) NULL;
-
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
-
-		prP2pSpeBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo;
-
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2pFsmInfo))
-			break;
-
-		pucIEBuf = (uint8_t *) ((uint32_t) prMsduInfo->prPacket +
-			(uint32_t) prMsduInfo->u2FrameLength);
-
-		kalMemCopy(pucIEBuf,
-			prP2pSpeBssInfo->aucBeaconIECache,
-			prP2pSpeBssInfo->u2IELenForBCN);
-
-		prMsduInfo->u2FrameLength += prP2pSpeBssInfo->u2IELenForBCN;
-
-	} while (FALSE);
-}				/* p2pFuncGenerateExtra_IEForBeacon */
-
-#else
 uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx, struct STA_RECORD *prStaRec)
 {
@@ -6700,7 +6645,7 @@ uint32_t p2pFuncCalculateWSC_IELenForBeacon(struct ADAPTER *prAdapter,
 
 	return kalP2PCalWSC_IELen(prAdapter->prGlueInfo,
 		0, (uint8_t) prP2pBssInfo->u4PrivateData);
-}				/* p2pFuncCalculateP2p_IELenForBeacon */
+}				/* p2pFuncCalculateWSC_IELenForBeacon */
 
 void p2pFuncGenerateWSC_IEForBeacon(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo)
@@ -6731,9 +6676,8 @@ void p2pFuncGenerateWSC_IEForBeacon(struct ADAPTER *prAdapter,
 		0, pucBuffer, (uint8_t) prP2pBssInfo->u4PrivateData);
 
 	prMsduInfo->u2FrameLength += u2IELen;
-}				/* p2pFuncGenerateP2p_IEForBeacon */
+}				/* p2pFuncGenerateWSC_IEForBeacon */
 
-#endif
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to calculate P2P IE length for Beacon frame.

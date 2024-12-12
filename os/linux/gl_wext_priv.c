@@ -11624,11 +11624,9 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 #else
 			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
 #endif
-		} else if (IS_BSS_GC(bss))
-			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
-				eBand, ch_num, ucRoleIdx);
-		else
+		} else {
 			DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
+		}
 
 		DBGLOG(REQ, DEBUG, "u4Ret is %d\n", u4Ret);
 	} else {
@@ -11719,11 +11717,9 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 #else
 			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
 #endif
-		} else if (IS_BSS_GC(bss))
-			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
-				eBand, ch_num, ucRoleIdx);
-		else
+		} else {
 			DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
+		}
 
 		DBGLOG(REQ, DEBUG, "u4Ret is %d\n", u4Ret);
 	} else {
@@ -11731,66 +11727,6 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 	}
 
 	return i4BytesWritten;
-}
-
-int priv_driver_set_csa_ex_event(
-	struct net_device *prNetDev,
-	char *pcCommand,
-	int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t ch_num = 0;
-	uint32_t u4Ret = 0;
-	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
-	enum ENUM_BAND eBand = BAND_NULL;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
-		return -1;
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
-		ucRoleIdx, &ucBssIdx) !=
-		WLAN_STATUS_SUCCESS)
-		return -1;
-
-	DBGLOG(REQ, DEBUG, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, DEBUG, "argc is %i\n", i4Argc);
-
-	if (i4Argc >= 3) {
-		struct WIFI_EVENT *pEvent;
-		struct EVENT_GC_CSA_T *prEventBody;
-
-		u4Ret = kalkStrtou32(apcArgv[1], 0, &eBand);
-		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
-
-		pEvent = (struct WIFI_EVENT *)
-			kalMemAlloc(sizeof(struct WIFI_EVENT)+
-			sizeof(struct EVENT_GC_CSA_T),
-			VIR_MEM_TYPE);
-		if (!pEvent)
-			return -1;
-
-		prEventBody = (struct EVENT_GC_CSA_T *)
-			&(pEvent->aucBuffer[0]);
-		prEventBody->ucBssIndex = ucBssIdx;
-		prEventBody->ucChannel = ch_num;
-		prEventBody->ucBand = eBand;
-
-		cnmPeerGcCsaHandler(prGlueInfo->prAdapter,
-			(struct WIFI_EVENT *) pEvent);
-
-		kalMemFree(pEvent,
-			VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
-			sizeof(struct EVENT_GC_CSA_T));
-
-		DBGLOG(REQ, DEBUG, "u4Ret is %d\n", u4Ret);
-	} else {
-		DBGLOG(REQ, DEBUG, "Input insufficient\n");
-	}
-
-	return 0;
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 

@@ -522,8 +522,6 @@ int priv_driver_set_band(struct net_device *prNetDev,
 int priv_driver_set_country(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #if CFG_SUPPORT_IDC_CH_SWITCH
-int priv_driver_set_csa_ex_event(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
 int priv_driver_set_csa_ex(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_csa(struct net_device *prNetDev,

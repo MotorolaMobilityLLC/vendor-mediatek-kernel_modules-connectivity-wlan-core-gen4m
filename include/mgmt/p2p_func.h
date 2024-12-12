@@ -411,15 +411,6 @@ p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMgmtTxMsdu,
 		uint8_t ucBssIdx);
 
-#if 0 /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
-uint32_t
-p2pFuncCalculateExtra_IELenForBeacon(struct ADAPTER *prAdapter,
-		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
-
-void p2pFuncGenerateExtra_IEForBeacon(struct ADAPTER *prAdapter,
-		struct MSDU_INFO *prMsduInfo);
-
-#else
 uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
@@ -431,7 +422,7 @@ uint32_t p2pFuncCalculateWSC_IELenForBeacon(struct ADAPTER *prAdapter,
 
 void p2pFuncGenerateWSC_IEForBeacon(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo);
-#endif
+
 uint32_t
 p2pFuncCalculateP2p_IELenForAssocRsp(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);

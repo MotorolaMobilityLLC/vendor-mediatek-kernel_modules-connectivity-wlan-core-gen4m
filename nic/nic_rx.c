@@ -165,7 +165,6 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
-	{EVENT_ID_GC_CSA, cnmPeerGcCsaHandler},
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 	{EVENT_ID_P2P_LO_STOP, p2pDevListenOffloadStopHandler},

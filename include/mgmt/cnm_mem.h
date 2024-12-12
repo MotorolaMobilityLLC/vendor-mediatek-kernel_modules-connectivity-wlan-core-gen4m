@@ -868,7 +868,6 @@ struct STA_RECORD {
 	u_int8_t fgIsMscsSupported;
 	struct LINK rMscsMonitorList;
 	struct LINK rMscsTcpMonitorList;
-	u_int8_t ucGcCsaSupported;
 	u_int8_t fgIsEapEncrypt;
 
 	u_int8_t fgEcsaCapable;

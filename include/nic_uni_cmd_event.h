@@ -2589,7 +2589,6 @@ struct UNI_CMD_P2P {
 	*   UNI_CMD_SET_OPPPS_PARAM    | 0x01 | UNI_CMD_SET_OPPPS_PARAM_T
 	*   UNI_CMD_SET_LO_START       | 0x02 | UNI_CMD_SET_LO_START_PARAM_T
 	*   UNI_CMD_SET_LO_STOP        | 0x03 | UNI_CMD_SET_LO_STOP_PARAM_T
-	*   UNI_CMD_SET_GC_CSA_PARAM   | 0x04 | UNI_CMD_SET_GC_CSA_PARAM_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -2599,7 +2598,6 @@ enum ENUM_UNI_CMD_P2P_TAG {
 	UNI_CMD_P2P_TAG_SET_OPPPS_PARAM = 1,
 	UNI_CMD_P2P_TAG_SET_LO_START = 2,
 	UNI_CMD_P2P_TAG_SET_LO_STOP = 3,
-	UNI_CMD_P2P_TAG_SET_GC_CSA_PARAM = 4,
 	UNI_CMD_P2P_TAG_NUM
 };
 
@@ -2648,17 +2646,6 @@ struct UNI_CMD_SET_P2P_LO_STOP_PARAM {
 	uint16_t u2Length;
 	uint8_t ucBssIndex;
 	uint8_t aucReserved[3];
-} __KAL_ATTRIB_PACKED__;
-
-/* Set GC CSA parameters (Tag4) */
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_SET_GC_CSA_PARAM {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t ucBssIdx;
-	uint8_t ucChannel;
-	uint8_t ucband;
-	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* Smart gear command (0x21) */
@@ -7166,7 +7153,6 @@ struct UNI_EVENT_P2P {
 	*   ------------------------------| ----| -------------
 	*   UNI_EVENT_UPDATE_NOA_PARAM    | 0x00| UNI_EVENT_UPDATE_NOA_PARAM_T
 	*   UNI_EVENT_LO_STOP_PARAM       | 0x01| UNI_EVENT_LO_STOP_PARAM_T
-	*   UNI_EVENT_GC_CSA_PARAM        | 0x02| UNI_EVENT_GC_CSA_PARAM_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -7174,7 +7160,6 @@ struct UNI_EVENT_P2P {
 enum ENUM_UNI_EVENT_P2P_TAG {
 	UNI_EVENT_P2P_TAG_UPDATE_NOA_PARAM = 0,
 	UNI_EVENT_P2P_TAG_LO_STOP_PARAM = 1,
-	UNI_EVENT_P2P_TAG_GC_CSA_PARAM = 2,
 	UNI_EVENT_P2P_TAG_NUM
 };
 
@@ -7203,16 +7188,6 @@ struct UNI_EVENT_UPDATE_NOA_PARAM {
 	uint8_t  ucNoATimingCount;
 	uint8_t  aucReserved[2];
 	struct UNI_NOA_TIMING  arEventNoaTiming[8/*P2P_MAXIMUM_NOA_COUNT*/];
-} __KAL_ATTRIB_PACKED__;
-
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_GC_CSA_PARAM {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t ucBssIndex;
-	uint8_t ucChannel;
-	uint8_t ucBand;
-	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -9683,8 +9658,6 @@ uint32_t nicUniCmdSetMdvt(struct ADAPTER *ad,
 uint32_t nicUniCmdSetP2pNoa(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetP2pOppps(struct ADAPTER *ad,
-		struct WIFI_UNI_SETQUERY_INFO *info);
-uint32_t nicUniCmdSetP2pGcCsa(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetP2pLoStart(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

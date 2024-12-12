@@ -181,9 +181,6 @@ static const char * const apucDebugMsg[] = {
 #if (CFG_SUPPORT_NAN == 1)
 	"MID_CNM_NAN_CH_GRANT",
 #endif
-#if CFG_ENABLE_WIFI_DIRECT
-	"MID_MNY_P2P_GC_CSA",
-#endif
 	"MID_MNY_P2P_LISTEN_OFFLOAD_START",
 	"MID_MNY_P2P_LISTEN_OFFLOAD_STOP",
 #if ARP_MONITER_ENABLE
@@ -324,7 +321,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_ADD_MLD_LINK, p2pRoleFsmRunEventAddMldLink},
 	{MID_MNY_P2P_DEL_MLD_LINK, p2pRoleFsmRunEventDelMldLink},
 #endif
-	{MID_MNY_P2P_GC_CSA, cnmOwnGcCsaHandler},
 #endif
 
 	{MID_SAA_AIS_FSM_ABORT, aisFsmRunEventAbort},

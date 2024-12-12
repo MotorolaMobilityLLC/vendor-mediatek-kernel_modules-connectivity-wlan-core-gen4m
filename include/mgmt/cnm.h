@@ -625,50 +625,6 @@ void cnmCsaResetParams(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Requests Group Owner (GO) Channel Switch Announcement (CSA).
- *
- *
- * @param[in] prAdapter	Pointer to the ADAPTER structure
- * @param[in] eBand	Band enumeration for the new channel
- * @param[in] ucCh	New channel number
- * @param[in] ucRoleIdx	Role index for the GO
- *
- * @return 0 on successful message send, -1 on error
- */
-/*----------------------------------------------------------------------------*/
-uint8_t cnmOwnGcCsaReq(struct ADAPTER *prAdapter,
-	enum ENUM_BAND eBand,
-	uint8_t ucCh,
-	uint8_t ucRoleIdx);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Handles Group Client (GC) Channel Switch Announcement (CSA) event
- *
- * @param[in] prAdapter	Pointer to the ADAPTER structure
- * @param[in] prEvent	Pointer to the WIFI_EVENT structure
- *
- * @return void
- */
-/*----------------------------------------------------------------------------*/
-void cnmPeerGcCsaHandler(struct ADAPTER *prAdapter,
-	struct WIFI_EVENT *prEvent);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief  Handles Group Client (GC) CSA message sent by own device.
- *
- * @param[in] prAdapter	Pointer to the ADAPTER structure
- * @param[in] prMsgHdr	Pointer to the MSG_HDR structure containing CSA MSG HDR
- *
- * @return void
- */
-/*----------------------------------------------------------------------------*/
-void cnmOwnGcCsaHandler(struct ADAPTER *prAdapter,
-		struct MSG_HDR *prMsgHdr);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief  Requests a channel switch for the SAP based on provided RF Ch info.
  *
  * @param[in] prAdapter	Pointer to the ADAPTER structure

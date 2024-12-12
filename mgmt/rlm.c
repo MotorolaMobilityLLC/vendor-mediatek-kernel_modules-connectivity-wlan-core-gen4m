@@ -859,14 +859,6 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
-#if CFG_ENABLE_WIFI_DIRECT
-	if (IS_BSS_APGO(prBssInfo) &&
-		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pGcCsa)) {
-		MTK_OUI_IE(pucBuffer)->aucCapability[1] |=
-			MTK_SYNERGY_CAP_SUPPORT_GC_CSA;
-		DBGLOG(P2P, TRACE, "Add gc csa capa\n");
-	}
-#endif
 	len = IE_SIZE(pucBuffer);
 	prMsduInfo->u2FrameLength += len;
 
@@ -4419,13 +4411,6 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC);
 #endif
 
-	prStaRec->ucGcCsaSupported =
-		((aucCapa[1] &
-		MTK_SYNERGY_CAP_SUPPORT_GC_CSA) ==
-		MTK_SYNERGY_CAP_SUPPORT_GC_CSA) &&
-		prAdapter->rWifiVar.fgP2pGcCsa;
-
-	DBGLOG(RLM, LOUD, "GcCsa: %d\n", prStaRec->ucGcCsaSupported);
 	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
