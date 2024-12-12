@@ -353,7 +353,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		if (prGlueInfo->prAdapter->rWifiVar.ucP2pShareMacAddr &&
 		    (type == NL80211_IFTYPE_P2P_CLIENT ||
 		     type == NL80211_IFTYPE_P2P_GO)) {
-			rMacAddr[0] = gPrP2pDev[0]->dev_addr[0];
+			COPY_MAC_ADDR(rMacAddr,
+				      prAdapter->rWifiVar.aucDeviceAddress);
+			DBGLOG(P2P, INFO, "Share mac addr: " MACSTR "\n",
+			       MAC2STR(rMacAddr));
 		}
 
 		mtk_p2p_initsettings(prGlueInfo->prAdapter,
