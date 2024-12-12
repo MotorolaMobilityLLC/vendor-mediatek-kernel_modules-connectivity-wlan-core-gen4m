@@ -1937,7 +1937,9 @@ static void mddpResetGlobalVariable(void)
 
 void __mddpNotifyWifiOnStart(void)
 {
-	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_END) {
+	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_END &&
+	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_END &&
+	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_END_QOS) {
 		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
 		return;
 	}
