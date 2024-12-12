@@ -2668,6 +2668,103 @@ done:
 	return ret;
 }
 
+uint16_t mldMbssGenerateRnrIE(uint8_t *buf, uint8_t bssidx, struct IE_RNR *rnr)
+{
+	uint8_t i, j;
+	uint8_t *pos, *cp;
+	uint8_t ucMldParamOffset = 13, ucMldId, ucMldLinkId;
+	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	uint32_t u4MldParam = 0;
+	struct IE_RNR *dst;
+
+	dst = (struct IE_RNR *) buf;
+	dst->ucId = ELEM_ID_RNR;
+	dst->ucLength = 0;
+	cp = dst->aucInfoField;
+
+	pos = rnr->aucInfoField;
+	do {
+		struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
+			(struct NEIGHBOR_AP_INFO_FIELD *)pos;
+		struct NEIGHBOR_AP_INFO_FIELD *prDstNeighborAPInfoField =
+			(struct NEIGHBOR_AP_INFO_FIELD *)cp;
+		uint8_t cnt = 0;
+
+		u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_COUNT)
+					>> TBTT_INFO_HDR_COUNT_OFFSET)
+					+ 1;
+		u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_LENGTH)
+					>> TBTT_INFO_HDR_LENGTH_OFFSET;
+
+		/* copy when no mld param */
+		if (u2TbttInfoLength < 16) {
+			uint16_t u2TotalLen = SCAN_TBTT_INFO_SET_OFFSET +
+				u2TbttInfoCount * u2TbttInfoLength;
+
+			kalMemCopy(cp, pos, u2TotalLen);
+			cp += u2TotalLen;
+			goto done;
+		}
+
+		kalMemCopy(cp, pos, SCAN_TBTT_INFO_SET_OFFSET);
+		cp += SCAN_TBTT_INFO_SET_OFFSET;
+		for (i = 0; i < u2TbttInfoCount; i++) {
+			j = i * u2TbttInfoLength;
+
+			DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
+				MAC2STR(&prNeighborAPInfoField
+					->aucTbttInfoSet[j + 1]));
+
+			/* Directly copy 4 bytes content, but MLD param is only
+			 * 3 bytes actually. We will only use 3 bytes content.
+			 */
+			kalMemCopy(&u4MldParam, &prNeighborAPInfoField
+				->aucTbttInfoSet[j + ucMldParamOffset],
+				sizeof(u4MldParam));
+			ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
+			ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
+				MLD_PARAM_LINK_ID_SHIFT;
+
+			DBGLOG(ML, LOUD, "MldId=%d, MldLinkId=%d, bssidx=%d\n",
+				ucMldId, ucMldLinkId, bssidx);
+
+			if (ucMldId != bssidx)
+				continue;
+
+			kalMemCopy(cp, &prNeighborAPInfoField
+				->aucTbttInfoSet[j], u2TbttInfoLength);
+			cp[ucMldParamOffset] = 0; /* MLD ID 0 for same mld */
+			cp += u2TbttInfoLength;
+			cnt++;
+		}
+
+		if (cnt == 0) {
+			cp -= SCAN_TBTT_INFO_SET_OFFSET; /* remove fix field */
+		} else {
+			prDstNeighborAPInfoField->u2TbttInfoHdr &=
+				~TBTT_INFO_HDR_COUNT;
+			prDstNeighborAPInfoField->u2TbttInfoHdr |=
+				TBTT_INFO_HDR_COUNT & ((cnt - 1) <<
+				TBTT_INFO_HDR_COUNT_OFFSET);
+		}
+done:
+		pos += (SCAN_TBTT_INFO_SET_OFFSET +
+			(u2TbttInfoCount * u2TbttInfoLength));
+	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+
+	dst->ucLength = cp - dst->aucInfoField;
+
+	if (dst->ucLength == 0) {
+		DBGLOG(ML, LOUD, "No matched TBTT\n");
+		return 0;
+	}
+
+	DBGDUMP_MEM8(ML, LOUD, "MBSS RnR\n", dst, IE_SIZE(dst));
+	return IE_SIZE(dst);
+}
+
 int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSrc, uint8_t *pucProf, uint8_t u2ProfLen,
 	struct SW_RFB *prDst)
@@ -2742,6 +2839,11 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 			tmp->ucDTIMCount = idx->ucDtimCount;
 			tmp->ucDTIMPeriod = idx->ucDtimPeriod;
 		}
+
+		if (IE_ID(ies[i]) == ELEM_ID_RNR)
+			len = mldMbssGenerateRnrIE(pos + padding,
+				idx->ucBSSIDIndex, (struct IE_RNR *)ies[i]);
+
 		padding += len;
 	}
 
