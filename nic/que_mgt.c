@@ -3350,16 +3350,6 @@ uint32_t gmGetDequeueQuota(
 			u4Weight = prAdapter->rWifiVar.u4DeQuePercentHT20Nss1;
 		}
 	}
-#if (CFG_SUPPORT_802_11AX == 1)
-	else if (fgEfuseCtrlAxOn == 1) {
-		if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HE)
-		;/* TBD */
-	}
-#endif
-#if (CFG_SUPPORT_802_11BE == 1)
-	else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT)
-		;/* TBD */
-#endif
 
 	u4Quota = u4TotalQuota * u4Weight / 100;
 
