@@ -4074,7 +4074,9 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_VLP;
 		u2PwrLmtDefaultTalbeSize = sizeof(g_rRlmPowerLimitDefault_VLP) /
 			sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT);
-	} else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) {
+	} else if ((rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) ||
+		(rlmDomainPwrLmt6GPwrModeGet(prAdapter) ==
+		PWR_MODE_6G_LPI_SP)) {
 		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_SP;
 		u2PwrLmtDefaultTalbeSize = sizeof(g_rRlmPowerLimitDefault_SP) /
 			sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT);
@@ -4323,7 +4325,9 @@ rlmDomainBuildCmdByDefaultTable(struct ADAPTER *prAdapter,
 	if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_VLP) {
 		prPwrLimitSubBand =
 			&g_rRlmPowerLimitDefault_VLP[u2DefaultTableIndex];
-	} else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) {
+	} else if ((rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) ||
+		(rlmDomainPwrLmt6GPwrModeGet(prAdapter) ==
+		PWR_MODE_6G_LPI_SP)) {
 		prPwrLimitSubBand =
 			&g_rRlmPowerLimitDefault_SP[u2DefaultTableIndex];
 	}
@@ -5225,7 +5229,9 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 			sizeof(
 			struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G);
 #endif
-	} else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) {
+	} else if ((rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) ||
+		(rlmDomainPwrLmt6GPwrModeGet(prAdapter) ==
+		PWR_MODE_6G_LPI_SP)) {
 		prPwrLmtConf6E = g_rRlmPowerLimitConfiguration6E_SP;
 		ucPwrLmitConfSize6E =
 			sizeof(g_rRlmPowerLimitConfiguration6E_SP) /
@@ -10308,7 +10314,9 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		rlmDomainPwrLmt6GPwrModeGet(prAdapter));
 	if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_VLP)
 		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_VLP;
-	else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP)
+	else if ((rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) ||
+		(rlmDomainPwrLmt6GPwrModeGet(prAdapter) ==
+		PWR_MODE_6G_LPI_SP))
 		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_SP;
 #endif
 
@@ -11135,7 +11143,7 @@ static uint8_t rlmDomainPwrLmt6GPwrModeGet(struct ADAPTER *prAdapter)
 		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 		/* 1. For normal mode will check whether the net is active or
 		 *    not but test mode will not check
-		 * 2. 6G power mode priority VLP(H)->LPI(M)->SP(L)
+		 * 2. 6G power mode priority VLP(H)->LPI(M)->SP(L) = LPI_VLP(L)
 		 */
 		if ((((prAdapter->fgTestMode != TRUE) &&
 			(prBssInfo->fgIsNetActive)) ||
@@ -11208,19 +11216,22 @@ uint8_t rlmDomain6GPwrModeDecision(
 	enum ENUM_PWR_MODE_6G_TYPE ePwrMode6G = 0;
 
 	if (fgIsHE6GPresent) {
-		if (uc6GHeRegInfo == HE_REG_INFO_LOW_POWER_INDOOR)
-			ePwrMode6G =  PWR_MODE_6G_LPI;
-		else if (uc6GHeRegInfo == HE_REG_INFO_STANDARD_POWER)
-			ePwrMode6G =  PWR_MODE_6G_SP;
-		else if (uc6GHeRegInfo == HE_REG_INFO_VERY_LOW_POWER)
+		if (uc6GHeRegInfo == HE_REG_INFO_LOW_POWER_INDOOR) {
+			ePwrMode6G = PWR_MODE_6G_LPI;
+		} else if (uc6GHeRegInfo == HE_REG_INFO_STANDARD_POWER) {
+			ePwrMode6G = PWR_MODE_6G_SP;
+		} else if (uc6GHeRegInfo == HE_REG_INFO_VERY_LOW_POWER) {
 			ePwrMode6G = PWR_MODE_6G_VLP;
-		else
-			ePwrMode6G = PWR_MODE_6G_VLP;
-		/* not sure which mode INDOOR_ENABLED and INDOOR_SP
-		 * should be used, follow the same logic
-		 */
+		} else if (uc6GHeRegInfo == HE_REG_INFO_INDOOR_STANDARD_POWER) {
+			ePwrMode6G = PWR_MODE_6G_LPI_SP;
+		} else {
+			/* not sure which mode INDOOR_ENABLED and INDOOR_SP
+			 * should be used, follow the same logic
+			 */
+			ePwrMode6G = PWR_MODE_6G_LPI;
+		}
 	} else {
-		ePwrMode6G =  PWR_MODE_6G_LPI;
+		ePwrMode6G = PWR_MODE_6G_LPI;
 	}
 
 #if WLAN_INCLUDE_SYS
@@ -11305,10 +11316,41 @@ static uint8_t rlmDomain6GPwrModeSupportStatusGet(
 	enum ENUM_PWR_MODE_6G_TYPE eMode
 )
 {
+	uint8_t fgSupport = FALSE;
 	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *prSupportTbl =
 			&g_rCountryPwrMode6GSupport[u1CountryIdx];
 
-	return prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[eMode];
+	if (eMode == PWR_MODE_6G_SP) {
+		/* [0]:SP */
+		fgSupport =
+			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[0];
+	} else if (eMode == PWR_MODE_6G_VLP) {
+		/* [2]:VLP */
+		fgSupport =
+			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[2];
+	} else if (eMode == PWR_MODE_6G_LPI_SP) {
+		/* [0]:SP | [1]:LPI */
+		fgSupport =
+			(prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[0] |
+			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[1]);
+	} else {
+		/* [1]:LPI */
+		fgSupport =
+			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[1];
+	}
+
+	DBGLOG(RLM, TRACE,
+		"Country_idx(%d)Band[%d]PwrMode[%d]Support[%d]LPI_SP[%d]SP[%d]LPI[%d]VLP[%d]",
+		u1CountryIdx,
+		u1Band,
+		eMode,
+		fgSupport,
+		PWR_MODE_6G_LPI_SP,
+		PWR_MODE_6G_SP,
+		PWR_MODE_6G_LPI,
+		PWR_MODE_6G_VLP);
+
+	return fgSupport;
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -11339,6 +11381,7 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 	uint8_t u1CountryIdx = 0;
 	uint16_t u2CountryCodeCheck = 0;
 	bool fgDefaultExist = FALSE;
+	bool fgCcNull = FALSE;
 
 	if ((eBand != BAND_6G) ||
 		(e6GPwrMode > PWR_MODE_6G_NUM)) {
@@ -11406,10 +11449,13 @@ uint32_t rlmDomain6GPwrModeSubbandChk(
 		}
 	}
 
+	if (u2CountryCode == COUNTRY_CODE_NULL)
+		fgCcNull = TRUE;
+
 	DBGLOG(RLM, TRACE,
 		"Country(%c%c)Band[%d]6GSubBand[%d]PwrMode[%d]Support[%d]",
-		((u2CountryCode & 0xff00) >> 8),
-		(u2CountryCode & 0x00ff),
+		fgCcNull ? '0' : ((u2CountryCode & 0xff00) >> 8),
+		fgCcNull ? '0' : (u2CountryCode & 0x00ff),
 		eBand,
 		u16GSubBandIdx,
 		e6GPwrMode,
@@ -12438,7 +12484,8 @@ static enum ENUM_PWR_LIMIT_DEFAULT_BASE rlmDomainPwrLmtGetDefaultBase(
 	e6GPwrModeType = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
 	if (e6GPwrModeType == PWR_MODE_6G_VLP)
 		eDefaultPwrLmtBase = PWR_LIMIT_DEFAULT_BASE_VLP;
-	else if (e6GPwrModeType == PWR_MODE_6G_SP)
+	else if ((e6GPwrModeType == PWR_MODE_6G_SP) ||
+		(e6GPwrModeType == PWR_MODE_6G_LPI_SP))
 		eDefaultPwrLmtBase = PWR_LIMIT_DEFAULT_BASE_SP;
 #endif
 
@@ -12461,7 +12508,8 @@ static enum ENUM_PWR_LIMIT_CONFIG_BASE rlmDomainPwrLmtGetConfigBase(
 		e6GPwrModeType = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
 		if (e6GPwrModeType == PWR_MODE_6G_VLP)
 			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_VLP;
-		else if (e6GPwrModeType == PWR_MODE_6G_SP)
+		else if ((e6GPwrModeType == PWR_MODE_6G_SP) ||
+			(e6GPwrModeType == PWR_MODE_6G_LPI_SP))
 			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_SP;
 	}
 #endif

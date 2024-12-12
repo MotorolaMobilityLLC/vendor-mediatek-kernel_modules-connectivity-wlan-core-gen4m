@@ -79,6 +79,9 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP), NULL,
 	 heRlmReqGenerateHe6gBandCapIE}
 	,			/* 255, EXT 59 */
+	{(0), heRlmCalculateRegConnectivityIELen,
+		heRlmReqGenerateHeRegConnectivityIE}
+	,			/* 255, EXT 137 */
 #endif
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	/* Add AES_BLOCK_SIZE for AEAD encryption header info */

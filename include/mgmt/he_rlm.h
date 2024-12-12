@@ -248,5 +248,15 @@ uint32_t heRlmFillNANHeOpIE(
 	uint8_t *pOutBuf);
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint32_t heRlmCalculateRegConnectivityIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec);
+void heRlmReqGenerateHeRegConnectivityIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+#endif
+
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #endif /* !_HE_RLM_H */

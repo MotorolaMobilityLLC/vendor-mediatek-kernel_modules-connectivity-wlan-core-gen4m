@@ -1400,6 +1400,8 @@
 	113 /* QoS Characteristics */
 #define ELEM_EXT_ID_BW_INDICATION \
 	135 /* Bandwidth indication */
+#define ELEM_EXT_ID_REG_CONNECTIVITY  \
+	137 /* Regulatory Connectivity element */
 #define ELEM_EXT_ID_MAX_NUM \
 	256 /* EXT_ID: 0-255 */
 
