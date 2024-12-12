@@ -239,6 +239,9 @@ struct QUE {
 #define QUEUE_REMOVE_HEAD(prQueue, prQueueEntry, _P_TYPE) \
 	do { \
 		ASSERT(prQueue); \
+		prQueueEntry = NULL; \
+		if ((prQueue)->u4NumElem == 0) \
+			break; \
 		prQueueEntry = (_P_TYPE)((prQueue)->prHead); \
 		if (prQueueEntry) { \
 			(prQueue)->prHead = \
@@ -264,6 +267,9 @@ struct QUE {
 #define QUEUE_REMOVE_TAIL(prQueue, prQueueEntry, _P_TYPE) \
 	do { \
 		ASSERT(prQueue); \
+		prQueueEntry = NULL; \
+		if ((prQueue)->u4NumElem == 0) \
+			break; \
 		prQueueEntry = (_P_TYPE)((prQueue)->prTail); \
 		if (prQueueEntry) { \
 			(prQueue)->prTail = \

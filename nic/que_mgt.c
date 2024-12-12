@@ -1787,6 +1787,8 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 
 				QUEUE_REMOVE_HEAD(prCurrQueue, prDequeuedPkt,
 						  struct MSDU_INFO *);
+				if (!prDequeuedPkt)
+					break;
 
 				if (!QUEUE_IS_EMPTY(prCurrQueue)) {
 					/* XXX: check all queues for STA */
@@ -2040,6 +2042,8 @@ qmDequeueTxPacketsFromGlobalQueue(struct ADAPTER *prAdapter,
 
 		QUEUE_REMOVE_HEAD(prCurrQueue, prDequeuedPkt,
 			struct MSDU_INFO *);
+		if (!prDequeuedPkt)
+			break;
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prDequeuedPkt->ucBssIndex);
