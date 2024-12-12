@@ -55,22 +55,22 @@
 
 #define NAN_MAX_PREFER_CHNL_SEL			4
 
-#define NAN_IS_AVAIL_MAP_SET(pu4AvailMap, u2SlotIdx)                           \
-	((pu4AvailMap[u2SlotIdx / NAN_SLOTS_PER_DW_INTERVAL] &                 \
-	  BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) != 0)
+#define NAN_IS_AVAIL_MAP_SET(pu4AvailMap, u2SlotIdx)	\
+	((pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)] &        \
+	  BIT(NAN_SLOT_INDEX(u2SlotIdx))) != 0)
 
-#define NAN_TIMELINE_SET(pu4AvailMap, u2SlotIdx)                               \
-do {									       \
-	pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] |=		       \
-		BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL);		       \
-	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",		       \
-	       __func__, pu4AvailMap, u2SlotIdx,			       \
-	       pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL]);	       \
+#define NAN_TIMELINE_SET(pu4AvailMap, u2SlotIdx)		\
+do {								\
+	pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)] |=			\
+		BIT(NAN_SLOT_INDEX(u2SlotIdx));			\
+	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",	\
+	       __func__, pu4AvailMap, u2SlotIdx,		\
+	       pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)]);		\
 } while (0)
 
-#define NAN_TIMELINE_UNSET(pu4AvailMap, u2SlotIdx)                             \
-	(pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] &=               \
-	 (~BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)))
+#define NAN_TIMELINE_UNSET(pu4AvailMap, u2SlotIdx)		\
+	(pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)] &=		\
+	 (~BIT(NAN_SLOT_INDEX(u2SlotIdx))))
 
 #define NAN_MAX_NONNAN_TIMELINE_NUM		1
 	/* Non-Nan timeline number */
@@ -803,12 +803,13 @@ nanIsDiscWindow(struct ADAPTER *prAdapter, size_t szSlotIdx,
 	size_t szIndex5G = nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
 
 	if (prScheduler->fgEn2g &&
-		(szTimeLineIdx == szIndex2G) &&
-		(szSlotIdx % NAN_SLOTS_PER_DW_INTERVAL == NAN_2G_DW_INDEX))
+	    szTimeLineIdx == szIndex2G &&
+	    NAN_SLOT_INDEX(szSlotIdx) == NAN_2G_DW_INDEX)
 		return TRUE;
-	else if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
-		(szTimeLineIdx == szIndex5G) &&
-		(szSlotIdx % NAN_SLOTS_PER_DW_INTERVAL == NAN_5G_DW_INDEX))
+
+	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
+	    szTimeLineIdx == szIndex5G &&
+	    NAN_SLOT_INDEX(szSlotIdx) == NAN_5G_DW_INDEX)
 		return TRUE;
 
 	return FALSE;
@@ -2363,12 +2364,13 @@ nanQueryChnlInfoBySlot(struct ADAPTER *prAdapter, uint16_t u2SlotIdx,
 		szIndex5G = nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
 
 		if (prScheduler->fgEn2g &&
-			(ucTimeLineIdx == szIndex2G) &&
-		    (u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL == NAN_2G_DW_INDEX))
+		    ucTimeLineIdx == szIndex2G &&
+		    NAN_SLOT_INDEX(u2SlotIdx) == NAN_2G_DW_INDEX)
 			return g_r2gDwChnl;
+
 		if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
-			(ucTimeLineIdx == szIndex5G) &&
-		    (u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL == NAN_5G_DW_INDEX))
+		    ucTimeLineIdx == szIndex5G &&
+		    NAN_SLOT_INDEX(u2SlotIdx) == NAN_5G_DW_INDEX)
 			return g_r5gDwChnl;
 
 		prChnlTimelineList = prNanTimelineMgmt->arChnlList;
@@ -8049,9 +8051,9 @@ CHK_QOS_LATENCY_DONE:
 			for (szTimeLineIdx = szNanActiveTimelineNum;
 			     szTimeLineIdx--;) {
 				if (au4CondSlots[szTimeLineIdx] & BIT(u4Idx1)) {
-					u4SlotIdx = u4Idx *
-						NAN_SLOTS_PER_DW_INTERVAL +
-						u4Idx1;
+					u4SlotIdx =
+						NAN_FULL_SLOT_INDEX(u4Idx,
+								    u4Idx1);
 					rSelChnlInfo =
 						nanSchedNegoSelectChnlInfo(
 						prAdapter, u4SlotIdx,
@@ -8408,7 +8410,6 @@ nanSchedNegoIsRmtCrbConflict(
 	uint8_t fgIsPeerNDC2G = FALSE, fgIsPeerNDC5GOr6G = FALSE;
 	union _NAN_BAND_CHNL_CTRL rRmtSlot9ChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rLocalSlot9ChnlInfo;
-	uint32_t u4Def5GNDCSlotIdx = NAN_5G_DW_INDEX + 1;
 	uint8_t fgDef5GNDCConflict = FALSE;
 	uint8_t fgNotNormalNDCTimeline = FALSE;
 	uint32_t u4NotNormalSlotIdx = 0;
@@ -8445,14 +8446,14 @@ nanSchedNegoIsRmtCrbConflict(
 		/* Check whether 5G NDC default slot conflict */
 		rRmtSlot9ChnlInfo = nanGetPeerChnlInfoBySlot(
 				prAdapter, prNegoCtrl->u4SchIdx, u4AvailDbIdx,
-				u4Def5GNDCSlotIdx, TRUE);
+				NAN_5G_DEFAULT_NDC_INDEX, TRUE);
 
 		eRmtBand = nanRegGetNanChnlBand(rRmtSlot9ChnlInfo);
 
 		szTimeLineIdx = nanGetTimelineMgmtIndexByBand(
 				prAdapter, BAND_5G);
 		rLocalSlot9ChnlInfo = nanQueryChnlInfoBySlot(prAdapter,
-					u4Def5GNDCSlotIdx, NULL, TRUE,
+					NAN_5G_DEFAULT_NDC_INDEX, NULL, TRUE,
 					szTimeLineIdx);
 
 		if (rRmtSlot9ChnlInfo.u4PrimaryChnl != 0 &&
@@ -8510,8 +8511,8 @@ nanSchedNegoIsRmtCrbConflict(
 			} else if (eRmtBand == BAND_5G || eRmtBand == BAND_6G) {
 				fgIsPeerNDC5GOr6G = TRUE;
 
-				if (u4SlotIdx % NAN_SLOTS_PER_DW_INTERVAL !=
-				    u4Def5GNDCSlotIdx &&
+				if (NAN_SLOT_INDEX(u4SlotIdx) !=
+				    NAN_5G_DEFAULT_NDC_INDEX &&
 				    !fgDef5GNDCConflict) {
 					fgNotNormalNDCTimeline = TRUE;
 					u4NotNormalSlotIdx = u4SlotIdx;
@@ -8531,7 +8532,7 @@ nanSchedNegoIsRmtCrbConflict(
 				 * because it'll commit later
 				 */
 				uint32_t u4SlotOffset =
-					u4SlotIdx % NAN_SLOTS_PER_DW_INTERVAL;
+					NAN_SLOT_INDEX(u4SlotIdx);
 				if (szTimeLineIdx ==
 					nanGetTimelineMgmtIndexByBand(
 								prAdapter,
@@ -9086,7 +9087,7 @@ static uint32_t updateDWIntervalTimeline(struct ADAPTER *prAdapter,
 		 * => u4SlotIdx: u4SlotOffset..31 or by u4CrbNum
 		 */
 
-		u4SlotIdx = u4SlotOffset + u4DwIdx * NAN_SLOTS_PER_DW_INTERVAL;
+		u4SlotIdx = NAN_FULL_SLOT_INDEX(u4DwIdx, u4SlotOffset);
 
 		if (nanWindowType(prAdapter, u4SlotIdx, szTimeLineIdx)
 			== ENUM_NAN_DW)
@@ -9376,8 +9377,8 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 				(szSlotOffset + 1) % u4NanQuota),
 				(u4IterationNum++)) {
 
-				szSlotIdx = szSlotOffset +
-					u4DwIdx * NAN_SLOTS_PER_DW_INTERVAL;
+				szSlotIdx = NAN_FULL_SLOT_INDEX(u4DwIdx,
+								szSlotOffset);
 
 				if (nanWindowType(prAdapter, szSlotIdx,
 					szTimeLineIdx) == ENUM_NAN_DW)
@@ -9565,6 +9566,7 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 	uint32_t u4Idx = 0;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
 	uint8_t rRandMacAddr[6] = {0};
 	uint8_t rRandMacMask[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	uint32_t u4SlotIdx = 0;
@@ -9582,7 +9584,6 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
 	uint32_t u4SuppBandIdMask = 0;
 	unsigned char fgPeerAvailMapValid = FALSE;
-	size_t szIdx = 0;
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
@@ -9709,16 +9710,15 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 
 		if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
 			(u4SuppBandIdMask & BIT(BAND_5G)))
-			u4SlotOffset = NAN_5G_DW_INDEX + 1;
+			u4SlotOffset = NAN_5G_DEFAULT_NDC_INDEX;
 		else
-			u4SlotOffset = NAN_2G_DW_INDEX + 1;
+			u4SlotOffset = NAN_2G_DEFAULT_NDC_INDEX;
 
 		if (prAdapter->rWifiVar.ucDftNdcStartOffset != 0)
 			u4SlotOffset = prAdapter->rWifiVar.ucDftNdcStartOffset;
 
-		for (u4Num = 0; u4Num < NAN_SLOTS_PER_DW_INTERVAL; u4Num++,
-			u4SlotOffset = (u4SlotOffset + 1) %
-			NAN_SLOTS_PER_DW_INTERVAL) {
+		for (u4Num = 0; u4Num < NAN_SLOTS_PER_DW_INTERVAL;
+		     u4Num++, u4SlotOffset = NAN_SLOT_INDEX(u4SlotOffset + 1)) {
 
 			if (nanIsDiscWindow(prAdapter, u4SlotOffset,
 				szTimeLineIdx))
@@ -9730,9 +9730,8 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 					uint32_t u4SelPrimaryChnl = 0;
 #endif
 
-				u4SlotIdx = u4DwIdx *
-					NAN_SLOTS_PER_DW_INTERVAL +
-					u4SlotOffset;
+				u4SlotIdx = NAN_FULL_SLOT_INDEX(u4DwIdx,
+								u4SlotOffset);
 
 				rLocalChnlInfo = nanGetChnlInfoBySlot(prAdapter,
 						      u4SlotIdx, szTimeLineIdx);
@@ -9748,7 +9747,6 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 					 */
 					rSelChnlInfo = nanSchedNegoFindSlotCrb(
 								prAdapter,
-								u4SlotOffset,
 								FALSE,
 								szTimeLineIdx,
 								u4SlotIdx,
@@ -9816,29 +9814,25 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 			kalMemZero(prNdcCtrl, sizeof(struct _NAN_NDC_CTRL_T));
 			for (u4Idx = 0; u4Idx < NAN_TIMELINE_MGMT_SIZE;
 				u4Idx++) {
-				prNdcCtrl->arTimeline[u4Idx].ucMapId =
-						NAN_INVALID_MAP_ID;
-				kalMemZero(&prNdcCtrl->arTimeline[u4Idx]
-					.au4AvailMap,
-					sizeof(prNdcCtrl->arTimeline[u4Idx]
-					.au4AvailMap));
+				prTimeline = &prNdcCtrl->arTimeline[u4Idx];
+				prTimeline->ucMapId = NAN_INVALID_MAP_ID;
+				kalMemZero(prTimeline->au4AvailMap,
+					sizeof(prTimeline->au4AvailMap));
 			}
 			prNdcCtrl->fgValid = TRUE;
 			get_random_mask_addr(rRandMacAddr, rRandMacMask,
 					rRandMacMask);
 			kalMemCopy(prNdcCtrl->aucNdcId, rRandMacAddr,
 				NAN_NDC_ATTRIBUTE_ID_LENGTH);
-			prNdcCtrl->arTimeline[szTimeLineIdx].ucMapId =
-				prNanTimelineMgmt->ucMapId;
+
+			prTimeline = &prNdcCtrl->arTimeline[szTimeLineIdx];
+			prTimeline->ucMapId = prNanTimelineMgmt->ucMapId;
 
 			for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) {
-				u4SlotIdx = u4DwIdx *
-						NAN_SLOTS_PER_DW_INTERVAL +
-						u4SlotOffset;
-				szIdx = szTimeLineIdx;
-				NAN_TIMELINE_SET(
-				prNdcCtrl->arTimeline[szIdx].au4AvailMap,
-				u4SlotIdx);
+				u4SlotIdx = NAN_FULL_SLOT_INDEX(u4DwIdx,
+								u4SlotOffset);
+				NAN_TIMELINE_SET(prTimeline->au4AvailMap,
+						 u4SlotIdx);
 
 				rLocalChnlInfo =
 					nanGetChnlInfoBySlot(prAdapter,
@@ -9872,15 +9866,12 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 			}
 
 			nanUtilDump(prAdapter, "New NDC Map",
-				(uint8_t *)prNdcCtrl->arTimeline[szTimeLineIdx]
-				.au4AvailMap,
-				sizeof(prNdcCtrl->arTimeline[szTimeLineIdx]
-				.au4AvailMap));
+				    (uint8_t *)prTimeline->au4AvailMap,
+				    sizeof(prTimeline->au4AvailMap));
 			nanUtilDump(prAdapter, "NDC ID", prNdcCtrl->aucNdcId,
 				NAN_NDC_ATTRIBUTE_ID_LENGTH);
 			DBGLOG(NAN, INFO, "NDC MapID:%d, TIdx:%zu\n",
-				prNdcCtrl->arTimeline[szTimeLineIdx].ucMapId,
-				szTimeLineIdx);
+				prTimeline->ucMapId, szTimeLineIdx);
 			/* nanSchedDbgDumpTimelineDb(prAdapter,
 			 * __func__, __LINE__);
 			 */
@@ -11172,10 +11163,9 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 #endif
 		) {
 		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
-			NAN_TIMELINE_UNSET(
-				au4PotentialAvailMap,
-				u4EntryIdx * NAN_SLOTS_PER_DW_INTERVAL +
-					NAN_2G_DW_INDEX);
+			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
+				NAN_FULL_SLOT_INDEX(u4EntryIdx,
+						    NAN_2G_DW_INDEX));
 	}
 	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL)
 #if NAN_POTENTIAL_BAND
@@ -11183,10 +11173,9 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 #endif
 		) {
 		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
-			NAN_TIMELINE_UNSET(
-				au4PotentialAvailMap,
-				u4EntryIdx * NAN_SLOTS_PER_DW_INTERVAL +
-					NAN_5G_DW_INDEX);
+			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
+				NAN_FULL_SLOT_INDEX(u4EntryIdx,
+						    NAN_5G_DW_INDEX));
 	}
 
 	/* Remove AIS slot in potential when infra channel is DFS */
@@ -11200,11 +11189,9 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		for (szSlotIdx = 0;
 		     szSlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 		     szSlotIdx++) {
-			if (NAN_SLOT_IS_AIS(
-				    szSlotIdx % NAN_SLOTS_PER_DW_INTERVAL))
-				NAN_TIMELINE_UNSET(
-					au4PotentialAvailMap,
-					szSlotIdx);
+			if (NAN_SLOT_IS_AIS(NAN_SLOT_INDEX(szSlotIdx)))
+				NAN_TIMELINE_UNSET(au4PotentialAvailMap,
+						   szSlotIdx);
 		}
 	}
 
@@ -11358,10 +11345,9 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 #endif
 		) {
 		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
-			NAN_TIMELINE_UNSET(
-				au4PotentialAvailMap,
-				u4EntryIdx * NAN_SLOTS_PER_DW_INTERVAL +
-					NAN_2G_DW_INDEX);
+			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
+				NAN_FULL_SLOT_INDEX(u4EntryIdx,
+						    NAN_2G_DW_INDEX));
 	}
 	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL)
 #if NAN_POTENTIAL_BAND
@@ -11369,10 +11355,9 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 #endif
 		) {
 		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
-			NAN_TIMELINE_UNSET(
-				au4PotentialAvailMap,
-				u4EntryIdx * NAN_SLOTS_PER_DW_INTERVAL +
-					NAN_5G_DW_INDEX);
+			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
+				NAN_FULL_SLOT_INDEX(u4EntryIdx,
+						    NAN_5G_DW_INDEX));
 	}
 
 	/* Remove AIS slot in potential when infra channel is DFS */
@@ -11386,8 +11371,7 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		for (szSlotIdx = 0;
 		     szSlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 		     szSlotIdx++) {
-			if (NAN_SLOT_IS_AIS(
-				    szSlotIdx % NAN_SLOTS_PER_DW_INTERVAL))
+			if (NAN_SLOT_IS_AIS(NAN_SLOT_INDEX(szSlotIdx)))
 				NAN_TIMELINE_UNSET(
 					au4PotentialAvailMap,
 					szSlotIdx);
@@ -13981,7 +13965,7 @@ nanQueryNonNanChnlInfoBySlot(struct ADAPTER *prAdapter,
 	for (u4Idx = 0; u4Idx < NAN_MAX_NONNAN_TIMELINE_NUM; u4Idx++) {
 		prNonNanTimeline = nanGetNonNanTimeline(prAdapter, u4Idx);
 		if (prNonNanTimeline->u4SlotBitmap &
-			BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) {
+		    BIT(NAN_SLOT_INDEX(u2SlotIdx))) {
 			if (nanRegGetNanChnlBand(prNonNanTimeline->rChnlInfo)
 				== eBand)
 				return prNonNanTimeline->rChnlInfo;
@@ -14261,9 +14245,8 @@ uint32_t nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter)
 
 				for (u4DwIdx = 0;
 					u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) {
-					u4SlotIdx = u4SlotOffset +
-						u4DwIdx *
-						NAN_SLOTS_PER_DW_INTERVAL;
+					u4SlotIdx = NAN_FULL_SLOT_INDEX(u4DwIdx,
+								u4SlotOffset);
 
 					/* Get committed channel */
 					rCommitChnlInfo =
@@ -14756,7 +14739,7 @@ u_int8_t nanNeedRescheduleByChannel(struct ADAPTER *prAdapter,
 		eTimelineIdx = 0;
 
 	for (i = 0; i < NAN_TOTAL_SLOT_WINDOWS; i++) {
-		if ((BIT(i % NAN_SLOTS_PER_DW_INTERVAL) & slot_mask) == 0)
+		if ((BIT(NAN_SLOT_INDEX(i)) & slot_mask) == 0)
 			continue;
 
 		rLocalChnlInfo = nanQueryChnlInfoBySlot(prAdapter,
@@ -14788,7 +14771,7 @@ static u_int8_t nanNeedRescheduleByCapability(struct ADAPTER *prAdapter,
 		eTimelineIdx = 0;
 
 	for (i = 0; i < NAN_TOTAL_SLOT_WINDOWS; i++) {
-		if ((BIT(i % NAN_SLOTS_PER_DW_INTERVAL) & slot_mask) == 0)
+		if ((BIT(NAN_SLOT_INDEX(i)) & slot_mask) == 0)
 			continue;
 
 		rLocalChnlInfo = nanQueryChnlInfoBySlot(prAdapter,
@@ -15250,8 +15233,7 @@ void nanSchedReleaseReschedCommitSlot(struct ADAPTER *prAdapter,
 	       u4ReschedSlot, szTimeLineIdx);
 
 	for (u4SlotIdx = 0; u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS; u4SlotIdx++) {
-		if ((u4ReschedSlot & BIT(u4SlotIdx % NAN_SLOTS_PER_DW_INTERVAL))
-		    == 0)
+		if ((u4ReschedSlot & BIT(NAN_SLOT_INDEX(u4SlotIdx))) == 0)
 			continue;
 
 		for (u4Idx = 0; u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
@@ -16155,27 +16137,26 @@ static union _NAN_BAND_CHNL_CTRL nanSchedNegoFindFCSlotCrb(
 	return rSelChnlInfo;
 }
 
-union _NAN_BAND_CHNL_CTRL nanSchedNegoFindSlotCrb(
-					struct ADAPTER *prAdapter,
-					size_t szSlotOffset,
-					unsigned char fgPrintLog,
-					size_t szTimeLineIdx,
-					size_t szSlotIdx,
-					unsigned char fgReschedForce5G,
-					unsigned char *pfgNotChoose6G)
+union _NAN_BAND_CHNL_CTRL
+nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
+			unsigned char fgPrintLog,
+			size_t szTimeLineIdx,
+			size_t szSlotIdx,
+			unsigned char fgReschedForce5G,
+			unsigned char *pfgNotChoose6G)
 {
 	union _NAN_BAND_CHNL_CTRL rSelChnlInfo = {.u4RawData = 0};
 
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	if (prAdapter->rWifiVar.ucNanEhtCHSwitchMode == 2) {
-		if (NAN_SLOT_IS_M2_CH_SWITCH(szSlotOffset)) {
+		if (NAN_SLOT_IS_M2_CH_SWITCH(szSlotIdx)) {
 			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
 				      "Tidx(%u) CH switch slot(%zu): Force empty for M2 CH switch\n",
 				      szTimeLineIdx, szSlotIdx);
 			return g_rNullChnl;
 		}
 	} else if (prAdapter->rWifiVar.ucNanEhtCHSwitchMode == 4) {
-		if (NAN_SLOT_IS_M4_CH_SWITCH(szSlotOffset)) {
+		if (NAN_SLOT_IS_M4_CH_SWITCH(szSlotIdx)) {
 			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
 				      "Tidx(%u) CH switch slot(%zu): Force empty for M4 CH switch\n",
 				      szTimeLineIdx, szSlotIdx);
@@ -16184,10 +16165,10 @@ union _NAN_BAND_CHNL_CTRL nanSchedNegoFindSlotCrb(
 	}
 #endif
 
-	if (NAN_SLOT_IS_AIS(szSlotOffset))
+	if (NAN_SLOT_IS_AIS(szSlotIdx))
 		rSelChnlInfo = nanSchedNegoFindAisSlotCrb(prAdapter, fgPrintLog,
 						szTimeLineIdx, szSlotIdx);
-	else if (NAN_SLOT_IS_NDL(szSlotOffset)) {
+	else if (NAN_SLOT_IS_NDL(szSlotIdx)) {
 		rSelChnlInfo = nanSchedNegoFindNdlSlotCrb(prAdapter, fgPrintLog,
 						szTimeLineIdx, szSlotIdx,
 						fgReschedForce5G,
@@ -16335,8 +16316,8 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 				(szSlotOffset + 1) % u4NanQuota),
 				(u4IterationNum++)) {
 
-				szSlotIdx = szSlotOffset +
-					u4DwIdx * NAN_SLOTS_PER_DW_INTERVAL;
+				szSlotIdx = NAN_FULL_SLOT_INDEX(u4DwIdx,
+								szSlotOffset);
 
 				if (nanWindowType(prAdapter, szSlotIdx,
 					szTimeLineIdx) == ENUM_NAN_DW)
@@ -16348,7 +16329,6 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 				fgNotChoose6G = FALSE;
 
 				nanSchedNegoFindSlotCrb(prAdapter,
-							szSlotOffset,
 							TRUE,
 							szTimeLineIdx,
 							szSlotIdx,

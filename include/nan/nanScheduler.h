@@ -11,6 +11,9 @@
 #define NAN_2G_DW_INDEX 0
 #define NAN_5G_DW_INDEX 8
 
+#define NAN_2G_DEFAULT_NDC_INDEX (NAN_2G_DW_INDEX + 1)
+#define NAN_5G_DEFAULT_NDC_INDEX (NAN_5G_DW_INDEX + 1)
+
 #define NAN_5G_HIGH_DISC_CH_OP_CLASS 124
 #define NAN_5G_HIGH_DISC_CHANNEL 149
 #define NAN_5G_LOW_DISC_CH_OP_CLASS 115
@@ -126,13 +129,22 @@
 /* Use 7,11 for channel switch */
 #define NAN_SLOT_MASK_TYPE_M4_CH_SWITCH 0x00000880
 
-#define NAN_SLOT_IS_AIS(szSlotIdx) (BIT(szSlotIdx) & NAN_SLOT_MASK_TYPE_AIS)
-#define NAN_SLOT_IS_NDL(szSlotIdx) (BIT(szSlotIdx) & NAN_SLOT_MASK_TYPE_NDL)
-#define NAN_SLOT_IS_FC(szSlotIdx) (BIT(szSlotIdx) & NAN_SLOT_MASK_TYPE_FC)
-#define NAN_SLOT_IS_M2_CH_SWITCH(szSlotIdx) \
-	(BIT(szSlotIdx) & NAN_SLOT_MASK_TYPE_M2_CH_SWITCH)
-#define NAN_SLOT_IS_M4_CH_SWITCH(szSlotIdx)\
-	(BIT(szSlotIdx) & NAN_SLOT_MASK_TYPE_M4_CH_SWITCH)
+#define NAN_DW_INDEX(__szSlotIdx) ((__szSlotIdx) / NAN_SLOTS_PER_DW_INTERVAL)
+#define NAN_SLOT_INDEX(__szSlotIdx) ((__szSlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)
+#define NAN_FULL_SLOT_INDEX(__szDwIdx, __szSlotIdx) \
+	((__szDwIdx) * NAN_SLOTS_PER_DW_INTERVAL + (__szSlotIdx))
+
+#define NAN_SLOT_IS_AIS(_szSlotIdx)	\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_AIS)
+#define NAN_SLOT_IS_NDL(_szSlotIdx)	\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_NDL)
+#define NAN_SLOT_IS_FC(_szSlotIdx)	\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_FC)
+
+#define NAN_SLOT_IS_M2_CH_SWITCH(_szSlotIdx) \
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_M2_CH_SWITCH)
+#define NAN_SLOT_IS_M4_CH_SWITCH(_szSlotIdx)\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_M4_CH_SWITCH)
 
 
 /* Limited log */
@@ -814,14 +826,13 @@ u_int8_t nanCheckIsNeedReschedule(struct ADAPTER *prAdapter,
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					uint8_t fgChkRmtCondSlot);
 
-union _NAN_BAND_CHNL_CTRL nanSchedNegoFindSlotCrb(
-					struct ADAPTER *prAdapter,
-					size_t szSlotOffset,
-					unsigned char fgPrintLog,
-					size_t szTimeLineIdx,
-					size_t szSlotIdx,
-					unsigned char fgReschedForce5G,
-					unsigned char *pfgNotChoose6G);
+union _NAN_BAND_CHNL_CTRL
+nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
+			unsigned char fgPrintLog,
+			size_t szTimeLineIdx,
+			size_t szSlotIdx,
+			unsigned char fgReschedForce5G,
+			unsigned char *pfgNotChoose6G);
 #endif
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
