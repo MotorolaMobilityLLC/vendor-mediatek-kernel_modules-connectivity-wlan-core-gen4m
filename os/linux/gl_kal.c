@@ -5277,12 +5277,12 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	 */
 	kalThreadSchedMark(prGlueInfo->main_thread, &schedstats);
 
-	DBGLOG(OID, TRACE, "waiting, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
+	DBGLOG(OID, TRACE, "waiting, pfnOidHandler=%ps, BufLen=%u, QryLen=%p\n",
 			prIoReq->pfnOidHandler, prIoReq->u4InfoBufLen,
 			prIoReq->pu4QryInfoLen);
 	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
 			MSEC_TO_JIFFIES(KAL_OID_WAIT_TIME));
-	DBGLOG(OID, TRACE, "wait=%u, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
+	DBGLOG(OID, TRACE, "wait=%u, pfnOidHandler=%ps, BufLen=%u, QryLen=%p\n",
 			waitRet, prIoReq->pfnOidHandler,
 			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	kalThreadSchedUnmark(prGlueInfo->main_thread, &schedstats);
@@ -6237,7 +6237,7 @@ int main_thread(void *data)
 			kalTraceBegin("OID");
 			/* get current prIoReq */
 			prIoReq = &(prGlueInfo->OidEntry);
-			DBGLOG(NIC, TRACE, "pfnOidHandler=%ps",
+			DBGLOG(NIC, TRACE, "pfnOidHandler=%ps\n",
 					prIoReq->pfnOidHandler);
 			prIoReq->rStatus = wlanSetInformation(
 					prIoReq->prAdapter,
@@ -6255,7 +6255,7 @@ int main_thread(void *data)
 						NULL);
 
 					DBGLOG(NIC, TRACE,
-						"rPendComp=%p pfnOidHandler=%ps",
+						"rPendComp=%p pfnOidHandler=%ps\n",
 						&prGlueInfo->rPendComp,
 						prIoReq->pfnOidHandler);
 					prGlueInfo->fgOidWaiting = FALSE;

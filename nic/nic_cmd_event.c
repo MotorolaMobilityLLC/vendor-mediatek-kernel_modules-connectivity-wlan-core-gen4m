@@ -5272,7 +5272,7 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	GET_BOOT_SYSTIME(&u4CurrentTime);
 
 	DBGLOG(NIC, INFO,
-			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastUnicastRxTime: %d, u4LastTxTime: %d",
+			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastUnicastRxTime: %d, u4LastTxTime: %d\n",
 			u4MonitorWindow, u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
 			prRxCtrl->u4LastUnicastRxTime[ucBssIdx],
@@ -5312,23 +5312,9 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	if (IS_BSS_AIS(prBssInfo)) {
 		if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
-			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
-			/* Policy 1, if RX in the past duration (in ms) */
-			if (aisBeaconTimeoutFilterPolicy(
-					prAdapter, ucBssIdx)) {
-				DBGLOG(NIC, INFO, "Driver find better TX AP");
-#if (CFG_EXT_ROAMING == 1)
-				*ucDisconnectReason =
-				       DISCONNECT_REASON_CODE_RADIO_LOST;
-#else
-				*ucDisconnectReason =
-				       DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR;
-#endif
-			} else {
-				DBGLOG(NIC, INFO, "RX in the past duration");
-				bValid = false;
-			}
-		}
+			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
+		    aisBeaconTimeoutFilterPolicy(prAdapter, ucBssIdx))
+			bValid = FALSE;
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	else if (IS_BSS_P2P(prBssInfo)) {
@@ -5342,7 +5328,7 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
-	DBGLOG(NIC, INFO, "valid beacon time out event?: %d", bValid);
+	DBGLOG(NIC, INFO, "valid beacon time out event?: %d\n", bValid);
 
 	return bValid;
 }
@@ -5404,6 +5390,7 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 				aisBssBeaconTimeout_impl(prAdapter,
 					prEventBssBeaconTimeout->ucReasonCode,
 					ucDisconnectReason,
+					TRUE,
 					prBssInfo->ucBssIndex);
 		}
 #if CFG_ENABLE_WIFI_DIRECT

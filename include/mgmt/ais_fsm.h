@@ -114,7 +114,11 @@
 	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
 	AIS_STATE_OFF_CHNL_TX)
 
-#define RCPI_FOR_DONT_ROAM                      60 /*-80dbm*/
+#if (CFG_EXT_ROAMING == 1)
+#define RCPI_FOR_DONT_ROAM		    54 /*-83dbm*/
+#else
+#define RCPI_FOR_DONT_ROAM		    60 /*-80dbm*/
+#endif
 
 #define AIS_BTM_DIS_IMMI_THRESHOLD	    60000 /* MSEC */
 #define AIS_BTM_DIS_IMMI_STATE_0	    0
@@ -478,6 +482,7 @@ struct AIS_BTO_INFO {
 	struct BSS_DESC *prBtoBssDesc;
 	uint8_t ucBcnTimeoutReason;
 	uint8_t ucDisconnectReason;
+	uint8_t fgTryRecover;
 };
 
 struct AIS_FSM_INFO {
@@ -817,7 +822,7 @@ void aisBssBeaconTimeout(struct ADAPTER *prAdapter,
 
 void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	uint8_t ucBcnTimeoutReason, uint8_t ucDisconnectReason,
-	uint8_t ucBssIndex);
+	uint8_t fgTryRecover, uint8_t ucBssIndex);
 
 uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
@@ -826,7 +831,7 @@ void aisBssLinkDown(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
 void aisHandleBeaconTimeout(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, u_int8_t fgDelayAbortIndication);
+	uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisBssSecurityChanged(struct ADAPTER *prAdapter,

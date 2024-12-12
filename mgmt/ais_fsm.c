@@ -1200,11 +1200,11 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
 
 	if (!prAisBssInfo) {
-		DBGLOG(AIS, ERROR, "prAisBssInfo is NULL!");
+		DBGLOG(AIS, ERROR, "prAisBssInfo is NULL!\n");
 		return NULL;
 	}
 	if (!prStaRec) {
-		DBGLOG(AIS, ERROR, "prStaRec is NULL!");
+		DBGLOG(AIS, ERROR, "prStaRec is NULL!\n");
 		return NULL;
 	}
 
@@ -2451,6 +2451,19 @@ uint8_t aisJoinFailureOverLimit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	return FALSE;
 }
 
+void aisFsmClearPostponedBTO(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	DBGLOG(AIS, INFO, "AIS[%d][%d] Clear postponed btoinfo\n",
+		prAisFsmInfo->ucAisIndex, ucBssIndex);
+
+	kalMemZero(&prAisFsmInfo->rBtoInfo, sizeof(prAisFsmInfo->rBtoInfo));
+	aisFsmClearRequest(prAdapter, AIS_REQUEST_BTO, ucBssIndex);
+}
+
 #if CFG_SUPPORT_ROAMING
 enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet, uint8_t fgDisallowScan,
@@ -2518,6 +2531,41 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 			MEDIA_STATE_CONNECTED,
 			FALSE,
 			ucBssIndex);
+
+	/* quick disconnect when bto scan can't find better AP*/
+	if (roam->eReason == ROAMING_REASON_BEACON_TIMEOUT) {
+		struct MSG_AIS_ABORT *prAisAbortMsg;
+		struct BSS_DESC *prBtoBssDesc;
+
+		prBtoBssDesc = ais->rBtoInfo.prBtoBssDesc;
+		if (prBtoBssDesc && !prBtoBssDesc->fgIsInBTO) {
+			DBGLOG(AIS, INFO, "AIS[%d][%d] BTO recovered\n",
+				ais->ucAisIndex, ucBssIndex);
+			aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
+			goto skip_roam_fail;
+		}
+
+		prAisAbortMsg = (struct MSG_AIS_ABORT *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(struct MSG_AIS_ABORT));
+		if (!prAisAbortMsg) {
+			DBGLOG(REQ, ERROR,
+			   "Fail in allocating AisAbortMsg.\n");
+			goto skip_roam_fail;
+		}
+
+		DBGLOG(AIS, INFO, "AIS[%d][%d] Trigger BTO disconnection\n",
+			ais->ucAisIndex, ucBssIndex);
+
+		prAisAbortMsg->rMsgHdr.eMsgId =	MID_OID_AIS_FSM_ABORT;
+		prAisAbortMsg->ucReasonOfDisconnect =
+			      DISCONNECT_REASON_CODE_RADIO_LOST;
+		prAisAbortMsg->fgDelayIndication = FALSE;
+		prAisAbortMsg->ucBssIndex = ucBssIndex;
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prAisAbortMsg,
+			MSG_SEND_METHOD_BUF);
+	}
 
 skip_roam_fail:
 	/* We already associated with it go back to NORMAL_TR */
@@ -2865,7 +2913,7 @@ enum ENUM_AIS_STATE aisFsmHandleNextReq_NORMAL_TR(struct ADAPTER *prAdapter,
 
 	if (aisFsmIsRequestPending(prAdapter,
 		AIS_REQUEST_BTO, TRUE, &prAisReq, ucBssIndex)) {
-		aisHandleBeaconTimeout(prAdapter, ucBssIndex, TRUE);
+		aisHandleBeaconTimeout(prAdapter, ucBssIndex);
 		cnmMemFree(prAdapter, prAisReq);
 	} else if (aisFsmIsRequestPending(prAdapter,
 		AIS_REQUEST_ROAMING_SEARCH, TRUE, &prAisReq, ucBssIndex)) {
@@ -3097,8 +3145,7 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			if (aisFsmIsRequestPending(prAdapter,
 				AIS_REQUEST_BTO, TRUE,
 				&prAisReq, ucBssIndex) == TRUE) {
-				aisHandleBeaconTimeout(prAdapter,
-					ucBssIndex, TRUE);
+				aisHandleBeaconTimeout(prAdapter, ucBssIndex);
 				fgIsTransition = FALSE;
 				break;
 			}
@@ -4850,6 +4897,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			/* remove all deauthing AP from blocklist */
 			aisRemoveDeauthBlocklist(prAdapter);
 
+			/* remove deferred bto event */
+			aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
+
 			rlmReqGenerateOMIIE(prAdapter, prAisBssInfo);
 			/* 4 <1.7> Set the Next State of AIS FSM */
 			eNextState = AIS_STATE_NORMAL_TR;
@@ -5253,6 +5303,16 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 
+	if (prAisFsmInfo->ucReasonOfDisconnect ==
+		DISCONNECT_REASON_CODE_RADIO_LOST) {
+		scanRemoveBssDescByBssid(prAdapter,
+			prAisBssInfo->aucBSSID);
+
+		/* remove from scanning results as well */
+		wlanClearBssInScanningResult(prAdapter,
+			prAisBssInfo->aucBSSID);
+	}
+
 	kalMemZero(prAisBssInfo->aucBSSID, MAC_ADDR_LEN);
 	kalMemZero(prAisSpecificBssInfo->aucCurrentApAddr, MAC_ADDR_LEN);
 	kalMemZero(prCurrBssid, sizeof(*prCurrBssid));
@@ -5302,6 +5362,9 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 		sizeof(prAisSpecificBssInfo->aucQueriedBssid));
 	prAisSpecificBssInfo->ucQueriedBssidIdx = 0;
 
+	/* remove deferred bto event when disconnect */
+	aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
+
 	/* reset BTM Params when disconnect */
 	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
 
@@ -5332,19 +5395,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 		ABORT_DISCONNECT);
 #endif
 
-#if CFG_EXT_SCAN
-	if (prAisFsmInfo->ucReasonOfDisconnect ==
-		DISCONNECT_REASON_CODE_RADIO_LOST ||
-		prAisFsmInfo->ucReasonOfDisconnect ==
-		DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
-		scanRemoveBssDescByBssid(prAdapter,
-			prAisBssInfo->aucBSSID);
-
-		/* remove from scanning results as well */
-		wlanClearBssInScanningResult(prAdapter,
-			prAisBssInfo->aucBSSID);
-	}
-#endif
 	prAisFsmInfo->ucIsSapCsaPending = FALSE;
 }
 
@@ -6164,59 +6214,10 @@ void aisFsmRemoveAllBssDesc(struct ADAPTER *prAdapter,
 		if (!prAisBssInfo)
 			continue;
 
-#if CFG_EXT_SCAN
-
 		scanRemoveConnFlagOfBssDescByBssid(
 			prAdapter,
 			prAisBssInfo->aucBSSID,
 			prAisBssInfo->ucBssIndex);
-
-		if (prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST ||
-			prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
-			struct SCAN_INFO *prScanInfo;
-			struct LINK *prBSSDescList;
-			struct BSS_DESC *prBssDesc;
-
-			prScanInfo =
-				&(prAdapter->rWifiVar.rScanInfo);
-			prBSSDescList =
-				&prScanInfo->rBSSDescList;
-			LINK_FOR_EACH_ENTRY(prBssDesc,
-				prBSSDescList,
-				rLinkEntry, struct BSS_DESC) {
-
-				if (EQUAL_MAC_ADDR(
-					prBssDesc->aucBSSID,
-					prAisBssInfo->aucBSSID)) {
-					DBGLOG(AIS, INFO,
-						""MACSTR" set BTO flag",
-						MAC2STR(prBssDesc->aucBSSID));
-					prBssDesc->fgIsInBTO = TRUE;
-					break;
-				}
-			}
-		}
-
-#else
-
-		if (prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST ||
-		    prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
-			scanRemoveBssDescByBssid(prAdapter,
-						 prAisBssInfo->aucBSSID);
-
-			/* remove from scanning results as well */
-			wlanClearBssInScanningResult(prAdapter,
-						     prAisBssInfo->aucBSSID);
-		} else {
-			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
-			      prAisBssInfo->aucBSSID, prAisBssInfo->ucBssIndex);
-		}
-
-#endif
 	}
 }
 
@@ -6328,11 +6329,6 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 			switch (prAisFsmInfo->ucReasonOfDisconnect) {
 			case DISCONNECT_REASON_CODE_RADIO_LOST:
 				roam->eReason = ROAMING_REASON_BEACON_TIMEOUT;
-				aisFsmInsertRequest(prAdapter,
-					eAisRequest, ucBssIndex);
-				break;
-			case DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR:
-				roam->eReason = ROAMING_REASON_TX_ERR;
 				aisFsmInsertRequest(prAdapter,
 					eAisRequest, ucBssIndex);
 				break;
@@ -6909,7 +6905,7 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 				   &prAisFsmInfo->rJoinTimeoutTimer,
 				   prAisFsmInfo->u4ChGrantedInterval -
 				   AIS_JOIN_CH_GRANT_THRESHOLD);
-		DBGLOG(AIS, INFO, "Start JOIN Timer!");
+		DBGLOG(AIS, INFO, "Start JOIN Timer!\n");
 		aisFsmSteps(prAdapter, AIS_STATE_JOIN, ucBssIndex);
 
 		prAisFsmInfo->fgIsChannelGranted = TRUE;
@@ -7070,26 +7066,34 @@ void aisBssBeaconTimeout(struct ADAPTER *prAdapter,
 {
 	/* trigger by driver, use dummy reason code */
 	aisBssBeaconTimeout_impl(prAdapter, BEACON_TIMEOUT_REASON_NUM,
-		DISCONNECT_REASON_CODE_RADIO_LOST, ucBssIndex);
+		DISCONNECT_REASON_CODE_RADIO_LOST, FALSE, ucBssIndex);
 }
 
 void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	uint8_t ucBcnTimeoutReason, uint8_t ucDisconnectReason,
-	uint8_t ucBssIndex)
+	uint8_t fgTryRecover, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_BTO_INFO *prAisBtoInfo;
-	uint8_t roam, join;
+	struct BSS_DESC *prBtoBssDesc;
+	uint8_t roam = FALSE, join = FALSE;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prBtoBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisBtoInfo = &(prAisFsmInfo->rBtoInfo);
 
 	if (prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
 		return;
+
+	if (prAisBtoInfo->prBtoBssDesc) {
+		DBGLOG(AIS, EVENT,
+			"Drop BTO event because there's ongoing BTO\n");
+		return;
+	}
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
 	if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
@@ -7112,40 +7116,26 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	if (fgDoAbortIndication) {
 #if CFG_SUPPORT_ROAMING
 		roam = roamingFsmCheckIfRoaming(prAdapter, ucBssIndex);
-		join = timerPendingTimer(
-				&prAisFsmInfo->rJoinTimeoutTimer);
+#endif /* CFG_SUPPORT_ROAMING */
+		join = timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer);
 
-		aisFsmClearRequest(prAdapter, AIS_REQUEST_BTO, ucBssIndex);
 		prAisBtoInfo->ucBcnTimeoutReason = ucBcnTimeoutReason;
 		prAisBtoInfo->ucDisconnectReason = ucDisconnectReason;
+		prAisBtoInfo->prBtoBssDesc = prBtoBssDesc;
+		prAisBtoInfo->fgTryRecover = fgTryRecover;
 
-		if (roam && join) {
-			struct PARAM_SSID rSsid;
-
+		if (roam || join) {
 			DBGLOG(AIS, EVENT,
-				"Postpone aisBssBeaconTimeout, roam=%d, join=%d",
-				roam, join);
-
-			/* record info for postpone handle BTO */
-			kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
-			COPY_SSID(rSsid.aucSsid,
-				  rSsid.u4SsidLen,
-				  prAisBssInfo->aucSSID,
-				  prAisBssInfo->ucSSIDLen);
-			prAisBtoInfo->prBtoBssDesc =
-				scanSearchBssDescByBssidAndSsid(prAdapter,
-				prAisBssInfo->aucBSSID, TRUE, &rSsid);
-
+				"Postpone aisBssBeaconTimeout, roam=%d, join=%d, recover=%d\n",
+				roam, join, fgTryRecover);
 			aisFsmInsertRequest(prAdapter,
 				AIS_REQUEST_BTO,
 				ucBssIndex);
-		} else
-#endif /* CFG_SUPPORT_ROAMING */
-		{
+		} else {
 			DBGLOG(AIS, EVENT,
-				"aisBssBeaconTimeout, roam=%d, join=%d",
-				roam, join);
-			aisHandleBeaconTimeout(prAdapter, ucBssIndex, FALSE);
+				"aisBssBeaconTimeout, roam=%d, join=%d, recover=%d\n",
+				roam, join, fgTryRecover);
+			aisHandleBeaconTimeout(prAdapter, ucBssIndex);
 		}
 	} else {
 		aisFsmStateAbort(prAdapter,
@@ -7154,42 +7144,56 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	}
 }
 
-void aisHandleBeaconTimeout(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, u_int8_t fgDelayAbortIndication)
+void aisHandleBeaconTimeout(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_BTO_INFO *prAisBtoInfo;
+	uint8_t i;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBtoInfo = &(prAisFsmInfo->rBtoInfo);
 
-	if (fgDelayAbortIndication) {
-		struct BSS_DESC *prBssDesc =
-			aisGetTargetBssDesc(prAdapter, ucBssIndex);
-		struct BSS_DESC *prBtoBssDesc =
-			prAisBtoInfo->prBtoBssDesc;
+	if (!prAisBtoInfo->prBtoBssDesc)
+		return;
 
-		if (prBtoBssDesc != prBssDesc) {
-			DBGLOG(AIS, EVENT,
-				"Connect to better AP[" MACSTR
-				"], ignore BTO AP[" MACSTR "]\n",
-				MAC2STR(prBssDesc->aucBSSID),
-				MAC2STR(prBtoBssDesc->aucBSSID));
-			return;
-		}
-	}
+	DBGLOG(AIS, EVENT, ""MACSTR" set BTO flag, reason=%d\n",
+		MAC2STR(prAisBtoInfo->prBtoBssDesc->aucBSSID),
+		prAisBtoInfo->ucBcnTimeoutReason);
 
 	prAisBssInfo->u2DeauthReason =
 		REASON_CODE_BEACON_TIMEOUT * 100 +
 		prAisBtoInfo->ucBcnTimeoutReason;
-	DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
+	prAisBtoInfo->prBtoBssDesc->fgIsInBTO = TRUE;
 
-	aisFsmStateAbort(prAdapter,
-		prAisBtoInfo->ucDisconnectReason,
-		TRUE,
-		ucBssIndex);
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_DESC *prBss = aisGetLinkBssDesc(prAisFsmInfo, i);
+
+		if (prBss)
+			prBss->fgIsInBTO = TRUE;
+	}
+
+#if CFG_SUPPORT_ROAMING
+	if (prAisBtoInfo->fgTryRecover) {
+		struct CMD_ROAMING_TRANSIT rRoamingData = {0};
+		struct ROAMING_INFO *prRoamingFsmInfo =
+			aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+		rRoamingData.eReason = ROAMING_REASON_BEACON_TIMEOUT;
+		rRoamingData.u2Data = prAisBtoInfo->prBtoBssDesc->ucRCPI;
+		rRoamingData.u2RcpiLowThreshold =
+			prRoamingFsmInfo->ucThreshold;
+		rRoamingData.ucBssidx = ucBssIndex;
+		roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
+	} else
+#endif
+	{
+		aisFsmStateAbort(prAdapter,
+			prAisBtoInfo->ucDisconnectReason,
+			TRUE,
+			ucBssIndex);
+	}
 }				/* end of aisBssBeaconTimeout() */
 
 /*----------------------------------------------------------------------------*/
@@ -7205,34 +7209,12 @@ void aisHandleBeaconTimeout(struct ADAPTER *prAdapter,
 uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
-#if CFG_SUPPORT_ROAMING
-	struct AIS_FSM_INFO *ais;
-#if (CFG_EXT_ROAMING == 1)
-	enum ENUM_ROAMING_REASON eReason = ROAMING_REASON_NUM;
-#else
-	enum ENUM_ROAMING_REASON eReason = ROAMING_REASON_TX_ERR;
-#endif
 	int8_t rssi;
 
-	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
-#if (CFG_EXT_ROAMING == 1)
-	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) && rssi > -83)
-#else
-	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) && rssi > -70)
-#endif
-	{
-		/* Good rssi but beacon timeout happened => PER */
-		struct BSS_DESC_SET set = {0};
 
-		apsSearchBssDescByScore(prAdapter, eReason, ucBssIndex, &set);
-		if (aisBssDescAllowed(prAdapter, ais, &set)) {
-			DBGLOG(AIS, INFO, "Better AP found for BTO\n");
-			return TRUE;
-		}
-	}
-#endif
-	return FALSE;
+	DBGLOG(NIC, INFO, "RX in the past duration and rssi=%d\n", rssi);
+	return rssi > RCPI_FOR_DONT_ROAM;
 }
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
@@ -8519,7 +8501,8 @@ aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 			    prAdapter->rNchoInfo.fgIsSendingAF == TRUE &&
 			    prAdapter->rNchoInfo.fgChGranted == TRUE) {
 				prAdapter->rNchoInfo.fgIsSendingAF = FALSE;
-				DBGLOG(AIS, TRACE, "NCHO action frame tx done");
+				DBGLOG(AIS, TRACE,
+					"NCHO action frame tx done\n");
 			}
 #endif
 		}
@@ -9350,7 +9333,7 @@ void aisResetNeighborApList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct LINK_MGMT *prAPlist = &prAisSpecBssInfo->rNeighborApList;
 
 	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
-	DBGLOG(AIS, INFO, "reset done");
+	DBGLOG(AIS, INFO, "reset done\n");
 }
 
 uint8_t aisCheckNeighborApValidity(struct ADAPTER *prAdapter,

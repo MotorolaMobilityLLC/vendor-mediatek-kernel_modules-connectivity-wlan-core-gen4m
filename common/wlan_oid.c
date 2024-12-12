@@ -16667,8 +16667,22 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		return WLAN_STATUS_FAILURE;
 #endif
 	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT", 5)) {
-		DBGLOG(OID, INFO, "Simulate beacon timeout!!!\n");
-		aisBssBeaconTimeout(prAdapter, ucBssIndex);
+		int32_t i4Argc = 0, i4Ret = 0, i4Recover = 1;
+		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+
+		DBGLOG(OID, INFO,
+			"Simulate beacon timeout [%s]!!!\n", pucSavedPtr);
+
+		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+		if (i4Argc > 1)
+			i4Ret = kalkStrtos32(apcArgv[1], 0, &i4Recover);
+
+		aisBssBeaconTimeout_impl(prAdapter,
+			BEACON_TIMEOUT_REASON_NUM,
+			DISCONNECT_REASON_CODE_RADIO_LOST,
+			i4Recover != 0,
+			ucBssIndex);
+
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		pucSavedPtr[10] = 0;

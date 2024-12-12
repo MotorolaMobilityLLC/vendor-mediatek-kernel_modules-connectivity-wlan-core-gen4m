@@ -3500,7 +3500,8 @@ wlanSetInformation(struct ADAPTER *prAdapter,
 	/* ignore any OID request after connected, under PS current measurement
 	 * mode
 	 */
-	DBGLOG(NIC, TRACE, "u4PsCurrentMeasureEn=%u, aisGetConnectedBssInfo=%p",
+	DBGLOG(NIC, TRACE,
+		"u4PsCurrentMeasureEn=%u, aisGetConnectedBssInfo=%p\n",
 		prAdapter->u4PsCurrentMeasureEn,
 		aisGetConnectedBssInfo(prAdapter));
 	if (prAdapter->u4PsCurrentMeasureEn &&
@@ -3516,7 +3517,7 @@ wlanSetInformation(struct ADAPTER *prAdapter,
 	 */
 	status = pfnOidSetHandler(prAdapter, pvInfoBuf,
 				  u4InfoBufLen, pu4SetInfoLen);
-	DBGLOG(NIC, TRACE, "%ps returns %u", pfnOidSetHandler, status);
+	DBGLOG(NIC, TRACE, "%ps returns %u\n", pfnOidSetHandler, status);
 
 	return status;
 }

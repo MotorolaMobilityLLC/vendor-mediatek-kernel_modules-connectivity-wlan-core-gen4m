@@ -2862,9 +2862,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 		ASSERT(prSwRfb->prRxStatusGroup3);
 
-#if CFG_EXT_SCAN
-		prBssDesc->fgIsInBTO = FALSE;
-#endif
+		if (prBssDesc->ucRCPI > RCPI_FOR_DONT_ROAM)
+			prBssDesc->fgIsInBTO = FALSE;
+
 		if (prBssDesc->eBSSType != eBSSType) {
 			prBssDesc->eBSSType = eBSSType;
 		}

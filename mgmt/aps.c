@@ -2032,6 +2032,13 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+	/* BTO case */
+	if (prBssDesc->fgIsInBTO) {
+		log_dbg(APS, WARN, MACSTR " is in BTO.\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
+
 	if (!rsnPerformPolicySelection(prAdapter, prBssDesc,
 		ucBssIndex)) {
 		DBGLOG(APS, WARN, MACSTR " rsn policy select fail.\n",
@@ -2198,6 +2205,7 @@ try_again:
 			/* Skip connected AP */
 			if (reason != ROAMING_REASON_UPPER_LAYER_TRIGGER &&
 			    reason != ROAMING_REASON_BTM &&
+			    reason != ROAMING_REASON_BEACON_TIMEOUT &&
 			    IS_AIS_CONN_BSSDESC(ais, bss)) {
 				DBGLOG(APS, WARN, MACSTR" connected\n",
 					MAC2STR(bss->aucBSSID));

@@ -271,7 +271,7 @@ uint8_t rsnApInvalidPMK(uint16_t status,
 	/* For IoT AP, don't use PMKID */
 	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
 		if (AuthMode == AUTH_MODE_WPA3_OWE ||
-			AuthMode == AUTH_MODE_WPA3_SAE)
+		    AuthMode == AUTH_MODE_WPA3_SAE)
 			return TRUE;
 		break;
 	}

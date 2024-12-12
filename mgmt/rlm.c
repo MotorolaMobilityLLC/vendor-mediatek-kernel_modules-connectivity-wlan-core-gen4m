@@ -8718,7 +8718,7 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll)
 		prCSAParams->ucCsaMode = ucCsaMode;
 		prCSAParams->fgIsCrossBand = fgIsCrossBand;
 	}
-	DBGLOG(RLM, TRACE, "Reset CSA count to %u for BSS%d fgHasStopTx=%d",
+	DBGLOG(RLM, TRACE, "Reset CSA count to %u for BSS%d fgHasStopTx=%d\n",
 		prCSAParams->ucCsaCount, prBssInfo->ucBssIndex,
 		prCSAParams->fgHasStopTx);
 }
@@ -8791,7 +8791,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 			     prBssInfo->ucVhtChannelWidth) {
 
 			DBGLOG(RLM, LOUD,
-			       "Change to w:%d s1:%d s2:%d since own changed BW < peer's WideBand BW",
+			       "Change to w:%d s1:%d s2:%d since own changed BW < peer's WideBand BW\n",
 			       prBssInfo->ucVhtChannelWidth,
 			       prBssInfo->ucVhtChannelFrequencyS1,
 			       prBssInfo->ucVhtChannelFrequencyS2);
