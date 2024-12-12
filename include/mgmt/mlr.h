@@ -207,6 +207,19 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		void *prNativePacket);
 
+void mlrDetermineRateCode(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		uint16_t *pu2RateCode);
+
+u_int8_t mlrCanEnterMlrStart(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		enum ENUM_BAND eBand);
+
+u_int8_t mlrCanUseMlrRate(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		enum ENUM_BAND eBand,
+		struct MSDU_INFO *prMsduInfo);
+
 u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
 		struct STA_RECORD *prStaRec,

@@ -1470,16 +1470,8 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 #if CFG_SUPPORT_MLR
 	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec) &&
-		/* STA MLRV1, MLRP and ALR consider 5G band */
-	    ((MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec) ||
-	      MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec) ||
-	      MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec)) &&
-	     MLR_BAND_IS_SUPPORT(MLR_GET_BAND(prAdapter, prStaRec)) ||
-		/* STA MLRV2 or MLRV1+MLRV2 don't need to consider 5G band */
-	    MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec) ||
-	    MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) &&
-	    MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, prStaRec->ucRCPI) &&
-	    prStaRec->ucStaState == STA_STATE_3) {
+	    mlrCanEnterMlrStart(prAdapter, prStaRec,
+	    MLR_GET_BAND(prAdapter, prStaRec))) {
 		prCmdContent->ucMlrMode = (prStaRec->ucMlrSupportBitmap &
 			prAdapter->u4MlrSupportBitmap);
 		prCmdContent->ucMlrState = MLR_STATE_START;
