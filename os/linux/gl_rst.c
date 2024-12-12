@@ -686,6 +686,10 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	struct RESET_STRUCT *rst = &wifi_rst;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+#endif
 	uint32_t rst_evt_send = WLAN_STATUS_NOT_ACCEPTED;
 #if !CFG_SUPPORT_CONNAC1X
 	int ret = 0;
@@ -833,6 +837,14 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	rst_evt_send = WLAN_STATUS_SUCCESS;
 #endif
 exit:
+#if CFG_SUPPORT_PCIE_ASPM
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (prChipInfo && prChipInfo->bus_info && prGlueInfo) {
+		prBusInfo = prChipInfo->bus_info;
+		if (prBusInfo->configPcieAspm)
+			prBusInfo->configPcieAspm(prGlueInfo, TRUE, 3);
+	}
+#endif
 	fgIsMcuOff = FALSE;
 	return rst_evt_send;
 }
