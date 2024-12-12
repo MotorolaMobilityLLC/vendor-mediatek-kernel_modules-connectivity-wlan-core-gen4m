@@ -2457,6 +2457,12 @@ else
 ccflags-y += -DCFG_ADVANCED_80211_MLO=0
 endif
 
+ifeq ($(CONFIG_MTK_ADVANCED_80211_BCN_PROT), y)
+    ccflags-y += -DCFG_ADVANCED_80211_BCN_PROT=1
+else
+    ccflags-y += -DCFG_ADVANCED_80211_BCN_PROT=0
+endif
+
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(KO_CODE_PATH)/os/$(os)/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)

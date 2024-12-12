@@ -516,7 +516,8 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 #endif
 
 #if (CFG_SUPPORT_BCN_PROT == 1) && \
-	(KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE)
+	((KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_BCN_PROT == 1))
 #if (CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
