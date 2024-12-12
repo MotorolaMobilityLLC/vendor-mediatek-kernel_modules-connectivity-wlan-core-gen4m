@@ -551,7 +551,7 @@ void p2pComposeLoProbeRsp(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		OFFSET_OF(struct WLAN_BEACON_FRAME,
 		aucInfoElem) + 2;
 	kalMemCopy(pLoInfo->aucIE,
-		(uint8_t *) prFrame->aucInfoElem - 2,
+		(uint8_t *) (&prFrame->u2CapInfo),
 		pLoInfo->u2IELen);
 
 	DBGLOG(P2P, TRACE,
