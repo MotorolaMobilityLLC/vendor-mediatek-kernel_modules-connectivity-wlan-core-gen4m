@@ -899,6 +899,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucSeqNumOfScanReq = 0;
 	prAisFsmInfo->fgIsChannelRequested = FALSE;
 	prAisFsmInfo->fgIsChannelGranted = FALSE;
+	prAisFsmInfo->fgIsDelIface = FALSE;
 	prAisFsmInfo->u4PostponeIndStartTime = 0;
 	/* Support AP Selection */
 	prAisFsmInfo->ucJoinFailCntAfterScan = 0;
@@ -3912,7 +3913,8 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_LOCALLY)
 		prBssInfo->u2DeauthReason = REASON_CODE_DEAUTH_LEAVING_BSS;
 
-	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
+	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING ||
+	    prAisFsmInfo->fgIsDelIface) {
 		/* 4 <3> invoke abort handler */
 		aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
 			fgDelayIndication, ucBssIndex);
@@ -7169,11 +7171,17 @@ aisDeauthXmitCompleteBss(struct ADAPTER *prAdapter,
 		      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgIsReset = FALSE;
 
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		DBGLOG(AIS, WARN,
+		       "Invalid index=%d, DEAUTH frame transmitted without further handling\n",
+		       ucBssIndex);
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
 #if CFG_SUPPORT_802_11W
 	/* Notify completion after encrypted deauth frame tx done */
 	if (prAisFsmInfo->encryptedDeauthIsInProcess == TRUE) {
@@ -7210,7 +7218,7 @@ aisDeauthXmitCompleteBss(struct ADAPTER *prAdapter,
 					 FALSE, ucBssIndex);
 	} else {
 		DBGLOG(AIS, WARN,
-		       "DEAUTH frame transmitted without further handling");
+		       "DEAUTH frame transmitted without further handling\n");
 	}
 
 	return WLAN_STATUS_SUCCESS;

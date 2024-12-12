@@ -9292,6 +9292,8 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
 			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN)
 		prAisFsmInfo->fgIsScanOidAborted = TRUE;
+	if (u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE)
+		prAisFsmInfo->fgIsDelIface = TRUE;
 
 	prAisAbortMsg->fgDelayIndication = FALSE;
 	prAisAbortMsg->ucBssIndex = ucBssIndex;
