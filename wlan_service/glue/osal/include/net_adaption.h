@@ -614,6 +614,7 @@ struct test_rx_stat_path_info {
 	u_int32 inst_wb_rssi;
 #if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
 	u_int32 adc_rssi;
+	u_int32 cca_idle_pwr;
 #endif
 };
 
@@ -775,7 +776,8 @@ struct GNU_PACKED hqa_rx_rssi_info
 {
 	u_int32 u4RssiIb;
 	u_int32 u4RssiWb;
-	u_int32 u4Reserved1[2];
+	u_int32 u4CcaIdlePwr;
+	u_int32 u4Reserved1;
 };
 
 struct GNU_PACKED hqa_rx_band_info_ext1

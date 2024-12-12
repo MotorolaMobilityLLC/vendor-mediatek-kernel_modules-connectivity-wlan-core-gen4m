@@ -10941,6 +10941,8 @@ void nicUniEventRxStatCastMap(struct UNI_EVENT_TESTMODE_STAT_ALL_V2 *tag,
 			(uint32_t)(tag->rInfoInst[u1Idx].i1RssiIb);
 		pHqaRxStat->rInfoInst[u1Idx].u4RssiWb =
 			(uint32_t)(tag->rInfoInst[u1Idx].i1RssiWb);
+		pHqaRxStat->rInfoInst[u1Idx].u4CcaIdlePwr =
+			(uint32_t)(tag->rInfoInst[u1Idx].u2CcaIdlePwr);
 	}
 
 	/* User part */

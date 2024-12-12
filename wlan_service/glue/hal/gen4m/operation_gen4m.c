@@ -3898,6 +3898,9 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->adc_rssi =
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.rInfoRXV[0].u4AdcRssi);
+		rx_st_path->cca_idle_pwr =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoInst[0].u4CcaIdlePwr);
 		break;
 	case ANT_WF1:
 		rx_st_path->rcpi =
@@ -3921,6 +3924,9 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->adc_rssi =
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.rInfoRXV[1].u4AdcRssi);
+		rx_st_path->cca_idle_pwr =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoInst[1].u4CcaIdlePwr);
 		break;
 #endif
 	default:

@@ -207,8 +207,9 @@ struct GNU_PACKED hqa_rx_stat_path_info {
 	u_int32 fagc_wb_rssi;
 	u_int32 inst_ib_rssi;
 	u_int32 inst_wb_rssi;
-#if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
-	u_int32 adc_rssi;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_int32 adc_rssi;		/* path_info v1 */
+	u_int32 cca_idle_pwr;	/* path_info v2 */
 #endif
 };
 

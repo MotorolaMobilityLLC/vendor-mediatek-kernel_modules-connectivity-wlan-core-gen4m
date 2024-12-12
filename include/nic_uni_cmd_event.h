@@ -8068,7 +8068,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_RSSI {
 	int8_t i1RssiIb;
 	int8_t i1RssiWb;
-	uint8_t u1Reserved1[2];
+	uint16_t u2CcaIdlePwr;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

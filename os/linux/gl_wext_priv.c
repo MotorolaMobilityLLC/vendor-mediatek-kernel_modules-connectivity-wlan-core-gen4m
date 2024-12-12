@@ -20333,7 +20333,8 @@ int8_t *RxStatPerAnt[] = {
 	"InstIbRssi:%d\n",
 	"InstWbRssi:%d\n",
 #if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
-	"Adc_Rssi:%d\n"
+	"AdcRssi:%d\n",
+	"CcaIP:%d\n"
 #endif
 };
 

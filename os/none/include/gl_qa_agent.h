@@ -291,7 +291,8 @@ struct TESTMODE_RX_STAT_RXV {
 struct TESTMODE_RX_STAT_RSSI {
 	uint32_t u4RssiIb;
 	uint32_t u4RssiWb;
-	uint32_t u4Reserved1[2];
+	uint32_t u4CcaIdlePwr;
+	uint32_t u4Reserved1;
 };
 
 struct TESTMODE_RX_STAT_BAND_EXT1 {
