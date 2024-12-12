@@ -86,8 +86,18 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
 	struct CHIP_DBG_OPS *debug_ops = chip_info->prDebugOps;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
-	if (!prAdapter->fgIsFwOwn) {
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (!kalIsResetting() &&
+			prHifInfo->rErrRecoveryCtl.eErrRecovState ==
+			ERR_RECOV_STOP_IDLE) {
+		DBGLOG(HAL, ERROR,
+			"SER on-going. ser state: %d reset: %d\n",
+			prHifInfo->rErrRecoveryCtl.eErrRecovState,
+			kalIsResetting());
+	} else if (!prAdapter->fgIsFwOwn) {
 		halCheckHifState(prAdapter);
 		halDumpHifDebugLog(prAdapter);
 
