@@ -2026,9 +2026,8 @@ void mt6639_dump_mcr_rd(struct ADAPTER *ad,
 {
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (is_bt) {
-		connv3_hif_dbg_read(
-			CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			addr, val);
+		if (ad)
+			kalDevRegReadViaBT(ad->prGlueInfo, addr, val);
 	} else
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 	{
@@ -2043,9 +2042,8 @@ void mt6639_dump_mcr_wr(struct ADAPTER *ad,
 {
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (is_bt) {
-		connv3_hif_dbg_write(
-			CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			addr, val);
+		if (ad)
+			kalDevRegWriteViaBT(ad->prGlueInfo, addr, val);
 	} else
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 	{
@@ -2064,12 +2062,12 @@ void mt6639_dump_mcr_wr_field(struct ADAPTER *ad,
 	if (is_bt) {
 		uint32_t tmp = 0;
 
-		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-				    addr, &tmp);
+		if (!ad)
+			return;
+		kalDevRegReadViaBT(ad->prGlueInfo, addr, &tmp);
 		tmp &= (~mask);
 		tmp |= (val << shift) & mask;
-		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-				     addr, tmp);
+		kalDevRegWriteViaBT(ad->prGlueInfo, addr, tmp);
 	} else
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 	{
