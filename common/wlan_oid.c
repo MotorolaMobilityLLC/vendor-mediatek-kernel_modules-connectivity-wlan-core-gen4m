@@ -19182,6 +19182,8 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 				MID_MNY_P2P_DEL_MLD_LINK;
 			prMsgMldLinkDel->ucRoleIdx = ucRoleIdx;
 			prMsgMldLinkDel->ucLinkIdx = prMsg->u4LinkId;
+			kalP2PSetRole(prAdapter->prGlueInfo, 0,
+				ucRoleIdx);
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *)prMsgMldLinkDel,
 				    MSG_SEND_METHOD_UNBUF);
