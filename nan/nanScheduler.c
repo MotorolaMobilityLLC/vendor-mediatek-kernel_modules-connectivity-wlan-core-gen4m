@@ -75,6 +75,10 @@ do {									       \
 #define NAN_MAX_NONNAN_TIMELINE_NUM		1
 	/* Non-Nan timeline number */
 
+#ifndef sizeof_field
+#define sizeof_field(TYPE, MEMBER) sizeof((((TYPE *)0)->MEMBER))
+#endif
+
 enum _ENUM_NAN_WINDOW_T {
 	ENUM_NAN_DW,
 	ENUM_NAN_FAW,
