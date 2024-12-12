@@ -306,12 +306,9 @@ int met_log_start(struct GLUE_INFO *prGlueInfo)
 	u4EmiMetOffset = emi_mem_offset_convert(
 				kalGetEmiMetOffset());
 
-	DBGLOG(MET, INFO,
-		"u4ConEmiPhyBase:%llx",
-		u4ConEmiPhyBase);
+	DBGLOG(MET, INFO, "u4ConEmiPhyBase:%pa", &u4ConEmiPhyBase);
 	if (!u4ConEmiPhyBase) {
-		DBGLOG(MET, ERROR,
-			"conninfra_get_phy_addr error.\n");
+		DBGLOG(MET, ERROR, "conninfra_get_phy_addr error.\n");
 		return -1;
 	}
 

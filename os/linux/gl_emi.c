@@ -189,8 +189,8 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 		res = request_mem_region(emi->pa, emi->size, EMI_NAME);
 		if (!res) {
 			DBGLOG(HAL, WARN,
-				"request_mem_region failed, pa(0x%llx) size(0x%x) name(%s)\n",
-				(uint64_t)emi->pa,
+				"request_mem_region failed, pa(%pa) size(0x%x) name(%s)\n",
+				&emi->pa,
 				emi->size,
 				EMI_NAME);
 		} else {

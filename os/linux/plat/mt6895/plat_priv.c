@@ -3,35 +3,14 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-
 #include "gl_os.h"
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/sched/types.h>
 #include <linux/sched/task.h>
 #include <linux/cpufreq.h>
-#elif KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
-#include <cpu_ctrl.h>
-#include <topo_ctrl.h>
-#include <linux/soc/mediatek/mtk-pm-qos.h>
-#include <helio-dvfsrc-opp.h>
-#define pm_qos_add_request(_req, _class, _value) \
-		mtk_pm_qos_add_request(_req, _class, _value)
-#define pm_qos_update_request(_req, _value) \
-		mtk_pm_qos_update_request(_req, _value)
-#define pm_qos_remove_request(_req) \
-		mtk_pm_qos_remove_request(_req)
-#define pm_qos_request mtk_pm_qos_request
-#define PM_QOS_DDR_OPP MTK_PM_QOS_DDR_OPP
-#define ppm_limit_data cpu_ctrl_data
-#else
-#include <cpu_ctrl.h>
-#include <topo_ctrl.h>
-#include <linux/pm_qos.h>
-#include <helio-dvfsrc-opp.h>
 #endif
-
-
+#include <linux/pm_qos.h>
 #include "precomp.h"
 
 #ifdef CONFIG_WLAN_MTK_EMI
@@ -40,15 +19,14 @@
 #else
 #include <memory/mediatek/emi.h>
 #endif
-
 #define DOMAIN_AP	0
 #define DOMAIN_CONN	2
 #endif
 
+#define DEFAULT_CPU_FREQ (0)
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
-#define MAX_CLUSTER_NUM  3
 #define CPU_ALL_CORE (0xff)
-#define CPU_BIG_CORE (0xc0)
+#define CPU_BIG_CORE (0xf0)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
 enum ENUM_CPU_BOOST_STATUS {
@@ -83,9 +61,16 @@ int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+static LIST_HEAD(wlan_policy_list);
+struct wlan_policy {
+	struct freq_qos_request	qos_req;
+	struct list_head	list;
+	int cpu;
+};
+
 void kalSetTaskUtilMinPct(int pid, unsigned int min)
 {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	int ret = 0;
 	unsigned int blc_1024;
 	struct task_struct *p;
@@ -123,27 +108,16 @@ void kalSetTaskUtilMinPct(int pid, unsigned int min)
 		ret = sched_setattr(p, &attr);
 		put_task_struct(p);
 	}
-#elif KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
-	/* TODO */
-#else
-	set_task_util_min_pct(pid, min);
-#endif
 }
-
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-static LIST_HEAD(wlan_policy_list);
-struct wlan_policy {
-	struct freq_qos_request	qos_req;
-	struct list_head	list;
-};
-#endif
 
 void kalSetCpuFreq(int32_t freq)
 {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	int cpu, ret;
 	struct cpufreq_policy *policy;
 	struct wlan_policy *wReq;
+
+	if (freq < 0)
+		freq = DEFAULT_CPU_FREQ;
 
 	if (list_empty(&wlan_policy_list)) {
 		for_each_possible_cpu(cpu) {
@@ -154,12 +128,14 @@ void kalSetCpuFreq(int32_t freq)
 			wReq = kzalloc(sizeof(struct wlan_policy), GFP_KERNEL);
 			if (!wReq)
 				break;
+			wReq->cpu = cpu;
 
 			ret = freq_qos_add_request(&policy->constraints,
-				&wReq->qos_req, FREQ_QOS_MIN, 0);
+				&wReq->qos_req, FREQ_QOS_MIN, DEFAULT_CPU_FREQ);
 			if (ret < 0) {
-				pr_info("%s: freq_qos_add_request fail cpu%d\n",
-					__func__, cpu);
+				DBGLOG(INIT, INFO,
+					"freq_qos_add_request fail cpu%d ret=%d\n",
+					wReq->cpu, ret);
 				kfree(wReq);
 				break;
 			}
@@ -170,51 +146,18 @@ void kalSetCpuFreq(int32_t freq)
 	}
 
 	list_for_each_entry(wReq, &wlan_policy_list, list) {
-		freq_qos_update_request(&wReq->qos_req, freq);
+		ret = freq_qos_update_request(&wReq->qos_req, freq);
+		if (ret < 0) {
+			DBGLOG(INIT, INFO,
+				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
+				wReq->cpu, freq, ret);
+		}
 	}
-#else
-	int32_t i = 0;
-	struct ppm_limit_data *freq_to_set;
-	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
-
-	freq_to_set = kmalloc_array(u4ClusterNum, sizeof(struct ppm_limit_data),
-			GFP_KERNEL);
-	if (!freq_to_set)
-		return;
-
-	for (i = 0; i < u4ClusterNum; i++) {
-		freq_to_set[i].min = freq;
-		freq_to_set[i].max = freq;
-	}
-
-	update_userlimit_cpu_freq(CPU_KIR_WIFI,
-		u4ClusterNum, freq_to_set);
-
-	kfree(freq_to_set);
-#endif
 }
 
-void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
+void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	/* TODO */
-#else
-	static struct pm_qos_request wifi_qos_request;
-
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-	if (onoff == TRUE) {
-		pr_info("Max Dram Freq start\n");
-		pm_qos_add_request(&wifi_qos_request,
-				   PM_QOS_DDR_OPP,
-				   DDR_OPP_2);
-		pm_qos_update_request(&wifi_qos_request, DDR_OPP_2);
-	} else {
-		pr_info("Max Dram Freq end\n");
-		pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
-		pm_qos_remove_request(&wifi_qos_request);
-	}
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-#endif
 }
 
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
@@ -223,11 +166,9 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Freq = -1;
-
 	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	/* ACAO, we dont have to set core number */
 	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
 
 	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
@@ -267,7 +208,7 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 
 	return 0;
 }
-
+#endif
 #ifdef CONFIG_WLAN_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
@@ -276,7 +217,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
-#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
+#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
 	struct emimpu_region_t region;
 	unsigned long long start = emiPhyBase + offset;
 	unsigned long long end = emiPhyBase + offset + size - 1;
@@ -304,22 +245,3 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 #endif
 }
 #endif
-
-int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
-{
-	int32_t ret = 1;
-	const uint32_t adie_chip_id = mtk_wcn_wmt_ic_info_get(WMTCHIN_ADIE);
-
-	DBGLOG(INIT, INFO, "adie_chip_id: 0x%x\n", adie_chip_id);
-
-	switch (adie_chip_id) {
-	case 0x6635:
-		*flavor = 'a';
-		break;
-	default:
-		ret = 0;
-		break;
-	}
-
-	return ret;
-}
