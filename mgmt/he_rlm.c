@@ -581,7 +581,8 @@ void heRlmFillHeCapIE(
 			HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(
 				prHeCap->ucHePhyCap);
 
-		if (ucMaxBw >= MAX_BW_80_80_MHZ)
+		/* 80+80 not supported, skip setting 80+80 for bw320 */
+		if (ucMaxBw == MAX_BW_80_80_MHZ)
 			HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(
 				prHeCap->ucHePhyCap);
 	}
@@ -728,7 +729,8 @@ void heRlmFillHeCapIE(
 		u4OverallLen += sizeof(struct _HE_SUPPORTED_MCS_FIELD);
 	}
 
-	if (ucMaxBw >= MAX_BW_80_80_MHZ) {
+	/* 80+80 not supported, skip setting 80+80 for bw320 */
+	if (ucMaxBw == MAX_BW_80_80_MHZ) {
 		prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 			(((uint8_t *) prHeCap) + u4OverallLen);
 		heRlmFillMCSMap(prAdapter, prBssInfo, prHeSupportedMcsSet);
