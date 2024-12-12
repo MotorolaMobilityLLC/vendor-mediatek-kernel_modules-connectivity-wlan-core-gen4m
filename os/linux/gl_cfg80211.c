@@ -534,13 +534,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	struct PARAM_GET_STATS_ONE_CMD rParam;
 	uint32_t u4QueryInfoLen;
-	struct LINK_SPEED_EX_ *prLq;
 #else
 	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	uint32_t u4TxBw = 0;
 #endif
 #endif
+	struct LINK_SPEED_EX_ *prLq;
 	struct PARAM_GET_STA_STATISTICS *prGetStaStats;
 	uint32_t u4TotalError = 0;
 	uint32_t u4FcsError = 0;
@@ -561,7 +561,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
-	ASSERT(prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
+		return -EINVAL;
 	prAdapter = prGlueInfo->prAdapter;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
@@ -587,6 +588,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	ucBandIdx = prBssInfo->eHwBandIdx;
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	prGetStaStats = &prAdapter->rQueryStaStatistics[ucBssIndex];
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	/* no need to COPY_MAC_ADDR here
 	 * because main thread will traverse all BSS index
 	 */
@@ -594,6 +596,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	prGetStaStats = &(
 		prAdapter->rQueryStaStatistics);
 	COPY_MAC_ADDR(prGetStaStats->aucMacAddr, mac);
+	prLq = &rLinkSpeed.rLq[ucBssIndex];
 #endif
 	prGetStaStats->ucReadClear = TRUE;
 	if (ucBandIdx < ENUM_BAND_NUM) {
@@ -640,18 +643,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 	if (rStatus == WLAN_STATUS_SUCCESS) {
-#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
-		prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 		u4TxRate = prLq->u2TxLinkSpeed;
 		u4RxRate = prLq->u2RxLinkSpeed;
 		i4Rssi = prLq->cRssi;
 		u4RxBw = prLq->u4RxBw;
-#else
-		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
-		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
-		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
-		u4RxBw = rLinkSpeed.rLq[ucBssIndex].u4RxBw;
-#endif
 		if (unlikely(u4RxBw >= ARRAY_SIZE(arBwCfg80211Table))) {
 			DBGLOG(REQ, WARN, "wrong u4RxBw!");
 			u4RxBw = 0;
@@ -674,7 +669,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	 *    driver and fw should change u2TxLinkSpeed to u4
 	 *    because it will overflow in wifi7
 	 */
-	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0)) {
+	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0) ||
+		!prLq->fgIsLinkRateValid) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Tx link speed\n");
 	} else {
@@ -682,7 +678,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate / 1000;
 	}
 
-	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0)) {
+	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0) ||
+		!prLq->fgIsLinkRateValid) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Rx link speed\n");
 	} else {
@@ -690,6 +687,17 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = u4RxRate / 1000;
 		prGlueInfo->u4RxBwCache[ucBssIndex] =
 			arBwCfg80211Table[u4RxBw];
+	}
+
+	/* if there is no valid RSSI from fw when we
+	 * query the RSSI for the first time after
+	 * connection, use the scan result
+	 */
+	if (!prLq->fgIsLinkRateValid) {
+		/* use the scan RSSI */
+		i4Rssi = RCPI_TO_dBm(prAdapter->ucScanRcpi[ucBssIndex]);
+		DBGLOG(REQ, WARN,
+				"LR invalid, use scan result:%d\n", i4Rssi);
 	}
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {

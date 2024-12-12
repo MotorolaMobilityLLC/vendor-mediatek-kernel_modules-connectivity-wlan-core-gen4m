@@ -5736,7 +5736,6 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 			  uint8_t ucIsLQ0Rdy)
 {
 	struct BSS_INFO *prBssInfo;
-	struct LINK_SPEED_EX_ *prLq;
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
@@ -5751,16 +5750,8 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
 		return;
 
-	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
-	if (prLq->fgIsLinkRateValid != FALSE &&
-		(kalGetTimeTick() - prLq->rLinkRateUpdateTime)
-		<= CFG_LINK_QUALITY_VALID_PERIOD)
+	if (!ucIsLQ0Rdy)
 		return;
-
-	DBGLOG(NIC, TRACE, "bss:%u LRValid:%u updateTime:%u\n",
-		ucBssIndex,
-		prLq->fgIsLinkRateValid,
-		prLq->rLinkRateUpdateTime);
 
 	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:
@@ -5802,6 +5793,7 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	struct LINK_SPEED_EX_ *prLq;
+	struct BSS_DESC *prBssDesc;
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
@@ -5819,6 +5811,11 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
 		return;
 
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+	prBssDesc =
+		scanSearchBssDescByBssid(prAdapter, prBssInfo->aucBSSID);
+
+	if (prBssDesc)
+		prAdapter->ucScanRcpi[ucBssIndex] = prBssDesc->ucRCPI;
 
 	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:

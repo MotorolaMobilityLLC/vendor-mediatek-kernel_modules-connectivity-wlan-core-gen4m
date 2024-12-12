@@ -4902,6 +4902,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct SW_RFB *prAssocRspSwRfb;
 	struct BSS_INFO *prAisBssInfo;
+	struct LINK_SPEED_EX_ *prLq = NULL;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
 
@@ -4915,6 +4916,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	eNextState = prAisFsmInfo->eCurrentState;
+	if (ucBssIndex < MAX_BSSID_NUM)
+		prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 #if CFG_SUPPORT_ROAMING
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 #if (CFG_EXT_ROAMING == 1)
@@ -4984,6 +4987,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 							    ucBssIndex,
 							    FALSE);
 #endif
+				/* reset buffered link quality information */
+				if (prLq) {
+					prLq->fgIsLinkQualityValid = FALSE;
+					prLq->fgIsLinkRateValid = FALSE;
+				}
 
 				/* 4 <1.6> Indicate Connected Event to Host
 				 * immediately.
@@ -5031,6 +5039,12 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 					prAisFsmInfo,
 					prAssocRspSwRfb,
 					prStaRec);
+
+				/* reset buffered link quality information */
+				if (prLq) {
+					prLq->fgIsLinkQualityValid = FALSE;
+					prLq->fgIsLinkRateValid = FALSE;
+				}
 
 				/* 4 <1.6> Indicate Connected Event to Host
 				 * immediately.

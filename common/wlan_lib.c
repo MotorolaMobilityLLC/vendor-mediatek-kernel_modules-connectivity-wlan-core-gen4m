@@ -6032,8 +6032,11 @@ updateStaStats(struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByAddress(prAdapter, ANY_BSS_INDEX,
 					 prQueryStaStatistics->aucMacAddr);
 
-	if (!prStaRec || !prStaRec->fgIsValid)
+	if (!prStaRec || !prStaRec->fgIsValid) {
+		DBGLOG(NIC, WARN, "starec invalid mac[" MACSTR "]\n",
+			MAC2STR(prQueryStaStatistics->aucMacAddr));
 		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	prQueryStaStatistics->u4Flag |= BIT(0);
 
@@ -6528,10 +6531,11 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 
 uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
-		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid,
+		uint8_t ucBssIndex)
 {
 	uint32_t rResult = WLAN_STATUS_SUCCESS;
-	uint8_t i, ucBssIndex;
+	uint8_t i;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	uint32_t max_cmd_len;
 	struct BSS_INFO *prBssInfo;
@@ -6548,7 +6552,6 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	uint64_t  u8PeriodUs;
 #endif
 
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
 		return WLAN_STATUS_INVALID_DATA;
 
@@ -6565,6 +6568,7 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 
 	GET_CURRENT_SYSTIME(&u4CurrTick);
 	prParam = (struct PARAM_GET_STATS_ONE_CMD *)pvQueryBuffer;
+
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	DBGLOG(NIC, TRACE,
 		"bssIdx:%u curTime:%u LRValid:%u period:%u\n",
@@ -6602,9 +6606,8 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr,
 			prBssInfo->aucBSSID);
 
-		rResult = updateStaStats(prAdapter, prQueryStaStatistics);
-
-		if (rResult != WLAN_STATUS_SUCCESS)
+		if (updateStaStats(prAdapter, prQueryStaStatistics) !=
+			WLAN_STATUS_SUCCESS)
 			continue;
 
 		ucConnBss[i] = 1;
@@ -14775,7 +14778,8 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 				&rParam,
 				sizeof(rParam),
 				&u4QueryInfoLen,
-				FALSE);
+				FALSE,
+				ucBssIndex);
 	DBGLOG(REQ, TRACE,
 			"u4Status=%u", u4Status);
 #else

@@ -4737,7 +4737,8 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 				pvQueryBuffer,
 				u4QueryBufferLen,
 				pu4QueryInfoLen,
-				TRUE);
+				TRUE,
+				GET_IOCTL_BSSIDX(prAdapter));
 	return rResult;
 }
 #endif

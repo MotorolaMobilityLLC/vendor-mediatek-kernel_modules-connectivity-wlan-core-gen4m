@@ -3036,6 +3036,7 @@ struct ADAPTER {
 #else
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 #endif
+	uint8_t ucScanRcpi[MAX_BSSID_NUM];
 	struct PARAM_802_11_STATISTICS_STRUCT rStat;
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
