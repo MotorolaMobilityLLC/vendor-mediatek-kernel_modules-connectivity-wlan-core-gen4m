@@ -376,7 +376,8 @@ static s_int32 hqa_close_adapter(
 static s_int32 hqa_set_tx_path(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS, value = 0;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
 	u_char *data = hqa_frame->data;
 	u_char band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
 	u_int16 tx_ant = 0;
@@ -421,12 +422,10 @@ static s_int32 hqa_set_tx_path(
 			("%s: tx_path:%d\n", __func__, tx_ant));
 	}
 
-	if (((int)band_idx >= 0) && (band_idx < TEST_DBDC_BAND_NUM)) {
-		/* Set parameters */
-		serv_test->test_config[band_idx].tx_ant = tx_ant;
-		ret = mt_serv_set_tx_path(serv_test);
-	} else
-		ret = SERV_STATUS_AGENT_INVALID_BANDIDX;
+	/* Set parameters */
+	CONFIG_SET_PARAM(serv_test, tx_ant, tx_ant, band_idx);
+
+	ret = mt_serv_set_tx_path(serv_test);
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
@@ -437,7 +436,8 @@ static s_int32 hqa_set_tx_path(
 static s_int32 hqa_set_rx_path(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS, value = 0;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
 	u_char *data = hqa_frame->data;
 	u_char band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
 	u_int16 rx_ant = 0;
@@ -482,12 +482,10 @@ static s_int32 hqa_set_rx_path(
 			("%s: rx_path:%d\n", __func__, rx_ant));
 	}
 
-	if (((int)band_idx >= 0) && (band_idx < TEST_DBDC_BAND_NUM)) {
-		/* Set parameters */
-		serv_test->test_config[band_idx].rx_ant = rx_ant;
-		ret = mt_serv_set_rx_path(serv_test);
-	} else
-		ret = SERV_STATUS_AGENT_INVALID_BANDIDX;
+	/* Set parameters */
+	CONFIG_SET_PARAM(serv_test, rx_ant, rx_ant, band_idx);
+
+	ret = mt_serv_set_rx_path(serv_test);
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
