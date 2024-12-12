@@ -5595,6 +5595,28 @@ wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
 
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+enum {
+	MTK_ACTION_SER_CHIP_RESET,
+	MTK_ACTION_SER_WIFISYS_RESET,
+	MTK_ACTION_SER_L1,
+	MTK_ACTION_SER_L3,
+	MTK_ACTION_DEL_BA,
+	MTK_ACTION_ALL,
+};
+uint32_t
+wlanoidMtkAction(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidMtkActionQuery(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+#endif
+
 uint32_t
 wlanoidSetCusBlocklist(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,

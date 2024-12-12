@@ -661,6 +661,8 @@
 #define CFG_CHIP_RESET_HANG		0
 #endif
 
+#define CFG_WIFI_AUTO_RECOVER		0
+
 #define HW_BSSID_NUM			4	/* HW BSSID number by chip */
 
 #define INVALID_OMAC_IDX		0xFF

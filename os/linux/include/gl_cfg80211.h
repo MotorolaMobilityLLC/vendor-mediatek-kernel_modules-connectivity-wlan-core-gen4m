@@ -859,6 +859,12 @@ int testmode_force_stbc(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_force_mrc(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+int testmode_mtk_action(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_mtk_action_query(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+#endif
 #if CFG_SUPPORT_LLW_SCAN
 int testmode_set_scan_param(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);

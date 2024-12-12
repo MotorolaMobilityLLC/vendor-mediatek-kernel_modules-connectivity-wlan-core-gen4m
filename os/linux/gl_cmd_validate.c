@@ -2591,6 +2591,24 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.policy    = set_cus_blK_policy,
 		.u4PolicySize = ARRAY_SIZE(set_cus_blK_policy)
 	},
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+	{
+		.pcCmdStr  = CMD_MTK_ACTION_QUERY,
+		.pfHandler = testmode_mtk_action_query,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_MTK_ACTION,
+		.pfHandler = testmode_mtk_action,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_REPORT_VENDOR_SPECIFIED,
 		.pfHandler = testmode_set_report_vendor_specified,
@@ -2611,7 +2629,7 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.pcCmdStr  = CMD_FORCE_MRC,
 		.pfHandler = testmode_force_mrc,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},

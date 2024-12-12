@@ -1325,6 +1325,9 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 {
 	u_int8_t fgResult = FALSE;
 	int32_t ret = 0;
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+	char uevent[64] = {0};
+#endif
 
 	if (rst == NULL) {
 		DBGLOG(INIT, ERROR, "input value rst is NULL.\n");
@@ -1382,6 +1385,17 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 
 	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d, ret: %d\n",
 		fgResult, ret);
+
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+	if (glGetRstReason() == RST_USER_CMD_TRIGGER &&
+		g_IsWholeChipRst == FALSE) {
+		kalSnprintf(uevent, sizeof(uevent),
+			"recoveryNotify=reset:%d,reason:%d", fgL0Reset,
+			(BIT(glGetRstReason()) & RST_REASON_FW) > 0 ? 1:0);
+		kalSendUevent(rst->prGlueInfo->prAdapter, uevent);
+	}
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/

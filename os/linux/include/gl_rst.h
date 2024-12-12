@@ -71,6 +71,11 @@
 			       RST_FLAG_DO_WHOLE_RESET)
 #define RST_FLAG_WF_RESET  (RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF)
 
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+#define RST_REASON_FW BIT(RST_FW_ASSERT |\
+	RST_BT_TRIGGER | RST_MDDP_MD_TRIGGER_EXCEPTION)
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -122,6 +127,9 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_MAWD_WAKEUP_FAIL,
 	RST_RFB_FAIL,
 	RST_WFDMA_MAP_FAIL,
+#if CFG_WIFI_AUTO_RECOVER
+	RST_USER_CMD_TRIGGER,
+#endif
 	RST_REASON_MAX
 };
 

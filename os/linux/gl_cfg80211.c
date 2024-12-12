@@ -5951,6 +5951,48 @@ int testmode_force_mrc(struct wiphy *wiphy,
 	return testmode_force_stbc_mrc(prGlueInfo, ucBssIndex, 1, cmd, len);
 }
 
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+int testmode_mtk_action(struct wiphy *wiphy, struct wireless_dev *wdev,
+			char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4BufLen;
+	uint8_t ucAction;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 2) {
+		kalkStrtou8(apcArgv[1], 0, &ucAction);
+		rStatus = kalIoctl(prGlueInfo, wlanoidMtkAction,
+			(void *)&ucAction, sizeof(uint8_t), &u4BufLen);
+	}
+	return rStatus;
+}
+
+int testmode_mtk_action_query(struct wiphy *wiphy, struct wireless_dev *wdev,
+			char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4BufLen;
+	char tmp[5] = {0};
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidMtkActionQuery,
+		NULL, 0, &u4BufLen);
+	kalScnprintf(tmp, 5, "0x%X", u4BufLen);
+
+	return mtk_cfg80211_process_str_cmd_reply(wiphy, tmp, sizeof(tmp));
+}
+#endif
+
 #if CFG_SUPPORT_LLW_SCAN
 uint32_t wlanoidSetScanParam(struct ADAPTER *prAdapter,
 			    void *pvSetBuffer,

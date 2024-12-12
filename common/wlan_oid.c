@@ -18500,6 +18500,93 @@ uint32_t wlanoidSendBTMRequest(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_AP_80211V_SUPPORT */
 
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+uint32_t
+wlanoidMtkActionQuery(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint8_t i;
+	uint32_t u4Support = 0;
+
+	for (i = 0; i < MTK_ACTION_ALL; i++)
+		u4Support |= (1 << i);
+	*pu4SetInfoLen = u4Support;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidMtkAction(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint8_t ucAction;
+	struct CMD_ADDBA_REJECT rAddBaReject;
+
+	kalMemCopy(&ucAction, pvSetBuffer, u4SetBufferLen);
+	DBGLOG(OID, INFO, "Get MTK Action: %d\n", ucAction);
+
+	switch (ucAction) {
+	case MTK_ACTION_SER_CHIP_RESET:
+#if (CFG_SUPPORT_CONNAC1X == 1)
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
+			RST_USER_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
+#else
+		glSetRstReasonString("cmd test trigger whole chip reset");
+		glResetWholeChipResetTrigger(g_reason);
+#endif
+		break;
+	case MTK_ACTION_SER_WIFISYS_RESET:
+#if (CFG_SUPPORT_CONNAC1X == 1)
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
+			RST_USER_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
+#else
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
+			RST_USER_CMD_TRIGGER, RST_FLAG_WF_RESET);
+#endif
+		break;
+	case MTK_ACTION_SER_L1:
+		wlanoidSerExtCmd(prAdapter,
+			SER_ACTION_SET_ENABLE_MASK,
+			(SER_ENABLE_TRACKING |
+				SER_ENABLE_L1_RECOVER |
+				SER_ENABLE_L2_RECOVER |
+				SER_ENABLE_L3_RX_ABORT |
+				SER_ENABLE_L3_TX_ABORT |
+				SER_ENABLE_L3_TX_DISABLE |
+				SER_ENABLE_L3_BF_RECOVER), 0);
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+			SER_SET_L1_RECOVER, 0);
+
+		break;
+	case MTK_ACTION_SER_L3:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+					(SER_SET_L3_RX_ABORT |
+					SER_SET_L3_TX_ABORT), 0);
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+					SER_SET_L3_RX_ABORT, 0);
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+					SER_SET_L3_TX_ABORT, 0);
+		break;
+	case MTK_ACTION_DEL_BA:
+		rAddBaReject.fgEnable = FALSE;
+		rAddBaReject.fgApply = TRUE;
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_ADDBA_REJECT,
+			TRUE, FALSE, FALSE, NULL, NULL,
+			sizeof(struct CMD_ADDBA_REJECT),
+			(uint8_t *) &rAddBaReject, NULL, 0);
+		break;
+	default:
+		break;
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 uint32_t wlanoidEnableVendorSpecifiedRpt(struct ADAPTER *prAdapter,
 				    void *pvSetBuffer, uint32_t u4SetBufferLen,
 				    uint32_t *pu4SetInfoLen)

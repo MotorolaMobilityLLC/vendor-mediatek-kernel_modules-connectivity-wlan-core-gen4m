@@ -4779,6 +4779,9 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 	uint16_t u2WinEnd;
 	uint16_t u2BarSSN;
 	uint8_t ucBssIndex;
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+	char uevent[64] = {0};
+#endif
 
 	/* Start to reorder packets */
 	u2SeqNo = prSwRfb->u2SSN;
@@ -4910,6 +4913,12 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 			prReorderQueParm->u4SNOverlapCount = 0;
 			DBGLOG_LIMITED(QM, INFO,
 				"QM: SSN jump over 1024:[%d]\n", u2Delta);
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+			kalSnprintf(uevent, sizeof(uevent),
+					"abnormaltrx=DIR:RX,event:AbReorder%u",
+						u2Delta);
+			kalSendUevent(prAdapter, uevent);
+#endif
 		}
 		DBGLOG(RX, TEMP, "QM: Miss Count:[%lu]\n",
 			RX_GET_CNT(&prAdapter->rRxCtrl,

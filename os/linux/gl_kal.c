@@ -6351,9 +6351,14 @@ int main_thread(void *data)
 #endif
 
 		if (test_and_clear_bit(GLUE_FLAG_SER_TIMEOUT_BIT,
-				       &prGlueInfo->ulFlag))
+				       &prGlueInfo->ulFlag)) {
 			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 						 RST_SER_TIMEOUT);
+#if (CFG_WIFI_AUTO_RECOVER == 1)
+			kalSendUevent(prGlueInfo->prAdapter,
+				"recoveryNotify=sertimeout");
+#endif
+		}
 
 		if (test_and_clear_bit(GLUE_FLAG_TX_TIMEOUT_DUMP_BIT,
 				&prGlueInfo->ulFlag))
