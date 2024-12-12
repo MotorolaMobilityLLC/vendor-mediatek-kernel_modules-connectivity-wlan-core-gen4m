@@ -200,6 +200,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 		NULL
 	}
 	,
+#if BUILD_QA_DBG
 	{
 		OID_CUSTOM_MCR_RW,
 		"OID_CUSTOM_MCR_RW",
@@ -226,6 +227,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetSwCtrlWrite
 	}
 	,
+#endif /* BUILD_QA_DBG */
 #if CFG_SUPPORT_QA_TOOL
 	{
 		OID_CUSTOM_TEST_MODE,
@@ -279,6 +281,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	}
 	,
 #endif
+#if BUILD_QA_DBG
 	{
 		OID_CUSTOM_MTK_NVRAM_RW,
 		"OID_CUSTOM_MTK_NVRAM_RW",
@@ -287,6 +290,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryNvramRead,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetNvramWrite}
 	,
+#endif
 	{
 		OID_CUSTOM_CFG_SRC_TYPE,
 		"OID_CUSTOM_CFG_SRC_TYPE",
