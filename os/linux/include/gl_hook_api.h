@@ -327,7 +327,7 @@ uint32_t ServiceWlanOid(void *prNetDev,
 	 uint32_t paramLen,
 	 uint32_t *u4BufLen,
 	 void *rsp_data);
-uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, bool fgEn);
+uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 uint8_t glIsWifiInTestMode(struct net_device *prNetDev);
 #endif /*#if (CONFIG_WLAN_SERVICE == 1)*/
 

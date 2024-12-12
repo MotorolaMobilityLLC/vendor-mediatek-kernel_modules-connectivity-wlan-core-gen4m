@@ -51,8 +51,11 @@ enum {
 /* Maximum rxv vectors under 2048-2 bytes */
 #define MAX_RXV_DUMP_COUNT			(56)
 uint8_t g_uBandIdx;
-/* GL_USER_DEFINE_RESET_TRIGGER switch time for L0P5 */
-#define L0P5_TIMEOUT_MS			5000
+
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
+#define RESET_TRIGGER_L0P5_TIMEOUT_MS			4000
+#define TIMEOUT_EXPIRED			0
+#endif
 /*******************************************************************************
  *				F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -5039,7 +5042,7 @@ uint32_t ServiceWlanOid(void *winfos,
 	return i4Status;
 }
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 int glRFTestL0P5(void *data)
 {
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
@@ -5047,7 +5050,7 @@ int glRFTestL0P5(void *data)
 	uint32_t SER_CMD = SER_USER_CMD_L0P5_RECOVER;
 	ktime_t startTime;
 	int64_t elapsedTime = 0;
-	int timeout = msecs_to_jiffies(L0P5_TIMEOUT_MS);
+	int timeout = msecs_to_jiffies(RESET_TRIGGER_L0P5_TIMEOUT_MS);
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 
 	if (!prGlueInfo) {
@@ -5076,14 +5079,15 @@ int glRFTestL0P5(void *data)
 		prGlueInfo->waitQTestFwDl,
 		prGlueInfo->fgTestL0P5Done,
 		timeout);
-	if (timeout <= 0) {
+	if (timeout <= TIMEOUT_EXPIRED) {
 		DBGLOG(RFTEST, ERROR,
 			"L0P5 reset(WfsResetHdlr) %s\n",
-			(timeout == 0) ? "timeout" : "interrupted by signal");
+			(timeout == TIMEOUT_EXPIRED) ?
+			"timeout" : "interrupted by signal");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* Set or abort mode for RF testing based on previous results */
+	/* Set or Abort Mode for RF testing based on previous results */
 	u4Status = wlanSetRFTestModeCMD(prGlueInfo, prGlueInfo->fgTestFwDl);
 	if (u4Status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RFTEST, ERROR,
@@ -5091,6 +5095,8 @@ int glRFTestL0P5(void *data)
 			u4Status);
 		return u4Status;
 	}
+	/* Update the current state of RF Testing */
+	prGlueInfo->fgTestModeStatus = prGlueInfo->fgTestFwDl;
 
 	/* Calculate the elapsed time from start to end */
 	elapsedTime = ktime_ms_delta(ktime_get(), startTime);
@@ -5100,7 +5106,7 @@ int glRFTestL0P5(void *data)
 }
 
 static uint32_t wlanSeparateTestMode(struct GLUE_INFO *prGlueInfo,
-			bool fgIsSwitchToTestMode)
+			u_int8_t fgIsSwitchToTestMode)
 {
 	long error = 0;
 
@@ -5117,7 +5123,9 @@ static uint32_t wlanSeparateTestMode(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(RFTEST, STATE, "target:%d, now:%d\n",
 		fgIsSwitchToTestMode, prGlueInfo->fgTestFwDl);
 
+	/* Update test mode flag */
 	prGlueInfo->fgTestFwDl = fgIsSwitchToTestMode;
+
 	prGlueInfo->prTestFwDlThread = kthread_run(glRFTestL0P5,
 		prGlueInfo, "glRFTestL0P5");
 	if (IS_ERR(prGlueInfo->prTestFwDlThread)) {
@@ -5128,11 +5136,11 @@ static uint32_t wlanSeparateTestMode(struct GLUE_INFO *prGlueInfo,
 	}
 	return WLAN_STATUS_SUCCESS;
 }
-#endif  /* CFG_TESTMODE_L0P5_FWDL_SUPPORT */
+#endif  /* CFG_WIFI_TESTMODE_FW_REDOWNLOAD */
 
 #if CFG_TESTMODE_FWDL_SUPPORT
 static uint32_t glRFTestSwitchMode(struct GLUE_INFO *prGlueInfo,
-			bool fgIsSwitchToTestMode)
+			u_int8_t fgIsSwitchToTestMode)
 {
 
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
@@ -5188,7 +5196,7 @@ done:
 }
 #endif /*CFG_TESTMODE_FWDL_SUPPORT*/
 
-uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, bool fgEn)
+uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 	DBGLOG(RFTEST, STATE, "%s Test Mode\n",
@@ -5196,7 +5204,7 @@ uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, bool fgEn)
 
 #if CFG_TESTMODE_FWDL_SUPPORT
 	u4Status = glRFTestSwitchMode(prGlueInfo, fgEn);
-#elif CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#elif CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 	u4Status = wlanSeparateTestMode(prGlueInfo, fgEn);
 #else
 	u4Status = wlanSetRFTestModeCMD(prGlueInfo, fgEn);

@@ -1147,11 +1147,13 @@ struct GLUE_INFO {
 	struct page_pool *aprPagePool[PAGE_POOL_MAX_SIZE];
 #endif
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 	/* Flag indicating if test-mode L0.5 firmware download is initiated */
 	u_int8_t fgTestFwDl;
 	/* Flag denoting the completion of the L0.5 firmware download process */
 	u_int8_t fgTestL0P5Done;
+	/* Flag indicating Current Test Mode */
+	u_int8_t fgTestModeStatus;
 	/* Wait queue for synchronization during test-mode L0.5 reset */
 	wait_queue_head_t waitQTestFwDl;
 	/* Thread responsible for handling test-mode transition */

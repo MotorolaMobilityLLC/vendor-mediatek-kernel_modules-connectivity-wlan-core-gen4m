@@ -527,8 +527,8 @@ struct GLUE_INFO {
 	uint8_t u1NoiseLevel;
 #endif
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
-	bool fgTestFwDl;
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
+	u_int8_t fgTestFwDl;
 #endif
 };
 

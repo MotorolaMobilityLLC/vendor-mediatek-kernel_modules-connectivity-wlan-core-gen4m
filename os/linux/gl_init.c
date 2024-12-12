@@ -5032,6 +5032,10 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	skb_queue_head_init(&(prGlueInfo->rCoreDumpSkbQueue));
 #endif
 
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
+	init_waitqueue_head(&prGlueInfo->waitQTestFwDl);
+#endif
+
 	return prWdev;
 
 netcreate_err:
@@ -8195,10 +8199,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		wlanServiceInit(prGlueInfo);
 #endif
 
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-		wlanOpenIdxLogBin(prAdapter);
-#endif
-
 #if CFG_SUPPORT_MBRAIN
 		glRegCbsToMbraink(prAdapter);
 #endif
@@ -8670,10 +8670,6 @@ static void wlanRemove(void)
 #if CFG_SUPPORT_AGPS_ASSIST
 	kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_OFF, NULL,
 			      0);
-#endif
-
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	wlanCloseIdxLogBin(prAdapter);
 #endif
 
 	wlanAdapterStop(prAdapter, FALSE);

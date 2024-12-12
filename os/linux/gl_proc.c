@@ -84,7 +84,7 @@
 #endif
 #endif /* (BUILD_QA_DBG) */
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 #define PROC_TEST_MODE				"testMode"
 #endif
 
@@ -1969,7 +1969,7 @@ static const struct file_operations auto_twt_smart_ops = {
 #endif
 #endif /* (BUILD_QA_DBG) */
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 static ssize_t procTestRead(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
 {
@@ -2000,7 +2000,8 @@ static ssize_t procTestRead(struct file *filp, char __user *buf,
 		goto freeBuf;
 	}
 
-	isTest = wlanQueryTestMode(prGlueInfo->prAdapter);
+	/* Check the current Test Mode */
+	isTest = prGlueInfo->fgTestModeStatus;
 
 	kalSnprintf(pucProcBuf, PROC_MAX_BUF_SIZE, "WiFi Operation Mode: %s\n",
 				isTest == 0 ? "MP Mode" : "Test Mode");
@@ -2030,7 +2031,7 @@ static const struct file_operations test_ops = {
 	.read = procTestRead,
 };
 #endif
-#endif /* CFG_TESTMODE_L0P5_FWDL_SUPPORT */
+#endif /* CFG_WIFI_TESTMODE_FW_REDOWNLOAD */
 
 
 
@@ -2184,7 +2185,7 @@ int32_t procRemoveProcfs(void)
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 #endif /* (BUILD_QA_DBG) */
 
-#if (CFG_TESTMODE_L0P5_FWDL_SUPPORT)
+#if (CFG_WIFI_TESTMODE_FW_REDOWNLOAD)
 	remove_proc_entry(PROC_TEST_MODE, gprProcRoot);
 #endif
 
@@ -2290,7 +2291,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif
 #endif /* ((BUILD_QA_DBG) */
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 	prEntry = proc_create(PROC_TEST_MODE, 0664, gprProcRoot, &test_ops);
 	if (!prEntry) {
 		DBGLOG(INIT, ERROR,

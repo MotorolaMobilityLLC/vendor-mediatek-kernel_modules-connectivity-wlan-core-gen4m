@@ -1618,6 +1618,10 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 #endif
 
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+		wlanOpenIdxLogBin(prAdapter);
+#endif
 	} while (FALSE);
 
 	if (u4Status != WLAN_STATUS_SUCCESS) {
@@ -1777,6 +1781,10 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	fgTriggerDebugSop = FALSE;
+#endif
+
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	wlanCloseIdxLogBin(prAdapter);
 #endif
 
 	return u4Status;

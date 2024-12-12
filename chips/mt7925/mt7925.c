@@ -1605,9 +1605,9 @@ static uint32_t mt7925GetFlavorVer(struct GLUE_INFO *prGlueInfo,
 	uint8_t *flavor)
 {
 	int ret;
-	bool fgTestFW = FALSE;
+	u_int8_t fgTestFW = FALSE;
 
-#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
 	if (prGlueInfo)
 		fgTestFW = prGlueInfo->fgTestFwDl;
 #endif
