@@ -6826,7 +6826,11 @@ int mtk_uninit_ap_role(struct GLUE_INFO *prGlueInfo,
 int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 				  struct net_device *dev,
 				  struct cfg80211_chan_def *chandef,
+#if (KERNEL_VERSION(6, 12, 0) > CFG80211_VERSION_CODE)
 				  unsigned int cac_time_ms)
+#else
+				  unsigned int cac_time_ms, int link_id)
+#endif
 {
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GLUE_INFO *prGlueInfo = NULL;
