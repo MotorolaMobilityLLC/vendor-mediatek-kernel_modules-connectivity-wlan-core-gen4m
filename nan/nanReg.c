@@ -649,7 +649,7 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 	if (!fgFound)
 		return g_rNullChnl;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "fgFound=%u, check idx=%u, oc=%u, bw=%u, ucCenterChnl=%u\n",
 	       fgFound, u4Idx, g_rNanRegInfo[u4Idx].ucOperatingClass,
 	       g_rNanRegInfo[u4Idx].u2Bw, ucCenterChnl);
@@ -822,7 +822,7 @@ uint32_t nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
 void nanRegForce_R3_6GChMap(uint8_t ucEnable)
 {
 	fgForceNANr36GCH_CHBitmap = ucEnable;
-	/*DBGLOG(NAN, INFO, "R3 6G channel map (%u)\n", ucEnable);*/
+	/*DBGLOG(NAN, DEBUG, "R3 6G channel map (%u)\n", ucEnable);*/
 }
 #endif
 

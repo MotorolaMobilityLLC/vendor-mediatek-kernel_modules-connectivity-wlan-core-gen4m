@@ -103,7 +103,7 @@ void halSwEmiInit(struct GLUE_INFO *prGlueInfo)
 	prSwEmiRingInfo->u4ReadBlockCnt = 0;
 	prSwEmiRingInfo->fgIsEnable = TRUE;
 
-	DBGLOG(HAL, INFO, "base: 0x%llx\n", prMem->pa);
+	DBGLOG(HAL, DEBUG, "base: 0x%llx\n", prMem->pa);
 }
 
 u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
@@ -194,7 +194,7 @@ end:
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
 		KAL_BOOT_TIME_END();
 		fgDbg = TRUE;
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "read [0x%08x]=[0x%08x] time[%llu us]\n",
 		       u4Addr, *pu4Val, KAL_GET_BOOTTIME_INTERVAL());
 	}
@@ -225,7 +225,7 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo)
 	    !prEmi)
 		return;
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "En[%d] CCIF[0x%08x %u] DrvIdx[%u] FwIdx[%u] Size[%u]\n",
 	       prSwEmiRingInfo->fgIsEnable,
 	       prSwEmiRingInfo->u4CcifTchnumAddr,
@@ -233,8 +233,8 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo)
 	       prEmi->u4DrvIdx,
 	       prEmi->u4FwIdx,
 	       prEmi->u4RingSize);
-	DBGLOG(HAL, INFO, "Dump EMI:\n");
-	DBGLOG_MEM32(HAL, INFO, prEmi, sizeof(struct SW_EMI_CTX));
+	DBGLOG(HAL, DEBUG, "Dump EMI:\n");
+	DBGLOG_MEM32(HAL, DEBUG, prEmi, sizeof(struct SW_EMI_CTX));
 }
 
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */

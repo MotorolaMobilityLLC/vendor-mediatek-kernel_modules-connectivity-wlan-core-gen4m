@@ -450,7 +450,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 				       kalIsCardRemoved(prAdapter->prGlueInfo), wlanIsChipNoAck(prAdapter),
 				       prAdapter->u4OwnFailedCount, fgWmtCoreDump);
 
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 				       "Skip LP own back failed log for next %ums\n", LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 
 				prAdapter->u4OwnFailedLogCount++;
@@ -481,7 +481,8 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	if (prAdapter->fgIsFwDownloaded) {
 		const uint32_t ready_bits = prAdapter->chip_info->sw_ready_bits;
 
-		DBGLOG(INIT, INFO, "halSetDriverOwn:: Check ready_bits(=0x%x)\n", ready_bits);
+		DBGLOG(INIT, DEBUG,
+		       "%s:: Check ready_bits(=0x%x)\n", __func__, ready_bits);
 		u4CurrTick = kalGetTimeTick();
 		while (1) {
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgReady);
@@ -512,7 +513,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 				       fgTimeout, kalGetTimeTick(), u4CurrTick, fgWmtCoreDump);
 
 
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 					"Skip waiting CR4 ready for next %ums\n", LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 				fgStatus = FALSE;
 
@@ -551,7 +552,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	}
 #endif
 
-	DBGLOG(NIC, INFO, "DRIVER OWN %d, %d, DSLP %s, count %d\n",
+	DBGLOG(NIC, DEBUG, "DRIVER OWN %d, %d, DSLP %s, count %d\n",
 		u4DriverOwnTime, u4Cr4ReadyTime, ((j == 0x77889901)?"1":"0"), i);
 
 unlock:
@@ -609,7 +610,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 
 	if ((nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) ||
 	     nicSerIsWaitingReset(prAdapter)) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 		  "FW OWN Skipped due to pending INT or waiting L1 reset\n");
 		/* pending interrupts */
 		goto unlock;
@@ -633,7 +634,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		} else {
 			prAdapter->fgIsFwOwn = TRUE;
 
-			DBGLOG(INIT, INFO, "FW OWN\n");
+			DBGLOG(INIT, DEBUG, "FW OWN\n");
 		}
 	}
 
@@ -2379,7 +2380,7 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 	}
 
 	if (u4IntrBits & WHISR_D2H_WKUP_BY_RX_PACKET)
-		DBGLOG(RX, INFO, "Wake up by Rx\n");
+		DBGLOG(RX, DEBUG, "Wake up by Rx\n");
 
 	if (u4IntrBits & WHISR_D2H_SW_RD_MAILBOX_INT)
 		halPrintMailbox(prAdapter);
@@ -3438,7 +3439,7 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 
 	HAL_LP_OWN_RD(prAdapter, &u4CrValue);
 	if (u4CrValue == FALSE) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[SER][L0.5] WHLPCR_IS_DRIVER_OWN = %d\n", u4CrValue);
 		HAL_LP_OWN_CLR(prAdapter, &u4CrValue);
 		if (u4CrValue == FALSE) {

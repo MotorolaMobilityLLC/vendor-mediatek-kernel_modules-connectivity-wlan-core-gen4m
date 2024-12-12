@@ -85,7 +85,7 @@ wlanoidSetAddP2PKey(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
-	DBGLOG(REQ, INFO, "\n");
+	DBGLOG(REQ, DEBUG, "\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
@@ -636,7 +636,7 @@ wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
 	uint8_t *pucBuf = NULL;
 
 	DBGLOG(INIT, TRACE, "\n");
-	DBGLOG(INIT, INFO, "wlanoidSetP2pSetNetworkAddress (%d)\n",
+	DBGLOG(INIT, DEBUG, "%s (%d)\n", __func__,
 		(int16_t) u4SetBufferLen);
 
 	ASSERT(prAdapter);
@@ -689,7 +689,7 @@ wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
 		prNWAddress =
 			(struct PARAM_NETWORK_ADDRESS *)(prNWAddrList + 1);
 
-		DBGLOG(INIT, INFO, "u4IpAddressCount (%u)\n",
+		DBGLOG(INIT, DEBUG, "u4IpAddressCount (%u)\n",
 			(int32_t) u4IpAddressCount);
 
 		for (i = 0, j = 0; i < prNWAddrList->u4AddressCount; i++) {
@@ -711,7 +711,7 @@ wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
 				j++;
 
 				pucBuf = (uint8_t *) &prNetAddrIp->in_addr;
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 						"prNetAddrIp->in_addr:%d:%d:%d:%d\n",
 						(uint8_t) pucBuf[0],
 						(uint8_t) pucBuf[1],

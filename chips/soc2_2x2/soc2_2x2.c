@@ -89,33 +89,33 @@ void soc2_2x2ShowHifInfo(struct ADAPTER *prAdapter)
 
 	/* conn2ap axi master sleep info */
 	HAL_MCR_RD(prAdapter, 0xBC010, &u4Value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"Conn2ap axi master sleep prot info: 0x%08x\n", u4Value);
 
 	/* conn_mcu2ap axi master sleep info */
 	HAL_MCR_RD(prAdapter, 0xBC014, &u4Value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"Conn_mcu2ap axi master sleep info: 0x%08x\n", u4Value);
 
 	/* conn2ap axi gals bus info */
 	HAL_MCR_RD(prAdapter, 0xBC018, &u4Value);
-	DBGLOG(HAL, INFO, "Conn2ap axi gals bus info: 0x%08x\n", u4Value);
+	DBGLOG(HAL, DEBUG, "Conn2ap axi gals bus info: 0x%08x\n", u4Value);
 
 	/* conn2ap mux4to1 debug info */
 	HAL_MCR_RD(prAdapter, 0xBC01C, &u4Value);
-	DBGLOG(HAL, INFO, "Conn2ap mux4to1 debug info: 0x%08x\n", u4Value);
+	DBGLOG(HAL, DEBUG, "Conn2ap mux4to1 debug info: 0x%08x\n", u4Value);
 
 	/* conn_hif_off bus busy info */
 	HAL_MCR_RD(prAdapter, 0xBC020, &u4Value);
-	DBGLOG(HAL, INFO, "Conn_hif_off bus busy info: 0x%08x\n", u4Value);
+	DBGLOG(HAL, DEBUG, "Conn_hif_off bus busy info: 0x%08x\n", u4Value);
 
 	/* conn_hif_on misc info */
 	HAL_MCR_RD(prAdapter, 0x0713C, &u4Value);
-	DBGLOG(HAL, INFO, "Conn_hif_on misc info: 0x%08x\n", u4Value);
+	DBGLOG(HAL, DEBUG, "Conn_hif_on misc info: 0x%08x\n", u4Value);
 
 	/* conn_on_host debug flag */
 	HAL_MCR_RD(prAdapter, 0xC1144, &u4Value);
-	DBGLOG(HAL, INFO, "Conn_on_host debug flag: 0x%08x\n", u4Value);
+	DBGLOG(HAL, DEBUG, "Conn_on_host debug flag: 0x%08x\n", u4Value);
 }
 
 void soc2_2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
@@ -202,7 +202,7 @@ void soc2_2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 
 void soc2_2x2wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 {
-	DBGLOG(RFTEST, INFO, "Cal CMD: (%d, %d) -> WMT reset\n", cmd, para);
+	DBGLOG(RFTEST, DEBUG, "Cal CMD: (%d, %d) -> WMT reset\n", cmd, para);
 	mtk_wcn_wmt_do_reset_only(WMTDRV_TYPE_WIFI);
 	/* wait for reset done */
 	glResetUpdateFlag(TRUE);

@@ -243,7 +243,7 @@ void wlanDebugDumpCalibrationEMI(
 	}
 
 	for (i = 0; i < (u4EmiSize/1000 + 1); i++)
-		DBGLOG(INIT, INFO, "Sum[%d]=0x%08x\n", i, *(p4ucSum + i));
+		DBGLOG(INIT, DEBUG, "Sum[%d]=0x%08x\n", i, *(p4ucSum + i));
 
 	kalMemFree(p4ucSum, VIR_MEM_TYPE, u4ArrSize);
 #endif
@@ -289,7 +289,7 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 
 			/*** backup calibration result ******/
 			if (gEmiCalNoUseEmiData == TRUE) {
-				DBGLOG(INIT, INFO, "No EMI backup.\n");
+				DBGLOG(INIT, DEBUG, "No EMI backup.\n");
 				u4Status = WLAN_STATUS_SUCCESS;
 				break;
 			}
@@ -309,7 +309,7 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 				break;
 			}
 
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"Offset(0x%x), Size(0x%x), NoUse(%d), backup(%d)\n",
 					gEmiCalOffset, gEmiCalSize,
 					gEmiCalNoUseEmiData, backupEMI);
@@ -340,7 +340,7 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 						gEmiCalSize);
 #endif
 				} else {
-					DBGLOG(INIT, INFO,
+					DBGLOG(INIT, DEBUG,
 						"precal prMem(1) = 0x%x\n",
 						prMem);
 
@@ -361,13 +361,13 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 			u4Status = WLAN_STATUS_SUCCESS;
 		} else {
 			if (gEmiCalNoUseEmiData == TRUE) {
-				DBGLOG(INIT, INFO, "No EMI restore.\n");
+				DBGLOG(INIT, DEBUG, "No EMI restore.\n");
 				u4Status = WLAN_STATUS_SUCCESS;
 				break;
 			}
 
 			if (gEmiCalOffset == 0 || gEmiCalSize == 0) {
-				DBGLOG(INIT, INFO, "No EMI restore data.\n");
+				DBGLOG(INIT, DEBUG, "No EMI restore data.\n");
 				break;
 			}
 
@@ -377,7 +377,7 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 				break;
 			}
 
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"Offset(0x%x), Size(0x%x), NoUse(%d), backup(%d)\n",
 				gEmiCalOffset, gEmiCalSize,
 				gEmiCalNoUseEmiData, backupEMI);
@@ -411,7 +411,7 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 						gEmiCalSize);
 #endif
 				} else {
-					DBGLOG(INIT, INFO,
+					DBGLOG(INIT, DEBUG,
 					"precal prMem(2) = 0x%x\n",
 					prMem);
 
@@ -608,7 +608,7 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 		prPhyTlv->aucBuffer;
 
 	if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_CAL) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"HAL_PHY_ACTION_TAG_CAL ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
 			prPhyEvent->ucEvent,
 			prPhyEvent->ucStatus,
@@ -627,13 +627,13 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 
 		u4Status = WLAN_STATUS_SUCCESS;
 	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_NVRAM) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"HAL_PHY_ACTION_TAG_NVRAM status[0x%x]\n",
 			prPhyEvent->ucStatus);
 
 		u4Status = WLAN_STATUS_SUCCESS;
 	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"HAL_PHY_ACTION_TAG_COM_FEM status[0x%x]\n",
 			prPhyEvent->ucStatus);
 
@@ -839,7 +839,7 @@ uint8_t _AddConnfemSkuTag(struct ADAPTER *prAdapter,
 	u4TagLen += sizeof(struct PHYACT_CONN_FEM_SPDT_V2_T);
 	pPlvHeader->u2Len = u4TagLen - u4TagLenBk;
 
-	DBGLOG(INIT, INFO, "_AddConnfemTag , Len=%d", u4TagLen);
+	DBGLOG(INIT, DEBUG, "_AddConnfemTag , Len=%d", u4TagLen);
 	DBGLOG_MEM8(INIT, TRACE, au1TagBuf, u4TagLen);
 
 	*pu4TagLen = u4TagLen;
@@ -904,7 +904,7 @@ uint32_t wlanSendPhyActionV2(struct ADAPTER *prAdapter,
 		au1TagList[0] = PC_TAG_ID_NVRAM;
 		au1TagList[1] = PC_TAG_ID_CAL;
 	} else {
-		DBGLOG(INIT, INFO, "unknown tag");
+		DBGLOG(INIT, DEBUG, "unknown tag");
 		goto exit;
 	}
 
@@ -973,7 +973,7 @@ uint32_t wlanSendPhyActionV2(struct ADAPTER *prAdapter,
 
 		u4CmdSize += sizeof(struct HAL_PHY_ACTION_TLV) + u4TagSize;
 
-		DBGLOG(INIT, INFO, "Tag=%d, Len=%d",
+		DBGLOG(INIT, DEBUG, "Tag=%d, Len=%d",
 			au1TagList[cnt1], u4TagSize);
 		DBGLOG_MEM8(INIT, TRACE, (uint8_t *)prPhyTlv, u4TagSize);
 	}
@@ -1029,7 +1029,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "SendPhyAction begin, tag: %d, cmd: %d, skip: %d\n",
+	DBGLOG(INIT, DEBUG, "SendPhyAction begin, tag: %d, cmd: %d, skip: %d\n",
 		u2Tag, ucCalCmd, g_fgCalDisabled);
 
 	ASSERT(prAdapter);
@@ -1370,14 +1370,14 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "fgPreCal = %d\n", g_fgPreCal);
+	DBGLOG(INIT, DEBUG, "fgPreCal = %d\n", g_fgPreCal);
 
 	if (g_fgPreCal == FALSE) {
 		/* Setup calibration data from backup file */
 #if (CFG_SUPPORT_CONNFEM == 1)
 #if (CONNFEM_API_VERSION >= 2)
 		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
-			DBGLOG(INIT, INFO, "connfem sku support");
+			DBGLOG(INIT, DEBUG, "connfem sku support");
 
 			wlanSendPhyActionV2(prAdapter,
 				HAL_PHY_ACTION_TAG_COM_FEM,
@@ -1405,7 +1405,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 
 #if (CONNFEM_API_VERSION >= 2)
 		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
-			DBGLOG(INIT, INFO, "connfem sku support");
+			DBGLOG(INIT, DEBUG, "connfem sku support");
 
 			wlanSendPhyActionV2(prAdapter,
 				HAL_PHY_ACTION_TAG_COM_FEM,
@@ -1444,7 +1444,7 @@ int wlan_precal_get_res(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 	*pEmiCalSize = 2048;
 #endif
 
-	DBGLOG(INIT, INFO, "EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
+	DBGLOG(INIT, DEBUG, "EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
 		*pEmiCalOffset,
 		*pEmiCalSize);
 
@@ -1453,7 +1453,7 @@ int wlan_precal_get_res(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 
 int wlan_precal_pwron_v1(void)
 {
-	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+	DBGLOG(INIT, DEBUG, "ever = %d\n", g_fgEverCal);
 
 	if (g_fgEverCal == TRUE)
 		return 1;
@@ -1472,7 +1472,7 @@ int wlan_precal_docal_v1(void)
 {
 	int32_t ret = 0;
 
-	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+	DBGLOG(INIT, DEBUG, "ever = %d\n", g_fgEverCal);
 
 	if (!g_fgEverCal) {
 		update_pre_cal_status(1);
@@ -1504,7 +1504,7 @@ int wlan_precal_pwron_v2(void)
 
 	int32_t ret = 0;
 
-	DBGLOG(INIT, INFO, "\n");
+	DBGLOG(INIT, DEBUG, "\n");
 
 #if CFG_MTK_ANDROID_EMI
 	// CONNAC 3 , no use backup /restore EMI
@@ -1537,7 +1537,7 @@ exit:
 
 #else /* #ifdef MT6639 */
 
-	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+	DBGLOG(INIT, DEBUG, "ever = %d\n", g_fgEverCal);
 
 	if (g_fgEverCal == TRUE)
 		return 1;
@@ -1561,7 +1561,7 @@ int wlan_precal_docal_v2(void)
 
 #ifdef MT6639
 
-	DBGLOG(INIT, INFO, "\n");
+	DBGLOG(INIT, DEBUG, "\n");
 
 	if (!g_fgEverCal) {
 		g_fgEverCal = TRUE;
@@ -1576,7 +1576,7 @@ int wlan_precal_docal_v2(void)
 
 	int32_t ret = 0;
 
-	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+	DBGLOG(INIT, DEBUG, "ever = %d\n", g_fgEverCal);
 
 	if (!g_fgEverCal) {
 		update_pre_cal_status(1);
@@ -1605,7 +1605,7 @@ exit:
 
 int wlan_precal_err(void)
 {
-	DBGLOG(INIT, INFO, "\n");
+	DBGLOG(INIT, DEBUG, "\n");
 
 	if (!g_fgEverCal) {
 		g_fgEverCal = TRUE;
@@ -1637,7 +1637,7 @@ u_int8_t is_cal_flow_finished(void)
 
 void wlan_precal_done_notify(void)
 {
-	DBGLOG(RFTEST, INFO, "wlan precal done\n");
+	DBGLOG(RFTEST, DEBUG, "wlan precal done\n");
 
 #if CFG_TESTMODE_WMT_WIFI_ON_SUPPORT
 	/* prevent turn on wifi by wmt driver before precal finished */
@@ -1666,7 +1666,7 @@ void wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 		break;
 	}
 
-	DBGLOG(RFTEST, INFO,
+	DBGLOG(RFTEST, DEBUG,
 		"gEmiCalOffset(0x%x), gEmiCalSize(0x%x), gEmiCalNoUseEmiData(%d)\n",
 		gEmiCalOffset, gEmiCalSize, gEmiCalNoUseEmiData);
 #endif

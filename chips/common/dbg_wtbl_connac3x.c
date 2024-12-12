@@ -349,7 +349,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 			"Dump WTBL info of WLAN_IDX	    = %d\n",
 		u4Index);
 
-	DBGLOG(REQ, INFO, "====DW0~1====\n");
+	DBGLOG(REQ, DEBUG, "====DW0~1====\n");
 	/* DW0~DW1 */
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tADDR="MACSTR"\n",
@@ -368,7 +368,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->peer_basic_info.wtbl_d0.field.wpi_flg);
 
 	/* DW2~4 */
-	DBGLOG(REQ, INFO, "====DW2~4====\n");
+	DBGLOG(REQ, DEBUG, "====DW2~4====\n");
 #ifdef MT6653
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tAID12/GID_SU/DUAL_PTEC_EN/DUAL_CTS_EN:%d/%d/%d/%d\n",
@@ -491,7 +491,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d4.field.dis_rhtr);
 #endif
 	/* DW5 */
-	DBGLOG(REQ, INFO, "====DW5====\n");
+	DBGLOG(REQ, DEBUG, "====DW5====\n");
 #ifdef MT6653
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 		i4BytesWritten,
@@ -536,7 +536,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d5.field.skip_tx);
 
 	/* DW6 */
-	DBGLOG(REQ, INFO, "====DW6====\n");
+	DBGLOG(REQ, DEBUG, "====DW6====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 		i4BytesWritten,
 		"\tCBRN/DBNSS_EN/BAFEN/RDGBA/R:%d/%d/%d/%d/%d\n",
@@ -569,7 +569,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d6.field.g16_ltf);
 
 	/* DW7 */
-	DBGLOG(REQ, INFO, "====DW7====\n");
+	DBGLOG(REQ, DEBUG, "====DW7====\n");
 	if (pWtbl->trx_cap.wtbl_d2.field.qos)
 		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 			i4BytesWritten,
@@ -592,7 +592,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid7));
 
 	/* DW8 */
-	DBGLOG(REQ, INFO, "====DW8====\n");
+	DBGLOG(REQ, DEBUG, "====DW8====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tCHK_PER/P_AID:%d/%d\n",
 		pWtbl->trx_cap.wtbl_d8.field.chk_per,
@@ -600,7 +600,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 
 
 	/* DW9 */
-	DBGLOG(REQ, INFO, "====DW9====\n");
+	DBGLOG(REQ, DEBUG, "====DW9====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tPRITX[SW_M/ERSU/PLR/DCM/ER106T]:%d/%d/%d/%d/%d\n",
 		pWtbl->trx_cap.wtbl_d9.field.pritx_sw_mode,
@@ -616,7 +616,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d9.field.mpdu_ok_cnt);
 
 	/* DW28 */
-	DBGLOG(REQ, INFO, "====DW28====\n");
+	DBGLOG(REQ, DEBUG, "====DW28====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tRELATED[IDX0/BN0/IDX1/BN1]:%d/%d/%d/%d\n",
 		pWtbl->mlo_info.wtbl_d28.field.related_idx0,
@@ -629,7 +629,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->mlo_info.wtbl_d28.field.sec_mld_band);
 
 	/* DW29 */
-	DBGLOG(REQ, INFO, "====DW29~30====\n");
+	DBGLOG(REQ, DEBUG, "====DW29~30====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tDISP_POL[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
 		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy0,
@@ -659,7 +659,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->mlo_info.wtbl_d30.field.dispatch_ratio);
 
 	/* DW34 */
-	DBGLOG(REQ, INFO, "====DW34~35====\n");
+	DBGLOG(REQ, DEBUG, "====DW34~35====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tRSSI= %d %d %d %d\n",
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_0),
@@ -835,7 +835,7 @@ void connac3x_get_lwtbl(
 	HAL_RMCR_RD(WTBL_DBG, prAdapter, prChipInfo->u4LmacWtblDUAddr,
 				&u4Value);
 
-	DBGLOG(REQ, INFO, "LMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
+	DBGLOG(REQ, DEBUG, "LMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
 		prChipInfo->u4LmacWtblDUAddr,
 		u4Value,
 		wtbl_lmac_baseaddr);
@@ -869,7 +869,7 @@ void connac3x_get_rssi_from_wtbl(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
-	DBGLOG(REQ, INFO, "WTBL : index = %d\n", u4Index);
+	DBGLOG(REQ, DEBUG, "WTBL : index = %d\n", u4Index);
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	rCmdAccessReg.u4Address = CONNAC3X_LWTBL_IDX2BASE(
@@ -950,8 +950,8 @@ static void dump_key_table(
 	uint16_t x;
 	uint32_t u4Value = 0;
 
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "\t%s:%d\n", "keyloc0", keyloc0);
+	DBGLOG(HAL, DEBUG, "\t\n");
+	DBGLOG(HAL, DEBUG, "\t%s:%d\n", "keyloc0", keyloc0);
 	if (keyloc0 != INVALID_KEY_ENTRY) {
 
 		/* Don't swap below two lines, halWtblReadRaw will
@@ -961,12 +961,13 @@ static void dump_key_table(
 			WTBL_TYPE_KEY, 0, ONE_KEY_ENTRY_LEN_IN_DW, keytbl);
 		HAL_RMCR_RD(WTBL_DBG, prAdapter,
 			       WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
-		DBGLOG(HAL, INFO, "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
-			WF_UWTBL_TOP_WDUCR_ADDR,
-			u4Value,
-			KEYTBL_IDX2BASE(keyloc0, 0));
+		DBGLOG(HAL, DEBUG,
+		       "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
+		       WF_UWTBL_TOP_WDUCR_ADDR,
+		       u4Value,
+		       KEYTBL_IDX2BASE(keyloc0, 0));
 		for (x = 0; x < ONE_KEY_ENTRY_LEN_IN_DW; x++) {
-			DBGLOG(HAL, INFO, "\t\tDW%02d: %02x %02x %02x %02x\n",
+			DBGLOG(HAL, DEBUG, "\t\tDW%02d: %02x %02x %02x %02x\n",
 				x,
 				keytbl[x * 4 + 3],
 				keytbl[x * 4 + 2],
@@ -975,7 +976,7 @@ static void dump_key_table(
 		}
 	}
 
-	DBGLOG(HAL, INFO, "\t%s:%d\n", "keyloc1", keyloc1);
+	DBGLOG(HAL, DEBUG, "\t%s:%d\n", "keyloc1", keyloc1);
 	if (keyloc1 != INVALID_KEY_ENTRY) {
 		/* Don't swap below two lines, halWtblReadRaw will
 		* write new value WF_WTBLON_TOP_WDUCR_ADDR
@@ -984,12 +985,13 @@ static void dump_key_table(
 			WTBL_TYPE_KEY, 0, ONE_KEY_ENTRY_LEN_IN_DW, keytbl);
 		HAL_RMCR_RD(WTBL_DBG, prAdapter,
 			       WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
-		DBGLOG(HAL, INFO, "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
-			WF_UWTBL_TOP_WDUCR_ADDR,
-			u4Value,
-			KEYTBL_IDX2BASE(keyloc1, 0));
+		DBGLOG(HAL, DEBUG,
+		       "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
+		       WF_UWTBL_TOP_WDUCR_ADDR,
+		       u4Value,
+		       KEYTBL_IDX2BASE(keyloc1, 0));
 		for (x = 0; x < ONE_KEY_ENTRY_LEN_IN_DW; x++) {
-			DBGLOG(HAL, INFO, "\t\tDW%02d: %02x %02x %02x %02x\n",
+			DBGLOG(HAL, DEBUG, "\t\tDW%02d: %02x %02x %02x %02x\n",
 				x,
 				keytbl[x * 4 + 3],
 				keytbl[x * 4 + 2],
@@ -998,7 +1000,7 @@ static void dump_key_table(
 		}
 	}
 
-	DBGLOG(HAL, INFO, "\t%s:%d\n", "keyloc2", keyloc2);
+	DBGLOG(HAL, DEBUG, "\t%s:%d\n", "keyloc2", keyloc2);
 	if (keyloc2 != INVALID_KEY_ENTRY) {
 		/* Don't swap below two lines, halWtblReadRaw will
 		* write new value WF_WTBLON_TOP_WDUCR_ADDR
@@ -1007,12 +1009,13 @@ static void dump_key_table(
 			WTBL_TYPE_KEY, 0, ONE_KEY_ENTRY_LEN_IN_DW, keytbl);
 		HAL_RMCR_RD(WTBL_DBG, prAdapter,
 			       WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
-		DBGLOG(HAL, INFO, "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
-			WF_UWTBL_TOP_WDUCR_ADDR,
-			u4Value,
-			KEYTBL_IDX2BASE(keyloc2, 0));
+		DBGLOG(HAL, DEBUG,
+		       "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
+		       WF_UWTBL_TOP_WDUCR_ADDR,
+		       u4Value,
+		       KEYTBL_IDX2BASE(keyloc2, 0));
 		for (x = 0; x < ONE_KEY_ENTRY_LEN_IN_DW; x++) {
-			DBGLOG(HAL, INFO, "\t\tDW%02d: %02x %02x %02x %02x\n",
+			DBGLOG(HAL, DEBUG, "\t\tDW%02d: %02x %02x %02x %02x\n",
 				x,
 				keytbl[x * 4 + 3],
 				keytbl[x * 4 + 2],
@@ -1040,7 +1043,7 @@ int32_t connac3x_show_umac_wtbl_info(
 	uint16_t keyloc2 = INVALID_KEY_ENTRY;
 	uint32_t amsdu_len = 0;
 
-	DBGLOG(HAL, INFO, "UMAC WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
+	DBGLOG(HAL, DEBUG, "UMAC WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
 		WF_UWTBL_TOP_WDUCR_ADDR,
 		u4Value,
 		UWTBL_IDX2BASE(u4Index, 0));

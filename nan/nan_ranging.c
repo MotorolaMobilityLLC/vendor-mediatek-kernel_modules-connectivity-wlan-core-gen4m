@@ -177,7 +177,7 @@ nanRangingInstanceInit(struct ADAPTER *prAdapter,
 	prRanging->ranging_ctrl.rNanFtmParam.uc2BurstTimeout = 11;
 	prRanging->ranging_ctrl.rNanFtmParam.ucBurstExponent = 0;
 
-	DBGLOG(NAN, INFO, "Default FTMBandwidth (%d)\n",
+	DBGLOG(NAN, DEBUG, "Default FTMBandwidth (%d)\n",
 	       prAdapter->rWifiVar.ucNanFtmBw);
 
 	if (ucRole == NAN_PROTOCOL_INITIATOR) {
@@ -224,7 +224,7 @@ nanRangingInstanceAdd(struct ADAPTER *prAdapter,
 
 	prRanging->ranging_ctrl.u2RangingId = nanRangingGenerateId(prAdapter);
 
-	DBGLOG(NAN, INFO, "ID (%d)\n", prRanging->ranging_ctrl.u2RangingId);
+	DBGLOG(NAN, DEBUG, "ID (%d)\n", prRanging->ranging_ctrl.u2RangingId);
 }
 
 void
@@ -248,7 +248,7 @@ nanRangingInstanceDel(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NAN, INFO, "ID (%d)\n", prRanging->ranging_ctrl.u2RangingId);
+	DBGLOG(NAN, DEBUG, "ID (%d)\n", prRanging->ranging_ctrl.u2RangingId);
 
 	cnmTimerStopTimer(prAdapter,
 		  &(prRanging->ranging_ctrl.rRangingSessionTimer));
@@ -649,7 +649,7 @@ nanRangingFrameCompose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		rStatus = nanSchedGetAvailabilityAttr(prAdapter, NULL,
 						      &pucAttr, &u4AttrLen);
 
-		DBGLOG(NAN, INFO, "nanSchedGetAvailabilityAttr 0x%08x\n",
+		DBGLOG(NAN, DEBUG, "nanSchedGetAvailabilityAttr 0x%08x\n",
 		       rStatus);
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
@@ -808,7 +808,7 @@ nanRangingSetupAttrHandler(struct ADAPTER *prAdapter,
 			(struct _NAN_SCHEDULE_ENTRY_T *)pucPos,
 			NAN_ATTR_SIZE(prAttr) - u4Length);
 
-		DBGLOG(NAN, INFO,
+		DBGLOG(NAN, DEBUG,
 		       "nanSchedPeerUpdateRangingScheduleList 0x%08x\n",
 		       rStatus);
 	}
@@ -840,7 +840,7 @@ nanParseRangingFrame(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	prActionFrame = (struct _NAN_ACTION_FRAME_T *)(prSwRfb->pvHeader);
 	pucNanAttr = prActionFrame->aucInfoContent;
@@ -849,7 +849,7 @@ nanParseRangingFrame(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 	NAN_ATTR_FOR_EACH(pucNanAttr, u2ContentLen, u2Offset) {
 
-		DBGLOG(NAN, INFO, "ID %d, size %d\n", NAN_ATTR_ID(pucNanAttr),
+		DBGLOG(NAN, DEBUG, "ID %d, size %d\n", NAN_ATTR_ID(pucNanAttr),
 		       NAN_ATTR_SIZE(pucNanAttr));
 
 		switch (NAN_ATTR_ID(pucNanAttr)) {
@@ -881,7 +881,7 @@ nanParseRangingFrame(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				prAdapter, prActionFrame->aucSrcAddr,
 				(uint8_t *)pucNanAttr, NULL);
 
-			DBGLOG(NAN, INFO,
+			DBGLOG(NAN, DEBUG,
 			       "nanSchedPeerUpdateAvailabilityAttr 0x%08x\n",
 			       rStatus);
 			break;
@@ -994,7 +994,7 @@ nanRangingRequestTx(struct ADAPTER *prAdapter,
 				      prRanging->ranging_ctrl.aucPeerAddr,
 				      NAN_ACTION_RANGING_REQUEST);
 
-	DBGLOG(NAN, INFO, "nanRangingFrameSend %d\n", rStatus);
+	DBGLOG(NAN, DEBUG, "nanRangingFrameSend %d\n", rStatus);
 
 	return 0;
 }
@@ -1019,9 +1019,9 @@ nanRangingRequestTxDone(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	if (rTxDoneStatus == TX_RESULT_SUCCESS) {
-		DBGLOG(NAN, INFO, "Success\n");
+		DBGLOG(NAN, DEBUG, "Success\n");
 	} else {
-		DBGLOG(NAN, INFO, "Failed\n");
+		DBGLOG(NAN, DEBUG, "Failed\n");
 		nanRangingFsmStep(prAdapter, prRanging, RANGING_STATE_IDLE);
 	}
 
@@ -1035,7 +1035,7 @@ uint32_t nanRangingRequestRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -1120,7 +1120,7 @@ nanRangingResponseTx(struct ADAPTER *prAdapter,
 
 	prResponseCtl = &prRanging->ranging_ctrl.response_ctl;
 
-	DBGLOG(NAN, INFO, "auto response %d report required %d\n",
+	DBGLOG(NAN, DEBUG, "auto response %d report required %d\n",
 	       (prResponseCtl->ranging_auto_response ==
 		NAN_RANGING_AUTO_RESPONSE_ENABLE)
 		       ? TRUE
@@ -1169,7 +1169,7 @@ nanRangingResponseTx(struct ADAPTER *prAdapter,
 				      prRanging->ranging_ctrl.aucPeerAddr,
 				      NAN_ACTION_RANGING_RESPONSE);
 
-	DBGLOG(NAN, INFO, "nanRangingFrameSend %d\n", rStatus);
+	DBGLOG(NAN, DEBUG, "nanRangingFrameSend %d\n", rStatus);
 
 	return 0;
 }
@@ -1194,14 +1194,14 @@ nanRangingResponseTxDone(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	if (rTxDoneStatus == TX_RESULT_SUCCESS) {
-		DBGLOG(NAN, INFO, "Success\n");
+		DBGLOG(NAN, DEBUG, "Success\n");
 		if (prRanging->ranging_ctrl.bSchedPass) {
 			nanRangingFtmParamCmd(prAdapter, prRanging);
 			nanRangingFsmStep(prAdapter, prRanging,
 					  RANGING_STATE_ACTIVE);
 		}
 	} else {
-		DBGLOG(NAN, INFO, "Failed\n");
+		DBGLOG(NAN, DEBUG, "Failed\n");
 		if (prRanging->ranging_ctrl.bSchedPass)
 			nanRangingFsmStep(prAdapter, prRanging,
 					  RANGING_STATE_IDLE);
@@ -1222,7 +1222,7 @@ nanRangingResponseRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	if (prSwRfb == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prSwRfb is NULL\n", __func__);
@@ -1257,7 +1257,7 @@ nanRangingResponseRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 			nanSchedNegoChkRmtCrbProposal(
 				prAdapter, &u4RejectCode);
 
-		DBGLOG(NAN, INFO, "nanSchedNegoChkRmtCrbProposal 0x%08x\n",
+		DBGLOG(NAN, DEBUG, "nanSchedNegoChkRmtCrbProposal 0x%08x\n",
 		       u4Status);
 
 		if (u4Status == WLAN_STATUS_SUCCESS) {
@@ -1272,11 +1272,11 @@ nanRangingResponseRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 
 	prRanging->ranging_ctrl.bSchedPass = bSchedPass;
 
-	DBGLOG(NAN, INFO, "bSchedPass %d\n", bSchedPass);
+	DBGLOG(NAN, DEBUG, "bSchedPass %d\n", bSchedPass);
 
 	nanSchedNegoStop(prAdapter);
 
-	DBGLOG(NAN, INFO, "nanSchedNegoStop\n");
+	DBGLOG(NAN, DEBUG, "nanSchedNegoStop\n");
 
 	if (bSchedPass) {
 		nanRangingFtmParamCmd(prAdapter, prRanging);
@@ -1313,7 +1313,7 @@ nanRangingTerminationTx(struct ADAPTER *prAdapter,
 				      prRanging->ranging_ctrl.aucPeerAddr,
 				      NAN_ACTION_RANGING_TERMINATION);
 
-	DBGLOG(NAN, INFO, "nanRangingFrameSend %d\n", rStatus);
+	DBGLOG(NAN, DEBUG, "nanRangingFrameSend %d\n", rStatus);
 
 	return 0;
 }
@@ -1323,9 +1323,9 @@ nanRangingTerminationTxDone(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo,
 			    enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
 	if (rTxDoneStatus == TX_RESULT_SUCCESS)
-		DBGLOG(NAN, INFO, "Success\n");
+		DBGLOG(NAN, DEBUG, "Success\n");
 	else
-		DBGLOG(NAN, INFO, "Failed\n");
+		DBGLOG(NAN, DEBUG, "Failed\n");
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -1381,7 +1381,7 @@ nanRangingReportTx(struct ADAPTER *prAdapter,
 				      prRanging->ranging_ctrl.aucPeerAddr,
 				      NAN_ACTION_RANGING_REPORT);
 
-	DBGLOG(NAN, INFO, "nanRangingFrameSend %d\n", rStatus);
+	DBGLOG(NAN, DEBUG, "nanRangingFrameSend %d\n", rStatus);
 
 	return 0;
 }
@@ -1391,9 +1391,9 @@ nanRangingReportTxDone(struct ADAPTER *prAdapter,
 		       struct MSDU_INFO *prMsduInfo,
 		       enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
 	if (rTxDoneStatus == TX_RESULT_SUCCESS)
-		DBGLOG(NAN, INFO, "Success\n");
+		DBGLOG(NAN, DEBUG, "Success\n");
 	else
-		DBGLOG(NAN, INFO, "Failed\n");
+		DBGLOG(NAN, DEBUG, "Failed\n");
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -1410,7 +1410,7 @@ uint32_t nanRangingReportRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	if (prSwRfb == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prSwRfb is NULL\n", __func__);
@@ -1555,7 +1555,7 @@ void
 nanRangingSessionTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
 
-	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
+	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
 
 	prRanging = (struct _NAN_RANGING_INSTANCE_T *)ulParam;
 
@@ -1587,7 +1587,7 @@ nanRangingFtmParamCmd(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
@@ -1650,11 +1650,11 @@ nanRangingUpdateDistance(struct ADAPTER *prAdapter,
 
 	if ((pCtrl->rNanFtmReport.ucRangeEntryCnt == 0) ||
 	    (pCtrl->rNanFtmReport.arRangeEntry[0].u4Range == 0)) {
-		DBGLOG(NAN, INFO, "No valid distance to update\n");
+		DBGLOG(NAN, DEBUG, "No valid distance to update\n");
 		return FALSE;
 	}
 
-	DBGLOG(NAN, INFO, "Report %u (1/4096 m), Range %lu cm\n",
+	DBGLOG(NAN, DEBUG, "Report %u (1/4096 m), Range %lu cm\n",
 	       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range,
 	       FTM_FMT_TO_RANGE_CM(
 		       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range));
@@ -1663,7 +1663,7 @@ nanRangingUpdateDistance(struct ADAPTER *prAdapter,
 	pCtrl->range_measurement_cm = FTM_FMT_TO_RANGE_CM(
 		pCtrl->rNanFtmReport.arRangeEntry[0].u4Range);
 
-	DBGLOG(NAN, INFO, "Ingress Th %u cm, Egress Th %u cm\n", u4IngressTh,
+	DBGLOG(NAN, DEBUG, "Ingress Th %u cm, Egress Th %u cm\n", u4IngressTh,
 	       u4EgressTh);
 
 	/* Ingress geofence */
@@ -1707,7 +1707,7 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 
 		u4IndStatus |= NAN_RANGING_INDICATE_CONTINUOUS_MASK;
 
-		DBGLOG(NAN, INFO, "Continuous Indication! Range %u cm\n",
+		DBGLOG(NAN, DEBUG, "Continuous Indication! Range %u cm\n",
 		       prRanging->ranging_ctrl.range_measurement_cm);
 	}
 
@@ -1716,7 +1716,7 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 		if (!pCtrl->bPreInside && pCtrl->bCurInside) {
 			u4IndStatus |= NAN_RANGING_INDICATE_INGRESS_MET_MASK;
 
-			DBGLOG(NAN, INFO, "Ingress Indication! Range %u cm\n",
+			DBGLOG(NAN, DEBUG, "Ingress Indication! Range %u cm\n",
 			       prRanging->ranging_ctrl.range_measurement_cm);
 		}
 	}
@@ -1726,7 +1726,7 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 		if (!pCtrl->bPreOutside && pCtrl->bCurOutside) {
 			u4IndStatus |= NAN_RANGING_INDICATE_EGRESS_MET_MASK;
 
-			DBGLOG(NAN, INFO, "Egress Indication! Range %u cm\n",
+			DBGLOG(NAN, DEBUG, "Egress Indication! Range %u cm\n",
 			       prRanging->ranging_ctrl.range_measurement_cm);
 		}
 	}
@@ -1755,7 +1755,7 @@ nanRangingFtmDoneEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 		return;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	prEvent = (struct _NAN_FTM_DONE_EVENT *)pcuEvtBuf;
 
@@ -1788,7 +1788,7 @@ nanRangingFtmDoneEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 			   sizeof(struct _FTM_REPORT_ERROR_ENTRY_T));
 	}
 
-	DBGLOG(NAN, INFO, "ucRangeEntryCnt (%u), ucErrorEntryCnt (%u)\n",
+	DBGLOG(NAN, DEBUG, "ucRangeEntryCnt (%u), ucErrorEntryCnt (%u)\n",
 	       ucRangeEntryCnt, ucErrorEntryCnt);
 
 	/* Send Ranging report if need */
@@ -1796,7 +1796,7 @@ nanRangingFtmDoneEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	    NAN_RANGING_CTL_REPORT_REQUIRED)
 		bReportEn = TRUE;
 
-	DBGLOG(NAN, INFO, "report required %d\n", bReportEn);
+	DBGLOG(NAN, DEBUG, "report required %d\n", bReportEn);
 
 	if (bReportEn)
 		nanRangingFsmStep(prAdapter, prRanging, RANGING_STATE_REPORT);
@@ -1849,7 +1849,7 @@ nanRangingReportDiscCmd(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
@@ -1913,7 +1913,7 @@ nanRangingInvokedByDisc(struct ADAPTER *prAdapter, uint16_t *pu2Id,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	prRangingInfo = &(prAdapter->rRangingInfo);
 	if (prRangingInfo == NULL) {
@@ -1979,7 +1979,7 @@ nanRangingInvokedByDiscEvt(struct ADAPTER *prAdapter,
 	uint16_t rgId = 0;
 	uint32_t rStatus;
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -2029,7 +2029,7 @@ nanRangingRequest(struct ADAPTER *prAdapter, uint16_t *pu2Id,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	prRangingInfo = &(prAdapter->rRangingInfo);
 	if (prRangingInfo == NULL) {
@@ -2096,7 +2096,7 @@ nanRangingCancel(struct ADAPTER *prAdapter, struct NanRangeCancelRequest *msg) {
 		return -1;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	prRanging = nanRangingInstanceSearchByMac(prAdapter, msg->peer_addr);
 	if (prRanging == NULL)
@@ -2120,7 +2120,7 @@ nanRangingResponse(struct ADAPTER *prAdapter, struct NanRangeResponse *msg) {
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	prRangingInfo = &(prAdapter->rRangingInfo);
 
@@ -2149,7 +2149,7 @@ nanRangingResponse(struct ADAPTER *prAdapter, struct NanRangeResponse *msg) {
 	kalMemCopy(prResponseCtl, &msg->response_ctl,
 		   sizeof(struct NanRangeResponseCtl));
 
-	DBGLOG(NAN, INFO, "auto response %d report required %d\n",
+	DBGLOG(NAN, DEBUG, "auto response %d report required %d\n",
 	       (prResponseCtl->ranging_auto_response ==
 		NAN_RANGING_AUTO_RESPONSE_ENABLE)
 		       ? TRUE
@@ -2168,7 +2168,7 @@ nanRangingResponse(struct ADAPTER *prAdapter, struct NanRangeResponse *msg) {
 
 		nanSchedNegoStop(prAdapter);
 
-		DBGLOG(NAN, INFO, "nanSchedNegoStop\n");
+		DBGLOG(NAN, DEBUG, "nanSchedNegoStop\n");
 
 		if (prResponseCtl->ranging_response_code !=
 		    NAN_RANGE_REQUEST_ACCEPT)
@@ -2189,7 +2189,7 @@ nanRangingRequestIndication(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	event.eventID = ENUM_NAN_RG_INDICATION;
 	event.publish_id = prRanging->ranging_ctrl.u2RangingId;
@@ -2227,7 +2227,7 @@ nanRangingResult(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "Peer Addr: " MACSTR ", Range: %d cm, Indication: 0x%x\n",
 	       MAC2STR(prRanging->ranging_ctrl.aucPeerAddr),
 	       prRanging->ranging_ctrl.range_measurement_cm, u4IndChk);
@@ -2269,7 +2269,7 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 
 		u4Status = nanSchedNegoGenLocalCrbProposal(prAdapter);
 
-		DBGLOG(NAN, INFO, "nanSchedNegoGenLocalCrbProposal 0x%08x\n",
+		DBGLOG(NAN, DEBUG, "nanSchedNegoGenLocalCrbProposal 0x%08x\n",
 		       u4Status);
 
 		bSchedPass = (u4Status == WLAN_STATUS_SUCCESS) ? TRUE : FALSE;
@@ -2277,7 +2277,7 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 			NAN_REASON_CODE_RESOURCE_LIMITATION;
 		prRanging->ranging_ctrl.bSchedPass = bSchedPass;
 
-		DBGLOG(NAN, INFO, "bSchedPass %d\n", bSchedPass);
+		DBGLOG(NAN, DEBUG, "bSchedPass %d\n", bSchedPass);
 
 		if (bSchedPass)
 			nanRangingFsmStep(prAdapter, prRanging,
@@ -2292,7 +2292,7 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 			nanSchedNegoChkRmtCrbProposal(
 				prAdapter, &u4RejectCode);
 
-		DBGLOG(NAN, INFO, "nanSchedNegoChkRmtCrbProposal 0x%08x\n",
+		DBGLOG(NAN, DEBUG, "nanSchedNegoChkRmtCrbProposal 0x%08x\n",
 		       u4Status);
 
 		if (u4Status == WLAN_STATUS_SUCCESS) {
@@ -2307,7 +2307,7 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 		ucAutoRsp = prRanging->ranging_ctrl.response_ctl
 				    .ranging_auto_response;
 
-		DBGLOG(NAN, INFO, "bSchedPass %d ucAutoRsp %d\n", bSchedPass,
+		DBGLOG(NAN, DEBUG, "bSchedPass %d ucAutoRsp %d\n", bSchedPass,
 		       ucAutoRsp);
 
 		if (bSchedPass &&
@@ -2324,7 +2324,7 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 
 			nanSchedNegoStop(prAdapter);
 
-			DBGLOG(NAN, INFO, "nanSchedNegoStop\n");
+			DBGLOG(NAN, DEBUG, "nanSchedNegoStop\n");
 
 			if (bSchedPass == FALSE)
 				nanRangingFsmStep(prAdapter, prRanging,
@@ -2342,7 +2342,7 @@ nanRangingScheduleViolation(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr) {
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "\n");
+	DBGLOG(NAN, DEBUG, "\n");
 
 	if (pu1DevAddr == NULL)
 		return WLAN_STATUS_INVALID_DATA;
@@ -2366,7 +2366,7 @@ nanRangingListPrint(struct ADAPTER *prAdapter) {
 		return;
 	}
 
-	DBGLOG(NAN, INFO, "u2RangingCnt %d\n",
+	DBGLOG(NAN, DEBUG, "u2RangingCnt %d\n",
 	       prAdapter->rRangingInfo.u2RangingCnt);
 
 	ranging_list = &prAdapter->rRangingInfo.ranging_list;
@@ -2375,7 +2375,7 @@ nanRangingListPrint(struct ADAPTER *prAdapter) {
 			 struct _NAN_RANGING_INSTANCE_T, list) {
 
 		if (prRanging) {
-			DBGLOG(NAN, INFO, "[%d] [" MACSTR "] [%s] [%s]\n",
+			DBGLOG(NAN, DEBUG, "[%d] [" MACSTR "] [%s] [%s]\n",
 			       prRanging->ranging_ctrl.u2RangingId,
 			       MAC2STR(prRanging->ranging_ctrl.aucPeerAddr),
 			       prRanging->ranging_ctrl.ucRole ==

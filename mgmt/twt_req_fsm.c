@@ -1016,7 +1016,7 @@ twtReqFsmRunEventTxDone(
 	}
 
 	if (rTxDoneStatus)
-		DBGLOG(TWT_REQUESTER, INFO,
+		DBGLOG(TWT_REQUESTER, DEBUG,
 			"EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
 		   rTxDoneStatus, prMsduInfo->ucTxSeqNum, kalGetTimeTick());
 
@@ -1223,7 +1223,7 @@ twtReqFsmRunEventTxDone(
 		twtReqFsmSteps(prAdapter,
 			prStaRec, eNextState, ucTWTFlowId, &eTwtType);
 
-		DBGLOG(TWT_REQUESTER, INFO,
+		DBGLOG(TWT_REQUESTER, DEBUG,
 			"EVENT-TX DONE flowID= %d\n", ucTWTFlowId);
 
 		break;
@@ -1274,7 +1274,7 @@ twtReqFsmRunEventTxDone(
 		twtReqFsmSteps(prAdapter,
 			prStaRec, eNextState, ucTWTFlowId, &eTwtType);
 
-		DBGLOG(TWT_REQUESTER, INFO,
+		DBGLOG(TWT_REQUESTER, DEBUG,
 			"EVENT-TX DONE flowID= %d\n", ucTWTFlowId);
 
 		break;

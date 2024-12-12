@@ -727,6 +727,8 @@ struct WAKE_INFO_T {
  */
 #define LOG_FUNC                kalPrint
 #define LOG_FUNC_LIMITED	kalPrintLimited
+#define TRACE_FUNC(_Module, _Class, _Str) \
+	DBGLOG(_Module, _Class, _Str, __func__)
 
 #if DBG_DISABLE_ALL_LOG
 #define DBGLOG(_Module, _Class, _Fmt, ...)
@@ -1005,7 +1007,7 @@ struct WAKE_INFO_T {
 			(_curLen) += kalSnprintf((_pucBuf) + (_curLen), \
 			(_maxLen) - (_curLen), _Fmt, ##__VA_ARGS__); \
 		else \
-			DBGLOG(SW4, INFO, _Fmt, ##__VA_ARGS__); \
+			DBGLOG(SW4, DEBUG, _Fmt, ##__VA_ARGS__); \
 	}
 /* The following macro is used for debugging packed structures. */
 #ifndef DATA_STRUCT_INSPECTING_ASSERT

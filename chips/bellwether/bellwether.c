@@ -884,7 +884,7 @@ static int __load_rom_binary(struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"Request FW ROM image: %s done, size: 0x%zx\n",
 			name_table[idx],
 			temp->size);
@@ -966,7 +966,7 @@ static uint32_t __polling_wf_mcu_idle(struct ADAPTER *prAdapter)
 		kalUdelay(MCU_IDLE_POLL_US);
 	} while ((i++) < MCU_IDLE_POLL_ROUND);
 
-	DBGLOG(INIT, INFO, "u4Value: 0x%x, fgIdle: %d\n", u4Value, fgIdle);
+	DBGLOG(INIT, DEBUG, "u4Value: 0x%x, fgIdle: %d\n", u4Value, fgIdle);
 
 	return (fgIdle == TRUE ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 }
@@ -992,7 +992,7 @@ static uint32_t __polling_wf_task_idle(struct ADAPTER *prAdapter)
 		kalUdelay(WF_IDLE_POLL_US);
 	} while ((i++) < WF_IDLE_POLL_ROUND);
 
-	DBGLOG(INIT, INFO, "u4Value: 0x%x, fgIdle: %d\n", u4Value, fgIdle);
+	DBGLOG(INIT, DEBUG, "u4Value: 0x%x, fgIdle: %d\n", u4Value, fgIdle);
 
 	return (fgIdle == TRUE ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 }
@@ -1015,8 +1015,9 @@ static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
 		if (u4Value == CONNSYS_VERSION_ID)
 			break;
 		else if (u4PollingCnt > 100) {
-			DBGLOG(INIT, INFO, "(%d) Polling conninfra id failed, value=0x%x.\n",
-				__LINE__, u4Value);
+			DBGLOG(INIT, DEBUG,
+			       "(%d) Polling conninfra id failed, value=0x%x.\n",
+			       __LINE__, u4Value);
 			ret = WLAN_STATUS_FAILURE;
 			goto exit2;
 		}
@@ -1030,7 +1031,9 @@ static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
 		if (u4Value & CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_CONN_INFRA_RDY_MASK)
 			break;
 		else if (u4PollingCnt > 100) {
-			DBGLOG(INIT, INFO, "Polling conninfra ready failed, value=0x%x.\n", u4Value);
+			DBGLOG(INIT, DEBUG,
+			       "Polling conninfra ready failed, value=0x%x.\n",
+			       u4Value);
 			ret = WLAN_STATUS_FAILURE;
 			goto exit1;
 		}
@@ -1056,7 +1059,9 @@ static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
 			(u4Value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_RDY_MASK))
 			break;
 		else if (u4PollingCnt > 100) {
-			DBGLOG(INIT, INFO, "Polling slp prot rdy failed, value=0x%x.\n", u4Value);
+			DBGLOG(INIT, DEBUG,
+			       "Polling slp prot rdy failed, value=0x%x.\n",
+			       u4Value);
 			ret = WLAN_STATUS_FAILURE;
 			goto exit1;
 		}
@@ -1090,8 +1095,9 @@ static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
 		if (u4Value == CONNSYS_VERSION_ID)
 			break;
 		else if (u4PollingCnt > 100) {
-			DBGLOG(INIT, INFO, "(%d) Polling conninfra id failed, value=0x%x.\n",
-				__LINE__, u4Value);
+			DBGLOG(INIT, DEBUG,
+			       "(%d) Polling conninfra id failed, value=0x%x.\n",
+			       __LINE__, u4Value);
 			ret = WLAN_STATUS_FAILURE;
 			goto exit1;
 		}
@@ -1133,7 +1139,7 @@ exit1:
 	HAL_MCR_WR(prAdapter, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, u4Value);
 
 exit2:
-	DBGLOG(INIT, INFO, "ret: 0x%lx\n", ret);
+	DBGLOG(INIT, DEBUG, "ret: 0x%lx\n", ret);
 	return ret;
 }
 

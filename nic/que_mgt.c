@@ -511,7 +511,7 @@ void qmActivateStaRec(struct ADAPTER *prAdapter,
 	LINK_INITIALIZE(&prStaRec->rMscsMonitorList);
 	LINK_INITIALIZE(&prStaRec->rMscsTcpMonitorList);
 
-	DBGLOG(QM, INFO, "QM: +STA[%d]\n", prStaRec->ucIndex);
+	DBGLOG(QM, DEBUG, "QM: +STA[%d]\n", prStaRec->ucIndex);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -582,7 +582,7 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 #if CFG_FAST_PATH_SUPPORT
 	mscsDeactivate(prAdapter, prStaRec);
 #endif
-	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);
+	DBGLOG(QM, DEBUG, "QM: -STA[%u]\n", prStaRec->ucIndex);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1032,7 +1032,7 @@ void qmSetStaRecTxAllowed(struct ADAPTER *prAdapter,
 	uint8_t ucIdx;
 	struct QUE *prSrcQ, *prDstQ;
 
-	DBGLOG(QM, VOC, "Set Sta[%u] TxAllowed from [%u] to [%u] %s TxQ\n",
+	DBGLOG(QM, INFO, "Set Sta[%u] TxAllowed from [%u] to [%u] %s TxQ\n",
 		prStaRec->ucIndex,
 		prStaRec->fgIsTxAllowed,
 		fgIsTxAllowed,
@@ -1196,7 +1196,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 					prAdapter, prCurrentMsduInfo,
 					ucActivedTspec, &ucTC);
 				if (!prTxQue) {
-					DBGLOG(QM, INFO,
+					DBGLOG(QM, DEBUG,
 						"Drop the Packet for TxQue is NULL\n");
 					prTxQue = &rNotEnqueuedQue;
 					TX_INC_CNT(&prAdapter->rTxCtrl,
@@ -1218,7 +1218,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 
 				if (prTxQue->u4NumElem >=
 					prQM->u4MaxForwardBufferCount) {
-					DBGLOG(QM, INFO,
+					DBGLOG(QM, DEBUG,
 					       "Drop the Packet for full Tx queue (forwarding) Bss %u\n",
 					       prCurrentMsduInfo->ucBssIndex);
 					prTxQue = &rNotEnqueuedQue;
@@ -1228,7 +1228,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 			}
 
 		} else {
-			DBGLOG(QM, INFO,
+			DBGLOG(QM, DEBUG,
 				"Drop the Packet for inactive Bss %u\n",
 				prCurrentMsduInfo->ucBssIndex);
 			QM_DBG_CNT_INC(prQM, QM_DBG_CNT_31);
@@ -1327,7 +1327,7 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 	ASSERT(prMsduInfo);
 
 	if (prBssInfo == NULL) {
-		DBGLOG(QM, INFO, "TX with prBssInfo = NULL\n");
+		DBGLOG(QM, DEBUG, "TX with prBssInfo = NULL\n");
 		return;
 	}
 
@@ -1798,7 +1798,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 
 				if (unlikely(prStaRec->ucBssIndex !=
 					prDequeuedPkt->ucBssIndex)) {
-					DBGLOG(QM, INFO,
+					DBGLOG(QM, DEBUG,
 						"BssIdx mismatch [%d,%d]",
 						prStaRec->ucBssIndex,
 						prDequeuedPkt->ucBssIndex);
@@ -2634,7 +2634,7 @@ void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,
 
 	/* distribute remaining PLE resource */
 	while (i4TotalExtraQuota != 0) {
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 				"distribute remaining PLE resource[%u]\n",
 				i4TotalExtraQuota);
 		for (i = TC0_INDEX; i < TC_NUM; i++) {
@@ -3016,7 +3016,7 @@ void qmAllocateResidualTcResource(struct ADAPTER *prAdapter,
 		}
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-		/* Add contorls for addtional WMM-loop */
+		/* Add controls for addtional WMM-loop */
 		}
 #endif
 		ucIdx++;
@@ -3188,7 +3188,7 @@ void qmReassignTcResource(struct ADAPTER *prAdapter)
 
 #if QM_PRINT_TC_RESOURCE_CTRL
 	/* Debug print */
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 		"QM: TC Rsc adjust to [%03u:%03u:%03u:%03u:%03u:%03u]\n",
 		prQM->au4CurrentTcResource[0],
 		prQM->au4CurrentTcResource[1],
@@ -3198,13 +3198,13 @@ void qmReassignTcResource(struct ADAPTER *prAdapter)
 		prQM->au4CurrentTcResource[5]);
 #endif
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 	"QM: TC[6-10] Rsc adjust to [%03u:%03u:%03u:%03u:%03u]\n",
 	prQM->au4CurrentTcResource[6], prQM->au4CurrentTcResource[7],
 	prQM->au4CurrentTcResource[8], prQM->au4CurrentTcResource[9],
 	prQM->au4CurrentTcResource[10]);
 
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 	"QM: TC[11-13] Rsc adjust to [%03u:%03u:%03u]\n",
 	prQM->au4CurrentTcResource[11], prQM->au4CurrentTcResource[12],
 	prQM->au4CurrentTcResource[13]);
@@ -3434,7 +3434,7 @@ static void processNanBmcRx(struct ADAPTER *prAdapter,
 	if (prBssInfo->eNetworkType != NETWORK_TYPE_NAN)
 		return;
 
-	DBGLOG(QM, INFO, "NAN special case for BMC packet\n");
+	DBGLOG(QM, DEBUG, "NAN special case for BMC packet\n");
 	if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl))
 		u2MACLen = sizeof(struct WLAN_MAC_HEADER_QOS);
 	else
@@ -3692,7 +3692,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		fgIsHTran = FALSE;
 
 		if (prAdapter->rWifiVar.u4BaVerboseLogging && fgIsBMC)
-			DBGLOG(QM, INFO,
+			DBGLOG(QM, DEBUG,
 				"Rx BMC [Sta,Tid,SN,len]:%u,%u,%u,%u\n",
 				prCurrSwRfb->ucStaRecIdx,
 				prCurrSwRfb->ucTid,
@@ -3865,13 +3865,13 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
 			qmAmsduValidation(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			DBGLOG(QM, INFO, "drop Abnormal AMSDU packet\n");
+			DBGLOG(QM, DEBUG, "drop Abnormal AMSDU packet\n");
 		}
 
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
 			qmDetectRxInvalidEAPOL(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			DBGLOG(QM, INFO,
+			DBGLOG(QM, DEBUG,
 				"drop EAPOL packet not in sec mode\n");
 		}
 #endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
@@ -3890,7 +3890,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			if (u2Etype == ETH_WPI_1X &&
 			    prCurrSwRfb->ucSecMode != 0 &&
 			    prCurrSwRfb->fgIsCipherMS == 0) {
-				DBGLOG(QM, INFO,
+				DBGLOG(QM, DEBUG,
 					"drop wpi packet with sec mode\n");
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
@@ -3907,7 +3907,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			prBssInfoRly = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndexRly);
 			if (prBssInfoRly && !IS_BSS_ACTIVE(prBssInfoRly)) {
-				DBGLOG(QM, INFO,
+				DBGLOG(QM, DEBUG,
 					"Mark NULL the Packet for inactive Bss %u\n",
 					ucBssIndexRly);
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
@@ -3924,7 +3924,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		}
 #endif
 		if (prAdapter->rWifiVar.u4BaVerboseLogging && fgIsBMC)
-			DBGLOG(QM, INFO,
+			DBGLOG(QM, DEBUG,
 				"Checked BMC [Sta,Tid,SN,len,fgDataFrame,StaRec,sec]:%u,%u,%u,%u,%u,%p,%u\n",
 				prCurrSwRfb->ucStaRecIdx,
 				prCurrSwRfb->ucTid,
@@ -4244,7 +4244,7 @@ u_int8_t qmAmsduValidation(struct ADAPTER *prAdapter,
 	"QM: FromDS:%d ToDS:%d TID:%u SN:%u PF:%u" \
 	" TA:" MACSTR " RA:" MACSTR " DA:" MACSTR " SA:" MACSTR " Drop:%d"
 			if (fgDrop)
-				DBGLOG(QM, INFO,
+				DBGLOG(QM, DEBUG,
 					__STR_FMT__,
 					RXM_IS_FROM_DS(u2FrameCtrl),
 					RXM_IS_TO_DS(u2FrameCtrl),
@@ -4390,7 +4390,7 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	 * as "Fall Within" case.
 	 */
 	if (prReorderQueParm->fgFirstSnToWinStart) {
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 		       "[%u] First resumed SN(%u) reset Window{%u,%u}\n",
 		       prSwRfb->ucTid, prSwRfb->u2SSN,
 		       prReorderQueParm->u2WinStart,
@@ -4574,7 +4574,7 @@ static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
 
 	u8Count = RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT);
 	if (prAdapter->rWifiVar.u4BaVerboseLogging) {
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu",
 		       prReorderQueParm->ucStaRecIdx, ucTid,
 		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
@@ -4591,7 +4591,7 @@ static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
 	checkRxDuplicateRetry(prAdapter, prReorderQueParm, prSwRfb);
 
 	if (IS_BAR_SSN_VALID(prReorderQueParm))
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu reset:%u",
 		       prReorderQueParm->ucStaRecIdx, ucTid,
 		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
@@ -4758,7 +4758,7 @@ void qmBaResetCheck(struct ADAPTER *prAdapter,
 	prReorderQueParm->ucLastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 #endif
 
-	DBGLOG(QM, INFO, "BA Win Shift STA[%u] TID[%u] {%u,%u} => {%u,%u}\n",
+	DBGLOG(QM, DEBUG, "BA Win Shift STA[%u] TID[%u] {%u,%u} => {%u,%u}\n",
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
 		u2WinStart, u2WinEnd, prReorderQueParm->u2WinStart,
 		prReorderQueParm->u2WinEnd);
@@ -4809,7 +4809,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 				 */
 				prReorderQueParm->u4SNOverlapCount = 0;
 				prReorderQueParm->fgNoDrop = FALSE;
-				DBGLOG(QM, INFO, "NO drop = FALSE, [%d][%d]\n",
+				DBGLOG(QM, DEBUG, "NO drop = FALSE, [%d][%d]\n",
 					u2SeqNo, prReorderQueParm->u2WinStart);
 			}
 		}
@@ -4826,7 +4826,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 			prReorderQueParm->u2BarSSN = 0;
 			CLR_BAR_SSN_VALID(prReorderQueParm);
 			prReorderQueParm->u2LastRcvdSN = 0;
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, DEBUG,
 				"Clear %u:%u BAR SSN, SN %d >= u2BarSSN %d\n",
 				prReorderQueParm->ucStaRecIdx,
 				prReorderQueParm->ucTid,
@@ -4907,7 +4907,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 		if (u2Delta > QUARTER_SEQ_NO_COUNT) {
 			prReorderQueParm->fgNoDrop = TRUE;
 			prReorderQueParm->u4SNOverlapCount = 0;
-			DBGLOG_LIMITED(QM, INFO,
+			DBGLOG_LIMITED(QM, DEBUG,
 				"QM: SSN jump over 1024:[%d]\n", u2Delta);
 #if (CFG_WIFI_AUTO_RECOVER == 1)
 			kalSnprintf(uevent, sizeof(uevent),
@@ -5199,7 +5199,7 @@ void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 	if  (!prAdapter->rWifiVar.u4BaVerboseLogging)
 		return;
 
-	DBGLOG(RX, INFO,
+	DBGLOG(RX, DEBUG,
 		"[class,type,miss,plfmt,isSub,Sta,Tid,WinStart,cSN,rSN,Lsub,WinAdv,deq,fin,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u,%u,%u(%s),%u,%u,%u,%u.%u,%u\n",
 		prReorderedSwRfb->ucRxClassify, /* class */
 		prReorderedSwRfb->ucPacketType, /* type */
@@ -5649,7 +5649,7 @@ void qmFlushTimeoutReorderBubble(struct ADAPTER *prAdapter,
 	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
 	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_DIRECT);
 
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 		"QM:(Bub Timeout) %u:%u Bub(%u)[%u]{%u,%u} -> Bub(%u)[%u]{%u,%u}\n",
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
 		fgHasBubble, u2FirstBubbleSn, u2WinStart, u2WinEnd,
@@ -5808,11 +5808,11 @@ void qmHandleEventTxAddBa(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 
-	DBGLOG(QM, INFO, "QM:Event +TxBa\n");
+	DBGLOG(QM, DEBUG, "QM:Event +TxBa\n");
 
 	if (!prChipInfo->is_support_hw_amsdu &&
 	    prChipInfo->ucMaxSwAmsduNum <= 1) {
-		DBGLOG(QM, INFO, "QM:Event +TxBa but chip is not support\n");
+		DBGLOG(QM, DEBUG, "QM:Event +TxBa but chip is not support\n");
 		return;
 	}
 
@@ -5822,7 +5822,7 @@ void qmHandleEventTxAddBa(struct ADAPTER *prAdapter,
 	if (!prStaRec) {
 		/* Invalid STA_REC index, discard the event packet */
 		/* ASSERT(0); */
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 		       "QM: (Warning) TX ADDBA Event for a NULL STA_REC\n");
 		return;
 	}
@@ -5846,7 +5846,7 @@ void qmHandleEventTxAddBa(struct ADAPTER *prAdapter,
 		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
 
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 	       "QM:Event +TxBa bitmap[0x%x] count[%u] MaxLen[%u] MinLen[%u]\n",
 	       prStaRec->ucAmsduEnBitmap, prStaRec->ucMaxMpduCount,
 	       prStaRec->u4MaxMpduLen, prStaRec->u4MinMpduLen);
@@ -5871,7 +5871,7 @@ void qmHandleEventRxAddBa(struct ADAPTER *prAdapter,
 	uint16_t u2WinSize;
 	uint16_t u2WinStart;
 
-	DBGLOG(QM, INFO, "QM:Event +RxBa\n");
+	DBGLOG(QM, DEBUG, "QM:Event +RxBa\n");
 
 	prEventRxAddBa = (struct EVENT_RX_ADDBA *)prEvent->aucBuffer;
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
@@ -6023,7 +6023,7 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 
 		g_arMissTimeout[ucStaRecIdx][ucTid] = 0;
 
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 			"QM: +RxBA(STA=%u TID=%u WinStart=%u WinEnd=%u WinSize=%u)\n",
 			ucStaRecIdx, ucTid, prRxBaEntry->u2WinStart,
 			prRxBaEntry->u2WinEnd,
@@ -6124,7 +6124,7 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
 #if ((QM_TEST_MODE == 0) && (QM_TEST_STA_REC_DEACTIVATION == 0))
 			prStaRec->aprRxReorderParamRefTbl[ucTid] = NULL;
 #endif
-			DBGLOG(QM, INFO, "QM: -RxBA(STA=%d,TID=%d)\n",
+			DBGLOG(QM, DEBUG, "QM: -RxBA(STA=%d,TID=%d)\n",
 				ucStaRecIdx, ucTid);
 		}
 	}
@@ -6321,7 +6321,7 @@ void mqmParseAssocRspWmmIe(const uint8_t *pucIE,
 				prStaRec->afgAcmRequired[eAci] = !!(
 					prWmmParam->arAcParam[eAci].ucAciAifsn &
 					WMM_ACIAIFSN_ACM);
-			DBGLOG(WMM, INFO,
+			DBGLOG(WMM, DEBUG,
 			       "WMM: " MACSTR "ACM BK=%d BE=%d VI=%d VO=%d\n",
 			       MAC2STR(prStaRec->aucMacAddr),
 			       prStaRec->afgAcmRequired[ACI_BK],
@@ -6635,7 +6635,7 @@ void mqmUpdateEdcaParams(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 			prAcQueParams->u2CWmax,
 			prAcQueParams->u2TxopLimit);
 	}
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 	       "BSS[%u] [AC/ACM/Aifsn/CWmin/CWmax/TxopLimit] %sCnt[%d]\n",
 	       prBssInfo->ucBssIndex, arBuf, *pucWmmParamSetCount);
 }
@@ -6665,7 +6665,7 @@ u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
 	/* Check Set Count, only update when count change */
 	if (*pucMUEdcaUpdateCnt != (prIeMUEdcaParam->ucMUQosInfo &
 		WMM_QOS_INFO_PARAM_SET_CNT)) {
-		DBGLOG(QM, INFO, "cnt changed, %u -> %lu\n",
+		DBGLOG(QM, DEBUG, "cnt changed, %u -> %lu\n",
 			   *pucMUEdcaUpdateCnt,
 			   prIeMUEdcaParam->ucMUQosInfo &
 				   WMM_QOS_INFO_PARAM_SET_CNT);
@@ -6711,7 +6711,7 @@ u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
 		/* MU EDCA timer */
 		if (prBSSMUEdca->ucMUEdcaTimer !=
 			prMUAcParamInIE->ucMUEdcaTimer) {
-			DBGLOG(QM, INFO, "timer changed, %d -> %d\n",
+			DBGLOG(QM, DEBUG, "timer changed, %d -> %d\n",
 			       prBSSMUEdca->ucMUEdcaTimer,
 			       prMUAcParamInIE->ucMUEdcaTimer);
 			return FALSE;
@@ -6798,7 +6798,7 @@ u_int8_t mqmUpdateMUEdcaParams(struct ADAPTER *prAdapter,
 				prBSSMUEdca->ucECWmax,
 				prBSSMUEdca->ucMUEdcaTimer);
 		}
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 		       "BSS[%u] [AC/ACM/Aifsn/ECWmin/ECWmax/Timer] %sForceOverride[%d] NewParameter[%d] Cnt[%d]\n",
 		       prBssInfo->ucBssIndex, arBuf, fgForceOverride,
 		       fgNewParameter, *pucMUEdcaUpdateCnt);
@@ -7001,7 +7001,7 @@ u_int8_t mqmIsEdcaParamsChanged(struct ADAPTER *prAdapter,
 	/* Check Set Count */
 	if (*pucWmmParamSetCount != (ucQosInfo &
 			WMM_QOS_INFO_PARAM_SET_CNT)) {
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 		       "IE count changed (%u -> %lu) but Param unchanged\n",
 		       *pucWmmParamSetCount,
 		       ucQosInfo & WMM_QOS_INFO_PARAM_SET_CNT);
@@ -7081,7 +7081,7 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MLR
 	prStaRec->ucMlrSupportBitmap = prScanResult->ucMlrSupportBitmap;
 	prStaRec->ucRCPI = prScanResult->ucRCPI;
-	MLR_DBGLOG(prAdapter, WMM, INFO,
+	MLR_DBGLOG(prAdapter, WMM, DEBUG,
 		"MLR beacon - BSSID:" MACSTR
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		" ,MLIE Valid:%d|LinkId:%d|Mld Addr:" MACSTR
@@ -7168,7 +7168,7 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 									[eAci]
 								.ucAciAifsn &
 							WMM_ACIAIFSN_ACM);
-					DBGLOG(WMM, INFO,
+					DBGLOG(WMM, DEBUG,
 					       "WMM: " MACSTR
 					       "ACM BK=%d BE=%d VI=%d VO=%d\n",
 					       MAC2STR(prStaRec->aucMacAddr),
@@ -7298,7 +7298,7 @@ mqmFillWmmInfoIE(uint8_t *pucOutBuf,
 				break;
 
 			default:
-				DBGLOG(QM, INFO, "MQM: Incorrect SP length\n");
+				DBGLOG(QM, DEBUG, "MQM: Incorrect SP length\n");
 				ucQosInfo |= WMM_QOS_INFO_MAX_SP_2;
 				break;
 			}
@@ -7686,7 +7686,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
 		}
 		/* 4 <2> Drop, if BSS is inactive */
 		if (!prBssInfo) {
-			DBGLOG(QM, INFO,
+			DBGLOG(QM, DEBUG,
 				"Drop packets (BSS is NULL)\n");
 			eFrameAction = FRAME_ACTION_DROP_PKT;
 			break;
@@ -7741,7 +7741,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
 				}
 				/* 4 <4.2.2> Queue, if resource is not enough */
 				else {
-					DBGLOG(QM, INFO,
+					DBGLOG(QM, DEBUG,
 						"Queue packets (Sta[%u] in PS)\n",
 						prStaRec->ucIndex);
 					eFrameAction = FRAME_ACTION_QUEUE_PKT;
@@ -7760,7 +7760,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
 
 		if (u2FreeResource < ucReqResource) {
 			eFrameAction = FRAME_ACTION_QUEUE_PKT;
-			DBGLOG(QM, INFO,
+			DBGLOG(QM, DEBUG,
 				"Queue MGMT (MSDU[0x%p] Req/Rsv/Free[%u/%u/%u])\n",
 				prMsduInfo,
 				halTxGetCmdPageCount(prAdapter,
@@ -7780,7 +7780,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
 				MSEC_TO_SYSTIME(
 					prWifiVar->u4MgmtQueueDelayTimeout))) {
 				eFrameAction = FRAME_ACTION_DROP_PKT;
-				log_dbg(QM, INFO, "Drop MGMT (MSDU[0x%p] timeout[%ums])\n",
+				log_dbg(QM, DEBUG, "Drop MGMT (MSDU[0x%p] timeout[%ums])\n",
 					prMsduInfo,
 					prWifiVar->u4MgmtQueueDelayTimeout);
 			}
@@ -7824,7 +7824,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prEventBssStatus->ucBssIndex);
 	if (!prBssInfo) {
-		DBGLOG(QM, INFO, "NAF:prBssInfo is NULL\n");
+		DBGLOG(QM, DEBUG, "NAF:prBssInfo is NULL\n");
 		return;
 	}
 
@@ -7875,7 +7875,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 		prBssInfo->ucAbsPresLogCount++;
 
 		if (prBssInfo->ucAbsPresLogCount >= QA_ABS_PRES_LOG_MAX_COUNT) {
-			DBGLOG(QM, VOC, "NAF: B=%u, %u.%u, %s\n",
+			DBGLOG(QM, INFO, "NAF: B=%u, %u.%u, %s\n",
 			       prBssInfo->ucBssIndex,
 			       prBssInfo->u4FirstAbsPresTime / MSEC_PER_SEC,
 			       prBssInfo->u4FirstAbsPresTime % MSEC_PER_SEC,
@@ -7896,7 +7896,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 		prBssInfo->fgIsNetAbsent ? prBssInfo->u4PresentTime :
 					   prBssInfo->u4AbsentTime);
 #else
-	DBGLOG(QM, INFO, "NAF:B=%u,A=%u,F=%u,T=%u\n",
+	DBGLOG(QM, DEBUG, "NAF:B=%u,A=%u,F=%u,T=%u\n",
 		prEventBssStatus->ucBssIndex,
 		prBssInfo->fgIsNetAbsent,
 		prBssInfo->ucBssFreeQuota,
@@ -7960,7 +7960,7 @@ void qmHandleEventStaChangePsMode(struct ADAPTER *prAdapter,
 			prEventStaChangePsMode->ucUpdateMode,
 			prEventStaChangePsMode->ucFreeQuota);
 
-		DBGLOG(QM, INFO, "PS=%d,%d M:%d Q:%d\n",
+		DBGLOG(QM, DEBUG, "PS=%d,%d M:%d Q:%d\n",
 			prEventStaChangePsMode->ucStaRecIdx,
 			prStaRec->fgIsInPS,
 			prEventStaChangePsMode->ucUpdateMode,
@@ -8281,7 +8281,7 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 		prQM->u4TimeToUpdateQueLen);
 #endif
 
-	DBGLOG(SW4, INFO, "===\n");
+	DBGLOG(SW4, DEBUG, "===\n");
 
 #if QM_FORWARDING_FAIRNESS
 	for (i = 0; i < NUM_OF_PER_STA_TX_QUEUES; i++) {
@@ -8582,7 +8582,7 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		prDetRplyInfo->arReplayPNInfo[ucKeyID].fgFirstPkt = FALSE;
 		HAL_RX_STATUS_GET_PN(prSwRfb->prRxStatusGroup1,
 			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN);
-		DBGLOG(QM, INFO,
+		DBGLOG(QM, DEBUG,
 			"First check packet. Key ID:0x%x\n", ucKeyID);
 		return FALSE;
 	}
@@ -8713,7 +8713,7 @@ void qmMoveStaTxQueue(struct ADAPTER *prAdapter,
 	prDstQue = &prDstStaRec->arPendingTxQueue[0];
 	ucDstStaIndex = prDstStaRec->ucIndex;
 
-	DBGLOG(QM, INFO, "Move Pending MSDUs STA[%u->%u] TC[%u %u %u %u]\n",
+	DBGLOG(QM, DEBUG, "Move Pending MSDUs STA[%u->%u] TC[%u %u %u %u]\n",
 		prSrcStaRec->ucIndex, ucDstStaIndex,
 		prSrcQue[TC0_INDEX].u4NumElem, prSrcQue[TC1_INDEX].u4NumElem,
 		prSrcQue[TC2_INDEX].u4NumElem, prSrcQue[TC3_INDEX].u4NumElem);
@@ -8785,7 +8785,7 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	}
 	if (eAci >= ACI_NUM)
 		return;
-	DBGLOG(QM, INFO, "new ACI %d, ACM %d, HasTs %d\n", eAci,
+	DBGLOG(QM, DEBUG, "new ACI %d, ACM %d, HasTs %d\n", eAci,
 	       prAcQueParam[eAci].ucIsACMSet, !!(ucActivedTspec & BIT(eAci)));
 	ucTc = aucWmmAC2TcResourceSet1[eAci];
 	prDstQue = &prStaRec->arTxQueue[ucTc];
@@ -8823,7 +8823,7 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 			DBGLOG(QM, ERROR, "No channel occupation\n");
 		} else {
-			DBGLOG(QM, INFO, "Dhcp done, stop join timer.\n");
+			DBGLOG(QM, DEBUG, "Dhcp done, stop join timer.\n");
 			cnmTimerStopTimer(prAdapter,
 				&prAisFsmInfo->rJoinTimeoutTimer);
 			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
@@ -8831,7 +8831,7 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	else if (IS_BSS_P2P(prBssInfo)) { /* GC */
-		DBGLOG(QM, INFO, "Dhcp done, stop GC join timer\n");
+		DBGLOG(QM, DEBUG, "Dhcp done, stop GC join timer\n");
 		p2pRoleFsmNotifyDhcpDone(prAdapter, ucBssIndex);
 	}
 #endif
@@ -8872,7 +8872,7 @@ void qmHandleRxReorderWinShift(struct ADAPTER *prAdapter,
 	if (SEQ_SMALLER(u2WinStart, u2SSN)) {
 #if CFG_SUPPORT_RX_OOR_BAR
 		prReorderQueParm->u2BarSSN = u2SSN;
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 			"BAR: update %u:%u WinStart %u -> %u, LRcvdSN=%u, B=%u",
 			prReorderQueParm->ucStaRecIdx,
 			prReorderQueParm->ucTid,
@@ -8949,7 +8949,7 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 					m == 3 &&
 					!prSwRfb->prStaRec->fgIsTxKeyReady) {
 				prAdapter->fgIsPostponeTxEAPOLM3 = TRUE;
-				DBGLOG(QM, INFO,
+				DBGLOG(QM, DEBUG,
 					"[Passpoint] Postpone sending EAPOL M4 until PTK installed!");
 			}
 		}

@@ -478,7 +478,7 @@ uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (flag != 0)
-		DBGLOG(OID, INFO, "[WLAN-LP] %s\n", (char *)&aucStr[0]);
+		DBGLOG(OID, DEBUG, "[WLAN-LP] %s\n", (char *)&aucStr[0]);
 #else
 	/*1.dump cmd*/
 	if (prWakeInfoStatics->ucCmdCnt > 0) {
@@ -493,7 +493,7 @@ uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo)
 				return 1;
 			pos += ret;
 		}
-		DBGLOG(OID, INFO, "[LP-CMD-ID-%u][%s]\n",
+		DBGLOG(OID, DEBUG, "[LP-CMD-ID-%u][%s]\n",
 			prWakeInfoStatics->ucCmdCnt, (char *)&aucStr[0]);
 
 		kalMemZero(&aucStr[0], sizeof(uint8_t)*WAKE_STR_BUFFER_LEN);
@@ -507,7 +507,7 @@ uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo)
 				return 1;
 			pos += ret;
 		}
-		DBGLOG(OID, INFO, "[LP-CMD-CNT-%u][%s]\n",
+		DBGLOG(OID, DEBUG, "[LP-CMD-CNT-%u][%s]\n",
 			prWakeInfoStatics->u4TotalCmd, (char *)&aucStr[0]);
 	}
 
@@ -525,7 +525,7 @@ uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo)
 				return 1;
 			pos += ret;
 		}
-		DBGLOG(OID, INFO, "[LP-EVENT-ID-%u][%s]\n",
+		DBGLOG(OID, DEBUG, "[LP-EVENT-ID-%u][%s]\n",
 			prWakeInfoStatics->ucEventCnt, (char *)&aucStr[0]);
 
 		kalMemZero(&aucStr[0], sizeof(uint8_t)*WAKE_STR_BUFFER_LEN);
@@ -541,13 +541,13 @@ uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo)
 			}
 			pos += ret;
 		}
-		DBGLOG(OID, INFO, "[LP-EVENT-CNT-%u][%s]\n",
+		DBGLOG(OID, DEBUG, "[LP-EVENT-CNT-%u][%s]\n",
 			prWakeInfoStatics->u4TotalEvent, (char *)&aucStr[0]);
 	}
 
 	/*3.dump tx/rx data*/
 	if (prWakeInfoStatics->u4TxCnt > 0) {
-		DBGLOG(OID, INFO, "[LP-EVENT-TX-%u][%u-%u-%u-%u-%u-%u]\n",
+		DBGLOG(OID, DEBUG, "[LP-EVENT-TX-%u][%u-%u-%u-%u-%u-%u]\n",
 			prWakeInfoStatics->u4TxCnt,
 			prWakeInfoStatics->au4TxDataCnt[WLAN_WAKE_ARP],
 			prWakeInfoStatics->au4TxDataCnt[WLAN_WAKE_IPV4],
@@ -558,7 +558,7 @@ uint32_t wlanWakeDumpRes(struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (prWakeInfoStatics->u4RxCnt > 0) {
-		DBGLOG(OID, INFO, "[LP-EVENT-RX-%u][%u-%u-%u-%u-%u-%u]\n",
+		DBGLOG(OID, DEBUG, "[LP-EVENT-RX-%u][%u-%u-%u-%u-%u-%u]\n",
 			prWakeInfoStatics->u4RxCnt,
 			prWakeInfoStatics->au4RxDataCnt[WLAN_WAKE_ARP],
 			prWakeInfoStatics->au4RxDataCnt[WLAN_WAKE_IPV4],
@@ -729,7 +729,8 @@ void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 			if (rStatus != WLAN_STATUS_FAILURE)
 				prAdapter->fgSetLogLevel = true;
 			else
-				DBGLOG(INIT, INFO, "Log level setting fail!\n");
+				DBGLOG(INIT, DEBUG,
+				       "Log level setting fail!\n");
 		}
 			break;
 		default:
@@ -744,7 +745,7 @@ void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
 	kalSetLogTooMuch(u4DriverLevel, u4FwLevel);
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"version=%d module=%d u4level=%d result[D:%d|F:%d]\n",
 		u4Version, u4Module, u4level, u4DriverLevel, u4FwLevel);
 
@@ -789,7 +790,7 @@ void wlanDriverDbgLevelSync(void)
 	else
 		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_UV;
 
-	DBGLOG(INIT, INFO, "u4DriverLogLevel=%d\n", u4DriverLogLevel);
+	DBGLOG(INIT, DEBUG, "u4DriverLogLevel=%d\n", u4DriverLogLevel);
 	wlanDbgSetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, u4DriverLogLevel);
 }
 

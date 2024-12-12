@@ -258,10 +258,10 @@ do { \
 } while (FALSE)
 #else
 #define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason) \
-	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
+	DBGLOG(INIT, DEBUG, "DO NOT support chip reset\n")
 
 #define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags) \
-	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
+	DBGLOG(INIT, DEBUG, "DO NOT support chip reset\n")
 #endif
 
 /*******************************************************************************

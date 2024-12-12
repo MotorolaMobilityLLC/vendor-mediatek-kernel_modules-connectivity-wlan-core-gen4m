@@ -566,7 +566,7 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 	u_int8_t ret = TRUE;
 	unsigned long flags;
 
-	DBGLOG(INIT, INFO, "reg: 0x%x, total_size: 0x%x\n", reg, total_size);
+	DBGLOG(INIT, DEBUG, "reg: 0x%x, total_size: 0x%x\n", reg, total_size);
 
 	remap = chip_info->bus_info->bus2chip_remap;
 	if (!remap) {
@@ -695,7 +695,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -714,7 +714,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -730,7 +730,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -756,7 +756,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -782,7 +782,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -827,7 +827,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -846,7 +846,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -862,7 +862,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -888,7 +888,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -914,7 +914,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -1082,7 +1082,7 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
 			DBGLOG(HAL, ERROR, "Read register is deadfeed\n");
 			if (in_interrupt())
-				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
+				DBGLOG(INIT, DEBUG, "Skip reset in tasklet\n");
 			else
 				GL_DEFAULT_RESET_TRIGGER(prAdapter,
 					RST_REG_READ_DEADFEED);
@@ -1743,7 +1743,7 @@ static void kalWfdmaWriteBackRecovery(
 	HAL_GET_RING_DIDX(HIF_RING, prAdapter, prRxRing, &u4RxEmiDmaIdx);
 
 	if (u4RxDmaIdx != u4RxEmiDmaIdx) {
-		DBGLOG(HAL, INFO, "P[%u] DMA[%u] EMI[%u]\n",
+		DBGLOG(HAL, DEBUG, "P[%u] DMA[%u] EMI[%u]\n",
 		       u2Port, u4RxDmaIdx, u4RxEmiDmaIdx);
 		if (prDbgOps && prDbgOps->show_wfdma_wb_info)
 			prDbgOps->show_wfdma_wb_info(prAdapter);
@@ -1766,7 +1766,7 @@ static void kalWaitRxDmaDoneDebug(
 		       prRxRing->hw_didx_addr,
 		       &prRxRing->RxDmaIdx);
 	prRxRing->RxDmaIdx &= MT_RING_DIDX_MASK;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
 	       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
 
@@ -1775,16 +1775,16 @@ static void kalWaitRxDmaDoneDebug(
 	if (prRxRing->RxDmaIdx != u4CpuIdx) {
 		pRxCell = &prRxRing->Cell[u4CpuIdx];
 		pCrRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
-		DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
-		DBGLOG_MEM32(HAL, INFO, pCrRxD, sizeof(struct RXD_STRUCT));
+		DBGLOG(HAL, DEBUG, "Rx DMAD[%u]\n", u4CpuIdx);
+		DBGLOG_MEM32(HAL, DEBUG, pCrRxD, sizeof(struct RXD_STRUCT));
 		u4Size = pCrRxD->SDLen0;
 		if (u4Size > CFG_RX_MAX_PKT_SIZE) {
 			DBGLOG(RX, ERROR, "Rx Data too large[%u]\n", u4Size);
 		} else {
-			DBGLOG(HAL, INFO, "RXD+Data[%u] len[%u]\n",
+			DBGLOG(HAL, DEBUG, "RXD+Data[%u] len[%u]\n",
 			       u4CpuIdx, u4Size);
 			prDmaBuf = &pRxCell->DmaBuf;
-			DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, u4Size);
+			DBGLOG_MEM32(HAL, DEBUG, prDmaBuf->AllocVa, u4Size);
 		}
 	}
 
@@ -1837,10 +1837,10 @@ static void kalWaitRxDmaDoneTimeoutDebug(
 	while (prRxRing->RxDmaIdx != u4CpuIdx) {
 		prRxCell = &prRxRing->Cell[u4CpuIdx];
 		prRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
-		DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
-		DBGLOG_MEM32(HAL, INFO, prRxD, sizeof(struct RXD_STRUCT));
+		DBGLOG(HAL, DEBUG, "Rx DMAD[%u]\n", u4CpuIdx);
+		DBGLOG_MEM32(HAL, DEBUG, prRxD, sizeof(struct RXD_STRUCT));
 		prDmaBuf = &prRxCell->DmaBuf;
-		DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, 32);
+		DBGLOG_MEM32(HAL, DEBUG, prDmaBuf->AllocVa, 32);
 		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
 	}
 }
@@ -1856,7 +1856,7 @@ static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
 	if (prBusInfo->u4EnHifIntUs &&
 		TIME_AFTER64(u8Now, prBusInfo->u8HifIntUs)) {
 		u8Delta = TIME_ABS_DIFF64(u8Now, prBusInfo->u8HifIntUs);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "RX[%u] done bit ready time[%lld.%.6lld] cnt[%d]\n",
 		       u2Port,
 		       USEC_TO_SEC(u8Delta), USEC_REM_TO_SEC(u8Delta),
@@ -2865,8 +2865,8 @@ static void kalDevDebugSegment(struct ADAPTER *ad, struct SW_RFB *prSwRfb,
 		/* use payload length in rxd instead */
 		u4Len = prSwRfb->u2PacketLen;
 
-		DBGLOG(HAL, INFO, "Dump RXD:\n");
-		DBGLOG_MEM8(HAL, INFO, prSwRfb->prRxStatus,
+		DBGLOG(HAL, DEBUG, "Dump RXD:\n");
+		DBGLOG_MEM8(HAL, DEBUG, prSwRfb->prRxStatus,
 			ad->chip_info->rxd_size);
 	} else
 		pvPayload = prSwRfb->pucRecvBuff;
@@ -2875,8 +2875,8 @@ static void kalDevDebugSegment(struct ADAPTER *ad, struct SW_RFB *prSwRfb,
 	if (u4Len >= CFG_RX_MAX_PKT_SIZE)
 		u4Len = CFG_RX_MAX_PKT_SIZE;
 
-	DBGLOG(HAL, INFO, "Dump RXP:\n");
-	DBGLOG_MEM8(HAL, INFO, pvPayload, u4Len);
+	DBGLOG(HAL, DEBUG, "Dump RXP:\n");
+	DBGLOG_MEM8(HAL, DEBUG, pvPayload, u4Len);
 
 #if CFG_DEBUG_RX_SEGMENT
 	if (eType == RX_SEGMENT_LAST) {
@@ -3357,7 +3357,7 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 	}
 
 	GLUE_INC_REF_CNT(prGlueInfo->u4HifRegStartCnt);
-	DBGLOG(HAL, INFO, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
+	DBGLOG(HAL, DEBUG, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
 	       prGlueInfo->prAdapter->u4PwrCtrlBlockCnt,
 	       prGlueInfo->u4HifRegStartCnt);
 
@@ -3377,7 +3377,7 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 	halSetFWOwn(prGlueInfo->prAdapter, FALSE);
 
 	GLUE_DEC_REF_CNT(prGlueInfo->u4HifRegStartCnt);
-	DBGLOG(HAL, INFO, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
+	DBGLOG(HAL, DEBUG, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
 	       prGlueInfo->prAdapter->u4PwrCtrlBlockCnt,
 	       prGlueInfo->u4HifRegStartCnt);
 

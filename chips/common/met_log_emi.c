@@ -152,7 +152,7 @@ static int met_log_emi_read(void)
 		return 0;
 	}
 	if (recv % 8 != 0) {
-		DBGLOG(MET, INFO,
+		DBGLOG(MET, DEBUG,
 			"align 8, change recv size from %d to %d\n",
 			recv, recv - (recv % 8));
 		recv -= (recv % 8);
@@ -168,7 +168,7 @@ static int met_log_emi_read(void)
 		else
 			size = recv;
 
-		DBGLOG(MET, INFO,
+		DBGLOG(MET, DEBUG,
 			"Read data from: 0x%x, size: 0x%x\n",
 			rpTemp,
 			size);
@@ -222,7 +222,7 @@ static int met_log_emi_read_wifi_long(void)
 		return 0;
 	}
 	if (recv % 16 != 0) {
-		DBGLOG(MET, INFO,
+		DBGLOG(MET, DEBUG,
 			"align 16, change recv size from %d to %d\n",
 			recv, recv - (recv % 16));
 		recv -= (recv % 16);
@@ -238,7 +238,7 @@ static int met_log_emi_read_wifi_long(void)
 		else
 			size = recv;
 
-		DBGLOG(MET, INFO,
+		DBGLOG(MET, DEBUG,
 			"Read data from: 0x%x, size: 0x%x\n",
 			rpTemp,
 			size);
@@ -293,7 +293,7 @@ static int met_log_emi_read_common(void)
 		return 0;
 	}
 	if (recv % 16 != 0) {
-		DBGLOG(MET, INFO,
+		DBGLOG(MET, DEBUG,
 			"align 16, change recv size from %d to %d\n",
 			recv, recv - (recv % 16));
 		recv -= (recv % 16);
@@ -309,7 +309,7 @@ static int met_log_emi_read_common(void)
 		else
 			size = recv;
 
-		DBGLOG(MET, INFO,
+		DBGLOG(MET, DEBUG,
 			"Read data from: 0x%x, size: 0x%x\n",
 			rpTemp,
 			size);
@@ -357,7 +357,7 @@ static void met_log_emi_handler(void)
 	ctrl->irp = ctrl->rp;
 	ctrl->start_addr = ctrl->rp;
 	ctrl->end_addr = ctrl->rp + ctrl->emi_size;
-	DBGLOG(MET, INFO,
+	DBGLOG(MET, DEBUG,
 		"irp: 0x%x, start_addr: 0x%x, end_addr: 0x%x\n",
 		ctrl->irp,
 		ctrl->start_addr,
@@ -367,7 +367,7 @@ static void met_log_emi_handler(void)
 	ctrl->start_addr_wifi_long = ctrl->rp_wifi_long;
 	ctrl->end_addr_wifi_long =
 		ctrl->rp_wifi_long + ctrl->emi_size_wifi_long;
-	DBGLOG(MET, INFO,
+	DBGLOG(MET, DEBUG,
 		"[Wifi Long] irp: 0x%x, start_addr: 0x%x, end_addr: 0x%x\n",
 		ctrl->irp_wifi_long,
 		ctrl->start_addr_wifi_long,
@@ -376,7 +376,7 @@ static void met_log_emi_handler(void)
 	ctrl->irp_common = ctrl->rp_common;
 	ctrl->start_addr_common = ctrl->rp_common;
 	ctrl->end_addr_common = ctrl->rp_common + ctrl->emi_size_common;
-	DBGLOG(MET, INFO,
+	DBGLOG(MET, DEBUG,
 		"[Common] irp: 0x%x, start_addr: 0x%x, end_addr: 0x%x\n",
 		ctrl->irp_common,
 		ctrl->start_addr_common,
@@ -388,7 +388,7 @@ static void met_log_emi_handler(void)
 			break;
 		if (test_bit(GLUE_FLAG_HALT_BIT, &ad->prGlueInfo->ulFlag) ||
 		    kalIsResetting()) {
-			DBGLOG(MET, INFO,
+			DBGLOG(MET, DEBUG,
 				"wifi off, stop Met log.\n");
 			break;
 		}
@@ -485,7 +485,7 @@ uint32_t met_log_emi_init(struct ADAPTER *ad)
 		u4EmiMetOffset + MET_LOG_EMI_SIZE + MET_LOG_EMI_WIFI_LONG_SIZE;
 	ctrl->emi_size_common = MET_LOG_EMI_COMMON_SIZE - MET_LOG_EMI_RESERVED;
 
-	DBGLOG(MET, INFO,
+	DBGLOG(MET, DEBUG,
 		"offset: 0x%x, emi_size: 0x%x, wifi_long_offset: 0x%x, wifi_long_size: 0x%x, common_offset: 0x%x, common_size: 0x%x\n",
 		ctrl->offset,
 		ctrl->emi_size,
@@ -512,7 +512,7 @@ uint32_t met_log_emi_init(struct ADAPTER *ad)
 	ctrl->offset = u4EmiMetOffset;
 	ctrl->emi_size = MET_LOG_EMI_SIZE - MET_LOG_EMI_RESERVED;
 
-	DBGLOG(MET, INFO,
+	DBGLOG(MET, DEBUG,
 		"offset: 0x%x, emi_size: 0x%x\n",
 		ctrl->offset,
 		ctrl->emi_size);

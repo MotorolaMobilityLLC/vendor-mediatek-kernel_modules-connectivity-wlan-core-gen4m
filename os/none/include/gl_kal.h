@@ -560,7 +560,7 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 	} \
 	if (pvAddr) {   \
 		allocatedMemSize += u4Size;   \
-		DBGLOG(INIT, INFO, "0x%p(%ld) allocated (%s:%s)\n", \
+		DBGLOG(INIT, DEBUG, "0x%p(%ld) allocated (%s:%s)\n", \
 		    pvAddr, (uint32_t)u4Size, __FILE__, __func__);  \
 	}   \
 	pvAddr; \
@@ -607,7 +607,7 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 {   \
 	if (pvAddr) {   \
 		allocatedMemSize -= u4Size; \
-		DBGLOG(INIT, INFO, "0x%p(%ld) freed (%s:%s)\n", \
+		DBGLOG(INIT, DEBUG, "0x%p(%ld) freed (%s:%s)\n", \
 			pvAddr, (uint32_t)u4Size, __FILE__, __func__);  \
 	}   \
 	if (eMemType == PHY_MEM_TYPE) { \
@@ -712,7 +712,7 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 				i4TotalLen - i4BytesWritten,\
 				fmt,\
 				args);\
-		DBGLOG(HAL, INFO, fmt, args);\
+		DBGLOG(HAL, DEBUG, fmt, args);\
 		i4BytesWritten;\
 	} \
 )

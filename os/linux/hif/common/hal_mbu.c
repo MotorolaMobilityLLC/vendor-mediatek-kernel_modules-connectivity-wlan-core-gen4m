@@ -134,7 +134,7 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 			   prMbuInfo->u4RemapVal);
 	}
 
-	DBGLOG(HAL, INFO, "base: pa:0x%llx, va:0x%llx\n",
+	DBGLOG(HAL, DEBUG, "base: pa:0x%llx, va:0x%llx\n",
 	       prMem->pa, prMem->va);
 
 	/* 1. [ALL] Program to unmask vector event for cb_infra_mbu */
@@ -362,7 +362,7 @@ exit:
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg) && prMsiMirror) {
 		KAL_BOOT_TIME_END();
 		fgDbg = TRUE;
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "read [0x%08x]=[0x%08x][0x%08x] sta[0x%08x] time[%llu us]\n",
 		       u4Addr, *pu4LowVal, *pu4HighVal, prMsiMirror->u4IntSta,
 		       KAL_GET_BOOTTIME_INTERVAL());
@@ -386,8 +386,8 @@ void halMbuDebug(struct GLUE_INFO *prGlueInfo)
 	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi)
 		return;
 
-	DBGLOG(HAL, INFO, "Dump MBU EMI:\n");
-	DBGLOG_MEM32(HAL, INFO, prEmi, sizeof(struct MBU_EMI_CTX));
+	DBGLOG(HAL, DEBUG, "Dump MBU EMI:\n");
+	DBGLOG_MEM32(HAL, DEBUG, prEmi, sizeof(struct MBU_EMI_CTX));
 }
 #endif /* CB_INFRA_MBU_BASE */
 #endif /* CFG_MTK_WIFI_MBU */

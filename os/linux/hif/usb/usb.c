@@ -943,7 +943,7 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 			prHifInfo->state == USB_STATE_PRE_RESUME ||
 			prHifInfo->state == USB_STATE_PRE_SUSPEND)) {
 			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"not allowed to transmit CMD packet. (%d)\n",
 				prHifInfo->state);
 			return -ESHUTDOWN;
@@ -951,7 +951,7 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 	} else if (type == SUBMIT_TYPE_TX_DATA) {
 		if (!(prHifInfo->state == USB_STATE_LINK_UP)) {
 			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"not allowed to transmit DATA packet. (%d)\n",
 				prHifInfo->state);
 			return -ESHUTDOWN;
@@ -1027,7 +1027,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		}
 	}
 	ASSERT(prHifInfo->eEventEpType != EVENT_EP_TYPE_UNKONW);
-	DBGLOG(HAL, INFO, "Event EP Type: %x\n", prHifInfo->eEventEpType);
+	DBGLOG(HAL, DEBUG, "Event EP Type: %x\n", prHifInfo->eEventEpType);
 
 	prHifInfo->prGlueInfo = prGlueInfo;
 	usb_set_intfdata(prHifInfo->intf, prGlueInfo);
@@ -1133,7 +1133,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 			++i;
 		}
 
-		DBGLOG(INIT, INFO, "USB Tx URB INIT Tc[%u] cnt[%u] len[%u]\n", ucTc, i,
+		DBGLOG(INIT, DEBUG,
+		       "USB Tx URB INIT Tc[%u] cnt[%u] len[%u]\n", ucTc, i,
 		       prHifInfo->rTxDataBufCtrl[ucTc][0].u4BufSize);
 	}
 
@@ -1677,7 +1678,8 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 				  HIF_USB_ERR_DESC_STR "usb_writel() reports error: %x retry: %u", ret, ucRetryCount);
 		DBGLOG(HAL, ERROR, "usb_writel() reports error: %x retry: %u\n", ret, ucRetryCount);
 	} else {
-		DBGLOG(HAL, INFO, "Set CR[0x%08x] value[0x%08x]\n", u4Register, u4Value);
+		DBGLOG(HAL, DEBUG,
+		       "Set CR[0x%08x] value[0x%08x]\n", u4Register, u4Value);
 	}
 
 	if (kalIsResetting() == FALSE) {
@@ -1889,7 +1891,9 @@ kalDevPortRead(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
 	/* int bNum = 0; */
 
 #if DBG
-	DBGLOG(HAL, INFO, "++kalDevPortRead++ buf:0x%p, port:0x%x, length:%d\n", pucBuf, u2Port, u4Len);
+	DBGLOG(HAL, DEBUG,
+	       "++%s++ buf:0x%p, port:0x%x, length:%d\n",
+	       __func__, pucBuf, u2Port, u4Len);
 #endif
 
 	ASSERT(prGlueInfo);
@@ -1956,7 +1960,9 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
 	/* int bNum = 0; */
 
 #if DBG
-	DBGLOG(HAL, INFO, "++kalDevPortWrite++ buf:0x%p, port:0x%x, length:%d\n", pucBuf, u2Port, u4Len);
+	DBGLOG(HAL, DEBUG,
+	       "++%s++ buf:0x%p, port:0x%x, length:%d\n",
+	       __func__, pucBuf, u2Port, u4Len);
 #endif
 
 	ASSERT(prGlueInfo);
@@ -2139,7 +2145,7 @@ void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 	action_level = 0;
 #endif
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "[SER][L0]: wifi reset gpio %d pull %s %dms\n",
 	       gpio_num, (action_level == 0) ? "down" : "up", invert_time);
 

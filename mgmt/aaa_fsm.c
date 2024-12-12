@@ -1266,7 +1266,7 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
 			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
 		goto error;
-	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
+	DBGLOG(REQ, DEBUG, "ucRoleIdx = %d\n", ucRoleIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
 	if (!prBssInfo) {
 		DBGLOG(REQ, WARN, "bss is not active\n");
@@ -1366,19 +1366,19 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 	sBssMetricsResp->u8ChanUtil = prBssInfo->u4ChanUtil;
 	sBssMetricsResp->iChanNoise = prBssInfo->i4NoiseHistogram;
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] uIfIndex = %u\n", sBssMetricsResp->uIfIndex);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] mBssid = " MACSTR "\n",
 		MAC2STR(sBssMetricsResp->mBssid));
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] u8Channel = %d\n", sBssMetricsResp->u8Channel);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] u16AssocStaNum = %d\n",
 		sBssMetricsResp->u16AssocStaNum);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] u8ChanUtil = %d\n", sBssMetricsResp->u8ChanUtil);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] iChanNoise = %d\n", sBssMetricsResp->iChanNoise);
 
 	i4Ret = MulAPAgentMontorSendMsg(EV_WLAN_MULTIAP_BSS_METRICS_RESPONSE,
@@ -1516,7 +1516,7 @@ void aaaMulAPAgentUnassocStaMeasureTimeout(
 	}
 
 	for (ucIndex = 0; ucIndex < SAP_UNASSOC_METRICS_STA_MAX; ucIndex++) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"[SAP_Test] [Report] arUnAssocSTA[%d]="MACSTR
 			",time=%u, RSSI=%d, ch=%d\n",
 			ucIndex,
@@ -1526,13 +1526,13 @@ void aaaMulAPAgentUnassocStaMeasureTimeout(
 			sStaUnAssocMetricsResp->tMetrics[ucIndex].iRssi,
 			sStaUnAssocMetricsResp->tMetrics[ucIndex].u8Channel);
 	}
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] uIfIndex = %u\n",
 		sStaUnAssocMetricsResp->uIfIndex);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] mBssid = " MACSTR "\n",
 		MAC2STR(sStaUnAssocMetricsResp->mBssid));
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[SAP_Test] u8StaNum = %u\n",
 		sStaUnAssocMetricsResp->u8StaNum);
 

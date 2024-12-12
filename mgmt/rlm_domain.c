@@ -13894,11 +13894,11 @@ void rlmDomainPatchPwrLimitType(void)
 void rlmDomainSendCachePwrLmtData(struct ADAPTER *prAdapter)
 {
 	if (rlmDoaminGetPwrLmtNewDataFlag(prAdapter) == TRUE) {
-		DBGLOG(NIC, INFO, "Send Tx Power Limit Cache Data !!\n");
+		DBGLOG(NIC, DEBUG, "Send Tx Power Limit Cache Data !!\n");
 		rlmDomainWritePwrLimitToEmi(prAdapter);
 		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, FALSE);
 	} else {
-		DBGLOG(NIC, INFO, "No cache data !!\n");
+		DBGLOG(NIC, DEBUG, "No cache data !!\n");
 	}
 
 }
@@ -13909,7 +13909,7 @@ void rlmDomainPowerLimitEmiEvent(struct ADAPTER *prAdapter,
 
 	u4SenarioType = *pucEventBuf;
 
-	DBGLOG(NIC, INFO, "u4SenarioType = %d!\n", u4SenarioType);
+	DBGLOG(NIC, DEBUG, "u4SenarioType = %d!\n", u4SenarioType);
 
 	if (u4SenarioType == TX_PWR_EMI_SCENARIO_TYPE_UPDATE) {
 		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
@@ -13997,14 +13997,14 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 		if (prMem) {
 			prTxPowrEmiAddress = (uint8_t *)prMem->va;
 		} else {
-			DBGLOG(NIC, INFO, "Failed to obtain prMem\n");
+			DBGLOG(NIC, DEBUG, "Failed to obtain prMem\n");
 			return;
 		}
 	}
 #endif
 
 	if (prTxPowrEmiAddress == NULL) {
-		DBGLOG(NIC, INFO, "TXP EMI Address is NULL\n");
+		DBGLOG(NIC, DEBUG, "TXP EMI Address is NULL\n");
 		return;
 	}
 
@@ -14057,7 +14057,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT), VIR_MEM_TYPE);
 
 	if (prEmiFormat == NULL) {
-		DBGLOG(NIC, INFO, "TXP alloc prEmiFormat fail\n");
+		DBGLOG(NIC, DEBUG, "TXP alloc prEmiFormat fail\n");
 		return;
 	}
 
@@ -14117,7 +14117,7 @@ static void rlmDomainDumpPwrLimitEmiPayload(
 #endif
 
 	if (prTxPowrEmiAddress == NULL) {
-		DBGLOG(NIC, INFO, "TXP EMI Address is NULL\n");
+		DBGLOG(NIC, DEBUG, "TXP EMI Address is NULL\n");
 		return;
 	}
 
@@ -14206,7 +14206,7 @@ int32_t rlmDomainReadPwrLimitEmiData(
 #endif
 
 	if (prTxPowrEmiAddress == NULL) {
-		DBGLOG(NIC, INFO, "TXP EMI Address is NULL\n");
+		DBGLOG(NIC, DEBUG, "TXP EMI Address is NULL\n");
 		return i4BytesWritten;
 	}
 

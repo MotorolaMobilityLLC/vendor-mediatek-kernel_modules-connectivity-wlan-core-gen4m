@@ -1302,7 +1302,7 @@ struct ACTION_FRAME_SIZE_MAP {
 #define REORDERING_INC_BSS_CNT(prRxCtrl, ucBssIndex) \
 	do { \
 		if (ucBssIndex >= MAX_BSSID_NUM) { \
-			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+			DBGLOG(QM, DEBUG, "Invalid ucBssIndex:%u\n", \
 				ucBssIndex); \
 			break; \
 		} \
@@ -1313,7 +1313,7 @@ struct ACTION_FRAME_SIZE_MAP {
 #define REORDERING_DEC_BSS_CNT(prRxCtrl, ucBssIndex) \
 	do { \
 		if (ucBssIndex >= MAX_BSSID_NUM) { \
-			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+			DBGLOG(QM, DEBUG, "Invalid ucBssIndex:%u\n", \
 				ucBssIndex); \
 			break; \
 		} \
@@ -1329,7 +1329,7 @@ struct ACTION_FRAME_SIZE_MAP {
 #define RX_PENDING_INC_BSS_CNT(prRxCtrl, ucBssIndex) \
 	do { \
 		if (ucBssIndex >= MAX_BSSID_NUM) { \
-			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+			DBGLOG(QM, DEBUG, "Invalid ucBssIndex:%u\n", \
 				ucBssIndex); \
 			break; \
 		} \
@@ -1340,7 +1340,7 @@ struct ACTION_FRAME_SIZE_MAP {
 #define RX_PENDING_DEC_BSS_CNT(prRxCtrl, ucBssIndex) \
 	do { \
 		if (ucBssIndex >= MAX_BSSID_NUM) { \
-			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+			DBGLOG(QM, DEBUG, "Invalid ucBssIndex:%u\n", \
 				ucBssIndex); \
 			break; \
 		} \

@@ -272,7 +272,7 @@ uint32_t wlanGetUniFwHeaderInfo(const void *pvFwBuffer)
 
 	kalMemCopy(aucFwBuildDate, prUniFwHdr->aucBuildDate,
 		UNI_FW_HDR_BUILD_DATE_LENGTH);
-	DBGLOG(INIT, INFO, "FW build date:[%s]\n", aucFwBuildDate);
+	DBGLOG(INIT, DEBUG, "FW build date:[%s]\n", aucFwBuildDate);
 
 	return WLAN_STATUS_SUCCESS;
 }

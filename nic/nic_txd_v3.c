@@ -582,7 +582,7 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 			prMsduInfo->eFragPos);
 
 		kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
-		MLR_DBGLOG(prAdapter, REQ, INFO,
+		MLR_DBGLOG(prAdapter, REQ, DEBUG,
 			"MLR txdc - PID=%d SeqNo=%d prPacket=%p prPacket->data=%p u2FrameLength=%d eFragPos=%d\n",
 			prMsduInfo->ucPID,
 			prMsduInfo->ucTxSeqNum,
@@ -728,7 +728,7 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 #endif
 
 	if (prMsduInfo->pfTxDoneHandler) {
-		DBGLOG(TX, VOC,
+		DBGLOG(TX, INFO,
 			"TX[%s] WIDX[%u] PID[%u] Rate mode[%d], RateIdx=%u\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
@@ -917,7 +917,7 @@ void nic_txd_v3_set_hw_amsdu_template(
 {
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
 
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 		"Update HW Amsdu field of TXD template for STA[%u] Tid[%u]\n",
 		prStaRec->ucIndex, ucTid);
 

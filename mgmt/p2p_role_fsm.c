@@ -572,7 +572,7 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 		fgIsTransitionOut = fgIsTransitionOut ? FALSE : TRUE;
 
 		if (!fgIsTransitionOut) {
-			DBGLOG(P2P, VOC,
+			DBGLOG(P2P, INFO,
 				"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
 				prP2pRoleFsmInfo->ucRoleIndex,
 				prP2pRoleFsmInfo->ucBssIndex,
@@ -1032,7 +1032,7 @@ p2pRoleFsmDeauthComplete(struct ADAPTER *prAdapter,
 			    starec->ucMldStaIndex != mldsta_idx)
 				continue;
 
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"\tsta: %d, wid: %d, bss: %d\n",
 				starec->ucIndex,
 				starec->ucWlanIndex,
@@ -1484,7 +1484,7 @@ void p2pRoleFsmRunEventAgingTimeout(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldSta;
 #endif
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 	       "EVENT_ID_STA_AGING_TIMEOUT: STA[%u] " MACSTR ", BSS[%u]\n",
 	       prStaRec->ucIndex,
 	       MAC2STR(prStaRec->aucMacAddr),

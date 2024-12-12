@@ -244,7 +244,7 @@ int FwLogDevInit(void)
 	result = alloc_chrdev_region(&gIndexDev->devno, 0, 1,
 			FW_INDEX_LOG_DRIVER_NAME);
 	gIndexDev->major = MAJOR(gIndexDev->devno);
-	DBGLOG(ICS, INFO,
+	DBGLOG(ICS, DEBUG,
 		"alloc_chrdev_region result %d, major %d\n",
 		result, gIndexDev->major);
 
@@ -319,7 +319,7 @@ int FwLogDevUninit(void)
 	class_destroy(gIndexDev->driver_class);
 	cdev_del(&gIndexDev->cdev);
 	unregister_chrdev_region(MKDEV(gIndexDev->major, 0), 1);
-	DBGLOG(ICS, INFO, "unregister_chrdev_region major %d\n",
+	DBGLOG(ICS, DEBUG, "unregister_chrdev_region major %d\n",
 		gIndexDev->major);
 	kfree(gIndexDev);
 	gIndexDev = NULL;

@@ -43,7 +43,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter,
 		NETWORK_TYPE_NAN, FALSE, INVALID_OMAC_IDX);
 	if (prnanBssInfo == NULL) {
-		DBGLOG(NAN, INFO, "No enough BSS INDEX\n");
+		DBGLOG(NAN, DEBUG, "No enough BSS INDEX\n");
 		return MAX_BSSID_NUM;
 	}
 
@@ -52,7 +52,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[NAN_BSS_INDEX_BAND0];
 	if (prnanBssInfo != NULL) {
-		DBGLOG(NAN, INFO, "NAN DEV BSSIFO INDEX %d %p\n",
+		DBGLOG(NAN, DEBUG, "NAN DEV BSSIFO INDEX %d %p\n",
 		       prnanBssInfo->ucBssIndex, prnanBssInfo);
 		COPY_MAC_ADDR(prnanBssInfo->aucOwnMacAddr,
 			      prNANInfo->prDevHandler->dev_addr);
@@ -284,7 +284,7 @@ void nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx)
 		}
 
 		prnanBssInfo = prAdapter->aprBssInfo[prNANSpecInfo->ucBssIndex];
-		DBGLOG(NAN, INFO, "UNINIT NAN DEV BSSIFO INDEX %d\n",
+		DBGLOG(NAN, DEBUG, "UNINIT NAN DEV BSSIFO INDEX %d\n",
 		       prnanBssInfo->ucBssIndex);
 
 		/* Clear CmdQue */
@@ -594,7 +594,7 @@ void nanDevClusterIdEvtHandler(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 	COPY_MAC_ADDR(prNANSpecInfo->aucClusterId, pcuEvtBuf);
 
-	DBGLOG(NAN, INFO, "ClusterId=%02x%02x%02x%02x%02x%02x\n",
+	DBGLOG(NAN, DEBUG, "ClusterId=%02x%02x%02x%02x%02x%02x\n",
 	       prNANSpecInfo->aucClusterId[0], prNANSpecInfo->aucClusterId[1],
 	       prNANSpecInfo->aucClusterId[2], prNANSpecInfo->aucClusterId[3],
 	       prNANSpecInfo->aucClusterId[4], prNANSpecInfo->aucClusterId[5]);
@@ -692,7 +692,7 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 	prMsgChReq->u4MaxInterval = 20;
 	prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 		"NAN req CH for N:%d,Tkn,%d\n",
 		prMsgChReq->ucBssIndex,
 		prMsgChReq->ucTokenID);
@@ -757,7 +757,7 @@ nanDevSendAbortRequestToCnm(struct ADAPTER *prAdapter)
 	prMsgChAbort->ucTokenID = prAdapter->ucNanReqTokenId;
 	prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 		"NAN abort CH for N:%d,Tkn,%d\n",
 		prMsgChAbort->ucBssIndex,
 		prMsgChAbort->ucTokenID);
@@ -951,7 +951,7 @@ nanDevSendEnableRequest(
 		if (!p2pFuncIsSapCsa(prAdapter))
 			complete(&prAdapter->prGlueInfo->rNanHaltComp);
 		else
-			DBGLOG(NAN, INFO,
+			DBGLOG(NAN, DEBUG,
 				"Concurrency: Wait CSA\n");
 	}
 
@@ -972,7 +972,7 @@ void nanDevSetDWInterval(struct ADAPTER *prAdapter, uint8_t ucDWInterval)
 	struct _NAN_CMD_DW_INTERVAL_T *prCmdNanDWInterval = NULL;
 
 
-	DBGLOG(NAN, INFO, "Set DW interval=%u\n", ucDWInterval);
+	DBGLOG(NAN, DEBUG, "Set DW interval=%u\n", ucDWInterval);
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
@@ -1030,7 +1030,7 @@ nanDevGetDeviceInfo(struct ADAPTER *prAdapter,
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct _NAN_CMD_GET_DEVICE_INFO *prCmdNanDeviceInfo = NULL;
 
-	DBGLOG(NAN, INFO, "Enter\n");
+	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -1110,7 +1110,7 @@ void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
 	prTlvElement = (struct UNI_CMD_EVENT_TLV_ELEMENT_T *)pucEventBuf;
 
 	u4SubEvent = prTlvElement->u2Tag;
-	DBGLOG(NAN, INFO, "event:%u\n", u4SubEvent);
+	DBGLOG(NAN, DEBUG, "event:%u\n", u4SubEvent);
 
 	switch (u4SubEvent) {
 	case UNI_EVENT_NAN_DEVICE_INFO:
@@ -1149,7 +1149,7 @@ void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
 		(struct _CMD_EVENT_TLV_ELEMENT_T *)prTlvCommon->aucBuffer;
 
 	u4SubEvent = prTlvElement->tag_type;
-	DBGLOG(NAN, INFO, "event:%u\n", u4SubEvent);
+	DBGLOG(NAN, DEBUG, "event:%u\n", u4SubEvent);
 
 	switch (u4SubEvent) {
 	case NAN_EVENT_DEVICE_INFO:

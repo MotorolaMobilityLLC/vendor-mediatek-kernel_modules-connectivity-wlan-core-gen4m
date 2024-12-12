@@ -1194,7 +1194,7 @@ static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
 	}
 
 	if (prIPCInfo->ipcCheckStatus) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"Start polling image response = success, Time:%u\n",
 			kalGetTimeTick());
 		u4Ret = prIPCInfo->ipcCheckStatus(prAdapter->prGlueInfo,
@@ -1216,7 +1216,7 @@ static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
 	}
 
 	if (prIPCInfo->ipcCheckStatus) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"Start polling boot stage = OS, Time:%u\n",
 			kalGetTimeTick());
 		u4Ret = prIPCInfo->ipcCheckStatus(prAdapter->prGlueInfo,
@@ -1288,7 +1288,7 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
 	if (prIPCInfo->ipcSetupWiFiMcuEmiAddr)
 		prIPCInfo->ipcSetupWiFiMcuEmiAddr(prAdapter);
 
-	DBGLOG(INIT, INFO, "IPC FWDL LAUNCHED!! Time:%u\n", kalGetTimeTick());
+	DBGLOG(INIT, DEBUG, "IPC FWDL LAUNCHED!! Time:%u\n", kalGetTimeTick());
 	do {
 
 		/* <1> Polling Wi-Fi SW init done */
@@ -1314,7 +1314,7 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
 
 		/* <2> Check HW/FW ID */
 		if (prIPCInfo->ipcCheckStatus) {
-			DBGLOG(INIT, INFO, "Check HW ID:\n");
+			DBGLOG(INIT, DEBUG, "Check HW ID:\n");
 			u4Status = prIPCInfo->ipcCheckStatus(
 				prAdapter->prGlueInfo,
 				CONN_VON_SYSRAM,
@@ -1332,7 +1332,7 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
 				break;
 			}
 
-			DBGLOG(INIT, INFO, "Check FW ID:\n");
+			DBGLOG(INIT, DEBUG, "Check FW ID:\n");
 			u4Status = prIPCInfo->ipcCheckStatus(
 				prAdapter->prGlueInfo,
 				CONN_VON_SYSRAM,
@@ -1352,7 +1352,7 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
 		}
 
 		/* <3> Get Efuse info */
-		DBGLOG(INIT, INFO, "Get Efuse info:\n");
+		DBGLOG(INIT, DEBUG, "Get Efuse info:\n");
 		if (prIPCInfo->ipcCheckStatus) {
 			u4Size = IPC_GET_CONN_VON_SYSRAM_FIELD_SIZE(
 				prIPCInfo->conn_von_sysram_layout,
@@ -1438,7 +1438,7 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
 		return u4Status;
 	}
 
-	DBGLOG(INIT, INFO, "IPC FWDL SUCCESS !! Time: %u\n", kalGetTimeTick());
+	DBGLOG(INIT, DEBUG, "IPC FWDL SUCCESS !! Time: %u\n", kalGetTimeTick());
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_ENABLE_IPC_FW_DOWNLOAD */
@@ -2493,7 +2493,7 @@ static void mt7935RunWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo)
 	if (prHifInfo->fgIsNeedCidxFetchFlag) {
 		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByNewTx);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
-			DBGLOG(HAL, INFO, "Trigger cidx fetch by new tx");
+			DBGLOG(HAL, DEBUG, "Trigger cidx fetch by new tx");
 		goto fetch;
 	}
 
@@ -2501,7 +2501,7 @@ static void mt7935RunWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo)
 	    mt7935CheckWfdmaCidxFetchTimeout(prGlueInfo)) {
 		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByTimeout);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
-			DBGLOG(HAL, INFO, "Trigger cidx fetch by timeout");
+			DBGLOG(HAL, DEBUG, "Trigger cidx fetch by timeout");
 		goto fetch;
 	}
 
@@ -2527,7 +2527,7 @@ static void mt7935TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 		mt7935TriggerWfdmaCidxFetch(prGlueInfo);
 		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByCmd);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
-			DBGLOG(HAL, INFO, "Trigger cidx fetch by cmd");
+			DBGLOG(HAL, DEBUG, "Trigger cidx fetch by cmd");
 		goto exit;
 	}
 
@@ -2543,7 +2543,7 @@ static void mt7935TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 
 exit:
 	if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg)) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "Ring[%u]: old cidx[%u]didx[%u]",
 		       prTxRing->u4RingIdx,
 		       prTxRing->u4LastCidx,
@@ -2791,7 +2791,7 @@ static void mt7935ConfigWfdmaRxRingThreshold(
 		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 exit:
-	DBGLOG(HAL, INFO, "Set WFDMA RxQ[%u] threshold[0x%08x]\n",
+	DBGLOG(HAL, DEBUG, "Set WFDMA RxQ[%u] threshold[0x%08x]\n",
 	       fgIsData, u4Val);
 }
 
@@ -3081,10 +3081,10 @@ static void mt7935ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	if (!in_interrupt()) {
 		u4Addr = 0x112F0184;
 		wf_ioremap_read(u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+		DBGLOG(HAL, DEBUG, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
 			wf_ioremap_read(u4Addr, &u4Val);
-			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
+			DBGLOG(HAL, DEBUG, "PCIE CR [0x%08x]=[0x%08x]",
 			       u4Addr, u4Val);
 		}
 	}
@@ -3107,7 +3107,7 @@ static void mt7935SetupWiFiMcuEmiAddr(struct ADAPTER *prAdapter)
 	if (prIPCInfo == NULL || !base)
 		return;
 
-	DBGLOG(HAL, INFO, "base: 0x%llx, size: 0x%x\n", base, size);
+	DBGLOG(HAL, DEBUG, "base: 0x%llx, size: 0x%x\n", base, size);
 
 	/* Update EMI's pa and size of WFMCU to conn von sysram */
 	if (prIPCInfo->ipcAccessConnVonSysRam) {
@@ -3140,7 +3140,7 @@ static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	if (!base)
 		return;
 
-	DBGLOG(HAL, INFO, "base: 0x%llx, size: 0x%x\n", base, size);
+	DBGLOG(HAL, DEBUG, "base: 0x%llx, size: 0x%x\n", base, size);
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
@@ -3241,7 +3241,7 @@ u_int8_t mt7935_is_conn2wf_readable(struct ADAPTER *ad)
 			   CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR,
 			   &value);
 		if (value == 0x100)
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"Skip conn_infra_vdnr timeout irq.\n");
 		else
 			return FALSE;
@@ -3256,7 +3256,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 	uint32_t u4Value = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "mt7935_mcu_reset..\n");
+	TRACE_FUNC(INIT, DEBUG, "%s..\n");
 
 	HAL_RMCR_RD(RESET_READ, ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
@@ -3281,7 +3281,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 	HAL_RMCR_RD(RESET_READ, ad,
 		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x.\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x.\n",
 		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
 		u4Value);
 	if ((u4Value &

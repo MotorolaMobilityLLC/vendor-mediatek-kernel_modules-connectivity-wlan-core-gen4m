@@ -364,7 +364,7 @@ uint32_t mt7961UpdateDmashdlQuota(struct ADAPTER *prAdapter,
 		}
 
 		if (u2MaxQuotaFinal) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"ucWmmIndex,%u,ucGroupIdx,%u,u2MaxQuotaFinal,0x%x\n",
 				ucWmmIndex, ucGroupIdx, u2MaxQuotaFinal);
 			asicConnac2xDmashdlSetMaxQuota(prAdapter,

@@ -908,7 +908,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 		/* Here are the functions which need rtnl_lock */
 		if ((prRoleDev) && (prP2PInfo->prDevHandler != prRoleDev)) {
-			DBGLOG(INIT, INFO, "unregister p2p[%d]\n", ucRoleIdx);
+			DBGLOG(INIT, DEBUG, "unregister p2p[%d]\n", ucRoleIdx);
 
 #if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
 	(CFG_SUPPORT_802_11BE_MLO == 1)
@@ -933,14 +933,14 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			prP2PInfo->aprRoleHandler = NULL;
 		}
 
-		DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
+		DBGLOG(INIT, DEBUG, "unregister p2pdev[%d]\n", ucRoleIdx);
 		if (prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED) {
 			struct net_device *prDev;
 
 			prDev = prP2PInfo->prDevHandler;
 			prP2PInfo->prDevHandler = NULL;
 			if (prDev == prRoleDev) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 					"set p2p role as NULL too\n");
 				prP2PInfo->aprRoleHandler = NULL;
 			}
@@ -1345,7 +1345,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			COPY_MAC_ADDR(rMacAddr, prAdapter->rWifiVar
 				.aucP2pInterfaceAddress[i]);
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"Set p2p[%d] mac to " MACSTR " fgIsApMode(%d)\n",
 			i, MAC2STR(rMacAddr), fgIsApMode);
 
@@ -1680,11 +1680,11 @@ static int p2pStop(struct net_device *prDev)
 	ASSERT(prP2pGlueDevInfo);
 
 	/* 0. Do the scan done and set parameter to abort if the scan pending */
-	/*DBGLOG(INIT, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);*/
+	/*DBGLOG(INIT, DEBUG, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);*/
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if ((prP2pGlueDevInfo->prScanRequest != NULL) &&
 	    (prP2pGlueDevInfo->prScanRequest->wdev == prDev->ieee80211_ptr)) {
-		DBGLOG(INIT, INFO, "p2pStop and abort scan!!\n");
+		DBGLOG(INIT, DEBUG, "%s and abort scan!!\n", __func__);
 		kalCfg80211ScanDone(prP2pGlueDevInfo->prScanRequest, TRUE);
 		prP2pGlueDevInfo->prScanRequest = NULL;
 	}
@@ -2197,7 +2197,7 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	case SIOCSIWMLME:
 		/* IW_MLME_DISASSOC used for disconnection */
 		if (prIwReq->u.data.length != sizeof(struct iw_mlme)) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"MLME buffer strange:%d\n",
 				prIwReq->u.data.length);
 			ret = -EINVAL;
@@ -2354,7 +2354,7 @@ int p2pSetMACAddress(struct net_device *prDev, void *addr)
 		mldBssGetByBss(prAdapter, prBssInfo));
 #endif
 	fgIsNetDevFound = TRUE;
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"[%u][%u] Set random macaddr to " MACSTR ".\n",
 		ucBssIdx, ucRoleIdx,
 		MAC2STR(prBssInfo->aucOwnMacAddr));
@@ -2366,7 +2366,7 @@ skip_role:
 		COPY_MAC_ADDR(prDevBssInfo->aucOwnMacAddr, sa->sa_data);
 		COPY_MAC_ADDR(prDevBssInfo->aucBSSID, sa->sa_data);
 		fgIsNetDevFound = TRUE;
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[%d][%d] Set dev random macaddr to " MACSTR ".\n",
 			ucBssIdx, ucDevIdx,
 			MAC2STR(prDevBssInfo->aucOwnMacAddr));

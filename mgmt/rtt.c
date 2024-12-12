@@ -334,7 +334,7 @@ uint8_t rttReviseBw(struct ADAPTER *prAdapter,
 
 		if (ucRttBw > ucMaxBssBw) {
 			eRttBwOut = rttBssBwToRttBw(ucMaxBssBw);
-			DBGLOG(RTT, INFO,
+			DBGLOG(RTT, DEBUG,
 				"Convert RTT BW from %d to %d\n",
 				eRttBwIn, eRttBwOut);
 		}
@@ -404,7 +404,7 @@ uint32_t rttAddPeerStaRec(struct ADAPTER *prAdapter,
 	}
 
 	if (prStaRec) {
-		DBGLOG(RTT, INFO,
+		DBGLOG(RTT, DEBUG,
 			"RTT w/ %s AP " MACSTR ", StaRecIdx=%d, WlanIdx=%d\n",
 			prStaRec->ucStaState == STA_STATE_1 ?
 			"un-associated" : "associated",
@@ -462,7 +462,7 @@ uint32_t rttRemovePeerStaRec(struct ADAPTER *prAdapter)
 					prStaRecOfAp->aucMacAddr))
 				continue;
 			else { /* Free StaRec for un-assoicated AP */
-				DBGLOG(RTT, INFO,
+				DBGLOG(RTT, DEBUG,
 					"Free StaRec for AP " MACSTR "\n",
 					MAC2STR(entry->rResult.aucMacAddr));
 
@@ -510,7 +510,7 @@ uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
 	}
 
 	if (prStaRec) {
-		DBGLOG(RTT, INFO,
+		DBGLOG(RTT, DEBUG,
 			"RTT w/ %s client " MACSTR "\n",
 			prStaRec->ucStaState == STA_STATE_1 ?
 			"un-associated" : "associated",
@@ -541,7 +541,7 @@ uint32_t rttRemoveClientStaRec(struct ADAPTER *prAdapter)
 
 		if (prStaRec && prStaRec->ucStaState == STA_STATE_1) {
 			/* Free StaRec for un-assoicated Client */
-			DBGLOG(RTT, INFO,
+			DBGLOG(RTT, DEBUG,
 				"Free StaRec for un-assoc client " MACSTR "\n",
 				MAC2STR(entry->rResult.aucMacAddr));
 
@@ -605,7 +605,7 @@ void rttPasnDoneCallback(struct ADAPTER *prAdapter,
 
 			prBssInfo->ucPhyTypeSet = prBssDesc->ucPhyTypeSet;
 
-			DBGLOG(RTT, INFO,
+			DBGLOG(RTT, DEBUG,
 				"Update BSSInfo, PhyTypeSet: 0x%x -> 0x%x, BssColor: 0x%x -> 0x%x\n",
 				rttInfo->ucOldPhyTypSet,
 				prBssInfo->ucPhyTypeSet,
@@ -626,7 +626,7 @@ void rttPasnDoneCallback(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"PASN done success, peers=%d\n",
 		prPasnDoneEvt->ucNumPeers);
 
@@ -637,7 +637,7 @@ void rttPasnDoneCallback(struct ADAPTER *prAdapter,
 				rttInfo->prRttReq);
 
 		cnmMemFree(prAdapter, (void *) rttInfo->prRttReq);
-		DBGLOG(RTT, INFO,
+		DBGLOG(RTT, DEBUG,
 			"status=%d, seq=%d",
 			status, rttInfo->ucSeqNum);
 		rttInfo->ucState = RTT_STATE_RTT_START;
@@ -725,7 +725,7 @@ uint32_t rttFillParamKey(struct PARAM_KEY *param, uint8_t *bssid,
 	param->u4Length = OFFSET_OF(struct PARAM_KEY, aucKeyMaterial) +
 			  param->u4KeyLength;
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"keyidx=0x%x, keylen=%d, bssid="MACSTR", bssidx=%d\n",
 		param->u4KeyIndex,
 		param->u4KeyLength,
@@ -746,7 +746,7 @@ void rttRemovePTK(struct ADAPTER *ad, struct RTT_CONFIG *rttcfg)
 	param.ucBssIdx = rttcfg->ucBssIndex;
 	COPY_MAC_ADDR(param.arBSSID, rttcfg->aucAddr);
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"Bss%d BSSID[" MACSTR "] remove key %d\n",
 		rttcfg->ucBssIndex, MAC2STR(param.arBSSID), keyidx);
 
@@ -864,7 +864,7 @@ void rttRangingCtxCallback(struct ADAPTER *prAdapter,
 
 	ASSERT(rttInfo);
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"Secure ranging ctx, "MACSTR", TkLen=%d, LtfKeyseedLen=%d\n",
 		MAC2STR(prCtx->aucPeerAddr),
 		prCtx->ucTkLen, prCtx->ucLtfKeyseedLen);
@@ -1047,7 +1047,7 @@ uint32_t rttCancelPasn(struct ADAPTER *prAdapter,
 	rttInfo->ucNumPeers = 0;
 
 	/* Restore BSS Color & PhyTypeSet */
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"Restore BSSInfo, PhyTypeSet: 0x%x -> 0x%x, BssColor: 0x%x -> 0x%x\n",
 		prBssInfo->ucPhyTypeSet, rttInfo->ucOldPhyTypSet,
 		prBssInfo->ucBssColorInfo, rttInfo->ucOldBssColorInfo);
@@ -1151,7 +1151,7 @@ void rttUpdateChannelParams(struct ADAPTER *prAdpater,
 	center_freq0 = bss_desc->ucCenterFreqS1;
 	center_freq1 = bss_desc->ucCenterFreqS2;
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"Update channel param, freq: %d -> %d, S1: %d -> %d, S2: %d -> %d",
 		rChannel->center_freq, center_freq,
 		rChannel->center_freq0, center_freq0,
@@ -1292,7 +1292,7 @@ fail:
 		cnmMemFree(prAdapter, (void *) cmd);
 	}
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"bssIndex=%d, status=%d, seq=%d",
 		ucBssIndex, status, rttInfo->ucSeqNum);
 
@@ -1317,7 +1317,7 @@ uint32_t rttCancelRttRequest(struct ADAPTER *prAdapter,
 	status = rttSendCmd(prAdapter, rttInfo->ucBssIndex, cmd);
 
 	cnmMemFree(prAdapter, (void *) cmd);
-	DBGLOG(RTT, INFO, "status=%d, seq=%d", status, rttInfo->ucSeqNum);
+	DBGLOG(RTT, DEBUG, "status=%d, seq=%d", status, rttInfo->ucSeqNum);
 	rttInfo->ucState = RTT_STATE_IDLE;
 
 	return status;
@@ -1516,7 +1516,7 @@ void rttEventDone(struct ADAPTER *prAdapter,
 		rttRemoveStaRec(prAdapter);
 		rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
 	} else { /* normal rtt done */
-		DBGLOG(RTT, INFO,
+		DBGLOG(RTT, DEBUG,
 			"Event RTT done seq: FW %u, driver %u\n",
 			prEvent->ucSeqNum, rttInfo->ucSeqNum);
 		if (prEvent->ucSeqNum == rttInfo->ucSeqNum) {
@@ -1554,7 +1554,7 @@ void rttEventResult(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(RTT, INFO,
+	DBGLOG(RTT, DEBUG,
 		"RTT result MAC=" MACSTR ", status=%d, range=%d (mm)\n",
 		MAC2STR(prEvent->rResult.aucMacAddr),
 		prEvent->rResult.eStatus,
@@ -1770,7 +1770,7 @@ void rttProcessPublicAction(struct ADAPTER *prAdapter,
 	switch (prActFrame->ucAction) {
 	case ACTION_PUBLIC_FINE_TIMING_MEASUREMENT_REQUEST:
 		if (rttIsAPActive(prAdapter)) {
-			DBGLOG(RTT, INFO, "Receive IFTMR\n");
+			DBGLOG(RTT, DEBUG, "Receive IFTMR\n");
 			rttProcessFTMR(prAdapter, prSwRfb);
 		}
 		break;

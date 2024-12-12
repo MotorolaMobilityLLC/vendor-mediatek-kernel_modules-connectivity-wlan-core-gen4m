@@ -423,7 +423,7 @@ uint32_t mt6639UpdateDmashdlQuota(struct ADAPTER *prAdapter,
 		}
 
 		if (u2MaxQuotaFinal) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"ucWmmIndex,%u ucGroupIdx,%u u2MaxQuotaFinal,0x%x\n",
 				ucWmmIndex, ucGroupIdx, u2MaxQuotaFinal);
 			asicConnac3xDmashdlSetMinMaxQuota(prAdapter,
@@ -505,7 +505,7 @@ uint32_t mt6639dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"eTargetBand,%u eOtherBand,%u u2MaxQuota,0x%x\n",
 					eTargetBand, eOtherBand, u2MaxQuota);
 	return u2MaxQuota;

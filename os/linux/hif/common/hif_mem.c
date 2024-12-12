@@ -235,7 +235,7 @@ static bool halGetRsvMemSizeRsvedByKernel(struct platform_device *pdev,
 		DBGLOG(INIT, ERROR, "get rsrv mem size failed(%d).\n", ret);
 		return false;
 	}
-	DBGLOG(INIT, INFO, "gWifiRsvMemSize:0x%llx\n",
+	DBGLOG(INIT, DEBUG, "gWifiRsvMemSize:0x%llx\n",
 	       gWifiRsvMemSize[u4RsvMemIdx]);
 	return true;
 #else
@@ -267,7 +267,7 @@ int halInitResvMem(struct platform_device *pdev,
 		else {
 			gWifiRsvMemSize[u4RsvMemIdx] =
 				(unsigned long long) RsvMemSize;
-			DBGLOG(INIT, VOC,
+			DBGLOG(INIT, INFO,
 				"MPU-in-lk gWifiRsvMemSize[%u]: 0x%llx\n",
 				u4RsvMemIdx, gWifiRsvMemSize[u4RsvMemIdx]);
 		}
@@ -375,7 +375,7 @@ static int halInitHifMem(struct platform_device *pdev,
 	if (!grMem.pucRsvMemBase[u4RsvMemIdx])
 		return -1;
 
-	DBGLOG(INIT, VOC,
+	DBGLOG(INIT, INFO,
 		"pucRsvMemBase[%u][%pa], pucRsvMemVirBase[%u][%pa]\n",
 		u4RsvMemIdx, &grMem.pucRsvMemBase[u4RsvMemIdx],
 		u4RsvMemIdx, &grMem.pucRsvMemVirBase[u4RsvMemIdx]);
@@ -564,7 +564,7 @@ int halAllocHifMem(struct platform_device *pdev,
 	}
 #endif /* HIF_TX_PREALLOC_DATA_BUFFER */
 
-	DBGLOG(INIT, VOC, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
+	DBGLOG(INIT, INFO, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
 		grMem.u4Offset[WIFI_RSV_MEM_WFDMA]);
 
 	return 0;
@@ -660,7 +660,7 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 		kalMemZero(prMem->va, u4Size);
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"grMemWiFiMisc.u4Offset[WIFI_RSV_MEM_WIFI_MISC] = [0x%x], size[%u]\n",
 		grMem.u4Offset[WIFI_RSV_MEM_WIFI_MISC],
 		prChipInfo->rsvMemWiFiMiscSize);
@@ -854,7 +854,7 @@ static bool alloc_wifi_tx_cma_mem(
 		alloc_num += TX_CMA_GROUP_TOK_NUM;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"req_size: %u, config_data_num: %u, cur_data_num: %u",
 		req_num, prTxCmaCtx->config_data_num,
 		prTxCmaCtx->cur_data_num);
@@ -929,7 +929,7 @@ static struct tx_cma_mem_group *free_tx_data_to_mem_group(
 
 	group = search_tx_cma_group(prTxCmaCtx, txCmaAddr2key(kaddr));
 	if (group == NULL) {
-		DBGLOG(INIT, INFO, "can't find mem group");
+		DBGLOG(INIT, DEBUG, "can't find mem group");
 		return NULL;
 	}
 
@@ -966,7 +966,7 @@ static void free_wifi_tx_cma_mem(
 
 	req_cnt = prTxCmaCtx->cur_data_num -
 		prTxCmaCtx->config_data_num;
-	DBGLOG(INIT, INFO, "req_cnt: %u, config num: %u, cur num: %u",
+	DBGLOG(INIT, DEBUG, "req_cnt: %u, config num: %u, cur num: %u",
 		req_cnt, prTxCmaCtx->config_data_num,
 		prTxCmaCtx->cur_data_num);
 
@@ -1019,7 +1019,7 @@ uint32_t wifi_tx_cma_get_mem_data_num(void)
 	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
 
 	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
-	DBGLOG_LIMITED(INIT, INFO, "cur data num: %lu",
+	DBGLOG_LIMITED(INIT, DEBUG, "cur data num: %lu",
 		prTxCmaCtx->cur_data_num);
 	return prTxCmaCtx->cur_data_num;
 }
@@ -1065,7 +1065,7 @@ int halInitTxCmaMem(struct platform_device *pdev)
 
 	prTxCmaCtx->min_data_num = HIF_TX_MSDU_TOKEN_NUM_MIN;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"reserved memory size[0x%08x] cma[%u] max[%u] min[%u]",
 		rsv_mem_size, prTxCmaCtx->is_cma_mem,
 		prTxCmaCtx->max_data_num, prTxCmaCtx->min_data_num);
@@ -1121,7 +1121,7 @@ void halCopyPathAllocTxCmaTxDataBuf(
 	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
 
 	if (list_empty(&prTxCmaCtx->free_data_list)) {
-		DBGLOG_LIMITED(INIT, INFO, "free_data_list empty");
+		DBGLOG_LIMITED(INIT, DEBUG, "free_data_list empty");
 		return;
 	}
 
@@ -1130,7 +1130,7 @@ void halCopyPathAllocTxCmaTxDataBuf(
 	group = search_tx_cma_group(prTxCmaCtx,
 		txCmaAddr2key((void *)data_entry));
 	if (group == NULL) {
-		DBGLOG(INIT, INFO, "can't find mem group");
+		DBGLOG(INIT, DEBUG, "can't find mem group");
 		return;
 	}
 	list_del(&data_entry->free_list);
@@ -1300,7 +1300,7 @@ int halAllocHifMemForTxCmaNonCache(
 			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE] = [0x%x]\n",
 		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]);
 
@@ -1310,7 +1310,7 @@ int halAllocHifMemForTxCmaNonCache(
 
 void halGetTxCmaNonCacheMemUsage(void)
 {
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE] = [0x%x]\n",
 		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]);
 }
@@ -1584,7 +1584,7 @@ void halCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 		prAddr = prDmaBuf->AllocVa;
 
 	if (prAddr)
-		DBGLOG_MEM32(HAL, VOC, prAddr, u4DumpLen);
+		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
 }
 
 void halCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
@@ -1598,7 +1598,7 @@ void halCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 	prDmaBuf = &prRxCell->DmaBuf;
 
 	if (prRxCell->pPacket)
-		DBGLOG_MEM32(HAL, VOC, prRxCell->pPacket, u4DumpLen);
+		DBGLOG_MEM32(HAL, INFO, prRxCell->pPacket, u4DumpLen);
 }
 
 void halZeroCopyPathAllocDesc(struct GL_HIF_INFO *prHifInfo,
@@ -1926,7 +1926,7 @@ void halZeroCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 		prAddr = prTxCell->pBuffer;
 
 	if (prAddr)
-		DBGLOG_MEM32(HAL, VOC, prAddr, u4DumpLen);
+		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
 }
 
 void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
@@ -1950,7 +1950,7 @@ void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 	halZeroCopyPathUnmapRxBuf(prHifInfo, prDmaBuf->AllocPa,
 				  prDmaBuf->AllocSize);
 
-	DBGLOG_MEM32(HAL, VOC, ((struct sk_buff *)prRxCell->pPacket)->data,
+	DBGLOG_MEM32(HAL, INFO, ((struct sk_buff *)prRxCell->pPacket)->data,
 		     u4DumpLen);
 
 	prDmaBuf->AllocPa = halZeroCopyPathMapRxBuf(
@@ -2222,7 +2222,7 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 		}
 		skb_queue_tail(&g_rHifSkbList, prSkb);
 	}
-	DBGLOG(HAL, VOC, "hif skb reserve count[%u]!\n", u4Num);
+	DBGLOG(HAL, INFO, "hif skb reserve count[%u]!\n", u4Num);
 
 exit:
 	return fgRet;

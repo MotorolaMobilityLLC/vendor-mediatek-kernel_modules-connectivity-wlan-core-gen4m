@@ -255,36 +255,36 @@ void nicCmdEventPfmuDataRead(struct ADAPTER *prAdapter,
 	if (prEventPfmuDataRead == NULL)
 		return;
 
-	DBGLOG(INIT, INFO, "=========== Low Seg Angles ===========\n");
-	DBGLOG(INIT, INFO, "Psi21 = 0x%02x, Phi11 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "=========== Low Seg Angles ===========\n");
+	DBGLOG(INIT, DEBUG, "Psi21 = 0x%02x, Phi11 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegAng.ucPsi21,
 		prEventPfmuDataRead->rField.rLowSegAng.u2Phi11);
-	DBGLOG(INIT, INFO, "Psi31 = 0x%02x, Phi21 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "Psi31 = 0x%02x, Phi21 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegAng.ucPsi31,
 		prEventPfmuDataRead->rField.rLowSegAng.u2Phi21);
-	DBGLOG(INIT, INFO, "Psi41 = 0x%02x, Phi31 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "Psi41 = 0x%02x, Phi31 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegAng.ucPsi41,
 		prEventPfmuDataRead->rField.rLowSegAng.u2Phi31);
-	DBGLOG(INIT, INFO, "Psi32 = 0x%02x, Phi22 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "Psi32 = 0x%02x, Phi22 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegAng.ucPsi32,
 		prEventPfmuDataRead->rField.rLowSegAng.u2Phi22);
-	DBGLOG(INIT, INFO, "Psi42 = 0x%02x, Phi32 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "Psi42 = 0x%02x, Phi32 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegAng.ucPsi42,
 		prEventPfmuDataRead->rField.rLowSegAng.u2Phi32);
-	DBGLOG(INIT, INFO, "Psi43 = 0x%02x, Phi33 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "Psi43 = 0x%02x, Phi33 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegAng.ucPsi43,
 		prEventPfmuDataRead->rField.rLowSegAng.u2Phi33);
 
-	DBGLOG(INIT, INFO, "============ Low Seg SNRs ============\n");
-	DBGLOG(INIT, INFO, "SNR00 = 0x%03x, SNR01 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "============ Low Seg SNRs ============\n");
+	DBGLOG(INIT, DEBUG, "SNR00 = 0x%03x, SNR01 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR00,
 		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR01);
-	DBGLOG(INIT, INFO, "SNR02 = 0x%03x, SNR03 = 0x%03x\n",
+	DBGLOG(INIT, DEBUG, "SNR02 = 0x%03x, SNR03 = 0x%03x\n",
 		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR02,
 		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR03_MSB << 2 |
 		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR03);
 
-	DBGLOG(INIT, INFO, "======================================\n");
+	DBGLOG(INIT, DEBUG, "======================================\n");
 }
 
 void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
@@ -331,40 +331,40 @@ void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
 	g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1;
 	g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2;
 #endif
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "========================== (R)Tag1 info ==========================\n");
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       " Row data0 : %x, Row data1 : %x, Row data2 : %x, Row data3 : %x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[0],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[1],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[2],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[3]);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       " Row data4 : %x, Row data5 : %x, Row data6 : %x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[4],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[5],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[6]);
-	DBGLOG(INIT, INFO, "ProfileID = %d Invalid status = %d\n",
+	DBGLOG(INIT, DEBUG, "ProfileID = %d Invalid status = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucProfileID,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucInvalidProf);
-	DBGLOG(INIT, INFO, "0:iBF / 1:eBF = %d\n",
+	DBGLOG(INIT, DEBUG, "0:iBF / 1:eBF = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucTxBf);
-	DBGLOG(INIT, INFO, "DBW(0/1/2/3 BW20/40/80/160NC) = %d\n",
+	DBGLOG(INIT, DEBUG, "DBW(0/1/2/3 BW20/40/80/160NC) = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucDBW);
-	DBGLOG(INIT, INFO, "0:SU / 1:MU = %d\n",
+	DBGLOG(INIT, DEBUG, "0:SU / 1:MU = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSU_MU);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "Nrow = %d, Ncol = %d, Ng = %d, LM = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucNrow,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucNcol,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucNgroup,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucLM);
-	DBGLOG(INIT, INFO, "  ucCodeBook  = %d\n",
+	DBGLOG(INIT, DEBUG, "  ucCodeBook  = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucCodeBook);
-	DBGLOG(INIT, INFO, "  ucRMSD = %d\n",
+	DBGLOG(INIT, DEBUG, "  ucRMSD = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRMSD);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "Mem1(%d, %d), Mem2(%d, %d), Mem3(%d, %d), Mem4(%d, %d)\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr1ColIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr1RowIdx,
@@ -374,56 +374,56 @@ void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr3RowIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr4ColIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr4RowIdx);
-	DBGLOG(INIT, INFO, "  ucRuStartIdx = 0x%x ucRuEndIdx = 0x%x\n",
+	DBGLOG(INIT, DEBUG, "  ucRuStartIdx = 0x%x ucRuEndIdx = 0x%x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRuStartIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRuEndIdx);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "SNR STS0=0x%x, SNR STS1=0x%x, SNR STS2=0x%x, SNR STS3=0x%x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS0,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS1,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS2,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS3);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "SNR STS4=0x%x, SNR STS5=0x%x, SNR STS6=0x%x, SNR STS7=0x%x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS4,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS5,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS6,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS7);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "===============================================================\n");
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "========================== (R)Tag2 info ==========================\n");
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       " Row data0 : %x, Row data1 : %x, Row data2 : %x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[0],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[1],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[2]);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       " Raw data3 : %x, Raw data4 : %x, Raw data5 : %x, Raw data6 : %x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[3],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[4],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[5],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[6]);
-	DBGLOG(INIT, INFO, "Smart Ant Cfg = %d\n",
+	DBGLOG(INIT, DEBUG, "Smart Ant Cfg = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.u2SmartAnt);
-	DBGLOG(INIT, INFO, "SE index = %d\n",
+	DBGLOG(INIT, DEBUG, "SE index = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucSEIdx);
-	DBGLOG(INIT, INFO, "iBF lifetime limit(unit:4ms) = 0x%x\n",
+	DBGLOG(INIT, DEBUG, "iBF lifetime limit(unit:4ms) = 0x%x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfTimeOut);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "iBF desired DBW = %d\n  0/1/2/3 : BW20/40/80/160NC\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfDBW);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "iBF desired Ncol = %d\n  0/1/2 : Ncol = 1 ~ 3\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfNcol);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "iBF desired Nrow = %d\n  0/1/2/3 : Nrow = 1 ~ 4\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfNrow);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "iBf Ru = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfRu);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "===============================================================\n");
 
 }
@@ -560,9 +560,9 @@ void nicCmdEventGetQd(struct ADAPTER *prAdapter,
 	kalOidComplete(prGlueInfo, prCmdInfo,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
-	DBGLOG(INIT, INFO, " event id : %x\n", prGetQd->u4EventId);
+	DBGLOG(INIT, DEBUG, " event id : %x\n", prGetQd->u4EventId);
 	for (i = 0; i < 14; i++)
-		DBGLOG(INIT, INFO, "au4RawData[%d]: %x\n", i,
+		DBGLOG(INIT, DEBUG, "au4RawData[%d]: %x\n", i,
 		       prGetQd->au4RawData[i]);
 
 }
@@ -615,11 +615,11 @@ void nicCmdEventGetCalcLq(struct ADAPTER *prAdapter,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 
-	DBGLOG(INIT, INFO, " event id : %x\n",
+	DBGLOG(INIT, DEBUG, " event id : %x\n",
 	       prGetMuCalcLq->u4EventId);
 	for (i = 0; i < NUM_OF_USER; i++)
 		for (j = 0; j < NUM_OF_MODUL; j++)
-			DBGLOG(INIT, INFO, " lq_report[%d][%d]: %x\n", i, j,
+			DBGLOG(INIT, DEBUG, " lq_report[%d][%d]: %x\n", i, j,
 			       prGetMuCalcLq->rEntry.lq_report[i][j]);
 
 }
@@ -673,28 +673,28 @@ void nicCmdEventGetCalcInitMcs(struct ADAPTER *prAdapter,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "========================== (R)Group table info ==========================\n");
-	DBGLOG(INIT, INFO, " event id : %x\n",
+	DBGLOG(INIT, DEBUG, " event id : %x\n",
 	       prEventShowGroupTblEntry->u4EventId);
-	DBGLOG(INIT, INFO, "index = %x numUser = %x\n",
+	DBGLOG(INIT, DEBUG, "index = %x numUser = %x\n",
 	       prEventShowGroupTblEntry->index,
 	       prEventShowGroupTblEntry->numUser);
-	DBGLOG(INIT, INFO, "BW = %x NS0/1/ = %x/%x\n",
+	DBGLOG(INIT, DEBUG, "BW = %x NS0/1/ = %x/%x\n",
 	       prEventShowGroupTblEntry->BW, prEventShowGroupTblEntry->NS0,
 	       prEventShowGroupTblEntry->NS1);
-	DBGLOG(INIT, INFO, "PFIDUser0/1 = %x/%x\n",
+	DBGLOG(INIT, DEBUG, "PFIDUser0/1 = %x/%x\n",
 	       prEventShowGroupTblEntry->PFIDUser0,
 	       prEventShowGroupTblEntry->PFIDUser1);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "fgIsShortGI = %x, fgIsUsed = %x, fgIsDisable = %x\n",
 	       prEventShowGroupTblEntry->fgIsShortGI,
 	       prEventShowGroupTblEntry->fgIsUsed,
 	       prEventShowGroupTblEntry->fgIsDisable);
-	DBGLOG(INIT, INFO, "initMcsUser0/1 = %x/%x\n",
+	DBGLOG(INIT, DEBUG, "initMcsUser0/1 = %x/%x\n",
 	       prEventShowGroupTblEntry->initMcsUser0,
 	       prEventShowGroupTblEntry->initMcsUser1);
-	DBGLOG(INIT, INFO, "dMcsUser0: 0/1/ = %x/%x\n",
+	DBGLOG(INIT, DEBUG, "dMcsUser0: 0/1/ = %x/%x\n",
 	       prEventShowGroupTblEntry->dMcsUser0,
 	       prEventShowGroupTblEntry->dMcsUser1);
 
@@ -756,7 +756,7 @@ void nicCmdEventQueryChipConfig(struct ADAPTER
 
 		if (prCmdInfo->u4InformationBufferLength < sizeof(
 			    struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT)) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 			       "Chip config u4InformationBufferLength %u is not valid (event)\n",
 			       prCmdInfo->u4InformationBufferLength);
 		}
@@ -764,9 +764,9 @@ void nicCmdEventQueryChipConfig(struct ADAPTER
 				    *) prCmdInfo->pvInformationBuffer;
 		prChipConfigInfo->ucRespType = prCmdChipConfig->ucRespType;
 		prChipConfigInfo->u2MsgSize = prCmdChipConfig->u2MsgSize;
-		DBGLOG(REQ, INFO, "%s: RespTyep  %u\n", __func__,
+		DBGLOG(REQ, DEBUG, "%s: RespTyep  %u\n", __func__,
 		       prChipConfigInfo->ucRespType);
-		DBGLOG(REQ, INFO, "%s: u2MsgSize %u\n", __func__,
+		DBGLOG(REQ, DEBUG, "%s: u2MsgSize %u\n", __func__,
 		       prChipConfigInfo->u2MsgSize);
 
 		if (prChipConfigInfo->u2MsgSize > CHIP_CONFIG_RESP_SIZE) {
@@ -1493,7 +1493,7 @@ void nicCmdEventQueryOfldInfo(struct ADAPTER
 
 		if (prCmdInfo->u4InformationBufferLength < sizeof(
 			    struct PARAM_OFLD_INFO)) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 			       "Ofld info query length %u is not valid.\n",
 			       prCmdInfo->u4InformationBufferLength);
 			rOidStatus = WLAN_STATUS_FAILURE;
@@ -1512,7 +1512,7 @@ void nicCmdEventQueryOfldInfo(struct ADAPTER
 				prCmdOfldInfo->aucBuf,
 				prCmdOfldInfo->u4BufLen);
 		} else {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 			       "Invalid query result, length: %d Buf size: %d.\n",
 				prCmdOfldInfo->u4TotalLen,
 				prCmdOfldInfo->u4BufLen);
@@ -1764,10 +1764,10 @@ void nicEventHifCtrl(struct ADAPTER *prAdapter,
 	prEventHifCtrl = (struct EVENT_HIF_CTRL *) (
 				 prEvent->aucBuffer);
 
-	DBGLOG(HAL, INFO, "%s: EVENT_ID_HIF_CTRL\n", __func__);
-	DBGLOG(HAL, INFO, "prEventHifCtrl->ucHifType = %hhu suspend %d\n",
+	DBGLOG(HAL, DEBUG, "%s: EVENT_ID_HIF_CTRL\n", __func__);
+	DBGLOG(HAL, DEBUG, "prEventHifCtrl->ucHifType = %hhu suspend %d\n",
 	       prEventHifCtrl->ucHifType, prEventHifCtrl->ucHifSuspend);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "prEventHifCtrl->ucHifTxTrafficStatus, prEventHifCtrl->ucHifRxTrafficStatus = %hhu, %hhu\n",
 	       prEventHifCtrl->ucHifTxTrafficStatus,
 	       prEventHifCtrl->ucHifRxTrafficStatus);
@@ -2277,7 +2277,7 @@ void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
 				= prEvent->rLteSafeChn.
 					au4SafeChannelBitmask[ucIdx];
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, DEBUG,
 				"[ACS]LTE safe channels[%d]=0x%08x\n",
 				ucIdx,
 				prLteSafeChnList->au4SafeChannelBitmask[ucIdx]);
@@ -2319,12 +2319,12 @@ void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 			RDD_EVENT_HDR_SIZE) / RDD_ONEPLUSE_SIZE;
 	}
 
-	DBGLOG(INIT, INFO, "[RDD]0x%08x %08d[RDD%d]\n",
+	DBGLOG(INIT, DEBUG, "[RDD]0x%08x %08d[RDD%d]\n",
 	       prRddPulseEvent->u4Prefix
 	       , prRddPulseEvent->u4Count, prRddPulseEvent->ucRddIdx);
 
 	for (u2Idx = 0; u2Idx < u2PulseCnt; u2Idx++) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[RDD]0x%02x%02x%02x%02x %02x%02x%02x%02x[RDD%d]\n"
 		  , prRddPulseEvent->aucBuffer[RDD_ONEPLUSE_SIZE * u2Idx +
 			  RDD_PULSE_OFFSET3]
@@ -2530,16 +2530,16 @@ uint32_t nicEventQueryTxResourceEntry(struct ADAPTER *prAdapter,
 	prAdapter->nicTxReousrce.u4DataResourceUnit =
 		prTxResource->u4DataResourceUnit;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicTxResource: u4CmdTotalResource = %x\n",
 	       prAdapter->nicTxReousrce.u4CmdTotalResource);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicTxResource: u4CmdResourceUnit = %x\n",
 	       prAdapter->nicTxReousrce.u4CmdResourceUnit);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicTxResource: u4DataTotalResource = %x\n",
 	       prAdapter->nicTxReousrce.u4DataTotalResource);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicTxResource: u4DataResourceUnit = %x\n",
 	       prAdapter->nicTxReousrce.u4DataResourceUnit);
 
@@ -2557,10 +2557,10 @@ uint32_t nicCmdEventQueryNicEfuseAddr(struct ADAPTER *prAdapter,
 	prAdapter->u4EfuseEndAddress =
 		prTxResource->u4EfuseEndAddress;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicEfuseAddr: u4EfuseStartAddress = %x\n",
 	       prAdapter->u4EfuseStartAddress);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicEfuseAddr: u4EfuseEndAddress = %x\n",
 	       prAdapter->u4EfuseEndAddress);
 
@@ -2575,7 +2575,7 @@ uint32_t nicCmdEventQueryNicCoexFeature(struct ADAPTER *prAdapter,
 
 	prAdapter->u4FddMode = prCoexFeature->u4FddMode;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicCoexFeature: u4FddMode = %x\n",
 	       prAdapter->u4FddMode);
 
@@ -2592,7 +2592,7 @@ uint32_t nicCmdEventQueryNicCsumOffload(struct ADAPTER *prAdapter,
 	prAdapter->fgIsSupportCsumOffload =
 		prChecksumOffload->ucIsSupportCsumOffload;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "nicCmdEventQueryNicCsumOffload: ucIsSupportCsumOffload = %x\n",
 	       prAdapter->fgIsSupportCsumOffload);
 
@@ -2630,7 +2630,7 @@ uint32_t nicCfgChipAdieHwVersion(struct ADAPTER *prAdapter,
 	ASSERT(prChipInfo);
 
 	prChipInfo->u2ADieChipVersion = prAdieHwVer->u2ProductID;
-	DBGLOG(INIT, INFO, "A DieID = 0x%x\n", prAdieHwVer->u2ProductID);
+	DBGLOG(INIT, DEBUG, "A DieID = 0x%x\n", prAdieHwVer->u2ProductID);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -2859,7 +2859,7 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d=>%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
@@ -2870,7 +2870,7 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 			prPhyCap->ucMaxBandwidth,
 			ucMaxBandwidth);
 #else
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d=>%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
@@ -2882,7 +2882,7 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 			ucMaxBandwidth);
 #endif
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u], WifiPath [%x]\n",
 			prPhyCap->ucTxLdpc,
 			prPhyCap->ucRxLdpc,
@@ -2917,7 +2917,7 @@ uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
 
 	prCapLimited = (struct CAP_LIMITED *)pucEventBuf;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"Limited max MCS map from FW: [2G][%u],[5G][%u],[6G][%u]\n",
 		prCapLimited->ucLimitedMaxMcsMap2g,
 		prCapLimited->ucLimitedMaxMcsMap5g,
@@ -2936,7 +2936,7 @@ uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
 			prCapLimited->ucLimitedMaxMcsMap6g,
 			prAdapter->rWifiVar.ucHeMaxMcsMap6g);
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"Limited max MCS map: [2G][%u],[5G][%u],[6G][%u]\n",
 		prAdapter->rWifiVar.ucHeMaxMcsMap2g,
 		prAdapter->rWifiVar.ucHeMaxMcsMap5g,
@@ -2956,7 +2956,7 @@ uint32_t nicCfgChipP2PCap(struct ADAPTER *prAdapter,
 #endif
 	wlanCfgSetUint32(prAdapter, "P2pGoACSEnable",
 		FEATURE_ENABLED);
-	DBGLOG(INIT, INFO, "P2pGoACSEnable:ACS Enable[%d]\n",
+	DBGLOG(INIT, DEBUG, "P2pGoACSEnable:ACS Enable[%d]\n",
 		FEATURE_ENABLED);
 	return WLAN_STATUS_SUCCESS;
 	}
@@ -2973,7 +2973,7 @@ uint32_t nicCfgChipPseRxQuota(struct ADAPTER *prAdapter,
 	uint32_t u4MaxPktSize = 0;
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucRxQuotaInfoEn)) {
-		DBGLOG(INIT, INFO, "RxQuotaInfoEn disabled.");
+		DBGLOG(INIT, DEBUG, "RxQuotaInfoEn disabled.");
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -2988,7 +2988,7 @@ uint32_t nicCfgChipPseRxQuota(struct ADAPTER *prAdapter,
 	if (u4MaxPktSize < 3000) {
 		/* disable AMSDU */
 		prAdapter->rWifiVar.ucAmsduInAmpduRx = FEATURE_DISABLED;
-		DBGLOG(INIT, INFO, "Disable AMSDU\n");
+		DBGLOG(INIT, DEBUG, "Disable AMSDU\n");
 	} else if (u4MaxPktSize < 7000) {
 		/* MAX RX MPDU len = 3K */
 		prAdapter->rWifiVar.ucRxMaxMpduLen = 0;
@@ -2999,7 +2999,7 @@ uint32_t nicCfgChipPseRxQuota(struct ADAPTER *prAdapter,
 		/* MAX RX MPDU len = 11K */
 		prAdapter->rWifiVar.ucRxMaxMpduLen = 2;
 	}
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"u4MaxQuotaBytes:%d u4MaxPktSize:%d ucRxMaxMpduLen:%d\n",
 		prPseCap->u4MaxQuotaBytes, u4MaxPktSize,
 		prAdapter->rWifiVar.ucRxMaxMpduLen);
@@ -3022,7 +3022,7 @@ uint32_t nicCmdEventHostStatusEmiOffset(struct ADAPTER *prAdapter,
 	prNotifyInfo->u4Mask = 0xFFFFFFFF;
 	prNotifyInfo->u4Shift = 0;
 
-	DBGLOG(INIT, INFO, "EMI offset= 0x%x\n",
+	DBGLOG(INIT, DEBUG, "EMI offset= 0x%x\n",
 		prNotifyInfo->u4SetAddr);
 
 	return WLAN_STATUS_SUCCESS;
@@ -3052,7 +3052,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
 	uint8_t ucLinkStatsBssNum = 1;
 
-	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u power=%u,%u\n",
+	DBGLOG(INIT, DEBUG, "Offset(Host): %u/%u/%u/%u/%u power=%u,%u\n",
 			u4HostOffsetInfo, u4HostOffsetAc,
 			u4HostOffsetTxTimePerLevels, u4HostOffsetRxTime,
 			u4HostOffsetChannel,
@@ -3147,7 +3147,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	prAdapter->prLinkStatsRadioInfo = (struct WIFI_RADIO_CHANNEL_STAT *)
 		&prAdapter->pucLinkStatsSrcBufAddr[prOffset->u4OffsetRadioStat];
 
-	DBGLOG(INIT, INFO, "EMI offset=%x, offset2=%x (%u), BssNum=%u\n",
+	DBGLOG(INIT, DEBUG, "EMI offset=%x, offset2=%x (%u), BssNum=%u\n",
 			offset, offset2, size2, prAdapter->ucLinkStatsBssNum);
 #endif
 	return WLAN_STATUS_SUCCESS;
@@ -3180,7 +3180,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 			"Offset FW:%u/%u/%u/%u host:%u/%u/%u/%u",
 			prCap->u4OffsetOfBasic,
 			prCap->u4OffsetOfLq,
@@ -3208,7 +3208,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		return WLAN_STATUS_FAILURE;
 	}
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 			"Tx Rate Offset FW:%u host:%u",
 			prCap->u4OffsetOfLastTxRateInfo,
 			u4HostOffsetLastTxRateInfo);
@@ -3220,7 +3220,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
 
-	DBGLOG(INIT, INFO, "offset:0x%08x addr:%p\n",
+	DBGLOG(INIT, DEBUG, "offset:0x%08x addr:%p\n",
 	       offset,
 	       prAdapter->prStatsAllRegStat);
 
@@ -3271,7 +3271,7 @@ uint32_t nicCfgGetSwSyncEMIOffset(struct ADAPTER *prAdapter,
 	for (u4Idx = 0; u4Idx < u4NumOfTables; ++u4Idx) {
 		switch (prInfo[u4Idx].tag) {
 		case SW_SYNC_ON_OFF_TAG: {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 			"WiFi On/Off EMI valid flag:[%s], Offset:[0x%08x]\n",
 			prInfo[u4Idx].isValid ? "valid" : "invalid",
 			prInfo[u4Idx].offset);
@@ -3385,7 +3385,7 @@ uint32_t nicCfgChipMbrEmiInfo(struct ADAPTER *prAdapter,
 
 		prAdapter->prMbrEmiData = (struct mbrain_emi_data *)(
 			(uint32_t *)prMem->va + mbrOffset);
-		DBGLOG(INIT, INFO, "addr=%p offsetNum=%u",
+		DBGLOG(INIT, DEBUG, "addr=%p offsetNum=%u",
 			prAdapter->prMbrEmiData, num);
 	}
 
@@ -3403,7 +3403,7 @@ uint32_t nicCmdEventCasanLoadType(struct ADAPTER *prAdapter,
 
 	prAdapter->u4CasanLoadType = prLoadType->u4CasanLoadType;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "Casan load type = %x\n",
 	       prAdapter->u4CasanLoadType);
 
@@ -3437,7 +3437,7 @@ uint32_t nicCfgChipCapMlr(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.u4MlrCfg;
 	prAdapter->ucMlrVersion = prMLRCap->ucVersion;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"MLR cap - MlrCfg=0x%02x MlrSB=0x%02x, cMlrVer=%d, cMlrSB=0x%02x\n",
 		prAdapter->rWifiVar.u4MlrCfg,
 		prAdapter->u4MlrSupportBitmap,
@@ -3472,12 +3472,13 @@ uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,
 	prNotifyInfo->u4Mask = prEvent->u4Mask;
 	prNotifyInfo->u4Shift = prEvent->u4Shift;
 
-	DBGLOG(INIT, INFO, "type: %d, addr: 0x%x 0x%x, mask: 0x%x, shift: %d\n",
-		prNotifyInfo->eType,
-		prNotifyInfo->u4SetAddr,
-		prNotifyInfo->u4ClrAddr,
-		prNotifyInfo->u4Mask,
-		prNotifyInfo->u4Shift);
+	DBGLOG(INIT, DEBUG,
+	       "type: %d, addr: 0x%x 0x%x, mask: 0x%x, shift: %d\n",
+	       prNotifyInfo->eType,
+	       prNotifyInfo->u4SetAddr,
+	       prNotifyInfo->u4ClrAddr,
+	       prNotifyInfo->u4Mask,
+	       prNotifyInfo->u4Shift);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3492,7 +3493,7 @@ uint32_t nicCfgChipCapFastPath(struct ADAPTER *prAdapter,
 	kalMemCopy(&prAdapter->rFastPathCap, prFastPathCap,
 			sizeof(struct MSCS_CAP_FAST_PATH));
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "Fast path version(%d) support(%d) vendor key(0x%x) group key(0x%x)\n",
 	       prFastPathCap->ucVersion, prFastPathCap->fgSupportFastPath,
 	       prFastPathCap->u4KeyBitmap[0], prFastPathCap->u4KeyBitmap[2]);
@@ -3531,7 +3532,7 @@ uint32_t nicCfgChipCapMacCap(struct ADAPTER *prAdapter,
 	prAdapter->ucWmmSetNum = prMacCap->ucWmmSet > 0 ?
 		prMacCap->ucWmmSet : 1;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"ucHwBssIdNum: %d, ucSwBssIdNum: %d(MAX=%d), ucP2PDevBssIdx: %d, ucWtblEntryNum: %d, ucWmmSetNum: %d.\n",
 			prMacCap->ucHwBssIdNum,
 			prMacCap->ucSwBssIdNum,
@@ -3575,7 +3576,7 @@ uint32_t nicCfgChipCapAntSwpCap(struct ADAPTER *prAdapter,
 
 	/* FW's value combines both platform and FW capablity */
 	prAdapter->fgIsSupportAntSwp = prAntSwpCap->ucIsSupported;
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"fgIsSupportAntSwp = %d\n",
 		prAdapter->fgIsSupportAntSwp);
 
@@ -3609,10 +3610,10 @@ uint32_t nicCfgChipCap6GCap(struct ADAPTER *prAdapter,
 	 * prAdapter->rWifiFemCfg.u2WifiDBDCAwithA = 1;
 	 * prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval = 360;
 	 */
-	DBGLOG(INIT, INFO, "fgIsHwSupport6G = %d, u2WifiPath6G=%d\n",
+	DBGLOG(INIT, DEBUG, "fgIsHwSupport6G = %d, u2WifiPath6G=%d\n",
 		prAdapter->fgIsHwSupport6G,
 		prAdapter->rWifiFemCfg.u2WifiPath6G);
-	DBGLOG(INIT, INFO, "u2WifiDBDCAwithA = %d minimumFre=%d\n",
+	DBGLOG(INIT, DEBUG, "u2WifiDBDCAwithA = %d minimumFre=%d\n",
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval);
 
@@ -3654,7 +3655,7 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucMlcSupportCap = cap->ucMlcSupportCap;
 #endif
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"EML cap - Non-AP=(%d,0x%x,%d), AP=(%d, 0x%x), MaxSimuLinks=%d\n",
 		prAdapter->rWifiVar.ucNonApMldEMLSupport,
 		prAdapter->rWifiVar.u2NonApMldEMLCap,
@@ -3905,7 +3906,7 @@ void nicExtEventReCalData(struct ADAPTER *prAdapter, uint8_t *pucEventBuf)
 	}
 
 	prCalArray = prReCalInfo->prCalArray;
-	DBGLOG(RFTEST, INFO, "prCalArray[%d] address [%p]\n",
+	DBGLOG(RFTEST, DEBUG, "prCalArray[%d] address [%p]\n",
 			     prReCalInfo->u4Count,
 			     &prCalArray[prReCalInfo->u4Count]);
 
@@ -4062,7 +4063,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 
 	pucBuf = kalMemAlloc(u4Size, VIR_MEM_TYPE);
 	if (!pucBuf) {
-		DBGLOG_LIMITED(NIC, INFO, "pucBuf NULL\n");
+		DBGLOG_LIMITED(NIC, DEBUG, "pucBuf NULL\n");
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT);
 		goto exit;
 	}
@@ -4203,7 +4204,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(RFTEST, INFO,
+	DBGLOG(RFTEST, DEBUG,
 	       "u4FuncIndex = %d, u4PktNum = [%d], u4PhyTimestamp = [0x%08x], u4DataLen = [%d]\n",
 	       prPhyIcsEvent->u4FuncIndex,
 	       prPhyIcsEvent->u4PktNum,
@@ -4304,7 +4305,7 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 	/* If we receive the packet which is delivered from
 	 * last time data-capure, we need to drop it.
 	 */
-	DBGLOG(RFTEST, INFO, "u4PktNum = [%d], u4DataLength = [%d]\n",
+	DBGLOG(RFTEST, DEBUG, "u4PktNum = [%d], u4DataLength = [%d]\n",
 						prICapEvent->u4PktNum,
 						prICapEvent->u4DataLength);
 
@@ -4332,7 +4333,7 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(RFTEST, INFO,
+	DBGLOG(RFTEST, DEBUG,
 	       "u4SmplCnt = [%d], u4WFCnt = [%d], IQArrayIndex = [%d]\n",
 	       prICapEvent->u4SmplCnt,
 	       prICapEvent->u4WFCnt,
@@ -4386,7 +4387,7 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 		/* Reset ICapEventCnt */
 		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMP_DONE;
 		prIcapInfo->u4ICapEventCnt = 0;
-		DBGLOG(INIT, INFO, ": ==> gen done_file\n");
+		DBGLOG(INIT, DEBUG, ": ==> gen done_file\n");
 	} else
 		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMPING;
 
@@ -4427,9 +4428,9 @@ void nicExtCmdEventSolicitICapIQData(struct ADAPTER *prAdapter,
 	u4IQType = prQAICapInfo->u4IQType;
 	pData = prQAICapInfo->pIcapData;
 
-	DBGLOG(RFTEST, INFO, "u4WfNum=%d, u4IQType=%d\n",
+	DBGLOG(RFTEST, DEBUG, "u4WfNum=%d, u4IQType=%d\n",
 						u4WfNum, u4IQType);
-	DBGLOG(RFTEST, INFO, "u4PktNum = [%d], u4DataLength = [%d]\n",
+	DBGLOG(RFTEST, DEBUG, "u4PktNum = [%d], u4DataLength = [%d]\n",
 				prICapEvent->u4PktNum,
 				prICapEvent->u4DataLength);
 
@@ -4463,7 +4464,7 @@ void nicExtCmdEventSolicitICapIQData(struct ADAPTER *prAdapter,
 	if ((prICapEvent->u4DataLength == 0)
 	    && (prICapEvent->u4PktNum == prIcapInfo->u4ICapEventCnt)) {
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			": ==> Dump data done, total pkt cnts=%d!!\n",
 			prIcapInfo->u4ICapEventCnt);
 
@@ -4498,7 +4499,7 @@ uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
 
 	prResult = (struct EXT_EVENT_RF_TEST_RESULT_T *)
 		   prEvent->aucBuffer;
-	DBGLOG(RFTEST, INFO, "%s funcID = %d\n",
+	DBGLOG(RFTEST, DEBUG, "%s funcID = %d\n",
 			__func__,
 	       prResult->u4FuncIndex);
 	switch (prResult->u4FuncIndex) {
@@ -4509,7 +4510,7 @@ uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
 		prCapStatus = (struct EXT_EVENT_RBIST_CAP_STATUS_T *)
 			      prEvent->aucBuffer;
 
-		DBGLOG(RFTEST, INFO, "%s iCapDone = %d , icap state=%d\n",
+		DBGLOG(RFTEST, DEBUG, "%s iCapDone = %d , icap state=%d\n",
 				__func__,
 		       prCapStatus->u4CapDone,
 		       prAdapter->rIcapInfo.eIcapState);
@@ -4660,7 +4661,7 @@ void nicEventLayer0ExtMagic(struct ADAPTER *prAdapter,
 		    prStaRec->ucMaxMpduCount > prEventAmsdu->ucAmsduLen)
 			prStaRec->ucMaxMpduCount = prEventAmsdu->ucAmsduLen;
 
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, DEBUG,
 		       "Amsdu update event ucWlanIdx[%u] ucLen[%u] ucMaxMpduCount[%u]\n",
 		       prEventAmsdu->ucWlanIdx, prEventAmsdu->ucAmsduLen,
 		       prStaRec->ucMaxMpduCount);
@@ -4944,7 +4945,7 @@ void nicEventScanDone(struct ADAPTER *prAdapter,
 void nicEventSchedScanDone(struct ADAPTER *prAdapter,
 		struct WIFI_EVENT *prEvent)
 {
-	DBGLOG(INIT, INFO, "EVENT_ID_SCHED_SCAN_DONE\n");
+	DBGLOG(INIT, DEBUG, "EVENT_ID_SCHED_SCAN_DONE\n");
 	scnEventSchedScanDone(prAdapter,
 		(struct EVENT_SCHED_SCAN_DONE *) (prEvent->aucBuffer));
 }
@@ -5282,7 +5283,7 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 
 	GET_BOOT_SYSTIME(&u4CurrentTime);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastUnicastRxTime: %d, u4LastTxTime: %d\n",
 			u4MonitorWindow, u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
@@ -5332,14 +5333,14 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 		if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
 			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, DEBUG,
 				"Policy 1 hit, RX in the past duration");
 			bValid = false;
 		}
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
-	DBGLOG(NIC, INFO, "valid beacon time out event?: %d\n", bValid);
+	DBGLOG(NIC, DEBUG, "valid beacon time out event?: %d\n", bValid);
 
 	return bValid;
 }
@@ -5362,7 +5363,7 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 			return;
 		}
 
-		DBGLOG(NIC, VOC,
+		DBGLOG(NIC, INFO,
 		       "EVENT_ID_BSS_BEACON_TIMEOUT, BssIdx: %u, Reason code: %d\n",
 		       prEventBssBeaconTimeout->ucBssIndex,
 		       prEventBssBeaconTimeout->ucReasonCode);
@@ -5469,7 +5470,7 @@ void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
 
 	if (prAdapter->fgDisStaAgingTimeoutDetection ||
 	    prAdapter->fgIsP2PRegistered == FALSE) {
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, DEBUG,
 			"fgDisStaAgingTimeoutDetection=%d fgIsP2PRegistered=%d\n",
 			prAdapter->fgDisStaAgingTimeoutDetection,
 			prAdapter->fgIsP2PRegistered);
@@ -5520,7 +5521,7 @@ void nicEventSendDeauth(struct ADAPTER *prAdapter,
 {
 	struct SW_RFB rSwRfb;
 
-	DBGLOG(NIC, INFO, "%s\n", __func__);
+	TRACE_FUNC(NIC, DEBUG, "%s\n");
 #if DBG
 	struct WLAN_MAC_HEADER *prWlanMacHeader;
 
@@ -5600,14 +5601,14 @@ void nicEventAddPkeyDone(struct ADAPTER *prAdapter,
 			prKeyDone->ucBSSIndex)->ucKeyAlgorithmId;
 		if ((ucKeyId == CIPHER_SUITE_WEP40)
 		    || (ucKeyId == CIPHER_SUITE_WEP104)) {
-			DBGLOG(RX, INFO, "WEP, ucKeyAlgorithmId= %d\n",
+			DBGLOG(RX, DEBUG, "WEP, ucKeyAlgorithmId= %d\n",
 				ucKeyId);
 			prStaRec = cnmGetStaRecByAddress(prAdapter,
 					prKeyDone->ucBSSIndex,
 					prAdapter->rWifiVar.arBssInfoPool[
 					prKeyDone->ucBSSIndex].aucBSSID);
 			if (!prStaRec) {
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, DEBUG,
 					"WEP, AddPKeyDone, ucBSSIndex %d, Addr "
 					MACSTR ", StaRec is NULL\n",
 					prKeyDone->ucBSSIndex,
@@ -5616,7 +5617,7 @@ void nicEventAddPkeyDone(struct ADAPTER *prAdapter,
 					ucBSSIndex].aucBSSID));
 			}
 		} else {
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, DEBUG,
 			       "AddPKeyDone, ucBSSIndex %d, Addr "
 			       MACSTR ", StaRec is NULL\n",
 			       prKeyDone->ucBSSIndex,
@@ -5632,7 +5633,7 @@ void nicEventAddPkeyDone(struct ADAPTER *prAdapter,
 
 	if (prAdapter->fgIsPostponeTxEAPOLM3) {
 		prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 			"[Passpoint] PTK is installed and ready!\n");
 	}
 }
@@ -5738,12 +5739,12 @@ void nicEventDumpMem(struct ADAPTER *prAdapter,
 {
 	struct CMD_INFO *prCmdInfo;
 
-	DBGLOG(SW4, INFO, "%s: EVENT_ID_DUMP_MEM\n", __func__);
+	DBGLOG(SW4, DEBUG, "%s: EVENT_ID_DUMP_MEM\n", __func__);
 
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
-		DBGLOG(NIC, INFO, ": ==> 1\n");
+		DBGLOG(NIC, DEBUG, ": ==> 1\n");
 		if (prCmdInfo->pfCmdDoneHandler)
 			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
 						    prEvent->aucBuffer);
@@ -5754,7 +5755,7 @@ void nicEventDumpMem(struct ADAPTER *prAdapter,
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 	} else {
 		/* Burst mode */
-		DBGLOG(NIC, INFO, ": ==> 2\n");
+		DBGLOG(NIC, DEBUG, ": ==> 2\n");
 	}
 }
 
@@ -5920,7 +5921,7 @@ void nicEventUpdateCoexPhyrate(struct ADAPTER *prAdapter,
 				prAdapter->aprBssInfo[j]->u4CoexPhyRateLimit =
 				  prEventUpdateCoexPhyrate->au4PhyRateLimit[i];
 
-				DBGLOG_LIMITED(NIC, INFO,
+				DBGLOG_LIMITED(NIC, DEBUG,
 				  "Coex:BSS[%d]R:%d, OwnMacID:%d\n", j,
 				  prAdapter->aprBssInfo[j]->u4CoexPhyRateLimit,
 				  prAdapter->aprBssInfo[j]->ucOwnMacIndex);
@@ -5933,7 +5934,7 @@ void nicEventUpdateCoexPhyrate(struct ADAPTER *prAdapter,
 	prAdapter->ucSmartGearWfPathSupport =
 		prEventUpdateCoexPhyrate->ucWfPathSupport;
 
-	DBGLOG_LIMITED(NIC, INFO, "Smart Gear SISO:%d, WF:%d\n",
+	DBGLOG_LIMITED(NIC, DEBUG, "Smart Gear SISO:%d, WF:%d\n",
 	       prAdapter->ucSmarGearSupportSisoOnly,
 	       prAdapter->ucSmartGearWfPathSupport);
 }
@@ -6017,7 +6018,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 				TRUE, FALSE, FALSE, NULL, NULL,
 				sizeof(struct CMD_ADDBA_REJECT),
 				(uint8_t *) &rAddBaReject, NULL, 0);
-			DBGLOG(NIC, INFO, "Set Rx BA size=1 [%u]\n", rStatus);
+			DBGLOG(NIC, DEBUG, "Set Rx BA size=1 [%u]\n", rStatus);
 		} else if (prBssInfo->eCoexMode == COEX_TDD_MODE &&
 			   eCoexMode != COEX_TDD_MODE &&
 			   prBssInfo->eBand == BAND_2G4 &&
@@ -6035,7 +6036,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 				TRUE, FALSE, FALSE, NULL, NULL,
 				sizeof(struct CMD_ADDBA_REJECT),
 				(uint8_t *) &rAddBaReject, NULL, 0);
-			DBGLOG(NIC, INFO, "Reset Rx BA size [%u]\n", rStatus);
+			DBGLOG(NIC, DEBUG, "Reset Rx BA size [%u]\n", rStatus);
 		}
 		/*Record current coex mode to Ais BssInfo*/
 		prBssInfo->eCoexMode = eCoexMode;
@@ -6206,7 +6207,7 @@ void nicEventWowWakeUpReason(struct ADAPTER *prAdapter,
 	struct EVENT_WOW_WAKEUP_REASON_INFO *prWakeUpReason;
 	struct GLUE_INFO *prGlueInfo;
 
-	DBGLOG(NIC, INFO, "nicEventWakeUpReason\n");
+	DBGLOG(NIC, DEBUG, "nicEventWakeUpReason\n");
 	prGlueInfo = prAdapter->prGlueInfo;
 
 	/* Driver receives EVENT_ID_WOW_WAKEUP_REASON after fw wake up host
@@ -6226,7 +6227,7 @@ void nicEventWowWakeUpReason(struct ADAPTER *prAdapter,
 	prWakeUpReason =
 		(struct EVENT_WOW_WAKEUP_REASON_INFO *) (prEvent->aucBuffer);
 	prGlueInfo->prAdapter->rWowCtrl.ucReason = prWakeUpReason->reason;
-	DBGLOG(NIC, INFO, "nicEventWakeUpReason:%d\n",
+	DBGLOG(NIC, DEBUG, "nicEventWakeUpReason:%d\n",
 		prGlueInfo->prAdapter->rWowCtrl.ucReason);
 }
 #endif
@@ -6268,7 +6269,7 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	if ((!prBssInfo) || (!IS_BSS_ACTIVE(prBssInfo)))
 		return;
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"[STATIC_PP_DSCB][EVENT] ucBssIndex=%d, fgIsDscbEnable=%d, u2DscbBitmap=%d\n",
 				prEvtStaticPPDscb->ucBssIndex,
 				prEvtStaticPPDscb->fgIsDscbEnable,
@@ -6461,7 +6462,7 @@ uint32_t nicNanAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
 	 * body_length here only counts the following data field
 	 */
 	prTlvElement->body_len = u4BodyLen;
-	DBGLOG(NAN, VOC, "Add cmd to firmware:%u(%s), len:%u\n",
+	DBGLOG(NAN, INFO, "Add cmd to firmware:%u(%s), len:%u\n",
 	       prTlvElement->tag_type, nanCmdTagString(prTlvElement->tag_type),
 	       prTlvElement->body_len);
 
@@ -6499,7 +6500,7 @@ void nicNanEventDiscoveryResult(struct ADAPTER *prAdapter,
 	prDiscEvt = (struct NAN_DISCOVERY_EVENT *)pcuEvtBuf;
 	g_u2IndPubId = prDiscEvt->u2PublishID; /* for sigma test */
 
-	DBGLOG(NAN, INFO, "generate discovey event\n");
+	DBGLOG(NAN, DEBUG, "generate discovery event\n");
 	dumpMemory8((uint8_t *)prDiscEvt->aucNanAddress, MAC_ADDR_LEN);
 
 	kalMemSet(&g_rDiscMatchInd, 0, sizeof(struct NanMatchInd));
@@ -6692,7 +6693,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		if (IS_2G_OP_CLASS(u4OpClass) && !nanLinkNeedMlo(prAdapter) &&
 		    nanSchedGetHighestCommonBand(prAdapter, u2SchId) !=
 						    ENUM_SUPPORTED_BN_2G) {
-			DBGLOG(NAN, INFO,
+			DBGLOG(NAN, DEBUG,
 				   "Seq:%u, Sch:%u, Rm:%u, Op:%u, ch=%u, 5/6G peer skip 2G flow ctrl\n",
 				   u2SeqNum, u2SchId,
 				   prFlowCtrlEvt->au2RemainingTime[u2SchId],
@@ -6718,7 +6719,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
 				       u4OpClass, u4PrimaryChnl);
 		} else {
-			DBGLOG(NAN, INFO,
+			DBGLOG(NAN, DEBUG,
 			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u, ch=%u\n",
 			       u2SeqNum, u2SchId, u2RemainingTime,
 			       prNanFlowCtrlRecord[u2SchId].fgAllow,
@@ -6756,7 +6757,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 				) {
 				prStaRec->fgNanSendTimeExpired = FALSE;
 
-				DBGLOG(NAN, INFO, "Trigger NAN tx request\n");
+				DBGLOG(NAN, DEBUG, "Trigger NAN tx request\n");
 				/* NAN StaRec Start Tx */
 				qmSetStaRecTxAllowed(prAdapter,
 					prStaRec, TRUE);
@@ -6803,7 +6804,7 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 
 	u4SubEvent = prTlvElement->u2Tag;
 
-	DBGLOG(NAN, INFO, "nicNanIOEventHandler, subEvent:%d\n", u4SubEvent);
+	DBGLOG(NAN, DEBUG, "%s, subEvent:%d\n", __func__, u4SubEvent);
 
 	if (prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, ERROR,
@@ -6892,7 +6893,7 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 
 	u4SubEvent = prTlvElement->tag_type;
 
-	DBGLOG(NAN, INFO, "nicNanIOEventHandler, subEvent:%d\n", u4SubEvent);
+	DBGLOG(NAN, DEBUG, "%s, subEvent:%d\n", __func__, u4SubEvent);
 
 	if (prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, ERROR,
@@ -7168,7 +7169,7 @@ void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
 		/* always add 1 since cnt=0 for 1st stored in fw */
 		prEventStoredBAR->arBAR[i].ucStoredBARCount++;
 
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, DEBUG,
 			"[Id:StaId:Tid:SSN:StoredCnt]:[%d:%d:%d:%d:%d]\n",
 			i,
 			prEventStoredBAR->arBAR[i].ucStaRecIdx,
@@ -7358,7 +7359,7 @@ void nicCmdEventGetTxPwrTbl(struct ADAPTER *prAdapter,
 	struct PARAM_CMD_GET_TXPWR_TBL *prTxPwrTbl = NULL;
 	void *info_buf = NULL;
 
-	DBGLOG(NIC, INFO, "Enter nicCmdEventGetTxPwrTbl\n");
+	TRACE_FUNC(NIC, DEBUG, "Enter %s\n");
 
 	if (!prAdapter) {
 		DBGLOG(NIC, WARN, "NULL prAdapter!\n");
@@ -7518,7 +7519,7 @@ void nicCmdEventRttCapabilities(struct ADAPTER *prAdapter,
 			kalMemCopy(prCapaBuf, &prRttCapa->rCapabilities,
 				u4QueryInfoLen);
 
-			DBGLOG(RTT, INFO,
+			DBGLOG(RTT, DEBUG,
 				"one_sided=%hhu, ftm=%hhu, lci=%hhu, lcr=%hhu, preamble=%hhu, bw=%hhu, responder=%hhu, ver=%hhu",
 				prCapaBuf->fgRttOneSidedSupported,
 				prCapaBuf->fgRttFtmSupported,
@@ -7592,7 +7593,7 @@ void nicEventGetVnf(struct ADAPTER *prAdapter,
 	struct EVENT_GET_VOLT_INFO_T *prEventVnf;
 
 	prEventVnf = (struct EVENT_GET_VOLT_INFO_T *)(prEvent->aucBuffer);
-	DBGLOG(NIC, INFO, "FW current volt[%d], trigger volt info sync",
+	DBGLOG(NIC, DEBUG, "FW current volt[%d], trigger volt info sync",
 				prEventVnf->u2Volt);
 	kalVnfEventHandler(prAdapter);
 }
@@ -7606,11 +7607,11 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 
 	prEventVnf = (struct EVENT_POWER_METRICS_INFO_T *)(prEvent->aucBuffer);
 
-	DBGLOG(NIC, INFO, "NSS: 1T =%d 2T =%d\n",
+	DBGLOG(NIC, DEBUG, "NSS: 1T =%d 2T =%d\n",
 				prEventVnf->u4Nss[0],
 				prEventVnf->u4Nss[1]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"Total =%d Band =%d Protocol =%d TX =%d RX =%d Listen =%d Sleep =%d\n",
 		prEventVnf->u4TotalTime,
 		prEventVnf->u4Band,
@@ -7620,25 +7621,25 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->u4BandRatio.u4RxListenTime,
 		prEventVnf->u4BandRatio.u4SleepTime);
 
-	DBGLOG(NIC, INFO, "CCK: 1M =%d 2M =%d 5.5M =%d 11M =%d\n",
+	DBGLOG(NIC, DEBUG, "CCK: 1M =%d 2M =%d 5.5M =%d 11M =%d\n",
 		prEventVnf->arStatsPmCckRateStat[0],
 		prEventVnf->arStatsPmCckRateStat[1],
 		prEventVnf->arStatsPmCckRateStat[2],
 		prEventVnf->arStatsPmCckRateStat[3]);
 
-	DBGLOG(NIC, INFO, "OFDM: 6M =%d 9M =%d 12M =%d 18M =%d\n",
+	DBGLOG(NIC, DEBUG, "OFDM: 6M =%d 9M =%d 12M =%d 18M =%d\n",
 		prEventVnf->arStatsPmOfdmRateStat[0],
 		prEventVnf->arStatsPmOfdmRateStat[1],
 		prEventVnf->arStatsPmOfdmRateStat[2],
 		prEventVnf->arStatsPmOfdmRateStat[3]);
 
-	DBGLOG(NIC, INFO, "OFDM: 24M =%d 36M =%d 48M =%d 54M =%d\n",
+	DBGLOG(NIC, DEBUG, "OFDM: 24M =%d 36M =%d 48M =%d 54M =%d\n",
 		prEventVnf->arStatsPmOfdmRateStat[4],
 		prEventVnf->arStatsPmOfdmRateStat[5],
 		prEventVnf->arStatsPmOfdmRateStat[6],
 		prEventVnf->arStatsPmOfdmRateStat[7]);
 
-	DBGLOG(NIC, INFO, "HT BW20: MCS0~7 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+	DBGLOG(NIC, DEBUG, "HT BW20: MCS0~7 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHtRateStat[0],
 		prEventVnf->arStatsPmHtRateStat[1],
 		prEventVnf->arStatsPmHtRateStat[2],
@@ -7648,7 +7649,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHtRateStat[6],
 		prEventVnf->arStatsPmHtRateStat[7]);
 
-	DBGLOG(NIC, INFO, "HT BW20: MCS8~15 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+	DBGLOG(NIC, DEBUG, "HT BW20: MCS8~15 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHtRateStat[8],
 		prEventVnf->arStatsPmHtRateStat[9],
 		prEventVnf->arStatsPmHtRateStat[10],
@@ -7658,7 +7659,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHtRateStat[14],
 		prEventVnf->arStatsPmHtRateStat[15]);
 
-	DBGLOG(NIC, INFO, "HT BW40: MCS0~7 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+	DBGLOG(NIC, DEBUG, "HT BW40: MCS0~7 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHtRateStat[16],
 		prEventVnf->arStatsPmHtRateStat[17],
 		prEventVnf->arStatsPmHtRateStat[18],
@@ -7668,7 +7669,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHtRateStat[22],
 		prEventVnf->arStatsPmHtRateStat[23]);
 
-	DBGLOG(NIC, INFO, "HT BW40: MCS8~15 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+	DBGLOG(NIC, DEBUG, "HT BW40: MCS8~15 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHtRateStat[24],
 		prEventVnf->arStatsPmHtRateStat[25],
 		prEventVnf->arStatsPmHtRateStat[26],
@@ -7678,7 +7679,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHtRateStat[30],
 		prEventVnf->arStatsPmHtRateStat[31]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"VHT BW20: MCS0~9 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmVhtRateStat[0],
 		prEventVnf->arStatsPmVhtRateStat[1],
@@ -7691,7 +7692,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmVhtRateStat[8],
 		prEventVnf->arStatsPmVhtRateStat[9]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"VHT BW40: MCS0~9 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmVhtRateStat[10],
 		prEventVnf->arStatsPmVhtRateStat[11],
@@ -7704,7 +7705,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmVhtRateStat[18],
 		prEventVnf->arStatsPmVhtRateStat[19]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"VHT BW80: MCS0~9 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmVhtRateStat[20],
 		prEventVnf->arStatsPmVhtRateStat[21],
@@ -7717,7 +7718,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmVhtRateStat[28],
 		prEventVnf->arStatsPmVhtRateStat[29]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"HE BW20: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHeRateStat[0],
 		prEventVnf->arStatsPmHeRateStat[1],
@@ -7732,7 +7733,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHeRateStat[10],
 		prEventVnf->arStatsPmHeRateStat[11]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"HE BW40: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHeRateStat[12],
 		prEventVnf->arStatsPmHeRateStat[13],
@@ -7747,7 +7748,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHeRateStat[22],
 		prEventVnf->arStatsPmHeRateStat[23]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"HE BW80: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHeRateStat[24],
 		prEventVnf->arStatsPmHeRateStat[25],
@@ -7762,7 +7763,7 @@ void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		prEventVnf->arStatsPmHeRateStat[34],
 		prEventVnf->arStatsPmHeRateStat[35]);
 
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"HE BW160: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
 		prEventVnf->arStatsPmHeRateStat[36],
 		prEventVnf->arStatsPmHeRateStat[37],
@@ -7876,7 +7877,7 @@ void nicEventHwDetectReport(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NIC, INFO, "HW Detect Report: %s\n", str_buf);
+	DBGLOG(NIC, DEBUG, "HW Detect Report: %s\n", str_buf);
 
 	if (prEventHwDetectReport->fgIsReportNode) {
 		/* Report to conninfra node */

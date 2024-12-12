@@ -69,7 +69,7 @@ nanTxUtTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	DBGLOG(TX, INFO, "EVENT-TX DONE: Status:%d\n", rTxDoneStatus);
+	DBGLOG(TX, DEBUG, "EVENT-TX DONE: Status:%d\n", rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
 }

@@ -255,7 +255,7 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 		return WLAN_STATUS_RESOURCES;
 	}
 
-	DBGLOG(HAL, INFO, "TX CMD CID[0x%X] URB[0x%p] SEQ[%d]\n",
+	DBGLOG(HAL, DEBUG, "TX CMD CID[0x%X] URB[0x%p] SEQ[%d]\n",
 			prCmdInfo->ucCID,
 			prUsbReq->prUrb, prCmdInfo->ucCmdSeqNum);
 
@@ -291,7 +291,7 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 			TRUE);
 	}
 
-	/* DBGLOG_MEM32(SW4, INFO, prBufCtrl->pucBuf, 32); */
+	/* DBGLOG_MEM32(SW4, DEBUG, prBufCtrl->pucBuf, 32); */
 	memset(prBufCtrl->pucBuf + u2OverallBufferLength, 0,
 	       ((TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) - u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR));
 	prBufCtrl->u4WrIdx = TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR;
@@ -303,7 +303,7 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 			dump_len = MAX_DUMP_CMD_LEN;
 		else
 			dump_len = prBufCtrl->u4WrIdx;
-		DBGLOG(HAL, INFO, "Dump CMD TXD: (total length: %d)\n",
+		DBGLOG(HAL, DEBUG, "Dump CMD TXD: (total length: %d)\n",
 		       prBufCtrl->u4WrIdx);
 		dumpMemory8(prBufCtrl->pucBuf, dump_len);
 	}
@@ -372,7 +372,7 @@ void halTxUSBProcessCmdComplete(struct ADAPTER *prAdapter,
 		/* TODO: handle error */
 	}
 
-	DBGLOG(HAL, INFO, "TX CMD DONE: URB[0x%p]\n", urb);
+	DBGLOG(HAL, DEBUG, "TX CMD DONE: URB[0x%p]\n", urb);
 
 	glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, prUsbReq, &prHifInfo->rTxCmdQLock, FALSE);
 
@@ -467,7 +467,7 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 		prBusInfo->asicUsbEpctlRstOpt(prAdapter, FALSE);
 
 	HAL_UHW_RD(prAdapter, CONN_SEMA00_M0_OWN_STA, &u4CrVal, &fgStatus);
-	DBGLOG(HAL, INFO, "Read CONN_SEMA00_M0_OWN_STA: 0x%x\n", u4CrVal);
+	DBGLOG(HAL, DEBUG, "Read CONN_SEMA00_M0_OWN_STA: 0x%x\n", u4CrVal);
 
 	/* assert WF L0.5 reset */
 	if (prChipInfo->asicWfsysRst)
@@ -489,7 +489,7 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 
 	HAL_UHW_RD(prAdapter, CONN_SEMA_OWN_BY_M0_STA_REP_1,
 		&u4CrVal, &fgStatus);
-	DBGLOG(HAL, INFO, "Read CONN_SEMA_OWN_BY_M0_STA_REP_1: 0x%x\n",
+	DBGLOG(HAL, DEBUG, "Read CONN_SEMA_OWN_BY_M0_STA_REP_1: 0x%x\n",
 		u4CrVal);
 
 	return WLAN_STATUS_SUCCESS;
@@ -566,7 +566,7 @@ static uint8_t halUsbDetermineTc(struct mt66xx_chip_info *prChipInfo,
 	if (ucGrpIdx < USB_DMASHDL_DATA_GROUP_NUM) {
 		ucDmashdlTc = arDmashdlGrpToTc[ucGrpIdx];
 		if (ucTc != ucDmashdlTc) {
-			DBGLOG(HAL, INFO, "ucTc mismatch! (%d != %d)\n", ucTc,
+			DBGLOG(HAL, DEBUG, "ucTc mismatch! (%d != %d)\n", ucTc,
 			       ucDmashdlTc);
 
 			return ucDmashdlTc;
@@ -671,7 +671,7 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 			dump_len = MAX_DUMP_DATA_LEN;
 		else
 			dump_len = u4Length;
-		DBGLOG(HAL, INFO, "Dump DATA TXD: (total length: %d)\n",
+		DBGLOG(HAL, DEBUG, "Dump DATA TXD: (total length: %d)\n",
 		       u4Length);
 		dumpMemory8(pucBuf, dump_len);
 	}
@@ -1506,7 +1506,7 @@ void halWakeUpWiFi(struct ADAPTER *prAdapter)
 	uint8_t ucCount = 0;
 	uint32_t u4Value;
 
-	DBGLOG(INIT, INFO, "Power on Wi-Fi....\n");
+	DBGLOG(INIT, DEBUG, "Power on Wi-Fi....\n");
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
@@ -1732,13 +1732,13 @@ void halUpdateTxMaxQuota(struct ADAPTER *prAdapter)
 							(uint16_t)ucWmmIndex,
 							u4Quota);
 			} else {
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, DEBUG,
 					"updateTxRingMaxQuota not implemented\n");
 				u4Ret = WLAN_STATUS_NOT_ACCEPTED;
 			}
 		}
 
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"WmmQuota,Run,%u,Wmm,%u,Quota,0x%x,ret=0x%x\n",
 			fgRun, ucWmmIndex, u4Quota, u4Ret);
 		if (u4Ret != WLAN_STATUS_PENDING) {
@@ -2219,7 +2219,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
+	DBGLOG(INIT, DEBUG, "Power off Wi-Fi!\n");
 
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
@@ -2323,7 +2323,7 @@ uint32_t halSerGetMcuEvent(struct ADAPTER *prAdapter, u_int8_t fgClear)
 	}
 
 	if (u4SerAction && fgClear) {
-		DBGLOG(NIC, INFO, "u4SerAction=0x%08X\n", u4SerAction);
+		DBGLOG(NIC, DEBUG, "u4SerAction=0x%08X\n", u4SerAction);
 
 		/* clear MCU SER event */
 		kalDevRegWrite(prGlueInfo,
@@ -2371,7 +2371,7 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 			if (prChipInfo->asicDumpSerDummyCR)
 				prChipInfo->asicDumpSerDummyCR(prAdapter);
 
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"SER(E) Host stop HIF tx/rx operation\n");
 
 			/* change SER FSM to SER_STOP_HOST_TX_RX */
@@ -2381,7 +2381,7 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 			/* stop RX BULK IN URB */
 			halDisableInterrupt(prAdapter);
 
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 			"SER(F) Host ACK HIF tx/rx stop operation done\n");
 
 			/* Send Host stops TX/RX done response to mcu */
@@ -2396,13 +2396,13 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4SerAction == ERROR_DETECT_RESET_DONE) {
-			DBGLOG(HAL, INFO, "SER(L) Host re-initialize WFDMA\n");
-			DBGLOG(HAL, INFO, "SER(M) Host enable WFDMA\n");
+			DBGLOG(HAL, DEBUG, "SER(L) Host re-initialize WFDMA\n");
+			DBGLOG(HAL, DEBUG, "SER(M) Host enable WFDMA\n");
 
 			if (prChipInfo->asicUsbInit)
 				prChipInfo->asicUsbInit(prAdapter, prChipInfo);
 
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"SER(N) Host ACK WFDMA init done\n");
 			/* Send Host stops TX/RX done response to mcu */
 			kalDevRegWrite(prAdapter->prGlueInfo,
@@ -2419,7 +2419,7 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 			if (prBusInfo->DmaShdlInit)
 				prBusInfo->DmaShdlInit(prAdapter);
 
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"SER(Q) Host ACK MCU SER handle done\n");
 			/* Send Host stops TX/RX done response to mcu */
 			kalDevRegWrite(prAdapter->prGlueInfo,
@@ -2435,10 +2435,10 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 		if (u4SerAction == ERROR_DETECT_MCU_NORMAL_STATE) {
 #if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
-			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
+			DBGLOG(HAL, DEBUG, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
 #endif
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"SER(U) Host reset TX/RX endpoint\n");
 
 			/* It's surprising that the toggle bit or sequence

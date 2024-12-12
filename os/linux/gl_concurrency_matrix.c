@@ -386,7 +386,7 @@ int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 				       sizeof(buffer) - written,
 				       "\n");
 	}
-	DBGLOG(REQ, INFO, "%s", buffer);
+	DBGLOG(REQ, DEBUG, "%s", buffer);
 
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_CONCURRENCY_MATRIX,
 			      sizeof(*dest), (void *)dest) < 0))

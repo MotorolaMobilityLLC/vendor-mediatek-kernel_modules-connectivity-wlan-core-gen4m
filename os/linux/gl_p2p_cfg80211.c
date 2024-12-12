@@ -2418,7 +2418,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			(struct MSG_HDR *) prP2pStartAPMsg,
 			MSG_SEND_METHOD_BUF);
 
-		DBGLOG(P2P, VOC, "%s\n", aucLogBuf);
+		DBGLOG(P2P, INFO, "%s\n", aucLogBuf);
 
 		i4Rslt = 0;
 		goto exit;
@@ -2929,7 +2929,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev,
 			dev == NULL)
 			break;
 
-		DBGLOG(P2P, VOC, "name: %s\n", dev->name);
+		DBGLOG(P2P, INFO, "name: %s\n", dev->name);
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		netif_carrier_off(dev);
@@ -3951,7 +3951,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
-		DBGLOG(REQ, INFO, "[%d] sme->auth_type=%x flags=0x%x\n",
+		DBGLOG(REQ, DEBUG, "[%d] sme->auth_type=%x flags=0x%x\n",
 			ucRoleIdx, sme->auth_type, sme->flags);
 
 		switch (sme->auth_type) {
@@ -3971,7 +3971,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 
 		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
 		if (sme->crypto.n_ciphers_pairwise) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 				"cipher pairwise (%d)\n",
 				sme->crypto.ciphers_pairwise[0]);
 			DBGLOG_MEM8(P2P, TRACE, prConnReqMsg->aucIEBuf,
@@ -5450,12 +5450,12 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(struct wiphy *wiphy,
 		rStatus = rsnSetPmkid(prGlueInfo->prAdapter, &pmkid);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
+			DBGLOG(INIT, DEBUG, "add pmkid error:%x\n", rStatus);
 	} else {
 		rStatus = rsnDelPmkid(prGlueInfo->prAdapter, &pmkid);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, INFO, "remove pmkid error:%x\n", rStatus);
+			DBGLOG(INIT, DEBUG, "remove pmkid error:%x\n", rStatus);
 	}
 
 	DBGLOG(P2P, LOUD,

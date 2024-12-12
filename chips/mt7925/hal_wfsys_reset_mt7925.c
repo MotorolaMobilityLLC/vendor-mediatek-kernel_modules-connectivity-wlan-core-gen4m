@@ -87,18 +87,18 @@ u_int8_t mt7925HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 		/*A.1*/
 		u4AddrVal = CBTOP_RGU_BASE;
 		HAL_MCR_RD(prAdapter, u4AddrVal, &u4CrVal);
-		DBGLOG(HAL, INFO, "Read cr_bus_rst 0x%x: 0x%x\n",
+		DBGLOG(HAL, DEBUG, "Read cr_bus_rst 0x%x: 0x%x\n",
 			u4AddrVal, u4CrVal);
 		u4CrVal |= CB_INFRA_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
 		HAL_MCR_WR(prAdapter, u4AddrVal, u4CrVal);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"A.1 - Write assert cr_bus_rst 0x%x: 0x%x\n",
 			u4AddrVal, u4CrVal);
 	} else {
 		/*e.1*/
 		u4AddrVal = CBTOP_RGU_BASE;
 		HAL_MCR_RD(prAdapter, u4AddrVal, &u4CrVal);
-		DBGLOG(HAL, INFO, "E. Read 0x%x: 0x%x\n", u4AddrVal, u4CrVal);
+		DBGLOG(HAL, DEBUG, "E. Read 0x%x: 0x%x\n", u4AddrVal, u4CrVal);
 
 		u4CrVal &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
 
@@ -131,7 +131,7 @@ u_int8_t mt7925HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 	while (TRUE) {
 		HAL_MCR_RD(prAdapter, WF_TOP_CFG_ON_ROMCODE_INDEX_REMAP_ADDR,
 			&u4CrValue);
-		DBGLOG(HAL, INFO, "Poll ROM_INDEX, 0x81021604: 0x%x\n",
+		DBGLOG(HAL, DEBUG, "Poll ROM_INDEX, 0x81021604: 0x%x\n",
 			u4CrValue);
 		if (u4CrValue == MMIO_READ_FAIL)
 			DBGLOG(HAL, ERROR, "[SER][L0.5] MMIO read CR fail\n");
@@ -164,17 +164,17 @@ void mt7925GetSemaphore(struct ADAPTER *prAdapter)
 	u4Val = (u4RemapVal & ~BITS(0, 15)) | (0x00001807);
 	HAL_MCR_WR(prAdapter, CONN_INFRA_BUS_CR_PCIE2AP_REMAP_WF_0_54_ADDR,
 		u4Val);
-	DBGLOG(HAL, INFO, "Write Remap val: 0x%x\n", u4Val);
+	DBGLOG(HAL, DEBUG, "Write Remap val: 0x%x\n", u4Val);
 	kalUdelay(10);
 
 	HAL_MCR_RD(prAdapter,
 		R_PCIE2AP_PUBLIC_REMAPPING_4_BUS_ADDR, &u4Val);
-	DBGLOG(HAL, INFO, "Read CONN_SEMA00_M0_OWN_STA: 0x%x\n",
+	DBGLOG(HAL, DEBUG, "Read CONN_SEMA00_M0_OWN_STA: 0x%x\n",
 		u4Val);
 
 	HAL_MCR_WR(prAdapter, CONN_INFRA_BUS_CR_PCIE2AP_REMAP_WF_0_54_ADDR,
 		u4RemapVal);
-	DBGLOG(HAL, INFO, "Write back default Remap val: 0x%x\n", u4RemapVal);
+	DBGLOG(HAL, DEBUG, "Write back default Remap val: 0x%x\n", u4RemapVal);
 	kalUdelay(10);
 }
 
@@ -190,17 +190,17 @@ void mt7925GetSemaReport(struct ADAPTER *prAdapter)
 	/* Set PCIE2AP public mapping CR4 */
 	u4Val = (u4RemapVal & ~BITS(0, 15)) | (0x00001807);
 
-	DBGLOG(HAL, INFO, "Write Remap val: 0x%x\n", u4Val);
+	DBGLOG(HAL, DEBUG, "Write Remap val: 0x%x\n", u4Val);
 
 	kalUdelay(10);
 
 	HAL_MCR_RD(prAdapter, 0x40400, &u4Val);
-	DBGLOG(HAL, INFO, "Read CONN_SEMA_OWN_BY_M0_STA_REP_1: 0x%x\n",
+	DBGLOG(HAL, DEBUG, "Read CONN_SEMA_OWN_BY_M0_STA_REP_1: 0x%x\n",
 		u4Val);
 
 	HAL_MCR_WR(prAdapter, CONN_INFRA_BUS_CR_PCIE2AP_REMAP_WF_0_54_ADDR,
 		u4RemapVal);
-	DBGLOG(HAL, INFO, "Write back default Remap val: 0x%x\n", u4RemapVal);
+	DBGLOG(HAL, DEBUG, "Write back default Remap val: 0x%x\n", u4RemapVal);
 	kalUdelay(10);
 }
 #endif /* defined(_HIF_PCIE) */
@@ -229,7 +229,7 @@ u_int8_t mt7925HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 
 		goto end;
 	}
-	DBGLOG(HAL, INFO, "UHW read SUBSYS_RST_CR: 0x%x\n", u4CrVal);
+	DBGLOG(HAL, DEBUG, "UHW read SUBSYS_RST_CR: 0x%x\n", u4CrVal);
 
 	if (fgAssertRst) {
 		/* CBTOP_RGU_WF_SUBSYS_RST_BYPASS_WFDMA_SLP_PROT_MASK is defined
@@ -345,13 +345,13 @@ u_int8_t mt7925HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 		if (!fgStatus)
 			DBGLOG(HAL, ERROR, "UHW read WF_TOP_CFG_ON CR fail\n");
 		else if (u4CrValue == MCU_IDLE) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"UHW read WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR: 0x%x\n",
 				u4CrValue);
 			break;
 		}
 
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"UHW read WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR: 0x%x\n",
 			u4CrValue);
 		if (u4ResetTimeCnt >= u4ResetTimeTmout) {

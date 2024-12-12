@@ -822,7 +822,7 @@ uint16_t nicGetStatIdxInfo(struct ADAPTER *prAdapter,
 			ucWlanIdxExist = aucWlanIdxArray[ucIdx];
 
 			if (ucWlanIdxExist == ucWlanIdx) {
-				DBGLOG(REQ, INFO,
+				DBGLOG(REQ, DEBUG,
 				    "=== Matched, Mask=0x%x, ucIdx=%d ===\n",
 				    u2ValidBitMask, ucIdx);
 				return ucIdx;
@@ -836,7 +836,7 @@ uint16_t nicGetStatIdxInfo(struct ADAPTER *prAdapter,
 			if (~u2ValidBitMask & BIT(ucIdx)) {
 				u2ValidBitMask |= BIT(ucIdx);
 				aucWlanIdxArray[ucIdx] = ucWlanIdx;
-				DBGLOG(REQ, INFO,
+				DBGLOG(REQ, DEBUG,
 				    "=== New Add, Mask=0x%x, ucIdx=%d ===\n",
 				    u2ValidBitMask, ucIdx);
 				return ucIdx;

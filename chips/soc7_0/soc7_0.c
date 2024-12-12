@@ -1209,7 +1209,7 @@ static void soc7_0configWfDmaIntMask(struct GLUE_INFO *prGlueInfo,
 	HAL_MCR_RD(prGlueInfo->prAdapter,
 		   WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &u4Val);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "HOST_INT_ENA(0x%08x):0x%08x, En:%u, Type:0x%x, Word:0x%08x\n",
 	       WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
 	       u4Val,
@@ -1241,7 +1241,7 @@ static void soc7_0clearEvtRingTillCmdRingEmpty(
 		kalMsleep(HIF_CMD_POWER_OFF_RETRY_TIME);
 		u4Retry++;
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
-		DBGLOG_LIMITED(INIT, INFO,
+		DBGLOG_LIMITED(INIT, DEBUG,
 		       "cmd ring cidx[%u] != didx[%u] try to clear event ring, retry: %u\n",
 		       u4CpuIdx, u4DmaIdx, u4Retry);
 		kalDevRegRead(prAdapter->prGlueInfo,
@@ -1285,11 +1285,11 @@ int soc7_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 	int value = 0;
 
 	if (g_IsWfsysBusNoAck == TRUE) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"Already trigger conninfra whole chip reset.\n");
 		return -EBUSY;
 	}
-	DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
+	DBGLOG(HAL, DEBUG, "Trigger fw assert start.\n");
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value &= 0xFFFFFF7F;
 	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
@@ -1405,7 +1405,7 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	uint32_t value = 0;
 	uint32_t polling_count;
 	uint32_t u4WfIpVersion = 0;
-	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
+	DBGLOG(INIT, DEBUG, "wmmcu power-on start.\n");
 
 #if (CFG_WLAN_LK_FWDL_SUPPORT == 0)
 	/* Setup CONNSYS firmware in EMI */
@@ -1712,7 +1712,7 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 
-	DBGLOG(INIT, INFO, "wmmcu power-on done.\n");
+	DBGLOG(INIT, DEBUG, "wmmcu power-on done.\n");
 	return ret;
 }
 
@@ -1743,7 +1743,7 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 	}
 #endif
 
-	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
+	DBGLOG(INIT, DEBUG, "wmmcu power-off start.\n");
 
 	ret = wake_up_conninfra_off();
 	if (ret)
@@ -2020,7 +2020,7 @@ release_wfsys_sem_done:
 	 * Action: read
 	 */
 	wf_ioremap_read(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR, &value);
-	DBGLOG(INIT, INFO, "Read A-die top_ck_en_1 (0x%x)\n", value);
+	DBGLOG(INIT, DEBUG, "Read A-die top_ck_en_1 (0x%x)\n", value);
 	udelay(50);
 
 	/* Disable A-die top_ck_en_1
@@ -2111,7 +2111,7 @@ static uint32_t soc7_0_McuInit(struct ADAPTER *prAdapter)
 
 	ret = wf_pwr_on_consys_mcu(prAdapter);
 	if (ret) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"wf_pwr_on_consys_mcu failed, ret=%d\n",
 			ret);
 		soc7_0_DumpBusStatus(prAdapter);
@@ -2123,7 +2123,7 @@ static uint32_t soc7_0_McuInit(struct ADAPTER *prAdapter)
 	 */
 	HAL_LP_OWN_RD(prAdapter, &result);
 	if (result) {
-		DBGLOG(INIT, INFO, "set fw own after mcu idle loop.\n");
+		DBGLOG(INIT, DEBUG, "set fw own after mcu idle loop.\n");
 		HAL_LP_OWN_SET(prAdapter, &result);
 	}
 
@@ -2143,7 +2143,7 @@ static void soc7_0_McuDeInit(struct ADAPTER *prAdapter)
 
 	ret = wf_pwr_off_consys_mcu(prAdapter);
 	if (ret) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"wf_pwr_off_consys_mcu failed, ret=%d\n",
 			ret);
 		soc7_0_DumpBusStatus(prAdapter);
@@ -2218,7 +2218,7 @@ static uint32_t soc7_0_SetupRomEmi(struct ADAPTER *prAdapter)
 
 exit:
 	if (u4Status != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, INFO, "u4Status = %u\n", u4Status);
+		DBGLOG(INIT, DEBUG, "u4Status = %u\n", u4Status);
 
 	return u4Status;
 }
@@ -2278,14 +2278,14 @@ static void soc7_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 			    var_lp);
 	}
 
-	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",
+	DBGLOG(HAL, DEBUG, "wm pc=%s%s%s%s%s\n",
 	       log_buf_pc[0],
 	       log_buf_pc[1],
 	       log_buf_pc[2],
 	       log_buf_pc[3],
 	       log_buf_pc[4]);
 
-	DBGLOG(HAL, INFO, "wm lp=%s%s%s%s%s\n",
+	DBGLOG(HAL, DEBUG, "wm lp=%s%s%s%s%s\n",
 	       log_buf_lp[0],
 	       log_buf_lp[1],
 	       log_buf_lp[2],
@@ -2548,21 +2548,21 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 #define	HANG_OTHER_LOG_NUM		2
 	uint32_t u4Val = 0;
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"Host_CSR - mailbox and other CRs");
 
 	connac2x_DbgCrRead(NULL, 0x18060010, &u4Val);
-	DBGLOG(INIT, INFO, "0x18060010=[0x%08x]\n", u4Val);
+	DBGLOG(INIT, DEBUG, "0x18060010=[0x%08x]\n", u4Val);
 	connac2x_DbgCrRead(NULL, 0x180600f0, &u4Val);
-	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
+	DBGLOG(INIT, DEBUG, "0x180600f0=[0x%08x]\n", u4Val);
 	connac2x_DbgCrRead(prAdapter, 0x18400120, &u4Val);
-	DBGLOG(INIT, INFO, "0x18400120=[0x%08x]\n", u4Val);
+	DBGLOG(INIT, DEBUG, "0x18400120=[0x%08x]\n", u4Val);
 
 	set_wf_monflg_on_mailbox_wf();
 
 	/* pooling host_mailbox_wf status */
 	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR, &u4Val);
-	DBGLOG(INIT, INFO, "0x%08x=[0x%08x]\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=[0x%08x]\n",
 		CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR,
 		u4Val);
 
@@ -2576,13 +2576,13 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 
 	/* MCIF_MD_STATUS_CR */
 	connac2x_DbgCrRead(NULL, 0x10001BF4, &u4Val);
-	DBGLOG(INIT, INFO, "MD_AOR_STATUS 0x10001BF4=[%x]\n", u4Val);
+	DBGLOG(INIT, DEBUG, "MD_AOR_STATUS 0x10001BF4=[%x]\n", u4Val);
 
 	/* Dump WFDMA CR */
 	connac2x_DbgCrRead(NULL, 0x184be008, &u4Val);
-	DBGLOG(INIT, INFO, "WFDMA clock 0x184be008=[%x]\n", u4Val);
+	DBGLOG(INIT, DEBUG, "WFDMA clock 0x184be008=[%x]\n", u4Val);
 	connac2x_DbgCrRead(NULL, 0x184c0800, &u4Val);
-	DBGLOG(INIT, INFO, "WFDMA rst 0x184c0800=[%x]\n", u4Val);
+	DBGLOG(INIT, DEBUG, "WFDMA rst 0x184c0800=[%x]\n", u4Val);
 	connac2x_DumpCrRange(prAdapter, 0x18024200, 7, "WFDMA 0x18024200");
 	connac2x_DumpCrRange(prAdapter, 0x18024300, 16, "WFDMA 0x18024300");
 	connac2x_DumpCrRange(prAdapter, 0x18024380, 16, "WFDMA x18024380");
@@ -2660,7 +2660,7 @@ static int soc7_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable)
 	uint32_t u4WfIpVersion = 0;
 
 	if (prAdapter == NULL)
-		DBGLOG(HAL, INFO, "prAdapter NULL\n");
+		DBGLOG(HAL, DEBUG, "prAdapter NULL\n");
 	else
 		DBGLOG(HAL, TRACE, " Start, fgIsFwOwn:%d\n",
 			prAdapter->fgIsFwOwn);

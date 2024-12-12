@@ -435,7 +435,7 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
-		DBGLOG_LIMITED(HAL, INFO, "No glue info in %s(%d, %d)\n",
+		DBGLOG_LIMITED(HAL, DEBUG, "No glue info in %s(%d, %d)\n",
 			       __func__, irq, msi_idx);
 		enable_irq(irq);
 		return NULL;
@@ -454,7 +454,7 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4HwIsrCount);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-		DBGLOG_LIMITED(HAL, INFO, "GLUE_FLAG_HALT skip INT(%d, %d)\n",
+		DBGLOG_LIMITED(HAL, DEBUG, "GLUE_FLAG_HALT skip INT(%d, %d)\n",
 			       irq, msi_idx);
 		if (msi_idx >= 0 && msi_idx < PCIE_MSI_NUM)
 			KAL_SET_BIT(msi_idx, prMsiInfo->ulEnBits);
@@ -586,7 +586,7 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
-		DBGLOG_LIMITED(HAL, INFO, "No glue info(%d)\n", irq);
+		DBGLOG_LIMITED(HAL, DEBUG, "No glue info(%d)\n", irq);
 		disable_irq_nosync(irq);
 		return IRQ_NONE;
 	}
@@ -823,7 +823,7 @@ uint8_t pcie_backup_config_space_settings(
 		}
 	}
 	prBusInfo->ucConfigSpaceBkDone = 1;
-	DBGLOG(HAL, INFO, "cfg space bk pass\n");
+	DBGLOG(HAL, DEBUG, "cfg space bk pass\n");
 
 	return 0;
 }
@@ -850,7 +850,7 @@ uint8_t pcie_restore_config_space_settings(
 			return -1;
 		}
 	}
-	DBGLOG(HAL, INFO, "cfg space rs pass\n");
+	DBGLOG(HAL, DEBUG, "cfg space rs pass\n");
 
 	return 0;
 }
@@ -953,7 +953,7 @@ u_int8_t pcie_check_status_is_linked(void)
 		DBGLOG(HAL, WARN, "PCIE link down\n");
 		return FALSE;
 	}
-	DBGLOG_LIMITED(HAL, INFO, "PCI_VENDOR_ID: 0x%X\n", vnd_id);
+	DBGLOG_LIMITED(HAL, DEBUG, "PCI_VENDOR_ID: 0x%X\n", vnd_id);
 	return TRUE;
 }
 
@@ -967,14 +967,14 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct device *prDev = &pdev->dev;
 
-	DBGLOG(HAL, VOC,
+	DBGLOG(HAL, INFO,
 		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
 		state, g_AERRstTriggered, kalIsResetting());
 
 	kalDumpPlatGPIOStat();
 
 	if (!pci_is_enabled(pdev)) {
-		DBGLOG(HAL, VOC, "pcie is disable\n");
+		DBGLOG(HAL, INFO, "pcie is disable\n");
 		goto exit;
 	}
 
@@ -1077,7 +1077,7 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 	enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason;
 	struct device *prDev = &pdev->dev;
 
-	DBGLOG(HAL, VOC, "mtk pci error slot reset, L05_rst: %d\n",
+	DBGLOG(HAL, INFO, "mtk pci error slot reset, L05_rst: %d\n",
 		g_AERL05Rst);
 
 	prGlueInfo = wlanDevGetGlueInfo(prDev);
@@ -1114,7 +1114,7 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 		glResetWholeChipResetTrigger(reason);
 	}
 
-	DBGLOG(HAL, VOC, "%s\n", aucAerRsn);
+	DBGLOG(HAL, INFO, "%s\n", aucAerRsn);
 
 	return PCI_ERS_RESULT_DISCONNECT;
 }
@@ -1124,7 +1124,7 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct device *prDev = &pdev->dev;
 
-	DBGLOG(HAL, VOC, "mtk pci error resume\n");
+	DBGLOG(HAL, INFO, "mtk pci error resume\n");
 
 	prGlueInfo = wlanDevGetGlueInfo(prDev);
 
@@ -1178,11 +1178,11 @@ static int32_t setupPlatDevIrq(
 		       "WIFI-OF: get wifi device node fail\n");
 
 	if (!u4IrqId) {
-		DBGLOG(INIT, INFO, "no irq\n");
+		DBGLOG(INIT, DEBUG, "no irq\n");
 		goto exit;
 	}
 
-	DBGLOG(INIT, VOC, "request_irq num(%d)\n", u4IrqId);
+	DBGLOG(INIT, INFO, "request_irq num(%d)\n", u4IrqId);
 
 	ret = devm_request_threaded_irq(
 		&pdev->dev,
@@ -1193,14 +1193,14 @@ static int32_t setupPlatDevIrq(
 		mtk_wifi_driver.driver.name,
 		&prGlueInfo->rHifInfo);
 	if (ret != 0) {
-		DBGLOG(INIT, VOC, "request_irq(%u) ERROR(%d)\n",
+		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
 		       u4IrqId, ret);
 		goto exit;
 	}
 
 	en_wake_ret = enable_irq_wake(u4IrqId);
 	if (en_wake_ret)
-		DBGLOG(INIT, VOC, "enable_irq_wake(%u) ERROR(%d)\n",
+		DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
 		       u4IrqId, en_wake_ret);
 
 exit:
@@ -1262,7 +1262,7 @@ static bool wifiCsrIoremap(struct platform_device *pdev)
 	struct device_node *node = NULL;
 	struct resource res;
 
-	DBGLOG(INIT, VOC, "wifi Csr Ioremap start\n");
+	DBGLOG(INIT, INFO, "wifi Csr Ioremap start\n");
 
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
 	if (!node) {
@@ -1306,7 +1306,7 @@ static bool wifiCsrIoremap(struct platform_device *pdev)
 #endif
 
 	if (!prChipInfo->HostCSRBaseAddress) {
-		DBGLOG(INIT, VOC,
+		DBGLOG(INIT, INFO,
 			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
 			wifi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
 		release_mem_region(g_u8CsrOffset, g_u4CsrSize);
@@ -1316,7 +1316,7 @@ static bool wifiCsrIoremap(struct platform_device *pdev)
 	prChipInfo->u4HostCsrOffset = (uint32_t)g_u8CsrOffset;
 	prChipInfo->u4HostCsrSize = g_u4CsrSize;
 
-	DBGLOG(INIT, VOC,
+	DBGLOG(INIT, INFO,
 	       "HostCSRBaseAddress:0x%llX ioremap region 0x%X @ 0x%llX\n",
 	       (uint64_t)prChipInfo->HostCSRBaseAddress,
 	       g_u4CsrSize, g_u8CsrOffset);
@@ -1354,7 +1354,7 @@ static void wifiSetupFwFlavor(struct platform_device *pdev,
 				    &driver_data->fw_flavor))
 		return;
 
-	DBGLOG(HAL, VOC, "fw_flavor: %s\n", driver_data->fw_flavor);
+	DBGLOG(HAL, INFO, "fw_flavor: %s\n", driver_data->fw_flavor);
 }
 
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
@@ -1376,7 +1376,7 @@ static void wifiSetupMemdumpMode(struct platform_device *pdev,
 		return;
 	}
 
-	DBGLOG(HAL, VOC, "memdump setup: %s\n", driver_data->memdump);
+	DBGLOG(HAL, INFO, "memdump setup: %s\n", driver_data->memdump);
 }
 #endif
 #endif
@@ -1434,7 +1434,7 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 #endif
 
 exit:
-	DBGLOG(INIT, VOC, "mtk wifi probe() done, ret: %d\n", ret);
+	DBGLOG(INIT, INFO, "mtk wifi probe() done, ret: %d\n", ret);
 	return ret;
 }
 
@@ -1475,7 +1475,7 @@ static void mtk_wifi_remove(struct platform_device *pdev)
 static void mtk_wifi_shutdown(struct platform_device *pdev)
 {
 	if (g_fgDriverProbed && pfWlanShutdown) {
-		DBGLOG(INIT, INFO, "do shutdown\n");
+		DBGLOG(INIT, DEBUG, "do shutdown\n");
 		pfWlanShutdown();
 		g_fgDriverProbed = FALSE;
 	}
@@ -1542,7 +1542,7 @@ static int mtk_wifi_misc_probe(struct platform_device *pdev)
 		goto exit;
 
 exit:
-	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+	DBGLOG(INIT, DEBUG, "%s() done, ret: %d\n", __func__, ret);
 
 	return 0;
 }
@@ -1579,7 +1579,7 @@ static void mtk_pci_setup_aspm(struct pci_dev *pdev)
 
 	glBusConfigASPM(pdev, DISABLE_ASPM_L1);
 	if (fgKeepL0) {
-		DBGLOG(INIT, INFO, "PCIE keep L0\n");
+		DBGLOG(INIT, DEBUG, "PCIE keep L0\n");
 		return;
 	}
 
@@ -1587,7 +1587,7 @@ static void mtk_pci_setup_aspm(struct pci_dev *pdev)
 		PCI_L1PM_CTR1_ASPM_L12_EN |
 		PCI_L1PM_CTR1_ASPM_L11_EN);
 	glBusConfigASPM(pdev, ENABLE_ASPM_L1);
-	DBGLOG(INIT, INFO, "PCIE allow enter L1.2\n");
+	DBGLOG(INIT, DEBUG, "PCIE allow enter L1.2\n");
 }
 #endif
 
@@ -1613,7 +1613,7 @@ static int mtk_pcie_setup_msi(struct pci_dev *pdev,
 		pdev, 1, u4MaxMsiNum, PCI_IRQ_MSI);
 #endif
 	if (ret < 0) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"pci_alloc_irq_vectors(1, %d) failed, ret=%d\n",
 			u4MaxMsiNum,
 			ret);
@@ -1633,7 +1633,7 @@ static int mtk_pcie_setup_msi(struct pci_dev *pdev,
 	prMsiInfo->u4MsiNum = 1;
 #endif
 	prMsiInfo->ulEnBits = 0;
-	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
+	DBGLOG(INIT, DEBUG, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
 	       ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
 
 	return 0;
@@ -1669,9 +1669,9 @@ static int mtk_wifi_tx_cma_probe(struct platform_device *pdev)
 	ret = wifiTxCmaSetup(pdev);
 
 	if (ret == 0)
-		DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+		DBGLOG(INIT, DEBUG, "%s() done, ret: %d\n", __func__, ret);
 	else
-		DBGLOG(INIT, INFO, "%s() fail, ret: %d\n", __func__, ret);
+		DBGLOG(INIT, DEBUG, "%s() fail, ret: %d\n", __func__, ret);
 
 	return 0;
 }
@@ -1750,7 +1750,7 @@ static int mtk_wifi_tx_cma_non_cache_probe(
 		goto exit;
 
 exit:
-	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+	DBGLOG(INIT, DEBUG, "%s() done, ret: %d\n", __func__, ret);
 
 	return 0;
 }
@@ -1796,7 +1796,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	ret = pcim_enable_device(pdev);
 	if (ret) {
-		DBGLOG(INIT, VOC,
+		DBGLOG(INIT, INFO,
 			"pci_enable_device failed, ret=%d\n", ret);
 		goto out;
 	}
@@ -1807,7 +1807,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 			break;
 	}
 	if (i > PCI_STD_RESOURCE_END) {
-		DBGLOG(INIT, VOC,
+		DBGLOG(INIT, INFO,
 		       "pcim_iomap_regions failed, ret=%d\n", ret);
 		goto out;
 	}
@@ -1835,7 +1835,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	ret = dma_set_mask(&pdev->dev,
 		DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask));
 	if (ret != 0) {
-		DBGLOG(INIT, VOC,
+		DBGLOG(INIT, INFO,
 			"dma_set_mask failed, ret=%d\n", ret);
 		goto err_free_irq_vectors;
 	}
@@ -1846,7 +1846,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		pcim_iomap_table(pdev)[i] : NULL;
 	prChipInfo->u8CsrOffset = pci_resource_start(pdev, i);
 
-	DBGLOG(INIT, VOC, "ioremap for device %s[%d], region 0x%lX @ 0x%lX\n",
+	DBGLOG(INIT, INFO, "ioremap for device %s[%d], region 0x%lX @ 0x%lX\n",
 	       pci_name(pdev), i, (unsigned long) pci_resource_len(pdev, i),
 	       (unsigned long) pci_resource_start(pdev, i));
 
@@ -1858,7 +1858,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, VOC, "pfWlanProbe fail!\n");
+		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
 		goto err_free_irq_vectors;
 	}
@@ -1884,7 +1884,7 @@ err_free_iomap:
 	pcim_iounmap_regions(pdev, BIT(0));
 
 out:
-	DBGLOG(INIT, VOC, "mtk_pci_probe() done(%d)\n", ret);
+	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
 
 	kalDumpPlatGPIOStat();
 
@@ -1901,7 +1901,7 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 	if (g_fgDriverProbed) {
 		pfWlanRemove();
 		g_fgDriverProbed = FALSE;
-		DBGLOG(INIT, VOC, "pfWlanRemove done\n");
+		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
 #if (CFG_MTK_ANDROID_WMT == 0)
 	emi_mem_uninit(prChipInfo, pdev);
@@ -2018,7 +2018,7 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 			DBGLOG(HAL, STATE, "*********************\n");
 			DBGLOG(HAL, STATE, "* Enter PCIE Suspend *\n");
 			DBGLOG(HAL, STATE, "*********************\n");
-			DBGLOG(HAL, INFO, "wait = %d\n\n", wait);
+			DBGLOG(HAL, DEBUG, "wait = %d\n\n", wait);
 			break;
 		}
 
@@ -2325,7 +2325,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	if (!kalCreateHifSkbList(prChipInfo)) {
-		DBGLOG(HAL, VOC,
+		DBGLOG(HAL, INFO,
 		       "Rx data ring using copy path. size[%u]->[%u].\n",
 		       prBusInfo->rx_data_ring_size,
 		       prBusInfo->rx_data_ring_prealloc_size);
@@ -2467,7 +2467,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			if (data) {
 				entry = irq_data_get_msi_desc(data);
 				if (entry) {
-					DBGLOG(INIT, INFO,
+					DBGLOG(INIT, DEBUG,
 					      "messages address [0x%x, 0x%x]\n",
 					      entry->msg.address_lo,
 					      entry->msg.address_hi);
@@ -2510,7 +2510,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 				irqn, ret, en_wake_ret,
 				i == prMsiInfo->u4MsiNum - 1 ? "\n" : "; ");
 		} else {
-			DBGLOG(INIT, VOC, "request_irq(%d %s %d %d)\n",
+			DBGLOG(INIT, INFO, "request_irq(%d %s %d %d)\n",
 				irqn, prMsiLayout->name, ret, en_wake_ret);
 		}
 		if (ret)
@@ -2518,7 +2518,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	}
 
 	if (buf) {
-		DBGLOG(HAL, VOC, "request_irq info: %s\n", buf);
+		DBGLOG(HAL, INFO, "request_irq info: %s\n", buf);
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 	}
 
@@ -2717,7 +2717,7 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 	}
 	KAL_BOOT_TIME_END();
 
-	DBGLOG(INIT, VOC,
+	DBGLOG(INIT, INFO,
 		"Total: %llu us, %s\n",
 		KAL_GET_BOOTTIME_INTERVAL(),
 		dbg);
@@ -2759,7 +2759,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
-		DBGLOG(INIT, VOC, "%s no glue info\n", __func__);
+		DBGLOG(INIT, INFO, "%s no glue info\n", __func__);
 		return;
 	}
 
@@ -2856,7 +2856,7 @@ static void pcieSetASPML1SS(struct pci_dev *dev, int i4Enable)
 	pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_L1PMSS);
 
 	if (!pos) {
-		DBGLOG(INIT, VOC, "L1 PM Substate capability is not found!\n");
+		DBGLOG(INIT, INFO, "L1 PM Substate capability is not found!\n");
 		return;
 	}
 
@@ -2884,19 +2884,19 @@ static bool pcieCheckASPML1SS(struct pci_dev *dev, int i4BitMap)
 
 
 	if (!i4Pos) {
-		DBGLOG(INIT, VOC, "L1 PM Substate capability is not found!\n");
+		DBGLOG(INIT, INFO, "L1 PM Substate capability is not found!\n");
 		return FALSE;
 	}
 	pci_read_config_dword(dev, i4Pos + PCI_L1PMSS_CAP, &u4Reg);
 	if (i4BitMap != 0) {
 		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L12) &&
 				(!(u4Reg & PCI_L1PM_CAP_ASPM_L12))) {
-			DBGLOG(INIT, VOC, "not support ASPM L1.2!\n");
+			DBGLOG(INIT, INFO, "not support ASPM L1.2!\n");
 			return FALSE;
 		}
 		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L11) &&
 				(!(u4Reg & PCI_L1PM_CAP_ASPM_L11))) {
-			DBGLOG(INIT, VOC, "not support ASPM L1.1!\n");
+			DBGLOG(INIT, INFO, "not support ASPM L1.1!\n");
 			return FALSE;
 		}
 	}
@@ -3281,7 +3281,7 @@ uint32_t glWritePcieCfgSpace(int offset, uint32_t value)
 void glNotifyPciePowerDown(void)
 {
 #if defined(CFG_MTK_WIFI_PCIE_SUPPORT) && CFG_MTK_ANDROID_WMT
-	DBGLOG(HAL, INFO, "notify PCIE PD\n");
+	DBGLOG(HAL, DEBUG, "notify PCIE PD\n");
 	mtk_pcie_pinmux_select(0, PCIE_PINMUX_PD);
 #endif
 }
@@ -3375,7 +3375,7 @@ void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
 
 	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
 
-	DBGLOG(OID, INFO,
+	DBGLOG(OID, DEBUG,
 		"[Gen_Switch] check rx idle start\n");
 
 	prRxIdleState =
@@ -3395,7 +3395,7 @@ void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
 		}
 	}
 
-	DBGLOG(OID, INFO, "[Gen_Switch] check rx idle end u4WFIdle=%d\n",
+	DBGLOG(OID, DEBUG, "[Gen_Switch] check rx idle end u4WFIdle=%d\n",
 		prRxIdleState->u4WFIdle);
 
 }

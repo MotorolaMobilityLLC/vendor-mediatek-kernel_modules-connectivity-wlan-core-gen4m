@@ -692,7 +692,7 @@ do { \
 	} \
 	if (prBusInfo->getMailboxStatus) {	\
 		prBusInfo->getMailboxStatus(_prAdapter, &u4Value);	\
-		DBGLOG(INIT, INFO, "Mailbox: 0x%x\n", u4Value); \
+		DBGLOG(INIT, DEBUG, "Mailbox: 0x%x\n", u4Value); \
 	} \
 } while (0)
 #else /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 0 */
@@ -715,7 +715,7 @@ do { \
 		       prChipInfo->sw_sync0, &_u4Result);	\
 	if (prBusInfo->getMailboxStatus) {	\
 		prBusInfo->getMailboxStatus(_prAdapter, &u4Value);	\
-		DBGLOG(INIT, INFO, "Mailbox: 0x%x\n", u4Value); \
+		DBGLOG(INIT, DEBUG, "Mailbox: 0x%x\n", u4Value); \
 	} \
 } while (0)
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
@@ -1024,7 +1024,7 @@ do { \
 			*_pfgResult = TRUE; \
 		} \
 	} else \
-		DBGLOG(INIT, INFO, "[SER][L0.5]skip set fw own\n"); \
+		DBGLOG(INIT, DEBUG, "[SER][L0.5]skip set fw own\n"); \
 }
 
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult) \

@@ -524,7 +524,7 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	DBGLOG(HAL, INFO, "type:0x%x, enable:%u, mask:0x%08x\n",
+	DBGLOG(HAL, DEBUG, "type:0x%x, enable:%u, mask:0x%08x\n",
 		ucType, fgEnable, IntMask.word);
 
 	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
@@ -585,7 +585,7 @@ u_int8_t asicWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
 		kalUdelay(wait_us);
 	} while ((i++) < round);
 
-	DBGLOG(HAL, INFO, "==>  DMABusy, GloCfg=0x%x\n", GloCfg.word);
+	DBGLOG(HAL, DEBUG, "==>  DMABusy, GloCfg=0x%x\n", GloCfg.word);
 
 	return FALSE;
 }
@@ -706,7 +706,7 @@ uint32_t asicUpdatTxRingMaxQuota(struct ADAPTER *prAdapter,
 	 * WLAN_STATUS_SUCCESS or unlock the TxRing by itself.
 	 */
 	if (u4MaxQuota < u4SrcCnt+u4RsvCnt) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"WmmQuota,CannotUpdateNow,Port,%u,Grp,%u,reqMax,%u,src,%u,rsv,%u\n",
 			u2Port, u4GroupIdx, u4MaxQuota, u4SrcCnt, u4RsvCnt);
 		return WLAN_STATUS_PENDING;
@@ -1167,7 +1167,7 @@ u_int8_t asicUsbSuspend(struct ADAPTER *prAdapter,
 	int32_t ret = 0;
 	struct BUS_INFO *prBusInfo;
 
-	DBGLOG(HAL, INFO, "%s ---->\n", __func__);
+	TRACE_FUNC(HAL, DEBUG, "%s ---->\n");
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	/* Disable PDMA TX */
@@ -1181,7 +1181,7 @@ u_int8_t asicUsbSuspend(struct ADAPTER *prAdapter,
 	/* Polling PDMA_dmashdl_request done  */
 	while (count < PDMA_TX_IDLE_WAIT_COUNT) {
 		HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
-		DBGLOG(HAL, INFO, "%s: 0x%08x = 0x%08x\n", __func__,
+		DBGLOG(HAL, DEBUG, "%s: 0x%08x = 0x%08x\n", __func__,
 		       PDMA_DEBUG_STATUS, u4Value);
 		if (!(u4Value & PDMA_DEBUG_DMASHDL_REQUEST_DONE_MASK)
 		    && (count >= 3))
@@ -1206,7 +1206,7 @@ u_int8_t asicUsbSuspend(struct ADAPTER *prAdapter,
 	count = 0;
 	while (count < PDMA_TX_IDLE_WAIT_COUNT) {
 		HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
-		DBGLOG(HAL, INFO, "%s:: 0x%08x = 0x%08x\n",
+		DBGLOG(HAL, DEBUG, "%s:: 0x%08x = 0x%08x\n",
 		       __func__, PDMA_DEBUG_STATUS, u4Value);
 		if ((u4Value == PDMA_DEBUG_TX_STATUS_MASK)
 		    && (count >= 3)) {
@@ -1248,10 +1248,10 @@ u_int8_t asicUsbSuspend(struct ADAPTER *prAdapter,
 		HAL_MCR_RD(prAdapter, PDMA_IF_MISC, &u4Value);
 		u4Value |= PDMA_IF_MISC_TX_ENABLE_MASK;
 		HAL_MCR_WR(prAdapter, PDMA_IF_MISC, u4Value);
-		DBGLOG(HAL, INFO, "%s <----\n", __func__);
+		TRACE_FUNC(HAL, DEBUG, "%s <----\n");
 		return FALSE;
 	}
-	DBGLOG(HAL, INFO, "%s <----\n", __func__);
+	TRACE_FUNC(HAL, DEBUG, "%s <----\n");
 	return TRUE;
 }
 
@@ -1295,7 +1295,7 @@ uint8_t asicUsbEventEpDetected(struct ADAPTER *prAdapter)
 			  "usb_readl() reports error: %x retry: %u\n", ret,
 			  ucRetryCount);
 		} else {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"%s: Get ucEp5Disable = %d\n", __func__,
 			  ucEp5Disable);
 			if (ucEp5Disable)
@@ -1405,7 +1405,7 @@ static void asicFillInitCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prInitHifTxHeader->rInitWifiCmd.ucSeqNum;
 
-	DBGLOG_LIMITED(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+	DBGLOG_LIMITED(INIT, DEBUG, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			prInitHifTxHeader->rInitWifiCmd.ucCID,
 			prInitHifTxHeader->rInitWifiCmd.ucSeqNum,
 			prInitHifTxHeader->u2TxByteCount);
@@ -1441,7 +1441,7 @@ static void asicFillCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prWifiCmd->ucSeqNum;
 
-	DBGLOG_LIMITED(INIT, INFO,
+	DBGLOG_LIMITED(INIT, DEBUG,
 			"TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 			prWifiCmd->ucSetQuery, prWifiCmd->u2Length);

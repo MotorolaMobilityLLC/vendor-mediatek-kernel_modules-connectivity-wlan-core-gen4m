@@ -3987,13 +3987,14 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 #if (CFG_EXT_ROAMING == 1)
 		if (prBcnReq &&
 			prBcnReq->ucMeasurementMode < RM_BCN_REQ_MODE_MAX)
-			DBGLOG(RRM, INFO,
+			DBGLOG(RRM, DEBUG,
 				"BCN report (%s) mode req, total: %d\n",
 				prBcnReq->ucMeasurementMode ==
 				RM_BCN_REQ_ACTIVE_MODE ?
 				"Active" : "Passive", count);
 #else
-		DBGLOG(RRM, INFO, "BCN report Active Mode, total: %d\n", count);
+		DBGLOG(RRM, DEBUG,
+		       "BCN report Active Mode, total: %d\n", count);
 #endif
 #if (CFG_SUPPORT_REPORT_LOG == 1)
 		rrmRespBeaconReportLog(prAdapter,
@@ -7463,7 +7464,7 @@ uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 
 	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 
-	DBGLOG(NIC, INFO, "RX in the past duration and rssi=%d\n", rssi);
+	DBGLOG(NIC, DEBUG, "RX in the past duration and rssi=%d\n", rssi);
 	return rssi > RCPI_FOR_DONT_ROAM;
 }
 
@@ -8624,7 +8625,7 @@ aisFunNeedOffchnlTx(struct ADAPTER *prAdapter,
 			prMgmtTxMsg->rChannelInfo.ucChannelNum)
 		return FALSE;
 
-	DBGLOG(REQ, INFO, "Use offchannel to TX.\n");
+	DBGLOG(REQ, DEBUG, "Use offchannel to TX.\n");
 
 	return TRUE;
 }

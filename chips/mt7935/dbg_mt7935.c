@@ -1249,7 +1249,7 @@ void mt7935_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 		HAL_MCR_WR(prAdapter, u4DbgIdxAddr, u4DbgIdxValue);
 		HAL_RMCR_RD(HIF_DBG, prAdapter,
 			       u4DbgProbeAddr, &u4DbgProbeValue);
-		DBGLOG(HAL, INFO, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
+		DBGLOG(HAL, DEBUG, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
 			u4DbgIdxValue, u4DbgProbeAddr, u4DbgProbeValue);
 	}
 }
@@ -1268,31 +1268,31 @@ void mt7935_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
 	u4DmaCfgCr = 0x20027078;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
 	u4DmaCfgCr = 0x2002707C;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, INFO, "WFDMA_MSI_CONFIG_ADDR(0x%08x): [0x%08x]",
+	DBGLOG(HAL, DEBUG, "WFDMA_MSI_CONFIG_ADDR(0x%08x): [0x%08x]",
 	       u4DmaCfgCr, u4RegValue);
 }
 
@@ -1355,14 +1355,14 @@ void mt7935_dumpWfsyscpupcr(struct ADAPTER *ad)
 			    var_lp);
 	}
 
-	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",
+	DBGLOG(HAL, DEBUG, "wm pc=%s%s%s%s%s\n",
 		log_buf_pc[0],
 		log_buf_pc[1],
 		log_buf_pc[2],
 		log_buf_pc[3],
 		log_buf_pc[4]);
 
-	DBGLOG(HAL, INFO, "wm lp=%s%s%s%s%s\n",
+	DBGLOG(HAL, DEBUG, "wm lp=%s%s%s%s%s\n",
 		log_buf_lp[0],
 		log_buf_lp[1],
 		log_buf_lp[2],
@@ -1379,7 +1379,7 @@ void mt7935_dumpPcGprLog(struct ADAPTER *ad)
 	uint32_t pc_dump[PC_LOG_NUM];
 	uint32_t gpr_dump[GPR_LOG_NUM];
 
-	DBGLOG(HAL, INFO, "Dump PC log / GPR log\n");
+	DBGLOG(HAL, DEBUG, "Dump PC log / GPR log\n");
 
 	HAL_MCR_WR_FIELD(ad,
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
@@ -1479,7 +1479,7 @@ static void mt7935_dumpWfTopMiscOn(struct ADAPTER *ad)
 	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR;
 	u4WrVal = 0x00000001;
 	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
@@ -1489,7 +1489,7 @@ static void mt7935_dumpWfTopMiscOn(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -1506,7 +1506,7 @@ static void mt7935_dumpWfTopMiscVon(struct ADAPTER *ad)
 	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR;
 	u4WrVal = 0x00000001;
 	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
@@ -1516,7 +1516,7 @@ static void mt7935_dumpWfTopMiscVon(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -1565,7 +1565,7 @@ static void mt7935_dumpWfTopCfgon(struct ADAPTER *ad)
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "\tR 0x%08x=[0x%08x]\n",
 		       u4RdAddr, u4Val);
 	}
@@ -1597,7 +1597,7 @@ static void mt7935_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 	u4WrVal = 0x4;
 	HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
 	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "\tR 0x%08x=[0x%08x], W 0x%08x=[0x%08x]\n",
 	       u4RdAddr, u4Val, u4WrAddr, u4WrVal);
 
@@ -1607,7 +1607,7 @@ static void mt7935_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -1637,7 +1637,7 @@ static void mt7935_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "\tR 0x%08x=[0x%08x]\n",
 		       u4RdAddr, u4Val);
 	}
@@ -1657,7 +1657,7 @@ static void mt7935_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "\tR 0x%08x=[0x%08x]\n",
 		       u4RdAddr, u4Val);
 	}
@@ -1777,7 +1777,7 @@ void mt7935_get_rx_link_stats(struct ADAPTER *prAdapter,
 	uint32_t mcsIdx;
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 			"RXV: pmbl=%lu nsts=%lu stbc=%lu bw=%lu mcs=%lu\n",
 			RXV_GET_TXMODE(pu4RxV[2]),
 			RXV_GET_RX_NSTS(pu4RxV[0]),
@@ -1847,7 +1847,7 @@ void mt7935_get_rx_link_stats(struct ADAPTER *prAdapter,
 	}
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
-		DBGLOG(RX, INFO, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+		DBGLOG(RX, DEBUG, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
 			rate.preamble, rate.nss, rate.bw, mcsIdx);
 	return;
 

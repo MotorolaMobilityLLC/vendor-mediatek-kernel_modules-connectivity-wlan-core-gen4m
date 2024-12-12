@@ -409,7 +409,7 @@ int SendRTS(
 
 	/* Enqueue the frame to send this control frame */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-	DBGLOG(REQ, INFO, "RTS - Send RTS\n");
+	DBGLOG(REQ, DEBUG, "RTS - Send RTS\n");
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -473,7 +473,7 @@ int SendBA(
 
 	/* Enqueue the frame to send this control frame */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-	DBGLOG(REQ, INFO, "BA - Send BA\n");
+	DBGLOG(REQ, DEBUG, "BA - Send BA\n");
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -665,7 +665,7 @@ void connac2x_rxv_correct_test(
 		__func__, ldpc, automation_dvt.rxv.rx_ldpc);
 	}
 
-	DBGLOG(RX, INFO,
+	DBGLOG(RX, DEBUG,
 	"\n================ RXV Automation end ================\n");
 }
 #endif

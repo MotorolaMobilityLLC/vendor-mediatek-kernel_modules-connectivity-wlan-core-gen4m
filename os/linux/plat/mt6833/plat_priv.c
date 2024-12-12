@@ -163,7 +163,7 @@ void kalSetCpuFreq(int32_t freq)
 			ret = freq_qos_add_request(&policy->constraints,
 				&wReq->qos_req, FREQ_QOS_MIN, DEFAULT_CPU_FREQ);
 			if (ret < 0) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 					"freq_qos_add_request fail cpu%d ret=%d\n",
 					wReq->cpu, ret);
 				kfree(wReq);
@@ -178,7 +178,7 @@ void kalSetCpuFreq(int32_t freq)
 	list_for_each_entry(wReq, &wlan_policy_list, list) {
 		ret = freq_qos_update_request(&wReq->qos_req, freq);
 		if (ret < 0) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
 				wReq->cpu, freq, ret);
 		}
@@ -291,7 +291,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	unsigned long long end = emiPhyBase + offset + size - 1;
 	int ret;
 
-	DBGLOG(INIT, INFO, "emiPhyBase: %pa, offset: %d, size: %d\n",
+	DBGLOG(INIT, DEBUG, "emiPhyBase: %pa, offset: %d, size: %d\n",
 				&emiPhyBase, offset, size);
 
 	ret = mtk_emimpu_init_region(&region, 18);
@@ -319,7 +319,7 @@ int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
 	int32_t ret = 1;
 	const uint32_t adie_chip_id = mtk_wcn_wmt_ic_info_get(WMTCHIN_ADIE);
 
-	DBGLOG(INIT, INFO, "adie_chip_id: 0x%x\n", adie_chip_id);
+	DBGLOG(INIT, DEBUG, "adie_chip_id: 0x%x\n", adie_chip_id);
 
 	switch (adie_chip_id) {
 	case 0x6635:

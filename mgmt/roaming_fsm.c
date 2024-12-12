@@ -1487,7 +1487,7 @@ u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"BSSID[%d] C[%d] R[%d] A[%d] IsInPostpone[%d]\n",
 		ucBssIndex,
 		prBssInfo->eConnectionState,

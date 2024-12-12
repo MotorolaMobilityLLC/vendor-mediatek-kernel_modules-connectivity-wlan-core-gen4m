@@ -305,7 +305,7 @@ void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 	if (!prAdapter->chip_info->isSupportBand2) {
 		prAdapter->chip_info->au4DmaMaxQuotaRfBand[BAND_5G - 1] =
 			prAdapter->chip_info->au4DmaMaxQuotaRfBand[BAND_6G - 1];
-		DBGLOG(INIT, INFO, "Update 5G Band Quota[0x%x]\n",
+		DBGLOG(INIT, DEBUG, "Update 5G Band Quota[0x%x]\n",
 		       prAdapter->chip_info->au4DmaMaxQuotaRfBand[BAND_5G - 1]);
 	}
 #endif

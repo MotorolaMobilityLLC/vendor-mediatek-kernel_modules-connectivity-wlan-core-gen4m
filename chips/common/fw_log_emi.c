@@ -314,7 +314,7 @@ static int32_t fw_log_emi_refresh_common_header(struct ADAPTER *ad,
 			continue;
 		}
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[%d %s] base_addr: 0x%x, length: 0x%x\n",
 			i,
 			fw_log_type_to_str(i),
@@ -388,7 +388,7 @@ static uint32_t fw_log_emi_sub_ctrl_init(struct ADAPTER *ad,
 	} else {
 		status = WLAN_STATUS_INVALID_LENGTH;
 	}
-	DBGLOG(INIT, INFO, "[%d %s] buf_base_addr: 0x%x, status: 0x%x\n",
+	DBGLOG(INIT, DEBUG, "[%d %s] buf_base_addr: 0x%x, status: 0x%x\n",
 		sub_ctrl->type,
 		fw_log_type_to_str(sub_ctrl->type),
 		sub_ctrl->buf_base_addr,
@@ -470,7 +470,7 @@ void fw_log_emi_set_enabled(struct ADAPTER *ad, u_int8_t enabled)
 {
 	struct FW_LOG_EMI_CTRL *ctrl = &g_fw_log_emi_ctx;
 
-	DBGLOG(INIT, INFO, "enabled: %d\n", enabled);
+	DBGLOG(INIT, DEBUG, "enabled: %d\n", enabled);
 
 	if (enabled)
 		__fw_log_emi_force_reset_buffer(ad, ctrl);
@@ -555,6 +555,6 @@ static void fw_log_emi_stats_dump(struct ADAPTER *ad,
 				       sub_ctrl->wp,
 				       sub_ctrl->iwp);
 	}
-	DBGLOG(INIT, INFO, "%s\n", buf);
+	DBGLOG(INIT, DEBUG, "%s\n", buf);
 }
 

@@ -204,7 +204,7 @@ void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
 	int i, ret;
 	struct net_device *prNetDev;
 
-	DBGLOG(HAL, INFO, "SER(E) hook to warp : %d\n", status);
+	DBGLOG(HAL, DEBUG, "SER(E) hook to warp : %d\n", status);
 
 	mutex_lock(&rWedMutex);
 	if (status == WIFI_ERR_RECOV_DETACH) {
@@ -998,11 +998,11 @@ int wedProxyHookRegister(struct proxy_wlan_hook_ops *ops)
 		return -1;
 	}
 
-	DBGLOG(HAL, INFO, "WED proxy ops registered\n");
+	DBGLOG(HAL, DEBUG, "WED proxy ops registered\n");
 	grWedInfo.proxy_ops = ops;
 
 	if (grWedInfo.pAdAdapter == NULL) {
-		DBGLOG(HAL, INFO, "grWedInfo.pAdAdapter is null\n");
+		DBGLOG(HAL, DEBUG, "grWedInfo.pAdAdapter is null\n");
 		return 0;
 	}
 
@@ -1023,7 +1023,7 @@ int wedProxyHookUnregister(struct proxy_wlan_hook_ops *ops)
 		return -1;
 
 	if (grWedInfo.proxy_ops != ops) {
-		DBGLOG(HAL, INFO, "WED proxy ops mismatch\n");
+		DBGLOG(HAL, DEBUG, "WED proxy ops mismatch\n");
 		return -1;
 	}
 
@@ -1043,7 +1043,7 @@ int wedProxyHookUnregister(struct proxy_wlan_hook_ops *ops)
 		mutex_unlock(&rWedMutex);
 	}
 
-	DBGLOG(HAL, INFO, "WED proxy ops unregistered\n");
+	DBGLOG(HAL, DEBUG, "WED proxy ops unregistered\n");
 	grWedInfo.proxy_ops = NULL;
 
 	return 0;

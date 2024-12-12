@@ -141,7 +141,7 @@ static uint8_t get_coredump_skipped(void)
 static void update_coredump_skipped(uint8_t skipped)
 {
 	fgIsCoredumpSkipped = skipped;
-	DBGLOG(INIT, INFO, "set skipped:%d\n", fgIsCoredumpSkipped);
+	DBGLOG(INIT, DEBUG, "set skipped:%d\n", fgIsCoredumpSkipped);
 }
 #endif
 
@@ -178,10 +178,10 @@ static ssize_t file_ops_coredump_write(struct file *filp,
 
 	ret = copy_size;
 	if (skip_buf[0] == '1') {
-		DBGLOG(INIT, INFO, "enable coredump\n");
+		DBGLOG(INIT, DEBUG, "enable coredump\n");
 		update_coredump_skipped(0);
 	} else if (skip_buf[0] == '0') {
-		DBGLOG(INIT, INFO, "disable coredump\n");
+		DBGLOG(INIT, DEBUG, "disable coredump\n");
 		update_coredump_skipped(1);
 	}
 
@@ -259,13 +259,13 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 
 			prMem = prMemOps->getWifiMiscRsvEmi(chip_info, uIdx);
 			if (prMem == NULL) {
-				DBGLOG(NIC, INFO, "not support EMI2\n");
+				DBGLOG(NIC, DEBUG, "not support EMI2\n");
 				goto copy_to_user;
 			}
 
 			prEmi2Address = (uint8_t *)prMem->va;
 			if (prEmi2Address == NULL) {
-				DBGLOG(NIC, INFO,
+				DBGLOG(NIC, DEBUG,
 					"[%d] get EMI Address is NULL\n", uIdx);
 				continue;
 			}
@@ -276,13 +276,13 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	} else
 #endif
 	{
-		DBGLOG(INIT, INFO, "emi2 read failed.\n");
+		DBGLOG(INIT, DEBUG, "emi2 read failed.\n");
 		goto copy_to_user;
 	}
 
 copy_to_user:
 	ret = simple_read_from_buffer(buf, count, f_pos, tmp_buf, count);
-	DBGLOG(INIT, INFO, "ret: %zd\n", ret);
+	DBGLOG(INIT, DEBUG, "ret: %zd\n", ret);
 
 exit:
 	if (tmp_buf)
@@ -651,7 +651,7 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 
 	if (chip_info->checkbusNoAck) {
 		if (chip_info->checkbusNoAck(glue->prAdapter, TRUE)) {
-			DBGLOG(INIT, INFO, "Bus check failed.\n");
+			DBGLOG(INIT, DEBUG, "Bus check failed.\n");
 			mem->mem_region_num = 0;
 		}
 	}
@@ -666,14 +666,14 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 		   0xFFFF);
 #endif
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"state: %d, pdcm[0x%x 0x%x 0x%x 0x%x]\n",
 		ctrl_blk.state,
 		ctrl_blk.print_buff_len,
 		ctrl_blk.dump_buff_len,
 		ctrl_blk.cr_region_len,
 		ctrl_blk.mem_region_num);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"pdcm_offset[0x%x 0x%x 0x%x 0x%x] pdcm_len[0x%x 0x%x 0x%x 0x%x]\n",
 		mem->print_buff_offset,
 		mem->dump_buff_offset,
@@ -783,7 +783,7 @@ static int __coredump_init_mem_region(struct coredump_ctx *ctx,
 			ret = -ENOMEM;
 			goto exit;
 		}
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[%d] name: %s, base: 0x%x, size: 0x%x\n",
 			idx,
 			region->name,
@@ -1025,9 +1025,9 @@ static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 		goto exit;
 	mem->dump_buff[mem->dump_buff_len - 1] = '\0';
 
-	DBGLOG(INIT, INFO, "++ Coredump message ++\n");
+	DBGLOG(INIT, DEBUG, "++ Coredump message ++\n");
 	PRINT_LONG_STR_MSG(mem->dump_buff, mem->dump_buff_len);
-	DBGLOG(INIT, INFO, "-- Coredump message --\n");
+	DBGLOG(INIT, DEBUG, "-- Coredump message --\n");
 
 exit:
 	return ret;
@@ -1139,7 +1139,7 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 
 		region->ready = TRUE;
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[%d] mem region %s 0x%x 0x%x\n",
 			idx,
 			region->name,
@@ -1328,7 +1328,7 @@ static void __coredump_to_userspace_aee_str(struct coredump_ctx *ctx,
 		break;
 	}
 
-	DBGLOG(INIT, INFO, "aee_str: %s\n", aee_str);
+	DBGLOG(INIT, DEBUG, "aee_str: %s\n", aee_str);
 }
 
 static void __coredump_to_userspace_issue_info(struct coredump_ctx *ctx,
@@ -1442,10 +1442,10 @@ static int __coredump_to_userspace_scp_dump(struct coredump_ctx *ctx,
 
 	i4Ret = kalGetScpDumpInfo(&u8ScpDumpPhyAddr, &u4ScpDumpSize);
 	if (i4Ret) {
-		DBGLOG(INIT, INFO, "no scp dump info\n");
+		DBGLOG(INIT, DEBUG, "no scp dump info\n");
 		return 0;
 	}
-	DBGLOG(INIT, INFO, "scp dump addr:0x%llx, size:%u\n",
+	DBGLOG(INIT, DEBUG, "scp dump addr:0x%llx, size:%u\n",
 		u8ScpDumpPhyAddr, u4ScpDumpSize);
 
 	pScpDumpBuf = kalMemAlloc(u4ScpDumpSize, VIR_MEM_TYPE);
@@ -1470,7 +1470,7 @@ static int __coredump_to_userspace_scp_dump(struct coredump_ctx *ctx,
 	iounmap(vir_addr);
 exit:
 	kalMemFree(pScpDumpBuf, VIR_MEM_TYPE, u4ScpDumpSize);
-	DBGLOG(INIT, INFO, "scp dump done\n");
+	DBGLOG(INIT, DEBUG, "scp dump done\n");
 #endif
 	return 0;
 }
@@ -1501,7 +1501,7 @@ static uint32_t wlanSendDFDInfo(
 			u4ReservedLength = 0;
 		}
 
-		DBGLOG(INIT, INFO, "[%d] offset:%d, size:%d, reservedLen:%d\n",
+		DBGLOG(INIT, DEBUG, "[%d] offset:%d, size:%d, reservedLen:%d\n",
 				u4InfoIdx, u4Offset, u4Size, u4ReservedLength);
 		if (prChipInfo->queryDFDInfo(prAdapter,
 				u4InfoIdx, u4Offset, u4Size,
@@ -1540,7 +1540,7 @@ static uint32_t wlanShowDFDInfo(struct coredump_ctx *ctx,
 		u4CurPos += u4DumpCount;
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			goto exit;
-		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+		DBGLOG(INIT, DEBUG, "[%d] curPos:%d\n",
 				DEBUG_INFO_DFD_CB_INFRA_INFO, u4CurPos);
 
 		/* DFD_CB_INFRA_SRAM */
@@ -1551,7 +1551,7 @@ static uint32_t wlanShowDFDInfo(struct coredump_ctx *ctx,
 		u4CurPos += u4DumpCount;
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			goto exit;
-		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+		DBGLOG(INIT, DEBUG, "[%d] curPos:%d\n",
 				DEBUG_INFO_DFD_CB_INFRA_SRAM, u4CurPos);
 
 		/* DFD_CB_INFRA_WF_SRAM */
@@ -1562,7 +1562,7 @@ static uint32_t wlanShowDFDInfo(struct coredump_ctx *ctx,
 		u4CurPos += u4DumpCount;
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			goto exit;
-		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+		DBGLOG(INIT, DEBUG, "[%d] curPos:%d\n",
 				DEBUG_INFO_DFD_CB_INFRA_WF_SRAM, u4CurPos);
 
 		/* DFD_CB_INFRA_DEBUG_INFO */
@@ -1573,7 +1573,7 @@ static uint32_t wlanShowDFDInfo(struct coredump_ctx *ctx,
 		u4CurPos += u4DumpCount;
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			goto exit;
-		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+		DBGLOG(INIT, DEBUG, "[%d] curPos:%d\n",
 				DEBUG_INFO_DFD_CB_INFRA_DEBUG_INFO, u4CurPos);
 
 		/* DFD_WF_DEBUG_INFO */
@@ -1584,7 +1584,7 @@ static uint32_t wlanShowDFDInfo(struct coredump_ctx *ctx,
 		u4CurPos += u4DumpCount;
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			goto exit;
-		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+		DBGLOG(INIT, DEBUG, "[%d] curPos:%d\n",
 				DEBUG_INFO_DFD_WF_DEBUG_INFO, u4CurPos);
 	}
 
@@ -1755,7 +1755,7 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 		__coredump_to_userspace_scp_dump(ctx, chip_info);
 
 	if (type != ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
-		DBGLOG(INIT, INFO, "do coredump end\n");
+		DBGLOG(INIT, DEBUG, "do coredump end\n");
 		connv3_coredump_end(ctx->handler, mem->aee_str_buff);
 	}
 
@@ -1901,7 +1901,7 @@ int wifi_coredump_post_start(void)
 	__coredump_to_userspace_dfd_dump(ctx, chip_info);
 
 coredump_end:
-	DBGLOG(INIT, INFO, "do coredump end\n");
+	DBGLOG(INIT, DEBUG, "do coredump end\n");
 	connv3_coredump_end(ctx->handler, mem->aee_str_buff);
 deinit:
 	__coredump_deinit(ctx);
@@ -1917,7 +1917,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 
-	DBGLOG(INIT, INFO, "source: %d, reason: %s, force_dump: %d\n",
+	DBGLOG(INIT, DEBUG, "source: %d, reason: %s, force_dump: %d\n",
 		source, reason, force_dump);
 
 	if (!ctx->initialized) {
@@ -1928,7 +1928,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 
 #if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
 	if (get_coredump_skipped()) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"skip coredump due to skip enabled.\n");
 		return;
 	}
@@ -2105,7 +2105,7 @@ void wifi_coredump_get_save_emi(phys_addr_t *base, size_t *size)
 	}
 	*base = rmem->base;
 	*size = rmem->size;
-	DBGLOG(INIT, INFO, "Coredump EMI base=0x%llx, size=0x%08x\n",
+	DBGLOG(INIT, DEBUG, "Coredump EMI base=0x%llx, size=0x%08x\n",
 		*base, *size);
 	of_node_put(rmem_node);
 #else

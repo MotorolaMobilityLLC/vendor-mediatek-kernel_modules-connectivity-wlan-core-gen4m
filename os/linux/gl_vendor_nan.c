@@ -215,7 +215,7 @@ nanNdpDissolve(struct ADAPTER *prAdapter,
 	if (!waitRet)
 		DBGLOG(NAN, WARN, "Disconnect timeout.\n");
 	else
-		DBGLOG(NAN, INFO, "Disconnect complete.\n");
+		DBGLOG(NAN, DEBUG, "Disconnect complete.\n");
 }
 
 /* Helper function to Write and Read TLV called in indication as well as
@@ -307,7 +307,7 @@ nanMapPublishReqParams(u16 *pIndata, struct NanPublishRequest *pOutparams)
 	u16 readLen = 0;
 	u32 *pPublishParams = NULL;
 
-	DBGLOG(NAN, INFO, "Enter\n");
+	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	/* Get value of ttl(time to live) */
 	pOutparams->ttl = *pIndata;
@@ -343,7 +343,7 @@ nanMapPublishReqParams(u16 *pIndata, struct NanPublishRequest *pOutparams)
 	pOutparams->connmap = (u8)GET_PUB_CONNMAP(*pPublishParams);
 	readLen += 4;
 
-	DBGLOG(NAN, VOC,
+	DBGLOG(NAN, INFO,
 	       "[Publish Req] ttl: %u, period: %u, recv_indication_cfg: %x, publish_type: %u,tx_type: %u, rssi_threshold_flag: %u, publish_match_indicator: %u, publish_count:%u, connmap:%u, readLen:%u\n",
 	       pOutparams->ttl, pOutparams->period,
 	       pOutparams->recv_indication_cfg, pOutparams->publish_type,
@@ -390,7 +390,7 @@ nanMapSubscribeReqParams(u16 *pIndata, struct NanSubscribeRequest *pOutparams)
 		GET_SUB_MATCH_EXPIRED_IND_DISABLE_FLAG(*pSubscribeParams) |
 		GET_SUB_TERMINATED_IND_DISABLE_FLAG(*pSubscribeParams);
 
-	DBGLOG(NAN, VOC,
+	DBGLOG(NAN, INFO,
 	       "[Subscribe Req] ttl: %u, period: %u, subscribe_type: %u, ssiRequiredForMatchIndication: %u, subscribe_match_indicator: %x, rssi_threshold_flag: %u\n",
 	       pOutparams->ttl, pOutparams->period,
 	       pOutparams->subscribe_type,
@@ -422,7 +422,7 @@ nanMapFollowupReqParams(u32 *pIndata,
 		GET_FLWUP_TX_RSP_DISABLE_FLAG(*pXmitFollowupParams);
 	readLen += 4;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "[%s]priority: %u, dw_or_faw: %u, recv_indication_cfg: %u\n",
 	       __func__, pOutparams->priority, pOutparams->dw_or_faw,
 	       pOutparams->recv_indication_cfg);
@@ -446,11 +446,11 @@ nanMapSdeaCtrlParams(u32 *pIndata,
 	prNanSdeaCtrlParms->fgRangeLimit =
 		GET_SDEA_RANGE_LIMIT_PRESENT(*pIndata);
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "config_nan_data_path: %u, ndp_type: %u, security_cfg: %u\n",
 	       prNanSdeaCtrlParms->config_nan_data_path,
 	       prNanSdeaCtrlParms->ndp_type, prNanSdeaCtrlParms->security_cfg);
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "ranging_state: %u, range_report: %u, fgFSDRequire: %u, fgGAS: %u, fgQoS: %u, fgRangeLimit: %u\n",
 	       prNanSdeaCtrlParms->ranging_state,
 	       prNanSdeaCtrlParms->range_report,
@@ -486,12 +486,12 @@ nanMapRangingConfigParams(u32 *pIndata, struct NanRangingCfg *prNanRangingCfg)
 				.outer_threshold /
 			10;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "[%s]ranging_resolution: %u, ranging_interval_msec: %u, config_ranging_indications: %u\n",
 	       __func__, prNanRangingCfg->ranging_resolution,
 	       prNanRangingCfg->ranging_interval_msec,
 	       prNanRangingCfg->config_ranging_indications);
-	DBGLOG(NAN, INFO, "[%s]distance_egress_cm: %u\n", __func__,
+	DBGLOG(NAN, DEBUG, "[%s]distance_egress_cm: %u\n", __func__,
 	       prNanRangingCfg->distance_egress_cm);
 }
 
@@ -517,7 +517,7 @@ nanMapNan20RangingReqParams(struct ADAPTER *prAdapter, u32 *pIndata,
 		prNanRangeRspCfgParms->ranging_response_code =
 			NAN_RANGE_REQUEST_CANCEL;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "[%s]requestor_instance_id: %u, ranging_response_code:%u\n",
 	       __func__, prNanRangeRspCfgParms->requestor_instance_id,
 	       prNanRangeRspCfgParms->ranging_response_code);
@@ -792,7 +792,7 @@ wlanoidNanPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	else
 		nanPublishRsp.status = NAN_I_STATUS_INVALID_HANDLE;
 
-	DBGLOG(NAN, INFO, "publish ID:%u, msgId:%u, msgLen:%u, tranID:%u\n",
+	DBGLOG(NAN, DEBUG, "publish ID:%u, msgId:%u, msgLen:%u, tranID:%u\n",
 	       nanPublishRsp.fwHeader.handle, nanPublishRsp.fwHeader.msgId,
 	       nanPublishRsp.fwHeader.msgLen,
 	       nanPublishRsp.fwHeader.transactionId);
@@ -841,7 +841,7 @@ wlanoidNANCancelPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
-	DBGLOG(NAN, INFO, "Enter\n");
+	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	nanPublishCancelRsp.fwHeader.msgVersion = 1;
 	nanPublishCancelRsp.fwHeader.msgId =
@@ -855,9 +855,9 @@ wlanoidNANCancelPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	nanPublishCancelRsp.value = 0;
 	nanPublishCancelRsp.status = pNanPublishCancelRsp->status;
 
-	DBGLOG(NAN, INFO, "[%s] nanPublishCancelRsp.fwHeader.handle = %d\n",
+	DBGLOG(NAN, DEBUG, "[%s] nanPublishCancelRsp.fwHeader.handle = %d\n",
 	       __func__, nanPublishCancelRsp.fwHeader.handle);
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 	       "[%s] nanPublishCancelRsp.fwHeader.transactionId = %d\n",
 	       __func__, nanPublishCancelRsp.fwHeader.transactionId);
 
@@ -901,7 +901,7 @@ wlanoidNanSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
-	DBGLOG(NAN, INFO, "Enter\n");
+	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	nanSubscribeRsp.fwHeader.msgVersion = 1;
 	nanSubscribeRsp.fwHeader.msgId = NAN_MSG_ID_SUBSCRIBE_SERVICE_RSP;
@@ -936,7 +936,7 @@ wlanoidNanSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 
-	DBGLOG(NAN, VOC, "handle:%u,transactionId:%u\n",
+	DBGLOG(NAN, INFO, "handle:%u,transactionId:%u\n",
 	       nanSubscribeRsp.fwHeader.handle,
 	       nanSubscribeRsp.fwHeader.transactionId);
 
@@ -962,7 +962,7 @@ wlanoidNANCancelSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
-	DBGLOG(NAN, INFO, "Enter\n");
+	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	nanSubscribeCancelRsp.fwHeader.msgVersion = 1;
 	nanSubscribeCancelRsp.fwHeader.msgId =
@@ -1020,7 +1020,7 @@ wlanoidNANFollowupRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	kalMemZero(&nanXmitFollowupRsp,
 		   sizeof(struct NanTransmitFollowupRspMsg));
 
-	DBGLOG(NAN, INFO, "Enter\n");
+	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	/* Prepare Transmit Follow up response */
 	nanXmitFollowupRsp.fwHeader.msgVersion = 1;
@@ -1142,7 +1142,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	data += sizeof(struct _NanMsgHeader);
 
 	dumpMemory8((uint8_t *)data, remainingLen);
-	DBGLOG(NAN, VOC, "nanMsgHdr.length %u, nanMsgHdr.msgId %d\n",
+	DBGLOG(NAN, INFO, "nanMsgHdr.length %u, nanMsgHdr.msgId %d\n",
 		nanMsgHdr.msgLen, nanMsgHdr.msgId);
 
 	switch (nanMsgHdr.msgId) {
@@ -1485,7 +1485,7 @@ skip:
 			DBGLOG(NAN, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
 		}
-		DBGLOG(NAN, INFO, "i4Status = %u\n", i4Status);
+		DBGLOG(NAN, DEBUG, "i4Status = %u\n", i4Status);
 		ret = cfg80211_vendor_cmd_reply(skb);
 
 		break;
@@ -1496,7 +1496,7 @@ skip:
 		uint16_t publish_id = 0;
 		uint8_t ucCipherType = 0;
 
-		DBGLOG(NAN, VOC, "IN case NAN_MSG_ID_PUBLISH_SERVICE_REQ\n");
+		DBGLOG(NAN, INFO, "IN case NAN_MSG_ID_PUBLISH_SERVICE_REQ\n");
 
 		pNanPublishReq =
 			kmalloc(sizeof(struct NanPublishRequest), GFP_ATOMIC);
@@ -1544,7 +1544,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->service_name_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"type:SERVICE_NAME:%u Len:%u\n",
 					outputTlv.type, outputTlv.length);
 
@@ -1562,7 +1562,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->service_specific_info_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"type:SERVICE_SPECIFIC_INFO:%u Len:%u\n",
 					outputTlv.type, outputTlv.length);
 
@@ -1581,7 +1581,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->rx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"type:RX_MATCH_FILTER:%u Len:%u\n",
 					outputTlv.type, outputTlv.length);
 
@@ -1604,7 +1604,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->tx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"type:TX_MATCH_FILTER:%u Len:%u\n",
 					outputTlv.type, outputTlv.length);
 
@@ -1616,7 +1616,7 @@ skip:
 			case NAN_TLV_TYPE_NAN_SERVICE_ACCEPT_POLICY:
 				pNanPublishReq->service_responder_policy =
 					*(outputTlv.value);
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"type:SERVICE_ACCEPT_POLICY:%u Len:%u\n",
 					outputTlv.type, outputTlv.length);
 
@@ -1659,7 +1659,7 @@ skip:
 				nanMapSdeaCtrlParams(
 					(u32 *)outputTlv.value,
 					&pNanPublishReq->sdea_params);
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"type:_SDEA_CTRL_PARAMS:%u Len:%u\n",
 					outputTlv.type, outputTlv.length);
 
@@ -1728,7 +1728,7 @@ skip:
 			nanLogPublish(publish_id);
 
 		pNanPublishRsp->fwHeader.handle = publish_id;
-		DBGLOG(NAN, VOC,
+		DBGLOG(NAN, INFO,
 			"pNanPublishRsp->fwHeader.handle %u, publish_id : %u\n",
 			pNanPublishRsp->fwHeader.handle, publish_id);
 
@@ -1800,10 +1800,11 @@ skip:
 			return -ENOMEM;
 		}
 
-		DBGLOG(NAN, INFO, "Enter CANCEL Publish Request\n");
+		DBGLOG(NAN, DEBUG, "Enter CANCEL Publish Request\n");
 		pNanPublishCancelReq->publish_id = nanMsgHdr.handle;
 
-		DBGLOG(NAN, INFO, "PID %d\n", pNanPublishCancelReq->publish_id);
+		DBGLOG(NAN, DEBUG,
+		       "PID %d\n", pNanPublishCancelReq->publish_id);
 		rStatus = nanCancelPublishRequest(prGlueInfo->prAdapter,
 						  pNanPublishCancelReq);
 
@@ -1829,10 +1830,11 @@ skip:
 		}
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(NAN, INFO, "CANCEL Publish Error %x\n", rStatus);
+			DBGLOG(NAN, DEBUG,
+			       "CANCEL Publish Error %x\n", rStatus);
 			pNanPublishCancelRsp->status = NAN_I_STATUS_DE_FAILURE;
 		} else {
-			DBGLOG(NAN, INFO, "CANCEL Publish Success %x\n",
+			DBGLOG(NAN, DEBUG, "CANCEL Publish Success %x\n",
 			       rStatus);
 			pNanPublishCancelRsp->status = NAN_I_STATUS_SUCCESS;
 		}
@@ -1862,7 +1864,7 @@ skip:
 		uint16_t Subscribe_id = 0;
 		int i = 0;
 
-		DBGLOG(NAN, INFO, "In NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ\n");
+		DBGLOG(NAN, DEBUG, "In NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ\n");
 
 		pNanSubscribeReq =
 			kmalloc(sizeof(struct NanSubscribeRequest), GFP_ATOMIC);
@@ -1917,7 +1919,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->service_name_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"SERVICE_NAME type:%u len:%u SRV_name:%s\n",
 					outputTlv.type,
 					outputTlv.length,
@@ -1936,7 +1938,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->service_specific_info_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"SERVICE_SPECIFIC_INFO type:%u len:%u value:%u SRV_spec_info:%s\n",
 					outputTlv.type,
 					outputTlv.length,
@@ -1958,7 +1960,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->rx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"RX_MATCH_FILTER type:%u len:%u rx_match_filter:%s\n",
 					outputTlv.type,
 					outputTlv.length,
@@ -1981,7 +1983,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->tx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"TX_MATCH_FILTERtype:%u len:%u value:%u tx_match_filter:%s\n",
 					outputTlv.type,
 					outputTlv.length,
@@ -2010,7 +2012,7 @@ skip:
 			case NAN_TLV_TYPE_NAN_CSID:
 				pNanSubscribeReq->cipher_type =
 					*(outputTlv.value);
-				DBGLOG(NAN, INFO, "NAN_CSID type:%u len:%u\n",
+				DBGLOG(NAN, DEBUG, "NAN_CSID type:%u len:%u\n",
 				       outputTlv.type, outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_NAN_PMK:
@@ -2042,7 +2044,7 @@ skip:
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->key_info.body.passphrase_info
 					.passphrase_len = outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"NAN_PASSPHRASE type:%u len:%u\n",
 					outputTlv.type,
 					outputTlv.length);
@@ -2051,7 +2053,7 @@ skip:
 				nanMapSdeaCtrlParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->sdea_params);
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"SDEA_CTRL_PARAMS type:%u len:%u\n",
 					outputTlv.type,
 					outputTlv.length);
@@ -2059,7 +2061,7 @@ skip:
 				break;
 			case NAN_TLV_TYPE_NAN_RANGING_CFG:
 				fgRangingCFG = TRUE;
-				DBGLOG(NAN, INFO, "fgRangingCFG %d\n",
+				DBGLOG(NAN, DEBUG, "fgRangingCFG %d\n",
 					fgRangingCFG);
 				nanMapRangingConfigParams(
 					(u32 *)outputTlv.value,
@@ -2080,7 +2082,7 @@ skip:
 				pNanSubscribeReq
 					->sdea_service_specific_info_len =
 					outputTlv.length;
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 					"SDEA_SERVICE_SPECIFIC_INFO type:%u len:%u\n",
 					outputTlv.type,
 					outputTlv.length);
@@ -2088,7 +2090,7 @@ skip:
 				break;
 			case NAN_TLV_TYPE_NAN20_RANGING_REQUEST:
 				fgRangingREQ = TRUE;
-				DBGLOG(NAN, INFO, "fgRangingREQ %d\n",
+				DBGLOG(NAN, DEBUG, "fgRangingREQ %d\n",
 					fgRangingREQ);
 				nanMapNan20RangingReqParams(
 					prAdapter,
@@ -2153,7 +2155,7 @@ skip:
 			rgreq->range_id =
 			pNanSubscribeReq->range_response_cfg
 				.requestor_instance_id;
-			DBGLOG(NAN, INFO, MACSTR
+			DBGLOG(NAN, DEBUG, MACSTR
 				" id %d reso %d intev %d indicat %d ING CM %d ENG CM %d\n",
 				MAC2STR(rgreq->peer_addr),
 				rgreq->range_id,
@@ -2199,7 +2201,7 @@ skip:
 
 		pNanSubscribeRsp->fwHeader.handle = Subscribe_id;
 
-		DBGLOG(NAN, VOC,
+		DBGLOG(NAN, INFO,
 		       "Subscribe_id:%u, pNanSubscribeRsp->fwHeader.handle:%u\n",
 		       Subscribe_id, pNanSubscribeRsp->fwHeader.handle);
 		i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
@@ -2243,10 +2245,10 @@ skip:
 		kalMemZero(pNanSubscribeCancelRsp,
 			   sizeof(struct NanSubscribeServiceCancelRspMsg));
 
-		DBGLOG(NAN, INFO, "Enter CANCEL Subscribe Request\n");
+		DBGLOG(NAN, DEBUG, "Enter CANCEL Subscribe Request\n");
 		pNanSubscribeCancelReq->subscribe_id = nanMsgHdr.handle;
 
-		DBGLOG(NAN, INFO, "PID %d\n",
+		DBGLOG(NAN, DEBUG, "PID %d\n",
 		       pNanSubscribeCancelReq->subscribe_id);
 		rStatus = nanCancelSubscribeRequest(prGlueInfo->prAdapter,
 						    pNanSubscribeCancelReq);
@@ -2280,7 +2282,7 @@ skip:
 			pNanSubscribeCancelRsp->status =
 				NAN_I_STATUS_DE_FAILURE;
 		} else {
-			DBGLOG(NAN, INFO, "CANCEL Subscribe Success %X\n",
+			DBGLOG(NAN, DEBUG, "CANCEL Subscribe Success %X\n",
 			       rStatus);
 			pNanSubscribeCancelRsp->status = NAN_I_STATUS_SUCCESS;
 		}
@@ -2326,7 +2328,7 @@ skip:
 		kalMemZero(pNanXmitFollowupRsp,
 			   sizeof(struct NanTransmitFollowupRspMsg));
 
-		DBGLOG(NAN, VOC, "Enter Transmit follow up Request\n");
+		DBGLOG(NAN, INFO, "Enter Transmit follow up Request\n");
 
 		/* Mapping publish req related parameters */
 		readLen = nanMapFollowupReqParams((u32 *)data,
@@ -2452,7 +2454,7 @@ skip:
 			NULL;
 		struct NanBeaconSdfPayloadRspMsg *pNanBcnSdfVSARsp = NULL;
 
-		DBGLOG(NAN, INFO, "Enter Beacon SDF Request.\n");
+		DBGLOG(NAN, DEBUG, "Enter Beacon SDF Request.\n");
 
 		pNanXmitVSAttrReq = kmalloc(
 			sizeof(struct NanTransmitVendorSpecificAttribute),
@@ -2561,12 +2563,12 @@ skip:
 			return -ENOMEM;
 		}
 		kalMemZero(pNanDebug, sizeof(struct NanDebugParams));
-		DBGLOG(NAN, INFO, "NAN_MSG_ID_TESTMODE_REQ\n");
+		DBGLOG(NAN, DEBUG, "NAN_MSG_ID_TESTMODE_REQ\n");
 
 		while ((remainingLen >= 4) &&
 			(0 != (readLen = nan_read_tlv((u8 *)data,
 			&outputTlv)))) {
-			DBGLOG(NAN, INFO, "outputTlv.type= %d\n",
+			DBGLOG(NAN, DEBUG, "outputTlv.type= %d\n",
 				outputTlv.type);
 			if (outputTlv.type ==
 				NAN_TLV_TYPE_TESTMODE_GENERIC_CMD) {
@@ -2587,7 +2589,7 @@ skip:
 					g_ndpReqNDPE.ucNDPEAttrPresent =
 						pNanDebug->
 						debug_cmd_data[0];
-					DBGLOG(NAN, INFO,
+					DBGLOG(NAN, DEBUG,
 						"NAN_TEST_MODE_CMD_DISABLE_NDPE: fgEnNDPE = %d\n",
 						g_ndpReqNDPE.fgEnNDPE);
 					break;
@@ -2658,7 +2660,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 
 
 	if (prDeEvt->ucEventType != NAN_EVENT_ID_DISC_MAC_ADDR) {
-		DBGLOG(NAN, INFO, "ClusterId=%02x%02x%02x%02x%02x%02x\n",
+		DBGLOG(NAN, DEBUG, "ClusterId=%02x%02x%02x%02x%02x%02x\n",
 		       prDeEvt->ucClusterId[0], prDeEvt->ucClusterId[1],
 		       prDeEvt->ucClusterId[2], prDeEvt->ucClusterId[3],
 		       prDeEvt->ucClusterId[4], prDeEvt->ucClusterId[5]);
@@ -2669,7 +2671,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 		} else if (prDeEvt->ucEventType ==
 			   NAN_EVENT_ID_JOINED_CLUSTER)
 			nanLogJoinCluster(prDeEvt->ucClusterId);
-		DBGLOG(NAN, INFO,
+		DBGLOG(NAN, DEBUG,
 		       "AnchorMastrRank=%02x%02x%02x%02x%02x%02x%02x%02x\n",
 		       prDeEvt->aucAnchorMasterRank[0],
 		       prDeEvt->aucAnchorMasterRank[1],
@@ -2679,11 +2681,11 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 		       prDeEvt->aucAnchorMasterRank[5],
 		       prDeEvt->aucAnchorMasterRank[6],
 		       prDeEvt->aucAnchorMasterRank[7]);
-		DBGLOG(NAN, INFO, "MyNMI=%02x%02x%02x%02x%02x%02x\n",
+		DBGLOG(NAN, DEBUG, "MyNMI=%02x%02x%02x%02x%02x%02x\n",
 		       prDeEvt->ucOwnNmi[0], prDeEvt->ucOwnNmi[1],
 		       prDeEvt->ucOwnNmi[2], prDeEvt->ucOwnNmi[3],
 		       prDeEvt->ucOwnNmi[4], prDeEvt->ucOwnNmi[5]);
-		DBGLOG(NAN, INFO, "MastrNMI=%02x%02x%02x%02x%02x%02x\n",
+		DBGLOG(NAN, DEBUG, "MastrNMI=%02x%02x%02x%02x%02x%02x\n",
 		       prDeEvt->ucMastrNmi[0], prDeEvt->ucMastrNmi[1],
 		       prDeEvt->ucMastrNmi[2], prDeEvt->ucMastrNmi[3],
 		       prDeEvt->ucMastrNmi[4], prDeEvt->ucMastrNmi[5]);
@@ -2821,7 +2823,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 
 	kalMemZero(prNanPubRepliedInd, message_len);
 
-	DBGLOG(NAN, INFO, "[%s] message_len : %lu\n", __func__, message_len);
+	DBGLOG(NAN, DEBUG, "[%s] message_len : %lu\n", __func__, message_len);
 	prNanPubRepliedInd->fwHeader.msgVersion = 1;
 	prNanPubRepliedInd->fwHeader.msgId = NAN_MSG_ID_PUBLISH_REPLIED_IND;
 	prNanPubRepliedInd->fwHeader.msgLen = message_len;
@@ -2916,7 +2918,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	/* Add TLV datas */
 	tlvs = nanAddTlv(NAN_TLV_TYPE_MAC_ADDRESS, MAC_ADDR_LEN,
 			 &prDiscEvt->aucNanAddress[0], tlvs);
-	DBGLOG(NAN, INFO, "[%s] :NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO %u\n",
+	DBGLOG(NAN, DEBUG, "[%s] :NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO %u\n",
 	       __func__, NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO);
 
 	tlvs = nanAddTlv(NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO,
@@ -3001,7 +3003,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	nanPubTerInd.reason = prPubTerEvt->ucReasonCode;
 	prAdapter->rPublishInfo.ucNanPubNum--;
 
-	DBGLOG(NAN, INFO, "Cancel Pub ID = %d, PubNum = %d\n",
+	DBGLOG(NAN, DEBUG, "Cancel Pub ID = %d, PubNum = %d\n",
 	       nanPubTerInd.fwHeader.handle,
 	       prAdapter->rPublishInfo.ucNanPubNum);
 
@@ -3068,7 +3070,7 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	nanSubTerInd.reason = prSubTerEvt->ucReasonCode;
 	prAdapter->rSubscribeInfo.ucNanSubNum--;
 
-	DBGLOG(NAN, INFO, "Cancel Sub ID = %d, SubNum = %d\n",
+	DBGLOG(NAN, DEBUG, "Cancel Sub ID = %d, SubNum = %d\n",
 		nanSubTerInd.fwHeader.handle,
 		prAdapter->rSubscribeInfo.ucNanSubNum);
 
@@ -3152,7 +3154,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 		prFollowupEvt->requestor_instance_id;
 	prNanFollowupInd->followupIndParams.window = prFollowupEvt->dw_or_faw;
 
-	DBGLOG(NAN, VOC,
+	DBGLOG(NAN, INFO,
 	       "[%s] matchHandle: %d, window:%d, ServiceLen(%d,%d)\n",
 	       __func__,
 	       prNanFollowupInd->followupIndParams.matchHandle,
@@ -3174,7 +3176,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 			 prFollowupEvt->sdea_service_specific_info_len,
 			 prFollowupEvt->sdea_service_specific_info, tlvs);
 
-	DBGLOG(NAN, VOC,
+	DBGLOG(NAN, INFO,
 		"pub/subid: %d, addr: %02x:%02x:%02x:%02x:%02x:%02x, specific_info[0]: %02x\n",
 		prNanFollowupInd->fwHeader.handle,
 		((uint8_t *)prFollowupEvt->addr)[0],
@@ -3324,7 +3326,7 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 	prNanMatchExpiredInd->matchExpiredIndParams.matchHandle =
 		prMatchExpireEvt->u4RequestorInstanceID;
 
-	DBGLOG(NAN, INFO, "[%s] Handle:%d, matchHandle:%d\n", __func__,
+	DBGLOG(NAN, DEBUG, "[%s] Handle:%d, matchHandle:%d\n", __func__,
 		prNanMatchExpiredInd->fwHeader.handle,
 		prNanMatchExpiredInd->matchExpiredIndParams.matchHandle);
 
@@ -3366,7 +3368,7 @@ mtk_cfg80211_vendor_event_nan_report_beacon(
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *)
 		prFwEvt->aucBeaconFrame;
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, DEBUG,
 		"Cl:" MACSTR ",Src:" MACSTR ",rssi:%d,chnl:%d,TsfL:0x%x\n",
 		MAC2STR(prWlanBeaconFrame->aucBSSID),
 		MAC2STR(prWlanBeaconFrame->aucSrcAddr),
@@ -3427,8 +3429,8 @@ int mtk_cfg80211_vendor_nan_ext_indication(struct ADAPTER *prAdapter,
 	}
 
 	kalMemCopy(nanExtInd.data, data, u2Size);
-	DBGLOG(NAN, INFO, "NAN Ext Ind:\n");
-	DBGLOG_HEX(NAN, INFO, nanExtInd.data, u2Size)
+	DBGLOG(NAN, DEBUG, "NAN Ext Ind:\n");
+	DBGLOG_HEX(NAN, DEBUG, nanExtInd.data, u2Size)
 
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN,
 			     sizeof(struct NanExtIndMsg),

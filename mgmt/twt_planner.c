@@ -2049,7 +2049,7 @@ void twtPlannerGetTsfDone(
 		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 
 		if (!prMldBssInfo) {
-			DBGLOG(REQ, INFO, "MLTWT Invalid MLD_BSS_INFO\n");
+			DBGLOG(REQ, DEBUG, "MLTWT Invalid MLD_BSS_INFO\n");
 
 				return;
 		}
@@ -2061,7 +2061,7 @@ void twtPlannerGetTsfDone(
 						TRUE);
 
 		if (!prBssInfo) {
-			DBGLOG(REQ, INFO, "Find no MLTWT setup link\n");
+			DBGLOG(REQ, DEBUG, "Find no MLTWT setup link\n");
 
 			return;
 		}

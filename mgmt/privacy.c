@@ -1519,7 +1519,7 @@ void secHandleNoWtbl(struct ADAPTER *prAdapter,
 
 	if (prSwRfb->prStaRec) {
 		prSwRfb->ucWlanIdx = prSwRfb->prStaRec->ucWlanIndex;
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 			"[%d] current wlan index is %d\n",
 			prSwRfb->ucStaRecIdx,
 			prSwRfb->ucWlanIdx);

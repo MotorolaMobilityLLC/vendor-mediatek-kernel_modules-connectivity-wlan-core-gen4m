@@ -108,7 +108,7 @@ void wnmWNMAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		/* btm offload */
 		wnmRecvBTMRequest(prAdapter, prSwRfb);
 #else
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 		       "WNM: action frame %d, try to send to supplicant\n",
 		       prRxFrame->ucAction);
 		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
@@ -117,7 +117,7 @@ void wnmWNMAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		break;
 	case ACTION_WNM_NOTIFICATION_REQUEST:
 	default:
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, DEBUG,
 		       "WNM: action frame %d, try to send to supplicant\n",
 		       prRxFrame->ucAction);
 		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);

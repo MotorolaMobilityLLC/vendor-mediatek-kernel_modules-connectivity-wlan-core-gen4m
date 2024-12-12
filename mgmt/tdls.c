@@ -109,7 +109,7 @@ void TdlsProcessPublicAction(
 	uint8_t ucBssIndex = 0;
 
 	if (!ad || !prSwRfb) {
-		DBGLOG(TDLS, INFO, " ad or prSwRfb are NULL\n");
+		DBGLOG(TDLS, DEBUG, " ad or prSwRfb are NULL\n");
 		return;
 	}
 
@@ -176,14 +176,14 @@ void TdlsProcessPublicAction(
 		staTdls = prBssInfo->prTdlsHash[i];
 		if (!staTdls)
 			continue;
-		DBGLOG(TDLS, VOC,
+		DBGLOG(TDLS, INFO,
 			" staTdls->aucAddr "MACSTR"\n",
 			MAC2STR(staTdls->aucAddr));
 		if (kalMemCmp(staTdls->aucAddr,
 			prActFrame->aucSrcAddr, ETH_ALEN) == 0 &&
 			staTdls->eTdlsRole == STA_TDLS_ROLE_INITOR &&
 			staTdls->eTdlsStatus == STA_TDLS_SETUP_INPROCESS) {
-			DBGLOG(TDLS, VOC, MACSTR
+			DBGLOG(TDLS, INFO, MACSTR
 				" auto send setup request\n",
 				MAC2STR(staTdls->aucAddr));
 			kalTdlsOpReq(
@@ -374,7 +374,7 @@ void TdlsStateTimer(
 
 	sta = b->prTdlsHash[STA_TDLS_HASH_SIZE];
 	if (!sta) {
-		DBGLOG(TDLS, VOC, "TDLS: No target station, return\n");
+		DBGLOG(TDLS, INFO, "TDLS: No target station, return\n");
 		return;
 	}
 
@@ -394,17 +394,17 @@ void TdlsStateTimer(
 				return;
 			}
 		}
-		DBGLOG(TDLS, VOC, "TDLS: Rx data stream OK\n");
+		DBGLOG(TDLS, INFO, "TDLS: Rx data stream OK\n");
 		sta->ulRxBytes = 0;
 		goto start_timer;
 	}
 
 	switch (sta->eTdlsStatus) {
 	case STA_TDLS_NOT_SETUP:
-		DBGLOG(TDLS, VOC, "Last TDLS monitor timer\n");
+		DBGLOG(TDLS, INFO, "Last TDLS monitor timer\n");
 		return;
 	case STA_TDLS_SETUP_INPROCESS:
-		DBGLOG(TDLS, VOC, "TDLS: setup timeout\n");
+		DBGLOG(TDLS, INFO, "TDLS: setup timeout\n");
 		if (sta->u4SetupFailCount++ > TDLS_SETUP_COUNT)
 			TdlsAutoTeardown(
 				ad,
@@ -455,7 +455,7 @@ uint32_t TdlsAutoSetup(
 	if (!b)
 		return TDLS_STATUS_FAIL;
 
-	DBGLOG(TDLS, INFO,
+	DBGLOG(TDLS, DEBUG,
 		"[%d] Build up "MACSTR", %d\n",
 		bss,
 		MAC2STR(sta->aucAddr),
@@ -504,14 +504,14 @@ uint32_t TdlsAutoTeardown(
 		return TDLS_STATUS_FAIL;
 
 	if (sta)
-		DBGLOG(TDLS, VOC,
+		DBGLOG(TDLS, INFO,
 			"[%d] Teardown "MACSTR" due to %s, %d\n",
 			bss,
 			MAC2STR(sta->aucAddr),
 			reason,
 			sta->u4Throughput);
 	else
-		DBGLOG(TDLS, VOC,
+		DBGLOG(TDLS, INFO,
 			"[%d] Teardown due to %s\n",
 			bss,
 			reason);
@@ -633,7 +633,7 @@ TdlsAutoSetupTarget(
 	if (!prTdlsPeer)
 		return;
 
-	DBGLOG(TDLS, VOC,
+	DBGLOG(TDLS, INFO,
 		"Create TDLS peer["MACSTR"] reason %s\n",
 		MAC2STR(prTdlsPeer->aucAddr), prReason);
 
@@ -731,7 +731,7 @@ int32_t TdlsAutoImpl(
 
 #if CFG_SUPPORT_NAN
 	if (pAd->fgIsNANRegistered) {
-		DBGLOG(TDLS, INFO,
+		DBGLOG(TDLS, DEBUG,
 			"Disable tdls auto for NAN\n");
 		return -1;
 	}
@@ -832,7 +832,7 @@ uint8_t TdlsEnabled(struct ADAPTER *pAd)
 	uint8_t fgEnabled = TRUE;
 
 	if (pAd->rWifiVar.fgTdlsDisable) {
-		DBGLOG(TDLS, VOC, "TDLS is disabled\n");
+		DBGLOG(TDLS, INFO, "TDLS is disabled\n");
 		fgEnabled = FALSE;
 	}
 
@@ -944,7 +944,7 @@ uint8_t TdlsAdjustBw(
 			GET_BSS_INFO_BY_INDEX(pAd,
 			bss));
 
-		DBGLOG(TDLS, VOC,
+		DBGLOG(TDLS, INFO,
 			"Adjust bw %d to %d\n",
 			bw,
 			newbw);
@@ -1093,7 +1093,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		return -EINVAL;
 	}
 
-	DBGLOG(TDLS, VOC, "u4SetBufferLen=%d\n", u4SetBufferLen);
+	DBGLOG(TDLS, INFO, "u4SetBufferLen=%d\n", u4SetBufferLen);
 
 #if 1
 	/* AIS only */
@@ -1110,7 +1110,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	DBGLOG(TDLS, VOC, "prCmd->ucActionCode=%d, prCmd->ucDialogToken=%d\n",
+	DBGLOG(TDLS, INFO, "prCmd->ucActionCode=%d, prCmd->ucDialogToken=%d\n",
 		prCmd->ucActionCode, prCmd->ucDialogToken);
 
 	prStaRec = prBssInfo->prStaRecOfAP;
@@ -1209,11 +1209,11 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		break;
 
 	default:
-		DBGLOG(TDLS, VOC, "default=%d\n", prCmd->ucActionCode);
+		DBGLOG(TDLS, INFO, "default=%d\n", prCmd->ucActionCode);
 		return -EINVAL;
 	}
 
-	DBGLOG(TDLS, VOC, "rResult=%d\n", rResult);
+	DBGLOG(TDLS, INFO, "rResult=%d\n", rResult);
 
 	return rResult;
 }
@@ -1253,7 +1253,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 		return 0;
 	}
 
-	DBGLOG(TDLS, VOC, "prCmd->oper=%d, u4SetBufferLen=%d\n",
+	DBGLOG(TDLS, INFO, "prCmd->oper=%d, u4SetBufferLen=%d\n",
 		prCmd->oper, u4SetBufferLen);
 
 	switch (prCmd->oper) {
@@ -1316,7 +1316,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 	prAdapter->u4TdlsLinkCount = 0;
 	for (i = 0; i < MAXNUM_TDLS_PEER; i++)
 		prAdapter->u4TdlsLinkCount += g_arTdlsLink[i];
-	DBGLOG(TDLS, VOC, "TDLS total link = %d\n",
+	DBGLOG(TDLS, INFO, "TDLS total link = %d\n",
 		prAdapter->u4TdlsLinkCount);
 
 	return 0;
@@ -1753,7 +1753,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 
 	/* 4. Update packet length */
 	kalSetPacketLength(pvPacket, u4PktLen);
-	DBGLOG(TDLS, VOC, "wlanHardStartXmit, u4PktLen=%d\n", u4PktLen);
+	DBGLOG(TDLS, INFO, "wlanHardStartXmit, u4PktLen=%d\n", u4PktLen);
 
 	/* 5. send the data frame */
 	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
@@ -2412,7 +2412,7 @@ void TdlsexEventHandle(struct GLUE_INFO *prGlueInfo,
 {
 	uint32_t u4EventId;
 
-	DBGLOG(TDLS, VOC, "enter\n");
+	DBGLOG(TDLS, INFO, "enter\n");
 
 	/* sanity check */
 	if ((prGlueInfo == NULL) || (prInBuf == NULL))
@@ -2424,7 +2424,7 @@ void TdlsexEventHandle(struct GLUE_INFO *prGlueInfo,
 
 	switch (u4EventId) {
 	case TDLS_HOST_EVENT_TEAR_DOWN:
-		DBGLOG(TDLS, VOC, "TDLS_HOST_EVENT_TEAR_DOWN\n");
+		DBGLOG(TDLS, INFO, "TDLS_HOST_EVENT_TEAR_DOWN\n");
 		TdlsEventTearDown(prGlueInfo, prInBuf + 4, u4InBufLen);
 		break;
 
@@ -2477,7 +2477,7 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 
 
 	if (u4TearDownSubId == TDLS_HOST_EVENT_TD_PTI_TIMEOUT) {
-		DBGLOG(TDLS, VOC,
+		DBGLOG(TDLS, INFO,
 	       "TDLS_HOST_EVENT_TD_PTI_TIMEOUT TDLS_REASON_CODE_UNSPECIFIED\n");
 		u2ReasonCode = TDLS_REASON_CODE_UNSPECIFIED;
 
@@ -2490,7 +2490,7 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (u4TearDownSubId == TDLS_HOST_EVENT_TD_AGE_TIMEOUT) {
-		DBGLOG(TDLS, VOC,
+		DBGLOG(TDLS, INFO,
 	       "TDLS_HOST_EVENT_TD_AGE_TIMEOUT TDLS_REASON_CODE_UNREACHABLE\n");
 		u2ReasonCode = TDLS_REASON_CODE_UNREACHABLE;
 
@@ -2502,7 +2502,7 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 			);
 	}
 
-	DBGLOG(TDLS, VOC, "\n\n u2ReasonCode = %u\n\n",
+	DBGLOG(TDLS, INFO, "\n\n u2ReasonCode = %u\n\n",
 	       u2ReasonCode);
 }
 
@@ -2602,11 +2602,11 @@ void TdlsHandleTxDoneStatus(struct ADAPTER *prAdapter,
 					ucBssIndex,
 					prMsduInfo->aucEthDestAddr);
 	if (!prStaRec) {
-		DBGLOG(TDLS, VOC, " prStaRec is NULL\n");
+		DBGLOG(TDLS, INFO, " prStaRec is NULL\n");
 		return;
 	}
 
-	DBGLOG(TDLS, VOC, " rTxDoneStatus=%d, addr :"
+	DBGLOG(TDLS, INFO, " rTxDoneStatus=%d, addr :"
 		MACSTR", IsNeedWaitTeardownTxDone=%d, IsNeedDisableLink=%d\n",
 		rTxDoneStatus, MAC2STR(prMsduInfo->aucEthDestAddr),
 		prStaRec->fgTdlsIsNeedWaitTeardownTxDone,

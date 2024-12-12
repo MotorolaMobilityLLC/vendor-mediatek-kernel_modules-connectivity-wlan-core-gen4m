@@ -695,7 +695,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		}
 	}
 
-	log_dbg(CNM, VOC,
+	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
 	       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID,
 	       prMsgChReq->eRfBand, prMsgChReq->ucPrimaryChannel,
@@ -914,7 +914,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	log_dbg(CNM, VOC,
+	log_dbg(CNM, INFO,
 	       "ChGrant net=%d band=%d token=%d ch=%d bw=%d sco=%d s1=%d s2=%d, u4GrantInterval=%d\n",
 	       prEventBody->ucBssIndex,
 	       prEventBody->ucDBDCBand,
@@ -1341,7 +1341,7 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 		WLAN_STATUS_SUCCESS)
 		return -1;
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[CSA]RoleIdx=%d, Band=%d, CH=%d, BssIdx=%d\n",
 		ucRoleIdx, eBand, ucCh, ucBssIdx);
 
@@ -1353,7 +1353,7 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 		rlmGetChnlInfoForCSA(prAdapter,
 			eBand, ucCh, ucBssIdx, &rRfChnlInfo);
 
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
 			rRfChnlInfo.ucChannelNum,
 			rRfChnlInfo.eBand,
@@ -1648,7 +1648,7 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 #if 0
-		log_dbg(INIT, INFO,
+		log_dbg(INIT, DEBUG,
 		       "%s BSS[%u] active[%u] netType[%u]\n",
 		       __func__, i, prBssInfo->fgIsNetActive,
 		       prBssInfo->eNetworkType);
@@ -3496,7 +3496,7 @@ void cnmCtrlDynamicMaxQuota(struct ADAPTER *prAdapter)
 			prAdapter->rWmmQuotaStatus[ucWmmIdx].u4Quota,
 			(ucWmmIdx == HW_WMM_NUM - 1) ? "] " : "/");
 	}
-	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+	DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 	kalMemFree(aucBuf, VIR_MEM_TYPE, u4BufSize);
 }
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */

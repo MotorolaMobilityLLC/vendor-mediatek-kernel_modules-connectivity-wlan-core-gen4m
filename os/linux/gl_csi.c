@@ -157,7 +157,7 @@ int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 
 	/* list full */
 	if (prCSIInfo->ucStaCount >= CSI_MAX_STA_MAC_NUM) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"[CSI] List is full! Current number=%d\n",
 			prCSIInfo->ucStaCount);
 		return -1;
@@ -169,7 +169,7 @@ int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 		rLinkEntry, struct CSI_STA) {
 		if (EQUAL_MAC_ADDR(prCSISta->aucMacAddress,
 				prCSICtrl->aucMacAddr)) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 				"[CSI] Sta mac (" MACSTR
 				") is already in csi sta list",
 				MAC2STR(prCSISta->aucMacAddress));
@@ -195,7 +195,7 @@ int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 	LINK_INSERT_HEAD(&prCSIInfo->rStaList, &prCSISta->rLinkEntry);
 	KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_CSI_STA_LIST);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[CSI] Add sta mac (" MACSTR ") to CSI List.\n",
 		MAC2STR(prCSISta->aucMacAddress));
 	prCSIInfo->ucStaCount++;
@@ -230,7 +230,7 @@ int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 		rLinkEntry, struct CSI_STA) {
 		if (EQUAL_MAC_ADDR(prCSISta->aucMacAddress,
 				prCSICtrl->aucMacAddr)) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 				"[CSI] Del sta mac (" MACSTR ") to CSI List.\n",
 				MAC2STR(prCSISta->aucMacAddress));
 			fgIsFound = TRUE;
@@ -247,7 +247,7 @@ int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 
 	/* not find */
 	if (!fgIsFound) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"[CSI] Sta mac (" MACSTR
 			") is not found in CSI list.\n",
 			MAC2STR(prCSISta->aucMacAddress));
@@ -266,7 +266,7 @@ void glCsiFreeStaList(struct GLUE_INFO *prGlueInfo)
 	while (!LINK_IS_EMPTY(&prCSIInfo->rStaList)) {
 		LINK_REMOVE_HEAD(&prCSIInfo->rStaList,
 			prCSISta, struct CSI_STA *);
-		DBGLOG(INIT, INFO, "[CSI] Remove sta mac (" MACSTR ")\n",
+		DBGLOG(INIT, DEBUG, "[CSI] Remove sta mac (" MACSTR ")\n",
 			MAC2STR(prCSISta->aucMacAddress));
 		kalMemFree(prCSISta, VIR_MEM_TYPE,
 			sizeof(struct CSI_STA));
@@ -398,7 +398,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 
 			prCSIData->ucDbdcIdx = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
-				DBGLOG(NIC, INFO, "[CSI] Band=%u\n",
+				DBGLOG(NIC, DEBUG, "[CSI] Band=%u\n",
 						prCSIData->ucDbdcIdx);
 			break;
 		case CSI_EVENT_CSI_NUM:
@@ -682,7 +682,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			prBuf += (u2Offset + prCSITlvData->body_len);
 	}
 
-	DBGLOG(NIC, INFO, "[CSI] u2DataCount=%d\n",
+	DBGLOG(NIC, DEBUG, "[CSI] u2DataCount=%d\n",
 				prCSIData->u2DataCount);
 
 	bStatus = wlanPushCSISegmentData(prAdapter, prCSIData);
@@ -728,7 +728,7 @@ wlanPushCSISegmentData(struct ADAPTER *prAdapter,
 	struct CSI_DATA_T *prCSISegmentTemp;
 
 #if CFG_CSI_DEBUG
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"[CSI] Segment number=%d, Remain last=%d\n",
 		prCSIData->u4SegmentNum, prCSIData->ucRemainLast);
 #endif
@@ -806,7 +806,7 @@ wlanPushCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 	}
 
 #if CFG_CSI_DEBUG
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"[CSI] Push idx = %d, data count = %d, H_IDX = %d\n",
 		prCSIInfo->u4CSIBufferTail,
 		prCSIData->u2DataCount,
@@ -836,7 +836,7 @@ wlanPopCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 		sizeof(struct CSI_DATA_T));
 
 #if CFG_CSI_DEBUG
-	DBGLOG(NIC, INFO,
+	DBGLOG(NIC, DEBUG,
 		"[CSI] Pop idx = %d, data count = %d, H_IDX = %d\n",
 		prCSIInfo->u4CSIBufferHead,
 		prCSIData->u2DataCount,
@@ -1063,7 +1063,7 @@ ssize_t wlanCSIDataPrepare(
 	put_unaligned(i4Pos - 3, (uint16_t *) (tmpBuf + 1));
 
 #if CFG_CSI_DEBUG
-	DBGLOG(REQ, INFO, "[CSI] debug: i4Pos = %d", i4Pos);
+	DBGLOG(REQ, DEBUG, "[CSI] debug: i4Pos = %d", i4Pos);
 #endif
 
 	return i4Pos;

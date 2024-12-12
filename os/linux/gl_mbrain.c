@@ -124,7 +124,7 @@ enum wifi2mbr_status mbraink2wifi_get_data(void *priv,
 			g_u2LeftLoopNum = g_u2LoopNum;
 			g_i4CurTag = tag;
 
-			DBGLOG(REQ, INFO, "reason:%u tag:%u loopNum:%u\n",
+			DBGLOG(REQ, DEBUG, "reason:%u tag:%u loopNum:%u\n",
 				reason, tag, g_u2LoopNum);
 		}
 
@@ -546,7 +546,7 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 			DBGLOG(REQ, WARN, "GET_MBR_EMI fail: 0x%x\n", u4Ret);
 			return status;
 		}
-		DBGLOG(REQ, INFO, "[Mbrain ICCM][%llu]-[%d][%d:%d:%d:%d]\n",
+		DBGLOG(REQ, DEBUG, "[Mbrain ICCM][%llu]-[%d][%d:%d:%d:%d]\n",
 			dest->timestamp,
 			g_rMbrIccm.u4TotalTime,
 			g_rMbrIccm.u4BandRatio[4].u4TxTime,
@@ -705,7 +705,7 @@ enum wifi2mbr_status mbrWifiTxTimeoutHandler(struct ADAPTER *prAdapter,
 	}
 
 	if (prAdapter->rMbrTxTimeoutQueue.u4NumElem <= 0) {
-		DBGLOG(REQ, INFO, "TxTimeout Queue is empty\n");
+		DBGLOG(REQ, DEBUG, "TxTimeout Queue is empty\n");
 		return WIFI2MBR_END;
 	}
 

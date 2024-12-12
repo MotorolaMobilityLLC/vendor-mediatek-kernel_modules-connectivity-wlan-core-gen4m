@@ -46,7 +46,7 @@ nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 			u4Idx++;
 			pucFilterSrc++;
 		}
-		DBGLOG(INIT, INFO, "nan: filter[%d] = %p\n", u4Idx,
+		DBGLOG(INIT, DEBUG, "nan: filter[%d] = %p\n", u4Idx,
 		       pucFilterSrc);
 		ucLen = atoi(*pucFilterSrc);
 		*pucFilterDst = ucLen;
@@ -56,7 +56,7 @@ nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		ucFilterLen++;
 		/* skip comma */
 		if (*pucFilterSrc == ',') {
-			DBGLOG(INIT, INFO, "nan: skip comma%d\n", u4Idx);
+			DBGLOG(INIT, DEBUG, "nan: skip comma%d\n", u4Idx);
 			u4Idx++;
 			pucFilterSrc++;
 		}
@@ -84,7 +84,7 @@ nanConvertUccMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		return;
 	}
 
-	DBGLOG(INIT, INFO, "ucFilterSrcLen %d\n", ucFilterSrcLen);
+	DBGLOG(INIT, DEBUG, "ucFilterSrcLen %d\n", ucFilterSrcLen);
 	if ((ucFilterSrcLen == 1) && (*pucFilterSrc == *delim)) {
 		*pucFilterDstLen = 1;
 		*pucFilterDst = 0;
@@ -94,22 +94,22 @@ nanConvertUccMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 	/* skip last */
 	if ((*(pucFilterSrc + ucFilterSrcLen - 1) == *delim) &&
 	    (ucFilterSrcLen >= 2)) {
-		DBGLOG(INIT, INFO, " erase last ','\n");
+		DBGLOG(INIT, DEBUG, " erase last ','\n");
 		*(pucFilterSrc + ucFilterSrcLen - 1) = 0;
 	}
 	while ((pucfilter = kalStrSep((char **)&pucFilterSrc, delim)) != NULL) {
 		if (*pucfilter == '*') {
-			DBGLOG(INIT, INFO, "met *, wildcard filter\n");
+			DBGLOG(INIT, DEBUG, "met *, wildcard filter\n");
 			*pucFilterDst = 0;
 			u4TotalLen += 1;
 			pucFilterDst += 1;
 		} else {
-			DBGLOG(INIT, INFO, "%s\n", pucfilter);
+			DBGLOG(INIT, DEBUG, "%s\n", pucfilter);
 			u4FilterLen = kalStrLen(pucfilter);
 			u4TotalLen += (u4FilterLen + 1);
 			*(pucFilterDst) = u4FilterLen;
 			kalMemCopy((pucFilterDst + 1), pucfilter, u4FilterLen);
-			DBGLOG(INIT, INFO, "u4FilterLen: %d\n", u4FilterLen);
+			DBGLOG(INIT, DEBUG, "u4FilterLen: %d\n", u4FilterLen);
 			dumpMemory8((uint8_t *)pucFilterDst, u4FilterLen + 1);
 			pucFilterDst += (u4FilterLen + 1);
 		}
@@ -251,7 +251,7 @@ nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 		   msg->service_specific_info,
 		   prPublishReq->service_specific_info_len);
 
-	DBGLOG(INIT, INFO, "nan: sdea_service_specific_info_len = %d\n",
+	DBGLOG(INIT, DEBUG, "nan: sdea_service_specific_info_len = %d\n",
 	       prPublishReq->sdea_service_specific_info_len);
 	prPublishReq->sdea_service_specific_info_len =
 		msg->sdea_service_specific_info_len;
@@ -434,7 +434,7 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 				if (prPubSpecificInfo->ucPublishId ==
 					msg->publish_id &&
 					!prPubSpecificInfo->ucUsed) {
-					DBGLOG(NAN, INFO,
+					DBGLOG(NAN, DEBUG,
 						"PID%d might be timeout, update FAIL!\n",
 						prPublishReq->publish_id);
 					return 0;
@@ -442,7 +442,7 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 			}
 		}
 	} else {
-		DBGLOG(NAN, INFO, "Exceed max number, allocate fail\n");
+		DBGLOG(NAN, DEBUG, "Exceed max number, allocate fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return 0;
 	}
@@ -507,7 +507,7 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 		   msg->service_specific_info,
 		   prPublishReq->service_specific_info_len);
 
-	DBGLOG(NAN, INFO, "nan: sdea_service_specific_info_len = %d\n",
+	DBGLOG(NAN, DEBUG, "nan: sdea_service_specific_info_len = %d\n",
 	       prPublishReq->sdea_service_specific_info_len);
 	prPublishReq->sdea_service_specific_info_len =
 		msg->sdea_service_specific_info_len;
@@ -643,11 +643,11 @@ nanTransmitRequest(struct ADAPTER *prAdapter,
 	 *     prTransmitReq->sdea_service_specific_info_len);
 	 */
 
-	DBGLOG(NAN, VOC,
+	DBGLOG(NAN, INFO,
 	       "[%s]: publish_subscribe_id: %d, requestor_instance_id: %d\n",
 	       __func__, prTransmitReq->publish_subscribe_id,
 	       prTransmitReq->requestor_instance_id);
-	DBGLOG(NAN, VOC,
+	DBGLOG(NAN, INFO,
 	       "[%s]: TransmitReq->addr=>%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       __func__, prTransmitReq->addr[0], prTransmitReq->addr[1],
 	       prTransmitReq->addr[2], prTransmitReq->addr[3],
@@ -805,7 +805,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 				if (prSubSpecificInfo->ucSubscribeId ==
 					msg->subscribe_id &&
 					!prSubSpecificInfo->ucUsed) {
-					DBGLOG(NAN, INFO,
+					DBGLOG(NAN, DEBUG,
 						"SID%d might be timeout, update FAIL!\n",
 						prSubscribeReq->subscribe_id);
 					return 0;
@@ -878,7 +878,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 		prSubscribeReq->sdea_service_specific_info_len =
 			NAN_MAX_SDEA_LEN;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"nan: sdea_service_specific_info_len = %d\n",
 		prSubscribeReq->sdea_service_specific_info_len);
 	kalMemCopy(prSubscribeReq->sdea_service_specific_info,

@@ -200,7 +200,7 @@ nanAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 			kalMemZero(prGlueInfo->aprNANDevInfo[ucRoleIdx],
 				   sizeof(struct _GL_NAN_INFO_T));
 		} else {
-			DBGLOG(NAN, INFO, "alloc aprNANDevInfo fail\n");
+			DBGLOG(NAN, DEBUG, "alloc aprNANDevInfo fail\n");
 			goto err_alloc;
 		}
 
@@ -453,7 +453,7 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	} else
 		unregister_netdev(prNANInfo->prDevHandler);
 
-	DBGLOG(NAN, INFO, "unregister nandev\n");
+	DBGLOG(NAN, DEBUG, "unregister nandev\n");
 
 	prGlueInfo->prAdapter->rNanNetRegState =
 		ENUM_NET_REG_STATE_UNREGISTERED;
@@ -484,7 +484,7 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	uint8_t ucBssIndex;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 
-	DBGLOG(NAN, INFO, "setup the nan dev\n");
+	DBGLOG(NAN, DEBUG, "setup the nan dev\n");
 
 	if ((prGlueInfo == NULL) || (prNanWdev == NULL) ||
 	    (prNanWdev->wiphy == NULL) || (prNanDev == NULL)) {
@@ -544,7 +544,7 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	 * bind netdev pointer to netdev index
 	 */
 	prNANInfo->prDevHandler = prNanDev;
-	DBGLOG(NAN, INFO, "setup the nan dev\n");
+	DBGLOG(NAN, DEBUG, "setup the nan dev\n");
 
 	for (u4Idx = 0; u4Idx < NAN_BSS_INDEX_NUM; u4Idx++) {
 
@@ -641,7 +641,7 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 				kalMemCopy(
 					(prMCAddrList + i * ETH_ALEN),
 					GET_ADDR(ha), ETH_ALEN);
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, DEBUG,
 				       "Set Multicast Address List "
 				       MACSTR "\n",
 				       MAC2STR(GET_ADDR(ha)));
@@ -717,7 +717,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 		return FALSE;
 	}
 
-	DBGLOG(NAN, INFO, "gprNanWdev\n");
+	DBGLOG(NAN, DEBUG, "gprNanWdev\n");
 	prNanWdev = g_aprNanRoleWdev[eRole];
 	prWiphy = prNanWdev->wiphy;
 	memset(prNanWdev, 0, sizeof(struct wireless_dev));
@@ -825,7 +825,7 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	prWdev->wiphy = prWiphy;
 
 	g_aprNanRoleWdev[eRole] = prWdev;
-	DBGLOG(NAN, INFO, "glNanCreateWirelessDevice (%p) %d\n",
+	DBGLOG(NAN, DEBUG, "%s (%p) %d\n", __func__,
 	       g_aprNanRoleWdev[eRole]->wiphy, eRole);
 
 	return TRUE;
@@ -930,7 +930,7 @@ unsigned char
 nanLaunch(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->prAdapter->fgIsNANRegistered == TRUE) {
-		DBGLOG(NAN, INFO, "NAN is already registered\n");
+		DBGLOG(NAN, DEBUG, "NAN is already registered\n");
 		return FALSE;
 	}
 
@@ -941,7 +941,7 @@ nanLaunch(struct GLUE_INFO *prGlueInfo)
 
 	prGlueInfo->prAdapter->fgIsNANRegistered = TRUE;
 
-	DBGLOG(NAN, INFO, "Launch success, fgIsNANRegistered TRUE\n");
+	DBGLOG(NAN, DEBUG, "Launch success, fgIsNANRegistered TRUE\n");
 	return TRUE;
 }
 
@@ -960,11 +960,11 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	if (prGlueInfo->prAdapter->fgIsNANRegistered == FALSE) {
-		DBGLOG(NAN, INFO, "nan is not registered\n");
+		DBGLOG(NAN, DEBUG, "nan is not registered\n");
 		return FALSE;
 	}
 
-	DBGLOG(NAN, INFO, "fgIsNANRegistered FALSE\n");
+	DBGLOG(NAN, DEBUG, "fgIsNANRegistered FALSE\n");
 	prGlueInfo->prAdapter->fgIsNANRegistered = FALSE;
 	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 
@@ -990,7 +990,7 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 }
 
 	nanUpdateAisBitmap(prGlueInfo->prAdapter, FALSE);
-	DBGLOG(NAN, INFO, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
+	DBGLOG(NAN, DEBUG, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
 
 	kfree(g_aprNanRoleWdev[ucIdx]);
 	g_aprNanRoleWdev[ucIdx] = NULL;
@@ -1005,13 +1005,13 @@ nanSetSuspendMode(struct GLUE_INFO *prGlueInfo, unsigned char fgEnable)
 		return;
 
 	if (!prGlueInfo->prAdapter->fgIsNANRegistered) {
-		DBGLOG(NAN, INFO, "%s: NAN is not enabled, SKIP!\n", __func__);
+		DBGLOG(NAN, DEBUG, "%s: NAN is not enabled, SKIP!\n", __func__);
 		return;
 	}
 
 	prDev = prGlueInfo->aprNANDevInfo[0]->prDevHandler;
 	if (!prDev) {
-		DBGLOG(NAN, INFO, "%s: NAN  dev is not available, SKIP!\n",
+		DBGLOG(NAN, DEBUG, "%s: NAN  dev is not available, SKIP!\n",
 		       __func__);
 		return;
 	}
@@ -1100,7 +1100,7 @@ nanStop(struct net_device *prDev)
 	}
 
 	/* 0. Do the scan done and set parameter to abort if the scan pending
-	 * DBGLOG(NAN, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);
+	 * DBGLOG(NAN, DEBUG, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);
 	 * TODO flush the scan request
 	 * 1. stop TX queue
 	 * 3. stop queue and turn off carrier
@@ -1425,7 +1425,7 @@ nanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	case SIOCSIWMLME:
 		/* IW_MLME_DISASSOC used for disconnection */
 		if (prIwReq->u.data.length != sizeof(struct iw_mlme)) {
-			DBGLOG(NAN, INFO, "MLME buffer strange:%d\n",
+			DBGLOG(NAN, DEBUG, "MLME buffer strange:%d\n",
 			       prIwReq->u.data.length);
 			ret = -EINVAL;
 			break;

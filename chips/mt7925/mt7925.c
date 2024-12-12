@@ -1545,7 +1545,7 @@ static void mt7925ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 		HAL_MCR_WR(prGlueInfo->prAdapter,
 			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
 			   prHifInfo->u4PcieASPM);
-		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2 0x%08x\n",
+		DBGLOG(HAL, DEBUG, "Enable aspm L1.1/L1.2 0x%08x\n",
 			prHifInfo->u4PcieASPM);
 	} else {
 		/*
@@ -1568,7 +1568,7 @@ static void mt7925ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 		HAL_MCR_WR(prGlueInfo->prAdapter,
 			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
 			   u4Val);
-		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
+		DBGLOG(HAL, DEBUG, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
 	}
 }
 #endif
@@ -1580,10 +1580,10 @@ static void mt7925ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	if (!in_interrupt()) {
 		u4Addr = 0x112F0184;
 		wf_ioremap_read(u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+		DBGLOG(HAL, DEBUG, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
 			wf_ioremap_read(u4Addr, &u4Val);
-			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
+			DBGLOG(HAL, DEBUG, "PCIE CR [0x%08x]=[0x%08x]",
 			       u4Addr, u4Val);
 		}
 	}
@@ -1694,7 +1694,7 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 #endif
 	;
 
-	DBGLOG_LIMITED(HAL, INFO, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
+	DBGLOG_LIMITED(HAL, DEBUG, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
 		prAdapter->rWifiVar.ucMaxSimuLinks);
 
@@ -1737,7 +1737,7 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucMaxSimuLinks == 0) {
 	/*has active Bss, block MLSR connection */
 		u4TmpLinkPlanBmap = u4LinkPlanNoneMLDBmap;
-		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlanNoneMLD\n");
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeLinkPlanNoneMLD\n");
 	}
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
 	else if (ucCanSupportDBDCAA && IS_FEATURE_ENABLED(
@@ -1745,15 +1745,15 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		IS_FEATURE_ENABLED(
 		prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
 		u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
-		DBGLOG_LIMITED(HAL, INFO, "use aeTriLinkPlan\n");
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeTriLinkPlan\n");
 	}
 #endif
 	else if (ucCanSupportDBDCAA) {
 		u4TmpLinkPlanBmap = u4LinkPlanAABmap;
-		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlanAwithA\n");
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeLinkPlanAwithA\n");
 	} else {
 		u4TmpLinkPlanBmap = u4LinkPlanBmap;
-		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlan\n");
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeLinkPlan\n");
 	}
 
 	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));

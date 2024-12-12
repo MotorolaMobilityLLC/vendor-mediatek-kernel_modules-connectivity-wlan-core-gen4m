@@ -53,7 +53,7 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 			ret = freq_qos_add_request(&policy->constraints,
 				&wReq->qos_req, FREQ_QOS_MIN, DEFAULT_CPU_FREQ);
 			if (ret < 0) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 					"freq_qos_add_request fail cpu%d ret=%d\n",
 					wReq->cpu, ret);
 				kfree(wReq);
@@ -71,7 +71,7 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 
 		ret = freq_qos_update_request(&wReq->qos_req, freq);
 		if (ret < 0) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
 				wReq->cpu, freq, ret);
 		}
@@ -124,7 +124,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	unsigned long long end = emiPhyBase + offset + size - 1;
 	int ret;
 
-	DBGLOG(INIT, INFO, "emiPhyBase: %pa, offset: %d, size: %d\n",
+	DBGLOG(INIT, DEBUG, "emiPhyBase: %pa, offset: %d, size: %d\n",
 				&emiPhyBase, offset, size);
 
 	ret = mtk_emimpu_init_region(&region, 29);

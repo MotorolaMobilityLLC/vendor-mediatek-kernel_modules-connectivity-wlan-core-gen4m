@@ -2348,7 +2348,7 @@ static void mt7999RunWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo)
 	if (prHifInfo->fgIsNeedCidxFetchFlag) {
 		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByNewTx);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
-			DBGLOG(HAL, INFO, "Trigger cidx fetch by new tx");
+			DBGLOG(HAL, DEBUG, "Trigger cidx fetch by new tx");
 		goto fetch;
 	}
 
@@ -2356,7 +2356,7 @@ static void mt7999RunWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo)
 	    mt7999CheckWfdmaCidxFetchTimeout(prGlueInfo)) {
 		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByTimeout);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
-			DBGLOG(HAL, INFO, "Trigger cidx fetch by timeout");
+			DBGLOG(HAL, DEBUG, "Trigger cidx fetch by timeout");
 		goto fetch;
 	}
 
@@ -2382,7 +2382,7 @@ static void mt7999TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 		mt7999TriggerWfdmaCidxFetch(prGlueInfo);
 		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByCmd);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
-			DBGLOG(HAL, INFO, "Trigger cidx fetch by cmd");
+			DBGLOG(HAL, DEBUG, "Trigger cidx fetch by cmd");
 		goto exit;
 	}
 
@@ -2398,7 +2398,7 @@ static void mt7999TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 
 exit:
 	if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg)) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "Ring[%u]: old cidx[%u]didx[%u]",
 		       prTxRing->u4RingIdx,
 		       prTxRing->u4LastCidx,
@@ -2621,7 +2621,7 @@ static void mt7999UpdateWfdmaPrdcInt(
 #endif
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	DBGLOG(HAL, INFO, "prdc int: %uus", u4Time * 20);
+	DBGLOG(HAL, DEBUG, "prdc int: %uus", u4Time * 20);
 }
 
 static void mt7999WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
@@ -2697,7 +2697,7 @@ static void mt7999WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 		WF_P0_WFDMA_WPDMA_PRI_DLY_INT_CFG2_PRI0_DLY_INT_EN_SHFT;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	DBGLOG(HAL, INFO, "dly int[%u]: %uus, cnt=%u",
+	DBGLOG(HAL, DEBUG, "dly int[%u]: %uus, cnt=%u",
 	       prWifiVar->fgEnDlyInt,
 	       prWifiVar->u4DlyIntTime * 20,
 	       prWifiVar->u4DlyIntCnt);
@@ -3075,13 +3075,13 @@ static void mt7999InitPcieInt(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_SUPPORT_PCIE_ASPM
 	if (!pcie_vir_addr) {
-		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
+		DBGLOG(HAL, DEBUG, "pcie_vir_addr is null\n");
 		return;
 	}
 
 	writel(u4WrVal, (pcie_vir_addr + 0x74));
 	u4Val = readl(pcie_vir_addr + 0x74);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "pcie_addr=0x%llx, write 0x74=[0x%08x], read 0x74=[0x%08x]\n",
 	       (uint64_t)pcie_vir_addr, u4WrVal, u4Val);
 #endif /* CFG_SUPPORT_PCIE_ASPM */
@@ -3164,7 +3164,7 @@ static uint32_t mt7999ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				isL0Status)) {
 				writel(0xe0f, (pcie_vir_addr + 0x194));
 			} else {
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, DEBUG,
 					"enable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
 					isL0Status, value, value1);
 				goto exit;
@@ -3182,7 +3182,7 @@ static uint32_t mt7999ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 					break;
 
 				if (delay >= u4PollTimeout) {
-					DBGLOG(HAL, INFO,
+					DBGLOG(HAL, DEBUG,
 						"Enable L1.2 POLLING_TIMEOUT\n");
 					rStatus = WLAN_STATUS_FAILURE;
 					goto exit;
@@ -3213,7 +3213,7 @@ static uint32_t mt7999ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			isL0Status)) {
 			writel(0x20f, (pcie_vir_addr + 0x194));
 		} else {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"disable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
 				isL0Status, value, value1);
 			goto exit;
@@ -3231,7 +3231,7 @@ static uint32_t mt7999ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				break;
 
 			if (delay >= u4PollTimeout) {
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, DEBUG,
 					"Disable L1.2 POLLING_TIMEOUT\n");
 				rStatus = WLAN_STATUS_FAILURE;
 				goto exit;
@@ -3326,7 +3326,7 @@ static void mt7999ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 				   "[0x%08x]=[0x%08x] ", u4Addr, u4Val);
 	}
 
-	DBGLOG(HAL, INFO, "%s\n", buf);
+	DBGLOG(HAL, DEBUG, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufSize);
 }
 
@@ -3353,7 +3353,7 @@ static u_int8_t mt7999DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	if (pci_dev) {
 		pci_read_config_dword(pci_dev, 0x0, &u4RegVal[0]);
 		if (u4RegVal[0] == 0 || u4RegVal[0] == 0xffffffff) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
 			/* block pcie to prevent access */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
@@ -3367,7 +3367,7 @@ static u_int8_t mt7999DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		if ((u4RegVal[1] & 0x3811) != 0x3811 ||
 			u4RegVal[1] == 0xffffffff) {
 			pci_read_config_dword(pci_dev, 0x48C, &u4RegVal[2]);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"Cb_infra bus fatal error and un-readble 0x488=0x%08x 0x48C=0x%08x\n",
 				u4RegVal[1], u4RegVal[2]);
 			return FALSE;
@@ -3406,7 +3406,7 @@ static void mt7999SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	if (!base)
 		return;
 
-	DBGLOG(HAL, INFO, "base: 0x%llx, size: 0x%x\n", base, size);
+	DBGLOG(HAL, DEBUG, "base: 0x%llx, size: 0x%x\n", base, size);
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC5X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
@@ -3423,7 +3423,7 @@ static void mt7999SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		prAdapter->chip_info->rsvMemWiFiMisc) {
 		prMem = prMemOps->getWifiMiscRsvEmi(prAdapter->chip_info, 0);
 		if (prMem == NULL) {
-			DBGLOG(NIC, INFO, "not support EMI2\n");
+			DBGLOG(NIC, DEBUG, "not support EMI2\n");
 			return;
 		}
 		base = prMem->pa;
@@ -3432,7 +3432,7 @@ static void mt7999SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 			prAdapter->chip_info->rsvMemWiFiMiscSize; uIdx++)
 			size += prAdapter->chip_info->rsvMemWiFiMisc[uIdx].size;
 	}
-	DBGLOG(HAL, INFO, "emi2 base: 0x%llx, size: 0x%x\n", base, size);
+	DBGLOG(HAL, DEBUG, "emi2 base: 0x%llx, size: 0x%x\n", base, size);
 
 	HAL_MCR_WR(prAdapter, SETUP_MCU_EMI2_BASE_ADDRESS,
 		   ((uint32_t)(base >> 16)));
@@ -3634,7 +3634,7 @@ static u_int8_t mt7999_check_recovery_needed(struct ADAPTER *ad)
 	HAL_RMCR_RD(ONOFF_READ, ad,
 		    WF_TOP_CFG_VLP_WFSYS_MCU_ROMCODE_INDEX_SW_FLAG_ADDR,
 		    &u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x\n",
 		WF_TOP_CFG_VLP_WFSYS_MCU_ROMCODE_INDEX_SW_FLAG_ADDR,
 		u4Value);
 	if ((u4Value & 0xFFFF0000) != 0xDEAD0000) {
@@ -3644,7 +3644,7 @@ static u_int8_t mt7999_check_recovery_needed(struct ADAPTER *ad)
 
 	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE5_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
 	if (((u4Value & CBTOP_GPIO_MODE5_GPIO47_MASK) >>
 	    CBTOP_GPIO_MODE5_GPIO47_SHFT) != 0x0) {
@@ -3654,7 +3654,7 @@ static u_int8_t mt7999_check_recovery_needed(struct ADAPTER *ad)
 
 	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE6_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
 	if (((u4Value & CBTOP_GPIO_MODE6_GPIO49_MASK) >>
 	    CBTOP_GPIO_MODE6_GPIO49_SHFT) != 0x0) {
@@ -3677,7 +3677,7 @@ static uint32_t mt7999_mcu_reinit(struct ADAPTER *ad)
 	if (mt7999_check_recovery_needed(ad) == FALSE)
 		goto exit;
 
-	DBGLOG(INIT, INFO, "mt7999_mcu_reinit.\n");
+	TRACE_FUNC(INIT, DEBUG, "%s.\n");
 
 	/* Force on conninfra */
 	HAL_MCR_WR(ad,
@@ -3732,11 +3732,11 @@ static uint32_t mt7999_mcu_reinit(struct ADAPTER *ad)
 	kalMdelay(50);
 
 	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
 
 	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
 
 	/* Clean force on conninfra */
@@ -3754,7 +3754,7 @@ static uint32_t mt7999_mcu_reset(struct ADAPTER *ad)
 	uint32_t u4Value = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "mt7999_mcu_reset..\n");
+	TRACE_FUNC(INIT, DEBUG, "%s..\n");
 
 	/* set driver own */
 	HAL_MCR_WR(ad,
@@ -3784,7 +3784,7 @@ static uint32_t mt7999_mcu_reset(struct ADAPTER *ad)
 	HAL_RMCR_RD(RESET_READ, ad,
 		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
 		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x.\n",
+	DBGLOG(INIT, DEBUG, "0x%08x=0x%08x.\n",
 		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
 		u4Value);
 	if ((u4Value &
@@ -3943,14 +3943,14 @@ dump:
 		HAL_RMCR_RD(ONOFF_DBG, ad,
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			   &u4Value);
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"0x%08x=0x%08x\n",
 			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			u4Value);
 		HAL_RMCR_RD(ONOFF_DBG, ad,
 			   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
 			   &u4Value);
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"0x%08x=0x%08x\n",
 			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
 			u4Value);
@@ -4240,7 +4240,7 @@ static u_int8_t mt7999_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 
 	glReadPcieCfgSpace(0x488, &u4Val1);
 	glReadPcieCfgSpace(0x48c, &u4Val2);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"0x488=0x%08x, 0x48c=0x%08x\n",
 		u4Val1, u4Val2);
 
@@ -4562,7 +4562,7 @@ int mt7999PowerDumpStart(void *priv_data, unsigned int force_dump)
 		return 1;
 
 	if (force_dump == TRUE) {
-		DBGLOG(REQ, INFO, "PowerDumpStart force_dump\n");
+		DBGLOG(REQ, DEBUG, "PowerDumpStart force_dump\n");
 		ad->fgIsPowerDumpDrvOwn = TRUE;
 		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
 		ad->fgIsPowerDumpDrvOwn = FALSE;
@@ -4577,7 +4577,7 @@ int mt7999PowerDumpStart(void *priv_data, unsigned int force_dump)
 
 	} else {
 		u4Val = (u4Val & 0x0000001F);
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"PowerDumpStart PCIE status: 0x%08x\n", u4Val);
 
 		if (u4Val == 0x10) {
@@ -4717,7 +4717,7 @@ static void mt7999MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 			au4DbgCr1[u4Idx],
 			u4Val);
 	}
-	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+	DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 
 	u4Pos = 0;
 	kalMemZero(aucBuf, u4BufferSize);
@@ -4737,7 +4737,7 @@ static void mt7999MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 			aucBuf + u4Pos, u4BufferSize - u4Pos,
 			"delay[0x%08x]=[0x%08x]",
 			0x74130200, u4Val);
-	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+	DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 
 	u4Pos = 0;
 	kalMemZero(aucBuf, u4BufferSize);
@@ -4764,7 +4764,7 @@ static void mt7999MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 				u4Val);
 		}
 	}
-	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+	DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 
 	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
 }

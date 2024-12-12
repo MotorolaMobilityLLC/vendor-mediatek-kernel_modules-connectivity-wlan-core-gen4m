@@ -277,7 +277,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 #endif
 
 	if (!CSRBaseAddress) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
 			axi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
 		release_mem_region(g_u8CsrOffset, g_u4CsrSize);
@@ -292,7 +292,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	prChipInfo->u4HostCsrOffset = 0;
 	prChipInfo->u4HostCsrSize = 0;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "CSRBaseAddress:0x%llX ioremap idx:%u region 0x%X @ 0x%llX\n",
 	       (uint64_t)CSRBaseAddress, idx, g_u4CsrSize, g_u8CsrOffset);
 
@@ -335,7 +335,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
 #if AXI_ISR_DEBUG_LOG
-		DBGLOG(HAL, INFO, "No glue info in mtk_axi_interrupt()\n");
+		DBGLOG(HAL, DEBUG, "No glue info in %s()\n", __func__);
 #endif
 		return IRQ_NONE;
 	}
@@ -346,7 +346,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 #if AXI_ISR_DEBUG_LOG
-		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
+		DBGLOG(HAL, DEBUG, "GLUE_FLAG_HALT skip INT\n");
 #endif
 		return IRQ_NONE;
 	}
@@ -403,7 +403,7 @@ static void axiSetupFwFlavor(struct platform_device *pdev,
 				    &driver_data->fw_flavor))
 		return;
 
-	DBGLOG(HAL, INFO, "fw_flavor: %s\n", driver_data->fw_flavor);
+	DBGLOG(HAL, DEBUG, "fw_flavor: %s\n", driver_data->fw_flavor);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -447,7 +447,7 @@ static int mtk_axi_probe(struct platform_device *pdev)
 #endif
 
 exit:
-	DBGLOG(INIT, INFO, "mtk_axi_probe() done, ret: %d\n", ret);
+	DBGLOG(INIT, DEBUG, "%s() done, ret: %d\n", __func__, ret);
 	return ret;
 }
 
@@ -704,22 +704,22 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 			"WIFI-OF: get wifi device node fail\n");
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d), num(%d)\n",
+	DBGLOG(INIT, DEBUG, "%s: request_irq num(%d), num(%d)\n", __func__,
 	       prHifInfo->u4IrqId, prHifInfo->u4IrqId_1);
 #else
-	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
+	DBGLOG(INIT, DEBUG, "%s: request_irq num(%d)\n", __func__,
 	       prHifInfo->u4IrqId);
 #endif /*end of CFG_SUPPORT_CONNINFRA == 1*/
 	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED,
 			  prNetDevice->name, prGlueInfo);
 	if (ret != 0) {
-		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
+		DBGLOG(INIT, DEBUG, "request_irq(%u) ERROR(%d)\n",
 				prHifInfo->u4IrqId, ret);
 		goto exit;
 	}
 	en_wake_ret = enable_irq_wake(prHifInfo->u4IrqId);
 	if (en_wake_ret)
-		DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
+		DBGLOG(INIT, DEBUG, "enable_irq_wake(%u) ERROR(%d)\n",
 				prHifInfo->u4IrqId, en_wake_ret);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = request_threaded_irq(prHifInfo->u4IrqId_1,
@@ -729,14 +729,14 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 		prNetDevice->name,
 		prGlueInfo->prAdapter);
 	if (ret != 0) {
-		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
+		DBGLOG(INIT, DEBUG, "request_irq(%u) ERROR(%d)\n",
 				prHifInfo->u4IrqId_1, ret);
 		goto exit;
 	}
 
 	en_wake_ret = enable_irq_wake(prHifInfo->u4IrqId_1);
 	if (en_wake_ret)
-		DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
+		DBGLOG(INIT, DEBUG, "enable_irq_wake(%u) ERROR(%d)\n",
 				prHifInfo->u4IrqId_1, en_wake_ret);
 #endif
 
@@ -763,14 +763,14 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 
 	ASSERT(pvData);
 	if (!pvData) {
-		DBGLOG(INIT, INFO, "%s null pvData\n", __func__);
+		DBGLOG(INIT, DEBUG, "%s null pvData\n", __func__);
 		return;
 	}
 	prNetDevice = (struct net_device *)pvData;
 	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
-		DBGLOG(INIT, INFO, "%s no glue info\n", __func__);
+		DBGLOG(INIT, DEBUG, "%s no glue info\n", __func__);
 		return;
 	}
 

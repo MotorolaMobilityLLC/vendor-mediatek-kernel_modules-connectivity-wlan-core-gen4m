@@ -558,6 +558,6 @@ static void fwLogMmioStatsDump(struct ADAPTER *prAdapter,
 				       prSubCtrl->wp,
 				       prSubCtrl->iwp);
 	}
-	DBGLOG(INIT, INFO, "%s\n", buf);
+	DBGLOG(INIT, DEBUG, "%s\n", buf);
 }
 

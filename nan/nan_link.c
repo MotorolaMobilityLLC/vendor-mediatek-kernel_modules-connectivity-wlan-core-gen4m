@@ -118,7 +118,7 @@ nanGetLinkIndexbyBand(
 		if ((prBssInfo != NULL) &&
 			(prBssInfo->eBand == eBand) &&
 			(ucIdx < ad->rWifiVar.ucNanMldLinkMax)) {
-			DBGLOG(NAN, VOC,
+			DBGLOG(NAN, INFO,
 				"Band%d, Idx%d\n",
 				eBand, ucIdx);
 			return ucIdx;
@@ -167,7 +167,7 @@ void nanGetLinkWmmQueSet(
 		cnmWmmIndexDecision(prAdapter, prBssInfo);
 	}
 
-	DBGLOG(NAN, INFO, "bss%d, wmm=%d, omac=%d\n",
+	DBGLOG(NAN, DEBUG, "bss%d, wmm=%d, omac=%d\n",
 		prBssInfo->ucBssIndex,
 		prBssInfo->ucWmmQueSet,
 		prBssInfo->ucOwnMacIndex);
@@ -231,7 +231,7 @@ void nanDumpStaRec(
 			ucBssIndex = s->ucBssIndex;
 		}
 
-		DBGLOG(NAN, INFO,
+		DBGLOG(NAN, DEBUG,
 			"CxtId:%d, Sta:%d, Bss:%d, Enrollee:%d\n",
 			cxt->ucId,
 			ucIndex,
@@ -286,14 +286,14 @@ uint32_t nanSetPreferLinkStaRec(
 			return WLAN_STATUS_FAILURE;
 		}
 
-		DBGLOG(NAN, INFO,
+		DBGLOG(NAN, DEBUG,
 			"Check sta%d, bss%d\n",
 			sta->ucWlanIndex,
 			sta->ucBssIndex);
 
 		if (sta->ucBssIndex == idx) {
 			cxt->prNanPreferStaRec = sta;
-			DBGLOG(NAN, VOC,
+			DBGLOG(NAN, INFO,
 				"Prefer sta %d\n",
 				sta->ucWlanIndex);
 			return WLAN_STATUS_SUCCESS;

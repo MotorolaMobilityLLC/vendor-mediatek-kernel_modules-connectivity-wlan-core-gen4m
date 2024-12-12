@@ -196,7 +196,7 @@ uint32_t t2lmReqTxDoneCb(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return WLAN_STATUS_FAILURE;
 
-	DBGLOG(TX, INFO,
+	DBGLOG(TX, DEBUG,
 		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
@@ -253,7 +253,7 @@ uint32_t t2lmRspTxDoneCb(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return WLAN_STATUS_FAILURE;
 
-	DBGLOG(TX, INFO,
+	DBGLOG(TX, DEBUG,
 		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
@@ -291,7 +291,7 @@ uint32_t t2lmTeardownTxDoneCb(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return WLAN_STATUS_FAILURE;
 
-	DBGLOG(TX, INFO,
+	DBGLOG(TX, DEBUG,
 		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 		prTxDone->u2SequenceNumber, rTxDoneStatus,
@@ -952,7 +952,7 @@ void t2lmProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
 
-	DBGLOG(RX, INFO, "Received T2LM action:%u\n", prRxFrame->ucAction);
+	DBGLOG(RX, DEBUG, "Received T2LM action:%u\n", prRxFrame->ucAction);
 
 	prT2LMParams = kalMemZAlloc(sizeof(*prT2LMParams), VIR_MEM_TYPE);
 	if (prT2LMParams == NULL)

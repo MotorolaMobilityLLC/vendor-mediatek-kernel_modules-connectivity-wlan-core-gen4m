@@ -466,7 +466,7 @@ void nic_rxd_v2_check_wakeup_reason(
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_SW_DEFINED:
 	if (prSwRfb->ucOFLD || prSwRfb->fgHdrTran) {
-		DBGLOG(RX, INFO, "Need to treat as data frame.\n");
+		DBGLOG(RX, DEBUG, "Need to treat as data frame.\n");
 		/*
 		 * In order to jump to case RX_PKT_TYPE_RX_DATA,
 		 * DO NOT ADD break here!!!
@@ -483,7 +483,7 @@ void nic_rxd_v2_check_wakeup_reason(
 			nicUpdateWakeupStatistics(prAdapter, RX_EVENT_INT);
 			prAdapter->wake_event_count[prEvent->ucEID]++;
 #endif
-			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
+			DBGLOG(RX, DEBUG, "Event 0x%02x wakeup host\n",
 				prEvent->ucEID);
 			break;
 		} else if ((NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus) &
@@ -528,10 +528,10 @@ void nic_rxd_v2_check_wakeup_reason(
 			ucSubtype = (prWlanMgmtHeader->u2FrameCtrl &
 				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, DEBUG,
 				" frame subtype:%d, SeqCtrl %d wakeup host\n",
 				ucSubtype, prWlanMgmtHeader->u2SeqCtrl);
-			DBGLOG_MEM8(RX, INFO,
+			DBGLOG_MEM8(RX, DEBUG,
 					pvHeader, u2PktLen > 50 ? 50:u2PktLen);
 		} else {
 			DBGLOG(RX, ERROR,
@@ -578,7 +578,7 @@ void nic_rxd_v2_check_wakeup_reason(
 
 			if ((prWlanMacHeader->u2FrameCtrl & MASK_FRAME_TYPE) ==
 				MAC_FRAME_BLOCK_ACK_REQ) {
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, DEBUG,
 					"BAR frame[SSN:%d,TID:%d] wakeup host\n"
 					, prSwRfb->u2SSN, prSwRfb->ucTid);
 				break;
@@ -590,13 +590,13 @@ void nic_rxd_v2_check_wakeup_reason(
 		switch (u2Temp) {
 		case ETH_P_IPV4:
 			u2Temp = *(uint16_t *) &pvHeader[ETH_HLEN + 4];
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, DEBUG,
 				"IP Packet from:%d.%d.%d.%d,\n",
 				pvHeader[ETH_HLEN + 12],
 				pvHeader[ETH_HLEN + 13],
 				pvHeader[ETH_HLEN + 14],
 				pvHeader[ETH_HLEN + 15]);
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, DEBUG,
 				" IP ID 0x%04x wakeup host\n",
 				u2Temp);
 			break;
@@ -612,7 +612,7 @@ void nic_rxd_v2_check_wakeup_reason(
 		case ETH_P_IPX:
 		case ETH_P_VLAN:
 		case ETH_PRO_TDLS:
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, DEBUG,
 				"Data Packet, EthType 0x%04x wakeup host\n",
 				u2Temp);
 			break;
@@ -620,15 +620,15 @@ void nic_rxd_v2_check_wakeup_reason(
 			if (HAL_MAC_CONNAC2X_RX_STATUS_IS_LLC_MIS(prRxStatus)) {
 				DBGLOG(RX, WARN,
 					"abnormal packet, Header translate fail\n");
-				DBGLOG_MEM8(RX, INFO,
+				DBGLOG_MEM8(RX, DEBUG,
 					(uint8_t *)prSwRfb->prRxStatus,
 					prChipInfo->rxd_size);
-				DBGLOG_MEM8(RX, INFO, pvHeader, u2PktLen);
+				DBGLOG_MEM8(RX, DEBUG, pvHeader, u2PktLen);
 			} else {
 				DBGLOG(RX, WARN,
 					"abnormal packet, EthType 0x%04x wakeup host\n",
 					u2Temp);
-				DBGLOG_MEM8(RX, INFO,
+				DBGLOG_MEM8(RX, DEBUG,
 					pvHeader, u2PktLen > 50 ? 50:u2PktLen);
 			}
 			break;

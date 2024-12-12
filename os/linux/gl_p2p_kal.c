@@ -1227,7 +1227,7 @@ void kalP2PIndicateScanDone(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"[p2p] scan complete %p abort=%d\n",
 			prP2pGlueDevInfo->prScanRequest, fgIsAbort);
 
@@ -1707,11 +1707,11 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 			prP2pConnInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
 #if (CFG_SUPPORT_NAN == 1)
 			/* TODO: GC connected */
-			DBGLOG(INIT, INFO, "GC connected\n");
+			DBGLOG(INIT, DEBUG, "GC connected\n");
 			nanConcurrencyHandler(prAdapter);
 #endif
 		} else {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"indicate disconnection event to kernel, reason=%d, locally_generated=%d\n",
 				u2StatusReason,
 				eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY
@@ -1877,7 +1877,7 @@ void kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct net_device *prNetdevice = (struct net_device *) NULL;
 
-	DBGLOG(INIT, INFO, "Radar Detection event\n");
+	DBGLOG(INIT, DEBUG, "Radar Detection event\n");
 
 	do {
 
@@ -1899,14 +1899,14 @@ void kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
 		 * if enable in dfs channel
 		 */
 		prGlueP2pInfo->prWdev->cac_started = FALSE;
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"Update to OS\n");
 		if (prGlueP2pInfo->chandefCsa.chan) {
 			cfg80211_radar_event(
 				prGlueP2pInfo->prWdev->wiphy,
 				&prGlueP2pInfo->chandefCsa,
 				GFP_KERNEL);
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"Update to OS Done\n");
 		}
 #endif
@@ -1940,7 +1940,7 @@ void kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 			prGlueInfo->prAdapter, ucRoleIndex);
 		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
-		DBGLOG(INIT, INFO, "CAC Started event\n");
+		DBGLOG(INIT, DEBUG, "CAC Started event\n");
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
 		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
@@ -1951,7 +1951,7 @@ void kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 
 #ifdef CFG_REPORT_TO_OS
-		DBGLOG(INIT, INFO, "CacStarted: Update to OS\n");
+		DBGLOG(INIT, DEBUG, "CacStarted: Update to OS\n");
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 		cfg80211_cac_event(
 			prNetdevice,
@@ -1962,7 +1962,7 @@ void kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 			prNetdevice,
 			NL80211_RADAR_CAC_STARTED, GFP_KERNEL);
 #endif
-		DBGLOG(INIT, INFO, "CacStarted: Update to OS Done\n");
+		DBGLOG(INIT, DEBUG, "CacStarted: Update to OS Done\n");
 #endif
 
 		if (prGlueP2pInfo->chandefCsa.chan)
@@ -1996,7 +1996,7 @@ void kalP2PCacFinishedUpdate(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->prAdapter, ucRoleIndex);
 		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-		DBGLOG(INIT, INFO, "CAC Finished event\n");
+		DBGLOG(INIT, DEBUG, "CAC Finished event\n");
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
 		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
@@ -2007,7 +2007,7 @@ void kalP2PCacFinishedUpdate(struct GLUE_INFO *prGlueInfo,
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 
 #ifdef CFG_REPORT_TO_OS
-		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS\n");
+		DBGLOG(INIT, DEBUG, "%s: Update to OS\n", __func__);
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 		cfg80211_cac_event(
 			prNetdevice,
@@ -2018,7 +2018,7 @@ void kalP2PCacFinishedUpdate(struct GLUE_INFO *prGlueInfo,
 			prNetdevice,
 			NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
 #endif
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"kalP2PCacFinishedUpdate: Update to OS Done\n");
 #endif
 
@@ -2299,13 +2299,13 @@ void kalP2PCatBlockList(struct GLUE_INFO *prGlueInfo, bool flag)
 	uint8_t ucRoleIndex;
 
 	if (flag)
-		DBGLOG(INIT, INFO, "Before Set BlockLis\n");
+		DBGLOG(INIT, DEBUG, "Before Set BlockLis\n");
 	else
-		DBGLOG(INIT, INFO, "After Set BlockLis\n");
+		DBGLOG(INIT, DEBUG, "After Set BlockLis\n");
 
 	for (ucRoleIndex = 0; ucRoleIndex < KAL_P2P_NUM; ucRoleIndex++) {
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"ucRoleIndex[%d]-BlockList[%d] MA="MACSTR"\n",
 				ucRoleIndex, i,
 				MAC2STR(&(prGlueInfo->prP2PInfo[ucRoleIndex]
@@ -3522,7 +3522,7 @@ void kalIdcGetRilInfo(void)
 {
 	int val = 1;
 
-	DBGLOG(INIT, INFO, "Get RIL Notifier\n");
+	DBGLOG(INIT, DEBUG, "Get RIL Notifier\n");
 
 	dev_ril_bridge_send_msg(
 		IDC_RIL_CHANNEL_INFO,
@@ -3542,7 +3542,7 @@ void kalIdcRegisterRilNotifier(struct GLUE_INFO *prGlueInfo)
 	prNotifier->notifier_call = kalIdcRilNotifier;
 
 	if (!prGlueInfo->init_ril_notifier) {
-		DBGLOG(INIT, INFO, "Register RIL Notifier\n");
+		DBGLOG(INIT, DEBUG, "Register RIL Notifier\n");
 
 		register_dev_ril_bridge_event_notifier(
 			prNotifier);
@@ -3564,7 +3564,7 @@ void kalIdcUnregisterRilNotifier(struct GLUE_INFO *prGlueInfo)
 		unregister_dev_ril_bridge_event_notifier(
 			&prGlueInfo->ril_notifier_block);
 		prGlueInfo->init_ril_notifier = 0;
-		DBGLOG(INIT, INFO, "Unregister RIL Notifier\n");
+		DBGLOG(INIT, DEBUG, "Unregister RIL Notifier\n");
 	}
 }
 #endif

@@ -830,11 +830,11 @@ int dmashdl_dvt_check_pass(
 
 		break;
 	case DMASHDL_DVT_ITEM_3:
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"Check packet's queue id in sequence on WA\n");
 		break;
 	case DMASHDL_DVT_ITEM_4:
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"Check packet's queue id in sequence on WA\n");
 		break;
 	case DMASHDL_DVT_ITEM_5:
@@ -912,7 +912,7 @@ int dmashdl_dvt_check_pass(
 
 		break;
 	default:
-		DBGLOG(REQ, INFO, "[DMASHDL] no support this test item\n");
+		DBGLOG(REQ, DEBUG, "[DMASHDL] no support this test item\n");
 	}
 
 	return result;
@@ -946,7 +946,7 @@ int dmashdl_dvt_result(
 	prAdapter = prGlueInfo->prAdapter;
 
 	if (dmashdl_dvt_check_pass(prGlueInfo) == 1)
-		DBGLOG(REQ, INFO, "DVT PASS\n");
+		DBGLOG(REQ, DEBUG, "DVT PASS\n");
 	priv_driver_show_dmashdl_allcr(prNetDev, pcCommand, i4TotalLen);
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
@@ -967,7 +967,7 @@ int dmashdl_dvt_result(
 			dvt_ping_nums =
 			&(prAdapter->auto_dvt->dmashdl.dvt_ping_nums[0]);
 			for (idx = 0; idx < 32; idx++)
-				DBGLOG(REQ, INFO,
+				DBGLOG(REQ, DEBUG,
 					"Ping nums %u\n", dvt_ping_nums[idx]);
 		}
 	}

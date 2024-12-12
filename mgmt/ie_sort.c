@@ -1067,7 +1067,7 @@ void sortIE(struct ADAPTER *prAdapter,
 			prMsduInfo->u2FrameLength, offset);
 		return;
 	} else if (prMsduInfo->u2FrameLength == offset) {
-		DBGLOG(TX, INFO, "No payload, skip sorting\n");
+		DBGLOG(TX, DEBUG, "No payload, skip sorting\n");
 		return;
 	}
 
@@ -1166,7 +1166,8 @@ void sortIE(struct ADAPTER *prAdapter,
 	}
 
 #if DBG
-	DBGLOG(TX, INFO, "Sorted %s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
+	DBGLOG(TX, DEBUG,
+	       "Sorted %s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
 	dumpMemory8(pucDst, u2IEsBufLen);
 #endif
 

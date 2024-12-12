@@ -247,7 +247,7 @@ u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       prBusInfo->top_cfg_base + TOP_HW_CONTROL, &u4CIR);
 
-	DBGLOG(INIT, INFO, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
+	DBGLOG(INIT, DEBUG, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
 	       (uint32_t)(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
 
 	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
@@ -286,7 +286,7 @@ static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
 	}
 
 	if (ucNeedDump) {
-		DBGLOG(INIT, VOC, "Time:%u, Timeout:%u, Cnt:%u\n",
+		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
 		       u4StartTime, u4Timeout, u4Cnt);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
@@ -464,7 +464,7 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 		} else if (kalIsCardRemoved(prAdapter->prGlueInfo) ||
 			   fgIsBusAccessFailed || fgTimeout
 			   || wlanIsChipNoAck(prAdapter)) {
-			DBGLOG(INIT, VOC,
+			DBGLOG(INIT, INFO,
 			       "Skip waiting CR4 ready for next %ums\n",
 			       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 			fgStatus = FALSE;
@@ -497,7 +497,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
-	DBGLOG(INIT, VOC,
+	DBGLOG(INIT, INFO,
 		   "Driver own timeout %u ms\n",
 		   u4DrvOwnTimeoutMs);
 
@@ -518,7 +518,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		       kalIsCardRemoved(prAdapter->prGlueInfo),
 		       wlanIsChipNoAck(prAdapter),
 		       prAdapter->u4OwnFailedCount);
-		DBGLOG(INIT, VOC,
+		DBGLOG(INIT, INFO,
 		       "Skip LP own back failed log for next %ums\n",
 		       u4DrvOwnTimeoutMs);
 
@@ -530,7 +530,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 			mtk_pcie_dump_link_info(0);
 #endif
 			if (in_interrupt())
-				DBGLOG(INIT, VOC, "Skip reset in tasklet\n");
+				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
 			else {
 #else  /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0) */
 			{
@@ -689,7 +689,7 @@ done:
 			prAdapter->u4OwnFailedLogCount = 0;
 			break;
 		} else if (wlanIsChipNoAck(prAdapter)) {
-			DBGLOG(INIT, VOC,
+			DBGLOG(INIT, INFO,
 			"Driver own return due to chip reset and chip no response.\n");
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 			prChipInfo->prDebugOps->show_debug_sop_info(prAdapter,
@@ -704,7 +704,7 @@ done:
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 			if (fgResult) {
-				DBGLOG(INIT, VOC,
+				DBGLOG(INIT, INFO,
 					"host pending recover.\n");
 				goto done;
 			}
@@ -779,7 +779,7 @@ done:
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 
 	} else
-		DBGLOG(INIT, VOC, DUMP_DRV_OWN_FAIL,
+		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
 			u4DrvOwnElapsed, u4Send);
 
 end:
@@ -933,7 +933,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	halManualUpdateWfdmaDmaDone(prAdapter);
 #if CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 	if (!halIsWfdmaTxRingEmpty(prAdapter)) {
-		DBGLOG(INIT, VOC, "halIsWfdmaTxRing not Empty\n");
+		DBGLOG(INIT, INFO, "halIsWfdmaTxRing not Empty\n");
 		goto unlock;
 	}
 #endif  /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
@@ -990,7 +990,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 			DBGLOG(INIT, TRACE, "FW OWN:%u, IntSta:0x%08x\n",
 			fgResult, prHifInfo->u4WakeupIntSta);
 		else
-			DBGLOG(INIT, VOC, "FW OWN:%u, IntSta:0x%08x\n",
+			DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
 			fgResult, prHifInfo->u4WakeupIntSta);
 		prHifInfo->u4WakeupIntSta = 0;
 	}
@@ -1049,7 +1049,7 @@ u_int8_t halTxIsCmdBufEnough(struct ADAPTER *prAdapter)
 		return TRUE;
 
 	halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo, u2Port);
-	DBGLOG(HAL, VOC, "Force recycle port %d DMA resource UsedCnt[%d].\n",
+	DBGLOG(HAL, INFO, "Force recycle port %d DMA resource UsedCnt[%d].\n",
 	       u2Port, prTxRing->u4UsedCnt);
 
 	if (prTxRing->u4UsedCnt + 1 < prTxRing->u4RingSize)
@@ -1332,7 +1332,7 @@ u_int8_t halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 
 	spin_lock_init(&prTokenInfo->rTokenLock);
 
-	DBGLOG(HAL, VOC, "Msdu Token Init: Tot[%u] Used[%u]\n",
+	DBGLOG(HAL, INFO, "Msdu Token Init: Tot[%u] Used[%u]\n",
 		prTokenInfo->u4TokenNum, prTokenInfo->u4UsedCnt);
 #if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
 	halGetTxCmaNonCacheMemUsage();
@@ -1449,7 +1449,7 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 	halUninitTxCmaNonCacheMem();
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
-	DBGLOG(HAL, VOC, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
+	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
 		prTokenInfo->u4TokenNum, prTokenInfo->u4UsedCnt);
 }
 
@@ -1578,7 +1578,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_HIF_FIFO_TOKEN
 	if (!KAL_FIFO_OUT(&prTokenInfo->rTokenFifo, prToken) || !prToken) {
-		DBGLOG(HAL, VOC, "acquire MSDU token fail, Used[%u]\n",
+		DBGLOG(HAL, INFO, "acquire MSDU token fail, Used[%u]\n",
 		       u4UsedCnt);
 		return NULL;
 	}
@@ -1587,7 +1587,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 	prToken = halAcquireMsduTokenFromFreeList(prAdapter);
 	if (!prToken) {
-		DBGLOG(HAL, INFO, "acquire MSDU token fail, Used[%u]\n",
+		DBGLOG(HAL, DEBUG, "acquire MSDU token fail, Used[%u]\n",
 			u4UsedCnt);
 		spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 		return NULL;
@@ -1868,7 +1868,7 @@ void halTxDelayTimeout(unsigned long arg)
 #endif /* CFG_SUPPORT_HRTIMER */
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-		DBGLOG(HAL, VOC, "GLUE_FLAG_HALT skip tx delay timeout\n");
+		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip tx delay timeout\n");
 #if CFG_SUPPORT_HRTIMER
 		return HRTIMER_NORESTART;
 #else /* CFG_SUPPORT_HRTIMER == 0 */
@@ -2019,7 +2019,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
-		DBGLOG(INIT, VOC, "[SER][L0.5] Host re-initialize WFDMA\n");
+		DBGLOG(INIT, INFO, "[SER][L0.5] Host re-initialize WFDMA\n");
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		halOffloadAllocMem(prAdapter->prGlueInfo, FALSE);
@@ -2030,7 +2030,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 			return false;
 
 		halResetMsduToken(prAdapter);
-		DBGLOG(INIT, VOC, "[SER][L0.5] Host enable WFDMA\n");
+		DBGLOG(INIT, INFO, "[SER][L0.5] Host enable WFDMA\n");
 		halWpdmaInitRing(prAdapter->prGlueInfo, false);
 	} else
 #endif
@@ -2131,7 +2131,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	}
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
-	DBGLOG(HAL, VOC, "Enable Host CSR timeout mechanism.\n");
+	DBGLOG(HAL, INFO, "Enable Host CSR timeout mechanism.\n");
 	HAL_MCR_WR(prAdapter, HOST_CSR_BUS_TIMOUT_CTRL_ADDR, 0x80EFFFFF);
 #endif
 
@@ -2493,7 +2493,7 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	}
 
 	if (prWifiVar->fgPacketLatencyLog)
-		DBGLOG(HAL, INFO, "Latency C: %u M: %u A: %u; tok=%u",
+		DBGLOG(HAL, DEBUG, "Latency C: %u M: %u A: %u; tok=%u",
 			u4ConnsysLatency, u4MacLatency, u4AirLatency, u4Token);
 #endif
 }
@@ -3926,7 +3926,7 @@ void halWpdmaProcessDataDmaDoneByIdx(struct ADAPTER *prAdapter,
 			u4Diff = prTxRing->u4RingSize;
 	}
 	if (u4Diff > prTxRing->u4UsedCnt) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "diff > used cnt: port[%u] dma[%u] idx[%u] used[%u] diff[%u]\n",
 		       u2Port, u4DmaIdx, u4SwIdx, prTxRing->u4UsedCnt, u4Diff);
 		prTxRing->u4UsedCnt = 0;
@@ -4987,7 +4987,7 @@ static void halDefaultProcessSoftwareInterrupt(
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       MCU2HOST_SW_INT_STA, &u4Status);
-	DBGLOG(HAL, VOC, "SER status[0x%x].\n", u4Status);
+	DBGLOG(HAL, INFO, "SER status[0x%x].\n", u4Status);
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
@@ -5080,7 +5080,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
 
 		if (prMem && prMem->va)
-			DBGLOG_MEM8(HAL, INFO, prMem->va,
+			DBGLOG_MEM8(HAL, DEBUG, prMem->va,
 				    sizeof(struct SER_EMI_STATUS));
 	}
 
@@ -5110,13 +5110,13 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 
 	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
 	    ERR_RECOV_STOP_IDLE) {
-		DBGLOG(HAL, VOC, "In SER, skip SER event\n");
+		DBGLOG(HAL, INFO, "In SER, skip SER event\n");
 		return;
 	}
 
 	halSerRecovery(prAdapter);
 
-	DBGLOG(HAL, VOC, "Set Driver Ser\n");
+	DBGLOG(HAL, INFO, "Set Driver Ser\n");
 	halTriggerSwInterrupt(prAdapter, MCU_INT_DRIVER_SER);
 }
 
@@ -5130,7 +5130,7 @@ static void halStartSerTimer(struct ADAPTER *prAdapter)
 	prHifInfo->rErrRecoveryCtl.u4TimeoutCnt = 0;
 	mod_timer(&prHifInfo->rSerTimer,
 		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
-	DBGLOG(HAL, VOC, "Start SER timer\n");
+	DBGLOG(HAL, INFO, "Start SER timer\n");
 }
 
 void halHwRecoveryFromError(struct ADAPTER *prAdapter)
@@ -5183,7 +5183,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				wlanoidWedRecoveryStatus, &u4WedSerStatus,
 				sizeof(u4WedSerStatus), &ret);
 #endif
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"SER(E) Host stop PDMA tx/rx ring operation & receive\n");
 
 #if defined(_HIF_PCIE)
@@ -5201,15 +5201,15 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 #endif
 #if CFG_SUPPORT_MULTITHREAD
 			kalSetRxProcessEvent(prAdapter->prGlueInfo);
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"SER(F) kalSetRxProcessEvent\n");
 #else
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"SER(F) nicRxProcessRFBs\n");
 			nicRxProcessRFBs(prAdapter);
 #endif
 
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"SER(F) Host ACK PDMA tx/rx ring stop operation\n");
 			halTriggerSwInterrupt(
 				prAdapter, MCU_INT_PDMA0_STOP_DONE);
@@ -5225,7 +5225,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
-			DBGLOG(HAL, VOC, "SER(L) Host re-initialize PDMA\n");
+			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
 
 			if (prSwWfdmaInfo->rOps.backup)
 				prSwWfdmaInfo->rOps.backup(prGlueInfo);
@@ -5237,7 +5237,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				prBusInfo->DmaShdlInit(prAdapter);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-			DBGLOG(HAL, VOC, "SER(M) Reset Host Offload\n");
+			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 				halRroResetRcbList(prGlueInfo);
 				halRroResetMem(prGlueInfo);
@@ -5262,7 +5262,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			halResetMsduToken(prAdapter);
 			prAdapter->ulNoMoreRfb = 0;
 
-			DBGLOG(HAL, VOC, "SER(M) Host enable PDMA\n");
+			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo, false);
 
 			/* reset SW value after InitRing */
@@ -5278,7 +5278,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				sizeof(u4WedSerStatus), &ret);
 #endif
 
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_RESET_PDMA0;
@@ -5292,7 +5292,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_RESET_PDMA0:
 		if (u4Status & ERROR_DETECT_RECOVERY_DONE) {
-			DBGLOG(HAL, VOC,
+			DBGLOG(HAL, INFO,
 				"SER(Q) Host interrupt MCU SER handle done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_WAIT_MCU_NORMAL;
@@ -5309,7 +5309,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			del_timer_sync(&prHifInfo->rSerTimer);
 #if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
-			DBGLOG(HAL, VOC, "SER(T) Host re-initialize BCN\n");
+			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
 #endif
 
@@ -5376,7 +5376,7 @@ static u_int8_t halCheckTxRxTaskReady(struct GLUE_INFO *prGlueInfo)
 				GLUE_GET_REF_CNT(
 				prGlueInfo->u4RxTaskScheduleCnt));
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
-		DBGLOG_LIMITED(INIT, INFO,
+		DBGLOG_LIMITED(INIT, DEBUG,
 		       "Not ready yet, ignore pending interrupt\n");
 		return FALSE;
 	}
@@ -5384,7 +5384,7 @@ static u_int8_t halCheckTxRxTaskReady(struct GLUE_INFO *prGlueInfo)
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT	||
 	    kalIsResetting()) {
 		/* Should stop now... skip pending interrupt */
-		DBGLOG_LIMITED(INIT, INFO,
+		DBGLOG_LIMITED(INIT, DEBUG,
 		       "ignore pending interrupt\n");
 		return FALSE;
 	}
@@ -5729,7 +5729,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
 
-	/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
+	/* DBGLOG(INIT, DEBUG, ("HIF Interrupt!\n")); */
 	prGlueInfo->TaskIsrCnt++;
 	wlanIST(prAdapter, FALSE);
 
@@ -5788,7 +5788,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	DBGLOG(INIT, VOC, "Power off Wi-Fi!\n");
+	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
@@ -5796,7 +5796,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 
 	if (nicProcessISTWithSpecifiedCount(prAdapter, 5) !=
 		WLAN_STATUS_NOT_INDICATING)
-		DBGLOG(INIT, VOC,
+		DBGLOG(INIT, INFO,
 		       "Handle pending interrupt\n");
 
 	/* check hif_thread remaining SER bit */
@@ -5817,7 +5817,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		kalMsleep(HIF_SER_POWER_OFF_RETRY_TIME);
 		u4Retry++;
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
-		DBGLOG(INIT, VOC, "process SER...\n");
+		DBGLOG(INIT, INFO, "process SER...\n");
 	}
 	prAdapter->fgIsPwrOffProcIST = FALSE;
 
@@ -5850,7 +5850,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 						prAdapter->prGlueInfo);
 				break;
 			}
-			DBGLOG(INIT, INFO, "Try to sent cmd to fw\n");
+			DBGLOG(INIT, DEBUG, "Try to sent cmd to fw\n");
 			kalMsleep(SW_WFDMA_RETRY_TIME);
 			u4Retry++;
 		}
@@ -6046,7 +6046,7 @@ void halSetAdjustCtrlMode(struct ADAPTER *prAdapter,
 	prTokenInfo = &prHifInfo->rTokenInfo;
 
 	if (prTokenInfo->u4EnAdjustCtrlMode != u4Mode)
-		DBGLOG(HAL, INFO, "u4EnAdjustCtrlMode[%u].\n", u4Mode);
+		DBGLOG(HAL, DEBUG, "u4EnAdjustCtrlMode[%u].\n", u4Mode);
 
 	prTokenInfo->u4EnAdjustCtrlMode = u4Mode;
 }
@@ -6060,7 +6060,7 @@ void halSetAdjustCtrl(struct ADAPTER *prAdapter, bool fgEn)
 	prTokenInfo = &prHifInfo->rTokenInfo;
 
 	if (prTokenInfo->fgEnAdjustCtrl != fgEn)
-		DBGLOG(HAL, INFO, "fgEnAdjustCtrl[%u].\n", fgEn);
+		DBGLOG(HAL, DEBUG, "fgEnAdjustCtrl[%u].\n", fgEn);
 
 	prTokenInfo->fgEnAdjustCtrl = fgEn;
 }
@@ -6086,7 +6086,7 @@ void halWFDBssBalanceSetBssCntCfg(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		prAdapter->rWifiVar.i4BssCount[i] = i4BssCntCfg;
 
-	DBGLOG(REQ, INFO, "BssCntCfg ===> %d\n", i4BssCntCfg);
+	DBGLOG(REQ, DEBUG, "BssCntCfg ===> %d\n", i4BssCntCfg);
 }
 
 void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
@@ -6104,7 +6104,7 @@ void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 				prTokenInfo->bitrate.au4PredictBitrate[i];
 	}
 
-	DBGLOG(REQ, INFO, "CurR[%u,%u,%u,%u], PreR[%u,%u,%u,%u]\n",
+	DBGLOG(REQ, DEBUG, "CurR[%u,%u,%u,%u], PreR[%u,%u,%u,%u]\n",
 		prTokenInfo->bitrate.au4CurrentBitrate[0],
 		prTokenInfo->bitrate.au4CurrentBitrate[1],
 		prTokenInfo->bitrate.au4CurrentBitrate[2],
@@ -6141,7 +6141,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
 		&u4CurBitRate, &u4PredBitRate);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"C All: %u, CurRate: %u, PredRate: %u\n",
 		u4ConsysAll, u4CurBitRate, u4PredBitRate);
 
@@ -6151,13 +6151,13 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 	/* C<50ms % < 80% */
 	if (u4ConsysSlot2 < (u4ConsysAll/u4Ratio) &&
 		(u4CurBitRate > u4PredBitRate*5/10)) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"C[0]:[%u] < LowTH, FSM: [NO_LIMIT] -> [QUICK]\n",
 			u4ConsysSlot2);
 		return WFD_BSS_BALANCE_QUICK_STATE;
 	}
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"C[0]:[%u] > LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]\n",
 		u4ConsysSlot2);
 	halWFDBssBalanceSetBssCntCfg(prAdapter,
@@ -6179,11 +6179,11 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleQuickState(
 		}
 	}
 
-	DBGLOG(REQ, INFO, "C All: %u", u4ConsysAll);
+	DBGLOG(REQ, DEBUG, "C All: %u", u4ConsysAll);
 
 	/* set Credit = ring size * 1/2, then go to main state */
 	halWFDBssBalanceSetBssCntCfg(prAdapter, TX_RING_SIZE/2, prTokenInfo);
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"Cnt[%d], FSM: [QUICK] -> [MAIN]",
 		halWFDBssBalanceGetBssCntCfg(prAdapter));
 
@@ -6219,13 +6219,13 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
 		&u4CurBitRate, &u4PredBitRate);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"C All: %u, D All: %u, CurRate: %u, PredRate: %u",
 		u4ConsysAll, u4DriverAll, u4CurBitRate, u4PredBitRate);
 
 	/* if Actual TPUT <= Est TPUT*50% */
 	if (u4CurBitRate < u4PredBitRate*5/10) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"TPUT <= NoLimitTH, Cnt[%d], FSM: [MAIN] -> [NO_LIMIT]",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
@@ -6238,7 +6238,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			i4BssCntCfg - TX_RING_SIZE/8, prTokenInfo);
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"C[0]:[%u] < TH, Cnt[%d], FSM: [MAIN] -> [MAIN]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
@@ -6252,7 +6252,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			i4BssCntCfg + TX_RING_SIZE/8, prTokenInfo);
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"C[0]:[%u] > TH and TPUT < TH, Cnt[%d], FSM: [MAIN] -> [MAIN]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
@@ -6262,7 +6262,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 	/* if C < 10ms % > 90%, go to step state */
 	if ((u4ConsysSlot0 > (u4ConsysAll*9/10))
 		&& (u4CurBitRate > u4PredBitRate*8/10)) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"C[0]:[%u] > TH, Cnt[%d], FSM: [MAIN] -> [STEP]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
@@ -6301,14 +6301,14 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
 		&u4CurBitRate, &u4PredBitRate);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"C All: %u, D All: %u, CurRate: %u, PreRate: %u",
 		u4ConsysAll, u4DriverAll, u4CurBitRate, u4PredBitRate);
 
 
 	/* if Actual TPUT < Est TPUT*50% */
 	if (u4CurBitRate <= u4PredBitRate*5/10) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"TPUT <= NoLimitTH, Cnt[%d], FSM: [STEP] -> [NO_LIMIT]",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 
@@ -6320,7 +6320,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 
 	/* if C < 10ms < 90%, go to main state */
 	if (u4ConsysSlot0 < (u4ConsysAll*9/10)) {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"C[0]:[%u] < TH, Cnt[%d], FSM: [STEP] -> [MAIN]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
@@ -6335,14 +6335,14 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 			> (u4DriverAll*9/10)) {
 			halWFDBssBalanceSetBssCntCfg(prAdapter,
 				i4BssCntCfg - 10, prTokenInfo);
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 				"D[0]+D[1]:[%u] < HighTH, Cnt[%d], FSM: [STEP] -> [STEP]",
 				(u4Driver[0] + u4Driver[1]),
 				halWFDBssBalanceGetBssCntCfg(prAdapter));
 		} else {
 			halWFDBssBalanceSetBssCntCfg(prAdapter,
 				i4BssCntCfg + 10, prTokenInfo);
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, DEBUG,
 				"D[0]+D[1]:[%u] > HighTH, Cnt[%d], FSM: [STEP] -> [STEP]",
 				(u4Driver[0] + u4Driver[1]),
 				halWFDBssBalanceGetBssCntCfg(prAdapter));
@@ -6355,7 +6355,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			i4BssCntCfg + 10, prTokenInfo);
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"TPUT < HighTH, Cnt[%d], FSM: [STEP] -> [STEP]",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		return WFD_BSS_BALANCE_STEP_STATE;
@@ -6364,7 +6364,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 	/* if Actual TPUT > Est TPUT * 80 */
 	if (u4CurBitRate > u4PredBitRate*8/10) {
 		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 			"ENTER STEP STATE, sActual TPUT > Est TPUT * 90, goto STEP",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		return WFD_BSS_BALANCE_STEP_STATE;
@@ -6485,7 +6485,7 @@ void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	if (u4Credit != prTokenInfo->u4TxCredit[ucBssIndex]) {
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "adjust tx credit Bss[%u], [%u]->[%u], used[%u], delta[%u]\n",
 		       ucBssIndex, prTokenInfo->u4TxCredit[ucBssIndex],
 		       u4Credit, u4Used, u4Delta);
@@ -6563,7 +6563,7 @@ static void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt)
 
 	prTokenInfo->u4MaxBssFreeCnt = u4Cnt ? u4Cnt : prTokenInfo->u4TokenNum;
 
-	DBGLOG(HAL, INFO, "SetTxRingBssTokenCnt=[%u].\n",
+	DBGLOG(HAL, DEBUG, "SetTxRingBssTokenCnt=[%u].\n",
 	       prTokenInfo->u4MaxBssFreeCnt);
 }
 
@@ -6584,7 +6584,7 @@ enum ENUM_BAND halIsDualBandSccMode(struct ADAPTER *prAdapter)
 
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
-		DBGLOG(HAL, INFO, "band:[%d], channel:[%u]\n",
+		DBGLOG(HAL, DEBUG, "band:[%d], channel:[%u]\n",
 			   prBssInfo->eBand, prBssInfo->ucPrimaryChannel);
 		u4AllActiveBssCnt++;
 
@@ -6603,7 +6603,7 @@ enum ENUM_BAND halIsDualBandSccMode(struct ADAPTER *prAdapter)
 		if (fgIsScc[u4Idx])
 			u4SccBand = u4Idx;
 	}
-	DBGLOG(HAL, INFO, "ActiveBssCnt:[%u], SccBand:[%d]\n",
+	DBGLOG(HAL, DEBUG, "ActiveBssCnt:[%u], SccBand:[%d]\n",
 		   u4AllActiveBssCnt, u4SccBand);
 
 	return u4SccBand;
@@ -6953,7 +6953,7 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "Txfail:%u",
 			report->u4TxFail);
 
-	DBGLOG(HAL, VOC, "%s\n", buf);
+	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 #endif
 }
@@ -6984,7 +6984,7 @@ static void checkTxDelayOverLimit(struct ADAPTER *prAdapter)
 		if (stats->u4DelayNum[i] == 0)
 			continue;
 
-		DBGLOG(HAL, INFO, "Delay[i]=%u, DelayNum[i]=%u, DelayLimit=%u",
+		DBGLOG(HAL, DEBUG, "Delay[i]=%u, DelayNum[i]=%u, DelayLimit=%u",
 			stats->u4Delay[i], stats->u4DelayNum[i],
 			stats->u4DelayLimit[i]);
 
@@ -7048,7 +7048,7 @@ void kalWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	if (!prGlueInfo) {
-		DBGLOG(REQ, VOC, "prGlueInfo null");
+		DBGLOG(REQ, INFO, "prGlueInfo null");
 		return;
 	}
 
@@ -7430,7 +7430,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 		prHifInfo->eNextPcieState);
 #endif
 
-	DBGLOG(HAL, VOC, "%s\n", buf);
+	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
@@ -7441,7 +7441,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 		kalWFDBssBalanceGetPreTxBW(prAdapter, &prTokenInfo->bitrate);
 #endif
 		prLatencyReport = &prStats->rDiff;
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"WFD Credit: [%u,%u,%u,%u]\n",
 			prTokenInfo->u4TxCredit[0], prTokenInfo->u4TxCredit[1],
 			prTokenInfo->u4TxCredit[2], prTokenInfo->u4TxCredit[3]);
@@ -7493,7 +7493,7 @@ void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct RTMP_TX_RING *prTxRing = &prHifInfo->TxRing[u2Port];
 
-	DBGLOG(HAL, INFO, "u2Port: %d\n", u2Port);
+	DBGLOG(HAL, DEBUG, "u2Port: %d\n", u2Port);
 
 	prTxRing->fgStopRecycleDmad = TRUE;
 }

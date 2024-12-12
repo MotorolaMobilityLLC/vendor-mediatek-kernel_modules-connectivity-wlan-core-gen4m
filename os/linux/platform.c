@@ -126,7 +126,7 @@ static int netdev_event(struct notifier_block *nb,
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (prDev == NULL) {
-		/* DBGLOG(REQ, INFO, ("netdev_event: device is empty.\n")); */
+		/* DBGLOG(REQ, DEBUG, ("netdev_event: device is empty.\n")); */
 		return NOTIFY_DONE;
 	}
 
@@ -138,7 +138,7 @@ static int netdev_event(struct notifier_block *nb,
 		&& (strncmp(prDev->name, "aware", 5) != 0)
 #endif
 	    && (strncmp(prDev->name, "wlan", 4) != 0)) {
-		/* DBGLOG(REQ, INFO, ("netdev_event: xxx\n")); */
+		/* DBGLOG(REQ, DEBUG, ("netdev_event: xxx\n")); */
 		return NOTIFY_DONE;
 	}
 #if 0				/* CFG_SUPPORT_PASSPOINT */
@@ -149,19 +149,19 @@ static int netdev_event(struct notifier_block *nb,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	if (prGlueInfo == NULL) {
-		DBGLOG(REQ, INFO, "netdev_event: prGlueInfo is empty.\n");
+		DBGLOG(REQ, DEBUG, "%s: prGlueInfo is empty.\n", __func__);
 		return NOTIFY_DONE;
 	}
 
 	if (prGlueInfo->fgIsInSuspendMode == FALSE) {
-		/* DBGLOG(REQ, INFO,
+		/* DBGLOG(REQ, DEBUG,
 		 *  ("netdev_event: MEDIA_STATE_DISCONNECTED. (%d)\n",
 		 * prGlueInfo->eParamMediaStateIndicated));
 		 */
 		/* return NOTIFY_DONE; */
 	}
 
-	DBGLOG(REQ, INFO, "netdev_event: set net addr\n");
+	DBGLOG(REQ, DEBUG, "%s: set net addr\n", __func__);
 	kalSetNetAddressFromInterface(prGlueInfo, prDev, TRUE);
 
 	return NOTIFY_DONE;
@@ -177,7 +177,7 @@ static int net6dev_event(struct notifier_block *nb,
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (prDev == NULL) {
-		DBGLOG(REQ, INFO, "net6dev_event: device is empty.\n");
+		DBGLOG(REQ, DEBUG, "%s: device is empty.\n", __func__);
 		return NOTIFY_DONE;
 	}
 
@@ -186,7 +186,7 @@ static int net6dev_event(struct notifier_block *nb,
 	    && (strncmp(prDev->name, "ra", 2) != 0)
 #endif
 	    && (strncmp(prDev->name, "wlan", 4) != 0)) {
-		DBGLOG(REQ, INFO, "net6dev_event: xxx\n");
+		DBGLOG(REQ, DEBUG, "%s: xxx\n", __func__);
 		return NOTIFY_DONE;
 	}
 
@@ -203,7 +203,7 @@ static int net6dev_event(struct notifier_block *nb,
 	}
 
 	if (prGlueInfo == NULL) {
-		DBGLOG(REQ, INFO, "netdev_event: prGlueInfo is empty.\n");
+		DBGLOG(REQ, DEBUG, "netdev_event: prGlueInfo is empty.\n");
 		return NOTIFY_DONE;
 	}
 
@@ -268,7 +268,7 @@ int glRegisterEarlySuspend(struct early_suspend *prDesc,
 	if (wlanSuspend != NULL)
 		prDesc->suspend = wlanSuspend;
 	else {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 		       "glRegisterEarlySuspend wlanSuspend ERROR.\n");
 		ret = -1;
 	}
@@ -276,7 +276,7 @@ int glRegisterEarlySuspend(struct early_suspend *prDesc,
 	if (wlanResume != NULL)
 		prDesc->resume = wlanResume;
 	else {
-		DBGLOG(REQ, INFO,
+		DBGLOG(REQ, DEBUG,
 		       "glRegisterEarlySuspend wlanResume ERROR.\n");
 		ret = -1;
 	}

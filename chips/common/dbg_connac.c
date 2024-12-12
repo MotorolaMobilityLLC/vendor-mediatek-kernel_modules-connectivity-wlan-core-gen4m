@@ -109,179 +109,179 @@ void halShowPseInfo(struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, PSE_PLE_PG_INFO, &pg_flow_ctrl[15]);
 
 	/* Configuration Info */
-	DBGLOG(HAL, INFO, "PSE Configuration Info:\n");
+	DBGLOG(HAL, DEBUG, "PSE Configuration Info:\n");
 
 	HAL_MCR_RD(prAdapter, PSE_GC, &value);
-	DBGLOG(HAL, INFO, "\tGC(0x82068000): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tGC(0x82068000): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, PSE_INT_STS, &value);
-	DBGLOG(HAL, INFO, "\tINT_STS(0x82068024): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tINT_STS(0x82068024): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, PSE_INT_ERR_STS, &value);
-	DBGLOG(HAL, INFO, "\tINT_ERR_STS(0x82068028): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tINT_ERR_STS(0x82068028): 0x%08x\n", value);
 
-	DBGLOG(HAL, INFO, "\tPacket Buffer Control(0x82068014): 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "\tPacket Buffer Control(0x82068014): 0x%08x\n",
 		pse_buf_ctrl);
 	pg_sz = (pse_buf_ctrl & (0x1 << 31)) >> 31;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tPage Size=%d(%d bytes per page)\n",
 		pg_sz, (pg_sz == 1 ? 256 : 128));
 	page_offset  = (pse_buf_ctrl & 0x3FFFFFF) >> 17;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		 "\t\tPage Offset=%d(in unit of 2KB)\n", page_offset);
 	pg_num = (pse_buf_ctrl & PSE_TOTAL_PAGE_NUM_MASK);
-	DBGLOG(HAL, INFO, "\t\tAvailable Total Page=%d pages\n", pg_num);
+	DBGLOG(HAL, DEBUG, "\t\tAvailable Total Page=%d pages\n", pg_num);
 	/* Page Flow Control */
-	DBGLOG(HAL, INFO, "PSE Page Flow Control:\n");
+	DBGLOG(HAL, DEBUG, "PSE Page Flow Control:\n");
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tFree page counter(0x82068100): 0x%08x\n", pg_flow_ctrl[0]);
 	fpg_cnt = pg_flow_ctrl[0] & 0xfff;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe toal page number of free=0x%03x\n", fpg_cnt);
 	ffa_cnt = (pg_flow_ctrl[0] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe free page numbers of free for all=0x%03x\n", ffa_cnt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tFree page head and tail(0x82068104): 0x%08x\n",
 		pg_flow_ctrl[1]);
 	fpg_head = pg_flow_ctrl[1] & 0xfff;
 	fpg_tail = (pg_flow_ctrl[1] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe tail/head page of free page list=0x%03x/0x%03x\n",
 		fpg_tail, fpg_head);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of HIF0 group(0x82068110): 0x%08x\n",
 		pg_flow_ctrl[2]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tHIF0 group page status(0x82068114): 0x%08x\n",
 		pg_flow_ctrl[3]);
 	min_q = pg_flow_ctrl[2] & 0xfff;
 	max_q = (pg_flow_ctrl[2] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of HIF0 group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[3] & 0xfff;
 	used_pg = (pg_flow_ctrl[3] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of HIF0 group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of HIF1 group(0x82068118): 0x%08x\n",
 		pg_flow_ctrl[4]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tHIF1 group page status(0x8206811c): 0x%08x\n",
 		pg_flow_ctrl[5]);
 	min_q = pg_flow_ctrl[4] & 0xfff;
 	max_q = (pg_flow_ctrl[4] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of HIF1 group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[5] & 0xfff;
 	used_pg = (pg_flow_ctrl[5] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of HIF1 group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of CPU group(0x82068150): 0x%08x\n",
 		pg_flow_ctrl[6]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tCPU group page status(0x82068154): 0x%08x\n",
 		pg_flow_ctrl[7]);
 	min_q = pg_flow_ctrl[6] & 0xfff;
 	max_q = (pg_flow_ctrl[6] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of CPU group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[7] & 0xfff;
 	used_pg = (pg_flow_ctrl[7] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of CPU group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of LMAC0 group(0x82068170): 0x%08x\n",
 		pg_flow_ctrl[8]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tLMAC0 group page status(0x82068174): 0x%08x\n",
 		pg_flow_ctrl[9]);
 	min_q = pg_flow_ctrl[8] & 0xfff;
 	max_q = (pg_flow_ctrl[8] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of LMAC0 group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[9] & 0xfff;
 	used_pg = (pg_flow_ctrl[9] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of LMAC0 group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of LMAC1 group(0x82068178): 0x%08x\n",
 		pg_flow_ctrl[10]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tLMAC1 group page status(0x8206817c): 0x%08x\n",
 		pg_flow_ctrl[11]);
 	min_q = pg_flow_ctrl[10] & 0xfff;
 	max_q = (pg_flow_ctrl[10] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of LMAC1 group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[11] & 0xfff;
 	used_pg = (pg_flow_ctrl[11] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of LMAC1 group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of LMAC2 group(0x82068180): 0x%08x\n",
 		pg_flow_ctrl[12]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tLMAC2 group page status(0x82068184): 0x%08x\n",
 		pg_flow_ctrl[13]);
 	min_q = pg_flow_ctrl[12] & 0xfff;
 	max_q = (pg_flow_ctrl[12] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of LMAC2 group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[13] & 0xfff;
 	used_pg = (pg_flow_ctrl[13] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of LMAC2 group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of PLE group(0x82068190): 0x%08x\n",
 		pg_flow_ctrl[14]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tPLE group page status(0x82068194): 0x%08x\n",
 		pg_flow_ctrl[15]);
 	min_q = pg_flow_ctrl[14] & 0xfff;
 	max_q = (pg_flow_ctrl[14] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of PLE group=0x%03x/0x%03x\n",
 		max_q, min_q);
 	rsv_pg = pg_flow_ctrl[15] & 0xfff;
 	used_pg = (pg_flow_ctrl[15] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of PLE group=0x%03x/0x%03x\n",
 		used_pg, rsv_pg);
 	/* Queue Empty Status */
-	DBGLOG(HAL, INFO, "PSE Queue Empty Status:\n");
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG, "PSE Queue Empty Status:\n");
+	DBGLOG(HAL, DEBUG,
 		"\tQUEUE_EMPTY(0x820680b0): 0x%08x\n",
 		pse_stat);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tQUEUE_EMPTY_MASK(0x820680b4): 0x%08x\n",
 		pse_queue_empty_mask);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tCPU Q0/1/2/3 empty=%d/%d/%d/%d\n",
 		 pse_stat & 0x1, ((pse_stat & 0x2) >> 1),
 		 ((pse_stat & 0x4) >> 2), ((pse_stat & 0x8) >> 3));
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tHIF Q0/1/2/3 empty=%d/%d/%d/%d\n",
 		 ((pse_stat & (0x1 << 16)) >> 16),
 		 ((pse_stat & (0x1 << 17)) >> 17),
 		 ((pse_stat & (0x1 << 18)) >> 18),
 		 ((pse_stat & (0x1 << 19)) >> 19));
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tLMAC TX Q empty=%d\n",
 		 ((pse_stat & (0x1 << 24)) >> 24));
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tRLS_Q empty=%d\n",
 		 ((pse_stat & (0x1 << 31)) >> 31));
 
@@ -296,7 +296,7 @@ void halShowPseInfo(struct ADAPTER *prAdapter)
 				"PSE_PEEK_CR_%u[0x%08x/0x%08x] ",
 				i, addr, value);
 		}
-		DBGLOG(HAL, INFO, "%s\n", buf);
+		DBGLOG(HAL, DEBUG, "%s\n", buf);
 
 		kalMemZero(buf, BUF_SIZE);
 		pos = 0;
@@ -307,7 +307,7 @@ void halShowPseInfo(struct ADAPTER *prAdapter)
 				"PSE_ENQ_%u[0x%08x/0x%08x] ",
 				i, addr, value);
 		}
-		DBGLOG(HAL, INFO, "%s\n", buf);
+		DBGLOG(HAL, DEBUG, "%s\n", buf);
 
 		kalMemZero(buf, BUF_SIZE);
 		pos = 0;
@@ -318,7 +318,7 @@ void halShowPseInfo(struct ADAPTER *prAdapter)
 				"PSE_DEQ_%u[0x%08x/0x%08x] ",
 				i, addr, value);
 		}
-		DBGLOG(HAL, INFO, "%s\n", buf);
+		DBGLOG(HAL, DEBUG, "%s\n", buf);
 
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 	}
@@ -433,141 +433,141 @@ void halShowPleInfo(struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter, STATION_PAUSE2, &sta_pause[2]);
 	HAL_MCR_RD(prAdapter, STATION_PAUSE3, &sta_pause[3]);
 	/* Configuration Info */
-	DBGLOG(HAL, INFO, "PLE Configuration Info:\n");
+	DBGLOG(HAL, DEBUG, "PLE Configuration Info:\n");
 
 	HAL_MCR_RD(prAdapter, PLE_GC, &value);
-	DBGLOG(HAL, INFO, "\tGC(0x82060000): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tGC(0x82060000): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, PLE_INT_STS, &value);
-	DBGLOG(HAL, INFO, "\tINT_STS(0x82060024): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tINT_STS(0x82060024): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, PLE_INT_ERR_STS, &value);
-	DBGLOG(HAL, INFO, "\tINT_ERR_STS(0x82060028): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tINT_ERR_STS(0x82060028): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, PLE_QUEUE_CMD_ERR_STS, &value);
-	DBGLOG(HAL, INFO, "\tQUEUE_CMD_ERR_STS(0x82060550): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tQUEUE_CMD_ERR_STS(0x82060550): 0x%08x\n", value);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tPacket Buffer Control(0x82060014): 0x%08x\n",
 		ple_buf_ctrl[0]);
 	pg_sz = (ple_buf_ctrl[0] & (0x1 << 31)) >> 31;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tPage Size=%d(%d bytes per page)\n",
 		pg_sz, (pg_sz == 1 ? 128 : 64));
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tPage Offset=%d(in unit of 2KB)\n",
 		(ple_buf_ctrl[0] & (0xf << 17)) >> 17);
 	pg_num = (ple_buf_ctrl[0] & 0xfff);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tTotal Page=%d pages\n", (ple_buf_ctrl[0] & 0xfff));
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tRelease Control(0x82060030): 0x%08x\n", ple_buf_ctrl[1]);
 	bit_field_1 = (ple_buf_ctrl[1] & 0x1f);
 	bit_field_2 = ((ple_buf_ctrl[1] & (0x3 << 6)) >> 6);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tNormalTx Release Pid/Qid=%d/%d\n",
 		bit_field_2, bit_field_1);
 	bit_field_1 = ((ple_buf_ctrl[1] & (0x1f << 8)) >> 8);
 	bit_field_2 = ((ple_buf_ctrl[1] & (0x3 << 14)) >> 14);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tDropTx Release Pid/Qid=%d/%d\n", bit_field_2, bit_field_1);
 	bit_field_1 = ((ple_buf_ctrl[1] & (0x1f << 16)) >> 16);
 	bit_field_2 = ((ple_buf_ctrl[1] & (0x3 << 22)) >> 22);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tBCN0 Release Pid/Qid=%d/%d\n", bit_field_2, bit_field_1);
 	bit_field_1 = ((ple_buf_ctrl[1] & (0x1f << 24)) >> 24);
 	bit_field_2 = ((ple_buf_ctrl[1] & (0x3 << 30)) >> 30);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tBCN1 Release Pid/Qid=%d/%d\n", bit_field_2, bit_field_1);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tHIF Report Control(0x82060034): 0x%08x\n", ple_buf_ctrl[2]);
 	bit_field_1 = ((ple_buf_ctrl[2] & (0x1 << 1)) >> 1);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tHostReportQSel/HostReportDisable=%d/%d\n",
 			  (ple_buf_ctrl[2] & 0x1), bit_field_1);
 	/* Page Flow Control */
-	DBGLOG(HAL, INFO, "PLE Page Flow Control:\n");
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG, "PLE Page Flow Control:\n");
+	DBGLOG(HAL, DEBUG,
 		"\tFree page counter(0x82060100): 0x%08x\n", pg_flow_ctrl[0]);
 	fpg_cnt = pg_flow_ctrl[0] & 0xfff;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe toal page number of free=0x%03x\n", fpg_cnt);
 	ffa_cnt = (pg_flow_ctrl[0] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe free page numbers of free for all=0x%03x\n", ffa_cnt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tFree page head and tail(0x82060104): 0x%08x\n",
 		pg_flow_ctrl[1]);
 	fpg_head = pg_flow_ctrl[1] & 0xfff;
 	fpg_tail = (pg_flow_ctrl[1] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe tail/head page of free page list=0x%03x/0x%03x\n",
 		fpg_tail, fpg_head);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of HIF group(0x82060110): 0x%08x\n",
 		pg_flow_ctrl[2]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tHIF group page status(0x82060114): 0x%08x\n",
 		pg_flow_ctrl[3]);
 	hif_min_q = pg_flow_ctrl[2] & 0xfff;
 	hif_max_q = (pg_flow_ctrl[2] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of HIF group=0x%03x/0x%03x\n",
 		hif_max_q, hif_min_q);
 	rpg_hif = pg_flow_ctrl[3] & 0xfff;
 	upg_hif = (pg_flow_ctrl[3] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of HIF group=0x%03x/0x%03x\n",
 		upg_hif, rpg_hif);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tReserved page counter of CPU group(0x82060150): 0x%08x\n",
 		pg_flow_ctrl[4]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tCPU group page status(0x82060154): 0x%08x\n",
 		pg_flow_ctrl[5]);
 	cpu_min_q = pg_flow_ctrl[4] & 0xfff;
 	cpu_max_q = (pg_flow_ctrl[4] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe max/min quota pages of CPU group=0x%03x/0x%03x\n",
 		cpu_max_q, cpu_min_q);
 	rpg_cpu = pg_flow_ctrl[5] & 0xfff;
 	upg_cpu = (pg_flow_ctrl[5] & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\t\tThe used/reserved pages of CPU group=0x%03x/0x%03x\n",
 		upg_cpu, rpg_cpu);
 
 	if (((ple_stat[0] & (0x1 << 24)) >> 24) == 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tAC0_QUEUE_EMPTY0(0x82060300): 0x%08x\n",
 			ple_stat[1]);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tAC1_QUEUE_EMPTY0(0x82060310): 0x%08x\n",
 			ple_stat[5]);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tAC2_QUEUE_EMPTY0(0x82060320): 0x%08x\n",
 			ple_stat[9]);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tAC3_QUEUE_EMPTY0(0x82060330): 0x%08x\n",
 			ple_stat[13]);
 
 		for (j = 0; j < 16; j = j + 4) {
 			if (j % 4 == 0)
-				DBGLOG(HAL, INFO, "\tNonempty AC%d Q of STA#:",
+				DBGLOG(HAL, DEBUG, "\tNonempty AC%d Q of STA#:",
 					j / 4);
 
 			for (i = 0; i < 32; i++) {
 				if (((ple_stat[j + 1] & (0x1 << i)) >> i) == 0)
-					DBGLOG(HAL, INFO, "%d ",
+					DBGLOG(HAL, DEBUG, "%d ",
 						i + (j % 4) * 32);
 			}
 		}
 
-		DBGLOG(HAL, INFO, "\n");
+		DBGLOG(HAL, DEBUG, "\n");
 	}
 
-	DBGLOG(HAL, INFO, "Nonempty Q info:\n");
+	DBGLOG(HAL, DEBUG, "Nonempty Q info:\n");
 
 	for (i = 0; i < 31; i++) {
 		if (((ple_stat[0] & (0x1 << i)) >> i) == 0) {
 			if (Queue_Empty_info[i].QueueName != NULL)
-				DBGLOG(HAL, INFO, "\t%s: ",
+				DBGLOG(HAL, DEBUG, "\t%s: ",
 					Queue_Empty_info[i].QueueName);
 			else
 				continue;
@@ -580,7 +580,7 @@ void halShowPleInfo(struct ADAPTER *prAdapter,
 				uint32_t ac_num = j / 4, ctrl = 0;
 				uint32_t sta_num = i + (j % 4) * 32;
 
-				DBGLOG(HAL, INFO, "\tSTA%d AC%d: ",
+				DBGLOG(HAL, DEBUG, "\tSTA%d AC%d: ",
 					sta_num, ac_num);
 				if (((sta_pause[j % 4] & 0x1 << i) >> i) == 1)
 					ctrl = 2;
@@ -588,7 +588,7 @@ void halShowPleInfo(struct ADAPTER *prAdapter,
 				if (((dis_sta_map[j % 4] & 0x1 << i) >> i) == 1)
 					ctrl = 1;
 
-				DBGLOG(HAL, INFO, " ctrl = %s",
+				DBGLOG(HAL, DEBUG, " ctrl = %s",
 					sta_ctrl_reg[ctrl]);
 			}
 		}
@@ -605,7 +605,7 @@ void halShowPleInfo(struct ADAPTER *prAdapter,
 				i, addr, value,
 				i == (PLE_PEEK_CR_NUM - 1) ? "\n" : ", ");
 		}
-		DBGLOG(HAL, INFO, "%s\n", buf);
+		DBGLOG(HAL, DEBUG, "%s\n", buf);
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 	}
 
@@ -680,7 +680,7 @@ void halShowDmaschInfo(struct ADAPTER *prAdapter)
 		Group_Mapping_Q[mapping_group] |= 1 << mapping_qidx;
 	}
 
-	DBGLOG(HAL, INFO, "Dma scheduler info:\n");
+	DBGLOG(HAL, DEBUG, "Dma scheduler info:\n");
 	HAL_MCR_RD(prAdapter, MT_HIF_DMASHDL_CTRL_SIGNAL, &value);
 	pktin_int_refill_ena =
 		(value & DMASHDL_PKTIN_INT_REFILL_ENA) ? TRUE : FALSE;
@@ -692,48 +692,49 @@ void halShowDmaschInfo(struct ADAPTER *prAdapter)
 	hif_ask_sub_ena = (value & DMASHDL_HIF_ASK_SUB_ENA) ? TRUE : FALSE;
 	ple_txd_gt_max_size_flag_clr =
 		(value & DMASHDL_PLE_TXD_GT_MAX_SIZE_FLAG_CLR) ? TRUE : FALSE;
-	DBGLOG(HAL, INFO, "DMASHDL Ctrl Signal(0x5000A018): 0x%08x\n", value);
-	DBGLOG(HAL, INFO, "\tple_txd_gt_max_size_flag_clr(BIT0) = %d\n",
+	DBGLOG(HAL, DEBUG, "DMASHDL Ctrl Signal(0x5000A018): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG, "\tple_txd_gt_max_size_flag_clr(BIT0) = %d\n",
 		ple_txd_gt_max_size_flag_clr);
-	DBGLOG(HAL, INFO, "\thif_ask_sub_ena(BIT16) = %d\n", hif_ask_sub_ena);
-	DBGLOG(HAL, INFO, "\tple_sub_ena(BIT17) = %d\n", ple_sub_ena);
-	DBGLOG(HAL, INFO, "\tple_add_int_refill_ena(BIT29) = %d\n",
+	DBGLOG(HAL, DEBUG, "\thif_ask_sub_ena(BIT16) = %d\n", hif_ask_sub_ena);
+	DBGLOG(HAL, DEBUG, "\tple_sub_ena(BIT17) = %d\n", ple_sub_ena);
+	DBGLOG(HAL, DEBUG, "\tple_add_int_refill_ena(BIT29) = %d\n",
 		ple_add_int_refill_ena);
-	DBGLOG(HAL, INFO, "\tpdma_add_int_refill_ena(BIT30) = %d\n",
+	DBGLOG(HAL, DEBUG, "\tpdma_add_int_refill_ena(BIT30) = %d\n",
 		pdma_add_int_refill_ena);
-	DBGLOG(HAL, INFO, "\tpktin_int_refill(BIT31)_ena = %d\n",
+	DBGLOG(HAL, DEBUG, "\tpktin_int_refill(BIT31)_ena = %d\n",
 		pktin_int_refill_ena);
 	HAL_MCR_RD(prAdapter, MT_HIF_DMASHDL_PKT_MAX_SIZE, &value);
 	ple_pkt_max_sz = GET_PLE_PKT_MAX_SIZE_NUM(value);
 	pse_pkt_max_sz = GET_PSE_PKT_MAX_SIZE_NUM(value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"DMASHDL Packet_max_size(0x5000A01c): 0x%08x\n", value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"PLE/PSE packet max size=0x%03x/0x%03x\n",
 		 ple_pkt_max_sz, pse_pkt_max_sz);
 	HAL_MCR_RD(prAdapter, MT_HIF_DMASHDL_ERROR_FLAG_CTRL, &value);
-	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x5000A09c): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG,
+	       "DMASHDL ERR FLAG CTRL(0x5000A09c): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, MT_HIF_DMASHDL_STATUS_RD, &value);
 	ffa_cnt = (value & DMASHDL_FFA_CNT_MASK) >> DMASHDL_FFA_CNT_OFFSET;
 	free_pg_cnt = (value & DMASHDL_FREE_PG_CNT_MASK) >>
 		DMASHDL_FREE_PG_CNT_OFFSET;
-	DBGLOG(HAL, INFO, "DMASHDL Status_RD(0x5000A100): 0x%08x\n", value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG, "DMASHDL Status_RD(0x5000A100): 0x%08x\n", value);
+	DBGLOG(HAL, DEBUG,
 		"free page cnt = 0x%03x, ffa cnt = 0x%03x\n",
 		free_pg_cnt, ffa_cnt);
 	HAL_MCR_RD(prAdapter,
 		CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), &value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"DMASHDL ReFill Control(0x5000A010): 0x%08x\n", value);
 
 	for (groupidx = 0; groupidx < 16; groupidx++) {
-		DBGLOG(HAL, INFO, "Group %d info:", groupidx);
+		DBGLOG(HAL, DEBUG, "Group %d info:", groupidx);
 		HAL_MCR_RD(prAdapter, status_addr, &value);
 		rsv_cnt = (value & DMASHDL_RSV_CNT_MASK) >>
 			DMASHDL_RSV_CNT_OFFSET;
 		src_cnt = (value & DMASHDL_SRC_CNT_MASK) >>
 			DMASHDL_SRC_CNT_OFFSET;
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tDMASHDL Status_RD_GP%d(0x%08x): 0x%08x\n",
 			groupidx, status_addr, value);
 		HAL_MCR_RD(prAdapter, quota_addr, &value);
@@ -741,13 +742,13 @@ void halShowDmaschInfo(struct ADAPTER *prAdapter)
 			DMASHDL_MAX_QUOTA_OFFSET;
 		min_quota = (value & DMASHDL_MIN_QUOTA_MASK) >>
 			DMASHDL_MIN_QUOTA_OFFSET;
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tDMASHDL Group%d control(0x%08x): 0x%08x\n",
 			groupidx, quota_addr, value);
 
 		if ((groupidx & 0x1) == 0) {
 			HAL_MCR_RD(prAdapter, pkt_cnt_addr, &value);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 			"\tDMASHDL RD_group_pkt_cnt_%d(0x%08x): 0x%08x\n",
 			groupidx / 2, pkt_cnt_addr, value);
 			odd_group_pktin_cnt = GET_ODD_GROUP_PKT_IN_CNT(value);
@@ -759,18 +760,18 @@ void halShowDmaschInfo(struct ADAPTER *prAdapter)
 			ask_cnt = odd_group_ask_cnt;
 		}
 
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\trsv_cnt = 0x%03x, src_cnt = 0x%03x\n",
 			rsv_cnt, src_cnt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tmax/min quota = 0x%03x/ 0x%03x\n",
 			max_quota, min_quota);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"\tpktin_cnt = 0x%02x, ask_cnt = 0x%02x",
 			pktin_cnt, ask_cnt);
 
 		if (hif_ask_sub_ena && pktin_cnt != ask_cnt) {
-			DBGLOG(HAL, INFO, ", mismatch!");
+			DBGLOG(HAL, DEBUG, ", mismatch!");
 			is_mismatch = TRUE;
 		}
 
@@ -781,7 +782,7 @@ void halShowDmaschInfo(struct ADAPTER *prAdapter)
 			break;
 		}
 
-		DBGLOG(HAL, INFO, "\tMapping Qidx: 0x%x",
+		DBGLOG(HAL, DEBUG, "\tMapping Qidx: 0x%x",
 		       Group_Mapping_Q[groupidx]);
 
 		total_src_cnt += src_cnt;
@@ -793,70 +794,70 @@ void halShowDmaschInfo(struct ADAPTER *prAdapter)
 			pkt_cnt_addr = pkt_cnt_addr + 4;
 	}
 
-	DBGLOG(HAL, INFO, "\nCounter Check:\n");
+	DBGLOG(HAL, DEBUG, "\nCounter Check:\n");
 	HAL_MCR_RD(prAdapter, PLE_HIF_PG_INFO, &value);
 	ple_rpg_hif = value & 0xfff;
 	ple_upg_hif = (value & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	"PLE:\n\tThe used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
 	ple_upg_hif, ple_rpg_hif);
 	HAL_MCR_RD(prAdapter, PSE_HIF1_PG_INFO, &value);
 	pse_rpg_hif = value & 0xfff;
 	pse_upg_hif = (value & (0xfff << 16)) >> 16;
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	"PSE:\n\tThe used/reserved pages of PSE HIF group=0x%03x/0x%03x\n",
 	pse_upg_hif, pse_rpg_hif);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"DMASHDL:\n\tThe total used pages of group0~14=0x%03x",
 		 total_src_cnt);
 
 	if (ple_upg_hif != total_src_cnt) {
-		DBGLOG(HAL, INFO, ", mismatch!");
+		DBGLOG(HAL, DEBUG, ", mismatch!");
 		is_mismatch = TRUE;
 	}
 
-	DBGLOG(HAL, INFO, "\n");
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG, "\n");
+	DBGLOG(HAL, DEBUG,
 		"\tThe total reserved pages of group0~14=0x%03x\n",
 		total_rsv_cnt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tThe total ffa pages of group0~14=0x%03x\n",
 		ffa_cnt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"\tThe total free pages of group0~14=0x%03x", free_pg_cnt);
 
 	if (free_pg_cnt != total_rsv_cnt + ffa_cnt) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			", mismatch(total_rsv_cnt + ffa_cnt in DMASHDL)");
 		is_mismatch = TRUE;
 	}
 
 	if (free_pg_cnt != ple_rpg_hif) {
-		DBGLOG(HAL, INFO, ", mismatch(reserved pages in PLE)");
+		DBGLOG(HAL, DEBUG, ", mismatch(reserved pages in PLE)");
 		is_mismatch = TRUE;
 	}
 
-	DBGLOG(HAL, INFO, "\n");
-	DBGLOG(HAL, INFO, "\tThe used pages of group15=0x%03x", pse_src_cnt);
+	DBGLOG(HAL, DEBUG, "\n");
+	DBGLOG(HAL, DEBUG, "\tThe used pages of group15=0x%03x", pse_src_cnt);
 
 	if (pse_upg_hif != pse_src_cnt) {
-		DBGLOG(HAL, INFO, ", mismatch!");
+		DBGLOG(HAL, DEBUG, ", mismatch!");
 		is_mismatch = TRUE;
 	}
 
-	DBGLOG(HAL, INFO, "\n");
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG, "\n");
+	DBGLOG(HAL, DEBUG,
 		"\tThe reserved pages of group15=0x%03x", pse_rsv_cnt);
 
 	if (pse_rpg_hif != pse_rsv_cnt) {
-		DBGLOG(HAL, INFO, ", mismatch!");
+		DBGLOG(HAL, DEBUG, ", mismatch!");
 		is_mismatch = TRUE;
 	}
 
-	DBGLOG(HAL, INFO, "\n");
+	DBGLOG(HAL, DEBUG, "\n");
 
 	if (!is_mismatch)
-		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
+		DBGLOG(HAL, DEBUG, "DMASHDL: no counter mismatch\n");
 }
 
 /* return: new pos */
@@ -915,7 +916,7 @@ void halDumpRegInRange(struct ADAPTER *prAdapter,
 			reg += offset;
 			kalMdelay(1);
 		}
-		DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+		DBGLOG(HAL, DEBUG, "Dump CR: %s\n", buf);
 		pos = 0;
 	}
 }
@@ -1037,7 +1038,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 
 	char *buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
 
-	DBGLOG(HAL, INFO, "Dump for band0\n");
+	DBGLOG(HAL, DEBUG, "Dump for band0\n");
 	HAL_MCR_WR(prAdapter, 0x820F082C, 0xF);
 	HAL_MCR_WR(prAdapter, 0x80025100, 0x1F);
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x07070707);
@@ -1049,7 +1050,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 			pos, cr_band0, sizeof(uint32_t),
 			ARRAY_SIZE(cr_band0));
 
-		DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+		DBGLOG(HAL, DEBUG, "Dump CR: %s\n", buf);
 		pos = 0;
 
 		kalMemZero(buf, BUF_SIZE);
@@ -1057,13 +1058,13 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 			pos = halDumpRegInArray(prAdapter, buf, BUF_SIZE,
 				pos, cr_band0_loop, sizeof(uint32_t),
 				ARRAY_SIZE(cr_band0_loop));
-			DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+			DBGLOG(HAL, DEBUG, "Dump CR: %s\n", buf);
 			pos = 0;
 			kalMdelay(1);
 		}
 	}
 
-	DBGLOG(HAL, INFO, "Dump for band1\n");
+	DBGLOG(HAL, DEBUG, "Dump for band1\n");
 	HAL_MCR_WR(prAdapter, 0x820F082C, 0xF);
 	HAL_MCR_WR(prAdapter, 0x80025100, 0x1F);
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x07070707);
@@ -1075,7 +1076,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 			pos, cr_band1, sizeof(uint32_t),
 			ARRAY_SIZE(cr_band1));
 
-		DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+		DBGLOG(HAL, DEBUG, "Dump CR: %s\n", buf);
 		pos = 0;
 
 		kalMemZero(buf, BUF_SIZE);
@@ -1083,17 +1084,17 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 			pos = halDumpRegInArray(prAdapter, buf, BUF_SIZE,
 				pos, cr_band1_loop, sizeof(uint32_t),
 				ARRAY_SIZE(cr_band1_loop));
-			DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+			DBGLOG(HAL, DEBUG, "Dump CR: %s\n", buf);
 			pos = 0;
 			kalMdelay(1);
 		}
 	}
 
-	DBGLOG(HAL, INFO, "Dump for ARB\n");
+	DBGLOG(HAL, DEBUG, "Dump for ARB\n");
 	HAL_MCR_RD(prAdapter, 0x820F3200, &u4RegValue1);
 	HAL_MCR_RD(prAdapter, 0x820F3278, &u4RegValue2);
 	HAL_MCR_RD(prAdapter, 0x820F327C, &u4RegValue3);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 		"ARB_DBG: B[0]Read 0x820F3200=0x%x Read 0x820F3278=0x%x Read 0x820F327C=0x%x\n",
 		u4RegValue1, u4RegValue2, u4RegValue3);
 
@@ -1104,13 +1105,13 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 		/* [15:11]:tx_que_num */
 		HAL_MCR_WR(prAdapter, 0x80025108, 0x4d4dacac);
 		HAL_MCR_RD(prAdapter, 0x820F0024, &u4RegValue1);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"ARB_DBG: B[0]Set 0x80025108 = 0x4d4dacac read 0x820F0024=0x%x\n",
 			u4RegValue1);
 		/* queue freeze flag */
 		HAL_MCR_WR(prAdapter, 0x80025108, 0x6c6c6d6d);
 		HAL_MCR_RD(prAdapter, 0x820F0024, &u4RegValue1);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"ARB_DBG: B[0]Set 0x80025108 = 0x6c6c6d6d read 0x820F0024=0x%x\n",
 			u4RegValue1);
 	}
@@ -1121,7 +1122,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 			HAL_MCR_WR(prAdapter, 0x80025108,
 				cr_arb_debug_flag_loop[j]);
 			HAL_MCR_RD(prAdapter, 0x820F0024, &u4RegValue1);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"ARB_DBG: B[0]Set 0x80025108 = 0x%x read 0x820F0024=0x%x\n",
 				cr_arb_debug_flag_loop[j], u4RegValue1);
 		}
@@ -1131,7 +1132,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 			HAL_MCR_WR(prAdapter, 0x820f3060,
 				cr_arb_queue_sel_loop[j]);
 			HAL_MCR_RD(prAdapter, 0x820F0024, &u4RegValue1);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 				"ARB_DBG: B[0]Set 0x80025108 = 0x04040505 Set 0x820f3060 = 0x%x read 0x820F0024=0x%x\n",
 				cr_arb_queue_sel_loop[j], u4RegValue1);
 		}

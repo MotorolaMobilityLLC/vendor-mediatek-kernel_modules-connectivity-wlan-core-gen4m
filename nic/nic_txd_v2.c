@@ -504,7 +504,7 @@ void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
 				prMsduInfo->ucWlanIndex,
 				prMsduInfo->ucPacketType); /* 0/1: data/mgmt */
-		DBGLOG(TX, INFO, "TX[%s] WIDX[%u] PID[%u]\n",
+		DBGLOG(TX, DEBUG, "TX[%s] WIDX[%u] PID[%u]\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC2X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);
@@ -744,7 +744,7 @@ void nic_txd_v2_set_hw_amsdu_template(
 {
 	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc;
 
-	DBGLOG(QM, INFO,
+	DBGLOG(QM, DEBUG,
 		"Update HW Amsdu field of TXD template for STA[%u] Tid[%u]\n",
 		prStaRec->ucIndex, ucTid);
 

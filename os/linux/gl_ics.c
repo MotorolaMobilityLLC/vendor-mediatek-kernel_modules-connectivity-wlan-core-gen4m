@@ -33,7 +33,7 @@ static u_int8_t ics_set_onoff(int cmd, int value)
 	}
 
 	if (cmd != ICS_LOG_CMD_ON_OFF && cmd != ICS_LOG_CMD_SET_LEVEL) {
-		DBGLOG(ICS, INFO, "Unknown cmd [Cmd:Value]=[%d:%d]\n",
+		DBGLOG(ICS, DEBUG, "Unknown cmd [Cmd:Value]=[%d:%d]\n",
 					cmd, value);
 		return FALSE;
 	}
@@ -62,7 +62,7 @@ static u_int8_t ics_set_onoff(int cmd, int value)
 		}
 	}
 
-	DBGLOG(ICS, INFO, "[Cmd:Value]=[%d:%d] IcsLog[Lv:OnOff]=[%u:%u]\n",
+	DBGLOG(ICS, DEBUG, "[Cmd:Value]=[%d:%d] IcsLog[Lv:OnOff]=[%u:%u]\n",
 		cmd, value, prLogCache->ucLevel, prLogCache->fgOnOff);
 
 	return TRUE;
@@ -80,7 +80,7 @@ void ics_log_event_notification(int cmd, int value)
 		return;
 
 	if (kalIsHalted()) {
-		DBGLOG(ICS, INFO, "device not ready return");
+		DBGLOG(ICS, DEBUG, "device not ready return");
 		return;
 	}
 
@@ -274,10 +274,10 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 	case ICS_FW_LOG_IOCTL_SET_LEVEL:{
 		unsigned int level = (unsigned int) arg;
 
-		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_SET_LEVEL start\n");
+		DBGLOG(ICS, DEBUG, "ICS_FW_LOG_IOCTL_SET_LEVEL start\n");
 
 		if (gIcsDev->pfFwEventFuncCB) {
-			DBGLOG(ICS, INFO,
+			DBGLOG(ICS, DEBUG,
 				"ICS_FW_LOG_IOCTL_SET_LEVEL invoke:%d\n",
 				(int)level);
 			gIcsDev->pfFwEventFuncCB(ICS_LOG_CMD_SET_LEVEL,
@@ -287,16 +287,16 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 				"ICS_FW_LOG_IOCTL_SET_LEVEL invoke failed\n");
 		}
 
-		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_SET_LEVEL end\n");
+		DBGLOG(ICS, DEBUG, "ICS_FW_LOG_IOCTL_SET_LEVEL end\n");
 		break;
 	}
 	case ICS_FW_LOG_IOCTL_ON_OFF:{
 		unsigned int log_on_off = (unsigned int) arg;
 
-		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_ON_OFF start\n");
+		DBGLOG(ICS, DEBUG, "ICS_FW_LOG_IOCTL_ON_OFF start\n");
 
 		if (gIcsDev->pfFwEventFuncCB) {
-			DBGLOG(ICS, INFO,
+			DBGLOG(ICS, DEBUG,
 				"ICS_FW_LOG_IOCTL_ON_OFF invoke:%d\n",
 				(int)log_on_off);
 			gIcsDev->pfFwEventFuncCB(ICS_LOG_CMD_ON_OFF, log_on_off);
@@ -305,13 +305,13 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 				"ICS_FW_LOG_IOCTL_ON_OFF invoke failed\n");
 		}
 
-		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_ON_OFF end\n");
+		DBGLOG(ICS, DEBUG, "ICS_FW_LOG_IOCTL_ON_OFF end\n");
 		break;
 	}
 	default:
 		ret = -EPERM;
 	}
-	DBGLOG(ICS, INFO, "cmd --> %d, ret=%d\n", cmd, ret);
+	DBGLOG(ICS, DEBUG, "cmd --> %d, ret=%d\n", cmd, ret);
 	up(&gIcsDev->ioctl_mtx);
 	return ret;
 }
@@ -323,7 +323,7 @@ static long fw_log_ics_compat_ioctl(struct file *filp, unsigned int cmd,
 	long ret = 0;
 	int32_t wait_cnt = 0;
 
-	DBGLOG(ICS, INFO, "COMPAT cmd --> %d\n", cmd);
+	DBGLOG(ICS, DEBUG, "COMPAT cmd --> %d\n", cmd);
 
 	if (!filp->f_op || !filp->f_op->unlocked_ioctl)
 		return -ENOTTY;
@@ -355,7 +355,7 @@ const struct file_operations fw_log_ics_fops = {
 
 void wifi_ics_event_func_register(ics_fwlog_event_func_cb func)
 {
-	DBGLOG(ICS, INFO, "wifi_ics_event_func_register %p\n", func);
+	DBGLOG(ICS, DEBUG, "wifi_ics_event_func_register %p\n", func);
 	gIcsDev->pfFwEventFuncCB = func;
 }
 
@@ -385,7 +385,7 @@ int IcsInit(void)
 	result = alloc_chrdev_region(&gIcsDev->devno, 0, 1,
 			FW_LOG_ICS_DRIVER_NAME);
 	gIcsDev->major = MAJOR(gIcsDev->devno);
-	DBGLOG(ICS, INFO,
+	DBGLOG(ICS, DEBUG,
 		"alloc_chrdev_region result %d, major %d\n",
 		result, gIcsDev->major);
 
@@ -459,7 +459,7 @@ int IcsDeInit(void)
 	class_destroy(gIcsDev->driver_class);
 	cdev_del(&gIcsDev->cdev);
 	unregister_chrdev_region(MKDEV(gIcsDev->major, 0), 1);
-	DBGLOG(ICS, INFO, "unregister_chrdev_region major %d\n",
+	DBGLOG(ICS, DEBUG, "unregister_chrdev_region major %d\n",
 		gIcsDev->major);
 	kfree(gIcsDev);
 	return 0;

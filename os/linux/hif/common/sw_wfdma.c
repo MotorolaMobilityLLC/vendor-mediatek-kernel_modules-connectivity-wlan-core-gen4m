@@ -90,7 +90,7 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 			prSwWfdmaInfo->u4EmiOffsetBase;
 		if (u4Value)
 			prSwWfdmaInfo->u4EmiOffset = u4Value;
-		DBGLOG(INIT, INFO, "EMI offset[0x%x]\n", u4Value);
+		DBGLOG(INIT, DEBUG, "EMI offset[0x%x]\n", u4Value);
 	}
 
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma)
@@ -210,7 +210,7 @@ void halSwWfdmaRestore(struct GLUE_INFO *prGlueInfo)
 			(prSwWfDmad->u4DrvIdx + 1) % SW_WFDMA_CMD_NUM;
 		prBackup->u4FwIdx = (prBackup->u4FwIdx + 1) % SW_WFDMA_CMD_NUM;
 
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "Restore CMD DRV[%u] FW[%u] BDRV[%u] BFW[%u] CID[%u]\n",
 		       prSwWfDmad->u4DrvIdx,
 		       prSwWfDmad->u4FwIdx,
@@ -348,7 +348,7 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 			(prSwWfDmad->u4DrvIdx + 1) % SW_WFDMA_CMD_NUM;
 
 		DBGLOG_LIMITED(
-			HAL, INFO,
+			HAL, DEBUG,
 			"Write CMD DRV[%u] FW[%u] CID[0x%02X]\n",
 			prSwWfDmad->u4DrvIdx,
 			prSwWfDmad->u4FwIdx,
@@ -395,7 +395,7 @@ void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo)
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prSwWfDmad = prSwWfdmaInfo->prDmad;
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, DEBUG,
 	       "EN[%u], CIDX[%u] DIDX[%u] MCNT[%u] ADDR[0x%llX] OFFSET[0x%X]\n",
 	       prSwWfdmaInfo->fgIsEnSwWfdma,
 	       prSwWfdmaInfo->u4CpuIdx,
@@ -409,10 +409,10 @@ void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo)
 
 	if (prSwWfdmaInfo->rOps.getIntSta)
 		prSwWfdmaInfo->rOps.getIntSta(prGlueInfo, &u4Val);
-	DBGLOG(HAL, INFO, "DRV[%u] FW[%u] STA[0x%X]\n",
+	DBGLOG(HAL, DEBUG, "DRV[%u] FW[%u] STA[0x%X]\n",
 	       prSwWfDmad->u4DrvIdx, prSwWfDmad->u4FwIdx, u4Val);
 	for (u4Idx = 0; u4Idx < SW_WFDMA_CMD_NUM; u4Idx++) {
-		DBGLOG(HAL, INFO, "IDX[%u] CID[0x%02X]\n",
+		DBGLOG(HAL, DEBUG, "IDX[%u] CID[0x%02X]\n",
 		       u4Idx, prSwWfdmaInfo->aucCID[u4Idx]);
 	}
 }

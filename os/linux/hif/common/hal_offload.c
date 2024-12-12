@@ -197,7 +197,7 @@ static void halMawdWakeupSleepDebugDump(struct ADAPTER *prAdapter)
 		HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Idx);
 		u4Addr = MAWD_DEBUG_SETTING1;
 		HAL_MAWD_MCR_RD(prAdapter, u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "WR 100=[%x], RD 104=[0x%08x]\n",
+		DBGLOG(HAL, DEBUG, "WR 100=[%x], RD 104=[0x%08x]\n",
 		       u4Idx, u4Val);
 	}
 
@@ -1563,7 +1563,7 @@ static u_int8_t halRroHandleRxRcb(
 #if RRO_DROP_BY_HIF
 	if (u4Reason == RRO_REPEAT || u4Reason == RRO_OLDPKT) {
 		QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
-		DBGLOG(HAL, INFO, "Drop skb by hif[%d]\n", u4Reason);
+		DBGLOG(HAL, DEBUG, "Drop skb by hif[%d]\n", u4Reason);
 	} else {
 		halRxInsertRecvRfbList(prAdapter, prRecvRfbList, prSwRfb);
 	}
@@ -1659,7 +1659,7 @@ static void halRroSearchAddrElem(struct ADAPTER *prAdapter,
 				void *rAddr = phys_to_virt((phys_addr_t)u8Addr);
 
 				if (rAddr) {
-					DBGLOG(HAL, INFO, "Dump RXD:\n");
+					DBGLOG(HAL, DEBUG, "Dump RXD:\n");
 					dumpMemory32(rAddr, 64);
 				}
 			}
@@ -1742,7 +1742,7 @@ static u_int8_t halRroFixAmsduError(
 	for (u4Idx = 0; u4Idx < u4MsduCnt - 1; u4Idx++) {
 		if (prRcb->rNode.prev ==
 		    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
-			DBGLOG(HAL, INFO, "it's link head\n");
+			DBGLOG(HAL, DEBUG, "it's link head\n");
 			*pu4MsduCnt -= u4MsduCnt - 1 - u4Idx;
 			prHifInfo->u4RcbHeadCnt++;
 			break;
@@ -1909,7 +1909,7 @@ static u_int8_t halRroDebugCheckSnAndPf(
 	}
 
 	if (fgRet)
-		DBGLOG(HAL, INFO, "%s\n", aucBuf);
+		DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 
 	kalMemFree(aucBuf, VIR_MEM_TYPE, u4BufSize);
 
@@ -1934,7 +1934,7 @@ static void halRroDebugCheckPrevRcbList(
 
 	if (prRcb->rNode.prev ==
 	    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
-		DBGLOG(HAL, INFO, "it's link head\n");
+		DBGLOG(HAL, DEBUG, "it's link head\n");
 		return;
 	}
 
@@ -1953,7 +1953,7 @@ static void halRroDebugCheckPrevRcbList(
 			struct RX_CTRL_BLK, rNode);
 		prSkb = prPreRcb->prSkb;
 		if (!prSkb) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, DEBUG,
 			       "prSkb == NULL, it's link head\n");
 			break;
 		}
@@ -1991,7 +1991,7 @@ static void halRroDebugCheckPrevRcbList(
 		prCurRcb = prPreRcb;
 	}
 
-	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+	DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 	kalMemFree(aucBuf, VIR_MEM_TYPE, u4BufSize);
 }
 
@@ -2055,7 +2055,7 @@ void halRroDumpRcb(struct ADAPTER *prAdapter,
 		   uint64_t u8Addr)
 {
 	if (prRxBlkD) {
-		DBGLOG(HAL, INFO, "Dump RxBlkD:\n");
+		DBGLOG(HAL, DEBUG, "Dump RxBlkD:\n");
 		dumpMemory32((uint32_t *)prRxBlkD, sizeof(struct RX_BLK_DESC));
 	}
 
@@ -2066,7 +2066,7 @@ void halRroDumpRcb(struct ADAPTER *prAdapter,
 		void *rAddr = phys_to_virt((phys_addr_t)u8Addr);
 
 		if (rAddr) {
-			DBGLOG(HAL, INFO, "Dump RXD:\n");
+			DBGLOG(HAL, DEBUG, "Dump RXD:\n");
 			dumpMemory32(rAddr, 64);
 		}
 	}
@@ -2094,7 +2094,7 @@ void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 	connac3x_show_rro_info(prGlueInfo->prAdapter);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-		DBGLOG(HAL, INFO, "Mawd RXD\n");
+		DBGLOG(HAL, DEBUG, "Mawd RXD\n");
 		dumpMemory32((uint32_t *)prRxDesc->AllocVa,
 			     sizeof(struct RX_BLK_DESC) * 4095);
 	}
@@ -2105,13 +2105,13 @@ void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 
 	u4Id = aurIndCmd[u4DmaIdx].session_id;
 	u4Sn = aurIndCmd[u4DmaIdx].start_sn;
-	DBGLOG(HAL, INFO, "IndCmd[0x%x] Id[%u] Sn[%u]\n",
+	DBGLOG(HAL, DEBUG, "IndCmd[0x%x] Id[%u] Sn[%u]\n",
 	       u4DmaIdx, u4Id, u4Sn);
 	dumpMemory32((uint32_t *)prIndCmd->AllocVa,
 		     RRO_IND_CMD_RING_SIZE * sizeof(struct RRO_IND_CMD));
 
 	u4Id = 0x10;
-	DBGLOG(HAL, INFO, "AddrArray[%u]\n", u4Id);
+	DBGLOG(HAL, DEBUG, "AddrArray[%u]\n", u4Id);
 	u4AddrNum = u4Id * RRO_MAX_WINDOW_NUM;
 	prAddrElem = (struct RRO_ADDR_ELEM *)
 		(prAddrArray->AllocVa +
@@ -2120,7 +2120,7 @@ void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 		     sizeof(struct RRO_ADDR_ELEM) * RRO_MAX_WINDOW_NUM);
 
 	u4Id = RRO_MAX_STA_NUM * RRO_MAX_TID_NUM;
-	DBGLOG(HAL, INFO, "AddrArray[%u]\n", u4Id);
+	DBGLOG(HAL, DEBUG, "AddrArray[%u]\n", u4Id);
 	u4AddrNum = u4Id * RRO_MAX_WINDOW_NUM;
 	prAddrElem = (struct RRO_ADDR_ELEM *)
 		(prAddrArray->AllocVa +
@@ -2660,7 +2660,7 @@ void halMawdDumpSram(struct GLUE_INFO *prGlueInfo)
 	u4Num = u4BackupOffset + MAWD_CR_BACKUP_NUM / 2 + 1;
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
 		halMawdReadSram(prGlueInfo, u4Idx, &u4ValL, &u4ValH);
-		DBGLOG(HAL, INFO, "Read SRAM[%d] H[0x%08x] L[0x%08x]",
+		DBGLOG(HAL, DEBUG, "Read SRAM[%d] H[0x%08x] L[0x%08x]",
 		       u4Idx, u4ValH, u4ValL);
 	}
 }
@@ -3190,7 +3190,7 @@ u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	if (u4Val != kalGetConnInfraId())
 		fgRet = FALSE;
-	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+	DBGLOG(HAL, DEBUG, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 #endif /* CFG_MTK_FPGA_PLATFORM == 0 */
 
 	return fgRet;

@@ -1070,7 +1070,7 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 				aisGetAisFsmInfo(prAdapter, ucBssIndex)
 					->encryptedDeauthIsInProcess = TRUE;
 			}
-			DBGLOG(SAA, VOC,
+			DBGLOG(SAA, INFO,
 			       "Reason=%d, DestAddr=" MACSTR
 			       " srcAddr=" MACSTR " BSSID=" MACSTR "\n",
 			       prDeauthFrame->u2ReasonCode,

@@ -282,7 +282,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	unsigned long long end = emiPhyBase + offset + size - 1;
 	int ret;
 
-	DBGLOG(INIT, INFO, "emiPhyBase: %pa, offset: %d, size: %d\n",
+	DBGLOG(INIT, DEBUG, "emiPhyBase: %pa, offset: %d, size: %d\n",
 				&emiPhyBase, offset, size);
 
 	ret = mtk_emimpu_init_region(&region, 18);
@@ -310,7 +310,7 @@ int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
 	int32_t ret = 1;
 	const uint32_t adie_chip_id = mtk_wcn_wmt_ic_info_get(WMTCHIN_ADIE);
 
-	DBGLOG(INIT, INFO, "adie_chip_id: 0x%x\n", adie_chip_id);
+	DBGLOG(INIT, DEBUG, "adie_chip_id: 0x%x\n", adie_chip_id);
 
 	switch (adie_chip_id) {
 	case 0x6635:

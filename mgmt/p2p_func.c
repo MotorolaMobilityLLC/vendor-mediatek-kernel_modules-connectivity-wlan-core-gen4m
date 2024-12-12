@@ -2134,7 +2134,7 @@ SKIP_START_RDD:
 
 #if (CFG_SUPPORT_NAN == 1)
 		/* TODO: P2P GO/SAP channel requested */
-		DBGLOG(INIT, INFO, "GO/SAP channel requested\n");
+		DBGLOG(INIT, DEBUG, "GO/SAP channel requested\n");
 		nanConcurrencyHandler(prAdapter);
 #endif
 
@@ -3190,7 +3190,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	/* Set complete for nan init */
 	if (!kal_completion_done(
 		&prAdapter->prGlueInfo->rNanHaltComp)) {
-		DBGLOG(NAN, INFO,
+		DBGLOG(NAN, DEBUG,
 			"Concurrency: Complete NAN\n");
 		complete(&prAdapter->prGlueInfo->rNanHaltComp);
 	}
@@ -3847,7 +3847,7 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 			p2pRemoveAllBssDesc(prAdapter,
 				prP2pBssInfo);
 		}
-		DBGLOG(P2P, VOC,
+		DBGLOG(P2P, INFO,
 			"BssMode: %d, reason: %d, SendDeauth %s, type 0x%x, locally_generated: %d\n",
 
 			prP2pBssInfo->eCurrentOPMode, u2ReasonCode,
@@ -7849,7 +7849,7 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 			*ucSapChannelNum;
 		prAdapter->eNanSapBand =
 			*eSapBand;
-		DBGLOG(NAN, VOC,
+		DBGLOG(NAN, INFO,
 			"[SCC] StaCH:%d,SapCH:%d\n",
 			*ucStaChannelNum,
 			*ucSapChannelNum);
@@ -7859,7 +7859,7 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 			prAdapter->ucNanSapCh;
 		*eStaBand =
 			prAdapter->eNanSapBand;
-		DBGLOG(NAN, VOC,
+		DBGLOG(NAN, INFO,
 			"[SCC] StaCH:%d,SapCH:%d\n",
 			*ucStaChannelNum,
 			*ucSapChannelNum);
@@ -7896,7 +7896,7 @@ void p2pFuncCrossBandChannelSwitchCheck(
 		prAdapter->eNanSapBand =
 			*eSapBand;
 		*fgDbDcModeEn = FALSE;
-		DBGLOG(NAN, VOC,
+		DBGLOG(NAN, INFO,
 			"[SCC][Bss%d]StaCH:%d,SapCH:%d\n",
 			prP2pBssInfo->ucBssIndex,
 			*ucStaChannelNum,
@@ -7909,7 +7909,7 @@ void p2pFuncCrossBandChannelSwitchCheck(
 			prAdapter->eNanSapBand;
 		prAdapter->ucNanSapCh = 0;
 		*fgDbDcModeEn = FALSE;
-		DBGLOG(NAN, VOC,
+		DBGLOG(NAN, INFO,
 			"[SCC][Bss%d]StaCH:%d,SapCH:%d\n",
 			prP2pBssInfo->ucBssIndex,
 			*ucStaChannelNum,

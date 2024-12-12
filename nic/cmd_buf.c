@@ -106,7 +106,7 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 	uint8_t i = 1, pos = 0;
 	char buf[500] = {0};
 
-	DBGLOG(NIC, INFO, "Dump CMD info for %s, Elem number:%u\n",
+	DBGLOG(NIC, DEBUG, "Dump CMD info for %s, Elem number:%u\n",
 			queName, prQueue->u4NumElem);
 	kalMemZero(buf, sizeof(buf));
 	while (prCmdInfo) {
@@ -120,7 +120,7 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 				prCmdInfo->eCmdType,
 				fgEndLine ? "\n" : "; ");
 		if (fgEndLine) {
-			DBGLOG(NIC, INFO, "%s", buf);
+			DBGLOG(NIC, DEBUG, "%s", buf);
 			kalMemZero(buf, sizeof(buf));
 			pos = 0;
 		}
@@ -215,7 +215,7 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
 		cmdBufDumpCmdQueue(prTxCmdDoneQueue,
 				   "waiting Tx CMD Done queue");
 #endif
-		DBGLOG(NIC, INFO, "Tc4 number:%d\n",
+		DBGLOG(NIC, DEBUG, "Tc4 number:%d\n",
 		       prTc->au4FreeBufferCount[TC4_INDEX]);
 	}
 

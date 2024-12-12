@@ -95,7 +95,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 #if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
 	struct emi_region_info_t region_info;
 
-	DBGLOG(INIT, INFO, "emiPhyBase: %pa, offset: %u, size: %u\n",
+	DBGLOG(INIT, DEBUG, "emiPhyBase: %pa, offset: %u, size: %u\n",
 			&emiPhyBase, offset, size);
 
 	/*set MPU for EMI share Memory */

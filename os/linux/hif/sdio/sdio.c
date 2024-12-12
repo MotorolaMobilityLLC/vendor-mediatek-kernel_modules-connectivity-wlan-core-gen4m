@@ -225,7 +225,7 @@ static irqreturn_t wifi_wow_isr(int irq, void *dev)
 #if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
 	struct ADAPTER *pAd = (struct ADAPTER *)dev;
 
-	DBGLOG(HAL, INFO, "%s, received interrupt!\n", __func__);
+	DBGLOG(HAL, DEBUG, "%s, received interrupt!\n", __func__);
 
 	disable_irq_nosync(pAd->rWowlanDevNode.wowlan_irq);
 	atomic_dec(&(pAd->rWowlanDevNode.irq_enable_count));
@@ -254,7 +254,7 @@ static void wlan_register_irq(struct ADAPTER *prAdapter)
 			NULL, WIFI_COMPATIBLE_NODE_NAME);
 	if (eint_node) {
 		node->wowlan_irq = irq_of_parse_and_map(eint_node, 0);
-		DBGLOG(INIT, INFO, "%s, WOWLAN irq_number = %d\n", __func__,
+		DBGLOG(INIT, DEBUG, "%s, WOWLAN irq_number = %d\n", __func__,
 			node->wowlan_irq);
 		if (node->wowlan_irq) {
 			of_property_read_u32_array(eint_node,
@@ -311,7 +311,7 @@ static int mtk_wow_input_init(struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->prAdapter->prWowInputDev = input_allocate_device();
 	if (prGlueInfo->prAdapter->prWowInputDev == NULL)
 		return -ENOMEM;
-	DBGLOG(HAL, INFO, "WOW input device allocate device\n");
+	DBGLOG(HAL, DEBUG, "WOW input device allocate device\n");
 
 	prGlueInfo->prAdapter->prWowInputDev->name = "WOW_INPUT_DEVICE";
 	prGlueInfo->prAdapter->prWowInputDev->id.bustype = BUS_HOST;
@@ -620,7 +620,7 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 			DBGLOG(HAL, STATE, "************************\n");
 			DBGLOG(HAL, STATE, "* Entered SDIO Suspend *\n");
 			DBGLOG(HAL, STATE, "************************\n");
-			DBGLOG(HAL, INFO, "wait = %d\n\n", wait);
+			DBGLOG(HAL, DEBUG, "wait = %d\n\n", wait);
 			break;
 		}
 
@@ -784,7 +784,7 @@ int mtk_sdio_async_irq_enable(struct sdio_func *func)
 		return FALSE;
 	} else if (data & SDIO_IRQ_EXT_EAI) {
 		/* EAI = 1 */
-		DBGLOG(INIT, INFO, "Async-IRQ enabled already.\n");
+		DBGLOG(INIT, DEBUG, "Async-IRQ enabled already.\n");
 		return TRUE;
 	}
 
@@ -982,7 +982,7 @@ u_int8_t glBusInit(void *pvData)
 	if (ret == FALSE)
 		DBGLOG(HAL, ERROR, "Async-IRQ auto-enable fail.\n");
 	else
-		DBGLOG(INIT, INFO, "Async-IRQ is enabled.\n");
+		DBGLOG(INIT, DEBUG, "Async-IRQ is enabled.\n");
 #endif
 	/* Returns 0 on success, -EINVAL if the host does not support the
 	 *  requested block size, or -EIO (etc.) if one of the resultant

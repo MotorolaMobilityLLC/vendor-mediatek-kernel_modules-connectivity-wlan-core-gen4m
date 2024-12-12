@@ -2278,7 +2278,8 @@ bowIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 		/* NOTE: Only delay the Indication of Disconnect Event */
 		ASSERT(eConnectionState == MEDIA_STATE_DISCONNECTED);
 
-		DBGLOG(BOW, INFO, "Postpone the indication of Disconnect for %d seconds\n",
+		DBGLOG(BOW, DEBUG,
+		       "Postpone the indication of Disconnect for %d seconds\n",
 		       prConnSettings->ucDelayTimeOfDisconnectEvent);
 
 		cnmTimerStartTimer(prAdapter,

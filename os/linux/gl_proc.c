@@ -506,7 +506,7 @@ static ssize_t procCSIDataRead(struct file *filp,
 	*f_pos += u4CopySize;
 
 #if CFG_CSI_DEBUG
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, DEBUG,
 		"[CSI] copy size = %d, [used|head idx|tail idx] = [%d|%d|%d]\n",
 		u4CopySize, prCSIInfo->u4CSIBufferUsed,
 		prCSIInfo->u4CSIBufferHead, prCSIInfo->u4CSIBufferTail);
@@ -630,7 +630,7 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	}
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "failed set country code: %s\n",
+		DBGLOG(INIT, DEBUG, "failed set country code: %s\n",
 			pucProcBuf);
 		i4Ret = -EINVAL;
 		goto freeBuf;
@@ -1059,7 +1059,7 @@ void print_txpwr_tbl(struct txpwr_table *txpwr_tbl, unsigned char ch,
 	unsigned int *pos = NULL;
 	int i;
 
-	DBGLOG(REQ, INFO, "Enter print_txpwr_tbl\n");
+	TRACE_FUNC(REQ, DEBUG, "Enter %s\n");
 
 	/* n_tables: MCS number of each modulation */
 	for (i = 0; i < txpwr_tbl->n_tables; i++) {
@@ -1149,7 +1149,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 	char pwr_offset[TXPWR_TBL_NUM] = {0};
 	int ret;
 
-	DBGLOG(REQ, INFO, "Enter procGetTxpwrTblRead\n");
+	TRACE_FUNC(REQ, DEBUG, "Enter %s\n");
 
 	/* Re-entry to the func to print the remaining table */
 	if (*f_pos > 0) { /* re-entry */
@@ -1190,7 +1190,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 		DBGLOG(REQ, WARN, "Query Tx Power Table fail\n");
 		return -EINVAL;
 	}
-	DBGLOG(REQ, INFO, "Query Tx Power Table success\n");
+	DBGLOG(REQ, DEBUG, "Query Tx Power Table success\n");
 
 
 	buffer = (char *) kalMemAlloc(buf_len, VIR_MEM_TYPE);
@@ -1209,7 +1209,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			goto out;
 		}
 	}
-	DBGLOG(REQ, INFO, "stream init\n");
+	DBGLOG(REQ, DEBUG, "stream init\n");
 
 
 	pos = kalScnprintf(buffer, buf_len,
@@ -1239,26 +1239,26 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 		case DSSS:
 			if (pwr_tbl.ucCenterCh > 14)
 				continue;
-			DBGLOG(REQ, INFO, "Print DSSS table\n");
+			DBGLOG(REQ, DEBUG, "Print DSSS table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_dsss;
 			break;
 		case OFDM_24G:
 			if (pwr_tbl.ucCenterCh > 14)
 				continue;
-			DBGLOG(REQ, INFO, "Print OFDM_24G table\n");
+			DBGLOG(REQ, DEBUG, "Print OFDM_24G table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ofdm;
 			break;
 		case OFDM_5G:
 			if (pwr_tbl.ucCenterCh <= 14)
 				continue;
-			DBGLOG(REQ, INFO, "Print OFDM_5G table\n");
+			DBGLOG(REQ, DEBUG, "Print OFDM_5G table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ofdm;
 			break;
 		case HT20:
-			DBGLOG(REQ, INFO, "Print HT20 table\n");
+			DBGLOG(REQ, DEBUG, "Print HT20 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ht20;
 			break;
@@ -1266,12 +1266,12 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_ht40[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print HT40 table\n");
+			DBGLOG(REQ, DEBUG, "Print HT40 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ht40;
 			break;
 		case VHT20:
-			DBGLOG(REQ, INFO, "Print VHT20 table\n");
+			DBGLOG(REQ, DEBUG, "Print VHT20 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht20;
 			break;
@@ -1279,7 +1279,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_vht40[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print VHT40 table\n");
+			DBGLOG(REQ, DEBUG, "Print VHT40 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht40;
 			break;
@@ -1287,7 +1287,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_vht80[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print VHT80 table\n");
+			DBGLOG(REQ, DEBUG, "Print VHT80 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht80;
 			break;
@@ -1295,28 +1295,28 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_vht160[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print VHT160 table\n");
+			DBGLOG(REQ, DEBUG, "Print VHT160 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht160;
 			break;
 #if (CFG_WIFI_TXPWR_TBL_DUMP_HE == 1)
 		case HE26:
-			DBGLOG(REQ, INFO, "Print HE26 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE26 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he26;
 			break;
 		case HE52:
-			DBGLOG(REQ, INFO, "Print HE52 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE52 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he52;
 			break;
 		case HE106:
-			DBGLOG(REQ, INFO, "Print HE106 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE106 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he106;
 			break;
 		case HE242:
-			DBGLOG(REQ, INFO, "Print HE242 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE242 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he242;
 			break;
@@ -1324,7 +1324,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_he484[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print HE484 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE484 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he484;
 			break;
@@ -1332,7 +1332,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_he996[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print HE996 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE996 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he996;
 			break;
@@ -1340,7 +1340,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 			if (pwr_tbl.ucCenterCh <= 14 ||
 					tx_pwr_tbl[0].tx_pwr_he996x2[0] >= 127)
 				continue;
-			DBGLOG(REQ, INFO, "Print HE996X2 table\n");
+			DBGLOG(REQ, DEBUG, "Print HE996X2 table\n");
 			for (j = 0; j < TXPWR_TBL_NUM; j++)
 				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he996x2;
 			break;
@@ -1489,7 +1489,7 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	/*add chip reset cmd for manual test*/
 #if CFG_CHIP_RESET_SUPPORT
 	if (temp[0] == 'R' && prGlueInfo) {
-		DBGLOG(INIT, INFO, "WIFI trigger reset!!\n");
+		DBGLOG(INIT, DEBUG, "WIFI trigger reset!!\n");
 		GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
 			RST_CMD_TRIGGER, RST_FLAG_DO_WHOLE_RESET);
 		temp[0] = 'X';
@@ -1981,7 +1981,7 @@ static ssize_t procTwtSmartWrite(struct file *file, const char *buffer,
 	}
 
 	buf[len] = '\0';
-	DBGLOG(INIT, INFO, "%s: write parameter data = %s", __func__, buf);
+	DBGLOG(INIT, DEBUG, "%s: write parameter data = %s", __func__, buf);
 	pBuf = buf;
 	pToken = strsep(&pBuf, pDelimiter);
 
@@ -2000,7 +2000,7 @@ static ssize_t procTwtSmartWrite(struct file *file, const char *buffer,
 
 	case 1:
 		g_TwtSmartStaCtrl.fgTwtSmartStaReq = TRUE;
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"twt landing stareq %d",
 			g_TwtSmartStaCtrl.fgTwtSmartStaReq);
 		break;
@@ -2012,7 +2012,7 @@ static ssize_t procTwtSmartWrite(struct file *file, const char *buffer,
 
 		g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
 		g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 			"twt landing tdreq %d",
 			g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq);
 		break;
@@ -2156,7 +2156,7 @@ int32_t procInitFs(void)
 #endif
 #endif /* (BUILD_QA_DBG) */
 
-	DBGLOG(INIT, INFO, "init proc fs done\n");
+	DBGLOG(INIT, DEBUG, "init proc fs done\n");
 	return 0;
 }				/* end of procInitProcfs() */
 
@@ -2197,7 +2197,7 @@ int32_t procUninitProcFs(void)
 	remove_proc_entry(PROC_ROOT_NAME, init_net.proc_net);
 #endif
 
-	DBGLOG(INIT, INFO, "uninit proc fs done\n");
+	DBGLOG(INIT, DEBUG, "uninit proc fs done\n");
 	return 0;
 }
 
@@ -2256,7 +2256,7 @@ int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo)
 	remove_proc_entry(PROC_TEST_MODE, prProcRoot);
 #endif
 
-	DBGLOG(INIT, INFO, "remove proc fs done\n");
+	DBGLOG(INIT, DEBUG, "remove proc fs done\n");
 	return 0;
 } /* end of procRemoveProcfs() */
 
@@ -2373,7 +2373,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif
 #undef PROC_CREATE
 
-	DBGLOG(INIT, INFO, "create proc fs done\n");
+	DBGLOG(INIT, DEBUG, "create proc fs done\n");
 	return 0;
 }
 
@@ -2496,7 +2496,7 @@ static const struct file_operations fwcfg_ops = {
 int32_t cfgRemoveProcEntry(void)
 {
 	remove_proc_entry(PROC_CFG_NAME, gprProcRoot);
-	DBGLOG(INIT, INFO, "cfg remove done\n", __func__);
+	DBGLOG(INIT, DEBUG, "cfg remove done\n", __func__);
 	return 0;
 }
 
@@ -2515,7 +2515,7 @@ int32_t cfgCreateProcEntry(struct GLUE_INFO *prGlueInfo)
 	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
 		KGIDT_INIT(PROC_GID_WIFI));
 
-	DBGLOG(INIT, INFO, "cfg create done\n", __func__);
+	DBGLOG(INIT, DEBUG, "cfg create done\n", __func__);
 	return 0;
 }
 #endif

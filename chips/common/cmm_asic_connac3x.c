@@ -257,7 +257,7 @@ static void asicConnac3xFillInitCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prInitHifTxHeader->rInitWifiCmd.ucSeqNum;
 
-	DBGLOG(INIT, VOC, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+	DBGLOG(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			prInitHifTxHeader->rInitWifiCmd.ucCID,
 			prInitHifTxHeader->rInitWifiCmd.ucSeqNum,
 			prCmdInfo->u2InfoBufLen);
@@ -302,7 +302,7 @@ static void asicConnac3xFillCmdTxdInfo(
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 			prWifiCmd->ucSetQuery, prCmdInfo->u2InfoBufLen);
 	else
-		DBGLOG_LIMITED(TX, INFO,
+		DBGLOG_LIMITED(TX, DEBUG,
 			"TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 			prWifiCmd->ucSetQuery, prCmdInfo->u2InfoBufLen);
@@ -453,7 +453,7 @@ static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 		}
 	}
 #else /* CFG_MTK_WIFI_WFDMA_BK_RS */
-	DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
+	DBGLOG(INIT, DEBUG, "WFDMA reinit due to deep sleep\n");
 	halWpdmaInitRing(prAdapter->prGlueInfo, true);
 #endif /* CFG_MTK_WIFI_WFDMA_BK_RS */
 #elif defined(_HIF_USB)
@@ -678,7 +678,7 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 		kalUdelay(wait_us);
 	} while ((i++) < round);
 
-	DBGLOG(HAL, INFO, "==>  DMABusy, GloCfg=0x%x\n", GloCfg.word);
+	DBGLOG(HAL, DEBUG, "==>  DMABusy, GloCfg=0x%x\n", GloCfg.word);
 
 	return FALSE;
 }
@@ -1229,7 +1229,7 @@ void asicConnac3xProcessSoftwareInterrupt(
 		}
 
 		if (u4Status)
-			DBGLOG(HAL, INFO, "STA[0x%08x]\n", u4Status);
+			DBGLOG(HAL, DEBUG, "STA[0x%08x]\n", u4Status);
 	} else {
 		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
 		HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
@@ -1546,7 +1546,7 @@ u_int8_t asicConnac3xUsbResume(
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
 
 	if (asicConnac3xWfdmaIsNeedReInit(prAdapter)) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, DEBUG,
 		       "Deep sleep happens in suspend\n");
 
 		/* reinit USB because LP could clear WFDMA's CR */
@@ -1749,13 +1749,13 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	WLAN_GET_FIELD_BE16(&pucData[ETHER_HEADER_LEN - ETHER_TYPE_LEN],
 			    &u2EtherTypeLen);
 
-	DBGLOG(HAL, INFO, "EtherType [0x%08x]\n", u2EtherTypeLen);
+	DBGLOG(HAL, DEBUG, "EtherType [0x%08x]\n", u2EtherTypeLen);
 	if (ucIpVer == IP_VERSION_4) {
-		DBGLOG(HAL, INFO, "is IPV4[0x%08x]\n", u2EtherTypeLen);
+		DBGLOG(HAL, DEBUG, "is IPV4[0x%08x]\n", u2EtherTypeLen);
 		ucType = 1;
 	}
 	if (ucIpVer == IP_VERSION_6) {
-		DBGLOG(HAL, INFO, "is IPV6[0x%08x]\n", u2EtherTypeLen);
+		DBGLOG(HAL, DEBUG, "is IPV6[0x%08x]\n", u2EtherTypeLen);
 		ucType = 2;
 	}
 	if (ucType) {
@@ -1813,8 +1813,8 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] =
 		(prMsduInfo->u2FrameLength - ETH_HLEN) | (u4AddrExt << 12);
 
-	DBGLOG(HAL, INFO, "Fill HIF TXD + payload[%d]\n", u4MawdPacketCnt++);
-	DBGLOG_MEM32(HAL, INFO, pTxCell->AllocVa,
+	DBGLOG(HAL, DEBUG, "Fill HIF TXD + payload[%d]\n", u4MawdPacketCnt++);
+	DBGLOG_MEM32(HAL, DEBUG, pTxCell->AllocVa,
 		     NIC_TX_DESC_AND_PADDING_LENGTH +
 		     prChipInfo->txd_append_size);
 }
@@ -2516,7 +2516,7 @@ uint32_t asicConnac3xUpdateDynamicDmashdlQuota(
 
 	if (aucBuf) {
 		if (u4Pos)
-			DBGLOG(HAL, INFO, "%s\n", aucBuf);
+			DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 		kalMemFree(aucBuf, VIR_MEM_TYPE, u4BufSize);
 	}
 
@@ -2566,14 +2566,14 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 	wifi_coredump_set_enable(TRUE);
 	if (kalIsResetting()) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"Wi-Fi Driver trigger, need do complete.\n");
 		reset_done_trigger_completion();
 	} else if (fgIsDrvTriggerWholeChipReset) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"Ignore fw assert due to whole chip reset ongoing.\n");
 	} else if (kalGetShutdownState()) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"Ignore fw assert due to device shutdown.\n");
 	} else {
 		if (prAdapter->fgIsSkipFWL05) {
@@ -2610,7 +2610,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	struct CHIP_DBG_OPS *dbg_ops = prAdapter->chip_info->prDebugOps;
 
 	if (kalGetShutdownState()) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 			"Ignore fw assert due to device shutdown.\n");
 		return;
 	}
@@ -2829,7 +2829,7 @@ uint32_t asicConnac3xQueryDFDInfo(
 	u4DFDInfoLength = prDfdEvent->u4Length;
 	DBGLOG(INIT, TRACE, "[%d] Get dump length: %d\n",
 		u4InfoIdx, u4DFDInfoLength);
-	/* DBGLOG_MEM32(INIT, INFO, &prDfdEvent->aucDFDInfoBuf[0], 32); */
+	/* DBGLOG_MEM32(INIT, DEBUG, &prDfdEvent->aucDFDInfoBuf[0], 32); */
 
 exit:
 	if (prDfdEvent)
@@ -2923,7 +2923,7 @@ static int wlan_pre_pwr_on(void)
 		get_platform_driver_data();
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
 
-	DBGLOG(INIT, INFO, "wlan_pre_pwr_on\n");
+	TRACE_FUNC(INIT, DEBUG, "%s\n");
 
 	return wlan_pinctrl_action(prChipInfo, WLAN_PINCTRL_MSG_FUNC_ON);
 }
@@ -2933,7 +2933,7 @@ static int wlan_efuse_on(void)
 	int32_t ret = 0;
 	struct task_struct *cutTask = current;
 
-	DBGLOG(INIT, INFO, "wlan_efuse_on.\n");
+	TRACE_FUNC(INIT, DEBUG, "%s.\n");
 
 	/*Setup sub_wifi_thrd run on non X core */
 	kalSetRunOnNonXCore(cutTask);
@@ -2966,7 +2966,7 @@ static void __wlan_pwr_on_notify(struct work_struct *work)
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_T *prWlanOnOffWakeLock;
 #endif
-	DBGLOG(INIT, INFO, "__wlan_pwr_on_notify.\n");
+	TRACE_FUNC(INIT, DEBUG, "%s.\n");
 
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_INIT(NULL,
@@ -3009,7 +3009,7 @@ u_int8_t is_pwr_on_notify_processing(void)
 
 static int wlan_pwr_on_notify(void)
 {
-	DBGLOG(INIT, INFO, "wlan_pwr_on_notify.\n");
+	DBGLOG(INIT, DEBUG, "wlan_pwr_on_notify.\n");
 
 	schedule_work(&pwr_on_notify_work);
 
@@ -3057,7 +3057,7 @@ static int wlan_pre_fmd(void)
 	} else
 		wlanShutdown();
 
-	DBGLOG(INIT, INFO, "wifi off success\n");
+	DBGLOG(INIT, DEBUG, "wifi off success\n");
 	return 0;
 }
 
@@ -3278,7 +3278,7 @@ void connac3xClearEvtRingTillCmdRingEmpty(struct ADAPTER *prAdapter)
 
 	}
 	if (u4Idx) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, DEBUG,
 		       "try to clear event ring, cmd[%u] retry[%u]\n",
 		       prTxRing->u4UsedCnt, u4Idx);
 	}

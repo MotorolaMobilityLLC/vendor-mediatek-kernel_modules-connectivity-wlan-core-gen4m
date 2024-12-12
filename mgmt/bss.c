@@ -1957,17 +1957,17 @@ void bssDumpClientList(struct ADAPTER *prAdapter,
 
 	prClientList = &prBssInfo->rStaRecOfClientList;
 
-	DBGLOG(SW4, INFO, "Dump BSS[%u] Client List NUM[%u]\n",
+	DBGLOG(SW4, DEBUG, "Dump BSS[%u] Client List NUM[%u]\n",
 	       prBssInfo->ucBssIndex, prClientList->u4NumElem);
 
 	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry,
 			    struct STA_RECORD) {
 
 		if (!prCurrStaRec) {
-			DBGLOG(SW4, INFO, "[%2u] is NULL STA_REC\n", ucCount);
+			DBGLOG(SW4, DEBUG, "[%2u] is NULL STA_REC\n", ucCount);
 			break;
 		}
-		DBGLOG(SW4, INFO, "[%2u] STA[%u] [" MACSTR "]\n", ucCount,
+		DBGLOG(SW4, DEBUG, "[%2u] STA[%u] [" MACSTR "]\n", ucCount,
 		       prCurrStaRec->ucIndex,
 		       MAC2STR(prCurrStaRec->aucMacAddr));
 
@@ -1987,7 +1987,7 @@ void bssCheckClientList(struct ADAPTER *prAdapter,
 
 	/* Check MAX number */
 	if (prClientList->u4NumElem > P2P_MAXIMUM_CLIENT_COUNT) {
-		DBGLOG(SW4, INFO, "BSS[%u] Client List NUM[%u] ERR\n",
+		DBGLOG(SW4, DEBUG, "BSS[%u] Client List NUM[%u] ERR\n",
 		       prBssInfo->ucBssIndex, prClientList->u4NumElem);
 
 		fgError = TRUE;
@@ -2001,7 +2001,7 @@ void bssCheckClientList(struct ADAPTER *prAdapter,
 			fgError = TRUE;
 
 		if (fgError) {
-			DBGLOG(SW4, INFO,
+			DBGLOG(SW4, DEBUG,
 			       "BSS[%u] Client List PTR next/prev[%p/%p] ERR\n",
 			       prBssInfo->ucBssIndex, prClientList->prNext,
 			       prClientList->prPrev);
@@ -2013,7 +2013,7 @@ void bssCheckClientList(struct ADAPTER *prAdapter,
 			    struct STA_RECORD) {
 		if (!prCurrStaRec) {
 			fgError = TRUE;
-			DBGLOG(SW4, INFO, "BSS[%u] Client List NULL PTR ERR\n",
+			DBGLOG(SW4, DEBUG, "BSS[%u] Client List NULL PTR ERR\n",
 			       prBssInfo->ucBssIndex);
 
 			break;
@@ -2024,7 +2024,7 @@ void bssCheckClientList(struct ADAPTER *prAdapter,
 
 	/* Check real count and list number */
 	if (ucCount != prClientList->u4NumElem) {
-		DBGLOG(SW4, INFO,
+		DBGLOG(SW4, DEBUG,
 		       "BSS[%u] Client List NUM[%u] REAL CNT[%u] ERR\n",
 		       prBssInfo->ucBssIndex, prClientList->u4NumElem, ucCount);
 
@@ -2678,7 +2678,7 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	/* P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL; */
 
 	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
-		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
+		DBGLOG(SW4, DEBUG, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
 		return;
 	}
@@ -2686,12 +2686,12 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	if (!prBssInfo) {
-		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
+		DBGLOG(SW4, DEBUG, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
 		return;
 	}
 
-	DBGLOG(SW4, INFO, "OWNMAC[" MACSTR "] BSSID[" MACSTR "] SSID[%s]\n",
+	DBGLOG(SW4, DEBUG, "OWNMAC[" MACSTR "] BSSID[" MACSTR "] SSID[%s]\n",
 	       MAC2STR(prBssInfo->aucOwnMacAddr), MAC2STR(prBssInfo->aucBSSID),
 	       HIDE(prBssInfo->aucSSID));
 
@@ -2699,7 +2699,7 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	u4CurrentOPMode = prBssInfo->eCurrentOPMode;
 	if (u4NetworkType < NETWORK_TYPE_NUM
 			&& u4CurrentOPMode < OP_MODE_NUM) {
-		DBGLOG(SW4, INFO,
+		DBGLOG(SW4, DEBUG,
 			"BSS IDX[%u] Type[%s] OPMode[%s] ConnState[%u] Absent[%u]\n",
 			prBssInfo->ucBssIndex,
 			apucNetworkType[u4NetworkType],
@@ -2707,66 +2707,66 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			prBssInfo->eConnectionState, prBssInfo->fgIsNetAbsent);
 	}
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, DEBUG,
 	       "Channel[%u] Band[%u] SCO[%u] Assoc40mBwAllowed[%u] 40mBwAllowed[%u]\n",
 	       prBssInfo->ucPrimaryChannel, prBssInfo->eBand,
 	       prBssInfo->eBssSCO, prBssInfo->fgAssoc40mBwAllowed,
 	       prBssInfo->fg40mBwAllowed);
 
-	DBGLOG(SW4, INFO, "MaxBw[%u] OpRxNss[%u] OpTxNss[%u]\n",
+	DBGLOG(SW4, DEBUG, "MaxBw[%u] OpRxNss[%u] OpTxNss[%u]\n",
 	       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex),
 	       prBssInfo->ucOpRxNss, prBssInfo->ucOpTxNss);
 
-	DBGLOG(SW4, INFO, "QBSS[%u] CapInfo[0x%04x] AID[%u]\n",
+	DBGLOG(SW4, DEBUG, "QBSS[%u] CapInfo[0x%04x] AID[%u]\n",
 	       prBssInfo->fgIsQBSS, prBssInfo->u2CapInfo, prBssInfo->u2AssocId);
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, DEBUG,
 	       "ShortPreamble Allowed[%u] EN[%u], ShortSlotTime[%u]\n",
 	       prBssInfo->fgIsShortPreambleAllowed,
 	       prBssInfo->fgUseShortPreamble, prBssInfo->fgUseShortSlotTime);
 
-	DBGLOG(SW4, INFO, "PhyTypeSet: Basic[0x%02x] NonHtBasic[0x%02x]\n",
+	DBGLOG(SW4, DEBUG, "PhyTypeSet: Basic[0x%02x] NonHtBasic[0x%02x]\n",
 	       prBssInfo->ucPhyTypeSet, prBssInfo->ucNonHTBasicPhyType);
 
-	DBGLOG(SW4, INFO, "RateSet: BssBasic[0x%04x] Operational[0x%04x]\n",
+	DBGLOG(SW4, DEBUG, "RateSet: BssBasic[0x%04x] Operational[0x%04x]\n",
 	       prBssInfo->u2BSSBasicRateSet, prBssInfo->u2OperationalRateSet);
 
-	DBGLOG(SW4, INFO, "ATIMWindow[%u] DTIM Period[%u] Count[%u]\n",
+	DBGLOG(SW4, DEBUG, "ATIMWindow[%u] DTIM Period[%u] Count[%u]\n",
 	       prBssInfo->u2ATIMWindow, prBssInfo->ucDTIMPeriod,
 	       prBssInfo->ucDTIMCount);
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, DEBUG,
 	       "HT Operation Info1[0x%02x] Info2[0x%04x] Info3[0x%04x]\n",
 	       prBssInfo->ucHtOpInfo1, prBssInfo->u2HtOpInfo2,
 	       prBssInfo->u2HtOpInfo3);
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, DEBUG,
 	       "ProtectMode HT[%u] ERP[%u], OperationMode GF[%u] RIFS[%u]\n",
 	       prBssInfo->eHtProtectMode, prBssInfo->fgErpProtectMode,
 	       prBssInfo->eGfOperationMode, prBssInfo->eRifsOperationMode);
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, DEBUG,
 	       "(OBSS) ProtectMode HT[%u] ERP[%u], OperationMode GF[%u] RIFS[%u]\n",
 	       prBssInfo->eObssHtProtectMode, prBssInfo->fgObssErpProtectMode,
 	       prBssInfo->eObssGfOperationMode,
 	       prBssInfo->fgObssRifsOperationMode);
 
-	DBGLOG(SW4, INFO,
+	DBGLOG(SW4, DEBUG,
 	       "VhtChannelWidth[%u] OpChangeChannelWidth[%u], IsOpChangeChannelWidth[%u]\n",
 	       prBssInfo->ucVhtChannelWidth, prBssInfo->ucOpChangeChannelWidth,
 	       prBssInfo->fgIsOpChangeChannelWidth);
 
-	DBGLOG(SW4, INFO, "======== Dump Connected Client ========\n");
+	DBGLOG(SW4, DEBUG, "======== Dump Connected Client ========\n");
 
 #if 0
-	DBGLOG(SW4, INFO, "NumOfClient[%u]\n",
+	DBGLOG(SW4, DEBUG, "NumOfClient[%u]\n",
 	       bssGetClientCount(prAdapter, prBssInfo));
 
 	prStaRecOfClientList = &prBssInfo->rStaRecOfClientList;
 
 	LINK_FOR_EACH_ENTRY(prCurrStaRec, prStaRecOfClientList, rLinkEntry,
 			    struct STA_RECORD) {
-		DBGLOG(SW4, INFO, "STA[%u] [" MACSTR "]\n",
+		DBGLOG(SW4, DEBUG, "STA[%u] [" MACSTR "]\n",
 		       prCurrStaRec->ucIndex,
 		       MAC2STR(prCurrStaRec->aucMacAddr));
 	}
@@ -2776,7 +2776,7 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #endif
 #endif
 
-	DBGLOG(SW4, INFO, "============== Dump Done ==============\n");
+	DBGLOG(SW4, DEBUG, "============== Dump Done ==============\n");
 }
 
 int8_t bssGetHtRxNss(struct BSS_DESC *prBssDesc)

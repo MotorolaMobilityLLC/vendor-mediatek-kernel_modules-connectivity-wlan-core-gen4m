@@ -1068,7 +1068,7 @@ p2pRoleFsmRunEventAAAComplete(
 				continue;
 			}
 
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"\tsta: %d, wid: %d, bss: %d, " MACSTR "\n",
 				starec->ucIndex,
 				starec->ucWlanIndex,

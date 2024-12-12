@@ -7038,7 +7038,7 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 	prCmdBody->ucRxNss = prBssInfo->ucOpRxNss;
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
-		DBGLOG(RLM, VOC,
+		DBGLOG(RLM, INFO,
 		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w(vht)=%d %s s1=%d s2=%d RxN=%d, TxN=%d\n",
 		       prCmdBody->ucBssIndex, prCmdBody->ucRfBand,
 		       prCmdBody->ucPrimaryChannel, prCmdBody->ucRfSco,
@@ -7052,7 +7052,7 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 		       prCmdBody->ucRxNss,
 		       prCmdBody->ucTxNss);
 	} else {
-		DBGLOG(RLM, VOC, "N=%d closed\n", prCmdBody->ucBssIndex);
+		DBGLOG(RLM, INFO, "N=%d closed\n", prCmdBody->ucBssIndex);
 	}
 }
 
@@ -7576,7 +7576,7 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 		uint8_t ucNewMaxBw =
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 
-		DBGLOG(TDLS, INFO,
+		DBGLOG(TDLS, DEBUG,
 			"Adjust bw %d to %d\n", ucMaxBw, ucNewMaxBw);
 	}
 #endif
@@ -11655,14 +11655,14 @@ void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter,
 
 	if (ucEnable) {
 		if (icLimit > icMaxPwrLmt) {
-			DBGLOG(RLM, VOC,
+			DBGLOG(RLM, INFO,
 				"LM: Target MaxPwr [%d] too big, use default[%d]\n"
 				, icLimit,
 				icMaxPwrLmt);
 			icLimit = icMaxPwrLmt;
 		}
 		if (icLimit < icMinPwrLmt) {
-			DBGLOG(RLM, VOC,
+			DBGLOG(RLM, INFO,
 				"LM: Target MinPwr [%d] too low, use default[%d]\n"
 				, icLimit
 				, icMinPwrLmt);
@@ -11673,7 +11673,7 @@ void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter,
 		rTxPwrLimit.cMaxTxPwr = icLimit * 2;
 		rTxPwrLimit.cMinTxPwr = icMinPwrLmt * 2;
 
-		DBGLOG(RLM, VOC,
+		DBGLOG(RLM, INFO,
 			"LM: Set Max Tx Power Limit %d, Min Limit %d\n",
 			rTxPwrLimit.cMaxTxPwr,
 			rTxPwrLimit.cMinTxPwr);
@@ -13550,7 +13550,7 @@ void rlmTxPwrEnvMaxPwrSend(
 			= picTxPwrEnvMaxPwr[eBwType];
 	}
 
-	DBGLOG(RLM, VOC,
+	DBGLOG(RLM, INFO,
 		"TPE Send:En[%d]B[%d]PriCh[%d]Num[%d]PwrLmtBW20[%d]BW40[%d]BW80[%d]BW160[%d]\n",
 		prTxPwrEnvPwrLmt->fgPwrLmtEnable,
 		prTxPwrEnvPwrLmt->ucBand,

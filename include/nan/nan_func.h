@@ -133,7 +133,7 @@ uint32_t nanGetTimelineFcSlots(struct ADAPTER *prAdapter, size_t szTimelineIdx,
 {
 	uint32_t u4Bitmap = 0;
 
-	NAN_DW_DBGLOG(NAN, INFO, TRUE, szSlotIdx,
+	NAN_DW_DBGLOG(NAN, DEBUG, TRUE, szSlotIdx,
 		      "Timeline %u FC slots: %02x-%02x-%02x-%02x\n",
 		      szTimelineIdx,
 		      ((uint8_t *)&u4Bitmap)[0], ((uint8_t *)&u4Bitmap)[1],

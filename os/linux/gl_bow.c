@@ -112,7 +112,8 @@ u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo)
 {
 	ASSERT(prGlueInfo);
 
-	DBGLOG(BOW, INFO, "Register for character device to communicate with 802.11 PAL.\n");
+	DBGLOG(BOW, DEBUG,
+	       "Register for character device to communicate with 802.11 PAL.\n");
 
 	if (prGlueInfo->rBowInfo.fgIsRegistered == TRUE)
 		return FALSE;
@@ -194,7 +195,8 @@ u_int8_t glUnregisterAmpc(struct GLUE_INFO *prGlueInfo)
 {
 	ASSERT(prGlueInfo);
 
-	DBGLOG(BOW, INFO, "Unregister character device for communicating with 802.11 PAL.\n");
+	DBGLOG(BOW, DEBUG,
+	       "Unregister character device for communicating with 802.11 PAL.\n");
 
 	if (prGlueInfo->rBowInfo.fgIsRegistered == FALSE)
 		return FALSE;
@@ -244,7 +246,7 @@ static ssize_t bow_ampc_read(struct file *filp, char __user *buf, size_t size,
 
 	ASSERT(prGlueInfo);
 
-	DBGLOG(BOW, INFO, "BoW EVENT read.\n");
+	DBGLOG(BOW, DEBUG, "BoW EVENT read.\n");
 
 	if ((prGlueInfo->rBowInfo.fgIsRegistered == FALSE) ||
 		test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
@@ -415,7 +417,7 @@ static int bow_ampc_open(struct inode *inodep, struct file *filp)
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_BOW_INFO *prBowInfo;
 
-	DBGLOG(BOW, INFO, "in %s\n", __func__);
+	TRACE_FUNC(BOW, DEBUG, "in %s\n");
 
 	prBowInfo = CONTAINER_OF(inodep->i_cdev, struct GL_BOW_INFO, cdev);
 	ASSERT(prBowInfo);
@@ -445,7 +447,7 @@ static int bow_ampc_release(struct inode *inodep, struct file *filp)
 
 	prGlueInfo = (struct GLUE_INFO *) (filp->private_data);
 
-	DBGLOG(BOW, INFO, "in %s\n", __func__);
+	TRACE_FUNC(BOW, DEBUG, "in %s\n");
 
 	ASSERT(prGlueInfo);
 
@@ -894,7 +896,7 @@ static netdev_tx_t bowHardStartXmit(struct sk_buff *prSkb,
 	/* Parsing BOW frame info */
 	if (!kalBowFrameClassifier(prGlueInfo, (void *) prSkb, &fgIs1x)) {
 		/* Cannot extract packet */
-		DBGLOG(BOW, INFO, "Invalid BOW frame, skip Tx\n");
+		DBGLOG(BOW, DEBUG, "Invalid BOW frame, skip Tx\n");
 		dev_kfree_skb(prSkb);
 		return NETDEV_TX_OK;
 	}

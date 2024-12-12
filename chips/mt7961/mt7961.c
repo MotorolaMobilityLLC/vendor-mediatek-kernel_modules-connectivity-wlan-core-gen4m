@@ -561,55 +561,55 @@ void mt7961DumpSerDummyCR(
 {
 	uint32_t u4MacVal;
 
-	DBGLOG(HAL, INFO, "%s\n", __func__);
+	TRACE_FUNC(HAL, DEBUG, "%s\n");
 
-	DBGLOG(HAL, INFO, "=====Dump Start====\n");
+	DBGLOG(HAL, DEBUG, "=====Dump Start====\n");
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_SER_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "SER STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "SER STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_SER_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PLE STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "PLE STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_PLE_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE1_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PLE1 STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "PLE1 STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_PLE1_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PLE AMSDU STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "PLE AMSDU STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PSE_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PSE STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "PSE STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_PSE_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PSE1_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PSE1 STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "PSE1 STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_PSE1_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR,
 			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR6 BN0 STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "LMAC WISR6 BN0 STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR,
 			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR6 BN1 STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "LMAC WISR6 BN1 STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR,
 			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR7 BN0 STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "LMAC WISR7 BN0 STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR, u4MacVal);
 
 	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR,
 			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR7 BN1 STATUS[0x%08x]: 0x%08x\n",
+	DBGLOG(HAL, DEBUG, "LMAC WISR7 BN1 STATUS[0x%08x]: 0x%08x\n",
 		WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR, u4MacVal);
 
-	DBGLOG(HAL, INFO, "=====Dump End====\n");
+	DBGLOG(HAL, DEBUG, "=====Dump End====\n");
 
 }
 
@@ -948,13 +948,13 @@ uint32_t wlanImageSectionGetBtPatchInfo(struct ADAPTER *prAdapter,
 	/* Dump image information */
 	kalMemZero(aucBuffer, 32);
 	kalStrnCpy(aucBuffer, prPatchFormat->aucPlatform, 4);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 	       "PATCH INFO: platform[%s] HW/SW ver[0x%04X] ver[0x%04X]\n",
 	       aucBuffer, prPatchFormat->u4SwHwVersion,
 	       prPatchFormat->u4PatchVersion);
 
 	kalStrnCpy(aucBuffer, prPatchFormat->aucBuildDate, 16);
-	DBGLOG(INIT, INFO, "date[%s]\n", aucBuffer);
+	DBGLOG(INIT, DEBUG, "date[%s]\n", aucBuffer);
 
 	if (prPatchFormat->u4PatchVersion != PATCH_VERSION_MAGIC_NUM) {
 		DBGLOG(INIT, ERROR, "BT Patch format isn't V2\n");
@@ -965,7 +965,7 @@ uint32_t wlanImageSectionGetBtPatchInfo(struct ADAPTER *prAdapter,
 	img_ptr += sizeof(struct PATCH_FORMAT_V2_T);
 	glo_desc = (struct PATCH_GLO_DESC *)img_ptr;
 	num_of_region = le2cpu32(glo_desc->section_num);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 			"\tPatch ver: 0x%x, Section num: 0x%x, subsys: 0x%x\n",
 			glo_desc->patch_ver,
 			num_of_region,
@@ -1014,7 +1014,7 @@ uint32_t wlanImageSectionGetBtPatchInfo(struct ADAPTER *prAdapter,
 			le2cpu32(sec_map->section_offset);
 		sec_info = le2cpu32(sec_map->bin_info_spec.sec_info);
 
-		DBGLOG(INIT, INFO, "BT Patch addr=0x%x: size=%d, ptr=0x%p\n",
+		DBGLOG(INIT, DEBUG, "BT Patch addr=0x%x: size=%d, ptr=0x%p\n",
 			region->img_dest_addr, region->img_size,
 			region->img_ptr);
 
@@ -1091,7 +1091,7 @@ uint32_t mt7961DownloadBtPatch(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 
-	DBGLOG(INIT, INFO, "BT Patch download start\n");
+	DBGLOG(INIT, DEBUG, "BT Patch download start\n");
 
 	/* Always check BT Patch Download for L0.5 reset case */
 
@@ -1120,11 +1120,11 @@ uint32_t mt7961DownloadBtPatch(struct ADAPTER *prAdapter)
 	s4BtPatchCheck = wlanBtPatchIsDownloaded(prAdapter,
 				region->img_dest_addr, &u4RemapAddr);
 	if (s4BtPatchCheck < 0) {
-		DBGLOG(INIT, INFO, "Get BT Semaphore Fail\n");
+		DBGLOG(INIT, DEBUG, "Get BT Semaphore Fail\n");
 		u4Status =  WLAN_STATUS_FAILURE;
 		goto out;
 	} else if (s4BtPatchCheck == 1) {
-		DBGLOG(INIT, INFO, "No need to download patch\n");
+		DBGLOG(INIT, DEBUG, "No need to download patch\n");
 		u4Status =  WLAN_STATUS_SUCCESS;
 		goto out;
 	}
@@ -1145,7 +1145,7 @@ uint32_t mt7961DownloadBtPatch(struct ADAPTER *prAdapter)
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, ERROR, "Send INIT_CMD_PATCH_FINISH Fail\n");
 	else
-		DBGLOG(INIT, INFO, "BT Patch download success\n");
+		DBGLOG(INIT, DEBUG, "BT Patch download success\n");
 
 out:
 	if (target.patch_region != NULL) {

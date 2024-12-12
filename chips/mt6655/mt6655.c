@@ -1455,7 +1455,7 @@ static void mt6655SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	if (!base)
 		return;
 
-	DBGLOG(HAL, INFO, "base: 0x%llx\n", base);
+	DBGLOG(HAL, DEBUG, "base: 0x%llx\n", base);
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,

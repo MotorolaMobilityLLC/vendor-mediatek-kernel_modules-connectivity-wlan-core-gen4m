@@ -473,7 +473,7 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 			ret = freq_qos_add_request(&policy->constraints,
 				&wReq->qos_req, FREQ_QOS_MIN, AUTO_CPU_FREQ);
 			if (ret < 0) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, DEBUG,
 					"freq_qos_add_request fail cpu%d ret=%d\n",
 					wReq->cpu, ret);
 				kfree(wReq);
@@ -491,7 +491,7 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 
 		ret = freq_qos_update_request(&wReq->qos_req, freq);
 		if (ret < 0) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, DEBUG,
 				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
 				wReq->cpu, freq, ret);
 		}
@@ -541,7 +541,7 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 			current_bw = 0;
 
 		icc_set_bw(bw_path, 0, current_bw);
-		DBGLOG(INIT, INFO, "[%d] bw %u => %u\n",
+		DBGLOG(INIT, DEBUG, "[%d] bw %u => %u\n",
 			iLv, prev_bw, current_bw);
 	}
 }
@@ -565,7 +565,7 @@ static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 				cpumask_or(&cpu_mask, &cpu_mask, cpumask_of(i));
 		r = set_cpus_allowed_ptr(task, &cpu_mask);
 	}
-	DBGLOG(INIT, INFO, "set_cpus_allowed_ptr()=%d", r);
+	DBGLOG(INIT, DEBUG, "set_cpus_allowed_ptr()=%d", r);
 #endif
 	return r;
 }
@@ -759,7 +759,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	TX_FREE_SKB_WORK_TEMPLATE \
 	"%s\n"
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		TEMP_LOG_TEMPLATE,
 		prBoostInfo->rCpuInfo.i4LittleCpuFreq,
 		prBoostInfo->rCpuInfo.i4BigCpuFreq,
@@ -862,7 +862,7 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		eNewBoost = eBoostCpuTable[u4TarPerfLevel];
 
 	if (eCurrBoost != eNewBoost) {
-		DBGLOG(INIT, INFO, "TputLv:%u BoostLv[%u->%u]\n",
+		DBGLOG(INIT, DEBUG, "TputLv:%u BoostLv[%u->%u]\n",
 			u4TarPerfLevel, eCurrBoost, eNewBoost);
 		kalTraceEvent("%s TputLv:%u BoostLv[%u->%u]\n", __func__,
 			u4TarPerfLevel, eCurrBoost, eNewBoost);
@@ -1042,11 +1042,11 @@ void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 
 void kalDumpPlatGPIOStat(void)
 {
-	DBGLOG(INIT, INFO, "GPIO 244, val=%d\n",
+	DBGLOG(INIT, DEBUG, "GPIO 244, val=%d\n",
 		gpio_get_value(512 + 244));
-	DBGLOG(INIT, INFO, "GPIO 248, val=%d\n",
+	DBGLOG(INIT, DEBUG, "GPIO 248, val=%d\n",
 		gpio_get_value(512 + 248));
-	DBGLOG(INIT, INFO, "GPIO 249, val=%d\n",
+	DBGLOG(INIT, DEBUG, "GPIO 249, val=%d\n",
 		gpio_get_value(512 + 249));
 }
 
@@ -1064,7 +1064,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	unsigned long long end = emiPhyBase + offset + size - 1;
 	int ret;
 
-	DBGLOG(INIT, INFO, "emiPhyBase: %pa, offset: %d, size: %d\n",
+	DBGLOG(INIT, DEBUG, "emiPhyBase: %pa, offset: %d, size: %d\n",
 				&emiPhyBase, offset, size);
 
 	ret = mtk_emimpu_init_region(&region, 18);
@@ -1258,7 +1258,7 @@ static int32_t mt6991_wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
 	}
 
 	ret = pinctrl_select_state(pinctrl_ptr, pinctrl);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, DEBUG,
 		"pinctrl_select_state msg: %d, ret: %d.\n",
 		msg, ret);
 
