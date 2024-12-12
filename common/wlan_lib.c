@@ -9405,7 +9405,7 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntry(struct ADAPTER *prAdapter,
 		ASSERT(prWlanCfgRec);
 	} else if (u4Flags == WLAN_CFG_EM) {
 		prWlanCfgEm = prAdapter->prWlanCfgEm;
-		u32MaxNum = WLAN_CFG_REC_ENTRY_NUM_MAX;
+		u32MaxNum = WLAN_CFG_ENTRY_NUM_MAX;
 		ASSERT(prWlanCfgEm);
 	} else {
 		prWlanCfg = prAdapter->prWlanCfg;
