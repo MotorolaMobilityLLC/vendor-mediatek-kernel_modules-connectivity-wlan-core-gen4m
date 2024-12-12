@@ -2959,9 +2959,18 @@ void rlmReviseS1(
 	enum ENUM_CHANNEL_WIDTH eChBw,
 	enum ENUM_CHNL_EXT eSco)
 {
-	/* For 6G BW20 Case*/
-	if (eSco == 0 && eChBw == CW_20_40MHZ)
-		*pucS1 = ucPrimaryCh;
+	if (eChBw == CW_20_40MHZ) {
+		/* For BW20 Case*/
+		if (eSco == CHNL_EXT_SCN)
+			*pucS1 = ucPrimaryCh;
+		/* For BW40 + SCA Case*/
+		else if (eSco == CHNL_EXT_SCA &&
+					ucPrimaryCh < UNII8_UPPER_BOUND)
+			*pucS1 = ucPrimaryCh + CHNL_SPAN_10;
+		/* For BW40 + SCB Case*/
+		else if (eSco == CHNL_EXT_SCB && ucPrimaryCh > 4)
+			*pucS1 = ucPrimaryCh - CHNL_SPAN_10;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
