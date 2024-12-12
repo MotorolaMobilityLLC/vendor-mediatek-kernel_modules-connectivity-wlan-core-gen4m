@@ -1745,8 +1745,10 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-	nicTxMsduQueue(prAdapter, 0, prDataPort0);
-	nicTxMsduQueue(prAdapter, 0, prDataPort1);
+	if (QUEUE_IS_NOT_EMPTY(prDataPort0))
+		nicTxMsduQueue(prAdapter, 0, prDataPort0);
+	if (QUEUE_IS_NOT_EMPTY(prDataPort1))
+		nicTxMsduQueue(prAdapter, 0, prDataPort1);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 	/* Enque from dataQ to TCQ if TX don't finish */
