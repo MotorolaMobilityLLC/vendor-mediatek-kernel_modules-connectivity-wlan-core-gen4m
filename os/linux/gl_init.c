@@ -7498,6 +7498,9 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	kalVnfActive(prAdapter);
 #endif
 
+#if CFG_SUPPORT_CABLE_DETECT
+	cable_detect_gpio_parse();
+#endif
 	return 0;
 }
 

@@ -1759,6 +1759,10 @@ void sysInitWifiVer(void);
 void sysGetExtCfg(struct ADAPTER *prAdapter);
 #endif /* WLAN_INCLUDE_SYS */
 
+#if CFG_SUPPORT_CABLE_DETECT
+void cable_detect_gpio_parse(void);
+#endif
+
 #if CFG_ENABLE_BT_OVER_WIFI
 u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo);
 
