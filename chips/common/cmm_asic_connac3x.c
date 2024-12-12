@@ -1056,7 +1056,7 @@ void asicConnac3xLowPowerOwnRead(
 		*pfgResult = TRUE;
 }
 
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 void asicConnac3xLowPowerOwnSet(
 	struct ADAPTER *prAdapter,
 	u_int8_t *pfgResult)
@@ -1116,7 +1116,7 @@ void asicConnac3xLowPowerOwnClear(
 	*pfgResult = TRUE;
 }
 
-#else /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#else /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0) */
 
 void asicConnac3xLowPowerOwnSet(
 	struct ADAPTER *prAdapter,
@@ -1181,7 +1181,7 @@ void asicConnac3xLowPowerOwnClear(
 	} else
 		*pfgResult = TRUE;
 }
-#endif /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#endif /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0) */
 
 void asicConnac3xProcessSoftwareInterrupt(
 	struct ADAPTER *prAdapter)

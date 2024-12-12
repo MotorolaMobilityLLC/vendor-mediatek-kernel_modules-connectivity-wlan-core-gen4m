@@ -2420,9 +2420,9 @@ void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 
 void kalAcquireHifOwnLock(struct ADAPTER *prAdapter)
 {
-#if (IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) && \
+#if ((CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) && \
 	!IS_ENABLED(CFG_SUPPORT_RX_WORK)) || \
-	!IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+	(CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
 
 	/* if direct trx,  set drv/fw own will be called
 	*  in softirq/tasklet/thread context,
@@ -2439,9 +2439,9 @@ void kalAcquireHifOwnLock(struct ADAPTER *prAdapter)
 
 void kalReleaseHifOwnLock(struct ADAPTER *prAdapter)
 {
-#if (IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) && \
+#if ((CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) && \
 	!IS_ENABLED(CFG_SUPPORT_RX_WORK)) || \
-	!IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+	(CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
 
 	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
 		spin_unlock_bh(

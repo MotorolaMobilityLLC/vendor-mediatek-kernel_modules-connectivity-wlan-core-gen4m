@@ -522,16 +522,16 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 			LP_OWN_BACK_FAILED_RESET_CNT) {
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 			mtk_pcie_dump_link_info(0);
 #endif
 			if (in_interrupt())
 				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
 			else {
-#else  /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#else  /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0) */
 			{
-#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#endif /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) */
 				GL_DEFAULT_RESET_TRIGGER(prAdapter,
 					RST_DRV_OWN_FAIL);
 			}
@@ -625,7 +625,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
 #endif /* !CFG_SUPPORT_RX_WORK */
 
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 		if (prAdapter->fgIsWiFiOnDrvOwn) {
 			DBGLOG(INIT, TRACE, "WIFI On DRIVER OWN Start\n");
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
@@ -640,13 +640,13 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #else
 		if (!prBusInfo->fgCheckDriverOwnInt ||
 		   test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
-#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#endif /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) */
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 		if (fgResult)
 			goto done;
 
-#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 		if (test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prAdapter->prGlueInfo->fgIsInSuspend)) {
 			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
@@ -671,7 +671,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		}
 done:
 		if (fgResult) {
-#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 			clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 				&prAdapter->prGlueInfo->ulFlag);
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
@@ -697,7 +697,7 @@ done:
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
 			   (kalIsCardRemoved(prAdapter->prGlueInfo) ||
 			    fgIsBusAccessFailed || fgTimeout)) {
-#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 			if (fgResult) {

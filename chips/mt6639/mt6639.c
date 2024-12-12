@@ -520,7 +520,7 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	{"drv_own_host_timeout_irq", pcie_drv_own_top_handler,
 		pcie_drv_own_thread_handler, AP_DRV_OWN, 0},
 #else
@@ -645,11 +645,11 @@ struct BUS_INFO mt6639_bus_info = {
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	.fgCheckDriverOwnInt = TRUE,
 #else
 	.fgCheckDriverOwnInt = FALSE,
-#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#endif /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) */
 #if defined(_HIF_PCIE) && !defined(UEFI)
 	.checkFwOwnMsiStatus = mt6639CheckFwOwnMsiStatus,
 #endif

@@ -576,7 +576,7 @@ struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 #endif
 
-#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	{"drv_own_host_timeout_irq", pcie_drv_own_top_handler,
 	pcie_drv_own_thread_handler, AP_DRV_OWN, 0},
 #else
@@ -715,7 +715,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_WF_B0_HOST_LPCR_FW_OWN_CLR_STAT_MASK,
-#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	.fgCheckDriverOwnInt = TRUE,
 #else
 	.fgCheckDriverOwnInt = FALSE,
@@ -4982,7 +4982,7 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 				 u_int8_t *pfgResult)
 {
 	struct mt66xx_chip_info *prChipInfo;
-#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
 	uint32_t u4RegValue = 0;
 #endif
 
@@ -4996,7 +4996,7 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 		   CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
 		   PCIE_LPCR_HOST_SET_OWN);
 
-#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
 	HAL_RMCR_RD(LPOWN_READ, prAdapter,
 		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
 		    &u4RegValue);
@@ -5019,7 +5019,7 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult)
 {
 	struct mt66xx_chip_info *prChipInfo;
-#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
 	uint32_t u4RegValue = 0;
 #endif
 
@@ -5039,7 +5039,7 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 	mtk_pcie_dump_link_info(0);
 #endif
 
-#ifdef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 		  &prAdapter->prGlueInfo->ulFlag);
 #endif
@@ -5048,7 +5048,7 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 		   CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
 		   PCIE_LPCR_HOST_CLR_OWN);
 
-#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
 	HAL_RMCR_RD(LPOWN_READ, prAdapter,
 		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
 		    &u4RegValue);
