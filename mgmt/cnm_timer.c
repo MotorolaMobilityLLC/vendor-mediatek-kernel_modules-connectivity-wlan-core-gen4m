@@ -296,6 +296,7 @@ cnmTimerInitTimerOption(struct ADAPTER *prAdapter,
 	struct LINK *prTimerList;
 	struct LINK_ENTRY *prLinkEntry;
 	struct TIMER *prPendingTimer;
+	int loopCnt = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	ASSERT(prAdapter);
@@ -312,6 +313,15 @@ cnmTimerInitTimerOption(struct ADAPTER *prAdapter,
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
 		if (prLinkEntry == NULL)
 			break;
+
+		loopCnt++;
+		if (loopCnt > prTimerList->u4NumElem) {
+			log_dbg(CNM, WARN,
+				"loopCnt=%d>[%d]\n",
+				loopCnt, prTimerList->u4NumElem);
+			cnmTimerDumpTimer(prAdapter);
+			break;
+		}
 
 		prPendingTimer = LINK_ENTRY(prLinkEntry,
 			struct TIMER, rLinkEntry);
