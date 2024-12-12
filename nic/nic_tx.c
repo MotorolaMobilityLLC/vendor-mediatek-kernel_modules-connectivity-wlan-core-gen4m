@@ -1958,7 +1958,7 @@ static bool nicIsNanStaRecTxAllowed(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec)
 {
-#if CFG_SUPPORT_NAN_11BE_MLO
+#if CFG_SUPPORT_NAN && CFG_SUPPORT_NAN_11BE_MLO
 	struct MLD_STA_RECORD *mld_starec;
 	struct LINK *links;
 	struct STA_RECORD *starec;
