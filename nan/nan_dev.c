@@ -1229,24 +1229,6 @@ struct BSS_INFO *nanIsSapOrP2pActive(struct ADAPTER *prAdapter)
 	return NULL;
 }
 
-void nanConcurrencyHandler(struct ADAPTER *prAdapter)
-{
-	nanBackToNormal(prAdapter);
-
-#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
-	if ((aisGetLinkNum(
-		aisGetDefaultAisInfo(prAdapter)) > 1) &&
-		nanIsSapOrP2pActive(prAdapter))
-		aisBssBeaconTimeout(prAdapter,
-		aisGetDefaultLinkBssIndex(prAdapter));
-#endif
-
-	DBGLOG(NAN, STATE, "NAN handle P2P status changed\n");
-	nanSchedUpdateP2pAisMcc(prAdapter);
-	nanSetFlashCommunication(prAdapter, FALSE);
-	nanRescheduleNdlIfNeeded(prAdapter, P2P_CONNECTED, NULL);
-}
-
 u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
 {
 	if (!prAdapter)
@@ -1257,6 +1239,28 @@ u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
 		nanIsOn(prAdapter);
 #else
 	return FALSE;
+#endif
+}
+
+void nanConcurrencyHandler(struct ADAPTER *prAdapter)
+{
+	nanBackToNormal(prAdapter);
+	nanSetFlashCommunication(prAdapter, FALSE);
+
+#if (CFG_NAN_CONCURRENCY == 1)
+	if (!nanIsConcurrency(prAdapter))
+		return;
+
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+	if (aisGetLinkNum(aisGetDefaultAisInfo(prAdapter)) > 1 &&
+	    nanIsSapOrP2pActive(prAdapter))
+		aisBssBeaconTimeout(prAdapter,
+				    aisGetDefaultLinkBssIndex(prAdapter));
+#endif
+
+	DBGLOG(NAN, STATE, "NAN handle P2P status changed\n");
+	nanSchedUpdateP2pAisMcc(prAdapter);
+	nanRescheduleNdlIfNeeded(prAdapter, P2P_CONNECTED, NULL);
 #endif
 }
 
