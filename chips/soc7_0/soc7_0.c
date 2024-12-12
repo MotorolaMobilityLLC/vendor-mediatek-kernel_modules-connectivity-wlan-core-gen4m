@@ -2649,7 +2649,7 @@ static int soc7_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable)
 	struct ADAPTER *prAdapter = (struct ADAPTER *) adapter;
 	int ret = 1;
 	int conninfra_read_ret = 0;
-	int conninfra_hang_ret = 0;
+	int conninfra_bus_ret = 0;
 	uint8_t conninfra_reset = FALSE;
 	uint32_t u4Value = 0;
 	uint32_t u4WfdmaRstVal = 0;
@@ -2672,12 +2672,13 @@ static int soc7_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable)
 			DBGLOG(HAL, ERROR,
 				"conninfra_reg_readable fail(%d)\n",
 				conninfra_read_ret);
-			conninfra_hang_ret = conninfra_is_bus_hang();
-			if (conninfra_hang_ret > 0) {
+			conninfra_bus_ret = conninfra_is_bus_hang();
+			if (conninfra_bus_ret > 0) {
 				conninfra_reset = TRUE;
 
 				DBGLOG(HAL, ERROR,
-					"conninfra_is_bus_hang, Chip reset\n");
+					"conninfra_bus_ret(%d), Reset\n",
+					conninfra_bus_ret);
 			} else {
 				/*
 				* not readable, but no_hang or rst_ongoing
@@ -2746,13 +2747,13 @@ static int soc7_0_CheckBusNoAck(void *adapter, uint8_t ucWfResetEnable)
 
 	if (ret > 0) {
 		if (conninfra_reg_readable_for_coredump() == 1 ||
-			((conninfra_hang_ret != CONNINFRA_ERR_RST_ONGOING) &&
-			(conninfra_hang_ret != CONNINFRA_INFRA_BUS_HANG) &&
-			(conninfra_hang_ret !=
+			((conninfra_bus_ret != CONNINFRA_ERR_RST_ONGOING) &&
+			(conninfra_bus_ret != CONNINFRA_INFRA_BUS_HANG) &&
+			(conninfra_bus_ret !=
 				CONNINFRA_AP2CONN_RX_SLP_PROT_ERR) &&
-			(conninfra_hang_ret !=
+			(conninfra_bus_ret !=
 				CONNINFRA_AP2CONN_TX_SLP_PROT_ERR) &&
-			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR)))
+			(conninfra_bus_ret != CONNINFRA_AP2CONN_CLK_ERR)))
 			soc7_0_DumpHostCr(prAdapter);
 
 		if (conninfra_reset) {

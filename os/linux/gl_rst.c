@@ -841,6 +841,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
+	reinit_completion(&g_triggerComp);
 	ret = prChipInfo->trigger_fw_assert(prAdapter);
 	if (ret == -EBUSY) {
 		glResetCleanResetFlag();
