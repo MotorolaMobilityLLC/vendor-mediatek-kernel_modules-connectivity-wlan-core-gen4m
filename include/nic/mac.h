@@ -1461,7 +1461,7 @@ enum PROTECTED_EHT_ACTION {
 #define FILS_INFO_PK_SUPPORTED		BIT(11)
 
 /* 7.3.2.1 SSID element */
-#define ELEM_MAX_LEN_SSID                           32
+#define ELEM_MAX_LEN_SSID                           32UL
 
 /* 7.3.2.2 Supported Rates */
 #define ELEM_MAX_LEN_SUP_RATES                      8
