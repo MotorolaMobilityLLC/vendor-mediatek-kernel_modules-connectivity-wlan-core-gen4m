@@ -10869,6 +10869,7 @@ void kalPerfIndReset(struct ADAPTER *prAdapter)
 void kalSetPerfReport(struct ADAPTER *prAdapter)
 {
 	struct CMD_PERF_IND *prCmdPerfReport;
+	struct BSS_INFO *prBssInfo;
 	uint8_t i;
 	uint32_t u4CurrentTp = 0;
 #if CFG_SUPPORT_TPUT_FACTOR
@@ -10913,7 +10914,11 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 		    prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes;
 	}
 	if (u4CurrentTp != 0) {
-		for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
+		for (i = 0; i < prCmdPerfReport->ucBssNum && i < MAX_BSSID_NUM;
+			i++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (!prBssInfo || !IS_BSS_ALIVE(prAdapter, prBssInfo))
+				continue;
 			DBGLOG(SW4, TRACE,
 			"Total TP[%d] BSS[%d] TX-Byte[%d],RX-Byte[%d],Rate[%d],RCPI0[%d],RCPI1[%d]\n",
 			u4CurrentTp,

@@ -10488,6 +10488,9 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		i < MAX_BSSID_NUM && i < ARRAY_SIZE(prEmiLQ->rLq); i++) {
 		struct LINK_SPEED_EX_ *prLq;
 
+		if (!prEmiLQ->rLq[i].ucIsLQ0Rdy)
+			continue;
+
 		DBGLOG(NIC, TRACE,
 			TEMP_LOG_TEMPLATE, i,
 			prEmiLQ->rLq[i].cRssi,
@@ -10502,8 +10505,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 				prEmiLQ->rLq[i].ucIsLQ0Rdy);
 
 #undef TEMP_LOG_TEMPLATE
-		if (!prEmiLQ->rLq[i].ucIsLQ0Rdy)
-			continue;
+
 		prUlq = &prEmiLQ->rLq[i];
 		prLq = &prAdapter->rLinkQuality.rLq[i];
 
