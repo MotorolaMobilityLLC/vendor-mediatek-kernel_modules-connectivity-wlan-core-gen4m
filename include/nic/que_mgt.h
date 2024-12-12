@@ -248,6 +248,9 @@ extern const uint8_t *apucACI2Str[4];
 #define QA_ABS_PRES_LOG_MAX_COUNT	25
 #endif
 
+#define QM_ABSENCE_DETECT_INTERVAL      1000 /* Unit: ms */
+#define QM_ABSENCE_DETECT_TIMEOUT      10000 /* Unit: ms */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1185,6 +1188,10 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER
 
 void qmHandleEventBssAbsencePresence(struct ADAPTER
 				     *prAdapter, struct WIFI_EVENT *prEvent);
+
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+void qmDetectAbnormalBssAbsence(struct ADAPTER *ad);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 #if CFG_ENABLE_WIFI_DIRECT
 void qmHandleEventStaChangePsMode(struct ADAPTER

@@ -2207,6 +2207,7 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 
 	prBssInfo->u4PresentTime = 0;
 	prBssInfo->tmLastPresent = 0;
+	prBssInfo->tmLastAbsent = 0;
 	prBssInfo->fgFirstArp = TRUE;
 
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);

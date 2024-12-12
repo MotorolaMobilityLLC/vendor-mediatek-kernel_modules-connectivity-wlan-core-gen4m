@@ -3033,6 +3033,12 @@ else
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=0
 endif
 
+ifeq ($(CONFIG_ABSENCE_TIMEOUT_DETECTION), y)
+    ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=1
+else
+    ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=0
+endif
+
 ifeq ($(CONFIG_PERF_MON_FAST), y)
     ccflags-y += -DCFG_PERF_MON_FAST=1
 else

@@ -147,6 +147,11 @@ static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		uint8_t fgIsAmsduSubframe,
 		u_int8_t fgWinAdvanced);
 
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+static void __qmDetectAbnormalBssAbsence(const uint8_t *fn, struct ADAPTER *ad,
+	uint32_t ucBssIdx, OS_SYSTIME now);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 static void resetRxRetryCount(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm)
 {
@@ -7811,6 +7816,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	uint8_t *pucLogBuf;
 	int32_t *i4Written;
 #endif
+	OS_SYSTIME now;
 
 	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
 		prEvent->aucBuffer);
@@ -7836,12 +7842,16 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	i4Written = &prBssInfo->i4AbsPresWritten;
 #endif
 
+	now = kalGetTimeTick();
 	if (!prBssInfo->fgIsNetAbsent) {
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+		__qmDetectAbnormalBssAbsence(__func__, prAdapter,
+				prBssInfo->ucBssIndex, now);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 		if (!prBssInfo->tmLastPresent)
-			prBssInfo->tmLastPresent = kalGetTimeTick();
+			prBssInfo->tmLastPresent = now;
 		if (prBssInfo->tmLastAbsent) {
-			prBssInfo->u4AbsentTime = kalGetTimeTick() -
-				prBssInfo->tmLastAbsent;
+			prBssInfo->u4AbsentTime = now - prBssInfo->tmLastAbsent;
 			prBssInfo->tmLastAbsent = 0;
 		}
 		/* ToDo:: QM_DBG_CNT_INC */
@@ -7851,12 +7861,12 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 #endif
 	} else {
 		if (prBssInfo->tmLastPresent) {
-			prBssInfo->u4PresentTime = kalGetTimeTick() -
+			prBssInfo->u4PresentTime = now -
 				prBssInfo->tmLastPresent;
 			prBssInfo->tmLastPresent = 0;
 		}
 		if (!prBssInfo->tmLastAbsent)
-			prBssInfo->tmLastAbsent = kalGetTimeTick();
+			prBssInfo->tmLastAbsent = now;
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_28);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -7886,7 +7896,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 			prBssInfo->ucAbsPresLogCount = 0;
 			prBssInfo->u4FirstAbsPresTime = 0;
 		} else if (prBssInfo->ucAbsPresLogCount == 1) {
-			prBssInfo->u4FirstAbsPresTime = kalGetTimeTick();
+			prBssInfo->u4FirstAbsPresTime = now;
 		}
 	}
 	DBGLOG(QM, TRACE, "NAF:B=%u,A=%u,F=%u,T=%u\n",
@@ -7923,6 +7933,49 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 		}
 	}
 }
+
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+static void __qmDetectAbnormalBssAbsence(const uint8_t *fn, struct ADAPTER *ad,
+	uint32_t ucBssIdx, OS_SYSTIME now)
+{
+	struct BSS_INFO *prBssInfo;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+	uint32_t u4AbsenceTime;
+	char uevent[300];
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(ad, ucBssIdx);
+	if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo) || !prBssInfo->tmLastAbsent)
+		return;
+
+	if (now > prBssInfo->tmLastAbsent)
+		u4AbsenceTime = now - prBssInfo->tmLastAbsent;
+	else
+		u4AbsenceTime = 0;
+
+	if (u4AbsenceTime < prWifiVar->u4AbsenceTimeout)
+		return;
+
+	kalSnprintf(uevent, sizeof(uevent),
+		"abnormalabsence bss=%u absencetime:%ums timeout:%ums fn:%s",
+		ucBssIdx, u4AbsenceTime, prWifiVar->u4AbsenceTimeout, fn);
+	kalSendUevent(ad, uevent);
+}
+
+void qmDetectAbnormalBssAbsence(struct ADAPTER *ad)
+{
+	OS_SYSTIME now;
+	uint32_t ucIdx;
+
+	now = kalGetTimeTick();
+	if (!CHECK_FOR_TIMEOUT(now, ad->rAbsenceTimeoutDetectTime,
+		MSEC_TO_SYSTIME(QM_ABSENCE_DETECT_INTERVAL)))
+		return;
+
+	ad->rAbsenceTimeoutDetectTime = now;
+	for (ucIdx = 0; ucIdx < ad->ucSwBssIdNum; ucIdx++)
+		__qmDetectAbnormalBssAbsence(__func__, ad, ucIdx, now);
+}
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 #if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/

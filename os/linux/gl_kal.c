@@ -6315,6 +6315,10 @@ int main_thread(void *data)
 		/* update current throughput */
 		kalPerMonUpdate(prGlueInfo->prAdapter);
 
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+		qmDetectAbnormalBssAbsence(prGlueInfo->prAdapter);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 		wlanDumpAllBssStatistics(prGlueInfo->prAdapter);
 		/* check tput factor */
 #if CFG_SUPPORT_TPUT_FACTOR

@@ -1127,6 +1127,10 @@ struct WIFI_VAR {
 	uint32_t u4VhtTxMaxAmsduInAmpduLen;
 	uint32_t u4TxMaxAmsduInAmpduLen;
 
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+	uint32_t u4AbsenceTimeout;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	uint8_t ucTxBaSize;
 	uint8_t ucRxHtBaSize;
 	uint8_t ucRxVhtBaSize;
@@ -2752,6 +2756,10 @@ struct ADAPTER {
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	OS_SYSTIME rAllStatsUpdateTime;
 #endif
+
+#if (CFG_ABSENCE_TIMEOUT_DETECTION == 1)
+	OS_SYSTIME rAbsenceTimeoutDetectTime;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 	/* WIFI_VAR_T */
 	struct WIFI_VAR rWifiVar;
