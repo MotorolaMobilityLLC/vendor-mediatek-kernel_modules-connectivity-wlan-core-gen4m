@@ -1824,6 +1824,11 @@ int glRstwlanPostWholeChipReset(void)
 	}
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+#if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+		update_whole_chip_rst_status(0);
+#endif
+#endif
 		return 0;
 	}
 	glRstSetRstEndEvent();
@@ -2037,7 +2042,13 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		}
 
 		g_IsWholeChipRst = TRUE;
-
+#if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
+#if !CFG_SUPPORT_CONNAC1X
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+		update_whole_chip_rst_status(1);
+#endif
+#endif
+#endif
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 					 RST_WHOLE_CHIP_TRIGGER);
 	} else {
@@ -2047,6 +2058,13 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 			kalMsleep(100);
 		}
 		g_IsWholeChipRst = TRUE;
+#if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
+#if !CFG_SUPPORT_CONNAC1X
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+		update_whole_chip_rst_status(1);
+#endif
+#endif
+#endif
 
 		kalSetRstEvent(TRUE);
 	}
@@ -2070,6 +2088,13 @@ int wlan_post_whole_chip_rst_v2(void)
 	}
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+#if CFG_CHIP_RESET_SUPPORT
+#if !CFG_SUPPORT_CONNAC1X
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+		update_whole_chip_rst_status(0);
+#endif
+#endif
+#endif
 		return 0;
 	}
 #endif
