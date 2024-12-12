@@ -838,11 +838,15 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 exit:
 #if CFG_SUPPORT_PCIE_ASPM
-	prGlueInfo = prAdapter->prGlueInfo;
-	if (prChipInfo && prChipInfo->bus_info && prGlueInfo) {
-		prBusInfo = prChipInfo->bus_info;
-		if (prBusInfo->configPcieAspm)
-			prBusInfo->configPcieAspm(prGlueInfo, TRUE, 3);
+	if (prAdapter) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		if (prGlueInfo && prChipInfo &&
+			prChipInfo->bus_info) {
+			prBusInfo = prChipInfo->bus_info;
+			if (prBusInfo->configPcieAspm)
+				prBusInfo->configPcieAspm(prGlueInfo,
+					TRUE, 3);
+		}
 	}
 #endif
 	fgIsMcuOff = FALSE;
@@ -2082,10 +2086,12 @@ void glResetWholeChipResetTrigger(char *pcReason)
 #endif
 
 	DBGLOG(INIT, INFO, "ret:%d, reason:%s\n", ret, pcReason);
+#if (CFG_SUPPORT_CONNINFRA == 1) || defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (ret == 0) {
 		dump_stack();
 		fgIsDrvTriggerWholeChipReset = TRUE;
 	}
+#endif
 }
 
 void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
@@ -2382,9 +2388,11 @@ int wlan_reset_thread_main(void *data)
 	}
 
 #if CFG_ENABLE_WAKE_LOCK
+#if (KERNEL_VERSION(4, 9, 0) > CFG80211_VERSION_CODE)
 	if (KAL_WAKE_LOCK_ACTIVE(NULL,
 				 prWlanRstThreadWakeLock))
 		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
+#endif
 	KAL_WAKE_LOCK_DESTROY(NULL,
 			      prWlanRstThreadWakeLock);
 #endif
