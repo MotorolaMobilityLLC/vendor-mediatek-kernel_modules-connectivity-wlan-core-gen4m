@@ -215,18 +215,11 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,
 			      const char *pucSrcFunc)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-
 	if (!prAdapter->fgIsP2PRegistered)
 		return;
 
 	if (!prTargetBss) {
 		DBGLOG(CCM, INFO, "null target Bss\n");
-		return;
-	}
-
-	if (prWifiVar->eP2pCcmMode == P2P_CCM_MODE_DISABLE) {
-		DBGLOG(CCM, WARN, "CCM is disabled\n");
 		return;
 	}
 
@@ -442,6 +435,7 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 	u_int8_t fgIsTargetMlo = FALSE;
 	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntry;
 	struct P2P_CCM_CSA_ENTRY *prFirstSap = NULL;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	fgIsTargetMlo = IS_MLD_BSSINFO_MULTI(
@@ -466,45 +460,53 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 	}
 
 	/* enqueue GO before the first SAP first */
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
-		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+	if (prWifiVar->eP2pCcmMode != P2P_CCM_MODE_DISABLE) {
+		for (i = 0; i < MAX_BSSID_NUM; ++i) {
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!IS_BSS_APGO(bss) || !IS_BSS_ALIVE(prAdapter, bss)
-		    || p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-					bss->u4PrivateData]))
-			continue;
+			if (!IS_BSS_APGO(bss) || !IS_BSS_ALIVE(prAdapter, bss)
+			    || p2pFuncIsAPMode(
+					prAdapter->rWifiVar.prP2PConnSettings[
+							bss->u4PrivateData]))
+				continue;
 
-		/* skip target bss itself */
-		if (!fgIsTargetMlo && bss == prTargetBss)
-			continue;
+			/* skip target bss itself */
+			if (!fgIsTargetMlo && bss == prTargetBss)
+				continue;
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
-		else if (bss->ucGroupMldId == prTargetBss->ucGroupMldId)
-			continue;
+			else if (bss->ucGroupMldId == prTargetBss->ucGroupMldId)
+				continue;
 #endif
 
-		prCcmCsaEntry = cnmMemAlloc(prAdapter,
-			RAM_TYPE_MSG, sizeof(struct P2P_CCM_CSA_ENTRY));
-		if (!prCcmCsaEntry) {
-			DBGLOG(CCM, ERROR, "Alloc mem fail\n");
-			return;
+			prCcmCsaEntry = cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, sizeof(struct P2P_CCM_CSA_ENTRY));
+			if (!prCcmCsaEntry) {
+				DBGLOG(CCM, ERROR, "Alloc mem fail\n");
+				return;
+			}
+
+			prCcmCsaEntry->prBssInfo = bss;
+			prCcmCsaEntry->u4TargetCh =
+				prTargetBss->ucPrimaryChannel;
+			prCcmCsaEntry->eTargetHwBandIdx =
+				prTargetBss->eHwBandIdx;
+			prCcmCsaEntry->eTargetBand = prTargetBss->eBand;
+
+			if (prFirstSap) {
+				LINK_INSERT_BEFORE(prCcmCheckCsList,
+						   &prFirstSap->rLinkEntry,
+						   &prCcmCsaEntry->rLinkEntry);
+			} else {
+				LINK_INSERT_TAIL(prCcmCheckCsList,
+						 &prCcmCsaEntry->rLinkEntry);
+			}
+
+			DBGLOG(CCM, INFO, "insert GO bss=%u waiting to check\n",
+			       bss->ucBssIndex);
 		}
-
-		prCcmCsaEntry->prBssInfo = bss;
-		prCcmCsaEntry->u4TargetCh = prTargetBss->ucPrimaryChannel;
-		prCcmCsaEntry->eTargetHwBandIdx = prTargetBss->eHwBandIdx;
-		prCcmCsaEntry->eTargetBand = prTargetBss->eBand;
-
-		if (prFirstSap) {
-			LINK_INSERT_BEFORE(prCcmCheckCsList,
-					   &prFirstSap->rLinkEntry,
-					   &prCcmCsaEntry->rLinkEntry);
-		} else {
-			LINK_INSERT_TAIL(prCcmCheckCsList,
-					 &prCcmCsaEntry->rLinkEntry);
-		}
-
-		DBGLOG(CCM, INFO, "insert GO bss=%u waiting to check\n",
-		       bss->ucBssIndex);
+	} else {
+		/* we should still notify SAP even if P2P CCM is disabled */
+		DBGLOG(CCM, WARN, "P2P CCM is disabled, skip to ckeck GO\n");
 	}
 
 	/* SAP must do CSA last, enqueue SAP at the end */
@@ -526,6 +528,10 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 
 		prCcmCsaEntry = cnmMemAlloc(prAdapter,
 			RAM_TYPE_MSG, sizeof(struct P2P_CCM_CSA_ENTRY));
+		if (!prCcmCsaEntry) {
+			DBGLOG(CCM, ERROR, "Alloc mem fail\n");
+			return;
+		}
 
 		prCcmCsaEntry->prBssInfo = bss;
 		prCcmCsaEntry->u4TargetCh = prTargetBss->ucPrimaryChannel;
