@@ -121,6 +121,10 @@ static void mt7925ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 
 static void mt7925ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
+#if CFG_ASSERTDUMP_BYPASS_CHIP_RESET
+static void mt7925bypassWfWdt(struct ADAPTER *prAdapter, bool fgBypass);
+#endif
+
 #if CFG_PCIE_LTR_UPDATE
 static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 #endif
@@ -423,6 +427,9 @@ struct BUS_INFO mt7925_bus_info = {
 		.u4MaxMsiNum = ARRAY_SIZE(mt7925_pcie_msi_layout),
 	},
 	.showDebugInfo = mt7925ShowPcieDebugInfo,
+#if CFG_ASSERTDUMP_BYPASS_CHIP_RESET
+	.bypassWfWdt = mt7925bypassWfWdt,
+#endif
 #if CFG_PCIE_LTR_UPDATE
 	.pcieLTRValue = mt7925PcieLTRValue,
 #endif
@@ -1300,7 +1307,11 @@ static void mt7925ReadIntStatus(struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter, PCIE_MAC_IREG_ISTATUS_HOST_ADDR,
 		&u4IntSta);
 	if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE &&
-			prAdapter->chip_info->fgIsSupportL0p5Reset == TRUE) {
+			prAdapter->chip_info->fgIsSupportL0p5Reset == TRUE
+#if CFG_ASSERTDUMP_BYPASS_CHIP_RESET
+			&& prAdapter->fgN9AssertDumpOngoing == FALSE
+#endif
+		) {
 		if (u4IntSta & PCIE_MAC_IREG_ISTATUS_HOST_WDT_INT_MASK)
 			*pu4IntStatus |= WHISR_WDT_INT;
 	}
@@ -1571,6 +1582,23 @@ static void mt7925ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 		}
 	}
 }
+
+#if CFG_ASSERTDUMP_BYPASS_CHIP_RESET
+static void mt7925bypassWfWdt(struct ADAPTER *prAdapter, bool fgBypass)
+{
+	uint32_t u4IntMask = 0;
+
+	HAL_MCR_RD(prAdapter, PCIE_MAC_IREG_IMASK_HOST_ADDR,
+		&u4IntMask);
+	if (fgBypass)
+		u4IntMask &= ~PCIE_MAC_IREG_ISTATUS_HOST_WDT_INT_MASK;
+	else
+		u4IntMask |= PCIE_MAC_IREG_ISTATUS_HOST_WDT_INT_MASK;
+
+	HAL_MCR_WR(prAdapter, PCIE_MAC_IREG_IMASK_HOST_ADDR,
+		u4IntMask);
+}
+#endif
 
 #if CFG_PCIE_LTR_UPDATE
 uint8_t g_ucLTRStat;

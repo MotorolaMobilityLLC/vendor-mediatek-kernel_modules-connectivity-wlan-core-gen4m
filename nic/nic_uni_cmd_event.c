@@ -8214,13 +8214,20 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 void initCECoredump(struct ADAPTER *ad)
 {
 	uint16_t len = 0;
+#if defined(_HIF_PCIE)
+	struct BUS_INFO *prBusInfo;
 
+	prBusInfo = ad->chip_info->bus_info;
+#endif
 	DBGLOG(NIC, INFO, "##### Start Coredump!\n");
 	DBGLOG(NIC, INFO, "manifest: %s\n", ad->rVerInfo.aucReleaseManifest);
 
 	ad->fgKeepPrintCoreDump = TRUE;
 	ad->fgN9AssertDumpOngoing = TRUE;
-
+#if defined(_HIF_PCIE)
+	if (prBusInfo->bypassWfWdt)
+		prBusInfo->bypassWfWdt(ad, TRUE);
+#endif
 	len = kalStrnLen(ad->rVerInfo.aucReleaseManifest,
 		sizeof(ad->rVerInfo.aucReleaseManifest));
 
@@ -8233,6 +8240,11 @@ void initCECoredump(struct ADAPTER *ad)
 
 void appendCECoredump(struct ADAPTER *ad, uint8_t *buf, uint16_t len)
 {
+#if defined(_HIF_PCIE)
+	struct BUS_INFO *prBusInfo;
+
+	prBusInfo = ad->chip_info->bus_info;
+#endif
 	if (!kalStrnCmp(buf, ";;[CONNSYS] coredump start", 26))
 		ad->fgKeepPrintCoreDump = FALSE;
 
@@ -8251,6 +8263,10 @@ void appendCECoredump(struct ADAPTER *ad, uint8_t *buf, uint16_t len)
 
 		cnmTimerStopTimer(ad, &ad->rN9CorDumpTimer);
 		GL_DEFAULT_RESET_TRIGGER(ad, RST_FW_ASSERT);
+#if defined(_HIF_PCIE)
+		if (prBusInfo->bypassWfWdt)
+			prBusInfo->bypassWfWdt(ad, FALSE);
+#endif
 	}
 }
 

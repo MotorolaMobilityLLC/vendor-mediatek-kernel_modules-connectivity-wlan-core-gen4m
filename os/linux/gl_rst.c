@@ -921,13 +921,6 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 		break;
 
 	case RST_FW_ASSERT:
-		/* If L0.5 is supported, then L0.5 reset will be triggered
-		 * automatically by RST_WDT. Otherwise, execute L0 reset.
-		 */
-		if (!prChipInfo->fgIsSupportL0p5Reset)
-			u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
-		break;
-
 	case RST_FW_ASSERT_TIMEOUT:
 	case RST_OID_TIMEOUT:
 	case RST_SER_TIMEOUT:
@@ -986,6 +979,14 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 
 		u4RstFlag = 0;
 	}
+#if CFG_ASSERTDUMP_BYPASS_CHIP_RESET
+	if ((u4RstFlag & RST_FLAG_DO_L0P5_RESET) &&
+		(prAdapter->fgN9AssertDumpOngoing == TRUE)) {
+		DBGLOG(INIT, INFO,
+		       "[SER] Bypass L0.5 reset due fgN9AssertDumpOngoing\n");
+		u4RstFlag = 0;
+	}
+#endif
 
 	return u4RstFlag;
 }
