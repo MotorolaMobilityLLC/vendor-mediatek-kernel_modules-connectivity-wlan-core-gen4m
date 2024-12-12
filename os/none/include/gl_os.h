@@ -323,6 +323,7 @@ struct GL_IO_REQ {
 	uint32_t *pu4QryInfoLen;
 	uint32_t rStatus;
 	uint32_t u4Flag;
+	struct CMD_INFO *prCmdInfo;
 };
 
 #if CFG_ENABLE_BT_OVER_WIFI
@@ -473,6 +474,9 @@ struct GLUE_INFO {
 #endif
 
 	u_int8_t fgIsInSuspendMode;
+
+	/* current IO request for kalIoctl */
+	struct GL_IO_REQ OidEntry;
 
 	/* registry info */
 	struct REG_INFO rRegInfo;

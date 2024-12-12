@@ -4809,6 +4809,12 @@ void kalOidComplete(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 
 	prIoReq = &prGlueInfo->OidEntry;
+	if (WARN_ON(prCmdInfo != prIoReq->prCmdInfo)) {
+		DBGLOG(NIC, WARN, "prCmdInfo not match IoReq=%p, Evt=%p\n",
+		       prIoReq->prCmdInfo, prCmdInfo);
+		return;
+	}
+
 	DBGLOG(NIC, TRACE,
 		"Cmd=%p pfnOidHandler=%ps InformationBuffer=%p QryInfoLen=%p",
 		prCmdInfo, prIoReq->pfnOidHandler,
@@ -4832,6 +4838,7 @@ void kalOidComplete(struct GLUE_INFO *prGlueInfo,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 
 		prGlueInfo->fgOidWaiting = FALSE;
+		prIoReq->prCmdInfo = NULL;
 		complete(&prGlueInfo->rPendComp);
 	} else {
 		uint32_t wIdx, cIdx;
@@ -5160,6 +5167,8 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	prIoReq->u4InfoBufLen = u4InfoBufLen;
 	prIoReq->pu4QryInfoLen = pu4QryInfoLen;
 	prIoReq->rStatus = WLAN_STATUS_FAILURE;
+	prIoReq->prCmdInfo = NULL;
+	DBGLOG(NIC, LOUD, "Set prIoReq->prCmdInfo=%p", prIoReq->prCmdInfo);
 	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 
 	/* <5> Reset the status of pending OID */
