@@ -1910,6 +1910,8 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_FACT_CAL == 1)
 	uint8_t fgFactCalEn;
 #endif
+	u_int8_t fgEnP2pPref6g;
+	u_int8_t fgP2pPrefSkipDfs;
 };
 
 /* cnm_timer module */

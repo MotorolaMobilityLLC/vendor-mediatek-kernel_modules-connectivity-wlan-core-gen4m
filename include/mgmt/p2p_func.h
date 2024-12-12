@@ -684,7 +684,8 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		uint32_t u4LteSafeChnMask_5G_2,
 		uint32_t u4LteSafeChnMask_6G,
 		uint8_t *pucSortChannelNumber,
-		struct RF_CHANNEL_INFO *paucSortChannelList);
+		struct RF_CHANNEL_INFO *paucSortChannelList,
+		u_int8_t fgNoDfs);
 #endif
 void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex,

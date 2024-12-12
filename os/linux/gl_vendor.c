@@ -3868,6 +3868,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	uint32_t i;
 	uint32_t au4FreqAllowList[MAX_CHN_NUM] = { 0 };
 	uint8_t ucAllowFreqNum;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -3894,6 +3895,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		DBGLOG(REQ, ERROR, "Invalid type.\n");
 		return -EINVAL;
 	}
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	type = nla_get_u32(tb[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE]);
 
 	DBGLOG(REQ, INFO, "type: %d\n", type);
@@ -3925,7 +3927,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 					       au4FreqAllowList);
 	rStatus = p2pFunGetPreferredFreqList(prGlueInfo->prAdapter, eIftype,
 			freq_list, &num_freq_list, au4FreqAllowList,
-			ucAllowFreqNum, TRUE);
+			ucAllowFreqNum, prWifiVar->fgP2pPrefSkipDfs);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "get preferred freq list failed.\n");
 		return -EINVAL;

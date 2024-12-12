@@ -2557,7 +2557,8 @@ wlanGetChannelBandFromIndex(uint8_t ucIdx);
 
 void
 wlanSortChannel(struct ADAPTER *prAdapter,
-		enum ENUM_CHNL_SORT_POLICY ucSortType);
+		enum ENUM_CHNL_SORT_POLICY ucSortType,
+		u_int8_t fgNoDfs);
 
 void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo);
 void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo);

@@ -9452,6 +9452,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  "AssocSaQueryRetryTimeout", 201,
 		  FEATURE_TO_CUSTOMER);
 #endif /* CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT */
+
+	INIT_UINT(prWifiVar->fgEnP2pPref6g, "EnP2pPref6g", FEATURE_ENABLED,
+		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->fgP2pPrefSkipDfs, "P2pPrefSkipDfs",
+		  FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
@@ -12658,7 +12663,8 @@ wlanGetChannelBandFromIndex(uint8_t ucIdx)
 
 void
 wlanSortChannel(struct ADAPTER *prAdapter,
-		enum ENUM_CHNL_SORT_POLICY ucSortType)
+		enum ENUM_CHNL_SORT_POLICY ucSortType,
+		u_int8_t fgNoDfs)
 {
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = &
 			(prAdapter->rWifiVar.rChnLoadInfo);
@@ -12673,7 +12679,7 @@ wlanSortChannel(struct ADAPTER *prAdapter,
 	if (ucSortType == CHNL_SORT_POLICY_BY_CH_DOMAIN) {
 		for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
 			rlmDomainGetChnlList(prAdapter, ucBandIdx,
-				TRUE, MAX_PER_BAND_CHN_NUM,
+				fgNoDfs, MAX_PER_BAND_CHN_NUM,
 				&ucNumOfChannel, aucChannelList);
 
 			DBGLOG(SCN, LOUD, "[ACS]Band=%d, Channel Number=%d\n",

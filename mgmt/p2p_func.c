@@ -9645,7 +9645,8 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 static uint8_t
 p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBandPrefer,
-		uint8_t ucTopPreferNum, uint32_t *pu4Freq)
+		uint8_t ucTopPreferNum, uint32_t *pu4Freq,
+		u_int8_t fgNoDfs)
 {
 	uint8_t ucMaxChnNum = MAX_PER_BAND_CHN_NUM;
 	uint8_t ucNumOfChannel = 0;
@@ -9671,9 +9672,10 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 			BIT(eBandPrefer),
 			BITS(0, 31), BITS(0, 31),
 			BITS(0, 31), BITS(0, 31),
-			&ucNumOfChannel, aucChannelList);
+			&ucNumOfChannel, aucChannelList,
+			fgNoDfs);
 #else
-	rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
+	rlmDomainGetChnlList(prAdapter, eBandPrefer, fgNoDfs,
 		ucMaxChnNum, &ucNumOfChannel, aucChannelList);
 #endif
 
@@ -9714,6 +9716,7 @@ uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 	uint32_t *u4SafeChnlInfo_5g_1;
 	uint32_t *u4SafeChnlInfo_6g;
 	uint32_t rStatus;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	/* Get Lte Safe Chnl */
 	prLteSafeChn = kalMemZAlloc(sizeof(struct PARAM_GET_CHN_INFO),
@@ -9753,7 +9756,8 @@ uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 	if (!prChnlList)
 		goto exit;
 
-	rlmDomainGetChnlList(prAdapter, BAND_NULL, TRUE, MAX_CHN_NUM,
+	rlmDomainGetChnlList(prAdapter, BAND_NULL,
+		prWifiVar->fgP2pPrefSkipDfs, MAX_CHN_NUM,
 		&ucCandidateChnlNum, prChnlList);
 
 	for (i = 0; i < ucCandidateChnlNum; ++i) {
@@ -9932,7 +9936,8 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 	p2pFunGetAcsBestChList(prAdapter, BIT(BAND_5G) | BIT(BAND_6G),
 			       BITS(0, 31), BITS(0, 31),
 			       BITS(0, 31), BITS(0, 31),
-			       &ucCandidateChnlNum, paChnlList);
+			       &ucCandidateChnlNum, paChnlList,
+			       prWifiVar->fgP2pPrefSkipDfs);
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 #else /* CFG_SUPPORT_P2PGO_ACS == 1 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -9953,8 +9958,11 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 		if (prRfChnlInfo1->eBand == BAND_5G)
 			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p5gBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prRfChnlInfo1->eBand == BAND_6G)
+		else if (prRfChnlInfo1->eBand == BAND_6G) {
+			if (!prWifiVar->fgEnP2pPref6g)
+				continue;
 			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p6gBandwidth;
+		}
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
 		prRfChnlInfo1->u4CenterFreq1 = nicGetCenterChFreq(
@@ -10107,10 +10115,21 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	       "alive Bss num [bn0:bn1:bn2]=[%u:%u:%u]\n",
 	       ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g);
 
+	/* Suggested PCL by Customer:
+	 *     - STA not connected:
+	 *         - GO: 5G non-dfs, 2G
+	 *         - GC: 5G with dfs, 2G
+	 *     - STA connected on 2G:
+	 *         - GO: 5G non-dfs, 2G SCC
+	 *         - GC: 5G with dfs, 2G SCC
+	 *     - STA connected on 5G non-dfs/dfs:
+	 *         - GO/GC: 5G SCC, 2G
+	 */
+
 	/* CONNAC 1 only support SCC */
 	if (prWifiVar->eDbdcMode == ENUM_DBDC_MODE_DISABLED &&
 	    ucNumAliveBss2g + ucNumAliveBss5g + ucNumAliveBss6g > 0) {
-		if (ucNumAliveBss6g)
+		if (ucNumAliveBss6g && prWifiVar->fgEnP2pPref6g)
 			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss6g,
 			    ucNumAliveBss6g, &pau4FreqList[*pu4FreqListNum]);
 		if (ucNumAliveBss5g)
@@ -10131,22 +10150,26 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 
 	/* Append 5G/6G channels first */
 	if (ucNumAliveBss5g + ucNumAliveBss6g > 0) {
-		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss6g,
-		    ucNumAliveBss6g, &pau4FreqList[*pu4FreqListNum]);
+		if (prWifiVar->fgEnP2pPref6g)
+			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss6g,
+			    ucNumAliveBss6g, &pau4FreqList[*pu4FreqListNum]);
 		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss5g,
 		    ucNumAliveBss5g, &pau4FreqList[*pu4FreqListNum]);
 	} else {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
+		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G) &&
+		    prWifiVar->fgEnP2pPref6g)
 			*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
 				prAdapter, BAND_6G,
 				MAX_6G_BAND_CHN_NUM,
-				&pau4FreqList[*pu4FreqListNum]);
+				&pau4FreqList[*pu4FreqListNum], TRUE);
 #endif
 		*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
 			prAdapter, BAND_5G,
 			MAX_5G_BAND_CHN_NUM,
-			&pau4FreqList[*pu4FreqListNum]);
+			&pau4FreqList[*pu4FreqListNum],
+			(eIftype == IFTYPE_P2P_GO) ?
+				TRUE : FALSE);
 	}
 
 	/* Append 2G channels */
@@ -10160,7 +10183,8 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			prAdapter,
 			BAND_2G4,
 			MAX_2G_BAND_CHN_NUM,
-			&pau4FreqList[*pu4FreqListNum]);
+			&pau4FreqList[*pu4FreqListNum],
+			TRUE);
 	}
 
 done:
@@ -10422,7 +10446,8 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		uint32_t u4LteSafeChnMask_5G_2,
 		uint32_t u4LteSafeChnMask_6G,
 		uint8_t *pucSortChannelNumber,
-		struct RF_CHANNEL_INFO *paucSortChannelList)
+		struct RF_CHANNEL_INFO *paucSortChannelList,
+		u_int8_t fgNoDfs)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct PARAM_GET_CHN_INFO *prChnLoad;
@@ -10433,7 +10458,7 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 	/*
 	 * 1. Sort all channels (which are support by current domain)
 	*/
-	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_BY_CH_DOMAIN);
+	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_BY_CH_DOMAIN, fgNoDfs);
 	/*
 	 * 2. Calculate each channel's dirty score
 	*/
@@ -10675,7 +10700,7 @@ void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
 	}
 
 	wlanCalculateAllChannelDirtiness(prAdapter);
-	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_ALL_CN);
+	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_ALL_CN, TRUE);
 }
 
 #if CFG_ENABLE_CSA_BLOCK_SCAN
