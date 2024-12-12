@@ -9649,45 +9649,37 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 	uint32_t u4EntryIndex;
 	uint32_t i;
 	uint8_t ucExist;
-#if CFG_TC10_FEATURE
-	int32_t i4ReadValue = 0;
-	int32_t i4Ret = 0;
-#endif
+	uint32_t u4MaxNum;
 
 	ASSERT(pucKey);
 
-#if CFG_TC10_FEATURE
-	if (pucValue) {
-		i4Ret = kalkStrtos32(pucValue, 0, &i4ReadValue);
-		DBGLOG(INIT, INFO, "[%s]:[%d] OP:%d\n",
-			pucKey, i4ReadValue, u4Flags);
-	} else
-		DBGLOG(INIT, INFO, "[%s]:[NA] OP:%d\n", pucKey, u4Flags);
-#else
 	DBGLOG(INIT, LOUD, "[%s]:[%s] OP:%d\n", pucKey, pucValue, u4Flags);
-#endif
+
 	/* Find the exist */
 	ucExist = 0;
 	if (u4Flags == WLAN_CFG_REC) {
 		prWlanCfgEntry =
 			wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_REC);
 		prWlanCfgRec = prAdapter->prWlanCfgRec;
+		u4MaxNum = WLAN_CFG_REC_ENTRY_NUM_MAX;
 		ASSERT(prWlanCfgRec);
 	} else if (u4Flags == WLAN_CFG_EM) {
 		prWlanCfgEntry =
 			wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_EM);
 		prWlanCfgEm = prAdapter->prWlanCfgEm;
+		u4MaxNum = WLAN_CFG_ENTRY_NUM_MAX;
 		ASSERT(prWlanCfgEm);
 	} else {
 		prWlanCfgEntry =
 			wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_DEFAULT);
 		prWlanCfg = prAdapter->prWlanCfg;
+		u4MaxNum = WLAN_CFG_ENTRY_NUM_MAX;
 		ASSERT(prWlanCfg);
 	}
 
 	if (!prWlanCfgEntry) {
 		/* Find the empty */
-		for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
+		for (i = 0; i < u4MaxNum; i++) {
 			if (u4Flags == WLAN_CFG_REC)
 				prWlanCfgEntry = &prWlanCfgRec->arWlanCfgBuf[i];
 			else if (u4Flags == WLAN_CFG_EM)
@@ -9700,7 +9692,7 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 		}
 
 		u4EntryIndex = i;
-		if (u4EntryIndex < WLAN_CFG_ENTRY_NUM_MAX) {
+		if (u4EntryIndex < u4MaxNum) {
 			if (u4Flags == WLAN_CFG_REC)
 				prWlanCfgEntry =
 				    &prWlanCfgRec->arWlanCfgBuf[u4EntryIndex];
