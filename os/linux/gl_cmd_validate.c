@@ -1075,6 +1075,24 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	{
+		.pcCmdStr  = CMD_SET_PhyIcs_EventOn,
+		.pfHandler = priv_driver_phyics_eventon,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_SET_PhyIcs_Start,
+		.pfHandler = priv_driver_phyics_start,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	{
 		.pcCmdStr  = CMD_SET_MONITOR,

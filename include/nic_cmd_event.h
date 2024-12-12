@@ -3232,6 +3232,20 @@ struct CMD_ICS_SNIFFER_INFO {
 };
 #endif /* CFG_SUPPORT_ICS */
 
+#if (CFG_SUPPORT_PHY_ICS == 1)
+struct CMD_PHY_ICS_EVENT_INFO {
+	uint8_t ucBandIdx;
+	uint8_t ucPartition;
+	uint16_t u2EventGroup;
+	uint32_t u4EventID;
+};
+
+struct CMD_PHY_ICS_START_INFO {
+	uint16_t u2Action;
+	uint16_t u2Timer;
+};
+#endif
+
 #if CFG_SUPPORT_MSP
 /* EVENT_ID_WTBL_INFO */
 struct EVENT_WLAN_INFO {

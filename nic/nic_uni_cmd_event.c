@@ -155,6 +155,10 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	[CMD_ID_SET_ICS_SNIFFER] = nicUniCmdSetIcsSniffer,
 #endif
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	[CMD_ID_SET_PHY_ICS_EVENT] = nicUniCmdSetPhyIcsEventOn,
+	[CMD_ID_SET_PHY_ICS_START] = nicUniCmdSetPhyIcsStart,
+#endif
 #if (CFG_SUPPORT_RTT == 1)
 	[CMD_ID_RTT_GET_CAPABILITIES] = nicUniCmdRttGetCapabilities,
 	[CMD_ID_RTT_RANGE_REQUEST] = nicUniCmdRttRangeRequest,
@@ -6372,6 +6376,76 @@ uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+uint32_t nicUniCmdSetPhyIcsEventOn(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_PHY_ICS_EVENT_INFO *cmd;
+	struct UNI_CMD_PHY_ICS *uni_cmd;
+	struct UNI_CMD_PHY_ICS_EVENT *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PHY_ICS) +
+		sizeof(struct UNI_CMD_PHY_ICS_EVENT);
+
+	if (info->ucCID != CMD_ID_SET_PHY_ICS_EVENT ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_PHY_ICS_EVENT_INFO *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_PHY_ICS,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_PHY_ICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_PHY_ICS_EVENT *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_PHY_ICS_EVENT_TAG_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucBandIdx = cmd->ucBandIdx;
+	tag->ucPartition = cmd->ucPartition;
+	tag->u2EventGroup = cmd->u2EventGroup;
+	tag->u4EventID = cmd->u4EventID;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetPhyIcsStart(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_PHY_ICS_START_INFO *cmd;
+	struct UNI_CMD_PHY_ICS *uni_cmd;
+	struct UNI_CMD_PHY_ICS_START *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PHY_ICS) +
+		sizeof(struct UNI_CMD_PHY_ICS_START);
+
+	if (info->ucCID != CMD_ID_SET_PHY_ICS_START ||
+		info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_PHY_ICS_START_INFO *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_PHY_ICS,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_PHY_ICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_PHY_ICS_START *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_PHY_ICS_START_TAG_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->u2Action = cmd->u2Action;
+	tag->u2Timer = cmd->u2Timer;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_PHY_ICS */
 
 uint32_t nicUniCmdACLPolicy(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)

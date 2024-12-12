@@ -8032,6 +8032,141 @@ wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_ICS */
 
+#if (CFG_SUPPORT_PHY_ICS == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is set ICS sniffer
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetPhyIcsEventOn(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT *prPhyicsEventInfo;
+	struct CMD_PHY_ICS_EVENT_INFO rCmdPhyicsEvent;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT);
+	if (u4SetBufferLen <
+		sizeof(struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prPhyicsEventInfo =
+	(struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT *)pvSetBuffer;
+	kalMemZero(&rCmdPhyicsEvent, sizeof(struct CMD_PHY_ICS_EVENT_INFO));
+
+	rCmdPhyicsEvent.ucBandIdx = prPhyicsEventInfo->ucBandIdx;
+	rCmdPhyicsEvent.ucPartition = prPhyicsEventInfo->ucPartition;
+	rCmdPhyicsEvent.u2EventGroup = prPhyicsEventInfo->u2EventGroup;
+	rCmdPhyicsEvent.u4EventID = prPhyicsEventInfo->u4EventID;
+
+	DBGLOG(INIT, INFO, "PHY_ICS_CMD_EVENT_ON: %d-%d-%d-%d\n",
+		rCmdPhyicsEvent.ucBandIdx,
+		rCmdPhyicsEvent.ucPartition,
+		rCmdPhyicsEvent.u2EventGroup,
+		rCmdPhyicsEvent.u4EventID
+		);
+
+	prAdapter->uPhyICSBandIdx = rCmdPhyicsEvent.ucBandIdx;
+
+
+	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
+				  CMD_ID_SET_PHY_ICS_EVENT,
+				  TRUE,
+				  FALSE,
+				  TRUE,
+				  nicCmdEventSetCommon,
+				  nicOidCmdTimeoutCommon,
+				  sizeof(struct CMD_PHY_ICS_EVENT_INFO),
+				  (uint8_t *) &rCmdPhyicsEvent,
+				  pvSetBuffer, u4SetBufferLen);
+
+	return rWlanStatus;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is set ICS sniffer
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetPhyIcsStart(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_CUSTOM_PHYICS_START_STRUCT *prPhyicsStartInfo;
+	struct CMD_PHY_ICS_START_INFO rCmdPhyicsStart;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_PHYICS_START_STRUCT);
+	if (u4SetBufferLen <
+		sizeof(struct PARAM_CUSTOM_PHYICS_START_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prPhyicsStartInfo =
+	(struct PARAM_CUSTOM_PHYICS_START_STRUCT *)pvSetBuffer;
+	kalMemZero(&rCmdPhyicsStart, sizeof(struct CMD_PHY_ICS_START_INFO));
+
+	rCmdPhyicsStart.u2Action = prPhyicsStartInfo->u2Action;
+	rCmdPhyicsStart.u2Timer = prPhyicsStartInfo->u2Timer;
+
+	DBGLOG(INIT, INFO, "PHY_ICS_CMD_START: %d-%d\n",
+		rCmdPhyicsStart.u2Action,
+		rCmdPhyicsStart.u2Timer
+		);
+
+	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
+				  CMD_ID_SET_PHY_ICS_START,
+				  TRUE,
+				  FALSE,
+				  TRUE,
+				  nicCmdEventSetCommon,
+				  nicOidCmdTimeoutCommon,
+				  sizeof(struct CMD_PHY_ICS_START_INFO),
+				  (uint8_t *) &rCmdPhyicsStart,
+				  pvSetBuffer, u4SetBufferLen);
+
+	return rWlanStatus;
+}
+
+
+#endif /* CFG_SUPPORT_PHY_ICS */
+
 uint32_t
 wlanoidQueryChipConfig(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,

@@ -2186,6 +2186,19 @@ struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT {
 	uint8_t aucPadding0[62];
 };
 #endif /* CFG_SUPPORT_ICS */
+#if (CFG_SUPPORT_PHY_ICS == 1)
+struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT {
+	uint8_t ucBandIdx;
+	uint8_t ucPartition;
+	uint16_t u2EventGroup;
+	uint32_t u4EventID;
+};
+
+struct PARAM_CUSTOM_PHYICS_START_STRUCT {
+	uint16_t u2Action;
+	uint16_t u2Timer;
+};
+#endif
 
 struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT {
 	uint16_t u2Id;
@@ -4531,6 +4544,19 @@ wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 		      void *pvSetBuffer, uint32_t u4SetBufferLen,
 		      uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_ICS */
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+uint32_t
+wlanoidSetPhyIcsEventOn(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetPhyIcsStart(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
+
+#endif /* CFG_SUPPORT_PHY_ICS */
 
 uint32_t
 wlanoidQueryChipConfig(struct ADAPTER *prAdapter,

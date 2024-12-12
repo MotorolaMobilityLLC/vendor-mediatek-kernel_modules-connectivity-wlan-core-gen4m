@@ -223,6 +223,10 @@
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #define CMD_SET_SNIFFER			"SNIFFER"
 #endif /* CFG_SUPPORT_ICS */
+#if (CFG_SUPPORT_PHY_ICS == 1)
+#define CMD_SET_PhyIcs_EventOn  "PhyIcs_EventOn"
+#define CMD_SET_PhyIcs_Start    "PhyIcs_Start"
+#endif
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 #define CMD_SET_MONITOR			"MONITOR"
 #endif

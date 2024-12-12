@@ -348,6 +348,10 @@ enum ENUM_CMD_ID {
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	CMD_ID_BEACON_TSF_SYNC = 0x94,		/* 0x94 (Set / Query) */
 #endif
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	CMD_ID_SET_PHY_ICS_EVENT = 0x96,		/* 0x96 (Set) */
+	CMD_ID_SET_PHY_ICS_START = 0x97,		/* 0x97 (Set) */
+#endif
 	CMD_ID_SET_SAP_SUS     = 0x9E,      /* 0x9E (Set) */
 	CMD_ID_SET_SAP_RPS     = 0x9F,      /* 0x9F (Set) */
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */

@@ -579,6 +579,12 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 int priv_driver_sniffer(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_ICS || CFG_SUPPORT_PHY_ICS */
+#if (CFG_SUPPORT_PHY_ICS == 1)
+int priv_driver_phyics_eventon(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_phyics_start(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_PHY_ICS */
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 int priv_driver_set_monitor(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

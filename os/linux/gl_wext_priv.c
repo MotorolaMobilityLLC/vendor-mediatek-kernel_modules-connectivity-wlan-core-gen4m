@@ -9006,6 +9006,121 @@ int priv_driver_sniffer(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
+#if (CFG_SUPPORT_PHY_ICS == 1)
+int priv_driver_phyics_eventon(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+	struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT rPhyicsEvent;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	kalMemZero(&rPhyicsEvent,
+		sizeof(struct PARAM_CUSTOM_PHYICS_EVENT_STRUCT));
+	i4Recv = sscanf(this_char,
+		"%d-%d-%x-%x",
+		&(rPhyicsEvent.ucBandIdx),
+		&(rPhyicsEvent.ucPartition),
+		&(rPhyicsEvent.u2EventGroup),
+		&(rPhyicsEvent.u4EventID));
+
+	if (i4Recv == 4) {
+		DBGLOG(REQ, INFO, "An PHY ICS event on cmd");
+		if (rPhyicsEvent.u2EventGroup < 256) {
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetPhyIcsEventOn,
+				&rPhyicsEvent, sizeof(rPhyicsEvent),
+				&u4BufLen);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				return -1;
+		} else {
+			DBGLOG(REQ, ERROR,
+			"PHY ICS Event Group must less than 0xff");
+		}
+	} else {
+		DBGLOG(REQ, ERROR,
+			"PHY ICS CMD: Number of PARAMETERS is WRONG\n");
+	}
+	return i4BytesWritten;
+}
+int priv_driver_phyics_start(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+	struct PARAM_CUSTOM_PHYICS_START_STRUCT rPhyicsStart;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	kalMemZero(&rPhyicsStart,
+		sizeof(struct PARAM_CUSTOM_PHYICS_START_STRUCT));
+	i4Recv = sscanf(this_char,
+		"%d-%d",
+		&(rPhyicsStart.u2Action),
+		&(rPhyicsStart.u2Timer));
+
+	if (i4Recv == 2) {
+		DBGLOG(REQ, INFO, "An PHY ICS start cmd");
+		if (rPhyicsStart.u2Action < 2) {
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetPhyIcsStart,
+				&rPhyicsStart, sizeof(rPhyicsStart),
+				&u4BufLen);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				return -1;
+		} else {
+			DBGLOG(REQ, ERROR,
+			"PHY ICS Action must less than 2");
+		}
+	} else {
+		DBGLOG(REQ, ERROR,
+			"PHY ICS CMD: Number of PARAMETERS is WRONG\n");
+	}
+	return i4BytesWritten;
+}
+
+#endif /* CFG_SUPPORT_PHY_ICS */
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 int priv_driver_set_monitor(struct net_device *prNetDev,

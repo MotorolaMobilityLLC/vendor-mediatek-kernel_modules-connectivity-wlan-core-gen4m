@@ -267,6 +267,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_PHY_LIST_DUMP	= 0x7F, /* Get Phy CR */
 	UNI_CMD_ID_UPDATE_LP	= 0x84, /*Update LP Parameter*/
 	UNI_CMD_ID_COEX	= 0x87, /*notify FW coex cmd*/
+	UNI_CMD_ID_PHY_ICS = 0x8A, /*PHY ICS*/
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4437,6 +4438,52 @@ struct UNI_CMD_ICS_SNIFFER {
 	uint8_t aucPadding0;
 	uint16_t ucCondition[7];
 	uint8_t aucPadding1[62];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_PHY_ICS {
+	/*fixed field*/
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+       /**< the TLVs included in this field:
+	*
+	*   TAG                              | ID  | structure
+	*   -------------------              | ----| -------------
+	*   UNI_CMD_PHY_ICS_EVENT_CTRL       | 0x0 | UNI_CMD_PHY_ICS_EVENT_T
+	*   UNI_CMD_PHY_ICS_START_CTRL       | 0x1 | UNI_CMD_PHY_ICS_START_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_PHY_ICS_TAG {
+	UNI_CMD_PHY_ICS_EVENT_TAG_CTRL = 0x0,
+	UNI_CMD_PHY_ICS_START_TAG_CTRL = 0x1,
+	UNI_CMD_PHY_ICS_TAG_MAX_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_PHY_ICS_EVENT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	/* tag specific part */
+	uint8_t ucBandIdx;
+	uint8_t ucPartition;
+	uint16_t u2EventGroup;
+	uint32_t u4EventID;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_PHY_ICS_START {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	/* tag specific part */
+	uint16_t u2Action;
+	uint16_t u2Timer;
 } __KAL_ATTRIB_PACKED__;
 #endif
 
@@ -9118,6 +9165,10 @@ uint32_t nicUniCmdSetCoexStopConnProtect(struct ADAPTER *ad, uint8_t ucBssIdx);
 uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetPhyIcsEventOn(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetPhyIcsStart(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
