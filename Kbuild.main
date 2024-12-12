@@ -52,7 +52,8 @@ ccflags-y += -Wno-unused-value
 ccflags-y += -Wno-unused-result
 ccflags-y += -Wno-format
 ccflags-y += -Wno-parentheses
-
+ccflags-y += -Wno-missing-declarations
+ccflags-y += -Wno-missing-prototypes
 ccflags-y += -Wno-unused-function
 
 ifeq ($(os), none)

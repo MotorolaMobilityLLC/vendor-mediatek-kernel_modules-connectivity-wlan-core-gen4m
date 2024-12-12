@@ -34,7 +34,7 @@
 #endif
 
 /* for rps */
-#if KERNEL_VERSION(6, 8, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(6, 9, 0) <= LINUX_VERSION_CODE
 #include <net/rps.h>
 #endif
 #include <linux/netdevice.h>
