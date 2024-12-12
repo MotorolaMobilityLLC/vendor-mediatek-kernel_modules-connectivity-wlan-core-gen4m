@@ -1208,7 +1208,7 @@
 #define ELEM_ID_MULTI_MAC_SUBLAYERS \
 	170 /* Multiple MAC Sublayers */
 #define ELEM_ID_MCCAOP_AD_OVERVIEW \
-	123 /* MCCAOP Advertisement Overview */
+	174 /* MCCAOP Advertisement Overview */
 #define ELEM_ID_QMF_POLICY \
 	181 /* QMF Policy */
 #define ELEM_ID_QLOAD_REPORT \
