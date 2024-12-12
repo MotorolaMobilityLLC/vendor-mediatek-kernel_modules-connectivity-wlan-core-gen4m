@@ -213,6 +213,20 @@ struct IE_TID_TO_LINK_MAPPING {
 	uint8_t ucOptCtrl[];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_MULTI_LINK_TRAFFIC_INDICATION {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	/* Control field:
+	 *     BITS(0, 3): Bitmap Size
+	 *     BITS(4, 14): AID Offset
+	 *     BIT(15): Reserved
+	 */
+	uint16_t u2Ctrl;
+	uint8_t aucList[1];
+} __KAL_ATTRIB_PACKED__;
+
 struct STA_PROFILE {
 	uint16_t u2StaCtrl;
 	uint8_t ucComplete;

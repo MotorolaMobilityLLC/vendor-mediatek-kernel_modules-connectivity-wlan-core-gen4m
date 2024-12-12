@@ -133,6 +133,9 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateOWEIE}
 	, {0, rlmCalculateTpeIELen, rlmGenerateTpeIE}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	, {0, ehtRlmCalMlTrafficIndiIELen, ehtRlmGenMlTrafficIndiIE}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 };
 
 struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {

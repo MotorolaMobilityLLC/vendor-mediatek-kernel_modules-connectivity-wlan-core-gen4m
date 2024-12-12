@@ -1137,4 +1137,56 @@ uint32_t ehtRlmFillBwIndicationIe(struct ADAPTER *prAdapter,
 
 	return IE_SIZE(prBwIndIe);
 }
+
+uint32_t ehtRlmCalMlTrafficIndiIELen(struct ADAPTER *prAdapter,
+				     uint8_t ucBssIndex,
+				     struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prBssInfo;
+	struct MLD_BSS_INFO *prMldBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prBssInfo || prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT ||
+	    !IS_MLD_BSSINFO_MULTI(prMldBssInfo))
+		return 0;
+
+	return sizeof(struct IE_MULTI_LINK_TRAFFIC_INDICATION);
+}
+
+void ehtRlmGenMlTrafficIndiIE(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo;
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct IE_MULTI_LINK_TRAFFIC_INDICATION *prIe;
+	uint8_t ucMldLinkMax;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prBssInfo || prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT ||
+	    !IS_MLD_BSSINFO_MULTI(prMldBssInfo))
+		return;
+
+	if (p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[
+			prBssInfo->u4PrivateData]))
+		ucMldLinkMax = prWifiVar->ucApMldLinkMax;
+	else
+		ucMldLinkMax = prWifiVar->ucP2pMldLinkMax;
+
+	prIe = (struct IE_MULTI_LINK_TRAFFIC_INDICATION *)
+		((uintptr_t)prMsduInfo->prPacket +
+		 (uintptr_t)prMsduInfo->u2FrameLength);
+
+	kalMemZero(prIe, sizeof(*prIe));
+
+	prIe->ucId = ELEM_ID_EXTENSION;
+	prIe->ucLength = 4;
+	prIe->ucExtId = ELEM_EXT_ID_MLT_INDICATION;
+	prIe->u2Ctrl = ((ucMldLinkMax - 1) & BITS(0, 3)) << 0;
+	/* Leave indication list to be filled in fw */
+
+	prMsduInfo->u2FrameLength += IE_SIZE(prIe);
+}
 #endif /* CFG_SUPPORT_802_11BE == 1 */

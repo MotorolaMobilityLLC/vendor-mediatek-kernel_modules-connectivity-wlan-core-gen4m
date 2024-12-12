@@ -79,6 +79,9 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 #endif
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 			rsnGenerateRSNXIE}	/* 244 */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	, {0, ehtRlmCalMlTrafficIndiIELen, ehtRlmGenMlTrafficIndiIE}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 };
 
 struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSccOnlyChCandFilterTable[] = {

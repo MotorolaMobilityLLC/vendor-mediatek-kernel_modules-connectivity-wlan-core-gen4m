@@ -96,5 +96,10 @@ void ehtRlmInitHtcACtrlOM(
 	struct ADAPTER *prAdapter);
 uint32_t ehtRlmFillBwIndicationIe(struct ADAPTER *prAdapter,
 				  uint8_t *pucBuffer);
+uint32_t ehtRlmCalMlTrafficIndiIELen(struct ADAPTER *prAdapter,
+				     uint8_t ucBssIndex,
+				     struct STA_RECORD *prStaRec);
+void ehtRlmGenMlTrafficIndiIE(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfo);
 #endif /* CFG_SUPPORT_802_11BE == 1 */
 #endif /* !_EHT_RLM_H */
