@@ -65,9 +65,15 @@
 #define HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT (15000)
 
 #if CFG_SUPPORT_WOW_EINT
-#define WAIT_POWERKEY_TIMEOUT		(5000)
 #define WIFI_COMPATIBLE_NODE_NAME	"mediatek,mediatek_wifi_ctrl"
 #define WIFI_INTERRUPT_NAME		"mediatek_wifi_ctrl-eint"
+#endif
+
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+#define WAIT_POWERKEY_TIMEOUT		(5000)
+#define WAIT_EINT_WAKEUP_TIMEOUT	WAIT_POWERKEY_TIMEOUT
+#else
+#define WAIT_EINT_WAKEUP_TIMEOUT	(1)
 #endif
 
 #if MTK_WCN_HIF_SDIO
@@ -220,17 +226,21 @@ void print_content(uint32_t cmd_len, uint8_t *buffer)
 #if CFG_SUPPORT_WOW_EINT
 static irqreturn_t wifi_wow_isr(int irq, void *dev)
 {
-#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
 	struct ADAPTER *pAd = (struct ADAPTER *)dev;
 
-	DBGLOG(HAL, DEBUG, "%s, received interrupt!\n", __func__);
+	if (pAd == NULL) {
+		DBGLOG(HAL, ERROR, "%s, pAd is NULL!\n", __func__);
+		return IRQ_HANDLED;
+	}
 
+	DBGLOG(HAL, INFO, "%s, received interrupt!\n", __func__);
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_TIMEOUT_FORCED(pAd, pAd->rWowlanDevNode.pr_eint_wlock,
+		MSEC_TO_JIFFIES(WAIT_EINT_WAKEUP_TIMEOUT));
+#endif
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
 	disable_irq_nosync(pAd->rWowlanDevNode.wowlan_irq);
 	atomic_dec(&(pAd->rWowlanDevNode.irq_enable_count));
-
-	wake_lock_timeout(&pAd->rWowlanDevNode.eint_wlock,
-		WAIT_POWERKEY_TIMEOUT);
-
 	input_report_key(pAd->prWowInputDev, KEY_POWER, 1);
 	input_sync(pAd->prWowInputDev);
 	input_report_key(pAd->prWowInputDev, KEY_POWER, 0);
@@ -295,9 +305,10 @@ static void mtk_sdio_eint_interrupt(struct sdio_func *func)
 
 	prGlueInfo->prAdapter->rWowlanDevNode.func = func;
 	wlan_register_irq(prGlueInfo->prAdapter);
-#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
-	wake_lock_init(&prGlueInfo->prAdapter->rWowlanDevNode.eint_wlock,
-		WAKE_LOCK_SUSPEND, "wifievent_eint");
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(NULL,
+		prGlueInfo->prAdapter->rWowlanDevNode.pr_eint_wlock,
+		"wifievent_eint");
 #endif
 }
 
@@ -328,6 +339,22 @@ static int mtk_wow_input_init(struct GLUE_INFO *prGlueInfo)
 
 	return 0;
 }
+
+static void mtk_wow_input_deinit(struct GLUE_INFO *prGlueInfo)
+{
+
+	if ((prGlueInfo == NULL) ||
+		(prGlueInfo->prAdapter == NULL) ||
+		(prGlueInfo->prAdapter->prWowInputDev == NULL)) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	input_unregister_device(prGlueInfo->prAdapter->prWowInputDev);
+	prGlueInfo->prAdapter->prWowInputDev = NULL;
+	return;
+
+}
 #endif
 
 static void mtk_sdio_eint_free_irq(struct sdio_func *func)
@@ -344,6 +371,14 @@ static void mtk_sdio_eint_free_irq(struct sdio_func *func)
 		disable_irq_nosync(u4Irq);
 		free_irq(u4Irq, prGlueInfo->prAdapter);
 	}
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+		prGlueInfo->prAdapter->rWowlanDevNode.pr_eint_wlock))
+		KAL_WAKE_UNLOCK(NULL,
+			prGlueInfo->prAdapter->rWowlanDevNode.pr_eint_wlock);
+	KAL_WAKE_LOCK_DESTROY(NULL,
+		prGlueInfo->prAdapter->rWowlanDevNode.pr_eint_wlock);
+#endif
 }
 
 #endif
@@ -652,18 +687,6 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 			"%s: cannot remain alive(0x%X)\n", func_id, pm_caps);
 	}
 
-	/* If wow enable, ask kernel accept SDIO IRQ in suspend mode */
-	if (prAdapter->rWifiVar.ucWow &&
-		prAdapter->rWowCtrl.fgWowEnable) {
-		set_flag = MMC_PM_WAKE_SDIO_IRQ;
-		ret = sdio_set_host_pm_flags(func, set_flag);
-		if (ret) {
-			DBGLOG(HAL, ERROR, "set flag %d err %d\n", set_flag, ret);
-			DBGLOG(HAL, ERROR,
-				"%s: cannot sdio wake-irq(0x%X)\n", func_id, pm_caps);
-		}
-	}
-
 	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_SUSPEND);
 
 	/* pending cmd will be kept in queue,
@@ -737,7 +760,7 @@ static int mtk_sdio_pm_resume(struct device *pDev)
 	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_READY);
 
 	/* Allow upper layers to call the device hard_start_xmit routine. */
-	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
+	netif_tx_wake_all_queues(prGlueInfo->prDevHandler);
 
 	DBGLOG(HAL, STATE, "<==\n");
 	return 0;
@@ -859,7 +882,6 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 void glUnregisterBus(remove_card pfRemove)
 {
 	ASSERT(pfRemove);
-	pfRemove();
 
 #if MTK_WCN_HIF_SDIO
 	/* unregister MTK sdio client */
@@ -1057,9 +1079,11 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 
 #if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
 	InitStatus = mtk_wow_input_init(prGlueInfo);
-	if (InitStatus != 0)
+	if (InitStatus != 0) {
 		DBGLOG(HAL, ERROR,
 			"alocating input device for WOW is failed\n");
+		return -1;
+	}
 #endif
 
 	prHifInfo->fgIsPendingInt = FALSE;
@@ -1108,6 +1132,10 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 
 #if CFG_SUPPORT_WOW_EINT
 	mtk_sdio_eint_free_irq(prHifInfo->func);
+#endif
+
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	mtk_wow_input_deinit(prGlueInfo);
 #endif
 
 }				/* end of glBusreeIrq() */
