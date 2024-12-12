@@ -3831,6 +3831,7 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq;
 	struct BCN_RM_PARAMS *prBcnRmParam;
+	struct CHNL_LOAD_RM_PARAMS *prChnlLoadRmParam;
 	uint8_t ucBssIndex = 0;
 
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *)prMsgHdr;
@@ -3851,6 +3852,7 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
 	prBcnRmParam = &prRmReq->rBcnRmParam;
+	prChnlLoadRmParam = &prRmReq->rChnlLoadRmParam;
 
 	ucSeqNumOfCompMsg = prScanDoneMsg->ucSeqNum;
 	eStatus = prScanDoneMsg->eScanStatus;
@@ -3953,6 +3955,45 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 			count);
 #endif
 #endif
+		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
+	} else if (prChnlLoadRmParam->eState == RM_ON_GOING) {
+#if (CFG_SUPPORT_802_11K == 1)
+		struct RADIO_MEASUREMENT_REQ_PARAMS *rmReqParam =
+				aisGetRmReqParam(prAdapter, ucBssIndex);
+		struct CHNL_LOAD_RM_PARAMS *data =
+				&rmReqParam->rChnlLoadRmParam;
+		struct IE_MEASUREMENT_REQ *prCurrReq = prRmReq->prCurrMeasElem;
+		struct RM_CHNL_LOAD_REQ *prChnlLoadReq =
+				(struct RM_CHNL_LOAD_REQ *)
+				&prCurrReq->aucRequestFields[0];
+		enum ENUM_BAND eBand;
+		uint32_t slot = 0, airTime = 0, idle = 0;
+
+		eBand = scanOpClassToBand(prChnlLoadReq->ucRegulatoryClass);
+		slot = scanGetChnlIdleSlot(prAdapter,
+				eBand, prChnlLoadReq->ucChannel);
+
+		/* 90000 ms = 90ms dwell time to micro sec */
+		idle = (slot * 9 * 100) / (data->minDwellTime * 1000);
+
+		/* nomalized to 0~255 */
+		airTime = idle * 255 / 100;
+		airTime = airTime > 255 ? 255 : airTime;
+
+		if (data->reportingCondition == 1) {
+			if ((255 - airTime) >= data->chnlLoadRefValue)
+				rrmCollectChannelLoadReport(prAdapter,
+						airTime, ucBssIndex);
+		} else if (data->reportingCondition == 2) {
+			if ((255 - airTime) <= data->chnlLoadRefValue)
+				rrmCollectChannelLoadReport(prAdapter,
+						airTime, ucBssIndex);
+		} else {
+			rrmCollectChannelLoadReport(prAdapter,
+						airTime, ucBssIndex);
+		}
+#endif /* CFG_SUPPORT_802_11K == 1 */
+
 		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 	}
 
@@ -11151,18 +11192,24 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq;
 #if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct IE_MEASUREMENT_REQ *prRequest = NULL;
 
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 #endif
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
+	prRequest = prRmReq->prCurrMeasElem;
 
 	/* record last scan start time for rrm */
-	if (prScanRequest->fgIsRrm) {
-		GET_CURRENT_SYSTIME(&prRmReq->rScanStartTime);
-		prRmReq->rBcnRmParam.eState = RM_ON_GOING;
-	}
+	if (prScanRequest->fgIsRrm)
+		if (prRequest->ucMeasurementType == ELEM_RM_TYPE_BEACON_REQ) {
+			GET_CURRENT_SYSTIME(&prRmReq->rScanStartTime);
+			prRmReq->rBcnRmParam.eState = RM_ON_GOING;
+		} else if (prRequest->ucMeasurementType ==
+					ELEM_RM_TYPE_CHNL_LOAD_REQ) {
+			prRmReq->rChnlLoadRmParam.eState = RM_ON_GOING;
+		}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prScanReqMsg->fgNeedMloScan = prScanRequest->fgNeedMloScan;

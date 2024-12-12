@@ -1615,6 +1615,26 @@ enum BEACON_REPORT_DETAIL {
 /* IEEE P802.11-REVmd/D2.0, 9.4.2.21.7 - Beacon report  */
 #define BEACON_REPORT_LAST_INDICATION_SUBELEM_LEN	3
 
+/* IEEE Std 802.11k-2008, Table 7-29a - Optional subelement IDs for
+ * Channel Load Request
+ */
+#define CHANNEL_LOAD_REQUEST_SUBELEM_REPORTING_INFO	1
+
+/* IEEE Std 802.11k-2008, Table 7-29j - Group Identity for
+ * STA Statistics Request
+ */
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_TABLE	0
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_GROUP	1
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP0	2
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP1	3
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP2	4
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP3	5
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP4	6
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP5	7
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP6	8
+#define STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP7	9
+#define STA_STATS_REQUEST_GROUP_BSS_AVERAGE_DELAY	10
+
 /* IEEE Std 802.11-2016, Figure 9-192 - Measurement Report Mode field */
 #define MEASUREMENT_REPORT_MODE_ACCEPT 0
 #define MEASUREMENT_REPORT_MODE_REJECT_LATE BIT(0)
@@ -1711,6 +1731,7 @@ enum BEACON_REPORT_DETAIL {
 #define RRM_CAP_INFO_BEACON_TABLE_BIT               6
 #define RRM_CAP_INFO_CHANNEL_LOAD_MEASURE_BIT       9
 #define RRM_CAP_INFO_NOISE_HISTOGRAM_MEASURE_BIT    10
+#define RRM_CAP_INFO_STATISTICS_MEASURE_BIT         11
 #define RRM_CAP_INFO_TSM_BIT                        14
 #define RRM_CAP_INFO_RRM_BIT                        17
 #if CFG_STAINFO_FEATURE
@@ -3365,7 +3386,6 @@ struct RM_CHNL_LOAD_REQ {
 	uint8_t aucSubElements[];
 } __KAL_ATTRIB_PACKED__;
 
-
 __KAL_ATTRIB_PACKED_FRONT__
 struct RM_BCN_REQ {
 	uint8_t ucRegulatoryClass;
@@ -3461,9 +3481,16 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct RM_CHNL_LOAD_REPORT {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
-	uint32_t u4StartTime[2];
+	uint8_t aucStartTime[8];
 	uint16_t u2Duration;
 	uint8_t ucChnlLoad;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct RM_STA_STATS_REPORT {
+	uint16_t u2Duration;
+	uint8_t ucGroupID;
+	uint32_t u4StatsGroupData[13];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

@@ -37,13 +37,27 @@
  *******************************************************************************
  */
 
-struct TIMER rBeaconReqTimer;
+struct TIMER rRrmReqTimer;
+struct TIMER rStaStatsTimer;
 
 struct REF_TSF {
 	uint32_t au4Tsf[2];
 	OS_SYSTIME rTime;
 };
 static struct REF_TSF rTsf;
+
+#if (CFG_SUPPORT_LLS == 1)
+static const uint8_t Tid2LinkStatsAc[] = {
+	STATS_LLS_WIFI_AC_BE,
+	STATS_LLS_WIFI_AC_BK,
+	STATS_LLS_WIFI_AC_BK,
+	STATS_LLS_WIFI_AC_BE,
+	STATS_LLS_WIFI_AC_VI,
+	STATS_LLS_WIFI_AC_VI,
+	STATS_LLS_WIFI_AC_VO,
+	STATS_LLS_WIFI_AC_VO,
+};
+#endif /* CFG_SUPPORT_LLS == 1 */
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -62,6 +76,12 @@ static void rrmCalibrateRepetions(
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq);
 
 static void rrmHandleBeaconReqSubelem(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+static void rrmHandleChannelLoadReqSubelem(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+static void rrmHandleStaStatsReqSubelem(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 /*******************************************************************************
@@ -88,6 +108,8 @@ void rrmParamInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	kalMemZero(prRmRepParam, sizeof(*prRmRepParam));
 	kalMemZero(prRmReqParam, sizeof(*prRmReqParam));
 	prRmReqParam->rBcnRmParam.eState = RM_NO_REQUEST;
+	prRmReqParam->rChnlLoadRmParam.eState = RM_NO_REQUEST;
+	prRmReqParam->rStaStatsRmParam.eState = RM_NO_REQUEST;
 	prRmReqParam->fgRmIsOngoing = FALSE;
 	LINK_INITIALIZE(&prRmRepParam->rReportLink);
 }
@@ -198,12 +220,12 @@ void rrmFreeMeasurementResources(struct ADAPTER *prAdapter,
 		aisGetRmReportParam(prAdapter, ucBssIndex);
 	struct RM_MEASURE_REPORT_ENTRY *prReportEntry = NULL;
 	struct LINK *prReportLink = &prRmRep->rReportLink;
-	u_int8_t fgHasBcnReqTimer = timerPendingTimer(&rBeaconReqTimer);
+	u_int8_t fgHasRrmReqTimer = timerPendingTimer(&rRrmReqTimer);
 
-	DBGLOG(RRM, TRACE, "Free measurement, Beacon Req timer is %d\n",
-		fgHasBcnReqTimer);
-	if (fgHasBcnReqTimer)
-		cnmTimerStopTimer(prAdapter, &rBeaconReqTimer);
+	DBGLOG(RRM, TRACE, "Free measurement, RRM Req timer is %d\n",
+		fgHasRrmReqTimer);
+	if (fgHasRrmReqTimer)
+		cnmTimerStopTimer(prAdapter, &rRrmReqTimer);
 
 	if (prRmReq->pucReqIeBuf)
 		kalMemFree(prRmReq->pucReqIeBuf, VIR_MEM_TYPE,
@@ -233,6 +255,8 @@ void rrmFreeMeasurementResources(struct ADAPTER *prAdapter,
 	kalMemZero(prRmReq, sizeof(*prRmReq));
 	kalMemZero(prRmRep, sizeof(*prRmRep));
 	prRmReq->rBcnRmParam.eState = RM_NO_REQUEST;
+	prRmReq->rChnlLoadRmParam.eState = RM_NO_REQUEST;
+	prRmReq->rStaStatsRmParam.eState = RM_NO_REQUEST;
 	prRmReq->fgRmIsOngoing = FALSE;
 	LINK_INITIALIZE(&prRmRep->rReportLink);
 
@@ -353,6 +377,7 @@ schedule_next:
 		DBGLOG(RRM, INFO, "Rm has been stopped\n");
 		return;
 	}
+
 	/* we don't support parallel measurement now */
 	if (prCurrReq->ucRequestMode & RM_REQ_MODE_PARALLEL_BIT) {
 		DBGLOG(RRM, WARN,
@@ -402,6 +427,7 @@ schedule_next:
 		fgNewStarted = FALSE;
 		goto schedule_next;
 	}
+
 	/* copy collected measurement report for specific measurement type */
 	if (!fgNewStarted) {
 		struct RM_MEASURE_REPORT_ENTRY *prReportEntry = NULL;
@@ -492,11 +518,57 @@ schedule_next:
 					    u2IeSize);
 			prRmReq->u2RemainReqLen -= u2IeSize;
 			rrmHandleBeaconReqSubelem(prAdapter, ucBssIndex);
+			rrmHandleChannelLoadReqSubelem(prAdapter, ucBssIndex);
+			rrmHandleStaStatsReqSubelem(prAdapter, ucBssIndex);
 		}
 	}
 
 	/* do specific measurement */
 	switch (prCurrReq->ucMeasurementType) {
+	case ELEM_RM_TYPE_CHNL_LOAD_REQ: {
+		struct RM_CHNL_LOAD_REQ *prChannelLoadReq =
+		    (struct RM_CHNL_LOAD_REQ *)&prCurrReq->aucRequestFields[0];
+
+		if (prChannelLoadReq->u2RandomInterval == 0)
+			rrmDoChnlLoadMeasurement(prAdapter, ucBssIndex);
+		else {
+			u2RandomTime = (uint16_t) (kalRandomNumber() & 0xFFFF);
+			u2RandomTime = (u2RandomTime *
+				prChannelLoadReq->u2RandomInterval) / 65535;
+			u2RandomTime = TU_TO_MSEC(u2RandomTime);
+			if (u2RandomTime > 0) {
+				cnmTimerStopTimer(prAdapter, &rRrmReqTimer);
+				cnmTimerInitTimer(prAdapter, &rRrmReqTimer,
+					rrmDoChnlLoadMeasurement, ucBssIndex);
+				cnmTimerStartTimer(prAdapter, &rRrmReqTimer,
+						   u2RandomTime);
+			} else
+				rrmDoChnlLoadMeasurement(prAdapter, ucBssIndex);
+		}
+		break;
+	}
+	case ELEM_RM_TYPE_STA_STATISTICS_REQ: {
+		struct RM_STA_STATS_REQ *prStaStatsReq =
+		    (struct RM_STA_STATS_REQ *)&prCurrReq->aucRequestFields[0];
+
+		if (prStaStatsReq->u2RandomInterval == 0)
+			rrmDoStaStatsMeasurement(prAdapter, ucBssIndex);
+		else {
+			u2RandomTime = (uint16_t) (kalRandomNumber() & 0xFFFF);
+			u2RandomTime = (u2RandomTime *
+				prStaStatsReq->u2RandomInterval) / 65535;
+			u2RandomTime = TU_TO_MSEC(u2RandomTime);
+			if (u2RandomTime > 0) {
+				cnmTimerStopTimer(prAdapter, &rRrmReqTimer);
+				cnmTimerInitTimer(prAdapter, &rRrmReqTimer,
+					rrmDoStaStatsMeasurement, ucBssIndex);
+				cnmTimerStartTimer(prAdapter, &rRrmReqTimer,
+						   u2RandomTime);
+			} else
+				rrmDoStaStatsMeasurement(prAdapter, ucBssIndex);
+		}
+		break;
+	}
 	case ELEM_RM_TYPE_BEACON_REQ: {
 		struct RM_BCN_REQ *prBeaconReq =
 			(struct RM_BCN_REQ *)&prCurrReq->aucRequestFields[0];
@@ -510,10 +582,10 @@ schedule_next:
 				65535;
 			u2RandomTime = TU_TO_MSEC(u2RandomTime);
 			if (u2RandomTime > 0) {
-				cnmTimerStopTimer(prAdapter, &rBeaconReqTimer);
-				cnmTimerInitTimer(prAdapter, &rBeaconReqTimer,
+				cnmTimerStopTimer(prAdapter, &rRrmReqTimer);
+				cnmTimerInitTimer(prAdapter, &rRrmReqTimer,
 					rrmDoBeaconMeasurement, ucBssIndex);
-				cnmTimerStartTimer(prAdapter, &rBeaconReqTimer,
+				cnmTimerStartTimer(prAdapter, &rRrmReqTimer,
 						   u2RandomTime);
 			} else
 				rrmDoBeaconMeasurement(prAdapter, ucBssIndex);
@@ -852,6 +924,167 @@ subelem:
 	return TRUE;
 }
 
+u_int8_t rrmFillScanParamForChnlLoad(struct ADAPTER *prAdapter,
+		struct PARAM_SCAN_REQUEST_ADV *prParam, uint8_t ucBssIndex)
+{
+	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq = NULL;
+	struct CHNL_LOAD_RM_PARAMS *prRmParam = NULL;
+	struct IE_MEASUREMENT_REQ *prCurrReq = NULL;
+	struct RM_CHNL_LOAD_REQ *prChnlLoadReq = NULL;
+	uint8_t ucOpClass, i;
+
+	if (!prParam)
+		return FALSE;
+
+	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
+
+	prRmParam = &prRmReq->rChnlLoadRmParam;
+	prCurrReq = prRmReq->prCurrMeasElem;
+	prChnlLoadReq =
+		(struct RM_CHNL_LOAD_REQ *)&prCurrReq->aucRequestFields[0];
+
+	prParam->fgIsRrm = TRUE;
+	prParam->ucBssIndex = ucBssIndex;
+	prParam->u4SsidNum = 0;
+	prParam->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+
+	WLAN_GET_FIELD_16(&prChnlLoadReq->u2Duration,
+		&prParam->u2ChannelDwellTime);
+	/* not allow scan dwell time too long if */
+	if (prParam->u2ChannelDwellTime > 100)
+		prParam->u2ChannelDwellTime = 100;
+
+	/* if mandatory bit is set, we should do */
+	if (prCurrReq->ucRequestMode & RM_REQ_MODE_DURATION_MANDATORY_BIT)
+		prParam->u2ChannelMinDwellTime = prParam->u2ChannelDwellTime;
+	else
+		prParam->u2ChannelMinDwellTime =
+			(prParam->u2ChannelDwellTime * 2) / 3;
+
+	prRmParam->minDwellTime = prParam->u2ChannelMinDwellTime;
+	ucOpClass = prChnlLoadReq->ucRegulatoryClass;
+
+	prParam->u4ChannelNum = 1;
+	prParam->arChannel[0].ucChannelNum = prChnlLoadReq->ucChannel;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (rrmCheckIs6GOpClass(ucOpClass))
+		prParam->arChannel[0].eBand = BAND_6G;
+	else
+#endif
+	{
+		if (prChnlLoadReq->ucChannel <= 14)
+			prParam->arChannel[0].eBand = BAND_2G4;
+		else
+			prParam->arChannel[0].eBand = BAND_5G;
+	}
+
+	for (i = 0; i < prParam->u4ChannelNum; i++) {
+		if (!kalIsValidChnl(prAdapter->prGlueInfo,
+				prParam->arChannel[i].ucChannelNum,
+				prParam->arChannel[i].eBand)) {
+			DBGLOG(RRM, WARN,
+				"ch%d band%d illegal! set to FULL scan\n",
+				prParam->arChannel[i].ucChannelNum,
+				prParam->arChannel[i].eBand);
+			prParam->u4ChannelNum = 0;
+			break;
+		}
+	}
+
+	DBGLOG(RRM, INFO,
+	       "ScanType %d, SsidNum %d, Dwell %d, MinDwell %d, ChnlNum %d\n",
+	       prParam->ucScanType, prParam->u4SsidNum,
+	       prParam->u2ChannelDwellTime, prParam->u2ChannelMinDwellTime,
+	       prParam->u4ChannelNum);
+
+	return TRUE;
+}
+
+void rrmFillStaStats(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	uint8_t ucGroupID, uint32_t *u4StatsGroupData)
+{
+#if (CFG_SUPPORT_LLS == 1)
+	struct PARAM_802_11_STATISTICS_STRUCT *prStat;
+	struct STATS_LLS_WIFI_IFACE_STAT *iface;
+	uint8_t up = 0, *dst;
+
+	prStat = &(prAdapter->rStat);
+	dst = (uint8_t *)&prAdapter->rLinkStatsDestBuffer;
+	kalMemZero(dst, sizeof(prAdapter->rLinkStatsDestBuffer));
+
+	if (prAdapter->ucLinkStatsBssNum == 1)
+		kalMemCopyFromIo(dst, &prAdapter->prLinkStatsIface[0],
+			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
+	else
+		kalMemCopyFromIo(dst, &prAdapter->prLinkStatsIface[ucBssIndex],
+			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
+	iface = (struct STATS_LLS_WIFI_IFACE_STAT *)dst;
+
+	if (ucGroupID == STA_STATS_REQUEST_GROUP_STA_COUNTERS_TABLE) {
+		u4StatsGroupData[0] =
+		    (uint32_t) prStat->rTransmittedFragmentCount.QuadPart;
+		u4StatsGroupData[1] =
+		    (uint32_t) prStat->rMulticastTransmittedFrameCount.QuadPart;
+		u4StatsGroupData[2] =
+		    (uint32_t) prStat->rFailedCount.QuadPart;
+		u4StatsGroupData[3] =
+		    (uint32_t) prStat->rReceivedFragmentCount.QuadPart;
+		u4StatsGroupData[4] =
+		    (uint32_t) prStat->rMulticastReceivedFrameCount.QuadPart;
+		u4StatsGroupData[5] =
+		    (uint32_t) prStat->rFCSErrorCount.QuadPart;
+		u4StatsGroupData[6] =
+		    (uint32_t) prStat->rMulticastTransmittedFrameCount.QuadPart;
+	} else if (ucGroupID == STA_STATS_REQUEST_GROUP_STA_COUNTERS_GROUP) {
+		u4StatsGroupData[0] =
+		    (uint32_t) prStat->rRetryCount.QuadPart;
+		u4StatsGroupData[1] =
+		    (uint32_t) prStat->rMultipleRetryCount.QuadPart;
+		u4StatsGroupData[2] =
+		    (uint32_t) prStat->rFrameDuplicateCount.QuadPart;
+		u4StatsGroupData[3] =
+		    (uint32_t) prStat->rRTSSuccessCount.QuadPart;
+		u4StatsGroupData[4] =
+		    (uint32_t) prStat->rRTSFailureCount.QuadPart;
+		u4StatsGroupData[5] =
+		    (uint32_t) prStat->rACKFailureCount.QuadPart;
+	} else if (ucGroupID >= STA_STATS_REQUEST_GROUP_STA_COUNTERS_UP0 &&
+		   ucGroupID < STA_STATS_REQUEST_GROUP_BSS_AVERAGE_DELAY) {
+		up = Tid2LinkStatsAc[ucGroupID - 2];
+
+		u4StatsGroupData[0] = iface->ac[up].tx_mpdu;
+		u4StatsGroupData[1] = iface->ac[up].mpdu_lost;
+		u4StatsGroupData[2] = iface->ac[up].retries;
+		u4StatsGroupData[3] =
+		    (uint32_t) prStat->rMultipleRetryCount.QuadPart;
+		u4StatsGroupData[4] =
+		    (uint32_t) prStat->rFrameDuplicateCount.QuadPart;
+		u4StatsGroupData[5] =
+		    (uint32_t) prStat->rRTSSuccessCount.QuadPart;
+		u4StatsGroupData[6] =
+		    (uint32_t) prStat->rRTSFailureCount.QuadPart;
+		u4StatsGroupData[7] =
+		    (uint32_t) prStat->rACKFailureCount.QuadPart;
+		u4StatsGroupData[8] = iface->ac[up].rx_mpdu;
+		u4StatsGroupData[9] = iface->ac[up].tx_mpdu;
+		u4StatsGroupData[10] = iface->ac[up].mpdu_lost;
+		u4StatsGroupData[11] = iface->ac[up].rx_mpdu;
+		u4StatsGroupData[12] = iface->ac[up].retries;
+	}
+#endif /* CFG_SUPPORT_LLS == 1 */
+
+	DBGLOG(RRM, TRACE,
+		"Group ID[%d], [%d] [%d] [%d] [%d] [%d] [%d] [%d] [%d] [%d] [%d] [%d] [%d] [%d]\n",
+		ucGroupID, u4StatsGroupData[0], u4StatsGroupData[1],
+		u4StatsGroupData[2], u4StatsGroupData[3],
+		u4StatsGroupData[4], u4StatsGroupData[5],
+		u4StatsGroupData[6], u4StatsGroupData[7],
+		u4StatsGroupData[8], u4StatsGroupData[9],
+		u4StatsGroupData[10], u4StatsGroupData[11],
+		u4StatsGroupData[12]);
+}
+
 void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParam;
@@ -927,6 +1160,59 @@ void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
 	}
 }
 
+void rrmDoChnlLoadMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
+{
+	uint8_t ucBssIndex = (uint8_t) ulParam;
+	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
+		aisGetRmReqParam(prAdapter, ucBssIndex);
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
+
+	prScanRequest = kalMemZAlloc(
+		sizeof(struct PARAM_SCAN_REQUEST_ADV),
+		VIR_MEM_TYPE);
+	if (prScanRequest == NULL) {
+		DBGLOG(REQ, ERROR, "alloc scan request fail\n");
+		return;
+	}
+
+	prRmReq->rChnlLoadRmParam.eState = RM_WAITING;
+	GET_CURRENT_SYSTIME(&prRmReq->rStartTime);
+
+	rrmFillScanParamForChnlLoad(prAdapter, prScanRequest, ucBssIndex);
+	aisFsmScanRequestAdv(prAdapter, prScanRequest);
+
+	kalMemFree(prScanRequest, VIR_MEM_TYPE,
+		   sizeof(struct PARAM_SCAN_REQUEST_ADV));
+}
+
+void rrmDoStaStatsMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
+{
+	uint8_t ucBssIndex = (uint8_t) ulParam;
+	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
+		aisGetRmReqParam(prAdapter, ucBssIndex);
+	struct IE_MEASUREMENT_REQ *prCurrReq = prRmReq->prCurrMeasElem;
+	struct RM_STA_STATS_REQ *prStaStatsReq =
+		(struct RM_STA_STATS_REQ *)&prCurrReq->aucRequestFields[0];
+	struct STA_STATS_RM_PARAMS *data = &prRmReq->rStaStatsRmParam;
+
+	if (prStaStatsReq->u2Duration == 0)
+		rrmCollectStaStatsReport(prAdapter, ucBssIndex);
+	else {
+		prRmReq->rStaStatsRmParam.eState = RM_WAITING;
+
+		cnmTimerStopTimer(prAdapter, &rStaStatsTimer);
+		cnmTimerInitTimer(prAdapter, &rStaStatsTimer,
+			rrmCollectStaStatsReport, ucBssIndex);
+
+		/* Record the statistics information */
+		rrmFillStaStats(prAdapter, ucBssIndex,
+			prStaStatsReq->ucGroupID, data->u4OriStatsData);
+
+		cnmTimerStartTimer(prAdapter, &rStaStatsTimer,
+			TU_TO_MSEC(prStaStatsReq->u2Duration));
+	}
+}
+
 static u_int8_t rrmRmFrameIsValid(struct SW_RFB *prSwRfb)
 {
 	uint16_t u2ElemLen = 0;
@@ -963,6 +1249,24 @@ static u_int8_t rrmRmFrameIsValid(struct SW_RFB *prSwRfb)
 		 */
 		prCurrMeasElem = (struct IE_MEASUREMENT_REQ *)pucIE;
 		switch (prCurrMeasElem->ucMeasurementType) {
+		case ELEM_RM_TYPE_CHNL_LOAD_REQ:
+			if (u2IELen < (3 + OFFSET_OF(struct RM_CHNL_LOAD_REQ,
+						     aucSubElements))) {
+				DBGLOG(RRM, ERROR,
+				       "Abnormal Channel Load Req IE length is %d\n",
+				       u2IELen);
+				return FALSE;
+			}
+			break;
+		case ELEM_RM_TYPE_STA_STATISTICS_REQ:
+			if (u2IELen < (3 + OFFSET_OF(struct RM_STA_STATS_REQ,
+						     aucSubElements))) {
+				DBGLOG(RRM, ERROR,
+				       "Abnormal STA Statistics Req IE length is %d\n",
+				       u2IELen);
+				return FALSE;
+			}
+			break;
 		case ELEM_RM_TYPE_BEACON_REQ:
 			if (u2IELen < (3 + OFFSET_OF(struct RM_BCN_REQ,
 						     aucSubElements))) {
@@ -1066,7 +1370,6 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = NULL, *prRspBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 	struct IE_MEASUREMENT_REQ *prReq = NULL;
-	struct RM_BCN_REQ *prBeaconReq = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1122,15 +1425,53 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 
 	/* Step0: reject invalid request */
 	prReq = (struct IE_MEASUREMENT_REQ *)&prRmReqFrame->aucInfoElem[0];
-	prBeaconReq = (struct RM_BCN_REQ *)&prReq->aucRequestFields[0];
-	if ((prReq->ucRequestMode & RM_REQ_MODE_DURATION_MANDATORY_BIT &&
-		prBeaconReq->u2Duration > RM_MAX_MEASUREMENT_DURATION) ||
-		(prBeaconReq->u2Duration == 0 &&
-		prBeaconReq->ucMeasurementMode < RM_BCN_REQ_TABLE_MODE)) {
-		DBGLOG(RRM, INFO, "reject invalid request\n");
-		rrmTxRmReportWithMeasreuemntRpt(prAdapter,
-			prBssInfo->ucBssIndex, prRmReqFrame, prStaRec);
-		return;
+
+	if (prReq->ucMeasurementType == ELEM_RM_TYPE_BEACON_REQ) {
+		struct RM_BCN_REQ *prBeaconReq = NULL;
+
+		prBeaconReq = (struct RM_BCN_REQ *)&prReq->aucRequestFields[0];
+		if ((prReq->ucRequestMode &
+				RM_REQ_MODE_DURATION_MANDATORY_BIT &&
+		     prBeaconReq->u2Duration > RM_MAX_MEASUREMENT_DURATION) ||
+		    (prBeaconReq->u2Duration == 0 &&
+		     prBeaconReq->ucMeasurementMode < RM_BCN_REQ_TABLE_MODE)) {
+			DBGLOG(RRM, INFO, "reject invalid request\n");
+			rrmTxRmReportWithMeasreuemntRpt(prAdapter,
+				prBssInfo->ucBssIndex, prRmReqFrame, prStaRec);
+			return;
+		}
+	} else if (prReq->ucMeasurementType == ELEM_RM_TYPE_CHNL_LOAD_REQ) {
+		struct RM_CHNL_LOAD_REQ *prChnlLoadReq = NULL;
+
+		prChnlLoadReq =
+			(struct RM_CHNL_LOAD_REQ *)&prReq->aucRequestFields[0];
+		if ((prReq->ucRequestMode &
+				RM_REQ_MODE_DURATION_MANDATORY_BIT &&
+		     prChnlLoadReq->u2Duration > RM_MAX_MEASUREMENT_DURATION) ||
+		    prChnlLoadReq->u2Duration == 0 ||
+		    prReq->ucRequestMode & RM_REQ_MODE_PARALLEL_BIT) {
+			DBGLOG(RRM, INFO, "reject invalid request\n");
+			rrmTxRmReportWithMeasreuemntRpt(prAdapter,
+				prBssInfo->ucBssIndex, prRmReqFrame, prStaRec);
+			return;
+		}
+	} else if (prReq->ucMeasurementType ==
+				ELEM_RM_TYPE_STA_STATISTICS_REQ) {
+		struct RM_STA_STATS_REQ *prStaStatsReq = NULL;
+
+		prStaStatsReq =
+			(struct RM_STA_STATS_REQ *)&prReq->aucRequestFields[0];
+		if ((prReq->ucRequestMode &
+				RM_REQ_MODE_DURATION_MANDATORY_BIT &&
+		     prStaStatsReq->u2Duration > RM_MAX_MEASUREMENT_DURATION) ||
+		    prStaStatsReq->ucGroupID >
+				STA_STATS_REQUEST_GROUP_BSS_AVERAGE_DELAY ||
+		    prReq->ucRequestMode & RM_REQ_MODE_PARALLEL_BIT) {
+			DBGLOG(RRM, INFO, "reject invalid request\n");
+			rrmTxRmReportWithMeasreuemntRpt(prAdapter,
+				prBssInfo->ucBssIndex, prRmReqFrame, prStaRec);
+			return;
+		}
 	}
 
 	prRmReqParam->fgRmIsOngoing = TRUE;
@@ -1163,6 +1504,8 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	prRmReqParam->prCurrMeasElem =
 		(struct IE_MEASUREMENT_REQ *)prRmReqParam->pucReqIeBuf;
 	rrmHandleBeaconReqSubelem(prAdapter, prBssInfo->ucBssIndex);
+	rrmHandleChannelLoadReqSubelem(prAdapter, prBssInfo->ucBssIndex);
+	rrmHandleStaStatsReqSubelem(prAdapter, prBssInfo->ucBssIndex);
 
 	/* Step2: Prepare Report Frame and fill in Frame Header */
 	prRmRepParam->pucReportFrameBuff =
@@ -1272,6 +1615,8 @@ void rrmFillRrmCapa(uint8_t *pucCapa)
 				    RRM_CAP_INFO_BEACON_PASSIVE_MEASURE_BIT,
 				    RRM_CAP_INFO_BEACON_ACTIVE_MEASURE_BIT,
 				    RRM_CAP_INFO_BEACON_TABLE_BIT,
+				    RRM_CAP_INFO_CHANNEL_LOAD_MEASURE_BIT,
+				    RRM_CAP_INFO_STATISTICS_MEASURE_BIT,
 				    RRM_CAP_INFO_RRM_BIT};
 
 	for (; ucIndex < sizeof(aucEnabledBits); ucIndex++)
@@ -1318,7 +1663,11 @@ static void rrmCalibrateRepetions(struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq)
 		if (!(prCurrReq->ucRequestMode &
 		      (RM_REQ_MODE_ENABLE_BIT | RM_REQ_MODE_PARALLEL_BIT))) {
 			if (prCurrReq->ucMeasurementType ==
-			    ELEM_RM_TYPE_BEACON_REQ)
+			    ELEM_RM_TYPE_BEACON_REQ ||
+			    prCurrReq->ucMeasurementType ==
+			    ELEM_RM_TYPE_CHNL_LOAD_REQ ||
+			    prCurrReq->ucMeasurementType ==
+			    ELEM_RM_TYPE_STA_STATISTICS_REQ)
 				return;
 		}
 		u2RemainReqLen -= u2IeSize;
@@ -1558,6 +1907,108 @@ static void rrmHandleBeaconReqSubelem(
 			data->lastIndication = subelems[2];
 			break;
 		}
+		default:
+			DBGLOG(RRM, WARN, "Unknown subelem id %u", subelems[0]);
+			break;
+		}
+		elemsLen -= 2 + slen;
+		subelems += 2 + slen;
+	}
+}
+
+static void rrmHandleChannelLoadReqSubelem(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReqParam = NULL;
+	struct IE_MEASUREMENT_REQ *request = NULL;
+	struct RM_CHNL_LOAD_REQ *prChnlLoadReq = NULL;
+	struct CHNL_LOAD_RM_PARAMS *data = NULL;
+	uint16_t elemsLen = 0;
+	uint8_t *subelems = NULL;
+	uint8_t slen = 0;
+
+	rmReqParam = aisGetRmReqParam(prAdapter, ucBssIndex);
+	request = rmReqParam->prCurrMeasElem;
+	prChnlLoadReq =
+		(struct RM_CHNL_LOAD_REQ *)&request->aucRequestFields[0];
+	data = &rmReqParam->rChnlLoadRmParam;
+
+	if (request->ucMeasurementType != ELEM_RM_TYPE_CHNL_LOAD_REQ)
+		return;
+
+	/* reset data */
+	data->token = request->ucToken;
+	data->reportingCondition = 0;
+
+	elemsLen = request->ucLength - 3 -
+		OFFSET_OF(struct RM_CHNL_LOAD_REQ, aucSubElements);
+	subelems = &prChnlLoadReq->aucSubElements[0];
+	while (elemsLen >= 2) {
+		slen = subelems[1];
+		if (slen > elemsLen - 2) {
+			DBGLOG(RRM, WARN,
+				"Channel Load Request: Truncated subelement");
+			return;
+		}
+
+		switch (subelems[0]) {
+		case CHANNEL_LOAD_REQUEST_SUBELEM_REPORTING_INFO:
+		{
+			if (slen != 2) {
+				DBGLOG(RRM, WARN,
+				    "Invalid Reporting Info length: %u", slen);
+				break;
+			}
+
+			data->reportingCondition = subelems[2];
+			data->chnlLoadRefValue = subelems[3];
+
+			break;
+		}
+		default:
+			DBGLOG(RRM, WARN, "Unknown subelem id %u", subelems[0]);
+			break;
+		}
+		elemsLen -= 2 + slen;
+		subelems += 2 + slen;
+	}
+}
+
+static void rrmHandleStaStatsReqSubelem(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReqParam = NULL;
+	struct IE_MEASUREMENT_REQ *request = NULL;
+	struct RM_STA_STATS_REQ *prStaStatsReq = NULL;
+	struct STA_STATS_RM_PARAMS *data = NULL;
+	uint16_t elemsLen = 0;
+	uint8_t *subelems = NULL;
+	uint8_t slen = 0;
+
+	rmReqParam = aisGetRmReqParam(prAdapter, ucBssIndex);
+	request = rmReqParam->prCurrMeasElem;
+	prStaStatsReq =
+		(struct RM_STA_STATS_REQ *)&request->aucRequestFields[0];
+	data = &rmReqParam->rStaStatsRmParam;
+
+	if (request->ucMeasurementType != ELEM_RM_TYPE_STA_STATISTICS_REQ)
+		return;
+
+	/* reset data */
+	data->token = request->ucToken;
+
+	elemsLen = request->ucLength - 3 -
+		OFFSET_OF(struct RM_STA_STATS_REQ, aucSubElements);
+	subelems = &prStaStatsReq->aucSubElements[0];
+	while (elemsLen >= 2) {
+		slen = subelems[1];
+		if (slen > elemsLen - 2) {
+			DBGLOG(RRM, WARN,
+				"Channel Load Request: Truncated subelement");
+			return;
+		}
+
+		switch (subelems[0]) {
 		default:
 			DBGLOG(RRM, WARN, "Unknown subelem id %u", subelems[0]);
 			break;
@@ -1959,6 +2410,120 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	       "Bss "MACSTR",ReportDeail %d,IncludeIE Num %d,chnl %d,op %d\n",
 	       MAC2STR(bssid), data->reportDetail, data->reportIeIdsLen,
 	       rep.ucChannel, rep.ucRegulatoryClass);
+}
+
+void rrmCollectChannelLoadReport(struct ADAPTER *prAdapter,
+	uint32_t airTime, uint8_t ucBssIndex)
+{
+	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReq =
+		aisGetRmReqParam(prAdapter, ucBssIndex);
+	struct RADIO_MEASUREMENT_REPORT_PARAMS *rmRep =
+		aisGetRmReportParam(prAdapter, ucBssIndex);
+	struct RM_CHNL_LOAD_REQ *chnlLoadReq =
+	     (struct RM_CHNL_LOAD_REQ *)&rmReq->prCurrMeasElem
+			->aucRequestFields[0];
+	struct CHNL_LOAD_RM_PARAMS *data = &rmReq->rChnlLoadRmParam;
+	struct RM_CHNL_LOAD_REPORT rep;
+	struct RM_MEASURE_REPORT_ENTRY *reportEntry = NULL;
+	uint64_t u8Tsf = 0;
+
+	reportEntry = kalMemAlloc(sizeof(*reportEntry),
+				    VIR_MEM_TYPE);
+	if (!reportEntry)/* no memory to allocate in OS */ {
+		DBGLOG(RRM, ERROR,
+		       "Alloc entry failed, No Memory\n");
+		return;
+	}
+	reportEntry->u2MeasReportLen = 0;
+	reportEntry->pucMeasReport = NULL;
+
+	LINK_INSERT_TAIL(&rmRep->rReportLink,
+			 &reportEntry->rLinkEntry);
+
+	/* Fixed length field */
+	rep.ucRegulatoryClass = chnlLoadReq->ucRegulatoryClass;
+	rep.ucChannel = chnlLoadReq->ucChannel;
+	rep.u2Duration = chnlLoadReq->u2Duration;
+	rep.ucChnlLoad = 255 - airTime;
+
+	u8Tsf = *(uint64_t *)&rTsf.au4Tsf[0];
+	if (rmReq->rStartTime >= rTsf.rTime)
+		u8Tsf += rmReq->rStartTime - rTsf.rTime;
+	else
+		u8Tsf += rTsf.rTime - rmReq->rStartTime;
+	kalMemCopy(rep.aucStartTime, &u8Tsf, 8);
+
+	rrmReportElem(reportEntry, data->token,
+		      MEASUREMENT_REPORT_MODE_ACCEPT,
+		      ELEM_RM_TYPE_CHNL_LOAD_REPORT, (uint8_t *)&rep,
+		      sizeof(rep));
+
+	DBGLOG(RRM, TRACE,
+	       "RegulatoryClass %d, Channel %d, CU %d\n",
+	       rep.ucRegulatoryClass, rep.ucChannel, rep.ucChnlLoad);
+}
+
+void rrmCollectStaStatsReport(struct ADAPTER *prAdapter, uintptr_t ulParam)
+{
+	uint8_t ucBssIndex = (uint8_t) ulParam, i = 0;
+	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReq =
+		aisGetRmReqParam(prAdapter, ucBssIndex);
+	struct RADIO_MEASUREMENT_REPORT_PARAMS *rmRep =
+		aisGetRmReportParam(prAdapter, ucBssIndex);
+	struct RM_STA_STATS_REQ *staStatsReq =
+	     (struct RM_STA_STATS_REQ *)&rmReq->prCurrMeasElem
+			->aucRequestFields[0];
+	struct STA_STATS_RM_PARAMS *data = &rmReq->rStaStatsRmParam;
+	struct RM_STA_STATS_REPORT rep = {0};
+	struct RM_MEASURE_REPORT_ENTRY *reportEntry = NULL;
+	uint32_t u4DataLen = 0;
+
+	rmReq->rStaStatsRmParam.eState = RM_ON_GOING;
+
+	reportEntry = kalMemAlloc(sizeof(*reportEntry), VIR_MEM_TYPE);
+	if (!reportEntry)/* no memory to allocate in OS */ {
+		DBGLOG(RRM, ERROR, "Alloc entry failed, No Memory\n");
+
+		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
+		return;
+	}
+	reportEntry->u2MeasReportLen = 0;
+	reportEntry->pucMeasReport = NULL;
+
+	LINK_INSERT_TAIL(&rmRep->rReportLink,
+			 &reportEntry->rLinkEntry);
+
+	/* Fixed length field */
+	rep.u2Duration = staStatsReq->u2Duration;
+	rep.ucGroupID = staStatsReq->ucGroupID;
+
+	rrmFillStaStats(prAdapter, ucBssIndex,
+		rep.ucGroupID, rep.u4StatsGroupData);
+
+	/* calculate the diff */
+	if (rep.u2Duration != 0)
+		for (i = 0; i < 13 ; i++)
+			rep.u4StatsGroupData[i] -= data->u4OriStatsData[i];
+
+	if (rep.ucGroupID == STA_STATS_REQUEST_GROUP_STA_COUNTERS_TABLE)
+		u4DataLen = 3 + 28;
+	else if (rep.ucGroupID == STA_STATS_REQUEST_GROUP_STA_COUNTERS_GROUP)
+		u4DataLen = 3 + 24;
+	else if (rep.ucGroupID == STA_STATS_REQUEST_GROUP_BSS_AVERAGE_DELAY)
+		u4DataLen = 3 + 8;
+	else
+		u4DataLen = sizeof(rep);
+
+	rrmReportElem(reportEntry, data->token,
+		      MEASUREMENT_REPORT_MODE_ACCEPT,
+		      ELEM_RM_TYPE_STA_STATISTICS_REPORT, (uint8_t *)&rep,
+		      u4DataLen);
+
+	DBGLOG(RRM, TRACE,
+	       "Group ID %d, Measurement Duration %d\n",
+	       rep.ucGroupID, rep.u2Duration);
+
+	rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 }
 
 void rrmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)

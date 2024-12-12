@@ -44,7 +44,7 @@
  *******************************************************************************
  */
 
-enum BCN_RM_STATE {
+enum RM_STATE {
 	RM_NO_REQUEST,
 	RM_ON_GOING,
 	RM_WAITING, /* waiting for rrm scan */
@@ -58,7 +58,7 @@ enum RM_REQ_PRIORITY {
 
 /* Beacon RM related parameters */
 struct BCN_RM_PARAMS {
-	enum BCN_RM_STATE eState;
+	enum RM_STATE eState;
 	uint8_t token;
 	uint8_t lastIndication;
 	u8 ssid[ELEM_MAX_LEN_SSID];
@@ -70,6 +70,21 @@ struct BCN_RM_PARAMS {
 	uint8_t reportExtIeIdsLen;
 	uint8_t apChannels[256];
 	uint8_t apChannelsLen;
+};
+
+/* Channel Load RM related parameters */
+struct CHNL_LOAD_RM_PARAMS {
+	enum RM_STATE eState;
+	uint8_t token;
+	uint8_t reportingCondition;
+	uint8_t chnlLoadRefValue;
+	uint16_t minDwellTime;
+};
+
+struct STA_STATS_RM_PARAMS {
+	enum RM_STATE eState;
+	uint8_t token;
+	uint32_t u4OriStatsData[13];
 };
 
 struct RM_BEACON_REPORT_PARAMS {
@@ -103,6 +118,8 @@ struct RADIO_MEASUREMENT_REQ_PARAMS {
 	OS_SYSTIME rScanStartTime;
 
 	struct BCN_RM_PARAMS rBcnRmParam;
+	struct CHNL_LOAD_RM_PARAMS rChnlLoadRmParam;
+	struct STA_STATS_RM_PARAMS rStaStatsRmParam;
 };
 
 struct RADIO_MEASUREMENT_REPORT_PARAMS {
@@ -166,6 +183,10 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 
 void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam);
 
+void rrmDoChnlLoadMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam);
+
+void rrmDoStaStatsMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam);
+
 void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec,
 				struct SUB_ELEMENT_LIST *prSubIEs);
@@ -192,6 +213,11 @@ uint8_t rrmCheckIs6GOpClass(uint8_t ucOpClass);
 
 void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
+
+void rrmCollectChannelLoadReport(struct ADAPTER *prAdapter,
+	uint32_t airTime, uint8_t ucBssIndex);
+
+void rrmCollectStaStatsReport(struct ADAPTER *prAdapter, uintptr_t ulParam);
 
 /*******************************************************************************
  *                              F U N C T I O N S

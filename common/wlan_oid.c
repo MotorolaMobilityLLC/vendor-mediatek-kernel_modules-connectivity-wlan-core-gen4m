@@ -16733,6 +16733,156 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			ucBssIndex);
 
 		return WLAN_STATUS_SUCCESS;
+	} else if (!kalStrniCmp(pucSavedPtr, "CHNLLOAD-IT", 11)) {
+		static uint8_t aucPacket[500] = {0,};
+		struct SW_RFB rSwRfb;
+		struct BSS_DESC *target;
+		int32_t i4Ret = 0;
+		struct ACTION_RM_REQ_FRAME *prRmReqFrame = NULL;
+		struct IE_MEASUREMENT_REQ *prReq = NULL;
+		struct RM_CHNL_LOAD_REQ *prChannelLoadReq = NULL;
+		int32_t i4Argc = 0;
+		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+
+		/*
+		 * CHNLLOAD-IT 81 11 10 80
+		 * 81: Operation class
+		 * 11: Channel
+		 * 10: Randomization Interval
+		 * 80: Duration
+		 */
+		DBGLOG(INIT, INFO,
+			"Channel load command is [%s]\n", pucSavedPtr);
+		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (!target) {
+			DBGLOG(OID, INFO, "sta is not connected!!!\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+		kalMemZero(aucPacket, sizeof(aucPacket));
+		kalMemZero(&rSwRfb, sizeof(rSwRfb));
+		rSwRfb.pvHeader = (void *)&aucPacket[0];
+		rSwRfb.u2PacketLen = sizeof(struct ACTION_RM_REQ_FRAME);
+		rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
+		rSwRfb.ucStaRecIdx = KAL_NETWORK_TYPE_AIS_INDEX;
+		rSwRfb.ucWlanIdx = prStaRec->ucWlanIndex;
+
+		prRmReqFrame = (struct ACTION_RM_REQ_FRAME *) rSwRfb.pvHeader;
+		COPY_MAC_ADDR(prRmReqFrame->aucDestAddr, ais->aucOwnMacAddr);
+		COPY_MAC_ADDR(prRmReqFrame->aucSrcAddr, target->aucBSSID);
+		COPY_MAC_ADDR(prRmReqFrame->aucBSSID, target->aucBSSID);
+
+		prRmReqFrame->ucCategory = CATEGORY_RM_ACTION;
+		prRmReqFrame->ucAction = ACTION_RM_REQ;
+		prRmReqFrame->ucDialogToken = 28;
+
+		prReq = (struct IE_MEASUREMENT_REQ *)
+				&prRmReqFrame->aucInfoElem[0];
+		prReq->ucId = ELEM_ID_MEASUREMENT_REQ;
+		prReq->ucLength = 9;
+		prReq->ucToken = 28;
+		prReq->ucRequestMode = 0;
+		prReq->ucMeasurementType = ELEM_RM_TYPE_CHNL_LOAD_REQ;
+		rSwRfb.u2PacketLen += sizeof(struct IE_MEASUREMENT_REQ);
+
+		prChannelLoadReq = (struct RM_CHNL_LOAD_REQ *)
+				&prReq->aucRequestFields[0];
+		rSwRfb.u2PacketLen += sizeof(struct RM_CHNL_LOAD_REQ);
+
+		if (i4Argc == 5) {
+			i4Ret = kalkStrtou8(apcArgv[1], 0,
+					&prChannelLoadReq->ucRegulatoryClass);
+
+			i4Ret = kalkStrtou8(apcArgv[2], 0,
+					&prChannelLoadReq->ucChannel);
+
+			i4Ret = kalkStrtou16(apcArgv[3], 0,
+					&prChannelLoadReq->u2RandomInterval);
+
+			i4Ret = kalkStrtou16(apcArgv[4], 0,
+					&prChannelLoadReq->u2Duration);
+
+			dumpMemory8(rSwRfb.pvHeader, rSwRfb.u2PacketLen);
+
+			rrmProcessRadioMeasurementRequest(prAdapter, &rSwRfb);
+		}
+
+		return WLAN_STATUS_SUCCESS;
+	} else if (!kalStrniCmp(pucSavedPtr, "STATISTICS-IT", 13)) {
+		static uint8_t aucPacket[500] = {0,};
+		struct SW_RFB rSwRfb;
+		struct BSS_DESC *target;
+		int32_t i4Ret = 0;
+		struct ACTION_RM_REQ_FRAME *prRmReqFrame = NULL;
+		struct IE_MEASUREMENT_REQ *prReq = NULL;
+		struct RM_STA_STATS_REQ *prStaStatsReq = NULL;
+		int32_t i4Argc = 0;
+		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+
+		/*
+		 * STATISTIC-IT 1 10 80
+		 * 1: GroupID
+		 * 10: Randomization Interval
+		 * 80: Duration
+		 */
+		DBGLOG(INIT, INFO,
+			"STA statistic command is [%s]\n", pucSavedPtr);
+		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (!target) {
+			DBGLOG(OID, INFO, "sta is not connected!!!\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+		kalMemZero(aucPacket, sizeof(aucPacket));
+		kalMemZero(&rSwRfb, sizeof(rSwRfb));
+		rSwRfb.pvHeader = (void *)&aucPacket[0];
+		rSwRfb.u2PacketLen = sizeof(struct ACTION_RM_REQ_FRAME);
+		rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
+		rSwRfb.ucStaRecIdx = KAL_NETWORK_TYPE_AIS_INDEX;
+		rSwRfb.ucWlanIdx = prStaRec->ucWlanIndex;
+
+		prRmReqFrame = (struct ACTION_RM_REQ_FRAME *) rSwRfb.pvHeader;
+		COPY_MAC_ADDR(prRmReqFrame->aucDestAddr, ais->aucOwnMacAddr);
+		COPY_MAC_ADDR(prRmReqFrame->aucSrcAddr, target->aucBSSID);
+		COPY_MAC_ADDR(prRmReqFrame->aucBSSID, target->aucBSSID);
+
+		prRmReqFrame->ucCategory = CATEGORY_RM_ACTION;
+		prRmReqFrame->ucAction = ACTION_RM_REQ;
+		prRmReqFrame->ucDialogToken = 28;
+
+		prReq = (struct IE_MEASUREMENT_REQ *)
+				&prRmReqFrame->aucInfoElem[0];
+		prReq->ucId = ELEM_ID_MEASUREMENT_REQ;
+		prReq->ucLength = 14;
+		prReq->ucToken = 28;
+		prReq->ucRequestMode = 0;
+		prReq->ucMeasurementType = ELEM_RM_TYPE_STA_STATISTICS_REQ;
+		rSwRfb.u2PacketLen += sizeof(struct IE_MEASUREMENT_REQ);
+
+		prStaStatsReq = (struct RM_STA_STATS_REQ *)
+				&prReq->aucRequestFields[0];
+		COPY_MAC_ADDR(prStaStatsReq->aucPeerMacAddr,
+				ais->aucOwnMacAddr);
+		rSwRfb.u2PacketLen += sizeof(struct RM_STA_STATS_REQ);
+
+		if (i4Argc == 4) {
+			i4Ret = kalkStrtou8(apcArgv[1], 0,
+					&prStaStatsReq->ucGroupID);
+
+			i4Ret = kalkStrtou16(apcArgv[2], 0,
+					&prStaStatsReq->u2RandomInterval);
+
+			i4Ret = kalkStrtou16(apcArgv[3], 0,
+					&prStaStatsReq->u2Duration);
+
+			dumpMemory8(rSwRfb.pvHeader, rSwRfb.u2PacketLen);
+
+			rrmProcessRadioMeasurementRequest(prAdapter, &rSwRfb);
+		}
+
+		return WLAN_STATUS_SUCCESS;
 	} else {
 		pucSavedPtr[10] = 0;
 		DBGLOG(OID, ERROR, "IT type %s is not supported\n",
