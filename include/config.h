@@ -323,8 +323,6 @@
 #else
 #define CFG_SUPPORT_MDNS_OFFLOAD_TV 1
 #endif
-
-#define TEST_CODE_FOR_MDNS              0
 #endif
 
 #ifndef CFG_SUPPORT_HE_ER
