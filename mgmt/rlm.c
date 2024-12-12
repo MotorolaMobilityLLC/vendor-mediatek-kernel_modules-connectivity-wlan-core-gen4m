@@ -12113,12 +12113,17 @@ uint32_t rlmTxPwrEnvMaxTxPwrCalcByPsd(
 
 	/* 2. Convert TxPower limit PSD to BW Power limit
 	 *    - Max TxPwr(dBm) = PSD(dBm/Hz) + 10*log(BW)
+	 *    We will also convert power LSB = 0.5dBm
 	 */
 	if (u4Status == WLAN_STATUS_SUCCESS) {
 		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
 			eBwType < TX_PWR_ENV_MAX_TXPWR_BW_NUM; eBwType++) {
 			rlmTxPwrEnvGetPwrDelta(eBwType, &ucTxPwrDelta);
-			picMaxTxPwr[eBwType] = icMaxTxPwrPsd + ucTxPwrDelta;
+
+			/* convert icMaxTxPwrPsd to LSB = 0.5dBm since
+			 * ucTxPwrDelta is already convert to LSB = 0.5dBm
+			 */
+			picMaxTxPwr[eBwType] = icMaxTxPwrPsd * 2 + ucTxPwrDelta;
 		}
 	}
 	return u4Status;
