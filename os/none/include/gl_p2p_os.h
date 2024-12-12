@@ -54,7 +54,7 @@ extern const struct net_device_ops p2p_netdev_ops;
 #ifdef CFG_P2P_MAXIMUM_CLIENT_COUNT
 #define P2P_MAXIMUM_CLIENT_COUNT                    CFG_P2P_MAXIMUM_CLIENT_COUNT
 #else
-#define P2P_MAXIMUM_CLIENT_COUNT                    16
+#define P2P_MAXIMUM_CLIENT_COUNT                    10
 #endif
 
 #define P2P_DEFAULT_CLIENT_COUNT 4
