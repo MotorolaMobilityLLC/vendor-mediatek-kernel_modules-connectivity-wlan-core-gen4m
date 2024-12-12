@@ -62,7 +62,9 @@
 
 /* Support AP Selection*/
 #define AIS_BLOCKLIST_TIMEOUT               15 /* seconds */
-#define AIS_AUTORN_MIN_INTERVAL		    20
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#define AIS_MLD_BLOCKLIST_TIMEOUT	    15 /* seconds */
+#endif
 
 #define AP_HASH_SIZE	256	/* Size of hash tab must be power of 2. */
 
@@ -420,7 +422,8 @@ struct AIS_BLOCKLIST_ITEM {
 struct MLD_BLOCKLIST_ITEM {
 	struct LINK_ENTRY rLinkEntry;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
-	uint8_t ucCount;
+	uint8_t aucCount[MLO_LINK_PLAN_NUM];
+	uint32_t u4BlockBmap; /* bmap for blocked link plan */
 	OS_SYSTIME rAddTime;
 };
 #endif
@@ -937,7 +940,7 @@ void aisRefreshFWKBlocklist(struct ADAPTER *prAdapter);
 struct AIS_BLOCKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisRemoveBlockList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
-void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter);
+void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec);
 struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
@@ -945,10 +948,10 @@ void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc);
+	struct BSS_DESC_SET *prBssDescSet);
 void aisRemoveMldBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
-void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter);
+void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec);
 struct MLD_BLOCKLIST_ITEM *aisQueryMldBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 #endif

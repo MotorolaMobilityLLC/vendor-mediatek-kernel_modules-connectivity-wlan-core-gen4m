@@ -1247,6 +1247,10 @@ struct WIFI_VAR {
 	uint32_t u4RejectBtmReqReason;
 	uint32_t fgRoamByBTO;
 	uint32_t u4AisRoamingNumber;
+	uint16_t u2AisBlocklistTimeout;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint16_t u2AisMldBlocklistTimeout;
+#endif
 	uint32_t fgEnArpFilter;
 
 	uint8_t	uDeQuePercentEnable;

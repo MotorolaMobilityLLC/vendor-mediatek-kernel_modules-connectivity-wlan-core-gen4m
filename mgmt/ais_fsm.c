@@ -592,25 +592,62 @@ void aisFreeIesMem(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
-					   struct BSS_DESC *prBssDesc)
+	struct BSS_DESC_SET *prBssDescSet)
 {
 	struct MLD_BLOCKLIST_ITEM *prEntry = NULL;
 	struct LINK_MGMT *prBlockList = &prAdapter->rWifiVar.rMldBlockList;
 	struct BSS_DESC *prTmpBssDesc = NULL;
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
+	struct BSS_DESC *prBssDesc = prBssDescSet->prMainBssDesc;
+	uint8_t i, ucRfBandBmap = 0;
+	enum ENUM_MLO_LINK_PLAN eLinkPlan;
+	const uint8_t *apuceLinkPlanStr[MLO_LINK_PLAN_NUM] = {
+		"2G",
+		"5G",
+		"2G_5G",
+		"5G_5G",
+		"2G_5G_5G",
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		"6G",
+		"2G_6G",
+		"5G_6G",
+		"6G_6G",
+		"2G_5G_6G",
+		"2G_6G_6G",
+#endif
+	};
 
 	if (!prBssDesc || !prBssDesc->rMlInfo.fgValid) {
-		DBGLOG(AIS, ERROR, "bss descriptor is not valid\n");
+		DBGLOG(AIS, ERROR, "mld is not valid\n");
+		return NULL;
+	}
+
+	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
+		if (!prBssDescSet->aprBssDesc[i])
+			continue;
+		ucRfBandBmap |= BIT(prBssDescSet->aprBssDesc[i]->eBand);
+	}
+
+	eLinkPlan = apsSearchLinkPlan(prAdapter,
+		ucRfBandBmap, prBssDescSet->ucLinkNum);
+
+	if (!prBssDesc || !prBssDesc->rMlInfo.fgValid ||
+	    eLinkPlan == MLO_LINK_PLAN_NUM) {
+		DBGLOG(AIS, ERROR, "mld is not valid, plan=%d\n", eLinkPlan);
 		return NULL;
 	}
 	if (prBssDesc->rMlInfo.prBlock) {
 		GET_CURRENT_SYSTIME(&prBssDesc->rMlInfo.prBlock->rAddTime);
-		prBssDesc->rMlInfo.prBlock->ucCount++;
+		prBssDesc->rMlInfo.prBlock->aucCount[eLinkPlan]++;
+		prBssDesc->rMlInfo.prBlock->u4BlockBmap |= BIT(eLinkPlan);
 		DBGLOG(AIS, INFO, "update blocklist for mld " MACSTR
-		       ", count %d\n",
-		       MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
-		       prBssDesc->rMlInfo.prBlock->ucCount);
+		       ", plan=%d(%s), count %d/%d, bmap=0x%x\n",
+		       MAC2STR(prBssDesc->rMlInfo.aucMldAddr), eLinkPlan,
+		       apuceLinkPlanStr[eLinkPlan],
+		       prBssDesc->rMlInfo.prBlock->aucCount[eLinkPlan],
+		       prAdapter->rWifiVar.ucMldRetryCount,
+		       prBssDesc->rMlInfo.prBlock->u4BlockBmap);
 		return prBssDesc->rMlInfo.prBlock;
 	}
 
@@ -621,11 +658,15 @@ struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
 	if (prEntry) {
 		GET_CURRENT_SYSTIME(&prEntry->rAddTime);
 		prBssDesc->rMlInfo.prBlock = prEntry;
-		prEntry->ucCount++;
+		prEntry->aucCount[eLinkPlan]++;
+		prEntry->u4BlockBmap |= BIT(eLinkPlan);
 		DBGLOG(AIS, INFO, "update blocklist for mld " MACSTR
-		       ", count %d\n",
-		       MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
-		       prEntry->ucCount);
+		       ", plan=%d(%s), count %d/%d, bmap=0x%x\n",
+		       MAC2STR(prBssDesc->rMlInfo.aucMldAddr), eLinkPlan,
+		       apuceLinkPlanStr[eLinkPlan],
+		       prEntry->aucCount[eLinkPlan],
+		       prAdapter->rWifiVar.ucMldRetryCount,
+		       prEntry->u4BlockBmap);
 		return prEntry;
 	}
 	LINK_MGMT_GET_ENTRY(prBlockList, prEntry, struct MLD_BLOCKLIST_ITEM,
@@ -634,7 +675,8 @@ struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
 		DBGLOG(AIS, WARN, "No memory to allocate\n");
 		return NULL;
 	}
-	prEntry->ucCount = 1;
+	prEntry->aucCount[eLinkPlan] = 1;
+	prEntry->u4BlockBmap |= BIT(eLinkPlan);
 	/* Support AP Selection */
 	COPY_MAC_ADDR(prEntry->aucMldAddr, prBssDesc->rMlInfo.aucMldAddr);
 	GET_CURRENT_SYSTIME(&prEntry->rAddTime);
@@ -653,8 +695,11 @@ struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(AIS, INFO, "Add mld " MACSTR " to blocklist\n",
-	       MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
+	DBGLOG(AIS, INFO, "Add mld " MACSTR
+	       " to blocklist, plan=%d(%s), count %d/%d, bmap=0x%x\n",
+	       MAC2STR(prBssDesc->rMlInfo.aucMldAddr), eLinkPlan,
+	       apuceLinkPlanStr[eLinkPlan], prEntry->aucCount[eLinkPlan],
+	       prAdapter->rWifiVar.ucMldRetryCount, prEntry->u4BlockBmap);
 	return prEntry;
 }
 
@@ -714,7 +759,7 @@ struct MLD_BLOCKLIST_ITEM *aisQueryMldBlockList(struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter)
+void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 {
 	struct MLD_BLOCKLIST_ITEM *prEntry = NULL;
 	struct MLD_BLOCKLIST_ITEM *prNextEntry = NULL;
@@ -734,10 +779,8 @@ void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct MLD_BLOCKLIST_ITEM) {
-		uint16_t sec = AIS_BLOCKLIST_TIMEOUT;
-
 		if (!CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
-				       SEC_TO_MSEC(sec)))
+				       SEC_TO_MSEC(u2Sec)))
 			continue;
 
 		/* Search BSS Desc from current SCAN result list. */
@@ -756,7 +799,7 @@ void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter)
 
 		DBGLOG(AIS, INFO,
 			"Remove Timeout mld "MACSTR" from blocklist\n",
-			MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
+			MAC2STR(prEntry->aucMldAddr));
 		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rMldBlockList,
 			prEntry);
 	}
@@ -2549,20 +2592,22 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 
 	/* over retry limit, no need mlo scan */
 	if (prAisFsmInfo->ucMlProbeSendCount >=
-		prAdapter->rWifiVar.ucMlProbeRetryLimit)
+	    prAdapter->rWifiVar.ucMlProbeRetryLimit)
 		return FALSE;
 
 	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) ||
 	    !aisSecondLinkAvailable(prAdapter, ucBssIndex))
 		return FALSE;
 
-	/* already found multi link, no need mlo scan */
-	if (prBssDescSet->ucLinkNum != 1)
-		return FALSE;
-
-	/* target is not mlo, no need mlo scan */
-	if (!prBssDesc->rMlInfo.fgValid ||
-	    !prBssDesc->rMlInfo.ucMaxSimuLinks)
+	/* no need mlo scan
+	 * 1. already found multi link
+	 * 2. not mlo/single link
+	 * 3. in mld block list
+	 */
+	if (prBssDescSet->ucLinkNum != 1 ||
+	    !prBssDesc->rMlInfo.fgValid ||
+	    !prBssDesc->rMlInfo.ucMaxSimuLinks ||
+	    prBssDesc->rMlInfo.prBlock)
 		return FALSE;
 
 	return TRUE;
@@ -4490,7 +4535,8 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	 * otherwise starec is freed
 	 */
 	if (!fgTempReject && mldIsMultiLinkFormed(prAdapter, prStaRec))
-		aisAddMldBlocklist(prAdapter, prBssDesc);
+		aisAddMldBlocklist(prAdapter,
+			aisGetSearchResult(prAdapter, ucBssIndex));
 #endif
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
 	aisRestoreAllLink(prAdapter, prAisFsmInfo);
@@ -5224,6 +5270,11 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 	aisRemoveDeauthBlocklist(prAdapter);
 	aisClearAllLink(prAisFsmInfo);
+
+	aisRemoveTimeoutBlocklist(prAdapter, 0);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	aisRemoveTimeoutMldBlocklist(prAdapter, 0);
+#endif
 
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);
@@ -8798,7 +8849,7 @@ struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
+void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 {
 	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
 	struct AIS_BLOCKLIST_ITEM *prNextEntry = NULL;
@@ -8811,7 +8862,7 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct AIS_BLOCKLIST_ITEM) {
-		uint16_t sec = AIS_BLOCKLIST_TIMEOUT;
+		uint16_t sec = u2Sec;
 
 		if (prEntry->fgIsInFWKBlocklist == TRUE)
 			continue;

@@ -1471,8 +1471,10 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 #endif
 	ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
 
-	aisRemoveTimeoutBlocklist(prAdapter);
+	aisRemoveTimeoutBlocklist(prAdapter,
+		prAdapter->rWifiVar.u2AisBlocklistTimeout);
 	aisClearCusBlocklist(prAdapter, ucBssIndex, FALSE);
+
 	apsUpdateEssApList(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_802_11K

@@ -43,10 +43,14 @@ struct AP_COLLECTION {
 	struct LINK_ENTRY rLinkEntry;
 	struct AP_COLLECTION *hnext; /* next entry in hash table list */
 	uint32_t u4Index;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BLOCKLIST_ITEM *prBlock;
+#endif
 	struct BSS_DESC *aprTarget[APS_LINK_MAX];
 	struct LINK arLinks[BAND_NUM]; /* categorize AP by band */
 	uint8_t ucLinkNum;
 	uint8_t ucTotalCount; /* total BssDesc count */
+	uint8_t fgIsMld;
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlockList;
