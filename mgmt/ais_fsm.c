@@ -1063,7 +1063,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	kal_init_completion(&prAisFsmInfo->rDeauthComp);
 	prAisFsmInfo->encryptedDeauthIsInProcess = FALSE;
-	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
+	rsnResetCombackBssDesc(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo->fgBipKeyInstalled = FALSE;
 	prAisSpecificBssInfo->fgBipGmacKeyInstalled = FALSE;
 #endif
@@ -4600,7 +4600,6 @@ u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_802_11W
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	uint8_t ucBssIndex = 0;
 #if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *prRoamingInfo;
@@ -4608,7 +4607,6 @@ u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,
 
 	ucBssIndex = prStaRec->ucBssIndex;
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_ROAMING
 	prRoamingInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 #endif
@@ -4616,17 +4614,14 @@ u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,
 	if (prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY &&
 	    prBssDesc->ucTempRejectCount <= AIS_TEMPORARY_REJECT_LIMIT) {
 		/* record temporarily rejected AP for SA query */
-		prAisSpecificBssInfo->prTargetComebackBssDesc =
-			aisGetTargetBssDesc(prAdapter, ucBssIndex);
-
+		rsnUpdateCombackBssDesc(prAdapter, ucBssIndex);
 		DBGLOG(AIS, INFO, "reschedule a comeback timer %u msec\n",
 			TU_TO_MSEC(prStaRec->u4assocComeBackTime));
 		return true;
 	}
-	return false;
-#else
-	return false;
+
 #endif
+	return false;
 }
 
 uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
@@ -5568,7 +5563,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_802_11W
-	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
+	rsnResetCombackBssDesc(prAdapter, ucBssIndex);
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
 
@@ -6723,11 +6718,11 @@ void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 			kalGetTimeTick());
 
 #if CFG_SUPPORT_802_11W
-		if (prAisSpecificBssInfo->prTargetComebackBssDesc) {
+		if (rsnCheckCombackBssDesc(prAdapter, NULL, ucBssIndex)) {
 			prcConnSetting->eConnectionPolicy =
 				CONNECT_BY_BSSID_REUSE;
 			eNextState = AIS_STATE_SEARCH;
-			prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
+			rsnResetCombackBssDesc(prAdapter, ucBssIndex);
 		} else
 #endif /* CFG_SUPPORT_802_11W */
 		{

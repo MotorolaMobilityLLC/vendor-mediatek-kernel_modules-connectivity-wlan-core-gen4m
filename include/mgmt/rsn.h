@@ -386,6 +386,13 @@ uint32_t rsnCheckBipGmacKeyInstall(struct ADAPTER
 uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
 			struct SW_RFB *prSwRfb);
 
+void rsnUpdateCombackBssDesc(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+uint8_t rsnCheckCombackBssDesc(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
+
+void rsnResetCombackBssDesc(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
 uint8_t rsnCheckSaQueryTimeout(
 	struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 

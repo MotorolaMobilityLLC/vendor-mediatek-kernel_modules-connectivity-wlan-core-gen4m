@@ -285,7 +285,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 	uint8_t *pucSaQueryTransId;
 	struct TIMER rSaQueryTimer;
 	u_int8_t fgBipKeyInstalled;
-	struct BSS_DESC *prTargetComebackBssDesc;
+	struct BSS_DESC *aprTargetComebackBssDesc[MLD_LINK_MAX];
 	uint8_t aucIPN[6];
 	uint8_t aucIGTK[32];
 	u_int8_t fgBipGmacKeyInstalled;

@@ -3400,15 +3400,10 @@ void rsnSaQueryRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct ACTION_SA_QUERY_FRAME *prTxFrame;
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter,
 		prSwRfb);
-#if CFG_SUPPORT_802_11W
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
-#endif
 
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-#if CFG_SUPPORT_802_11W
-	prAisSpecificBssInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-#endif
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 
 	if (!prSwRfb)
 		return;
@@ -3419,12 +3414,20 @@ void rsnSaQueryRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	if (!prStaRec)		/* Todo:: for not AIS check */
+	if (!prStaRec) {
+		DBGLOG(RSN, WARN,
+		       "Received a SA Query from "MACSTR
+		       " BssIndex[%d] w/o corresponding staRec\n",
+		       ucBssIndex, MAC2STR(prRxFrame->aucSrcAddr));
 		return;
+	}
 
 	DBGLOG(RSN, INFO,
-	       "IEEE 802.11: Received SA Query Request from " MACSTR "\n",
-	       MAC2STR(prStaRec->aucMacAddr));
+	       "IEEE 802.11: Received SA Query Request from DA[" MACSTR
+	       "] SA[" MACSTR "] BSSID[" MACSTR "]\n",
+	       MAC2STR(prRxFrame->aucDestAddr),
+	       MAC2STR(prRxFrame->aucSrcAddr),
+	       MAC2STR(prRxFrame->aucBSSID));
 
 	DBGLOG_MEM8(RSN, INFO, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN);
 
@@ -3437,16 +3440,12 @@ void rsnSaQueryRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		return;
 	}
 
-#if CFG_SUPPORT_802_11W
-	if (prAisSpecificBssInfo->prTargetComebackBssDesc
-		&& UNEQUAL_MAC_ADDR(prStaRec->aucMacAddr,
-		    prAisSpecificBssInfo->prTargetComebackBssDesc->aucBSSID)) {
+	if (!rsnCheckCombackBssDesc(prAdapter, prStaRec, ucBssIndex)) {
 		DBGLOG(RSN, INFO,
 			"Ignore SA Query Request from non-targeted AP "
 			MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 		return;
 	}
-#endif
 
 	DBGLOG(RSN, INFO,
 	       "IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
@@ -3486,23 +3485,13 @@ void rsnSaQueryRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL,
 		     MSDU_RATE_MODE_AUTO);
 
-#if 0
-	/* 4 Update information of MSDU_INFO_T */
-	/* Management frame */
-	prMsduInfo->ucPacketType = HIF_TX_PACKET_TYPE_MGMT;
-	prMsduInfo->ucStaRecIndex = prBssInfo->prStaRecOfAP->ucIndex;
-	prMsduInfo->ucNetworkType = prBssInfo->ucNetTypeIndex;
-	prMsduInfo->ucMacHeaderLength = WLAN_MAC_MGMT_HEADER_LEN;
-	prMsduInfo->fgIs802_1x = FALSE;
-	prMsduInfo->fgIs802_11 = TRUE;
-	prMsduInfo->u2FrameLength = WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen;
-	prMsduInfo->ucPID = nicAssignPID(prAdapter);
-	prMsduInfo->pfTxDoneHandler = NULL;
-	prMsduInfo->fgIsBasicRate = FALSE;
-#endif
+	nicTxConfigPktControlFlag(prMsduInfo,
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
+
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3662,6 +3651,61 @@ uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
 	}
 
 	return TRUE;
+}
+
+void rsnUpdateCombackBssDesc(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	uint8_t i;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	if (!prAisFsmInfo || !prAisSpecBssInfo)
+		return;
+
+	for (i = 0; i < MLD_LINK_MAX; i++)
+		prAisSpecBssInfo->aprTargetComebackBssDesc[i] =
+			aisGetLinkBssDesc(prAisFsmInfo, i);
+}
+
+uint8_t rsnCheckCombackBssDesc(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
+{
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
+	uint8_t i;
+
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+
+	if (!prAisSpecBssInfo)
+		return FALSE;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		if (!prAisSpecBssInfo->aprTargetComebackBssDesc[i])
+			continue;
+
+		if (!prStaRec)
+			return TRUE;
+
+		if (EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
+		    prAisSpecBssInfo->aprTargetComebackBssDesc[i]->aucBSSID))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+void rsnResetCombackBssDesc(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
+
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+
+	if (prAisSpecBssInfo) {
+		kalMemZero(prAisSpecBssInfo->aprTargetComebackBssDesc,
+			sizeof(prAisSpecBssInfo->aprTargetComebackBssDesc));
+	}
 }
 
 #endif
