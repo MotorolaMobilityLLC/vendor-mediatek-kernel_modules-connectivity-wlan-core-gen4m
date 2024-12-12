@@ -432,7 +432,7 @@ enum WIFI_MEM_OPER_SETS {
 #define HAL_GET_RING_DIDX(_RSN, _A, _R, _V)	\
 do { \
 	if (_R->fgEnEmiDidx) { \
-		*_V = *_R->pu2EmiDidx; \
+		*_V = (*_R->pu2EmiDidx & _R->hw_didx_mask); \
 	} else { \
 		HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
 		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \

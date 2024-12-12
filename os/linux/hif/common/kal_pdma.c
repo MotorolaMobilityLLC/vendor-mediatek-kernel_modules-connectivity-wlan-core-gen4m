@@ -1806,7 +1806,8 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
-		if (u4Count > DMA_DONE_WAITING_COUNT) {
+		if (u4Count > DMA_DONE_WAITING_COUNT ||
+		    prGlueInfo->prAdapter->fgIsPwrOffProcIST) {
 			kalWaitRxDmaDoneDebug(
 				prGlueInfo, prRxRing, pRxD, u2Port);
 			return false;
