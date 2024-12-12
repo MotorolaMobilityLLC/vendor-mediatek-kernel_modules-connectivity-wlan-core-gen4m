@@ -785,9 +785,12 @@ p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 		&prPendingMgmtInfo->rLinkEntry);
 
 	DBGLOG(P2P, TRACE,
-		"Add pending mgmt TX cookie:0x%llx eBand:%d ucChannelNum:%u\n",
+		"Add pending mgmt TX cookie:0x%llx eBand:%d ucChannelNum:%u, list addr:%p num:%u entry:%p\n",
 		prPendingMgmtInfo->u8PendingMgmtCookie,
-		prPendingMgmtInfo->eBand, prPendingMgmtInfo->ucChannelNum);
+		prPendingMgmtInfo->eBand, prPendingMgmtInfo->ucChannelNum,
+		&prGlueP2pInfo->rWaitTxDoneLink,
+		prGlueP2pInfo->rWaitTxDoneLink.u4NumElem,
+		prPendingMgmtInfo);
 }
 
 void
@@ -816,11 +819,13 @@ p2pFuncRemovePendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 			LINK_REMOVE_KNOWN_ENTRY(
 				&prGlueP2pInfo->rWaitTxDoneLink,
 				&prPendingMgmtInfo->rLinkEntry);
+			DBGLOG(P2P, TRACE,
+				"Remove pending mgmt TX cookie:0x%llx, num:%u, entry:%p\n",
+				u8Cookie,
+				prGlueP2pInfo->rWaitTxDoneLink.u4NumElem,
+				prPendingMgmtInfo);
 			cnmMemFree(prAdapter,
 				prPendingMgmtInfo);
-			DBGLOG(P2P, TRACE,
-				"Remove pending mgmt TX cookie:0x%llx\n",
-				u8Cookie);
 			break;
 		}
 	}
