@@ -726,7 +726,7 @@ struct _NAN_SPECIFIC_BSS_INFO_T {
 struct BUFFERED_LOG_ENTRY {
 	uint8_t fgBuffered;
 	uint8_t ucSn;
-	uint8_t aucLog[64];
+	uint8_t aucLog[256];
 };
 #endif
 
