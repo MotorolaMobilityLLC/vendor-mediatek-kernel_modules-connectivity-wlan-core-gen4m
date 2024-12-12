@@ -1850,6 +1850,8 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prNapiDev = &prHifInfo->rNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
+	prHifInfo->prGlueInfo = prAdapter->prGlueInfo;
+
 	if (prBusInfo->DmaShdlInit)
 		prBusInfo->DmaShdlInit(prAdapter);
 
@@ -6855,6 +6857,17 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			kalGetPagePoolPageNum()
 			);
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+#if (CFG_SUPPORT_RX_PAGE_POOL && !CFG_SUPPORT_PAGE_POOL_USE_CMA)
+	for (i = 0; i < PAGE_POOL_NUM; i++) {
+		pos += kalSnprintf(
+			buf + pos, u4BufferSize - pos,
+			"%s%u:%u%s",
+			(i == 0) ? " PP[" : "",
+			kalPtrRingCnt(&prGlueInfo->aprPagePool[i]->ring),
+			prGlueInfo->aprPagePool[i]->alloc.count,
+			(i == PAGE_POOL_NUM - 1) ? "]" : ",");
+	}
+#endif
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" reg[%u/%u]",
 			GLUE_GET_REF_CNT(prHifStats->u4TxDataRegCnt),

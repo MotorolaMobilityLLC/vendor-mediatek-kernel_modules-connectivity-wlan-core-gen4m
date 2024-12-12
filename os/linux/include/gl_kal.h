@@ -1715,6 +1715,7 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb);
 void kalSkbMarkForRecycle(struct sk_buff *pkt);
 struct sk_buff *kalAllocRxSkbFromPp(
 	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData, int i4Idx);
+int kalPtrRingCnt(struct ptr_ring *ring);
 void kalCreatePagePool(struct GLUE_INFO *prGlueInfo);
 void kalReleasePagePool(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */

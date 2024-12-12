@@ -1566,9 +1566,8 @@ void *halZeroCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 	struct sk_buff *pkt = NULL;
 	dma_addr_t rAddr;
 
-	pkt = (struct sk_buff *)kalPacketAlloc(NULL,
-		     prDmaBuf->AllocSize, FALSE,
-		     (uint8_t **)&prDmaBuf->AllocVa);
+	pkt = (struct sk_buff *)__nicRxPacketAlloc(
+		prHifInfo->prGlueInfo, (uint8_t **)&prDmaBuf->AllocVa, -1);
 
 	if (!pkt) {
 		DBGLOG(HAL, ERROR, "can't allocate rx %lu size packet\n",

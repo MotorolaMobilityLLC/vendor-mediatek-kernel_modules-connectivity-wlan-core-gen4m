@@ -1145,7 +1145,8 @@ struct GLUE_INFO {
 	unsigned long fgIsInSuspend;
 
 #if CFG_SUPPORT_RX_PAGE_POOL
-	struct page_pool *aprPagePool[PAGE_POOL_MAX_SIZE];
+	struct page_pool *aprPagePool[PAGE_POOL_NUM];
+	uint32_t u4LastAllocIdx;
 #endif
 
 #if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
