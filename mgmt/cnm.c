@@ -4706,7 +4706,9 @@ static bool IsLastDisconnectBssInMlo(
 		return false;
 
 	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
-	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo))
+	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) || IS_BSS_APGO(prBssInfo) ||
+		p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+			prBssInfo->u4PrivateData]))
 		return false;
 
 	ucWmmCompare = prBssInfo->ucWmmQueSet;
