@@ -490,7 +490,7 @@ struct BSS_DESC {
 	u_int8_t fgSeenProbeResp;
 	u_int8_t fgExistBssLoadIE;
 	u_int8_t fgMultiAnttenaAndSTBC;
-	u_int8_t fgIsSCC;
+	u_int8_t fgIsMCC;
 	uint32_t u4UpdateIdx;
 	uint8_t fgIotApActionValid;
 	uint8_t ucIotVer;
