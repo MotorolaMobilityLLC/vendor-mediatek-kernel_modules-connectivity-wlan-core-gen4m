@@ -11156,8 +11156,13 @@ uint8_t rlmDomain6GPwrModeDecision(
 			ePwrMode6G =  PWR_MODE_6G_LPI;
 		else if (uc6GHeRegInfo == HE_REG_INFO_STANDARD_POWER)
 			ePwrMode6G =  PWR_MODE_6G_SP;
+		else if (uc6GHeRegInfo == HE_REG_INFO_VERY_LOW_POWER)
+			ePwrMode6G = PWR_MODE_6G_VLP;
 		else
 			ePwrMode6G = PWR_MODE_6G_VLP;
+		/* not sure which mode INDOOR_ENABLED and INDOOR_SP
+		 * should be used, follow the same logic
+		 */
 	} else {
 		ePwrMode6G =  PWR_MODE_6G_LPI;
 	}
