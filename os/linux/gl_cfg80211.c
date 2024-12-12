@@ -549,6 +549,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBandIdx = 0;
 	struct MIB_INFO_STAT *prMibInfo = NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_TC10_FEATURE == 1)
+	struct STA_RECORD *prStaRec;
+	struct MLD_STA_RECORD *prMldStaRec;
+#endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -700,6 +704,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->signal = i4Rssi;	/* dBm */
 		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_TC10_FEATURE == 1)
+	prStaRec = prBssInfo->prStaRecOfAP;
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	/* set not_in_use link RSSI to -127 */
+	if (prMldStaRec && !(prMldStaRec->u4ActiveStaBitmap &
+		BIT(prStaRec->ucIndex))) {
+		sinfo->signal = -127;
+	}
+#endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
 
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
