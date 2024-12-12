@@ -313,6 +313,8 @@
 
 #define FW_BIN_FLAVOR_KEY		"flavor-bin"
 
+#define TX_MSDU_MEM_ALLOC_MAX_TIME	3000
+
 #if CFG_NEW_HIF_DEV_REG_IF
 #define HIF_DEV_REG_HISTORY_SIZE    100
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
