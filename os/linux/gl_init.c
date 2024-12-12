@@ -6908,6 +6908,7 @@ static uint32_t wlanServiceAllocInfo(struct GLUE_INFO *prGlueInfo)
 		}
 	} else {
 		DBGLOG(INIT, DEBUG, "prServiceTest has been malloc\n");
+		prServiceTest = prGlueInfo->prServiceTest;
 	}
 
 	prGlueInfo->prServiceTest = prServiceTest;
