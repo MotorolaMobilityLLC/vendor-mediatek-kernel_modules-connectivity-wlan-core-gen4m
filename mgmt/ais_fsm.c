@@ -1297,7 +1297,7 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 			"Do not apply PMKID in RSNIE if invalidPMK or auth type is SAE");
 		entry = NULL;
 	}
-
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
 	if (entry && prConnSettings->eAuthMode == AUTH_MODE_WPA3_OWE
 		&& bssIsIotAp(prAdapter, prBssDesc,
 			      WLAN_IOT_AP_OWE_PMK_REMOVE)) {
@@ -1305,7 +1305,7 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 			"IoT AP: Do not apply PMKID in RSNIE if auth type is OWE");
 		entry = NULL;
 	}
-
+#endif
 	return entry;
 }
 

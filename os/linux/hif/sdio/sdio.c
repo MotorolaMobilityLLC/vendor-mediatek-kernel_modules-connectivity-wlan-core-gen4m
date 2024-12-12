@@ -404,17 +404,15 @@ static void mtk_sdio_interrupt(struct sdio_func *func)
 	prGlueInfo = sdio_get_drvdata(func);
 	/* ASSERT(prGlueInfo); */
 
-	if (!prGlueInfo) {
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
 		return;
-	}
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		sdio_writeb(prGlueInfo->rHifInfo.func, WHLPCR_INT_EN_CLR, MCR_WHLPCR, &ret);
 		return;
 	}
 
-	sdio_writeb(prGlueInfo->rHifInfo.func, WHLPCR_INT_EN_CLR, MCR_WHLPCR, &ret);
-
+	halDisableInterrupt(prGlueInfo->prAdapter);
 	kalSetIntEvent(prGlueInfo);
 }
 #endif

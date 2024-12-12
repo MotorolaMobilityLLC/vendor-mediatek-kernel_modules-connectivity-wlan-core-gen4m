@@ -2805,6 +2805,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 
 			ucDutNss = wlanGetSupportNss(prAdapter, ucBssIndex);
 			DBGLOG(SW4, DEBUG, "[SG]SG Get Dut NSS %d\n", ucDutNss);
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
 			if (prAdapter && prBssDesc &&
 			    bssIsIotAp(prAdapter, prBssDesc,
 				       WLAN_IOT_AP_DIS_SG)){
@@ -2812,7 +2813,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 					"[SG]Hit SG blocklist, disable SG\n");
 				ucSGEnable = FALSE;
 			}
-
+#endif
 			prCurStaRec = prBssInfo->prStaRecOfAP;
 
 			/* Check peer Rx Nss Cap */
@@ -2900,11 +2901,17 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	rCmdSetBssInfo.ucMBSSIDIndex = prBssInfo->ucMBSSIDIndex;
 #endif
 
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
 #define TEMP_LOG_TEMPLATE \
 	"Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] " \
-	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u:%u] " \
+	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] " \
 	"eBand[%u] Bw[%u] NetIfTh[%u:%u] 6GPwrReg[%u]\n"
-
+#else
+#define TEMP_LOG_TEMPLATE \
+	"Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] " \
+	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] " \
+	"eBand[%u] Bw[%u] NetIfTh[%u:%u] 6GPwrReg[%u]\n"
+#endif
 	DBGLOG(BSS, INFO,
 	       TEMP_LOG_TEMPLATE,
 	       ucBssIndex,
@@ -2915,8 +2922,10 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	       MAC2STR(prBssInfo->aucBSSID),
 	       rCmdSetBssInfo.ucAuthMode,
 	       rCmdSetBssInfo.ucEncStatus,
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
 	       rCmdSetBssInfo.ucIotApAct,
 	       rCmdSetBssInfo.u8IotApAct,
+#endif
 	       prBssInfo->eBand,
 	       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex),
 	       prBssInfo->u4TxStopTh,

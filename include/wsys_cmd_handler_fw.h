@@ -976,8 +976,12 @@ struct CMD_SET_BSS_INFO {
 	uint16_t u2HeBasicMcsSet;
 	uint8_t  ucMaxBSSIDIndicator;
 	uint8_t  ucMBSSIDIndex;
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
 	uint64_t u8IotApAct;
 	uint8_t  aucPadding[4];
+#else
+	uint8_t  aucPadding[12];
+#endif
 };
 
 struct CMD_HTVHT_BA_SIZE {

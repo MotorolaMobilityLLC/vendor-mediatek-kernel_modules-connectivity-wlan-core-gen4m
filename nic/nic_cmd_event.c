@@ -5987,9 +5987,10 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 		prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
 		fgHitBlockList = bssIsIotAp(prAdapter, prBssDesc,
 					    WLAN_IOT_AP_COEX_DIS_RX_AMPDU);
-
+#endif
 		aisGetApsInfo(prAdapter, ucBssIndex)->fgIsGBandCoex =
 			!!(prEventCoexStatus->u2BtProfile & 0x0045);
 

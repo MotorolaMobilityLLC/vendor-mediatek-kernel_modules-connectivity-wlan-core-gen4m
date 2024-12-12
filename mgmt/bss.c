@@ -359,6 +359,8 @@ BYPASS_SEC_CHECK:
 	else if (prBssDesc && prBssDesc->eBand == BAND_2G4 &&
 		IS_FEATURE_DISABLED(prWifiVar->ucVhtIeIn2g)) {
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
+	} else {
+		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
