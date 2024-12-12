@@ -2543,6 +2543,29 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 }
 
+u_int8_t mt6639_CheckSkipDebugSOPEEReason(
+	struct ADAPTER *ad)
+{
+	uint32_t u4idx = 0, u4bit = 0, u4Reason = 0;
+	struct WIFI_VAR *prWifiVar = NULL;
+
+	if (!ad)
+		return FALSE;
+	prWifiVar = &ad->rWifiVar;
+
+	u4Reason = glGetRstReason();
+	u4idx = u4Reason / 32;
+	u4bit = u4Reason % 32;
+
+	if (u4idx >= NUM_OF_SKIP_DUMP_EE_REASON_LIST)
+		return FALSE;
+
+	if (prWifiVar->u4SkipDebugSOPEEReasonList[u4idx] & BIT(u4bit))
+		return TRUE;
+
+	return FALSE;
+}
+
 void mt6639_DumpBusStatus(struct ADAPTER *ad)
 {
 	struct mt66xx_chip_info *chip_info = NULL;
@@ -2570,6 +2593,9 @@ void mt6639_DumpBusStatus(struct ADAPTER *ad)
 		}
 		GLUE_SET_REF_CNT(1, prHifInfo->fgIsDebugSopOnGoing);
 	}
+
+	if (mt6639_CheckSkipDebugSOPEEReason(ad))
+		goto start_dump_via_scp;
 
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
@@ -2663,9 +2689,9 @@ start_dump_via_bt:
 		DBGLOG(HAL, ERROR, "connv3_hif_dbg_end failed.\n");
 #endif
 
-#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 start_dump_via_scp:
 	DBGLOG(HAL, INFO, "Phase4: Trigger SCP dump.\n");
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connectivity_export_conap_scp_trigger_cmd(CONN_HIF_DBG_WF,
 		CONN_HIF_DBG_CMD_PCIE, 0);
 

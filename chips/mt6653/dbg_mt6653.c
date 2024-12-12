@@ -2283,6 +2283,29 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 #endif
 }
 
+u_int8_t mt6653_CheckSkipDebugSOPEEReason(
+	struct ADAPTER *ad)
+{
+	uint32_t u4idx = 0, u4bit = 0, u4Reason = 0;
+	struct WIFI_VAR *prWifiVar = NULL;
+
+	if (!ad)
+		return FALSE;
+	prWifiVar = &ad->rWifiVar;
+
+	u4Reason = glGetRstReason();
+	u4idx = u4Reason / 32;
+	u4bit = u4Reason % 32;
+
+	if (u4idx >= NUM_OF_SKIP_DUMP_EE_REASON_LIST)
+		return FALSE;
+
+	if (prWifiVar->u4SkipDebugSOPEEReasonList[u4idx] & BIT(u4bit))
+		return TRUE;
+
+	return FALSE;
+}
+
 static void mt6653_DumpBusStatusByLayer(struct ADAPTER *ad,
 	u_int8_t fgIsDumpViaBt)
 {
@@ -2342,6 +2365,9 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 		return;
 	}
 	GLUE_SET_REF_CNT(1, prHifInfo->fgIsDebugSopOnGoing);
+
+	if (mt6653_CheckSkipDebugSOPEEReason(ad))
+		goto dump_end;
 
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 #if CFG_MTK_WIFI_PCIE_SUPPORT

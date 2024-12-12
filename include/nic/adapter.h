@@ -45,6 +45,8 @@
 
 #define MAX_STA_INFO_MCS_NUM 32
 
+#define NUM_OF_SKIP_DUMP_EE_REASON_LIST 2
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1846,6 +1848,8 @@ struct WIFI_VAR {
 	uint32_t u4PcieGenSwitchTputThr;
 	uint32_t u4PcieGenSwitchJudgeTime;
 #endif
+
+	uint32_t u4SkipDebugSOPEEReasonList[NUM_OF_SKIP_DUMP_EE_REASON_LIST];
 
 	u_int8_t fgEnWfdmaNoMmioRead;
 #if CFG_MTK_WIFI_SW_EMI_RING

@@ -9448,6 +9448,17 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  "PcieGenSwitchJudgeTime", 10, FEATURE_TO_CUSTOMER);
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+	INIT_UINT(prWifiVar->u4SkipDebugSOPEEReasonList[0],
+		"SkipDebugSOPList0", BIT(RST_MDDP_MD_TRIGGER_EXCEPTION),
+		FEATURE_DEBUG_ONLY);
+#else /* CFG_MTK_MDDP_SUPPORT */
+	INIT_UINT(prWifiVar->u4SkipDebugSOPEEReasonList[0],
+		"SkipDebugSOPList0", 0, FEATURE_DEBUG_ONLY);
+#endif /* CFG_MTK_MDDP_SUPPORT */
+	INIT_UINT(prWifiVar->u4SkipDebugSOPEEReasonList[1],
+		"SkipDebugSOPList1", 0, FEATURE_DEBUG_ONLY);
+
 	INIT_UINT(prWifiVar->fgEnWfdmaNoMmioRead,
 		  "EnWfdmaNoMmioRead", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead))
