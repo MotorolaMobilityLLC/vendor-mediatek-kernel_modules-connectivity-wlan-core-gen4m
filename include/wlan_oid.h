@@ -3771,7 +3771,7 @@ struct PARAM_EML_DEBUG_INFO {
 	uint16_t u2StaRecMldIdx;
 	uint8_t ucEmlsrBitMap;
 	/* protocol link index to band index */
-	uint8_t auMldLinkIdx[MLD_LINK_MAX];
+	uint8_t auMldLinkIdx[3];
 	/* same with ENUM_EML_STATE_T */
 	uint8_t ucCurrentState;
 	/* AP MLD responded the EML notification frame */

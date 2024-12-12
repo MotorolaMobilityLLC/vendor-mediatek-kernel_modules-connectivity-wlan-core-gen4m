@@ -5520,13 +5520,14 @@ int priv_driver_dump_eml(struct net_device *prNetDev,
 			i4TotalLen - i4BytesWritten,
 			"EML Negotiated		= %d\n",
 			rQueryEmlInfo.ucEmlNegotiated);
-		for (ucLinkIdx = 0; ucLinkIdx < MLD_LINK_MAX; ucLinkIdx++) {
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"LinkId to Band[%d/%d]\n",
-				ucLinkIdx,
-				rQueryEmlInfo.auMldLinkIdx[ucLinkIdx]);
+		for (ucLinkIdx = 0; ucLinkIdx < 3; ucLinkIdx++) {
+			if (rQueryEmlInfo.auMldLinkIdx[ucLinkIdx] != 0xff)
+				i4BytesWritten += kalSnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"LinkId to Band%d [%d]\n",
+					ucLinkIdx,
+					rQueryEmlInfo.auMldLinkIdx[ucLinkIdx]);
 		}
 
 	} else

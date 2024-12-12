@@ -10523,9 +10523,7 @@ void nicUniEventEmlInfo(struct ADAPTER *ad,
 		data->ucCurrentState = tag->ucCurrentState;
 		data->ucEmlNegotiated = tag->ucEmlNegotiated;
 
-		for (ucLinkidx = 0;
-				(ucLinkidx < MLD_LINK_MAX &&
-				 ucLinkidx < tag->ucMaxMldLinkNum); ucLinkidx++)
+		for (ucLinkidx = 0; ucLinkidx < 3; ucLinkidx++)
 			data->auMldLinkIdx[ucLinkidx] =
 				tag->auMldLinkIdx[ucLinkidx];
 	}

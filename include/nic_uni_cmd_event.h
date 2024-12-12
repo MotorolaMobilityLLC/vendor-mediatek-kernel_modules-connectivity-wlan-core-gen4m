@@ -6566,9 +6566,11 @@ struct UNI_EVENT_EML_INFO {
 	uint8_t ucCurrentState;
 	/* AP MLD responded the EML notification frame */
 	uint8_t ucEmlNegotiated;
-	uint8_t ucMaxMldLinkNum;
+	/* Reserved for backward compatible for ucMaxMldLinkNum*/
+	uint8_t ucReserved0;
 	/* protocol link index to band index */
-	uint8_t auMldLinkIdx[];
+	uint8_t auMldLinkIdx[3];
+	uint8_t aucReserved1[7];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
