@@ -209,6 +209,11 @@
 /* Enable Detection for 2021 Frag/AGG Attack from WFA */
 #define CFG_SUPPORT_FRAG_AGG_VALIDATION 1
 
+/* Enable driver generate op class IE in assoc req */
+#ifndef CFG_SUPPORT_GEN_OP_CLASS
+#define CFG_SUPPORT_GEN_OP_CLASS          0
+#endif /* CFG_SUPPORT_GEN_OP_CLASS */
+
 /*------------------------------------------------------------------------------
  * Enable rx zero copy feature
  *------------------------------------------------------------------------------

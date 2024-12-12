@@ -1550,10 +1550,6 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 		prStaRec->ucTxAuthAssocRetryLimit = TX_AUTH_ASSOCI_RETRY_LIMIT;
 
-		/* Update Bss info before join */
-		prBssInfo->eBand = prBssDesc->eBand;
-		prBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
-
 #if (CFG_SUPPORT_HE_ER == 1)
 		prStaRec->fgIsExtendedRange = FALSE;
 
@@ -2346,6 +2342,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 		prAisBssInfo->u4RsnSelectedAKMSuite =
 			prBssDesc->u4RsnSelectedAKMSuite;
 		prAisBssInfo->eBand = prBssDesc->eBand;
+		prAisBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
 
 		/* backup and reset grant NSS/BW */
 		prAisBssInfo->ucBackupGrantTxNss = prAisBssInfo->ucGrantTxNss;
@@ -4375,6 +4372,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 		prBssDesc->u4RsnSelectedGroupMgmtCipher;
 	prBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
 	prBssInfo->eBand = prBssDesc->eBand;
+	prBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
 	ucPrimaryChannel = prBssDesc->ucChannelNum;
 	eRfSco = prBssDesc->eSco;
 	eRfChannelWidth = prBssDesc->eChannelWidth;

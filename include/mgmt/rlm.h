@@ -1018,6 +1018,16 @@ void rlmGenerateTpeIE(struct ADAPTER *prAdapter,
 enum ENUM_MAX_BANDWIDTH_SETTING
 rlmVhtBw2OpBw(uint8_t ucVhtBw, enum ENUM_CHNL_EXT eSco);
 
+#if CFG_SUPPORT_GEN_OP_CLASS
+uint32_t rlmCalculateSupportedOpClassIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec);
+
+void rlmGenerateSupportedOpClassIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

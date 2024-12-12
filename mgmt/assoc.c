@@ -106,6 +106,10 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 				/* 221 */
 	,
 #endif
+#if CFG_SUPPORT_GEN_OP_CLASS
+	{0, rlmCalculateSupportedOpClassIELen, rlmGenerateSupportedOpClassIE}
+	,			/* 221 */
+#endif
 };
 
 #if CFG_SUPPORT_AAA
@@ -223,6 +227,9 @@ static struct SKIP_IE_ENTRY g_assocSkipIEs[] = {
 	{ELEM_ID_MOBILITY_DOMAIN, NULL},
 	{ELEM_ID_RSNX, assocSkipRSNXIe},
 	{ELEM_ID_WPA, assocSkipWpaIe},
+#if CFG_SUPPORT_GEN_OP_CLASS
+	{ELEM_ID_SUP_OPERATING_CLASS, NULL},
+#endif
 };
 
 /*----------------------------------------------------------------------------*/

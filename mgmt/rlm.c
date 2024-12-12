@@ -13965,3 +13965,172 @@ void heRlmReqGenerateHeRegConnectivityIE(
 		rlmFillRegConnectivityIE(prAdapter, prBssInfo, prMsduInfo);
 }
 #endif /* CFG_SUPPORT_WIFI_6G */
+
+#if CFG_SUPPORT_GEN_OP_CLASS
+uint32_t rlmGenSupOpClassIEImpl(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t *pucIE)
+{
+	uint8_t len = 0, i = 0, j = 0;
+	uint8_t ucOpClass[64] = {0}, ucTemp, ucSwap;
+	uint8_t uc5gLastOp = 0;
+	struct DOMAIN_SUBBAND_INFO *prSubband;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct BSS_INFO *prBssInfo;
+
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+	/* Current Op Class*/
+	ucOpClass[len] = rlmGetOpClassForChannel(
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBand, prBssInfo->eBssSCO,
+				prBssInfo->ucVhtChannelWidth,
+				COUNTRY_CODE_NULL);
+	len += 1;
+
+	/* 2G madantory op class 81*/
+	ucOpClass[len] = 81;
+	len += 1;
+
+	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+		prSubband = &prDomainInfo->rSubBand[i];
+		/* Check current country support 2g channel 14? */
+		if (prSubband->ucBand == BAND_2G4) {
+			if (prSubband->ucRegClass == 82) {
+				ucOpClass[len] = 82;
+				len += 1; /* 82 (channel 14)*/
+			}
+		/* Check current country supported which 5g channel */
+		} else if (prSubband->ucBand == BAND_5G
+			&& prAdapter->fgEnable5GBand) {
+			/* 115: ch36 ~ 48, add op class 115~117 */
+			if (prSubband->ucRegClass == 115 && uc5gLastOp != 115) {
+				ucOpClass[len] = 115;
+				ucOpClass[len + 1] = 116;
+				ucOpClass[len + 2] = 117;
+				len += 3; /* 115 ~ 117 */
+			} else if (prSubband->ucRegClass == 118
+				&& uc5gLastOp != 118) {
+			/* 118: ch52 ~ 64, add op class 118~120 */
+				ucOpClass[len] = 118;
+				ucOpClass[len + 1] = 119;
+				ucOpClass[len + 2] = 120;
+				len += 3;
+			} else if (prSubband->ucRegClass == 121
+				&& uc5gLastOp != 121) {
+			/* 121: ch100 ~ 144, add op class 121~123 */
+				ucOpClass[len] = 121;
+				ucOpClass[len + 1] = 122;
+				ucOpClass[len + 2] = 123;
+				len += 3; /* 121 ~ 123 */
+			} else if (prSubband->ucRegClass == 125
+				&& uc5gLastOp != 125) {
+			/* 125: ch149 ~ 173, add op class 124~127 */
+				ucOpClass[len] = 124;
+				ucOpClass[len + 1] = 125;
+				ucOpClass[len + 2] = 126;
+				ucOpClass[len + 3] = 127;
+				len += 4; /* 124 ~ 127 */
+			}
+			uc5gLastOp = prSubband->ucRegClass;
+		/* Check current country supported 6g channel */
+		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prSubband->ucBand == BAND_6G
+			&& prAdapter->fgIsHwSupport6G) {
+			if (prSubband->ucRegClass == 131) {
+				ucOpClass[len] = 131;
+				ucOpClass[len + 1] = 132;
+				ucOpClass[len + 2] = 133;
+				ucOpClass[len + 3] = 134;
+				len += 4; /* 131 ~ 134 */
+			} else if (prSubband->ucRegClass == 136) {
+				ucOpClass[len] = 136;
+				len += 1; /* 136 */
+			}
+		}
+#endif
+	}
+
+	/* Check 2.4g support BW40 or not */
+	if (prAdapter->rWifiVar.ucSta2gBandwidth == MAX_BW_40MHZ) {
+		ucOpClass[len] = 83;
+		ucOpClass[len + 1] = 84;
+		len += 2; /* 83, 84 */
+	}
+
+	/* Check 5G support BW160 or not*/
+	if (prAdapter->rWifiVar.ucSta5gBandwidth == MAX_BW_160MHZ) {
+		ucOpClass[len] = 128;
+		ucOpClass[len + 1] = 129;
+		len += 2; /* 128, 129 */
+	} else if (prAdapter->rWifiVar.ucSta5gBandwidth == MAX_BW_80MHZ) {
+		ucOpClass[len] = 128;
+		len += 1; /* 128 */
+	}
+
+	/* Check 6G support BW320 or not*/
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAdapter->rWifiVar.ucSta6gBandwidth == MAX_BW_320_1MHZ ||
+		prAdapter->rWifiVar.ucSta6gBandwidth == MAX_BW_320_2MHZ) {
+		ucOpClass[len] = 137;
+		len += 1; /* 137 */
+	}
+#endif
+	/* Sort op class, but Index 0 no need,
+	 * index 0 is Current Op Class
+	 */
+	for (i = 1; i < len - 1; i++) {
+		ucSwap = FALSE;
+		for (j = 1; j < len - i; j++) {
+			if (ucOpClass[j] > ucOpClass[j + 1]) {
+				ucTemp = ucOpClass[j];
+				ucOpClass[j] = ucOpClass[j + 1];
+				ucOpClass[j + 1] = ucTemp;
+				ucSwap = TRUE;
+			}
+		}
+		if (ucSwap == FALSE)
+			break;
+	}
+
+	if (pucIE)
+		kalMemCopy(pucIE, ucOpClass, len);
+
+	/* EID and IE length */
+	len += ELEM_HDR_LEN;
+
+	return len;
+}
+
+uint32_t rlmCalculateSupportedOpClassIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec)
+{
+	return rlmGenSupOpClassIEImpl(prAdapter, ucBssIndex, NULL);
+}
+
+void rlmGenerateSupportedOpClassIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct IE_SUP_OPERATING_CLASS *prSupOpClass;
+
+
+	prSupOpClass = (struct IE_SUP_OPERATING_CLASS *)
+		(((uint8_t *)prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
+
+	prSupOpClass->ucId = ELEM_ID_SUP_OPERATING_CLASS;
+	prSupOpClass->ucLength =
+		rlmCalculateSupportedOpClassIELen(prAdapter,
+				prMsduInfo->ucBssIndex, NULL) - ELEM_HDR_LEN;
+
+	rlmGenSupOpClassIEImpl(prAdapter,
+				prMsduInfo->ucBssIndex, &prSupOpClass->ucCur);
+
+	prMsduInfo->u2FrameLength += prSupOpClass->ucLength + ELEM_HDR_LEN;
+}
+#endif

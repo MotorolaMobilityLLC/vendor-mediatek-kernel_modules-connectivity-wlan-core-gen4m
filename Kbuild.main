@@ -1868,6 +1868,7 @@ endif
 
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
+    ccflags-y += -DCFG_SUPPORT_GEN_OP_CLASS=1
     WMT_SUPPORT := y
     CONFIG_QUEUE_DEBUG=y
     CONFIG_SUPPORT_FW_DROP_SSN=y
