@@ -436,7 +436,7 @@ static int32_t mddpRegisterCb(void)
 #else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
 
-	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
+	DBGLOG(INIT, VOC, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	kalMemZero(&stats, sizeof(struct mddpw_net_stat_ext_t));
@@ -452,9 +452,9 @@ static int32_t mddpRegisterCb(void)
 
 static void mddpUnregisterCb(void)
 {
-	DBGLOG(INIT, INFO, "mddp_drv_detach\n");
+	DBGLOG(INIT, VOC, "mddp_drv_detach\n");
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-	DBGLOG(INIT, INFO, "port idx:%d\n", g_rSettings.i4PortIdx);
+	DBGLOG(INIT, VOC, "port idx:%d\n", g_rSettings.i4PortIdx);
 	if (!g_rSettings.is_port_open) {
 		DBGLOG(INIT, ERROR, "port didn't open!\n");
 		return;
@@ -824,7 +824,7 @@ static void save_mddp_lls_stats(void)
 		}
 	}
 
-	DBGLOG(INIT, INFO, "save_mddp_lls_stats done.\n");
+	DBGLOG(INIT, VOC, "save mddp lls stats done.\n");
 }
 #endif
 
@@ -998,7 +998,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 	if (fgActivate && !prStaRec->aprTxDescTemplate[0]) {
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, VOC,
 			"sta[%d]'s TXD NOT generated done, maybe wait.\n",
 			prStaRec->ucBssIndex);
 		ret = -1;
@@ -1015,7 +1015,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 			goto exit;
 		}
 	} else {
-		DBGLOG(NIC, INFO, "NetDev is null BssIndex[%d]\n",
+		DBGLOG(NIC, VOC, "NetDev is null BssIndex[%d]\n",
 		       prStaRec->ucBssIndex);
 	}
 
@@ -1071,7 +1071,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 
 #define TEMP_LOG_TEMPLATE "ver:%d,idx:%d,w_idx:%d,mod:%d,bss:%d,wmm:%d," \
 		"name:%s,act:%d,ret:%d"
-	DBGLOG(NIC, INFO, TEMP_LOG_TEMPLATE,
+	DBGLOG(NIC, VOC, TEMP_LOG_TEMPLATE,
 		prMddpTxd->version,
 		prMddpTxd->sta_idx,
 		prMddpTxd->wlan_idx,
@@ -1443,7 +1443,7 @@ int32_t mddpNotifyCheckSer(uint32_t u4Status)
 	g_u4CheckSerCnt++;
 
 	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-	DBGLOG(NIC, INFO, "check ser sn: %u, sta:0x%08x, ret: %d.\n",
+	DBGLOG(NIC, VOC, "check ser sn: %u, sta:0x%08x, ret: %d.\n",
 	       prSerInfo->sn, u4Status, ret);
 	kalMemFree(buff, PHY_MEM_TYPE, u4BufSize);
 
@@ -1485,7 +1485,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	uint32_t u4DrvOwnTimeoutTime = g_rSettings.u4MdDrvOwnTimeoutTime;
 	uint8_t *buff = NULL;
 
-	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
+	DBGLOG(INIT, VOC, "Wi-Fi Notify MD Drv Own Timeout time.\n");
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1526,7 +1526,7 @@ exit:
 	if (buff)
 		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 
-	DBGLOG(INIT, INFO, "ret: %d, timeout: %d.\n",
+	DBGLOG(INIT, VOC, "ret: %d, timeout: %d.\n",
 				   ret, u4DrvOwnTimeoutTime);
 	return ret;
 }
@@ -1625,7 +1625,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 
 	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
 			   ERR_RECOV_STOP_IDLE) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE,
@@ -1643,7 +1643,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 	}
 
 	if (u2GenSwitchRsp == 1) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_END_STATE,
@@ -1651,7 +1651,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_END_STATE;
 		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 	} else {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE,
@@ -1682,7 +1682,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchEnd(
 		u2GenSwitchRsp = prAckRsp->u2Result;
 	}
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 		prHifInfo->u4GenSwitchState,
 		MDDP_GEN_SWITCH_NORMAL_STATE,
@@ -1712,7 +1712,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchByPassStart(
 
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_NORMAL_STATE) {
 		/* set to bypass state only when GenSwitch in normal state */
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_BYPASS_STATE,
@@ -1722,7 +1722,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchByPassStart(
 		wlandioStopPcieStatus(prAdapter,
 			PCIE_MD_BYPASS_GEN_SWITCH_START);
 	} else {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u, ignore md bypass\n",
 			prHifInfo->u4GenSwitchState,
 			prHifInfo->u4GenSwitchState,
@@ -1750,7 +1750,7 @@ int32_t mddpMdNotifyInfoHandleGenSwitchByPassEnd(
 
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
 		/* set to bypass state only when GenSwitch in normal state */
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE,
@@ -1867,7 +1867,7 @@ void mddpGenSwitchMsgTimeout(unsigned long arg)
 
 	/* call API to notify Gen Switch module */
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_START_BEGIN_STATE) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d], msg timeout\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE);
@@ -1875,7 +1875,7 @@ void mddpGenSwitchMsgTimeout(unsigned long arg)
 			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE;
 		mddpNotifyMDGenSwitchEnd(prAdapter);
 	} else if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_END_STATE) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d], msg timeout\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE);
@@ -1946,12 +1946,12 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
 		/* no need to send msg to md in bypass state */
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_BYPASS_STATE);
 		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	} else if (prHifInfo->fgMdResetInd == TRUE) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d], reset ind\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE);
@@ -1961,26 +1961,26 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
 			MDDP_GEN_SWITCH_NORMAL_STATE) {
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_BEGIN_STATE);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_BEGIN_STATE;
 		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
 			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
 			  MSEC_PER_SEC);
-		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+		DBGLOG(HAL, VOC, "Start GenSwitch timer\n");
 
 		ret = mddpNotifyMDGenSwithAction(
 			WFPM_DRVINFO_PCIE_GENSWITCH_START);
 	} else if (md_state != READY) {
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE);
 		prHifInfo->u4GenSwitchState =
 			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE;
 		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 	} else {
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			prHifInfo->u4GenSwitchState);
 	}
@@ -2037,7 +2037,7 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 		goto end;
 
 	if (!is_cal_flow_finished()) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d], cal not finished\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE);
@@ -2048,7 +2048,7 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 #if CFG_MTK_ANDROID_WMT
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing()) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d], pwr on processing\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE);
@@ -2064,11 +2064,11 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
 		/* no need to send msg to md in bypass state */
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_BYPASS_STATE);
 	} else if (prHifInfo->fgMdResetInd == TRUE) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"mddp gen switch state [%d]->[%d], reset ind\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE);
@@ -2076,31 +2076,31 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
 			MDDP_GEN_SWITCH_START_END_STATE) {
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState, MDDP_GEN_SWITCH_END_STATE);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_END_STATE;
 		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
 			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
 			  MSEC_PER_SEC);
-		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+		DBGLOG(HAL, VOC, "Start GenSwitch timer\n");
 
 		ret = mddpNotifyMDGenSwithAction(
 			WFPM_DRVINFO_PCIE_GENSWITCH_END);
 	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
 			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE) {
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState, MDDP_GEN_SWITCH_END_STATE);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_END_STATE;
 		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
 			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
 			  MSEC_PER_SEC);
-		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+		DBGLOG(HAL, VOC, "Start GenSwitch timer\n");
 		ret = mddpNotifyMDGenSwithAction(
 			WFPM_DRVINFO_PCIE_GENSWITCH_END);
 		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	} else {
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
@@ -2122,7 +2122,7 @@ void mddpHandleGenSwitchMdExp(int32_t md_state)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_START_BEGIN_STATE) {
 		del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE);
 		prHifInfo->u4GenSwitchState =
@@ -2131,7 +2131,7 @@ void mddpHandleGenSwitchMdExp(int32_t md_state)
 			PCIE_STOP_TRANSITION_END);
 	} else if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_END_STATE) {
 		del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
-		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+		DBGLOG(HAL, VOC, "mddp gen switch state [%d]->[%d]\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
@@ -2192,7 +2192,7 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 	uint32_t u4UnifiedCmdVer = 1;
 	uint8_t *buff = NULL;
 
-	DBGLOG(INIT, INFO, "Notify MD Unified Cmd version.\n");
+	DBGLOG(INIT, VOC, "Notify MD Unified Cmd version.\n");
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -2229,7 +2229,7 @@ exit:
 	if (buff)
 		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 
-	DBGLOG(INIT, INFO, "ret: %d, Ver: %u.\n", ret, u4UnifiedCmdVer);
+	DBGLOG(INIT, VOC, "ret: %d, Ver: %u.\n", ret, u4UnifiedCmdVer);
 	return ret;
 }
 #endif
@@ -2370,7 +2370,7 @@ void __mddpNotifyWifiOffStart(void)
 		return;
 	}
 
-	DBGLOG(INIT, INFO, "md off start.\n");
+	DBGLOG(INIT, VOC, "md off start.\n");
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_AOP) {
 		if (g_rSettings.rOps.set)
 			g_rSettings.rOps.set(&g_rSettings,
@@ -2497,7 +2497,7 @@ void mddpUnregisterMdStateCB(void)
 
 #if CFG_MTK_CCCI_SUPPORT
 	mutex_lock(&rMddpLock);
-	DBGLOG(INIT, INFO, "unregister mddp ccci cb\n");
+	DBGLOG(INIT, VOC, "unregister mddp ccci cb\n");
 	mtk_ccci_register_md_state_cb(NULL);
 	mutex_unlock(&rMddpLock);
 #endif
@@ -2527,7 +2527,7 @@ u_int8_t mddpMdNotifyInfoSanityCheck(struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, VOC,
 			"Skip update info. to MD, fgHalted: %d, u4ReadyFlag: %d\n",
 			fgHalted, prGlueInfo->u4ReadyFlag);
 		return FALSE;
@@ -2568,7 +2568,7 @@ int32_t mddpMdNotifyInfoHandleResetInd(
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prHifInfo->fgMdResetInd = TRUE;
 
-	DBGLOG(INIT, INFO, "MD resetting.\n");
+	DBGLOG(INIT, VOC, "MD resetting.\n");
 	save_mddp_stats();
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
 	save_mddp_lls_stats();
@@ -2587,7 +2587,7 @@ int32_t mddpMdNotifyInfoHandleResetInd(
 	ret = __mddpNotifyWifiOnEnd(fgIsForceNotify);
 	mutex_unlock(&rMddpLock);
 	if (ret != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
+		DBGLOG(INIT, VOC, "mddpNotifyWifiOnEnd failed.\n");
 		return 0;
 	}
 
@@ -2868,7 +2868,7 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 		break;
 
 	case MDDP_STATE_ACTIVATED:
-		DBGLOG(INIT, INFO, "Mddp activated.\n");
+		DBGLOG(INIT, VOC, "Mddp activated.\n");
 		prAdapter->fgMddpActivated = true;
 		break;
 
@@ -2876,7 +2876,7 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 		break;
 
 	case MDDP_STATE_DEACTIVATED:
-		DBGLOG(INIT, INFO, "Mddp deactivated.\n");
+		DBGLOG(INIT, VOC, "Mddp deactivated.\n");
 		prAdapter->fgMddpActivated = false;
 		break;
 
@@ -2913,7 +2913,7 @@ static bool wait_for_md_off_complete(void)
 		&& g_rSettings.recv_seq == GLUE_GET_REF_CNT(g_rSettings.seq)
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 		) {
-			DBGLOG(INIT, INFO, "md off end.\n");
+			DBGLOG(INIT, VOC, "md off end.\n");
 			break;
 		}
 
@@ -2953,7 +2953,7 @@ static bool wait_for_md_on_complete(void)
 			g_rSettings.rOps.rd(&g_rSettings, &u4Value);
 
 		if ((u4Value & g_rSettings.u4MdOnBit) > 0) {
-			DBGLOG(INIT, INFO, "md on end.\n");
+			DBGLOG(INIT, VOC, "md on end.\n");
 			fgCompletion = true;
 			break;
 		} else if (!prGlueInfo->u4ReadyFlag) {
@@ -3268,7 +3268,7 @@ void mddpSetMDFwOwn(void)
 	if (prChipInfo->u4MdLpctlAddr)
 		u4MdLpctlAddr = prChipInfo->u4MdLpctlAddr;
 	kalDevRegWrite(NULL, u4MdLpctlAddr, MDDP_LPCR_MD_SET_FW_OWN);
-	DBGLOG(INIT, INFO, "Set MD Fw Own.\n");
+	DBGLOG(INIT, VOC, "Set MD Fw Own.\n");
 
 #if defined(_HIF_PCIE)
 	if (prChipInfo->bus_info->hwControlVote)
@@ -3306,14 +3306,14 @@ bool mddpIsSupportMcifWifi(void)
 	}
 
 	if (!g_fgMddpEnabled) {
-		DBGLOG_LIMITED(INIT, INFO, "mddp enable: %u.\n",
+		DBGLOG_LIMITED(INIT, VOC, "mddp enable: %u.\n",
 			       g_fgMddpEnabled);
 		return false;
 	}
 
 	i4Feature = gMddpWFunc.get_mddp_feature();
 	if ((i4Feature & MDDP_FEATURE_MCIF_WIFI) == 0) {
-		DBGLOG_LIMITED(INIT, INFO, "feature: %d.\n", i4Feature);
+		DBGLOG_LIMITED(INIT, VOC, "feature: %d.\n", i4Feature);
 		return false;
 	}
 

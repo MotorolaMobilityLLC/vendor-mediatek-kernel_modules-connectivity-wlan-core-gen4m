@@ -154,7 +154,7 @@ static void halTriggerTxHangFwDebugSop(
 			(1 << DBG_PLE_INT_VER_SHIFT) |
 			(u4Reason)
 			);
-		DBGLOG(HAL, INFO, "Trigger Fw Debug SOP[%d][%d]\n",
+		DBGLOG(HAL, VOC, "Trigger Fw Debug SOP[%d][%d]\n",
 		       u4Module, u4BssIndex);
 	}
 }
@@ -214,7 +214,7 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 		ucBssIndex = prToken->ucBssIndex;
 	}
 
-	DBGLOG(HAL, INFO, "BssIndex: %d\n", ucBssIndex);
+	DBGLOG(HAL, VOC, "BssIndex: %d\n", ucBssIndex);
 	halTriggerTxHangFwDebugSop(
 		prAdapter, DBG_PLE_INT_MOD_TX,
 		ucBssIndex, DBG_PLE_INT_REASON_MANUAL);
@@ -235,7 +235,7 @@ bool halCheckFullDump(struct ADAPTER *prAdapter)
 #if CFG_MTK_MDDP_SUPPORT
 	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_TIMEOUT) {
 		ret = TRUE;
-		DBGLOG(HAL, INFO, "MD Tx timeout dump\n");
+		DBGLOG(HAL, VOC, "MD Tx timeout dump\n");
 		goto end;
 	}
 #endif
@@ -462,21 +462,21 @@ static void halDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	struct TXD_STRUCT *pTxD;
 
 	if (u2Port >= NUM_OF_TX_RING) {
-		DBGLOG(HAL, INFO, "Dump fail u2Port[%u]\n",
+		DBGLOG(HAL, VOC, "Dump fail u2Port[%u]\n",
 		       u2Port);
 		return;
 	}
 
 	prTxRing = &prHifInfo->TxRing[u2Port];
 	if (u4Idx >= prTxRing->u4RingSize) {
-		DBGLOG(HAL, INFO, "Dump fail u2Port[%u] u4Idx[%u]\n",
+		DBGLOG(HAL, VOC, "Dump fail u2Port[%u] u4Idx[%u]\n",
 		       u2Port, u4Idx);
 		return;
 	}
 
 	pTxD = (struct TXD_STRUCT *) prTxRing->Cell[u4Idx].AllocVa;
 
-	log_dbg(SW4, INFO, "TX Ring[%u] Idx[%04u] SDP0[0x%08x] SDL0[%u] LS[%u] B[%u] DDONE[%u] SDP0_EXT[%u]\n",
+	log_dbg(SW4, VOC, "TX Ring[%u] Idx[%04u] SDP0[0x%08x] SDL0[%u] LS[%u] B[%u] DDONE[%u] SDP0_EXT[%u]\n",
 		u2Port, u4Idx, pTxD->SDPtr0, pTxD->SDLen0, pTxD->LastSec0,
 		pTxD->Burst, pTxD->DMADONE, pTxD->SDPtr0Ext);
 }
@@ -616,7 +616,7 @@ static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,
 	/* Idle slot diff is less than max of 32bit uint */
 	u4TmpIdleSlotDiff = (uint32_t)prLinkQualityInfo->u8DiffIdleSlotCount;
 	if (checkAddOverflow(prAdapter->u4SumIdleSlot, u4TmpIdleSlotDiff)) {
-		DBGLOG(HAL, INFO, "idle slot sum is overflow\n");
+		DBGLOG(HAL, ERROR, "idle slot sum is overflow\n");
 		return;
 	}
 
@@ -703,7 +703,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 #if CFG_MTK_MDDP_SUPPORT
 	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_TIMEOUT) {
-		DBGLOG(HAL, INFO, "MD Tx timeout dump\n");
+		DBGLOG(HAL, VOC, "MD Tx timeout dump\n");
 		return TRUE;
 	}
 #endif
@@ -765,7 +765,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			USEC_REM_TO_SEC(u8Longest), eOPMode);
 
 		if (prToken->prPacket)
-			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
+			DBGLOG_MEM32(HAL, VOC, prToken->prPacket, 64);
 
 		halCalcTxTimeoutParams(prAdapter, u4TokenId);
 
@@ -802,10 +802,10 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			u8LastMsduRptChangedTime,
 			SEC_TO_USEC(u4TimeoutSerTime))) {
 			prAdapter->u4HifChkFlag |= HIF_DRV_SER;
-			DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
+			DBGLOG(HAL, ERROR, "Timeout > %ds, trigger SER\n",
 				u4TimeoutSerTime);
 		} else {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, ERROR,
 				"MSDU reports are returning, do not trigger SER. lastMsduRpt @ %lld, MsduRptCnt[%u] timeout[sec:%lld]",
 				USEC_TO_SEC(u8LastMsduRptChangedTime),
 				GLUE_GET_REF_CNT(
@@ -842,8 +842,8 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	if (!pTxD)
 		return;
 
-	DBGLOG(HAL, INFO, "Tx Dese Num[%u]\n", u4Num);
-	DBGLOG_MEM32(HAL, INFO, pTxD, sizeof(struct TXD_STRUCT));
+	DBGLOG(HAL, VOC, "Tx Dese Num[%u]\n", u4Num);
+	DBGLOG_MEM32(HAL, VOC, pTxD, sizeof(struct TXD_STRUCT));
 
 	if (!fgDumpContent)
 		return;
@@ -875,8 +875,8 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 	if (!pRxD)
 		return;
 
-	DBGLOG(HAL, INFO, "Rx Dese Num[%u]\n", u4Num);
-	DBGLOG_MEM32(HAL, INFO, pRxD, sizeof(struct RXD_STRUCT));
+	DBGLOG(HAL, VOC, "Rx Dese Num[%u]\n", u4Num);
+	DBGLOG_MEM32(HAL, VOC, pRxD, sizeof(struct RXD_STRUCT));
 
 	if (!fgDumpContent)
 		return;
@@ -1069,42 +1069,42 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 
 	/* PDMA HOST_INT */
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, WPDMA_INT_STA, &u4Value);
-	DBGLOG(HAL, INFO, "WPDMA HOST_INT:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "WPDMA HOST_INT:0x%08x = 0x%08x\n",
 		WPDMA_INT_STA, u4Value);
 
 	/* PDMA GLOBAL_CFG  */
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, WPDMA_GLO_CFG, &u4Value);
-	DBGLOG(HAL, INFO, "WPDMA GLOBAL_CFG:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "WPDMA GLOBAL_CFG:0x%08x = 0x%08x\n",
 		WPDMA_GLO_CFG, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, CONN_HIF_RST, &u4Value);
-	DBGLOG(HAL, INFO, "WPDMA CONN_HIF_RST:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "WPDMA CONN_HIF_RST:0x%08x = 0x%08x\n",
 		CONN_HIF_RST, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MCU2HOST_SW_INT_STA, &u4Value);
-	DBGLOG(HAL, INFO, "WPDMA MCU2HOST_SW_INT_STA:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "WPDMA MCU2HOST_SW_INT_STA:0x%08x = 0x%08x\n",
 		MCU2HOST_SW_INT_STA, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_INT_STA, &u4Value);
-	DBGLOG(HAL, INFO, "MD_INT_STA:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "MD_INT_STA:0x%08x = 0x%08x\n",
 	       MD_INT_STA, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_WPDMA_GLO_CFG, &u4Value);
-	DBGLOG(HAL, INFO, "MD_WPDMA_GLO_CFG:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "MD_WPDMA_GLO_CFG:0x%08x = 0x%08x\n",
 	       MD_WPDMA_GLO_CFG, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_INT_ENA, &u4Value);
-	DBGLOG(HAL, INFO, "MD_INT_ENA:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "MD_INT_ENA:0x%08x = 0x%08x\n",
 	       MD_INT_ENA, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       MD_WPDMA_DLY_INIT_CFG, &u4Value);
-	DBGLOG(HAL, INFO, "MD_WPDMA_DLY_INIT_CFG:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "MD_WPDMA_DLY_INIT_CFG:0x%08x = 0x%08x\n",
 	       MD_WPDMA_DLY_INIT_CFG, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_WPDMA_MISC, &u4Value);
-	DBGLOG(HAL, INFO, "MD_WPDMA_MISC:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "MD_WPDMA_MISC:0x%08x = 0x%08x\n",
 	       MD_WPDMA_MISC, u4Value);
 
 	/* PDMA Tx/Rx Ring  Info */
-	DBGLOG(HAL, INFO, "Tx Ring configuration\n");
-	DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
+	DBGLOG(HAL, VOC, "Tx Ring configuration\n");
+	DBGLOG(HAL, VOC, "%10s%10s%12s%20s%10s%10s%10s\n",
 		"Tx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
 	if (buf) {
@@ -1145,15 +1145,15 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 				wfmda_tx_group[i].cidx,
 				wfmda_tx_group[i].didx);
 			if (ret >= 0 || ret < BUF_SIZE)
-				DBGLOG(HAL, INFO, "%s\n", buf);
+				DBGLOG(HAL, VOC, "%s\n", buf);
 			else
 				DBGLOG(INIT, ERROR,
 					"[%u] kalSnprintf failed, ret: %d\n",
 						__LINE__, ret);
 		}
 
-		DBGLOG(HAL, INFO, "Rx Ring configuration\n");
-		DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
+		DBGLOG(HAL, VOC, "Rx Ring configuration\n");
+		DBGLOG(HAL, VOC, "%10s%10s%12s%20s%10s%10s%10s\n",
 			"Rx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
 		kalMemZero(buf, BUF_SIZE);
@@ -1192,7 +1192,7 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 				wfmda_rx_group[i].cidx,
 				wfmda_rx_group[i].didx);
 			if (ret >= 0 || ret < BUF_SIZE)
-				DBGLOG(HAL, INFO, "%s\n", buf);
+				DBGLOG(HAL, VOC, "%s\n", buf);
 			else
 				DBGLOG(INIT, ERROR,
 					"[%u] kalSnprintf failed, ret: %d\n",
@@ -1207,7 +1207,7 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 		 i < NUM_OF_TX_RING; i++) {
 		if (!wfmda_tx_group[i].dump_ring_content)
 			continue;
-		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n",
+		DBGLOG(HAL, VOC, "Dump PDMA Tx Ring[%u]\n",
 				wfmda_tx_group[i].ring_idx);
 		prTxRing = &prHifInfo->TxRing[i];
 		SwIdx = wfmda_tx_group[i].didx;
@@ -1223,7 +1223,7 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 	for (i = 0; i < ARRAY_SIZE(wfmda_rx_group); i++) {
 		if (!wfmda_rx_group[i].dump_ring_content)
 			continue;
-		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n",
+		DBGLOG(HAL, VOC, "Dump PDMA Rx Ring[%u]\n",
 				wfmda_rx_group[i].ring_idx);
 		prRxRing = &prHifInfo->RxRing[i];
 		SwIdx1 = wfmda_rx_group[i].didx;
@@ -1247,15 +1247,15 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 	/* PDMA Busy Status */
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       PDMA_DEBUG_BUSY_STATUS, &u4Value);
-	DBGLOG(HAL, INFO, "PDMA busy status:0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "PDMA busy status:0x%08x = 0x%08x\n",
 		PDMA_DEBUG_STATUS, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       PDMA_DEBUG_HIF_BUSY_STATUS, &u4Value);
-	DBGLOG(HAL, INFO, "CONN_HIF busy status:0x%08x = 0x%08x\n\n",
+	DBGLOG(HAL, VOC, "CONN_HIF busy status:0x%08x = 0x%08x\n\n",
 		PDMA_DEBUG_HIF_BUSY_STATUS, u4Value);
 
 	/* PDMA Debug Flag Info */
-	DBGLOG(HAL, INFO, "PDMA core dbg");
+	DBGLOG(HAL, VOC, "PDMA core dbg");
 	if (buf) {
 		kalMemZero(buf, BUF_SIZE);
 		pos = 0;
@@ -1269,30 +1269,30 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 				i, u4Value, i == 23 ? "\n" : "; ");
 			mdelay(1);
 		}
-		DBGLOG(HAL, INFO, "%s", buf);
+		DBGLOG(HAL, VOC, "%s", buf);
 	}
 
 	/* AXI Debug Flag */
 	HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, PDMA_AXI_DEBUG_FLAG);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       CONN_HIF_DEBUG_STATUS, &u4Value);
-	DBGLOG(HAL, INFO, "Set:0x%04x, pdma axi dbg:0x%08x",
+	DBGLOG(HAL, VOC, "Set:0x%04x, pdma axi dbg:0x%08x",
 	       PDMA_AXI_DEBUG_FLAG, u4Value);
 
 	HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, GALS_AXI_DEBUG_FLAG);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       CONN_HIF_DEBUG_STATUS, &u4Value);
-	DBGLOG(HAL, INFO, "Set:0x%04x, gals axi dbg:0x%08x",
+	DBGLOG(HAL, VOC, "Set:0x%04x, gals axi dbg:0x%08x",
 	       GALS_AXI_DEBUG_FLAG, u4Value);
 
 	HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, MCU_AXI_DEBUG_FLAG);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       CONN_HIF_DEBUG_STATUS, &u4Value);
-	DBGLOG(HAL, INFO, "Set:0x%04x, mcu axi dbg:0x%08x",
+	DBGLOG(HAL, VOC, "Set:0x%04x, mcu axi dbg:0x%08x",
 	       MCU_AXI_DEBUG_FLAG, u4Value);
 
 	/* Rbus Bridge Debug Flag */
-	DBGLOG(HAL, INFO, "rbus dbg");
+	DBGLOG(HAL, VOC, "rbus dbg");
 	HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, RBUS_DEBUG_FLAG);
 	if (buf) {
 		kalMemZero(buf, BUF_SIZE);
@@ -1306,7 +1306,7 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 				"Set[19:16]:0x%02x, result = 0x%08x%s",
 				i, u4Value, i == 8 ? "\n" : "; ");
 		}
-		DBGLOG(HAL, INFO, "%s", buf);
+		DBGLOG(HAL, VOC, "%s", buf);
 	}
 	if (prAdapter->chip_info->prDebugOps->showHifInfo)
 		prAdapter->chip_info->prDebugOps->showHifInfo(prAdapter);
@@ -1322,96 +1322,96 @@ bool halShowHostCsrInfo(struct ADAPTER *prAdapter)
 	bool fgIsDriverOwn = false;
 	bool fgEnClock = false;
 
-	DBGLOG(HAL, INFO, "Host CSR Configuration Info:\n\n");
+	DBGLOG(HAL, VOC, "Host CSR Configuration Info:\n\n");
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, HOST_CSR_BASE, &u4Value);
-	DBGLOG(HAL, INFO, "Get 0x87654321: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Get 0x87654321: 0x%08x = 0x%08x\n",
 		HOST_CSR_BASE, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_DRIVER_OWN_INFO, &u4Value);
-	DBGLOG(HAL, INFO, "Driver own info: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Driver own info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
 	fgIsDriverOwn = (u4Value & PCIE_LPCR_HOST_SET_OWN) == 0;
 
 	for (i = 0; i < 5; i++) {
 		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 			       HOST_CSR_MCU_PORG_COUNT, &u4Value);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"MCU programming Counter info (no sync): 0x%08x = 0x%08x\n",
 			HOST_CSR_MCU_PORG_COUNT, u4Value);
 	}
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, HOST_CSR_RGU, &u4Value);
-	DBGLOG(HAL, INFO, "RGU Info: 0x%08x = 0x%08x\n", HOST_CSR_RGU, u4Value);
+	DBGLOG(HAL, VOC, "RGU Info: 0x%08x = 0x%08x\n", HOST_CSR_RGU, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_HIF_BUSY_CORQ_WFSYS_ON, &u4Value);
-	DBGLOG(HAL, INFO, "HIF_BUSY / CIRQ / WFSYS_ON info: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "HIF_BUSY / CIRQ / WFSYS_ON info: 0x%08x = 0x%08x\n",
 		HOST_CSR_HIF_BUSY_CORQ_WFSYS_ON, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_PINMUX_MON_FLAG, &u4Value);
-	DBGLOG(HAL, INFO, "Pinmux/mon_flag info: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Pinmux/mon_flag info: 0x%08x = 0x%08x\n",
 		HOST_CSR_PINMUX_MON_FLAG, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_MCU_PWR_STAT, &u4Value);
-	DBGLOG(HAL, INFO, "Bit[5] mcu_pwr_stat: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Bit[5] mcu_pwr_stat: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_PWR_STAT, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, HOST_CSR_FW_OWN_SET, &u4Value);
-	DBGLOG(HAL, INFO, "Bit[15] fw_own_stat: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Bit[15] fw_own_stat: 0x%08x = 0x%08x\n",
 		HOST_CSR_FW_OWN_SET, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_MCU_SW_MAILBOX_0, &u4Value);
-	DBGLOG(HAL, INFO, "WF Mailbox[0]: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "WF Mailbox[0]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_0, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_MCU_SW_MAILBOX_1, &u4Value);
-	DBGLOG(HAL, INFO, "MCU Mailbox[1]: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "MCU Mailbox[1]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_1, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_MCU_SW_MAILBOX_2, &u4Value);
-	DBGLOG(HAL, INFO, "BT Mailbox[2]: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "BT Mailbox[2]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_2, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_MCU_SW_MAILBOX_3, &u4Value);
-	DBGLOG(HAL, INFO, "GPS Mailbox[3]: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "GPS Mailbox[3]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_3, u4Value);
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_CONN_CFG_ON, &u4Value);
-	DBGLOG(HAL, INFO, "Conn_cfg_on info: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Conn_cfg_on info: 0x%08x = 0x%08x\n",
 		HOST_CSR_CONN_CFG_ON, u4Value);
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_AP2CONN_AHB_HADDR, &u4Value);
-	DBGLOG(HAL, INFO, "HOST_CSR_AP2CONN_AHB_HADDR: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "HOST_CSR_AP2CONN_AHB_HADDR: 0x%08x = 0x%08x\n",
 		HOST_CSR_AP2CONN_AHB_HADDR, u4Value);
 #endif
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR,
 		       &u4Value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "CONN_HIF_ON_MD_LPCTL_ADDR: 0x%08x = 0x%08x\n",
 	       HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR,
 		       &u4Value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "CONN_HIF_ON_MD_IRQ_STAT_ADDR: 0x%08x = 0x%08x\n",
 	       HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR, u4Value);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR,
 		       &u4Value);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "CONN_HIF_ON_MD_IRQ_ENA_ADDR: 0x%08x = 0x%08x\n",
 	       HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR, u4Value);
 
@@ -1419,7 +1419,7 @@ bool halShowHostCsrInfo(struct ADAPTER *prAdapter)
 	kalUdelay(1);
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       HOST_CSR_DRIVER_OWN_INFO, &u4Value);
-	DBGLOG(HAL, INFO, "Bit[17]/[16], Get HCLK info: 0x%08x = 0x%08x\n",
+	DBGLOG(HAL, VOC, "Bit[17]/[16], Get HCLK info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
 
 	/* check clock is enabled */

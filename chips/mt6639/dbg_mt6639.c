@@ -1422,7 +1422,7 @@ void mt6639_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 		u4DbgIdxValue = 0x100 + dbg_cr_idx[i];
 		HAL_MCR_WR(prAdapter, u4DbgIdxAddr, u4DbgIdxValue);
 		HAL_MCR_RD(prAdapter, u4DbgProbeAddr, &u4DbgProbeValue);
-		DBGLOG(HAL, INFO, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
+		DBGLOG(HAL, VOC, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
 			u4DbgIdxValue, u4DbgProbeAddr, u4DbgProbeValue);
 	}
 }
@@ -1439,25 +1439,25 @@ void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
 		u4DmaCfgCr = 0x7c027044;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, VOC, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 
 		u4DmaCfgCr = 0x7c027050;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, VOC, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 
 		u4DmaCfgCr = 0x7c027078;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, VOC, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 
 		u4DmaCfgCr = 0x7c02707C;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, VOC, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 	}
@@ -1488,334 +1488,334 @@ void mt6639_dumpPcieReg(void)
 		0x74030150, &u4RegVal[2]);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030154, &u4RegVal[3]);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"MalfTLP [0x%08x] [0x%08x] [0x%08x] [0x%08x]\n",
 		u4RegVal[0], u4RegVal[1], u4RegVal[2], u4RegVal[3]);
 
-	DBGLOG(HAL, INFO, "Start mt6639_dumpPcieReg.\n");
+	DBGLOG(HAL, VOC, "Start mt6639 dumpPcieReg.\n");
 	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74070000, 0x00000404);
-	DBGLOG(HAL, INFO, "WR CR[0x74070000]=0x00000404\n");
+	DBGLOG(HAL, VOC, "WR CR[0x74070000]=0x00000404\n");
 	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74070010, 0x00AD00AD);
-	DBGLOG(HAL, INFO, "WR CR[0x74070010]=0x00AD00AD\n");
+	DBGLOG(HAL, VOC, "WR CR[0x74070010]=0x00AD00AD\n");
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740700D0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740700D0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740700D0] value[0x%08x]\n", u4Value);
 
 	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74070010, 0x00C500C5);
-	DBGLOG(HAL, INFO, "WR CR[0x74070010]=0x00C500C5\n");
+	DBGLOG(HAL, VOC, "WR CR[0x74070010]=0x00C500C5\n");
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740700D0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740700D0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740700D0] value[0x%08x]\n", u4Value);
 
 	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74070010, 0x008E008E);
-	DBGLOG(HAL, INFO, "WR CR[0x74070010]=0x008E008E\n");
+	DBGLOG(HAL, VOC, "WR CR[0x74070010]=0x008E008E\n");
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740700D0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740700D0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740700D0] value[0x%08x]\n", u4Value);
 
 	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74070010, 0x00940094);
-	DBGLOG(HAL, INFO, "WR CR[0x74070010]=0x00940094\n");
+	DBGLOG(HAL, VOC, "WR CR[0x74070010]=0x00940094\n");
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740700D0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740700D0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740700D0] value[0x%08x]\n", u4Value);
 
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x70003014, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x70003014] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x70003014] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x70025014, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x70025014] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x70025014] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x70025404, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x70025404] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x70025404] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030150, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030150] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030150] value[0x%08x]\n", u4Value);
 
 	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030150, 0x3ffff);
 
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030150, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030150] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030150] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030018, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030018] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030018] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030080, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030080] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030080] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030098, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030098] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030098] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740300C0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740300C0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740300C0] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740300C8, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740300C8] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740300C8] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030150, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030150] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030150] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030154, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030154] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030154] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030180, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030180] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030180] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030184, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030184] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030184] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030188, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030188] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030188] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403018C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403018C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403018C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030194, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030194] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030194] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030198, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030198] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030198] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403019C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403019C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403019C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740301A4, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740301A4] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740301A4] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740301A8, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740301A8] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740301A8] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740301AC, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740301AC] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740301AC] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D00, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D00] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D00] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D38, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D38] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D38] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D3C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D3C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D3C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D40, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D40] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D40] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D44, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D44] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D44] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D48, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D48] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D48] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D4C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D4C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D4C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D50, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D50] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D50] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D54, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D54] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D54] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D58, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D58] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D58] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D5C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D5C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D5C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D60, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D60] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D60] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D64, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D64] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D64] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D68, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D68] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D68] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D6C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D6C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D6C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D70, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D70] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D70] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D74, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D74] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D74] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D78, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D78] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D78] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030D7C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030D7C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030D7C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E00, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E00] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E00] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E04, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E04] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E04] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E08, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E08] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E08] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E0C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E0C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E0C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E10, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E10] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E10] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E14, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E14] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E14] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E18, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E18] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E18] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E1C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E1C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E1C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E20, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E20] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E20] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E24, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E24] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E24] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E28, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E28] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E28] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E2C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E2C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E2C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E30, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E30] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E30] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E34, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E34] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E34] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E38, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E38] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E38] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E3C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E3C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E3C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E40, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E40] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E40] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E44, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E44] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E44] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E48, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E48] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E48] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74030E4C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74030E4C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74030E4C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031000, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031000] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031000] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031004, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031004] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031004] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031008, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031008] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031008] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403100C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403100C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403100C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031010, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031010] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031010] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031014, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031014] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031014] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031018, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031018] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031018] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403101C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403101C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403101C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031080, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031080] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031080] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031020, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031020] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031020] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031024, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031024] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031024] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031084, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031084] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031084] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031088, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031088] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031088] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403108C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403108C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403108C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031090, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031090] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031090] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031094, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031094] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031094] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031098, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031098] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031098] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403109C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403109C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403109C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740310E0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740310E0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740310E0] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740310E4, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740310E4] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740310E4] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740310EC, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740310EC] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740310EC] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740310F0, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740310F0] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740310F0] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740310F4, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x740310F4] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x740310F4] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031110, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031110] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031110] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031114, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031114] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031114] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031118, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031118] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031118] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403111C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403111C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403111C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031200, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031200] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031200] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031204, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031204] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031204] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031208, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031208] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031208] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403120C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403120C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403120C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031210, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031210] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031210] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031214, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031214] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031214] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031218, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x74031218] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x74031218] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403121C, &u4Value);
-	DBGLOG(HAL, INFO, "CR[0x7403121C] value[0x%08x]\n", u4Value);
+	DBGLOG(HAL, VOC, "CR[0x7403121C] value[0x%08x]\n", u4Value);
 }
 
 void mt6639_dumpPcieRegWithScanDump(void)
@@ -1829,7 +1829,7 @@ void mt6639_dumpPcieRegWithScanDump(void)
 		u4RegVal = 0x74030000 + i;
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			u4RegVal, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x%08x] value[0x%08x]\n",
+		DBGLOG(HAL, VOC, "CR[0x%08x] value[0x%08x]\n",
 			u4RegVal, u4Value);
 	}
 }
@@ -1873,72 +1873,72 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 	uint32_t dump_count = 25;
 	uint32_t read_addr = 0x7C059800;
 
-	DBGLOG(HAL, INFO, "Start mt6639_dumpCbtopReg.\n");
+	DBGLOG(HAL, VOC, "Start mt6639 dumpCbtopReg.\n");
 	if (fgIsBusAccessFailed || fgIsMcuOff) {
 
 		/* 1. dump 0x18023C00[31:0] -> 0x7c023c00 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x7c023c00, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x7c023c00] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x7c023c00] value[0x%08x]\n", u4Value);
 
 		/* 2. dump 0x70007204, read patch version */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70007204, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70007204] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70007204] value[0x%08x]\n", u4Value);
 
 		/* 3. dump 0x7002500C, cb_infra_slp_status */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x7002500C, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x7002500C] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x7002500C] value[0x%08x]\n", u4Value);
 
 		/* 4. dump slp_ctrl setting: 0x70025004/0x7002500C/0x70025014 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70025004, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70025004] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70025004] value[0x%08x]\n", u4Value);
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x7002500C, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x7002500C] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x7002500C] value[0x%08x]\n", u4Value);
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70025014, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70025014] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70025014] value[0x%08x]\n", u4Value);
 
 		/* 5. dump slp_ctrl cnt: 0x70025400/0x70025404 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70025400, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70025400] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70025400] value[0x%08x]\n", u4Value);
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70025404, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70025404] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70025404] value[0x%08x]\n", u4Value);
 
 		/* 6. dump ap2conn gals dbg : 0x70026008 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70026008, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70026008] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70026008] value[0x%08x]\n", u4Value);
 
 		/* 7. dump conn2ap gals dbg : 0x70026000 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70026000, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70026000] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70026000] value[0x%08x]\n", u4Value);
 
 		/* 8. dump dma2ap gals dbg : 0x70026100 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70026100, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70026100] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70026100] value[0x%08x]\n", u4Value);
 
 		/* 9. dump 0x70025300  // debug index */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70025300, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70025300] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70025300] value[0x%08x]\n", u4Value);
 
 		/* 10. dump 0x70026550 // debug index */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70026550, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70026550] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70026550] value[0x%08x]\n", u4Value);
 
 		/* 11. dump 0x7002801C // debug index */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x7002801C, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x7002801C] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x7002801C] value[0x%08x]\n", u4Value);
 
 		/* 12. write 0x70003020 = 0x0 // set vlp_uds_ctrl probe 00 */
 		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
@@ -1951,7 +1951,7 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 		/* 14. CBTOP REGs dump 0x70007154 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70007154, &u4Value);
-		DBGLOG(HAL, INFO, "CR[0x70007154] value[0x%08x]\n", u4Value);
+		DBGLOG(HAL, VOC, "CR[0x70007154] value[0x%08x]\n", u4Value);
 
 		/* 15. PCIe debug dump for SDES */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
@@ -1984,7 +1984,7 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			read_addr, &u4Values[9]);
 		read_addr += 4;
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"PCIe debug dump for SDES, 0x70003014=0x%08x, 0x70025404=0x%08x, MCU time=0x%08x, 0x74030150=0x%08x, 0x74030184=0x%08x, 0x70003014=0x%08x, 0x70025404=0x%08x, 0x74030194=0x%08x, 0x70025008=0x%08x, 0x70025014=0x%08x\n",
 			u4Values[0], u4Values[1], u4Values[2], u4Values[3],
 			u4Values[4], u4Values[5], u4Values[6], u4Values[7],
@@ -1998,18 +1998,18 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 						&u4Values[j]);
 				read_addr += 4;
 			}
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"PCIe debug dump for SDES, 1-0x74030150=0x%08x, 2-0x7403002C=0x%08x, 3-0x740700D0=0x%08x, 4-0x74079054=0x%08x, 5-0x70025304=0x%08x, 6-0x70025304=0x%08x, 7-0x70025024=0x%08x, 8-0x7002502C=0x%08x\n",
 				u4Values[0], u4Values[1],
 				u4Values[2], u4Values[3],
 				u4Values[4], u4Values[5],
 				u4Values[6], u4Values[7]);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"PCIe debug dump for SDES, 9-0x740700D0=0x%08x, 10-0x740700D0=0x%08x, 11-0x740700D0=0x%08x, 12-0x740700D0=0x%08x, 13-0x740700D0=0x%08x, 14-0x740700D0=0x%08x\n",
 				u4Values[8], u4Values[9],
 				u4Values[10], u4Values[11],
 				u4Values[12], u4Values[13]);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"PCIe debug dump for SDES, 15-0x740700D0=0x%08x, 16-0x740700D0=0x%08x, 17-0x740700D0=0x%08x, 18-0x740700D0=0x%08x, 19-0x740700D0=0x%08x, 20-0x740700D0=0x%08x\n",
 				u4Values[14], u4Values[15],
 				u4Values[16], u4Values[17],
@@ -2136,14 +2136,14 @@ void _mt6639_dumpWfsyscpupcr(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 			    var_lp);
 	}
 
-	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",
+	DBGLOG(HAL, VOC, "wm pc=%s%s%s%s%s\n",
 		log_buf_pc[0],
 		log_buf_pc[1],
 		log_buf_pc[2],
 		log_buf_pc[3],
 		log_buf_pc[4]);
 
-	DBGLOG(HAL, INFO, "wm lp=%s%s%s%s%s\n",
+	DBGLOG(HAL, VOC, "wm lp=%s%s%s%s%s\n",
 		log_buf_lp[0],
 		log_buf_lp[1],
 		log_buf_lp[2],
@@ -2165,7 +2165,7 @@ void mt6639_dumpPcGprLog(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 	uint32_t pc_dump[PC_LOG_NUM];
 	uint32_t gpr_dump[GPR_LOG_NUM];
 
-	DBGLOG(HAL, INFO, "Dump PC log / GPR log\n");
+	DBGLOG(HAL, VOC, "Dump PC log / GPR log\n");
 
 	mt6639_dump_mcr_wr_field(
 		ad,
@@ -2283,7 +2283,7 @@ static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR;
 	u4WrVal = 0x00000001;
 	mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
@@ -2293,7 +2293,7 @@ static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 		u4WrVal = au4List[u4Idx];
 		mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
 		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_3_1_A%d=0x%08X=0x%08X\n",
 			indexA,
 			u4Val,
@@ -2314,7 +2314,7 @@ static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR;
 	u4WrVal = 0x00000001;
 	mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
@@ -2324,7 +2324,7 @@ static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 		u4WrVal = au4List[u4Idx];
 		mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
 		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_3_1_B%d=0x%08X=0x%08X\n",
 			indexB,
 			u4Val,
@@ -2377,7 +2377,7 @@ static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_3_1_C%d=0x%08X=0x%08X\n",
 			indexC,
 			u4Val,
@@ -2413,7 +2413,7 @@ void _mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 	u4WrVal = 0x4;
 	mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
 	mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
 		indexA,
 		u4Val,
@@ -2426,7 +2426,7 @@ void _mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 		u4WrVal = au4List[u4Idx];
 		mt6639_dump_mcr_wr(ad, u4WrAddr, u4WrVal, fgIsDumpViaBt);
 		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
 			indexA,
 			u4Val,
@@ -2466,7 +2466,7 @@ static void mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad,
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
 			indexB,
 			u4Val,
@@ -2493,7 +2493,7 @@ static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad,
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		mt6639_dump_mcr_rd(ad, u4RdAddr, &u4Val, fgIsDumpViaBt);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_4_1_C%d=0x%08X=0x%08X\n",
 			indexC,
 			u4Val,
@@ -2538,7 +2538,7 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 		HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
 			   &MDDrvOwnStat);
 	}
-	DBGLOG(HAL, INFO, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
+	DBGLOG(HAL, VOC, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
 		WFDrvOwnStat, MDDrvOwnStat);
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 }
@@ -2582,7 +2582,7 @@ void mt6639_DumpBusStatus(struct ADAPTER *ad)
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 
 
-	DBGLOG(HAL, INFO, "Phase1: Trigger PCIe Scan Dump.\n");
+	DBGLOG(HAL, VOC, "Phase1: Trigger PCIe Scan Dump.\n");
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	/* Notify BT to start */
 	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
@@ -2591,7 +2591,7 @@ void mt6639_DumpBusStatus(struct ADAPTER *ad)
 		DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
 		goto start_dump_via_pcie;
 	} else {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		"start BT dump for PCIe EP Scan dump.\n");
 	}
 
@@ -2607,7 +2607,7 @@ void mt6639_DumpBusStatus(struct ADAPTER *ad)
 #endif
 
 start_dump_via_pcie:
-	DBGLOG(HAL, INFO, "Phase2: Trigger Wi-Fi dump via PCIe.\n");
+	DBGLOG(HAL, VOC, "Phase2: Trigger Wi-Fi dump via PCIe.\n");
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
@@ -2631,7 +2631,7 @@ start_dump_via_pcie:
 	mt6639_dumpWfBusReg(ad, FALSE);
 
 start_dump_via_bt:
-	DBGLOG(HAL, INFO, "Phase3: Trigger Wi-Fi dump via BT.\n");
+	DBGLOG(HAL, VOC, "Phase3: Trigger Wi-Fi dump via BT.\n");
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
@@ -2643,7 +2643,7 @@ start_dump_via_bt:
 		DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
 		goto start_dump_via_scp;
 	} else
-		DBGLOG(HAL, INFO, "start BT dump.\n");
+		DBGLOG(HAL, VOC, "start BT dump.\n");
 
 	/* force do dump via BT */
 	mt6639_dumpConninfraBus(ad, TRUE);
@@ -2665,7 +2665,7 @@ start_dump_via_bt:
 
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 start_dump_via_scp:
-	DBGLOG(HAL, INFO, "Phase4: Trigger SCP dump.\n");
+	DBGLOG(HAL, VOC, "Phase4: Trigger SCP dump.\n");
 	connectivity_export_conap_scp_trigger_cmd(CONN_HIF_DBG_WF,
 		CONN_HIF_DBG_CMD_PCIE, 0);
 
@@ -2764,7 +2764,7 @@ void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 	uint32_t mcsIdx;
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
-		DBGLOG(RX, INFO,
+		DBGLOG(RX, VOC,
 			"RXV: pmbl=%lu nsts=%lu stbc=%lu bw=%lu mcs=%lu",
 			RXV_GET_TXMODE(pu4RxV[2]),
 			RXV_GET_RX_NSTS(pu4RxV[0]),
@@ -2846,7 +2846,7 @@ void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 	}
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
-		DBGLOG(RX, INFO, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+		DBGLOG(RX, VOC, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
 			rate.preamble, rate.nss, rate.bw, mcsIdx);
 	return;
 
@@ -4055,12 +4055,12 @@ static u_int8_t usb_mt6639_ConninfraOnRdableChk(struct ADAPTER *ad)
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 	HAL_UHW_RD_FIELD(ad, u4RdAddr, 6, (BIT(6) | BIT(7)), &u4Val);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x[7:6]=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "sleep protect not release, skip further sop dump!\n");
 		return FALSE;
 	}
@@ -4080,7 +4080,7 @@ static u_int8_t usb_mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 	  MAP_DRIVER_SIDE(CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR);
 	HAL_UHW_WR_FIELD(ad, u4Addr, 1, 0, 0x1);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tW 0x%08x[0]=[0x1]\n", u4Addr);
 
 	for (i = 0; i <= CONNINFRA_OFF_POLLING_TIME; i++) {
@@ -4089,7 +4089,7 @@ static u_int8_t usb_mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 		if (u4Val == 0x3)
 			break;
 		else if (i == CONNINFRA_OFF_POLLING_TIME) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 			  "clock not exist, skip further sop dump!\n");
 
 			return FALSE;
@@ -4098,12 +4098,12 @@ static u_int8_t usb_mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 	}
 	u4RdAddr = MAP_DRIVER_SIDE(CONN_CFG_IP_VERSION_ADDR);
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != CONNINFRA_IP_VER) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "IP ver not match, skip further sop dump!\n");
 
 		return FALSE;
@@ -4111,12 +4111,12 @@ static u_int8_t usb_mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 	u4RdAddr =
 	  MAP_DRIVER_SIDE(CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR);
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "conn_infra off bus maybe hang, skip further sop dump!\n");
 
 		return FALSE;
@@ -4134,7 +4134,7 @@ static u_int8_t usb_mt6639_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
 /* CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR */
 	u4RdAddr = 0x1802362C;
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
@@ -4142,7 +4142,7 @@ static u_int8_t usb_mt6639_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
 	  MAP_DRIVER_SIDE(CONN_BUS_CR_ADDR_CONN2SUBSYS_0_AHB_GALS_DBG_ADDR);
 	HAL_UHW_RD_FIELD(ad, u4RdAddr, 26, BIT(26), &u4Val);
 	if (u4Val != 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "conn2wf sleep protect not release, skip further sop dump!\n");
 
 		return FALSE;
@@ -4150,12 +4150,12 @@ static u_int8_t usb_mt6639_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
 
 	u4RdAddr = 0x184B0010;
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != WIFI_IP_VER) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "wifi IP ver not match, skip further sop dump!\n");
 
 		return FALSE;
@@ -4190,7 +4190,7 @@ u_int8_t fgOnDomain)
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_2_1_B%d=0x%08X=0x%08X\n",
 					indexB[i],
 					u4Val,
@@ -4217,7 +4217,7 @@ u_int8_t fgOnDomain)
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_2_1_C%d=0x%08X=0x%08X\n",
 					indexC,
 					u4Val,
@@ -4229,7 +4229,7 @@ u_int8_t fgOnDomain)
 					dump[i].value,
 					dump[i].shift,
 					dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					u4Addr,
 					dump[i].value);
@@ -4239,7 +4239,7 @@ u_int8_t fgOnDomain)
 		size = ARRAY_SIZE(conninfra_pwr_adie_common_dump_list);
 		for (i = 0; i < size; i++) {
 			u4Val = mtk_sys_usb_spi_read(ad, dump[i].addr);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_2_1_D%d=0x%08X=0x%08X\n",
 				indexD,
 				u4Val,
@@ -4251,7 +4251,7 @@ u_int8_t fgOnDomain)
 		size = ARRAY_SIZE(conninfra_pwr_adie_7971_dump_list);
 		for (i = 0; i < size; i++) {
 			u4Val = mtk_sys_usb_spi_read(ad, dump[i].addr);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_2_1_E%d=0x%08X=0x%08X\n",
 				indexE,
 				u4Val,
@@ -4287,7 +4287,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_1_1_A%d=0x%08X=0x%08X\n",
 					indexA,
 					u4Val,
@@ -4299,7 +4299,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					dump[i].value,
 					dump[i].shift,
 					dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					u4Addr,
 					dump[i].value);
@@ -4320,7 +4320,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 					indexB,
 					u4Val,
@@ -4332,7 +4332,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					dump[i].value,
 					dump[i].shift,
 					dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					u4Addr,
 					dump[i].value);
@@ -4346,7 +4346,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 			HAL_UHW_WR(ad, u4WrAddr, u4Idx, &fgStatus);
 
 			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 				indexB,
 				u4Val,
@@ -4357,7 +4357,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 			HAL_UHW_WR(ad, u4WrAddr, u4Idx, &fgStatus);
 
 			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 				indexB,
 				u4Val,
@@ -4379,7 +4379,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 					indexB,
 					u4Val,
@@ -4391,7 +4391,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					dump[i].value,
 					dump[i].shift,
 					dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					u4Addr,
 					dump[i].value);
@@ -4399,7 +4399,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 		}
 		u4RdAddr = CB_INFRA_RGU_SLP_PROT_RDY_STAT_ADDR;
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		"RD 0x%08x=0x%08x\n",
 		u4RdAddr, u4Val);
 
@@ -4418,7 +4418,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_1_2_A%d=0x%08X=0x%08X\n",
 					indexA,
 					u4Val,
@@ -4434,7 +4434,7 @@ static void usb_mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 		}
 		u4Addr = 0x70028730;
 		HAL_UHW_RD(ad, u4Addr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_1_2_A%d=0x%08X=0x%08X\n",
 			indexA, u4Val, u4Addr);
 	}
@@ -4467,7 +4467,7 @@ static void usb_mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_7_1_A%d=0x%08X=0x%08X\n",
 					indexA,
 					u4Val,
@@ -4479,7 +4479,7 @@ static void usb_mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 					dump[i].value,
 					dump[i].shift,
 					dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					u4Addr,
 					dump[i].value);
@@ -4500,7 +4500,7 @@ static void usb_mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 					u4Addr,
 					&u4Val,
 					&fgStatus);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_7_1_B%d=0x%08X=0x%08X\n",
 					indexB[j],
 					u4Val,
@@ -4512,7 +4512,7 @@ static void usb_mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 					dump[i].value,
 					dump[i].shift,
 					dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					u4Addr,
 					dump[i].value);
@@ -4531,7 +4531,7 @@ static void usb_mt6639_dumpConninfraReg(struct ADAPTER *ad)
 
 	u4RdAddr = MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR);
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tR 0x%08x=[0x%08x]\n",
 	       u4RdAddr, u4Val);
 
@@ -4564,7 +4564,7 @@ static void usb_mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
 	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR);
 	u4WrVal = 0x00000001;
 	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
@@ -4576,7 +4576,7 @@ static void usb_mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_3_1_A%d=0x%08X=0x%08X\n",
 			indexA,
 			u4Val,
@@ -4599,7 +4599,7 @@ static void usb_mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
 	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR);
 	u4WrVal = 0x00000001;
 	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
@@ -4611,7 +4611,7 @@ static void usb_mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_3_1_B%d=0x%08X=0x%08X\n",
 			indexB,
 			u4Val,
@@ -4641,7 +4641,7 @@ static void usb_mt6639_dumpWfTopCfgon(struct ADAPTER *ad)
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_3_1_C%d=0x%08X=0x%08X\n",
 			indexC,
 			u4Val,
@@ -4668,7 +4668,7 @@ static void usb_mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
 		indexA,
 		u4Val,
@@ -4683,7 +4683,7 @@ static void usb_mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
 			indexA,
 			u4Val,
@@ -4710,14 +4710,14 @@ static void usb_mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
 	u4WrAddr = 0x18400120;
 	u4WrVal = 0x810F0000;
 	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
 			indexB,
 			u4Val,
@@ -4742,14 +4742,14 @@ static void usb_mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 	u4WrAddr = 0x18400120;
 	u4WrVal = 0x830C0000;
 	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tW 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal);
 
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 			"=PSOP_4_1_C%d=0x%08X=0x%08X\n",
 			indexC,
 			u4Val,
@@ -4817,19 +4817,19 @@ static void usb_mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 	u4Addr =
 	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_CONN_INFRA_SYSSTRAP_OUT_ADDR);
 	HAL_UHW_RD(ad, u4Addr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"\tR 0x%08x=[0x%08x]\n",
 		u4Addr, u4Val);
 
 	u4Addr = 0x18060230;
 	HAL_UHW_RD(ad, u4Addr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"\tR 0x%08x=[0x%08x]\n",
 		u4Addr, u4Val);
 
 	u4Addr = 0x18060200;
 	HAL_UHW_RD(ad, u4Addr, &u4Val, &fgStatus);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"\tR 0x%08x=[0x%08x]\n",
 		u4Addr, u4Val);
 
@@ -4842,7 +4842,7 @@ static void usb_mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 		u4WrVal = au4BgfSelList1[u4Idx];
 		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -4854,7 +4854,7 @@ static void usb_mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 		u4WrVal = au4BgfSelList2[u4Idx];
 		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -4866,7 +4866,7 @@ static void usb_mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 		u4WrVal = au4BgfSelList3[u4Idx];
 		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -4923,7 +4923,7 @@ u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
 
 	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 
-	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	DBGLOG(INIT, VOC, "Current PC LOG: 0x%08x\n", u4Val);
 	if (pucBuf)
 		LOGBUF(pucBuf, u4Max, *pu4Length,
 		"Current PC LOG: 0x%08x\n", u4Val);
@@ -4944,7 +4944,7 @@ u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
 
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 
-		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
+		DBGLOG(INIT, VOC, "PC log contorl=0x%08x\n", u4Val);
 		if (pucBuf)
 			LOGBUF(pucBuf, u4Max, *pu4Length,
 			"PC log contorl=0x%08x\n", u4Val);
@@ -4964,7 +4964,7 @@ u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
 
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 
-		DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
+		DBGLOG(INIT, VOC, "PC log(%d)=0x%08x\n", i, u4Val);
 		if (pucBuf)
 			LOGBUF(pucBuf, u4Max, *pu4Length,
 			"PC log(%d)=0x%08x\n", i, u4Val);
@@ -4990,7 +4990,7 @@ u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
 
 		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 
-		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+		DBGLOG(INIT, VOC, "LR log contorl=0x%08x\n", u4Val);
 
 		u4Addr =
 		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR);
@@ -5011,7 +5011,7 @@ u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
 
 			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
 
-			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			DBGLOG(INIT, VOC, "LR log(%d)=0x%08x\n", i, u4Val);
 			if (pucBuf)
 				LOGBUF(pucBuf, u4Max, *pu4Length,
 				"LR log(%d)=0x%08x\n", i, u4Val);
@@ -5032,12 +5032,12 @@ static u_int8_t mt6639_ConninfraOnRdableChk(struct ADAPTER *ad)
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 	HAL_MCR_RD_FIELD(ad, u4RdAddr, 6, (BIT(6) | BIT(7)), &u4Val);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x[7:6]=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "sleep protect not release, skip further sop dump!\n");
 		return FALSE;
 	}
@@ -5055,7 +5055,7 @@ static u_int8_t mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 	u4Addr = CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR;
 	HAL_MCR_WR_FIELD(ad, u4Addr, 1, 0, 0x1);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tW 0x%08x[0]=[0x1]\n", u4Addr);
 
 	for (i = 0; i <= CONNINFRA_OFF_POLLING_TIME; i++) {
@@ -5064,7 +5064,7 @@ static u_int8_t mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 		if (u4Val == 0x3)
 			break;
 		else if (i == CONNINFRA_OFF_POLLING_TIME) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 			  "clock not exist, skip further sop dump!\n");
 
 			return FALSE;
@@ -5073,24 +5073,24 @@ static u_int8_t mt6639_ConninfraOffRdableChk(struct ADAPTER *ad)
 	}
 	u4RdAddr = CONN_CFG_IP_VERSION_ADDR;
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != CONNINFRA_IP_VER) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "IP ver not match, skip further sop dump!\n");
 
 		return FALSE;
 	}
 	u4RdAddr = CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR;
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "conn_infra off bus maybe hang, skip further sop dump!\n");
 
 		return FALSE;
@@ -5108,14 +5108,14 @@ static u_int8_t mt6639_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
 /* CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR */
 	u4RdAddr = 0x7C02362C;
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	u4RdAddr = CONN_BUS_CR_ADDR_CONN2SUBSYS_0_AHB_GALS_DBG_ADDR;
 	HAL_MCR_RD_FIELD(ad, u4RdAddr, 26, BIT(26), &u4Val);
 	if (u4Val != 0) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "conn2wf sleep protect not release, skip further sop dump!\n");
 
 		return FALSE;
@@ -5123,12 +5123,12 @@ static u_int8_t mt6639_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
 
 	u4RdAddr = 0x184B0010;
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	   "\tR 0x%08x=[0x%08x]\n",
 	   u4RdAddr, u4Val);
 
 	if (u4Val != WIFI_IP_VER) {
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		  "wifi IP ver not match, skip further sop dump!\n");
 
 		return FALSE;
@@ -5156,7 +5156,7 @@ static void mt6639_dumpConninfraPwrDbg(struct ADAPTER *ad, u_int8_t fgOnDomain)
 				HAL_MCR_RD(ad,
 					dump[i].addr,
 					&u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_2_1_B%d=0x%08X=0x%08X\n",
 					indexB[i],
 					u4Val,
@@ -5178,7 +5178,7 @@ static void mt6639_dumpConninfraPwrDbg(struct ADAPTER *ad, u_int8_t fgOnDomain)
 				HAL_MCR_RD(ad,
 					dump[i].addr,
 					&u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_2_1_C%d=0x%08X=0x%08X\n",
 					indexC,
 					u4Val,
@@ -5190,7 +5190,7 @@ static void mt6639_dumpConninfraPwrDbg(struct ADAPTER *ad, u_int8_t fgOnDomain)
 				dump[i].value,
 				dump[i].shift,
 				dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					dump[i].addr,
 					dump[i].value);
@@ -5200,7 +5200,7 @@ static void mt6639_dumpConninfraPwrDbg(struct ADAPTER *ad, u_int8_t fgOnDomain)
 		size = ARRAY_SIZE(conninfra_pwr_adie_common_dump_list);
 		for (i = 0; i < size; i++) {
 			u4Val = mtk_sys_pci_spi_read(ad, dump[i].addr);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_2_1_D%d=0x%08X=0x%08X\n",
 				indexD,
 				u4Val,
@@ -5212,7 +5212,7 @@ static void mt6639_dumpConninfraPwrDbg(struct ADAPTER *ad, u_int8_t fgOnDomain)
 		size = ARRAY_SIZE(conninfra_pwr_adie_7971_dump_list);
 		for (i = 0; i < size; i++) {
 			u4Val = mtk_sys_pci_spi_read(ad, dump[i].addr);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_2_1_E%d=0x%08X=0x%08X\n",
 				indexE,
 				u4Val,
@@ -5241,7 +5241,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				HAL_MCR_RD(ad,
 					   dump[i].addr,
 					   &u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_1_1_A%d=0x%08X=0x%08X\n",
 					indexA,
 					u4Val,
@@ -5253,7 +5253,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				dump[i].value,
 				dump[i].shift,
 				dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					dump[i].addr,
 					dump[i].value);
@@ -5267,7 +5267,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				HAL_MCR_RD(ad,
 					   dump[i].addr,
 					   &u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 					indexB,
 					u4Val,
@@ -5279,7 +5279,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				dump[i].value,
 				dump[i].shift,
 				dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					dump[i].addr,
 					dump[i].value);
@@ -5291,7 +5291,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 			HAL_MCR_WR(ad, u4WrAddr, u4Idx);
 
 			HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 				indexB,
 				u4Val,
@@ -5302,7 +5302,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 			HAL_MCR_WR(ad, u4WrAddr, u4Idx);
 
 			HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
 				indexB,
 				u4Val,
@@ -5317,7 +5317,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				HAL_MCR_RD(ad,
 					   dump[i].addr,
 					   &u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 				"=PSOP_1_1_C%d=0x%08X=0x%08X\n",
 				indexC,
 				u4Val,
@@ -5328,7 +5328,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				dump[i].value,
 				dump[i].shift,
 				dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					dump[i].addr,
 					dump[i].value);
@@ -5336,7 +5336,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 		}
 		u4RdAddr = CB_INFRA_RGU_SLP_PROT_RDY_STAT_ADDR;
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		"RD 0x%08x=0x%08x\n",
 		u4RdAddr, u4Val);
 
@@ -5348,7 +5348,7 @@ static void mt6639_dumpConninfraBusDbg(struct ADAPTER *ad,
 				HAL_MCR_RD(ad,
 					   dump[i].addr,
 					   &u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 				"=PSOP_1_2_A%d=0x%08X=0x%08X\n",
 				indexA,
 				u4Val,
@@ -5383,7 +5383,7 @@ static void mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 				HAL_MCR_RD(ad,
 					   dump[i].addr,
 					   &u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_7_1_A%d=0x%08X=0x%08X\n",
 					indexA,
 					u4Val,
@@ -5395,7 +5395,7 @@ static void mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 				dump[i].value,
 				dump[i].shift,
 				dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					dump[i].addr,
 					dump[i].value);
@@ -5409,7 +5409,7 @@ static void mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 				HAL_MCR_RD(ad,
 					   dump[i].addr,
 					   &u4Val);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"=PSOP_7_1_B%d=0x%08X=0x%08X\n",
 					indexB,
 					u4Val,
@@ -5421,7 +5421,7 @@ static void mt6639_dumpConninfraClkDbg(struct ADAPTER *ad,
 				dump[i].value,
 				dump[i].shift,
 				dump[i].mask);
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, VOC,
 					"WR 0x%08x=0x%08x\n",
 					dump[i].addr,
 					dump[i].value);
@@ -5440,7 +5440,7 @@ static void mt6639_dumpConninfraReg(struct ADAPTER *ad)
 
 	u4RdAddr = CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR;
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 	       "\tR 0x%08x=[0x%08x]\n",
 	       u4RdAddr, u4Val);
 
@@ -5514,19 +5514,19 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 	/* 1. Power check */
 	u4Addr = CONN_HOST_CSR_TOP_CONN_INFRA_SYSSTRAP_OUT_ADDR;
 	HAL_MCR_RD(ad, u4Addr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"\tR 0x%08x=[0x%08x]\n",
 		u4Addr, u4Val);
 
 	u4Addr = 0x7C060230;
 	HAL_MCR_RD(ad, u4Addr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"\tR 0x%08x=[0x%08x]\n",
 		u4Addr, u4Val);
 
 	u4Addr = 0x7C060200;
 	HAL_MCR_RD(ad, u4Addr, &u4Val);
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, VOC,
 		"\tR 0x%08x=[0x%08x]\n",
 		u4Addr, u4Val);
 
@@ -5537,7 +5537,7 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 		u4WrVal = au4BgfSelList1[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -5547,7 +5547,7 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 		u4WrVal = au4BgfSelList2[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -5557,7 +5557,7 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 		u4WrVal = au4BgfSelList3[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, VOC,
 		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
 		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
@@ -5608,7 +5608,7 @@ u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
 		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 		&u4Val);
 
-	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	DBGLOG(INIT, VOC, "Current PC LOG: 0x%08x\n", u4Val);
 	if (pucBuf)
 		LOGBUF(pucBuf, u4Max, *pu4Length,
 		"Current PC LOG: 0x%08x\n", u4Val);
@@ -5629,7 +5629,7 @@ u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
 			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 			&u4Val);
 
-		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
+		DBGLOG(INIT, VOC, "PC log contorl=0x%08x\n", u4Val);
 		if (pucBuf)
 			LOGBUF(pucBuf, u4Max, *pu4Length,
 			"PC log contorl=0x%08x\n", u4Val);
@@ -5644,7 +5644,7 @@ u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
 			  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 			  &u4Val);
 
-			DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
+			DBGLOG(INIT, VOC, "PC log(%d)=0x%08x\n", i, u4Val);
 			if (pucBuf)
 				LOGBUF(pucBuf, u4Max, *pu4Length,
 				"PC log(%d)=0x%08x\n", i, u4Val);
@@ -5662,7 +5662,7 @@ u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
 		HAL_MCR_RD(ad,
 			CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
 			&u4Val);
-		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+		DBGLOG(INIT, VOC, "LR log contorl=0x%08x\n", u4Val);
 		if (pucBuf)
 			LOGBUF(pucBuf, u4Max, *pu4Length,
 			"LR log contorl=0x%08x\n", u4Val);
@@ -5676,7 +5676,7 @@ u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
 			HAL_MCR_RD(ad,
 			  CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
 			  &u4Val);
-			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			DBGLOG(INIT, VOC, "LR log(%d)=0x%08x\n", i, u4Val);
 			if (pucBuf)
 				LOGBUF(pucBuf, u4Max, *pu4Length,
 				"LR log(%d)=0x%08x\n", i, u4Val);

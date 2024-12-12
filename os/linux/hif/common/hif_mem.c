@@ -267,7 +267,7 @@ int halInitResvMem(struct platform_device *pdev,
 		else {
 			gWifiRsvMemSize[u4RsvMemIdx] =
 				(unsigned long long) RsvMemSize;
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, VOC,
 				"MPU-in-lk gWifiRsvMemSize[%u]: 0x%llx\n",
 				u4RsvMemIdx, gWifiRsvMemSize[u4RsvMemIdx]);
 		}
@@ -375,7 +375,7 @@ static int halInitHifMem(struct platform_device *pdev,
 	if (!grMem.pucRsvMemBase[u4RsvMemIdx])
 		return -1;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, VOC,
 		"pucRsvMemBase[%u][%pa], pucRsvMemVirBase[%u][%pa]\n",
 		u4RsvMemIdx, &grMem.pucRsvMemBase[u4RsvMemIdx],
 		u4RsvMemIdx, &grMem.pucRsvMemVirBase[u4RsvMemIdx]);
@@ -564,7 +564,7 @@ int halAllocHifMem(struct platform_device *pdev,
 	}
 #endif /* HIF_TX_PREALLOC_DATA_BUFFER */
 
-	DBGLOG(INIT, INFO, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
+	DBGLOG(INIT, VOC, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
 		grMem.u4Offset[WIFI_RSV_MEM_WFDMA]);
 
 	return 0;
@@ -1509,7 +1509,7 @@ void halCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 		prAddr = prDmaBuf->AllocVa;
 
 	if (prAddr)
-		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
+		DBGLOG_MEM32(HAL, VOC, prAddr, u4DumpLen);
 }
 
 void halCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
@@ -1523,7 +1523,7 @@ void halCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 	prDmaBuf = &prRxCell->DmaBuf;
 
 	if (prRxCell->pPacket)
-		DBGLOG_MEM32(HAL, INFO, prRxCell->pPacket, u4DumpLen);
+		DBGLOG_MEM32(HAL, VOC, prRxCell->pPacket, u4DumpLen);
 }
 
 void halZeroCopyPathAllocDesc(struct GL_HIF_INFO *prHifInfo,
@@ -1851,7 +1851,7 @@ void halZeroCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 		prAddr = prTxCell->pBuffer;
 
 	if (prAddr)
-		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
+		DBGLOG_MEM32(HAL, VOC, prAddr, u4DumpLen);
 }
 
 void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
@@ -1875,7 +1875,7 @@ void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 	halZeroCopyPathUnmapRxBuf(prHifInfo, prDmaBuf->AllocPa,
 				  prDmaBuf->AllocSize);
 
-	DBGLOG_MEM32(HAL, INFO, ((struct sk_buff *)prRxCell->pPacket)->data,
+	DBGLOG_MEM32(HAL, VOC, ((struct sk_buff *)prRxCell->pPacket)->data,
 		     u4DumpLen);
 
 	prDmaBuf->AllocPa = halZeroCopyPathMapRxBuf(
@@ -2146,7 +2146,7 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 		}
 		skb_queue_tail(&g_rHifSkbList, prSkb);
 	}
-	DBGLOG(HAL, INFO, "hif skb reserve count[%u]!\n", u4Num);
+	DBGLOG(HAL, VOC, "hif skb reserve count[%u]!\n", u4Num);
 
 exit:
 	return fgRet;

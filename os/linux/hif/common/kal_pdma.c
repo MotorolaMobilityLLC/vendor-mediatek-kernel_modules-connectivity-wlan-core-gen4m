@@ -695,7 +695,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -714,7 +714,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -730,7 +730,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -756,7 +756,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -782,7 +782,7 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Read success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, *pu4Value);
 			return TRUE;
@@ -827,7 +827,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -846,7 +846,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -862,7 +862,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -888,7 +888,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;
@@ -914,7 +914,7 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
 		if (ret == 0) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"Write success: CR[0x%08x] value[0x%08x]\n",
 				u4Register, u4Value);
 			return TRUE;

@@ -286,7 +286,7 @@ static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
 	}
 
 	if (ucNeedDump) {
-		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
+		DBGLOG(INIT, VOC, "Time:%u, Timeout:%u, Cnt:%u\n",
 		       u4StartTime, u4Timeout, u4Cnt);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
@@ -464,7 +464,7 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 		} else if (kalIsCardRemoved(prAdapter->prGlueInfo) ||
 			   fgIsBusAccessFailed || fgTimeout
 			   || wlanIsChipNoAck(prAdapter)) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, VOC,
 			       "Skip waiting CR4 ready for next %ums\n",
 			       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 			fgStatus = FALSE;
@@ -497,7 +497,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, VOC,
 		   "Driver own timeout %u ms\n",
 		   u4DrvOwnTimeoutMs);
 
@@ -518,7 +518,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		       kalIsCardRemoved(prAdapter->prGlueInfo),
 		       wlanIsChipNoAck(prAdapter),
 		       prAdapter->u4OwnFailedCount);
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, VOC,
 		       "Skip LP own back failed log for next %ums\n",
 		       u4DrvOwnTimeoutMs);
 
@@ -530,7 +530,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 			mtk_pcie_dump_link_info(0);
 #endif
 			if (in_interrupt())
-				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
+				DBGLOG(INIT, VOC, "Skip reset in tasklet\n");
 			else {
 #else  /* (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0) */
 			{
@@ -689,7 +689,7 @@ done:
 			prAdapter->u4OwnFailedLogCount = 0;
 			break;
 		} else if (wlanIsChipNoAck(prAdapter)) {
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, VOC,
 			"Driver own return due to chip reset and chip no response.\n");
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 			prChipInfo->prDebugOps->show_debug_sop_info(prAdapter,
@@ -704,7 +704,7 @@ done:
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 			if (fgResult) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, VOC,
 					"host pending recover.\n");
 				goto done;
 			}
@@ -779,7 +779,7 @@ done:
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 
 	} else
-		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
+		DBGLOG(INIT, VOC, DUMP_DRV_OWN_FAIL,
 			u4DrvOwnElapsed, u4Send);
 
 end:
@@ -933,7 +933,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	halManualUpdateWfdmaDmaDone(prAdapter);
 #if CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 	if (!halIsWfdmaTxRingEmpty(prAdapter)) {
-		DBGLOG(INIT, INFO, "halIsWfdmaTxRing not Empty\n");
+		DBGLOG(INIT, VOC, "halIsWfdmaTxRing not Empty\n");
 		goto unlock;
 	}
 #endif  /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
@@ -990,7 +990,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 			DBGLOG(INIT, TRACE, "FW OWN:%u, IntSta:0x%08x\n",
 			fgResult, prHifInfo->u4WakeupIntSta);
 		else
-			DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
+			DBGLOG(INIT, VOC, "FW OWN:%u, IntSta:0x%08x\n",
 			fgResult, prHifInfo->u4WakeupIntSta);
 		prHifInfo->u4WakeupIntSta = 0;
 	}
@@ -1049,7 +1049,7 @@ u_int8_t halTxIsCmdBufEnough(struct ADAPTER *prAdapter)
 		return TRUE;
 
 	halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo, u2Port);
-	DBGLOG(HAL, INFO, "Force recycle port %d DMA resource UsedCnt[%d].\n",
+	DBGLOG(HAL, VOC, "Force recycle port %d DMA resource UsedCnt[%d].\n",
 	       u2Port, prTxRing->u4UsedCnt);
 
 	if (prTxRing->u4UsedCnt + 1 < prTxRing->u4RingSize)
@@ -1329,7 +1329,7 @@ u_int8_t halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 
 	spin_lock_init(&prTokenInfo->rTokenLock);
 
-	DBGLOG(HAL, INFO, "Msdu Token Init: Tot[%u] Used[%u]\n",
+	DBGLOG(HAL, VOC, "Msdu Token Init: Tot[%u] Used[%u]\n",
 		prTokenInfo->u4TokenNum, prTokenInfo->u4UsedCnt);
 #if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
 	halGetTxCmaNonCacheMemUsage();
@@ -1446,7 +1446,7 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 	halUninitTxCmaNonCacheMem();
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
-	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
+	DBGLOG(HAL, VOC, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
 		prTokenInfo->u4TokenNum, prTokenInfo->u4UsedCnt);
 }
 
@@ -1575,7 +1575,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_HIF_FIFO_TOKEN
 	if (!KAL_FIFO_OUT(&prTokenInfo->rTokenFifo, prToken) || !prToken) {
-		DBGLOG(HAL, INFO, "acquire MSDU token fail, Used[%u]\n",
+		DBGLOG(HAL, VOC, "acquire MSDU token fail, Used[%u]\n",
 		       u4UsedCnt);
 		return NULL;
 	}
@@ -1865,7 +1865,7 @@ void halTxDelayTimeout(unsigned long arg)
 #endif /* CFG_SUPPORT_HRTIMER */
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip tx delay timeout\n");
+		DBGLOG(HAL, VOC, "GLUE_FLAG_HALT skip tx delay timeout\n");
 #if CFG_SUPPORT_HRTIMER
 		return HRTIMER_NORESTART;
 #else /* CFG_SUPPORT_HRTIMER == 0 */
@@ -2016,7 +2016,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
-		DBGLOG(INIT, INFO, "[SER][L0.5] Host re-initialize WFDMA\n");
+		DBGLOG(INIT, VOC, "[SER][L0.5] Host re-initialize WFDMA\n");
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		halOffloadAllocMem(prAdapter->prGlueInfo, FALSE);
@@ -2027,7 +2027,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 			return false;
 
 		halResetMsduToken(prAdapter);
-		DBGLOG(INIT, INFO, "[SER][L0.5] Host enable WFDMA\n");
+		DBGLOG(INIT, VOC, "[SER][L0.5] Host enable WFDMA\n");
 		halWpdmaInitRing(prAdapter->prGlueInfo, false);
 	} else
 #endif
@@ -2128,7 +2128,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	}
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
-	DBGLOG(HAL, INFO, "Enable Host CSR timeout mechanism.\n");
+	DBGLOG(HAL, VOC, "Enable Host CSR timeout mechanism.\n");
 	HAL_MCR_WR(prAdapter, HOST_CSR_BUS_TIMOUT_CTRL_ADDR, 0x80EFFFFF);
 #endif
 
@@ -4972,7 +4972,7 @@ static void halDefaultProcessSoftwareInterrupt(
 
 	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
 		       MCU2HOST_SW_INT_STA, &u4Status);
-	DBGLOG(HAL, INFO, "SER status[0x%x].\n", u4Status);
+	DBGLOG(HAL, VOC, "SER status[0x%x].\n", u4Status);
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
@@ -5095,13 +5095,13 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 
 	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
 	    ERR_RECOV_STOP_IDLE) {
-		DBGLOG(HAL, INFO, "In SER, skip SER event\n");
+		DBGLOG(HAL, VOC, "In SER, skip SER event\n");
 		return;
 	}
 
 	halSerRecovery(prAdapter);
 
-	DBGLOG(HAL, INFO, "Set Driver Ser\n");
+	DBGLOG(HAL, VOC, "Set Driver Ser\n");
 	halTriggerSwInterrupt(prAdapter, MCU_INT_DRIVER_SER);
 }
 
@@ -5115,7 +5115,7 @@ static void halStartSerTimer(struct ADAPTER *prAdapter)
 	prHifInfo->rErrRecoveryCtl.u4TimeoutCnt = 0;
 	mod_timer(&prHifInfo->rSerTimer,
 		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
-	DBGLOG(HAL, INFO, "Start SER timer\n");
+	DBGLOG(HAL, VOC, "Start SER timer\n");
 }
 
 void halHwRecoveryFromError(struct ADAPTER *prAdapter)
@@ -5773,7 +5773,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
+	DBGLOG(INIT, VOC, "Power off Wi-Fi!\n");
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
@@ -5781,7 +5781,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 
 	if (nicProcessISTWithSpecifiedCount(prAdapter, 5) !=
 		WLAN_STATUS_NOT_INDICATING)
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, VOC,
 		       "Handle pending interrupt\n");
 
 	/* check hif_thread remaining SER bit */
@@ -5802,7 +5802,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		kalMsleep(HIF_SER_POWER_OFF_RETRY_TIME);
 		u4Retry++;
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
-		DBGLOG(INIT, INFO, "process SER...\n");
+		DBGLOG(INIT, VOC, "process SER...\n");
 	}
 	prAdapter->fgIsPwrOffProcIST = FALSE;
 
@@ -7055,7 +7055,7 @@ void kalWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	if (!prGlueInfo) {
-		DBGLOG(REQ, INFO, "prGlueInfo null");
+		DBGLOG(REQ, VOC, "prGlueInfo null");
 		return;
 	}
 
