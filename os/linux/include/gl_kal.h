@@ -1330,11 +1330,11 @@ void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
 #if CFG_SUPPORT_SA_LOG
 #define kalPrint(_Fmt...) \
 	((get_wifi_standalone_log_mode() == 1) \
-	? kalPrintSALog(WLAN_TAG _Fmt) \
+	? kalPrintSALog(_Fmt) \
 	: pr_info(WLAN_TAG _Fmt))
 #define kalPrintLimited(_Fmt...) \
 	((get_wifi_standalone_log_mode() == 1) \
-	? kalPrintSALogLimited(WLAN_TAG _Fmt) \
+	? kalPrintSALogLimited(_Fmt) \
 	: pr_info_ratelimited(WLAN_TAG _Fmt))
 #else
 #define kalPrint(_Fmt...)               pr_info(WLAN_TAG _Fmt)
