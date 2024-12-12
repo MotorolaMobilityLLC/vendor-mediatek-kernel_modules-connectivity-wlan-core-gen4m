@@ -5212,7 +5212,7 @@ void wlanSetMcGroupList(struct GLUE_INFO *prGlueInfo,
 	struct net_device *prDev,
 	uint8_t fgEnable,
 	uint8_t *prNum,
-	uint8_t *prAddrList)
+	struct PARAM_MULTICAST_LIST *prAddrList)
 {
 	uint16_t u2GroupAddrCount = 0, u2TotalLen = 0;
 	uint8_t *prOfldBuf = NULL, *prPos = NULL;
@@ -5277,12 +5277,12 @@ void wlanSetMcGroupList(struct GLUE_INFO *prGlueInfo,
 			if (prAddrList &&
 					u2GroupAddrCount < MAX_NUM_GROUP_ADDR) {
 				kalMemCopy(
-				&prAddrList[MAC_ADDR_LEN * u2GroupAddrCount],
+				&prAddrList->aucMcAddrList[u2GroupAddrCount],
 				aucMcAddr, MAC_ADDR_LEN);
 
 				for (i = 0; i < IPV4_ADDR_LEN; i++) {
-					prAddrList[
-					MAC_ADDR_LEN * u2GroupAddrCount + i + 2]
+					prAddrList->aucMcAddrList[
+					u2GroupAddrCount][i + 2]
 						|= prPos[i] & (~aucMcIpMask[i]);
 				}
 			}
@@ -5317,7 +5317,7 @@ void wlanSetMcGroupList(struct GLUE_INFO *prGlueInfo,
 		if (u2GroupAddrCount > 0) {
 			if (prNum) {
 				kalMemCopy(
-				&prAddrList[MAC_ADDR_LEN * u2GroupAddrCount],
+				&prAddrList->aucMcAddrList[u2GroupAddrCount],
 				aucDstMcAddr, MAC_ADDR_LEN);
 				*prNum = u2GroupAddrCount + 1;
 			}
@@ -5398,7 +5398,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 					"Processing u4Idx %d\n", u4Idx);
 			wlanSetMcGroupList(prGlueInfo, prDev, TRUE,
 						&ucNum,
-						&rMcAddrList.aucMcAddrList[0]);
+						&rMcAddrList);
 #endif
 #endif
 			if (ucNum < MAX_NUM_GROUP_ADDR) {
