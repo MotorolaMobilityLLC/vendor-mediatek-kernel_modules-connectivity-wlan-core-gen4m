@@ -869,8 +869,6 @@ p2pDevFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 			== prChnlReqInfo->ucReqChnlNum);
 		ASSERT(prMsgChGrant->eReqType
 			== prChnlReqInfo->eChnlReqType);
-		ASSERT(prMsgChGrant->u4GrantInterval
-			== prChnlReqInfo->u4MaxInterval);
 
 		prChnlReqInfo->u4MaxInterval = prMsgChGrant->u4GrantInterval;
 
