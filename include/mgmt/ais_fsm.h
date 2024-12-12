@@ -97,16 +97,16 @@
 
 #define RCPI_FOR_DONT_ROAM                      60 /*-80dbm*/
 
-#define AIS_BTM_DIS_IMMI_TIMEOUT	    10000 /* MSEC */
+#define AIS_BTM_DIS_IMMI_THRESHOLD	    60000 /* MSEC */
 #define AIS_BTM_DIS_IMMI_STATE_0	    0
 #define AIS_BTM_DIS_IMMI_STATE_1	    1
 #define AIS_BTM_DIS_IMMI_STATE_2	    2
 #define AIS_BTM_DIS_IMMI_STATE_3	    3
-#define AIS_BTM_TIMER_THRESHOLD		    10000 /* MSEC */
 
 #define AIS_FT_R0		0
 #define AIS_FT_R1		1
 
+#define AIS_MAX_QUERIED_BSSID_NUM	    5
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -272,16 +272,19 @@ struct AIS_SPECIFIC_BSS_INFO {
 #endif
 	struct ESS_CHNL_INFO arCurEssChnlInfo[CFG_MAX_NUM_OF_CHNL_INFO];
 	uint8_t ucCurEssChnlInfoNum;
+	uint8_t aucCurEssChnlBitMap[64];
+
 	struct LINK rCurEssLink;
 	struct AP_COLLECTION *arApHash[AP_HASH_SIZE];
 
 	/* end Support AP Selection */
 
 	struct BSS_TRANSITION_MGT_PARAM rBTMParam;
-	struct TIMER rBTMDisassocTimer;
-	struct LINK_MGMT  rNeighborApList;
+	struct LINK_MGMT rNeighborApList;
 	OS_SYSTIME rNeiApRcvTime;
 	uint32_t u4NeiApValidInterval;
+	uint8_t aucQueriedBssid[AIS_MAX_QUERIED_BSSID_NUM][MAC_ADDR_LEN];
+	uint8_t ucQueriedBssidIdx;
 
 #if CFG_SUPPORT_ASSURANCE
 	uint8_t fgRoamingReasonEnable;
@@ -464,6 +467,7 @@ struct AIS_FSM_INFO {
 	u_int8_t ucAisIndex;
 
 	u_int8_t fgIsScanning;
+	OS_SYSTIME rScanDoneTime;
 
 	u_int8_t fgIsChannelRequested;
 	u_int8_t fgIsChannelGranted;
@@ -1102,10 +1106,6 @@ struct TIMER *aisGetSecModeChangeTimer(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif
-
-struct TIMER *aisGetBTMDisassocTimer(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
 
 struct TIMER *aisGetScanDoneTimer(
 	struct ADAPTER *prAdapter,

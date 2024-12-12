@@ -1109,7 +1109,8 @@ scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
 			  enum ENUM_MSG_ID eMsgId,
 			  uint8_t ucSeqNum,
 			  uint8_t ucBssIndex,
-			  enum ENUM_SCAN_STATUS eScanStatus);
+			  enum ENUM_SCAN_STATUS eScanStatus,
+			  enum EUNM_MSG_SEND_METHOD eMethod);
 
 /*----------------------------------------------------------------------------*/
 /* Query for sparse channel                                                   */

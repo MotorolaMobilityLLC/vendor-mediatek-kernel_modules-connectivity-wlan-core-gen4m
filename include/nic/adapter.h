@@ -1242,8 +1242,9 @@ struct WIFI_VAR {
 	uint32_t fgDisBcnLostDetection;
 	uint32_t fgDisAgingLostDetection;
 	uint32_t fgDisRoaming;		/* 0:enable roaming 1:disable */
-	uint8_t  fgDisGTKCipherCheck;
-	uint8_t  fgDisSecurityCheck;
+	uint8_t fgDisGTKCipherCheck;
+	uint8_t fgDisSecurityCheck;
+	uint8_t fgDisClearECL;
 	uint32_t u4RejectBtmReqReason;
 	uint32_t fgRoamByBTO;
 	uint32_t u4AisRoamingNumber;

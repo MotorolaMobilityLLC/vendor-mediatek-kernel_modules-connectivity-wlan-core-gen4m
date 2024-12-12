@@ -628,7 +628,8 @@ void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 				prScanParam->eMsgId,
 				prScanParam->ucSeqNum,
 				prScanParam->ucBssIndex,
-				eStatus);
+				eStatus,
+				MSG_SEND_METHOD_UNBUF);
 
 			/* switch to next pending scan */
 			scnFsmSteps(prAdapter, SCAN_STATE_IDLE);
@@ -637,6 +638,10 @@ void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 				prScanCancel->ucSeqNum,
 				prScanCancel->ucBssIndex);
 		}
+	} else {
+		scnFsmRemovePendingMsg(prAdapter,
+			prScanCancel->ucSeqNum,
+			prScanCancel->ucBssIndex);
 	}
 
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -970,7 +975,8 @@ void scnFsmRemovePendingMsg(struct ADAPTER *prAdapter, uint8_t ucSeqNum,
 				/* generate scan-done event for caller */
 				scnFsmGenerateScanDoneMsg(prAdapter,
 					prPendingMsgHdr->eMsgId, ucSeqNum,
-					ucBssIndex, SCAN_STATUS_CANCELLED);
+					ucBssIndex, SCAN_STATUS_CANCELLED,
+					MSG_SEND_METHOD_UNBUF);
 			}
 
 			/* remove from pending list */
@@ -1446,7 +1452,8 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 		/* generate scan-done event for caller */
 		scnFsmGenerateScanDoneMsg(prAdapter,
 			prScanParam->eMsgId, prScanParam->ucSeqNum,
-			prScanParam->ucBssIndex, SCAN_STATUS_DONE);
+			prScanParam->ucBssIndex, SCAN_STATUS_DONE,
+			MSG_SEND_METHOD_BUF);
 
 		/* switch to next pending scan */
 		scnFsmSteps(prAdapter, SCAN_STATE_IDLE);
@@ -1622,7 +1629,7 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 void
 scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
 	enum ENUM_MSG_ID eMsgId, uint8_t ucSeqNum, uint8_t ucBssIndex,
-	enum ENUM_SCAN_STATUS eScanStatus)
+	enum ENUM_SCAN_STATUS eScanStatus, enum EUNM_MSG_SEND_METHOD eMethod)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -1668,7 +1675,7 @@ scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
 	prScanDoneMsg->eScanStatus = eScanStatus;
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
-		(struct MSG_HDR *) prScanDoneMsg, MSG_SEND_METHOD_BUF);
+		(struct MSG_HDR *) prScanDoneMsg, eMethod);
 
 }	/* end of scnFsmGenerateScanDoneMsg() */
 

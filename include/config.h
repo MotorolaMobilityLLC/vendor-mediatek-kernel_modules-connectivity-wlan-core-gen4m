@@ -925,11 +925,7 @@
 #define MAX_WSC_IE_LENGTH                       (400)
 #define MAX_TPE_IE_LENGTH                       (64)
 
-#if (CFG_EXT_ROAMING == 1)
-#define CFG_MAX_NUM_OF_CHNL_INFO                (MAXIMUM_OPERATION_CHANNEL_LIST)
-#else
-#define CFG_MAX_NUM_OF_CHNL_INFO                50
-#endif
+#define CFG_MAX_NUM_OF_CHNL_INFO		(MAXIMUM_OPERATION_CHANNEL_LIST)
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Load Setup Default

@@ -165,7 +165,6 @@ struct ROAMING_INFO {
 	enum ENUM_ROAMING_EVENT eCurrentEvent[MAX_BSSID_NUM];
 	uint32_t u4BssIdxBmap;
 
-	OS_SYSTIME rRoamingDiscoveryUpdateTime;
 #if CFG_SUPPORT_DRIVER_ROAMING
 	OS_SYSTIME rRoamingLastDecisionTime;
 #endif

@@ -16609,8 +16609,6 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 		struct ROAMING_INFO *prRoamingFsmInfo =
 			aisGetRoamingInfo(prAdapter, ucBssIndex);
-		struct AIS_FSM_INFO *prAisFsmInfo =
-			aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 		DBGLOG(OID, INFO, "FW event is [%s]\n", pucCmd);
 		wlanCfgParseArgument(pucCmd, &i4Argc, apcArgv);
@@ -16626,7 +16624,6 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanCount);
 			kalkStrtou8(apcArgv[3], 0,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanMode);
-			prAisFsmInfo->ucScanTrialCount = 0;
 		}
 
 		/* Check roaming FSM and CSA states*/

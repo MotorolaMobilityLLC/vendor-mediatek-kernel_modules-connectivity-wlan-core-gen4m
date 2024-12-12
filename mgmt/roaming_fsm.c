@@ -501,7 +501,6 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	/* 4 <1> Initiate FSM */
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
-	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
 	prRoamingFsmInfo->u4BssIdxBmap = 0;
 	prRoamingFsmInfo->rRoamScanParam.ucScanType = ROAMING_SCAN_TYPE_NORMAL;
 	prRoamingFsmInfo->rRoamScanParam.ucScanCount = 0;
@@ -665,11 +664,13 @@ static u_int8_t roamingFsmIsNeedScan(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
+	struct ROAMING_INFO *prRoam;
 	struct AIS_SPECIFIC_BSS_INFO *asbi = NULL;
 	struct LINK *prEssLink = NULL;
 	u_int8_t fgIsNeedScan = TRUE;
 
 	asbi = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	if (asbi == NULL) {
 		DBGLOG(ROAMING, WARN, "ais specific bss info is NULL\n");
 		return TRUE;
@@ -677,7 +678,7 @@ static u_int8_t roamingFsmIsNeedScan(
 
 	prEssLink = &asbi->rCurEssLink;
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
+#if (CFG_SUPPORT_ROAMING_SKIP_ONE_AP == 1)
 	/*
 	 * Start skip roaming scan mechanism if only one ESSID AP
 	 */
@@ -740,10 +741,9 @@ static u_int8_t roamingFsmIsNeedScan(
 	}
 #endif
 
-#if CFG_ENABLE_WIFI_DIRECT
-	if (cnmP2pIsActive(prAdapter))
+	if (prRoam->eReason == ROAMING_REASON_UPPER_LAYER_TRIGGER ||
+	    prRoam->eReason == ROAMING_REASON_INACTIVE)
 		fgIsNeedScan = FALSE;
-#endif
 
 	return fgIsNeedScan;
 }
@@ -778,6 +778,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_STATE eNextState,
 	uint8_t ucBssIndex)
 {
+	struct AIS_FSM_INFO *ais;
 	struct ROAMING_INFO *prRoam;
 	enum ENUM_ROAMING_STATE ePreviousState;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
@@ -787,6 +788,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint32_t rStatus;
 
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
@@ -853,8 +855,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 #endif
 
 			GET_CURRENT_SYSTIME(&rCurrentTime);
-			if (CHECK_FOR_TIMEOUT(rCurrentTime,
-			      prRoam->rRoamingDiscoveryUpdateTime,
+			if (CHECK_FOR_TIMEOUT(rCurrentTime, ais->rScanDoneTime,
 			      SEC_TO_SYSTIME(u4ScnResultsTimeout))) {
 				DBGLOG(ROAMING, LOUD,
 					"roamingFsmSteps: DiscoveryUpdateTime Timeout\n");
@@ -862,6 +863,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 				fgIsNeedScan = roamingFsmIsNeedScan(prAdapter,
 								ucBssIndex);
 			}
+
 			aisFsmRunEventRoamingDiscovery(
 				prAdapter, fgIsNeedScan, ucBssIndex);
 		}
@@ -1490,29 +1492,4 @@ u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
-void roamingFsmBTMTimeout(struct ADAPTER *prAdapter,
-				uintptr_t ulParamPtr)
-{
-	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
-	struct CMD_ROAMING_TRANSIT rRoamingData = {0};
-	struct AIS_FSM_INFO *prAisFsmInfo =
-		aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	struct BSS_TRANSITION_MGT_PARAM *prBtmParam =
-		aisGetBTMParam(prAdapter, ucBssIndex);
-	struct BSS_DESC *prBssDesc =
-		scanSearchBssDescByBssid(prAdapter, prBtmParam->aucBSSID);
-
-	if (prBssDesc &&
-	    prBssDesc->fgIsConnected & aisGetBssIndexBmap(prAisFsmInfo)) {
-		DBGLOG(ROAMING, INFO, "[%d] BTM DiassocTimer Timeout\n",
-				      ucBssIndex);
-
-		rRoamingData.eReason = ROAMING_REASON_BTM;
-		rRoamingData.u2Data = prBssDesc->ucRCPI;
-		rRoamingData.ucBssidx = ucBssIndex;
-		roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
-	} else {
-		DBGLOG(ROAMING, ERROR, "[%d] Invalid BssDesc\n", ucBssIndex);
-	}
-}
 #endif
