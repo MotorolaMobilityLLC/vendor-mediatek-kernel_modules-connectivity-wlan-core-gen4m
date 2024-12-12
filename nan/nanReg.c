@@ -3,6 +3,8 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
+#if (CFG_SUPPORT_NAN == 1)
+
 #include "precomp.h"
 
 #define REG_2G_5G_MAX_SUPPORT_CHANNEL 13
@@ -18,7 +20,7 @@
 struct _NAN_CHNL_REG_INFO_T {
 	uint8_t ucOperatingClass;
 
-	uint8_t ucBw;
+	uint16_t u2Bw;
 
 	enum ENUM_CHNL_EXT eSco;
 	/* For 40M Bw to determine SCB or SCA */
@@ -117,12 +119,14 @@ struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[] = {
 		/* 6G BW80 => Center Channel */
 	}, /* 25 */
 	{136, 20, CHNL_EXT_SCN, { 2, } /* 6G BW20 => Channel set */ }, /* 26 */
+	{137, 320, CHNL_EXT_SCN, { 31, 95, 159 } },
 #endif
 	{0, 0, 0, { 0, } } /* terminator */
 };
 
 #define REG_MAX_DB_SIZE ARRAY_SIZE(g_rNanRegInfo)
 
+uint8_t fgForceNANr36GCH_CHBitmap = FALSE;
 
 /*******************************************
  * Table E4 - Global Operating Classes
@@ -147,12 +151,21 @@ uint8_t nanRegFindRecordIdx(uint8_t ucOperatingClass)
 uint8_t nanRegGet20MHzPrimaryChnlIndex(uint8_t ucOperatingClass,
 				       uint8_t ucPriChnlBitmap)
 {
-	int32_t i4Idx;
+	int32_t i4Idx = 0;
 
 	/* In the case of Channel Set = 155 / 42 with bitmap = 0x0f,
 	 * prefer bit0 for ch149 / ch 36
 	 */
-	for (i4Idx = 0; i4Idx < 8; i4Idx++) {
+
+	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		if (fgForceNANr36GCH_CHBitmap)
+			i4Idx = 1; /* channel 5, 101 */
+		else
+			DBGLOG(NAN, WARN, "FIXME, OC=%u, PriChnlBitmap=0x%02x",
+			       ucOperatingClass, ucPriChnlBitmap);
+	}
+
+	for ( ; i4Idx < 8; i4Idx++) {
 		if (ucPriChnlBitmap & BIT(i4Idx))
 			return i4Idx;
 	}
@@ -174,7 +187,8 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+	if (IS_6G_OP_CLASS(ucOperatingClass)
+		&& fgForceNANr36GCH_CHBitmap == FALSE) {
 		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
 		uc6gStartChnl = pucBuf[0];
 		uc6gChnlNum = pucBuf[1];
@@ -182,6 +196,9 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 		nanRegConvert6gChannelBitmap(ucOperatingClass, pu2ChnlBitmap,
 					     aucSupportChnlList);
 		pucBuf = aucSupportChnlList;
+		u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
+	} else if (IS_6G_OP_CLASS(ucOperatingClass)
+				&& fgForceNANr36GCH_CHBitmap == TRUE) {
 		u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
 	}
 #endif
@@ -202,7 +219,8 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 		pucBuf[j / 8] &= ~BIT(j % 8);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-		if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		if (IS_6G_OP_CLASS(ucOperatingClass)
+			&& fgForceNANr36GCH_CHBitmap == FALSE) {
 			uint8_t nxt = 0;
 
 			if (j < u4MaxChnlBitmap - 1)
@@ -230,7 +248,8 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 
 uint32_t
 nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
-		       uint16_t *pu2ChnlBitmap) {
+		       uint16_t *pu2ChnlBitmap)
+{
 	uint8_t i, j;
 	uint8_t *pucBuf;
 
@@ -238,7 +257,8 @@ nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
 	i = nanRegFindRecordIdx(ucOperatingClass);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+	if (IS_6G_OP_CLASS(ucOperatingClass)
+		&& fgForceNANr36GCH_CHBitmap == FALSE) {
 		pucBuf[0] = ucChannel;
 		pucBuf[1] = 1;
 		return WLAN_STATUS_SUCCESS;
@@ -255,19 +275,21 @@ nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint8_t
-nanRegGetBw(uint8_t ucOperatingClass) {
+uint16_t
+nanRegGetBw(uint8_t ucOperatingClass)
+{
 	int i;
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
 	if (i != REG_MAX_DB_SIZE)
-		return g_rNanRegInfo[i].ucBw;
+		return g_rNanRegInfo[i].u2Bw;
 
 	return REG_INVALID_INFO;
 }
 
 enum ENUM_CHNL_EXT
-nanRegGetSco(uint8_t ucOperatingClass) {
+nanRegGetSco(uint8_t ucOperatingClass)
+{
 	int i;
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
@@ -278,15 +300,18 @@ nanRegGetSco(uint8_t ucOperatingClass) {
 }
 
 uint8_t
-nanRegGetPrimaryChannel(uint8_t ucChannel, uint8_t ucBw, uint8_t ucNonContBw,
-			uint8_t ucPriChnlIdx, uint8_t ucOperatingClass) {
+nanRegGetPrimaryChannel(uint8_t ucChannel, uint16_t u2Bw, uint8_t ucNonContBw,
+			uint8_t ucPriChnlIdx, uint8_t ucOperatingClass)
+{
 	uint8_t ucIs6gChnl = IS_6G_OP_CLASS(ucOperatingClass);
 
-	if ((ucBw == 20) || ((ucBw == 40) && !ucIs6gChnl))
+	if ((u2Bw == 20) || ((u2Bw == 40) && !ucIs6gChnl))
 		return ucChannel;
-	else if ((ucBw == 160) && (ucNonContBw == 0))
+	else if ((u2Bw == 160) && (ucNonContBw == 0))
 		ucChannel = ucChannel - 14 + (ucPriChnlIdx * 4);
-	else if ((ucBw == 40) && ucIs6gChnl)
+	else if ((u2Bw == 320) && (ucNonContBw == 0))
+		ucChannel = ucChannel - 30 + (ucPriChnlIdx * 4);
+	else if ((u2Bw == 40) && ucIs6gChnl)
 		ucChannel = ucChannel - 2 + (ucPriChnlIdx * 4);
 	else
 		ucChannel = ucChannel - 6 + (ucPriChnlIdx * 4);
@@ -343,7 +368,8 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+	if (IS_6G_OP_CLASS(ucOperatingClass)
+		&& fgForceNANr36GCH_CHBitmap == FALSE) {
 		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
 		uc6gStartChnl = pucBuf[0];
 		uc6gChnlNum = pucBuf[1];
@@ -382,7 +408,8 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 		 * here should clear bitmap once the channel has been selected
 		 * Save the updated bitmap pointed by pu2ChnlBitmap.
 		 */
-		if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		if (IS_6G_OP_CLASS(ucOperatingClass)
+			&& fgForceNANr36GCH_CHBitmap == FALSE) {
 			uint8_t nxt = 0;
 
 			if (j < u4MaxChnlBitmap - 1)
@@ -419,7 +446,7 @@ uint8_t nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass,
 {
 	uint32_t i;
 	uint32_t j = 0;
-	uint8_t ucBw;
+	uint16_t u2Bw;
 	uint8_t ucRang = 0;
 	uint8_t ucCenterChnl;
 	uint8_t ucChnl;
@@ -428,19 +455,21 @@ uint8_t nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass,
 
 	i = nanRegFindRecordIdx(ucOperatingClass);
 	if (i != REG_MAX_DB_SIZE) {
-		ucBw = g_rNanRegInfo[i].ucBw;
-		if (ucBw == 20)
+		u2Bw = g_rNanRegInfo[i].u2Bw;
+		if (u2Bw == 20)
 			ucRang = 0;
 #if (CFG_SUPPORT_NAN_6G == 1)
-		else if ((ucBw == 40) && IS_6G_OP_CLASS(ucOperatingClass))
+		else if ((u2Bw == 40) && IS_6G_OP_CLASS(ucOperatingClass))
 			ucRang = 2;
 #endif
-		else if (ucBw == 40)
+		else if (u2Bw == 40)
 			ucRang = 0;
-		else if (ucBw == 80)
+		else if (u2Bw == 80)
 			ucRang = 6;
-		else if (ucBw == 160)
+		else if (u2Bw == 160)
 			ucRang = 14;
+		else if (u2Bw == 320)
+			ucRang = 30;
 
 		for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
 			ucChnl = g_rNanRegInfo[i].aucSupportChnlList[j];
@@ -453,7 +482,7 @@ uint8_t nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass,
 		}
 
 		if (ucChnl != 0) {
-			if (ucBw == 40) {
+			if (u2Bw == 40) {
 				if (nanRegGetSco(ucOperatingClass) ==
 				    CHNL_EXT_SCA)
 					ucCenterChnl = ucChnl + 2;
@@ -476,7 +505,7 @@ uint8_t nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass,
 	return ucCenterChnl;
 }
 
-uint8_t nanRegGetOperatingClass(uint8_t ucBw, uint8_t ucChannel,
+uint8_t nanRegGetOperatingClass(uint16_t u2Bw, uint8_t ucChannel,
 				enum ENUM_CHNL_EXT eSco, enum ENUM_BAND eBand)
 {
 	int i, j;
@@ -493,7 +522,7 @@ uint8_t nanRegGetOperatingClass(uint8_t ucBw, uint8_t ucChannel,
 		    IS_6G_OP_CLASS(g_rNanRegInfo[i].ucOperatingClass))
 			continue;
 #endif
-		if ((g_rNanRegInfo[i].ucBw == ucBw) &&
+		if ((g_rNanRegInfo[i].u2Bw == u2Bw) &&
 		    (g_rNanRegInfo[i].eSco == eSco)) {
 			for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
 				if (g_rNanRegInfo[i].aucSupportChnlList[j] ==
@@ -521,7 +550,7 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 
 	rChnlInfo.u4RawData = 0;
 
-	if (eChannelWidth > CW_80P80MHZ) {
+	if (eChannelWidth > CW_320_1MHZ) {
 		DBGLOG(NAN, ERROR, "eChannelWidth is over!\n");
 		return rChnlInfo;
 	}
@@ -549,9 +578,18 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 		break;
 
 	case CW_80MHZ:
-	case CW_160MHZ:
 		ucOperatingClass =
 			nanRegGetOperatingClass(80, ucChannelS1, eSco, eBand);
+		break;
+
+	case CW_160MHZ:
+		ucOperatingClass =
+			nanRegGetOperatingClass(160, ucChannelS1, eSco, eBand);
+		break;
+
+	case CW_320_1MHZ:
+		ucOperatingClass =
+			nanRegGetOperatingClass(320, ucChannelS1, eSco, eBand);
 		break;
 
 	case CW_80P80MHZ:
@@ -577,13 +615,13 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 /**
  * nanRegGenNanChnlInfoByPriChannel() - Get the channel info
  * @ucPriChannel: primary channel number
- * @ucBw: bandwidth
+ * @u2Bw: bandwidth
  * @eBand: Band of the queried channel information
  *
  * Return: channel information
  */
 union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
-							   uint8_t ucBw,
+							   uint16_t u2Bw,
 							   enum ENUM_BAND eBand)
 {
 	uint32_t u4Idx;
@@ -602,7 +640,7 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 		if (g_rNanRegInfo[u4Idx].ucOperatingClass == 0) /* end */
 			break;
 
-		if (g_rNanRegInfo[u4Idx].ucBw != ucBw)
+		if (g_rNanRegInfo[u4Idx].u2Bw != u2Bw)
 			continue;
 
 #if (CFG_SUPPORT_NAN_6G == 1) || (CFG_SUPPORT_WIFI_6G == 1)
@@ -618,7 +656,6 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 			break;
 		}
 	}
-
 	if (!fgFound)
 		return g_rNullChnl;
 
@@ -629,14 +666,17 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 	eSco = nanRegGetSco(g_rNanRegInfo[u4Idx].ucOperatingClass);
 
 	ucChannelS1 = ucChannelS2 = 0;
-	if ((ucBw == 20) || (ucBw == 40)) {
+	if ((u2Bw == 20) || (u2Bw == 40)) {
 		eChannelWidth = CW_20_40MHZ;
 #if (CFG_SUPPORT_NAN_6G == 1) || (CFG_SUPPORT_WIFI_6G == 1)
-		if (ucIs6gChnl && (ucBw == 40))
+		if (ucIs6gChnl && (u2Bw == 40))
 			ucChannelS1 = ucCenterChnl;
 #endif
-	} else if (ucBw == 80) {
+	} else if (u2Bw == 80) {
 		eChannelWidth = CW_80MHZ;
+		ucChannelS1 = ucCenterChnl;
+	} else if (u2Bw == 320) {
+		eChannelWidth = CW_320_1MHZ;
 		ucChannelS1 = ucCenterChnl;
 	} else { /* 160 */
 		eChannelWidth = CW_160MHZ;
@@ -654,14 +694,14 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 			 enum ENUM_CHANNEL_WIDTH *peChannelWidth,
 			 enum ENUM_CHNL_EXT *peSco, uint8_t *pucChannelS1,
 			 uint8_t *pucChannelS2) {
-	uint8_t ucBw;
+	uint16_t u2Bw;
 
 	if (!pucPriChannel || !peChannelWidth || !peSco || !pucChannelS1 ||
 	    !pucChannelS2)
 		return WLAN_STATUS_FAILURE;
 
-	ucBw = nanRegGetBw(rChnlInfo.rChannel.u4OperatingClass);
-	if (ucBw == REG_INVALID_INFO)
+	u2Bw = nanRegGetBw(rChnlInfo.rChannel.u4OperatingClass);
+	if (u2Bw == REG_INVALID_INFO)
 		return WLAN_STATUS_FAILURE;
 
 	*pucPriChannel = rChnlInfo.rChannel.u4PrimaryChnl;
@@ -669,7 +709,7 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 	*peSco = nanRegGetSco(rChnlInfo.rChannel.u4OperatingClass);
 
 	*pucChannelS1 = *pucChannelS2 = 0;
-	if ((ucBw == 20) || (ucBw == 40)) {
+	if ((u2Bw == 20) || (u2Bw == 40)) {
 		*peChannelWidth = CW_20_40MHZ;
 #if (CFG_SUPPORT_NAN_6G == 1)
 		if (IS_6G_OP_CLASS(rChnlInfo.rChannel.u4OperatingClass)) {
@@ -678,17 +718,22 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 				rChnlInfo.rChannel.u4PrimaryChnl);
 			}
 #endif
-	} else if ((ucBw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl == 0)) {
+	} else if ((u2Bw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl == 0)) {
 		*peChannelWidth = CW_80MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
 			rChnlInfo.rChannel.u4OperatingClass,
 			rChnlInfo.rChannel.u4PrimaryChnl);
-	} else if (ucBw == 160) {
+	} else if (u2Bw == 160) {
 		*peChannelWidth = CW_160MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
 			rChnlInfo.rChannel.u4OperatingClass,
 			rChnlInfo.rChannel.u4PrimaryChnl);
-	} else if ((ucBw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl != 0)) {
+	} else if (u2Bw == 320) {
+		*peChannelWidth = CW_320_1MHZ;
+		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
+			rChnlInfo.rChannel.u4OperatingClass,
+			rChnlInfo.rChannel.u4PrimaryChnl);
+	} else if ((u2Bw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl != 0)) {
 		*peChannelWidth = CW_80P80MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
 			rChnlInfo.rChannel.u4OperatingClass,
@@ -732,6 +777,17 @@ nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 	return eBand;
 }
 
+u_int8_t nanRegNanChnlBandIsEht(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
+{
+	if (rNanChnlInfo.rChannel.u4Type != NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL)
+		return FALSE;
+
+	if (IS_EHT_OP_CLASS(rNanChnlInfo.rChannel.u4OperatingClass))
+		return TRUE;
+
+	return FALSE;
+}
+
 #if (CFG_SUPPORT_NAN_6G == 1)
 /**
  * nanRegConvert6gChannelBitmap() - Convert 6G channel bitmap to legacy format
@@ -773,4 +829,11 @@ uint32_t nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
 
 	return WLAN_STATUS_SUCCESS;
 }
+void nanRegForce_R3_6GChMap(uint8_t ucEnable)
+{
+	fgForceNANr36GCH_CHBitmap = ucEnable;
+	/*DBGLOG(NAN, INFO, "R3 6G channel map (%u)\n", ucEnable);*/
+}
 #endif
+
+#endif /* CFG_SUPPORT_NAN */

@@ -1225,7 +1225,6 @@ void qmResetTcControlResource(struct ADAPTER *prAdapter);
 void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,
 			struct TX_TCQ_ADJUST *prTcqAdjust,
 			struct TX_TCQ_STATUS *prTcqStatus);
-
 struct DHCP_PROTOCOL *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 	u_int8_t fgFromServer, uint16_t *pDhcpLen);
 

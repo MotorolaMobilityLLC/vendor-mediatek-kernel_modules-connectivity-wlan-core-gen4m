@@ -146,6 +146,9 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define PERF_MON_UPDATE_MIN_INTERVAL (500)
 #define PERF_MON_UPDATE_INTERVAL (1000)
 #define PERF_MON_TP_MAX_THRESHOLD (12)
+#define PERF_MON_TP_NAN_LEVEL (11)
+
+#define PERF_MON_NAN_BOOST_CPU_THRESHOLD 5
 
 #define PERF_MON_TP_CONDITION (125000)
 #define PERF_MON_COEX_TP_THRESHOLD (100)
@@ -2590,6 +2593,7 @@ void kalBatNotifierUnReg(void);
 
 #if CFG_SUPPORT_NAN
 void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer);
+void kalNanHandlePendingCmd(struct ADAPTER *prAdapter, uint8_t *prBuffer);
 #endif
 
 void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo);

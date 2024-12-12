@@ -7,6 +7,7 @@
  * gl_vendor_ndp.c
  */
 
+#if (CFG_SUPPORT_NAN == 1)
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -122,6 +123,95 @@ const struct nla_policy
 				.len = NAN_MAX_SERVICE_NAME_LEN },
 	};
 
+#define NAN_MAX_CHANNEL_INFO_SUPPORTED (4)
+
+/* NAN Channel Info */
+struct NanChannelInfo {
+	u32 channel;
+	u32 bandwidth;
+	u32 nss;
+};
+
+void
+nanGetChannelInfo(
+	struct ADAPTER *ad,
+	struct _NAN_NDP_INSTANCE_T *prNDP,
+	struct NanChannelInfo *info,
+	uint32_t *num_info)
+{
+	uint32_t u4Idx = 0, u4Idx1 = 0, u4Idx2 = 0;
+	uint32_t i = 0;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+	struct _NAN_PEER_SCH_DESC_T *p = NULL;
+	struct _NAN_AVAILABILITY_DB_T *d = NULL;
+	struct _NAN_AVAILABILITY_TIMELINE_T *t = NULL;
+	union _NAN_BAND_CHNL_CTRL chctrl;
+	uint32_t pch = 0;
+	uint32_t opc = 0;
+
+	if (!prNDP)
+		return;
+
+	prNDL =
+		&ad->rDataPathInfo.arNDL[prNDP->ucNdlIndex];
+	if (!prNDL)
+		return;
+
+	p = nanSchedSearchPeerSchDescByNmi(
+		ad,
+		prNDL->aucPeerMacAddr);
+	if (!p) {
+		DBGLOG(NAN, WARN,
+			"PeerSchDesc for " MACSTR " not found\n",
+		MAC2STR(prNDL->aucPeerMacAddr));
+		return;
+	}
+
+	*num_info = 0;
+
+	for (u4Idx = 0; u4Idx < NAN_NUM_AVAIL_DB; u4Idx++) {
+		d = &p->arAvailAttr[u4Idx];
+		if (d->ucMapId == NAN_INVALID_MAP_ID)
+			continue;
+
+		for (u4Idx1 = 0;
+			u4Idx1 < NAN_NUM_AVAIL_TIMELINE;
+			u4Idx1++) {
+			t = &d->arAvailEntryList[u4Idx1];
+			if (t->fgActive == FALSE)
+				continue;
+
+			if (t->arBandChnlCtrl[0].u4Type ==
+				NAN_BAND_CH_ENTRY_LIST_TYPE_BAND)
+				continue;
+
+			for (u4Idx2 = 0;
+				u4Idx2 < t->ucNumBandChnlCtrl;
+				u4Idx2++) {
+				chctrl = t->arBandChnlCtrl[u4Idx2];
+				pch = chctrl.rChannel.u4PrimaryChnl;
+				opc = chctrl.rChannel.u4OperatingClass;
+				info[i].channel = pch;
+				info[i].bandwidth = nanRegGetBw(opc);
+				info[i].nss = 2;
+				DBGLOG(NAN, INFO,
+					"[%u][%u]Map:%d,Bw:%d,Ch:%d\n",
+					u4Idx, u4Idx1,
+					d->ucMapId,
+					info[i].bandwidth,
+					info[i].channel);
+				i++;
+				*num_info = i;
+				if (i >=
+					NAN_MAX_CHANNEL_INFO_SUPPORTED)
+					return;
+
+				break;
+			}
+		}
+	}
+}
+
 uint32_t nanOidDataRequest(
 	struct ADAPTER *prAdapter,
 	void *pvSetBuffer,
@@ -143,6 +233,10 @@ uint32_t nanOidDataRequest(
 	if (u4SetBufferLen <
 		sizeof(struct _NAN_CMD_DATA_REQUEST))
 		return WLAN_STATUS_INVALID_DATA;
+
+#if CFG_SUPPORT_NAN_EXT
+	nanAdsdcBackToNormal(prAdapter);
+#endif
 
 	rStatus = nanCmdDataRequest(prAdapter,
 		prNanCmdDataRequest,
@@ -177,6 +271,10 @@ uint32_t nanOidDataResponse(
 	if (u4SetBufferLen <
 		sizeof(struct _NAN_CMD_DATA_RESPONSE))
 		return WLAN_STATUS_INVALID_DATA;
+
+#if CFG_SUPPORT_NAN_EXT
+	nanAdsdcBackToNormal(prAdapter);
+#endif
 
 	rStatus = nanCmdDataResponse(prAdapter, prNanCmdDataResponse);
 
@@ -502,6 +600,81 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
+nanNdpResponderUserTimeoutEvent(struct ADAPTER *prAdapter,
+				uint32_t ndp_instance_id,
+				uint16_t u2TransId)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	uint16_t u2ResponderRspLen;
+
+	if (prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	DBGLOG(NAN, INFO, "Send NDP Response event NdpId(%u) trans=%u\n",
+	       ndp_instance_id, u2TransId);
+
+	if (u2TransId == 0) {
+		DBGLOG(NAN, ERROR,
+		       "Invalid transaction id NdpId(%u) trans=%u\n",
+		       ndp_instance_id, u2TransId);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	wiphy = wlanGetWiphy();
+	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
+		       ->ieee80211_ptr;
+	u2ResponderRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
+			    (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
+
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2ResponderRspLen,
+					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb,
+			MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD,
+			MTK_WLAN_VENDOR_ATTR_NDP_RESPONDER_RESPONSE) <
+		     0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	if (unlikely(nla_put_u16(skb,
+			MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
+			u2TransId) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	if (unlikely(nla_put_u32(skb,
+		    MTK_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE,
+		    NAN_I_STATUS_TIMEOUT) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	if (unlikely(nla_put_u32(skb,
+			MTK_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+			DP_REASON_USER_SPACE_RESPONSE_TIMEOUT) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
 nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 			struct _NAN_NDP_INSTANCE_T *prNDP,
 			uint32_t rTxDoneStatus) {
@@ -520,7 +693,15 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "Send NDP Response event\n");
+	DBGLOG(NAN, INFO, "Send NDP Response event NdpId(%u) trans=%u\n",
+	       prNDP->ndp_instance_id, prNDP->u2TransId);
+
+	if (prNDP->u2TransId == 0) {
+		DBGLOG(NAN, ERROR,
+		       "Invalid transaction id NdpId(%u) trans=%u\n",
+		       prNDP->ndp_instance_id, prNDP->u2TransId);
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
@@ -1353,6 +1534,10 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	struct wireless_dev *wdev;
 	uint32_t u2ConfirmEventLen;
 	uint32_t u4Id = 0;
+	struct NanChannelInfo
+		info[NAN_MAX_CHANNEL_INFO_SUPPORTED];
+	uint32_t num_info = 0;
+	struct nlattr *array, *item;
 
 	if (prNDP == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDP is NULL\n", __func__);
@@ -1417,8 +1602,8 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	}
 
 	if (prNDP->fgCarryIPV6)
-		DBGLOG(NAN, INFO, "[%s] fgCarryIPV6 = %d\n",
-		__func__, prNDP->aucRspInterfaceId);
+		DBGLOG(NAN, INFO, "[%s] fgCarryIPV6 = " IPV6STR "\n",
+		__func__, IPV6TOSTR(prNDP->aucRspInterfaceId));
 
 	if (prNDP->pucPeerAppInfo &&
 	    unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO,
@@ -1446,6 +1631,52 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 		kfree_skb(skb);
 		return -EFAULT;
 	}
+
+	if (!prAdapter->rWifiVar.ucNanReportChInfo)
+		goto SKIP_REPORT_CHANNEL_INFO;
+
+	nanGetChannelInfo(prAdapter,
+		prNDP, info, &num_info);
+
+	if (num_info) {
+		uint32_t i = 0;
+
+		if (unlikely(nla_put_u32(skb,
+			MTK_WLAN_VENDOR_ATTR_NDP_NUM_CHANNELS,
+			num_info) < 0))
+			goto SKIP_REPORT_CHANNEL_INFO;
+
+		array = nla_nest_start(skb,
+			MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL_INFO);
+		if (!array)
+			goto SKIP_REPORT_CHANNEL_INFO;
+
+		for (i = 0; i < num_info; i++) {
+			item = nla_nest_start(skb, i);
+			if (!item)
+				goto SKIP_REPORT_CHANNEL_INFO;
+
+			if (unlikely(nla_put_u32(skb,
+				MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL,
+				info[i].channel) < 0))
+				goto SKIP_REPORT_CHANNEL_INFO;
+
+			if (unlikely(nla_put_u32(skb,
+				MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL_WIDTH,
+				info[i].bandwidth) < 0))
+				goto SKIP_REPORT_CHANNEL_INFO;
+
+			if (unlikely(nla_put_u32(skb,
+				MTK_WLAN_VENDOR_ATTR_NDP_NSS,
+				info[i].nss) < 0))
+				goto SKIP_REPORT_CHANNEL_INFO;
+
+			nla_nest_end(skb, item);
+		}
+		nla_nest_end(skb, array);
+	}
+
+SKIP_REPORT_CHANNEL_INFO:
 
 	DBGLOG(NAN, INFO, "NDP Data Confirm event, ndp instance: %d,",
 		u4Id);
@@ -1589,7 +1820,7 @@ int mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
 		return -EINVAL;
 	}
 
-	DBGLOG(NAN, INFO, "DATA len from user %d\n", data_len);
+	DBGLOG(NAN, TRACE, "DATA len from user %d\n", data_len);
 
 	/* Parse NDP vendor cmd */
 	if (NLA_PARSE(tb, MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX, data, data_len,
@@ -1632,3 +1863,4 @@ int mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	return rStatus;
 }
+#endif /* CFG_SUPPORT_NAN */

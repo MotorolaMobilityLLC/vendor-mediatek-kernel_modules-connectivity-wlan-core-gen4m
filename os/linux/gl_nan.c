@@ -10,6 +10,7 @@
  *    802.11 Wireless LAN Adapters.
  */
 
+#if (CFG_SUPPORT_NAN == 1)
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -353,7 +354,7 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 
 	/* register for net device */
 	if (i4RetReg < 0) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(NAN, WARN,
 		       "unable to register netdevice for nan\n");
 		/* trunk doesn't do free_netdev here */
 		free_netdev(
@@ -450,7 +451,7 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	} else
 		unregister_netdev(prNANInfo->prDevHandler);
 
-	DBGLOG(INIT, INFO, "unregister nandev\n");
+	DBGLOG(NAN, INFO, "unregister nandev\n");
 
 	prGlueInfo->prAdapter->rNanNetRegState =
 		ENUM_NET_REG_STATE_UNREGISTERED;
@@ -481,11 +482,11 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	uint8_t ucBssIndex;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 
-	DBGLOG(INIT, INFO, "setup the nan dev\n");
+	DBGLOG(NAN, INFO, "setup the nan dev\n");
 
 	if ((prGlueInfo == NULL) || (prNanWdev == NULL) ||
 	    (prNanWdev->wiphy == NULL) || (prNanDev == NULL)) {
-		DBGLOG(INIT, ERROR, "parameter is NULL!!\n");
+		DBGLOG(NAN, ERROR, "parameter is NULL!!\n");
 		return -1;
 	}
 
@@ -493,13 +494,13 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	prAdapter = prGlueInfo->prAdapter;
 
 	if ((prAdapter == NULL) || (prHif == NULL)) {
-		DBGLOG(INIT, ERROR, "prAdapter/prHif is NULL!!\n");
+		DBGLOG(NAN, ERROR, "prAdapter/prHif is NULL!!\n");
 		return -1;
 	}
 
 	/*0. allocate naninfo */
 	if (nanAllocInfo(prGlueInfo, u4Idx) != TRUE) {
-		DBGLOG(INIT, WARN, "Allocate memory for nan FAILED\n");
+		DBGLOG(NAN, WARN, "Allocate memory for nan FAILED\n");
 		return -1;
 	}
 
@@ -541,14 +542,14 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	 * bind netdev pointer to netdev index
 	 */
 	prNANInfo->prDevHandler = prNanDev;
-	DBGLOG(INIT, INFO, "setup the nan dev\n");
+	DBGLOG(NAN, INFO, "setup the nan dev\n");
 
 	for (u4Idx = 0; u4Idx < NAN_BSS_INDEX_NUM; u4Idx++) {
 
 		ucBssIndex = nanDevInit(prGlueInfo->prAdapter, u4Idx);
 
 		if (ucBssIndex == MAX_BSSID_NUM) {
-			DBGLOG(INIT, ERROR, "No BSS can be used!!\n");
+			DBGLOG(NAN, ERROR, "No BSS can be used!!\n");
 			nanFreeInfo(prGlueInfo, u4Idx);
 			return -1;
 		}
@@ -598,7 +599,7 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (!prDev || !prGlueInfo) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(NAN, WARN,
 		       " abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
 		       prDev, prGlueInfo);
 		return;
@@ -667,7 +668,7 @@ nanSetMulticastListWorkQueueWrapper(struct GLUE_INFO *prGlueInfo)
 {
 
 	if (!prGlueInfo) {
-		DBGLOG(INIT, WARN, "abnormal dev or skb: prGlueInfo(0x%p)\n",
+		DBGLOG(NAN, WARN, "abnormal dev or skb: prGlueInfo(0x%p)\n",
 		       prGlueInfo);
 		return;
 	}
@@ -710,11 +711,11 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 
 	glNanCreateWirelessDevice(prGlueInfo);
 	if (!g_aprNanRoleWdev[eRole]) {
-		DBGLOG(INIT, ERROR, "gprNanWdev is NULL\n");
+		DBGLOG(NAN, ERROR, "gprNanWdev is NULL\n");
 		return FALSE;
 	}
 
-	DBGLOG(INIT, INFO, "gprNanWdev\n");
+	DBGLOG(NAN, INFO, "gprNanWdev\n");
 	prNanWdev = g_aprNanRoleWdev[eRole];
 	prWiphy = prNanWdev->wiphy;
 	memset(prNanWdev, 0, sizeof(struct wireless_dev));
@@ -732,7 +733,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 		ether_setup, CFG_MAX_TXQ_NUM);
 #endif
 	if (!prNanDev) {
-		DBGLOG(INIT, WARN, "unable to allocate ndev for nan\n");
+		DBGLOG(NAN, WARN, "unable to allocate ndev for nan\n");
 		goto err_alloc_netdev;
 	}
 
@@ -761,7 +762,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	kalMemCopy(prNanDev->perm_addr, prNanDev->dev_addr, ETH_ALEN);
 
 	if (glSetupNAN(prGlueInfo, prNanWdev, prNanDev, eRole) != 0) {
-		DBGLOG(INIT, WARN, "glSetupnan FAILED\n");
+		DBGLOG(NAN, WARN, "glSetupnan FAILED\n");
 		free_netdev(prNanDev);
 		return FALSE;
 	}
@@ -877,6 +878,8 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	if (prAdapter->rNanDiscType == NAN_EXISTING_DISC)
 		nanSchedUninit(prAdapter);
 
+	prAdapter->rNanDiscType = NAN_UNINIT_DISC;
+
 	/* 4 <1> Uninit NAN dev FSM */
 	/* Uninit NAN device FSM */
 	/* only do nanDevFsmUninit, when unregister all nan device */
@@ -903,7 +906,7 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	}
 	/* 4 <4> Free NAN internal memory */
 	if (!nanFreeInfo(prGlueInfo, ucIdx)) {
-		DBGLOG(INIT, ERROR, "nanFreeInfo FAILED\n");
+		DBGLOG(NAN, ERROR, "nanFreeInfo FAILED\n");
 		return FALSE;
 	}
 
@@ -979,7 +982,8 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-	DBGLOG(INIT, INFO, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
+	nanUpdateAisBitmap(prGlueInfo->prAdapter, FALSE);
+	DBGLOG(NAN, INFO, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
 
 	kfree(g_aprNanRoleWdev[ucIdx]);
 	g_aprNanRoleWdev[ucIdx] = NULL;
@@ -1078,7 +1082,7 @@ nanStop(struct net_device *prDev)
 	}
 
 	if (!prAdapter->fgIsNANRegistered) {
-		DBGLOG(INIT, WARN, "fgIsNANRegistered == 0, and return\n");
+		DBGLOG(NAN, WARN, "fgIsNANRegistered == 0, and return\n");
 		return -EFAULT;
 	}
 
@@ -1089,7 +1093,7 @@ nanStop(struct net_device *prDev)
 	}
 
 	/* 0. Do the scan done and set parameter to abort if the scan pending
-	 * DBGLOG(INIT, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);
+	 * DBGLOG(NAN, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);
 	 * TODO flush the scan request
 	 * 1. stop TX queue
 	 * 3. stop queue and turn off carrier
@@ -1150,6 +1154,50 @@ nanSetMulticastList(struct net_device *prDev)
 	}
 }
 
+static u_int8_t is_ipv6_neighbor_soliciation(struct sk_buff *prSkb,
+					     uint8_t aucUcastMacDestAddr[])
+{
+	struct ETH_FRAME *prEth = (struct ETH_FRAME *)prSkb->data;
+	struct IPV6_HEADER *prIpv6 = (struct IPV6_HEADER *)prEth->aucData;
+	struct ICMPV6_HEADER *prIcmpv6 = (struct ICMPV6_HEADER *)prIpv6->aucL4;
+	struct ICMPV6_NSNA_HEADER *prIcmp6NsNa;
+	uint8_t *pucTargetAddr;
+
+	if (htons(prEth->u2TypeLen) != ETH_P_IPV6)
+		return FALSE;
+
+	prIpv6 = (struct IPV6_HEADER *)prEth->aucData;
+	if (prIpv6->ucNextHeader != IPV6_PROTOCOL_ICMPV6)
+		return FALSE;
+
+	prIcmpv6 = (struct ICMPV6_HEADER *)prIpv6->aucL4;
+	if (prIcmpv6->ucType != ICMPV6_TYPE_NEIGHBOR_SOLICITATION)
+		return FALSE;
+
+	prIcmp6NsNa = (struct ICMPV6_NSNA_HEADER *)prIcmpv6;
+	pucTargetAddr = prIcmp6NsNa->aucTargetAddress;
+
+	kalMemCopy(&aucUcastMacDestAddr[0], &pucTargetAddr[8], 3);
+	kalMemCopy(&aucUcastMacDestAddr[3], &pucTargetAddr[13], 3);
+	aucUcastMacDestAddr[0] ^= EUI_64_U_BIT;
+
+	return TRUE;
+}
+
+static void __nanHardStartXmit(struct GLUE_INFO *prGlueInfo,
+			       struct net_device *prDev, uint8_t ucBssIndex,
+			       struct sk_buff *prSkb)
+{
+	kalResetPacket(prGlueInfo, prSkb);
+
+	if (kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex) ==
+	    WLAN_STATUS_SUCCESS) {
+		/* Successfully enqueue to Tx queue */
+		if (netif_carrier_ok(prDev))
+			kalPerMonStart(prGlueInfo);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is TX entry point of NET DEVICE.
@@ -1172,6 +1220,9 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 	struct STA_RECORD *prStaRec;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo = NULL;
 	uint8_t aucMacDestAddr[MAC_ADDR_LEN];
+	uint8_t aucUcastMacDestAddr[MAC_ADDR_LEN] = {0};
+	struct sk_buff *prMcastSkb;
+	enum NAN_BSS_ROLE_INDEX eNdcBand;
 
 	if (!prSkb) {
 		DBGLOG(NAN, ERROR, "prSkb error!\n");
@@ -1186,45 +1237,75 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
 
-	prNANSpecInfo =
-		nanGetSpecificBssInfo(prGlueInfo->prAdapter,
-#if (CFG_SUPPORT_NAN_DBDC == 1)
-		NAN_BSS_INDEX_BAND1
-#else
-		NAN_BSS_INDEX_BAND0
-#endif
-	);
-
-	if (prNANSpecInfo == NULL) {
-		DBGLOG(NAN, ERROR, "prNANSpecInfo is NULL!\n");
-		return NETDEV_TX_BUSY;
-	}
-
 	/* Get DA to determine BSS */
 	COPY_MAC_ADDR(aucMacDestAddr, prSkb->data);
 
 	if (IS_BMCAST_MAC_ADDR(aucMacDestAddr)) {
-		ucBssIndex = prNANSpecInfo->ucBssIndex;
-		DBGLOG(NAN, LOUD,
-		       "TX with DA = BMCAST, ucBssIndex=%d\n",
-		       ucBssIndex);
-	} else {
+		struct _NAN_SCHEDULER_T *prScheduler;
+
+		prScheduler = nanGetScheduler(prGlueInfo->prAdapter);
+
+		for (eNdcBand = NAN_BSS_INDEX_BAND0;
+		     eNdcBand < NAN_BSS_INDEX_NUM; eNdcBand++) {
+			if ((prScheduler->ucNdcBand & BIT(eNdcBand)) == 0)
+				continue;
+
+			prNANSpecInfo =
+				nanGetSpecificBssInfo(prGlueInfo->prAdapter,
+						      eNdcBand);
+
+			if (prNANSpecInfo == NULL) {
+				DBGLOG(NAN, ERROR, "prNANSpecInfo is NULL!\n");
+				/* return NETDEV_TX_BUSY; */
+				continue;
+			}
+
+			ucBssIndex = prNANSpecInfo->ucBssIndex;
+			prMcastSkb = kal_skb_copy(prSkb);
+			if (!prMcastSkb)
+				continue;
+			DBGLOG(NAN, TRACE,
+			       "TX with DA=" MACSTR ", ucBssIndex=%d\n",
+			       MAC2STR(aucMacDestAddr), ucBssIndex);
+			__nanHardStartXmit(prGlueInfo, prDev, ucBssIndex,
+					   prMcastSkb);
+		}
+
+		if (is_ipv6_neighbor_soliciation(prSkb, aucUcastMacDestAddr)) {
+			/* ICMPv6 NS, modify DA to make it a unicast frame */
+			DBGLOG(NAN, TRACE,
+			       "Find NS DA " MACSTR "for NAN multicast\n",
+			       MAC2STR(aucUcastMacDestAddr));
+			prStaRec = nanGetStaRecByNDI(prGlueInfo->prAdapter,
+						     aucUcastMacDestAddr);
+			if (prStaRec) { /* change DA */
+				COPY_MAC_ADDR(prSkb->data, aucUcastMacDestAddr);
+				DBGLOG(NAN, TRACE,
+				       "Found prStaRec->ucIndex=%d\n",
+				       prStaRec->ucIndex);
+			} else {
+				DBGLOG(NAN, WARN,
+				       "NS peer starec Not Found "MACSTR"\n",
+				       MAC2STR(aucUcastMacDestAddr));
+				dev_kfree_skb(prSkb);
+				prSkb = NULL;
+			}
+		} else {
+			dev_kfree_skb(prSkb);
+			prSkb = NULL;
+		}
+	}
+
+	if (prSkb) { /* copied from BMC NS or UC from kernel */
 		prStaRec = nanGetStaRecByNDI(prGlueInfo->prAdapter,
-					     aucMacDestAddr);
+					     prSkb->data);
 		if (prStaRec) {
 			ucBssIndex = prStaRec->ucBssIndex;
 			DBGLOG(NAN, LOUD, "Starec bssIndex:%d\n",
 			       ucBssIndex);
 		}
-	}
 
-	kalResetPacket(prGlueInfo, (void *)prSkb);
-
-	if (kalHardStartXmit(prSkb, prDev, prGlueInfo,
-			     ucBssIndex) == WLAN_STATUS_SUCCESS) {
-		/* Successfully enqueue to Tx queue */
-		if (netif_carrier_ok(prDev))
-			kalPerMonStart(prGlueInfo);
+		__nanHardStartXmit(prGlueInfo, prDev, ucBssIndex, prSkb);
 	}
 
 	return NETDEV_TX_OK;
@@ -1295,7 +1376,7 @@ nanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 		ret = android_private_support_driver_cmd(prDev, prIfReq, i4Cmd);
 #endif
 	else {
-		DBGLOG(INIT, WARN, "Unexpected ioctl command: 0x%04x\n", i4Cmd);
+		DBGLOG(NAN, WARN, "Unexpected ioctl command: 0x%04x\n", i4Cmd);
 		ret = -1;
 	}
 
@@ -1337,7 +1418,7 @@ nanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	case SIOCSIWMLME:
 		/* IW_MLME_DISASSOC used for disconnection */
 		if (prIwReq->u.data.length != sizeof(struct iw_mlme)) {
-			DBGLOG(INIT, INFO, "MLME buffer strange:%d\n",
+			DBGLOG(NAN, INFO, "MLME buffer strange:%d\n",
 			       prIwReq->u.data.length);
 			ret = -EINVAL;
 			break;
@@ -1466,3 +1547,4 @@ mtk_nan_wext_get_priv(struct net_device *prDev,
 
 	return 0;
 }
+#endif /* CFG_SUPPORT_NAN */

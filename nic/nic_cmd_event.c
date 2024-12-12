@@ -3175,7 +3175,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 #endif
 
 	if (!offset) {
-		DBGLOG(INIT, WARN, "NULL offset: offset=%p", offset);
+		DBGLOG(INIT, WARN, "NULL offset: offset=%u", offset);
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -3219,7 +3219,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
 
-	DBGLOG(INIT, INFO, "offset:%x addr:%p\n",
+	DBGLOG(INIT, INFO, "offset:0x%08x addr:%p\n",
 	       offset,
 	       prAdapter->prStatsAllRegStat);
 
@@ -6284,24 +6284,32 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 #endif /* #if CFG_SUPPORT_802_PP_DSCB */
 
 #if CFG_SUPPORT_NAN
-struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
-		   uint16_t u2TargetTlvElement, void *prCmdBuffer)
+/**
+ * nicNanGetTargetTlvElement() - Get the n-th TLV element by u2TargetTlvElement
+ * @u2TargetTlvElement: id of the target TLV element, 1-based indexing
+ * @prTlvCommon: TLV structure to retrieve the element
+ *
+ * Context:
+ *   When getting an existing element, the id shall be less than or equal to
+ *   the current element number in the TLV.
+ *   When calling from nicNanAddNewTlvElement(), the id will be
+ *   the current element number in the TLV added by 1 to return the position
+ *   to append a new entry.
+ *
+ * Return: pointer to the queried n-th target TLV element
+ */
+struct _CMD_EVENT_TLV_ELEMENT_T *nicNanGetTargetTlvElement(
+		   uint16_t u2TargetTlvElement,
+		   struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon)
 {
-	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	uint16_t u2ElementNum;
 	void *pvCurrPtr;
 
-	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
-
-	/* Check target element is exist or not */
-	if (u2TargetTlvElement > prTlvCommon->u2TotalElementNum) {
-		/* New element or element is not exist */
-		if (u2TargetTlvElement - prTlvCommon->u2TotalElementNum > 1) {
-			/* element is not exist */
-			DBGLOG(TX, ERROR, "Target element is not exist\n");
-			return NULL;
-		}
+	if (u2TargetTlvElement - prTlvCommon->u2TotalElementNum > 1) {
+		/* element is not exist */
+		DBGLOG(TX, ERROR, "Target element is not exist\n");
+		return NULL;
 	}
 
 	for (u2ElementNum = 1; u2ElementNum <= u2TargetTlvElement;
@@ -6309,43 +6317,135 @@ struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
 		if (u2ElementNum == 1) {
 			pvCurrPtr = prTlvCommon->aucBuffer;
 		} else {
-			pvCurrPtr = prTlvElement->aucbody;
-			pvCurrPtr = (void *)((uint8_t *)pvCurrPtr +
-					    prTlvElement->body_len);
+			pvCurrPtr =
+				&prTlvElement->aucbody[prTlvElement->body_len];
 		}
-		prTlvElement = (struct _CMD_EVENT_TLV_ELEMENT_T *)pvCurrPtr;
+		prTlvElement = pvCurrPtr;
 	}
 
 	return prTlvElement;
 }
 
-uint32_t nicAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
-		    uint32_t prCmdBufferLen, void *prCmdBuffer)
+const char *nanCmdTagString(uint32_t tag)
 {
-	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
-	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	const char * const nanTagStr[] = {
+		[NAN_CMD_TEST] = "Test",
+		[NAN_TXM_TEST] = "TXM Test",
+		[NAN_CMD_MASTR_PREFERENCE] = "Mastr Preference",
+		[NAN_CMD_HOP_COUNT] = "Hop Count",
+		[NAN_CMD_PUBLISH] = "Publish",
+		[NAN_CMD_CANCEL_PUBLISH] = "Cancel Publish", /* 5 */
+		[NAN_CMD_UPDATE_PUBLISH] = "Update Publish",
+		[NAN_CMD_SUBSCRIBE] = "Subscribe",
+		[NAN_CMD_CANCEL_SUBSCRIBE] = "Cancel Subscribe",
+		[NAN_CMD_TRANSMIT] = "Transmit",
+		[NAN_CMD_ENABLE_REQUEST] = "Enable Request", /* 10 */
+		[NAN_CMD_DISABLE_REQUEST] = "Disable Request",
+		[NAN_CMD_UPDATE_AVAILABILITY] = "Update Availability",
+		[NAN_CMD_UPDATE_CRB] = "Update CRB",
+		[NAN_CMD_CRB_HANDSHAKE_TOKEN] = "CRB Handshake Token",
+		[NAN_CMD_MANAGE_PEER_SCH_RECORD] =
+			"Manage Peer Schedule Record", /* 15 */
+		[NAN_CMD_MAP_STA_RECORD] = "Map STA Record",
+		[NAN_CMD_RANGING_REPORT_DISC] = "Ranging Reposrt Discovery",
+		[NAN_CMD_FTM_PARAM] = "FTM Parameters",
+		[NAN_CMD_UPDATE_PEER_UAW] = "Update Peer UAW",
+		[NAN_CMD_UPDATE_ATTR] = "Update Attribute", /* 20 */
+		[NAN_CMD_UPDATE_PHY_SETTING] = "Update Phy Setting",
+		[NAN_CMD_UPDATE_POTENTIAL_CHNL_LIST] =
+			"Update Potential Channel List",
+		[NAN_CMD_UPDATE_AVAILABILITY_CTRL] =
+			"Update Availability Control",
+		[NAN_CMD_UPDATE_PEER_CAPABILITY] = "Update Peer Capability",
+		[NAN_CMD_ADD_CSID] = "Add CSID", /* 25 */
+		[NAN_CMD_MANAGE_SCID] = "Manage CSID",
+		[NAN_CMD_CHANGE_ADDRESS] = "Change Address",
+		[NAN_CMD_SET_SCHED_VERSION] = "Set Scheduling Version",
+		[NAN_CMD_SET_DW_INTERVAL] = "Set DW interval",
+		[NAN_CMD_ENABLE_UNSYNC]  = "Enable UnSync",
+		[NAN_CMD_GET_DEVICE_INFO] = "Get Device Info",
+		[NAN_CMD_VENDOR_PAYLOAD] = "Vendor Payload",
+		[NAN_CMD_SET_HOST_ELECTION] = "Set Host Election",
+		[NAN_CMD_SET_ELECTION_ROLE] = "Set Election Role",
+	};
+
+	/* Reserve for vendor s, 200 ~ 299 */
+	const char * const nanTagStr2[] = {
+		[NAN_CMD_EXT_CLUSTER - NAN_CMD_EXT_CLUSTER] = "Ext Cluster",
+		[NAN_CMD_EXT_P2P - NAN_CMD_EXT_CLUSTER] = "Ext P2P",
+		[NAN_CMD_EXT_MERGING_DIRECTION - NAN_CMD_EXT_CLUSTER] =
+			"Ext Merging Direction",
+		[NAN_CMD_EXT_SYNC - NAN_CMD_EXT_CLUSTER] = "Ext Sync",
+		[NAN_CMD_EXT_MERGING - NAN_CMD_EXT_CLUSTER] = "Ext merging",
+		[NAN_CMD_EXT_SCHEDULING - NAN_CMD_EXT_CLUSTER] =
+			"Ext Scheduling",
+		[NAN_CMD_EXT_USD - NAN_CMD_EXT_CLUSTER] = "Ext USD",
+		[NAN_CMD_EXT_ASC - NAN_CMD_EXT_CLUSTER] = "Ext ASC",
+	};
+
+	if (tag == NAN_CMD_EXT_CUSTOM_CMD) {
+		return "Ext Custom Command";
+	} else if (tag < ARRAY_SIZE(nanTagStr)) {
+		if (nanTagStr[tag])
+			return nanTagStr[tag];
+		else
+			return "";
+	} else if (tag >= NAN_CMD_EXT_CLUSTER &&
+		   tag < NAN_CMD_EXT_CLUSTER + ARRAY_SIZE(nanTagStr2)) {
+		if (nanTagStr2[tag - NAN_CMD_EXT_CLUSTER])
+			return nanTagStr2[tag - NAN_CMD_EXT_CLUSTER];
+		else
+			return "";
+	}
+
+	return "";
+}
+
+/**
+ * nicNanAddNewTlvElement() - Add an element to NAN TLV structure
+ * @u4Tag: Tag of new TLV
+ * @u4BodyLen: Length of new TLV
+ * @u4CmdBufferLen: Total buffer size to hold concatenated TLV structures
+ * @prCmdBuffer: Buffer to hold concatenated TLV structures
+ *
+ * Context:
+ *   The u4BodyLen is only used to check the remaining size against
+ *   u4CmdBufferLen, and return the position of new TLV.
+ *   The value in TLV is still empty.
+ *   The caller calls nicNanGetTargetTlvElement() later to get the position to
+ *   new TLV to copied the values to the buffer.
+ *
+ *   The u2TotalElementNum has incremented in this function.
+ *
+ * Return: WLAN_STATUS_SUCCESS: check pass and Tag and Length are updated
+ *»        WLAN_STATUS_NOT_ACCEPTED: no sufficient buffer
+ *»        WLAN_STATUS_FAILURE: unexpected error
+ */
+uint32_t nicNanAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
+				uint32_t u4CmdBufferLen,
+				struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon)
+{
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement;
 	uint32_t u4TotalLen;
 
-	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
-
-	/* Get new element */
-	prTlvElement = nicGetTargetTlvElement(
-		prTlvCommon->u2TotalElementNum + 1, prCmdBuffer);
-
+	/* Get pointer to new element (the one right after current last) */
+	prTlvElement = nicNanGetTargetTlvElement(
+		prTlvCommon->u2TotalElementNum + 1, prTlvCommon);
 	if (prTlvElement == NULL) {
-		DBGLOG(TX, ERROR, "Get new TLV element fail\n");
+		DBGLOG(NAN, ERROR, "Get new TLV element fail\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* Check tatol len is overflow or not */
+	/* Check tatol len is overflow or not,
+	 * u4TotalLen = len(end of the TLV - start of the TLV common
+	 */
 	u4TotalLen = ((size_t)prTlvElement->aucbody + u4BodyLen) -
-		     (size_t)prCmdBuffer;
+		     (size_t)prTlvCommon;
 
-	if (u4TotalLen > prCmdBufferLen) {
-		/* Length overflow */
-		DBGLOG(TX, ERROR,
+	if (u4TotalLen > u4CmdBufferLen) { /* Length overflow */
+		DBGLOG(NAN, ERROR,
 		       "Length overflow: Total len:%d, CMD buffer len:%d\n",
-		       u4TotalLen, prCmdBufferLen);
+		       u4TotalLen, u4CmdBufferLen);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
@@ -6354,8 +6454,13 @@ uint32_t nicAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
 
 	/* Fill TLV constant */
 	prTlvElement->tag_type = u4Tag;
-
+	/* Unlinke the UNI_CMD structure as set in nicUniCmdNanGenEntry(),
+	 * body_length here only counts the following data field
+	 */
 	prTlvElement->body_len = u4BodyLen;
+	DBGLOG(NAN, VOC, "Add cmd to firmware:%u(%s), len:%u\n",
+	       prTlvElement->tag_type, nanCmdTagString(prTlvElement->tag_type),
+	       prTlvElement->body_len);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -6374,7 +6479,7 @@ void nicNanVendorEventHandler(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
 
-	DBGLOG(NAN, INFO, "[%s] IN, Guiding to Vendor event handler\n",
+	DBGLOG(NAN, TRACE, "[%s] IN, Guiding to Vendor event handler\n",
 	       __func__);
 
 	kalNanHandleVendorEvent(prAdapter, prEvent->aucBuffer);
@@ -6439,7 +6544,7 @@ void nicNanReceiveEvent(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	if (unlikely(prDiscEvt->service_specific_info_len >
 		sizeof(rFollowInd.service_specific_info))) {
 		DBGLOG(NAN, WARN,
-			"service_specific_info len too large: %u > %u\n",
+			"service_specific_info len too large: %u > %zu\n",
 			prDiscEvt->service_specific_info_len,
 			sizeof(rFollowInd.service_specific_info));
 		prDiscEvt->service_specific_info_len =
@@ -6555,6 +6660,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	struct NAN_EVT_NDL_FLOW_CTRL_V2 *prFlowCtrlEvt;
 	struct STA_RECORD *prStaRec;
 	uint16_t u2SchId = 0;
+	uint16_t u2SeqNum;
 	uint32_t u4Idx;
 	uint32_t u4NanSendPacketGuardTime;
 	struct NAN_FLOW_CTRL *prNanFlowCtrlRecord;
@@ -6565,33 +6671,61 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 	u4NanSendPacketGuardTime = prAdapter->rWifiVar.u4NanSendPacketGuardTime;
 	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL_V2 *)pcuEvtBuf;
+	u2SeqNum = prFlowCtrlEvt->u2SeqNum;
 
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
 		uint8_t ucSTAIdx;
-		uint16_t u4RemainingTime;
+		uint16_t u2RemainingTime;
 
 		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
 			continue;
 
+		if (IS_2G_OP_CLASS(prFlowCtrlEvt->arBandChnlInfo[u2SchId]
+				.rChannel.u4OperatingClass) &&
+			nanSchedGetHighestCommonBand(prAdapter, u2SchId) !=
+				ENUM_SUPPORTED_BN_2G) {
+			DBGLOG(NAN, INFO,
+				   "Seq:%u, Sch:%u, Rm:%u, Op:%u, 5/6G peer skip 2G flow ctrl\n",
+				   u2SeqNum, u2SchId,
+				   prFlowCtrlEvt->au2RemainingTime[u2SchId],
+				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
+					.rChannel.u4OperatingClass);
+			continue;
+		}
+
 		prNanFlowCtrlRecord = nanSchedGetPeerSchRecFlowCtrl(prAdapter,
 								    u2SchId);
 		rCurrentTime = kalGetTimeTick();
-		u4RemainingTime = prFlowCtrlEvt->au4RemainingTime[u2SchId];
-		rExpiryTime = rCurrentTime + u4RemainingTime;
+		u2RemainingTime = prFlowCtrlEvt->au2RemainingTime[u2SchId];
+		rExpiryTime = rCurrentTime + u2RemainingTime;
 
-		DBGLOG(NAN, INFO,
-		       "[NDL flow control] Sch:%u, Expiry:%u, Remain:%u, %sstayed %u for %u ms\n",
-		       u2SchId, rExpiryTime, u4RemainingTime,
-		       prNanFlowCtrlRecord[u2SchId].fgAllow ==
-				       !!u4RemainingTime ? "WARN " : "",
-		       prNanFlowCtrlRecord[u2SchId].fgAllow,
-		       prNanFlowCtrlRecord[u2SchId].u4Time ?
-			       rCurrentTime -
-				       prNanFlowCtrlRecord[u2SchId].u4Time : 0);
-		prNanFlowCtrlRecord[u2SchId].fgAllow = !!u4RemainingTime;
+		if (prNanFlowCtrlRecord[u2SchId].fgAllow == !!u2RemainingTime ||
+		    rCurrentTime > prNanFlowCtrlRecord[u2SchId].u4Time +
+				   NAN_DW_INTERVAL) {
+			DBGLOG(NAN, WARN,
+			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u\n",
+			       u2SeqNum, u2SchId, u2RemainingTime,
+			       prNanFlowCtrlRecord[u2SchId].fgAllow,
+			       prNanFlowCtrlRecord[u2SchId].u4Time ?
+				       rCurrentTime -
+				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
+				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
+				   .rChannel.u4OperatingClass);
+		} else {
+			DBGLOG(NAN, INFO,
+			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u\n",
+			       u2SeqNum, u2SchId, u2RemainingTime,
+			       prNanFlowCtrlRecord[u2SchId].fgAllow,
+			       prNanFlowCtrlRecord[u2SchId].u4Time ?
+				       rCurrentTime -
+				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
+				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
+				   .rChannel.u4OperatingClass);
+		}
+		prNanFlowCtrlRecord[u2SchId].fgAllow = !!u2RemainingTime;
 		prNanFlowCtrlRecord[u2SchId].u4Time = rCurrentTime;
 
-		if (u4RemainingTime == 0)
+		if (u2RemainingTime == 0)
 			continue;
 
 		rExpiryTime -= u4NanSendPacketGuardTime;
@@ -6630,12 +6764,14 @@ void nicNanEventDispatcher(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
 
+	kalNanHandlePendingCmd(prAdapter, (uint8_t *)prEvent);
+
 	if (prAdapter->fgIsNANfromHAL == FALSE) {
-		DBGLOG(INIT, INFO, "nicNanIOEventHandler\n");
+		DBGLOG(INIT, LOUD, "nicNanIOEventHandler\n");
 		/* For IOCTL use */
 		nicNanIOEventHandler(prAdapter, prEvent);
 	} else {
-		DBGLOG(INIT, INFO, "nicNanVendorEventHandler\n");
+		DBGLOG(INIT, LOUD, "nicNanVendorEventHandler\n");
 		/* For Vendor command use */
 		nicNanVendorEventHandler(prAdapter, prEvent);
 	}
@@ -6720,6 +6856,8 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 #endif
 	case UNI_EVENT_NAN_TAG_NDL_DISCONNECT:
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_DEVICE_INFO:
 		break;
 	}
 }
@@ -6807,6 +6945,9 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 #endif
 	case NAN_EVENT_NDL_DISCONNECT:
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_DEVICE_INFO:
+		break;
 	}
 }
 #endif

@@ -8758,7 +8758,7 @@ wlanoidSetNANMulticastList(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 
 	/* The data must be a multiple of the Ethernet address size. */
 	if ((u4SetBufferLen % MAC_ADDR_LEN)) {
-		DBGLOG(REQ, WARN, "Invalid MC list length %ld\n",
+		DBGLOG(REQ, WARN, "Invalid MC list length %u\n",
 		       u4SetBufferLen);
 
 		*pu4SetInfoLen =
@@ -14049,16 +14049,16 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	*pu4SetInfoLen = sizeof(uint32_t);
 	if (u4SetBufferLen < sizeof(uint32_t)) {
-		DBGLOG(REQ, WARN, "Invalid length %ld\n", u4SetBufferLen);
+		DBGLOG(NAN, WARN, "Invalid length %u\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
 	prEnable = (uint32_t *)pvSetBuffer;
 
-	DBGLOG(INIT, INFO, "Set nan enable[%ld]\n", *prEnable);
+	DBGLOG(NAN, VOC, "Set nan enable[%ld]\n", *prEnable);
 
 	if (*prEnable == 2) {
-		DBGLOG(INIT, INFO, "Set nan Unsync\n", *prEnable);
+		DBGLOG(NAN, INFO, "Set nan Unsync\n", *prEnable);
 		prAdapter->rNanDiscType = NAN_UNSYNC_DISC;
 	} else {
 		prAdapter->rNanDiscType = NAN_EXISTING_DISC;
@@ -14068,7 +14068,7 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		if (nanLaunch(prAdapter->prGlueInfo)) {
 			/* ToDo:: ASSERT */
 			if (!prAdapter->fgIsNANRegistered) {
-				DBGLOG(REQ, ERROR,
+				DBGLOG(NAN, ERROR,
 					"fgIsNANRegistered is NULL\n");
 				return WLAN_STATUS_FAILURE;
 			}
@@ -19583,7 +19583,6 @@ wlanoidSetDefaultBcnKey(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_SAP_BCN_PROT */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
-
 #if CFG_SUPPORT_CCM
 /*----------------------------------------------------------------------------*/
 /*!
@@ -19669,3 +19668,16 @@ uint32_t wlanoidBtCoreDumpCtrl(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 }
 
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+#if CFG_SUPPORT_NAN
+uint32_t
+wlanoidGetNanDeviceInfo(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen)
+{
+	return nanDevGetDeviceInfo(prAdapter,
+			pvQueryBuffer,
+			u4QueryBufferLen,
+			pu4QueryInfoLen);
+}
+#endif

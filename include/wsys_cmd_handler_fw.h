@@ -1112,7 +1112,12 @@ struct CMD_UPDATE_STA_RECORD {
 
 	uint8_t ucTxAmsduInAmpdu;
 	uint8_t ucRxAmsduInAmpdu;
+#if CFG_SUPPORT_NAN
+	uint8_t ucOtherWlanIndex;	/* WLAN table other index */
+	uint8_t aucPadding2[1];
+#else
 	uint8_t aucPadding2[2];
+#endif
 	uint32_t u4TxMaxAmsduInAmpduLen;
 
 #if CFG_SUPPORT_802_11AX

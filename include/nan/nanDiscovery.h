@@ -54,11 +54,17 @@ struct NAN_FOLLOW_UP_EVENT {
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
 	uint8_t sdea_service_specific_info[NAN_SDEA_SERVICE_SPECIFIC_INFO_LEN];
+
+	/* Tx status */
+	uint32_t tx_status;
 };
 
 struct NAN_DE_EVENT {
 	uint8_t ucEventType;
-	uint8_t addr[MAC_ADDR_LEN];
+	uint8_t ucClusterId[MAC_ADDR_LEN];
+	uint8_t aucAnchorMastrRank[ANCHOR_MASTR_RANK_NUM];
+	uint8_t ucOwnNmi[MAC_ADDR_LEN];
+	uint8_t ucMastrNmi[MAC_ADDR_LEN];
 };
 
 struct NAN_DISABLE_EVENT {

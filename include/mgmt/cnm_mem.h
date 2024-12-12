@@ -815,6 +815,7 @@ struct STA_RECORD {
 	OS_SYSTIME rNanExpiredSendTime;
 	unsigned char fgNanSendTimeExpired;
 	atomic_t NanRefCount;
+	uint8_t ucOtherWlanIndex;	/* WLAN table other index */
 #endif
 
 #if CFG_SUPPORT_LLS

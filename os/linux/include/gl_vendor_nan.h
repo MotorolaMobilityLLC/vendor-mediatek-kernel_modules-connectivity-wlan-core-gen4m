@@ -131,6 +131,25 @@ struct NanTransmitFollowupRspMsg {
 	u16 value;
 } PACKED;
 
+#if CFG_SUPPORT_NAN_EXT
+#define NAN_MAX_EXT_DATA_SIZE 512
+
+struct NanExtCmdMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 data[NAN_MAX_EXT_DATA_SIZE];
+} PACKED;
+
+struct NanExtResponseMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 data[NAN_MAX_EXT_DATA_SIZE];
+} PACKED;
+
+struct NanExtIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 data[NAN_MAX_EXT_DATA_SIZE];
+} PACKED;
+#endif /* CFG_SUPPORT_NAN_EXT */
+
 /* NAN Capabilities Rsp */
 struct NanCapabilitiesRspMsg {
 	struct _NanMsgHeader fwHeader;
@@ -155,8 +174,13 @@ struct NanCapabilitiesRspMsg {
 	u32 max_scid_len;
 	u32 is_ndp_security_supported : 1;
 	u32 max_sdea_service_specific_info_len : 16;
-	u32 reserved1 : 5;
-	u32 reserved2 : 5;
+	u32 is_instant_mode_supported : 1;
+	u32 is_6g_supported : 1;
+	u32 is_he_supported : 1;
+	u32 is_pairing_supported : 1;
+	u32 is_set_cluster_id_supported : 1;
+	u32 is_suspension_supported : 1;
+	u32 reserved1 : 4;
 	u32 ndpe_attr_supported : 1;
 	u32 reserved : 4;
 	u32 max_subscribe_address;
@@ -361,6 +385,8 @@ enum NanMsgId {
 	NAN_MSG_ID_SELF_TRANSMIT_FOLLOWUP_IND = 35,
 	NAN_MSG_ID_RANGING_REQUEST_RECEVD_IND = 36,
 	NAN_MSG_ID_RANGING_RESULT_IND = 37,
+	NAN_MSG_ID_EXT_CMD = 92,
+	NAN_MSG_ID_EXT_IND = 93,
 	NAN_MSG_ID_TESTMODE_REQ = 1025,
 	NAN_MSG_ID_TESTMODE_RSP = 1026
 };
@@ -403,6 +429,7 @@ enum NanTlvType {
 	NAN_TLV_TYPE_NAN_PASSPHRASE = 27,
 	NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO = 28,
 	NAN_TLV_TYPE_DEV_CAP_ATTR_CAPABILITY = 29,
+	NAN_TLV_TYPE_EXT_CMD = 92,
 	NAN_TLV_TYPE_SDF_LAST = 4095,
 
 	/* Configuration types */
@@ -811,6 +838,12 @@ nanMapNan20RangingReqParams(u32 *pIndata,
 			    struct NanRangeResponseCfg *prNanRangeRspCfgParms);
 int mtk_cfg80211_vendor_nan(struct wiphy *wiphy, struct wireless_dev *wdev,
 			    const void *data, int data_len);
+#if CFG_SUPPORT_NAN_EXT
+int mtk_cfg80211_vendor_nan_ext(struct wiphy *wiphy, struct wireless_dev *wdev,
+			    const void *data, int data_len);
+int mtk_cfg80211_vendor_nan_ext_indication(struct ADAPTER *prAdapter,
+					   u8 *data, uint16_t u2Size);
+#endif /* CFG_SUPPORT_NAN_EXT */
 int mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 						   uint8_t *pcuEvtBuf);
 int mtk_cfg80211_vendor_event_nan_schedule_config(
@@ -833,7 +866,7 @@ int
 mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 						  uint8_t *pcuEvtBuf);
 int
-mtk_cfg80211_vendor_event_nan_seldflwup_indication(struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_selfflwup_indication(struct ADAPTER *prAdapter,
 						  uint8_t *pcuEvtBuf);
 int mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 						   uint8_t *pcuEvtBuf);
@@ -843,4 +876,7 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 int
 mtk_cfg80211_vendor_event_nan_disable_indication(struct ADAPTER *prAdapter,
 						uint8_t *pcuEvtBuf);
+void
+nanNdpDissolve(struct ADAPTER *prAdapter,
+	uint32_t u4Timeout);
 #endif

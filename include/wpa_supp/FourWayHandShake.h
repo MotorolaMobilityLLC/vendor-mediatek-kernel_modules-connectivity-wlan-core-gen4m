@@ -413,7 +413,7 @@ int os_memcmp_const(const void *a, const void *b, size_t len);
 
 void *os_memmove(void *dest, const void *src, size_t n);
 
-#define os_snprintf kalSnprintf
+int os_snprintf(char *str, size_t size, const char *format, ...);
 
 size_t os_strlen(const char *s);
 

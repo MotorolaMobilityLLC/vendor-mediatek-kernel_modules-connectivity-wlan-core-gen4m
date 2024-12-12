@@ -3,8 +3,12 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
+#if (CFG_SUPPORT_NAN == 1)
+
 #include "precomp.h"
 #include "nan/nan_sec.h"
+
+#define NAN_SKIP_BOOT_REQ_CH (1)
 
 void nanResetMemory(void)
 {
@@ -121,6 +125,12 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 #endif
 #endif
 		}
+#if (CFG_SUPPORT_NAN_11BE == 1)
+		if (nanIsEhtSupport(prAdapter))
+			prnanBssInfo->ucPhyTypeSet =
+				prWifiVar->ucAvailablePhyTypeSet &
+				PHY_TYPE_SET_802_11ABGNACAXBE;
+#endif
 
 		prnanBssInfo->ucNonHTBasicPhyType = ucLegacyPhyTp;
 		if (prLegacyPhyAttr
@@ -363,7 +373,7 @@ nanDevSetMasterPreference(
 	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
 
 	if (!prCmdBuffer) {
-		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
@@ -372,21 +382,20 @@ nanDevSetMasterPreference(
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus =
-		nicAddNewTlvElement(NAN_CMD_MASTER_PREFERENCE,
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_MASTR_PREFERENCE,
 				    sizeof(struct _NAN_CMD_MASTER_PREFERENCE_T),
 				    u4CmdBufferLen, prCmdBuffer);
-
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+					      prCmdBuffer);
 
 	if (prTlvElement == NULL) {
-		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
@@ -398,7 +407,7 @@ nanDevSetMasterPreference(
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, nanDevCommonSetCb,
 				      nicCmdTimeoutCommon, u4CmdBufferLen,
-				      (uint8_t *)prCmdBuffer, NULL, 0);
+				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 }
@@ -419,7 +428,7 @@ nanDevEnableRequest(struct ADAPTER *prAdapter,
 	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
 
 	if (!prCmdBuffer) {
-		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
@@ -428,20 +437,20 @@ nanDevEnableRequest(struct ADAPTER *prAdapter,
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus = nicAddNewTlvElement(NAN_CMD_ENABLE_REQUEST,
-				      sizeof(struct NanEnableRequest),
-				      u4CmdBufferLen, prCmdBuffer);
-
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_ENABLE_REQUEST,
+					 sizeof(struct NanEnableRequest),
+					 u4CmdBufferLen, prCmdBuffer);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+					      prCmdBuffer);
 
 	if (prTlvElement == NULL) {
-		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
@@ -453,7 +462,7 @@ nanDevEnableRequest(struct ADAPTER *prAdapter,
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, nanDevCommonSetCb,
 				      nicCmdTimeoutCommon, u4CmdBufferLen,
-				      (uint8_t *)prCmdBuffer, NULL, 0);
+				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 
@@ -476,7 +485,7 @@ nanDevDisableRequest(struct ADAPTER *prAdapter) {
 	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
 
 	if (!prCmdBuffer) {
-		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
@@ -485,19 +494,18 @@ nanDevDisableRequest(struct ADAPTER *prAdapter) {
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus = nicAddNewTlvElement(NAN_CMD_DISABLE_REQUEST, 0,
-				      u4CmdBufferLen, prCmdBuffer);
-
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_DISABLE_REQUEST, 0,
+					 u4CmdBufferLen, prCmdBuffer);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
-
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+					      prCmdBuffer);
 	if (prTlvElement == NULL) {
-		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
@@ -505,7 +513,7 @@ nanDevDisableRequest(struct ADAPTER *prAdapter) {
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, nanDevCommonSetCb,
 				      nicCmdTimeoutCommon, u4CmdBufferLen,
-				      (uint8_t *)prCmdBuffer, NULL, 0);
+				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 
@@ -559,10 +567,9 @@ nanDevGetMasterIndAttr(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-void
-nanDevClusterIdEvtHandler(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
-	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
-		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+void nanDevClusterIdEvtHandler(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
+{
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -571,13 +578,17 @@ nanDevClusterIdEvtHandler(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 
 	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 
-	kalMemCopy(&prNANSpecInfo->aucClusterId, pcuEvtBuf, MAC_ADDR_LEN);
+	COPY_MAC_ADDR(prNANSpecInfo->aucClusterId, pcuEvtBuf);
+
+	DBGLOG(NAN, INFO, "ClusterId=%02x%02x%02x%02x%02x%02x\n",
+	       prNANSpecInfo->aucClusterId[0], prNANSpecInfo->aucClusterId[1],
+	       prNANSpecInfo->aucClusterId[2], prNANSpecInfo->aucClusterId[3],
+	       prNANSpecInfo->aucClusterId[4], prNANSpecInfo->aucClusterId[5]);
 }
 
-uint32_t
-nanDevGetClusterId(struct ADAPTER *prAdapter, uint8_t *pucClusterId) {
-	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
-		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+uint32_t nanDevGetClusterId(struct ADAPTER *prAdapter, uint8_t *pucClusterId)
+{
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -589,7 +600,7 @@ nanDevGetClusterId(struct ADAPTER *prAdapter, uint8_t *pucClusterId) {
 	if (prNANSpecInfo == NULL)
 		return WLAN_STATUS_FAILURE;
 
-	kalMemCopy(pucClusterId, &prNANSpecInfo->aucClusterId, MAC_ADDR_LEN);
+	COPY_MAC_ADDR(pucClusterId, prNANSpecInfo->aucClusterId);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -597,11 +608,30 @@ nanDevGetClusterId(struct ADAPTER *prAdapter, uint8_t *pucClusterId) {
 uint32_t
 nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 {
-	struct MSG_CH_REQ *prMsgChReq = NULL;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 	(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 	struct BSS_INFO *prnanBssInfo = (struct BSS_INFO *)NULL;
 	uint8_t ucIdx;
+
+#if NAN_SKIP_BOOT_REQ_CH
+	/** Set BSS to active */
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		prNANSpecInfo = prAdapter
+			->rWifiVar.aprNanSpecificBssInfo[ucIdx];
+		prnanBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prNANSpecInfo->ucBssIndex);
+		if (prnanBssInfo == NULL) {
+			DBGLOG(NAN, ERROR,
+				"[%s] prnanBssInfo [%d] is NULL\n",
+				__func__, prNANSpecInfo->ucBssIndex);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		UNSET_NET_ACTIVE(prAdapter, prnanBssInfo->ucBssIndex);
+	}
+	nanDevSendEnableRequest(prAdapter, NULL);
+#else
+	struct MSG_CH_REQ *prMsgChReq = NULL;
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -674,6 +704,7 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 		MSG_SEND_METHOD_BUF);
 
 	prAdapter->fgIsNanSendRequestToCnm = TRUE;
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -742,7 +773,8 @@ nanDevGenEnableRequest(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.ucConfig5gChannel;
 	rEnableReq.channel_5g_val =
 		prAdapter->rWifiVar.ucChannel5gVal;
-
+	rEnableReq.enable_log_slot_statistics =
+		prAdapter->rWifiVar.ucNanLogSlotStatistics;
 	nanDevEnableRequest(prAdapter, &rEnableReq);
 }
 
@@ -766,7 +798,7 @@ nanDevEnableUnsync(
 		RAM_TYPE_BUF, u4CmdBufferLen);
 
 	if (!prCmdBuffer) {
-		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
@@ -775,35 +807,32 @@ nanDevEnableUnsync(
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus = nicAddNewTlvElement(NAN_CMD_ENABLE_UNSYNC,
-				      sizeof(struct NanEnableUnsync),
-				      u4CmdBufferLen, prCmdBuffer);
-
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_ENABLE_UNSYNC,
+					 sizeof(struct NanEnableUnsync),
+					 u4CmdBufferLen, prCmdBuffer);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
-
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+						prCmdBuffer);
 	if (prTlvElement == NULL) {
-		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
 	}
 
-	prCmdNanEnableUnsync =
-		(struct NanEnableUnsync *)prTlvElement->aucbody;
-	kalMemCopy(
-		prCmdNanEnableUnsync, prEnableUnsync,
-		sizeof(struct NanEnableUnsync));
+	prCmdNanEnableUnsync = (struct NanEnableUnsync *)prTlvElement->aucbody;
+	kalMemCopy(prCmdNanEnableUnsync, prEnableUnsync,
+		   sizeof(struct NanEnableUnsync));
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_NAN_EXT_CMD, TRUE,
 		FALSE, FALSE, nanDevCommonSetCb,
 		nicCmdTimeoutCommon, u4CmdBufferLen,
-		(uint8_t *)prCmdBuffer, NULL, 0);
+		prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 
@@ -885,18 +914,25 @@ nanDevSendEnableRequest(
 			nanDevGenEnableUnsync(prAdapter);
 		else
 			nanDevGenEnableRequest(prAdapter);
-	} else
-	/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
-		complete(&prAdapter->prGlueInfo->rNanHaltComp);
+	} else {
+		p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
 
-	nanDevSendAbortRequestToCnm(prAdapter);
+		/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
+		if (!p2pFuncIsSapCsa(prAdapter))
+			complete(&prAdapter->prGlueInfo->rNanHaltComp);
+		else
+			DBGLOG(NAN, INFO,
+				"Concurrency: Wait CSA\n");
+	}
 
-	cnmMemFree(prAdapter, prMsgHdr);
+	if (prMsgHdr) {
+		nanDevSendAbortRequestToCnm(prAdapter);
+
+		cnmMemFree(prAdapter, prMsgHdr);
+	}
 }
 
-void nanDevSetDWInterval(
-	struct ADAPTER *prAdapter,
-	uint8_t ucDWInterval)
+void nanDevSetDWInterval(struct ADAPTER *prAdapter, uint8_t ucDWInterval)
 {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -905,13 +941,16 @@ void nanDevSetDWInterval(
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct _NAN_CMD_DW_INTERVAL_T *prCmdNanDWInterval = NULL;
 
+
+	DBGLOG(NAN, INFO, "Set DW interval=%u\n", ucDWInterval);
+
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
 			 sizeof(struct _NAN_CMD_DW_INTERVAL_T);
 	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
 
 	if (!prCmdBuffer) {
-		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
@@ -920,21 +959,19 @@ void nanDevSetDWInterval(
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus =
-		nicAddNewTlvElement(NAN_CMD_SET_DW_INTERVAL,
-				    sizeof(struct _NAN_CMD_DW_INTERVAL_T),
-				    u4CmdBufferLen, prCmdBuffer);
-
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_SET_DW_INTERVAL,
+					 sizeof(struct _NAN_CMD_DW_INTERVAL_T),
+					 u4CmdBufferLen, prCmdBuffer);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
-
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+					      prCmdBuffer);
 	if (prTlvElement == NULL) {
-		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
@@ -946,8 +983,183 @@ void nanDevSetDWInterval(
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, nanDevCommonSetCb,
 				      nicCmdTimeoutCommon, u4CmdBufferLen,
-				      (uint8_t *)prCmdBuffer, NULL, 0);
+				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 }
 
+uint32_t
+nanDevGetDeviceInfo(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rStatus;
+	void *prCmdBuffer;
+	uint32_t u4CmdBufferLen;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct _NAN_CMD_GET_DEVICE_INFO *prCmdNanDeviceInfo = NULL;
+
+	DBGLOG(NAN, INFO, "Enter\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	*pu4QueryInfoLen = sizeof(struct _NAN_EVENT_DEVICE_INFO);
+
+	if (u4QueryBufferLen < sizeof(struct _NAN_EVENT_DEVICE_INFO))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+			 sizeof(struct _NAN_CMD_GET_DEVICE_INFO);
+	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
+
+	if (!prCmdBuffer) {
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+	prTlvCommon->u2TotalElementNum = 0;
+	rStatus =
+		nicNanAddNewTlvElement(NAN_CMD_GET_DEVICE_INFO,
+				    sizeof(struct _NAN_CMD_GET_DEVICE_INFO),
+				    u4CmdBufferLen, prCmdBuffer);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+						prCmdBuffer);
+
+	if (prTlvElement == NULL) {
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prCmdNanDeviceInfo =
+		(struct _NAN_CMD_GET_DEVICE_INFO *)prTlvElement->aucbody;
+	prCmdNanDeviceInfo->ucVersion = 1;
+
+	rStatus = wlanSendSetQueryCmd(
+		prAdapter, CMD_ID_NAN_EXT_CMD,
+		FALSE, TRUE, TRUE,
+		nanDevEventQueryDeviceInfo,
+		nicCmdTimeoutCommon,
+		u4CmdBufferLen,
+		(uint8_t *)prCmdBuffer,
+		pvQueryBuffer,
+		u4QueryBufferLen);
+
+	cnmMemFree(prAdapter, prCmdBuffer);
+
+	return rStatus;
+}
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
+				struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
+{
+	struct _NAN_EVENT_DEVICE_INFO *prEventDeviceInfo;
+	uint32_t u4QueryInfoLen = 0;
+	struct UNI_CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4SubEvent;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prTlvElement = (struct UNI_CMD_EVENT_TLV_ELEMENT_T *)pucEventBuf;
+
+	u4SubEvent = prTlvElement->u2Tag;
+	DBGLOG(NAN, INFO, "event:%u\n", u4SubEvent);
+
+	switch (u4SubEvent) {
+	case UNI_EVENT_NAN_DEVICE_INFO:
+		prEventDeviceInfo =
+			(struct _NAN_EVENT_DEVICE_INFO *) prTlvElement->aucbody;
+		kalMemCopy(
+			prCmdInfo->pvInformationBuffer,
+			prEventDeviceInfo,
+			sizeof(struct _NAN_EVENT_DEVICE_INFO));
+		u4QueryInfoLen = sizeof(struct _NAN_EVENT_DEVICE_INFO);
+		break;
+	default:
+		break;
+	}
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+}
+#else
+void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
+				struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
+{
+	struct _NAN_EVENT_DEVICE_INFO *prEventDeviceInfo;
+	uint32_t u4QueryInfoLen = 0;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4SubEvent;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)pucEventBuf;
+	prTlvElement =
+		(struct _CMD_EVENT_TLV_ELEMENT_T *)prTlvCommon->aucBuffer;
+
+	u4SubEvent = prTlvElement->tag_type;
+	DBGLOG(NAN, INFO, "event:%u\n", u4SubEvent);
+
+	switch (u4SubEvent) {
+	case NAN_EVENT_DEVICE_INFO:
+		prEventDeviceInfo =
+			(struct _NAN_EVENT_DEVICE_INFO *) prTlvElement->aucbody;
+		kalMemCopy(
+			prCmdInfo->pvInformationBuffer,
+			prEventDeviceInfo,
+			sizeof(struct _NAN_EVENT_DEVICE_INFO));
+		u4QueryInfoLen = sizeof(struct _NAN_EVENT_DEVICE_INFO);
+		break;
+	default:
+		break;
+	}
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+}
+#endif
+
+uint8_t nanIsEhtSupport(struct ADAPTER *prAdapter)
+{
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	return prAdapter->rWifiVar.ucStaEht &&
+		prAdapter->rWifiVar.ucNanEht;
+#else
+	return 0;
+#endif
+}
+
+uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter)
+{
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	return prAdapter->rWifiVar.ucStaEht &&
+		(prAdapter->rWifiVar.ucNanEht ==
+		FEATURE_FORCE_ENABLED);
+#else
+	return 0;
+#endif
+}
+
+#endif /* CFG_SUPPORT_NAN */

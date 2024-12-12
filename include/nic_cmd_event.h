@@ -3739,7 +3739,7 @@ struct _CMD_EVENT_TLV_COMMOM_T {
 
 struct _CMD_EVENT_TLV_ELEMENT_T {
 	uint32_t tag_type;
-	uint32_t body_len;
+	uint32_t body_len; /* size of the following aucbody[] */
 	uint8_t aucbody[];
 };
 
@@ -3773,6 +3773,32 @@ struct _NAN_CMD_DW_INTERVAL_T {
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
+struct _NAN_CMD_GET_DEVICE_INFO {
+	uint8_t ucVersion;
+	uint8_t aucReserved[3];
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
+
+struct _NAN_EVENT_DEVICE_INFO {
+	uint8_t ucIsEnabled;
+	uint8_t aucSelfMacAddr[MAC_ADDR_LEN];
+	uint8_t ucFwElectionEnable;
+	uint32_t u4NanDeviceRole;
+	uint32_t u4NanDeviceState;
+	uint8_t ucMastrPreference;
+	uint8_t ucRandomFactor;
+	uint8_t ucHopCount;
+	uint8_t aucClusterID[MAC_ADDR_LEN];
+	uint8_t aucAnchorMastrMacAddr[MAC_ADDR_LEN];
+	uint8_t ucAmMastrPreference;
+	uint8_t ucAmRandomFactor;
+	uint8_t aucParentMacAddr[MAC_ADDR_LEN];
+	uint8_t ucParentMastrPreference;
+	uint8_t ucParentRandomFactor;
+	uint32_t u4AMBTT;
+	uint32_t au4Tsf[2];
+};
+
 struct _NAN_EVENT_REPORT_BEACON {
 	enum ENUM_BAND eRfBand;
 	int32_t i4Rssi;
@@ -3782,6 +3808,7 @@ struct _NAN_EVENT_REPORT_BEACON {
 	uint8_t ucRate;
 	uint8_t ucHwChnl;
 	uint8_t ucBw;
+	uint8_t aucAnchorMastrRank[ANCHOR_MASTR_RANK_NUM];
 	uint8_t aucReserved[5];
 	uint8_t aucBeaconFrame[];
 };
@@ -3789,7 +3816,7 @@ struct _NAN_EVENT_REPORT_BEACON {
 enum _ENUM_NAN_SUB_CMD {
 	NAN_CMD_TEST, /* 0 */
 	NAN_TXM_TEST,
-	NAN_CMD_MASTER_PREFERENCE,
+	NAN_CMD_MASTR_PREFERENCE,
 	NAN_CMD_HOP_COUNT,
 	NAN_CMD_PUBLISH,
 	NAN_CMD_CANCEL_PUBLISH, /* 5 */
@@ -3818,6 +3845,7 @@ enum _ENUM_NAN_SUB_CMD {
 	NAN_CMD_SET_SCHED_VERSION,
 	NAN_CMD_SET_DW_INTERVAL,
 	NAN_CMD_ENABLE_UNSYNC = 30,
+	NAN_CMD_GET_DEVICE_INFO = 33,
 	NAN_CMD_VENDOR_PAYLOAD = 35,
 	NAN_CMD_SET_HOST_ELECTION = 42,
 	NAN_CMD_SET_ELECTION_ROLE = 43,
@@ -3826,6 +3854,7 @@ enum _ENUM_NAN_SUB_CMD {
 	/* Reserve for vendor r, 100 ~ 199 */
 
 	/* Reserve for vendor s, 200 ~ 299 */
+	NAN_CMD_EXT_CUSTOM_CMD = 200,
 	NAN_CMD_EXT_CLUSTER = 252,
 	NAN_CMD_EXT_P2P = 255,
 	NAN_CMD_EXT_MERGING_DIRECTION = 256,
@@ -3868,6 +3897,7 @@ enum _ENUM_NAN_SUB_EVENT {
 	NAN_EVENT_SERVICE_DISC_CAPABILITY,
 	NAN_EVENT_DEVICE_INFO,
 	NAN_EVENT_REPORT_BEACON,
+	NAN_EVENT_SLOT_STATISTICS,
 	NAN_EVENT_MATCH_EXPIRE,
 
 	NAN_EVENT_VENDOR_DISCOVERY_RESULT = 50, /* 50 */
@@ -4514,11 +4544,13 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_NAN
-struct _CMD_EVENT_TLV_ELEMENT_T *
-nicGetTargetTlvElement(uint16_t u2TargetTlvElement, void *prCmdBuffer);
+uint32_t nicNanAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
+				uint32_t prCmdBufferLen,
+				struct _CMD_EVENT_TLV_COMMOM_T *prCmdBuffer);
 
-uint32_t nicAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
-			     uint32_t prCmdBufferLen, void *prCmdBuffer);
+struct _CMD_EVENT_TLV_ELEMENT_T *
+nicNanGetTargetTlvElement(uint16_t u2TargetTlvElement,
+			  struct _CMD_EVENT_TLV_COMMOM_T *prCmdBuffer);
 
 void nicNanEventDispatcher(struct ADAPTER *prAdapter,
 			   struct WIFI_EVENT *prEvent);
@@ -4536,7 +4568,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
 
 void nicNanVendorEventHandler(struct ADAPTER *prAdapter,
 			      struct WIFI_EVENT *prEvent);
-#endif
+#endif /* CFG_SUPPORT_NAN */
 
 void nicEventReportUEvent(struct ADAPTER *prAdapter,
 		     struct WIFI_EVENT *prEvent);

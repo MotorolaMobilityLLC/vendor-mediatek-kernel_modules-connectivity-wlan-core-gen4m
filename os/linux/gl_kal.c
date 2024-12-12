@@ -92,6 +92,12 @@
 #endif
 #endif
 
+#if (CFG_SUPPORT_NAN == 1)
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+#include "nanRescheduler.h"
+#endif
+#endif
+
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -3261,6 +3267,13 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 		kalUpdate6GPwrMode(prAdapter, ucBssIndex);
 #endif
+#if CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1)
+			nanRescheduleNdlIfNeeded(prAdapter,
+				AIS_CONNECTED, NULL);
+#endif
+#endif
 
 		break;
 
@@ -3446,6 +3459,10 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 		}
 
+#if CFG_SUPPORT_NAN_EXT
+		nanExtTerminateApNan(prAdapter, NAN_ASC_EVENT_ASCC_END_PS);
+#endif
+
 		kalSetMediaStateIndicated(prGlueInfo,
 			MEDIA_STATE_DISCONNECTED,
 			ucBssIndex);
@@ -3477,6 +3494,13 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
 #endif
 		}
+#if CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1)
+			nanRescheduleNdlIfNeeded(prAdapter,
+				AIS_DISCONNECTED, NULL);
+#endif
+#endif
 		break;
 
 	case WLAN_STATUS_SCAN_COMPLETE:
@@ -3858,8 +3882,7 @@ void kalUpdateReAssocRspInfo(struct GLUE_INFO
 #endif
 }				/* kalUpdateReAssocRspInfo */
 
-void kalResetPacket(struct GLUE_INFO *prGlueInfo,
-		    void *prPacket)
+void kalResetPacket(struct GLUE_INFO *prGlueInfo, void *prPacket)
 {
 	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
 
@@ -11235,6 +11258,38 @@ static uint32_t calcualteTput(struct ADAPTER *prAdapter,
 
 		*throughput += txDiffBytes[i] + rxDiffBytes[i];
 		throughputInPPS += txDiffPkts[i] + rxDiffPkts[i];
+
+		if (IS_BSS_NAN(bss)) {
+			signed long nanTput;
+			signed long nanPps;
+			struct PERF_MONITOR *prPerMonitor;
+
+			nanTput = txDiffBytes[i] + rxDiffBytes[i];
+			nanPps = txDiffPkts[i] + rxDiffPkts[i];
+			do_div(nanTput, period);
+			do_div(nanPps, period);
+			nanTput <<= 3; /* bps */
+			nanTput >>= 10; /* Mbps */
+
+			prPerMonitor = &prAdapter->rPerMonitor;
+
+			if (nanTput < PERF_MON_NAN_BOOST_CPU_THRESHOLD) {
+				/* linger for NAN start stage */
+				if (prPerMonitor->u4NanBoostCpu > 0) {
+					prPerMonitor->u4NanBoostCpu--;
+					prPerMonitor->fgNanBoostCpuOff =
+					       prPerMonitor->u4NanBoostCpu == 0;
+				}
+			} else {
+				prPerMonitor->u4NanBoostCpu = 1;
+				DBGLOG(SW4, INFO,
+				       "NAN tput: %ld, pps=%ld, period=%d, boost=%u\n",
+				       nanTput, nanPps, period,
+				       prPerMonitor->u4NanBoostCpu);
+			}
+
+		}
+
 	}
 
 	perf->fgIdle = (*throughput == 0 && glue->i4TxPendingFrameNum == 0);
@@ -12083,9 +12138,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	bool keep_alive = FALSE;
 	struct net_device *prDevHandler = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-#if CFG_SUPPORT_PERF_IND || CFG_SUPPORT_DATA_STALL
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
 	uint32_t u4BoostCpuTh = prAdapter->rWifiVar.u4BoostCpuTh;
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t u4CoalescingIntTh;
@@ -12209,7 +12262,12 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MCC_BOOST_CPU
 			|| kalIsMccStateChange(prAdapter)
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+			|| prAdapter->rPerMonitor.u4NanBoostCpu
+			|| prAdapter->rPerMonitor.fgNanBoostCpuOff
 			) && (u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
+			uint32_t u4SetTarPerfLevel;
+			uint32_t u4SetBoostCpuTh;
+
 			DBGLOG(SW4, INFO,
 			"PerfMon total:%3lu.%03lu mbps lv:%u->%u th:%u fg:0x%lx\n",
 			(unsigned long) (maxTput >> 20),
@@ -12220,17 +12278,30 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag);
 
+			u4SetTarPerfLevel = u4CurrTputLv;
+			u4SetBoostCpuTh = u4BoostCpuTh;
+
+#if (CFG_SUPPORT_NAN == 1)
+			if (prAdapter->rPerMonitor.u4NanBoostCpu) {
+				u4SetTarPerfLevel = u4SetBoostCpuTh =
+					prWifiVar->u4NanBoostLevel;
+			}
+#endif /* CFG_SUPPORT_NAN */
+
 #if CFG_SUPPORT_MCC_BOOST_CPU
 			if (kalIsMccBoost(prAdapter)) {
-				kalBoostCpu(prAdapter,
-					PERF_MON_TP_MAX_THRESHOLD - 1,
-					PERF_MON_TP_MAX_THRESHOLD - 1);
-			} else
+				u4SetTarPerfLevel = u4SetBoostCpuTh =
+					PERF_MON_TP_MAX_THRESHOLD - 1;
+			}
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
-			kalBoostCpu(prAdapter, u4CurrTputLv,
-				u4BoostCpuTh);
-		} else {
-			kalBoostCpuPolicy(prAdapter);
+
+			DBGLOG(SW4, INFO, "kalBoostCpu(%u, %u)\n",
+				    u4SetTarPerfLevel, u4SetBoostCpuTh);
+			kalBoostCpu(prAdapter,
+				    u4SetTarPerfLevel, u4SetBoostCpuTh);
+
+			if (prAdapter->rPerMonitor.fgNanBoostCpuOff)
+				prAdapter->rPerMonitor.fgNanBoostCpuOff = FALSE;
 		}
 
 /* switch pcie gen */
@@ -14407,7 +14478,9 @@ static const char *nan_unisubevent_str(uint32_t u4SubEvent)
 		[UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2] = "NDL Flow Ctrl v2",
 		[UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY] = "Device Capability",
 		[UNI_EVENT_NAN_ID_MATCH_EXPIRE] = "Match Expire",
+		[UNI_EVENT_NAN_DEVICE_INFO] = "Device Info",
 		[UNI_EVENT_NAN_TAG_REPORT_BEACON] = "Report Beacon",
+		[UNI_EVENT_NAN_TAG_SLOT_STATISTICS] = "Slot Statistics",
 	};
 
 	if (u4SubEvent < UNI_EVENT_NAN_TAG_NUM)
@@ -14429,8 +14502,10 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 	u4SubEvent = prTlvElement->u2Tag;
 
-	DBGLOG(NAN, INFO, "subEvent:%d (%s)\n", u4SubEvent,
-			nan_unisubevent_str(u4SubEvent));
+	if (u4SubEvent != UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2) {
+		DBGLOG(NAN, INFO, "subEvent:%d (%s)\n", u4SubEvent,
+				nan_unisubevent_str(u4SubEvent));
+	}
 
 	if (prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, ERROR,
@@ -14464,7 +14539,7 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case UNI_EVENT_NAN_TAG_SELF_FOLLOW_EVENT:
-		status = mtk_cfg80211_vendor_event_nan_seldflwup_indication(
+		status = mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case UNI_EVENT_NAN_TAG_MASTER_IND_ATTR:
@@ -14524,6 +14599,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		mtk_cfg80211_vendor_event_nan_report_beacon(
 			prAdapter, prTlvElement->aucbody);
 		break;
+	case UNI_EVENT_NAN_TAG_SLOT_STATISTICS:
+		nicNanSlotStatisticsEvt(prAdapter, prTlvElement->aucbody);
+		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");
 		break;
@@ -14564,6 +14642,7 @@ static const char *nan_subevent_str(uint32_t u4SubEvent)
 	[NAN_EVENT_SERVICE_DISC_CAPABILITY] =  "Service Discovery Capability",
 	[NAN_EVENT_DEVICE_INFO] = "Device Info",
 	[NAN_EVENT_REPORT_BEACON] = "Report Beacon",
+	[NAN_EVENT_SLOT_STATISTICS] = "Slot Statistics",
 	[NAN_EVENT_MATCH_EXPIRE] = "Match Expire",
 
 	[NAN_EVENT_VENDOR_DISCOVERY_RESULT] = "Vendor Discovery Result",
@@ -14595,8 +14674,10 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 	u4SubEvent = prTlvElement->tag_type;
 
-	DBGLOG(NAN, INFO, "subEvent:%d (%s)\n", u4SubEvent,
+	if (u4SubEvent != NAN_EVENT_NDL_FLOW_CTRL_V2) {
+		DBGLOG(NAN, INFO, "subEvent:%d (%s)\n", u4SubEvent,
 				nan_subevent_str(u4SubEvent));
+	}
 
 	if (prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, ERROR,
@@ -14630,7 +14711,7 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_SELF_FOLLOW_EVENT:
-		status = mtk_cfg80211_vendor_event_nan_seldflwup_indication(
+		status = mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_MASTER_IND_ATTR:
@@ -14690,12 +14771,39 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		mtk_cfg80211_vendor_event_nan_report_beacon(
 			prAdapter, prTlvElement->aucbody);
 		break;
+	case NAN_EVENT_SLOT_STATISTICS:
+		nicNanSlotStatisticsEvt(prAdapter, prTlvElement->aucbody);
+		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");
 		break;
 	}
 }
 #endif
+
+void kalNanHandlePendingCmd(struct ADAPTER *prAdapter,
+	uint8_t *prBuffer)
+{
+	struct WIFI_EVENT *prEvent = (struct WIFI_EVENT *)prBuffer;
+	struct CMD_INFO *prCmdInfo;
+
+	/* command response handling */
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
+					 prEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler) {
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+							prEvent->aucBuffer);
+		} else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo,
+							prCmdInfo,
+							0, WLAN_STATUS_SUCCESS);
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+}
+
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
@@ -18094,7 +18202,7 @@ static void kalWorkSetCpu(struct GLUE_INFO *pr,
 	}
 
 end:
-	DBGLOG(INIT, INFO, "%s => %d",
+	DBGLOG(INIT, INFO, "%s => %d\n",
 		prWork->sWorkQueueName, prWork->i4WorkCpu);
 }
 

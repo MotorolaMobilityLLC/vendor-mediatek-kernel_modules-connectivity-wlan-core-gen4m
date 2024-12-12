@@ -51,9 +51,18 @@ uint32_t nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter);
 uint32_t nanDevSendAbortRequestToCnm(struct ADAPTER *prAdapter);
 void nanDevSendEnableRequest(struct ADAPTER *prAdapter,
 				struct MSG_HDR *prMsgHdr);
-void
-nanDevSetDWInterval(struct ADAPTER *prAdapter,
-			  uint8_t ucDWInterval);
+void nanDevSetDWInterval(struct ADAPTER *prAdapter, uint8_t ucDWInterval);
+
+uint32_t
+nanDevGetDeviceInfo(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
+void nanDevEventQueryDeviceInfo(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf);
+
+uint8_t nanIsEhtSupport(struct ADAPTER *prAdapter);
+uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter);
 
 /*========================= FUNCTIONs ============================*/
 #endif

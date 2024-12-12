@@ -361,7 +361,11 @@ void ehtRlmFillCapIE(
 	eht_bw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G) {
+	if (prBssInfo->eBand == BAND_6G
+#if CFG_SUPPORT_NAN
+		|| (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
+#endif
+		) {
 		if (eht_bw >= MAX_BW_320_1MHZ)
 			phy_cap_1 |= DOT11BE_PHY_CAP_320M_6G;
 	}
@@ -711,6 +715,10 @@ static void ehtRlmFillOpIE(
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
 
 	eht_bw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+#if CFG_SUPPORT_NAN
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
+		eht_bw = MAX_BW_320_1MHZ;
+#endif
 
 	if ((prBssInfo->eBand == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -1194,4 +1202,114 @@ void ehtRlmGenMlTrafficIndiIE(struct ADAPTER *prAdapter,
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prIe);
 }
+#if (CFG_SUPPORT_NAN == 1)
+#if (CFG_SUPPORT_NAN_11BE == 1)
+uint16_t ehtRlmNANFillCapIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss,
+	uint8_t *buf)
+{
+	struct MSDU_INFO *prMsduInfo;
+	uint16_t u2EstimatedFrameLen = 0;
+	uint16_t u2FrameLength = 0;
+
+	if (!ad || !bss || !buf) {
+		DBGLOG(NAN, ERROR, "ad is NULL!\n");
+		return 0;
+	}
+
+	if (!nanIsEhtEnable(ad))
+		return 0;
+
+	u2EstimatedFrameLen +=
+		ehtRlmCalculateCapIELen(
+			ad,
+			bss->ucBssIndex,
+			NULL);
+
+	prMsduInfo = cnmMgtPktAlloc(ad, u2EstimatedFrameLen);
+	if (prMsduInfo == NULL) {
+		DBGLOG(NAN, WARN, "No PKT_INFO_T.\n");
+		return 0;
+	}
+
+	ehtRlmFillCapIE(
+		ad,
+		bss,
+		prMsduInfo);
+
+
+	DBGLOG(NAN, TRACE, "Dump cap ie\n");
+
+	if (aucDebugModule[DBG_NAN_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+			(uint32_t) prMsduInfo->u2FrameLength);
+	}
+
+	kalMemCopy(buf,
+		prMsduInfo->prPacket,
+		prMsduInfo->u2FrameLength);
+
+	u2FrameLength = prMsduInfo->u2FrameLength;
+
+	cnmMgtPktFree(ad, prMsduInfo);
+
+	return u2FrameLength;
+}
+
+uint16_t ehtRlmNANFillOpIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss,
+	uint8_t *buf)
+{
+	struct MSDU_INFO *prMsduInfo;
+	uint16_t u2EstimatedFrameLen = 0;
+	uint16_t u2FrameLength = 0;
+
+	if (!ad || !bss || !buf) {
+		DBGLOG(NAN, ERROR, "ad is NULL!\n");
+		return 0;
+	}
+
+	if (!nanIsEhtEnable(ad))
+		return 0;
+
+	u2EstimatedFrameLen +=
+		ehtRlmCalculateOpIELen(
+			ad,
+			bss->ucBssIndex,
+			NULL);
+
+	prMsduInfo = cnmMgtPktAlloc(ad, u2EstimatedFrameLen);
+	if (prMsduInfo == NULL) {
+		DBGLOG(NAN, WARN, "No PKT_INFO_T.\n");
+		return 0;
+	}
+
+	ehtRlmFillOpIE(
+		ad,
+		bss,
+		prMsduInfo);
+
+
+	DBGLOG(NAN, TRACE, "Dump cap ie\n");
+
+	if (aucDebugModule[DBG_NAN_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+			(uint32_t) prMsduInfo->u2FrameLength);
+	}
+
+	kalMemCopy(buf,
+		prMsduInfo->prPacket,
+		prMsduInfo->u2FrameLength);
+
+	u2FrameLength = prMsduInfo->u2FrameLength;
+
+	cnmMgtPktFree(ad, prMsduInfo);
+
+	return u2FrameLength;
+}
+#endif /* CFG_SUPPORT_NAN_11BE */
+#endif /* CFG_SUPPORT_NAN */
+
 #endif /* CFG_SUPPORT_802_11BE == 1 */

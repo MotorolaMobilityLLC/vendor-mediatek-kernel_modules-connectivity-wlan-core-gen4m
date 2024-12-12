@@ -3,6 +3,8 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
+#if (CFG_SUPPORT_NAN == 1)
+
 #include "precomp.h"
 #include "nan_base.h"
 
@@ -644,8 +646,8 @@ nanRangingFrameCompose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 		uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-		rStatus = nanSchedGetAvailabilityAttr(prAdapter, &pucAttr,
-						      &u4AttrLen);
+		rStatus = nanSchedGetAvailabilityAttr(prAdapter, NULL,
+						      &pucAttr, &u4AttrLen);
 
 		DBGLOG(NAN, INFO, "nanSchedGetAvailabilityAttr 0x%08x\n",
 		       rStatus);
@@ -877,7 +879,7 @@ nanParseRangingFrame(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
 			rStatus = nanSchedPeerUpdateAvailabilityAttr(
 				prAdapter, prActionFrame->aucSrcAddr,
-				(uint8_t *)pucNanAttr);
+				(uint8_t *)pucNanAttr, NULL);
 
 			DBGLOG(NAN, INFO,
 			       "nanSchedPeerUpdateAvailabilityAttr 0x%08x\n",
@@ -1252,7 +1254,8 @@ nanRangingResponseRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 		uint32_t u4RejectCode = NAN_REASON_CODE_RESERVED;
 
 		u4Status =
-			nanSchedNegoChkRmtCrbProposal(prAdapter, &u4RejectCode);
+			nanSchedNegoChkRmtCrbProposal(
+				prAdapter, &u4RejectCode);
 
 		DBGLOG(NAN, INFO, "nanSchedNegoChkRmtCrbProposal 0x%08x\n",
 		       u4Status);
@@ -1600,18 +1603,17 @@ nanRangingFtmParamCmd(struct ADAPTER *prAdapter,
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus = nicAddNewTlvElement(NAN_CMD_FTM_PARAM,
-				      sizeof(struct _NAN_FTM_PARAM_CMD),
-				      u4CmdBufferLen, prCmdBuffer);
-
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_FTM_PARAM,
+					 sizeof(struct _NAN_FTM_PARAM_CMD),
+					 u4CmdBufferLen, prCmdBuffer);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
-
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+					      prCmdBuffer);
 	if (prTlvElement == NULL) {
 		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
@@ -1630,7 +1632,7 @@ nanRangingFtmParamCmd(struct ADAPTER *prAdapter,
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, NULL, NULL, u4CmdBufferLen,
-				      (uint8_t *)prCmdBuffer, NULL, 0);
+				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 }
@@ -1652,7 +1654,7 @@ nanRangingUpdateDistance(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	DBGLOG(NAN, INFO, "Report %u (1/4096 m), Range %u cm\n",
+	DBGLOG(NAN, INFO, "Report %u (1/4096 m), Range %lu cm\n",
 	       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range,
 	       FTM_FMT_TO_RANGE_CM(
 		       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range));
@@ -1863,18 +1865,17 @@ nanRangingReportDiscCmd(struct ADAPTER *prAdapter,
 
 	prTlvCommon->u2TotalElementNum = 0;
 
-	rStatus = nicAddNewTlvElement(NAN_CMD_RANGING_REPORT_DISC,
+	rStatus = nicNanAddNewTlvElement(NAN_CMD_RANGING_REPORT_DISC,
 				      sizeof(struct _NAN_RANGING_REPORT_CMD),
 				      u4CmdBufferLen, prCmdBuffer);
-
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
 		return;
 	}
 
-	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
-
+	prTlvElement = nicNanGetTargetTlvElement(prTlvCommon->u2TotalElementNum,
+					      prCmdBuffer);
 	if (prTlvElement == NULL) {
 		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
 		cnmMemFree(prAdapter, prCmdBuffer);
@@ -1886,7 +1887,7 @@ nanRangingReportDiscCmd(struct ADAPTER *prAdapter,
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, NULL, NULL, u4CmdBufferLen,
-				      (uint8_t *)prCmdBuffer, NULL, 0);
+				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 }
@@ -2288,7 +2289,8 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 	} else { /* NAN_PROTOCOL_RESPONDER */
 
 		u4Status =
-			nanSchedNegoChkRmtCrbProposal(prAdapter, &u4RejectCode);
+			nanSchedNegoChkRmtCrbProposal(
+				prAdapter, &u4RejectCode);
 
 		DBGLOG(NAN, INFO, "nanSchedNegoChkRmtCrbProposal 0x%08x\n",
 		       u4Status);
@@ -2385,3 +2387,5 @@ nanRangingListPrint(struct ADAPTER *prAdapter) {
 		}
 	}
 }
+
+#endif /* CFG_SUPPORT_NAN */

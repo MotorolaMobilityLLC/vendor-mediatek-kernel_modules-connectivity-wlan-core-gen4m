@@ -2297,6 +2297,7 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     ccflags-y += -DCFG_SUPPORT_WPA3_LOG=1
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=1
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=1
+    ccflags-y += -DCFG_SUPPORT_NAN_LOG=1
     ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
         CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
         CONFIG_MTK_WIFI_IGMP_OFLD_SUPPORT=y
@@ -2315,6 +2316,7 @@ else
     ccflags-y += -DCFG_SUPPORT_WPA3_LOG=0
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=0
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=0
+    ccflags-y += -DCFG_SUPPORT_NAN_LOG=0
 endif
 
 ifneq ($(CONFIG_MTK_MD1_SUPPORT), )
@@ -3440,7 +3442,8 @@ NAN_OBJS := $(NAN_DIR)nan_dev.o \
             $(NAN_DIR)nan_data_engine.o\
             $(NAN_DIR)nan_data_engine_util.o\
             $(NAN_DIR)nan_ranging.o\
-            $(NAN_DIR)nan_txm.o
+            $(NAN_DIR)nan_txm.o\
+            $(NAN_DIR)nanRescheduler.o
 
 ifeq ($(CONFIG_MTK_WIFI_NAN_EXT), y)
 OS_OBJS +=  $(EXT_DIR)$(OS_DIR)gl_sys.o
@@ -3453,7 +3456,9 @@ NAN_OBJS += $(EXT_DIR)$(NAN_DIR)nan_ext.o \
             $(EXT_DIR)$(NAN_DIR)nan_ext_amc.o \
             $(EXT_DIR)$(NAN_DIR)nan_ext_ascc.o \
             $(EXT_DIR)$(NAN_DIR)nan_ext_fr.o \
-            $(EXT_DIR)$(NAN_DIR)nan_ext_adsdc.o
+            $(EXT_DIR)$(NAN_DIR)nan_ext_eht.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_adsdc.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_log.o
 endif
 
 NAN_SEC_OBJS := $(NAN_DIR)nan_sec.o\

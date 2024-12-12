@@ -5891,5 +5891,12 @@ wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 uint32_t wlanoidBtCoreDumpCtrl(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 		       uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+#if CFG_SUPPORT_NAN
+uint32_t
+wlanoidGetNanDeviceInfo(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen);
+#endif
 
 #endif /* _WLAN_OID_H */

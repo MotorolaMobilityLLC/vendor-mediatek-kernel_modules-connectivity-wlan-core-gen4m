@@ -46,10 +46,12 @@
 #define NAN_MAX_SUPPORT_NDL_NUM (NAN_MAX_NDP_SESSIONS)
 #endif
 
-#define NAN_PROTOCOL_TIMEOUT 10000 /*2000*/
+#define NAN_PROTOCOL_TIMEOUT 3000 /*2000*/
 #define NAN_SECURITY_TIMEOUT 1000
-#define NAN_DATA_RETRY_TIMEOUT 4500 /*300*/
+#define NAN_DATA_RETRY_TIMEOUT 1600 /*300*/
 #define NAN_DATA_RETRY_LIMIT 2
+#define NAN_SCHED_REQ_RETRY_LIMIT 1
+#define NAN_RESUME_RESCHEDULE_TIMEOUT 5000
 
 /* Macros used by NAN Data Engine */
 #define NAN_DATAREQ_REQUIRE_QOS_UNICAST BIT(0)
@@ -74,8 +76,15 @@
 #define NAN_ELEM_MAX_LEN_HE_OP 16
 /* According to MAX len of Element ID: 1 byte*/
 #endif
+#if (CFG_SUPPORT_NAN_11BE == 1)
+#define NAN_ELEM_MAX_LEN_EHT_CAP 256
+#define NAN_ELEM_MAX_LEN_EHT_OP 16
+/* According to MAX len of Element ID: 1 byte*/
+#endif
 
 #define NAF_TX_RETRY_COUNT_LIMIT 5
+
+#define NAF_REPORT_END_RSP_EVENT_TXDONE 0
 
 /****************************************************
  *                    Local part
@@ -174,6 +183,16 @@ enum _ENUM_DP_PROTOCOL_REASON_CODE_T {
 	DP_REASON_USER_SPACE_RESPONSE_TIMEOUT,
 	DP_REASON_NUM
 };
+
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+enum _ENUM_NDL_RESCHEDULE_STATE_T {
+	NDL_RESCHEDULE_STATE_NONE,
+	NDL_RESCHEDULE_STATE_NEW,
+	NDL_RESCHEDULE_STATE_NEGO_ONGOING,
+	NDL_RESCHEDULE_STATE_ESTABLISHED,
+	NDL_RESCHEDULE_STATE_NUM
+};
+#endif
 
 struct wpa_sm;
 struct wpa_state_machine;
@@ -321,7 +340,8 @@ struct _NAN_NDL_INSTANCE_T {
 	uint8_t ucTxRetryCounter;
 
 	struct TIMER rNDPProtocolExpireTimer;
-	struct TIMER rNDPProtocolRetryTimer;
+	struct TIMER arNDLProtocolReschRetryTimer[NAN_PROTOCOL_ROLE_NUM];
+	struct TIMER arNDPProtocolRetryTimer[NAN_MAX_SUPPORT_NDP_NUM];
 	struct TIMER rNDPSecurityExpireTimer;
 	uint8_t ucNDLSetupCurrentStatus;
 	uint8_t ucReasonCode;
@@ -333,6 +353,7 @@ struct _NAN_NDL_INSTANCE_T {
 	unsigned char fgPagingRequired;
 	unsigned char fgCarryImmutableSchedule;
 	unsigned char fgIsCounter;
+	unsigned char fgNeedRespondCounter;
 
 	/* ATTR_NDL parameters */
 	uint8_t ucDialogToken;
@@ -355,9 +376,25 @@ struct _NAN_NDL_INSTANCE_T {
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t aucIeHeCap[NAN_ELEM_MAX_LEN_HE_CAP];
 #endif
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	uint8_t aucIeEhtCap[NAN_ELEM_MAX_LEN_EHT_CAP];
+#endif
 
 	struct LINK rPendingReqList;
 	uint8_t aucTxRespAddr[MAC_ADDR_LEN]; /* Schedule Response peer addr */
+
+
+	uint32_t u4FastRecoveryId; /* Store request ID */
+	uint32_t u4SetFastRecovery; /* Log timestamp of entering FR */
+
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1 && CFG_SUPPORT_NAN_11BE == 1)
+	u_int8_t fgIsEhtReschedule;
+#endif
+
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+	uint8_t fgTriggerReschedNewNDL;
+	uint8_t fgIs3rd6GNewNDL;
+#endif
 };
 
 struct _NAN_DATA_PATH_INFO_T {
@@ -370,7 +407,11 @@ struct _NAN_DATA_PATH_INFO_T {
 	uint16_t u2TransId;
 
 	unsigned char fgIsECSet;
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	uint8_t aucECAttr[600];
+#else
 	uint8_t aucECAttr[322];
+#endif
 	/* large enought to contain
 	 * OFFSET_OF(struct _NAN_ATTR_ELEMENT_CONTAINER_T, aucElements) +
 	 * ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP +
@@ -383,6 +424,9 @@ struct _NAN_DATA_PATH_INFO_T {
 	struct IE_VHT_CAP *prLocalVhtCap;
 #if (CFG_SUPPORT_802_11AX == 1)
 	struct _IE_HE_CAP_T *prLocalHeCap;
+#endif
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	struct IE_EHT_CAP_T *prLocalEhtCap;
 #endif
 
 	/* NET-DEV reference count */
@@ -402,6 +446,9 @@ struct _NAN_DATA_PATH_INFO_T {
 	uint8_t              ucServiceProtocolType;
 	uint8_t              ucProtocolType;
 	uint16_t             u2PortNum;
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+	struct LINK rReScheduleTokenList;
+#endif
 };
 
 /* CMD and EVT for OID */
@@ -516,6 +563,26 @@ struct _NAN_SCHED_EVENT_NDL_DISCONN_T {
 	uint8_t ucStaIdx;
 };
 
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+struct _NAN_RESCHED_NDL_INFO {
+	struct LINK_ENTRY rLinkEntry;
+	enum _ENUM_NDL_RESCHEDULE_STATE_T eNdlRescheduleState;
+	struct _NAN_NDL_INSTANCE_T *prNDL;
+};
+struct _NAN_DATA_ENGINE_SCHEDULE_RESCHEDULE_TOKEN_T {
+	struct LINK_ENTRY rLinkEntry;
+
+	 /* list head to point the list of NDLs need to be rescheduled */
+	struct LINK rReSchedNdlList;
+	uint8_t ucTokenID;
+	uint8_t ucRescheduleEvent;
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	uint8_t fgIsEhtReschedule;
+#endif
+};
+#endif
+
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -567,6 +634,11 @@ int32_t nanCmdDataEnd(struct ADAPTER *prAdapter,
 
 uint32_t nanUpdateNdlSchedule(struct ADAPTER *prAdapter,
 			      struct _NAN_PARAMETER_NDL_SCH *prNanparamUDSCH);
+
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+uint32_t nanUpdateNdlScheduleV2(struct ADAPTER *prAdapter,
+			struct _NAN_NDL_INSTANCE_T *prNDL);
+#endif
 
 uint32_t nanCmdDataUpdtae(struct ADAPTER *prAdapter,
 			  struct _NAN_PARAMETER_NDL_SCH *prNanUpdateSchParam);
@@ -745,7 +817,8 @@ uint32_t nanDeviceCapabilityAttrHandler(
 uint32_t nanAvailabilityAttrHandler(
 	struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAvailabilityAttr,
-	struct _NAN_NDL_INSTANCE_T *prNDL);
+	struct _NAN_NDL_INSTANCE_T *prNDL,
+	struct _NAN_NDP_INSTANCE_T *prNDP);
 
 uint32_t nanNDCAttrHandler(struct ADAPTER *prAdapter,
 			   enum _NAN_ACTION_T eNanAction,
@@ -947,6 +1020,30 @@ void nanDataEngineSharedKeyAttrAppend(struct ADAPTER *prAdapter,
 				      struct _NAN_NDL_INSTANCE_T *prNDL,
 				      struct _NAN_NDP_INSTANCE_T *prNDP);
 
+#if CFG_SUPPORT_NAN_EXT
+uint16_t
+nanDataEngineVendorAttrLength(struct ADAPTER *prAdapter,
+				 struct _NAN_NDL_INSTANCE_T *prNDL,
+				 struct _NAN_NDP_INSTANCE_T *prNDP);
+
+void nanDataEngineVendorAttrAppend(struct ADAPTER *prAdapter,
+				      struct MSDU_INFO *prMsduInfo,
+				      struct _NAN_NDL_INSTANCE_T *prNDL,
+				      struct _NAN_NDP_INSTANCE_T *prNDP);
+
+#if (CFG_SUPPORT_NAN_11BE == 1)
+uint16_t
+nanDataEngineVendorEhtAttrLength(struct ADAPTER *prAdapter,
+				 struct _NAN_NDL_INSTANCE_T *prNDL,
+				 struct _NAN_NDP_INSTANCE_T *prNDP);
+
+void nanDataEngineVendorEhtAttrAppend(struct ADAPTER *prAdapter,
+				      struct MSDU_INFO *prMsduInfo,
+				      struct _NAN_NDL_INSTANCE_T *prNDL,
+				      struct _NAN_NDP_INSTANCE_T *prNDP);
+#endif
+#endif
+
 uint16_t
 nanDataEngineNDPEAttrLength(struct ADAPTER *prAdapter,
 			    struct _NAN_NDL_INSTANCE_T *prNDL,
@@ -1086,5 +1183,13 @@ nanGetFeatureIsSigma(struct ADAPTER *prAdapter);
 struct _NAN_NDP_INSTANCE_T *
 nanDataUtilSearchNdpByNdpInstanceId(struct ADAPTER *prAdapter,
 				    uint32_t u4NdpInstanceId);
+
+uint32_t
+nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
+			 struct _NAN_NDL_INSTANCE_T *prNDL,
+			 struct STA_RECORD *prStaRec);
+
+const char *nanActionFrameOuiString(uint8_t subtype);
+
 #endif
 #endif

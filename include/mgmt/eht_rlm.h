@@ -101,5 +101,15 @@ uint32_t ehtRlmCalMlTrafficIndiIELen(struct ADAPTER *prAdapter,
 				     struct STA_RECORD *prStaRec);
 void ehtRlmGenMlTrafficIndiIE(struct ADAPTER *prAdapter,
 			      struct MSDU_INFO *prMsduInfo);
+#if (CFG_SUPPORT_NAN_11BE == 1)
+uint16_t ehtRlmNANFillCapIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss,
+	uint8_t *buf);
+uint16_t ehtRlmNANFillOpIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss,
+	uint8_t *buf);
+#endif /* CFG_SUPPORT_NAN_11BE == 1 */
 #endif /* CFG_SUPPORT_802_11BE == 1 */
 #endif /* !_EHT_RLM_H */

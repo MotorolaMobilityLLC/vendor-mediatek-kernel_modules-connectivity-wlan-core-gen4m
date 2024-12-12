@@ -4443,6 +4443,34 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 }
 #endif
 
+#if CFG_SUPPORT_NAN
+uint32_t nicUniCmdStaRecTagNan(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
+{
+	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
+	struct UNI_CMD_STAREC_NAN *tag =
+		(struct UNI_CMD_STAREC_NAN *)buf;
+
+	if (!prStaRec) {
+		DBGLOG(REQ, WARN, "NAN unicmd - prStaRec is NULL\n");
+		return 0;
+	}
+
+	tag->u2Tag = UNI_CMD_STAREC_TAG_NAN;
+	tag->u2Length = sizeof(struct UNI_CMD_STAREC_NAN);
+	tag->ucOtherWlanIndex = cmd->ucOtherWlanIndex;
+
+	DBGLOG(REQ, ERROR,
+		"NAN unicmd - StaRec[%u] WIDX[%u] other WIDX[%u]\n",
+		cmd->ucStaIndex,
+		cmd->ucWlanIndex,
+		cmd->ucOtherWlanIndex);
+
+	return tag->u2Length;
+}
+#endif
+
+
 struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_BASIC), nicUniCmdStaRecTagBasic},
 	{sizeof(struct UNI_CMD_STAREC_HT_INFO), nicUniCmdStaRecTagHtInfo},
@@ -4472,6 +4500,10 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 #if (CFG_SUPPORT_MLR == 1)
 	{sizeof(struct UNI_CMD_STAREC_MLR_INFO), nicUniCmdStaRecTagMlrInfo},
 #endif
+#if (CFG_SUPPORT_NAN == 1)
+	{sizeof(struct UNI_CMD_STAREC_NAN), nicUniCmdStaRecTagNan},
+#endif
+
 };
 
 uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
@@ -7815,8 +7847,8 @@ uint32_t nicUniCmdRttInstallLtfKeyseed(struct ADAPTER *ad,
 #endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_NAN
-struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,
-	uint16_t u2Length, uint8_t **ppucEvtBuf, struct ADAPTER *ad)
+struct WIFI_UNI_CMD_ENTRY *nicNanUniCmdGenEntry(struct ADAPTER *ad,
+			uint16_t u2Tag, uint16_t u2Length, uint8_t **ppucCmdBuf)
 {
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len;
@@ -7824,13 +7856,20 @@ struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,
 	struct UNI_CMD_EVENT_TLV_ELEMENT_T *tag;
 
 	max_cmd_len = sizeof(struct UNI_CMD_NAN) +
-				sizeof(struct UNI_CMD_EVENT_TLV_ELEMENT_T) +
-				u2Length;
+		      sizeof(struct UNI_CMD_EVENT_TLV_ELEMENT_T) +
+		      u2Length;
 
-	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_NAN,
-			max_cmd_len,
-			nicUniCmdEventSetCommon,
-			nicUniCmdTimeoutCommon);
+	if (u2Tag == UNI_CMD_NAN_TAG_GET_DEVICE_INFO) {
+		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_NAN,
+				max_cmd_len,
+				nanDevEventQueryDeviceInfo,
+				nicUniCmdTimeoutCommon);
+	} else {
+		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_NAN,
+				max_cmd_len,
+				nicUniCmdEventSetCommon,
+				nicUniCmdTimeoutCommon);
+	}
 
 	if (!entry)
 		return NULL;
@@ -7838,137 +7877,168 @@ struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,
 	uni_cmd = (struct UNI_CMD_NAN *) entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_EVENT_TLV_ELEMENT_T *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = u2Tag;
+	/* The length counts the size of structure and following payload */
 	tag->u2Length = u2Length + sizeof(struct UNI_CMD_EVENT_TLV_ELEMENT_T);
 
-	*ppucEvtBuf = tag->aucbody;
+	*ppucCmdBuf = tag->aucbody;
 
 	return entry;
 }
 
-
-uint32_t nicUniCmdNan(struct ADAPTER *ad,
-		struct WIFI_UNI_SETQUERY_INFO *info)
+uint32_t nicUniCmdNan(struct ADAPTER *ad, struct WIFI_UNI_SETQUERY_INFO *info)
 {
 #if (CFG_SUPPORT_NAN == 1)
 
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
-	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
-	uint8_t *ucEvtBuf;
-	uint16_t u2EvtTag;
-	uint16_t u2EvtLength;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement;
+	uint8_t *ucCmdBuf;
+	uint16_t u2CmdTag;
+	uint16_t u2CmdLength;
+
 
 	if (info->ucCID != CMD_ID_NAN_EXT_CMD)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *) info->pucInfoBuffer;
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)info->pucInfoBuffer;
 
-	prTlvElement = nicGetTargetTlvElement(1, info->pucInfoBuffer);
+	/* Current implementation only holds one Tag in one event */
+	prTlvElement = nicNanGetTargetTlvElement(1, prTlvCommon);
 
 	if (prTlvElement == NULL)
 		return WLAN_STATUS_FAILURE;
 
 	switch (prTlvElement->tag_type) {
-	case NAN_CMD_MASTER_PREFERENCE:
-		u2EvtTag = UNI_CMD_NAN_TAG_SET_MASTER_PREFERENCE;
+	case NAN_CMD_MASTR_PREFERENCE:
+		u2CmdTag = UNI_CMD_NAN_TAG_SET_MASTR_PREFERENCE;
 		break;
 	case NAN_CMD_PUBLISH:
-		u2EvtTag = UNI_CMD_NAN_TAG_PUBLISH;
+		u2CmdTag = UNI_CMD_NAN_TAG_PUBLISH;
 		break;
 	case NAN_CMD_CANCEL_PUBLISH:
-		u2EvtTag = UNI_CMD_NAN_TAG_CANCEL_PUBLISH;
+		u2CmdTag = UNI_CMD_NAN_TAG_CANCEL_PUBLISH;
 		break;
 	case NAN_CMD_UPDATE_PUBLISH:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_PUBLISH;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_PUBLISH;
 		break;
 	case NAN_CMD_SUBSCRIBE:
-		u2EvtTag = UNI_CMD_NAN_TAG_SUBSCRIBE;
+		u2CmdTag = UNI_CMD_NAN_TAG_SUBSCRIBE;
 		break;
 	case NAN_CMD_CANCEL_SUBSCRIBE:
-		u2EvtTag = UNI_CMD_NAN_TAG_CANCEL_SUBSCRIBE;
+		u2CmdTag = UNI_CMD_NAN_TAG_CANCEL_SUBSCRIBE;
 		break;
 	case NAN_CMD_TRANSMIT:
-		u2EvtTag = UNI_CMD_NAN_TAG_TRANSMIT;
+		u2CmdTag = UNI_CMD_NAN_TAG_TRANSMIT;
 		break;
 	case NAN_CMD_ENABLE_REQUEST:
-		u2EvtTag = UNI_CMD_NAN_TAG_ENABLE_REQUEST;
+		u2CmdTag = UNI_CMD_NAN_TAG_ENABLE_REQUEST;
 		break;
 	case NAN_CMD_DISABLE_REQUEST:
-		u2EvtTag = UNI_CMD_NAN_TAG_DISABLE_REQUEST;
+		u2CmdTag = UNI_CMD_NAN_TAG_DISABLE_REQUEST;
 		break;
 	case NAN_CMD_UPDATE_AVAILABILITY:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_AVAILABILITY;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_AVAILABILITY;
 		break;
 	case NAN_CMD_UPDATE_CRB:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_CRB;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_CRB;
 		break;
 	case NAN_CMD_MANAGE_PEER_SCH_RECORD:
-		u2EvtTag = UNI_CMD_NAN_TAG_MANAGE_PEER_SCH_RECORD;
+		u2CmdTag = UNI_CMD_NAN_TAG_MANAGE_PEER_SCH_RECORD;
 		break;
 	case NAN_CMD_MAP_STA_RECORD:
-		u2EvtTag = UNI_CMD_NAN_TAG_MAP_STA_RECORD;
+		u2CmdTag = UNI_CMD_NAN_TAG_MAP_STA_RECORD;
 		break;
 	case NAN_CMD_RANGING_REPORT_DISC:
-		u2EvtTag = UNI_CMD_NAN_TAG_RANGING_REPORT_DISC;
+		u2CmdTag = UNI_CMD_NAN_TAG_RANGING_REPORT_DISC;
 		break;
 	case NAN_CMD_FTM_PARAM:
-		u2EvtTag = UNI_CMD_NAN_TAG_FTM_PARAM;
+		u2CmdTag = UNI_CMD_NAN_TAG_FTM_PARAM;
 		break;
 	case NAN_CMD_UPDATE_PEER_UAW:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_PEER_UAW;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_PEER_UAW;
 		break;
 	case NAN_CMD_UPDATE_ATTR:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_ATTR;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_ATTR;
 		break;
 	case NAN_CMD_UPDATE_PHY_SETTING:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_PHY_SETTING;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_PHY_SETTING;
 		break;
 	case NAN_CMD_UPDATE_POTENTIAL_CHNL_LIST:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_POTENTIAL_CHNL_LIST;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_POTENTIAL_CHNL_LIST;
 		break;
 	case NAN_CMD_UPDATE_AVAILABILITY_CTRL:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_AVAILABILITY_CTRL;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_AVAILABILITY_CTRL;
 		break;
 	case NAN_CMD_UPDATE_PEER_CAPABILITY:
-		u2EvtTag = UNI_CMD_NAN_TAG_UPDATE_PEER_CAPABILITY;
+		u2CmdTag = UNI_CMD_NAN_TAG_UPDATE_PEER_CAPABILITY;
 		break;
 	case NAN_CMD_ADD_CSID:
-		u2EvtTag = UNI_CMD_NAN_TAG_ADD_CSID;
+		u2CmdTag = UNI_CMD_NAN_TAG_ADD_CSID;
 		break;
 	case NAN_CMD_MANAGE_SCID:
-		u2EvtTag = UNI_CMD_NAN_TAG_MANAGE_SCID;
+		u2CmdTag = UNI_CMD_NAN_TAG_MANAGE_SCID;
 		break;
 	case NAN_CMD_SET_SCHED_VERSION:
-		u2EvtTag = UNI_CMD_NAN_TAG_SET_SCHED_VERSION;
+		u2CmdTag = UNI_CMD_NAN_TAG_SET_SCHED_VERSION;
 		break;
 	case NAN_CMD_SET_DW_INTERVAL:
-		u2EvtTag = UNI_CMD_NAN_TAG_SET_DW_INTERVAL;
+		u2CmdTag = UNI_CMD_NAN_TAG_SET_DW_INTERVAL;
 		break;
 	case NAN_CMD_ENABLE_UNSYNC:
-		u2EvtTag = UNI_CMD_NAN_TAG_ENABLE_UNSYNC;
+		u2CmdTag = UNI_CMD_NAN_TAG_ENABLE_UNSYNC;
+		break;
+	case NAN_CMD_GET_DEVICE_INFO:
+		u2CmdTag = UNI_CMD_NAN_TAG_GET_DEVICE_INFO;
 		break;
 	case NAN_CMD_VENDOR_PAYLOAD:
-		u2EvtTag = UNI_CMD_NAN_TAG_VENDOR_PAYLOAD;
+		u2CmdTag = UNI_CMD_NAN_TAG_VENDOR_PAYLOAD;
 		break;
 	case NAN_CMD_SET_HOST_ELECTION:
-		u2EvtTag = UNI_CMD_NAN_TAG_SET_HOST_ELECTION;
+		u2CmdTag = UNI_CMD_NAN_TAG_SET_HOST_ELECTION;
 		break;
 	case NAN_CMD_SET_ELECTION_ROLE:
-		u2EvtTag = UNI_CMD_NAN_TAG_SET_ELECTION_ROLE;
+		u2CmdTag = UNI_CMD_NAN_TAG_SET_ELECTION_ROLE;
+		break;
+	case NAN_CMD_EXT_CLUSTER:
+		u2CmdTag = NAN_CMD_EXT_TAG_CLUSTER;
+		break;
+	case NAN_CMD_EXT_P2P:
+		u2CmdTag = NAN_CMD_EXT_TAG_P2P;
+		break;
+	case NAN_CMD_EXT_MERGING_DIRECTION:
+		u2CmdTag = NAN_CMD_EXT_TAG_MERGING_DIRECTION;
+		break;
+	case NAN_CMD_EXT_SYNC:
+		u2CmdTag = NAN_CMD_EXT_TAG_SYNC;
+		break;
+	case NAN_CMD_EXT_MERGING:
+		u2CmdTag = NAN_CMD_EXT_TAG_MERGING;
+		break;
+	case NAN_CMD_EXT_SCHEDULING:
+		u2CmdTag = NAN_CMD_EXT_TAG_SCHEDULING;
+		break;
+	case NAN_CMD_EXT_USD:
+		u2CmdTag = NAN_CMD_EXT_TAG_USD;
+		break;
+	case NAN_CMD_EXT_ASC:
+		u2CmdTag = NAN_CMD_EXT_TAG_ASC;
+		break;
+	case NAN_CMD_EXT_CUSTOM_CMD:
+		u2CmdTag = UNI_CMD_NAN_TAG_EXT_CUSTOM_CMD;
 		break;
 	default:
 		return WLAN_STATUS_NOT_ACCEPTED;
 		break;
 	}
 
-	u2EvtLength = prTlvElement->body_len;
+	u2CmdLength = prTlvElement->body_len;
 
-	entry = nicUniCmdNanGenEntry(u2EvtTag, u2EvtLength, &ucEvtBuf, ad);
+	entry = nicNanUniCmdGenEntry(ad, u2CmdTag, u2CmdLength, &ucCmdBuf);
 
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	kalMemCopy(ucEvtBuf, prTlvElement->aucbody, u2EvtLength);
+	kalMemCopy(ucCmdBuf, prTlvElement->aucbody, u2CmdLength);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -7979,6 +8049,7 @@ uint32_t nicUniCmdNan(struct ADAPTER *ad,
 #endif
 }
 #endif
+
 uint32_t nicUniCmdFwLogQueryBase(struct ADAPTER *ad,
 	uint32_t *addr)
 {

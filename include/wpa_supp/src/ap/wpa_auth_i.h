@@ -115,7 +115,7 @@ struct wpa_state_machine {
 
 	int pending_1_of_4_timeout;
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	u8 au1RmtAddr[6];
 	u8 u1PtkKeyId;
 	u8 fgPtkKeyIdSet;
@@ -142,8 +142,8 @@ struct wpa_state_machine {
 	u8 *pu1GetRxMsgKdeBuf;
 	u32 u4GetRxMsgKdeLen;
 
-	u8 *pu1AuthTokenBuf;
-	u8 *pu1M3MicMaterialBuf;
+	u8 au1AuthTokenBuf[NAN_AUTH_TOKEN_LEN];
+	u8 au1M3MicMaterialBuf[NAN_MIC_BUF_SIZE];
 	u32 u4M3MicMaterialLen;
 
 #endif

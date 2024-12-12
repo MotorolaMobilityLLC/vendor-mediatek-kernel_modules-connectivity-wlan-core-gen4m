@@ -122,6 +122,8 @@
 #define IPV6_PROTOCOL_ICMPV6                    0x3A
 #define IPV6_PROTOCOL_FRAGMENT                  0x2C
 
+#define EUI_64_U_BIT				BIT(1) /* IPv6 inverting bit */
+
 #define IPV6_UDP_PORT_DHCPC			546
 #define IPV6_UDP_PORT_DHCPS			547
 

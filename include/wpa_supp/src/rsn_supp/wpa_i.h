@@ -85,7 +85,7 @@ struct wpa_sm {
 	u8 *ap_wpa_ie, *ap_rsn_ie;
 	size_t ap_wpa_ie_len, ap_rsn_ie_len;
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	u8 fgPtkKeyIdSet;
 	u8 u1PtkKeyId;
 
@@ -111,8 +111,8 @@ struct wpa_sm {
 	u8 *pu1GetRxMsgKdeBuf;
 	u32 u4GetRxMsgKdeLen;
 
-	u8 *pu1AuthTokenBuf;
-	u8 *pu1M3MicMaterialBuf;
+	u8 au1AuthTokenBuf[NAN_AUTH_TOKEN_LEN];
+	u8 au1M3MicMaterialBuf[NAN_MIC_BUF_SIZE];
 	u32 u4M3MicMaterialLen;
 
 #endif

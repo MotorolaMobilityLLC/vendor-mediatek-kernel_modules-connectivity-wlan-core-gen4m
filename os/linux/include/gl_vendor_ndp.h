@@ -235,6 +235,10 @@ uint32_t nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 				 struct _NAN_NDP_INSTANCE_T *prNDP,
 				 uint32_t rTxDoneStatus);
 
+uint32_t nanNdpResponderUserTimeoutEvent(struct ADAPTER *prAdapter,
+					 uint32_t ndp_instance_id,
+					 uint16_t u2TransId);
+
 uint32_t nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 				 struct _NAN_NDP_INSTANCE_T *prNDP,
 				 uint32_t rTxDoneStatus);

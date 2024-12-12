@@ -3726,26 +3726,41 @@ uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 	if (ucOuiType == VENDOR_OUI_TYPE_NAN_NAF ||
 	    ucOuiType == VENDOR_OUI_TYPE_NAN_SDF) {
 		ucOuiSubtype = prActionFrame->ucOUISubtype;
-		DBGLOG(NAN, INFO,
-		       "Rx NAN Pub Action, StaIdx:%d, Wtbl:%d, Key:%d, OUISubtype:%d\n",
+		DBGLOG(NAN, VOC,
+		       "Rx NAN Pub Action, StaIdx:%d, Wtbl:%d, Key:%d, OUISubtype:%d(%s), Src: "
+		       MACSTR " Dest: " MACSTR "\n",
 		       prSwRfb->ucStaRecIdx, prSwRfb->ucWlanIdx,
 		       (prSwRfb->prStaRec ? prSwRfb->prStaRec->fgIsTxKeyReady
 					  : 0),
-		       ucOuiSubtype);
-		DBGLOG(NAN, INFO, "Src=>%02x:%02x:%02x:%02x:%02x:%02x\n",
-		       prActionFrame->aucSrcAddr[0],
-		       prActionFrame->aucSrcAddr[1],
-		       prActionFrame->aucSrcAddr[2],
-		       prActionFrame->aucSrcAddr[3],
-		       prActionFrame->aucSrcAddr[4],
-		       prActionFrame->aucSrcAddr[5]);
-		DBGLOG(NAN, INFO, "Dest=>%02x:%02x:%02x:%02x:%02x:%02x\n",
-		       prActionFrame->aucDestAddr[0],
-		       prActionFrame->aucDestAddr[1],
-		       prActionFrame->aucDestAddr[2],
-		       prActionFrame->aucDestAddr[3],
-		       prActionFrame->aucDestAddr[4],
-		       prActionFrame->aucDestAddr[5]);
+		       ucOuiSubtype,
+		       nanActionFrameOuiString(ucOuiSubtype),
+		       MAC2STR(prActionFrame->aucSrcAddr),
+		       MAC2STR(prActionFrame->aucDestAddr));
+
+		/* NAN_CHK_PNT log message */
+		nanLogRx(ucOuiSubtype, prActionFrame->aucSrcAddr);
+
+		/* NAN_CHK_PNT log message */
+		if (UNEQUAL_MAC_ADDR(prActionFrame->aucClusterID,
+		    nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0)
+		    ->aucClusterId)) {
+			switch (ucOuiSubtype) {
+			case NAN_ACTION_DATA_PATH_REQUEST:
+				nanLogFailRxReqStr("cluster_mismatch");
+				break;
+			case NAN_ACTION_DATA_PATH_RESPONSE:
+				nanLogFailRxRespStr("cluster_mismatch");
+				break;
+			case NAN_ACTION_DATA_PATH_CONFIRM:
+				nanLogFailRxConfmStr("cluster_mismatch");
+				break;
+			case NAN_ACTION_DATA_PATH_KEY_INSTALLMENT:
+				nanLogFailRxKeyInstlStr("cluster_mismatch");
+				break;
+			default:
+				break;
+			}
+		}
 
 		switch (ucOuiSubtype) {
 		case NAN_ACTION_RANGING_REQUEST:

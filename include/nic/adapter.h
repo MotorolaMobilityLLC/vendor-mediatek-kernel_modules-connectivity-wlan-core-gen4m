@@ -1288,6 +1288,11 @@ struct WIFI_VAR {
 	uint32_t u4MccBoostPresentTime;
 	uint32_t u4MccBoostForAllTputLvTh;
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+#if (CFG_SUPPORT_NAN == 1)
+	uint32_t u4NanBoostLevel;
+	uint32_t u4NanBoostInit;
+	uint32_t u4NanRescheduleInit;
+#endif /* CFG_SUPPORT_NAN */
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	u_int8_t fgSkbAllocWorkEn;
 	uint32_t u4SkbAllocScheduleTh;
@@ -1489,7 +1494,7 @@ struct WIFI_VAR {
 	uint8_t fgAllowSameBandDualSta;
 	uint8_t ucApForceSleep;
 
-#if CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	uint8_t ucMasterPref;
 	uint8_t ucConfig5gChannel;
 	uint8_t ucChannel5gVal;
@@ -1500,13 +1505,24 @@ struct WIFI_VAR {
 	uint8_t ucDftNdcStartOffset;
 	uint8_t ucNanFixChnl;
 	uint8_t ucNanFixBand;
+	uint8_t ucNanMapMask;
 	uint8_t ucNanEnable6g;
+	/* Allow NAN r3 style channel map for 6G channel map */
+	uint8_t ucNanEnableSS6g;
+	/* Initiate NDL reschedule from this device */
+	uint8_t ucNanEnable6gReschedInit;
 	uint8_t ucNanBandChnlType;
 	uint8_t ucNan6gBandwidth;
+
 	unsigned char fgEnableNDPE;
 	uint8_t ucDftNdlQosQuotaVal;    /* Unit: NAN slot */
 	uint16_t u2DftNdlQosLatencyVal; /* Unit: NAN slot */
 	uint8_t fgEnNanVHT;
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	uint8_t ucNanEht;
+	uint8_t ucNanEhtCHSwitchMode;
+#endif
+	uint8_t ucNanReportChInfo;
 	uint8_t ucNanFtmBw;
 	uint8_t ucNanDiscBcnInterval;
 	uint8_t ucNanCommittedDw;
@@ -1521,8 +1537,23 @@ struct WIFI_VAR {
 	uint8_t aucNanMacAddrStr[WLAN_CFG_VALUE_LEN_MAX];
 	unsigned char fgEnableRandNdpid;
 	u_int8_t fgNanUnrollInstallTk;
+	uint32_t u4NanSchTimeout;
+	uint32_t u4NanRespTimeout;
+	uint32_t u4NanConfirmTimeout;
 	uint32_t u4NanSendPacketGuardTime;
-#endif
+	u_int8_t fgNanAutoFC;
+	u_int8_t fgNanSkipAnqp;
+	u_int8_t fgNanConcurrency;
+	uint32_t u4NanPreferBandMask;
+	uint32_t u4NanNdcPreferBandMask;
+	uint8_t ucNanMaxNdpDissolve;
+	uint32_t u4NanDissolveTimeout;
+	uint32_t u4NanDissolveOffTimeout;
+	u_int8_t fgNanDissolveAbortScan;
+	u_int8_t fgNanOnAbortScan;
+	u_int8_t fgNanNdpSkipSchedule;
+	uint8_t ucNanLogSlotStatistics;
+#endif /* CFG_SUPPORT_NAN */
 
 #if CFG_SUPPORT_TPENHANCE_MODE
 	uint8_t ucTpEnhanceEnable;
@@ -2067,6 +2098,8 @@ struct PERF_MONITOR {
 	u_int8_t fgPolicyReady;
 	uint32_t u4TriggerCnt;
 	uint32_t u4RunCnt;
+	uint32_t u4NanBoostCpu; /* 0: disable boost; else: need boost */
+	u_int8_t fgNanBoostCpuOff; /* to reset CPU boost status */
 };
 
 struct HIF_STATS {
@@ -2478,6 +2511,9 @@ struct ADAPTER {
 
 	/* Container for Ranging Engine */
 	struct _NAN_RANGING_INFO_T rRangingInfo;
+
+	/* Store customizable AIS (to AP) time slots */
+	struct _NAN_AIS_BITMAP arNanAisSlots[NAN_BAND_NUM];
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT

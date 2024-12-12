@@ -31,6 +31,10 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#ifndef CHAR_BIT
+#define CHAR_BIT 8
+#endif
+
 /* These values must sync from Wifi HAL
  * /hardware/libhardware_legacy/include/hardware_legacy/wifi_hal.h
  */
@@ -2366,12 +2370,13 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter);
 void wlanCfgDumpIotApRule(struct ADAPTER *prAdapter);
 #endif
 
-int32_t wlanHexToNum(int8_t c);
+u_int8_t wlanIsHexChar(char c);
+int32_t wlanHexToNum(char c);
 
-int32_t wlanHexToByte(int8_t *hex);
-
-int32_t wlanHexToArray(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen);
-int32_t wlanHexToArrayR(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen);
+int32_t wlanHexStrToByteArray(const char *hexString,
+				 uint8_t *byte, size_t szBufSize);
+int32_t wlanByteArrayToHexStr(char *str, size_t u4StrBufSize,
+			      const uint8_t *byte, size_t len);
 
 int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr);
 

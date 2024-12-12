@@ -25,6 +25,7 @@
 #include "mgmt/ais_fsm.h"
 #include "mddp.h"
 #include "gl_kal.h"
+#include "wlan_lib.h"
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 #include "gl_coredump.h"
 #endif
@@ -32,10 +33,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-
-#ifndef CHAR_BIT
-#define CHAR_BIT 8
-#endif
 
 /* 6.1.1.2 Interpretation of priority parameter in MAC service primitives */
 /* Static convert the Priority Parameter/TID(User Priority/TS Identifier) to
@@ -4925,7 +4922,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 			if (u4NvramFragmentSize >
 				sizeof(struct CMD_NVRAM_FRAGMENT)) {
 				DBGLOG(INIT, ERROR,
-				"ID[%d]copy size[%d]bigger than buf size[%d]\n",
+				"ID[%d]copy size[%d]bigger than buf size[%zu]\n",
 				u1TypeID,
 				u4NvramFragmentSize,
 				sizeof(struct CMD_NVRAM_FRAGMENT));
@@ -6924,7 +6921,7 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 	struct BSS_DESC *prBssDesc = NULL;
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
-	int8_t  aucEleSize[] = {
+	size_t aucEleSize[] = {
 		sizeof(prIotApRule->ucVersion),
 		sizeof(prIotApRule->aVendorOui),
 		sizeof(prIotApRule->aVendorData),
@@ -6962,7 +6959,7 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 		while (*pCurTok != '\0') {
 			if (*pCurTok == ':')
 				ucStatus++;
-			else if (wlanHexToNum(*pCurTok) == -1) {
+			else if (!wlanIsHexChar(*pCurTok)) {
 				ucStatus = -EINVAL;
 				break;
 			}
@@ -6977,20 +6974,16 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 
 		for (ucTokId = 0; ucTokId < WLAN_IOT_AP_FG_MAX; ucTokId++) {
 			pCurTok = kalStrSep((char **)&pNexTok, ":");
-			if (pCurTok) {
-				if (ucTokId == WLAN_IOT_AP_FG_ACTION) {
-					ucStatus = wlanHexToArray(pCurTok,
+			if (pCurTok)
+				ucStatus = wlanHexStrToByteArray(pCurTok,
 						pOffset, aucEleSize[ucTokId]);
-				} else
-					ucStatus = wlanHexToArrayR(pCurTok,
-						pOffset, aucEleSize[ucTokId]);
-			} else {
+			else {
 				DBGLOG(INIT, TRACE,
 				       "Invalid Tok IOTAP%d\n", ucCnt);
 				continue;
 			}
 			DBGLOG(INIT, TRACE,
-				"IOTAP%d tok:%d Str:%s status:%d len:%d flag:0x%x\n",
+				"IOTAP%d tok:%d Str:%s status:%d len:%lu flag:0x%x\n",
 				ucCnt, ucTokId, pCurTok, ucStatus,
 				aucEleSize[ucTokId], prIotApRule->u2MatchFlag);
 
@@ -8281,6 +8274,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  MCC_BOOST_FOR_ALL_LEVEL, FEATURE_DEBUG_ONLY);
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 
+#if (CFG_SUPPORT_NAN == 1)
+	INIT_UINT(prWifiVar->u4NanBoostLevel, "NanBoostLevel",
+		  PERF_MON_TP_NAN_LEVEL, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanBoostInit, "NanBoostInit", 5,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanRescheduleInit, "NanRescheduleInit", 2,
+		  FEATURE_TO_CUSTOMER);
+#endif /* CFG_SUPPORT_NAN */
+
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	INIT_UINT(prWifiVar->fgSkbAllocWorkEn, "SkbAllocWorkEn",
 			FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
@@ -8633,7 +8635,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  BSS_MAX_IDLE_PERIOD_VALUE, FEATURE_TO_CUSTOMER);
 #endif
 
-#if CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	INIT_UINT(prWifiVar->ucNanMacAddrOverride, "NanMacOverride", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_STR(prWifiVar->aucNanMacAddrStr,
@@ -8668,11 +8670,18 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucDftNdlQosQuotaVal, "NanDftNdlQosQuota", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEnNanVHT, "NanVHT", 1, FEATURE_TO_CUSTOMER);
+#if (CFG_SUPPORT_NAN_11BE == 1)
+	INIT_UINT(prWifiVar->ucNanEht, "NanEHTDriver", 0, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanEhtCHSwitchMode, "NanEHTCHSwitchMode", 0,
+		  FEATURE_TO_CUSTOMER);
+#endif
 	INIT_UINT(prWifiVar->ucNanFtmBw,
 		"NanFtmBw", FTM_FORMAT_BW_HT_MIXED_BW20, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanDiscBcnInterval, "NanDiscBcnInterval", 100,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanCommittedDw, "NanDftCommittedDw", 1,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanReportChInfo, "NanReportChInfo", 1,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNoPmf, "NanForceNoPmf", 0, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanIsSigma, "NanIsSigma", 0,
@@ -8686,6 +8695,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanMaxNdpSession, "NanMaxNdpSession",
 		NAN_MAX_NDP_SESSIONS, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanMaxNdpDissolve,
+		"NanMaxNdpDissolve", prWifiVar->ucNanMaxNdpSession,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanDissolveTimeout,
+		"NanDissolveTimeout", 512, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanDissolveOffTimeout,
+		"NanDissolveOffTimeout", 80, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgNanDissolveAbortScan,
+		"NanDissolveAbortScan", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEnableRandNdpid, "NanEnableRandNdpid", 1,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4NanSendPacketGuardTime,
@@ -8698,18 +8716,66 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq",
 		(prWifiVar->ucNanFixChnl < 36) ? 0:1, FEATURE_TO_CUSTOMER);
 	}
+	INIT_UINT(prWifiVar->u4NanSchTimeout, "NanSchTimeout", 560,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanRespTimeout, "NanRespTimeout", 3000,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanConfirmTimeout, "NanConfirmTimeout",
+		NAN_DATA_RETRY_TIMEOUT, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanUnrollInstallTk, "NanUnrollInstallTk", 0,
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanFixBand, "NanFixBand", BAND_2G4,
 		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanMapMask, "NanMapMask", 255,
+		FEATURE_TO_CUSTOMER);
+	wlanCfgSetUint32(prAdapter, "NanMapMask",
+		prWifiVar->ucNanMapMask);
 	INIT_UINT(prWifiVar->ucNanEnable6g, "NanEnable6g", 1,
 		FEATURE_TO_CUSTOMER);
+	wlanCfgSetUint32(prAdapter, "NanEnable6g",
+		prWifiVar->ucNanEnable6g);
+	INIT_UINT(prWifiVar->ucNanEnableSS6g, "NanEnableSS6g", 1,
+		FEATURE_TO_CUSTOMER);
+	wlanCfgSetUint32(prAdapter, "NanEnableSS6g",
+		prWifiVar->ucNanEnableSS6g);
+	INIT_UINT(prWifiVar->ucNanEnable6gReschedInit,
+		"NanEnable6gReschedInit", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanBandChnlType, "NanBandChnlType",
 		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 		FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucNan6gBandwidth, "Nan6gBw", MAX_BW_20MHZ,
+	wlanCfgSetUint32(prAdapter, "NanBandChnlType",
+		prWifiVar->ucNanBandChnlType);
+	INIT_UINT(prWifiVar->ucNan6gBandwidth, "Nan6gBw", MAX_BW_160MHZ,
 		FEATURE_TO_CUSTOMER);
-#endif
+	INIT_UINT(prWifiVar->fgNanSkipAnqp, "NanSkipAnqp", 0,
+		FEATURE_TO_CUSTOMER);
+	/* 0: disabled; 1: 5G only; 2: 5G+2G (not completed yet) */
+	INIT_UINT(prWifiVar->fgNanAutoFC, "NanAutoFC", 1,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgNanConcurrency, "NanConcurrency", 0,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgNanNdpSkipSchedule,
+		"NanNdpSkipSchedule", 1, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgNanOnAbortScan,
+		"NanOnAbortScan", 1, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanPreferBandMask, "NanPreferBandMask",
+		0xF456231, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NanNdcPreferBandMask, "NanNdcPreferBandMask",
+		0xF64523, FEATURE_TO_CUSTOMER);
+		/*
+		 * [NanPreferBandMask]
+		 *	NAN_PREFER_BAND_MASK_XXX
+		 *	0x1: reference preferred ch
+		 *	0x2: reference 2G DW ch
+		 *	0x3: reference 5G DW ch
+		 *	0x4: reference 2G BAND
+		 *	0x5: reference 5G BAND
+		 *	0x6: reference 6G BAND
+		 *	0xF: default
+		 */
+	INIT_UINT(prWifiVar->ucNanLogSlotStatistics,
+		"NanLogSlotStatistics", 1, FEATURE_TO_CUSTOMER);
+#endif /* CFG_SUPPORT_NAN */
 
 #ifdef CFG_REUSE_RSN_IE
 	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", (CFG_REUSE_RSN_IE),
@@ -11045,7 +11111,14 @@ uint32_t wlanCfgInit(struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_CFG_FILE */
 
-int32_t wlanHexToNum(int8_t c)
+u_int8_t wlanIsHexChar(char c)
+{
+	return (c >= '0' && c <= '9' ||
+		c >= 'a' && c <= 'f' ||
+		c >= 'A' && c <= 'F');
+}
+
+int32_t wlanHexToNum(char c)
 {
 	if (c >= '0' && c <= '9')
 		return c - '0';
@@ -11056,74 +11129,108 @@ int32_t wlanHexToNum(int8_t c)
 	return -1;
 }
 
-int32_t wlanHexToByte(int8_t *hex)
+/**
+ * wlanHexStrToByteArray() - Convert string in hex format to byte array
+ * @hexString: input buffer of converted string in hexadecimal format with '\0'
+ * @byte: output buffer of byte stream
+ * @szBufSize: buffer length of 'byte'
+ *
+ * Context:
+ *  char hexString[] in hexadecimal format -> uint8_t byte[] of
+ *  'szBufSize' bytes.
+ *  Two buffers str and hexadecimal can be overlapped.
+ *
+ * Return: strlen of shexString, excluding '\0'
+ */
+int32_t wlanHexStrToByteArray(const char *hexString,
+			      uint8_t *byte, size_t szBufSize)
 {
-	int32_t a, b;
+	size_t i;
+	size_t offset = 0;
+	int i4Ret;
+	uint8_t ucValue;
+	uint8_t ucToken[3];
+	const size_t len = strlen(hexString);
 
-	a = wlanHexToNum(*hex++);
-	if (a < 0)
-		return -1;
-	b = wlanHexToNum(*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
-int32_t wlanHexToArray(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
-{
-	uint8_t converted = 0;
-	uint8_t len = (kalStrLen(hexString) + 1)/2;
-	uint8_t *tail = hexString + kalStrLen(hexString);
-
-	len = arrayLen < len ? arrayLen : len;
-	for (converted = 0; converted < len; converted++) {
-		if (kalStrLen(hexString) - converted*2 >= 2)
-			hexArray[converted] =
-				wlanHexToByte(tail - converted*2 - 2);
-		else
-			hexArray[converted] =
-				wlanHexToNum(*(tail - converted*2 - 1));
+	DBGLOG(INIT, INFO, "input str=%s\n", hexString);
+	if (len % 2 == 1) {
+		DBGLOG(INIT, LOUD,
+		       "Warning, odd string length %zu\n", strlen(hexString));
 	}
-	return converted;
-}
 
-int32_t wlanHexToArrayR(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
-{
-	uint8_t converted = 0;
-	uint8_t len = (kalStrLen(hexString) + 1)/2;
-
-	len = arrayLen < len ? arrayLen : len;
-	for (converted = 0; converted < len; converted++) {
-		if (converted*2 + 2  <= kalStrLen(hexString))
-			hexArray[converted] =
-				wlanHexToByte(hexString + converted*2);
-		else
-			hexArray[converted] =
-				wlanHexToNum(*(hexString + converted*2));
+	ucToken[2] = '\0';
+	for (i = 0; i < len && offset < szBufSize; i += 2, offset++) {
+		ucToken[0] = hexString[i];
+		ucToken[1] = hexString[i+1];
+		i4Ret = kalkStrtou8(ucToken, 16, &ucValue);
+		if (i4Ret)
+			break;
+		byte[offset] = ucValue;
 	}
-	return converted;
+	DBGLOG_HEX(INIT, TRACE, byte, offset);
+
+	return offset;
 }
 
+/**
+ * wlanByteArrayToHexStr() - Convert byte array to string in hex format
+ * @str: output buffer of converted string in hexadecimal format with '\0'
+ * @strBufSize: buffer size of str
+ * @byte: input buffer of byte stream
+ * @len: data length in byte buffer
+ *
+ * Context:
+ *  uint8_t byte[] of 'len' bytes -> char str[] in hexadecimal format.
+ *  Two buffers str and byte can be overlapped.
+ *
+ * Return: strlen of str, excluding '\0'
+ */
+int32_t wlanByteArrayToHexStr(char *str, size_t u4StrBufSize,
+			      const uint8_t *byte, size_t len)
+{
+	int32_t i;
+	uint32_t offset = 0;
+	uint8_t tmp[3];
+	int n;
 
+	DBGLOG_HEX(INIT, INFO, byte, len);
+
+	if (u4StrBufSize < (len * 2) + 1)
+		len = (u4StrBufSize - 1) / 2; /* translate partial */
+
+	for (i = len - 1; i >= 0; i--) {
+		offset = i * 2;
+		n = snprintf(tmp, sizeof(tmp), "%02X", byte[i]);
+		if (n != 2)
+			break;
+		memcpy(&str[offset], tmp, 2);
+	}
+	str[len * 2] = '\0';
+
+	DBGLOG(INIT, INFO, "output str=%s\n", str);
+	return len * 2;
+
+}
 
 int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr)
 {
 	int32_t i;
 	int8_t *pos = txt;
+	int i4Ret;
+	uint8_t ucValue;
+	uint8_t ucToken[3];
 
-	for (i = 0; i < 6; i++) {
-		int32_t a, b;
-
+	ucToken[2] = '\0';
+	for (i = 0; i < MAC_ADDR_LEN; i++, pos += 2) {
 		while (*pos == ':' || *pos == '.' || *pos == '-')
 			pos++;
 
-		a = wlanHexToNum(*pos++);
-		if (a < 0)
-			return -1;
-		b = wlanHexToNum(*pos++);
-		if (b < 0)
-			return -1;
-		*addr++ = (a << 4) | b;
+		ucToken[0] = pos[0];
+		ucToken[1] = pos[1];
+		i4Ret = kalkStrtou8(ucToken, 16, &ucValue);
+		if (i4Ret)
+			break;
+		addr[i] = ucValue;
 	}
 
 	return pos - txt;

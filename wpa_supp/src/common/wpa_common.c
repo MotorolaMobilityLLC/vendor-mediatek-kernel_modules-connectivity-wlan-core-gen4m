@@ -87,7 +87,7 @@ wpa_eapol_key_mic_wpa(const u8 *key, size_t key_len, int akmp, int ver,
 		      const u8 *buf, size_t len, u8 *mic) {
 	u8 hash[SHA384_MAC_LEN];
 
-	wpa_printf(MSG_INFO, "[%s] key_len:%d, akmp:%d, ver:%d, len:%d\n",
+	wpa_printf(MSG_INFO, "[%s] key_len:%lu, akmp:%d, ver:%d, len:%lu\n",
 		   __func__, key_len, akmp, ver, len);
 
 	wpa_hexdump(MSG_DEBUG, "key", key, key_len);
@@ -178,11 +178,14 @@ wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 
 	ptk->kck_len = wpa_kck_len(akmp);
 	ptk->kek_len = wpa_kek_len(akmp);
-	/*ptk->tk_len = wpa_cipher_key_len(cipher);*/
+#if (CFG_SUPPORT_NAN == 1)
 	ptk->tk_len = (cipher == NAN_CIPHER_SUITE_ID_NCS_SK_CCM_128) ? 16 : 32;
+#else /* CFG_SUPPORT_NAN */
+	ptk->tk_len = wpa_cipher_key_len(cipher);
+#endif /* CFG_SUPPORT_NAN */
 	ptk_len = ptk->kck_len + ptk->kek_len + ptk->tk_len;
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	/*NAN => (IAddr1 || RAddr2 || INounce1 || RNounce2)*/
 
 	os_memcpy(data, addr1, ETH_ALEN);

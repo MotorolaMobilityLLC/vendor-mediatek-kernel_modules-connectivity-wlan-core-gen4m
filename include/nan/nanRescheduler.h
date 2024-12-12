@@ -1,18 +1,16 @@
-// SPDX-License-Identifier: BSD-2-Clause
+/* SPDX-License-Identifier: GPL-2.0 */
+
 /*
- * Copyright (c) 2021 MediaTek Inc.
+ * Copyright (c) 2020 MediaTek Inc.
  */
-
-#include "precomp.h"
-#include "nan_txm.h"
-
-#if (CFG_SUPPORT_NAN == 1)
+#ifndef _NANRESCHEDULER_H_
+#define _NANRESCHEDULER_H_
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
  */
-
+#if CFG_SUPPORT_NAN
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -22,8 +20,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-
-#define TXM_UT_CONTENT_LEN 20
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -41,37 +37,46 @@
  */
 
 /*******************************************************************************
+ *                                 M A C R O S
+ *******************************************************************************
+ */
+
+
+/*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
 
-/*******************************************************************************
- *                              F U N C T I O N S
- *******************************************************************************
- */
+
+void nanRescheduleInit(struct ADAPTER *prAdapter);
+void nanRescheduleDeInit(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief
+ * \brief This func is used to
+ * 1) check if rescheduling is needed and
+ * 2) proceed rescheduling
  *
- * \param[in]
+ * \param[in] prAdapter
+ * \param[in] event : event origin to trigger this reschedule check
+ * \param[in] prNDL : NULL if event is AIS_CONNECTED or AIS_DISCONNECTED
+ *                    pointer to the (newly connected / disconnected) NDL
+ *                    if event is NEW_NDL or REMOVE_NDL
  *
- * \return none
+ * \return value : void
  */
 /*----------------------------------------------------------------------------*/
+void nanRescheduleNdlIfNeeded(struct ADAPTER *prAdapter,
+	enum RESCHEDULE_SOURCE,
+	struct _NAN_NDL_INSTANCE_T *prNDL);
+void nanRescheduleEnqueueNewToken(struct ADAPTER *prAdapter,
+	enum RESCHEDULE_SOURCE event,
+	struct _NAN_NDL_INSTANCE_T *prNDL);
 
-uint32_t
-nanTxUtTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
-	      enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "prMsduInfo error!\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	DBGLOG(TX, INFO, "EVENT-TX DONE: Status:%d\n", rTxDoneStatus);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
+uint32_t ReleaseNanSlotsForSchedulePrep(struct ADAPTER *prAdapter,
+				const enum RESCHEDULE_SOURCE event,
+				u_int8_t fgIsEhtRescheduleNewNDL);
 #endif /* CFG_SUPPORT_NAN */
+
+void nanResumeRescheduleTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam);
+#endif /* _NANRESCHEDULER_H_ */

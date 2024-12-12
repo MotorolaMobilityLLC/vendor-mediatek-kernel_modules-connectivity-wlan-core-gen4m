@@ -43,6 +43,8 @@
 #if CFG_SUPPORT_NAN
 #include "nan_data_engine.h"
 #include "nan_sec.h"
+#include "nanScheduler.h"
+#include "nanReg.h"
 #endif
 
 #if CFG_SUPPORT_RTT
@@ -2170,7 +2172,8 @@ int __priv_nan_struct(struct net_device *prNetDev,
 int
 priv_nan_struct(struct net_device *prNetDev,
 		struct iw_request_info *prIwReqInfo,
-		union iwreq_data *prIwReqData, char *pcExtra) {
+		union iwreq_data *prIwReqData, char *pcExtra)
+{
 	DBGLOG(REQ, INFO, "cmd=%x, flags=%x\n", prIwReqInfo->cmd,
 	       prIwReqInfo->flags);
 	DBGLOG(REQ, INFO, "mode=%x, flags=%x\n", prIwReqData->mode,
@@ -10701,7 +10704,8 @@ int priv_driver_proc_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 #if CFG_SUPPORT_NAN
 int
 priv_driver_set_nan_start(struct net_device *prNetDev, char *pcCommand,
-			  int i4TotalLen) {
+			  int i4TotalLen)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
@@ -10734,7 +10738,8 @@ priv_driver_set_nan_start(struct net_device *prNetDev, char *pcCommand,
 
 int
 priv_driver_get_master_ind(struct net_device *prNetDev, char *pcCommand,
-			   int i4TotalLen) {
+			   int i4TotalLen)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	int32_t i4Argc = 0;
@@ -10781,7 +10786,8 @@ priv_driver_get_master_ind(struct net_device *prNetDev, char *pcCommand,
 
 int
 priv_driver_get_range(struct net_device *prNetDev, char *pcCommand,
-		      int i4TotalLen) {
+		      int i4TotalLen)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	int32_t i4Argc = 0;
@@ -10846,7 +10852,8 @@ priv_driver_get_range(struct net_device *prNetDev, char *pcCommand,
 
 int
 priv_driver_set_faw_config(struct net_device *prNetDev, char *pcCommand,
-			   int i4TotalLen) {
+			   int i4TotalLen)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
@@ -10904,7 +10911,8 @@ priv_driver_set_faw_config(struct net_device *prNetDev, char *pcCommand,
 
 int
 priv_driver_set_faw_reset(struct net_device *prNetDev, char *pcCommand,
-			  int i4TotalLen) {
+			  int i4TotalLen)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
@@ -10916,7 +10924,8 @@ priv_driver_set_faw_reset(struct net_device *prNetDev, char *pcCommand,
 
 int
 priv_driver_set_faw_apply(struct net_device *prNetDev, char *pcCommand,
-			  int i4TotalLen) {
+			  int i4TotalLen)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
@@ -10926,8 +10935,9 @@ priv_driver_set_faw_apply(struct net_device *prNetDev, char *pcCommand,
 	return 0;
 }
 
-int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
-				int i4TotalLen)
+int
+priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
+		int i4TotalLen)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -10938,11 +10948,52 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
 	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
 	struct dl_list *ranging_list = NULL;
-	struct _NAN_RANGING_INSTANCE_T *prRng = NULL;
-	struct _NAN_RANGING_CTRL_T *prRngCtrl = NULL;
+	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
+	struct _NAN_RANGING_CTRL_T *prRangingCtrl = NULL;
 	int32_t i4Argc = 0, i4BytesWritten = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	uint8_t i = 0, j = 0;
+	size_t szTimeLineIdx = 0;
+	uint32_t u4Idx = 0, u4Idx1 = 0, u4Idx2 = 0;
+	uint32_t u4Length = 0;
+	uint8_t *pucContent = NULL;
+	uint8_t aucBuf[16] = {0};
+	uint32_t u4Size = sizeof(struct _NAN_EVENT_DEVICE_INFO);
+	uint32_t u4BufLen = 0;
+	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt = NULL;
+	struct _NAN_CHANNEL_TIMELINE_T *prChnlTimeline = NULL;
+	struct _NAN_SCHEDULER_T *prNanScheduler = NULL;
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
+	struct _NAN_AVAILABILITY_DB_T *prAvailAttr = NULL;
+	struct _NAN_AVAILABILITY_TIMELINE_T *prAvailEty = NULL;
+	struct LINK *prPeerSchDescList = NULL;
+	struct _NAN_EVENT_DEVICE_INFO *prEventDeviceInfo = NULL;
+	union _NAN_BAND_CHNL_CTRL ChInf = {0};
+	union _NAN_BAND_CHNL_CTRL ChCtl = {0};
+	union _NAN_BAND_CHNL_CTRL ct = {0};
+	uint32_t u4OpClass = 0;
+	uint8_t aucRole[5][16] = {"ROLE_NONE",
+						"ANCHOR_MASTR",
+						"ROLE_MASTR",
+						"ROLE_NON_MASTR",
+						"ROLE_NUM"};
+	uint8_t aucState[4][20] = {"STATE_NONE",
+						"NON_MASTR_SYNC",
+						"NON_MASTR_NON_SYNC",
+						"STATE_NUM"};
+	uint8_t aucNdpState[13][37] = {"NDP_IDLE",
+						"NDP_INITIATOR_TX_DP_REQUEST",
+						"NDP_INITIATOR_RX_DP_RESPONSE",
+						"NDP_INITIATOR_TX_DP_CONFIRM",
+						"NDP_INITIATOR_RX_DP_SECURITY_INSTALL",
+						"NDP_RESPONDER_WAIT_DATA_RSP",
+						"NDP_RESPONDER_TX_DP_RESPONSE",
+						"NDP_RESPONDER_RX_DP_CONFIRM",
+						"NDP_RESPONDER_TX_DP_SECURITY_INSTALL",
+						"NDP_NORMAL_TR",
+						"NDP_TX_DP_TERMINATION",
+						"NDP_DISCONNECT",
+						"NDP_PROTOCOL_STATE_NUM"};
 
 	if (!prNetDev) {
 		DBGLOG(NAN, ERROR, "prNetDev error!\n");
@@ -10968,32 +11019,83 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prNANSpecInfo->ucBssIndex);
 
-	if (!prBssInfo) {
-		DBGLOG(REQ, ERROR, "NAN Invalid BSS_INFO\n");
-		return -1;
-	}
-
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
+	/* Get NAN Command*/
+	prEventDeviceInfo = (struct _NAN_EVENT_DEVICE_INFO *)
+		   kalMemAlloc(u4Size, VIR_MEM_TYPE);
+
+	if (!prEventDeviceInfo) {
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
+		return -1;
+	}
+	kalMemZero(prEventDeviceInfo, u4Size);
+	kalIoctl(prGlueInfo,
+			wlanoidGetNanDeviceInfo,
+			prEventDeviceInfo,
+			u4Size,
+			&u4BufLen);
+
+	if (prEventDeviceInfo->ucIsEnabled == FALSE) {
+		DBGLOG(NAN, ERROR, "NAN isn't enabled\n");
+		return -1;
+	}
+
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"\n[NAN Info]\n");
+	    "\n\n=============================[NAN Info]=============================\n");
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"Cluster["MACSTR"] [NSS:%d] %s %s\n",
-		MAC2STR(prNANSpecInfo->aucClusterId),
+	       "NAN Mode : %s, Hop Count = %u\n",
+	       prEventDeviceInfo->ucIsEnabled & TRUE ? "Enabled" : "Disabled",
+	       prEventDeviceInfo->ucHopCount);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"Role = %s, State : %s\n",
+		aucRole[prEventDeviceInfo->u4NanDeviceRole],
+	    aucState[prEventDeviceInfo->u4NanDeviceState]);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "AMBTT = 0x%08x, TSF = 0x%08x%08x\n",
+	       prEventDeviceInfo->u4AMBTT,
+		   prEventDeviceInfo->au4Tsf[1],
+	       prEventDeviceInfo->au4Tsf[0]);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"Cluster["MACSTR"] [NSS:%u] %s %s\n\n",
+		MAC2STR(prEventDeviceInfo->aucClusterID),
 		prAdapter->rWifiVar.ucNSS,
 		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT ? "[HT]" : "",
 		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT ? "[VHT]" : "");
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"\nMaster Preference %u, Random Factor %u\n",
-		prNANSpecInfo->rMasterIndAttr.ucMasterPreference,
-		prNANSpecInfo->rMasterIndAttr.ucRandomFactor);
+			"This Device["MACSTR"]\n",
+			MAC2STR(prEventDeviceInfo->aucSelfMacAddr));
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "Mastr Preference         = %3u, Random Factor       = %3u\n",
+	       prEventDeviceInfo->ucMastrPreference,
+	       prEventDeviceInfo->ucRandomFactor);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nAnchor Mastr["MACSTR"]\n",
+		MAC2STR(prEventDeviceInfo->aucAnchorMastrMacAddr));
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "AM Mastr Preference      = %3u, AM Random Factor    = %3u\n",
+	       prEventDeviceInfo->ucAmMastrPreference,
+	       prEventDeviceInfo->ucAmRandomFactor);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nParent["MACSTR"]\n",
+		MAC2STR(prEventDeviceInfo->aucParentMacAddr));
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "Parent Mastr Preference  = %3u, Parent Random Factor = %3u\n",
+	       prEventDeviceInfo->ucParentMastrPreference,
+	       prEventDeviceInfo->ucParentRandomFactor);
 
 	/* Data Path */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"\n[NDL Info]\n");
+	    "\n=============================[NDL Info]=============================\n");
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"Maximum NDL Cache Size : %d\n", NAN_MAX_SUPPORT_NDL_NUM);
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
@@ -11005,48 +11107,256 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 		if (prNDL->fgNDLValid == FALSE)
 			continue;
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-			"Peer[" MACSTR "], Idx:%d, %s\n",
-			MAC2STR(prNDL->aucPeerMacAddr), i,
+			"*****************************[NDL #%d]*******************************\n",
+			i);
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"Peer[" MACSTR "], %s\n",
+			MAC2STR(prNDL->aucPeerMacAddr),
 			prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR ?
 				"[INITIATOR]" : "[RESPONDER]");
-		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"--- [NDP Info]\n");
 		for (j = 0; j < NAN_MAX_SUPPORT_NDP_NUM; j++) {
 			prNDP  = &(prNDL->arNDP[j]);
 			if (prNDP->fgNDPValid == FALSE)
 				continue;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"--- Peer[" MACSTR "], Idx:%d, %s %s State:[%u]->[%u], NdpID:%u, PubID:%u\n",
-				MAC2STR(prNDP->aucPeerNDIAddr), j,
+				"*****************************[NDP #%d]*******************************\n",
+				j);
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"[" MACSTR "], %s %s - NdpID:%u, PubID:%u\n",
+				MAC2STR(prNDP->aucPeerNDIAddr),
 				prNDP->fgNDPActive ? "[ACTIVE]" : "[INACTIVE]",
 				prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR ?
 					"[INITIATOR]" : "[RESPONDER]",
-				prNDP->eLastNDPProtocolState,
-				prNDP->eCurrentNDPProtocolState,
 				prNDP->ucNDPID,
 				prNDP->ucPublishId);
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"FSM:[%s]->[%s]\n",
+				aucNdpState[prNDP->eLastNDPProtocolState],
+				aucNdpState[prNDP->eCurrentNDPProtocolState]);
 		}
 	}
 
-	/* Raging */
+	/* nanSchedDbgDumpTimelineDb */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-			"\n[RANGING Info]\n");
+	    "\n=========================[Scheduler Info]===========================\n");
+
+	for (szTimeLineIdx = 0; szTimeLineIdx < NAN_TIMELINE_MGMT_SIZE;
+	     szTimeLineIdx++) {
+		prNanTimelineMgmt =
+			nanGetTimelineMgmt(prAdapter, szTimeLineIdx);
+
+		for (u4Idx = 0;
+			u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
+			u4Idx++) {
+			prChnlTimeline = &prNanTimelineMgmt->arChnlList[u4Idx];
+			if (prChnlTimeline->fgValid == FALSE)
+				continue;
+
+			ChInf = prChnlTimeline->rChnlInfo;
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"[%zu][%u] MapId:%d, Raw:0x%x, Commit Chnl:%u, Class:%u, Bw:%d\n",
+				szTimeLineIdx, u4Idx,
+				prNanTimelineMgmt->ucMapId,
+				ChInf.u4RawData,
+				ChInf.rChannel.u4PrimaryChnl,
+				ChInf.rChannel.u4OperatingClass,
+				nanRegGetBw(ChInf.rChannel.u4OperatingClass));
+
+			u4Length = sizeof(prChnlTimeline->au4AvailMap);
+			pucContent = (uint8_t *)prChnlTimeline->au4AvailMap;
+			if (u4Length >= 16) {
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+					"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+					pucContent[0], pucContent[1],
+					pucContent[2], pucContent[3],
+					pucContent[4], pucContent[5],
+					pucContent[6], pucContent[7],
+					pucContent[8], pucContent[9],
+					pucContent[10], pucContent[11],
+					pucContent[12], pucContent[13],
+					pucContent[14], pucContent[15]);
+
+			} else if (u4Length > 0) {
+				kalMemZero(aucBuf, 16);
+				kalMemCopy(aucBuf, pucContent, u4Length);
+
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+					"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+					aucBuf[0], aucBuf[1], aucBuf[2],
+					aucBuf[3], aucBuf[4], aucBuf[5],
+					aucBuf[6], aucBuf[7], aucBuf[8],
+					aucBuf[9], aucBuf[10], aucBuf[11],
+					aucBuf[12], aucBuf[13], aucBuf[14],
+					aucBuf[15]);
+			}
+		}
+
+		for (u4Idx = 0;
+			u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
+			u4Idx++) {
+			if (prNanTimelineMgmt->fgChkCondAvailability == FALSE)
+				break;
+
+			prChnlTimeline =
+				&prNanTimelineMgmt->arCondChnlList[u4Idx];
+			if (prChnlTimeline->fgValid == FALSE)
+				continue;
+
+			ChInf = prChnlTimeline->rChnlInfo;
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"[%zu][%u] MapId:%d, Raw:0x%x, Cond Chnl:%u, Class:%u, Bw:%d\n",
+				szTimeLineIdx, u4Idx,
+				prNanTimelineMgmt->ucMapId,
+				ChInf.u4RawData,
+				ChInf.rChannel.u4PrimaryChnl,
+				ChInf.rChannel.u4OperatingClass,
+				nanRegGetBw(ChInf.rChannel.u4OperatingClass));
+
+			u4Length = sizeof(prChnlTimeline->au4AvailMap);
+			pucContent = (uint8_t *)prChnlTimeline->au4AvailMap;
+			if (u4Length >= 16) {
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+					"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+					pucContent[0], pucContent[1],
+					pucContent[2], pucContent[3],
+					pucContent[4], pucContent[5],
+					pucContent[6], pucContent[7],
+					pucContent[8], pucContent[9],
+					pucContent[10], pucContent[11],
+					pucContent[12], pucContent[13],
+					pucContent[14], pucContent[15]);
+			} else if (u4Length > 0) {
+				kalMemZero(aucBuf, 16);
+				kalMemCopy(aucBuf, pucContent, u4Length);
+
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+					"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+					aucBuf[0], aucBuf[1], aucBuf[2],
+					aucBuf[3], aucBuf[4], aucBuf[5],
+					aucBuf[6], aucBuf[7], aucBuf[8],
+					aucBuf[9], aucBuf[10], aucBuf[11],
+					aucBuf[12], aucBuf[13], aucBuf[14],
+					aucBuf[15]);
+			}
+		}
+	}
+
+	/* nanSchedDbgDumpPeerAvailability */
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n[PeerAvailability]\n");
+
+	prNanScheduler = nanGetScheduler(prAdapter);
+	prPeerSchDescList = &prNanScheduler->rPeerSchDescList;
+
+	LINK_FOR_EACH_ENTRY(prPeerSchDesc, prPeerSchDescList, rLinkEntry,
+		struct _NAN_PEER_SCH_DESC_T) {
+		if (prPeerSchDesc == NULL) {
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"Can't find peer schedule desc\n");
+			break;
+		}
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"Dump %02x:%02x:%02x:%02x:%02x:%02x Availability\n",
+			prPeerSchDesc->aucNmiAddr[0],
+			prPeerSchDesc->aucNmiAddr[1],
+			prPeerSchDesc->aucNmiAddr[2],
+			prPeerSchDesc->aucNmiAddr[3],
+			prPeerSchDesc->aucNmiAddr[4],
+			prPeerSchDesc->aucNmiAddr[5]);
+
+		for (u4Idx = 0; u4Idx < NAN_NUM_AVAIL_DB; u4Idx++) {
+			prAvailAttr = &prPeerSchDesc->arAvailAttr[u4Idx];
+			if (prAvailAttr->ucMapId == NAN_INVALID_MAP_ID)
+				continue;
+
+			for (u4Idx1 = 0;
+				u4Idx1 < NAN_NUM_AVAIL_TIMELINE;
+				u4Idx1++) {
+				prAvailEty =
+					&prAvailAttr->arAvailEntryList[u4Idx1];
+				if (prAvailEty->fgActive == FALSE)
+					continue;
+
+				if (prAvailEty->arBandChnlCtrl[0].u4Type ==
+					NAN_BAND_CH_ENTRY_LIST_TYPE_BAND)
+					continue;
+
+				ChCtl = prAvailEty->arBandChnlCtrl[0];
+				u4OpClass = ChCtl.rChannel.u4OperatingClass;
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+					"[%u][%u] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
+					u4Idx, u4Idx1, prAvailAttr->ucMapId,
+					prAvailEty->rEntryCtrl.u2RawData,
+					ChCtl.u4RawData,
+					ChCtl.rChannel.u4OperatingClass,
+					nanRegGetBw(u4OpClass));
+				for (u4Idx2 = 0;
+					u4Idx2 < prAvailEty->ucNumBandChnlCtrl;
+					u4Idx2++) {
+					ct = prAvailEty->arBandChnlCtrl[u4Idx2];
+					LOGBUF(pcCommand, i4TotalLen,
+						i4BytesWritten,
+						"[%u] PriChnl:%u\n",
+						u4Idx2,
+						ct.rChannel.u4PrimaryChnl);
+				}
+
+				u4Length = sizeof(prAvailEty->au4AvailMap);
+				pucContent =
+					(uint8_t *)prAvailEty->au4AvailMap;
+
+				if (u4Length >= 16) {
+					LOGBUF(pcCommand, i4TotalLen,
+						i4BytesWritten,
+						"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+						pucContent[0], pucContent[1],
+						pucContent[2], pucContent[3],
+						pucContent[4], pucContent[5],
+						pucContent[6], pucContent[7],
+						pucContent[8], pucContent[9],
+						pucContent[10], pucContent[11],
+						pucContent[12], pucContent[13],
+						pucContent[14], pucContent[15]);
+				} else if (u4Length > 0) {
+					kalMemZero(aucBuf, 16);
+					kalMemCopy(aucBuf,
+						pucContent,
+						u4Length);
+
+					LOGBUF(pcCommand, i4TotalLen,
+						i4BytesWritten,
+						"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+						aucBuf[0], aucBuf[1],
+						aucBuf[2], aucBuf[3],
+						aucBuf[4], aucBuf[5],
+						aucBuf[6], aucBuf[7],
+						aucBuf[8], aucBuf[9],
+						aucBuf[10], aucBuf[11],
+						aucBuf[12], aucBuf[13],
+						aucBuf[14], aucBuf[15]);
+				}
+			}
+		}
+	} /* LINK_FOR_EACH_ENTRY */
+
+	/* Ranging */
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	    "\n===========================[Ranging Info]===========================\n");
 
 	ranging_list = &prAdapter->rRangingInfo.ranging_list;
-	dl_list_for_each(prRng, ranging_list,
-			struct _NAN_RANGING_INSTANCE_T, list) {
-		if (prRng == NULL)
-			return -1;
-
-		prRngCtrl = &prRng->ranging_ctrl;
+	dl_list_for_each(prRanging, ranging_list,
+			 struct _NAN_RANGING_INSTANCE_T, list) {
+		prRangingCtrl = &prRanging->ranging_ctrl;
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			"\nPeer[" MACSTR "] %s State:[%u] Range: %u cm\n",
-			MAC2STR(prRng->ranging_ctrl.aucPeerAddr),
-			prRngCtrl->ucRole == NAN_PROTOCOL_INITIATOR ?
+			MAC2STR(prRanging->ranging_ctrl.aucPeerAddr),
+			prRangingCtrl->ucRole == NAN_PROTOCOL_INITIATOR ?
 				"[INITIATOR]" : "[RESPONDER]",
-			prRngCtrl->eCurrentState,
-			prRngCtrl->range_measurement_cm ?
-				prRngCtrl->range_measurement_cm : 0);
+			prRangingCtrl->eCurrentState,
+			prRangingCtrl->range_measurement_cm ?
+				prRangingCtrl->range_measurement_cm : 0);
+
 	}
 
 	return i4BytesWritten;
@@ -22440,7 +22750,7 @@ int priv_support_driver_cmd(struct net_device *prNetDev,
 			i4BytesWritten++;
 		priv_cmd->used_len = i4BytesWritten;
 		if (copy_to_user(prReq->ifr_data, priv_cmd,
-				sizeof(struct priv_driver_cmd_s))) {
+				i4BytesWritten)) {
 			ret = -EFAULT;
 			DBGLOG(REQ, INFO, "copy fail");
 		}

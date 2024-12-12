@@ -281,7 +281,7 @@ static int
 wpa_derive_ptk(struct wpa_sm *sm, const unsigned char *src_addr,
 	       const struct wpa_eapol_key *key, struct wpa_ptk *ptk) {
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	wpa_printf(MSG_INFO, "[%s] Enter\n", __func__);
 
 	wpa_printf(MSG_INFO, "[%s] initiator_addr: " MACSTR "\n", __func__,
@@ -402,7 +402,7 @@ wpa_supplicant_process_1_of_4(struct wpa_sm *sm, const unsigned char *src_addr,
 	kde = sm->assoc_wpa_ie;
 	kde_len = sm->assoc_wpa_ie_len;
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	ver = WPA_KEY_INFO_TYPE_AES_128_CMAC; /*TODO_CJ: dynamic selection*/
 	if (nan_sec_wpa_supplicant_send_2_of_4(sm, sm->bssid, key, ver,
 					       sm->snonce, kde, kde_len, ptk))
@@ -469,13 +469,13 @@ wpa_supplicant_key_neg_complete(struct wpa_sm *sm, const u8 *addr, int secure) {
 	*	sm->cur_pmksa->opportunistic = 0;
 	*}
 	*/
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	/*nanNdpNotifySecStatus(sm->u1NdpIdx, */
 	/*			REPORT_EV_SUCCESS, 0, NAN_SEC_M4); */
 	/*TODO_CJ*/
 	nanSecStaSmBufReset(sm);
 #else
-	wpas_evt_wpa_result(REPORT_EV_SUCCESS, 0, FALSE);
+	/* wpas_evt_wpa_result(REPORT_EV_SUCCESS, 0, FALSE); */
 #endif
 }
 
@@ -535,7 +535,7 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm,
 					   sm->ptk.tk, keylen) < 0) {
 		/*wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
 		*		"WPA: Failed to set PTK to the
-		*		driver (alg=%d keylen=%d bssid=" MACSTR ")",
+		*		driver (alg=%d keylen=%d bssid=)" MACSTR,
 		*		alg, keylen, MAC2STR(sm->bssid));
 		*/
 		return -1;
@@ -1023,7 +1023,7 @@ wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 	}
 #endif
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 	ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
 	if (nan_sec_wpa_supplicant_send_4_of_4(sm, sm->bssid, key, ver,
 					       key_info, &sm->ptk)) {
@@ -1360,17 +1360,19 @@ wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 	os_memcpy(mic, key->key_mic, mic_len);
 	if (sm->tptk_set) {
 		os_memset(key->key_mic, 0, mic_len);
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 		/*M3 only*/
 		nanSecGenM3MicMaterial(
-			sm->pu1AuthTokenBuf, sm->pu1GetRxMsgBodyBuf,
-			sm->u4GetRxMsgBodyLen, &sm->pu1M3MicMaterialBuf,
+			sm->au1AuthTokenBuf, sm->pu1GetRxMsgBodyBuf,
+			sm->u4GetRxMsgBodyLen, sm->au1M3MicMaterialBuf,
 			&sm->u4M3MicMaterialLen);
 		nan_sec_wpa_eapol_key_mic(sm->tptk.kck, sm->tptk.kck_len,
 					  sm->u4SelCipherType,
-					  sm->pu1M3MicMaterialBuf,
+					  sm->au1M3MicMaterialBuf,
 					  sm->u4M3MicMaterialLen, key->key_mic);
-		sm->pu1M3MicMaterialBuf = NULL;
+		kalMemZero(
+			sm->au1M3MicMaterialBuf,
+			NAN_MIC_BUF_SIZE);
 		sm->u4M3MicMaterialLen = 0;
 #else
 		wpa_eapol_key_mic_wpa(sm->tptk.kck, sm->tptk.kck_len,
@@ -1394,17 +1396,19 @@ wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 
 	if (!ok && sm->ptk_set) {
 		os_memset(key->key_mic, 0, mic_len);
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 		if (sm->u1CurMsg == NAN_SEC_M2) {
 			/*M3*/
-			nanSecGenM3MicMaterial(sm->pu1AuthTokenBuf, buf, len,
-					       &sm->pu1M3MicMaterialBuf,
+			nanSecGenM3MicMaterial(sm->au1AuthTokenBuf, buf, len,
+					       sm->au1M3MicMaterialBuf,
 					       &sm->u4M3MicMaterialLen);
 			nan_sec_wpa_eapol_key_mic(
 				sm->ptk.kck, sm->ptk.kck_len,
-				sm->u4SelCipherType, sm->pu1M3MicMaterialBuf,
+				sm->u4SelCipherType, sm->au1M3MicMaterialBuf,
 				sm->u4M3MicMaterialLen, key->key_mic);
-			sm->pu1M3MicMaterialBuf = NULL;
+			kalMemZero(
+				sm->au1M3MicMaterialBuf,
+				NAN_MIC_BUF_SIZE);
 			sm->u4M3MicMaterialLen = 0;
 		} else {
 			/*M1*/
@@ -1521,7 +1525,7 @@ wpa_eapol_key_dump(struct wpa_sm *sm, const struct wpa_eapol_key *key,
 
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "  EAPOL-Key type=%d", key->type);
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
-		"  key_info 0x%x (ver=%d keyidx=%d rsvd=%d %s%s%s%s%s%s%s%s)",
+		"  key_info 0x%x (ver=%d keyidx=%lu rsvd=0x%lx %s%s%s%s%s%s%s%s)",
 		key_info, key_info & WPA_KEY_INFO_TYPE_MASK,
 		(key_info & WPA_KEY_INFO_KEY_INDEX_MASK) >>
 			WPA_KEY_INFO_KEY_INDEX_SHIFT,

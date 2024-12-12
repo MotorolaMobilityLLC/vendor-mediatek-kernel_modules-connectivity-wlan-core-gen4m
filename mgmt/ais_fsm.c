@@ -8418,6 +8418,18 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 				prMgmtTxMsg->prMgmtMsduInfo,
 				prMgmtTxMsg->u8Cookie,
 				ucBssIndex);
+#if CFG_SUPPORT_NAN
+	} else if (prAdapter->rWifiVar.fgNanSkipAnqp &&
+		(prAdapter->rNanDiscType != NAN_UNINIT_DISC)) {
+		DBGLOG(NAN, WARN, "Disable TX mgmt when nan on\n");
+		kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
+			  prMgmtTxMsg->u8Cookie,
+			  FALSE,
+			  prMgmtTxMsg->prMgmtMsduInfo->prPacket,
+			  (uint32_t)
+			  prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength,
+			  ucBssIndex);
+#endif
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE ||
 		   prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR ||
 		   aisFsmIsSwitchChannel(prAdapter, prAisFsmInfo)) {

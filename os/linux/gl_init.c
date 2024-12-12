@@ -1899,7 +1899,23 @@ static const struct wiphy_vendor_command
 		.maxattr = MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX
 #endif
 	},
+#if	CFG_SUPPORT_NAN_EXT
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = MTK_SUBCMD_NAN_EXT
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV |
+				WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_nan_ext
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
 #endif
+	},
+#endif /* CFG_SUPPORT_NAN_EXT */
+#endif /* CFG_SUPPORT_NAN */
 	{
 		{
 			.vendor_id = OUI_MTK,
@@ -2258,6 +2274,12 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = OUI_QCA,
 		.subcmd = QCA_NL80211_VENDOR_SUBCMD_PASN
 	},
+#if CFG_SUPPORT_NAN_EXT
+	[WIFI_EVENT_SUBCMD_NAN_EXT] {
+		.vendor_id = OUI_MTK,
+		.subcmd = MTK_SUBCMD_NAN_EXT
+	},
+#endif /* CFG_SUPPORT_NAN_EXT */
 };
 #endif
 
@@ -5633,7 +5655,7 @@ int set_p2p_mode_handler(struct net_device *netdev,
 {
 	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
 					 netdev_priv(netdev));
-	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
+	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P = {0};
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 
@@ -5646,6 +5668,16 @@ int set_p2p_mode_handler(struct net_device *netdev,
 		return -1;
 	}
 #endif /*CFG_MTK_ANDROID_WMT*/
+
+#if CFG_SUPPORT_NAN
+	if ((!rSetP2P.u4Enable) && (kalIsResetting() == FALSE)) {
+		struct ADAPTER *ad = prGlueInfo->prAdapter;
+
+		if (ad->rWifiVar.u4NanDissolveOffTimeout)
+			nanNdpDissolve(ad,
+				ad->rWifiVar.u4NanDissolveOffTimeout);
+	}
+#endif
 
 	/* Remember original ifindex for reset case */
 	if (kalIsResetting()) {
@@ -7147,6 +7179,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	prAdapter->fgIsNANfromHAL = TRUE;
 	prAdapter->rPublishInfo.ucNanPubNum = 0;
 	prAdapter->rSubscribeInfo.ucNanSubNum = 0;
+	prAdapter->rNanDiscType = NAN_UNINIT_DISC;
 	DBGLOG(INIT, WARN, "NAN fgIsNANfromHAL init %u\n",
 	       prAdapter->fgIsNANfromHAL);
 #endif
@@ -7517,7 +7550,7 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable,
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
 			       sizeof(uint32_t), &u4BufLen);
 
-	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08x\n",
+	DBGLOG(NAN, INFO, "ret = 0x%08x\n",
 	       (uint32_t)rWlanStatus);
 
 	/* Need to check fgIsNANRegistered, in case of whole chip reset.

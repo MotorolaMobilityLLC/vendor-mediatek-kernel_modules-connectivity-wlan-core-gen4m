@@ -4421,6 +4421,35 @@ struct wifi_iface_limit sta_p2p_nan[] = {
 	},
 };
 
+struct mtk_wifi_iface_combination
+	mtk_ifaces_combinations_nan[] = {
+	{
+		.max_ifaces = 2,
+		.num_iface_limits = ARRAY_SIZE(sta_sta),
+		.iface_limits = sta_sta,
+	},
+	{
+		.max_ifaces = 1,
+		.num_iface_limits = ARRAY_SIZE(ap_ap),
+		.iface_limits = ap_ap,
+	},
+	{
+		.max_ifaces = 3,
+		.num_iface_limits = ARRAY_SIZE(sta_ap_p2p),
+		.iface_limits = sta_ap_p2p,
+	},
+	{
+		.max_ifaces = 3,
+		.num_iface_limits = ARRAY_SIZE(sta_ap_nan),
+		.iface_limits = sta_ap_nan,
+	},
+	{
+		.max_ifaces = 3,
+		.num_iface_limits = ARRAY_SIZE(sta_p2p_nan),
+		.iface_limits = sta_p2p_nan,
+	},
+};
+
 #if (CFG_IFACE_CONCURRENT_MODE == 2)
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 	{
@@ -4502,6 +4531,11 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations_6631[] = {
 	},
 };
 
+struct mtk_wifi_iface_concurrency_matrix mtk_ifaces_matrix_nan = {
+	.num_iface_combinations = ARRAY_SIZE(mtk_ifaces_combinations_nan),
+	.iface_combinations = mtk_ifaces_combinations_nan,
+};
+
 struct mtk_wifi_iface_concurrency_matrix mtk_ifaces_matrix = {
 	.num_iface_combinations = ARRAY_SIZE(mtk_ifaces_combinations),
 	.iface_combinations = mtk_ifaces_combinations,
@@ -4569,9 +4603,17 @@ int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 		goto nla_put_failure;
 	}
 
+#if (CFG_SUPPORT_NAN == 1)
+	if (prGlueInfo->prAdapter->rWifiVar.fgNanConcurrency)
+		src = &mtk_ifaces_matrix_nan;
+	else if (prChipInfo->asicGetChipID &&
+	    prChipInfo->asicGetChipID(prGlueInfo->prAdapter) == 0x31)
+		src = &mtk_ifaces_matrix_6631;
+#else /* CFG_SUPPORT_NAN */
 	if (prChipInfo->asicGetChipID &&
 	    prChipInfo->asicGetChipID(prGlueInfo->prAdapter) == 0x31)
 		src = &mtk_ifaces_matrix_6631;
+#endif /* CFG_SUPPORT_NAN */
 	else
 		src = &mtk_ifaces_matrix;
 

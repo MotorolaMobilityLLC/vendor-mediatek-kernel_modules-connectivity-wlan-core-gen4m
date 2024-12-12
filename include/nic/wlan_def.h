@@ -523,7 +523,7 @@ enum ENUM_PHY_TYPE_INDEX {
 	PHY_TYPE_VHT_INDEX,	/* HT PHY (clause 22) */
 	PHY_TYPE_HE_INDEX,	/* HE PHY */
 	PHY_TYPE_EHT_INDEX,	/* EHT PHY */
-	PHY_TYPE_INDEX_NUM	/* 6 */
+	PHY_TYPE_INDEX_NUM	/* 8 */
 };
 
 enum ENUM_SW_RATE_INDEX {
@@ -1295,7 +1295,7 @@ enum ENUM_PARAM_NAN_MODE_T {
 #define STA_TYPE_AP_MASK                    BIT(STA_ROLE_AP_INDEX)
 #define STA_TYPE_DLS_MASK                   BIT(STA_ROLE_DLS_INDEX)
 #if CFG_SUPPORT_NAN
-#define STA_TYPE_NAN_MASK BIT(STA_TYPE_NAN_INDEX)
+#define STA_TYPE_NAN_MASK                   BIT(STA_TYPE_NAN_INDEX)
 #endif
 
 /* Macros for obtaining the Network Type

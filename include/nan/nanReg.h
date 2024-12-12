@@ -10,16 +10,17 @@
 
 #define REG_INVALID_INFO 0xFF
 
-uint8_t nanRegGetBw(uint8_t ucOperatingClass);
+uint16_t nanRegGetBw(uint8_t ucOperatingClass);
 uint32_t nanRegGetChannelBitmap(uint8_t ucOperatingClass,
 		uint8_t ucChannel, uint16_t *pu2ChnlBitmap);
 uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 		uint16_t *pu2ChnlBitmap);
 uint8_t nanRegGetPrimaryChnlBehavior(uint8_t ucOperatingClass);
-uint8_t nanRegGetPrimaryChannel(uint8_t ucChannel, uint8_t ucBw,
+uint8_t nanRegGetPrimaryChannel(uint8_t ucChannel, uint16_t u2Bw,
 			       uint8_t ucNonContBw,
 			       uint8_t ucPriChnlIdx,
 			       uint8_t ucOperatingClass);
+
 uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 				      uint16_t *pu2ChnlBitmap,
 				      uint8_t ucNonContBw,
@@ -39,10 +40,12 @@ nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 
 union _NAN_BAND_CHNL_CTRL
 nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
-		uint8_t ucBw, enum ENUM_BAND eBand);
+		uint16_t u2Bw, enum ENUM_BAND eBand);
 
 enum ENUM_BAND
 nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo);
+
+u_int8_t nanRegNanChnlBandIsEht(union _NAN_BAND_CHNL_CTRL rNanChnlInfo);
 
 uint8_t
 nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass, uint8_t ucPrimaryChnl);
@@ -51,6 +54,8 @@ uint32_t
 nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
 	uint16_t *pu2ChnlBitmap,
 	uint8_t *pucNewChnlBitmap);
+
+void nanRegForce_R3_6GChMap(uint8_t ucEnable);
 
 #endif
 #endif /* _NAN_REG_H_ */

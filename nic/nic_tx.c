@@ -4567,6 +4567,8 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 				       "TX done handler can't use for BMC case\n");
 			}
 		}
+
+		return;
 	}
 #endif
 	u2SwSn++;
@@ -5973,9 +5975,8 @@ static void updateNanStaRecTxAllowed(struct ADAPTER *prAdapter,
 			ExpiredSendTime);
 
 	/* avoid to flood the kernel log, only the 1st expiry event logged */
-	if (fgExpired &&
-			!prStaRec->fgNanSendTimeExpired) {
-		DBGLOG(NAN, INFO,
+	if (fgExpired && !prStaRec->fgNanSendTimeExpired) {
+		DBGLOG(NAN, TRACE,
 			"[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
 			prStaRec->ucIndex,
 			ExpiredSendTime,

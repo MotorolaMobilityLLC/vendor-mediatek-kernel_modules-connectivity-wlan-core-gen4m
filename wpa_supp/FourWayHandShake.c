@@ -18,7 +18,7 @@ struct ADAPTER *g_prAdapter;
 
 void
 wpas_timeoutCb(struct ADAPTER *prAdapter, unsigned long u4TimerIdx) {
-	wpa_printf(MSG_INFO, "[%s] Enter, u4TimerIdx:%d\n", __func__,
+	wpa_printf(MSG_INFO, "[%s] Enter, u4TimerIdx:%lu\n", __func__,
 		   u4TimerIdx);
 	g_arWpasTimer[u4TimerIdx].rHandler(
 		g_arWpasTimer[u4TimerIdx].pvEloopData,
@@ -176,6 +176,25 @@ os_get_time(struct os_time *t) {
 	t->sec = u4CurTime / USEC_PER_SEC;
 	t->usec = u4CurTime % USEC_PER_SEC;
 	return 0;
+}
+
+int
+os_snprintf(char *str, size_t size, const char *format, ...)
+{
+	va_list ap;
+	int ret = 0;
+
+	/* See http://www.ijs.si/software/snprintf/ for portable
+	 * implementation of snprintf.
+	 */
+
+	va_start(ap, format);
+	ret = vsnprintf(str, size, format, ap);
+	/*ret = rpl_vsnprintf(str, size, format, ap);*/
+	va_end(ap);
+	if (size > 0)
+		str[size - 1] = '\0';
+	return ret;
 }
 
 size_t

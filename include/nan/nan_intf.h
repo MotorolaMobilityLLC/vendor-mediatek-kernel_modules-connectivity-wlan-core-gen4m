@@ -19,13 +19,20 @@
 #undef __KAL_ATTRIB_PACKED__
 #define __KAL_ATTRIB_PACKED__ __attribute__((__packed__))
 #endif
+#ifndef __KAL_ATTRIB_ALIGNED_FRONT__
+#define __KAL_ATTRIB_ALIGNED_FRONT__(x)
+#endif
+#ifndef __KAL_ATTRIB_ALIGNED__
+#define __KAL_ATTRIB_ALIGNED__(x)
+#endif
 
 /* Buffer size to generate NAN attribute */
 #define NAN_IE_BUF_MAX_SIZE 1000
 
 /* Memory leak issue, use global array to alloc buffer for kde/mic */
 #define NAN_KDE_ATTR_BUF_SIZE 150
-#define NAN_MIC_BUF_SIZE 350
+#define NAN_AUTH_TOKEN_LEN 16 /*128bit */
+#define NAN_MIC_BUF_SIZE 512
 
 
 #define NAN_MAC_ADDR_LEN 6
@@ -60,11 +67,15 @@
 #define NAN_FW_SDEA_SPECIFIC_INFO_LEN 255
 #define NAN_SECURITY_MIN_PASSPHRASE_LEN 8
 #define NAN_SECURITY_MAX_PASSPHRASE_LEN 63
-/*Max publish + subscribe numbers 4*/
-#define NAN_MAX_PUBLISH_NUM 2
-#define NAN_MAX_SUBSCRIBE_NUM 2
-#if (CFG_SUPPORT_NAN_DBDC == 1) && (CFG_EXT_FEATURE == 1)
-#define NAN_MAX_NDP_SESSIONS 5
+/* Max publish + subscribe numbers 12 */
+#define NAN_MAX_PUBLISH_NUM 6
+#define NAN_MAX_SUBSCRIBE_NUM 6
+#define NAN_MAX_QUEUE_FOLLOW_UP 6
+/* MAX 6 queued follow up messages and 6 solicited publish */
+#define NUM_OF_NAN_POST_PROCESS 12
+
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+#define NAN_MAX_NDP_SESSIONS 8
 #else
 #define NAN_MAX_NDP_SESSIONS 2
 #endif
@@ -155,7 +166,9 @@ enum NanDiscType {
 enum NanDiscEngEventType {
 	NAN_EVENT_ID_DISC_MAC_ADDR = 0,
 	NAN_EVENT_ID_STARTED_CLUSTER,
-	NAN_EVENT_ID_JOINED_CLUSTER
+	NAN_EVENT_ID_JOINED_CLUSTER,
+	NAN_EVENT_ID_SYNC_BEACON_TRACK,
+	NAN_EVENT_ID_DISC_BEACON_TRACK
 };
 
 /* NAN Data Path type */
@@ -995,7 +1008,7 @@ struct NanEnableRequest {
 	uint32_t channel_24g_val;
 
 	uint8_t config_5g_channel;
-	uint32_t channel_5g_val;
+	uint32_t channel_5g_val; /* BIT(0): 44/Lower; BIT(1): 149/Upper */
 
 	/* Configure 2.4/5GHz DW */
 	struct NanConfigDW config_dw;
@@ -1024,6 +1037,9 @@ struct NanEnableRequest {
 	 */
 	uint8_t config_subscribe_sid_beacon;
 	uint32_t subscribe_sid_beacon_val;
+
+	/* Enable/disable NAN slot statistics */
+	uint8_t enable_log_slot_statistics;
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 /* Enable Unsync Message Structure

@@ -1824,10 +1824,6 @@ void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter)
 		}
 	}
 #endif
-#if (CFG_SUPPORT_NAN == 1) && (CFG_NAN_SCHEDULER_VERSION == 1)
-	if (nanSchedUpdateNonNanTimelineByAis(prAdapter) == WLAN_STATUS_SUCCESS)
-		nanSchedSyncNonNanChnlToNan(prAdapter);
-#endif
 
 }
 
@@ -2196,9 +2192,20 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		if (prBssInfo->eBand == BAND_2G4)
 			ucMaxBandwidth = prAdapter->rWifiVar
 					.ucNan2gBandwidth;
-		else if (prBssInfo->eBand == BAND_5G)
+		else if (prBssInfo->eBand == BAND_5G) {
 			ucMaxBandwidth = prAdapter->rWifiVar
 					.ucNan5gBandwidth;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (prAdapter->rWifiVar.ucNanEnable6g &&
+			prAdapter->rWifiVar.ucNan6gBandwidth != 0) {
+			if (nanIsEhtEnable(prAdapter))
+				ucMaxBandwidth = MAX_BW_320_1MHZ;
+			else
+				ucMaxBandwidth = prAdapter->rWifiVar
+				.ucNan6gBandwidth;
+		}
+#endif
+		}
 	}
 #endif
 

@@ -37,7 +37,7 @@ extern void PKCS5_PBKDF2_HMAC(unsigned char *password, size_t plen,
 #define MAX_NDP_NUM 8 /* May integrate with NDP */
 #define NAN_MAX_KEY_ID 3
 #define NAN_SHA384_MAC_LEN 48
-#define NAN_AUTH_TOKEN_LEN 16 /*128bit */
+
 #define MAX_WTBL_ENTRY_NUM 128
 #define CFG_NAN_SEC_UT 0
 #define NCS_SK_128_MIC_LEN 16
@@ -245,7 +245,7 @@ uint32_t nanSecGenAuthToken(u32 cipher, const u8 *auth_token_data,
 uint32_t nanSecGenM3MicMaterial(uint8_t *pu1AuthTokenBuf,
 				const u8 *pu1M3bodyBuf,
 				uint32_t u4M3BodyLen,
-				uint8_t **ppu1M3MicMaterialBuf,
+				uint8_t *pu1M3MicMaterialBuf,
 				uint32_t *pu4M3MicMaterialLen);
 
 /************************************************

@@ -654,6 +654,9 @@ p2pFuncNeedWaitRsp(struct ADAPTER *prAdapter,
 u_int8_t
 p2pFuncNeedForceSleep(struct ADAPTER *prAdapter);
 
+u_int8_t
+p2pFuncIsSapCsa(struct ADAPTER *prAdapter);
+
 void
 p2pFunClearAllTxReq(struct ADAPTER *prAdapter,
 		struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo);

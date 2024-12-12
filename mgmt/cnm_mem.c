@@ -1462,6 +1462,12 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	cnmStaRecCmdEhtContentFill(prStaRec, prCmdContent);
 #endif
 
+#if CFG_SUPPORT_NAN
+	if (prStaRec->eStaType & STA_TYPE_NAN) {
+		prCmdContent->ucOtherWlanIndex = prStaRec->ucOtherWlanIndex;
+	}
+#endif
+
 #if CFG_SUPPORT_MLR
 	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec) &&
 		/* STA MLRV1, MLRP and ALR consider 5G band */

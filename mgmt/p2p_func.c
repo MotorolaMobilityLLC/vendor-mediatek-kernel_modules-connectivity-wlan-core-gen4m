@@ -3122,6 +3122,16 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 			sizeof(struct WIFI_EVENT) +
 			sizeof(struct EVENT_OPMODE_CHANGE));
 	}
+
+#if (CFG_SUPPORT_NAN == 1)
+	/* Set complete for nan init */
+	if (!kal_completion_done(
+		&prAdapter->prGlueInfo->rNanHaltComp)) {
+		DBGLOG(NAN, INFO,
+			"Concurrency: Complete NAN\n");
+		complete(&prAdapter->prGlueInfo->rNanHaltComp);
+	}
+#endif /* CFG_SUPPORT_NAN */
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
@@ -7735,6 +7745,21 @@ void p2pFuncCrossBandChannelSwitchCheck(
 {
 
 #if CFG_SUPPORT_DBDC
+#if (CFG_SUPPORT_NAN == 1)
+	if ((prAdapter->rNanDiscType !=
+		NAN_UNINIT_DISC)) {
+		if (*eStaBand != BAND_2G4) {
+			*ucStaChannelNum =
+				AP_DEFAULT_CHANNEL_2G;
+			*eStaBand = BAND_2G4;
+		}
+		*fgDbDcModeEn = FALSE;
+		return;
+	}
+#endif /* CFG_SUPPORT_NAN */
+#endif
+
+#if CFG_SUPPORT_DBDC
 	*fgDbDcModeEn = (prAdapter->rWifiVar.eDbdcMode !=
 		ENUM_DBDC_MODE_DISABLED);
 #if (CFG_SUPPORT_WIFI_6G == 1)	/* Go SCC for 5G+6G */
@@ -10052,6 +10077,26 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 #endif
 
 	return TRUE;
+}
+
+u_int8_t
+p2pFuncIsSapCsa(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo =
+		prAdapter->prGlueInfo;
+	struct GL_P2P_INFO *prP2pInfo = NULL;
+	uint32_t u4Idx = 0;
+
+	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
+		if (prP2pInfo == NULL)
+			continue;
+
+		if (prP2pInfo->fgChannelSwitchReq)
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 void

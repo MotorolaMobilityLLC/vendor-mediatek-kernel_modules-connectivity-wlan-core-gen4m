@@ -80,7 +80,7 @@ void dumpHex(uint8_t *pucStartAddr, uint16_t u2Length)
 	uint32_t offset = 0;
 
 	ASSERT(pucStartAddr);
-	LOG_FUNC("DUMPHEX ADDRESS: 0x%p, Length: %d", pucStartAddr, u2Length);
+	LOG_FUNC("DUMPHEX ADDRESS: 0x%p, Length: %d\n", pucStartAddr, u2Length);
 
 	while (u2Length > 0) {
 		kalMemZero(text, sizeof(text));
@@ -95,7 +95,7 @@ void dumpHex(uint8_t *pucStartAddr, uint16_t u2Length)
 					pucStartAddr[printed + i] : '.';
 			u2Length--;
 		}
-		LOG_FUNC("%04x: %-100s %s", printed, output, text);
+		LOG_FUNC("%04x: %s\n", printed, output);
 		printed += 32;
 	}
 #undef BUFSIZE

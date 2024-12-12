@@ -257,6 +257,9 @@
 #include "nan_base.h"
 #if CFG_SUPPORT_NAN_EXT
 #include "nan_ext.h"
+#include "nan_ext_log.h"
+#else
+#include "nan_log.h"
 #endif
 #include "nan_data_engine.h"
 #include "nan_dev.h"
@@ -414,6 +417,7 @@
  *                                 M A C R O S
  *******************************************************************************
  */
+#define UNUSED(x) ((void)(x))
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S

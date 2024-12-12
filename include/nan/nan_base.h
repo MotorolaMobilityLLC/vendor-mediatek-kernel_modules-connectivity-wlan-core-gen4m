@@ -37,6 +37,17 @@
 /* NAN Attribute Header Length */
 #define NAN_ATTR_HDR_LEN 3
 
+
+#define NAN_ATTR_ID(fp)		(((struct _NAN_ATTR_HDR_T *)fp)->ucAttrId)
+#define NAN_ATTR_LEN(fp)	(((struct _NAN_ATTR_HDR_T *)fp)->u2Length)
+#define NAN_ATTR_SIZE(fp)	(NAN_ATTR_HDR_LEN + NAN_ATTR_LEN(fp))
+
+#define NAN_AVAIL_ENTRY_HDR_LEN 2
+#define NAN_AVAIL_ENTRY_LEN(fp)		\
+	(((struct _NAN_AVAILABILITY_ENTRY_T *)fp)->u2Length)
+#define NAN_AVAIL_ENTRY_SIZE(fp)	\
+	(NAN_AVAIL_ENTRY_HDR_LEN + NAN_AVAIL_ENTRY_LEN(fp))
+
 /* NAN 4.0 Table 58. Service Protocol Types */
 enum NAN_SERVICE_PROTOCOL_TYPES {
 	NAN_SERVICE_PROTOCOL_TYPE_RESERVED,
@@ -67,7 +78,6 @@ enum NAN_SERVICE_PROTOCOL_TYPES {
 #define NAN_ATTR_ID_CLUSTER_DISCOVERY 0x0D
 #define NAN_ATTR_ID_SDEA 0x0E
 #define NAN_ATTR_ID_DEVICE_CAPABILITY 0x0F
-#define NAN_ATTR_ID_DEVICE_CAPABILITY_EXT 0x2A
 #define NAN_ATTR_ID_NDP 0x10
 #define NAN_ATTR_ID_NMSG 0x11
 #define NAN_ATTR_ID_NAN_AVAILABILITY 0x12
@@ -265,9 +275,12 @@ enum NAN_ATTR_NDPE_TLV_TYPES {
 	(((_ctrl) & NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT) >> \
 		NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT_OFFSET)
 
-#define NAN_AVAIL_ENTRY_CTRL_SET_TYPE(_ctrl, _val)			\
-	((_ctrl) |= (_val) << NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_OFFSET &	\
-				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE)
+#define NAN_AVAIL_ENTRY_CTRL_SET_TYPE(_ctrl, _val)			       \
+	do {								       \
+		(_ctrl) &= ~NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE;		       \
+		(_ctrl) |= (_val) << NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_OFFSET & \
+				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE;	       \
+	} while (0)
 #define NAN_AVAIL_ENTRY_CTRL_SET_PREF(_ctrl, _val)			\
 	((_ctrl) |= (_val) << NAN_AVAIL_ENTRY_CTRL_USAGE_PREF_OFFSET &	\
 				NAN_AVAIL_ENTRY_CTRL_USAGE_PREF)
@@ -292,11 +305,34 @@ enum NAN_ATTR_NDPE_TLV_TYPES {
 #define NAN_BAND_CH_ENTRY_LIST_NUM_ENTRY_OFFSET 4
 #define NAN_BAND_CH_ENTRY_LIST_NUM_ENTRY BITS(4, 7)
 
-#define NAN_SUPPORTED_BAND_ID_2P4G (2)
-#define NAN_SUPPORTED_BAND_ID_5G (4)
-#define NAN_SUPPORTED_BAND_ID_6G (7)
+/* NAN 4.0 Table 79. Device Capability attribute format, Supported Bands */
+enum NAN_SUPPORTED_BANDS {
+	/* RESERVED for TV whitespace = 0 */
+	/* Sub-1 GHz (excluding TV whitespace) = 1 */
+	NAN_SUPPORTED_BAND_ID_2P4G = 2,
+	/* Reserved (for 3.6 GHz) = 3 */
+	NAN_SUPPORTED_BAND_ID_5G = 4,
+	/* Reserved (for 60 GHz) = 5 */
+	/* Reserved (for 45 GHz) = 6 */
+	NAN_PROPRIETY_BAND_ID_6G = 6, /* from IOT devices */
+	NAN_SUPPORTED_BAND_ID_6G = 7,
+};
 
-#define NAN_DEV_CAP_OP_MODE_PHY_MODE (0)
+#define NAN_SUPPORTED_2G_BIT    BIT(NAN_SUPPORTED_BAND_ID_2P4G)
+#define NAN_SUPPORTED_5G_BIT    BIT(NAN_SUPPORTED_BAND_ID_5G)
+#define NAN_PROPRIETARY_6G_BIT  BIT(NAN_PROPRIETY_BAND_ID_6G)
+#define NAN_SUPPORTED_6G_BIT    BIT(NAN_SUPPORTED_BAND_ID_6G)
+
+/* NAN 4.0 Table 81. Operation Mode field format
+ * PHY mode:
+ * b0: 0 HT only; 1 VHT
+ * b4: 0 HE not supported; 1 HE
+ *
+ * b1: HE/VHT 80+80 support
+ * b2: HE/VHT 160 support
+ * b3: Reserved (Paging NDL support)
+ */
+#define NAN_DEV_CAP_OP_MODE_PHY_MODE (0) /* NAN 3.2, 0: HT only; 1: VHT */
 
 /* NAN SDA Service Control Field */
 #define NAN_SDA_SERVICE_CONTROL_TYPE BITS(0, 1)
@@ -321,7 +357,7 @@ enum NAN_ATTR_NDPE_TLV_TYPES {
 #define NAN_SDEA_CTRL_RANGING_LIMIT_PRESENT BIT(8)
 #define NAN_SDEA_CTRL_SERV_UPDATE_INDICATOR BIT(9)
 
-/* NAN Time Bitmap Control Field */
+/* Table 97 NAN Time Bitmap Control Field */
 #define NAN_TIME_BITMAP_CTRL_DURATION_OFFSET 0
 #define NAN_TIME_BITMAP_CTRL_PERIOD_OFFSET 3
 #define NAN_TIME_BITMAP_CTRL_STARTOFFSET_OFFSET 6
@@ -330,15 +366,30 @@ enum NAN_ATTR_NDPE_TLV_TYPES {
 #define NAN_TIME_BITMAP_CTRL_PERIOD BITS(3, 5)
 #define NAN_TIME_BITMAP_CTRL_STARTOFFSET BITS(6, 14)
 
-/* NAN Committed DW Info Field */
-#define NAN_COMMITTED_DW_INFO_24G BITS(0, 2)
-#define NAN_COMMITTED_DW_INFO_24G_OFFSET 0
-#define NAN_COMMITTED_DW_INFO_5G BITS(3, 5)
-#define NAN_COMMITTED_DW_INFO_5G_OFFSET 3
-#define NAN_COMMITTED_DW_INFO_24G_DW_OVERWRITE BITS(6, 9)
-#define NAN_COMMITTED_DW_INFO_24G_DW_OVERWRITE_OFFSET 6
-#define NAN_COMMITTED_DW_INFO_5G_DW_OVERWRITE BITS(10, 13)
-#define NAN_COMMITTED_DW_INFO_5G_DW_OVERWRITE_OFFSET 10
+/**
+ * u2BitDuration BITS(0,2), 16 << n TU, n < 4
+ * u2Period BITS(3,5), 128 << (n-1) TU, n > 0
+ * u2StartOffset BITS(6,14), 16 * n TU
+ */
+#define NAN_GET_TIME_BITMAP_CTRL_DURATION_IN_TU(_ctrl)			\
+	(16 << ((((_ctrl) & NAN_TIME_BITMAP_CTRL_DURATION) >>		\
+		NAN_TIME_BITMAP_CTRL_DURATION_OFFSET)))
+#define NAN_GET_TIME_BITMAP_CTRL_PERIOD_IN_TU(_ctrl)			\
+	({	uint8_t x;						\
+		x = (((_ctrl) & NAN_TIME_BITMAP_CTRL_PERIOD) >>		\
+		     NAN_TIME_BITMAP_CTRL_PERIOD_OFFSET);		\
+		x ? 64 << x : 0;					\
+	 })
+#define NAN_GET_TIME_BITMAP_CTRL_STARTOFFSET_IN_TU(_ctrl)		\
+	(16 * (((_ctrl) & NAN_TIME_BITMAP_CTRL_STARTOFFSET) >>		\
+		NAN_TIME_BITMAP_CTRL_STARTOFFSET_OFFSET))
+
+#define NAN_GET_TIME_BITMAP_CTRL_DURATION_IN_SLOT(_ctrl)		\
+	(NAN_GET_TIME_BITMAP_CTRL_DURATION_IN_TU(_ctrl) / NAN_SLOT_INTERVAL)
+#define NAN_GET_TIME_BITMAP_CTRL_PERIOD_IN_SLOT(_ctrl)			\
+	(NAN_GET_TIME_BITMAP_CTRL_PERIOD_IN_TU(_ctrl) / NAN_SLOT_INTERVAL)
+#define NAN_GET_TIME_BITMAP_CTRL_STARTOFFSET_IN_SLOT(_ctrl)		\
+	(NAN_GET_TIME_BITMAP_CTRL_STARTOFFSET_IN_TU(_ctrl) / NAN_SLOT_INTERVAL)
 
 /* NAN Cipher Suite ID */
 #define NAN_CIPHER_SUITE_ID_NONE 0
@@ -349,7 +400,7 @@ enum NAN_ATTR_NDPE_TLV_TYPES {
 #define NAN_SCID_DEFAULT_LEN 16
 
 /* Anchor Master rank length */
-#define ANCHOR_MASTER_RANK_NUM 8
+#define ANCHOR_MASTR_RANK_NUM 8
 
 /* Ranging Info Attribute - Location Info Availability */
 #define NAN_RANGING_LOCAL_COORDINATE_PRESENT BIT(0)
@@ -401,6 +452,7 @@ enum _NAN_ACTION_T {
 	NAN_ACTION_SCHEDULE_RESPONSE = 11,
 	NAN_ACTION_SCHEDULE_CONFIRM = 12,
 	NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION = 13,
+	NAN_ACTION_FOLLOW_UP = 14,
 	NAN_ACTION_NUM
 };
 
@@ -416,6 +468,14 @@ enum NAN_NDP_ROLE {
 	NAN_NDP_INITIATOR = 0,
 	NAN_NDP_RESPONDER,
 	NAN_NDP_ROLE_NUM
+};
+
+enum RESCHEDULE_SOURCE {
+	RESCHEDULE_NULL,
+	AIS_CONNECTED,
+	AIS_DISCONNECTED,
+	NEW_NDL,
+	REMOVE_NDL,
 };
 
 /*******************************************************************************
@@ -485,30 +545,58 @@ struct _NAN_ATTR_HDR_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute definitions */
+/* NAN 4.0 Table 79. Device Capability attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_DEVICE_CAPABILITY_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_DEVICE_CAPABILITY */
 	uint16_t u2Length;
 	uint8_t ucMapID;
-	uint16_t u2CommittedDWInfo;
-	uint8_t ucSupportedBands;
-	uint8_t ucOperationMode;
-	uint8_t ucNumOfAntennas;
-	uint16_t u2MaxChannelSwitchTime;
+	union { /* NAN 4.0 Table 80. Committed DW Information field format */
+		uint16_t u2CommittedDWInfo;
+
+		struct {
+			uint16_t u2CommittedDw2g :3,
+				 u2CommittedDw5g :3,
+				 u2CommittedDw2gOverwrite :4,
+				 u2CommittedDw5gOverwrite :4,
+				 u2CommittedDWReserved :2;
+		};
+	};
+
+	uint8_t ucSupportedBands; /* enum NAN_SUPPORTED_BANDS */
+	union { /* NAN 4.0 Table 81. Operation Mode field format */
+		uint8_t ucOperationMode; /* NAN_DEV_CAP_OP_MODE_PHY_MODE */
+		struct {
+			uint8_t ucOperPhyModeVht :1, /* 0: HT only */
+				ucOperPhyModeBw_80_80 :1,
+				ucOperPhyModeBw_160 :1,
+				ucOperPhyModeReserved :1,
+				ucOperPhyModeHe :1,
+				ucOperPhyModeReserved2 :3;
+		};
+	};
+
+	struct { /* Number of Antennas */
+		uint8_t ucNumOfAntennasTx :4,
+			ucNumOfAntennasRx :4;
+	};
+	uint16_t u2MaxChannelSwitchTime; /* micro-seconds, 0: not available */
 	uint8_t ucCapabilities;
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 141. Capability Info field */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_EXT_CAPABILITIES_T {
 	uint8_t ucRegulatoryInfo; /* NAN_ATTR_ID_DEVICE_CAPABILITY_EXT */
 	uint8_t ucSettings;
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 140. Device Capability Extension attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_DEVICE_CAPABILITY_EXT_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_DEVICE_CAPABILITY_EXT */
 	uint16_t u2Length;
-	uint8_t aucExtCapabilities[1];
+	uint8_t aucExtCapabilities[];
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN 4.0 Table 82. NDP attribute format */
@@ -517,7 +605,13 @@ struct _NAN_ATTR_NDP_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDP */
 	uint16_t u2Length;
 	uint8_t ucDialogToken;
-	uint8_t ucTypeStatus;
+	union {
+		uint8_t ucTypeStatus;
+		struct {
+			uint8_t ucType :4, /* NAN_ATTR_NDP_TYPE_* */
+				ucStatus :4; /* NAN_ATTR_NDP_STATUS_* */
+		};
+	};
 	uint8_t ucReasonCode;
 	uint8_t aucInitiatorNDI[6];
 	uint8_t ucNDPID;
@@ -568,7 +662,13 @@ struct _NAN_ATTR_NDPE_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDP_EXTENSION */
 	uint16_t u2Length;
 	uint8_t ucDialogToken;
-	uint8_t ucTypeStatus;
+	union {
+		uint8_t ucTypeStatus;
+		struct {
+			uint8_t ucType :4, /* NAN_ATTR_NDP_TYPE_* */
+				ucStatus :4; /* NAN_ATTR_NDP_STATUS_* */
+		};
+	};
 	uint8_t ucReasonCode;
 	uint8_t aucInitiatorNDI[6];
 	uint8_t ucNDPID;
@@ -600,7 +700,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_CLUSTER_T {
 	uint8_t ucId;
 	uint16_t u2Length;
-	uint8_t aucAnchorMasterRank[ANCHOR_MASTER_RANK_NUM];
+	uint8_t aucAnchorMastrRank[ANCHOR_MASTR_RANK_NUM];
 	uint8_t ucHopCount;
 	uint32_t u4AMBTT;
 } __KAL_ATTRIB_PACKED__;
@@ -614,11 +714,135 @@ struct _NAN_ATTR_MASTER_INDICATION_T {
 	uint8_t ucRandomFactor;
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 100. Channel Entry format for the NAN Availability attribute */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_SIMPLE_CHNL_ENTRY_T {
+	uint8_t ucOperatingClass;
+	uint16_t u2ChannelBitmap;
+	uint8_t ucPrimaryChnlBitmap;
+} __KAL_ATTRIB_PACKED__;
+
+/* NAN 4.0 Table 98. Band/Channel Entries List field format for the NAN
+ * Availability attribute
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_SIMPLE_BAND_CHNL_LIST_T {
+	uint8_t ucType : 1;
+	uint8_t ucNonContiguous : 1;
+	uint8_t ucRsvd : 2;
+	uint8_t ucNumberOfEntry : 4;
+	struct _NAN_SIMPLE_CHNL_ENTRY_T rChnlEntry;
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * R4 Table 96. Entry Control field format for the NAN Availability attribute
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_AVAILABILITY_ENTRY_CONTROL_T {
+	uint16_t u2TypeCommitted : 1,
+		 u2TypePotential : 1,
+		 u2TypeConditional : 1,
+		 u2UsagePreference : 2,
+		 u2Utilization : 3,
+		 u2RxNss : 4,
+		 u2TimeBitmapPresent : 1,
+		 u2Reserved : 3;
+} __KAL_ATTRIB_PACKED__;
+
+/* NAN 4.0 Table 97. Time Bitmap Control field format for NAN Availability */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_ATTR_TIME_BITMAP_CONTROL_T {
+	uint16_t u2BitDuration :3,	/* BITS(0,2), 16 << n TU, n < 4 */
+		 u2Period :3,		/* BITS(3,5), 128 << (n-1) TU, n > 0 */
+		 u2StartOffset :9,	/* BITS(6,14), 16 * n TU */
+		 u2Reserved :1;		/* BIT(15) */
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * R4 Table 95. Availability Entry field format for NAN Availability attribute
+ * if _NAN_ATTR_NAN_AVAILABILITY_T.u2AttributeControl.TimeBitmapPresent == 1
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T {
+	uint16_t u2Length;
+	union {
+		uint16_t u2EntryControl;
+		struct _NAN_AVAILABILITY_ENTRY_CONTROL_T rCtrl;
+	};
+	union {
+		uint16_t u2TimeBitmapControl;
+		struct _NAN_ATTR_TIME_BITMAP_CONTROL_T rTimeBitmapCtrl;
+	};
+	uint8_t ucTimeBitmapLength; /* 4 */
+	union {
+		uint8_t aucTimeBitmap[4];
+		uint32_t u4TimeBitmap;
+	};
+	struct _NAN_SIMPLE_BAND_CHNL_LIST_T channelEntry;
+} __KAL_ATTRIB_PACKED__;
+
+/* NAN 4.0 Table 98. Band/Channel Entries List field format for the NAN
+ * Availability attribute
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_BAND_CHNL_LIST_T {
+	uint8_t ucType : 1;
+	uint8_t ucNonContiguous : 1;
+	uint8_t ucRsvd : 2;
+	uint8_t ucNumberOfEntry : 4;
+	uint8_t aucEntry[]; /* if ucType==0, Band entries;
+			     * if ucType==1, Channel entries as
+			     * struct _NAN_CHNL_ENTRY_T
+			     */
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * NAN 4.0 Table 95
+ * A more specific structure of struct _NAN_AVAILABILITY_ENTRY_T, with
+ * Time Bitmap Present == 1 in u2EntryControl (Table 96)
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T {
+	uint16_t u2Length;
+	union {
+		uint16_t u2EntryControl;
+		struct _NAN_AVAILABILITY_ENTRY_CONTROL_T rCtrl;
+	};
+	union {
+		uint16_t u2TimeBitmapControl;
+		struct _NAN_ATTR_TIME_BITMAP_CONTROL_T rTimeBitmapCtrl;
+	};
+	uint8_t ucTimeBitmapLength;
+	uint8_t aucTimeBitmapAndBandChnlEntry[];
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * NAN 4.0 Table 95
+ * Generic structure
+ */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_AVAILABILITY_ENTRY_T {
 	uint16_t u2Length;
-	uint16_t u2EntryControl;
+	union {
+		uint16_t u2EntryControl;
+		struct _NAN_AVAILABILITY_ENTRY_CONTROL_T rCtrl;
+	};
 	uint8_t aucTimeBitmapAndBandChnlEntry[];
+} __KAL_ATTRIB_PACKED__;
+
+/* NAN 4.0 Table 94. Attribute Control field format for the NAN Availability
+ * attribute
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_ATTR_NAN_ATTRIBUTE_CONTROL_T {
+	uint16_t u2MapID : 4,
+		 u2CommittedChanged : 1,
+		 u2PotentialChanged : 1,
+		 u2PublicAvailabilityChanged : 1,
+		 u2NDCChanged : 1,
+		 u2McastScheduleChanged : 1,
+		 u2McastScheduleChangeChanged : 1,
+		 u2Reserved : 6;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -626,34 +850,53 @@ struct _NAN_ATTR_NAN_AVAILABILITY_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NAN_AVAILABILITY */
 	uint16_t u2Length;
 	uint8_t ucSeqID;
-	uint16_t u2AttributeControl;
-	uint8_t aucAvailabilityEntryList[]; /* NAN_AVAILABILITY_ENTRY_T */
+	union {
+		uint16_t u2AttributeControl;
+		struct _NAN_ATTR_NAN_ATTRIBUTE_CONTROL_T rAttrCtrl;
+	};
+	uint8_t aucAvailabilityEntryList[]; /* _NAN_AVAILABILITY_ENTRY_T */
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 104. Schedule Entry format of the NDC attribute */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_SCHEDULE_ENTRY_T {
-	uint8_t ucMapID;
+	uint8_t ucMapID : 4,
+		reserved : 4;
 	uint16_t u2TimeBitmapControl;
 	uint8_t ucTimeBitmapLength;
 	uint8_t aucTimeBitmap[];
 } __KAL_ATTRIB_PACKED__;
 
+
+/* NAN 4.0 Table 102. NDC attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDC_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDC */
 	uint16_t u2Length;
 	uint8_t aucNDCID[6];
-	uint8_t ucAttributeControl;
-	uint8_t aucScheduleEntryList[];
-	/* in structure of NAN_SCHEDULE_ENTRY_T */
+	union { /* Table 103. Attribute Control field format for NDC */
+		uint8_t ucAttributeControl;
+		struct {
+			uint8_t selected_ndc :1,
+				reserved :7;
+		};
+	};
+	uint8_t aucScheduleEntryList[]; /* structure of _NAN_SCHEDULE_ENTRY_T */
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 105. NDL attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDL_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDL */
 	uint16_t u2Length;
 	uint8_t ucDialogToken;
-	uint8_t ucTypeStatus;
+	union {
+		uint8_t ucTypeStatus;
+		struct {
+			uint8_t ucType :4,	/* NAN_ATTR_NDL_TYPE_* */
+				ucStatus :4;	/* NAN_ATTR_NDL_STATUS_* */
+		};
+	};
 	uint8_t ucReasonCode;
 	uint8_t ucNDLControl;
 	uint8_t ucNDLPeerID;		/* optional */
@@ -730,21 +973,6 @@ struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T {
 	uint8_t aucRSNAKeyDescriptor[];
 } __KAL_ATTRIB_PACKED__;
 
-/* NAN 4.0 Table 98. Band/Channel Entries List field format for the NAN
- * Availability attribute
- */
-__KAL_ATTRIB_PACKED_FRONT__
-struct _NAN_BAND_CHNL_LIST_T {
-	uint8_t ucType : 1;
-	uint8_t ucNonContiguous : 1;
-	uint8_t ucRsvd : 2;
-	uint8_t ucNumberOfEntry : 4;
-	uint8_t aucEntry[]; /* if ucType==0, Band entries;
-			     * if ucType==1, Channel entries as
-			     * struct _NAN_CHNL_ENTRY_T
-			     */
-} __KAL_ATTRIB_PACKED__;
-
 /* NAN 4.0 Table 100. Channel Entry format for the NAN Availability attribute */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_CHNL_ENTRY_T {
@@ -772,13 +1000,20 @@ struct _NAN_ATTR_RANGING_INFO_T {
 	uint16_t u2LastMovement;
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 118. Ranging Setup attribute format */
 /* NAN Ranging Setup attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_RANGING_SETUP_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_RANGING_SETUP */
 	uint16_t u2Length;
 	uint8_t ucDialogToken;
-	uint8_t ucTypeStatus;
+	union {
+		uint8_t ucTypeStatus;
+		struct {
+			uint8_t ucType :4, /* NAN_RANGING_TYPE_* */
+				ucStatus :4; /* NAN_RANGING_STATUS_*  */
+		};
+	};
 	uint8_t ucReasonCode;
 	uint8_t ucRangingCtl;
 	struct _NAN_ATTR_FTM_PARAMETERS_T rFtmParameter;

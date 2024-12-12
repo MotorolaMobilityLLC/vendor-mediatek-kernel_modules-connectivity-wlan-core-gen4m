@@ -226,6 +226,9 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOCTL_SET_INTS - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_GET_STR - SIOCIWFIRSTPRIV] = priv_get_string,
 	[IOCTL_GET_INTS - SIOCIWFIRSTPRIV] = priv_get_ints,
+#if CFG_SUPPORT_NAN_PRIV
+	[IOCTL_NAN_STRUCT - SIOCIWFIRSTPRIV] = priv_nan_struct,
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
 	[IOC_AP_GET_STA_LIST - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_SET_MAC_FLTR - SIOCIWFIRSTPRIV] = priv_set_ap,
