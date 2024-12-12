@@ -2294,6 +2294,57 @@ skip_gro:
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_RFB_RECOVERY
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief to check whether SWRFB has severe memory leaks and trigger wifi
+ *        reset .
+ *
+ * \param[in] prGlueInfo Pointer to the GLUE_INFO structure.
+ *
+ * \return (none)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void kalRxRFBFailRecoveryCheck(struct GLUE_INFO *prGlueInfo)
+{
+	struct RX_CTRL *prRxCtrl;
+
+	if (!prGlueInfo)
+		return;
+
+	prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
+
+	if (RX_GET_TOTAL_RFB_CNT(prGlueInfo) < CFG_RX_RFB_MEM_LEAK_THRESHOLD) {
+		DBGLOG(RX, WARN,
+			"Monitor RFB memory leak, Rfb[%u/%u/%u/%u/%u/%u/%u/%u/%u]\n",
+			RX_GET_FREE_RFB_CNT(prRxCtrl),
+			RX_GET_HIF_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_REORDERING_TOTAL_CNT(prGlueInfo->prAdapter),
+			RX_GET_PENDING_RFB_CNT(prGlueInfo->prAdapter),
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
+			KAL_GET_FIFO_CNT(prGlueInfo),
+			CFG_RX_MAX_PKT_NUM);
+
+		if (prRxCtrl->u4CheckRFBFailTime
+			&& TIME_AFTER(kalGetTimeTick(),
+				prRxCtrl->u4CheckRFBFailTime)) {
+			DBGLOG(RX, ERROR,
+				"Trigger chip reset due to RFB memory leak\n");
+			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+				RST_RFB_FAIL);
+		}
+
+		prRxCtrl->u4CheckRFBFailTime = kalGetTimeTick()
+			+ CFG_RX_RFB_MEM_LEAK_INTERVAL;
+	} else {
+		prRxCtrl->u4CheckRFBFailTime = 0;
+	}
+}
+#endif
+
 #if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
@@ -11568,7 +11619,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.u4NapiDelayCntTh,
 		prAdapter->rWifiVar.u4NapiDelayTimeout,
 		glue->ulNapiDelayFlag,
-		KAL_FIFO_CNT(&glue->rRxKfifoQ),
+		KAL_GET_FIFO_CNT(glue),
 #endif /* CFG_NAPI_DELAY */
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		prAdapter->rWifiVar.fgEnableRro,
@@ -14995,7 +15046,7 @@ static u_int8_t kalIsNapiDelay(struct GLUE_INFO *pr)
 		return TRUE;
 
 	/* start timer when delay napi, skip schedule */
-	if (KAL_FIFO_CNT(&pr->rRxKfifoQ) < prWifiVar->u4NapiDelayCntTh) {
+	if (KAL_GET_FIFO_CNT(pr) < prWifiVar->u4NapiDelayCntTh) {
 		kalNapiDelayTimerStart(pr, prWifiVar->u4NapiDelayTimeout);
 		return TRUE;
 	}
@@ -15114,10 +15165,10 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	nicRxIndicateRfbMainToNapi(prAdapter);
 
 #if CFG_NAPI_DELAY
-	DBGLOG(RX, TEMP, "FIFO_CNT:%u\n", KAL_FIFO_CNT(&prGlueInfo->rRxKfifoQ));
+	DBGLOG(RX, TEMP, "FIFO_CNT:%u\n", KAL_GET_FIFO_CNT(prGlueInfo));
 #endif /* CFG_NAPI_DELAY */
 
-	u4Cnt = KAL_FIFO_CNT(&prGlueInfo->rRxKfifoQ);
+	u4Cnt = KAL_GET_FIFO_CNT(prGlueInfo);
 	while ((work_done <= u4Cnt) &&
 	       KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {

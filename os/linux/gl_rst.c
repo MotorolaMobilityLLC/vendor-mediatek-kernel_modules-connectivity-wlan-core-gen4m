@@ -115,6 +115,7 @@ char * const apucRstReason[RST_REASON_MAX] = {
 	"RST_MMIO_READ",
 	"RST_WFDMA_RX_HANG",
 	"RST_MAWD_WAKEUP_FAIL",
+	"RST_RFB_FAIL",
 };
 
 static const char *const apucRstAction[] = {
@@ -631,6 +632,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	case RST_P2P_CHNL_GRANT_INVALID_STATE:
 	case RST_SCAN_RECOVERY:
 	case RST_CMD_EVT_FAIL:
+	case RST_RFB_FAIL:
 #if CFG_SUPPORT_CONNAC1X
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 #else
