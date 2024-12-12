@@ -2298,11 +2298,20 @@ static void assignPmfFlag(struct STA_RECORD *prStaRec,
 	struct CMD_802_11_KEY *prCmdKey)
 {
 	if (IS_BSS_AIS(prBssInfo)) {
-		prCmdKey->ucMgmtProtection =
-			prAisSpecBssInfo->fgMgmtProtection;
-		DBGLOG(RSN, INFO,
-			"Ais PMF flag = %d\n",
-			prAisSpecBssInfo->fgMgmtProtection);
+#if CFG_SUPPORT_RTT
+		if (IS_STA_RTT_TYPE(prStaRec)) {
+			DBGLOG(RSN, INFO,
+				"Force set ucMgmtProtection flag for RTT\n");
+			prCmdKey->ucMgmtProtection = TRUE;
+		} else
+#endif
+		{
+			prCmdKey->ucMgmtProtection =
+				prAisSpecBssInfo->fgMgmtProtection;
+			DBGLOG(RSN, INFO,
+				"Ais PMF flag = %d\n",
+				prAisSpecBssInfo->fgMgmtProtection);
+		}
 	} else {
 		/* AP PMF */
 		DBGLOG_LIMITED(RSN, INFO,
