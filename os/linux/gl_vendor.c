@@ -201,6 +201,7 @@ const struct nla_policy nla_get_acs_policy[
 	[WIFI_VENDOR_ATTR_ACS_FREQ_LIST] = { .type = NLA_UNSPEC },
 #endif
 	[WIFI_VENDOR_ATTR_ACS_EHT_ENABLED] = { .type = NLA_FLAG },
+	[WIFI_VENDOR_ATTR_ACS_LINK_ID] = { .type = NLA_U8 },
 };
 
 const struct nla_policy nla_string_cmd_policy[
