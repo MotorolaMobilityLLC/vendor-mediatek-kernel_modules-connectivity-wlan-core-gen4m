@@ -915,20 +915,20 @@
 #define SCAN_CMD_EXT_SSID_NUM                   (6)
 #define SCAN_CMD_EXT_CHNL_NUM                   (32)
 #endif
-#define CFG_SCAN_OOB_MAX_NUM			(4)
+#define CFG_SCAN_OOB_MAX_NUM                    (10)
 #define CFG_SCAN_SSID_MAX_NUM (SCAN_CMD_SSID_NUM+SCAN_CMD_EXT_SSID_NUM)
 #define MAXIMUM_OPERATION_CHANNEL_LIST (SCAN_CMD_CHNL_NUM+SCAN_CMD_EXT_CHNL_NUM)
-#define MAX_SHORT_SSID_LEN			(4)
-#define MAX_BEACON_LENGTH			(1024)
-#define MAX_IE_LENGTH				(600)
-#define MAX_BAND_IE_LENGTH			(100)
-#define MAX_WSC_IE_LENGTH			(400)
-#define MAX_TPE_IE_LENGTH			(64)
+#define MAX_SHORT_SSID_LEN                      (4)
+#define MAX_BEACON_LENGTH                       (1024)
+#define MAX_IE_LENGTH                           (600)
+#define MAX_BAND_IE_LENGTH                      (100)
+#define MAX_WSC_IE_LENGTH                       (400)
+#define MAX_TPE_IE_LENGTH                       (64)
 
 #if (CFG_EXT_ROAMING == 1)
-#define CFG_MAX_NUM_OF_CHNL_INFO		(MAXIMUM_OPERATION_CHANNEL_LIST)
+#define CFG_MAX_NUM_OF_CHNL_INFO                (MAXIMUM_OPERATION_CHANNEL_LIST)
 #else
-#define CFG_MAX_NUM_OF_CHNL_INFO		50
+#define CFG_MAX_NUM_OF_CHNL_INFO                50
 #endif
 
 /*------------------------------------------------------------------------------
