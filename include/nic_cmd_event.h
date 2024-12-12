@@ -1158,6 +1158,7 @@ enum NIC_CAPABILITY_V2_TAG {
 #if CFG_SUPPORT_MLR
 	TAG_CAP_MLR_CAP = 0x38,
 #endif
+	TAG_CAP_PERF_IND_FROM_EMI = 0x40,
 	TAG_CAP_TOTAL
 };
 
@@ -1389,6 +1390,14 @@ struct CAP_MLO_CAP {
 	uint16_t u2ApMldEMLCap; /* AP Mld EML cap */
 	uint8_t ucNonApHyMloSupport; /* Hybrid MLo 1:support, 0 :not */
 	uint8_t ucMlcSupportCap; /* MLC BIT(0): 1:support, 0 :not */
+	uint8_t ucReserved[2];
+};
+#endif
+
+#if (CFG_SUPPORT_PERF_IND == 1)
+struct CAP_PERF_IND_FROM_EMI {
+	uint8_t fgPerfIndicatorFromEMIFWSupport;
+	uint8_t ucPerfIndicatorFromEMIFWVer;
 	uint8_t ucReserved[2];
 };
 #endif
@@ -4422,6 +4431,12 @@ uint32_t nicCfgGetSwSyncEMIOffset(
 
 #if CFG_SUPPORT_MBRAIN
 uint32_t nicCfgChipMbrEmiInfo(
+		struct ADAPTER *prAdapter,
+		uint8_t *pucEventBuf);
+#endif
+
+#if (CFG_SUPPORT_PERF_IND == 1)
+uint32_t nicCfgChipCapPerfIndFromEMI(
 		struct ADAPTER *prAdapter,
 		uint8_t *pucEventBuf);
 #endif

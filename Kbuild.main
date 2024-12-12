@@ -794,6 +794,7 @@ ifeq ($(CONFIG_WIFI_DX4), y)
 else
     CONFIG_MLD_LINK_MAX=3
     CONFIG_SUPPORT_MLC=y
+    ccflags-y += -DCFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER=1
 endif
 
 ifeq ($(CONFIG_WIFI_DX5), y)

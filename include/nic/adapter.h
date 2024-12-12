@@ -1424,6 +1424,11 @@ struct WIFI_VAR {
 #endif
 #if CFG_SUPPORT_PERF_IND
 	u_int8_t fgPerfIndicatorEn;
+	u_int8_t fgPerfIndicatorFromEMIFWSupport;
+	u_int8_t ucPerfIndicatorFromEMIFWVer;
+	u_int8_t fgPerfIndicatorFromEMIDriverSupport;
+	u_int8_t ucPerfIndicatorFromEMIDriverVer;
+	u_int8_t fgPerfIndicatorFromEMISupportVer;
 #endif
 
 	u_int8_t fgSwRxReordering;

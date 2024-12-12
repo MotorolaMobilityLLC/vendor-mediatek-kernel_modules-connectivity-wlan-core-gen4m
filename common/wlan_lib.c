@@ -8801,6 +8801,28 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_SUPPORT_PERF_IND
 	INIT_UINT(prWifiVar->fgPerfIndicatorEn, "PerfIndicatorEn", 1,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgPerfIndicatorFromEMIFWSupport,
+		  "PerfIndFromEMIFWSupport",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucPerfIndicatorFromEMIFWVer,
+		  "PerfIndFromEMIFWVer", 0, FEATURE_TO_CUSTOMER);
+#ifdef CFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER
+	INIT_UINT(prWifiVar->fgPerfIndicatorFromEMIDriverSupport,
+		  "PerfIndFromEMIDrvSupport",
+		  FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucPerfIndicatorFromEMIDriverVer,
+		  "PerfIndFromEMIDrvVer",
+		  CFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER,
+		  FEATURE_TO_CUSTOMER);
+#else
+	INIT_UINT(prWifiVar->fgPerfIndicatorFromEMIDriverSupport,
+		  "PerfIndFromEMIDrvSupport",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+#endif
+	wlanCfgSetUint32(prAdapter, "PerfIndFromEMIDrvSupport",
+			 prWifiVar->fgPerfIndicatorFromEMIDriverSupport);
+	wlanCfgSetUint32(prAdapter, "PerfIndFromEMIDrvVer",
+			 prWifiVar->ucPerfIndicatorFromEMIDriverVer);
 #endif
 #if CFG_SUPPORT_SPE_IDX_CONTROL
 	INIT_UINT(prWifiVar->ucSpeIdxCtrl, "SpeIdxCtrl", 2,

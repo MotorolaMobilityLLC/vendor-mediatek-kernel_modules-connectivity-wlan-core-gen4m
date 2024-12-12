@@ -148,6 +148,11 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MBRAIN_EMI_INFO,
 				nicCfgChipMbrEmiInfo),
 #endif
+#if (CFG_SUPPORT_PERF_IND == 1)
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PERF_IND_FROM_EMI,
+				nicCfgChipCapPerfIndFromEMI),
+#endif
+
 };
 
 /*******************************************************************************
@@ -3393,6 +3398,43 @@ uint32_t nicCfgChipMbrEmiInfo(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+#if (CFG_SUPPORT_PERF_IND == 1)
+uint32_t nicCfgChipCapPerfIndFromEMI(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
+{
+	struct CAP_PERF_IND_FROM_EMI *prPerfIndFromEMI =
+		(struct CAP_PERF_IND_FROM_EMI *)pucEventBuf;
+
+	prAdapter->rWifiVar.fgPerfIndicatorFromEMIFWSupport =
+			prPerfIndFromEMI->fgPerfIndicatorFromEMIFWSupport;
+	prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer =
+			prPerfIndFromEMI->ucPerfIndicatorFromEMIFWVer;
+
+	if (prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer ==
+		prAdapter->rWifiVar.ucPerfIndicatorFromEMIDriverVer) {
+		prAdapter->rWifiVar.fgPerfIndicatorFromEMISupportVer =
+			prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer;
+	} else if (prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer >
+		prAdapter->rWifiVar.ucPerfIndicatorFromEMIDriverVer) {
+		prAdapter->rWifiVar.fgPerfIndicatorFromEMISupportVer =
+			prAdapter->rWifiVar.ucPerfIndicatorFromEMIDriverVer;
+	} else {
+		prAdapter->rWifiVar.fgPerfIndicatorFromEMISupportVer =
+			prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer;
+	}
+
+	DBGLOG(INIT, INFO,
+		"[Perf_Ind_From_EMI] FWSup[%u], FWVer[%u], DrvSup[%u], DrvVer[%u]\n",
+		prAdapter->rWifiVar.fgPerfIndicatorFromEMIFWSupport,
+		prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer,
+		prAdapter->rWifiVar.fgPerfIndicatorFromEMIDriverSupport,
+		prAdapter->rWifiVar.ucPerfIndicatorFromEMIDriverVer);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 
 uint32_t nicCmdEventCasanLoadType(struct ADAPTER *prAdapter,
 					uint8_t *pucEventBuf)

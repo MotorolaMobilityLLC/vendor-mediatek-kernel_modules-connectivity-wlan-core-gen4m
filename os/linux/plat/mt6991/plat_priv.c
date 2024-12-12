@@ -56,6 +56,7 @@
 
 #define OPP_BW_MAX_NUM 9
 
+
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
 #include <linux/regulator/consumer.h>
 #endif

@@ -11027,11 +11027,11 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 {
 	struct CMD_PERF_IND *prCmdPerfReport;
 	struct BSS_INFO *prBssInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t i;
 	uint32_t u4CurrentTp = 0;
 #if CFG_SUPPORT_TPUT_FACTOR
 	struct WLAN_TABLE *prWtbl = prAdapter->rWifiVar.arWtbl;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4WtblBitMap = 0;
 #endif
 	prCmdPerfReport = (struct CMD_PERF_IND *)
@@ -11098,15 +11098,101 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 		}
 		prCmdPerfReport->u4WtblBitMap = u4WtblBitMap;
 #endif
+
+		DBGLOG(SW4, TRACE,
+			"[Perf_Ind_From_EMI] FW EN[%u] Driver EN[%u]\n",
+			prWifiVar->fgPerfIndicatorFromEMIFWSupport,
+			prWifiVar->fgPerfIndicatorFromEMIDriverSupport);
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		if (prWifiVar->fgPerfIndicatorFromEMIDriverSupport &&
+			prWifiVar->fgPerfIndicatorFromEMIFWSupport) {
+			if (prWifiVar->fgPerfIndicatorFromEMISupportVer == 1) {
+				struct GL_HIF_INFO *prHifInfo;
+				struct mt66xx_chip_info *prChipInfo;
+				struct HIF_MEM_OPS *prMemOps;
+				struct HIF_MEM *prMem = NULL;
+				uint8_t *prCmdPerfReportEmiAddress = NULL;
+
+				prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+				prChipInfo = prAdapter->chip_info;
+				prMemOps = &prHifInfo->rMemOps;
+
+				if (prMemOps &&
+					prMemOps->getWifiMiscRsvEmi) {
+					prMem = prMemOps->getWifiMiscRsvEmi(
+						prChipInfo,
+						WIFI_MISC_MEM_BLOCK_PERF_IND);
+					if (prMem) {
+						prCmdPerfReportEmiAddress =
+							(uint8_t *)prMem->va;
+						DBGLOG(SW4, INFO,
+						"[Perf_Ind_From_EMI] pa: %pa, va:0x%llx\n",
+						&prMem->pa, prMem->va);
+					} else {
+						DBGLOG(SW4, INFO,
+						"[Perf_Ind_From_EMI] Can't get prMem\n");
+						cnmMemFree(prAdapter,
+							   prCmdPerfReport);
+						return;
+					}
+				}
+
+				if (prCmdPerfReportEmiAddress == NULL) {
+					DBGLOG(SW4, INFO,
+					"[Perf_Ind_From_EMI] EMI Address is NULL\n");
+					cnmMemFree(prAdapter, prCmdPerfReport);
+					return;
+				}
+
+				kalMemCopy(
+					prCmdPerfReportEmiAddress,
+					prCmdPerfReport,
+					sizeof(*prCmdPerfReport));
+				DBGLOG(SW4, INFO,
+					"[Perf_Ind_From_EMI] copied to EMI\n");
+
+		}
+			else {
+				DBGLOG(SW4, WARN,
+				"[Perf_Ind_From_EMI] Wrong version FW Ver[%u] Drv Ver[%u] Support Ver[%u]\n",
+				prWifiVar->ucPerfIndicatorFromEMIFWVer,
+				prWifiVar->ucPerfIndicatorFromEMIDriverVer,
+				prWifiVar->fgPerfIndicatorFromEMISupportVer);
+
+				wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_PERF_IND,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(*prCmdPerfReport),
+					(uint8_t *) prCmdPerfReport, NULL, 0);
+			}
+		} else {
+			wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_PERF_IND,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				sizeof(*prCmdPerfReport),
+				(uint8_t *) prCmdPerfReport, NULL, 0);
+		}
+#else
 		wlanSendSetQueryCmd(prAdapter,
-			CMD_ID_PERF_IND,
-			TRUE,
-			FALSE,
-			FALSE,
-			NULL,
-			NULL,
-			sizeof(*prCmdPerfReport),
-			(uint8_t *) prCmdPerfReport, NULL, 0);
+				CMD_ID_PERF_IND,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				sizeof(*prCmdPerfReport),
+				(uint8_t *) prCmdPerfReport, NULL, 0);
+#endif
+
 	}
 	cnmMemFree(prAdapter, prCmdPerfReport);
 }				/* kalSetPerfReport */
