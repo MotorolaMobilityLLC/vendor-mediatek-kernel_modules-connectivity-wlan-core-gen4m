@@ -785,11 +785,13 @@ fail:
 int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
 {
+#define STR_SIZE 64
+
 	struct ADAPTER *prAdapter;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
 	struct nlattr *attr[WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK + 1];
-	char str[64] = {0};
+	char str[STR_SIZE] = {0};
 	uint8_t i, len;
 	uint8_t ucNetworkType = 0, ucAssocState = 0, ucScanType = 0;
 	uint8_t ucProbeCount = 0, ucActiveScnChBack = 0, ucPassiveScnChBack = 0;
@@ -882,8 +884,12 @@ int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
 	rChipConfigInfo.u2MsgSize = len;
 	kalStrnCpy(rChipConfigInfo.aucCmd, str,
-		   CHIP_CONFIG_RESP_SIZE - 1);
+		(STR_SIZE < CHIP_CONFIG_RESP_SIZE) ?
+		STR_SIZE : CHIP_CONFIG_RESP_SIZE);
+
 	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+
+#undef STR_SIZE
 
 	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidSetChipConfig,
 		&rChipConfigInfo, sizeof(rChipConfigInfo), &u4BufLen);
