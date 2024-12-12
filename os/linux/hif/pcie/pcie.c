@@ -2449,7 +2449,11 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			prMsiLayout->irq_num,
 			prMsiLayout->top_handler,
 			prMsiLayout->thread_handler,
+#if KERNEL_VERSION(6, 12, 0) <= LINUX_VERSION_CODE
+			IRQF_SHARED,
+#else
 			IRQF_SHARED | IRQF_NO_SUSPEND,
+#endif
 			KBUILD_MODNAME,
 			prGlueInfo);
 
