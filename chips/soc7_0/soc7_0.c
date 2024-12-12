@@ -458,6 +458,8 @@ struct BUS_INFO soc7_0_bus_info = {
 	.setRxRingHwAddr = soc7_0SetRxRingHwAddr,
 	.wfdmaAllocRxRing = soc7_0WfdmaAllocRxRing,
 	.enableFwDlMode = soc7_0EnableFwDlMode,
+	.recordWFDMAIdx = asicConnac2xWfdmaRecord,
+	.checkIdxMismatch = asicConnac2xWfdmaChkIdxMisMatch,
 	.setDmaIntMask = soc7_0configWfDmaIntMask,
 	.clearEvtRingTillCmdRingEmpty =
 		soc7_0clearEvtRingTillCmdRingEmpty,
