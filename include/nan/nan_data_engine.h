@@ -1018,30 +1018,6 @@ void nanDataEngineSharedKeyAttrAppend(struct ADAPTER *prAdapter,
 				      struct _NAN_NDL_INSTANCE_T *prNDL,
 				      struct _NAN_NDP_INSTANCE_T *prNDP);
 
-#if CFG_SUPPORT_NAN_EXT
-uint16_t
-nanDataEngineVendorAttrLength(struct ADAPTER *prAdapter,
-				 struct _NAN_NDL_INSTANCE_T *prNDL,
-				 struct _NAN_NDP_INSTANCE_T *prNDP);
-
-void nanDataEngineVendorAttrAppend(struct ADAPTER *prAdapter,
-				      struct MSDU_INFO *prMsduInfo,
-				      struct _NAN_NDL_INSTANCE_T *prNDL,
-				      struct _NAN_NDP_INSTANCE_T *prNDP);
-
-#if (CFG_SUPPORT_NAN_11BE == 1)
-uint16_t
-nanDataEngineVendorEhtAttrLength(struct ADAPTER *prAdapter,
-				 struct _NAN_NDL_INSTANCE_T *prNDL,
-				 struct _NAN_NDP_INSTANCE_T *prNDP);
-
-void nanDataEngineVendorEhtAttrAppend(struct ADAPTER *prAdapter,
-				      struct MSDU_INFO *prMsduInfo,
-				      struct _NAN_NDL_INSTANCE_T *prNDL,
-				      struct _NAN_NDP_INSTANCE_T *prNDP);
-#endif
-#endif
-
 uint16_t
 nanDataEngineNDPEAttrLength(struct ADAPTER *prAdapter,
 			    struct _NAN_NDL_INSTANCE_T *prNDL,

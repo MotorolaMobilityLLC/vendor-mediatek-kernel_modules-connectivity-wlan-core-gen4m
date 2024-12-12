@@ -114,6 +114,42 @@ uint32_t nanSchedGetVendorAttr(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+
+static inline
+uint16_t
+nanDataEngineVendorAttrLength(struct ADAPTER *prAdapter,
+				 struct _NAN_NDL_INSTANCE_T *prNDL,
+				 struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+	return 0;
+}
+
+static inline
+void nanDataEngineVendorAttrAppend(struct ADAPTER *prAdapter,
+				      struct MSDU_INFO *prMsduInfo,
+				      struct _NAN_NDL_INSTANCE_T *prNDL,
+				      struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+
+}
+
+static inline
+uint16_t
+nanDataEngineVendorEhtAttrLength(struct ADAPTER *prAdapter,
+				 struct _NAN_NDL_INSTANCE_T *prNDL,
+				 struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+	return 0;
+}
+
+static inline
+void nanDataEngineVendorEhtAttrAppend(struct ADAPTER *prAdapter,
+				      struct MSDU_INFO *prMsduInfo,
+				      struct _NAN_NDL_INSTANCE_T *prNDL,
+				      struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+}
+
 static inline
 uint32_t nanGetFcSlots(struct ADAPTER *prAdapter)
 {
@@ -152,6 +188,24 @@ u_int8_t nanIsChnlSwitchSlot(struct ADAPTER *prAdapter,
 			     size_t szSlotIdx)
 {
 	return FALSE;
+}
+
+static inline
+void nanExtTerminateApNan(struct ADAPTER *prAdapter, uint8_t ucReason)
+{
+
+}
+
+static inline
+void nanExtTerminateApNanEndPs(struct ADAPTER *prAdapter)
+{
+
+}
+
+static inline
+void nanExtTerminateApNanEndLegacy(struct ADAPTER *prAdapter)
+{
+
 }
 
 #endif

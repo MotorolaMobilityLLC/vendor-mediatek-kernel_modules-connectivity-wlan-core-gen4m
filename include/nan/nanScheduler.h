@@ -821,20 +821,6 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 uint8_t nanSchedGetConnBands(struct ADAPTER *prAdapter,
 			     enum ENUM_NETWORK_TYPE eNetworkType);
 
-#if CFG_SUPPORT_NAN_EXT
-uint32_t nanSchedGetVendorAttr(
-	struct ADAPTER *prAdapter,
-	uint8_t **ppucVendorAttr,
-	uint32_t *pu4VendorAttrLength);
-
-#if (CFG_SUPPORT_NAN_11BE == 1)
-uint32_t nanSchedGetVendorEhtAttr(
-	struct ADAPTER *prAdapter,
-	uint8_t **ppucVendorAttr,
-	uint32_t *pu4VendorAttrLength);
-#endif
-#endif
-
 #if (CFG_NAN_SCHEDULER_VERSION == 1)
 union _NAN_BAND_CHNL_CTRL
 nanQueryNonNanChnlInfoBySlot(struct ADAPTER *prAdapter,

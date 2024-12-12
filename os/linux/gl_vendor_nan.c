@@ -1757,9 +1757,7 @@ skip:
 			}
 		}
 
-#if CFG_SUPPORT_NAN_EXT
-		nanExtTerminateApNan(prAdapter, NAN_ASC_EVENT_ASCC_END_LEGACY);
-#endif
+		nanExtTerminateApNanEndLegacy(prAdapter);
 
 		i4Status = kalIoctl(prGlueInfo, wlanoidNanPublishRsp,
 				    (void *)pNanPublishRsp,
@@ -2167,10 +2165,7 @@ skip:
 			rStatus =
 			nanRangingRequest(prGlueInfo->prAdapter, &rgId, rgreq);
 
-#if CFG_SUPPORT_NAN_EXT
-			nanExtTerminateApNan(prAdapter,
-				NAN_ASC_EVENT_ASCC_END_LEGACY);
-#endif
+			nanExtTerminateApNanEndLegacy(prAdapter);
 
 			pNanSubscribeRsp->fwHeader.handle = rgId;
 			i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
@@ -2427,9 +2422,7 @@ skip:
 		else
 			pNanXmitFollowupRsp->status = NAN_I_STATUS_SUCCESS;
 
-#if CFG_SUPPORT_NAN_EXT
-		nanExtTerminateApNan(prAdapter, NAN_ASC_EVENT_ASCC_END_LEGACY);
-#endif
+		nanExtTerminateApNanEndLegacy(prAdapter);
 
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANFollowupRsp,
 				    (void *)pNanXmitFollowupRsp,

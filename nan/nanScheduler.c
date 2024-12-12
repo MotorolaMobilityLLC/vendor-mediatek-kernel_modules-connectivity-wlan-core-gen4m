@@ -1311,12 +1311,13 @@ nanSchedReleasePeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 
 	if (prPeerSchRecord->prPeerSchDesc)
 		prPeerSchRecord->prPeerSchDesc->fgUsed = FALSE;
+
 	nanSchedResetPeerSchedRecord(prAdapter, u4SchIdx);
-#if CFG_SUPPORT_NAN_EXT
+
 	nanExtClearCustomNdpFaw(u4SchIdx);
-#endif
 
 	nanSchedCmdManagePeerSchRecord(prAdapter, u4SchIdx, FALSE);
+
 	return WLAN_STATUS_SUCCESS;
 }
 

@@ -3418,8 +3418,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 		}
 
-#if CFG_SUPPORT_NAN_EXT
-		nanExtTerminateApNan(prAdapter, NAN_ASC_EVENT_ASCC_END_PS);
+#if (CFG_SUPPORT_NAN == 1)
+		nanExtTerminateApNanEndPs(prAdapter);
 #endif
 
 		kalSetMediaStateIndicated(prGlueInfo,
