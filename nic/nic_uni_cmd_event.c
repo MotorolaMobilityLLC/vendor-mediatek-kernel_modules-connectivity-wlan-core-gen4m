@@ -4639,7 +4639,7 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucExtraInfo = extra;
 
 		DBGLOG(INIT, INFO,
-			"bss=%d,token=%d,type=%d,interval=%d,ch[%d %d %d %d %d %d],dbdc=%d,extra=%u\n",
+			"bss=%d,token=%d,type=%d,interval=%d,ch[%d %d %d %d %d %d],ap[%d %d %d],dbdc=%d,extra=%u\n",
 			tag->ucBssIndex,
 			tag->ucTokenID,
 			tag->ucReqType,
@@ -4650,6 +4650,9 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 			tag->ucRfSco,
 			tag->ucRfCenterFreqSeg1,
 			tag->ucRfCenterFreqSeg2,
+			tag->ucRfChannelWidthFromAP,
+			tag->ucRfCenterFreqSeg1FromAP,
+			tag->ucRfCenterFreqSeg2FromAP,
 			tag->ucDBDCBand,
 			tag->ucExtraInfo);
 	}

@@ -10470,8 +10470,11 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		 * value when set channel.
 		 */
 		prSubReq->eRfChannelWidthFromAP = prBssDesc->eChannelWidth;
-		prSubReq->ucRfCenterFreqSeg1FromAP =
-			prSubReq->eRfChannelWidthFromAP;
+		prSubReq->ucRfCenterFreqSeg1FromAP = nicGetS1(prSubReq->eRfBand,
+			prSubReq->ucPrimaryChannel,
+			rlmGetBssOpBwByChannelWidth(prSubReq->eRfSco,
+				prSubReq->eRfChannelWidth));
+
 		rlmReviseS1(
 			&(prSubReq->ucRfCenterFreqSeg1FromAP),
 			prBssDesc->ucChannelNum,

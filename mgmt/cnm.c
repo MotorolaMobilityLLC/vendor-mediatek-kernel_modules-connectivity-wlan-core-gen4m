@@ -659,6 +659,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	struct CMD_CH_PRIVILEGE *prCmdBody;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t rStatus;
+	uint8_t i;
 #if CFG_SUPPORT_DBDC
 	OS_SYSTIME rChReqQueueTime;
 #endif
@@ -739,11 +740,20 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	/* For FW, ucVhtChannelFrequencyS1 means center channel,
 	 * not Channel Center Frequency Segment 0(CCFS0) in spec.
 	 */
-	prMsgChReq->ucRfCenterFreqSeg1 = nicGetCenterCh(
-			prMsgChReq->eRfBand,
-			prMsgChReq->ucPrimaryChannel,
-			rlmGetBssOpBwByChannelWidth(prMsgChReq->eRfSco,
-					    prMsgChReq->eRfChannelWidth));
+	for (i = 0; i <= prMsgChReq->ucExtraChReqNum; ++i) {
+		prMsgChReq[i].ucRfCenterFreqSeg1 = nicGetCenterCh(
+			prMsgChReq[i].eRfBand,
+			prMsgChReq[i].ucPrimaryChannel,
+			rlmGetBssOpBwByChannelWidth(
+				prMsgChReq[i].eRfSco,
+				prMsgChReq[i].eRfChannelWidth));
+
+		prMsgChReq[i].ucRfCenterFreqSeg1FromAP = nicGetCenterCh(
+			prMsgChReq[i].eRfBand,
+			prMsgChReq[i].ucPrimaryChannel,
+			rlmGetBssOpBwByChannelWidth(prMsgChReq[i].eRfSco,
+				prMsgChReq[i].eRfChannelWidthFromAP));
+	}
 
 	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
@@ -3874,7 +3884,7 @@ cnmDBDCFsmActionReqPeivilegeUnLock(struct ADAPTER *prAdapter)
 				prPendingMsg->ucTokenID);
 
 			cnmChMngrRequestPrivilege(prAdapter,
-						  &prPendingMsg->rMsgHdr);
+					(struct MSG_HDR *)prPendingMsg);
 		} else {
 			ASSERT(0);
 		}
