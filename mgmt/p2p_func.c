@@ -3127,6 +3127,11 @@ void p2pFuncEnableManualCac(void)
 	g_fgManualCac = TRUE;
 }
 
+void p2pFuncDisableManualCac(void)
+{
+	g_fgManualCac = FALSE;
+}
+
 uint32_t p2pFuncGetDriverCacTime(void)
 {
 	return g_u4DriverCacTime;
@@ -3164,6 +3169,29 @@ uint8_t p2pFuncGetRadarDetectMode(void)
 void p2pFuncAddRadarDetectCnt(void)
 {
 	g_ucRadarDetectCnt++;
+}
+
+void p2pFuncRadarDetectCntUevent(struct ADAPTER *prAdapter)
+{
+	char uEvent[300];
+
+	kalSnprintf(uEvent, sizeof(uEvent),
+		"radardetectcount=%u",
+		p2pFuncGetRadarDetectCnt());
+
+	DBGLOG(SCN, LOUD, "radar detect uevent:%s\n", uEvent);
+	kalSendUevent(prAdapter, uEvent);
+}
+
+void p2pFuncRadarDetectDoneUevent(struct ADAPTER *prAdapter)
+{
+	char uEvent[300];
+
+	kalSnprintf(uEvent, sizeof(uEvent),
+		"radardetectdone=1");
+
+	DBGLOG(SCN, LOUD, "radar detect done\n", uEvent);
+	kalSendUevent(prAdapter, uEvent);
 }
 
 void p2pFuncResetRadarDetectCnt(void)
