@@ -26,7 +26,6 @@
 #include "coda/mt7999/conn_host_csr_top.h"
 #include "coda/mt7999/conn_semaphore.h"
 #include "coda/mt7999/wf_cr_sw_def.h"
-#include "coda/mt7999/wf_top_cfg.h"
 #include "coda/mt7999/wf_p0_wfdma.h"
 #include "coda/mt7999/wf_m0_wfdma.h"
 #include "coda/mt7999/wf_p0_wfdma_trinfo_top.h"
