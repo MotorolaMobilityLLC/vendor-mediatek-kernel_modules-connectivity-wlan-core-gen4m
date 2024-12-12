@@ -2189,6 +2189,10 @@ uint32_t wlanLoadManufactureData(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint32_t wlanTimerTimeoutCheck(struct ADAPTER *prAdapter);
 
+#if CFG_SUPPORT_HRTIMER
+uint32_t wlanHrtimerTimeout(struct ADAPTER *prAdapter);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Check (for Glue Layer)                                     */
 /*----------------------------------------------------------------------------*/

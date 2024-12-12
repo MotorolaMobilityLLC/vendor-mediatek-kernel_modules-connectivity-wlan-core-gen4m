@@ -3313,6 +3313,9 @@ struct ADAPTER {
 	struct tasar_config rTasarCfg;
 	struct tasar_scenrio_ctrl rTasarScenrio;
 #endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
+
+	struct QUE rTimeoutedHrtimerInfoQue; /* already timeout */
+	struct LINK rHrtimerList; /* still not timeout */
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

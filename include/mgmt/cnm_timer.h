@@ -67,6 +67,11 @@ enum ENUM_TIMER_WAKELOCK_TYPE_T {
 	TIMER_WAKELOCK_NUM
 };
 
+enum ENUM_TIMER_TYPE {
+	TIMER_TIMER_LIST,
+	TIMER_HRTIMER
+};
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -74,13 +79,33 @@ enum ENUM_TIMER_WAKELOCK_TYPE_T {
 typedef void(*PFN_MGMT_TIMEOUT_FUNC) (struct ADAPTER *, uintptr_t);
 
 struct TIMER {
+	union {
+		/* Legacy Timer List */
+		struct {
+			OS_SYSTIME rExpiredSysTime;
+			uint16_t u2Minutes;
+			uint16_t u2Reserved;
+			uintptr_t ulDataPtr;
+			PFN_MGMT_TIMEOUT_FUNC pfMgmtTimeOutFunc;
+			enum ENUM_TIMER_WAKELOCK_TYPE_T eType;
+		};
+
+#if CFG_SUPPORT_HRTIMER
+		/* Hrtimer(High resolution), should only be used in latency
+		 * sensitive scenario or need to wake up from kernel suspend.
+		 */
+		struct {
+			/* QueEntry MUST at the beginning of struct */
+			struct QUE_ENTRY rHrtimeoutQueEntry;
+			struct hrtimer rHrtimer;
+			struct ADAPTER *prHrAdapter;
+			PFN_MGMT_TIMEOUT_FUNC pfHrtimeoutFunc;
+			uintptr_t prHrFuncPara;
+		};
+#endif
+	};
 	struct LINK_ENTRY rLinkEntry;
-	OS_SYSTIME rExpiredSysTime;
-	uint16_t u2Minutes;
-	uint16_t u2Reserved;
-	uintptr_t ulDataPtr;
-	PFN_MGMT_TIMEOUT_FUNC pfMgmtTimeOutFunc;
-	enum ENUM_TIMER_WAKELOCK_TYPE_T eType;
+	enum ENUM_TIMER_TYPE eTimerType;
 };
 
 /*******************************************************************************
@@ -222,6 +247,13 @@ void cnmTimerInitTimerOption(struct ADAPTER *prAdapter,
 			     uintptr_t ulDataPtr,
 			     enum ENUM_TIMER_WAKELOCK_TYPE_T eType);
 
+#if CFG_SUPPORT_HRTIMER
+void cnmTimerInitHrtimerImpl(struct ADAPTER *prAdapter,
+			     struct TIMER *prTimer,
+			     PFN_MGMT_TIMEOUT_FUNC pfFunc,
+			     uintptr_t ulDataPtr);
+#endif
+
 void cnmTimerStopTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer);
 
 void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
@@ -237,7 +269,16 @@ static __KAL_INLINE__ int32_t timerPendingTimer(struct TIMER *prTimer)
 {
 	ASSERT(prTimer);
 
-	return prTimer->rLinkEntry.prNext != NULL;
+	switch (prTimer->eTimerType) {
+#if CFG_SUPPORT_HRTIMER
+	/* Hrtimer */
+	case TIMER_HRTIMER:
+		return kalHrtimerIsRunning(&prTimer->rHrtimer);
+#endif
+	/* Legacy Timer List */
+	default:
+		return prTimer->rLinkEntry.prNext != NULL;
+	}
 }
 
 static __KAL_INLINE__ void cnmTimerInitTimer(struct ADAPTER *prAdapter,
@@ -245,8 +286,24 @@ static __KAL_INLINE__ void cnmTimerInitTimer(struct ADAPTER *prAdapter,
 					     PFN_MGMT_TIMEOUT_FUNC pfFunc,
 					     uintptr_t ulDataPtr)
 {
+	prTimer->eTimerType = TIMER_TIMER_LIST;
 	cnmTimerInitTimerOption(prAdapter, prTimer, pfFunc, ulDataPtr,
 		TIMER_WAKELOCK_AUTO);
+}
+
+static __KAL_INLINE__ void cnmTimerInitHrtimer(struct ADAPTER *prAdapter,
+					       struct TIMER *prTimer,
+					       PFN_MGMT_TIMEOUT_FUNC pfFunc,
+					       uintptr_t ulDataPtr)
+{
+#if CFG_SUPPORT_HRTIMER
+	/* Hrtimer */
+	prTimer->eTimerType = TIMER_HRTIMER;
+	cnmTimerInitHrtimerImpl(prAdapter, prTimer, pfFunc, ulDataPtr);
+#else
+	/* Legacy Timer List */
+	cnmTimerInitTimer(prAdapter, prTimer, pfFunc, ulDataPtr);
+#endif
 }
 
 #if CFG_WOW_SUPPORT

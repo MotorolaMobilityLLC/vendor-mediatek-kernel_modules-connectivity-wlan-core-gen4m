@@ -6329,6 +6329,18 @@ int main_thread(void *data)
 		kalRxGroTcCheck(prGlueInfo);
 #endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
 
+#if CFG_SUPPORT_HRTIMER
+		if (test_and_clear_bit(GLUE_FLAG_HRTIMER_BIT,
+				       &prGlueInfo->ulFlag))
+			if (KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+					 prGlueInfo->prHrtimerWakeLock)) {
+				KAL_WAKE_UNLOCK(prGlueInfo->prAdapter,
+						prGlueInfo->prHrtimerWakeLock);
+			}
+			TRACE(wlanHrtimerTimeout(prGlueInfo->prAdapter),
+			      "HRTIMER_TIMEOUT");
+#endif
+
 		if (test_and_clear_bit(GLUE_FLAG_TIMEOUT_BIT,
 				       &prGlueInfo->ulFlag))
 			TRACE(wlanTimerTimeoutCheck(prGlueInfo->prAdapter),
@@ -6909,6 +6921,128 @@ u_int8_t kalCancelTimer(struct GLUE_INFO *prGlueInfo)
 	else
 		return FALSE;
 }
+
+#if CFG_SUPPORT_HRTIMER
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief   Check if hrtimer is initiated or not.
+ *          hrtimer cannot be canceled if still not initiated.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalHrtimerIsInit(struct hrtimer *prTimer)
+{
+	return !!prTimer->base;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief   Check if hrtimer is running or not.
+ *          Running means timer has started, and still not timeout.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalHrtimerIsRunning(struct hrtimer *prTimer)
+{
+	return hrtimer_is_queued(prTimer);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Handler the kernel timeout event.
+ */
+/*----------------------------------------------------------------------------*/
+enum hrtimer_restart kalHrtimerTimeout(struct hrtimer *prHrtimer)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct TIMER *prTimer;
+	struct ADAPTER *prAdapter;
+	struct QUE *prQue;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prTimer = CONTAINER_OF(prHrtimer, struct TIMER, rHrtimer);
+	prAdapter = prTimer->prHrAdapter;
+	prGlueInfo = prAdapter->prGlueInfo;
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_T *prTxWakeLock = prGlueInfo->prHrtimerWakeLock;
+#endif
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_HRTIMER_LIST);
+	LINK_REMOVE_KNOWN_ENTRY(&prAdapter->rHrtimerList, &prTimer->rLinkEntry);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_HRTIMER_LIST);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_HRTIMER_TIMEOUT);
+	prQue = &prAdapter->rTimeoutedHrtimerInfoQue;
+	QUEUE_INSERT_TAIL(prQue, &prTimer->rHrtimeoutQueEntry);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_HRTIMER_TIMEOUT);
+
+	DBGLOG(INIT, TRACE, "hrtimer timeout %p\n", prHrtimer);
+
+	set_bit(GLUE_FLAG_HRTIMER_BIT, &prGlueInfo->ulFlag);
+#if CFG_ENABLE_WAKE_LOCK
+	if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, prTxWakeLock))
+		KAL_WAKE_LOCK(prAdapter, prTxWakeLock);
+#endif
+	wake_up_interruptible(&prGlueInfo->waitq);
+
+	return HRTIMER_NORESTART;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Initialize hrtimer.
+ */
+/*----------------------------------------------------------------------------*/
+void kalHrtimerInit(struct hrtimer *prTimer)
+{
+	hrtimer_init(prTimer, CLOCK_BOOTTIME, HRTIMER_MODE_ABS);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Start hrtimer.
+ */
+/*----------------------------------------------------------------------------*/
+void kalHrtimerStart(struct hrtimer *prTimer, uint32_t delayMs)
+{
+	ktime_t kTargetTime;
+
+	if (!kalHrtimerIsInit(prTimer)) {
+		DBGLOG(INIT, WARN, "hrtimer has not init\n");
+		return;
+	}
+
+	kTargetTime = ktime_get_boottime();
+	kTargetTime = ktime_add(kTargetTime, ms_to_ktime(delayMs));
+
+	if (kalHrtimerIsRunning(prTimer))
+		kalHrtimerCancel(prTimer);
+
+	prTimer->function = kalHrtimerTimeout;
+	hrtimer_start(prTimer, kTargetTime, HRTIMER_MODE_ABS);
+
+	DBGLOG(INIT, TRACE, "hrtimer %p %lldms started\n", prTimer, delayMs);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Stop hrtimer.
+ */
+/*----------------------------------------------------------------------------*/
+void kalHrtimerCancel(struct hrtimer *prTimer)
+{
+	// for boot up, p2p dev may not do cnmGetBssInfoAndInit to init timer
+	if (!kalHrtimerIsInit(prTimer)) {
+		DBGLOG(INIT, WARN, "hrtimer has not init\n");
+		return;
+	}
+
+	hrtimer_cancel(prTimer);
+	prTimer->function = NULL;
+
+	DBGLOG(INIT, TRACE, "hrtimer %p stopped\n", prTimer);
+}
+#endif /* CFG_SUPPORT_HRTIMER */
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -5091,6 +5091,38 @@ uint32_t wlanTimerTimeoutCheck(struct ADAPTER *prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_HRTIMER
+uint32_t wlanHrtimerTimeout(struct ADAPTER *prAdapter)
+{
+	struct QUE tmpQue;
+	struct TIMER *prTimer;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "Null adapter\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_HRTIMER_TIMEOUT);
+	QUEUE_MOVE_ALL(&tmpQue, &prAdapter->rTimeoutedHrtimerInfoQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_HRTIMER_TIMEOUT);
+
+	while (QUEUE_IS_NOT_EMPTY(&tmpQue)) {
+		QUEUE_REMOVE_HEAD(&tmpQue, prTimer, struct TIMER *);
+
+		if (!prTimer) {
+			DBGLOG(P2P, ERROR, "Null CSA timer\n");
+			continue;
+		}
+
+		prTimer->pfHrtimeoutFunc(prAdapter, prTimer->prHrFuncPara);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_HRTIMER */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to check if any pending mailbox message

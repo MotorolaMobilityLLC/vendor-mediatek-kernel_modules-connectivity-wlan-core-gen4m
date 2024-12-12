@@ -114,7 +114,7 @@ extern bool fgIsTxPowerDecreased;
 	GLUE_FLAG_TX_CMD_DONE | GLUE_FLAG_TXREQ | GLUE_FLAG_TIMEOUT | \
 	GLUE_FLAG_FRAME_FILTER | GLUE_FLAG_OID | GLUE_FLAG_RX | \
 	GLUE_FLAG_SER_TIMEOUT | GLUE_FLAG_DISABLE_PERF | \
-	GLUE_FLAG_CONNECTIVITY_LOG)
+	GLUE_FLAG_CONNECTIVITY_LOG | GLUE_FLAG_HRTIMER)
 
 #define GLUE_FLAG_HIF_PROCESS \
 	(GLUE_FLAG_HALT | GLUE_FLAG_INT | GLUE_FLAG_HIF_TX | \
@@ -411,6 +411,10 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_MBR_TXTIMEOUT,
 #endif
 	SPIN_LOCK_MLD_GRP_SN,
+#if CFG_SUPPORT_HRTIMER
+	SPIN_LOCK_HRTIMER_LIST,
+	SPIN_LOCK_HRTIMER_TIMEOUT,
+#endif
 	SPIN_LOCK_NUM
 };
 
@@ -2155,6 +2159,15 @@ u_int8_t kalSetTimer(struct GLUE_INFO *prGlueInfo,
 		     uint32_t u4Interval);
 
 u_int8_t kalCancelTimer(struct GLUE_INFO *prGlueInfo);
+
+#if CFG_SUPPORT_HRTIMER
+u_int8_t kalHrtimerIsInit(struct hrtimer *prTimer);
+u_int8_t kalHrtimerIsRunning(struct hrtimer *prTimer);
+enum hrtimer_restart kalHrtimerTimeout(struct hrtimer *prTimer);
+void kalHrtimerInit(struct hrtimer *prTimer);
+void kalHrtimerStart(struct hrtimer *prTimer, uint32_t delayMs);
+void kalHrtimerCancel(struct hrtimer *prTimer);
+#endif /* CFG_SUPPORT_HRTIMER */
 
 void kalScanDone(struct GLUE_INFO *prGlueInfo,
 		 uint8_t ucBssIndex,
