@@ -6738,6 +6738,11 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 	uint8_t ucTokenID;
 	uint32_t u4GrantInterval;
 	uint8_t ucBssIndex = 0;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucMloType = MLO_MODE_NUM;
+#endif
 
 	prMsgChGrant = (struct MSG_CH_GRANT *)prMsgHdr;
 
@@ -6774,6 +6779,40 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			prAisBssInfo->eBand,
 			prAisBssInfo->ucBssIndex);
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		/**
+		 * Currently CNM's flow doesn't support grant a non active link.
+		 * However, for OWL MLO connection,
+		 * non active link may need to do channel switch.
+		 *
+		 * For OWL CSA in EMLSR or Hybrid MLO connection, Driver get
+		 * grant event but actually it's not granted. it's not able
+		 * to listen Beacon after CSA, so the rCsaDoneTimer won't
+		 * start up.
+		 *
+		 * The error handle for CSA fail will take over by BTO handleing
+		 * procedure when the link is active.
+		 */
+
+		ucMloType = mldCheckMLSRType(prAdapter);
+		if (ucMloType >= MLO_MODE_MLSR
+			&& ucMloType <= MLO_MODE_HYEMLSR) {
+			prCSAParams = &prAisBssInfo->CSAParams;
+			prStaRec = prAisBssInfo->prStaRecOfAP;
+
+			if (prCSAParams->fgHasStopTx) {
+				kalIndicateAllQueueTxAllowed(
+					prAdapter->prGlueInfo,
+					prStaRec->ucBssIndex,
+					TRUE);
+				qmSetStaRecTxAllowed(prAdapter,
+					prStaRec, TRUE);
+				DBGLOG(RLM, EVENT,
+					"[CSA] TxAllowed = TRUE\n");
+			}
+			return;
+		}
+#endif
 		cnmTimerStartTimer(prAdapter,
 				&prAisBssInfo->rCsaDoneTimer,
 				SEC_TO_MSEC(prWifiVar->ucCsaDoneTimeout));
@@ -11151,6 +11190,9 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	struct MSG_CH_REQ *prMsgChReq = NULL;
 	struct BSS_DESC *prBssDesc;
 	struct PARAM_SSID rSsid;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucMloType = MLO_MODE_NUM;
+#endif
 
 	prMsgChReq = (struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
 		RAM_TYPE_MSG,
@@ -11178,7 +11220,28 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 #endif
 	prMsgChReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 	prMsgChReq->ucTokenID = *ucChTokenId;
-	prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	/**
+	 * Currently CNM's flow doesn't support grant a non active link.
+	 * However, for OWL MLO connection,
+	 * non active link may need to do channel switch.
+	 *
+	 * To overcome the problem,
+	 * driver send Chreq with CH_REQ_TYPE_MLO_MLSR_CSA type when the
+	 * connection type is EMLSR or Hybrid MLO.
+	 * FW will send grant event but actually it's not granted.
+	 * The purpose of sending chreq is to update AP's capbility(S1, S2, BW)
+	 * to FW to let CNM calculte primary channel offset with correct value.
+	 */
+	ucMloType = mldCheckMLSRType(prAdapter);
+	if (ucMloType >= MLO_MODE_MLSR &&
+		 ucMloType <= MLO_MODE_HYEMLSR)
+		prMsgChReq->eReqType = CH_REQ_TYPE_MLO_MLSR_CSA;
+	else
+#endif
+		prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
+
 	prMsgChReq->u4MaxInterval = AIS_JOIN_CH_REQUEST_INTERVAL;
 	prMsgChReq->ucPrimaryChannel = prBss->ucPrimaryChannel;
 	prMsgChReq->eRfSco = prBss->eBssSCO;
