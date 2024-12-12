@@ -262,10 +262,10 @@ struct STA_RECORD {
 	enum ENUM_STA_SUBTYPE eStaSubtype;
 
 	uint8_t ucBssIndex;	/* BSS_INFO_I index */
+	uint8_t ucLinkId;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	uint8_t ucMldStaIndex;	/* MLD_STAREC index */
-	uint8_t ucLinkId;
 	/*
 	 * the tid-to-link bitmap,  BIT0 for TID0, BIT1 for TID1...
 	 *     1'b1: supoort transmission for the TID in this link

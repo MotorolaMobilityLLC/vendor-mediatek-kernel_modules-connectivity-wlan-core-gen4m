@@ -2075,6 +2075,7 @@ static uint32_t fill_ml_link_stats(struct ADAPTER *prAdapter, uint8_t *dst,
 	uint8_t *orig = dst;
 	int b;
 	int bss_idx_bitmap;
+	struct STA_RECORD *prStaRec;
 	static const enum nl80211_band band[BAND_NUM] = {
 		[BAND_2G4] = NL80211_BAND_2GHZ,
 		[BAND_5G] = NL80211_BAND_5GHZ,
@@ -2105,14 +2106,21 @@ static uint32_t fill_ml_link_stats(struct ADAPTER *prAdapter, uint8_t *dst,
 
 		link = (struct STATS_LLS_WIFI_LINK_STAT *)dst;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
-		link->link_id = prBssInfo->ucLinkId;
-#endif
-		link->state = WIFI_LINK_STATE_IN_USE;
+		prStaRec = prBssInfo->prStaRecOfAP;
+		if (prStaRec) {
+			link->link_id = prStaRec->ucLinkId;
+			link->state = cnmStaRecIsActive(prAdapter, prStaRec) ?
+					WIFI_LINK_STATE_IN_USE :
+					WIFI_LINK_STATE_NOT_IN_USE;
+		} else {
+			link->link_id = 0;
+			link->state = WIFI_LINK_STATE_IN_USE;
+		}
+
 		link->radio = prBssInfo->eHwBandIdx;
 		link->frequency = ieee80211_channel_to_frequency(
-					prBssInfo->ucPrimaryChannel,
-					band[prBssInfo->eBand]);
+				prBssInfo->ucPrimaryChannel,
+				band[prBssInfo->eBand]);
 
 		/* Copy link stats data for this BSS[b]
 		 * src structure: STATS_LLS_WIFI_IFACE_STAT
