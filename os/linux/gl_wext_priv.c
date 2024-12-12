@@ -22109,6 +22109,8 @@ int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
 	int32_t i4BytesWritten = 0;
 	uint8_t ucCmdFound = FALSE;
 	PRIV_CMD_FUNCTION pfHandler = NULL;
+	int8_t *pcTempCmd;
+	int32_t i4CmdSize = i4TotalLen + 1;
 
 	if (g_u4HaltFlag) {
 		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
@@ -22117,6 +22119,14 @@ int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
+
+	pcTempCmd = (int8_t *) kalMemZAlloc(i4CmdSize, VIR_MEM_TYPE);
+	if (!pcTempCmd) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return 0;
+	}
+	kalMemCopy(pcTempCmd, pcCommand, i4TotalLen);
+	pcTempCmd[i4TotalLen] = '\0';
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -22157,8 +22167,15 @@ int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
 		}
 		pcCommand[i4BytesWritten] = '\0';
 		i4BytesWritten++;
-
+	} else {
+		DBGLOG(REQ, WARN, "Cmd failed, status:%d\n", i4BytesWritten);
+		i4BytesWritten = kalScnprintf(pcCommand, i4TotalLen,
+		      "\nError executing command \"%s\", status: %d\n",
+		      pcTempCmd, i4BytesWritten);
 	}
+
+	if (pcTempCmd)
+		kalMemFree(pcTempCmd, VIR_MEM_TYPE, i4CmdSize);
 
 	return i4BytesWritten;
 

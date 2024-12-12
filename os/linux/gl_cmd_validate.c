@@ -2653,27 +2653,24 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 	int32_t i4Argc = 0;
 
 	wlanCfgParseArgument(pcCmd, &i4Argc, pcArgv);
-	DBGLOG(REQ, TRACE, "i4Argc=%d", i4Argc);
 
 	/* 1. validate argument count */
-	if (argPolicy == VERIFY_EXACT_ARG_NUM &&
-		ucArgNum != i4Argc)
-		return ret;
-	else if (argPolicy == VERIFY_MIN_ARG_NUM &&
-		ucArgNum > i4Argc)
-		return ret;
-
-	/* 2. validate arguments */
-	if (policy == NULL) {
-		ret = WLAN_STATUS_SUCCESS;
+	if ((argPolicy == VERIFY_EXACT_ARG_NUM && ucArgNum != i4Argc) ||
+	    (argPolicy == VERIFY_MIN_ARG_NUM && ucArgNum > i4Argc)) {
+		DBGLOG(REQ, ERROR, "Arg num mismatch, argPolicy=%d, i4Argc=%d",
+		       argPolicy, i4Argc);
 		return ret;
 	}
+
+	/* 2. validate arguments */
+	if (policy == NULL)
+		return WLAN_STATUS_SUCCESS;
 
 	for (ucIdx = 1; ucIdx < ucArgNum && ucIdx < u4PolicySize; ucIdx++) {
 		struct CMD_VALIDATE_POLICY *prAttr = &policy[ucIdx];
 
 		if (!prAttr) {
-			DBGLOG(REQ, INFO, "invalid attr(%d)\n", ucIdx);
+			DBGLOG(REQ, ERROR, "invalid attr(%d)\n", ucIdx);
 			return ret;
 		}
 		DBGLOG(REQ, LOUD, "(%d) type[%d] len[%u] min[%u] max[%u]\n",
@@ -2686,14 +2683,21 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 		{
 			uint32_t tmp;
 
-			if (kalkStrtou32(pcArgv[ucIdx], 0, &tmp) != 0)
+			if (kalkStrtou32(pcArgv[ucIdx], 0, &tmp) != 0) {
+				DBGLOG(REQ, ERROR,
+				       "%s to u32 fail\n", pcArgv[ucIdx]);
 				return ret;
+			}
 			DBGLOG(REQ, LOUD, ">> value[%u]\n", tmp);
 
-			if (tmp >= prAttr->min && tmp <= prAttr->max)
+			if (tmp >= prAttr->min && tmp <= prAttr->max) {
 				continue;
-			else
+			} else {
+				DBGLOG(REQ, ERROR,
+				       "Invalid arg%u=%u, range[%u, %u]\n",
+				       ucIdx, tmp, prAttr->min, prAttr->max);
 				return ret;
+			}
 			break;
 		}
 		case NLA_S8:
@@ -2702,14 +2706,21 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 		{
 			int tmp;
 
-			if (kalStrtoint(pcArgv[ucIdx], 0, &tmp) != 0)
+			if (kalStrtoint(pcArgv[ucIdx], 0, &tmp) != 0) {
+				DBGLOG(REQ, ERROR,
+				       "%s to int fail\n", pcArgv[ucIdx]);
 				return ret;
+			}
 			DBGLOG(REQ, LOUD, ">> value[%d]\n", tmp);
 
-			if (tmp >= prAttr->min && tmp <= prAttr->max)
+			if (tmp >= prAttr->min && tmp <= prAttr->max) {
 				continue;
-			else
+			} else {
+				DBGLOG(REQ, ERROR,
+				       "Invalid arg%u=%d, range[%d, %d]\n",
+				       ucIdx, tmp, prAttr->min, prAttr->max);
 				return ret;
+			}
 			break;
 		}
 		case NLA_STRING:
@@ -2719,15 +2730,25 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 			DBGLOG(REQ, LOUD, ">> len[%d]\n", len);
 
 			if (prAttr->len != 0) {
-				if (prAttr->len != len)
+				if (prAttr->len != len) {
+					DBGLOG(REQ, ERROR,
+					       "Invalid arg%u=%s, len=%u\n",
+					       ucIdx, pcArgv[ucIdx],
+					       prAttr->len);
 					return ret;
+				}
 				continue;
 			}
 
-			if (len >= prAttr->min && len <= prAttr->max)
+			if (len >= prAttr->min && len <= prAttr->max) {
 				continue;
-			else
+			} else {
+				DBGLOG(REQ, ERROR,
+				       "Invalid arg%u=%s, range[%u, %u]\n",
+				       ucIdx, pcArgv[ucIdx],
+				       prAttr->min, prAttr->max);
 				return ret;
+			}
 			break;
 		}
 		default: {
