@@ -1746,7 +1746,7 @@ static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
 		prGlueInfo->prAdapter->chip_info->bus_info;
 	struct timespec64 rNowTs, rTime;
 
-	ktime_get_ts64(&rNowTs);
+	KAL_GET_TS64(&rNowTs);
 	if (prBusInfo->u4EnHifIntTs &&
 	    kalGetDeltaTime(&rNowTs, &prBusInfo->rHifIntTs, &rTime)) {
 		DBGLOG(HAL, INFO,

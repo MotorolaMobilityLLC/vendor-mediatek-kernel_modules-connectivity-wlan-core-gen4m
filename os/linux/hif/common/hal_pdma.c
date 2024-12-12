@@ -1513,7 +1513,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_HIF_FIFO_TOKEN */
 
-	ktime_get_ts64(&prToken->rTs);
+	KAL_GET_TS64(&prToken->rTs);
 	prToken->fgInUsed = TRUE;
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
@@ -2343,7 +2343,7 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	 * since MSDU info freed on passed to DMA.
 	 */
 
-	ktime_get_ts64(&rNowTs);
+	KAL_GET_TS64(&rNowTs);
 
 	if (rNowTs.tv_nsec < prTokenEntry->rTs.tv_nsec) {
 		rNowTs.tv_sec -= 1;

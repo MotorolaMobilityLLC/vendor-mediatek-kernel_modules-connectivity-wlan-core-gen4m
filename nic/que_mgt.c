@@ -1250,8 +1250,6 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 
 		/* 4 <4> Enqueue the packet */
 		QUEUE_INSERT_TAIL(prTxQue, prCurrentMsduInfo);
-		wlanFillTimestamp(prAdapter, prCurrentMsduInfo->prPacket,
-				  PHASE_ENQ_QM);
 		/*
 		 * Record how many packages enqueue
 		 * to TX during statistic intervals

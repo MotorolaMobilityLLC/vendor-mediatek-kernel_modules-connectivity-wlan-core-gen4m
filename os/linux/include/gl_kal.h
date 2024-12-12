@@ -1387,21 +1387,72 @@ do { \
 #define kal_access_ok(type, addr, size) access_ok(type, addr, size)
 #endif
 
+
+/*
+ * Time Handling Compatibility for Linux Kernel Versions
+ *
+ * For kernel ver < 3.17:
+ * - 'struct timespec' is used for time calculations.
+ * - 'ktime_get_real_ts()' retrieves the system time into 'struct timespec'.
+ * - 'timespec_sub()' subtracts one 'struct timespec' from another.
+ * Note: 'struct timespec' and associated functions are susceptible
+ *       to the Year 2038 problem on 32-bit systems.
+ *
+ * For kernel ver >= 3.17:
+ * - 'timespec64' is used for time calculation to handle times beyond Year 2038.
+ * - 'ktime_get_real_ts64()' retrieves the system time into 'struct timespec64'.
+ * - 'timespec64_sub()' subtracts one 'struct timespec64' from another.
+ *
+ * System Boot Time Retrieval:
+ * - For kernel ver >= 4.18:
+ *    'ktime_get_boottime_ts64()' retrieves 64-bit system boot time.
+ * - For kernel ver between 3.17.0 and 4.17:
+ *    'ktime_get_boottime()' and 'ktime_to_timespec64()'
+ *     retrieves 64-bit system boot time.
+ * - For kernel verver < 3.17:
+ *    'get_monotonic_boottime()' and 'monotonic_to_bootbased'
+ *     retrieves system boot time.
+ * Note: Functions w/o '64' suffix may not be safe for use post-2038
+ *       on 32-bit systems.
+ *
+ * RTC Time to 'struct tm' Conversion:
+ * - For kernel ver >= 3.19:
+ *    'rtc_time64_to_tm()' converts 64-bit RTC time to 'struct tm'.
+ * - For kernel ver < 3.19:
+ *    'rtc_time_to_tm()' converts RTC time to 'struct tm'.
+ * Note: The 'rtc_time_to_tm()' function may face Year 2038 issues
+ *       on 32-bit systems.
+ */
+
 #if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
-#define ktime_get_ts64 ktime_get_real_ts64
+#define KAL_GET_TS64 ktime_get_real_ts64
 #else
 #define timespec64 timespec
-#define ktime_get_ts64 ktime_get_real_ts
 #define ktime_get_real_ts64 ktime_get_real_ts
-#define rtc_time64_to_tm rtc_time_to_tm
+#define timespec64_sub timespec_sub
+#define KAL_GET_TS64 ktime_get_real_ts
+#endif
+
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+#define KAL_RTC_TIME_TO_TM rtc_time64_to_tm
+#else
+#define KAL_RTC_TIME_TO_TM rtc_time_to_tm
 #endif
 
 #if KERNEL_VERSION(4, 18, 0) <= CFG80211_VERSION_CODE
-/* ktime_get_boottime_ts64 defined in kernel */
-#elif KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-#define ktime_get_boottime_ts64 get_monotonic_boottime64
+#define KAL_GET_SYS_BOOTTIME_TS64(__pTs__) ktime_get_boottime_ts64(__pTs__)
+#elif KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
+#define KAL_GET_SYS_BOOTTIME_TS64(__pTs__) \
+	do {	\
+		ktime_t boottime_kt = ktime_get_boottime();		\
+		*(__pTs__) = ktime_to_timespec64(boottime_kt);	\
+	} while (0)
 #else
-#define ktime_get_boottime_ts64 get_monotonic_boottime
+#define KAL_GET_SYS_BOOTTIME_TS64(__pTs__) \
+	do {	\
+		get_monotonic_boottime(__pTs__);	\
+		monotonic_to_bootbased(__pTs__);	\
+	} while (0)
 #endif
 
 #define KAL_GET_USEC(_time) ((uint32_t)NSEC_TO_USEC(_time.tv_nsec))
@@ -1417,8 +1468,8 @@ do { \
 	USEC_TO_MSEC(NSEC_TO_USEC(_Time.tv_nsec))))
 
 #define KAL_TIME_INTERVAL_DECLARATION()     struct timespec64 __rTs, __rTe
-#define KAL_REC_TIME_START()                ktime_get_ts64(&__rTs)
-#define KAL_REC_TIME_END()                  ktime_get_ts64(&__rTe)
+#define KAL_REC_TIME_START()                KAL_GET_TS64(&__rTs)
+#define KAL_REC_TIME_END()                  KAL_GET_TS64(&__rTe)
 #define KAL_GET_TIME_INTERVAL() \
 	((SEC_TO_USEC(__rTe.tv_sec) + KAL_GET_USEC(__rTe)) - \
 	(SEC_TO_USEC(__rTs.tv_sec) + KAL_GET_USEC(__rTs)))

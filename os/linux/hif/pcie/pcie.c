@@ -451,7 +451,7 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 #if HIF_INT_TIME_DEBUG
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	if (!prBusInfo->u4EnHifIntTs) {
-		ktime_get_ts64(&prBusInfo->rHifIntTs);
+		KAL_GET_TS64(&prBusInfo->rHifIntTs);
 		prBusInfo->u4EnHifIntTs = 1;
 	}
 	prBusInfo->u4HifIntTsCnt++;

@@ -676,7 +676,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	rTimeout.tv_nsec = 0;
 	rLongest.tv_sec = 0;
 	rLongest.tv_nsec = 0;
-	ktime_get_ts64(&rNowTs);
+	KAL_GET_TS64(&rNowTs);
 
 	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];

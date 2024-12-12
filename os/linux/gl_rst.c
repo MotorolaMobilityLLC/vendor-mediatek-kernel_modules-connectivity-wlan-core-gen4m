@@ -2043,7 +2043,7 @@ bool IsOverRstTimeThreshold(
 
 	rTimeout.tv_sec = 30;
 	rTimeout.tv_nsec = 0;
-	ktime_get_ts64(rNowTs);
+	KAL_GET_TS64(rNowTs);
 	DBGLOG(INIT, INFO,
 		"Reset happen time :%ld.%09ld, last happen time :%ld.%09ld\n",
 		rNowTs->tv_sec, rNowTs->tv_nsec,

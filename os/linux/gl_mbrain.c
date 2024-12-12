@@ -396,7 +396,7 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 			if (status != WIFI2MBR_SUCCESS)
 				continue;
 
-			ktime_get_ts64(&tv);
+			KAL_GET_TS64(&tv);
 			dest->hdr.tag = WIFI2MBR_TAG_LLS_RATE;
 			dest->hdr.ver = 1;
 			dest->timestamp = KAL_TIME_TO_MSEC(tv);
@@ -420,7 +420,7 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 
 		kalMemCopyFromIo(&rRadio, src + eLlsBand,
 			sizeof(struct STATS_LLS_WIFI_RADIO_STAT));
-		ktime_get_ts64(&tv);
+		KAL_GET_TS64(&tv);
 
 		dest = (struct wifi2mbr_llsRadioInfo *)buf;
 		dest->hdr.tag = WIFI2MBR_TAG_LLS_RADIO;
@@ -458,7 +458,7 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 		kalMemCopyFromIo(&rAc,
 			&prAdapter->prLinkStatsIface[ucBssIdx].ac[eLlsAc],
 			sizeof(struct STATS_LLS_WMM_AC_STAT));
-		ktime_get_ts64(&tv);
+		KAL_GET_TS64(&tv);
 
 		dest = (struct wifi2mbr_llsAcInfo *)buf;
 		dest->hdr.tag = WIFI2MBR_TAG_LLS_RADIO;
@@ -548,7 +548,7 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 
 	dest->hdr.tag = WIFI2MBR_TAG_LP_RATIO;
 	dest->hdr.ver = 1;
-	ktime_get_ts64(&tv);
+	KAL_GET_TS64(&tv);
 	dest->timestamp = KAL_TIME_TO_MSEC(tv);
 	dest->radio = u2CurLoopIdx;
 

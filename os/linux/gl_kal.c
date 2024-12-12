@@ -8993,7 +8993,7 @@ uint64_t kalGetBootTime(void)
 	struct timespec64 ts;
 	uint64_t bootTime = 0;
 
-	ktime_get_boottime_ts64(&ts);
+	KAL_GET_SYS_BOOTTIME_TS64(&ts);
 
 	bootTime = ts.tv_sec;
 	bootTime *= USEC_PER_SEC;
@@ -15714,7 +15714,7 @@ inline uint64_t kalTpeTimeUs(void)
 {
 	struct timespec64 _now;
 
-	ktime_get_ts64(&_now);
+	KAL_GET_TS64(&_now);
 
 	return (uint64_t)((int)_now.tv_sec * 1000000 +
 			(int)KAL_GET_USEC(_now));

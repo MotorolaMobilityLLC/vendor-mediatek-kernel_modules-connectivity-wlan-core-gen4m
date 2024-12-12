@@ -590,12 +590,6 @@ struct CHIP_DBG_OPS {
 #endif
 };
 
-enum PKT_PHASE {
-	PHASE_XMIT_RCV,
-	PHASE_ENQ_QM,
-	PHASE_HIF_TX,
-};
-
 struct WLAN_DEBUG_INFO {
 	u_int8_t fgVoE5_7Test:1;
 	u_int8_t fgReserved:7;
@@ -968,9 +962,6 @@ void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 void wlanDriverDbgLevelSync(void);
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level);
 u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
-
-void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
-		       uint8_t ucPhase);
 
 void halShowPseInfo(struct ADAPTER *prAdapter);
 uint32_t halGetPleInt(struct ADAPTER *prAdapter);

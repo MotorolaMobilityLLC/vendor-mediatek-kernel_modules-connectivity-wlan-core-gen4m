@@ -6478,7 +6478,7 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	}
 
 	/* get last sync driver/fw time */
-	ktime_get_ts64(&rNow);
+	KAL_GET_TS64(&rNow);
 
 	/* get EMI update time */
 	kalMemCopyFromIo(&u4EmiUpdateMs,

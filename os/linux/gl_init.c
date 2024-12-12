@@ -7550,7 +7550,7 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 
 	rTimeout.tv_sec = 10;
 	rTimeout.tv_nsec = 0;
-	ktime_get_ts64(&rEntryTs);
+	KAL_GET_TS64(&rEntryTs);
 
 	while (TRUE) {
 		waitRet = wait_for_completion_interruptible_timeout(
@@ -7565,7 +7565,7 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 		if (fgIsTimeout)
 			continue;
 
-		ktime_get_ts64(&rNowTs);
+		KAL_GET_TS64(&rNowTs);
 		if (kalGetDeltaTime(&rNowTs, &rEntryTs, &rTime)) {
 			if (kalTimeCompare(&rTime, &rTimeout) >= 0) {
 				kalSendAeeWarning("WLAN",
