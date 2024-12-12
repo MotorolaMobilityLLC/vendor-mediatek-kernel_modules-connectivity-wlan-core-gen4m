@@ -1314,6 +1314,9 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	} else {
 		prScanInfo->fgIsSparseChannelValid = FALSE;
 	}
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+	roamingFsmLogScanBuffer(prAdapter, prScanParam->ucBssIndex);
+#endif
 
 	/* Full2Partial */
 	if (prScanInfo->fgIsScanForFull2Partial &&

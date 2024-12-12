@@ -780,6 +780,14 @@ struct WIFI_VAR {
 	/* Common connection settings end */
 
 	struct SCAN_INFO rScanInfo;
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+	uint8_t fgIsScanStarted;
+	uint8_t ucPos;
+	uint8_t ucAvailableLen;
+	uint8_t ucMaxLen;
+	uint8_t rScanDoneFreqLog[200];
+	uint32_t u4FreqNum;
+#endif
 
 	struct AIS_FSM_INFO rAisFsmInfo[KAL_AIS_NUM];
 	struct AIS_FSM_INFO *prDefaultAisFsmInfo;
