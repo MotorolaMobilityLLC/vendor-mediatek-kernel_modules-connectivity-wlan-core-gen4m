@@ -2503,6 +2503,26 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if CFG_ENABLE_WIFI_DIRECT
+	{
+		.pcCmdStr  = CMD_AP_SET_WMM_PARAM,
+		.pfHandler = priv_driver_update_wmm_params,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	{
+		.pcCmdStr  = CMD_AP_TRIGGER_CRITICAL_UPDATE,
+		.pfHandler = priv_driver_trigger_critical_update,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 /*
  *	{
  *		.pcCmdStr  = <command string>,

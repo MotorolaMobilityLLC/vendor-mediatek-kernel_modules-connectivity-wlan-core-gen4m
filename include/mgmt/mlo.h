@@ -507,4 +507,16 @@ uint32_t mldSetRemainMLSRBssIndex(struct ADAPTER *prAdapter,
 	uint8_t ucRemainBssIndex);
 #endif
 
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+void mldIncBssParamChangeCount(struct ADAPTER *prAdapter,
+			       struct MSDU_INFO *prMsduInfo);
+
+u_int8_t mldCheckCriticalUpdate(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prOldMsduInfo,
+				struct MSDU_INFO *prNewMsduInfo);
+
+void mldTriggerCriticalUpdate(struct ADAPTER *prAdapter,
+			      uint8_t ucBssidx);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
 #endif /* !_MLO_H */

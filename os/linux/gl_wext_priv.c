@@ -23905,3 +23905,193 @@ int priv_driver_dump_wfsys_cpupcr(struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
+
+#if CFG_ENABLE_WIFI_DIRECT
+int priv_driver_update_wmm_params(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct MSG_P2P_UPDATE_WMM_PARAMS *prWmmParam = NULL;
+	int32_t i4Argc = 0;
+	uint32_t u4Idx, u4Value;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prNetDev);
+	prGlueInfo = prNetDevPriv->prGlueInfo;
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, ERROR, "driver is not ready\n");
+		goto error;
+	} else if (prNetDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP &&
+		   prNetDev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_GO) {
+		DBGLOG(REQ, WARN, "Not support for iftype(%d)\n",
+			prNetDev->ieee80211_ptr->iftype);
+		goto error;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc < 2) {
+		DBGLOG(REQ, ERROR, "min argc is 2\n");
+		goto error;
+	}
+
+	prWmmParam = (struct MSG_P2P_UPDATE_WMM_PARAMS *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(*prWmmParam));
+	if (!prWmmParam) {
+		DBGLOG(REQ, ERROR, "Alloc mem(%zu) failed\n",
+			sizeof(*prWmmParam));
+		goto error;
+	}
+
+	kalMemZero(prWmmParam, sizeof(*prWmmParam));
+	prWmmParam->rMsgHdr.eMsgId =
+		MID_MNY_P2P_UPDATE_WMM_PARAMS;
+	prWmmParam->ucBssIdx = prNetDevPriv->ucBssIdx;
+
+	prWmmParam->ucAc = WMM_AC_INDEX_NUM;
+	for (u4Idx = 1; u4Idx < i4Argc; u4Idx++) {
+		if (kalStrStr(apcArgv[u4Idx], "ac=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 3, 0,
+					 &u4Value) == 0 &&
+			    u4Value < WMM_AC_INDEX_NUM) {
+				prWmmParam->ucAc = (uint8_t)u4Value;
+			}
+		} else if (kalStrStr(apcArgv[u4Idx], "aifs=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 5, 0,
+					 &u4Value) == 0 &&
+			    u4Value >= 1 && u4Value <= 255) {
+				prWmmParam->ucUpdateBitmap |=
+					BIT(ENUM_WMM_UPDATE_AIFS);
+				prWmmParam->u2Aifsn = (uint16_t)u4Value;
+			}
+		} else if (kalStrStr(apcArgv[u4Idx], "cwmin=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 6, 0,
+					 &u4Value) == 0 &&
+			    u4Value <= 15) {
+				prWmmParam->ucUpdateBitmap |=
+					BIT(ENUM_WMM_UPDATE_CWMIN);
+				prWmmParam->u2CWmin = (uint16_t)u4Value;
+			}
+		} else if (kalStrStr(apcArgv[u4Idx], "cwmax=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 6, 0,
+					 &u4Value) == 0 &&
+			    u4Value <= 15) {
+				prWmmParam->ucUpdateBitmap |=
+					BIT(ENUM_WMM_UPDATE_CWMAX);
+				prWmmParam->u2CWmax = (uint16_t)u4Value;
+			}
+		} else if (kalStrStr(apcArgv[u4Idx], "txop=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 5, 0,
+					 &u4Value) == 0 &&
+			    u4Value <= 0xffff) {
+				prWmmParam->ucUpdateBitmap |=
+					BIT(ENUM_WMM_UPDATE_TXOP_LIMIT);
+				prWmmParam->u2TxopLimit = (uint16_t)u4Value;
+			}
+		} else if (kalStrStr(apcArgv[u4Idx], "acm=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 4, 0,
+					 &u4Value) == 0 &&
+			    u4Value <= 1) {
+				prWmmParam->ucUpdateBitmap |=
+					BIT(ENUM_WMM_UPDATE_ACM);
+				prWmmParam->fgIsACMSet = (uint8_t)u4Value;
+			}
+		}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		else if (kalStrStr(apcArgv[u4Idx], "link=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 4, 0,
+					 &u4Value) == 0 &&
+			    u4Value <= MLD_LINK_MAX) {
+				struct MLD_BSS_INFO *prMldBss;
+				struct BSS_INFO *prBss;
+
+				prMldBss = mldBssGetByIdx(prAdapter,
+					prNetDevPriv->ucMldBssIdx);
+				prBss = mldGetBssInfoByLinkID(prAdapter,
+							      prMldBss,
+							      u4Value,
+							      FALSE);
+				if (prBss) {
+					prWmmParam->ucBssIdx =
+						prBss->ucBssIndex;
+				} else {
+					DBGLOG(REQ, ERROR,
+						"search bss failed.\n");
+					goto error;
+				}
+			}
+		}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+	}
+
+	if (prWmmParam->ucAc >= WMM_AC_INDEX_NUM) {
+		DBGLOG(REQ, ERROR, "ac is a valid value\n");
+		goto error;
+	} else if (prWmmParam->ucUpdateBitmap == 0) {
+		DBGLOG(REQ, ERROR, "no update attribute\n");
+		goto error;
+	}
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prWmmParam,
+		    MSG_SEND_METHOD_BUF);
+
+	return kalSnprintf(pcCommand, i4TotalLen, "OK");
+
+error:
+	if (prWmmParam)
+		cnmMemFree(prAdapter, prWmmParam);
+
+	return kalSnprintf(pcCommand, i4TotalLen, "FAILED");
+}
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+int priv_driver_trigger_critical_update(struct net_device *prNetDev,
+					char *pcCommand, int i4TotalLen)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct MSG_P2P_BCN_CRI_UPD *prMsgBcnCriUpd;
+
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prNetDev);
+	prGlueInfo = prNetDevPriv->prGlueInfo;
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, ERROR, "driver is not ready\n");
+		goto error;
+	} else if (prNetDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP &&
+		   prNetDev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_GO) {
+		DBGLOG(REQ, WARN, "Not support for iftype(%d)\n",
+			prNetDev->ieee80211_ptr->iftype);
+		goto error;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	prMsgBcnCriUpd = (struct MSG_P2P_BCN_CRI_UPD *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			    sizeof(*prMsgBcnCriUpd));
+	if (!prMsgBcnCriUpd) {
+		DBGLOG(REQ, ERROR, "Alloc mem(%zu) failed\n",
+			sizeof(*prMsgBcnCriUpd));
+		goto error;
+	}
+
+	kalMemZero(prMsgBcnCriUpd, sizeof(*prMsgBcnCriUpd));
+	prMsgBcnCriUpd->rMsgHdr.eMsgId = MID_MNY_P2P_BCN_CRI_UPD;
+	prMsgBcnCriUpd->ucBssIdx = prNetDevPriv->ucBssIdx;
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prMsgBcnCriUpd,
+		    MSG_SEND_METHOD_BUF);
+
+	return kalSnprintf(pcCommand, i4TotalLen, "OK");
+
+error:
+	return kalSnprintf(pcCommand, i4TotalLen, "FAILED");
+}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */

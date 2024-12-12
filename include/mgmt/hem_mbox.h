@@ -260,6 +260,12 @@ enum ENUM_MSG_ID {
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
 	MID_MNY_P2P_NOTIFY_APGO_STARTED,
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
+#if CFG_ENABLE_WIFI_DIRECT
+	MID_MNY_P2P_UPDATE_WMM_PARAMS,
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	MID_MNY_P2P_BCN_CRI_UPD,
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	MID_TOTAL_NUM
 };
 
@@ -445,6 +451,36 @@ struct MSG_P2P_NOTIFY_APGO_STARTED {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucBssIdx;
 };
+
+#if CFG_ENABLE_WIFI_DIRECT
+enum ENUM_WMM_UPDATE_TYPE {
+	ENUM_WMM_UPDATE_AIFS,
+	ENUM_WMM_UPDATE_CWMIN,
+	ENUM_WMM_UPDATE_CWMAX,
+	ENUM_WMM_UPDATE_TXOP_LIMIT,
+	ENUM_WMM_UPDATE_ACM,
+	ENUM_WMM_UPDATE_NUM
+};
+
+struct MSG_P2P_UPDATE_WMM_PARAMS {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIdx;
+	uint8_t ucAc;
+	uint8_t ucUpdateBitmap;
+	uint16_t u2CWmin;
+	uint16_t u2CWmax;
+	uint16_t u2TxopLimit;
+	uint16_t u2Aifsn;
+	u_int8_t fgIsACMSet;
+};
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+struct MSG_P2P_BCN_CRI_UPD {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIdx;
+};
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 /* specific message data types */
 

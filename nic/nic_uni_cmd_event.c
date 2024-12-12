@@ -8702,6 +8702,7 @@ uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
 #if CFG_SAP_RPS_SUPPORT
 uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -8764,6 +8765,75 @@ uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+uint32_t nicUniCmdSapBcnCriUpd(struct ADAPTER *ad, uint8_t idx)
+{
+	struct UNI_CMD_SAP *uni_cmd;
+	struct UNI_CMD_SAP_BCN_CRI_UPD_T *tag;
+	struct BSS_INFO *bss;
+	struct MLD_BSS_INFO *mld_bss;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SAP) +
+		sizeof(struct UNI_CMD_SAP_BCN_CRI_UPD_T);
+
+	if (!ad || !IS_BSS_INDEX_VALID(idx)) {
+		DBGLOG(INIT, ERROR,
+		       "ad=0x%p idx=%u\n",
+		       ad, idx);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	bss = GET_BSS_INFO_BY_INDEX(ad, idx);
+	if (!bss) {
+		DBGLOG(INIT, ERROR,
+		       "get bss failed idx=%u\n",
+		       idx);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	mld_bss = mldBssGetByBss(ad, bss);
+	if (!mld_bss) {
+		DBGLOG(INIT, ERROR,
+		       "get mld bss failed idx=%u\n",
+		       idx);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	uni_cmd = (struct UNI_CMD_SAP *) cnmMemAlloc(ad, RAM_TYPE_MSG,
+						     max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_SAP (%u) ==> FAILED.\n",
+		       max_cmd_len);
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	uni_cmd->ucBssIdx = idx;
+	tag = (struct UNI_CMD_SAP_BCN_CRI_UPD_T *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SAP_BCN_CRI_UPD;
+	tag->u2Length = sizeof(*tag);
+	LINK_FOR_EACH_ENTRY(bss, &mld_bss->rBssList,
+			    rLinkEntryMld, struct BSS_INFO) {
+		tag->u2UpdateBssBitmap |= BIT(bss->ucBssIndex);
+	}
+
+	wlanSendSetQueryUniCmd(ad,
+			       UNI_CMD_ID_SET_SAP,
+			       TRUE,
+			       FALSE,
+			       FALSE,
+			       nicUniCmdEventSetCommon,
+			       nicUniCmdTimeoutCommon,
+			       max_cmd_len,
+			       (void *)uni_cmd,
+			       NULL,
+			       0);
+
+	cnmMemFree(ad, uni_cmd);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 uint32_t nicUniCmdPowerLimitEmiInfo(struct ADAPTER *ad,

@@ -1327,10 +1327,17 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 				uint8_t ucBssIndex,
 				enum ENUM_IE_UPD_METHOD eMethod)
 {
-
-	struct MSDU_INFO *prMsduInfo;
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	struct MLD_BSS_INFO *prMldBss;
+	struct MSDU_INFO *prOldMsduInfo = NULL;
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+	struct MSDU_INFO *prNewMsduInfo;
 	struct BSS_INFO *prBssInfo;
 	struct WLAN_BEACON_FRAME *prBcnFrame;
+	uint32_t u4Status;
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	u_int8_t fgTriggerCriticalUpdate = FALSE;
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1338,7 +1345,8 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN,
 			"bss%d is not in used\n",
 			ucBssIndex);
-		return 0;
+		u4Status = WLAN_STATUS_INVALID_DATA;
+		goto exit;
 	}
 
 	/* if FW receive beacon update before ch grant, beacon will always
@@ -1346,31 +1354,114 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 	 */
 	if (!IS_BSS_ACTIVE(prBssInfo) || prBssInfo->fgIsSwitchingChnl) {
 		DBGLOG(P2P, TRACE,
-		       "skip update beacon to FW, active=%u, chnlSwitching=%u",
+		       "skip update beacon to FW, active=%u, chnlSwitching=%u\n",
 		       IS_BSS_ACTIVE(prBssInfo), prBssInfo->fgIsSwitchingChnl);
-		return 0;
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto exit;
 	}
 
-	prMsduInfo = bssComposeBeaconContent(prAdapter, ucBssIndex);
-	if (!prMsduInfo)
-		return WLAN_STATUS_SUCCESS;
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	if (eMethod == IE_UPD_METHOD_UPDATE_ALL &&
+	    prBssInfo->prBeacon && prBssInfo->prBeacon->u2FrameLength) {
+		prOldMsduInfo = cnmMgtPktAlloc(prAdapter,
+			prBssInfo->prBeacon->u2FrameLength);
+		if (!prOldMsduInfo) {
+			DBGLOG(P2P, WARN,
+				"Alloc backup beacon (%u) failed.\n",
+				prBssInfo->prBeacon->u2FrameLength);
+		} else {
+			kalMemCopy(prOldMsduInfo->prPacket,
+				   prBssInfo->prBeacon->prPacket,
+				   prBssInfo->prBeacon->u2FrameLength);
+			prOldMsduInfo->u2FrameLength =
+				prBssInfo->prBeacon->u2FrameLength;
+		}
+	}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+	prNewMsduInfo = bssComposeBeaconContent(prAdapter, ucBssIndex);
+	if (!prNewMsduInfo) {
+		DBGLOG(P2P, ERROR, "prNewMsduInfo is NULL\n");
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto exit;
+	}
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	if (prOldMsduInfo) {
+		fgTriggerCriticalUpdate =
+			mldCheckCriticalUpdate(prAdapter,
+					       prOldMsduInfo,
+					       prNewMsduInfo);
+
+		if (fgTriggerCriticalUpdate) {
+			mldIncBssParamChangeCount(prAdapter, prNewMsduInfo);
+			mldTriggerCriticalUpdate(prAdapter, ucBssIndex);
+		}
+
+		cnmMgtPktFree(prAdapter, prOldMsduInfo);
+	}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 
 	DBGLOG(P2P, TRACE, "Dump beacon content %d to FW, method:%d\n",
 		ucBssIndex, eMethod);
-	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
-			(uint32_t) prMsduInfo->u2FrameLength);
-	}
+	DBGLOG_MEM8(P2P, TRACE, prNewMsduInfo->prPacket,
+		    prNewMsduInfo->u2FrameLength);
 
-	prBcnFrame = (struct WLAN_BEACON_FRAME *)prMsduInfo->prPacket;
-	return nicUpdateBeaconIETemplate(prAdapter,
-				 eMethod,
-				 ucBssIndex,
-				 prBssInfo->u2CapInfo,
-				 (uint8_t *) prBcnFrame->aucInfoElem,
-				 prMsduInfo->u2FrameLength -
-				 OFFSET_OF(struct WLAN_BEACON_FRAME,
-					   aucInfoElem));
+	prBcnFrame = (struct WLAN_BEACON_FRAME *)prNewMsduInfo->prPacket;
+	u4Status =
+		nicUpdateBeaconIETemplate(prAdapter,
+					  eMethod,
+					  ucBssIndex,
+					  prBssInfo->u2CapInfo,
+					  (uint8_t *) prBcnFrame->aucInfoElem,
+					  prNewMsduInfo->u2FrameLength -
+					  OFFSET_OF(struct WLAN_BEACON_FRAME,
+					  aucInfoElem));
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	if (fgTriggerCriticalUpdate && prMldBss) {
+		struct BSS_INFO *prOtherBssInfo;
+		struct MSDU_INFO *prOtherMsduInfo;
+		uint16_t u2IELen;
+
+		LINK_FOR_EACH_ENTRY(prOtherBssInfo, &prMldBss->rBssList,
+				    rLinkEntryMld, struct BSS_INFO) {
+			if (prOtherBssInfo == prBssInfo)
+				continue;
+
+			/*
+			 * For rnr ie update, re-generate beacon content
+			 * for neighbor AP.
+			 */
+			prOtherMsduInfo = bssComposeBeaconContent(prAdapter,
+				prOtherBssInfo->ucBssIndex);
+			if (!prOtherMsduInfo) {
+				DBGLOG(P2P, ERROR,
+					"bssComposeBeaconContent failed, bss=%u\n",
+					prOtherBssInfo->ucBssIndex);
+				continue;
+			}
+			u2IELen = prOtherMsduInfo->u2FrameLength -
+				OFFSET_OF(struct WLAN_BEACON_FRAME,
+					  aucInfoElem);
+			nicUpdateBeaconIETemplate(prAdapter,
+						  eMethod,
+						  ucBssIndex,
+						  prBssInfo->u2CapInfo,
+						  prBcnFrame->aucInfoElem,
+						  u2IELen);
+		}
+	}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+exit:
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	if (prOldMsduInfo)
+		cnmMgtPktFree(prAdapter, prOldMsduInfo);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+	return u4Status;
 }				/* end of bssUpdateBeaconContent() */
 
 /*----------------------------------------------------------------------------*/

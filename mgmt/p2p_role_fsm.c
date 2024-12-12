@@ -6295,4 +6295,123 @@ exit:
 }
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
+void p2pRoleFsmRunEventUpdateWmmParams(struct ADAPTER *prAdapter,
+				       struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_UPDATE_WMM_PARAMS *prWmmParam =
+		(struct MSG_P2P_UPDATE_WMM_PARAMS *)prMsgHdr;
+	struct BSS_INFO *prP2pBssInfo;
+	struct AC_QUE_PARMS *prACQueParms;
+	enum ENUM_WMM_ACI eAci;
+
+	if (!prAdapter || !prWmmParam) {
+		DBGLOG(P2P, ERROR, "prAdapter=0x%p prWmmParam=0x%p\n",
+			prAdapter, prWmmParam);
+		return;
+	}
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prWmmParam->ucBssIdx);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR, "Invalid bss idx=%u\n",
+			prWmmParam->ucBssIdx);
+		goto exit;
+	}
+
+	eAci = (enum ENUM_WMM_ACI)prWmmParam->ucAc;
+	prACQueParms = &prP2pBssInfo->arACQueParmsForBcast[eAci];
+
+	if (!prWmmParam->ucUpdateBitmap)
+		goto exit;
+
+	if (prWmmParam->u2Aifsn == prACQueParms->u2Aifsn &&
+	    prP2pBssInfo->aucCWminLog2ForBcast[eAci] == prWmmParam->u2CWmin &&
+	    prP2pBssInfo->aucCWmaxLog2ForBcast[eAci] == prWmmParam->u2CWmax &&
+	    prACQueParms->u2TxopLimit == prWmmParam->u2TxopLimit &&
+	    prACQueParms->ucIsACMSet == prWmmParam->fgIsACMSet)
+		goto exit;
+
+	DBGLOG(P2P, INFO,
+		"bss=%u bitmap=0x%x ac=%u aifs=%u cwmin=%u cwmax=%u txop=%u acm=%u\n",
+		prWmmParam->ucBssIdx,
+		prWmmParam->ucUpdateBitmap,
+		prWmmParam->ucAc,
+		prWmmParam->u2Aifsn,
+		prWmmParam->u2CWmin,
+		prWmmParam->u2CWmax,
+		prWmmParam->u2TxopLimit,
+		prWmmParam->fgIsACMSet);
+
+	if (prWmmParam->ucUpdateBitmap & BIT(ENUM_WMM_UPDATE_AIFS))
+		prACQueParms->u2Aifsn = prWmmParam->u2Aifsn;
+
+	if (prWmmParam->ucUpdateBitmap & BIT(ENUM_WMM_UPDATE_CWMIN)) {
+		prACQueParms->u2CWmin = BIT(prWmmParam->u2CWmin) - 1;
+		prP2pBssInfo->aucCWminLog2ForBcast[eAci] = prWmmParam->u2CWmin;
+	}
+
+	if (prWmmParam->ucUpdateBitmap & BIT(ENUM_WMM_UPDATE_CWMAX)) {
+		prACQueParms->u2CWmax = BIT(prWmmParam->u2CWmax) - 1;
+		prP2pBssInfo->aucCWmaxLog2ForBcast[eAci] =
+			prWmmParam->u2CWmax;
+	}
+
+	if (prWmmParam->ucUpdateBitmap & BIT(ENUM_WMM_UPDATE_TXOP_LIMIT))
+		prACQueParms->u2TxopLimit = prWmmParam->u2TxopLimit;
+
+	if (prWmmParam->ucUpdateBitmap & BIT(ENUM_WMM_UPDATE_ACM))
+		prACQueParms->ucIsACMSet = prWmmParam->fgIsACMSet;
+
+	bssUpdateBeaconContent(prAdapter, prP2pBssInfo->ucBssIndex);
+
+exit:
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+void p2pRoleFsmRunEventBcnCriUpd(struct ADAPTER *prAdapter,
+				 struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_BCN_CRI_UPD *prMsgBcnCriUpd =
+		(struct MSG_P2P_BCN_CRI_UPD *)prMsgHdr;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+
+	if (!prAdapter || !prMsgBcnCriUpd) {
+		DBGLOG(P2P, ERROR,
+			"prAdapter=0x%p prMsgBcnCriUpd=0x%p\n",
+			prAdapter, prMsgBcnCriUpd);
+		return;
+	}
+
+	DBGLOG(P2P, INFO, "bss=%u\n",
+		prMsgBcnCriUpd->ucBssIdx);
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					     prMsgBcnCriUpd->ucBssIdx);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR, "Invalid bss idx=%u\n",
+			prMsgBcnCriUpd->ucBssIdx);
+		goto exit;
+	} else if (prP2pBssInfo->u4PrivateData >= BSS_P2P_NUM) {
+		DBGLOG(OID, WARN, "Invalid role idx(%u)\n",
+			prP2pBssInfo->u4PrivateData);
+		goto exit;
+	}
+
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prP2pBssInfo->u4PrivateData];
+	if (!prP2pSpecificBssInfo) {
+		DBGLOG(OID, WARN, "Null prP2pSpecificBssInfo by idx(%u)\n",
+			prP2pBssInfo->u4PrivateData);
+		goto exit;
+	}
+
+	prP2pSpecificBssInfo->fgForceUpdateBpcc = TRUE;
+
+	bssUpdateBeaconContent(prAdapter, prP2pBssInfo->ucBssIndex);
+
+exit:
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 #endif /* CFG_ENABLE_WIFI_DIRECT */

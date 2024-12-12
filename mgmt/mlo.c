@@ -606,9 +606,15 @@ uint8_t *mldGenerateBasicCommonInfo(
 		*cp++ = bss->ucLinkIndex;
 	}
 	if (BE_IS_ML_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(common->u2Ctrl)) {
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+		/* will be updated again later for critical update */
+		*cp = bss->ucBPCC;
+#else
+		*cp = 0;
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 		DBGLOG(ML, TRACE,
-			"\tML common Info BssParaChangeCount = %d", 0);
-		*cp++ = 0;
+			"\tML common Info BssParaChangeCount = %d", *cp);
+		cp++;
 	}
 	if (BE_IS_ML_CTRL_PRESENCE_EML_CAP(common->u2Ctrl)) {
 		if (mld_bssinfo) {
@@ -1395,6 +1401,8 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	links = &mld_bssinfo->rBssList;
 	LINK_FOR_EACH_ENTRY(bss, links, rLinkEntryMld,
 		struct BSS_INFO) {
+		uint32_t mld_params;
+
 		if (count >= MLD_LINK_MAX) {
 			DBGLOG(ML, ERROR, "too many links!!!\n");
 			return;
@@ -1442,15 +1450,23 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 		*cp++ = 0x22; /* 17 dBm/Mhz */
 
 		/* MLD Para (3) */
-		*cp++ = 0; /* MLD ID */
-		*cp++ = bss->ucLinkIndex; /* Link ID */
-		*cp++ = 0; /* BSS para change count */
+		mld_params = ((0 << MLD_PARAM_MLD_ID_SHIFT) &
+			MLD_PARAM_MLD_ID_MASK);
+		mld_params |= ((bss->ucLinkIndex << MLD_PARAM_LINK_ID_SHIFT) &
+			MLD_PARAM_LINK_ID_MASK);
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+		MLD_PARAM_SET_BPCC(mld_params, bss->ucBPCC);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+		kalMemCopy(cp, &mld_params, 3);
+		cp += 3;
 
 		DBGLOG(ML, LOUD,
-			"bss_idx: %d, link: %d: ch: %d, mac: " MACSTR "\n",
+			"bss_idx: %d, link: %d: ch: %d, bpcc: %d, mac: " MACSTR
+			"\n",
 			bss->ucBssIndex,
 			bss->ucLinkIndex,
 			bss->ucPrimaryChannel,
+			MLD_PARAM_GET_BPCC(mld_params),
 			MAC2STR(bss->aucOwnMacAddr));
 
 		count++;
@@ -5212,4 +5228,333 @@ uint32_t mldSetRemainMLSRBssIndex(struct ADAPTER *prAdapter,
 	return status;
 }
 #endif
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+void mldIncBssParamChangeCount(struct ADAPTER *prAdapter,
+			       struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct WLAN_BEACON_FRAME *prBeacon;
+	struct IE_MULTI_LINK_CONTROL *prMlIe;
+	uint16_t u2IeOffset, u2BssParamElemOffset;
+
+	if (!prAdapter || !prMsduInfo) {
+		DBGLOG(ML, ERROR, "prAdapter=0x%p prMsduInfo=0x%p\n",
+			prAdapter, prMsduInfo);
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prMsduInfo->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(ML, ERROR, "Get bss failed %u\n",
+			prMsduInfo->ucBssIndex);
+		return;
+	}
+
+	prBeacon = prMsduInfo->prPacket;
+	u2IeOffset = OFFSET_OF(struct WLAN_BEACON_FRAME,
+			       aucInfoElem);
+	prMlIe = (struct IE_MULTI_LINK_CONTROL *)
+		kalFindIeExtIE(ELEM_ID_RESERVED,
+			       ELEM_EXT_ID_MLD,
+			       prBeacon->aucInfoElem,
+			       prMsduInfo->u2FrameLength - u2IeOffset);
+
+	if (!prMlIe) {
+		DBGLOG(ML, ERROR, "ML IE NOT exists.\n");
+		return;
+	}
+
+	if (!BE_IS_ML_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(prMlIe->u2Ctrl)) {
+		DBGLOG(ML, ERROR, "BSS_PARA_CHANGE_COUNT NOT present.\n");
+		return;
+	}
+
+	prBssInfo->ucBPCC++;
+	prBssInfo->ucBPCC %= 256;
+	if (prBssInfo->ucBPCC == 255)
+		prBssInfo->ucBPCC = 0;
+
+	DBGLOG(ML, INFO, "[%u] Increase bss param change count to %u\n",
+		prBssInfo->ucBssIndex,
+		prBssInfo->ucBPCC);
+
+	u2BssParamElemOffset = 1 + MAC_ADDR_LEN;
+	if (BE_IS_ML_CTRL_PRESENCE_LINK_ID(prMlIe->u2Ctrl))
+		u2BssParamElemOffset += 1;
+
+	prMlIe->aucCommonInfo[u2BssParamElemOffset] = prBssInfo->ucBPCC;
+}
+
+static u_int8_t mldIsIeEqual(const uint8_t *ie1, const uint16_t ie_len1,
+			     const uint8_t *ie2, const uint16_t ie_len2)
+{
+	if (!ie1 || ie_len1 == 0 ||
+	    !ie2 || ie_len2 == 0)
+		return FALSE;
+
+	if (ie_len1 != ie_len2)
+		return FALSE;
+
+	return kalMemCmp(ie1, ie2, ie_len1) == 0;
+}
+
+u_int8_t mldCheckCriticalUpdate(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prOldMsduInfo,
+				struct MSDU_INFO *prNewMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	uint8_t *pucIEBuf = NULL, *pucOldIEBuf = NULL;
+	uint16_t u2Offset = 0, u2IELength = 0, u2OldIELength = 0;
+	uint8_t aucDbgBuffer[128];
+	u_int8_t fgTriggerCriticalUpdate = FALSE;
+	uint8_t ucBssIdx;
+
+	if (!prAdapter || !prOldMsduInfo || !prNewMsduInfo) {
+		DBGLOG(ML, ERROR,
+			"prAdapter=0x%p prOldMsduInfo=0x%p prNewMsduInfo=0x%p\n",
+			prAdapter, prOldMsduInfo, prNewMsduInfo);
+		goto exit;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prNewMsduInfo->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(ML, ERROR, "Get bss failed %u\n",
+			prNewMsduInfo->ucBssIndex);
+		goto exit;
+	} else if (prBssInfo->u4PrivateData >= BSS_P2P_NUM) {
+		DBGLOG(ML, ERROR, "Invalid role idx(%u)\n",
+			prBssInfo->u4PrivateData);
+		goto exit;
+	} else if (!RLM_NET_IS_11BE(prBssInfo)) {
+		goto exit;
+	}
+	ucBssIdx = prBssInfo->ucBssIndex;
+	prP2pSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prBssInfo->u4PrivateData];
+
+	if (prP2pSpecBssInfo->fgForceUpdateBpcc) {
+		kalSnprintf(aucDbgBuffer,
+			    sizeof(aucDbgBuffer),
+			    "Force update");
+		fgTriggerCriticalUpdate = TRUE;
+		prP2pSpecBssInfo->fgForceUpdateBpcc = FALSE;
+		goto exit;
+	}
+
+	pucOldIEBuf = prOldMsduInfo->prPacket +
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	u2OldIELength = prOldMsduInfo->u2FrameLength -
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	pucIEBuf = prNewMsduInfo->prPacket +
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	u2IELength = prNewMsduInfo->u2FrameLength -
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	u2Offset = 0;
+	IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
+		switch (IE_ID(pucIEBuf)) {
+		case ELEM_ID_CH_SW_ANNOUNCEMENT:
+		case ELEM_ID_QUIET:
+		case ELEM_ID_EX_CH_SW_ANNOUNCEMENT:
+		case ELEM_ID_TX_PWR_ENVELOPE:
+		case ELEM_ID_CH_SW_WRAPPER:
+		case ELEM_ID_QUIET_CHANNEL:
+		case ELEM_ID_OP_MODE:
+		case ELEM_ID_TWT:
+			if (!kalFindIeMatchMask(IE_ID(pucIEBuf),
+						pucOldIEBuf,
+						u2OldIELength,
+						NULL, 0, 0, NULL)) {
+				kalSnprintf(aucDbgBuffer,
+					    sizeof(aucDbgBuffer),
+					    "INSERTION IE_ID(%u)",
+					    IE_ID(pucIEBuf));
+				fgTriggerCriticalUpdate = TRUE;
+				goto exit;
+			}
+			break;
+		case ELEM_ID_DS_PARAM_SET:
+		case ELEM_ID_EDCA_PARAM_SET:
+		case ELEM_ID_HT_OP:
+		case ELEM_ID_VHT_OP:
+		{
+			const uint8_t *prTemp = NULL;
+
+			prTemp = kalFindIeMatchMask(IE_ID(pucIEBuf),
+						    pucOldIEBuf,
+						    u2OldIELength,
+						    NULL, 0, 0, NULL);
+			if (prTemp &&
+			    !mldIsIeEqual(pucIEBuf, IE_LEN(pucIEBuf),
+					  prTemp, IE_LEN(prTemp))) {
+				kalSnprintf(aucDbgBuffer,
+					    sizeof(aucDbgBuffer),
+					    "MODIFICATION IE_ID(%u)",
+					    IE_ID(pucIEBuf));
+				DBGLOG_MEM8(ML, LOUD, prTemp,
+					    IE_SIZE(prTemp));
+				DBGLOG_MEM8(ML, LOUD, pucIEBuf,
+					    IE_SIZE(pucIEBuf));
+				fgTriggerCriticalUpdate = TRUE;
+				goto exit;
+			}
+		}
+			break;
+		case ELEM_ID_VENDOR:
+		{
+			const uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
+			uint32_t u4Oui;
+			const uint8_t *prTemp = NULL;
+
+			if (IE_LEN(pucIEBuf) <=
+			    ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE)
+				break;
+			else if (kalMemCmp(aucWfaOui, pucIEBuf + 2,
+					   sizeof(aucWfaOui)))
+				break;
+			else if (VENDOR_OUI_TYPE_WMM !=
+				 ((struct IE_WFA *)pucIEBuf)->ucOuiType)
+				break;
+
+			u4Oui = ((aucWfaOui[0] << 16) |
+				 (aucWfaOui[1] << 8) |
+				 (aucWfaOui[2]));
+			prTemp = kalFindVendorIe(u4Oui,
+						 VENDOR_OUI_TYPE_WMM,
+						 pucOldIEBuf,
+						 u2OldIELength);
+			if (prTemp &&
+			    !mldIsIeEqual(pucIEBuf, IE_LEN(pucIEBuf),
+					  prTemp, IE_LEN(prTemp))) {
+				kalSnprintf(aucDbgBuffer,
+					    sizeof(aucDbgBuffer),
+					    "MODIFICATION IE_ID(%u) OUI(%u)",
+					    IE_ID(pucIEBuf),
+					    VENDOR_OUI_TYPE_WMM);
+				DBGLOG_MEM8(ML, LOUD, prTemp,
+					    IE_SIZE(prTemp));
+				DBGLOG_MEM8(ML, LOUD, pucIEBuf,
+					    IE_SIZE(pucIEBuf));
+				fgTriggerCriticalUpdate = TRUE;
+				goto exit;
+			}
+		}
+			break;
+		case ELEM_ID_RESERVED:
+		{
+			switch (IE_ID_EXT(pucIEBuf)) {
+			case ELEM_EXT_ID_BSS_COLOR_CHANGE:
+				if (!kalFindIeExtIE(ELEM_ID_RESERVED,
+						    IE_ID_EXT(pucIEBuf),
+						    pucOldIEBuf,
+						    u2OldIELength)) {
+					kalSnprintf(aucDbgBuffer,
+						    sizeof(aucDbgBuffer),
+						    "INSERTION IE_ID(%u) IE_ID_EXT(%u)",
+						    IE_ID(pucIEBuf),
+						    IE_ID_EXT(pucIEBuf));
+					fgTriggerCriticalUpdate = TRUE;
+					goto exit;
+				}
+				break;
+			case ELEM_EXT_ID_HE_OP:
+			case ELEM_EXT_ID_UORA_PARAM:
+			case ELEM_EXT_ID_MU_EDCA_PARAM:
+			case ELEM_EXT_ID_SR_PARAM:
+			case ELEM_EXT_ID_EHT_OP:
+			{
+				const uint8_t *prTemp = NULL;
+
+				prTemp = kalFindIeExtIE(ELEM_ID_RESERVED,
+							IE_ID_EXT(pucIEBuf),
+							pucOldIEBuf,
+							u2OldIELength);
+				if (prTemp &&
+				    !mldIsIeEqual(pucIEBuf, IE_LEN(pucIEBuf),
+					  prTemp, IE_LEN(prTemp))) {
+					kalSnprintf(aucDbgBuffer,
+						    sizeof(aucDbgBuffer),
+						    "MODIFICATION IE_ID(%u) IE_ID_EXT(%u)",
+						    IE_ID(pucIEBuf),
+						    IE_ID_EXT(pucIEBuf));
+					DBGLOG_MEM8(ML, LOUD, prTemp,
+						    IE_SIZE(prTemp));
+					DBGLOG_MEM8(ML, LOUD, pucIEBuf,
+						    IE_SIZE(pucIEBuf));
+					fgTriggerCriticalUpdate = TRUE;
+					goto exit;
+				}
+			}
+				break;
+			default:
+				break;
+			}
+		}
+			break;
+		default:
+			break;
+		}
+	}
+
+	pucOldIEBuf = prOldMsduInfo->prPacket +
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	u2OldIELength = prOldMsduInfo->u2FrameLength -
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	pucIEBuf = prNewMsduInfo->prPacket +
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	u2IELength = prNewMsduInfo->u2FrameLength -
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+			  aucInfoElem);
+	u2Offset = 0;
+	IE_FOR_EACH(pucOldIEBuf, u2OldIELength, u2Offset) {
+		switch (IE_ID(pucOldIEBuf)) {
+		case ELEM_ID_CH_SW_ANNOUNCEMENT:
+		case ELEM_ID_EX_CH_SW_ANNOUNCEMENT:
+		case ELEM_ID_TX_PWR_ENVELOPE:
+		case ELEM_ID_CH_SW_WRAPPER:
+		case ELEM_ID_TWT:
+			if (!kalFindIeMatchMask(IE_ID(pucOldIEBuf),
+						pucIEBuf,
+						u2IELength,
+						NULL, 0, 0, NULL)) {
+				kalSnprintf(aucDbgBuffer,
+					    sizeof(aucDbgBuffer),
+					    "REMOVAL IE_ID(%u)",
+					    IE_ID(pucOldIEBuf));
+				fgTriggerCriticalUpdate = TRUE;
+				goto exit;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+exit:
+	if (fgTriggerCriticalUpdate)
+		DBGLOG(ML, TRACE, "[%u] BPCC by %s\n",
+			ucBssIdx, aucDbgBuffer);
+
+	return fgTriggerCriticalUpdate;
+}
+
+void mldTriggerCriticalUpdate(struct ADAPTER *prAdapter,
+			      uint8_t ucBssidx)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	nicUniCmdSapBcnCriUpd(prAdapter, ucBssidx);
+#endif /* CFG_SUPPORT_UNIFIED_COMMAND */
+}
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */

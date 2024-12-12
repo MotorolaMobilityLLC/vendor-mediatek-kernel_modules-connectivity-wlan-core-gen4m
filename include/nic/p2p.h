@@ -106,7 +106,8 @@
 #define DEFAULT_P2P_CSA_TIMEOUT_MS	7000
 #define P2P_MAX_AID_VALUE	2007
 
-#define DEFAULT_MAX_CHANNEL_SWITCH_TIME_TU     1000
+#define DEFAULT_MAX_CHANNEL_SWITCH_TIME_TU	1000
+#define P2P_MAX_PROBE_RESP_LEN			768
 
 /******************************************************************************
  *                                 M A C R O S
@@ -443,6 +444,10 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgBcnProtEn;
 	uint8_t ucBcnKeyIdx;
 #endif /* CFG_SUPPORT_SAP_BCN_PROT */
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	u_int8_t fgForceUpdateBpcc;
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

@@ -319,9 +319,10 @@ p2pFuncAssocRespUpdate(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
 uint32_t
 p2pFuncProbeRespUpdate(struct ADAPTER *prAdapter,
-		struct BSS_INFO *prP2pBssInfo,
-		uint8_t *ProbeRespIE, uint32_t u4ProbeRespLen,
-		enum ENUM_IE_UPD_METHOD eMethod);
+		       struct BSS_INFO *prP2pBssInfo,
+		       struct WLAN_BEACON_FRAME *prBeacon,
+		       uint32_t u4BeaconLen,
+		       enum ENUM_IE_UPD_METHOD eMethod);
 #endif
 
 u_int8_t

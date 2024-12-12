@@ -438,6 +438,13 @@
 
 #define CMD_DBG_DUMP_WFSYS_CPUPCR		"dumpwfsyscpupcr"
 
+#if CFG_ENABLE_WIFI_DIRECT
+#define CMD_AP_SET_WMM_PARAM			"SET_WMM_PARAM"
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+#define CMD_AP_TRIGGER_CRITICAL_UPDATE		"BCN_CRI_UPD"
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
+
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

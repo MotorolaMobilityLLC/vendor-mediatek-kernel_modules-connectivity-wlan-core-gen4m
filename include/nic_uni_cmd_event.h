@@ -259,7 +259,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_LOW_LATENCY_MODE     = 0x62, /* Low Latency Mode */
 	UNI_CMD_ID_GAMING_MODE          = 0x63, /* Gaming Mode */
 	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
-	UNI_CMD_ID_SET_SAP_RPS          = 0x70, /* SAP */
+	UNI_CMD_ID_SET_SAP		= 0x70, /* SAP */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
 	UNI_CMD_ID_HM			= 0x7D, /* Hybrid mlo */
@@ -5358,56 +5358,35 @@ struct UNI_CMD_LP_KEEP_PWR_CTRL {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SET_SAP_RPS {
+/* SAP command (UNI_CMD_ID_SET_SAP 0x70) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SAP {
 	/* fixed field */
 	uint8_t ucBssIdx;
 	uint8_t aucReserved[3];
 	/* tlv */
 	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
-	 *	TAG				 | ID  | structure
-	 *	---------------------------------|-----|--------------
-	 *	UNI_CMD_SET_SAP_RPS_TAG_SET	 | 0x01| UNI_CMD_SET_SAP_RPS_T
+	 * TAG				| ID  | structure
+	 * -----------------------------|-----|--------------
+	 * UNI_CMD_SAP_TAG_RSV		| 0x00|
+	 * UNI_CMD_SET_SAP_RPS_TAG_SET	| 0x01| UNI_CMD_SET_SAP_RPS_SET_T
+	 * UNI_CMD_SET_SAP_SUS_TAG_SET	| 0x02| UNI_CMD_SET_SAP_SUS_SET_T
+	 * UNI_CMD_SAP_BCN_CRI_UPD	| 0x03| UNI_CMD_SAP_BCN_CRI_UPD_T
 	 */
-
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SET_SAP_SUS {
-	/* fixed field */
-	uint8_t ucBssIdx;
-	uint8_t aucReserved[3];
-	/* tlv */
-	uint8_t aucTlvBuffer[];
-	/**< the TLVs included in this field:
-	 *	TAG				 | ID  | structure
-	 *	---------------------------------|-----|--------------
-	 *	UNI_CMD_SET_SAP_SUS_TAG_SET	 | 0x02| UNI_CMD_SET_SAP_RPS_T
-	 */
-
-} __KAL_ATTRIB_PACKED__;
-
+/* SAP command TLV List */
 enum UNI_CMD_SET_SAP_RPS_TAG {
-	UNI_CMD_SET_SAP_RPS_TAG_INIT = 0x0,
+	UNI_CMD_SAP_TAG_RSV = 0x0,
 	UNI_CMD_SET_SAP_RPS_TAG_SET = 0x1,
 	UNI_CMD_SET_SAP_SUS_TAG_SET = 0x2,
-	UNI_CMD_SET_SAP_RPS_TAG_MAX_NUM
+	UNI_CMD_SAP_BCN_CRI_UPD = 0x3,
+	UNI_CMD_SAP_TAG_MAX_NUM
 };
-/** @addtogroup UNI_CMD_ID_SET_SAP_RPS
- *  @{
- */
 
-/**
- * This structure is used for UNI_CMD_SET_SAP_RPS (0x00)
- * of UNI_CMD_ID_SAP command (0x70) to set packet offload parameters.
- * @version Supported from ver:1.0.0.0
- *
- * @param[in] u2Tag		should be valid tag num
- * @param[in] u2Length		the length of this TLV,
- * @param[in] fgEnable		0: Enable, 1: Disable
- * @param[in] ucPhase	The percentage of beacon interval, 1~9 :10% ~ 90%
- * @param[in] aucPadding	Reserved
- */
-
+/* UNI_CMD_SET_SAP_SUS_TAG_SET (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_SAP_RPS_SET_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5416,6 +5395,8 @@ struct UNI_CMD_SET_SAP_RPS_SET_T {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+/* UNI_CMD_SET_SAP_SUS_TAG_SET (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_SAP_SUS_SET_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5423,6 +5404,14 @@ struct UNI_CMD_SET_SAP_SUS_SET_T {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+/* UNI_CMD_SAP_BCN_CRI_UPD (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SAP_BCN_CRI_UPD_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2UpdateBssBitmap;
+	uint16_t u2BypassSeqBitmap;
+} __KAL_ATTRIB_PACKED__;
 
 /* COEX command (0x87) */
 struct UNI_CMD_COEX_T {
@@ -9286,6 +9275,9 @@ uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+uint32_t nicUniCmdSapBcnCriUpd(struct ADAPTER *ad, uint8_t idx);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 
 #if CFG_SUPPORT_RTT
 uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,

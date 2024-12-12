@@ -577,6 +577,9 @@ struct BSS_INFO {
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
 #endif
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	uint8_t ucBPCC;
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 	uint8_t ucLinkIndex;
 
 #if (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1)

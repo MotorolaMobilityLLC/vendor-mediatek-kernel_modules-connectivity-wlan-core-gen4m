@@ -610,4 +610,13 @@ void p2pRoleFsmRunEventApGoStarted(struct ADAPTER *prAdapter,
 				   struct MSG_HDR *prMsgHdr);
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
+#if CFG_ENABLE_WIFI_DIRECT
+void p2pRoleFsmRunEventUpdateWmmParams(struct ADAPTER *prAdapter,
+				       struct MSG_HDR *prMsgHdr);
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+void p2pRoleFsmRunEventBcnCriUpd(struct ADAPTER *prAdapter,
+				 struct MSG_HDR *prMsgHdr);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 #endif

@@ -683,8 +683,8 @@
 	(CAP_INFO_CF_POLLABLE | CAP_INFO_CF_POLL_REQ)
 #define CAP_INFO_PRIVACY                            BIT(4)
 #define CAP_INFO_SHORT_PREAMBLE                     BIT(5)
-#define CAP_INFO_PBCC                               BIT(6)
-#define CAP_INFO_CH_AGILITY                         BIT(7)
+#define CAP_INFO_CRI_UPD                            BIT(6)
+#define CAP_INFO_NONTRANS_BSSID_CRI_UPD             BIT(7)
 #define CAP_INFO_SPEC_MGT                           BIT(8)
 #define CAP_INFO_QOS                                BIT(9)
 #define CAP_INFO_SHORT_SLOT_TIME                    BIT(10)
@@ -2432,12 +2432,22 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 
 /*802.11be D3.0 Figure 9-709c - MLD Parameters subfield format*/
 #define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)
+#define MLD_PARAM_MLD_ID_SHIFT				0
 #define MLD_PARAM_LINK_ID_MASK				BITS(8, 11)
 #define MLD_PARAM_LINK_ID_SHIFT				8
 #define MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK		BITS(12, 19)
 #define MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT		12
 #define MLD_PARAM_ALL_UPDATES_INCLUDED			BIT(20)
 #define MLD_PARAM_DISABLED_LINK				BIT(21)
+
+#define MLD_PARAM_SET_BPCC(_mld_params, _bpcc) \
+	((_mld_params) |= (((_bpcc) << \
+	MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT) & \
+	MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK))
+#define MLD_PARAM_GET_BPCC(_mld_params) \
+	(((_mld_params) & \
+	MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >> \
+	MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT)
 
 /* 9.4.2.312 Multi-Link element */
 #define ML_CTRL_TYPE_MASK				BITS(0, 2)

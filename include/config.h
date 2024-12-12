@@ -1388,6 +1388,10 @@
 #define CFG_SUPPORT_802_11BE                     0
 #endif
 
+#ifndef CFG_SUPPORT_SAP_BCN_CRI_UPD
+#define CFG_SUPPORT_SAP_BCN_CRI_UPD              0
+#endif
+
 #ifndef CFG_SUPPORT_802_PP_DSCB
 #if CFG_SUPPORT_802_11BE
 #define CFG_SUPPORT_802_PP_DSCB                  1

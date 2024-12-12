@@ -1131,6 +1131,16 @@ int priv_driver_set_mddp_test(struct net_device *prNetDev,
 
 int priv_driver_dump_wfsys_cpupcr(struct net_device *prNetDev,
 				  char *pcCommand, int i4TotalLen);
+
+#if CFG_ENABLE_WIFI_DIRECT
+int priv_driver_update_wmm_params(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen);
+
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+int priv_driver_trigger_critical_update(struct net_device *prNetDev,
+					char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

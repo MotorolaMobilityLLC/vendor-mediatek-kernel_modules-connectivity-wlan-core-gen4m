@@ -476,6 +476,14 @@ void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter,
 	if (!prBssInfo || prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
 		return;
 
+	DBGLOG(RLM, TRACE,
+		"erp_prot=%u ht_prot=%u gf=%u rifs=%u force_20m=%u\n",
+		prObssStatus->ucObssErpProtectMode,
+		prObssStatus->ucObssHtProtectMode,
+		prObssStatus->ucObssGfOperationMode,
+		prObssStatus->ucObssRifsOperationMode,
+		prObssStatus->ucObssBeaconForcedTo20M);
+
 	prBssInfo->fgObssErpProtectMode =
 		(u_int8_t) prObssStatus->ucObssErpProtectMode;
 	prBssInfo->eObssHtProtectMode =

@@ -203,6 +203,12 @@ static const char * const apucDebugMsg[] = {
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
 	"MID_MNY_P2P_NOTIFY_APGO_STARTED",
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
+#if CFG_ENABLE_WIFI_DIRECT
+	"MID_MNY_P2P_UPDATE_WMM_PARAMS",
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	"MID_MNY_P2P_BCN_CRI_UPD",
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 };
 
 /*lint -restore */
@@ -413,6 +419,12 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
 	{MID_MNY_P2P_NOTIFY_APGO_STARTED, p2pRoleFsmRunEventApGoStarted},
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
+#if CFG_ENABLE_WIFI_DIRECT
+	{MID_MNY_P2P_UPDATE_WMM_PARAMS, p2pRoleFsmRunEventUpdateWmmParams},
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	{MID_MNY_P2P_BCN_CRI_UPD, p2pRoleFsmRunEventBcnCriUpd},
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 };
 
 /*******************************************************************************

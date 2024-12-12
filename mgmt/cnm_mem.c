@@ -1811,6 +1811,10 @@ void cnmDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 		prBssInfo->ucGroupMldId,
 		prBssInfo->ucOwnMldId);
 #endif
+#if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
+	log_dbg(MEM, INFO, "\tBPCC[%u]\n",
+		prBssInfo->ucBPCC);
+#endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 	log_dbg(MEM, INFO, "\tTRX [%u %u]\n",
 		prBssInfo->fgIsNetAbsent,
 		prBssInfo->fgIsQBSS);
