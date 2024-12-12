@@ -7863,6 +7863,7 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 
 	return FALSE;
 }
+
 void p2pFuncCrossBandChannelSwitchCheck(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo,
@@ -8983,8 +8984,12 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 	for (i = *ucChSwitchCandNum; i > 0; i--) {
 		if (aliveSapBss[0]->eBand == BAND_5G &&
 			prSapSwitchCand[i-1].eRfBand == BAND_6G &&
+#if CFG_CH_SELECT_ENHANCEMENT
+			(prP2pBssInfo->eInitBand != BAND_6G) &&
+#endif
 			p2pFuncIsBssWpa3OnlyCheck(prAdapter,
 				aliveSapBss[0])) {
+
 			p2pSapSwitchCandidateRemove(
 				ucChSwitchCandNum,
 				prSapSwitchCand,

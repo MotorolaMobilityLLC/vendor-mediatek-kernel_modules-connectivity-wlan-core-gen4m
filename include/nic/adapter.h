@@ -401,6 +401,9 @@ struct BSS_INFO {
 	/* fields of information element (CM)                                */
 	/*-------------------------------------------------------------------*/
 	enum ENUM_BAND eBand;
+#if CFG_CH_SELECT_ENHANCEMENT
+	enum ENUM_BAND eInitBand;
+#endif
 	uint8_t ucPrimaryChannel;
 	uint8_t ucHtOpInfo1;
 	uint16_t u2HtOpInfo2;

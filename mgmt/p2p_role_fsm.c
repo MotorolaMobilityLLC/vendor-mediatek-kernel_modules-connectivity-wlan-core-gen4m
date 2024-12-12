@@ -1832,6 +1832,10 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 #endif
 
 	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
+#if CFG_CH_SELECT_ENHANCEMENT
+	prP2pBssInfo->eInitBand =
+		prP2pConnReqInfo->rChannelInfo.eBand;
+#endif
 	p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
