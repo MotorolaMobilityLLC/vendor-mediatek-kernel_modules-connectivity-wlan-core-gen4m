@@ -689,8 +689,10 @@ ifeq ($(MTK_ANDROID_WMT), y)
             CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
         endif
     endif
-    ifeq ($(call kver_ge,6,6),1)
+    ifeq ($(CONFIG_MTK_MBRAINK_BRIDGE), m)
         CONFIG_SUPPORT_MBRAIN=y
+    endif
+    ifeq ($(call kver_ge,6,6),1)
         CONFIG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG=y
     endif
     CONFIG_PERF_MON_FAST=y
