@@ -1765,6 +1765,13 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	DBGLOG(INIT, INFO,
 			"Enter glRstwlanPreWholeChipReset.\n");
+
+#if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+	update_whole_chip_rst_status(1);
+#endif
+#endif
+
 	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -2028,6 +2035,13 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	prAdapter = prGlueInfo->prAdapter;
 
 #if CFG_MTK_ANDROID_WMT
+
+#if CFG_CHIP_RESET_SUPPORT
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+	update_whole_chip_rst_status(1);
+#endif
+#endif
+
 	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
