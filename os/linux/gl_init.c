@@ -4778,6 +4778,9 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	wiphy_ext_feature_set(prWiphy,
 			      NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP);
 #endif
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_MGMT_TX_RANDOM_TA);
+#endif
 #endif
 
 #if KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE && \

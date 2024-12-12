@@ -179,6 +179,12 @@ struct BSS_INFO {
 	/* Owned MAC Address used in this BSS */
 	uint8_t aucOwnMacAddr[MAC_ADDR_LEN];
 
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	/* Backup of Owned MAC Address when tx MGMT frame with random TA */
+	u_int8_t fgIsOmacBackupValid;
+	uint8_t aucOwnMacAddrBackup[MAC_ADDR_LEN];
+#endif
+
 	uint8_t ucOwnMacIndex;	/* Owned MAC index used in this BSS */
 
 	/* For Infra Mode, and valid only if

@@ -163,6 +163,12 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 				     uint8_t ucBssIndex);
 
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+static void aisSetRandomOmac(struct ADAPTER *ad, uint8_t ucBssIndex,
+	struct MSDU_INFO *prMgmtMsduInfo);
+static void aisRestoreOmac(struct ADAPTER *ad, uint8_t ucBssIndex);
+#endif
+
 static void aisRestoreBandIdx(struct ADAPTER *ad,
 	struct BSS_INFO *prBssInfo);
 
@@ -4393,7 +4399,6 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		/* 2. stop channel timeout timer */
 		cnmTimerStopTimer(prAdapter,
 				  &prAisFsmInfo->rChannelTimeoutTimer);
-
 		break;
 
 	default:
@@ -8560,6 +8565,75 @@ void aisFsmRunEventCancelRemainOnChannel(struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+static void aisSetRandomOmac(struct ADAPTER *prAdapter,
+		 uint8_t ucBssIndex,
+		 struct MSDU_INFO *prMgmtMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct WLAN_MAC_HEADER *prWlanHdr;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo || prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED)
+		return;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *)((uintptr_t)
+			prMgmtMsduInfo->prPacket + MAC_TX_RESERVED_FIELD);
+
+	DBGLOG(AIS, INFO,
+	       "before - fg: %d, bss omac:" MACSTR ", bss backup:" MACSTR
+	       ", a2:" MACSTR "\n",
+	       prBssInfo->fgIsOmacBackupValid,
+	       MAC2STR(prBssInfo->aucOwnMacAddr),
+	       MAC2STR(prBssInfo->aucOwnMacAddrBackup),
+	       MAC2STR(prWlanHdr->aucAddr2));
+
+	/* 1. backup current OMAC to backup */
+	if (!prBssInfo->fgIsOmacBackupValid) {
+		COPY_MAC_ADDR(prBssInfo->aucOwnMacAddrBackup,
+			      prBssInfo->aucOwnMacAddr);
+		prBssInfo->fgIsOmacBackupValid = TRUE;
+	}
+
+	/* 2. set A2 of MGMT TX frame to BSS */
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, prWlanHdr->aucAddr2);
+
+	DBGLOG(AIS, INFO,
+	       "after - fg: %d, bss omac:" MACSTR ", bss backup:" MACSTR
+	       ", a2:" MACSTR "\n",
+	       prBssInfo->fgIsOmacBackupValid,
+	       MAC2STR(prBssInfo->aucOwnMacAddr),
+	       MAC2STR(prBssInfo->aucOwnMacAddrBackup),
+	       MAC2STR(prWlanHdr->aucAddr2));
+}
+
+static void aisRestoreOmac(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	DBGLOG(AIS, INFO,
+	       "before - fg: %d, bss omac:" MACSTR
+	       ", bss backup:" MACSTR"\n",
+	       prBssInfo->fgIsOmacBackupValid,
+	       MAC2STR(prBssInfo->aucOwnMacAddr),
+	       MAC2STR(prBssInfo->aucOwnMacAddrBackup));
+	if (prBssInfo->fgIsOmacBackupValid)
+		COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr,
+			      prBssInfo->aucOwnMacAddrBackup);
+	prBssInfo->fgIsOmacBackupValid = FALSE;
+	DBGLOG(AIS, INFO,
+	       "after - fg: %d, bss omac:" MACSTR
+	       ", bss backup:" MACSTR"\n",
+	       prBssInfo->fgIsOmacBackupValid,
+	       MAC2STR(prBssInfo->aucOwnMacAddr),
+	       MAC2STR(prBssInfo->aucOwnMacAddrBackup));
+}
+#endif
+
 static u_int8_t
 aisFunChnlReqByOffChnl(struct ADAPTER *prAdapter,
 		struct AIS_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq,
@@ -8651,6 +8725,11 @@ aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
 	if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq,
 		ucBssIndex))
 		goto error;
+
+
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	aisSetRandomOmac(prAdapter, ucBssIndex, prMgmtTxMsg->prMgmtMsduInfo);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 error:
@@ -10229,6 +10308,11 @@ void aisDeactivateAllLink(struct ADAPTER *prAdapter,
 			nicDeactivateNetwork(prAdapter,
 				NETWORK_ID(bss->ucBssIndex, i));
 	}
+
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	aisRestoreOmac(prAdapter, aisGetMainLinkBssIndex(
+				prAdapter, prAisFsmInfo));
+#endif
 }
 
 struct AIS_LINK_INFO *aisGetLink(struct ADAPTER *prAdapter,
