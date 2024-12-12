@@ -199,8 +199,9 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 				prStaRec->ucAuthTranNum =
 					AUTH_TRANSACTION_SEQ_1;
 				/* Update Station Record - Class 1 Flag */
-				cnmStaRecChangeState(prAdapter, prStaRec,
-						     STA_STATE_1);
+				if (prStaRec->ucStaState != STA_STATE_1)
+					cnmStaRecChangeState(prAdapter,
+						     prStaRec, STA_STATE_1);
 
 				rStatus = authSendAuthFrame(prAdapter,
 						      prStaRec,
