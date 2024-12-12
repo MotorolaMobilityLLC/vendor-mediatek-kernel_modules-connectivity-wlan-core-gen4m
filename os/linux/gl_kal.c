@@ -2293,7 +2293,12 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			preempt_enable();
 		} else {
 			skb_queue_tail(&prGlueInfo->rRxNapiSkbQ, prSkb);
-			kal_napi_schedule(&prGlueInfo->napi);
+			if (prGlueInfo->fgNapiReady)
+				kal_napi_schedule(&prGlueInfo->napi);
+			else
+				DBGLOG(RX, WARN,
+					"Skip napi schedule, NapiReady:%u\n",
+					prGlueInfo->fgNapiReady);
 		}
 #else /* CFG_SUPPORT_RX_NAPI */
 		/* GRO receive function can't be interrupt so it need to
@@ -15336,9 +15341,6 @@ uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_RX_NAPI_THREADED
 	kalNapiThreadedUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
-#if CFG_NAPI_DELAY
-	kalNapiDelayTimerUninit(prGlueInfo);
-#endif /* CFG_NAPI_DELAY */
 	DBGLOG(INIT, TRACE, "Napi Uninit Done\n");
 	return 0;
 }
@@ -15376,8 +15378,14 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
 
-	prRxCtrl = &prAdapter->rRxCtrl;
 	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo->fgNapiReady) {
+		DBGLOG(RX, WARN, "Skip napi schedule, fgNapiReady:%u\n",
+			prGlueInfo->fgNapiReady);
+		return;
+	}
+
+	prRxCtrl = &prAdapter->rRxCtrl;
 
 	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
 	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
@@ -15777,7 +15785,7 @@ next_try:
 #endif /* CFG_SUPPORT_RX_GRO_PEAK */
 	work_done = kal_min_t(int, work_done, budget-1);
 	kal_napi_complete_done(napi, work_done);
-	if (skb_queue_len(prRxNapiSkbQ)) {
+	if (skb_queue_len(prRxNapiSkbQ) && prGlueInfo->fgNapiReady) {
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT);
 		napi_schedule(napi);
 	}
@@ -15791,6 +15799,7 @@ next_try:
 uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 {
 	napi_enable(&prGlueInfo->napi);
+	prGlueInfo->fgNapiReady = TRUE;
 	DBGLOG(RX, TRACE, "RX NAPI enabled\n");
 	return 0;
 }
@@ -15798,6 +15807,12 @@ uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(RX, INFO, "RX NAPI disable ongoing\n");
+
+	prGlueInfo->fgNapiReady = FALSE;
+#if CFG_NAPI_DELAY
+	kalNapiDelayTimerUninit(prGlueInfo);
+#endif /* CFG_NAPI_DELAY */
+
 	napi_synchronize(&prGlueInfo->napi);
 	napi_disable(&prGlueInfo->napi);
 	if (skb_queue_len(&prGlueInfo->rRxNapiSkbQ)) {
