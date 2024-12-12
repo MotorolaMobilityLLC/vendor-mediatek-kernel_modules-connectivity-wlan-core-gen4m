@@ -158,6 +158,30 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 }
 #endif
 
+static u_int8_t kalIsCbtopRange(struct mt66xx_chip_info *prChipInfo,
+				uint32_t reg)
+{
+	const struct PCIE_CHIP_CR_REMAPPING *remap =
+		prChipInfo->bus_info->bus2chip_remap;
+	uint32_t u4Idx = 0;
+
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
+		return FALSE;
+	}
+
+	if (!remap->cbtop_ranges)
+		return FALSE;
+
+	for (u4Idx = 0; remap->cbtop_ranges[u4Idx].end != 0; u4Idx++) {
+		if (reg >= remap->cbtop_ranges[u4Idx].start &&
+		    reg <= remap->cbtop_ranges[u4Idx].end)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t *val)
@@ -173,7 +197,10 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
-	pcie2ap = remap->pcie2ap;
+	if (remap->pcie2ap_cbtop && kalIsCbtopRange(prChipInfo, reg))
+		pcie2ap = remap->pcie2ap_cbtop;
+	else
+		pcie2ap = remap->pcie2ap;
 	if (!pcie2ap) {
 		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
 		return;
@@ -205,7 +232,10 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
-	pcie2ap = remap->pcie2ap;
+	if (remap->pcie2ap_cbtop && kalIsCbtopRange(prChipInfo, reg))
+		pcie2ap = remap->pcie2ap_cbtop;
+	else
+		pcie2ap = remap->pcie2ap;
 	if (!pcie2ap) {
 		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
 		return;

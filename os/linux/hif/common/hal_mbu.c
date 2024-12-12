@@ -42,6 +42,7 @@
 #define MAX_MBU_EMI_WAITING_CNT	(2000) /* 2000 * 5us = 10ms timeout */
 #define MBU_MSI_MIRROR_IDX	7
 #define MBU_TIMEOUT_VALUE	0xffffdead
+#define MBU_REG_MASK		0xffff0000
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -72,6 +73,18 @@
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+void halMbuMcrWr(struct ADAPTER *prAdapter, uint32_t u4Addr, uint32_t u4Val)
+{
+	struct SW_EMI_RING_INFO *prMbuInfo =
+		&prAdapter->chip_info->bus_info->rSwEmiRingInfo;
+
+	if ((u4Addr & MBU_REG_MASK) == prMbuInfo->u4RemapRegAddr)
+		u4Addr = prMbuInfo->u4RemapBusAddr | (u4Addr & ~MBU_REG_MASK);
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
 void halMbuInit(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
@@ -130,60 +143,60 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 	/* Interrupt enable for IMR #0 (DMA#0) */
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_0_INT_EN_INTEN_ADDR;
 	u4Val = 0x1;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_1_INT_EN_INTEN_ADDR;
 	u4Val = 0x1;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 	/* Set device address for dummy read #0 */
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_1_DST_ADDR_DST_ADDR_ADDR;
 	u4Val = 0x7413B000;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* 3. Driver Sequence */
 	/* Set EMI destination address for DMA#0 */
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_0_DST_ADDR_DST_ADDR_ADDR;
 	u4Val = ((uint64_t)prMem->pa) & DMA_LOWER_32BITS_MASK;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_0_DST_ADDR2_DST_ADDR2_ADDR;
 	u4Val = ((uint64_t)prMem->pa >> DMA_BITS_OFFSET) | BIT(4);
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* Set EMI_addr as source address for dummy read #0 */
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_1_SRC_ADDR_SRC_ADDR_ADDR;
 	u4Val = ((uint64_t)prMem->pa) & DMA_LOWER_32BITS_MASK;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	u4Addr = CB_DMA_TOP_CB_DMA_0_G_DMA_1_SRC_ADDR2_SRC_ADDR2_ADDR;
 	u4Val = ((uint64_t)prMem->pa >> DMA_BITS_OFFSET) | BIT(4);
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* Set fetch address for cb_infra_mbu (i = 0~31) */
 	for (i = 0; i < 32; i++) {
 		u4Addr = CB_DMA_TOP_CB_INFRA_MBU_FHADDR_0_ADDR + i * 0x04;
 		u4Val = i * 0x04 << 4;
-		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+		halMbuMcrWr(prAdapter, u4Addr, u4Val);
 	}
 
 	/* Set MSI mirror enable (i = 0~15): 0x0 or 0x1 */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MSI_MIRROR_EN_7_ADDR;
 	u4Val = 0x1;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* Set MSI mirror mode (i = 0~15): 0x0 or 0x1 */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MSI_MIRROR_MODE_7_ADDR;
 	u4Val = 0x1;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* [MSI] Set EMI address for MSI mirror */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_RMP_CB_INFRA_MBU_RMP_ADDR;
 	u4Val = ((u8MsiMirrorAddr >> 28) & BITS(0, 7)) | BIT(8);
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_INTREG_2_CB_INFRA_MBU_INTREG_2_ADDR;
 	u4Val = ((u8MsiMirrorAddr >> 28) & BITS(0, 7)) | BIT(8);
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_INTREG_3_CB_INFRA_MBU_INTREG_3_ADDR;
 	u4Val = (u8MsiMirrorAddr & BITS(0, 27)) | BITS(28, 31);
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* restore remap */
 	if (prMbuInfo->u4RemapAddr) {
@@ -270,10 +283,10 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 		u4Val = u4ReadAddr;
 	} else {
 		/* set cb top remap */
-		HAL_MCR_WR(prAdapter, prAp2wf->reg_base, u4ReadAddr);
+		halMbuMcrWr(prAdapter, prAp2wf->reg_base, u4ReadAddr);
 		u4Val = prAp2wf->base_addr - CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET;
 	}
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
 	/* restore remap */
 	if (prMbuInfo->u4RemapAddr) {
