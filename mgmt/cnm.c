@@ -5146,6 +5146,11 @@ cnmGetOtherSapBssInfo(
 	if (!prAdapter)
 		return NULL;
 
+	if (!prSapBssInfo) {
+		DBGLOG(P2P, WARN, "prSapBssInfo is null");
+		return NULL;
+	}
+
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if ((prSapBssInfo != prBssInfo) &&
