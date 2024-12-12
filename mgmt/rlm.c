@@ -1807,8 +1807,15 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 			"Disable BTM cap due to wifi.cfg or sub Wi-Fi");
 	}
 
-	while (prExtCap->ucLength > 0 &&
-		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0) {
+	while ((prExtCap->ucLength > 0 &&
+		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0)
+#if CFG_SAP_EXT_CAP_IE
+		|| (prExtCap->ucLength > SAP_ELEM_MAX_LEN_EXT_CAP &&
+			IS_BSS_APGO(prBssInfo)))
+#else
+	)
+#endif
+	{
 		prExtCap->ucLength--;
 	}
 

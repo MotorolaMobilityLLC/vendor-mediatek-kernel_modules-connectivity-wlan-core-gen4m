@@ -8953,7 +8953,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 #if CFG_ENABLE_WIFI_DIRECT
 	INIT_UINT(prWifiVar->fgSapCheckPmkidInDriver,
-		"SapCheckPmkidInDriver", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+		"SapCheckPmkidInDriver", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgSapOffload, "SapOffload", FEATURE_DISABLED,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgSapGoSkipObss,

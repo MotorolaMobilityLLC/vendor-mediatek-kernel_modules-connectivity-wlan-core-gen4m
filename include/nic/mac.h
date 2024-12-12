@@ -1680,6 +1680,9 @@ enum BEACON_REPORT_DETAIL {
 
 /* This length should synchronize with wpa_supplicant */
 #define ELEM_MAX_LEN_EXT_CAP                        (11)
+#if CFG_SAP_EXT_CAP_IE
+#define SAP_ELEM_MAX_LEN_EXT_CAP                    (8)
+#endif
 
 /* 7.3.2.30 TSPEC element */
 /* WMM: 0 (Asynchronous TS of low-duty cycles) */
