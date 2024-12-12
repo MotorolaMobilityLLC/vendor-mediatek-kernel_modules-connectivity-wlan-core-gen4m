@@ -26,7 +26,7 @@
 #include "gl_wext.h"
 #include "gl_cfg80211.h"
 #include "precomp.h"
-#if ((CFG_SUPPORT_AGPS_ASSIST) || (CFG_VOLT_INFO == 1))
+#if (CFG_VOLT_INFO == 1)
 #include "gl_kal.h"
 #endif
 #if CFG_TC1_FEATURE
@@ -7381,11 +7381,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	wlanCfgDumpIotApRule(prAdapter);
 #endif
 	if (!bAtResetFlow) {
-#if CFG_SUPPORT_AGPS_ASSIST
-		kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL,
-				0);
-#endif
-
 		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
 		wlanCfgSetChip(prGlueInfo->prAdapter);
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
@@ -8720,11 +8715,6 @@ static void wlanRemove(void)
 #endif
 
 	/* 4 <4> wlanAdapterStop */
-#if CFG_SUPPORT_AGPS_ASSIST
-	kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_OFF, NULL,
-			      0);
-#endif
-
 	wlanAdapterStop(prAdapter, FALSE);
 	kalWlanUeventDeinit(prGlueInfo);
 

@@ -116,13 +116,6 @@
 #define SCN_SSID_MAX_NUM			CFG_SCAN_SSID_MAX_NUM
 #define SCN_SSID_MATCH_MAX_NUM			CFG_SCAN_SSID_MATCH_MAX_NUM
 
-#if CFG_SUPPORT_AGPS_ASSIST
-#define SCN_AGPS_AP_LIST_MAX_NUM		32
-#endif
-
-#define SCN_BSS_JOIN_FAIL_CNT_RESET_SEC		15
-#define SCN_BSS_JOIN_FAIL_RESET_STEP		2
-
 #if CFG_SUPPORT_BATCH_SCAN
 /*----------------------------------------------------------------------------*/
 /* SCAN_BATCH_REQ                                                             */
@@ -823,26 +816,6 @@ struct MSG_SCN_SCAN_DONE {
 	enum ENUM_SCAN_STATUS eScanStatus;
 };
 
-#if CFG_SUPPORT_AGPS_ASSIST
-enum AP_PHY_TYPE {
-	AGPS_PHY_A,
-	AGPS_PHY_B,
-	AGPS_PHY_G,
-};
-
-struct AGPS_AP_INFO {
-	uint8_t aucBSSID[MAC_ADDR_LEN];
-	int16_t i2ApRssi;	/* -127..128 */
-	uint16_t u2Channel;	/* 0..256 */
-	enum AP_PHY_TYPE ePhyType;
-};
-
-struct AGPS_AP_LIST {
-	uint8_t ucNum;
-	struct AGPS_AP_INFO arApInfo[SCN_AGPS_AP_LIST_MAX_NUM];
-};
-#endif
-
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 
 #define MAXIMUM_RNR_BSSID_LIST		16
@@ -1130,10 +1103,6 @@ struct BSS_DESC *scanSearchBssDescByBssidAndLatestUpdateTime(
 						struct ADAPTER *prAdapter,
 						uint8_t aucBSSID[]);
 #endif /* CFG_SUPPORT_PASSPOINT */
-
-#if CFG_SUPPORT_AGPS_ASSIST
-void scanReportScanResultToAgps(struct ADAPTER *prAdapter);
-#endif
 
 #if CFG_SUPPORT_SCHED_SCAN
 u_int8_t scnFsmSchedScanRequest(struct ADAPTER *prAdapter,

@@ -3770,37 +3770,32 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 			(eStatus == SCAN_STATUS_DONE) ?
 			WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 
-		prAisFsmInfo->fgIsScanning = FALSE;
 		GET_CURRENT_SYSTIME(&prAisFsmInfo->rScanDoneTime);
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
-		switch (prAisFsmInfo->eCurrentState) {
-		case AIS_STATE_SCAN:
-			eNextState = AIS_STATE_IDLE;
-#if CFG_SUPPORT_AGPS_ASSIST
-			scanReportScanResultToAgps(prAdapter);
-#endif
-			break;
 
-		case AIS_STATE_ONLINE_SCAN:
-			aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
+		/* If scan done is cause by aborted, fgIsScanning will
+		 * be FALSE, not to switch step, let aisFsmStateAbort
+		 * change state.
+		 */
+		if (prAisFsmInfo->fgIsScanning) {
+			prAisFsmInfo->fgIsScanning = FALSE;
+			switch (prAisFsmInfo->eCurrentState) {
+			case AIS_STATE_SCAN:
+				eNextState = AIS_STATE_IDLE;
+				break;
 
-			eNextState = aisFsmScanResultsUpdate(prAdapter,
-				ucBssIndex);
-#if CFG_SUPPORT_AGPS_ASSIST
-			scanReportScanResultToAgps(prAdapter);
-#endif
-			break;
+			case AIS_STATE_ONLINE_SCAN:
+			case AIS_STATE_LOOKING_FOR:
+				aisFsmGetCurrentEssChnlList(prAdapter,
+							ucBssIndex);
 
-		case AIS_STATE_LOOKING_FOR:
-			aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
+				eNextState = aisFsmScanResultsUpdate(prAdapter,
+					ucBssIndex);
+				break;
 
-			eNextState = aisFsmScanResultsUpdate(prAdapter,
-				ucBssIndex);
-			break;
-
-		default:
-			break;
-
+			default:
+				break;
+			}
 		}
 	}
 
@@ -4086,18 +4081,14 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		break;
 
 	case AIS_STATE_ONLINE_SCAN:
+	case AIS_STATE_LOOKING_FOR:
+		/* in case roaming is triggered */
 		fgIsCheckConnected = TRUE;
 		kal_fallthrough;
 	case AIS_STATE_SCAN:
 		/* Do abort SCAN */
+		prAisFsmInfo->fgIsScanning = FALSE;
 		aisFsmStateAbort_SCAN_All(prAdapter);
-		break;
-	case AIS_STATE_LOOKING_FOR:
-		/* Do abort SCAN */
-		aisFsmStateAbort_SCAN_All(prAdapter);
-
-		/* in case roaming is triggered */
-		fgIsCheckConnected = TRUE;
 		break;
 
 	case AIS_STATE_REQ_CHANNEL_JOIN:

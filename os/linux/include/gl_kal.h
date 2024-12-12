@@ -461,26 +461,6 @@ enum ENUM_KAL_MEM_ALLOCATION_TYPE_E {
 #define KAL_WAKE_LOCK_T uint32_t
 #endif
 
-#if CFG_SUPPORT_AGPS_ASSIST
-enum ENUM_MTK_AGPS_ATTR {
-	MTK_ATTR_AGPS_INVALID,
-	MTK_ATTR_AGPS_CMD,
-	MTK_ATTR_AGPS_DATA,
-	MTK_ATTR_AGPS_IFINDEX,
-	MTK_ATTR_AGPS_IFNAME,
-	MTK_ATTR_AGPS_MAX
-};
-
-enum ENUM_AGPS_EVENT {
-	AGPS_EVENT_WLAN_ON,
-	AGPS_EVENT_WLAN_OFF,
-	AGPS_EVENT_WLAN_AP_LIST,
-};
-u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
-			       uint8_t cmd,
-			       uint8_t *data, uint16_t dataLen);
-#endif /* CFG_SUPPORT_AGPS_ASSIST */
-
 struct KAL_HALT_CTRL_T {
 	struct semaphore lock;
 	struct task_struct *owner;

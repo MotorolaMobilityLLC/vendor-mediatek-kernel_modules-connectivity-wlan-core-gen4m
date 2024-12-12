@@ -29,10 +29,6 @@
 #include <stdarg.h>
 #endif
 
-#if CFG_SUPPORT_AGPS_ASSIST
-#include <net/netlink.h>
-#endif
-
 #if CFG_TC1_FEATURE
 #include <tc1_partition.h>
 #endif
@@ -8962,46 +8958,6 @@ int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
 	return TRUE;
 nla_put_failure:
 	kfree_skb(skb);
-	return FALSE;
-}
-#endif
-
-#if CFG_SUPPORT_AGPS_ASSIST
-u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
-			       uint8_t cmd, uint8_t *data, uint16_t dataLen)
-{
-#ifdef CONFIG_NL80211_TESTMODE
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct sk_buff *skb = NULL;
-
-	skb = cfg80211_testmode_alloc_event_skb(wlanGetWiphy(),
-						dataLen, GFP_KERNEL);
-
-	/* DBGLOG(CCX, INFO, ("WLAN_STATUS_AGPS_NOTIFY, cmd=%d\n", cmd)); */
-	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_CMD, sizeof(cmd),
-			     &cmd) < 0))
-		goto nla_put_failure;
-	if (dataLen > 0 && data
-	    && unlikely(nla_put(skb, MTK_ATTR_AGPS_DATA, dataLen,
-				data) < 0))
-		goto nla_put_failure;
-	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_IFINDEX,
-	    sizeof(uint32_t), &prGlueInfo->prDevHandler->ifindex) < 0))
-		goto nla_put_failure;
-	/* currently, the ifname maybe wlan0, p2p0, so the maximum name length
-	 * will be 5 bytes
-	 */
-	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_IFNAME, 5,
-			     prGlueInfo->prDevHandler->name) < 0))
-		goto nla_put_failure;
-
-	cfg80211_testmode_event(skb, GFP_KERNEL);
-	return TRUE;
-nla_put_failure:
-	kfree_skb(skb);
-#else
-	DBGLOG(INIT, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
-#endif
 	return FALSE;
 }
 #endif

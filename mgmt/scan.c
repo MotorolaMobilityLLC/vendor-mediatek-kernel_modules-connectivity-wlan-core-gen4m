@@ -4710,41 +4710,6 @@ struct BSS_DESC *scanSearchBssDescByBssidAndLatestUpdateTime(
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#if CFG_SUPPORT_AGPS_ASSIST
-void scanReportScanResultToAgps(struct ADAPTER *prAdapter)
-{
-	struct LINK *prBSSDescList =
-			&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
-	struct BSS_DESC *prBssDesc = NULL;
-	struct AGPS_AP_LIST *prAgpsApList =
-			kalMemAlloc(sizeof(struct AGPS_AP_LIST), VIR_MEM_TYPE);
-	struct AGPS_AP_INFO *prAgpsInfo = &prAgpsApList->arApInfo[0];
-	struct SCAN_INFO *prScanInfo = &prAdapter->rWifiVar.rScanInfo;
-	uint8_t ucIndex = 0;
-
-	LINK_FOR_EACH_ENTRY(
-		prBssDesc, prBSSDescList, rLinkEntry, struct BSS_DESC) {
-
-		if (prBssDesc->rUpdateTime < prScanInfo->rLastScanCompletedTime)
-			continue;
-		COPY_MAC_ADDR(prAgpsInfo->aucBSSID, prBssDesc->aucBSSID);
-		prAgpsInfo->ePhyType = AGPS_PHY_G;
-		prAgpsInfo->u2Channel = prBssDesc->ucChannelNum;
-		prAgpsInfo->i2ApRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
-		prAgpsInfo++;
-		ucIndex++;
-		if (ucIndex == SCN_AGPS_AP_LIST_MAX_NUM)
-			break;
-	}
-	prAgpsApList->ucNum = ucIndex;
-	GET_CURRENT_SYSTIME(&prScanInfo->rLastScanCompletedTime);
-	/* log_dbg(SCN, INFO, ("num of scan list:%d\n", ucIndex)); */
-	kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_AP_LIST,
-		(uint8_t *) prAgpsApList, sizeof(struct AGPS_AP_LIST));
-	kalMemFree(prAgpsApList, VIR_MEM_TYPE, sizeof(struct AGPS_AP_LIST));
-}
-#endif /* CFG_SUPPORT_AGPS_ASSIST */
-
 void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 {
 	struct CMD_SCAN_REQ_V2 *req = prCmdScanReq;
