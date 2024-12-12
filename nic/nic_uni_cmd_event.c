@@ -13331,6 +13331,13 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 					prStaRec->ucBssIndex, prStaRec->ucIndex,
 					prStaRec->ucWlanIndex,
 					prMldStaRec->u4ActiveStaBitmap);
+#if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
+				mldLogLink(ad,
+					prStaRec,
+					prMldStaRec,
+					state->ucLinkState,
+					state->ucReason);
+#endif
 			}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 		}

@@ -791,15 +791,15 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		goto send_response;
 	}
 
-	if (ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
-#if CFG_SUPPORT_802_11K
-#if (CFG_SUPPORT_REPORT_LOG == 1)
-		wnmLogBTMRecvReq(prAdapter,
-			ucBssIndex,
-			prRxFrame,
-			prSwRfb->u2PacketLen - u2TmpLen);
+#if CFG_SUPPORT_802_11K && (CFG_SUPPORT_REPORT_LOG == 1)
+	wnmLogBTMRecvReq(prAdapter,
+		ucBssIndex,
+		prRxFrame,
+		prSwRfb->u2PacketLen - u2TmpLen);
 #endif
 
+	if (ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
+#if CFG_SUPPORT_802_11K
 		if (prSwRfb->u2PacketLen <= u2TmpLen ||
 		    !aisCollectNeighborAP(prAdapter, pucOptInfo,
 					prSwRfb->u2PacketLen - u2TmpLen,
