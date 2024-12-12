@@ -2866,7 +2866,7 @@ void connac3x_dump_format_memory32(
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
-static void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
+void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_DMABUF *prRingDmyDbg;

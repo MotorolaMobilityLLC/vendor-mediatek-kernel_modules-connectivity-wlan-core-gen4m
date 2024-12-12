@@ -954,6 +954,9 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 	.dumpPcieCr = mt6653_dumpPcieReg,
 	.checkDumpViaBt = mt6653_CheckDumpViaBt,
 #endif
+#if CFG_MTK_WIFI_WFDMA_WB
+	.show_wfdma_wb_info = connac3x_show_wfdma_wb_info,
+#endif
 #if CFG_MTK_WIFI_MBU
 	.getMbuTimeoutStatus = mt6653_get_mbu_timeout_status,
 #endif

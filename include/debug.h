@@ -574,6 +574,9 @@ struct CHIP_DBG_OPS {
 		struct ADAPTER *prAdapter,
 		uint8_t ucCase);
 #endif
+#if CFG_MTK_WIFI_WFDMA_WB
+	void (*show_wfdma_wb_info)(struct ADAPTER *prAdapter);
+#endif
 	void (*dumpwfsyscpupcr)(struct ADAPTER *prAdapter);
 	void (*dumpBusStatus)(struct ADAPTER *prAdapter);
 	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
@@ -1170,6 +1173,9 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 void connac3x_show_mawd_info(struct ADAPTER *prAdapter);
 void connac3x_show_rro_info(struct ADAPTER *prAdapter);
+#endif
+#if CFG_MTK_WIFI_WFDMA_WB
+void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter);
 #endif
 void connac3x_dump_format_memory32(
 	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo);
