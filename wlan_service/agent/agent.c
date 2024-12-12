@@ -421,10 +421,12 @@ static s_int32 hqa_set_tx_path(
 			("%s: tx_path:%d\n", __func__, tx_ant));
 	}
 
-	/* Set parameters */
-	CONFIG_SET_PARAM(serv_test, tx_ant, tx_ant, band_idx);
-
-	ret = mt_serv_set_tx_path(serv_test);
+	if (band_idx < TEST_DBDC_BAND_NUM) {
+		/* Set parameters */
+		serv_test->test_config[band_idx].tx_ant = tx_ant;
+		ret = mt_serv_set_tx_path(serv_test);
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_BANDIDX;
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
@@ -480,10 +482,12 @@ static s_int32 hqa_set_rx_path(
 			("%s: rx_path:%d\n", __func__, rx_ant));
 	}
 
-	/* Set parameters */
-	CONFIG_SET_PARAM(serv_test, rx_ant, rx_ant, band_idx);
-
-	ret = mt_serv_set_rx_path(serv_test);
+	if (band_idx < TEST_DBDC_BAND_NUM) {
+		/* Set parameters */
+		serv_test->test_config[band_idx].rx_ant = rx_ant;
+		ret = mt_serv_set_rx_path(serv_test);
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_BANDIDX;
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
@@ -4531,7 +4535,7 @@ static s_int32 hqa_set_ru_info(
 					   &data,
 					   (u_char *)&value);
 		param_loop--;
-		ru_info[sta_seq].start_sp_st = value-1;
+		ru_info[sta_seq].start_sp_st = value > 0 ? (value-1) : 0;
 		get_param_and_shift_buf(TRUE,
 					   sizeof(u_int32),
 					   &data,
@@ -6969,6 +6973,8 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 		return SERV_STATUS_AGENT_NOT_SUPPORTED;
 }
 
+
+
 s_int32 mt_agent_hqa_cmd_handler(
 	struct service *serv, struct hqa_frame_ctrl *hqa_frame_ctrl)
 {
@@ -7409,6 +7415,7 @@ err_out:
 	return ret;
 }
 
+
 s_int32 mt_agent_set_txant(struct service_test *serv_test, u_char *arg)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
@@ -7531,3 +7538,4 @@ s_int32 mt_agent_exit_service(struct service *serv)
 
 	return ret;
 }
+
