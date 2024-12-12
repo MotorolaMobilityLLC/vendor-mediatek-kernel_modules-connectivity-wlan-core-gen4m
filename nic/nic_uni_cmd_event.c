@@ -6628,7 +6628,7 @@ uint32_t nicUniCmdBeaconReport(struct ADAPTER *ad,
 	entry = nicUniCmdAllocEntry(ad,
 		UNI_CMD_ID_GET_STATISTICS,
 		max_cmd_len,
-		nicUniEventStatistics,
+		nicUniCmdEventSetCommon,
 		nicUniCmdTimeoutCommon);
 
 	if (!entry)
