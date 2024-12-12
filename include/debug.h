@@ -61,7 +61,6 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 #define DBG_CLASS_INFO          BIT(5)
 #define DBG_CLASS_LOUD          BIT(6)
 #define DBG_CLASS_TEMP          BIT(7)
-#define DBG_CLASS_VOC           DBG_CLASS_INFO /* TODO: remove */
 #define DBG_CLASS_DEBUG         BIT(8)
 #define DBG_CLASS_MASK          BITS(0, 8)
 
