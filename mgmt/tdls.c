@@ -1743,7 +1743,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
-	return TDLS_STATUS_PENDING;
+	return TDLS_STATUS_SUCCESS;
 }
 
 uint32_t
@@ -1946,7 +1946,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
-	return TDLS_STATUS_PENDING;
+	return TDLS_STATUS_SUCCESS;
 }
 
 uint32_t
