@@ -10980,10 +10980,6 @@ void aisFunSwitchChannel(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/* Indicate PM abort to sync BSS state with FW */
-	nicPmIndicateBssAbort(prAdapter, prBssInfo->ucBssIndex);
-	prBssInfo->ucDTIMPeriod = 0;
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 		aisFunSwitchChannelImpl(prAdapter, prBssInfo->ucBssIndex);
@@ -11022,16 +11018,26 @@ void aisFunSwitchChannelImpl(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
-	/* Update BSS with temp. disconnect state to FW */
-	if (IS_NET_ACTIVE(prAdapter, ucBssIndex))
-		nicDeactivateNetworkEx(prAdapter,
-			NETWORK_ID(ucBssIndex,
-			  aisGetLinkIndex(prAdapter, ucBssIndex)),
-			  FALSE);
-	aisChangeMediaState(prAisBssInfo, MEDIA_STATE_DISCONNECTED);
-	nicUpdateBssEx(prAdapter,
-		ucBssIndex,
-		FALSE);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prAisBssInfo)))
+#endif
+	{
+		/* Indicate PM abort to sync BSS state with FW */
+		nicPmIndicateBssAbort(prAdapter, prAisBssInfo->ucBssIndex);
+		prAisBssInfo->ucDTIMPeriod = 0;
+
+		/* Update BSS with temp. disconnect state to FW */
+		if (IS_NET_ACTIVE(prAdapter, ucBssIndex))
+			nicDeactivateNetworkEx(prAdapter,
+				NETWORK_ID(ucBssIndex,
+				aisGetLinkIndex(prAdapter, ucBssIndex)),
+				FALSE);
+		aisChangeMediaState(prAisBssInfo,
+			MEDIA_STATE_DISCONNECTED);
+		nicUpdateBssEx(prAdapter,
+			ucBssIndex,
+			FALSE);
+	}
 
 	prAisBssInfo->fgIsAisCsaPending = FALSE;
 	prAisBssInfo->fgIsAisSwitchingChnl = TRUE;
