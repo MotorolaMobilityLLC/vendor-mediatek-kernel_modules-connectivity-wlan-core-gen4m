@@ -226,8 +226,9 @@ static struct WLANDEV_INFO
 static uint32_t
 u4WlanDevNum;	/* How many NICs coexist now */
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-static u_int8_t uIsShutdown = FALSE;
+#if CFG_MTK_ANDROID_WMT
+/* 0: off, 1: on-going, 2: done */
+static enum ENUM_SHUTDOWN_STATE uShutdownState;
 #endif
 
 /* 20150205 added work queue for sched_scan to avoid cfg80211 stop schedule scan
@@ -8799,25 +8800,41 @@ WLAN_REMOVE_RETURN:
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-u_int8_t kalIsShutdown(void)
+#if CFG_MTK_ANDROID_WMT
+uint8_t kalGetShutdownState(void)
 {
-	return uIsShutdown;
+	return uShutdownState;
 }
-
-static void wlanShutdown(void)
+#endif
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
+void wlanShutdown(void)
 {
+	/* there are two shutdown entry,
+	 * one is pre_fmd and another is platform
+	 */
+	if (kalGetShutdownState()) {
+		DBGLOG(REQ, INFO, "shutdown is ongoing\n");
+		return;
+	}
+
+	uShutdownState = SHUTDOWN_STATE_ONGOING;
+	while (kalIsResetOnEnd()) {
+		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
+		kalMsleep(1000);
+	}
+
 	wfsys_lock();
 	/* wifi is off */
-	if (!get_wifi_powered_status() && get_wifi_process_status() == 0) {
+	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0)) {
 		wfsys_unlock();
 		return;
 	}
 
 	DBGLOG(INIT, INFO, "do wifi off\n");
-	uIsShutdown = TRUE;
 	wlanFuncOff();
 	wfsys_unlock();
+
+	uShutdownState = SHUTDOWN_STATE_DONE;
 }
 #endif
 
@@ -8843,6 +8860,15 @@ int wlanFuncOnImpl(void)
 {
 	struct mt66xx_chip_info *chip = NULL;
 	int ret = 0;
+
+#if CFG_MTK_ANDROID_WMT
+	/*
+	 * Initialize shutdown status to resolve reset-triggered failures
+	 * if no shutdown occurs after pre_fmd callback is done.
+	 */
+	if (uShutdownState == SHUTDOWN_STATE_DONE)
+		uShutdownState = SHUTDOWN_STATE_INIT;
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	power_throttling_pre_start();
@@ -9072,7 +9098,7 @@ static int initWlan(void)
 
 	kalPlatOpsInit();
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 	ret = ((glRegisterShutdownCB(wlanShutdown)
 		== WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 	if (ret == -EIO)

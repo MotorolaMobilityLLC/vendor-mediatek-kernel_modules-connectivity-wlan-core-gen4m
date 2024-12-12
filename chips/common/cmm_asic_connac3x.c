@@ -2551,6 +2551,9 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 	} else if (fgIsDrvTriggerWholeChipReset) {
 		DBGLOG(HAL, INFO,
 			"Ignore fw assert due to whole chip reset ongoing.\n");
+	} else if (kalGetShutdownState()) {
+		DBGLOG(HAL, INFO,
+			"Ignore fw assert due to device shutdown.\n");
 	} else {
 		if (prAdapter->fgIsSkipFWL05) {
 			DBGLOG(HAL, ERROR,
@@ -2584,6 +2587,12 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *dbg_ops = prAdapter->chip_info->prDebugOps;
+
+	if (kalGetShutdownState()) {
+		DBGLOG(HAL, INFO,
+			"Ignore fw assert due to device shutdown.\n");
+		return;
+	}
 
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
@@ -3028,11 +3037,42 @@ static int wlan_chip_power_down_notify(unsigned int notify)
 			"Wi-Fi off process is ongoing, wait here.\n");
 		msleep(50);
 	}
-	if (!get_wifi_process_status() && !get_wifi_powered_status())
+	if ((!get_wifi_process_status() && !get_wifi_powered_status()) ||
+	    (kalGetShutdownState() == 2))
 		glNotifyPciePowerDown();
 
 	return 0;
 }
+
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
+static int wlan_pre_fmd(void)
+{
+#define MAX_WAIT_OFF_DONE 10
+
+	int retry = 0;
+
+	if (kalGetShutdownState()) {
+		while (kalGetShutdownState() == 1) {
+			if (retry > MAX_WAIT_OFF_DONE) {
+				DBGLOG(INIT, WARN,
+					"shutdown off over 1s, retry = %d\n",
+					retry);
+			}
+			kalMsleep(100);
+			retry++;
+		}
+	} else
+		wlanShutdown();
+
+	DBGLOG(INIT, INFO, "wifi off success\n");
+	return 0;
+}
+
+static int wlan_post_fmd(void)
+{
+	return wlan_chip_power_down_notify(0);
+}
+#endif
 
 static void unregister_connv3_cbs(void)
 {
@@ -3070,6 +3110,13 @@ static void register_connv3_cbs(void)
 	cb.pre_cal_cb.pwr_on_cb = wlan_precal_pwron_v2;
 	cb.pre_cal_cb.do_cal_cb = wlan_precal_docal_v2;
 	cb.pre_cal_cb.pre_cal_error = wlan_precal_err;
+#endif
+
+#if KERNEL_VERSION(6, 6, 0) < LINUX_VERSION_CODE
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
+	cb.fmd_cb.pre_fmd_cb = wlan_pre_fmd;
+	cb.fmd_cb.post_fmd_cb = wlan_post_fmd;
+#endif
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT

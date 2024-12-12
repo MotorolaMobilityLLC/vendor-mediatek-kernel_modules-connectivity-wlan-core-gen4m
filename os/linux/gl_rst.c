@@ -699,11 +699,6 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	if (kalIsResetting())
 		goto exit;
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-	if (kalIsShutdown())
-		goto exit;
-#endif
-
 	if (prAdapter) {
 		prChipInfo = prAdapter->chip_info;
 
@@ -751,6 +746,12 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 
 	glResetUpdateFlag(TRUE);
 	glResetOnEndUpdateFlag(TRUE);
+
+	if (kalGetShutdownState()) {
+		DBGLOG(INIT, INFO, "skip in shutdown\n");
+		glResetCleanResetFlag();
+		goto exit;
+	}
 
 #if CFG_SUPPORT_CONNAC1X
 	if (eResetReason != RST_BT_TRIGGER)
