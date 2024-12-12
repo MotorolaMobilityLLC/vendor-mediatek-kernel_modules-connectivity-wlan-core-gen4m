@@ -4508,6 +4508,10 @@ kalIPv6FrameClassifier(struct GLUE_INFO *prGlueInfo,
 		ucSeqNo = nicIncreaseTxSeqNum(prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMPV6);
+	} else if (ucIpv6Proto == IPV6_PROTOCOL_FRAGMENT) {
+#if CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_IPV6_FRAG);
+#endif
 	}
 
 	return TRUE;

@@ -120,7 +120,7 @@
 #define IPV6_HDR_IP_DST_ADDR_MAC_LOW_OFFSET     37
 #define IPV6_PROTOCOL_HOP_BY_HOP                0
 #define IPV6_PROTOCOL_ICMPV6                    0x3A
-
+#define IPV6_PROTOCOL_FRAGMENT                  0x2C
 
 #define IPV6_UDP_PORT_DHCPC			546
 #define IPV6_UDP_PORT_DHCPS			547

@@ -171,6 +171,7 @@ const char *const TXS_PACKET_TYPE[ENUM_PKT_FLAG_NUM] = {
 	[ENUM_PKT_ICMPV6] = "ICMPV6",
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 	[ENUM_PKT_IP_FRAG] = "IP FRAG",
+	[ENUM_PKT_IPV6_FRAG] = "IPV6 FRAG",
 #endif
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	[ENUM_PKT_802_11_MGMT] = "802_11_MGMT",
@@ -2075,7 +2076,8 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
 			ucChksumFlag &= ~TX_CS_TCP_UDP_GEN;
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
-		else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
+		else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG
+			|| prMsduInfo->ucPktType == ENUM_PKT_IPV6_FRAG)
 			ucChksumFlag &= ~(TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN);
 #endif
 #else
@@ -2097,7 +2099,8 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		 *   let CSO respect the ip_summed flag.
 		 */
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
-		if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
+		if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG
+			|| prMsduInfo->ucPktType == ENUM_PKT_IPV6_FRAG)
 			ucChksumFlag &= ~(TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN);
 #endif
 #endif
@@ -3178,7 +3181,8 @@ static u_int8_t txsRequired(struct ADAPTER *prAdapter,
 		return FALSE;
 
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
-	else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
+	else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG
+		|| prMsduInfo->ucPktType == ENUM_PKT_IPV6_FRAG)
 		return FALSE;
 #endif
 
@@ -3313,6 +3317,8 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_IP_FRAG))
 			prMsduInfo->ucPktType = ENUM_PKT_IP_FRAG;
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_IPV6_FRAG))
+			prMsduInfo->ucPktType = ENUM_PKT_IPV6_FRAG;
 #endif
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 		if (prMsduInfo->ucPktType != ENUM_PKT_ICMP) {

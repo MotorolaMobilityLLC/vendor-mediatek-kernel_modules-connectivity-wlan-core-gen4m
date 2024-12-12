@@ -4106,6 +4106,9 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter, void *prPacket)
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_IP_FRAG))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_IP_FRAG);
+
+			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_IPV6_FRAG))
+				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_IPV6_FRAG);
 #endif
 		}
 

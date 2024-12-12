@@ -471,6 +471,7 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_ICMPV6,	/* ICMPV6 */
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 	ENUM_PKT_IP_FRAG,	/* fragmented IP packet */
+	ENUM_PKT_IPV6_FRAG,	/* fragmented IP packet */
 #endif
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	ENUM_PKT_802_11_MGMT,
