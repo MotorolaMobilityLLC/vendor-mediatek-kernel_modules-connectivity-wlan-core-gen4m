@@ -301,7 +301,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = HIGH_PRIORITY
 		},
 		.rHifNapiThreadInfo = {
-			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4CpuMask = CPU_BIG_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
