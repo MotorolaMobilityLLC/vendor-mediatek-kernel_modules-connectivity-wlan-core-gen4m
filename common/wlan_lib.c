@@ -10095,6 +10095,9 @@ int32_t wlanCfgFindNextTokenWithEqual(struct WLAN_CFG_PARSE_STATE_S
 			x++;
 			continue;
 		case '#':
+#if CFG_TC10_FEATURE
+		case '[':
+#endif
 			while (*x && (*x != '\n'))
 				x++;
 			if (*x == '\n') {
