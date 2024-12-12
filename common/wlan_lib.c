@@ -8314,6 +8314,20 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L4, FEATURE_TO_CUSTOMER);
 	prWifiVar->au4DriverTxDelayMax[4] = UINT_MAX;
 
+	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[0],
+		"TxLatencyDriver1DelayMaxL1",
+		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L1, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[1],
+		"TxLatencyDriver1DelayMaxL2",
+		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L2, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[2],
+		"TxLatencyDriver1DelayMaxL3",
+		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L3, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[3],
+		"TxLatencyDriver1DelayMaxL4",
+		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L4, FEATURE_TO_CUSTOMER);
+	prWifiVar->au4DriverHifTxDelayMax[4] = UINT_MAX;
+
 	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[0],
 		"TxLatencyConnsysDelayMaxL1",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L1, FEATURE_TO_CUSTOMER);
@@ -11251,6 +11265,32 @@ static void halAddDriverLatencyCount(struct ADAPTER *prAdapter,
 
 	wlanCountTxDelayOverLimit(prAdapter, DRIVER_DELAY, u4DriverLatency);
 }
+
+static void halAddDriverHifLatencyCount(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4DriverHifLatency)
+{
+	struct TX_LATENCY_STATS *prCounting;
+	uint32_t *pDriverHifDelay;
+	uint32_t *pMaxDriverHifDelay =
+		prAdapter->rWifiVar.au4DriverHifTxDelayMax;
+	uint8_t i;
+
+	if (ucBssIndex >= BSSID_NUM)
+		return;
+
+	prCounting = &prAdapter->rMsduReportStats.rCounting;
+	prCounting->au8AccumulatedDelay[DRIVER_HIF_TX_DELAY][ucBssIndex] +=
+					u4DriverHifLatency;
+
+	pDriverHifDelay = prCounting->au4DriverHifLatency[ucBssIndex];
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4DriverHifLatency <= *pMaxDriverHifDelay++) {
+			GLUE_INC_REF_CNT(pDriverHifDelay[i]);
+			break;
+		}
+	}
+}
 #endif
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE && CFG_ENABLE_PER_STA_STATISTICS
@@ -11482,6 +11522,19 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 				(struct MSG_HDR *) prAutoTdls,
 				MSG_SEND_METHOD_BUF);
 #endif
+		}
+		break;
+	case TX_PROF_TAG_ACQR_MSDU_TOK:
+		if (prPktProfile->fgIsValid) {
+#if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8HifAcqrMsduTime = StatsEnvTimeGet();
+
+			halAddDriverHifLatencyCount(prAdapter,
+				prMsduInfo->ucBssIndex,
+				((uint32_t)(prPktProfile->u8HifAcqrMsduTime -
+				prPktProfile->u8HifTxTime)) /
+				USEC_PER_SEC);
+#endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 		}
 		break;
 	default:
