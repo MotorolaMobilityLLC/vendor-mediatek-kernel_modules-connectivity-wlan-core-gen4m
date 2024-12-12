@@ -11839,7 +11839,9 @@ uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
 			aucDelayInfo);
 
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 	connLogPkt(prAdapter, prMsduInfo, rTxDoneStatus);
+#endif
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prMsduInfo->ucPktType == ENUM_PKT_1X)

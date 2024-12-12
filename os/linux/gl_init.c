@@ -5387,11 +5387,13 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 					sizeof(struct PARAM_MULTICAST_LIST));
 
 #if (CFG_SUPPORT_IGMP_OFLD == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 			DBGLOG(INIT, WARN,
 					"Processing u4Idx %d\n", u4Idx);
 			wlanSetMcGroupList(prGlueInfo, prDev, TRUE,
 						&ucNum,
 						&rMcAddrList.aucMcAddrList[0]);
+#endif
 #endif
 			if (ucNum < MAX_NUM_GROUP_ADDR) {
 				COPY_MAC_ADDR(

@@ -282,10 +282,12 @@
 
 #define CFG_CH_SELECT_ENHANCEMENT	0
 
-#define CFG_SAP_RPS_SUPPORT	(CFG_EXT_FEATURE && CFG_SUPPORT_CONNAC3X)
-#define CFG_SAP_SUS_SUPPORT	(CFG_EXT_FEATURE && CFG_SUPPORT_CONNAC3X)
+#define CFG_SAP_RPS_SUPPORT	0
+#define CFG_SAP_SUS_SUPPORT	0
 
 #define CFG_SUPPORT_ANT_SWAP		1
+
+#define CFG_SUPPORT_TX_ANT_CTRL	(CFG_EXT_FEATURE)
 
 /* If skb_buff mark field marked with pre-defined value, change priority to VO*/
 #define CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD	1
@@ -1479,6 +1481,10 @@
 #define CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO	0
 #endif
 
+#ifndef CFG_SUPPORT_APS
+#define CFG_SUPPORT_APS				0
+#endif
+
 #define WNM_UNIT_TEST CFG_SUPPORT_802_11V
 
 #define CFG_SUPPORT_802_11V_MBSSID		0
@@ -1976,8 +1982,9 @@
 #define CFG_SUPPORT_NCHO	(CFG_EXT_FEATURE)
 #define CFG_SUPPORT_ASSURANCE	(CFG_EXT_FEATURE)
 #define CFG_SUPPORT_LLW_SCAN		(1)
-#define CFG_STAINFO_FEATURE (CFG_EXT_FEATURE)
+#define CFG_STAINFO_FEATURE (0)
 #define CFG_SUPPORT_STA_INFO (CFG_EXT_FEATURE)
+#define CFG_SUPPORT_BW_SELECT (0)
 
 /*------------------------------------------------------------------------------
  * Flags of Manipulate TID for UDP packets
@@ -3077,9 +3084,15 @@
  *------------------------------------------------------------------------------
  */
 #if CFG_EXT_FEATURE
-#define CFG_SUPPORT_SA_LOG 0
+#define CFG_SUPPORT_SA_LOG 1
+#define CFG_SA_LOG_SIMPLIFY 1
+#define CFG_SUPPORT_CABLE_DETECT 0
+#define CFG_HDM_WIFI_SUPPORT 1
 #else
 #define CFG_SUPPORT_SA_LOG 0
+#define CFG_SA_LOG_SIMPLIFY 0
+#define CFG_SUPPORT_CABLE_DETECT 0
+#define CFG_HDM_WIFI_SUPPORT 0
 #endif
 
 #define CFG_ENABLE_MAWD_MD_RING 0

@@ -478,9 +478,11 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 				msg_type, u2IpId, prDhcp->aucDhcpOption[2],
 				u4TransID, u2SSN);
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 			connLogDhcpRx(g_prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				u4DhcpOpt);
+#endif
 #endif
 		} else { /* EVENT_TX */
 			DBGLOG_LIMITED(TX, INFO,
@@ -489,10 +491,12 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 				prDhcp->aucDhcpOption[2],
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 			connLogDhcpTx(g_prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				u4DhcpOpt,
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
+#endif
 #endif
 		}
 	} else if (u2UdpSrcPort == UDP_PORT_DNS ||
@@ -920,12 +924,14 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 					NTOHS(*(uint16_t *)&pucEapol[6]),
 					pucEapol[8], u2SSN);
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 				connLogEapRx(
 					g_prAdapter,
 					GLUE_GET_PKT_BSS_IDX(pvPacket),
 					u2EapLen,
 					pucEapol[8],
 					pucEapol[4]);
+#endif
 #endif
 				break;
 			case EVENT_TX:
@@ -936,6 +942,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 					pucEapol[8],
 					GLUE_GET_PKT_SEQ_NO(pvPacket));
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 				connLogEapTx(
 					g_prAdapter,
 					GLUE_GET_PKT_BSS_IDX(pvPacket),
@@ -943,6 +950,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 					pucEapol[8],
 					pucEapol[4],
 					GLUE_GET_PKT_SEQ_NO(pvPacket));
+#endif
 #endif
 				break;
 			}
@@ -963,11 +971,13 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 		case ETH_EAPOL_KEY: /* key */
 			WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 			connLogEapKey(g_prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				eventType,
 				pucEapol,
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
+#endif
 #endif
 			switch (eventType) {
 			case EVENT_RX:

@@ -244,6 +244,7 @@
 #if CFG_SUPPORT_NAN
 #include "gl_nan_os.h"
 #include "gl_vendor_nan.h"
+#include "nan_data_engine.h"
 #include "nanDiscovery.h"
 #include "nanScheduler.h"
 #include "nanReg.h"
@@ -353,6 +354,7 @@
 #include "p2p_ext.h"
 #include "roaming_ext.h"
 #include "twt_ext.h"
+#include "gl_sys.h"
 #endif
 
 #if CFG_SUPPORT_TDLS_AUTO

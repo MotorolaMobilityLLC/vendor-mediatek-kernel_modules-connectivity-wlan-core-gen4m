@@ -1876,9 +1876,11 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			DBGLOG(APS, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 			connLogBlockList(prAdapter,
 				ucBssIndex,
 				prBssDesc);
+#endif
 #endif
 			return FALSE;
 		}
@@ -2058,9 +2060,11 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		DBGLOG(APS, WARN, MACSTR " rsn policy select fail.\n",
 			MAC2STR(prBssDesc->aucBSSID));
 #if (CFG_SUPPORT_CONN_LOG == 1)
+#ifdef DX5_TC10_TODO /* DX5 TC10 */
 		connLogRsnMismatch(prAdapter,
 			ucBssIndex,
 			prBssDesc);
+#endif
 #endif
 		return FALSE;
 	}
