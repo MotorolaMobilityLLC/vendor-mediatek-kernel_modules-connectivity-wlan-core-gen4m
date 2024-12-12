@@ -4533,11 +4533,28 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo)
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	struct notifier_block wf_pdwnc_notifier;
 #endif
-
 #if CFG_SUPPORT_IDC_RIL_BRIDGE || CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 	struct notifier_block ril_notifier_block;
 	int init_ril_notifier;
 #endif
+	struct net_device *prNetDevice;
+	struct delayed_work workq;
+	struct delayed_work sched_workq;
+#if CFG_ENABLE_EARLY_SUSPEND
+	struct early_suspend wlan_early_suspend_desc;
+#endif
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	struct dentry *dbgFsDir;
+#endif
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+	struct dentry *serDbgFsDir;
+#endif
+	struct miscdevice wlan_object;
+#if (CFG_SUPPORT_STATISTICS == 1)
+	struct WAKE_INFO_T *prWakeInfoStatics;
+#endif
+	u_int8_t fgCmdDumpIsDone;
+	u_int32_t u4WlanFbLen = 0;
 
 	if (!prGlueInfo)
 		return;
@@ -4558,6 +4575,23 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo)
 	ril_notifier_block   = prGlueInfo->ril_notifier_block;
 	init_ril_notifier    = prGlueInfo->init_ril_notifier;
 #endif
+	prNetDevice          = prGlueInfo->prNetDevice;
+	workq                = prGlueInfo->workq;
+	sched_workq          = prGlueInfo->sched_workq;
+#if CFG_ENABLE_EARLY_SUSPEND
+	wlan_early_suspend_desc = prGlueInfo->wlan_early_suspend_desc;
+#endif
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	dbgFsDir             = prGlueInfo->dbgFsDir;
+#endif
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+	serDbgFsDir          = prGlueInfo->serDbgFsDir;
+#endif
+	wlan_object          = prGlueInfo->wlan_object;
+#if (CFG_SUPPORT_STATISTICS == 1)
+	prWakeInfoStatics    = prGlueInfo->prWakeInfoStatics;
+#endif
+	fgCmdDumpIsDone      = prGlueInfo->fgCmdDumpIsDone;
 
 	kalMemZero(prGlueInfo, sizeof(struct GLUE_INFO));
 
@@ -4577,6 +4611,23 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->ril_notifier_block   = ril_notifier_block;
 	prGlueInfo->init_ril_notifier    = init_ril_notifier;
 #endif
+	prGlueInfo->prNetDevice          = prNetDevice;
+	prGlueInfo->workq                = workq;
+	prGlueInfo->sched_workq          = sched_workq;
+#if CFG_ENABLE_EARLY_SUSPEND
+	prGlueInfo->wlan_early_suspend_desc = wlan_early_suspend_desc;
+#endif
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	prGlueInfo->dbgFsDir             = dbgFsDir;
+#endif
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+	prGlueInfo->serDbgFsDir          = serDbgFsDir;
+#endif
+	prGlueInfo->wlan_object          = wlan_object;
+#if (CFG_SUPPORT_STATISTICS == 1)
+	prGlueInfo->prWakeInfoStatics    = prWakeInfoStatics;
+#endif
+	prGlueInfo->fgCmdDumpIsDone      = fgCmdDumpIsDone;
 
 	/* initialize semaphore for halt control */
 	sema_init(&prGlueInfo->halt_sem, 1);
@@ -4592,8 +4643,14 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->ucCSIBandIdx = ENUM_BAND_0;
 #endif
 	kalMemSet(&prGlueInfo->eco_info, 0xFF, sizeof(struct ECO_INFO));
-	kalStrnCpy(prGlueInfo->aucFbName,
-		"wlan_fb_notifier", sizeof(prGlueInfo->aucFbName));
+
+	if ((kalStrLen("wlan_fb_notifier") + 1) <
+			(sizeof(prGlueInfo->aucFbName) - 1))
+		u4WlanFbLen = kalStrLen("wlan_fb_notifier") + 1;
+	else
+		u4WlanFbLen = sizeof(prGlueInfo->aucFbName) - 1;
+
+	kalStrnCpy(prGlueInfo->aucFbName, "wlan_fb_notifier", u4WlanFbLen);
 }
 
 static struct wireless_dev *wlanCreateWirelessDevice(void)
