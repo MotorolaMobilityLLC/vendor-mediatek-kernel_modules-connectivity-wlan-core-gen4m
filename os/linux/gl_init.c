@@ -5797,7 +5797,8 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 		pucMergedBuf = kalMemZAlloc(u4ConfigMergedLen, VIR_MEM_TYPE);
 		if (pucMergedBuf) {
 			if (pucConfigBuf) {
-				pucConfigBuf[u4ConfigReadLen-1] = '\n';
+				if (pucIniBuf)
+					pucConfigBuf[u4ConfigReadLen-1] = '\n';
 				kalMemCopy(pucMergedBuf, pucConfigBuf,
 					u4ConfigReadLen);
 				kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
