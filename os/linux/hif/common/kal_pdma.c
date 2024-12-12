@@ -1823,17 +1823,18 @@ static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
 {
 	struct BUS_INFO *prBusInfo =
 		prGlueInfo->prAdapter->chip_info->bus_info;
-	struct timespec64 rNowTs, rTime;
+	uint64_t u8Now, u8Delta;
 
-	KAL_GET_TS64(&rNowTs);
-	if (prBusInfo->u4EnHifIntTs &&
-	    kalGetDeltaTime(&rNowTs, &prBusInfo->rHifIntTs, &rTime)) {
+	u8Now = kalGetBootTime();
+	if (prBusInfo->u4EnHifIntUs &&
+		TIME_AFTER64(u8Now, prBusInfo->u8HifIntUs)) {
+		u8Delta = TIME_ABS_DIFF64(u8Now, prBusInfo->u8HifIntUs);
 		DBGLOG(HAL, INFO,
-		       "RX[%u] done bit ready time[%lld.%.9ld] cnt[%d]\n",
+		       "RX[%u] done bit ready time[%lld.%.6lld] cnt[%d]\n",
 		       u2Port,
-		       (long long)rTime.tv_sec, rTime.tv_nsec,
+		       USEC_TO_SEC(u8Delta), USEC_REM_TO_SEC(u8Delta),
 		       prBusInfo->u4HifIntTsCnt);
-		prBusInfo->u4EnHifIntTs = 0;
+		prBusInfo->u4EnHifIntUs = 0;
 		prBusInfo->u4HifIntTsCnt = 0;
 	}
 }

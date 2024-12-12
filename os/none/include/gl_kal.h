@@ -896,6 +896,14 @@ do { \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \
 	}
 
+#define KAL_BOOTTIME_INTERVAL_DECLARATION()     uint64_t __rTs = 0, __rTe = 0
+#define KAL_BOOT_TIME_START()                (__rTs = KAL_GET_SYS_BOOTTIME())
+#define KAL_BOOT_TIME_END()                  (__rTe = KAL_GET_SYS_BOOTTIME())
+#define KAL_GET_BOOTTIME_INTERVAL() \
+	(NSEC_TO_USEC(__rTe - __rTs))
+#define KAL_ADD_BOOTTIME_INTERVAL(_Interval) \
+	((_Interval) += KAL_GET_BOOTTIME_INTERVAL())
+
 /* TODO: os-related HIF should we move to os/xxx/hif/include? */
 #if defined(_HIF_PCIE)
 #define KAL_DMA_TO_DEVICE	DMA_TO_DEVICE
@@ -2173,7 +2181,6 @@ uint32_t kalSyncTimeToFW(struct ADAPTER *prAdapter,
 	u_int8_t fgInitCmd);
 void kalSetLogTooMuch(uint32_t u4DriverLevel,
 	uint32_t u4FwLevel);
-void kalGetRealTime(struct REAL_TIME *prRealTime);
 
 void kalVendorEventRssiBeyondRange(
 	struct GLUE_INFO *prGlueInfo,

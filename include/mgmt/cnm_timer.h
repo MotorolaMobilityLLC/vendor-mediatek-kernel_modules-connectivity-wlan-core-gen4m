@@ -101,7 +101,6 @@ struct TIMER {
 /* In 32-bit variable, 0x00000001~0x7fffffff -> positive number,
  *                     0x80000000~0xffffffff -> negative number
  */
-#define TIME_BEFORE_64bit(a, b)		(a < b)
 
 #define TIME_BEFORE(a, b) \
 	((uint32_t)((uint32_t)(a) - (uint32_t)(b)) > 0x7fffffff)
@@ -111,6 +110,14 @@ struct TIMER {
  */
 
 #define TIME_AFTER(a, b)		TIME_BEFORE(b, a)
+
+#define TIME_BEFORE64(a, b) \
+	((uint64_t)((uint64_t)(a) - (uint64_t)(b)) > 0x7fffffffffffffff)
+
+#define TIME_AFTER64(a, b)		TIME_BEFORE64(b, a)
+
+#define TIME_ABS_DIFF64(a, b) \
+	(((a) > (b)) ? ((a) - (b)) : ((b) - (a)))
 
 #define SYSTIME_TO_SEC(_systime)	((_systime) / KAL_HZ)
 #define SEC_TO_SYSTIME(_sec)		((_sec) * KAL_HZ)
@@ -123,8 +130,8 @@ struct TIMER {
 #define SEC_TO_TIME_SECOND(_sec)	((uint32_t)(_sec) % SEC_PER_MINUTE)
 
 /* The macros to convert second & millisecond */
-#define MSEC_TO_SEC(_msec)		((_msec) / MSEC_PER_SEC)
-#define NSEC_TO_USEC(_nsec)		((_nsec) / NSEC_PER_USEC)
+#define MSEC_TO_SEC(_msec)		(kal_div_u64((_msec), MSEC_PER_SEC))
+#define NSEC_TO_USEC(_nsec)		(kal_div_u64((_nsec), NSEC_PER_USEC))
 #define SEC_TO_MSEC(_sec)		((uint32_t)(_sec) * MSEC_PER_SEC)
 #define SEC_TO_USEC(_sec)		((uint32_t)(_sec) * USEC_PER_SEC)
 #define SEC_TO_NSEC(_sec)		((uint64_t)(_sec) * NSEC_PER_SEC)
@@ -132,7 +139,9 @@ struct TIMER {
 	((uint32_t)(_sec) * USEC_PER_SEC / USEC_PER_TU)
 
 /* The macros to convert millisecond & microsecond */
-#define USEC_TO_MSEC(_usec)		((_usec) / USEC_PER_MSEC)
+#define USEC_TO_MSEC(_usec)		(kal_div_u64((_usec), USEC_PER_MSEC))
+#define USEC_TO_SEC(_usec)		(kal_div_u64((_usec), USEC_PER_SEC))
+#define USEC_REM_TO_SEC(_usec)	((_usec) % USEC_PER_SEC)
 #define MSEC_TO_USEC(_msec)		((uint32_t)(_msec) * USEC_PER_MSEC)
 
 /* The macros to convert TU & microsecond, TU & millisecond */
@@ -173,6 +182,17 @@ struct TIMER {
 #define CHECK_FOR_TIMEOUT(_currentTime, _timeoutStartingTime, _timeout) \
 	CHECK_FOR_EXPIRATION((_currentTime), \
 	((_timeoutStartingTime) + (_timeout)))
+
+
+/* The macro to check for expiration using 64-bit unsigned integers */
+#define CHECK_FOR_EXPIRATION64(_currentTime, _expirationTime) \
+	(((uint64_t)(_currentTime) - (uint64_t)(_expirationTime)) \
+		<= 0x7FFFFFFFFFFFFFFFULL)
+
+/* The macro to check for the timeout using 64-bit unsigned integers */
+#define CHECK_FOR_TIMEOUT64(_currentTime, _timeoutStartingTime, _timeout) \
+	CHECK_FOR_EXPIRATION64((_currentTime), \
+		((_timeoutStartingTime) + (_timeout)))
 
 /* The macro to set the expiration time with a specified timeout */
 /* Watch out for round up. */

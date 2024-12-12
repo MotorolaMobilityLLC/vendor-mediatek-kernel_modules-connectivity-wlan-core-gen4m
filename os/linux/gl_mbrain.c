@@ -353,7 +353,7 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 
 	static enum ENUM_MBMC_BN eLlsBand = ENUM_BAND_0;
 	static enum ENUM_STATS_LLS_AC eLlsAc = STATS_LLS_WIFI_AC_VO;
-	struct timespec64 tv;
+	uint64_t u8Time;
 	uint8_t i;
 
 	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
@@ -398,10 +398,10 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 			if (status != WIFI2MBR_SUCCESS)
 				continue;
 
-			KAL_GET_TS64(&tv);
+			u8Time = kalGetBootTime();
 			dest->hdr.tag = WIFI2MBR_TAG_LLS_RATE;
 			dest->hdr.ver = 1;
-			dest->timestamp = KAL_TIME_TO_MSEC(tv);
+			dest->timestamp = USEC_TO_MSEC(u8Time);
 
 			*pu2Len = sizeof(*dest);
 			break;
@@ -422,12 +422,12 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 
 		kalMemCopyFromIo(&rRadio, src + eLlsBand,
 			sizeof(struct STATS_LLS_WIFI_RADIO_STAT));
-		KAL_GET_TS64(&tv);
+		u8Time = kalGetBootTime();
 
 		dest = (struct wifi2mbr_llsRadioInfo *)buf;
 		dest->hdr.tag = WIFI2MBR_TAG_LLS_RADIO;
 		dest->hdr.ver = 1;
-		dest->timestamp = KAL_TIME_TO_MSEC(tv);
+		dest->timestamp = USEC_TO_MSEC(u8Time);
 		dest->radio = rRadio.radio;
 		dest->on_time = rRadio.on_time;
 		dest->tx_time = rRadio.tx_time;
@@ -460,12 +460,12 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 		kalMemCopyFromIo(&rAc,
 			&prAdapter->prLinkStatsIface[ucBssIdx].ac[eLlsAc],
 			sizeof(struct STATS_LLS_WMM_AC_STAT));
-		KAL_GET_TS64(&tv);
+		u8Time = kalGetBootTime();
 
 		dest = (struct wifi2mbr_llsAcInfo *)buf;
 		dest->hdr.tag = WIFI2MBR_TAG_LLS_RADIO;
 		dest->hdr.ver = 1;
-		dest->timestamp = KAL_TIME_TO_MSEC(tv);
+		dest->timestamp = USEC_TO_MSEC(u8Time);
 		dest->ac = conv_ac_to_mbr(eLlsAc);
 		dest->tx_mpdu = rAc.tx_mpdu;
 		dest->rx_mpdu = prBssInfo->u4RxMpduAc[eLlsAc];
@@ -540,7 +540,7 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_WIFI_ICCM
 	struct wifi2mbr_lpRatioInfo *dest = (struct wifi2mbr_lpRatioInfo *)buf;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct timespec64 tv;
+	uint64_t u8Time;
 	uint32_t u4Ret = WLAN_STATUS_FAILURE;
 
 	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
@@ -550,8 +550,8 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 
 	dest->hdr.tag = WIFI2MBR_TAG_LP_RATIO;
 	dest->hdr.ver = 1;
-	KAL_GET_TS64(&tv);
-	dest->timestamp = KAL_TIME_TO_MSEC(tv);
+	u8Time = kalGetBootTime();
+	dest->timestamp = USEC_TO_MSEC(u8Time);
 	dest->radio = u2CurLoopIdx;
 
 	if (u2CurLoopIdx == 0) {

@@ -5159,7 +5159,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	int r;
 	u_int8_t fgCmdDbgEn;
 
-	KAL_TIME_INTERVAL_DECLARATION();
+	KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 	if ((prGlueInfo == NULL) || (prGlueInfo->prAdapter == NULL))
 		return WLAN_STATUS_FAILURE;
@@ -5167,7 +5167,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	prAdapter = prGlueInfo->prAdapter;
 	fgCmdDbgEn = wlanIfCmdDbgEn(prAdapter);
 
-	KAL_REC_TIME_START();
+	KAL_BOOT_TIME_START();
 
 	/* GLUE_SPIN_LOCK_DECLARATION(); */
 
@@ -5338,11 +5338,11 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	up(&prGlueInfo->ioctl_sem);
 	up(&g_halt_sem);
 
-	KAL_REC_TIME_END();
+	KAL_BOOT_TIME_END();
 	if (ret != WLAN_STATUS_SUCCESS)
-		DBGLOG(OID, WARN, "ret(%x) time: %u us\n",
+		DBGLOG(OID, WARN, "ret(%x) time: %llu us\n",
 			ret,
-			KAL_GET_TIME_INTERVAL());
+			KAL_GET_BOOTTIME_INTERVAL());
 
 	return ret;
 }
@@ -8996,15 +8996,7 @@ nla_put_failure:
  */
 uint64_t kalGetBootTime(void)
 {
-	struct timespec64 ts;
-	uint64_t bootTime = 0;
-
-	KAL_GET_SYS_BOOTTIME_TS64(&ts);
-
-	bootTime = ts.tv_sec;
-	bootTime *= USEC_PER_SEC;
-	bootTime += ts.tv_nsec / NSEC_PER_USEC;
-	return bootTime;
+	return kal_div_u64(KAL_GET_SYS_BOOTTIME(), NSEC_PER_USEC);
 }
 
 #if (CFG_CE_ASSERT_DUMP == 1)
@@ -15814,22 +15806,6 @@ uint64_t kalGetUIntRealTime(void)
 	return ktime_get_real_ns();
 }
 
-void kalGetRealTime(struct REAL_TIME *prRealTime)
-{
-	struct rtc_time tm;
-	struct timespec64 tv = { 0 };
-
-	ktime_get_real_ts64(&tv);
-	rtc_time64_to_tm(tv.tv_sec, &tm);
-	prRealTime->i4TmMon = tm.tm_mon;
-	prRealTime->i4TmDay = tm.tm_mday;
-	prRealTime->i4TmHour = tm.tm_hour;
-	prRealTime->i4TmMin = tm.tm_min;
-	prRealTime->i4TmSec = tm.tm_sec;
-	prRealTime->u4TvValSec = (uint32_t)tv.tv_sec;
-	prRealTime->u4TvValUsec = (uint32_t)KAL_GET_USEC(tv);
-}
-
 void kalVendorEventRssiBeyondRange(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucBssIdx, int rssi)
@@ -15842,16 +15818,6 @@ void kalVendorEventRssiBeyondRange(
 
 
 #if CFG_SUPPORT_TPENHANCE_MODE
-inline uint64_t kalTpeTimeUs(void)
-{
-	struct timespec64 _now;
-
-	KAL_GET_TS64(&_now);
-
-	return (uint64_t)((int)_now.tv_sec * 1000000 +
-			(int)KAL_GET_USEC(_now));
-}
-
 void kalTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
 		uint8_t ucPktJump)
 {
@@ -16008,7 +15974,7 @@ void kalTpeFlush(struct GLUE_INFO *prGlueInfo)
 	kalTpeUpdate(prGlueInfo, prTempQue,
 		prGlueInfo->prAdapter->rWifiVar.ucTpEnhancePktNum);
 
-	prGlueInfo->u8TpeTimestamp = kalTpeTimeUs();
+	prGlueInfo->u8TpeTimestamp = kalGetBootTime();
 
 	/* Append to Tx-Q */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
@@ -16132,7 +16098,7 @@ int kalTpeProcess(struct GLUE_INFO *prGlueInfo,
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	cRssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 
-	u8Nowus = kalTpeTimeUs();
+	u8Nowus = kalGetBootTime();
 
 	if (cRssi < prWifiVar->cTpEnhanceRSSI)
 		goto TpeEndFlush;

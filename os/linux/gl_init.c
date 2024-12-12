@@ -7581,19 +7581,15 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 		struct task_struct *prThread)
 {
 	uint32_t waitRet = 0;
-	struct timespec64 rEntryTs = {0};
-	struct timespec64 rNowTs = {0};
-	struct timespec64 rTimeout, rTime = {0};
+	uint64_t u8EntryUs, u8NowUs;
+	uint64_t u8Timeout = SEC_TO_USEC(10);
 	u_int8_t fgIsTimeout = FALSE;
 
 	if (!prThread) {
 		DBGLOG(INIT, INFO, "thread already stop");
 		return;
 	}
-
-	rTimeout.tv_sec = 10;
-	rTimeout.tv_nsec = 0;
-	KAL_GET_TS64(&rEntryTs);
+	u8EntryUs = kalGetBootTime();
 
 	while (TRUE) {
 		waitRet = wait_for_completion_interruptible_timeout(
@@ -7608,14 +7604,12 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 		if (fgIsTimeout)
 			continue;
 
-		KAL_GET_TS64(&rNowTs);
-		if (kalGetDeltaTime(&rNowTs, &rEntryTs, &rTime)) {
-			if (kalTimeCompare(&rTime, &rTimeout) >= 0) {
-				kalSendAeeWarning("WLAN",
-					"off wait threads from %ld.%ld\n",
-					rEntryTs.tv_sec, rEntryTs.tv_nsec);
-				fgIsTimeout = TRUE;
-			}
+		u8NowUs = kalGetBootTime();
+		if (CHECK_FOR_TIMEOUT64(u8NowUs, u8EntryUs, u8Timeout)) {
+			kalSendAeeWarning("WLAN",
+				"off wait threads from %llu, now %llu\n",
+				u8EntryUs, u8NowUs);
+			fgIsTimeout = TRUE;
 		}
 	}
 }

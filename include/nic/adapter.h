@@ -2602,8 +2602,8 @@ struct ADAPTER {
 	OS_SYSTIME rLastInvalidRxRateTime;
 #endif
 #if CFG_SUPPORT_REG_STAT_FROM_EMI
-	struct timespec64 rRegStatSyncFwTs;
-	struct timespec64 rRegStatSyncDrvTs;
+	uint64_t u8RegStatSyncFwUs;
+	uint64_t u8RegStatSyncDrvUs;
 	struct STATS_REG_STAT_FW_REPORT *prStatsAllRegStat;
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	u_int8_t fgTxRateOffsetMapped;

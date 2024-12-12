@@ -10759,14 +10759,14 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			&prAdapter->prStatsAllRegStat->u4LastUpdateTime,
 			sizeof(uint32_t));
 
-	KAL_SET_MSEC_TO_TIME(prAdapter->rRegStatSyncFwTs, u4EmiUpdateMs);
-	KAL_GET_TS64(&prAdapter->rRegStatSyncDrvTs);
-	DBGLOG(REQ, TRACE, "sync time drv:%ld.%09ld fw:%u(%ld.%09ld)\n",
-		prAdapter->rRegStatSyncDrvTs.tv_sec,
-		prAdapter->rRegStatSyncDrvTs.tv_nsec,
+	prAdapter->u8RegStatSyncFwUs = MSEC_TO_USEC(u4EmiUpdateMs);
+	prAdapter->u8RegStatSyncDrvUs = kalGetBootTime();
+	DBGLOG(REQ, TRACE, "sync time drv:%lld.%06lld fw:%u(%lld.%06lld)\n",
+		USEC_TO_SEC(prAdapter->u8RegStatSyncDrvUs),
+		USEC_REM_TO_SEC(prAdapter->u8RegStatSyncDrvUs),
 		u4EmiUpdateMs,
-		prAdapter->rRegStatSyncFwTs.tv_sec,
-		prAdapter->rRegStatSyncFwTs.tv_nsec);
+		USEC_TO_SEC(prAdapter->u8RegStatSyncFwUs),
+		USEC_REM_TO_SEC(prAdapter->u8RegStatSyncFwUs));
 #endif
 
 	if (prCmdInfo->fgIsOid)

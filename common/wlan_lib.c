@@ -6472,12 +6472,11 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	uint32_t u4CurrTick;
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
 	uint32_t u4EmiUpdateMs = 0;
-	struct timespec64 rNow;
-	struct timespec64 rDrvDiff = {0};
-	struct timespec64 rFwDiff = {0};
-	struct timespec64 rUpdate;
-	struct timespec64 rTimeout = {0};
-	struct timespec64 rPeriod;
+	uint64_t  u8NowUs;
+	uint64_t  u8DrvDiffUs = {0};
+	uint64_t  u8FwDiffUs = {0};
+	uint64_t  u8UpdateUs;
+	uint64_t  u8PeriodUs;
 #endif
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
@@ -6553,7 +6552,7 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	}
 
 	/* get last sync driver/fw time */
-	KAL_GET_TS64(&rNow);
+	u8NowUs = kalGetBootTime();
 
 	/* get EMI update time */
 	kalMemCopyFromIo(&u4EmiUpdateMs,
@@ -6564,29 +6563,29 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		goto send_cmd;
 
 	DBGLOG(REQ, TRACE,
-		"update:%u drvCur=%ld.%09ld drvSync=%ld.%09ld fwSync=%ld.%09ld\n",
+		"update:%u drvCur=%lld.%06lld drvSync=%lld.%06lld fwSync=%lld.%06lld\n",
 		u4EmiUpdateMs,
-		rNow.tv_sec, rNow.tv_nsec,
-		prAdapter->rRegStatSyncDrvTs.tv_sec,
-		prAdapter->rRegStatSyncDrvTs.tv_nsec,
-		prAdapter->rRegStatSyncFwTs.tv_sec,
-		prAdapter->rRegStatSyncFwTs.tv_nsec);
+		USEC_TO_SEC(u8NowUs), USEC_REM_TO_SEC(u8NowUs),
+		USEC_TO_SEC(prAdapter->u8RegStatSyncDrvUs),
+		USEC_REM_TO_SEC(prAdapter->u8RegStatSyncDrvUs),
+		USEC_TO_SEC(prAdapter->u8RegStatSyncFwUs),
+		USEC_REM_TO_SEC(prAdapter->u8RegStatSyncFwUs));
 
-	KAL_SET_MSEC_TO_TIME(rUpdate, u4EmiUpdateMs);
-	KAL_SET_MSEC_TO_TIME(rPeriod, prParam->u4Period);
+	u8UpdateUs = MSEC_TO_USEC(u4EmiUpdateMs);
+	u8PeriodUs = MSEC_TO_USEC(prParam->u4Period);
 
-	if (kalGetDeltaTime(&rNow, &prAdapter->rRegStatSyncDrvTs, &rDrvDiff) &&
-	    kalGetDeltaTime(&rUpdate, &prAdapter->rRegStatSyncFwTs, &rFwDiff) &&
-	    kalGetDeltaTime(&rDrvDiff, &rFwDiff, &rTimeout) &&
-	    kalTimeCompare(&rTimeout, &rPeriod) <= 0) {
+	u8DrvDiffUs = TIME_ABS_DIFF64(u8NowUs, prAdapter->u8RegStatSyncDrvUs);
+	u8FwDiffUs = TIME_ABS_DIFF64(u8UpdateUs, prAdapter->u8RegStatSyncFwUs);
+	if (TIME_AFTER64(u8NowUs, prAdapter->u8RegStatSyncDrvUs) &&
+		TIME_AFTER64(u8UpdateUs, prAdapter->u8RegStatSyncFwUs) &&
+		!CHECK_FOR_TIMEOUT64(u8DrvDiffUs, u8FwDiffUs, u8PeriodUs)) {
 		nicCollectRegStatFromEmi(prAdapter);
 	} else {
 		DBGLOG(REQ, TRACE,
-			"drvDiff=%ld.%09ld fwDiff=%ld.%09ld to=%ld.%09ld per=%ld.%09ld\n",
-			rDrvDiff.tv_sec, rDrvDiff.tv_nsec,
-			rFwDiff.tv_sec, rFwDiff.tv_nsec,
-			rTimeout.tv_sec, rTimeout.tv_nsec,
-			rPeriod.tv_sec, rPeriod.tv_nsec);
+		"drvDiff=%lld.%06lld fwDiff=%lld.%06lld per=%lld.%06lld\n",
+		USEC_TO_SEC(u8DrvDiffUs), USEC_REM_TO_SEC(u8DrvDiffUs),
+		USEC_TO_SEC(u8FwDiffUs), USEC_REM_TO_SEC(u8FwDiffUs),
+		USEC_TO_SEC(u8PeriodUs), USEC_REM_TO_SEC(u8PeriodUs));
 send_cmd:
 		rResult = sendStatsUniCmd(prAdapter, pvQueryBuffer,
 			u4QueryBufferLen, pu4QueryInfoLen,

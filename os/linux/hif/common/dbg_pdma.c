@@ -687,7 +687,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	struct MSDU_TOKEN_ENTRY *prToken;
 	struct MSDU_TOKEN_HISTORY_INFO *prHistory;
 	struct BSS_INFO *prBssInfo;
-	struct timespec64 rNowTs, rTime, rLongest, rTimeout;
+	uint64_t u8Now, u8Longest, u8Timeout, u8DeltaTime;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	u_int8_t fgIsTimeout = FALSE;
 	struct WIFI_VAR *prWifiVar;
@@ -695,7 +695,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	struct HIF_STATS *prHifStats;
 	enum ENUM_OP_MODE eOPMode = OP_MODE_NUM;
 	uint32_t u4TimeoutSerTime;
-	struct timespec64 *prLastMsduRptChangedTime;
+	uint64_t u8LastMsduRptChangedTime = 0;
 	uint32_t u4CurrentMsduRptCnt;
 
 	ASSERT(prAdapter);
@@ -713,14 +713,10 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	prWifiVar = &prAdapter->rWifiVar;
 	u4TimeoutSerTime = prWifiVar->u4MsduReportTimeoutSerTime;
 	prHifStats = &prAdapter->rHifStats;
-	prLastMsduRptChangedTime =
-		&prAdapter->prGlueInfo->rLastMsduRptChangedTime;
 
-	rTimeout.tv_sec = prWifiVar->u4MsduReportTimeout;
-	rTimeout.tv_nsec = 0;
-	rLongest.tv_sec = 0;
-	rLongest.tv_nsec = 0;
-	KAL_GET_TS64(&rNowTs);
+	u8Timeout = SEC_TO_USEC(prWifiVar->u4MsduReportTimeout);
+	u8Longest = 0;
+	u8Now = kalGetBootTime();
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
@@ -729,20 +725,20 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			continue;
 
 		if (prToken->fgInUsed &&
-		    kalGetDeltaTime(&rNowTs, &prToken->rTs, &rTime)) {
-			if (kalTimeCompare(&rTime, &rTimeout) >= 0)
-				fgIsTimeout = TRUE;
+		    CHECK_FOR_TIMEOUT64(u8Now, prToken->u8Tm, u8Timeout)) {
+			fgIsTimeout = TRUE;
 
-			/* rTime > rLongest */
-			if (kalTimeCompare(&rTime, &rLongest) > 0) {
-				rLongest = rTime;
+			/* u8DeltaTime > u8Longest */
+			u8DeltaTime = TIME_ABS_DIFF64(u8Now, prToken->u8Tm);
+			if (u8DeltaTime > u8Longest) {
+				u8Longest = u8DeltaTime;
 				u4TokenId = u4Idx;
 			}
 		}
 	}
 
 	/* Save longest to be compared for pending MSDU */
-	prAdapter->u4LongestPending = rLongest.tv_sec;
+	prAdapter->u4LongestPending = USEC_TO_SEC(u8Longest);
 
 	if (fgIsTimeout) {
 		prToken = &prTokenInfo->arToken[u4TokenId];
@@ -762,9 +758,10 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			eOPMode = prBssInfo->eCurrentOPMode;
 
 		DBGLOG(HAL, INFO,
-		       "TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[%ld.%09ld] OpMode[%u]\n",
+		       "TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[%lld.%06lld] OpMode[%u]\n",
 		       u4TokenId, prToken->ucWlanIndex, prToken->ucBssIndex,
-		       rLongest.tv_sec, rLongest.tv_nsec, eOPMode);
+		       USEC_TO_SEC(u8Longest),
+			   USEC_REM_TO_SEC(u8Longest), eOPMode);
 
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
@@ -782,7 +779,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 				prHifStats->u4DataMsduRptCount);
 		if (GLUE_GET_REF_CNT(prHifStats->u4LastDataMsduRptCount) !=
 			    u4CurrentMsduRptCnt)
-			*prLastMsduRptChangedTime = rNowTs;
+			u8LastMsduRptChangedTime = u8Now;
 
 		GLUE_SET_REF_CNT(u4CurrentMsduRptCnt,
 				 prHifStats->u4LastDataMsduRptCount);
@@ -791,27 +788,28 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		halResetTxTimeoutParams(prAdapter);
 	}
 
-	halWarningTxTimeout(prAdapter, rLongest.tv_sec);
+	halWarningTxTimeout(prAdapter, USEC_TO_SEC(u8Longest));
 #if CFG_SUPPORT_MBRAIN
-	mbrIsTxTimeout(prAdapter, u4TokenId, rLongest.tv_sec);
+	mbrIsTxTimeout(prAdapter, u4TokenId, USEC_TO_SEC(u8Longest));
 #endif
 
 	/* Trigger SER */
 	if (u4TimeoutSerTime == NIC_MSDU_REPORT_DISABLE_SER_TIME) {
 		DBGLOG(HAL, TRACE, "Do not trigger SER");
-	} else if (rLongest.tv_sec >= u4TimeoutSerTime) {
-		if (kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
-				&& rTime.tv_sec >= u4TimeoutSerTime) {
+	} else if (USEC_TO_SEC(u8Longest) >= u4TimeoutSerTime) {
+		if (CHECK_FOR_TIMEOUT64(u8Now,
+			u8LastMsduRptChangedTime,
+			SEC_TO_USEC(u4TimeoutSerTime))) {
 			prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 			DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
 				u4TimeoutSerTime);
 		} else {
 			DBGLOG(HAL, INFO,
-				"MSDU reports are returning, do not trigger SER. lastMsduRpt @ %ld, MsduRptCnt[%u] timeout[sec:%ld]",
-				prLastMsduRptChangedTime->tv_sec,
+				"MSDU reports are returning, do not trigger SER. lastMsduRpt @ %lld, MsduRptCnt[%u] timeout[sec:%lld]",
+				USEC_TO_SEC(u8LastMsduRptChangedTime),
 				GLUE_GET_REF_CNT(
 					prHifStats->u4LastDataMsduRptCount),
-				rLongest.tv_sec);
+				USEC_TO_SEC(u8Longest));
 		}
 	}
 

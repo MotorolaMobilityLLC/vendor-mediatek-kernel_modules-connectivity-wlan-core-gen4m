@@ -1377,6 +1377,10 @@ int32_t mt6632_show_stat_info(struct ADAPTER *prAdapter,
 			uint8_t fgResetCnt, uint32_t u4StatGroup);
 #endif
 
+#ifndef UINT64_MAX
+#define UINT64_MAX	(~0ULL)
+#endif
+
 #ifndef UINT32_MAX
 #define UINT32_MAX	(~0U)
 #endif

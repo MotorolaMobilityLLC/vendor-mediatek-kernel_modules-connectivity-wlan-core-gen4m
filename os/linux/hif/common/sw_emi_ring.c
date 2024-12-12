@@ -118,7 +118,7 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	uint32_t u4DrvIdx = 0, u4Cnt = 0, u4ReadBlockCnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
 
-	KAL_TIME_INTERVAL_DECLARATION();
+	KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -150,7 +150,7 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg))
-		KAL_REC_TIME_START();
+		KAL_BOOT_TIME_START();
 
 	GLUE_INC_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
 	u4ReadBlockCnt = GLUE_GET_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
@@ -192,11 +192,11 @@ end:
 	GLUE_DEC_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
-		KAL_REC_TIME_END();
+		KAL_BOOT_TIME_END();
 		fgDbg = TRUE;
 		DBGLOG(HAL, INFO,
-		       "read [0x%08x]=[0x%08x] time[%u us]\n",
-		       u4Addr, *pu4Val, KAL_GET_TIME_INTERVAL());
+		       "read [0x%08x]=[0x%08x] time[%llu us]\n",
+		       u4Addr, *pu4Val, KAL_GET_BOOTTIME_INTERVAL());
 	}
 debug:
 	if (fgDbg) {

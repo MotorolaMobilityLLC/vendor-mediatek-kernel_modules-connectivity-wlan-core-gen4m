@@ -1393,16 +1393,13 @@ do { \
  * - 'timespec64_sub()' subtracts one 'struct timespec64' from another.
  *
  * System Boot Time Retrieval:
- * - For kernel ver >= 4.18:
- *    'ktime_get_boottime_ts64()' retrieves 64-bit system boot time.
- * - For kernel ver between 3.17.0 and 4.17:
- *    'ktime_get_boottime()' and 'ktime_to_timespec64()'
- *     retrieves 64-bit system boot time.
+ * - For kernel ver >= 5.2:
+ *    'ktime_get_boottime_ns()' retrieves 64-bit system boot time.
+ * - For kernel ver < 5.2 && >=  3.17:
+ *    'ktime_get_boot_ns' retrieves 64-bit system boot time.
  * - For kernel verver < 3.17:
- *    'get_monotonic_boottime()' and 'monotonic_to_bootbased'
+ *    'ktime_to_ns(ktime_get_boottime())'
  *     retrieves system boot time.
- * Note: Functions w/o '64' suffix may not be safe for use post-2038
- *       on 32-bit systems.
  *
  * RTC Time to 'struct tm' Conversion:
  * - For kernel ver >= 3.19:
@@ -1428,20 +1425,12 @@ do { \
 #define KAL_RTC_TIME_TO_TM rtc_time_to_tm
 #endif
 
-#if KERNEL_VERSION(4, 18, 0) <= CFG80211_VERSION_CODE
-#define KAL_GET_SYS_BOOTTIME_TS64(__pTs__) ktime_get_boottime_ts64(__pTs__)
+#if KERNEL_VERSION(5, 2, 0) <= CFG80211_VERSION_CODE
+#define KAL_GET_SYS_BOOTTIME() ktime_get_boottime_ns()
 #elif KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
-#define KAL_GET_SYS_BOOTTIME_TS64(__pTs__) \
-	do {	\
-		ktime_t boottime_kt = ktime_get_boottime();		\
-		*(__pTs__) = ktime_to_timespec64(boottime_kt);	\
-	} while (0)
+#define KAL_GET_SYS_BOOTTIME() ktime_get_boot_ns()
 #else
-#define KAL_GET_SYS_BOOTTIME_TS64(__pTs__) \
-	do {	\
-		get_monotonic_boottime(__pTs__);	\
-		monotonic_to_bootbased(__pTs__);	\
-	} while (0)
+#define KAL_GET_SYS_BOOTTIME() ktime_to_ns(ktime_get_boottime())
 #endif
 
 #define KAL_GET_USEC(_time) ((uint32_t)NSEC_TO_USEC(_time.tv_nsec))
@@ -1466,6 +1455,14 @@ do { \
 	do { \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \
 	} while (0)
+
+#define KAL_BOOTTIME_INTERVAL_DECLARATION()     uint64_t __rTs = 0, __rTe = 0
+#define KAL_BOOT_TIME_START()                (__rTs = KAL_GET_SYS_BOOTTIME())
+#define KAL_BOOT_TIME_END()                  (__rTe = KAL_GET_SYS_BOOTTIME())
+#define KAL_GET_BOOTTIME_INTERVAL() \
+	(NSEC_TO_USEC(__rTe - __rTs))
+#define KAL_ADD_BOOTTIME_INTERVAL(_Interval) \
+	((_Interval) += KAL_GET_BOOTTIME_INTERVAL())
 
 #if defined(_HIF_PCIE)
 #define KAL_DMA_TO_DEVICE	DMA_TO_DEVICE
@@ -2664,12 +2661,10 @@ void kal_sched_set(struct task_struct *p, int policy,
 		int nice);
 void kalSetThreadSchPolicyPriority(struct GLUE_INFO *prGlueInfo);
 void kalSetLogTooMuch(uint32_t u4DriverLevel, uint32_t u4FwLevel);
-void kalGetRealTime(struct REAL_TIME *prRealTime);
 uint64_t kalGetUIntRealTime(void);
 void kalVendorEventRssiBeyondRange(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucBssIdx, int rssi);
 #if CFG_SUPPORT_TPENHANCE_MODE
-inline uint64_t kalTpeTimeUs(void);
 void kalTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
 		uint8_t ucPktJump);
 void kalTpeFlush(struct GLUE_INFO *prGlueInfo);

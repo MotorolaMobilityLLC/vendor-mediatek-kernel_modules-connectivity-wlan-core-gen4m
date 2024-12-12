@@ -571,7 +571,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	uint32_t u4PollingCnt = 0;
 #endif
 
-	KAL_TIME_INTERVAL_DECLARATION();
+	KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 	ASSERT(prAdapter);
 
@@ -607,13 +607,13 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* CFG_PCIE_GEN_SWITCH */
 
 	/* PCIE/AXI need to do clear own, then could start polling status */
-	KAL_REC_TIME_START();
+	KAL_BOOT_TIME_START();
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
-	KAL_REC_TIME_END();
-	u4Send = KAL_GET_TIME_INTERVAL();
+	KAL_BOOT_TIME_END();
+	u4Send = (uint32_t)KAL_GET_BOOTTIME_INTERVAL();
 	fgResult = FALSE;
 
-	KAL_REC_TIME_START();
+	KAL_BOOT_TIME_START();
 	u4CurrTick = kalGetTimeTick();
 
 	while (1) {
@@ -756,8 +756,8 @@ done:
 		halMawdWakeup(prAdapter->prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	KAL_REC_TIME_END();
-	u4DrvOwnElapsed = KAL_GET_TIME_INTERVAL();
+	KAL_BOOT_TIME_END();
+	u4DrvOwnElapsed = (uint32_t)KAL_GET_BOOTTIME_INTERVAL();
 
 	if (fgResult) {
 		DBGLOG(INIT, TRACE, DUMP_DRV_OWN_DONE,
@@ -1559,7 +1559,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_HIF_FIFO_TOKEN */
 
-	KAL_GET_TS64(&prToken->rTs);
+	prToken->u8Tm = kalGetBootTime();
 	prToken->fgInUsed = TRUE;
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
@@ -2366,8 +2366,8 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prTokenEntry;
 	struct WIFI_VAR *prWifiVar = NULL;
-	uint32_t u4ConnsysLatency;
-	struct timespec64 rNowTs;
+	uint32_t u4ConnsysLatency = 0;
+	uint64_t u8Now;
 	uint8_t ucBssIndex;
 
 #if CFG_SUPPORT_WED_PROXY
@@ -2394,15 +2394,12 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	 * since MSDU info freed on passed to DMA.
 	 */
 
-	KAL_GET_TS64(&rNowTs);
+	u8Now = kalGetBootTime();
 
-	if (rNowTs.tv_nsec < prTokenEntry->rTs.tv_nsec) {
-		rNowTs.tv_sec -= 1;
-		rNowTs.tv_nsec += NSEC_PER_SEC;
-	}
-	u4ConnsysLatency =
-		(rNowTs.tv_sec - prTokenEntry->rTs.tv_sec) * MSEC_PER_SEC +
-		(rNowTs.tv_nsec - prTokenEntry->rTs.tv_nsec) / NSEC_PER_MSEC;
+	if (TIME_AFTER64(u8Now, prTokenEntry->u8Tm))
+		u4ConnsysLatency = USEC_TO_MSEC(
+			TIME_ABS_DIFF64(u8Now,
+				prTokenEntry->u8Tm));
 
 	halAddMacLatencyCount(prAdapter, ucBssIndex, u4MacLatency);
 	if (u4AirLatency != INVALID_TX_DELAY)

@@ -522,7 +522,7 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
-	/* KAL_TIME_INTERVAL_DECLARATION(); */
+	/* KAL_BOOTTIME_INTERVAL_DECLARATION(); */
 
 	if (unlikely(!prAdapter)) {
 		DBGLOG(TX, WARN, "MLR frag - prAdapter is NULL");
@@ -577,7 +577,7 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(TX, INFO, "MLR frag - Start\n");
-	/* KAL_REC_TIME_START(); */
+	/* KAL_BOOT_TIME_START(); */
 
 	/* Step 1: Calculate and deal with split size and split number */
 	/* The fragment size must meet 802.11 spec requirement */
@@ -872,9 +872,9 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 	 */
 	kalPacketFree(prAdapter->prGlueInfo, prSkb);
 
-	/* KAL_REC_TIME_END();
+	/* KAL_BOOT_TIME_END();
 	 * DBGLOG(TX, INFO, "MLR frag - End[%lu us]\n",
-	 * KAL_GET_TIME_INTERVAL());
+	 * KAL_GET_BOOTTIME_INTERVAL());
 	 */
 	DBGLOG(TX, INFO, "MLR frag - End\n");
 

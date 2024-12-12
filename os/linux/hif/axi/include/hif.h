@@ -400,8 +400,8 @@ struct BUS_INFO {
 	u_int8_t (*checkPortForRxEventFromPse)(struct ADAPTER *prAdapter,
 		uint8_t u2Port);
 #endif
-	struct timespec64 rHifIntTs;
-	uint32_t u4EnHifIntTs;
+	uint64_t u8HifIntUs;
+	uint32_t u4EnHifIntUs;
 	uint32_t u4HifIntTsCnt;
 
 	u_int8_t fgUpdateWfdmaTh;

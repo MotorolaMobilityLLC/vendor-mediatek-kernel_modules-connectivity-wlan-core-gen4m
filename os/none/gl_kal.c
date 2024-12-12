@@ -126,10 +126,6 @@ void kalSetLogTooMuch(uint32_t u4DriverLevel,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void kalGetRealTime(struct REAL_TIME *prRealTime)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
 
 void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {

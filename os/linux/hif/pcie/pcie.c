@@ -459,9 +459,9 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 
 #if HIF_INT_TIME_DEBUG
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-	if (!prBusInfo->u4EnHifIntTs) {
-		KAL_GET_TS64(&prBusInfo->rHifIntTs);
-		prBusInfo->u4EnHifIntTs = 1;
+	if (!prBusInfo->u4EnHifIntUs) {
+		prBusInfo->u8HifIntUs = kalGetBootTime();
+		prBusInfo->u4EnHifIntUs = 1;
 	}
 	prBusInfo->u4HifIntTsCnt++;
 #endif
@@ -2646,41 +2646,41 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 	uint32_t written = 0;
 	uint8_t i = 0;
 
-	KAL_TIME_INTERVAL_DECLARATION();
+	KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 	kalMemZero(dbg, sizeof(dbg));
 
-	KAL_REC_TIME_START();
+	KAL_BOOT_TIME_START();
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
 			&prMsiInfo->prMsiLayout[i];
 		int irqn = pci_irq_vector(pdev, i);
 
-		KAL_TIME_INTERVAL_DECLARATION();
+		KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 		if (prMsiLayout && !prMsiLayout->top_handler &&
 		    !prMsiLayout->thread_handler)
 			continue;
 
-		KAL_REC_TIME_START();
+		KAL_BOOT_TIME_START();
 		synchronize_irq(irqn);
 		irq_set_affinity_hint(irqn, NULL);
 		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
-		KAL_REC_TIME_END();
+		KAL_BOOT_TIME_END();
 
 		written += kalSnprintf(dbg + written,
 				       sizeof(dbg) - written,
 				       "[%d] %u, ",
 				       irqn,
-				       (uint32_t)KAL_GET_TIME_INTERVAL());
+				       (uint32_t)KAL_GET_BOOTTIME_INTERVAL());
 	}
-	KAL_REC_TIME_END();
+	KAL_BOOT_TIME_END();
 
 	DBGLOG(INIT, INFO,
-		"Total: %u us, %s\n",
-		KAL_GET_TIME_INTERVAL(),
+		"Total: %llu us, %s\n",
+		KAL_GET_BOOTTIME_INTERVAL(),
 		dbg);
 #endif
 }

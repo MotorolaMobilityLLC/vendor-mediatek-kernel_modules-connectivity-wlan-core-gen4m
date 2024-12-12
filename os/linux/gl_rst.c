@@ -2139,43 +2139,31 @@ u_int8_t kalIsWholeChipResetting(void)
 #endif
 }
 
-void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
-{
-	rNowTs->tv_sec = 0;
-	rNowTs->tv_nsec = 0;
-	rLastTs->tv_sec = 0;
-	rLastTs->tv_nsec = 0;
-}
-
 bool IsOverRstTimeThreshold(
-	struct timespec64 *rNowTs, struct timespec64 *rLastTs)
+	uint64_t *pru8Now, uint64_t *pru8Last)
 {
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	struct timespec64 rTimeout, rTime = {0};
-	bool fgIsTimeout = TRUE;
+	uint64_t u8Timeout = SEC_TO_USEC(30);
+	uint64_t u8DeltaTime;
 
-	rTimeout.tv_sec = 30;
-	rTimeout.tv_nsec = 0;
-	KAL_GET_TS64(rNowTs);
+	if (!pru8Now || !pru8Last)
+		return FALSE;
+
+	*pru8Now = kalGetBootTime();
+	u8DeltaTime = TIME_ABS_DIFF64(*pru8Now, *pru8Last);
 	DBGLOG(INIT, INFO,
-		"Reset happen time :%ld.%09ld, last happen time :%ld.%09ld\n",
-		rNowTs->tv_sec, rNowTs->tv_nsec,
-		rLastTs->tv_sec, rLastTs->tv_nsec);
-	if (rLastTs->tv_sec != 0) {
-		if (kalGetDeltaTime(rNowTs, rLastTs, &rTime)) {
-			if (kalTimeCompare(&rTime, &rTimeout) >= 0)
-				fgIsTimeout = TRUE;
-			else
-				fgIsTimeout = FALSE;
-		}
+		"Reset happen time :%lld.%06lld, last happen time :%lld.%06lld\n",
+		USEC_TO_SEC(*pru8Now), USEC_REM_TO_SEC(*pru8Now),
+		USEC_TO_SEC(*pru8Last), USEC_REM_TO_SEC(*pru8Last));
+	if (TIME_AFTER64(*pru8Now, *pru8Last)) {
 		DBGLOG(INIT, INFO,
-			"Reset rTimeout :%ld.%ld, calculate time :%ld.%ld\n",
-			rTimeout.tv_sec,
-			rTimeout.tv_nsec,
-			rTime.tv_sec,
-			rTime.tv_nsec);
+			"Reset rTimeout :%lld.%lld, calculate time :%lld.%lld\n",
+			USEC_TO_SEC(u8Timeout), USEC_REM_TO_SEC(u8Timeout),
+			USEC_TO_SEC(u8DeltaTime),
+			USEC_REM_TO_SEC(u8DeltaTime));
+		return TIME_AFTER64(*pru8Now, *pru8Last + u8Timeout);
 	}
-	return fgIsTimeout;
+	return FALSE;
 #else
 	return TRUE;
 #endif
@@ -2224,8 +2212,8 @@ void glResetWholeChipResetTrigger(char *pcReason)
 }
 
 void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
-	struct timespec64 *rNowTs,
-	struct timespec64 *rLastTs,
+	uint64_t *pru8Now,
+	uint64_t *pru8Last,
 	enum COREDUMP_SOURCE_TYPE coredump_source,
 	enum _ENUM_CHIP_RESET_REASON_TYPE_T resetReason)
 {
@@ -2240,7 +2228,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		prWifiVar = &prAdapter->rWifiVar;
 	}
 
-	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
+	fgIsTimeout = IsOverRstTimeThreshold(pru8Now, pru8Last);
 	if (g_IsWfsysBusNoAck == TRUE) {
 		if (prAdapter) {
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -2274,7 +2262,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		if (fgIsTimeout == TRUE) {
 		/*
 		 * g_SubsysRstCnt > 3, > 30 sec,
-		 * need to update rLastTs, still do wfsys reset
+		 * need to update u8Last, still do wfsys reset
 		 */
 
 			if (g_fgRstRecover == TRUE)
@@ -2342,17 +2330,13 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 				"Don't trigger subsys reset due to driver is not ready\n");
 		}
 		g_SubsysRstTotalCnt++;
-		/*g_SubsysRstCnt < 3, but >30 sec,need to update rLastTs*/
+		/*g_SubsysRstCnt < 3, but >30 sec,need to update u8Last*/
 		if (fgIsTimeout == TRUE)
 			g_SubsysRstCnt = 1;
 	}
 
-	if (g_SubsysRstCnt == 1 &&
-		rLastTs != NULL &&
-		rNowTs != NULL) {
-		rLastTs->tv_nsec = rNowTs->tv_nsec;
-		rLastTs->tv_sec = rNowTs->tv_sec;
-	}
+	if (g_SubsysRstCnt == 1)
+		*pru8Last = *pru8Now;
 
 	g_Coredump_source = COREDUMP_SOURCE_NUM;
 	rst->force_dump = FALSE;
@@ -2362,7 +2346,7 @@ int wlan_reset_thread_main(void *data)
 {
 	struct RESET_STRUCT *rst = data;
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
-	struct timespec64 rNowTs, rLastTs;
+	uint64_t u8Now = 0, u8Last = 0;
 	int ret = 0;
 
 #if CFG_ENABLE_WAKE_LOCK
@@ -2372,8 +2356,6 @@ int wlan_reset_thread_main(void *data)
 			   prWlanRstThreadWakeLock, "WLAN rst_thread");
 	KAL_WAKE_LOCK(NULL, prWlanRstThreadWakeLock);
 #endif
-
-	glReset_timeinit(&rNowTs, &rLastTs);
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
@@ -2419,7 +2401,7 @@ int wlan_reset_thread_main(void *data)
 					glResetMsgHandler(
 						ENUM_RST_MSG_L0_START);
 					glRstWholeChipRstParamInit();
-					glReset_timeinit(&rNowTs, &rLastTs);
+					u8Now = u8Last = 0;
 				} else {
 					if (!completion_done(&g_RstOffComp))
 						complete(&g_RstOffComp);
@@ -2437,8 +2419,8 @@ int wlan_reset_thread_main(void *data)
 					"WF reset count = %d.\n",
 					g_SubsysRstCnt);
 				glResetSubsysRstProcedure(rst,
-							 &rNowTs,
-							 &rLastTs,
+							 &u8Now,
+							 &u8Last,
 							 g_Coredump_source,
 							 eResetReason);
 				/*wfsys reset done*/
@@ -2463,7 +2445,7 @@ int wlan_reset_thread_main(void *data)
 				"WF reset count = %d.\n",
 				g_SubsysRstCnt);
 			glResetSubsysRstProcedure(rst,
-				&rNowTs, &rLastTs,
+				&u8Now, &u8Last,
 				COREDUMP_SOURCE_WF_FW,
 				RST_FW_ASSERT);
 			/*wfsys reset done*/
@@ -2488,7 +2470,7 @@ int wlan_reset_thread_main(void *data)
 				"WF reset count = %d.\n",
 				g_SubsysRstCnt);
 			glResetSubsysRstProcedure(rst,
-				&rNowTs, &rLastTs,
+				&u8Now, &u8Last,
 				COREDUMP_SOURCE_WF_FW,
 				0);
 			/*wfsys reset done*/

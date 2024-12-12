@@ -240,7 +240,7 @@ u_int8_t halMbuRead8(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	uint32_t u4Addr = 0, u4Val = 0, u4Cnt = 0, u4ReadBlockCnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
 
-	KAL_TIME_INTERVAL_DECLARATION();
+	KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
@@ -289,7 +289,7 @@ u_int8_t halMbuRead8(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	prMsiMirror = &prEmi->arMsiMirror[MBU_MSI_MIRROR_IDX];
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg))
-		KAL_REC_TIME_START();
+		KAL_BOOT_TIME_START();
 
 	/* 4. Clear emi int sta */
 	prMsiMirror = &prEmi->arMsiMirror[MBU_MSI_MIRROR_IDX];
@@ -360,12 +360,12 @@ exit:
 	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg) && prMsiMirror) {
-		KAL_REC_TIME_END();
+		KAL_BOOT_TIME_END();
 		fgDbg = TRUE;
 		DBGLOG(HAL, INFO,
-		       "read [0x%08x]=[0x%08x][0x%08x] sta[0x%08x] time[%u us]\n",
+		       "read [0x%08x]=[0x%08x][0x%08x] sta[0x%08x] time[%llu us]\n",
 		       u4Addr, *pu4LowVal, *pu4HighVal, prMsiMirror->u4IntSta,
-		       KAL_GET_TIME_INTERVAL());
+		       KAL_GET_BOOTTIME_INTERVAL());
 	}
 	if (fgDbg)
 		halMbuDebug(prGlueInfo);
