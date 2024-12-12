@@ -3485,6 +3485,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 #endif
 
 			scanCheckAdaptive11rIE(pucIE, prBssDesc);
+			scanCheckCiscoCCXIE(pucIE, prBssDesc);
 
 			scanParseCheckMTKOuiIE(prAdapter,
 				pucIE, prBssDesc, eHwBand,
@@ -5291,6 +5292,43 @@ void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	prBssDesc->ucIsAdaptive11r = data & BIT(0);
 	DBGLOG(SCN, TRACE, "BSSDesc [" MACSTR "] adaptive11r = %d\n",
 		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsAdaptive11r);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Check if it is Vendor Cisco CCX IE.
+ *
+ * @param[in] pucBuf     Pointer to the Vendor IE.
+ * @param[in] prBssDesc  Pointer to the BSS_DESC structure.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void scanCheckCiscoCCXIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
+{
+	uint32_t oui;
+	struct IE_VENDOR_ADAPTIVE_11R_IE *ie;
+	uint16_t len;
+
+	if (pucBuf == NULL || prBssDesc == NULL) {
+		DBGLOG(SCN, WARN, "adp11r pucBuf %p, prBssDesc %p, skip!\n",
+			pucBuf, prBssDesc);
+		return;
+	}
+
+	/* Struct of CCXIE is same as adaptive 11r IE */
+	ie = (struct IE_VENDOR_ADAPTIVE_11R_IE *) pucBuf;
+	len = ie->ucLength;
+	if (len < 5 || len > 8)
+		return;
+
+	WLAN_GET_FIELD_BE24(ie->aucOui, &oui);
+	if (oui == VENDOR_IE_CISCO_OUI &&
+	    *(ie->aucVendorType) == VENDOR_IE_CISCO_TYPE_CCX)
+		prBssDesc->ucIsCiscoCCXIePresent = TRUE;
+
+	DBGLOG(SCN, TRACE, "BSSDesc [" MACSTR "] Cisco CCX IE present = %d\n",
+		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsCiscoCCXIePresent);
 }
 
 void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,

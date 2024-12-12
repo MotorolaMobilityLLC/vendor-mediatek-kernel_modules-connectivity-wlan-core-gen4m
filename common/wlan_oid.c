@@ -3835,6 +3835,18 @@ wlanoidSetPmkid(struct ADAPTER *prAdapter,
 	*pu4SetInfoLen = u4SetBufferLen;
 	prPmkid = (struct PARAM_PMKID *) pvSetBuffer;
 
+	if (IS_BSS_INDEX_AIS(prAdapter, prPmkid->ucBssIdx)) {
+		struct BSS_DESC *prBssDesc =
+			scanSearchBssDescByBssid(prAdapter, prPmkid->arBSSID);
+		if (prBssDesc) {
+			kalMemZero(&prPmkid->rSsid, sizeof(struct PARAM_SSID));
+			COPY_SSID(prPmkid->rSsid.aucSsid,
+				prPmkid->rSsid.u4SsidLen,
+				prBssDesc->aucSSID,
+				prBssDesc->ucSSIDLen);
+		}
+	}
+
 	return rsnSetPmkid(prAdapter, prPmkid);
 } /* wlanoidSetPmkid */
 

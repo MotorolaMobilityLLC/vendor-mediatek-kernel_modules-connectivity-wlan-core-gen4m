@@ -450,6 +450,11 @@ struct BSS_DESC {
 	uint8_t fgIsFtOverDS;
 	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
 
+	/* for Cistco CCX AP that supports single PMK
+	 * don't use PMKID thus always use auth SAE
+	 */
+	uint8_t ucIsCiscoCCXIePresent;
+
 	uint16_t u2RawLength;		/* The byte count of aucRawBuf[] */
 	uint16_t u2IELength;		/* The byte count of aucIEBuf[] */
 
@@ -1207,6 +1212,7 @@ void scanParseVHTCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 
 void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
+void scanCheckCiscoCCXIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
 void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 	uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 	enum ENUM_BAND eHwBand, uint16_t u2FrameCtrl);

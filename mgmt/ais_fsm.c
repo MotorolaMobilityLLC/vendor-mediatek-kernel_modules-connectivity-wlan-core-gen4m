@@ -1222,6 +1222,14 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	prBssid = cnmStaRecAuthAddr(prAdapter, prStaRec);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucSinglePMK) &&
+	    prBssDesc && prBssDesc->ucIsCiscoCCXIePresent &&
+	    prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE) {
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+	}
+
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA256 ||
 	    prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA384) {

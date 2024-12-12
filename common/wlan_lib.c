@@ -9007,6 +9007,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4MlrCfg, "MlrCfg", 0x3, FEATURE_TO_CUSTOMER);
 #endif
 
+	INIT_UINT(prWifiVar->ucSinglePMK,
+		"SinglePMK", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	INIT_UINT(prWifiVar->u4TxDataDelayTimeout, "TxDataDelayTimeout", 2,
 		  FEATURE_TO_CUSTOMER);

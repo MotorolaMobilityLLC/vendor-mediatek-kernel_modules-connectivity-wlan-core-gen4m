@@ -1736,6 +1736,7 @@ struct WIFI_VAR {
 	uint32_t u4DlyIntTime;
 	uint32_t u4DlyIntCnt;
 
+	u_int8_t ucSinglePMK;
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	uint32_t u4PagePoolMinCnt;
 	uint32_t u4PagePoolMaxCnt;
