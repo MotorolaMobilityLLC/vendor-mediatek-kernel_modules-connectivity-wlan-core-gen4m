@@ -603,6 +603,36 @@ void aisFreeIesMem(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t aisNeedMldBlocklist(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct PARAM_SSID rSsid = {0};
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	if (!prBssDesc->fgIsHiddenSSID)
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+
+	/* mlo is disallowed */
+	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) ||
+	    !aisSecondLinkAvailable(prAdapter, ucBssIndex))
+		return FALSE;
+
+	/* no need mlo blocklist
+	 * 1. not AP mld
+	 * 2. single link AP mld
+	 */
+	if (!prBssDesc->rMlInfo.fgValid ||
+	    scanSearchBssDescCountByMldAddrSsid(prAdapter,
+		prBssDesc->rMlInfo.aucMldAddr, !prBssDesc->fgIsHiddenSSID,
+		&rSsid) == 1)
+		return FALSE;
+
+	return TRUE;
+}
+
 struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet)
 {
@@ -4663,7 +4693,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	/* check whether multi link before restoring all links,
 	 * otherwise starec is freed
 	 */
-	if (mldStarecGetByStarec(prAdapter, prStaRec))
+	if (aisNeedMldBlocklist(prAdapter, prBssDesc, ucBssIndex))
 		aisAddMldBlocklist(prAdapter,
 			aisGetSearchResult(prAdapter, ucBssIndex));
 	else
