@@ -40,9 +40,9 @@
 #define TDLS_SETUP_TIMEOUT (4)
 #define TDLS_MONITOR_UT (2)
 	/* TDLS setup threshold if TX throughput > the THD */
-#define TDLS_SETUP_THD (1000)
+#define TDLS_SETUP_THD (10000)
 #define TDLS_SETUP_LOW_THD (90)
-#define TDLS_SETUP_COUNT (4)
+#define TDLS_SETUP_COUNT (2)
 #define TDLS_TEARDOWN_THD (500)
 #define TDLS_TEARDOWN_LOW_THD (40)
 #define TDLS_TEARDOWN_RX_THD (100)
