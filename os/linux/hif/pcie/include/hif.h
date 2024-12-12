@@ -528,6 +528,7 @@ struct BUS_INFO {
 	void (*hwControlVote)(struct ADAPTER *prAdapter,
 		uint8_t enable, uint32_t u4WifiUser);
 	void (*checkFwOwnMsiStatus)(struct ADAPTER *prAdapter);
+	void (*dumpPcieMsiStatus)(struct ADAPTER *prAdapter);
 	void (*recoveryMsiStatus)(struct ADAPTER *prAdapter, u_int8_t fgForce);
 	void (*recoverSerStatus)(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
