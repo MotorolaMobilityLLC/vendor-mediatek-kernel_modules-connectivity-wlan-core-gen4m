@@ -3156,6 +3156,7 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 	prJoinInfo->u4ConnFlags = prP2pConnReqMsg->u4ConnFlags;
 	/* Find BSS Descriptor first. */
 	prJoinInfo->prTargetBssDesc = scanP2pSearchDesc(prAdapter,
+							bss,
 							prConnReqInfo,
 							prJoinInfo);
 

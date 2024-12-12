@@ -1179,8 +1179,10 @@ exit:
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet)
+			      struct BSS_INFO *prBssInfo,
+			      struct BSS_DESC_SET *prBssDescSet)
 {
+	struct MLD_BSS_INFO *prMlsBss = mldBssGetByBss(prAdapter, prBssInfo);
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 	struct BSS_DESC *prBssDesc = NULL;
@@ -1193,7 +1195,8 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE))
+	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE) ||
+	    !mldBssAllowReconfig(prAdapter, prMlsBss))
 		return;
 
 	ucMaxLinkNum = prAdapter->rWifiVar.ucP2pMldLinkMax;

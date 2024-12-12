@@ -99,7 +99,8 @@ uint16_t bssAssignAssocID(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet);
+			      struct BSS_INFO *prBssInfo,
+			      struct BSS_DESC_SET *prBssDescSet);
 #endif
 
 void p2pLinkStaRecFree(struct ADAPTER *prAdapter,

@@ -67,6 +67,7 @@ scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
 
 struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
 		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
 		struct P2P_JOIN_INFO *prJoinInfo);
 

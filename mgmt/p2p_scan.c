@@ -247,6 +247,7 @@ static u_int8_t scanP2pNeedTriggerMlScan(struct ADAPTER *prAdapter,
 #endif
 
 struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
 		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
 		struct P2P_JOIN_INFO *prJoinInfo)
 {
@@ -339,7 +340,8 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 			prBssDescSet->prMainBssDesc = prCandidateBssDesc;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			p2pScanFillSecondaryLink(prAdapter, prBssDescSet);
+			p2pScanFillSecondaryLink(prAdapter, prBssInfo,
+						 prBssDescSet);
 			if (prBssDescSet->ucLinkNum > 1)
 				prCandidateBssDesc =
 					prBssDescSet->prMainBssDesc;

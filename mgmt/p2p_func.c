@@ -5500,8 +5500,8 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 		ASSERT(prConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GC);
 
 		/* Find BSS Descriptor first. */
-		prTargetBss = scanP2pSearchDesc(prAdapter, prConnReqInfo,
-						prJoinInfo);
+		prTargetBss = scanP2pSearchDesc(prAdapter, prBssInfo,
+						prConnReqInfo, prJoinInfo);
 
 		if (prTargetBss == NULL) {
 			/* Update scan parameter... to scan target device. */
