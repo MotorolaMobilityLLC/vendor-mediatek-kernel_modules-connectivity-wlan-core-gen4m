@@ -405,10 +405,10 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 					    aucAllSupportedRates,
 					    &ucAllSupportedRatesLen);
 
-		ucSupRatesLen =
-		    ((ucAllSupportedRatesLen >
-		      ELEM_MAX_LEN_SUP_RATES) ? ELEM_MAX_LEN_SUP_RATES :
-		     ucAllSupportedRatesLen);
+		if (ucAllSupportedRatesLen > ELEM_MAX_LEN_SUP_RATES)
+			ucSupRatesLen = ELEM_MAX_LEN_SUP_RATES;
+		else
+			ucSupRatesLen = ucAllSupportedRatesLen;
 
 		ucExtSupRatesLen = ucAllSupportedRatesLen - ucSupRatesLen;
 
