@@ -1891,7 +1891,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 		break;
 	}
-	/* DBGLOG(REQ, INFO, ("MFP=%d\n", prWpaInfo->u4Mfp)); */
+	DBGLOG(REQ, INFO, "MFP=%d\n", prWpaInfo->u4Mfp);
 #endif
 
 	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,

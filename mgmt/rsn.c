@@ -1278,9 +1278,19 @@ void rsnAllowCrossAkm(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct IEEE_802_11_MIB *prMib;
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY *prEntry;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+	struct GL_WPA_INFO *prWpaInfo;
 
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 	prMib = aisGetMib(prAdapter, ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgDisCrossPmf) &&
+	    kalGetRsnIeMfpCap(prAdapter->prGlueInfo, ucBssIndex)
+		== RSN_AUTH_MFP_REQUIRED) {
+		prWpaInfo->ucRSNMfpCap = RSN_AUTH_MFP_OPTIONAL;
+		DBGLOG(RSN, INFO,
+			"Change RSN IE cap from MFPR to MFPC for cross akm roaming\n");
+	}
 
 #if (CFG_TC10_FEATURE == 1)
 	if (eAuthMode == AUTH_MODE_WPA_PSK ||
@@ -1624,7 +1634,7 @@ u_int8_t rsnPerformPolicySelection(
 #if CFG_SUPPORT_802_11W
 	/* check pmf only when rsn ie is selected */
 	if (prBssRsnInfo->ucElemId == ELEM_ID_RSN) {
-		if (kalGetMfpSetting(prAdapter->prGlueInfo,
+		if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
 			ucBssIndex) == RSN_AUTH_MFP_REQUIRED) {
 			if (!prBssRsnInfo->fgRsnCapPresent) {
 				DBGLOG(RSN, INFO,
@@ -1638,7 +1648,7 @@ u_int8_t rsnPerformPolicySelection(
 			}
 			u4MgmtProtection =
 				ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC;
-		} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
+		} else if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
 			ucBssIndex) == RSN_AUTH_MFP_OPTIONAL) {
 			if (prAdapter->rWifiVar.u4SwTestMode ==
 				/* PMF Cert. should disallow MFPR if OPTIONAL */
@@ -1675,7 +1685,7 @@ u_int8_t rsnPerformPolicySelection(
 
 		DBGLOG(RSN, TRACE,
 		       "[MFP] MFP setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = 0x%x, GroupMgmtCipher = 0x%x\n",
-		       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
+		       kalGetRsnIeMfpCap(prAdapter->prGlueInfo, ucBssIndex),
 		       prBssRsnInfo->u2RsnCap,
 		       prBssRsnInfo->fgRsnCapPresent,
 		       u4MgmtProtection, SWAP32(u4GroupMgmtCipher));
@@ -2163,7 +2173,7 @@ void rsnGenerateRSNIEImpl(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc =
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-		if (kalGetMfpSetting(prAdapter->prGlueInfo,
+		if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
 			ucBssIndex) != RSN_AUTH_MFP_DISABLED && prBssDesc) {
 			WLAN_SET_FIELD_16(cp,
 				prBssDesc->u4RsnSelectedPmf);

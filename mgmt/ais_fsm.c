@@ -2836,7 +2836,7 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 
 	DBGLOG(AIS, INFO,
 	       "setting=%d, MgmtProtection = %d\n",
-	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
+	       kalGetRsnIeMfpCap(prAdapter->prGlueInfo, ucBssIndex),
 	       prAisSpecificBssInfo->fgMgmtProtection);
 #endif
 
