@@ -561,6 +561,13 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 			DBGLOG(REQ, WARN, "GET_MBR_EMI fail: 0x%x\n", u4Ret);
 			return status;
 		}
+		DBGLOG(REQ, INFO, "[Mbrain ICCM][%llu]-[%d][%d:%d:%d:%d]\n",
+			dest->timestamp,
+			g_rMbrIccm.u4TotalTime,
+			g_rMbrIccm.u4BandRatio[4].u4TxTime,
+			g_rMbrIccm.u4BandRatio[4].u4RxTime,
+			g_rMbrIccm.u4BandRatio[4].u4RxListenTime,
+			g_rMbrIccm.u4BandRatio[4].u4SleepTime);
 	}
 
 	dest->tx_time =
