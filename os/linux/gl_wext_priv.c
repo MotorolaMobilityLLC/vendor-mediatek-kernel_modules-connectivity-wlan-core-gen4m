@@ -14704,13 +14704,13 @@ int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 			fgEnable = FALSE;
 
 		if (prGlueInfo->fgIsInSuspendMode == fgEnable) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, VOC,
 			       "%s: Already in suspend mode [%u], SKIP!\n",
 			       __func__, fgEnable);
 			return 0;
 		}
 
-		DBGLOG(REQ, INFO, "%s: Set suspend mode [%u]\n", __func__,
+		DBGLOG(REQ, VOC, "%s: Set suspend mode [%u]\n", __func__,
 		       fgEnable);
 
 		prGlueInfo->fgIsInSuspendMode = fgEnable;
