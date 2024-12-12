@@ -3732,7 +3732,7 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 		0x74030188, 0x7403018C, 0x740310f0, 0x740310f4, 0x70025018
 	};
 
-	buf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	buf = (char *)kalMemAlloc(u4BufSize, PHY_MEM_TYPE);
 	if (!buf) {
 		DBGLOG(HAL, WARN, "buffer alloc fail%s\n", buf);
 		return;
@@ -3752,7 +3752,7 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	}
 
 	DBGLOG(HAL, INFO, "%s\n", buf);
-	kalMemFree(buf, VIR_MEM_TYPE, u4BufSize);
+	kalMemFree(buf, PHY_MEM_TYPE, u4BufSize);
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
