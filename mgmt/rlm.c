@@ -12339,12 +12339,25 @@ uint32_t rlmTxPwrEnvMaxTxPwrCalcByPsd(
 	if (u4Status == WLAN_STATUS_SUCCESS) {
 		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
 			eBwType < TX_PWR_ENV_MAX_TXPWR_BW_NUM; eBwType++) {
-			rlmTxPwrEnvGetPwrDelta(eBwType, &ucTxPwrDelta);
+			u4Status =
+			    rlmTxPwrEnvGetPwrDelta(eBwType, &ucTxPwrDelta);
+			if (u4Status != WLAN_STATUS_SUCCESS)
+				return u4Status;
 
-			/* convert icMaxTxPwrPsd to LSB = 0.5dBm since
+			/* Note the icMaxTxPwrPsd is LSB = 0.5dBm and
 			 * ucTxPwrDelta is already convert to LSB = 0.5dBm
 			 */
-			picMaxTxPwr[eBwType] = icMaxTxPwrPsd * 2 + ucTxPwrDelta;
+
+			if (icMaxTxPwrPsd + ucTxPwrDelta > 127) {
+				/* Max boundary check */
+				picMaxTxPwr[eBwType] = 127;
+			} else if (icMaxTxPwrPsd + ucTxPwrDelta < -128) {
+				/* Min boundary check */
+				picMaxTxPwr[eBwType] = -128;
+			} else {
+				picMaxTxPwr[eBwType] =
+					icMaxTxPwrPsd + ucTxPwrDelta;
+			}
 		}
 	}
 	return u4Status;
