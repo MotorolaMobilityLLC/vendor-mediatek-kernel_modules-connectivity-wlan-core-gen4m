@@ -3293,7 +3293,15 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
-
+#if CFG_SUPPORT_RETURN_WORK
+	/* No need to setup packet in Wifi off/reset.*/
+	if (KAL_TEST_BIT(GLUE_FLAG_HALT_BIT, prAdapter->prGlueInfo->ulFlag)
+		|| kalIsResetting()
+		) {
+		DBGLOG(INIT, INFO, "GLUE_FLAG_HALT skip return packet\n");
+		return;
+	}
+#endif
 	DBGLOG(RX, LOUD, "IndicatedRfbList num = %u\n",
 		RX_GET_INDICATED_RFB_CNT(prRxCtrl));
 
