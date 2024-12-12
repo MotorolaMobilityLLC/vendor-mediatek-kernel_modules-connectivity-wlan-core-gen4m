@@ -1925,13 +1925,13 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 		prStaStatistics->u4AggRangeCtrl_1 =
 			prEvent->u4AggRangeCtrl_1;
 		prStaStatistics->ucRangeType = prEvent->ucRangeType;
-#if ((CFG_SUPPORT_CONNAC2X == 1) || (CFG_SUPPORT_CONNAC3X == 1))
+#if (CFG_SUPPORT_CONNAC2X == 1) || (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 		prStaStatistics->u4AggRangeCtrl_2 =
 			prEvent->u4AggRangeCtrl_2;
 		prStaStatistics->u4AggRangeCtrl_3 =
 			prEvent->u4AggRangeCtrl_3;
 #endif
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 		prStaStatistics->u4AggRangeCtrl_4 =
 			prEvent->u4AggRangeCtrl_4;
 		prStaStatistics->u4AggRangeCtrl_5 =
@@ -1974,7 +1974,7 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 					prEvtMib->u4AmpduTxSfCnt;
 				prMibInfo->u4AmpduTxAckSfCnt +=
 					prEvtMib->u4AmpduTxAckSfCnt;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 				for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM;
 					ucIdx++)
 					prMibInfo->au4TxRangeAmpduCnt[ucIdx] +=
@@ -1997,7 +1997,7 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 					prEvtMib->u4AmpduTxSfCnt;
 				prMibInfo->u4AmpduTxAckSfCnt =
 					prEvtMib->u4AmpduTxAckSfCnt;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 				for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM;
 					ucIdx++)
 					prMibInfo->au4TxRangeAmpduCnt[ucIdx] =

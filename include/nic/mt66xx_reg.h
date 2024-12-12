@@ -1436,7 +1436,7 @@ struct thermal_info {
 	struct thermal_sensor_info *sensor_info;
 };
 
-#if CFG_SUPPORT_CONNAC3X
+#if CFG_SUPPORT_XONVRAM
 struct platcfg_infra_sysram {
 	/* Conninfra sysram address and size for custom config */
 	const uint32_t size;
@@ -1732,7 +1732,7 @@ struct mt66xx_chip_info {
 	u_int8_t fgWifiNappingForceDisable; /* main thread: w, hif thread: r */
 	struct EMI_WIFI_MISC_RSV_MEM_INFO *rsvMemWiFiMisc;
 	uint32_t rsvMemWiFiMiscSize;
-#if CFG_SUPPORT_CONNAC3X
+#if CFG_SUPPORT_XONVRAM
 	struct platcfg_infra_sysram rPlatcfgInfraSysram;
 #endif
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)

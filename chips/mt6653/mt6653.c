@@ -1390,7 +1390,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.au4DmaMaxQuotaRfBand = {0x100, 0x2d0},
 #endif /* CFG_SUPPORT_WIFI_6G */
 #endif
-#if CFG_SUPPORT_CONNAC3X
+#if CFG_SUPPORT_XONVRAM
 	/* Platform custom config for conninfra */
 	.rPlatcfgInfraSysram = {
 		.addr = CONNAC3X_PLAT_CFG_ADDR,

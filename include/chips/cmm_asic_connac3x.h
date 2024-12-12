@@ -1370,9 +1370,6 @@ struct bwtbl_umac_struct {
 
 extern u_int8_t fgIsDrvTriggerWholeChipReset;
 extern u_int8_t g_IsWfsysBusNoAck;
-#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
-extern u_int8_t g_fgWlanOnOffHoldRtnlLock;
-#endif
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -1626,7 +1623,6 @@ uint32_t asicConnac3xQueryDFDInfo(
 	struct ADAPTER *prAdapter, uint32_t u4InfoIdx, uint32_t u4Offset,
 	uint32_t u4Length, uint8_t *pBuf);
 uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter);
-int wlan_test_mode_on(bool uIsSwtichTestMode);
 
 #if defined(_HIF_USB)
 void asicConnac3xWfdmaInitForUSB(

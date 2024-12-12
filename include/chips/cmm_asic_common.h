@@ -14,6 +14,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+extern u_int8_t g_fgWlanOnOffHoldRtnlLock;
+#endif
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
@@ -44,6 +47,8 @@ void register_chrdev_cbs(void);
 void unregister_plat_connsys_cbs(void);
 void register_plat_connsys_cbs(void);
 #endif
+
+int wlan_test_mode_on(bool uIsSwtichTestMode);
 
 #endif /* _CMM_ASIC_COMMON_H */
 

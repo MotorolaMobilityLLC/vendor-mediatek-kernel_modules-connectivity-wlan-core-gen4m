@@ -505,13 +505,11 @@ struct CHIP_DBG_OPS {
 		uint32_t u4Index,
 		char *pcCommand,
 		int32_t i4TotalLen);
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	int32_t (*showUmacWtblInfo)(
 		struct ADAPTER *prAdapter,
 		uint32_t u4Index,
 		char *pcCommand,
 		int32_t i4TotalLen);
-#endif
 	void (*showHifInfo)(struct ADAPTER *prAdapter);
 	void (*printHifDbgInfo)(struct ADAPTER *prAdapter);
 	int32_t (*show_rx_rate_info)(
@@ -1084,6 +1082,7 @@ int connac2x_get_rx_rate_info(
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
+#if (DBG_DISABLE_ALL_INFO == 0)
 void connac3x_show_txd_Info(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
@@ -1194,8 +1193,120 @@ void connac3x_dbg_invalid_rx_rate(struct ADAPTER *ad,
 int32_t connac3x_get_tx_info_from_txv(
 	char *pcCommand, int i4TotalLen,
 	struct TX_VECTOR_BBP_LATCH *prTxV);
-
+#endif /* DBG_DISABLE_ALL_INFO == 0 */
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
+
+#if (CFG_SUPPORT_CONNAC5X == 1)
+#if (DBG_DISABLE_ALL_INFO == 0)
+void connac5x_show_txd_Info(
+	struct ADAPTER *prAdapter,
+	u_int32_t fid);
+void connac5x_dump_tmac_info(
+	struct ADAPTER *prAdapter,
+	uint8_t *tmac_info);
+void connac5x_get_lwtbl(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	uint8_t *wtbl_raw_dw
+);
+int32_t connac5x_show_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+int32_t connac5x_show_umac_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+int32_t connac5x_show_rx_rate_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint8_t ucStaIdx);
+void connac5x_get_rssi_from_wtbl(
+	struct ADAPTER *prAdapter, uint32_t u4Index,
+	int32_t *pi4Rssi0, int32_t *pi4Rssi1,
+	int32_t *pi4Rssi2, int32_t *pi4Rssi3);
+
+int32_t connac5x_show_rx_rssi_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint8_t ucStaIdx);
+
+int32_t connac5x_show_stat_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+	uint8_t fgResetCnt,
+	uint32_t u4StatGroup);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int32_t connac5x_show_mld_info(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		struct PARAM_MLD_REC *mld);
+#endif
+
+void connac5x_show_wfdma_interrupt_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac5x_show_wfdma_glo_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac5x_show_wfdma_ring_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+
+void connac5x_show_wfdma_dbg_flag_log(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac5x_show_wfdma_info_by_type(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac5x_show_wfdma_info(struct ADAPTER *prAdapter);
+void connac5x_show_dmashdl_info(struct ADAPTER *prAdapter);
+void connac5x_show_dmashdl_lite_info(struct ADAPTER *prAdapter);
+uint32_t connac5x_get_ple_int(struct ADAPTER *prAdapter);
+void connac5x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask);
+void connac5x_set_ple_int_no_read(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask);
+void connac5x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
+void connac5x_show_pse_info(struct ADAPTER *prAdapter);
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+void connac5x_show_mawd_info(struct ADAPTER *prAdapter);
+void connac5x_show_rro_info(struct ADAPTER *prAdapter);
+#endif
+void connac5x_dump_format_memory32(
+	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo);
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+int connac5x_get_rx_rate_info(
+	const uint32_t *prRxV,
+	struct RxRateInfo *prRxRateInfo);
+#endif
+#if CFG_SUPPORT_LLS
+#define INVALID_RX_RATE_TIMEOUT 1000 /* ms */
+void connac5x_dbg_invalid_rx_rate(struct ADAPTER *ad,
+	struct SW_RFB *prSwRfb, struct STATS_LLS_WIFI_RATE *rate);
+#endif /* CFG_SUPPORT_LLS */
+int32_t connac5x_get_tx_info_from_txv(
+	char *pcCommand, int i4TotalLen,
+	struct TX_VECTOR_BBP_LATCH *prTxV);
+#endif /* DBG_DISABLE_ALL_INFO == 0 */
+#endif /* CFG_SUPPORT_CONNAC5X == 1 */
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 void wlanWakeStaticsInit(void);

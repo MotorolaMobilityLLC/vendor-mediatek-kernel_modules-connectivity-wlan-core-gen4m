@@ -100,7 +100,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6653 -UMT6655 -UMT7990 -UMT7925 -UMT7935
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6653 -UMT6655 -UMT7990 -UMT7925 -UMT7935 -UMT7999
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -910,6 +910,143 @@ ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
 endif
 endif
 
+ifneq ($(filter MT7999,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT7999,$(ccflags-y))
+ccflags-y += -DMT7999
+CONFIG_NEW_HIF_DEV_REG_IF=y
+ifeq ($(MTK_ANDROID_WMT), y)
+    CONFIG_MTK_WIFI_POWER_THROTTLING=y
+    CONFIG_MTK_WIFI_ON_READ_BY_CFG_SPACE=y
+    CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+    CONFIG_MTK_WIFI_APF_SUPPORT=y
+    ifneq ($(CONFIG_PAGE_POOL),)
+        CONFIG_RX_PAGE_POOL=y
+    endif
+    CONFIG_SNIFFER_RADIOTAP=y
+    CONFIG_DYNAMIC_RFB_ADJUSTMENT=y
+    CONFIG_MTK_WIFI_PCIE_SUPPORT=y
+    ifeq ($(CONFIG_MTK_WIFI_PCIE_SUPPORT), y)
+        CONFIG_MTK_WIFI_PCIE_SR=y
+    endif
+    CONFIG_DRV_OWN_INT_MODE=y
+    CONFIG_SUPPORT_PCIE_GEN_SWITCH=n
+    CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
+    CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
+    CONFIG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE=y
+    CONFIG_MTK_WIFI_FW_LOG_EMI=y
+    CONFIG_MTK_WIFI_MET_LOG_EMI=y
+    ifeq ($(call kver_ge,5,15),1)
+        ifneq ($(filter y m,$(CONFIG_PMIC_LBAT_SERVICE)),)
+            CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+        endif
+    endif
+    ifeq ($(call kver_ge,6,6),1)
+        CONFIG_SUPPORT_MBRAIN=y
+        CONFIG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG=y
+    endif
+    CONFIG_PERF_MON_FAST=y
+    CONFIG_WIFI_PLAT_SHUTDOWN_SUPPORT=y
+    CONFIG_WIFI_COREDUMP_SUPPORT=y
+    CONFIG_WIFI_SECURITY_COREDUMP=y
+    CONFIG_WIFI_COREDUMP_SKIP_BY_REQUEST=n
+    CONFIG_MTK_WIFI_AER_RESET=y
+    CONFIG_MTK_WIFI_DFD_DUMP_SUPPORT=y
+    CONFIG_PER_CPU_TX=y
+    CONFIG_SUPPORT_TX_FREE_SKB_WORK=y
+    CONFIG_TX_WORK_SUPPORT=y
+    CONFIG_RX_WORK_SUPPORT=y
+    CONFIG_SKB_ALLOC_WORK_SUPPORT=y
+    CONFIG_RX_NAPI_DELAY_SUPPORT=y
+    CONFIG_RETURN_WORK_SUPPORT=y
+    CONFIG_RX_NAPI_THREADED=y
+    CONFIG_HIF_RX_NAPI=y
+    CONFIG_SUPPORT_TX_FREE_MSDU_WORK=y
+    CONFIG_SUPPORT_TX_SKB_ORPHAN=y
+    CONFIG_SUPPORT_HIF_FIFO_TOKEN=y
+    CONFIG_DISABLE_HIF_TX_RESOURCE_CTRL=y
+    CONFIG_MTK_WIFI_AER_L05_RESET=n
+    CONFIG_WIFI_RAM_HW_DETECT_REPORT_SUPPORT=y
+    CONFIG_SUPPORT_DISABLE_CMD_DDONE_INTR=y
+    CONFIG_SUPPORT_HIF_REG_WORK=y
+    CONFIG_SUPPORT_WFDMA_RX_DELAY_INT=y
+    CONFIG_SUPPORT_WIFI_TX_MEM_SLIM=y
+    CONFIG_SUPPORT_WIFI_TX_CMA_MEM=n
+    CONFIG_SUPPORT_WIFI_TX_CMA_MEM_NON_CACHE=y
+    CONFIG_SUPPORT_WIFI_POWER_METRICS=y
+    CONFIG_SUPPORT_WIFI_ICCM=y
+    CONFIG_PCIE_GEN_SWITCH=y
+    CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
+    CONFIG_SUPPORT_WIFI_MISC_RSV_MEM=y
+    CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
+    CONFIG_SUPPORT_MTK_WIFI_MBU=y
+    CONFIG_SUPPORT_STATS_ONE_CMD=y
+    CONFIG_SUPPORT_REG_STAT_FROM_EMI=y
+    CONFIG_SUPPORT_WIFI_MET_CONNAC3_V2=y
+    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+    CONFIG_SUPPORT_PHY_ICS_V3=n
+    CONFIG_SUPPORT_PHY_ICS_V4=y
+    CONFIG_AP_EHT_DEFAULT_VALUE=1
+    CONFIG_MLD_AP_LINK_MAX=2
+    CONFIG_ADD_MDNS_WHITELIST=y
+    CONFIG_MTK_WIFI_SUPPORT_TXPWR_ENV=y
+    CONFIG_MTK_WIFI_SUPPORT_6G_PWR_MODE=y
+endif
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+    CONFIG_MTK_WIFI_NAN=y
+else
+    CONFIG_MTK_WIFI_NAN=n
+endif
+ifeq ($(CONFIG_MTK_WIFI_MT7999_DEV), y)
+    CONFIG_SUPPORT_MDDP_DYNAMIC_DISABLE=y
+    CONFIG_PCIE_GEN_SWITCH=n
+endif
+ccflags-y += -DCFG_AP_GO_DELAY_CARRIER_ON
+ccflags-y += -DCFG_SUPPORT_6G_OVERWRITE_ACS_BW
+ccflags-y += -DCFG_MAX_BSSID_NUM=6
+ccflags-y += -DCFG_REUSE_RSN_IE=1
+ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
+ccflags-y += -DCONFIG_MTK_WIFI_BW320
+ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
+ccflags-y += -DCFG_WIFI_TX_FIXED_RATE_NO_VTA=1
+ccflags-y += -DCFG_DISABLE_TXTIMEOUT_SER=1
+ccflags-y += -DCFG_SINGLE_BAND_MLSR_56=1
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
+    ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=2048
+    ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
+    ccflags-y += -DCFG_SUPPORT_RX_NAPI=0
+    ccflags-y += -DCFG_SUPPORT_RX_GRO=0
+endif
+
+ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
+    CONFIG_BAND_NUM=3
+    CONFIG_IFACE_CONCURRENT_MODE=2
+    ccflags-y += -DCFG_P2P_NUM=3
+    ccflags-y += -DCFG_STA_NUM=3
+endif
+
+ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
+    CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
+    CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+    ifneq ($(MTK_ANDROID_WMT), y)
+        ifeq ($(wildcard $(KO_CODE_PATH)/../connfem/include),)
+            $(warning Missing $(KO_CODE_PATH)/../connfem/include)
+            $(warning Use SKU1-1 default setting.)
+            $(warning To use another SKU or eFEM parts, please sync & build ConnFem according to Wiki)
+            CONFIG_MTK_WIFI_CONNFEM_DEFAULT=y
+        endif
+    endif
+endif
+
+# ===== project override =====
+ifeq ($(CONFIG_MTK_EAP), y)
+CONFIG_MTK_MDDP_SUPPORT=
+CONFIG_MTK_HOST_OFFLOAD_SUPPORT=n
+CONFIG_MTK_WIFI_PCIE_SR=n
+endif
+
+endif
+
 # ===== Before is project setting =====
 include $(CFG_DIR)/defconfig
 ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
@@ -1276,6 +1413,12 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
     ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_CONNAC5X), y)
+    ccflags-y += -DCFG_SUPPORT_CONNAC5X=1
+else
+    ccflags-y += -DCFG_SUPPORT_CONNAC5X=0
 endif
 
 ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
@@ -3103,6 +3246,22 @@ CHIPS_OBJS += $(CHIPS_CMM)dbg_connac3x.o \
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_txd_v3.o \
             $(NIC_DIR)nic_rxd_v3.o
+else ifeq ($(CONFIG_MTK_WIFI_CONNAC5X), y)
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac5x.o
+CHIPS_OBJS += $(CHIPS_CMM)dbg_connac5x.o \
+              $(CHIPS_CMM)dbg_wtbl_connac5x.o
+    ifeq ($(CONFIG_MTK_WIFI_FW_LOG_MMIO), y)
+        CHIPS_OBJS += $(CHIPS_CMM)fw_log_mmio.o
+    endif
+    ifeq ($(CONFIG_MTK_WIFI_FW_LOG_EMI), y)
+        CHIPS_OBJS += $(CHIPS_CMM)fw_log_emi.o
+    endif
+    ifeq ($(CONFIG_MTK_WIFI_MET_LOG_EMI), y)
+        CHIPS_OBJS += $(CHIPS_CMM)met_log_emi.o
+    endif
+NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
+            $(NIC_DIR)nic_txd_v5.o \
+            $(NIC_DIR)nic_rxd_v5.o
 else
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o \
               $(CHIPS_CMM)dbg_connac.o
@@ -3217,6 +3376,15 @@ ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7935/mt7935.o
 CHIPS_OBJS += $(CHIPS)mt7935/dbg_mt7935.o
 CHIPS_OBJS += $(CHIPS)mt7935/hal_dmashdl_mt7935.o
+endif
+
+ifneq ($(filter MT7999,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt7999/mt7999.o
+CHIPS_OBJS += $(CHIPS)mt7999/dbg_mt7999.o
+CHIPS_OBJS += $(CHIPS)mt7999/hal_dmashdl_mt7999.o
+ifeq ($(CONFIG_MTK_WIFI_CONNFEM_DEFAULT), y)
+CHIPS_OBJS += $(CHIPS)mt7999/connfem_mt7999.o
+endif
 endif
 
 ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_TRANS), y)

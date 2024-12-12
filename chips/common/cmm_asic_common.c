@@ -33,6 +33,9 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+u_int8_t g_fgWlanOnOffHoldRtnlLock;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -481,3 +484,38 @@ void register_chrdev_cbs(void)
 }
 #endif
 #endif
+
+int wlan_test_mode_on(bool uIsSwtichTestMode)
+{
+	int32_t ret = 0;
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	DBGLOG(INIT, INFO, "uIsSwtichTestMode: %d\n", uIsSwtichTestMode);
+
+	if (kalIsResetOnEnd() == TRUE) {
+		DBGLOG(INIT, INFO, "now is resetting\n");
+		ret = WLAN_STATUS_FAILURE;
+		return ret;
+	}
+
+	if (!wfsys_trylock()) {
+		DBGLOG(INIT, INFO, "now is write processing\n");
+		ret = WLAN_STATUS_FAILURE;
+		return ret;
+	}
+
+	set_wifi_in_switch_mode(1);
+	g_fgWlanOnOffHoldRtnlLock = 1;
+
+	wlanFuncOff();
+	if (uIsSwtichTestMode)
+		set_wifi_test_mode_fwdl(1);
+	ret = wlanFuncOn();
+	if (uIsSwtichTestMode)
+		set_wifi_test_mode_fwdl(0);
+
+	g_fgWlanOnOffHoldRtnlLock = 0;
+	set_wifi_in_switch_mode(0);
+	wfsys_unlock();
+#endif
+	return ret;
+}

@@ -97,15 +97,19 @@
 
 #include "nic_connac2x_tx.h"
 #include "nic_connac3x_tx.h"
+#include "nic_connac5x_tx.h"
 #include "nic_tx.h"
 #include "nic_txd_v1.h"
 #include "nic_txd_v2.h"
 #include "nic_txd_v3.h"
+#include "nic_txd_v5.h"
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #include "nic_rxd_v2.h"
 #elif (CFG_SUPPORT_CONNAC3X == 1)
 #include "nic_rxd_v3.h"
+#elif (CFG_SUPPORT_CONNAC5X == 1)
+#include "nic_rxd_v5.h"
 #else
 #include "nic_rxd_v1.h"
 #endif
@@ -113,6 +117,7 @@
 #include "hal.h"
 #include "nic_connac2x_rx.h"
 #include "nic_connac3x_rx.h"
+#include "nic_connac5x_rx.h"
 /* Dependency:  hif_rx.h (P_HIF_RX_HEADER_T) */
 /* Dependency:  hal.h (RRO_COUNTER_NUM) */
 #include "nic_rx.h"
@@ -160,6 +165,7 @@
 #include "cmm_asic_connac.h"
 #include "cmm_asic_connac2x.h"
 #include "cmm_asic_connac3x.h"
+#include "cmm_asic_connac5x.h"
 #include "pre_cal.h"
 
 #if (CFG_SUPPORT_802_11AX == 1)

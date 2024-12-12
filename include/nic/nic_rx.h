@@ -670,9 +670,7 @@ enum ENUM_MAC_RX_GROUP_VLD {
 	RX_GROUP_VLD_2,
 	RX_GROUP_VLD_3,
 	RX_GROUP_VLD_4,
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	RX_GROUP_VLD_5,
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	RX_GROUP_VLD_NUM
 };
 
@@ -955,9 +953,7 @@ struct SW_RFB {
 	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
 	void *prRxStatusGroup3;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4;
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	struct HW_MAC_RX_STS_GROUP_5 *prRxStatusGroup5;
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	/* rx data information */
 	void *pvHeader;

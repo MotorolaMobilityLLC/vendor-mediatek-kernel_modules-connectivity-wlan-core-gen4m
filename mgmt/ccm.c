@@ -276,7 +276,7 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 	uint32_t u4FreqListNum;
 	uint32_t u4Idx;
 	uint32_t u4ChForAa;
-	enum ENUM_BAND eBandForAa;
+	enum ENUM_BAND eBandForAa = BAND_NULL;
 	uint32_t u4Freq;
 
 	/* pass for MCC only */

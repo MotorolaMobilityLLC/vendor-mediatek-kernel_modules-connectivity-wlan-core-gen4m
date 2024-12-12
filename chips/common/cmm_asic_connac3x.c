@@ -56,10 +56,6 @@
 u_int8_t g_fgIsRegDevapcCb;
 #endif
 
-#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
-u_int8_t g_fgWlanOnOffHoldRtnlLock;
-#endif
-
 #define USB_ACCESS_RETRY_LIMIT           1
 
 #if defined(_HIF_USB)
@@ -2892,41 +2888,6 @@ void connsys_power_off(void)
 	wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_PTA_UART_OFF);
 	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
 #endif
-}
-
-int wlan_test_mode_on(bool uIsSwtichTestMode)
-{
-	int32_t ret = 0;
-#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
-	DBGLOG(INIT, INFO, "uIsSwtichTestMode: %d\n", uIsSwtichTestMode);
-
-	if (kalIsResetOnEnd() == TRUE) {
-		DBGLOG(INIT, INFO, "now is resetting\n");
-		ret = WLAN_STATUS_FAILURE;
-		return ret;
-	}
-
-	if (!wfsys_trylock()) {
-		DBGLOG(INIT, INFO, "now is write processing\n");
-		ret = WLAN_STATUS_FAILURE;
-		return ret;
-	}
-
-	set_wifi_in_switch_mode(1);
-	g_fgWlanOnOffHoldRtnlLock = 1;
-
-	wlanFuncOff();
-	if (uIsSwtichTestMode)
-		set_wifi_test_mode_fwdl(1);
-	ret = wlanFuncOn();
-	if (uIsSwtichTestMode)
-		set_wifi_test_mode_fwdl(0);
-
-	g_fgWlanOnOffHoldRtnlLock = 0;
-	set_wifi_in_switch_mode(0);
-	wfsys_unlock();
-#endif
-	return ret;
 }
 
 #if CFG_MTK_ANDROID_WMT

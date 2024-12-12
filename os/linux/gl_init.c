@@ -4626,7 +4626,9 @@ static void wlanCreateWirelessDevice(void)
 #endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+#if KERNEL_VERSION(4, 17, 0) <= CFG80211_VERSION_CODE
 	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_DFS_OFFLOAD);
+#endif
 #endif
 
 #if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \

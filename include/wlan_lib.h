@@ -237,7 +237,7 @@
 /* Define concurrent network channel number, using by CNM/CMD */
 #define MAX_OP_CHNL_NUM			3
 
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1 || CFG_SUPPORT_CONNAC5X == 1)
 #define AGG_RANGE_SEL_NUM		15
 #else
 #define AGG_RANGE_SEL_NUM		7
@@ -1288,7 +1288,7 @@ struct MIB_INFO_STAT {
 	uint32_t u4RxFifoFull;
 	uint32_t u4AmpduTxSfCnt;
 	uint32_t u4AmpduTxAckSfCnt;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	uint32_t au4TxRangeAmpduCnt[AGG_RANGE_SEL_NUM + 1];
 #else
 	uint16_t au2TxRangeAmpduCnt[AGG_RANGE_SEL_NUM + 1];
@@ -1390,12 +1390,12 @@ struct PARAM_GET_STA_STATISTICS {
 	uint32_t u4AggRangeCtrl_0;
 	uint32_t u4AggRangeCtrl_1;
 	uint8_t ucRangeType;
-#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0 && CFG_SUPPORT_CONNAC5X == 0)
 	uint8_t aucReserved5[24];
 #else
 	uint32_t u4AggRangeCtrl_2;
 	uint32_t u4AggRangeCtrl_3;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	uint32_t u4AggRangeCtrl_4;
 	uint32_t u4AggRangeCtrl_5;
 	uint32_t u4AggRangeCtrl_6;

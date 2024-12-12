@@ -1215,9 +1215,7 @@ wlanCopyXonvramToSysram(struct GLUE_INFO *prGlueInfo,
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
-#endif
 
-#if CFG_SUPPORT_CONNAC3X
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Because each SKU will have different platform config, such as
@@ -1251,7 +1249,6 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 		return WLAN_STATUS_SUCCESS;
 	}
 
-#if CFG_SUPPORT_XONVRAM
 	if (prRegInfo->prXonvCfg == NULL) {
 		DBGLOG(INIT, TRACE, "Unsupport xo nvram\n");
 		return WLAN_STATUS_SUCCESS;
@@ -1262,7 +1259,6 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 		DBGLOG(INIT, TRACE, "Fail to copy xo nvram\n");
 		return WLAN_STATUS_FAILURE;
 	}
-#endif
 
 #if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	pu1Cfg = connv3_get_plat_config(&u4Size);
@@ -1284,7 +1280,7 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
-#endif /* #if CFG_SUPPORT_CONNAC3X */
+#endif /* #if CFG_SUPPORT_XONVRAM */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1440,7 +1436,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* recheck Asic capability depends on ECO version */
 		wlanCheckAsicCap(prAdapter);
 
-#if CFG_SUPPORT_CONNAC3X
+#if CFG_SUPPORT_XONVRAM
 		/* Copy config to infra sysram before patch download */
 		if (wlanCopyPlatCfgToSysram(prAdapter, prRegInfo)
 					!= WLAN_STATUS_SUCCESS) {
