@@ -78,7 +78,7 @@ const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN] = {
  */
 
 static void scanFreeBssDesc(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc);
+	struct BSS_DESC *prBssDesc, const char *pucDesc);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1028,7 +1028,7 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
 				return prBssDesc;
 			}
 
-			scanFreeBssDesc(prAdapter, prBssDesc);
+			scanFreeBssDesc(prAdapter, prBssDesc, "IBSS");
 
 			return prIBSSBssDesc;
 		}
@@ -1049,6 +1049,117 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Exclude BSS Descriptors from current list according
+ * to given Remove Policy.
+ *
+ * @param[in] u4RemovePolicy     Remove Policy.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t scanRemoveBssDescsIsExcluded(struct ADAPTER *prAdapter,
+	uint32_t u4RemovePolicy, struct BSS_DESC *prBssDesc)
+{
+	struct SCAN_INFO *prScanInfo;
+	struct SCAN_PARAM *prScanParam;
+	uint16_t i;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	prScanParam = &prScanInfo->rScanParam;
+
+	/* Don't remove the one currently we are connected. */
+	if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED) &&
+	    (prBssDesc->fgIsConnected || prBssDesc->fgIsConnecting))
+		return TRUE;
+
+	/* Check this SSID has recorded or not */
+	if (u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_SPECIFIC_SSID) {
+		 /* Not remove BssDesc that has same SSID with current
+		  * connected AP, for roaming.
+		  */
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			struct BSS_INFO *prAisBssInfo = NULL;
+
+			if (!IS_BSS_INDEX_AIS(prAdapter, i))
+				continue;
+			prAisBssInfo = aisGetAisBssInfo(prAdapter, i);
+
+			if (!IS_BSS_ALIVE(prAdapter, prAisBssInfo))
+				continue;
+
+			if (!prBssDesc->fgIsHiddenSSID &&
+			    EQUAL_SSID(prBssDesc->aucSSID,
+				prBssDesc->ucSSIDLen,
+				prAisBssInfo->aucSSID,
+				prAisBssInfo->ucSSIDLen))
+				return TRUE;
+		}
+
+		if ((prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) &&
+		    !prBssDesc->fgIsHiddenSSID) {
+			for (i = 0; i < prScanParam->ucSSIDNum; i++) {
+				if (EQUAL_SSID(prScanParam->aucSpecifiedSSID[i],
+				       prScanParam->ucSpecifiedSSIDLen[i],
+				       prBssDesc->aucSSID,
+				       prBssDesc->ucSSIDLen))
+					return TRUE;
+			}
+		}
+	}
+
+	if (u4RemovePolicy & SCN_RM_POLICY_MISS_COUNT) {
+		switch (prScanParam->eScanChannel) {
+		case SCAN_CHANNEL_FULL:
+			break;
+		case SCAN_CHANNEL_2G4:
+			if (prBssDesc->eBand != BAND_2G4)
+				return TRUE;
+			break;
+		case SCAN_CHANNEL_5G:
+			if (prBssDesc->eBand != BAND_5G)
+				return TRUE;
+			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case SCAN_CHANNEL_6G:
+			if (prBssDesc->eBand != BAND_6G)
+				return TRUE;
+			break;
+#endif
+		case SCAN_CHANNEL_SPECIFIED:
+			for (i = 0; i < prScanParam->ucChannelListNum; i++) {
+				if (prScanParam->arChnlInfoList[i].eBand ==
+					prBssDesc->eBand &&
+				    prScanParam->arChnlInfoList[i].ucChannelNum
+					== prBssDesc->ucChannelNum)
+					break;
+			}
+			if (i == prScanParam->ucChannelListNum)
+				return TRUE;
+			break;
+		default:
+			return TRUE;
+		}
+
+		if ((prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) &&
+		    !prBssDesc->fgIsHiddenSSID) {
+			for (i = 0; i < prScanParam->ucSSIDNum; i++) {
+				if (EQUAL_SSID(prScanParam->aucSpecifiedSSID[i],
+				       prScanParam->ucSpecifiedSSIDLen[i],
+				       prBssDesc->aucSSID,
+				       prBssDesc->ucSSIDLen))
+					break;
+			}
+
+			if (i == prScanParam->ucSSIDNum)
+				return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Delete BSS Descriptors from current list according
  * to given Remove Policy.
  *
@@ -1058,21 +1169,19 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
-				uint32_t u4RemovePolicy)
+				uint32_t u4RemovePolicy,
+				struct SW_RFB *prSwRfb)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
 	struct BSS_DESC *prBssDesc;
+	struct SCAN_PARAM *prScanParam;
 
 	ASSERT(prAdapter);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	prScanParam = &prScanInfo->rScanParam;
 	prBSSDescList = &prScanInfo->rBSSDescList;
-
-#if 0 /* TODO: Remove this */
-	log_dbg(SCN, TRACE, ("Before Remove - Number Of SCAN Result = %ld\n",
-		prBSSDescList->u4NumElem));
-#endif
 
 	if (u4RemovePolicy & SCN_RM_POLICY_TIMEOUT) {
 		struct BSS_DESC *prBSSDescNext;
@@ -1089,10 +1198,6 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
-#if CFG_EXT_SCAN
-			uint8_t i, fgSameSsid;
-#endif
-
 			if (prBssDesc == NULL) {
 				DBGLOG(SCN, WARN,
 					"NULL prBssDesc from list %u elem,%p,%p\n",
@@ -1102,47 +1207,9 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 				return;
 			}
 
-			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
-				&& (prBssDesc->fgIsConnected
-				|| prBssDesc->fgIsConnecting)) {
-				/* Don't remove the one currently we
-				 * are connected.
-				 */
+			if (scanRemoveBssDescsIsExcluded(prAdapter,
+				u4RemovePolicy, prBssDesc))
 				continue;
-			}
-
-#if CFG_EXT_SCAN
-			fgSameSsid = FALSE;
-
-			/* Not remove BssDesc that has
-			 * same SSID with current
-			 * connected AP, for roaming.
-			 */
-			for (i = 0; i < KAL_AIS_NUM; i++) {
-				struct BSS_INFO *prAisBssInfo = NULL;
-
-				if (!IS_BSS_INDEX_AIS(prAdapter, i))
-					continue;
-				prAisBssInfo =
-					aisGetAisBssInfo(prAdapter, i);
-
-				if (kalGetMediaStateIndicated(
-					prAdapter->prGlueInfo, i) !=
-					MEDIA_STATE_CONNECTED)
-					continue;
-
-				if ((!prBssDesc->fgIsHiddenSSID) &&
-					(EQUAL_SSID(prBssDesc->aucSSID,
-					prBssDesc->ucSSIDLen,
-					prAisBssInfo->aucSSID,
-					prAisBssInfo->ucSSIDLen))) {
-					fgSameSsid = TRUE;
-					break;
-				}
-			}
-			if (fgSameSsid)
-				continue;
-#endif
 
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 				prBssDesc->rUpdateTime,
@@ -1150,26 +1217,18 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 					SCN_BSS_DESC_STALE_SEC_WFD :
 					SCN_BSS_DESC_STALE_SEC))) {
 
-#if 0 /* TODO: Remove this */
-				log_dbg(SCN, TRACE, "Remove TIMEOUT BSS DESC(%#x):MAC: "
-				MACSTR
-				", Current Time = %08lx, Update Time = %08lx\n",
-					prBssDesc,
-					MAC2STR(prBssDesc->aucBSSID),
-					rCurrentTime, prBssDesc->rUpdateTime));
-#endif
-
-				scanFreeBssDesc(prAdapter, prBssDesc);
+				scanFreeBssDesc(prAdapter, prBssDesc,
+						"TIMEOUT");
 			}
 		}
 	}
+
 	if (u4RemovePolicy & SCN_RM_POLICY_OLDEST_HIDDEN) {
 		struct BSS_DESC *prBssDescOldest = (struct BSS_DESC *) NULL;
 
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
-
 			if (prBssDesc == NULL) {
 				DBGLOG(SCN, WARN,
 					"NULL prBssDesc from list %u elem,%p,%p\n",
@@ -1179,14 +1238,9 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 				return;
 			}
 
-			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
-				&& (prBssDesc->fgIsConnected
-				|| prBssDesc->fgIsConnecting)) {
-				/* Don't remove the one currently
-				 * we are connected.
-				 */
+			if (scanRemoveBssDescsIsExcluded(prAdapter,
+				u4RemovePolicy, prBssDesc))
 				continue;
-			}
 
 			if (!prBssDesc->fgIsHiddenSSID)
 				continue;
@@ -1201,30 +1255,22 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 				prBssDescOldest = prBssDesc;
 		}
 
-		if (prBssDescOldest) {
-#if 0 /* TODO: Remove this */
-			log_dbg(SCN, TRACE, "Remove OLDEST HIDDEN BSS DESC(%#x): MAC: "
-			MACSTR
-			", Update Time = %08lx\n",
-				prBssDescOldest,
-				MAC2STR(prBssDescOldest->aucBSSID),
-				prBssDescOldest->rUpdateTime);
-#endif
-			scanFreeBssDesc(prAdapter, prBssDescOldest);
-		}
+		if (prBssDescOldest)
+			scanFreeBssDesc(prAdapter, prBssDescOldest,
+					"OLDEST_HIDEN");
 	}
+
 	if (u4RemovePolicy & SCN_RM_POLICY_SMART_WEAKEST) {
 		struct BSS_DESC *prBssDescWeakest = (struct BSS_DESC *) NULL;
-		struct BSS_DESC *prBssDescWeakestSameSSID
-			= (struct BSS_DESC *) NULL;
-		uint32_t u4SameSSIDCount = 0;
-		uint8_t j;
-		uint8_t fgIsSameSSID;
+		uint8_t ucRxRCPI = RCPI_LOW_BOUND;
+
+		if (prSwRfb)
+			ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter,
+				RCPI_MODE_MAX, prSwRfb);
 
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
-
 			if (prBssDesc == NULL) {
 				DBGLOG(SCN, WARN,
 					"NULL prBssDesc from list %u elem,%p,%p\n",
@@ -1234,52 +1280,15 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 				return;
 			}
 
-			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
-				&& (prBssDesc->fgIsConnected
-				|| prBssDesc->fgIsConnecting)) {
-				/* Don't remove the one currently
-				 * we are connected.
-				 */
+			if (scanRemoveBssDescsIsExcluded(prAdapter,
+				u4RemovePolicy, prBssDesc))
 				continue;
-			}
 
-			fgIsSameSSID = FALSE;
-			for (j = 0; j < KAL_AIS_NUM; j++) {
-				uint8_t ucBssIndex;
-				struct CONNECTION_SETTINGS *prConnSettings;
+			if (prBssDesc->fgDriverGen)
+				continue;
 
-				if (!AIS_MAIN_BSS_INFO(prAdapter, j))
-					continue;
-
-				ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, j);
-				prConnSettings =
-				      aisGetConnSettings(prAdapter, ucBssIndex);
-				if (!prConnSettings)
-					continue;
-
-				if ((!prBssDesc->fgIsHiddenSSID) &&
-					(EQUAL_SSID(prBssDesc->aucSSID,
-					prBssDesc->ucSSIDLen,
-					prConnSettings->aucSSID,
-					prConnSettings->ucSSIDLen))) {
-
-					u4SameSSIDCount++;
-
-					if (!prBssDescWeakestSameSSID)
-						prBssDescWeakestSameSSID =
-							prBssDesc;
-					else if (prBssDesc->ucRCPI
-					< prBssDescWeakestSameSSID->ucRCPI)
-						prBssDescWeakestSameSSID =
-							prBssDesc;
-
-					fgIsSameSSID = TRUE;
-				}
-			}
-
-			if (fgIsSameSSID &&
-				u4SameSSIDCount
-				< SCN_BSS_DESC_SAME_SSID_THRESHOLD)
+			if (ucRxRCPI != RCPI_LOW_BOUND &&
+			    prBssDesc->ucRCPI > ucRxRCPI)
 				continue;
 
 			if (!prBssDescWeakest) {	/* 1st element */
@@ -1292,23 +1301,10 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 
 		}
 
-		if ((u4SameSSIDCount >= SCN_BSS_DESC_SAME_SSID_THRESHOLD)
-			&& (prBssDescWeakestSameSSID))
-			prBssDescWeakest = prBssDescWeakestSameSSID;
-
-		if (prBssDescWeakest) {
-#if 0 /* TODO: Remove this */
-			log_dbg(SCN, TRACE, "Remove WEAKEST BSS DESC(%#x): MAC: "
-			MACSTR
-			", Update Time = %08lx\n",
-				prBssDescOldest,
-				MAC2STR(prBssDescOldest->aucBSSID),
-				prBssDescOldest->rUpdateTime);
-#endif
-
-			scanFreeBssDesc(prAdapter, prBssDescWeakest);
-		}
+		if (prBssDescWeakest)
+			scanFreeBssDesc(prAdapter, prBssDescWeakest, "WEAKEST");
 	}
+
 	if (u4RemovePolicy & SCN_RM_POLICY_ENTIRE) {
 		struct BSS_DESC *prBSSDescNext;
 
@@ -1320,7 +1316,6 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
-
 			if (prBssDesc == NULL) {
 				DBGLOG(SCN, WARN,
 					"NULL prBssDesc from list %u elem,%p,%p\n",
@@ -1330,18 +1325,38 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 				return;
 			}
 
-			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
-				&& (prBssDesc->fgIsConnected
-				|| prBssDesc->fgIsConnecting)) {
-				/* Don't remove the one currently
-				 * we are connected.
-				 */
+			if (scanRemoveBssDescsIsExcluded(prAdapter,
+				u4RemovePolicy, prBssDesc))
 				continue;
-			}
 
-			scanFreeBssDesc(prAdapter, prBssDesc);
+			scanFreeBssDesc(prAdapter, prBssDesc, "ENTIRE");
 		}
+	}
 
+	if (u4RemovePolicy & SCN_RM_POLICY_MISS_COUNT) {
+		struct BSS_DESC *prBSSDescNext;
+
+		if (prScanParam->eScanChannel == SCAN_CHANNEL_FULL ||
+		    prScanParam->eScanChannel == SCAN_CHANNEL_2G4 ||
+		    prScanParam->eScanChannel == SCAN_CHANNEL_5G ||
+		    prScanParam->eScanChannel == SCAN_CHANNEL_6G ||
+		    prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
+			LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
+				prBSSDescList, rLinkEntry, struct BSS_DESC) {
+				if (scanRemoveBssDescsIsExcluded(prAdapter,
+					u4RemovePolicy, prBssDesc))
+					continue;
+
+				if (prBssDesc->u4UpdateIdx <
+				    prScanInfo->u4ScanUpdateIdx)
+					prBssDesc->ucScanMissCount++;
+
+				if (prBssDesc->ucScanMissCount >=
+					prAdapter->rWifiVar.ucScnMissCntLimit)
+					scanFreeBssDesc(prAdapter, prBssDesc,
+							"MISS_COUNT");
+			}
+		}
 	}
 }	/* end of scanRemoveBssDescsByPolicy() */
 
@@ -1388,14 +1403,7 @@ void scanRemoveBssDescByBssid(struct ADAPTER *prAdapter,
 			ucTargetChNum = prBssDesc->ucChannelNum;
 			eTargetBand = prBssDesc->eBand;
 
-			scanFreeBssDesc(prAdapter, prBssDesc);
-
-			/* We should notify kernel to unlink BSS */
-			kalRemoveBss(
-				prAdapter->prGlueInfo,
-				aucBSSID,
-				ucTargetChNum,
-				eTargetBand);
+			scanFreeBssDesc(prAdapter, prBssDesc, "BY_BSSID");
 
 			/* BSSID is not unique, so need to traverse
 			 * whols link-list
@@ -1480,7 +1488,8 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 		}
 
 		if (fgToRemove == TRUE)
-			scanFreeBssDesc(prAdapter, prBssDesc);
+			scanFreeBssDesc(prAdapter, prBssDesc,
+					"BY_BAND_NETWORK");
 	}
 }	/* end of scanRemoveBssDescByBand() */
 
@@ -2347,7 +2356,7 @@ struct BSS_DESC *scanAllocateBssDesc(struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 static void scanFreeBssDesc(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc)
+	struct BSS_DESC *prBssDesc, const char *pucDesc)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prFreeBSSDescList;
@@ -2356,14 +2365,20 @@ static void scanFreeBssDesc(struct ADAPTER *prAdapter,
 	if (!prBssDesc)
 		return;
 
-	log_dbg(SCN, LOUD, "Free Bss(%p): " MACSTR "\n",
-		prBssDesc, MAC2STR(prBssDesc->aucBSSID));
+	log_dbg(SCN, LOUD, "Free Bss(%p): " MACSTR " (%s)\n",
+		prBssDesc, MAC2STR(prBssDesc->aucBSSID), pucDesc);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
 
 	prBssDesc->fgIsInUse = FALSE;
+
+	/* We should notify kernel to unlink BSS */
+	kalRemoveBss(prAdapter->prGlueInfo,
+		prBssDesc->aucBSSID,
+		prBssDesc->ucChannelNum,
+		prBssDesc->eBand);
 
 	/* Remove this BSS Desc from the BSS Desc list */
 	scanRemoveBssDescFromList(prAdapter,
@@ -2801,8 +2816,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			 */
 			scanRemoveBssDescsByPolicy(prAdapter,
 				(SCN_RM_POLICY_EXCLUDE_CONNECTED
+				| SCN_RM_POLICY_EXCLUDE_SPECIFIC_SSID
 				| SCN_RM_POLICY_OLDEST_HIDDEN
-				| SCN_RM_POLICY_TIMEOUT));
+				| SCN_RM_POLICY_TIMEOUT),
+				prSwRfb);
 
 			/* 4 <1.2.3> Second tail of allocation */
 			prBssDesc = scanAllocateBssDesc(prAdapter);
@@ -2815,7 +2832,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			 */
 			scanRemoveBssDescsByPolicy(prAdapter,
 				(SCN_RM_POLICY_EXCLUDE_CONNECTED
-				 | SCN_RM_POLICY_SMART_WEAKEST));
+				 | SCN_RM_POLICY_EXCLUDE_SPECIFIC_SSID
+				 | SCN_RM_POLICY_SMART_WEAKEST),
+				prSwRfb);
 
 			/* 4 <1.2.5> reallocation */
 			prBssDesc = scanAllocateBssDesc(prAdapter);
@@ -3875,6 +3894,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		prBssDesc->fgSeenProbeResp = FALSE;
 		prBssDesc->u4UpdateIdx =
 			prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
+		prBssDesc->ucScanMissCount = 0;
 	}
 
 	/* check if it is a probe response frame */

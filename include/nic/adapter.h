@@ -1190,6 +1190,7 @@ struct WIFI_VAR {
 	uint32_t u4DbdcP2pLisSwDelayTime;
 #endif
 	uint8_t u4ScanCtrl;
+	uint8_t ucScnMissCntLimit;
 
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	uint8_t ucEfuseBufferModeCal;

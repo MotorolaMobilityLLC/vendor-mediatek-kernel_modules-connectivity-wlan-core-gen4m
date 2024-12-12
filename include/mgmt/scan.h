@@ -50,10 +50,10 @@
 /* Remove SCAN result except the specific one. */
 #define SCN_RM_POLICY_EXCLUDE_SPECIFIC_SSID	BIT(5)
 
-/* This is used by POLICY SMART WEAKEST, If exceed this value, remove weakest
- * struct BSS_DESC with same SSID first in large network.
- */
-#define SCN_BSS_DESC_SAME_SSID_THRESHOLD	20
+/* Remove SCAN result over missed counts. */
+#define SCN_RM_POLICY_MISS_COUNT		BIT(6)
+
+#define SCN_BSS_DESC_MISS_COUNT_LIMIT		2
 
 #define SCN_BSS_DESC_STALE_SEC KAL_SCN_BSS_DESC_STALE_SEC
 
@@ -132,6 +132,7 @@
 #define SCN_CTRL_DEFAULT_SCAN_CTRL		SCN_CTRL_IGNORE_AIS_FIX_CHANNEL
 
 #define SCN_SCAN_DONE_PRINT_BUFFER_LENGTH	500
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -488,6 +489,7 @@ struct BSS_DESC {
 	u_int8_t fgMultiAnttenaAndSTBC;
 	u_int8_t fgIsMCC;
 	uint32_t u4UpdateIdx;
+	uint8_t ucScanMissCount;
 	uint8_t fgIotApActionValid;
 	uint8_t ucIotVer;
 	uint64_t u8IotApAct;
@@ -989,7 +991,8 @@ struct BSS_DESC *scanAllocateBssDesc(struct ADAPTER *prAdapter);
 
 /* BSS-DESC Removal */
 void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
-				uint32_t u4RemovePolicy);
+				uint32_t u4RemovePolicy,
+				struct SW_RFB *prSwRfb);
 
 void scanRemoveBssDescByBssid(struct ADAPTER *prAdapter,
 			      uint8_t aucBSSID[]);

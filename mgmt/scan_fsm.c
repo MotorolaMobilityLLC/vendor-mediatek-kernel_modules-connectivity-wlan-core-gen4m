@@ -457,8 +457,10 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 
 	scanAddPerBandIE(prAdapter, prScanParam, prCmdScanReq);
 
-	log_dbg(SCN, TRACE, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,IELen=%d,Func=(0x%X,0x%X),Mac="
+	log_dbg(SCN, TRACE, "ScanReqV2: used[%d]free[%d] ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,IELen=%d,Func=(0x%X,0x%X),Mac="
 		MACSTR ",BSSID:"MACSTR"\n",
+		prScanInfo->rBSSDescList.u4NumElem,
+		prScanInfo->rFreeBSSDescList.u4NumElem,
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucBssIndex,
 		prCmdScanReq->ucSSIDType,
@@ -1281,9 +1283,11 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	prScanParam = &prScanInfo->rScanParam;
 
 	if (fgIsNewVersion) {
-		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n",
+		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "Version%u!size of ScanDone%zu,used[%d]free[%d],ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n",
 			prScanDone->ucScanDoneVersion,
 			sizeof(struct EVENT_SCAN_DONE),
+			prScanInfo->rBSSDescList.u4NumElem,
+			prScanInfo->rFreeBSSDescList.u4NumElem,
 			prScanDone->ucCompleteChanCount,
 			prScanDone->ucCurrentState,
 			prScanDone->u4ScanDurBcnCnt,
@@ -1301,10 +1305,10 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 				prScanParam->ucChannelListNum);
 
 		} else {
-			log_dbg(SCN, TRACE, " scnEventScanDone at FW_SCAN_STATE_SCAN_DONE state\n");
+			log_dbg(SCN, TRACE, "at FW_SCAN_STATE_SCAN_DONE state\n");
 		}
 	} else {
-		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "Old scnEventScanDone Version\n");
+		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "Old Version\n");
 	}
 
 	/* buffer empty channel information */
@@ -1344,7 +1348,17 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 		uint8_t fgNeedRnrScan = FALSE;
+#endif
 
+		/* remove before next scan to check current scan req */
+		scanRemoveBssDescsByPolicy(prAdapter,
+			SCN_RM_POLICY_EXCLUDE_CONNECTED |
+			SCN_RM_POLICY_EXCLUDE_SPECIFIC_SSID |
+			SCN_RM_POLICY_TIMEOUT |
+			SCN_RM_POLICY_MISS_COUNT,
+			NULL);
+
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 		prScanParam->fgOobRnrParseEn = FALSE;
 
 		if (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
@@ -1445,9 +1459,6 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 		if (scnNeedMloScan(prAdapter, prScanDone->ucSeqNum))
 			return;
 #endif
-
-		scanRemoveBssDescsByPolicy(prAdapter,
-		       SCN_RM_POLICY_EXCLUDE_CONNECTED | SCN_RM_POLICY_TIMEOUT);
 
 		/* generate scan-done event for caller */
 		scnFsmGenerateScanDoneMsg(prAdapter,

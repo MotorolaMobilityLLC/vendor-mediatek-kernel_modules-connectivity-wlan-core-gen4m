@@ -8118,6 +8118,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  DBG_ASSERT_CTRL_LEVEL_DEFAULT, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4ScanCtrl,
 		"ScanCtrl", SCN_CTRL_DEFAULT_SCAN_CTRL, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->ucScnMissCntLimit, "ScnMissCntLimit",
+		SCN_BSS_DESC_MISS_COUNT_LIMIT, FEATURE_TO_CUSTOMER);
 
 	/* Wake lock related configuration */
 	INIT_UINT(prWifiVar->u4WakeLockRxTimeout,
