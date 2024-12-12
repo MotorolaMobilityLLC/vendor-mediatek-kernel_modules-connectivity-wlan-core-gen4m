@@ -6146,6 +6146,13 @@ int main_thread(void *data)
 			&prGlueInfo->ulFlag))
 			kalPerMonDisable(prGlueInfo);
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+		if (test_and_clear_bit(GLUE_FLAG_CONNECTIVITY_LOG_BIT,
+			&prGlueInfo->ulFlag)) {
+			__kalReportWifiLog(prGlueInfo->prAdapter);
+		}
+#endif
+
 #if CFG_ENABLE_WIFI_DIRECT
 		/*run p2p multicast list work. */
 		if (test_and_clear_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT,
@@ -14324,6 +14331,14 @@ void kalPrintSALog(const char *fmt, ...)
 	}
 }
 #endif /* CFG_SUPPORT_SA_LOG */
+
+#if (CFG_SUPPORT_CONN_LOG == 1)
+void kalReportWiFiLogSet(struct ADAPTER *prAdapter)
+{
+	set_bit(GLUE_FLAG_CONNECTIVITY_LOG_BIT, &prAdapter->prGlueInfo->ulFlag);
+	wake_up_interruptible(&prAdapter->prGlueInfo->waitq);
+}
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(struct ADAPTER *prAdapter,

@@ -116,7 +116,8 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	(GLUE_FLAG_HALT | GLUE_FLAG_SUB_MOD_MULTICAST | \
 	GLUE_FLAG_TX_CMD_DONE | GLUE_FLAG_TXREQ | GLUE_FLAG_TIMEOUT | \
 	GLUE_FLAG_FRAME_FILTER | GLUE_FLAG_OID | GLUE_FLAG_RX | \
-	GLUE_FLAG_SER_TIMEOUT | GLUE_FLAG_DISABLE_PERF)
+	GLUE_FLAG_SER_TIMEOUT | GLUE_FLAG_DISABLE_PERF | \
+	GLUE_FLAG_CONNECTIVITY_LOG)
 
 #define GLUE_FLAG_HIF_PROCESS \
 	(GLUE_FLAG_HALT | GLUE_FLAG_INT | GLUE_FLAG_HIF_TX | \
@@ -2629,6 +2630,10 @@ void kalUpdateCompHdlrRec(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_SA_LOG
 void kalPrintSALog(const char *fmt, ...);
+#endif
+
+#if (CFG_SUPPORT_CONN_LOG == 1)
+void kalReportWiFiLogSet(struct ADAPTER *prAdapter);
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)

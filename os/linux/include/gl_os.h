@@ -347,6 +347,9 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_RST_FW_NOTIFY_L05_BIT		(30)
 #define GLUE_FLAG_RST_FW_NOTIFY_L05		BIT(30)
 
+#define GLUE_FLAG_CONNECTIVITY_LOG_BIT		(31)
+#define GLUE_FLAG_CONNECTIVITY_LOG		BIT(31)
+
 #define HIF_FLAG_AER_RESET		BIT(0)
 #define HIF_FLAG_AER_RESET_BIT		(0)
 
