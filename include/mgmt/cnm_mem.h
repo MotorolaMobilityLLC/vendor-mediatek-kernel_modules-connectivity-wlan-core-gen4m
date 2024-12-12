@@ -718,6 +718,8 @@ struct STA_RECORD {
 
 	struct PARAM_KEY rTdlsKeyTemp;	/* temp to queue the key information */
 	uint8_t ucTdlsIndex;
+	u_int8_t fgTdlsIsNeedWaitTeardownTxDone;
+	u_int8_t fgTdlsIsNeedDisableLink;
 #endif	/* CFG_SUPPORT_TDLS */
 #if CFG_SUPPORT_TX_BF
 	struct TXBF_PFMU_STA_INFO rTxBfPfmuStaInfo;

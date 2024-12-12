@@ -12038,7 +12038,7 @@ uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
 #endif
 #if CFG_SUPPORT_TDLS
 	if (prMsduInfo->ucPktType == ENUM_PKT_TDLS)
-		TdlsHandleTxDoneStatus(prAdapter, rTxDoneStatus);
+		TdlsHandleTxDoneStatus(prAdapter, prMsduInfo, rTxDoneStatus);
 #endif /* CFG_SUPPORT_TDLS */
 
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
