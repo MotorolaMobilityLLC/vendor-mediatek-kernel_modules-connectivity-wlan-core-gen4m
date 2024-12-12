@@ -9080,7 +9080,7 @@ void kalWowProcess(struct GLUE_INFO *prGlueInfo,
 			UDP_PORT_MDNS)
 			break;
 	}
-	if (ii == ucCountIpv6 && uucCountIpv6 < MAX_TCP_UDP_PORT) {
+	if (ii == ucCountIpv6 && ucCountIpv6 < MAX_TCP_UDP_PORT) {
 		pWOW_CTRL->stWowPort.ucIPv6UdpPortCnt++;
 		pWOW_CTRL->stWowPort.ausIPv6UdpPort[ucCountIpv6] =
 			UDP_PORT_MDNS;
