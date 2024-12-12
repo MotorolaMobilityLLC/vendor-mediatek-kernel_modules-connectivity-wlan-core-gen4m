@@ -449,7 +449,7 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 #define kalP2pIndicateQueuedMgmtFrame(_prGlueInfo, _prFrame) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalP2pIndicateAcsResult(_prGlueInfo, _eBand, _ucRoleIndex, \
+#define kalP2pIndicateAcsResult(_prGlueInfo, _ucRoleIndex, _icLinkId, _eBand, \
 	_ucPrimaryCh, _ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw, _eHwMode, \
 	_u2PunctBitmap, _eSco) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
@@ -502,6 +502,7 @@ void kalP2pPreStartRdd(
 
 void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,
+		int8_t icLinkId,
 		enum ENUM_BAND eBand,
 		uint8_t ucPrimaryCh,
 		uint8_t ucSecondCh,

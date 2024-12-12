@@ -3964,6 +3964,7 @@ struct MSG_ADD_DEL_MLD_LINK {
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 	uint8_t aucLinkAddr[MAC_ADDR_LEN];
 	void *prNetDevice;
+	void *prWdev;
 };
 
 /*******************************************************************************

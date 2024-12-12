@@ -1898,6 +1898,10 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(prAdapter,
+							   prBssInfo);
+#endif
 	uint8_t ucRoleIdx;
 
 	do {
@@ -2172,6 +2176,30 @@ SKIP_START_RDD:
 		p2pFunMulAPAgentBssStatusNotification(prAdapter,
 			prBssInfo);
 #endif /* CFG_AP_80211KVR_INTERFACE */
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prMldBssInfo &&
+		    prBssInfo->ucLinkIndex == P2P_MAIN_LINK_INDEX) {
+			struct LINK *prBssList = &prMldBssInfo->rBssList;
+			struct BSS_INFO *prLinkBssInfo;
+
+			LINK_FOR_EACH_ENTRY(prLinkBssInfo, prBssList,
+					    rLinkEntryMld, struct BSS_INFO) {
+				if (prLinkBssInfo == prBssInfo)
+					continue;
+
+				if (!prLinkBssInfo->prMsgPendingAcsReq)
+					continue;
+
+				DBGLOG(P2P, INFO,
+					"Continue setup link%u's ACS\n",
+					prLinkBssInfo->ucLinkIndex);
+				mboxSendMsg(prAdapter, MBOX_ID_0,
+					    prLinkBssInfo->prMsgPendingAcsReq,
+					    MSG_SEND_METHOD_BUF);
+			}
+		}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
 
@@ -10211,11 +10239,13 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 	 */
 	prGetChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
 
-	DBGLOG(P2P, INFO, "acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
-			u4LteSafeChnMask_2G,
-			u4LteSafeChnMask_5G_1,
-			u4LteSafeChnMask_5G_2,
-			u4LteSafeChnMask_6G);
+	DBGLOG(P2P, INFO,
+		"band=%u bw=%u acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
+		eBand, eChnlBw,
+		u4LteSafeChnMask_2G,
+		u4LteSafeChnMask_5G_1,
+		u4LteSafeChnMask_5G_2,
+		u4LteSafeChnMask_6G);
 
 	for (i = 0; i < ucNumOfChannel; i++) {
 		uint8_t ucIdx;
@@ -10502,6 +10532,7 @@ skip_bw_overwrite:
 
 	kalP2pIndicateAcsResult(prGlueInfo,
 				prAcsReqInfo->ucRoleIdx,
+				prAcsReqInfo->icLinkId,
 				prAcsReqInfo->eBand,
 				prAcsReqInfo->ucPrimaryCh,
 				prAcsReqInfo->ucSecondCh,

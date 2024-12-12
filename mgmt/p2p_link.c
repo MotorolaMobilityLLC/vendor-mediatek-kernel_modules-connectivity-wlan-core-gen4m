@@ -573,7 +573,7 @@ static uint32_t p2pLinkGet2ndLinkFreqByPeerPref(struct ADAPTER *prAdapter,
 		WLAN_STATUS_SUCCESS : WLAN_STATUS_NOT_ACCEPTED;
 }
 
-static uint32_t p2pLinkGet2ndLinkFreqByCfg(struct ADAPTER *prAdapter,
+uint32_t p2pLinkGet2ndLinkFreqByCfg(struct ADAPTER *prAdapter,
 	u_int8_t fgIsApMode,
 	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,
 	uint32_t *u4PreferFreq)

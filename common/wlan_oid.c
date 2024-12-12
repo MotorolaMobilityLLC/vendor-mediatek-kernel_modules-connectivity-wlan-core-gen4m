@@ -19542,6 +19542,7 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 			}
 
 			prP2pInfo->aprRoleHandler = prMsg->prNetDevice;
+			prP2pInfo->prWdev = prMsg->prWdev;
 			prP2pInfo->u4LinkId = prMsg->u4LinkId;
 
 			/* Switch OP MOde. */
@@ -19622,6 +19623,7 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 		if (prMsg->u4LinkId > 0) {
 			p2pRoleFsmUninit(prAdapter, ucRoleIdx);
 
+			prP2pInfo->prWdev = NULL;
 			prP2pInfo->aprRoleHandler = NULL;
 		}
 

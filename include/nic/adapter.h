@@ -646,6 +646,10 @@ struct BSS_INFO {
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
 	struct TIMER rP2pApGoCarrierOnTimer;
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MSG_HDR *prMsgPendingAcsReq;
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

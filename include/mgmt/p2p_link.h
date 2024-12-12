@@ -40,6 +40,11 @@ void p2pLinkInitGcOtherLinks(struct ADAPTER *prAdapter,
 void p2pLinkUninitGcOtherLinks(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 
+uint32_t p2pLinkGet2ndLinkFreqByCfg(struct ADAPTER *prAdapter,
+	u_int8_t fgIsApMode,
+	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,
+	uint32_t *u4PreferFreq);
+
 void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
 	u_int8_t fgIsApMode,
 	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,

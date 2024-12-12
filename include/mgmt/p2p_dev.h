@@ -187,6 +187,7 @@ struct MSG_WFD_CONFIG_SETTINGS_CHANGED {
 struct MSG_P2P_ACS_REQUEST {
 	struct MSG_HDR rMsgHdr; /* Must be the first member */
 	uint8_t ucRoleIdx;
+	int8_t icLinkId;
 	u_int8_t fgIsHtEnable;
 	u_int8_t fgIsHt40Enable;
 	u_int8_t fgIsVhtEnable;

@@ -76,8 +76,9 @@
  *                              F U N C T I O N S
  ******************************************************************************
  */
-static int32_t __mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
-		void *pvNdev, int32_t i4LinkId, uint8_t *pucRoleIdx)
+int32_t __mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
+				void *pvNdev, int32_t i4LinkId,
+				uint8_t *pucRoleIdx)
 {
 	struct net_device *ndev = (struct net_device *)pvNdev;
 	int32_t i4Ret = -1;
@@ -4449,6 +4450,7 @@ int mtk_p2p_cfg80211_add_intf_link(struct wiphy *wiphy,
 	COPY_MAC_ADDR(rMsg.aucMldAddr, prNetdev->dev_addr);
 	COPY_MAC_ADDR(rMsg.aucLinkAddr, wdev->links[link_id].addr);
 	rMsg.prNetDevice = prNetdev;
+	rMsg.prWdev = wdev;
 
 	if (kalIoctl(prGlueInfo, wlanoidAddDelMldLink, &rMsg, sizeof(rMsg),
 		     &u4SetInfoLen))

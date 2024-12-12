@@ -293,6 +293,9 @@ extern const uint32_t mtk_cipher_suites[];
 */
 
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
+int32_t __mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
+				void *pvNdev, int32_t i4LinkId,
+				uint8_t *pucRoleIdx);
 
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,

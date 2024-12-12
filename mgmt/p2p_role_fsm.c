@@ -443,6 +443,11 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 		prP2pRoleFsmInfo->ucRoleIndex,
 		prP2pBssInfo->ucBssIndex);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prP2pBssInfo->prMsgPendingAcsReq)
+		cnmMemFree(prAdapter, prP2pBssInfo->prMsgPendingAcsReq);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 	p2pFuncDissolve(prAdapter,
 		prP2pBssInfo, FALSE,
 		REASON_CODE_DEAUTH_LEAVING_BSS,
@@ -5189,27 +5194,10 @@ static void initAcsParams(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prMsgAcsRequest || !prAcsReqInfo)
 		return;
 
-	if (prMsgAcsRequest->u4NumChannel) {
-		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
-			prRfChannelInfo =
-				&(prMsgAcsRequest->arChannelListInfo[i]);
-			DBGLOG(REQ, TRACE, "[%d] band=%d, ch=%d\n", i,
-				prRfChannelInfo->eBand,
-				prRfChannelInfo->ucChannelNum);
-		}
-	}
-}
-
-static void initAcsBasicParams(struct ADAPTER *prAdapter,
-		struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
-		struct P2P_ACS_REQ_INFO *prAcsReqInfo)
-{
-	if (!prAdapter || !prMsgAcsRequest || !prAcsReqInfo)
-		return;
-
 	kalMemSet(prAcsReqInfo, 0, sizeof(struct P2P_ACS_REQ_INFO));
 	prAcsReqInfo->fgIsProcessing = TRUE;
 	prAcsReqInfo->ucRoleIdx = prMsgAcsRequest->ucRoleIdx;
+	prAcsReqInfo->icLinkId = prMsgAcsRequest->icLinkId;
 	prAcsReqInfo->fgIsHtEnable = prMsgAcsRequest->fgIsHtEnable;
 	prAcsReqInfo->fgIsHt40Enable = prMsgAcsRequest->fgIsHt40Enable;
 	prAcsReqInfo->fgIsVhtEnable = prMsgAcsRequest->fgIsVhtEnable;
@@ -5236,8 +5224,9 @@ static void initAcsBasicParams(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(P2P, INFO,
-		"idx=%d, ht=%d, ht40=%d, vht=%d, eht=%d, bw=%d, m=%d, c=%d\n",
+		"idx=%d, link=%d, ht=%d, ht40=%d, vht=%d, eht=%d, bw=%d, m=%d, c=%d\n",
 		prMsgAcsRequest->ucRoleIdx,
+		prMsgAcsRequest->icLinkId,
 		prMsgAcsRequest->fgIsHtEnable,
 		prMsgAcsRequest->fgIsHt40Enable,
 		prMsgAcsRequest->fgIsVhtEnable,
@@ -5246,6 +5235,22 @@ static void initAcsBasicParams(struct ADAPTER *prAdapter,
 		prMsgAcsRequest->eHwMode,
 		prMsgAcsRequest->u4NumChannel);
 
+	if (prMsgAcsRequest->u4NumChannel) {
+		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+			prRfChannelInfo =
+				&(prMsgAcsRequest->arChannelListInfo[i]);
+			DBGLOG(REQ, TRACE, "[%d] band=%d, ch=%d\n", i,
+				prRfChannelInfo->eBand,
+				prRfChannelInfo->ucChannelNum);
+		}
+	}
+
+	DBGLOG(P2P, INFO,
+		"acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
+		prMsgAcsRequest->au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_2G4],
+		prMsgAcsRequest->au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_0],
+		prMsgAcsRequest->au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_1],
+		prMsgAcsRequest->au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G]);
 }
 
 static void indicateAcsResultByAliveCh(struct ADAPTER *prAdapter,
@@ -5303,68 +5308,81 @@ static void indicateAcsResultByAliveCh(struct ADAPTER *prAdapter,
 }
 
 static void trimAcsScanList(struct ADAPTER *prAdapter,
-		struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
-		struct P2P_ACS_REQ_INFO *prAcsReqInfo,
-		uint8_t ucDesiredBand,
-		uint32_t *pau4SafeChnl)
+			    struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
+			    struct P2P_ACS_REQ_INFO *prAcsReqInfo,
+			    uint8_t ucDesiredBand,
+			    uint32_t *pau4SafeChnl)
 {
-	uint32_t u4NumChannel = 0;
+	struct RF_CHANNEL_INFO **arChannelList = NULL;
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	uint32_t u4NumChannel = 0, u4Size;
 	uint8_t i;
-	struct RF_CHANNEL_INFO *prRfChannelInfo1;
-	struct RF_CHANNEL_INFO *prRfChannelInfo2;
 
 	if (!prAdapter || !prAcsReqInfo)
 		return;
 
+	u4Size = sizeof(struct RF_CHANNEL_INFO) *
+		prMsgAcsRequest->u4NumChannel;
+	arChannelList = (struct RF_CHANNEL_INFO **)
+		kalMemZAlloc(u4Size, VIR_MEM_TYPE);
+	if (!arChannelList) {
+		DBGLOG(P2P, ERROR,
+			"Alloc arChannelList failed, size=%u\n",
+			u4Size);
+		return;
+	}
+
 	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
-		prRfChannelInfo1 =
-				&(prMsgAcsRequest->arChannelListInfo[i]);
-		if ((ucDesiredBand & BIT(prRfChannelInfo1->eBand)) == 0)
+		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
+
+		if ((ucDesiredBand & BIT(prRfChannelInfo->eBand)) == 0)
 			continue;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		/* Keep only PSC channels */
-		if (prRfChannelInfo1->eBand == BAND_6G &&
-		    !(prRfChannelInfo1->ucChannelNum >= 5 &&
-		      prRfChannelInfo1->ucChannelNum <= 225 &&
-		      IS_6G_PSC_CHANNEL(prRfChannelInfo1->ucChannelNum)))
+		if (prRfChannelInfo->eBand == BAND_6G &&
+		    !(prRfChannelInfo->ucChannelNum >= 5 &&
+		      prRfChannelInfo->ucChannelNum <= 225 &&
+		      IS_6G_PSC_CHANNEL(prRfChannelInfo->ucChannelNum)))
 			continue;
 #endif
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 		if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
-			prRfChannelInfo1->ucChannelNum,
-			prRfChannelInfo1->eBand))
+						prRfChannelInfo->ucChannelNum,
+						prRfChannelInfo->eBand))
 			continue;
 #endif
 		/* trim by safe chnl info */
-		if (!p2pFuncIsLteSafeChnl(prRfChannelInfo1->eBand,
-					     prRfChannelInfo1->ucChannelNum,
-					     pau4SafeChnl)) {
-			DBGLOG(P2P, INFO, "skip lte unsafe ch=%u, B=%u",
-			       prRfChannelInfo1->ucChannelNum,
-			       prRfChannelInfo1->eBand);
+		if (!p2pFuncIsLteSafeChnl(prRfChannelInfo->eBand,
+					  prRfChannelInfo->ucChannelNum,
+					  pau4SafeChnl))
 			continue;
-		}
 
-		DBGLOG(P2P, INFO, "acs trim scan list, [%d]=%d %d\n",
-				u4NumChannel,
-				prRfChannelInfo1->eBand,
-				prRfChannelInfo1->ucChannelNum);
-		prRfChannelInfo2 = &(prMsgAcsRequest->arChannelListInfo[
-				u4NumChannel]);
-		prRfChannelInfo2->eBand = prRfChannelInfo1->eBand;
-		prRfChannelInfo2->u4CenterFreq1 =
-				prRfChannelInfo1->u4CenterFreq1;
-		prRfChannelInfo2->u4CenterFreq2 =
-				prRfChannelInfo1->u4CenterFreq2;
-		prRfChannelInfo2->u2PriChnlFreq =
-				prRfChannelInfo1->u2PriChnlFreq;
-		prRfChannelInfo2->ucChnlBw = prRfChannelInfo1->ucChnlBw;
-		prRfChannelInfo2->ucChannelNum =
-				prRfChannelInfo1->ucChannelNum;
-		u4NumChannel++;
-		prRfChannelInfo1++;
+		arChannelList[u4NumChannel++] = prRfChannelInfo;
+	}
+
+	if (u4NumChannel == 0) {
+		DBGLOG(P2P, WARN,
+			"Skip trim list since list will be trimmed to empty\n");
+		goto exit;
+	} else if (u4NumChannel == prMsgAcsRequest->u4NumChannel) {
+		goto exit;
+	}
+
+	for (i = 0; i < u4NumChannel; i++) {
+		kalMemCopy(&(prMsgAcsRequest->arChannelListInfo[i]),
+			   arChannelList[i],
+			   sizeof(struct RF_CHANNEL_INFO));
+		DBGLOG(P2P, TRACE,
+			"acs trim channel list, [%d]=%d %d\n",
+			i,
+			arChannelList[i]->eBand,
+			arChannelList[i]->ucChannelNum);
 	}
 	prMsgAcsRequest->u4NumChannel = u4NumChannel;
+
+exit:
+	if (arChannelList)
+		kalMemFree(arChannelList, VIR_MEM_TYPE, u4Size);
 }
 
 u_int8_t indicateApAcsOverwrite(
@@ -5430,6 +5448,82 @@ u_int8_t indicateApAcsOverwrite(
 	return bOverwrite;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+u_int8_t
+indicateApLinkAcsOverwrite(struct ADAPTER *prAdapter,
+			   struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
+			   struct P2P_ACS_REQ_INFO *prAcsReqInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct MLD_BSS_INFO *prMldBss;
+	struct BSS_INFO *prBssInfo, *prMainBssInfo;
+	enum ENUM_BAND eMainLinkBand;
+	enum ENUM_MAX_BANDWIDTH_SETTING eMaxChnlBw;
+	uint32_t u4MainLinkFreq, u4PreferFreq;
+	uint8_t ucRoleIdx;
+	u_int8_t fgIsApMode;
+
+	ucRoleIdx = prMsgAcsRequest->ucRoleIdx;
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+							  ucRoleIdx);
+	if (!prP2pRoleFsmInfo)
+		return FALSE;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prP2pRoleFsmInfo->ucBssIndex);
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	prMainBssInfo = mldGetBssInfoByLinkID(prAdapter, prMldBss,
+					      P2P_MAIN_LINK_INDEX,
+					      FALSE);
+	if (!prMldBss || !prMainBssInfo || !prBssInfo)
+		return FALSE;
+
+	fgIsApMode = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx]);
+	eMainLinkBand = prMainBssInfo->eBand;
+	u4MainLinkFreq = nicChannelNum2Freq(prMainBssInfo->ucPrimaryChannel,
+					    eMainLinkBand) / 1000;
+	if (p2pLinkGet2ndLinkFreqByCfg(prAdapter, fgIsApMode, eMainLinkBand,
+				       u4MainLinkFreq, &u4PreferFreq) !=
+	    WLAN_STATUS_SUCCESS)
+		return FALSE;
+
+	prAcsReqInfo->ucPrimaryCh = nicFreq2ChannelNum(u4PreferFreq * 1000);
+	prAcsReqInfo->eBand = cnmGetBandByFreq(u4PreferFreq);
+	if (prAcsReqInfo->eBand == BAND_2G4)
+		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+	else
+		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
+	switch (prAcsReqInfo->eBand) {
+	case BAND_2G4:
+		eMaxChnlBw = fgIsApMode ?
+			prAdapter->rWifiVar.ucAp2gBandwidth :
+			prAdapter->rWifiVar.ucP2p2gBandwidth;
+		break;
+	case BAND_5G:
+		eMaxChnlBw = fgIsApMode ?
+			prAdapter->rWifiVar.ucAp5gBandwidth :
+			prAdapter->rWifiVar.ucP2p5gBandwidth;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BAND_6G:
+		eMaxChnlBw = fgIsApMode ?
+			prAdapter->rWifiVar.ucAp6gBandwidth :
+			prAdapter->rWifiVar.ucP2p6gBandwidth;
+		break;
+#endif
+	default:
+		eMaxChnlBw = MAX_BW_20MHZ;
+		break;
+	}
+	prAcsReqInfo->eChnlBw = eMaxChnlBw;
+
+	p2pFunIndicateAcsResult(prAdapter->prGlueInfo, prAcsReqInfo);
+
+	return TRUE;
+}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 static void p2pRoleFsmSetSafeBitmap(struct ADAPTER *prAdapter,
 				struct P2P_ACS_REQ_INFO *prAcsReqInfo,
 				enum ENUM_BAND eBand,
@@ -5461,6 +5555,11 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest =
 		(struct MSG_P2P_ACS_REQUEST *) prMsgHdr;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+	struct BSS_INFO *prMainBssInfo;
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg;
 	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
 	struct BSS_INFO *prPreferBssInfo =  NULL;
@@ -5474,6 +5573,7 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	uint32_t *pu4SafeChInfo_5g_0;
 	uint32_t *pu4SafeChInfo_5g_1;
 	uint32_t *pu4SafeChInfo_6g;
+	uint8_t ucBssIndex;
 
 	if (!prAdapter || !prMsgHdr)
 		goto exit;
@@ -5492,23 +5592,67 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	if (!prP2pRoleFsmInfo)
 		goto exit;
 
+	ucBssIndex = prP2pRoleFsmInfo->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	prP2pRoleFsmInfo->fgIsChannelSelectByAcs = TRUE;
 	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
 
-	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(prAdapter,
-						       aliveNonSapBss);
-
-	DBGLOG(P2P, INFO, "alive non sap bss num:%d\n",
-		ucNumAliveNonSapBss);
-
 	p2pRoleFsmAbortCurrentAcsReq(prAdapter, prMsgAcsRequest);
-	initAcsBasicParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
-
-	if (indicateApAcsOverwrite(prAdapter, prMsgAcsRequest, prAcsReqInfo))
-		goto exit;
-
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	prMainBssInfo = mldGetBssInfoByLinkID(prAdapter, prMldBss,
+					      P2P_MAIN_LINK_INDEX,
+					      FALSE);
+	if (prMsgAcsRequest->icLinkId != -1 &&
+	    prMsgAcsRequest->icLinkId != P2P_MAIN_LINK_INDEX &&
+	    prMldBss && prBssInfo && prMainBssInfo) {
+		if (prMainBssInfo->fgIsApGoGranted) {
+			uint8_t ucDesiredBand = 0;
+
+			/* Only A+G mlo links supported */
+			if (prMainBssInfo->eBand == BAND_2G4) {
+				prAcsReqInfo->eHwMode =
+					P2P_VENDOR_ACS_HW_MODE_11A;
+				ucDesiredBand = BIT(BAND_5G);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				ucDesiredBand |= BIT(BAND_6G);
+#endif /* CFG_SUPPORT_WIFI_6G */
+			} else {
+				prAcsReqInfo->eHwMode =
+					P2P_VENDOR_ACS_HW_MODE_11G;
+				ucDesiredBand = BIT(BAND_2G4);
+			}
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, ucDesiredBand,
+					NULL);
+		} else {
+			DBGLOG(P2P, INFO,
+				"Postpone link%d's ACS request until main link setup done\n",
+				prMsgAcsRequest->icLinkId);
+			prBssInfo->prMsgPendingAcsReq = prMsgHdr;
+			return;
+		}
+	}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	if (prMsgAcsRequest->icLinkId == -1 ||
+	    prMsgAcsRequest->icLinkId == P2P_MAIN_LINK_INDEX) {
+		if (indicateApAcsOverwrite(prAdapter, prMsgAcsRequest,
+					   prAcsReqInfo))
+			goto exit;
+	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	else {
+		if (indicateApLinkAcsOverwrite(prAdapter, prMsgAcsRequest,
+					       prAcsReqInfo))
+			goto exit;
+	}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(prAdapter,
+						       aliveNonSapBss);
 	for (i = 0; i < ucNumAliveNonSapBss && prPreferBssInfo == NULL; i++) {
 		struct BSS_INFO *bss = aliveNonSapBss[i];
 		struct RF_CHANNEL_INFO *channel;
@@ -5640,21 +5784,12 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
 
 		if (p2pFuncIsLteSafeChnl(prRfChannelInfo->eBand,
-					  prRfChannelInfo->ucChannelNum,
-					  prMsgAcsRequest->au4SafeChnl)) {
+					 prRfChannelInfo->ucChannelNum,
+					 prMsgAcsRequest->au4SafeChnl)) {
 			fgIsSafeChExist = TRUE;
-			p2pRoleFsmSetSafeBitmap(
-				prAdapter,
-				prAcsReqInfo,
-				prRfChannelInfo->eBand,
-				prRfChannelInfo->ucChannelNum);
+			break;
 		}
 	}
-
-	DBGLOG(P2P, INFO,
-	       "acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x], isSafeChExist=%u",
-		*pu4SafeChInfo_2g, *pu4SafeChInfo_5g_0,
-		*pu4SafeChInfo_5g_1, *pu4SafeChInfo_6g, fgIsSafeChExist);
 
 	if (fgIsSafeChExist) {
 		/* trim by modem IDC safe channel */
@@ -5665,18 +5800,24 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 				BIT(BAND_2G4) | BIT(BAND_5G),
 #endif
 				prMsgAcsRequest->au4SafeChnl);
+	} else {
+		DBGLOG(P2P, WARN,
+			"safe channel mask NOT valid [0x%08x][0x%08x][0x%08x][0x%08x].\n",
+			*pu4SafeChInfo_2g,
+			*pu4SafeChInfo_5g_0,
+			*pu4SafeChInfo_5g_1,
+			*pu4SafeChInfo_6g);
 	}
 
-	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
-	    prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
-		prAcsReqInfo->eBand = BAND_2G4;
-	} else {
-		prAcsReqInfo->eBand = BAND_5G;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAcsReqInfo->au4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G] &&
-		    prAdapter->fgIsHwSupport6G)
-			prAcsReqInfo->eBand = BAND_6G;
-#endif /* CFG_SUPPORT_WIFI_6G */
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
+
+		p2pRoleFsmSetSafeBitmap(prAdapter,
+					prAcsReqInfo,
+					prRfChannelInfo->eBand,
+					prRfChannelInfo->ucChannelNum);
+		/* set acs's band as highest supported band */
+		prAcsReqInfo->eBand = prRfChannelInfo->eBand;
 	}
 
 	u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) + (
@@ -5703,6 +5844,10 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			(struct MSG_HDR *) prP2pScanReqMsg);
 
 exit:
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prBssInfo && prBssInfo->prMsgPendingAcsReq)
+		prBssInfo->prMsgPendingAcsReq = NULL;
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 }

@@ -2568,6 +2568,7 @@ nla_put_failure:
 
 void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,
+		int8_t icLinkId,
 		enum ENUM_BAND eBand,
 		uint8_t ucPrimaryCh,
 		uint8_t ucSecondCh,
@@ -2581,7 +2582,6 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct sk_buff *vendor_event = NULL;
 	uint16_t ch_width = MAX_BW_20MHZ;
-	uint8_t ucLinkId = 0;
 
 	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
@@ -2589,8 +2589,6 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
 		return;
 	}
-
-	ucLinkId = (uint8_t)prGlueP2pInfo->u4LinkId;
 
 	switch (eChnlBw) {
 	case MAX_BW_20MHZ:
@@ -2641,8 +2639,9 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	DBGLOG(P2P, INFO,
-		"l=%u r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d, b=0x%x\n",
-		ucLinkId,
+		"%s l=%d r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d, b=0x%x\n",
+		prGlueP2pInfo->prWdev->netdev->name,
+		icLinkId,
 		ucRoleIndex,
 		eBand,
 		ucPrimaryCh,
@@ -2714,9 +2713,10 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		goto nla_put_failure;
 	}
 
-	if (unlikely(nla_put_u8(vendor_event,
+	if (icLinkId != -1 &&
+	    unlikely(nla_put_u8(vendor_event,
 			WIFI_VENDOR_ATTR_ACS_LINK_ID,
-			ucLinkId) < 0)) {
+			icLinkId) < 0)) {
 		DBGLOG(P2P, ERROR, "put link id fail.\n");
 		goto nla_put_failure;
 	}

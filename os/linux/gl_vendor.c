@@ -3976,6 +3976,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	struct RF_CHANNEL_INFO *prRfChannelInfo;
 	struct sk_buff *reply_skb;
 	uint8_t role_idx;
+	int8_t link_id = -1;
 	struct PARAM_GET_CHN_INFO *prLteSafeChn = NULL;
 #if CFG_SUPPORT_GET_LTE_SAFE_CHANNEL
 	uint32_t u4BufLen;
@@ -4075,6 +4076,22 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		}
 	}
 
+	if (tb[WIFI_VENDOR_ATTR_ACS_LINK_ID]) {
+		uint8_t ucRoleIdx;
+
+		link_id = nla_get_u8(tb[WIFI_VENDOR_ATTR_ACS_LINK_ID]);
+		if (__mtk_Netdev_To_RoleIdx(prGlueInfo, wdev->netdev, link_id,
+					    &ucRoleIdx) == 0) {
+			role_idx = ucRoleIdx;
+		} else {
+			DBGLOG(REQ, ERROR,
+				"__mtk_Netdev_To_RoleIdx failed, link_id=%d\n",
+				link_id);
+			rStatus = -ENOMEM;
+			goto exit;
+		}
+	}
+
 	if (!ch_list_count) {
 		DBGLOG(REQ, ERROR, "channel list count can NOT be 0\n");
 		rStatus = -EINVAL;
@@ -4096,6 +4113,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	kalMemSet(prMsgAcsRequest, 0, msg_size);
 	prMsgAcsRequest->rMsgHdr.eMsgId = MID_MNY_P2P_ACS;
 	prMsgAcsRequest->ucRoleIdx = role_idx;
+	prMsgAcsRequest->icLinkId = link_id;
 	prMsgAcsRequest->fgIsHtEnable = ht_enabled;
 	prMsgAcsRequest->fgIsHt40Enable = ht40_enabled;
 	prMsgAcsRequest->fgIsVhtEnable = vht_enabled;

@@ -269,6 +269,7 @@ enum P2P_FOBIDDEN_REGION_TYPE {
  */
 struct P2P_ACS_REQ_INFO {
 	uint8_t ucRoleIdx;
+	int8_t icLinkId;
 	u_int8_t fgIsProcessing;
 	u_int8_t fgIsHtEnable;
 	u_int8_t fgIsHt40Enable;
