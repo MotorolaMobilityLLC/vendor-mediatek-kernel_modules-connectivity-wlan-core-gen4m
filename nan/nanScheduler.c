@@ -7646,7 +7646,7 @@ WAIT_RSP_STATE_DONE:
 	if (pu4RejectCode != NULL)
 		*pu4RejectCode = u4ReasonCode;
 
-	DBGLOG(NAN, INFO, "pu4RejectCode = %u\n", *pu4RejectCode);
+	DBGLOG(NAN, INFO, "u4RejectCode=%u\n", u4ReasonCode);
 
 	return rRetStatus;
 }
