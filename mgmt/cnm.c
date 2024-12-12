@@ -516,6 +516,7 @@ static const char * const apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP + 1] = {
 	[CNM_OPMODE_REQ_DBDC] = "DBDC",
 	[CNM_OPMODE_REQ_DBDC_SCAN] = "DBDC Scan",
 	[CNM_OPMODE_REQ_COEX] = "COEX",
+	[CNM_OPMODE_REQ_TX_ANT_CTRL] = "TxAntCtrl_1T2R",
 	[CNM_OPMODE_REQ_SMARTGEAR] = "SmartGear",
 	[CNM_OPMODE_REQ_USER_CONFIG] = "User",
 	[CNM_OPMODE_REQ_SMARTGEAR_1T2R] = "SmartGear_1T2R",
@@ -5515,6 +5516,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_HW_CONSTRIAN_CAP:
 		eReqIdx = CNM_OPMODE_REQ_HW_CONSTRIAN_CAP;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_TX_ANT_CTRL:
+		eReqIdx = CNM_OPMODE_REQ_TX_ANT_CTRL;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
@@ -6000,6 +6004,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 #endif
 		/* Step 4. Execute OpMode change function for alive BSS */
 		if (eNewReq == CNM_OPMODE_REQ_SMARTGEAR_1T2R ||
+			eNewReq == CNM_OPMODE_REQ_TX_ANT_CTRL ||
 			eNewReq == CNM_OPMODE_REQ_ANT_CTRL_1T2R)
 			ucSendAct = OP_CHANGE_SEND_ACT_DISABLE;
 

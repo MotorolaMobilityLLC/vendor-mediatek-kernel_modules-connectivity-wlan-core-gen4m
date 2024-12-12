@@ -348,29 +348,32 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	/** Coexistence decision request */
 	CNM_OPMODE_REQ_COEX       = 4,
 
+	/** Tx antenna control */
+	CNM_OPMODE_REQ_TX_ANT_CTRL = 5,
+
 	/** Smartgear decision request */
-	CNM_OPMODE_REQ_SMARTGEAR  = 5,
+	CNM_OPMODE_REQ_SMARTGEAR  = 6,
 
 	/** User configuration request */
-	CNM_OPMODE_REQ_USER_CONFIG     = 6,
+	CNM_OPMODE_REQ_USER_CONFIG     = 7,
 
 	/** Smartgear 1T2R decision request */
-	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 7,
+	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 8,
 
 	/** Antenna control 1T2R request */
-	CNM_OPMODE_REQ_ANT_CTRL_1T2R   = 8,
+	CNM_OPMODE_REQ_ANT_CTRL_1T2R   = 9,
 
 	/** CO-Ant request */
-	CNM_OPMODE_REQ_COANT      = 9,
+	CNM_OPMODE_REQ_COANT      = 10,
 
 	/** RDD (Radar Detection and DFS) operation change request */
-	CNM_OPMODE_REQ_RDD_OPCHNG = 10,
+	CNM_OPMODE_REQ_RDD_OPCHNG = 11,
 
 	/** Total number of CNM operation mode requests */
-	CNM_OPMODE_REQ_NUM        = 11,
+	CNM_OPMODE_REQ_NUM        = 12,
 
 	/** Maximum capability of opmode request (just for coding) */
-	CNM_OPMODE_REQ_MAX_CAP    = 12
+	CNM_OPMODE_REQ_MAX_CAP    = 13
 };
 
 /*******************************************************************************
