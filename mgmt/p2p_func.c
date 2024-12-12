@@ -5313,12 +5313,20 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
-				struct MULTI_LINK_INFO rMlInfo;
+				struct MULTI_LINK_INFO *prMlInfo;
 
-				MLD_PARSE_BASIC_MLIE(&rMlInfo, pucIE,
-					IE_SIZE(pucIE), /* no need fragment */
-					aucBSSID,
-					MAC_FRAME_BEACON);
+				prMlInfo = (struct MULTI_LINK_INFO *)
+					kalMemZAlloc(sizeof(*prMlInfo),
+						     VIR_MEM_TYPE);
+
+				if (prMlInfo) {
+					MLD_PARSE_BASIC_MLIE(prMlInfo, pucIE,
+							     IE_SIZE(pucIE),
+							     aucBSSID,
+							     MAC_FRAME_BEACON);
+					kalMemFree(prMlInfo, VIR_MEM_TYPE,
+						   sizeof(*prMlInfo));
+				}
 
 				prP2pSpecificBssInfo->fgMlIeExist = TRUE;
 			}
