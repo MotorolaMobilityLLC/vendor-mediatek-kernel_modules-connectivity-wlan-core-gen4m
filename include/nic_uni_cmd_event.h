@@ -801,7 +801,8 @@ struct UNI_CMD_BSSINFO_EHT {
 	uint8_t  ucEhtCcfs1;
 	uint8_t  ucPadding1;
 	uint16_t u2EhtDisSubChanBitmap;
-	uint8_t  aucPadding2[4];
+	uint8_t  fgEhtMcs15Disable;
+	uint8_t  aucPadding2[3];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo STA PM disable (Tag 0x1B) */

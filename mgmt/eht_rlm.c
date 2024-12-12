@@ -997,6 +997,11 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prBssInfo->u2EhtDisSubChanBitmap = 0;
 	}
 
+	if (EHT_IS_OP_PARAM_MCS_15_DISABLE(prEhtOp->ucEhtOpParams))
+		prBssInfo->fgEhtMcs15Disable = TRUE;
+	else
+		prBssInfo->fgEhtMcs15Disable = FALSE;
+
 	DBGLOG(RLM, INFO, "DscbBitmap: 0x%x\n",
 		prBssInfo->u2EhtDisSubChanBitmap);
 

@@ -2693,6 +2693,7 @@ uint32_t nicUniCmdBssInfoTagEht(struct ADAPTER *ad,
 	tag->ucEhtCcfs1 = bss->ucEhtCcfs1;
 	tag->u2EhtDisSubChanBitmap =
 		bss->u2EhtDisSubChanBitmap;
+	tag->fgEhtMcs15Disable = bss->fgEhtMcs15Disable;
 
 	return tag->u2Length;
 }

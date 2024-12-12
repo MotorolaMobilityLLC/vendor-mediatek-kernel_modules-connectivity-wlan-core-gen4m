@@ -443,6 +443,7 @@ struct BSS_INFO {
 	uint8_t  ucEhtCcfs0;
 	uint8_t  ucEhtCcfs1;
 	uint16_t u2EhtDisSubChanBitmap;
+	uint8_t  fgEhtMcs15Disable;
 #endif
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	uint8_t ucMaxBSSIDIndicator;
