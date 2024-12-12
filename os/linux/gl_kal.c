@@ -13212,8 +13212,9 @@ void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 	prBssInfo =
 		CONTAINER_OF(prWorkContainer, struct BSS_INFO, rGlChSwitchWork);
 	prAdapter = (struct ADAPTER *)
-		((int8_t *) (prBssInfo - prBssInfo->ucBssIndex) -
-		OFFSET_OF(struct ADAPTER, aprBssInfo));
+		(((int8_t *) (prBssInfo - prBssInfo->ucBssIndex)) -
+		OFFSET_OF(struct WIFI_VAR, arBssInfoPool) -
+		OFFSET_OF(struct ADAPTER, rWifiVar));
 
 	if (!prAdapter ||
 		!prAdapter->prGlueInfo ||
