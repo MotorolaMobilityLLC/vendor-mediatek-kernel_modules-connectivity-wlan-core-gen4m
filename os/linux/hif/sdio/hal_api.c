@@ -423,7 +423,7 @@ u_int8_t halFWOwnClr(struct ADAPTER *prAdapter,
 				       fgTimeout, kalGetTimeTick() - u4CurrTick, fgIsBusAccessFailed);
 				DBGLOG(INIT, ERROR,
 				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u] fgCoreDump[%u]\n",
-				       kalIsResetting(prAdapter->prGlueInfo),
+				       kalIsResetting(),
 				       kalIsCardRemoved(prAdapter->prGlueInfo), wlanIsChipNoAck(prAdapter),
 				       prAdapter->u4OwnFailedCount, fgWmtCoreDump);
 
@@ -2459,9 +2459,6 @@ void halProcessAbnormalInterrupt(struct ADAPTER *prAdapter)
 		DBGLOG(REQ, WARN, "Skip all SDIO Rx due to Rx underflow error!\n");
 
 		if (prDbgOps) {
-			if (prDbgOps->get_sdio_debug_info)
-				prDbgOps->get_sdio_debug_info(prAdapter);
-
 			if (prDbgOps->show_mcu_debug_info) {
 				prDbgOps->show_mcu_debug_info(prAdapter,
 				  NULL, 0, DBG_MCU_DBG_ALL, NULL);

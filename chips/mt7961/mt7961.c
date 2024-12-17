@@ -11,7 +11,7 @@
      from MediaTek 802.11 Wireless LAN driver stack to GLUE Layer.
 */
 
-#ifdef MT7961
+#if defined(MT7961) || defined(MT7922) || defined(MT7902)
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -478,7 +478,7 @@ static void mt7961ReadIntStatus(
 	struct ADAPTER *prAdapter,
 	uint32_t *pu4IntStatus)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	union WPDMA_INT_STA_STRUCT *prIntrStatus;
@@ -1218,7 +1218,8 @@ u_int8_t mt7961GetRxDbgInfoSrc(struct ADAPTER *prAdapter)
 uint32_t mt7961setWfdmaCoalescingInt(struct ADAPTER *prAdapter,
 					    u_int8_t fgEnable)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 	struct BUS_INFO *prBusInfo;
 
 	prBusInfo = prAdapter->chip_info->bus_info;

@@ -72,7 +72,7 @@
 #undef BUFFER_BIN_PAGE_SIZE
 #endif
 
-#if defined MT7915 || defined MT7961
+#if defined MT7915 || defined MT7961 || defined MT7902
 #define MAX_EEPROM_BUFFER_SIZE	0xe00
 #define BUFFER_BIN_PAGE_SIZE 0x400
 #else

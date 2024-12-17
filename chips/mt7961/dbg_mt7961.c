@@ -14,7 +14,7 @@
  *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
  ******************************************************************************/
 
-#ifdef MT7961
+#if defined(MT7961) || defined(MT7902)
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -31,6 +31,7 @@
 #include "mt_dmac.h"
 #include "wf_ple.h"
 #include "mt7961.h"
+#include "dbg_comm.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -249,13 +250,15 @@ struct wfdma_group_info wfmda_wm_rx_group[] = {
 };
 
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
+#if defined(_HIF_USB) || defined(_HIF_PCIE)
 static u_int32_t wfsys_status_sel[] =
 #if defined(_HIF_USB)
 	{0x80000010, 0x80000017, 0x80000018, 0x8000001C, 0x8000001D};
 #elif defined(_HIF_PCIE)
 	{0x00100010, 0x00100017, 0x00100018, 0x0010001C, 0x0010001D};
 #else
-	{0, 0, 0, 0, 0};
+	/* SDIO may not run this feature. Add data for non-OS build */
+	{0x00000010, 0x00100017, 0x00100018, 0x0010001C, 0x0010001D};
 #endif
 
 static u_int32_t bgfsys_status_sel[] = {
@@ -292,6 +295,7 @@ static struct DEBUG_SOP_INFO mt7961_debug_sop_info[] = {
 #endif
 	}
 };
+#endif /* defined(_HIF_USB) || defined(_HIF_PCIE) */
 #endif
 
 
@@ -313,12 +317,12 @@ void mt7961_show_ple_info(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd)
 {
-	u_int32_t ple_buf_ctrl, pg_sz, pg_num;
+	u_int32_t ple_buf_ctrl = 0, pg_sz, pg_num;
 	u_int32_t ple_stat[25] = {0}, pg_flow_ctrl[10] = {0};
 	u_int32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	u_int32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	u_int32_t ple_err, ple_err1;
+	u_int32_t ple_err = 0, ple_err1 = 0;
 	u_int32_t i, j;
 #if 0
 	u_int32_t ple_txcmd_stat;
@@ -727,12 +731,13 @@ void mt7961_show_ple_info(
 void mt7961_show_pse_info(
 	struct ADAPTER *prAdapter)
 {
-	u_int32_t pse_buf_ctrl, pg_sz, pg_num;
-	u_int32_t pse_stat;
+	u_int32_t pse_buf_ctrl = 0, pg_sz, pg_num;
+	u_int32_t pse_stat = 0;
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	u_int32_t max_q, min_q, rsv_pg, used_pg;
 	u_int32_t i, group_cnt;
-	u_int32_t group_quota, group_info, freepg_cnt, freepg_head_tail;
+	u_int32_t group_quota = 0, group_info = 0;
+	u_int32_t freepg_cnt = 0, freepg_head_tail = 0;
 	u_int32_t pse_err, pse_err1;
 	struct pse_group_info *group;
 	char *str;
@@ -949,7 +954,7 @@ void show_wfdma_interrupt_info(
 {
 	uint32_t idx;
 	uint32_t u4DmaCfgCrAddr;
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 
 	/* Dump Interrupt Status info */
 	DBGLOG(HAL, DEBUG, "Interrupt Status:\n");
@@ -1032,10 +1037,10 @@ void show_wfdma_ring_info(
 	uint32_t group_cnt;
 	uint32_t u4DmaCfgCrAddr;
 	struct wfdma_group_info *group;
-	uint32_t u4_hw_desc_base_value;
-	uint32_t u4_hw_cnt_value;
-	uint32_t u4_hw_cidx_value;
-	uint32_t u4_hw_didx_value;
+	uint32_t u4_hw_desc_base_value = 0;
+	uint32_t u4_hw_cnt_value = 0;
+	uint32_t u4_hw_cidx_value = 0;
+	uint32_t u4_hw_didx_value = 0;
 	uint32_t queue_cnt;
 
 	/* Dump All Ring Info */
@@ -1117,7 +1122,8 @@ void show_wfdma_dbg_probe_info(
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint16_t u2Idx;
-	uint32_t u4DbgIdxAddr, u4DbgProbeAddr, u4DbgIdxValue, u4DbgProbeValue;
+	uint32_t u4DbgIdxAddr, u4DbgProbeAddr, u4DbgIdxValue;
+	uint32_t u4DbgProbeValue = 0;
 
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
 		u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
@@ -1586,6 +1592,6 @@ u_int8_t mt7961_show_debug_sop_info(struct ADAPTER *prAdapter,
 
 	return TRUE;
 }
-#endif
+#endif /* (CFG_SUPPORT_DEBUG_SOP == 1) */
 
 #endif /* MT7961 */

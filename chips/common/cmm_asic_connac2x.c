@@ -361,7 +361,7 @@ void asicConnac2xFillInitCmdTxd(
 				&prInitHifTxHeader->rInitWifiCmd.aucBuffer[0];
 	}
 }
-
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 void asicConnac2xWfdmaRecord(
 	struct ADAPTER *prAdapter)
 {
@@ -394,7 +394,7 @@ void asicConnac2xWfdmaChkIdxMisMatch(
 			prTxRing->TxDmaIdx, prTxRing->TxDmaIdxRec);
 	}
 }
-
+#endif
 void asicConnac2xWfdmaDummyCrRead(
 	struct ADAPTER *prAdapter,
 	u_int8_t *pfgResult)

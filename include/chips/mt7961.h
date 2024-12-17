@@ -7,7 +7,7 @@
 *    \brief This file contains the info of MT7961
 */
 
-#ifdef MT7961
+#if defined(MT7961) || defined(MT7922) || defined(MT7902)
 
 #ifndef _MT7961_H
 #define _MT7961_H
@@ -169,6 +169,11 @@ uint32_t mt7961setWfdmaCoalescingInt(
 
 void mt7961SerInit(struct ADAPTER *prAdapter,
 		   const u_int8_t fgAtResetFlow);
+
+void mt7961DumpSerDummyCR(
+	struct ADAPTER *prAdapter);
+
+uint32_t mt7961GetFwVer(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S

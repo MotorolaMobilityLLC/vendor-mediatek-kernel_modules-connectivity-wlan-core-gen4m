@@ -330,6 +330,10 @@ struct BUS_INFO {
 	void (*halUpdateTxDonePendingCount)(struct ADAPTER *prAdapter,
 			u_int8_t isIncr, uint8_t ucTc, uint16_t u2Cnt);
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
+	struct wfdma_group_info *wfmda_host_tx_group;
+	const uint32_t wfmda_host_tx_group_len;
+	struct wfdma_group_info *wfmda_host_rx_group;
+	const uint32_t wfmda_host_rx_group_len;
 };
 
 enum HIF_SDIO_INT_STS {
