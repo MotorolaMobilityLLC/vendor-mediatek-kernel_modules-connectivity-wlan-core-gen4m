@@ -127,7 +127,7 @@ static const char * const apucReplaceReasonStr[APS_REPLACE_REASON_NUM] = {
 	"NOT LAST DEAUTH",
 };
 
-static const char * const apucMloModeStr[MLO_MODE_NUM] = {
+static const char * const apucMloModeStr[MLO_MODE_NUM + 1] = {
 	"SLSR",
 	"STR",
 	"MLSR",
@@ -136,6 +136,7 @@ static const char * const apucMloModeStr[MLO_MODE_NUM] = {
 	"HYEMLSR",
 	"HYMLSR",
 	"SBMLSR",
+	"UNKNOWN",
 };
 
 static const char * const apucLinkPlanStr[MLO_LINK_PLAN_NUM] = {
