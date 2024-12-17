@@ -750,6 +750,13 @@ enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE {
 #endif
 };
 
+enum ENUM_POWER_TAG_CATEGORY {
+	POWER_TAG_CATEGORY_ANT = 0,
+	POWER_TAG_CATEGORY_MULTIBAND = 1,
+	POWER_TAG_CATEGORY_NUM
+};
+
+
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 
 /* Revise channel power limit by scenario with parameter
@@ -879,6 +886,10 @@ struct TX_PWR_CTRL_ELEMENT {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 	struct TX_PWR_CTRL_ANT_SETTING aiPwrAnt[POWER_ANT_TAG_NUM];
 #endif
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+	struct TX_PWR_CTRL_MULTIBAND_SETTING
+		rMultiBandCfg[PWR_LIMIT_MULTIBAND_TYPE_NUM];
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[];
 	/* always keep it the last one. */
 };
@@ -1277,6 +1288,15 @@ struct PWR_LIMIT_INFO {
 	enum ENUM_PWR_LMT_SUBBAND eEndSubBand;
 };
 
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+struct MULTIBAND_PWR_LIMIT_INFO {
+	uint8_t ucVersion;
+	uint32_t u4ChCnt;
+	enum ENUM_PWR_LMT_SUBBAND eStartSubBand;
+	enum ENUM_PWR_LMT_SUBBAND eEndSubBand;
+};
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
+
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT_INFO {
 	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLmtDefaultTable;
@@ -1543,6 +1563,12 @@ int32_t txPwrParseTagChainAbs(
 	char *pStart, char *pEnd, uint8_t cTagParaNum,
 	struct TX_PWR_CTRL_ELEMENT *pRecord);
 #endif
+
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+int32_t txPwrParseTagMultiBand(
+	char *pcStart, char *pcEnd, uint8_t cTagParaNum,
+	struct TX_PWR_CTRL_ELEMENT *pRecord);
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
 #endif
 

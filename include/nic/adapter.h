@@ -3322,10 +3322,14 @@ struct ADAPTER {
 #endif
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit;
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+	struct TX_PWR_CTRL_MULTIBAND_EMI_DATA
+		rMulBnData[PWR_LIMIT_MULTIBAND_TYPE_NUM][PWR_LIMIT_RF_BAND_NUM];
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 	struct EMI_POWER_LIMIT_INFO
 		rTxpwrEmiInfo[PWR_LIMIT_RF_BAND_NUM][PWR_LIMIT_PROTOCOL_NUM];
 	bool fgPwrLmtCacheExist;
-	u_int32_t u4PwrLmtLockCounter;
+	int32_t i4PwrLmtLockCounter;
 #endif
 
 #if CFG_SUPPORT_CCM

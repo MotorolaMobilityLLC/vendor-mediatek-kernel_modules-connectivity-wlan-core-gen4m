@@ -986,6 +986,10 @@ struct GLUE_INFO {
 	kal_timer_list rTxDirectSkbTimer;
 	/* check if HIF port is ready to accept a new Msdu */
 	kal_timer_list rTxDirectHifTimer;
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	/* check if tx power wake lock ctrl */
+	kal_timer_list rTxPowerLimitTimer;
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1*/
 	struct sk_buff_head rTxDirectSkbQueue;
 
 #if CFG_SUPPORT_EXT_CONFIG

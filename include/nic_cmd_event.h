@@ -2190,7 +2190,10 @@ struct CMD_EMI_POWER_LIMIT_FORMAT {
 	uint8_t u1ProtocolNum;
 	uint8_t u1ApplyMethod;
 	uint8_t u1ScenarioType;
-	uint8_t u1reserve[4];
+	uint8_t u1MultiBandVer;
+	uint8_t u1MultiBandNum;
+	uint8_t u1MultiBandSize;
+	uint8_t u1reserve[1];
 	struct EMI_POWER_LIMIT_INFO
 		rTxpwrEmiInfo[PWR_LIMIT_RF_BAND_NUM][PWR_LIMIT_PROTOCOL_NUM];
 };

@@ -7,6 +7,9 @@
 
 #include "precomp.h"
 #include "nan/nan_sec.h"
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+#include "rlm_txpwr_limit_emi.h"
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 #include "nanRescheduler.h"
@@ -479,6 +482,10 @@ nanDevEnableRequest(struct ADAPTER *prAdapter,
 				      prCmdBuffer, NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdBuffer);
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	rlmDomainConnectionNotifiey(prAdapter, NAN_INIT);
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		return NAN_STATUS_SUCCESS;

@@ -3286,8 +3286,18 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_PWR_LMT_EMI), y)
     ccflags-y += -DCFG_SUPPORT_PWR_LMT_EMI=1
+    ifeq ($(CONFIG_WIFI_DX5), y)
+        ifeq ($(CONFIG_SUPPORT_MULTIBAND_PWR_LMT_EMI), y)
+            ccflags-y += -DCFG_SUPPORT_MULTIBAND_PWR_LMT_EMI=1
+        else
+            ccflags-y += -DCFG_SUPPORT_MULTIBAND_PWR_LMT_EMI=0
+        endif
+    else
+            ccflags-y += -DCFG_SUPPORT_MULTIBAND_PWR_LMT_EMI=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_PWR_LMT_EMI=0
+    ccflags-y += -DCFG_SUPPORT_MULTIBAND_PWR_LMT_EMI=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_TAS_HOST_CONTROL), y)

@@ -40,6 +40,17 @@ enum ENUM_PWR_LIMIT_TYPE {
 	PWR_LIMIT_TYPE_NUM,
 };
 
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+/* add new element at the end for backward compatibility*/
+enum ENUM_PWR_LIMIT_MULTIBAND_TYPE {
+	PWR_LIMIT_MULTIBAND_TYPE_0_1 = 0,
+	PWR_LIMIT_MULTIBAND_TYPE_0_2 = 1,
+	PWR_LIMIT_MULTIBAND_TYPE_1_2 = 2,
+	PWR_LIMIT_MULTIBAND_TYPE_0_1_2 = 3,
+	PWR_LIMIT_MULTIBAND_TYPE_NUM,
+};
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
+
 enum ENUM_CMD_PWR_LIMIT_TYPE {
 	PWR_LIMIT_CMD_TYPE_ANT_V2 = 7,
 };
@@ -173,6 +184,29 @@ enum ENUM_POWER_LIMIT_EHT {
 	PWR_LIMIT_EHT_NUM,
 };
 #endif
+
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+/* add new element at the end for backward compatibility*/
+enum ENUM_POWER_LIMIT_MULTIBAND {
+	PWR_LIMIT_MULTIBAND_RU26,
+	PWR_LIMIT_MULTIBAND_RU52,
+	PWR_LIMIT_MULTIBAND_RU106,
+	PWR_LIMIT_MULTIBAND_RU242,
+	PWR_LIMIT_MULTIBAND_RU484,
+	PWR_LIMIT_MULTIBAND_RU996,
+	PWR_LIMIT_MULTIBAND_RU996X2,
+	PWR_LIMIT_MULTIBAND_RU996X4,
+	PWR_LIMIT_MULTIBAND_RU26_52,
+	PWR_LIMIT_MULTIBAND_RU26_106,
+	PWR_LIMIT_MULTIBAND_RU484_242,
+	PWR_LIMIT_MULTIBAND_RU996_484,
+	PWR_LIMIT_MULTIBAND_RU996_484_242,
+	PWR_LIMIT_MULTIBAND_RU996X2_484,
+	PWR_LIMIT_MULTIBAND_RU996X3,
+	PWR_LIMIT_MULTIBAND_RU996X3_484,
+	PWR_LIMIT_MULTIBAND_NUM,
+};
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
 struct CHANNEL_POWER_LIMIT_LEGACY {
 	uint8_t ucCentralCh;
@@ -352,6 +386,8 @@ struct EMI_POWER_LIMIT_INFO {
 
 enum ENUM_CONNECTION_NOTIFIED_REASON {
 	CNM_REQUEST_CHANNEL,
+	NAN_INIT,
+	NAN_TIMELINE_UPDATE,
 };
 
 enum ENUM_TX_PWR_EMI_STATUS_ACTION {
@@ -360,11 +396,18 @@ enum ENUM_TX_PWR_EMI_STATUS_ACTION {
 	TX_PWR_EMI_STATUS_ACTION_UPDATE_CMD,
 	TX_PWR_EMI_STATUS_ACTION_UPDATE_EVENT,
 	TX_PWR_EMI_STATUS_ACTION_CHECK,
+	TX_PWR_EMI_STATUS_ACTION_CLEAR,
+	TX_PWR_EMI_STATUS_ACTION_NAN_INIT_START,
+	TX_PWR_EMI_STATUS_ACTION_NAN_INIT_END,
+	TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_START,
+	TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_END,
 };
 
 enum ENUM_TX_PWR_EMI_SCENARIO_TYPE {
 	TX_PWR_EMI_SCENARIO_TYPE_CONNECTION,
 	TX_PWR_EMI_SCENARIO_TYPE_UPDATE,
+	TX_PWR_EMI_SCENARIO_TYPE_NAN_INIT,
+	TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE,
 	TX_PWR_EMI_SCENARIO_TYPE_NUM,
 };
 
@@ -411,6 +454,32 @@ enum ENUM_PWR_LIMIT_DEFAULT_BASE {
 	PWR_LIMIT_DEFAULT_BASE_NUM,
 };
 
+
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+struct TX_PWR_CTRL_MULTIBAND_PWR {
+	uint8_t u1RfBand;
+	uint8_t u1Startch;
+	uint8_t u1Endch;
+	int8_t Op[PWR_LIMIT_MULTIBAND_NUM];
+	int8_t i1MBPwrLmt[PWR_LIMIT_MULTIBAND_NUM];
+};
+
+struct TX_PWR_CTRL_MULTIBAND_SETTING {
+	uint8_t u1ChGrpCnt;
+	struct TX_PWR_CTRL_MULTIBAND_PWR
+		rMultiBandPwr[MAX_SUPPORT_CHANNEL_NUMBER];
+};
+
+struct TX_PWR_CTRL_MULTIBAND_EMI_DATA {
+	uint8_t u1Channel[MAX_SUPPORT_CHANNEL_NUMBER];
+	int8_t i1MBPwrLmt[MAX_SUPPORT_CHANNEL_NUMBER][PWR_LIMIT_MULTIBAND_NUM];
+};
+
+struct TX_PWR_BAND_MASK_TBL {
+	enum ENUM_PWR_LIMIT_MULTIBAND_TYPE idx;
+	uint8_t u1BandMask;
+};
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -434,6 +503,11 @@ enum ENUM_PWR_LIMIT_DEFAULT_BASE {
 #define PWR_LIMIT_FOR_EACH_PROTOCOL(idx) \
 	for (idx = 0; idx < PWR_LIMIT_PROTOCOL_NUM; idx++)
 
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+#define PWR_LIMIT_FOR_EACH_MULTI_BAND(idx) \
+	for (idx = 0; idx < PWR_LIMIT_MULTIBAND_TYPE_NUM; idx++)
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
+
 #define PWR_LIMIT_FOR_EACH_SUBBAND(idx, rPerPwrLimitInfo) \
 	for (idx = rPerPwrLimitInfo.eStartSubBand; \
 		idx <= rPerPwrLimitInfo.eEndSubBand; \
@@ -452,6 +526,49 @@ enum ENUM_PWR_LIMIT_DEFAULT_BASE {
 }
 
 #define PWR_LMT_TBL_REG(table)	{(table), (ARRAY_SIZE((table)))}
+
+#if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
+#define PWR_LMT_MULTIBAND_2G_INFO_REGISTER(ver) \
+{ \
+	PWR_LMT_MULTIBAND_INFO_REGISTER( \
+		ver, \
+		PWR_LMT_SUBBAND_2G4, \
+		PWR_LMT_SUBBAND_2G4, \
+		PWR_LIMIT_RF_BAND_2G4); \
+}
+
+#define PWR_LMT_MULTIBAND_5G_INFO_REGISTER(ver) \
+{ \
+	PWR_LMT_MULTIBAND_INFO_REGISTER( \
+		ver, \
+		PWR_LMT_SUBBAND_UNII1, \
+		PWR_LMT_SUBBAND_UNII3, \
+		PWR_LIMIT_RF_BAND_5G); \
+}
+
+#define PWR_LMT_MULTIBAND_6G_INFO_REGISTER(ver) \
+{ \
+	PWR_LMT_MULTIBAND_INFO_REGISTER( \
+		ver, \
+		PWR_LMT_SUBBAND_UNII5A, \
+		PWR_LMT_SUBBAND_UNII8, \
+		PWR_LIMIT_RF_BAND_6G); \
+}
+
+#define PWR_LMT_MULTIBAND_INFO_REGISTER(ver, start_band, end_band, \
+	rf_idx) \
+{ \
+	g_RlmMulitPwrLimitInfo[rf_idx].ucVersion = ver; \
+	g_RlmMulitPwrLimitInfo[rf_idx].eStartSubBand = start_band; \
+	g_RlmMulitPwrLimitInfo[rf_idx].eEndSubBand = end_band; \
+	DBGLOG(RLM, INFO, \
+		"[MulBnPwr] Patch MulitBand R[%d]V[%d]Start[%d]End[%d]\n", \
+		rf_idx, \
+		g_RlmMulitPwrLimitInfo[rf_idx].ucVersion, \
+		g_RlmMulitPwrLimitInfo[rf_idx].eStartSubBand, \
+		g_RlmMulitPwrLimitInfo[rf_idx].eEndSubBand); \
+}
+#endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
 #define PWR_LMT_2G_INFO_REGISTER(limitType, ver, protocol_idx) \
 { \
@@ -493,7 +610,7 @@ enum ENUM_PWR_LIMIT_DEFAULT_BASE {
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].ucVersion = ver; \
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].eStartSubBand = start_band; \
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].eEndSubBand = end_band; \
-	DBGLOG(RLM, TRACE, \
+	DBGLOG(RLM, INFO, \
 		"Patch R[%d]P[%d]T[%d]V[%d]Start[%d]End[%d]\n", \
 		rf_idx, \
 		protocol_idx, \
@@ -591,7 +708,8 @@ bool rlmDomainPwrLmtEmiStatusCtrl(
 void rlmDomainSendCachePwrLmtData(
 	struct ADAPTER *prAdapter);
 
-void rlmDomainPwrLmtCNMReqChNotify(
-	struct ADAPTER *prAdapter);
+void rlmDomainPwrLmtConnectionCMD(
+	struct ADAPTER *prAdapter,
+	enum ENUM_TX_PWR_EMI_SCENARIO_TYPE type);
 #endif /*CFG_SUPPORT_PWR_LMT_EMI == 1 && CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1*/
 #endif /*_RLM_TX_PWR_LIMIT_EMI_H*/

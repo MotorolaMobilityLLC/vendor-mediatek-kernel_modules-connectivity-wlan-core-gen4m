@@ -8,6 +8,9 @@
 #include "precomp.h"
 #include "typedef.h"
 #include "nanRescheduler.h"
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+#include "rlm_txpwr_limit_emi.h"
+#endif
 
 
 #define NDC_NEXT_SLOT_CHANNEL 149
@@ -13013,6 +13016,10 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 		}
 	} while (FALSE);
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	rlmDomainConnectionNotifiey(prAdapter, NAN_TIMELINE_UPDATE);
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+
 	return rStatus;
 }
 
@@ -13157,6 +13164,10 @@ nanSchedEventScheduleConfig(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 					 prWifiVar->ucDftRangQuotaVal);
 
 	nanSchedCmdUpdatePotentialChnlList(prAdapter);
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	rlmDomainConnectionNotifiey(prAdapter, NAN_INIT);
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 	return rRetStatus;
 }
