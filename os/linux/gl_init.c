@@ -562,7 +562,7 @@ int kalDcSetWow(void)
 	GLUE_SPIN_LOCK_DECLARATION();
 #endif
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	WIPHY_PRIV(wlanGetWiphyByWdev(gprWdev[0]), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR, "prGlueInfo == NULL\n");
 		return -ENODEV;

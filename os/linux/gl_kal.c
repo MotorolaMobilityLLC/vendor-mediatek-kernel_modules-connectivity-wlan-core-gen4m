@@ -16316,6 +16316,7 @@ next_try:
 #endif /* CFG_SUPPORT_RX_NAPI */
 }
 
+#if (CFG_SUPPORT_RX_NAPI == 1)
 uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 {
 	napi_enable(&prGlueInfo->napi);
@@ -16349,6 +16350,7 @@ uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(RX, TRACE, "RX NAPI disabled\n");
 	return 0;
 }
+#endif  /* (CFG_SUPPORT_RX_NAPI == 1)*/
 #endif
 
 uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,

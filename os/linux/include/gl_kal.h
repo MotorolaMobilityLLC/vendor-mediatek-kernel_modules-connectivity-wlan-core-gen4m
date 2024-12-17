@@ -2619,8 +2619,10 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiRxDirectUninit(struct GLUE_INFO *prGlueInfo);
+#if (CFG_SUPPORT_RX_NAPI == 1)
 uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo);
+#endif
 #endif /* CFG_SUPPORT_RX_GRO */
 uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb);
