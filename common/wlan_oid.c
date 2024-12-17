@@ -4648,6 +4648,7 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 		rUpdateDeltaTime <= CFG_LQ_MONITOR_FREQUENCY)
 	) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
+		pu4LinkSpeed->rLq[ucBssIndex].fgIsLinkRateValid = TRUE;
 		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
 		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed =
 			prLq->u2TxLinkSpeed;
