@@ -1039,7 +1039,8 @@ void scanRemoveConnFlagOfBssDescByBssid(struct ADAPTER *prAdapter,
 
 /* BSS-DESC Insertion - ALTERNATIVE */
 struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
-				  struct SW_RFB *prSwRfb);
+				  struct SW_RFB *prSwRfb,
+				  uint8_t fgHasMLElement);
 
 uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 				       struct SW_RFB *prSWRfb);

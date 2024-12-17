@@ -358,7 +358,7 @@ void mldParseStaProfilePriorityAccess(struct ADAPTER *prAdapter,
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type);
 
-void mldProcessBeaconAndProbeResp(
+uint8_t mldProcessBeaconAndProbeResp(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);
 
 struct SW_RFB *mldDupAssocSwRfb(

@@ -2585,7 +2585,8 @@ void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
-				  struct SW_RFB *prSwRfb)
+				  struct SW_RFB *prSwRfb,
+				  uint8_t fgHasMLElement)
 {
 	struct BSS_DESC *prBssDesc = NULL;
 	struct SCAN_PARAM *prScanParam;
@@ -2644,6 +2645,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	prScanParam = &prAdapter->rWifiVar.rScanInfo.rScanParam;
 
@@ -2851,12 +2853,24 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
-		") valid(%u) found(%u),band=%d, %p\n",
+		") valid(%u) found(%u), band=%d, ML(%d), %p\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
 		ucChnlNum,
 		MAC2STR((uint8_t *)prWlanBeaconFrame->aucBSSID), fgIsValidSsid,
 		(prBssDesc != NULL) ? 1 : 0,
-		eHwBand, prBssDesc);
+		eHwBand, fgHasMLElement, prBssDesc);
+
+	if ((prSwRfb->u2PacketLen > CFG_RAW_BUFFER_SIZE)
+		&& (fgHasMLElement == TRUE)) {
+		DBGLOG(SCN, WARN,
+		"Multi-Link Pkt len(%u) > Max RAW buffer size(%u), discard it!\n",
+			prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
+#if CFG_SUPPORT_802_11K
+		if (prBssDesc && prBssDesc->fgIsConnected)
+			rrmUpdateBssTimeTsf(prAdapter, prBssDesc);
+#endif
+		return NULL;
+	}
 
 	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
 			== MAC_FRAME_PROBE_RSP)
@@ -4272,15 +4286,15 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 {
 	struct SCAN_INFO *prScanInfo;
 	struct BSS_DESC *prBssDesc = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t *pau4ChBitMap;
 	struct WLAN_BEACON_FRAME *prWlanBeaconFrame = NULL;
+	struct WLAN_INFO *prWlanInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t *pau4ChBitMap;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Idx = 0;
+	uint8_t fgHasMLElement = FALSE;
 #if CFG_SLT_SUPPORT
 	struct SLT_INFO *prSltInfo = NULL;
 #endif
-	uint32_t u4Idx = 0;
-	struct WLAN_INFO *prWlanInfo;
-	struct BSS_INFO *prBssInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4337,7 +4351,10 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	prWlanInfo = &prAdapter->rWlanInfo;
 
 	/* 4 <1> Parse and add into BSS_DESC_T */
-	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgHasMLElement = mldProcessBeaconAndProbeResp(prAdapter, prSwRfb);
+#endif
+	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb, fgHasMLElement);
 	prWlanInfo->u4ScanDbgTimes1++;
 
 	if (prBssDesc) {
@@ -4561,9 +4578,6 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			scanP2pProcessBeaconAndProbeResp(prAdapter, prSwRfb,
 				&rStatus, prBssDesc, prWlanBeaconFrame);
 		}
-#endif
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldProcessBeaconAndProbeResp(prAdapter, prSwRfb);
 #endif
 	}
 
