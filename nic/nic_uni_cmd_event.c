@@ -14016,6 +14016,8 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			DBGLOG(NIC, INFO,
 				"[Gen Switch] event status [%d]\n",
 					info->ucGenSwitchStatus);
+			g_ucReceiveGenSwitch = FALSE;
+			g_ucBypassException = FALSE;
 
 #if CFG_MTK_MDDP_SUPPORT
 			mddpNotifyMDGenSwitchStart(ad);

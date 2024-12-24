@@ -377,8 +377,8 @@ static u_int8_t g_fgDriverProbed = FALSE;
 static struct pci_dev *g_prDev;
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-static u_int8_t g_ucReceiveGenSwitch;
-static u_int8_t g_ucBypassException;
+u_int8_t g_ucReceiveGenSwitch;
+u_int8_t g_ucBypassException;
 #endif
 
 
