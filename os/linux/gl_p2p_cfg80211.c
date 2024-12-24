@@ -900,6 +900,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 	struct MLD_BSS_INFO *prMldBss = NULL;
+	struct MLD_STA_RECORD *prMldSta = NULL;
 #endif
 	int32_t i4Rslt = -EINVAL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -925,14 +926,25 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	prMldBss = mldBssGetByIdx(prGlueInfo->prAdapter,
 				  prNetDevPrivate->ucMldBssIdx);
 	if (link_id == -1 && pairwise && IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct STA_RECORD *prStaRec;
 		struct LINK *prBssList;
 		struct BSS_INFO *prTempBss;
+
+		prMldSta = mldStarecGetByMldAddr(prGlueInfo->prAdapter,
+						 prMldBss, mac_addr);
+		if (prMldSta) {
+			prStaRec = cnmGetStaRecByIndex(prGlueInfo->prAdapter,
+				secGetStaIdxByWlanIdx(prGlueInfo->prAdapter,
+					prMldSta->u2SetupWlanId));
+			if (prStaRec)
+				ucBssIdx = prStaRec->ucBssIndex;
+
+			goto link_chosed;
+		}
 
 		prBssList = &prMldBss->rBssList;
 		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
 				    struct BSS_INFO) {
-			struct STA_RECORD *prStaRec;
-
 			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
 							 prTempBss->ucBssIndex,
 							 mac_addr);
@@ -942,6 +954,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 			}
 		}
 
+link_chosed:
 		if (ucBssIdx == MAX_BSSID_NUM) {
 			DBGLOG(RSN, WARN,
 				"cat not find sta by mac="MACSTR"\n",
