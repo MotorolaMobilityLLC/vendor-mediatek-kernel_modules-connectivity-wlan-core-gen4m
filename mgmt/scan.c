@@ -5271,8 +5271,17 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	}
 
 	prEpiIE = (struct IE_VENDOR_EPIGRAM_IE *) pucBuf;
+
+	if (prEpiIE->ucLength <= 5) {
+		DBGLOG(RLM, WARN,
+			"[Epigram] VHT length is invalid(%d), skip!\n",
+			prEpiIE->ucLength);
+		return;
+	}
+
 	u2IELength = prEpiIE->ucLength -
-		(uint16_t) OFFSET_OF(struct IE_VENDOR_EPIGRAM_IE, pucData[0]);
+		((uint16_t)
+			OFFSET_OF(struct IE_VENDOR_EPIGRAM_IE, pucData[0]) - 2);
 	WLAN_GET_FIELD_BE24(prEpiIE->aucOui, &u4EpigramOui);
 	WLAN_GET_FIELD_BE16(prEpiIE->aucVendorType, &u2EpigramVendorType);
 	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI)
