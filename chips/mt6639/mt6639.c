@@ -3610,7 +3610,11 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 
 	int retry = 0;
 
-	while (is_wifi_coredump_processing()) {
+	while (is_wifi_coredump_processing()
+#if CFG_MTK_ANDROID_WMT
+		&& !kalGetShutdownState()
+#endif
+		) {
 		if (retry >= MAX_WAIT_COREDUMP_COUNT) {
 			DBGLOG(INIT, WARN,
 				"Coredump spend long time, retry = %d\n",
