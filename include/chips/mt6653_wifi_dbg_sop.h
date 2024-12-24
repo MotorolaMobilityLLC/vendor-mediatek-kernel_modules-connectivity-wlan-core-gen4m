@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2023 MediaTek Inc.
+ * Copyright (c) 2024 MediaTek Inc.
  */
 
 #include "wlan_hw_dbg.h"
 
-#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20240617"
+#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20241212"
 
 const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -632,6 +632,33 @@ const struct wlan_dump_list mt6653_dump_list_wf_top_d = {
 	"PSOP_3_1_D", "SectionD - Dump wf_top_rgu_on debug CR",
 	32, ARRAY_SIZE(mt6653_wf_top_d),
 	mt6653_wf_top_d
+};
+
+const struct wlan_dbg_command mt6653_wf_top_e[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{TRUE, 0x7c400124, 0, 0x87000000, FALSE, 0},
+	{TRUE, 0x7c700830, 0, 0xf, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x10, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x11, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x12, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x13, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x14, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x15, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x16, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x17, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x18, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x19, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x1a, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x1b, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x1c, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x1d, TRUE, 0x7c700834},
+	{TRUE, 0x7c700830, 0, 0x1e, TRUE, 0x7c700834},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_top_e = {
+	"PSOP_3_1_E", "SectionE - Dump wf_top_rgu_von monflg",
+	16, ARRAY_SIZE(mt6653_wf_top_e),
+	mt6653_wf_top_e
 };
 
 const struct wlan_dbg_command mt6653_wf_top_f[] = {
