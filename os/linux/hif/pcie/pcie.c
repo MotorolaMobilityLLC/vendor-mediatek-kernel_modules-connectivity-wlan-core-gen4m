@@ -273,7 +273,9 @@ const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
  */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 static remove_card pfWlanShutdown;
+#endif
 #if CFG_MTK_WIFI_AER_RESET
 static u_int8_t g_AERRstTriggered;
 static u_int8_t g_AERL05Rst;
@@ -292,7 +294,6 @@ static struct platform_driver mtk_wifi_driver = {
 	.id_table = mtk_wifi_ids,
 	.probe = NULL,
 	.remove = NULL,
-	.shutdown = NULL,
 };
 
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
@@ -364,6 +365,7 @@ static struct pci_driver mtk_pci_driver = {
 #if CFG_MTK_WIFI_AER_RESET
 	.err_handler = &mtk_pci_err_handler,
 #endif
+	.shutdown = NULL,
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
@@ -1407,7 +1409,8 @@ static void mtk_wifi_remove(struct platform_device *pdev)
 #endif
 }
 
-static void mtk_wifi_shutdown(struct platform_device *pdev)
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
+static void mtk_wifi_shutdown(struct pci_dev *pdev)
 {
 	if (g_fgDriverProbed && pfWlanShutdown) {
 		DBGLOG(INIT, INFO, "do shutdown\n");
@@ -1415,6 +1418,7 @@ static void mtk_wifi_shutdown(struct platform_device *pdev)
 		g_fgDriverProbed = FALSE;
 	}
 }
+#endif
 
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 static int wifiMiscDmaSetup(struct platform_device *pdev,
@@ -2094,6 +2098,7 @@ int mtk_pci_resume(struct pci_dev *pdev)
  * \return The result of registering pci bus
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 uint32_t glRegisterShutdownCB(remove_card pfShutdown)
 {
 	int ret = 0;
@@ -2101,9 +2106,10 @@ uint32_t glRegisterShutdownCB(remove_card pfShutdown)
 	ASSERT(pfShutdown);
 	pfWlanShutdown = pfShutdown;
 
-	mtk_wifi_driver.shutdown = mtk_wifi_shutdown;
+	mtk_pci_driver.shutdown = mtk_wifi_shutdown;
 	return ret;
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3085,6 +3091,12 @@ exit_dump:
 void glBusFuncOff(void)
 {
 	if (g_fgDriverProbed) {
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
+		if (kalGetShutdownState()) {
+			mtk_pci_remove(g_prGlueInfo->rHifInfo.pdev);
+			return;
+		}
+#endif
 		pci_unregister_driver(&mtk_pci_driver);
 		g_fgDriverProbed = FALSE;
 	}
