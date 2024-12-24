@@ -1437,8 +1437,8 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_INFO
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	{
 		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationLegacy_6G_VLP),
-		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationHE_6G_SP),
-		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationEHT_6G_SP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationHE_6G_VLP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationEHT_6G_VLP),
 	},
 	{
 		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationLegacy_6G_SP),
