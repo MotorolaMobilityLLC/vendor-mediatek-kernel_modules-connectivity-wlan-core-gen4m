@@ -1881,19 +1881,31 @@ static netdev_tx_t __p2pHardStartXmit(struct GLUE_INFO *prGlueInfo,
 	struct net_device *prDev,
 	uint8_t ucBssIndex)
 {
-	struct BSS_INFO *prP2pBssInfo;
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (prBssInfo &&
+	    prBssInfo->eNetworkType == NETWORK_TYPE_P2P &&
+	    prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
+	    prBssInfo->fgIsApGoStarted == FALSE) {
+		DBGLOG(P2P, WARN,
+			"AP/GO (%u) is not started, skip this frame\n",
+			ucBssIndex);
+		dev_kfree_skb(prSkb);
+		goto exit;
+	}
 
 	kalResetPacket(prGlueInfo, (void *) prSkb);
 
 	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
-	if (prP2pBssInfo &&
-	    (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
-	     prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0)) {
+	if (prBssInfo &&
+	    (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	     prBssInfo->rStaRecOfClientList.u4NumElem > 0)) {
 		kalPerMonStart(prGlueInfo);
 	}
 
+exit:
 	return NETDEV_TX_OK;
 }
 

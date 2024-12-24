@@ -2114,6 +2114,7 @@ SKIP_START_RDD:
 				   &(prBssInfo->rP2pApGoCarrierOnTimer),
 				   AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS);
 #else
+		prBssInfo->fgIsApGoStarted = TRUE;
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
