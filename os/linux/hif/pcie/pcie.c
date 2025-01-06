@@ -1094,7 +1094,7 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
 
-	if (!prGlueInfo)
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
 		return;
 
 	/* trigger driver SER after AER */
