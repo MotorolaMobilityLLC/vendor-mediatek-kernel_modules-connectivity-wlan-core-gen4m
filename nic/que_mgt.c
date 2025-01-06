@@ -5492,6 +5492,11 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			QUEUE_REMOVE_HEAD(prReorderQue, prReorderedSwRfb,
 					struct SW_RFB *);
 
+			if (prReorderedSwRfb == NULL) {
+				DBGLOG(RX, ERROR, "Reordered SwRfb is Null");
+				break;
+			}
+
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
 				prReorderedSwRfb, prReturnedQue,
 				RX_DATA_REORDER_AHEAD_COUNT);
