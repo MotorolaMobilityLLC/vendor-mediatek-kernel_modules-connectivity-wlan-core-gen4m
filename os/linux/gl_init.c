@@ -9223,6 +9223,7 @@ uint8_t kalGetShutdownState(void)
 	return uShutdownState;
 }
 #endif
+
 #if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 void wlanShutdown(void)
 {
