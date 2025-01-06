@@ -617,12 +617,8 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,
 	uint32_t u4TokenId)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 	uint32_t u4TmpIdleSlotDiff = 0;
-
-	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
-		return;
 
 	 /* Update SameTokenDuration and Idle slot parameter
 	  * Assume the TokenId is same before 1st time TX timeout coming
@@ -650,11 +646,6 @@ static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,
 
 static void halResetTxTimeoutParams(struct ADAPTER *prAdapter)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-
-	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
-		return;
-
 	/* Reset SameTokenDuration and Idle slot parameter */
 	prAdapter->u4SumIdleSlot = 0;
 	prAdapter->u4SameTokenCnt = 0;
@@ -683,10 +674,8 @@ static void halWarningTxTimeout(struct ADAPTER *prAdapter,
 
 	/* always show if SameToken > thr */
 	if (prAdapter->u4SameTokenCnt > prWifiVar->u4SameTokenThr) {
-		/* only trigger SER when enable in wifi.cfg */
-		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 		kalSendAeeWarning("Tx Timeout",
-			"Tx timeout same token > %d , idle slot %d SER!\n",
+			"Tx timeout same token > %d , idle slot %d\n",
 			prWifiVar->u4SameTokenThr, u4AvgIdleSlot);
 	} else if (u4LongestPending >= prWifiVar->u4TxTimeoutWarningThr) {
 		kalSendAeeWarning("Tx Timeout",
@@ -718,7 +707,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	uint8_t ucStaIdx = 0;
 	struct HIF_STATS *prHifStats;
 	enum ENUM_OP_MODE eOPMode = OP_MODE_NUM;
-	uint32_t u4TimeoutSerTime;
+	uint32_t u4TimeoutSerTime, u4SameTokenThr;
 	struct timespec64 *prLastMsduRptChangedTime;
 	uint32_t u4CurrentMsduRptCnt;
 
@@ -736,6 +725,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	prHistory = &prTokenInfo->rHistory;
 	prWifiVar = &prAdapter->rWifiVar;
 	u4TimeoutSerTime = prWifiVar->u4MsduReportTimeoutSerTime;
+	u4SameTokenThr = prWifiVar->u4SameTokenThr;
 	prHifStats = &prAdapter->rHifStats;
 	prLastMsduRptChangedTime =
 		&prAdapter->prGlueInfo->rLastMsduRptChangedTime;
@@ -822,13 +812,17 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 	/* Trigger SER */
 	if (u4TimeoutSerTime == NIC_MSDU_REPORT_DISABLE_SER_TIME) {
-		DBGLOG(HAL, TRACE, "Do not trigger SER");
+		DBGLOG(HAL, LOUD, "Do not trigger SER");
 	} else if (rLongest.tv_sec >= u4TimeoutSerTime) {
-		if (kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
-				&& rTime.tv_sec >= u4TimeoutSerTime) {
+		if ((kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
+				&& rTime.tv_sec >= u4TimeoutSerTime) ||
+			prAdapter->u4SameTokenCnt > u4SameTokenThr) {
 			prAdapter->u4HifChkFlag |= HIF_DRV_SER;
-			DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
-				u4TimeoutSerTime);
+			DBGLOG(HAL, INFO,
+			       "Timeout > %ds, lastMsduRpt @ %ld, SameTokCnt[%u] trigger SER\n",
+				u4TimeoutSerTime,
+				prLastMsduRptChangedTime->tv_sec,
+				prAdapter->u4SameTokenCnt);
 		} else {
 			DBGLOG(HAL, INFO,
 				"MSDU reports are returning, do not trigger SER. lastMsduRpt @ %ld, MsduRptCnt[%u] timeout[sec:%ld]",
