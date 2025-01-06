@@ -9704,10 +9704,18 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 
 	//TN Start modified by dong.zhang  Do not delete when resolving conflicts please
 	if(getSku() > 10) {
-		if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
-			&u4ConfigReadLen, TRUE,
-			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
-			/* ToDo:: Nothing */
+		if(getSku() == 16) {
+			if (kalRequestFirmware("txpowerctrl16.cfg", &pucConfigBuf,
+				&u4ConfigReadLen, TRUE,
+				kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+				/* ToDo:: Nothing */
+			}
+		}else {
+			if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
+				&u4ConfigReadLen, TRUE,
+				kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+				/* ToDo:: Nothing */
+			}
 		}
 	}else {
 		if (kalRequestFirmware("txpowerctrllite.cfg", &pucConfigBuf,
