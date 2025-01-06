@@ -5253,9 +5253,10 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				if (IS_AIS_ROAMING(prAdapter,
 					prBssInfo->ucBssIndex) ||
 				    IS_AIS_OFF_CHNL(prAdapter,
-					prBssInfo->ucBssIndex)) {
+					prBssInfo->ucBssIndex) ||
+				    IS_AIS_CH_SWITCH(prBssInfo)) {
 					DBGLOG(RLM, INFO,
-						"Ignore rlm update when roaming/offchnl\n");
+						"Ignore rlm update when roaming/offchnl/csa\n");
 					continue;
 				}
 
@@ -9400,9 +9401,10 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		}
 
 		if (IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex) ||
-		    IS_AIS_OFF_CHNL(prAdapter, prBssInfo->ucBssIndex)) {
+		    IS_AIS_OFF_CHNL(prAdapter, prBssInfo->ucBssIndex) ||
+		    IS_AIS_CH_SWITCH(prBssInfo)) {
 			DBGLOG(RLM, INFO,
-				"Ignore rlm update when roaming/offchnl\n");
+				"Ignore rlm update when roaming/offchnl/csa\n");
 			fgSkipRlmSync = TRUE;
 		}
 
