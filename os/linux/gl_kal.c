@@ -10842,7 +10842,7 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
 	prCmdPerfReport->ucBssNum = prAdapter->ucSwBssIdNum;
 
-	for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
+	for (i = 0; i < prCmdPerfReport->ucBssNum && i < MAX_BSSID_NUM; i++) {
 		prCmdPerfReport->rUniCmdParm[i].u4CurTxBytes =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
 		prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes =
@@ -10862,7 +10862,8 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 		    prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes;
 	}
 	if (u4CurrentTp != 0) {
-		for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
+		for (i = 0; i < prCmdPerfReport->ucBssNum && i < MAX_BSSID_NUM;
+			i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 			if (!prBssInfo || !IS_BSS_ALIVE(prAdapter, prBssInfo))
 				continue;
