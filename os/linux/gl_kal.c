@@ -13079,7 +13079,7 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter,
 		P2P_DEFAULT_SCENARIO);
 }
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+
 void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 {
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
@@ -13104,12 +13104,10 @@ void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 				prBssInfo->eBand,
 				prBssInfo->ucBssIndex);
 }
-#endif
 
 void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo =
@@ -13119,13 +13117,11 @@ void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalAisChnlSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
-#endif
 }
 
 void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo =
@@ -13136,7 +13132,6 @@ void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 	cancel_work_sync(
 		&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = FALSE;
-#endif
 }
 
 
@@ -13146,8 +13141,6 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucChannelNum, enum ENUM_BAND eBand,
 			uint8_t ucBssIndex)
 {
-
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 
@@ -13155,14 +13148,6 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	prBssInfo =
 		prAdapter->aprBssInfo[ucBssIndex];
 	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
-#else
-	__kalIndicateChannelSwitch(prGlueInfo,
-				eSco,
-				ucChannelNum,
-				eBand,
-				ucBssIndex);
-#endif
-
 }
 
 #endif
