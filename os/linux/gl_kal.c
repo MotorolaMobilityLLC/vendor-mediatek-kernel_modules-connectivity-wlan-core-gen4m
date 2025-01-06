@@ -11686,9 +11686,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 #if CFG_SUPPORT_RX_GRO
-#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] "
+#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] "
 #else
-#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
+#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
 #endif
 
 #if CFG_NAPI_DELAY
@@ -11723,6 +11723,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
@@ -15391,6 +15392,8 @@ end:
 #endif
 		kal_napi_complete_done(napi, work_done);
 
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
+
 	return work_done;
 }
 #else
@@ -15489,6 +15492,8 @@ next_try:
 			DBGLOG(RX, ERROR, "skb NULL %d %d\n",
 				work_done, skb_queue_len(prFlushSkbQ));
 			kal_napi_complete_done(napi, work_done);
+			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_POLL_END_COUNT);
 			return work_done;
 		}
 
@@ -15532,6 +15537,8 @@ next_try:
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT);
 		napi_schedule(napi);
 	}
+
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
 
 	return work_done;
 #else /* CFG_SUPPORT_RX_NAPI */
