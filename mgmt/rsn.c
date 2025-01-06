@@ -4257,18 +4257,6 @@ void rsnApSaQueryRequest(struct ADAPTER *prAdapter,
 		       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 		return;
 	}
-
-	DBGLOG(RSN, INFO,
-	       "IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
-	       MAC2STR(prStaRec->aucMacAddr));
-
-	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
-							MAC_TX_RESERVED_FIELD +
-							PUBLIC_ACTION_MAX_LEN);
-
-	if (!prMsduInfo)
-		return;
-
 	/* drop cipher mismatch */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 		if (prSwRfb->fgIsCipherMS ||
@@ -4280,6 +4268,16 @@ void rsnApSaQueryRequest(struct ADAPTER *prAdapter,
 			return;
 		}
 	}
+	DBGLOG(RSN, INFO,
+	       "IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
+	       MAC2STR(prStaRec->aucMacAddr));
+
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
+							MAC_TX_RESERVED_FIELD +
+							PUBLIC_ACTION_MAX_LEN);
+
+	if (!prMsduInfo)
+		return;
 
 	prTxFrame = (struct ACTION_SA_QUERY_FRAME *)
 	    ((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
