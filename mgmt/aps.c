@@ -48,14 +48,14 @@
 #define CHNL_DWELL_TIME_ONLINE   50
 
 #define WEIGHT_IDX_CHNL_UTIL                    0
-#define WEIGHT_IDX_RSSI                         2
+#define WEIGHT_IDX_RSSI                         4
 #define WEIGHT_IDX_SCN_MISS_CNT                 2
 #define WEIGHT_IDX_PROBE_RSP                    1
 #define WEIGHT_IDX_CLIENT_CNT                   0
 #define WEIGHT_IDX_AP_NUM                       0
 #define WEIGHT_IDX_5G_BAND                      2
 #define WEIGHT_IDX_BAND_WIDTH                   1
-#define WEIGHT_IDX_STBC                         1
+#define WEIGHT_IDX_STBC                         0
 #define WEIGHT_IDX_DEAUTH_LAST                  1
 #define WEIGHT_IDX_BLOCK_LIST                   2
 #define WEIGHT_IDX_SAA                          0
@@ -93,7 +93,7 @@
 
 #define WEIGHT_GBAND_COEX_DOWNGRADE		70 /* 0~100 */
 #define CU_6G_INDEX_OFFSET			256
-#define WEIGHT_MCC_DOWNGRADE			70 /* 0~100 */
+#define WEIGHT_MCC_DOWNGRADE			85 /* 0~100 */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
