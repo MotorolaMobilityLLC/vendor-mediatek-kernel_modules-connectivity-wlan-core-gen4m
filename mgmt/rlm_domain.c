@@ -369,9 +369,14 @@ static const uint16_t g_u2CountryGroup9[] = {
 static const uint16_t g_u2CountryGroup10[] = {
 	COUNTRY_CODE_DZ
 };
+//BEGIN IKSWV-78039, enable 6G CH1-93 for EG/EH/MA
 static const uint16_t g_u2CountryGroup11[] = {
-	COUNTRY_CODE_EG, COUNTRY_CODE_EH, COUNTRY_CODE_MA, COUNTRY_CODE_UZ
+	COUNTRY_CODE_UZ
 };
+static const uint16_t g_u2CountryGroup11_1[] = {
+	COUNTRY_CODE_EG, COUNTRY_CODE_EH, COUNTRY_CODE_MA
+};
+//END IKSWV-78039
 static const uint16_t g_u2CountryGroup12[] = {
 	COUNTRY_CODE_JO
 };
@@ -875,6 +880,29 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 		}
 	}
 	,
+	//BEGIN IKSWV-78039, enable 6G CH1-93 for EG/EH/MA
+	{
+		(uint16_t *) g_u2CountryGroup11_1, sizeof(g_u2CountryGroup11_1) / 2,
+		{
+			{81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
+			,	/*CH_SET_2G4_1_13 */
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+			,	/*CH_SET_UNII_LOW_36_4 */
+			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
+			,	/*CH_SET_UNII_MID_52_4 */
+			{121, BAND_NULL, 0, 0, 0, FALSE}
+			,	/*CH_SET_UNII_WW_NA */
+			{125, BAND_NULL, 0, 0, 0, FALSE}
+			,	/*CH_SET_UNII_UPPER_NA */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			{131, BAND_6G, CHNL_SPAN_20, 1, 24, FALSE}
+			,	/* 6G_CH_1_93 */
+#endif
+			{0, BAND_NULL, 0, 0, 0, FALSE}
+		}
+	}
+	,
+	//END IKSWV-78039
 	{
 		(uint16_t *) g_u2CountryGroup12, sizeof(g_u2CountryGroup12) / 2,
 		{
