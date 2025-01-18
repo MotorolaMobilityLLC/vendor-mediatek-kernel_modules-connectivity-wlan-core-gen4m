@@ -10966,9 +10966,8 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	struct _NAN_RANGING_CTRL_T *prRangingCtrl = NULL;
 	int32_t i4Argc = 0, i4BytesWritten = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
-	uint8_t i = 0, j = 0;
 	size_t szTimeLineIdx = 0;
-	uint32_t u4Idx = 0, u4Idx1 = 0, u4Idx2 = 0;
+	size_t i, j, k;
 	uint32_t u4Length = 0;
 	uint8_t *pucContent = NULL;
 	uint8_t aucBuf[16] = {0};
@@ -10979,13 +10978,13 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	struct _NAN_SCHEDULER_T *prNanScheduler = NULL;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 	struct _NAN_AVAILABILITY_DB_T *prAvailAttr = NULL;
-	struct _NAN_AVAILABILITY_TIMELINE_T *prAvailEty = NULL;
+	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
 	struct LINK *prPeerSchDescList = NULL;
 	struct _NAN_EVENT_DEVICE_INFO *prEventDeviceInfo = NULL;
-	union _NAN_BAND_CHNL_CTRL ChInf = {0};
-	union _NAN_BAND_CHNL_CTRL ChCtl = {0};
-	union _NAN_BAND_CHNL_CTRL ct = {0};
+	union _NAN_BAND_CHNL_CTRL *prChnlInfo;
 	uint32_t u4OpClass = 0;
+	uint8_t channel[NAN_TIMELINE_MGMT_SIZE][NAN_SLOTS_PER_DW_INTERVAL] = {
+		0};
 	static const char * const aucRole[] = {
 		"ROLE_NONE",
 		"ANCHOR_MASTER",
@@ -11162,27 +11161,32 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 
 	for (szTimeLineIdx = 0; szTimeLineIdx < NAN_TIMELINE_MGMT_SIZE;
 	     szTimeLineIdx++) {
+
 		prNanTimelineMgmt =
 			nanGetTimelineMgmt(prAdapter, szTimeLineIdx);
 
-		for (u4Idx = 0;
-			u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
-			u4Idx++) {
-			prChnlTimeline = &prNanTimelineMgmt->arChnlList[u4Idx];
+		for (i = 0; i < NAN_TIMELINE_MGMT_CHNL_LIST_NUM; i++) {
+			prChnlTimeline = &prNanTimelineMgmt->arChnlList[i];
 			if (prChnlTimeline->fgValid == FALSE)
 				continue;
 
-			ChInf = prChnlTimeline->rChnlInfo;
+			prChnlInfo = &prChnlTimeline->rChnlInfo;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 				"[%zu][%u] MapId:%d, Raw:0x%x, Commit Chnl:%u, Class:%u, Bw:%d\n",
-				szTimeLineIdx, u4Idx,
+				szTimeLineIdx, i,
 				prNanTimelineMgmt->ucMapId,
-				ChInf.u4RawData,
-				ChInf.u4PrimaryChnl,
-				ChInf.u4OperatingClass,
-				nanRegGetBw(ChInf.u4OperatingClass));
+				prChnlInfo->u4RawData,
+				prChnlInfo->u4PrimaryChnl,
+				prChnlInfo->u4OperatingClass,
+				nanRegGetBw(prChnlInfo->u4OperatingClass));
 
 			u4Length = sizeof(prChnlTimeline->au4AvailMap);
+			for (j = 0; j < NAN_SLOTS_PER_DW_INTERVAL; j++) {
+				if (prChnlTimeline->au4AvailMap[0] & BIT(j))
+					channel[szTimeLineIdx][j] =
+						prChnlInfo->u4PrimaryChnl;
+			}
+
 			pucContent = (uint8_t *)prChnlTimeline->au4AvailMap;
 			if (u4Length >= 16) {
 				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
@@ -11211,26 +11215,23 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 			}
 		}
 
-		for (u4Idx = 0;
-			u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
-			u4Idx++) {
+		for (i = 0; i < NAN_TIMELINE_MGMT_CHNL_LIST_NUM; i++) {
 			if (prNanTimelineMgmt->fgChkCondAvailability == FALSE)
 				break;
 
-			prChnlTimeline =
-				&prNanTimelineMgmt->arCondChnlList[u4Idx];
+			prChnlTimeline = &prNanTimelineMgmt->arCondChnlList[i];
 			if (prChnlTimeline->fgValid == FALSE)
 				continue;
 
-			ChInf = prChnlTimeline->rChnlInfo;
+			prChnlInfo = &prChnlTimeline->rChnlInfo;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 				"[%zu][%u] MapId:%d, Raw:0x%x, Cond Chnl:%u, Class:%u, Bw:%d\n",
-				szTimeLineIdx, u4Idx,
+				szTimeLineIdx, i,
 				prNanTimelineMgmt->ucMapId,
-				ChInf.u4RawData,
-				ChInf.u4PrimaryChnl,
-				ChInf.u4OperatingClass,
-				nanRegGetBw(ChInf.u4OperatingClass));
+				prChnlInfo->u4RawData,
+				prChnlInfo->u4PrimaryChnl,
+				prChnlInfo->u4OperatingClass,
+				nanRegGetBw(prChnlInfo->u4OperatingClass));
 
 			u4Length = sizeof(prChnlTimeline->au4AvailMap);
 			pucContent = (uint8_t *)prChnlTimeline->au4AvailMap;
@@ -11261,6 +11262,30 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 		}
 	}
 
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
+	for (szTimeLineIdx = 0; szTimeLineIdx < NAN_TIMELINE_MGMT_SIZE;
+	     szTimeLineIdx++) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "[%zu] %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u\n",
+		       szTimeLineIdx,
+		       channel[szTimeLineIdx][0], channel[szTimeLineIdx][1],
+		       channel[szTimeLineIdx][2], channel[szTimeLineIdx][3],
+		       channel[szTimeLineIdx][4], channel[szTimeLineIdx][5],
+		       channel[szTimeLineIdx][6], channel[szTimeLineIdx][7],
+		       channel[szTimeLineIdx][8], channel[szTimeLineIdx][9],
+		       channel[szTimeLineIdx][10], channel[szTimeLineIdx][11],
+		       channel[szTimeLineIdx][12], channel[szTimeLineIdx][13],
+		       channel[szTimeLineIdx][14], channel[szTimeLineIdx][15],
+		       channel[szTimeLineIdx][16], channel[szTimeLineIdx][17],
+		       channel[szTimeLineIdx][18], channel[szTimeLineIdx][19],
+		       channel[szTimeLineIdx][20], channel[szTimeLineIdx][21],
+		       channel[szTimeLineIdx][22], channel[szTimeLineIdx][23],
+		       channel[szTimeLineIdx][24], channel[szTimeLineIdx][25],
+		       channel[szTimeLineIdx][26], channel[szTimeLineIdx][27],
+		       channel[szTimeLineIdx][28], channel[szTimeLineIdx][29],
+		       channel[szTimeLineIdx][30], channel[szTimeLineIdx][31]);
+	}
+
 	/* nanSchedDbgDumpPeerAvailability */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"\n[PeerAvailability]\n");
@@ -11285,46 +11310,45 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 			prPeerSchDesc->aucNmiAddr[4],
 			prPeerSchDesc->aucNmiAddr[5]);
 
-		for (u4Idx = 0; u4Idx < NAN_NUM_AVAIL_DB; u4Idx++) {
-			prAvailAttr = &prPeerSchDesc->arAvailAttr[u4Idx];
+		for (i = 0; i < NAN_NUM_AVAIL_DB; i++) {
+			prAvailAttr = &prPeerSchDesc->arAvailAttr[i];
 			if (prAvailAttr->ucMapId == NAN_INVALID_MAP_ID)
 				continue;
 
-			for (u4Idx1 = 0;
-				u4Idx1 < NAN_NUM_AVAIL_TIMELINE;
-				u4Idx1++) {
-				prAvailEty =
-					&prAvailAttr->arAvailEntryList[u4Idx1];
-				if (prAvailEty->fgActive == FALSE)
+			for (j = 0;
+				j < NAN_NUM_AVAIL_TIMELINE;
+				j++) {
+				prNanAvailEntry =
+					&prAvailAttr->arAvailEntryList[j];
+				if (prNanAvailEntry->fgActive == FALSE)
 					continue;
 
-				if (prAvailEty->arBandChnlCtrl[0].u4Type ==
+				if (prNanAvailEntry->arBandChnlCtrl[0].u4Type ==
 					NAN_BAND_CH_ENTRY_LIST_TYPE_BAND)
 					continue;
 
-				ChCtl = prAvailEty->arBandChnlCtrl[0];
-				u4OpClass = ChCtl.u4OperatingClass;
+				prChnlInfo = prNanAvailEntry->arBandChnlCtrl;
+				u4OpClass = prChnlInfo->u4OperatingClass;
 				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 					"[%u][%u] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
-					u4Idx, u4Idx1, prAvailAttr->ucMapId,
-					prAvailEty->rEntryCtrl.u2RawData,
-					ChCtl.u4RawData,
-					ChCtl.u4OperatingClass,
+					i, j, prAvailAttr->ucMapId,
+					prNanAvailEntry->rEntryCtrl.u2RawData,
+					prChnlInfo->u4RawData,
+					prChnlInfo->u4OperatingClass,
 					nanRegGetBw(u4OpClass));
-				for (u4Idx2 = 0;
-					u4Idx2 < prAvailEty->ucNumBandChnlCtrl;
-					u4Idx2++) {
-					ct = prAvailEty->arBandChnlCtrl[u4Idx2];
+
+				for (k = 0;
+					k < prNanAvailEntry->ucNumBandChnlCtrl;
+					k++, prChnlInfo++) {
 					LOGBUF(pcCommand, i4TotalLen,
 						i4BytesWritten,
 						"[%u] PriChnl:%u\n",
-						u4Idx2,
-						ct.u4PrimaryChnl);
+						k, prChnlInfo->u4PrimaryChnl);
 				}
 
-				u4Length = sizeof(prAvailEty->au4AvailMap);
+				u4Length = sizeof(prNanAvailEntry->au4AvailMap);
 				pucContent =
-					(uint8_t *)prAvailEty->au4AvailMap;
+					(uint8_t *)prNanAvailEntry->au4AvailMap;
 
 				if (u4Length >= 16) {
 					LOGBUF(pcCommand, i4TotalLen,
@@ -11339,10 +11363,9 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 						pucContent[12], pucContent[13],
 						pucContent[14], pucContent[15]);
 				} else if (u4Length > 0) {
-					kalMemZero(aucBuf, 16);
-					kalMemCopy(aucBuf,
-						pucContent,
-						u4Length);
+					kalMemZero(aucBuf, sizeof(aucBuf));
+					kalMemCopy(aucBuf, pucContent,
+						   u4Length);
 
 					LOGBUF(pcCommand, i4TotalLen,
 						i4BytesWritten,
