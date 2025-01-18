@@ -1575,7 +1575,8 @@ void rttEventResult(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_RTT_RSTA
-u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter)
+u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter,
+	uint8_t *pucDestAddr)
 {
 	uint8_t ucBssIndex = 0;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -1589,7 +1590,8 @@ u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter)
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 		if (prBssInfo &&
 			IS_BSS_APGO(prBssInfo) &&
-			IS_BSS_ACTIVE(prBssInfo)) {
+			IS_BSS_ACTIVE(prBssInfo) &&
+			EQUAL_MAC_ADDR(pucDestAddr, prBssInfo->aucOwnMacAddr)) {
 			break;
 		}
 	}
@@ -1713,7 +1715,8 @@ uint32_t rttProcessFTM(struct ADAPTER *prAdapter,
 	rttReq->arRttConfigs[0].ucFtmMinDeltaTime =
 		prFtmInfoElem->ucMinDeltaFtm;
 
-	rttHandleRttRequest(prAdapter, rttReq, rttGetAPBssIndex(prAdapter));
+	rttHandleRttRequest(prAdapter, rttReq,
+		rttGetAPBssIndex(prAdapter, prActFrame->aucDestAddr));
 
 	kalMemFree(rttReq, VIR_MEM_TYPE, sizeof(struct PARAM_RTT_REQUEST));
 
