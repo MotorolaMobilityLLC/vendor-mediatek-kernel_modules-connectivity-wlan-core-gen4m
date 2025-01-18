@@ -2928,7 +2928,7 @@ nanDataEngineNanAvailAttrLength(struct ADAPTER *prAdapter,
 				struct _NAN_NDP_INSTANCE_T *prNDP)
 {
 	uint8_t *pucAvailabilityAttr = NULL;
-	uint32_t pu4AvailabilityAttrLength = 0;
+	uint32_t u4AvailabilityAttrLength = 0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
@@ -2938,9 +2938,9 @@ nanDataEngineNanAvailAttrLength(struct ADAPTER *prAdapter,
 		return 0;
 
 	nanSchedGetAvailabilityAttr(prAdapter, prNDL, &pucAvailabilityAttr,
-				    &pu4AvailabilityAttrLength);
+				    &u4AvailabilityAttrLength);
 
-	return pu4AvailabilityAttrLength;
+	return u4AvailabilityAttrLength;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2959,7 +2959,7 @@ nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
 				struct _NAN_NDP_INSTANCE_T *prNDP)
 {
 	uint8_t *pucAvailabilityAttr = NULL;
-	uint32_t pu4AvailabilityAttrLength = 0;
+	uint32_t u4AvailabilityAttrLength = 0;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -2978,17 +2978,17 @@ nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
 	       MAC2STR(prNDL->aucPeerMacAddr));
 
 	nanSchedGetAvailabilityAttr(prAdapter, prNDL, &pucAvailabilityAttr,
-				    &pu4AvailabilityAttrLength);
+				    &u4AvailabilityAttrLength);
 
 	/* MERGE_POTENTIAL */
 	prPeerSchDesc->u4MergedCommittedChannel = 0;
 	kalMemZero(prPeerSchDesc->aucPotMergedBitmap, TYPICAL_BITMAP_LENGTH);
 
-	if ((pucAvailabilityAttr != NULL) && (pu4AvailabilityAttrLength != 0)) {
+	if ((pucAvailabilityAttr != NULL) && (u4AvailabilityAttrLength != 0)) {
 		kalMemCopy(((uint8_t *)prMsduInfo->prPacket) +
 				   prMsduInfo->u2FrameLength,
-			   pucAvailabilityAttr, pu4AvailabilityAttrLength);
-		prMsduInfo->u2FrameLength += pu4AvailabilityAttrLength;
+			   pucAvailabilityAttr, u4AvailabilityAttrLength);
+		prMsduInfo->u2FrameLength += u4AvailabilityAttrLength;
 	}
 }
 
@@ -3025,7 +3025,7 @@ nanDataEngineNdcAttrLength(struct ADAPTER *prAdapter,
 			   struct _NAN_NDL_INSTANCE_T *prNDL,
 			   struct _NAN_NDP_INSTANCE_T *prNDP) {
 	uint8_t *pucNdcAttr = NULL;
-	uint32_t pu4NdcAttrLength = 0;
+	uint32_t u4NdcAttrLength = 0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
@@ -3049,9 +3049,9 @@ nanDataEngineNdcAttrLength(struct ADAPTER *prAdapter,
 	}
 
 	nanSchedNegoGetSelectedNdcAttr(prAdapter, &pucNdcAttr,
-						&pu4NdcAttrLength);
+						&u4NdcAttrLength);
 
-	return pu4NdcAttrLength;
+	return u4NdcAttrLength;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3069,23 +3069,23 @@ nanDataEngineNdcAttrAppend(struct ADAPTER *prAdapter,
 			   struct _NAN_NDL_INSTANCE_T *prNDL,
 			   struct _NAN_NDP_INSTANCE_T *prNDP) {
 	uint8_t *pucNdcAttr = NULL;
-	uint32_t pu4NdcAttrLength = 0;
+	uint32_t u4NdcAttrLength = 0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
 #endif
 
-	if ((prNDL == NULL) && (prNDP == NULL))
+	if (prNDL == NULL && prNDP == NULL)
 		return;
 
 	nanSchedNegoGetSelectedNdcAttr(prAdapter, &pucNdcAttr,
-						&pu4NdcAttrLength);
+						&u4NdcAttrLength);
 
-	if ((pucNdcAttr != NULL) && (pu4NdcAttrLength != 0)) {
+	if (pucNdcAttr != NULL && u4NdcAttrLength != 0) {
 		kalMemCopy(((uint8_t *)prMsduInfo->prPacket) +
 				   prMsduInfo->u2FrameLength,
-			   pucNdcAttr, pu4NdcAttrLength);
-		prMsduInfo->u2FrameLength += pu4NdcAttrLength;
+			   pucNdcAttr, u4NdcAttrLength);
+		prMsduInfo->u2FrameLength += u4NdcAttrLength;
 	}
 }
 

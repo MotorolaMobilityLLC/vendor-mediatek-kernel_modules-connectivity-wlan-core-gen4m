@@ -125,7 +125,8 @@
 #define NAN_NON_DBDC_6G_AIS 0x00FF00FC
 
 #define NAN_SLOT_MASK_TYPE_AIS 0x00FF00FF /* 0~7, 16~23 */
-#define NAN_SLOT_MASK_TYPE_DEFAULT_NDL 0xFF00FE00 /* 9~15, 24~31 */
+#define NAN_SLOT_MASK_TYPE_DEFAULT_NDL 0xFF00FF00 /* *9~15, 24~31 */
+
 #define nanGetNdlSlots(_adapter) \
 	(NAN_SLOT_MASK_TYPE_DEFAULT_NDL & ~nanGetFcSlots(_adapter))
 #define NAN_SLOT_MASK_TYPE_DEFAULT 0xFFFFFFFF /* For NDP setup */
