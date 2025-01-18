@@ -56,6 +56,7 @@ u_int8_t fgIsResetHangState = SER_L0_HANG_RST_NONE;
 #if CFG_WMT_RESET_API_SUPPORT
 wait_queue_head_t g_waitq_rst;
 struct completion g_RstOffComp;
+u_int8_t g_RstOffCompWaitFlag;
 struct completion g_RstOnComp;
 struct completion g_triggerComp;
 KAL_WAKE_LOCK_T *g_IntrWakeLock;
@@ -338,6 +339,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	KAL_WAKE_LOCK_INIT(NULL, g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstOffComp);
+	g_RstOffCompWaitFlag = FALSE;
 	init_completion(&g_RstOnComp);
 	init_completion(&g_triggerComp);
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
@@ -1686,7 +1688,13 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		wfsys_lock();
 		wlanFuncOffImpl();
 		wfsys_unlock();
-		complete(&g_RstOffComp);
+		if (g_RstOffCompWaitFlag) {
+			g_RstOffCompWaitFlag = FALSE;
+			complete(&g_RstOffComp);
+		} else {
+			kalSendAeeWarning("WLAN",
+				"reset off complete failed\n");
+		}
 		break;
 	case ENUM_RST_MSG_L0_END:
 		DBGLOG(INIT, DEBUG, "Whole chip reset end!\n");
@@ -1829,6 +1837,8 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 		kalSetRstEvent(FALSE);
 	}
+
+	g_RstOffCompWaitFlag = TRUE;
 	wait_for_completion(&g_RstOffComp);
 	DBGLOG(INIT, DEBUG, "Wi-Fi is off successfully.\n");
 
@@ -1975,11 +1985,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		kalSetRstEvent(TRUE);
 	}
 
-	DBGLOG(INIT, DEBUG, "g_RstOffComp.done= %d\n",
-		g_RstOffComp.done);
-	if (g_RstOffComp.done != 0)
-		kalSendAeeWarning("WLAN", "reset off failed\n");
-
+	g_RstOffCompWaitFlag = TRUE;
 	wait_for_completion(&g_RstOffComp);
 exit:
 	DBGLOG(INIT, DEBUG, "Wi-Fi is off successfully\n");
@@ -2099,6 +2105,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		kalSetRstEvent(TRUE);
 	}
 
+	g_RstOffCompWaitFlag = TRUE;
 	wait_for_completion(&g_RstOffComp);
 exit:
 	fgIsDrvTriggerWholeChipReset = FALSE;
@@ -2408,8 +2415,13 @@ int wlan_reset_thread_main(void *data)
 					glRstWholeChipRstParamInit();
 					u8Now = u8Last = 0;
 				} else {
-					if (!completion_done(&g_RstOffComp))
+					if (g_RstOffCompWaitFlag) {
+						g_RstOffCompWaitFlag = FALSE;
 						complete(&g_RstOffComp);
+					} else {
+						kalSendAeeWarning("WLAN",
+						"reset off complete failed\n");
+					}
 					DBGLOG(INIT, DEBUG,
 						"Don't trigger whole chip reset due to driver is not ready\n");
 					glResetCleanResetFlag();
