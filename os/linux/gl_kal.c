@@ -11811,6 +11811,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	char *pos;
 	char *end;
 	uint32_t slen;
+	uint32_t u4UpdatePeriod;
 
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 #if CFG_SUPPORT_SKB_ALLOC_WORK
@@ -11820,9 +11821,14 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	GET_BOOT_SYSTIME(&now);
 	last = perf->rLastUpdateTime;
 
+#if (CFG_TC10_FEATURE == 1)
+	u4UpdatePeriod = PERF_MON_UPDATE_LONG_INTERVAL;
+#else
+	u4UpdatePeriod = perf->u4UpdatePeriod;
+#endif
 	if (!KAL_TEST_BIT(PERF_MON_INIT_BIT, perf->ulPerfMonFlag) ||
 	    !CHECK_FOR_TIMEOUT(now, last,
-			MSEC_TO_SYSTIME(perf->u4UpdatePeriod))) {
+			MSEC_TO_SYSTIME(u4UpdatePeriod))) {
 		ret = WLAN_STATUS_PENDING;
 		goto done;
 	}
