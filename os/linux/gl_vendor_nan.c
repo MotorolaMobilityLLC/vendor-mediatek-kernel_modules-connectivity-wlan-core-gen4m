@@ -182,7 +182,7 @@ uint32_t nanOidDissolveReq(
 	if (!found) {
 		DBGLOG(NAN, TRACE,
 			"Dissolve: Complete NAN\n");
-		complete(&prAdapter->prGlueInfo->rNanHaltComp);
+		complete(&prAdapter->prGlueInfo->rNanDissolveComp);
 	}
 
 	DBGLOG(NAN, TRACE, "After\n");
@@ -198,7 +198,7 @@ nanNdpDissolve(struct ADAPTER *prAdapter,
 	uint32_t rStatus = 0;
 	uint32_t u4SetInfoLen = 0;
 
-	reinit_completion(&prAdapter->prGlueInfo->rNanHaltComp);
+	reinit_completion(&prAdapter->prGlueInfo->rNanDissolveComp);
 
 	if (prAdapter->rWifiVar.fgNanDissolveAbortScan)
 		nanAbortOngoingScan(prAdapter);
@@ -209,7 +209,7 @@ nanNdpDissolve(struct ADAPTER *prAdapter,
 		&u4SetInfoLen);
 
 	waitRet = wait_for_completion_timeout(
-		&prAdapter->prGlueInfo->rNanHaltComp,
+		&prAdapter->prGlueInfo->rNanDissolveComp,
 		MSEC_TO_JIFFIES(
 		u4Timeout));
 	if (!waitRet)
@@ -1170,6 +1170,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			DBGLOG(NAN, WARN, "NAN is already enabled\n");
 			goto skip_enable;
 		}
+
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+		kal_reinit_completion(
+			&prAdapter->prGlueInfo->rNanHaltComp);
+#else
+		prAdapter->prGlueInfo->rNanHaltComp.done = 0;
+#endif
 
 		for (u4DelayIdx = 0; u4DelayIdx < 5; u4DelayIdx++) {
 			if (g_enableNAN == TRUE) {

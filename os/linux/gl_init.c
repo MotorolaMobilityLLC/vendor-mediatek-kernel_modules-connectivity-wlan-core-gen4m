@@ -5398,6 +5398,7 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 #endif
 #if CFG_SUPPORT_NAN
 	init_completion(&prGlueInfo->rNanHaltComp);
+	init_completion(&prGlueInfo->rNanDissolveComp);
 #endif
 
 #if CFG_SUPPORT_NCHO
