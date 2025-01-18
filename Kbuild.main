@@ -3923,6 +3923,7 @@ ifeq ($(CONFIG_MTK_WIFI_NAN), y)
                 $(OS_DIR)gl_vendor_ndp.o
     NAN_OBJS := $(NAN_DIR)nan_dev.o \
                 $(NAN_DIR)nan_link.o \
+                $(NAN_DIR)nan_func.o \
                 $(NAN_DIR)nanDiscovery.o\
                 $(NAN_DIR)nanScheduler.o\
                 $(NAN_DIR)nanReg.o\
