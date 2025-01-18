@@ -698,6 +698,8 @@ void nic_txd_v5_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		HAL_MAC_CONNAC5X_TXD_SET_FIXED_RATE_IDX(prTxDesc,
 						prMsduInfo->u4FixedRateOption);
 		HAL_MAC_CONNAC5X_TXD_SET_FR_BW(prTxDesc, 0x8);
+		/* PP would regard TXD invalid if FR=1 && HW_AMSDU_CAP==1 */
+		HAL_MAC_CONNAC5X_TXD_UNSET_HW_AMSDU(prTxDesc);
 
 		if (prMsduInfo->ucPacketType != TX_PACKET_TYPE_MGMT)
 			HAL_MAC_CONNAC5X_TXD_SET_PROTECT_FRAME_OPT(prTxDesc,
