@@ -3166,8 +3166,8 @@ done:
 					"<CONN> SEARCH_RESULT BSS[" MACSTR
 					"] linkid[%d] band[%s] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] sync_om[%d]\n",
 					MAC2STR(bss->aucBSSID),
-					apucBandStr[bss->eBand],
 					bss->rMlInfo.ucLinkId,
+					apucBandStr[bss->eBand],
 					bss->u2Score, bss->u4Tput,
 					bss->fgIsConnected,
 					bss->fgIsMatchBssid,
