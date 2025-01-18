@@ -15768,8 +15768,12 @@ void kal_napi_schedule(struct napi_struct *n)
 {
 	if (!n)
 		return;
-#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-	if (in_interrupt())
+#if KERNEL_VERSION(5, 11, 0) <= CFG80211_VERSION_CODE
+	if (in_hardirq())
+		napi_schedule_irqoff(n);
+	else
+#elif KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
+	if (in_irq())
 		napi_schedule_irqoff(n);
 	else
 #endif /* KERNEL_VERSION(4, 0, 0) */
