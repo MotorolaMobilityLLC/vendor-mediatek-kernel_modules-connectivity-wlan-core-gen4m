@@ -29,8 +29,7 @@ struct BSS_INFO *nanGetDefaultLinkBssInfo(
 		prBssInfo = ad->aprBssInfo[i];
 
 		if (prBssInfo &&
-			IS_BSS_NAN(prBssInfo) &&
-			IS_BSS_ALIVE(ad, prBssInfo))
+			IS_BSS_NAN(prBssInfo))
 			return prBssInfo;
 	}
 
