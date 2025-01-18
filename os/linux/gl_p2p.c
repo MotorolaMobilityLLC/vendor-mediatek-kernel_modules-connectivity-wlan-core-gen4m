@@ -260,6 +260,7 @@ static int p2pStop(struct net_device *prDev);
 static struct net_device_stats *p2pGetStats(struct net_device *prDev);
 
 static void p2pSetMulticastList(struct net_device *prDev);
+static void p2pSetMulticastListWorkQueue(struct work_struct *work);
 
 static netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
 		struct net_device *prDev);
@@ -287,6 +288,8 @@ static int p2pDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
 /*---------------------------------------------------------------------------*/
 static int p2pInit(struct net_device *prDev)
 {
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
+
 	if (!prDev)
 		return -ENXIO;
 #if CFG_SUPPORT_RX_GRO
@@ -300,6 +303,11 @@ static int p2pInit(struct net_device *prDev)
 #if CFG_SW_TSO
 	kalTxTsoSwInit(prDev);
 #endif /* CFG_SW_TSO */
+
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
+	INIT_WORK(&(prNetDevPriv->workq), p2pSetMulticastListWorkQueue);
+
 	return 0;		/* success */
 }				/* end of p2pInit() */
 
@@ -314,6 +322,11 @@ static int p2pInit(struct net_device *prDev)
 /*----------------------------------------------------------------------------*/
 static void p2pUninit(struct net_device *prDev)
 {
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
+
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
+	cancel_work_sync(&(prNetDevPriv->workq));
 }				/* end of p2pUninit() */
 
 const struct net_device_ops p2p_netdev_ops = {
@@ -661,14 +674,12 @@ void p2pFreeMemSafe(struct GLUE_INFO *prGlueInfo,
 u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		uint8_t fgIsRtnlLockAcquired)
 {
-	u_int8_t fgDoRegister = FALSE;
-	struct net_device *prDevHandler = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct net_device *prDevHandler = NULL;
 	struct net_device **pprP2pDev = NULL;
-	u_int32_t *prP2pDevIdx = NULL;
-	u_int8_t ret = FALSE;
 	uint32_t i;
-	int32_t i4RetReg = 0;
+	int32_t i4RetReg;
+	u_int8_t ret = TRUE, fgDoRegister = FALSE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -676,7 +687,6 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 
 	prAdapter = prGlueInfo->prAdapter;
 	pprP2pDev = prGlueInfo->prP2pDev;
-	prP2pDevIdx = prGlueInfo->u4P2pDevIdx;
 
 	ASSERT(prAdapter);
 
@@ -706,7 +716,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		 * is called but not set to NULL yet.
 		 */
 		if (prDevHandler == NULL ||
-			prDevHandler->reg_state == NETREG_RELEASED) {
+		    prDevHandler->reg_state == NETREG_RELEASED) {
 			prAdapter->rP2PNetRegState =
 				ENUM_NET_REG_STATE_UNREGISTERED;
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -718,10 +728,6 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		netif_carrier_off(prDevHandler);
 		netif_tx_stop_all_queues(prDevHandler);
 
-		if (prP2pDevIdx[i]) {
-			prDevHandler->ifindex = prP2pDevIdx[i];
-			prP2pDevIdx[i] = 0;
-		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 		if (fgIsRtnlLockAcquired) {
@@ -730,29 +736,67 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 #else
 			i4RetReg = register_netdevice(prDevHandler);
 #endif
-		} else
+		} else {
 			i4RetReg = register_netdev(prDevHandler);
+		}
 
-		/* register for net device */
-		if (i4RetReg < 0) {
-			DBGLOG(INIT, WARN,
-				"unable to register netdevice for p2p\n");
+		DBGLOG(P2P, INFO,
+			"P2P interface %d %s ifindex=%d reg=%d\n",
+			i, prDevHandler->name, prDevHandler->ifindex,
+			i4RetReg);
+
+		if (i4RetReg) {
 			ret = FALSE;
+			goto fail;
 		} else {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			pprP2pDev[i] = prDevHandler;
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-			ret = TRUE;
 		}
-
-		DBGLOG(P2P, INFO, "P2P interface %d work %d\n",
-			i, prDevHandler->ifindex);
 	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	goto exit;
 fail:
+	for (i = 0;
+	     i < prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum;
+	     i++) {
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		prDevHandler = prGlueInfo->prP2PInfo[i] ?
+			prGlueInfo->prP2PInfo[i]->prDevHandler :
+			NULL;
+		pprP2pDev[i] = NULL;
+		prGlueInfo->prP2PInfo[i]->prDevHandler = NULL;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+		if (!prDevHandler)
+			continue;
+
+		if (prDevHandler->reg_state == NETREG_REGISTERED) {
+			if (fgIsRtnlLockAcquired) {
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+				cfg80211_unregister_netdevice(prDevHandler);
+#else
+				unregister_netdevice(prDevHandler);
+#endif
+			} else {
+				unregister_netdev(prDevHandler);
+			}
+#if KERNEL_VERSION(4, 11, 9) > CFG80211_VERSION_CODE
+			free_netdev(prDevHandler);
+#endif
+		} else {
+			free_netdev(prDevHandler);
+		}
+	}
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_UNREGISTERED;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+exit:
 	return ret;
 }
 
@@ -924,8 +968,9 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 #else
 					unregister_netdevice(prRoleDev);
 #endif
-				} else
+				} else {
 					unregister_netdev(prRoleDev);
+				}
 			}
 			/* This ndev is created in mtk_p2p_cfg80211_add_iface(),
 			 * and unregister_netdev will also free the ndev.
@@ -954,6 +999,10 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			} else {
 				unregister_netdev(prDev);
 			}
+
+#if KERNEL_VERSION(4, 11, 9) > CFG80211_VERSION_CODE
+			free_netdev(prDev);
+#endif
 		}
 	}
 
@@ -1197,38 +1246,6 @@ exit:
 	return 0;
 }
 
-static void mtk_p2p_vif_destructor(struct net_device *dev)
-{
-	struct GLUE_INFO *prGlueInfo;
-	uint8_t ucRoleIdx;
-
-	if (!dev) {
-		DBGLOG(P2P, WARN, "dev is NULL\n");
-		return;
-	}
-
-	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(dev));
-
-	if (!prGlueInfo) {
-		DBGLOG(P2P, WARN, "prGlueInfo is NULL\n");
-		return;
-	}
-
-	if (mtk_Netdev_To_DevIdx(prGlueInfo, dev,
-				 &ucRoleIdx) == WLAN_STATUS_SUCCESS) {
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->aprRoleHandler ==
-		    dev)
-			prGlueInfo->prP2PInfo[ucRoleIdx]->aprRoleHandler =
-			    NULL;
-		prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler = NULL;
-	}
-
-	if (prGlueInfo->p2pPrDev == dev)
-		prGlueInfo->p2pPrDev = NULL;
-	DBGLOG(P2P, INFO, "free %s[%p]\n", dev->name, dev);
-	free_netdev(dev);
-}
-
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief Register for cfg80211 for Wi-Fi Direct
@@ -1349,10 +1366,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			"Set p2p[%d] mac to " MACSTR " fgIsApMode(%d)\n",
 			i, MAC2STR(rMacAddr), fgIsApMode);
 
-#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
-		prP2pDev->priv_destructor = mtk_p2p_vif_destructor;
-#else
-		prP2pDev->destructor = mtk_p2p_vif_destructor;
+#if KERNEL_VERSION(4, 11, 9) <= CFG80211_VERSION_CODE
+		prP2pDev->needs_free_netdev = true;
 #endif
 
 #if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
@@ -1541,8 +1556,18 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 		}
 
 		if (prP2PInfo->prDevHandler) {
+			struct net_device *prDev;
+
+			prDev = prP2PInfo->prDevHandler;
+			prP2PInfo->prDevHandler = NULL;
+			if (prDev == prP2PInfo->aprRoleHandler) {
+				DBGLOG(INIT, INFO,
+					"set p2p role as NULL too\n");
+				prP2PInfo->aprRoleHandler = NULL;
+			}
+
 			/* don't free the dev that share with the AIS */
-			if (wlanIsAisDev(prP2PInfo->prDevHandler))
+			if (wlanIsAisDev(prDev))
 				pprP2pRoleWdev[ucRoleIdx] = NULL;
 			else {
 				if (prAdapter->rP2PNetRegState ==
@@ -1554,15 +1579,17 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 					GLUE_RELEASE_SPIN_LOCK(prGlueInfo,
 						SPIN_LOCK_NET_DEV);
 					if (fgIsRtnlLockAcquired)
-						unregister_netdevice(
-						    prP2PInfo->prDevHandler);
+						unregister_netdevice(prDev);
 					else
-						unregister_netdev(
-						    prP2PInfo->prDevHandler);
+						unregister_netdev(prDev);
 					GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo,
 						SPIN_LOCK_NET_DEV);
 					prAdapter->rP2PNetRegState =
 						ENUM_NET_REG_STATE_UNREGISTERED;
+
+#if KERNEL_VERSION(4, 11, 9) > CFG80211_VERSION_CODE
+					free_netdev(prDev);
+#endif
 				} else if (prAdapter->rP2PNetRegState !=
 					ENUM_NET_REG_STATE_UNREGISTERED) {
 					DBGLOG(P2P, WARN,
@@ -1571,7 +1598,6 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 						prAdapter->rP2PNetRegState);
 				}
 			}
-			prP2PInfo->prDevHandler = NULL;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
@@ -1775,63 +1801,42 @@ struct net_device_stats *p2pGetStats(struct net_device *prDev)
 
 static void p2pSetMulticastList(struct net_device *prDev)
 {
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-
-	prGlueInfo = (prDev != NULL)
-		? *((struct GLUE_INFO **) netdev_priv(prDev))
-		: NULL;
-
-	if (!prDev || !prGlueInfo) {
-		DBGLOG(INIT, WARN,
-			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
-			prDev, prGlueInfo);
-		return;
-	}
-
-	prGlueInfo->p2pPrDev = prDev;
-
-	/* 4  Mark HALT, notify main thread to finish current job */
-	set_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT, &prGlueInfo->ulFlag);
-	/* wake up main thread */
-	wake_up_interruptible(&prGlueInfo->waitq);
-}				/* p2pSetMulticastList */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function is to set multicast list and set rx mode.
- *
- * \param[in] prDev  Pointer to struct net_device
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
-{
-	struct net_device *prDev = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
-	uint32_t u4SetInfoLen = 0;
-	uint32_t u4McCount;
+	struct GLUE_INFO *prGlueInfo;
 
-	GLUE_SPIN_LOCK_DECLARATION();
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
-	prDev = prGlueInfo->p2pPrDev;
-
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
-	prGlueInfo = (prDev != NULL)
-		? *((struct GLUE_INFO **) netdev_priv(prDev))
-		: NULL;
-
-	if (!prDev || !prGlueInfo) {
-		DBGLOG(INIT, WARN,
-			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
-			prDev, prGlueInfo);
+	if (!prDev)
 		return;
-	}
 
 	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
 		netdev_priv(prDev);
+	prGlueInfo = prNetDevPriv->prGlueInfo;
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
+	schedule_work(&(prNetDevPriv->workq));
+}				/* p2pSetMulticastList */
+
+static void p2pSetMulticastListWorkQueue(struct work_struct *work)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = CONTAINER_OF(work,
+		struct NETDEV_PRIVATE_GLUE_INFO, workq);
+	struct GLUE_INFO *prGlueInfo = prNetDevPriv->prGlueInfo;
+	struct net_device *prDev;
+	uint32_t u4SetInfoLen = 0, u4McCount;
+
+	prDev = wlanGetNetDev(prGlueInfo, prNetDevPriv->ucBssIdx);
+	if (!prDev) {
+		DBGLOG(INIT, ERROR,
+			"prDev for Bss%d not exist.\n",
+			prNetDevPriv->ucBssIdx);
+		return;
+	}
+
+	DBGLOG(INIT, TRACE, "Bss[%d] set multicast list, flags=0x%x\n",
+		prNetDevPriv->ucBssIdx,
+		prDev->flags);
 
 	if (prDev->flags & IFF_PROMISC)
 		prGlueInfo->prP2PDevInfo->u4PacketFilter
@@ -1840,8 +1845,8 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	if (prDev->flags & IFF_BROADCAST)
 		prGlueInfo->prP2PDevInfo->u4PacketFilter
 			|= PARAM_PACKET_FILTER_BROADCAST;
-	u4McCount = netdev_mc_count(prDev);
 
+	u4McCount = netdev_mc_count(prDev);
 	if (prDev->flags & IFF_MULTICAST) {
 		if ((prDev->flags & IFF_ALLMULTI)
 			|| (u4McCount > MAX_NUM_GROUP_ADDR))
@@ -1880,21 +1885,21 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 
 		rMcAddrList.ucBssIdx = prNetDevPriv->ucBssIdx;
 		rMcAddrList.ucAddrNum = i;
-		rMcAddrList.fgIsOid = FALSE;
+		rMcAddrList.fgIsOid = TRUE;
 
 		netif_addr_unlock_bh(prDev);
-
-		DBGLOG(P2P, TRACE, "Set Multicast Address List\n");
 
 		if (i >= MAX_NUM_GROUP_ADDR)
 			return;
 
-		wlanoidSetMulticastList(prGlueInfo->prAdapter,
-					&rMcAddrList,
-					sizeof(rMcAddrList),
-					&u4SetInfoLen);
+		kalIoctlByBssIdx(prGlueInfo,
+				 wlanoidSetMulticastList,
+				 &rMcAddrList,
+				 sizeof(struct PARAM_MULTICAST_LIST),
+				 &u4SetInfoLen,
+				 prNetDevPriv->ucBssIdx);
 	}
-}				/* end of mtk_p2p_wext_set_Multicastlist() */
+}
 
 static netdev_tx_t __p2pHardStartXmit(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb,

@@ -179,7 +179,6 @@ static void mtk_vif_destructor(struct net_device *dev)
 	struct wireless_dev *prWdev = NULL;
 	struct wireless_dev **pprP2pWdev = NULL;
 	struct wireless_dev **pprP2pRoleWdev = NULL;
-	struct net_device **pprP2pPrDev = NULL;
 	uint32_t u4Idx = 0;
 
 	if (!dev || !dev->ieee80211_ptr)
@@ -188,13 +187,8 @@ static void mtk_vif_destructor(struct net_device *dev)
 	DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
 	prWdev = dev->ieee80211_ptr;
 
-	if (prWdev) {
+	if (prWdev)
 		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
-		pprP2pPrDev = &prGlueInfo->p2pPrDev;
-	}
-
-	if (prGlueInfo && pprP2pPrDev && *pprP2pPrDev == dev)
-		*pprP2pPrDev = NULL;
 
 	free_netdev(dev);
 	/* Expect that the pprP2pWdev isn't freed here */

@@ -6119,11 +6119,6 @@ int main_thread(void *data)
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
-		/*run p2p multicast list work. */
-		if (test_and_clear_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT,
-				       &prGlueInfo->ulFlag))
-			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
-
 		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_BIT,
 				       &prGlueInfo->ulFlag)
 			&& prGlueInfo->prP2PDevInfo) {

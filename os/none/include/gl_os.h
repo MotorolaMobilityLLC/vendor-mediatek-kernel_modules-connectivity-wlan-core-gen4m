@@ -162,7 +162,6 @@ extern u_int32_t u4SdesDetectTime;
 #define GLUE_FLAG_OID                   BIT(2)
 #define GLUE_FLAG_TIMEOUT               BIT(3)
 #define GLUE_FLAG_TXREQ                 BIT(4)
-#define GLUE_FLAG_SUB_MOD_MULTICAST     BIT(7)
 #define GLUE_FLAG_FRAME_FILTER          BIT(8)
 #define GLUE_FLAG_FRAME_FILTER_AIS      BIT(9)
 
@@ -171,7 +170,6 @@ extern u_int32_t u4SdesDetectTime;
 #define GLUE_FLAG_OID_BIT               (2)
 #define GLUE_FLAG_TIMEOUT_BIT           (3)
 #define GLUE_FLAG_TXREQ_BIT             (4)
-#define GLUE_FLAG_SUB_MOD_MULTICAST_BIT (7)
 #define GLUE_FLAG_FRAME_FILTER_BIT      (8)
 #define GLUE_FLAG_FRAME_FILTER_AIS_BIT  (9)
 
@@ -965,11 +963,6 @@ int32_t procUninitProcFs(void);
 u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo);
 
 u_int8_t glUnregisterAmpc(struct GLUE_INFO *prGlueInfo);
-#endif
-
-#if CFG_ENABLE_WIFI_DIRECT
-void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
-		*prGlueInfo);
 #endif
 
 struct GLUE_INFO *wlanGetGlueInfo(void);

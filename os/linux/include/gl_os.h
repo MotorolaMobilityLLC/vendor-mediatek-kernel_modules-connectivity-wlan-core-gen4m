@@ -282,7 +282,6 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_TIMEOUT               BIT(3)
 #define GLUE_FLAG_TXREQ                 BIT(4)
 #define GLUE_FLAG_SER_TIMEOUT           BIT(5)
-#define GLUE_FLAG_SUB_MOD_MULTICAST     BIT(7)
 #define GLUE_FLAG_FRAME_FILTER          BIT(8)
 #define GLUE_FLAG_FRAME_FILTER_AIS      BIT(9)
 
@@ -292,7 +291,6 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_TIMEOUT_BIT           (3)
 #define GLUE_FLAG_TXREQ_BIT             (4)
 #define GLUE_FLAG_SER_TIMEOUT_BIT       (5)
-#define GLUE_FLAG_SUB_MOD_MULTICAST_BIT (7)
 #define GLUE_FLAG_FRAME_FILTER_BIT      (8)
 #define GLUE_FLAG_FRAME_FILTER_AIS_BIT  (9)
 
@@ -1262,11 +1260,9 @@ struct GLUE_INFO {
 
 	struct net_device *prNetDevice;
 
-	struct net_device *p2pPrDev;
 	struct wireless_dev *prP2pWdev[KAL_P2P_NUM];
 	struct wireless_dev *prP2pRoleWdev[KAL_P2P_NUM];
 	struct net_device *prP2pDev[KAL_P2P_NUM];
-	uint32_t u4P2pDevIdx[KAL_P2P_NUM];
 
 	struct service_test *prServiceTest;
 
@@ -1950,11 +1946,6 @@ void cable_detect_gpio_parse(void);
 u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo);
 
 u_int8_t glUnregisterAmpc(struct GLUE_INFO *prGlueInfo);
-#endif
-
-#if CFG_ENABLE_WIFI_DIRECT
-void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
-		*prGlueInfo);
 #endif
 
 struct GLUE_INFO *wlanGetGlueInfo(void);

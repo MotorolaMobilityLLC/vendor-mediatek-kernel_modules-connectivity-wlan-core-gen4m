@@ -3545,26 +3545,6 @@ void wlanSchedScanStoppedWorkQueue(struct work_struct *work)
 
 }
 
-/* FIXME: Since we cannot sleep in the wlanSetMulticastList, we arrange
- * another workqueue for sleeping. We don't want to block
- * main_thread, so we can't let tx_thread to do this
- */
-
-void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
-		*prGlueInfo)
-{
-	if (!prGlueInfo) {
-		DBGLOG(INIT, WARN,
-		       "abnormal dev or skb: prGlueInfo(0x%p)\n", prGlueInfo);
-		return;
-	}
-
-#if CFG_ENABLE_WIFI_DIRECT
-	if (prGlueInfo->prAdapter->fgIsP2PRegistered)
-		mtk_p2p_wext_set_Multicastlist(prGlueInfo);
-#endif
-} /* end of p2pSetMulticastListWorkQueueWrapper() */
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief This function is TX entry point of NET DEVICE.
@@ -5937,12 +5917,9 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P = {0};
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
-	uint32_t *prP2pDevIdx = NULL;
 
 	if (!prGlueInfo)
 		return -1;
-
-	prP2pDevIdx = prGlueInfo->u4P2pDevIdx;
 
 #if (CFG_MTK_ANDROID_WMT)
 	if (prGlueInfo->u4ReadyFlag == 0) {
@@ -5962,33 +5939,10 @@ int set_p2p_mode_handler(struct net_device *netdev,
 #endif
 
 	/* Remember original ifindex for reset case */
-	if (kalIsResetting()) {
-		struct GL_P2P_INFO *prP2PInfo = NULL;
-		int i = 0;
-
-		for (i = 0 ; i < KAL_P2P_NUM; i++) {
-			prP2PInfo = prGlueInfo->prP2PInfo[i];
-
-			if (!prP2PInfo || !prP2PInfo->aprRoleHandler
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-				|| !prP2PInfo->prWdev
-#endif
-				)
-				continue;
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-			/* Only restore sap part */
-			if (prP2PInfo->prWdev->iftype != NL80211_IFTYPE_AP)
-				continue;
-#endif
-
-			prP2pDevIdx[i] =
-				prP2PInfo->aprRoleHandler->ifindex;
-		}
-
-		if (prGlueInfo->prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
-			DBGLOG(INIT, WARN, "Resetting p2p mode at probe\n");
-			return 0;
-		}
+	if (kalIsResetting() &&
+	    prGlueInfo->prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
+		DBGLOG(INIT, INFO, "Resetting p2p mode at probe\n");
+		return 0;
 	}
 
 	/* Resetting p2p mode if registered to avoid launch KE */
