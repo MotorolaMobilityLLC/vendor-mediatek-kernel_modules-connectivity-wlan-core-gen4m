@@ -788,6 +788,15 @@ u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 {
 	enum ENUM_BAND eBand;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	union _NAN_BAND_CHNL_CTRL *prAisChnlInfo[NAN_TIMELINE_MGMT_SIZE];
+	union _NAN_BAND_CHNL_CTRL *prP2pChnlInfo[NAN_TIMELINE_MGMT_SIZE];
+	const size_t sz2gTimeLine =
+		nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4);
+	const size_t sz5gTimeLine =
+		nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
+	size_t i;
+#endif
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
@@ -804,8 +813,45 @@ u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 		return prNanScheduler->fgEn5gL || prNanScheduler->fgEn5gH;
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (eBand == BAND_6G)
+	for (i = 0; i < NAN_TIMELINE_MGMT_SIZE; i++) {
+		prAisChnlInfo[i] = &prNanScheduler->arP2pAisMcc[i].rAisChnlInfo;
+		prP2pChnlInfo[i] = &prNanScheduler->arP2pAisMcc[i].rP2pChnlInfo;
+	}
+	if (eBand == BAND_6G) {
+		/**
+		 * limited to 4 channels:
+		 * 1. band0: NAN(6), P2P(x), AIS(y)
+		 *    band1: NAN(149), NAN (6G)
+		 *    Total: = 5, over limit
+		 * 2. band0: NAN(6), P2P(x)
+		 *    band1: NAN(149), AIS(y), NAN(6G)
+		 *    Total = 5, over limit
+		 * 3. band0: NAN(6),AIS (x)
+		 *    band1: NAN(149),P2P(y), NAN(y)
+		 *    Total = 4
+		 * 4. band0: NAN(6), NAN(6)
+		 *    band1: NAN(149), P2P(x), AIS(y)
+		 *    Total = 4
+		 */
+		if (prAdapter->chip_info &&
+		    prAdapter->chip_info->ucMaxConcurrentLimit &&
+		    prAdapter->chip_info->ucMaxConcurrentLimit == 4 &&
+		    /* case 1 */
+		    prNanScheduler->arP2pAisMcc[sz2gTimeLine].fgIsP2pAisMCC &&
+		    prAisChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
+					    g_r2gDwChnl.u4PrimaryChnl &&
+		    prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
+					    g_r2gDwChnl.u4PrimaryChnl ||
+		    /* case 2 */
+		    prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl &&
+		    prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
+					    g_r2gDwChnl.u4PrimaryChnl &&
+		    prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl &&
+		    prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl !=
+					    g_r5gDwChnl.u4PrimaryChnl)
+			return FALSE;
 		return prNanScheduler->fgEn6g;
+	}
 #endif
 
 	return FALSE;

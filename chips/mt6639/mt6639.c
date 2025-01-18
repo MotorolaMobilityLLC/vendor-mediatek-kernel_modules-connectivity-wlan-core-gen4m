@@ -1279,8 +1279,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.rPlatcfgInfraSysram = {
 		.addr = CONNAC3X_PLAT_CFG_ADDR,
 		.size = CONNAC3X_PLAT_CFG_SIZE,
-	}
+	},
 #endif
+
+	.ucMaxConcurrentLimit = 4,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {

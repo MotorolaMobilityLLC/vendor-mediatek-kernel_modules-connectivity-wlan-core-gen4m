@@ -1617,6 +1617,8 @@ struct mt66xx_chip_info {
 
 	u_int8_t fgCheckRxDropThreshold;
 
+	uint8_t ucMaxConcurrentLimit;
+
 	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;
