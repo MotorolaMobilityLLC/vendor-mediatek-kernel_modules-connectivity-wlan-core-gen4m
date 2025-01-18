@@ -2473,6 +2473,7 @@ static int halSetMemOpsWifiMiscEmi(
 static int halSetMemOpsAndroid(
 	struct HIF_MEM_OPS *prMemOps)
 {
+	/* with pre-allocated memory (DTS) */
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
@@ -2542,6 +2543,7 @@ static int halSetMemOpsAndroid(
 static int halSetMemOpsPC(
 	struct HIF_MEM_OPS *prMemOps)
 {
+	/* w/o pre-allocated memory (DTS) */
 	halSetMemOpsTrxDesc(prMemOps,
 		WF_MEM_OP_TRX_DESC_ZERO_COPY_PATH);
 
@@ -2579,9 +2581,12 @@ int halSetMemOps(
 	struct platform_device *prPlatDev,
 	struct HIF_MEM_OPS *prMemOps)
 {
+
 	if (prPlatDev)
+		/* with pre-allocated memory (DTS) */
 		halSetMemOpsAndroid(prMemOps);
 	else
+		/* w/o pre-allocated memory (DTS) */
 		halSetMemOpsPC(prMemOps);
 
 	return 0;

@@ -1183,6 +1183,7 @@ struct WFDMA_EMI_DONE_FLAG {
 	uint32_t sw_int;
 	uint32_t subsys_int;
 	uint32_t rro;
+#if (CFG_SUPPORT_WFDMA_WB_INT_MASK == 1)
 	uint32_t tx_int0_mask;
 	uint32_t tx_int1_mask;
 	uint32_t rx_int0_mask;
@@ -1190,7 +1191,8 @@ struct WFDMA_EMI_DONE_FLAG {
 	uint32_t err_int_mask;
 	uint32_t sw_int_mask;
 	uint32_t subsys_int_mask;
-	uint32_t rro_maks;
+	uint32_t rro_mask;
+#endif /* CFG_SUPPORT_WFDMA_WB_INT_MASK */
 };
 
 struct WFDMA_EMI_RING_DIDX {

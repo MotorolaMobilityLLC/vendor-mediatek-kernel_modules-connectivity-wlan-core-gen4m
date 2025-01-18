@@ -269,6 +269,8 @@ struct CODA_CR_INFO {
 	uint32_t u4Shift;
 };
 
+#define DMASHDL_LITE_LMAC_QUEUE_MAX_NUM 100
+
 enum ENUM_DMASHDL_GROUP_IDX {
 	ENUM_DMASHDL_GROUP_0 = 0,
 	ENUM_DMASHDL_GROUP_1,
@@ -298,8 +300,8 @@ struct DMASHDL_CFG {
 	uint32_t u4RefillCtrl;
 	uint16_t au2MaxQuota[ENUM_DMASHDL_LITE_GROUP_NUM];
 	uint16_t au2MinQuota[ENUM_DMASHDL_LITE_GROUP_NUM];
-	uint8_t aucQueue2Group[ENUM_DMASHDL_LITE_GROUP_NUM];
-	uint32_t u4Queue2Group[ENUM_DMASHDL_LITE_GROUP_NUM];
+	uint8_t aucQueue2Group[DMASHDL_LITE_LMAC_QUEUE_MAX_NUM];
+	uint32_t u4Queue2Group[DMASHDL_LITE_LMAC_QUEUE_MAX_NUM >> 2];
 	uint8_t aucPriority2Group[ENUM_DMASHDL_GROUP_NUM];
 	uint32_t u4Priority2Group[2];
 	uint16_t u2HifAckCntTh;

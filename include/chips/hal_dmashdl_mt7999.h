@@ -31,6 +31,7 @@
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 
+#define MT7999_DMASHDL_LMAC_QUEUE_NUM                  (32)
 #define MT7999_DMASHDL_SLOT_ARBITER_EN                 (0)
 #define MT7999_DMASHDL_PLE_TOTAL_PAGE_SIZE             (0x6E0)
 #define MT7999_DMASHDL_PSE_TOTAL_PAGE_SIZE             (0x20)

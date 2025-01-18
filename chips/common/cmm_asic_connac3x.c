@@ -71,7 +71,7 @@ uint32_t g_au4UsbPollAddrTbl[] = {
 	CONNAC3X_UDMA_WL_TX_SCH_ADDR,
 	CONNAC3X_UDMA_AR_CMD_FIFO_ADDR,
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_CSR_TX_DROP_MODE_TEST_ADDR,
-	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_HIF_BUSY_ADDR,
+	CONNAC3X_WFDMA_HIF_MISC_HIF_BUSY_ADDR,
 	CONNAC3X_UDMA_WL_STOP_DP_OUT_ADDR
 };
 uint32_t g_au4UsbPollMaskTbl[] = {
@@ -85,7 +85,7 @@ uint32_t g_au4UsbPollMaskTbl[] = {
 	CONNAC3X_UDMA_WL_TX_SCH_MASK,
 	CONNAC3X_UDMA_AR_CMD_FIFO_MASK,
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_CSR_TX_DROP_MODE_TEST_MASK,
-	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_HIF_BUSY_MASK,
+	CONNAC3X_WFDMA_HIF_MISC_HIF_BUSY_MASK,
 	CONNAC3X_UDMA_WL_STOP_DP_OUT_DROP_MASK
 };
 uint32_t g_au4UsbPollValueTbl[] = {
@@ -2240,7 +2240,7 @@ void asicConnac3xDmashdlLiteSetQueueMapping(
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
 
-	if (ucQueue >= 64)
+	if (ucQueue >= prCfg->ucQueueNum)
 		return;
 
 	if (ucGroup >= prCfg->u4GroupNum)
@@ -2254,6 +2254,7 @@ void asicConnac3xDmashdlLiteSetQueueMapping(
 	u4Val = prCfg->u4Queue2Group[u4Idx];
 	u4Val &= ~u4Mask;
 	u4Val |= (ucGroup << u4Shft) & u4Mask;
+	/* restore queue mapping CR value to dmashdl cfg */
 	prCfg->u4Queue2Group[u4Idx] = u4Val;
 
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);

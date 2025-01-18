@@ -156,6 +156,8 @@ struct DMASHDL_CFG rMt7999DmashdlCfg = {
 
 	.u4GroupNum = ENUM_DMASHDL_GROUP_NUM,
 
+	.ucQueueNum = MT7999_DMASHDL_LMAC_QUEUE_NUM,
+
 	.rMainControl = {
 		WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_ADDR,
 		0,
