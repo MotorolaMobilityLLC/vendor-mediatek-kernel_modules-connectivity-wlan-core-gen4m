@@ -1397,7 +1397,7 @@ struct CAP_MLO_CAP {
 
 #if (CFG_SUPPORT_PERF_IND == 1)
 struct CAP_PERF_IND_FROM_EMI {
-	uint8_t fgPerfIndicatorFromEMIFWSupport;
+	u_int8_t fgPerfIndicatorFromEMIFWSupport;
 	uint8_t ucPerfIndicatorFromEMIFWVer;
 	uint8_t ucReserved[2];
 };

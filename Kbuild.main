@@ -908,7 +908,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_MTK_WIFI_SAP_BCN_CRI_UPD_SUPPORT=y
         CONFIG_P2P_NUM=3
         CONFIG_STA_NUM=3
-        ccflags-y += -DCFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER=1
+        CONFIG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER=1
     endif
 
     ifeq ($(CONFIG_WIFI_DX5), y)
@@ -3497,6 +3497,12 @@ ifeq ($(CONFIG_MTK_MLRP_ALR_BALANCE), y)
     ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=1
 else
     ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=0
+endif
+
+ifeq ($(CONFIG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER), 1)
+    ccflags-y += -DCFG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER=1
+else
+    ccflags-y += -DCFG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER=0
 endif
 
 ifneq ($(CONFIG_TX_MAX_PKT_NUM),)

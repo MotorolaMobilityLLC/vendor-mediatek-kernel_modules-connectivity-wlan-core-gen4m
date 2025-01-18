@@ -11150,11 +11150,8 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 					if (prMem) {
 						prCmdPerfReportEmiAddress =
 							(uint8_t *)prMem->va;
-						DBGLOG(SW4, INFO,
-						"[Perf_Ind_From_EMI] pa: %pa, va:0x%llx\n",
-						&prMem->pa, prMem->va);
 					} else {
-						DBGLOG(SW4, INFO,
+						DBGLOG(SW4, WARN,
 						"[Perf_Ind_From_EMI] Can't get prMem\n");
 						cnmMemFree(prAdapter,
 							   prCmdPerfReport);
@@ -11163,7 +11160,7 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 				}
 
 				if (prCmdPerfReportEmiAddress == NULL) {
-					DBGLOG(SW4, INFO,
+					DBGLOG(SW4, WARN,
 					"[Perf_Ind_From_EMI] EMI Address is NULL\n");
 					cnmMemFree(prAdapter, prCmdPerfReport);
 					return;
@@ -11173,11 +11170,8 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 					prCmdPerfReportEmiAddress,
 					prCmdPerfReport,
 					sizeof(*prCmdPerfReport));
-				DBGLOG(SW4, INFO,
-					"[Perf_Ind_From_EMI] copied to EMI\n");
 
-		}
-			else {
+			} else {
 				DBGLOG(SW4, WARN,
 				"[Perf_Ind_From_EMI] Wrong version FW Ver[%u] Drv Ver[%u] Support Ver[%u]\n",
 				prWifiVar->ucPerfIndicatorFromEMIFWVer,

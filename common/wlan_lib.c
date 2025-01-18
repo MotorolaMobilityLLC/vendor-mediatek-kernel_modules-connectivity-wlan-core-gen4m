@@ -8804,17 +8804,17 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgPerfIndicatorFromEMIFWSupport,
 		  "PerfIndFromEMIFWSupport",
-		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+		  FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucPerfIndicatorFromEMIFWVer,
-		  "PerfIndFromEMIFWVer", 0, FEATURE_TO_CUSTOMER);
-#ifdef CFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER
+		  "PerfIndFromEMIFWVer", 0, FEATURE_DEBUG_ONLY);
+#ifdef CFG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER
 	INIT_UINT(prWifiVar->fgPerfIndicatorFromEMIDriverSupport,
 		  "PerfIndFromEMIDrvSupport",
 		  FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucPerfIndicatorFromEMIDriverVer,
 		  "PerfIndFromEMIDrvVer",
-		  CFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER,
-		  FEATURE_TO_CUSTOMER);
+		  CFG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER,
+		  FEATURE_DEBUG_ONLY);
 #else
 	INIT_UINT(prWifiVar->fgPerfIndicatorFromEMIDriverSupport,
 		  "PerfIndFromEMIDrvSupport",
