@@ -66,8 +66,17 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter, uint8_t aucIntfMac[])
 
 		if (prP2pBssInfo != NULL) {
 			BSS_INFO_INIT(prAdapter, prP2pBssInfo);
+#if (CFG_TC10_FEATURE == 1)
+			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
+				      prAdapter->rWifiVar.aucP2pDeviceAddress[0]
+				      );
+			COPY_MAC_ADDR(prP2pBssInfo->aucBSSID,
+				      prAdapter->rWifiVar.aucP2pDeviceAddress[0]
+				      );
+#else
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, aucIntfMac);
 			COPY_MAC_ADDR(prP2pBssInfo->aucBSSID, aucIntfMac);
+#endif
 			DBGLOG(INIT, TRACE, "Set p2p dev mac to " MACSTR "\n",
 					MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 

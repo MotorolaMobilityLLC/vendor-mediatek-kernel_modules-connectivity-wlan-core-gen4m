@@ -34,6 +34,11 @@
 
 #define MAC_ADDR_LOCAL_ADMIN                    BIT(1)
 
+#if (CFG_TC10_FEATURE == 1)
+#define P2P_DEV_MAC_1ST_BYTE_MASK               0x2
+#define P2P_DEV_MAC_5TH_BYTE_MASK               0x80
+#endif
+
 #define ETH_P_IPV4                              0x0800
 #define ETH_P_ARP                               0x0806
 #define ETH_P_IPX                               0x8137	/* Novell IPX */

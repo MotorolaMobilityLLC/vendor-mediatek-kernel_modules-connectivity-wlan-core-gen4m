@@ -5980,15 +5980,22 @@ void nicApplyP2pNetworkFixAddress(struct ADAPTER *prAdapter)
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		aucMacAddr = prAdapter->rWifiVar.aucP2pDeviceAddress[i];
 		COPY_MAC_ADDR(aucMacAddr, prAdapter->rMyMacAddr);
-
+#if (CFG_TC10_FEATURE == 1)
+		aucMacAddr[0] |= P2P_DEV_MAC_1ST_BYTE_MASK;
+		aucMacAddr[5] ^= i;
+#else
 		aucMacAddr[0] |= 0x2;
 		aucMacAddr[0] ^=
 			i << MAC_ADDR_LOCAL_ADMIN;
+#endif
 
 		/* Let p2p group interface MAC addr same as P2P Device */
 		aucMacAddr = prAdapter->rWifiVar.aucP2pInterfaceAddress[i];
 		COPY_MAC_ADDR(aucMacAddr, prAdapter->rWifiVar
 			.aucP2pDeviceAddress[i]);
+#if (CFG_TC10_FEATURE == 1)
+		aucMacAddr[4] ^= P2P_DEV_MAC_5TH_BYTE_MASK;
+#endif
 
 		DBGLOG(NIC, DEBUG,
 			"P2P[%u] DEV mac:" MACSTR " INF mac:" MACSTR "\n",
