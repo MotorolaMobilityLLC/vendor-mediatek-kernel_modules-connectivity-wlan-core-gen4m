@@ -112,7 +112,12 @@ enum ENUM_USB_END_POINT {
 #define USB_TX_DATA_BUFF_SIZE           (32*1024)
 #define USB_RX_EVENT_BUF_SIZE           (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO + 4)
 #define USB_RX_WDT_BUF_SIZE             (1)
-#define USB_RX_DATA_BUF_SIZE            (CFG_RX_MAX_PKT_SIZE + \
+#define MDP_MAX_MSDU_SIZE               (0x680 << 3) /* 13312 Bytes */
+#define MAX_RXD_SIZE                    (192)
+#define HIF_RX_HEADER_SIZE              (12)
+#define USB_RX_DATA_BUF_SIZE            ((MDP_MAX_MSDU_SIZE + MAX_RXD_SIZE +\
+					 HIF_RX_HEADER_SIZE + \
+					 LEN_USB_RX_PADDING_CSO + 4)+ \
 					 min(USB_RX_AGGREGTAION_LIMIT * 1024, \
 					     (USB_RX_AGGREGTAION_PKT_LIMIT * \
 					      (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO) + 4)))
