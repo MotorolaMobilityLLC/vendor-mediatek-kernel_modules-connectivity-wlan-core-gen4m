@@ -439,6 +439,19 @@ nanDevEnableRequest(struct ADAPTER *prAdapter,
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct NanEnableRequest *prCmdNanEnableReq = NULL;
 
+#if CFG_SUPPORT_DBDC
+	/* Before NAN enable stage, host might configure new
+	 * avail map then update the multiple map flag.
+	 * But if DBDC is still off, we will override the flag as signle map.
+	 */
+	if (prAdapter->rWifiVar.ucNanMapMask < NAN_TIMELINE_MGMT_SIZE) {
+		prAdapter->fgNanMultipleMapTimeline = FALSE;
+	} else {
+		if (!prAdapter->rWifiVar.fgDbDcModeEn)
+			prAdapter->fgNanMultipleMapTimeline = FALSE;
+	}
+#endif
+
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
 			 sizeof(struct NanEnableRequest);

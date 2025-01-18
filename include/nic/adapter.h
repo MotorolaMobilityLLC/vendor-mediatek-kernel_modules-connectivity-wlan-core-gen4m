@@ -2690,6 +2690,7 @@ struct ADAPTER {
 	unsigned char fgIsNANfromHAL;
 	bool fgIsNanSendRequestToCnm;
 	uint8_t ucNanReqTokenId;
+	u_int8_t fgNanMultipleMapTimeline;
 	struct _NAN_PUBLISH_INFO_T rPublishInfo;
 	struct _NAN_SUBSCRIBE_INFO_T rSubscribeInfo;
 

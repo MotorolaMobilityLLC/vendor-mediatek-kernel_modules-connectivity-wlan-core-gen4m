@@ -712,6 +712,14 @@ size_t
 nanGetTimelineMgmtIndexByBand(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand)
 {
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+	if (!prAdapter->rWifiVar.fgDbDcModeEn)
+		return 0;
+#endif
+
+	if (!prAdapter->fgNanMultipleMapTimeline)
+		return 0;
+
 	if (eBand == BAND_2G4)
 		return 0;
 	else
@@ -732,7 +740,8 @@ nanGetActiveTimelineMgmtNum(struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_DBDC
 
-	if (prAdapter->rWifiVar.fgDbDcModeEn)/*&& g_fgNanMultipleMapTimeline) */
+	if (prAdapter->rWifiVar.fgDbDcModeEn &&
+		prAdapter->fgNanMultipleMapTimeline)
 		return NAN_TIMELINE_MGMT_SIZE;
 
 #endif
@@ -1505,6 +1514,18 @@ nanSchedInit(struct ADAPTER *prAdapter)
 
 	nanSchedConfigPhyParams(prAdapter);
 	nanSchedCmdUpdateSchedVer(prAdapter);
+
+#if (CFG_SUPPORT_DBDC == 1)
+	/* Set default multiple map flag in NAN init stage */
+	if (prAdapter->rWifiVar.ucNanMapMask < NAN_TIMELINE_MGMT_SIZE) {
+		prAdapter->fgNanMultipleMapTimeline = FALSE;
+	} else {
+		if (prAdapter->rWifiVar.fgDbDcModeEn)
+			prAdapter->fgNanMultipleMapTimeline = TRUE;
+		else
+			prAdapter->fgNanMultipleMapTimeline = FALSE;
+	}
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -5990,6 +6011,7 @@ static void nanSchedUpdateActiveNdcBands(struct ADAPTER *prAdapter)
 	struct _NAN_SCHEDULE_TIMELINE_T *prNdcTimeline;
 	enum ENUM_BAND eBand;
 	uint8_t ucNdcBandBitmap = 0;
+	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
 
 	prScheduler = nanGetScheduler(prAdapter);
 
@@ -6011,7 +6033,7 @@ static void nanSchedUpdateActiveNdcBands(struct ADAPTER *prAdapter)
 					continue;
 
 				/* ucMap matched */
-				if (NAN_TIMELINE_MGMT_SIZE > 1) {
+				if (szNanActiveTimelineNum > 1) {
 					ucNdcBandBitmap |=
 						BIT(szTimeLineIdx);
 					continue;
@@ -6977,11 +6999,15 @@ uint32_t nanSchedNegoCustFawResetCmd(struct ADAPTER *prAdapter)
 }
 
 
-static void nanRemoveFawForDw(struct _NAN_SCHEDULER_T *prScheduler,
-			      enum ENUM_BAND eBand,
-			      uint32_t *u4SlotBitmap)
+static void nanRemoveFawForDw(
+	struct ADAPTER *prAdapter,
+	struct _NAN_SCHEDULER_T *prScheduler,
+	enum ENUM_BAND eBand,
+	uint32_t *u4SlotBitmap)
 {
 	uint32_t u4ClearBits = 0;
+	size_t szNanActiveTimelineNum =
+		nanGetActiveTimelineMgmtNum(prAdapter);
 
 #if (NAN_TIMELINE_MGMT_SIZE > 1)
 	if (eBand == BAND_2G4)
@@ -6994,6 +7020,13 @@ static void nanRemoveFawForDw(struct _NAN_SCHEDULER_T *prScheduler,
 #endif
 		if (prScheduler->fgEn5gH || prScheduler->fgEn5gL)
 			u4ClearBits |= BIT(NAN_5G_DW_INDEX);
+
+	if (szNanActiveTimelineNum < NAN_TIMELINE_MGMT_SIZE) {
+		if (prScheduler->fgEn2g)
+			u4ClearBits |= BIT(NAN_2G_DW_INDEX);
+		if (prScheduler->fgEn5gH || prScheduler->fgEn5gL)
+			u4ClearBits |= BIT(NAN_5G_DW_INDEX);
+	}
 
 	*u4SlotBitmap &= ~u4ClearBits;
 }
@@ -7033,7 +7066,7 @@ uint32_t nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter,
 	       ((uint8_t *)&u4SlotBitmap)[3]);
 
 	/* DW slots are reserved */
-	nanRemoveFawForDw(prScheduler, eBand, &u4SlotBitmap);
+	nanRemoveFawForDw(prAdapter, prScheduler, eBand, &u4SlotBitmap);
 
 	for (u4Idx = 0; u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM; u4Idx++) {
 		prChnlTimeline = &prNanTimelineMgmt->arCustChnlList[u4Idx];
@@ -9538,10 +9571,13 @@ nanSchedNegoCheckNdcCrbConflict(struct ADAPTER *prAdapter,
 	unsigned char fgConflict = TRUE;
 	enum _NAN_SUPPORTED_BAND_BIT eHighestCommonBand =
 		nanSchedGetHighestCommonBand(prAdapter, prNegoCtrl->u4SchIdx);
+	size_t szNanActiveTimelineNum =
+		nanGetActiveTimelineMgmtNum(prAdapter);
 
 	for (u4AvailDbIdx = 0;
 		u4AvailDbIdx < NAN_NUM_AVAIL_DB; u4AvailDbIdx++) {
-		fgConflict = TRUE;
+		if (szNanActiveTimelineNum >= NAN_TIMELINE_MGMT_SIZE)
+			fgConflict = TRUE;
 
 		if (nanSchedPeerAvailabilityDbValidByID(prAdapter,
 			prNegoCtrl->u4SchIdx, u4AvailDbIdx) == FALSE)
@@ -11933,6 +11969,11 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prScheduler->fgEn6g)
 		prAttrDevCap->ucOperPhyModeBw_160 = 1;
+#else
+	if (prAdapter->rWifiVar.ucNan5gBandwidth == MAX_BW_160MHZ)
+		/* only support HE/VHT 160 when dbdc off */
+		if (prAdapter->rWifiVar.fgDbDcModeEn == FALSE)
+			prAttrDevCap->ucOperPhyModeBw_160 = 1;
 #endif
 #endif
 
