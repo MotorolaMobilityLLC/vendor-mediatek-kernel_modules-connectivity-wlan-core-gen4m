@@ -384,7 +384,7 @@ u_int8_t rsnParseRsnxIE(struct ADAPTER *prAdapter,
 		uint8_t ucCap = *cp;
 
 		u2Cap = (uint16_t) ucCap & 0x00ff;
-	} else if (prInfoElem->ucLength == 2) {
+	} else if (prInfoElem->ucLength >= 2) {
 		WLAN_GET_FIELD_16(cp, &u2Cap);
 	}
 	prRsnxeInfo->u2Cap = u2Cap;
