@@ -131,8 +131,11 @@
 	(NAN_SLOT_MASK_TYPE_DEFAULT_NDL & ~nanGetFcSlots(_adapter))
 #define NAN_SLOT_MASK_TYPE_DEFAULT 0xFFFFFFFF /* For NDP setup */
 
+/* For P2P SCC concurrent, slot #0 for DW. #1 for NDC? */
+#define NAN_T0_SLOT_MASK_CONCURRENT_FULL 0xFFFFFFFC
+
 /* For P2P SCC concurrent, slot #8, #9 are special for NDC and channel switch */
-#define NAN_SLOT_MASK_CONCURRENT_FULL 0xFFFFF8FF
+#define NAN_T1_SLOT_MASK_CONCURRENT_FULL 0xFFFFF8FF
 
 #define NAN_DW_INDEX(__szSlotIdx) ((__szSlotIdx) / NAN_SLOTS_PER_DW_INTERVAL)
 #define NAN_SLOT_INDEX(__szSlotIdx) ((__szSlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)
@@ -190,6 +193,57 @@
 		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_6G);     \
 	_szTimeLineIdx == sz6gTimeLineIdx;                              \
 })
+
+#define NAN_IS_CHANNEL_6G(_rChnlInfo) \
+	(IS_6G_OP_CLASS((_rChnlInfo).u4OperatingClass))
+
+#define NAN_IS_CHANNEL_5G_HIGH(_rChnlInfo) \
+	(IS_5G_OP_CLASS((_rChnlInfo).u4OperatingClass) && \
+	 (_rChnlInfo).u4PrimaryChnl >= 149 && \
+	 (_rChnlInfo).u4PrimaryChnl <= 165)
+
+#define NAN_IS_CHANNEL_5G_LOW(_rChnlInfo) \
+	(IS_5G_OP_CLASS((_rChnlInfo).u4OperatingClass) && \
+	 (_rChnlInfo).u4PrimaryChnl >= 36 && \
+	 (_rChnlInfo).u4PrimaryChnl <= 48)
+
+#define NAN_IS_CHANNEL_2G(_rChnlInfo) \
+	(IS_2G_OP_CLASS((_rChnlInfo).u4OperatingClass))
+
+#define NAN_GET_CHNL_BAND_INFO(_rChnlInfo) \
+({ \
+	enum _NAN_SUPPORTED_BAND_BIT eBand = ENUM_SUPPORTED_BN_NUM; \
+	if (NAN_IS_CHANNEL_6G(_rChnlInfo)) \
+		eBand = ENUM_SUPPORTED_BN_6G; \
+	else if (NAN_IS_CHANNEL_5G_HIGH(_rChnlInfo)) \
+		eBand = ENUM_SUPPORTED_BN_5G_HIGH; \
+	else if (NAN_IS_CHANNEL_5G_LOW(_rChnlInfo)) \
+		eBand = ENUM_SUPPORTED_BN_5G_LOW; \
+	else if (NAN_IS_CHANNEL_2G(_rChnlInfo)) \
+		eBand = ENUM_SUPPORTED_BN_2G; \
+	eBand; \
+})
+
+
+#define NAN_CHNL_IN_COMMON_BAND(_prAdapter, _prNegoCtrl, _rChnl) \
+({ \
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord; \
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc; \
+	uint32_t u4CommonBand; \
+	prPeerSchRecord = nanSchedGetPeerSchRecord(_prAdapter, \
+					     (_prNegoCtrl)->u4SchIdx); \
+	prPeerSchDesc = prPeerSchRecord->prPeerSchDesc; \
+	u4CommonBand = prPeerSchDesc->u4CommonSupportedBand; \
+	(u4CommonBand & BIT(ENUM_SUPPORTED_BN_6G) && \
+	 NAN_IS_CHANNEL_6G(_rChnl) || \
+	 u4CommonBand & BIT(ENUM_SUPPORTED_BN_5G_HIGH) && \
+	 NAN_IS_CHANNEL_5G_HIGH(_rChnl) || \
+	 u4CommonBand & BIT(ENUM_SUPPORTED_BN_5G_LOW) && \
+	 NAN_IS_CHANNEL_5G_LOW(_rChnl) || \
+	 u4CommonBand & BIT(ENUM_SUPPORTED_BN_2G) && \
+	 NAN_IS_CHANNEL_2G(_rChnl)); \
+})
+
 
 #define NAN_IS_TIMELINE_MATCH_BAND(_prAdapter, _szTimeline, _eBand)     \
 	(nanGetTimelineMgmtIndexByBand(_prAdapter, _eBand) == _szTimeline)
@@ -581,6 +635,9 @@ struct _NAN_SCHEDULER_T {
 
 	/* Store P2P/AIS channel info by timeline index */
 	struct NAN_P2P_AIS_MCC_RECORD arP2pAisMcc[NAN_TIMELINE_MGMT_SIZE];
+
+	/* Last customized channel for concurrency to avoid redundant set */
+	struct _NAN_CUST_FAW_ENTRY arConcurrentCust[2]; /* 2 & 5/6 G bands */
 };
 
 uint8_t *nanGetNanIEBuffer(void);
@@ -712,8 +769,9 @@ uint32_t nanSchedDbgDumpPeerAvailability(struct ADAPTER *prAdapter,
 uint32_t nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 					 uint8_t *pucNmiAddr);
 
-uint32_t nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter,
-				   uint32_t u4SchIdx);
+enum _NAN_SUPPORTED_BAND_BIT
+nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
+			     u_int8_t fgPrint);
 
 enum _ENUM_NAN_WINDOW_T nanWindowType(struct ADAPTER *prAdapter,
 				      size_t szSlotIdx, size_t szTimeLineIdx);
