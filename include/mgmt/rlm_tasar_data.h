@@ -38,7 +38,14 @@ struct tasar_algorithm_common {
 	unsigned char ucConnStatusResendInterval[4];
 	unsigned char ucConnStatusResendtimes[4];
 	unsigned char ucScfUartErrMargin[2];
-	unsigned char ucReserve[10]; /* 4 bytes alignment*/
+	unsigned char ucTimeWindow0Sec;
+	unsigned char ucTimeWindow2Sec;
+	unsigned char ucTimeWindow4Sec;
+	unsigned char ucTimeWindow30Sec;
+	unsigned char ucTimeWindow60Sec;
+	unsigned char ucTimeWindow100Sec;
+	unsigned char ucTimeWindow360Sec;
+	unsigned char ucReserve[3]; /* 4 bytes alignment*/
 }; /* 20 bytes */
 
 struct tasar_algorithm_reg_specific {
@@ -52,16 +59,25 @@ struct tasar_algorithm_reg_specific {
 	unsigned char ucScfConnOffMargin[2];
 	unsigned char ucScfMdOffMargin[2];
 	unsigned char ucScfChgInstantEn;
-	unsigned char ucIsMdFboEn;
-	unsigned char ucReserve[11]; /* 4 bytes alignment*/
+	unsigned char ucIsFboEn;
+	unsigned char ucBtTaVer;
+	unsigned char ucWifiTaVer;
+	unsigned char ucScfSub6ExpireThresh[2];
+	unsigned char ucSmoothChgSpeedScale;
+	unsigned char ucRegulatory;
+	unsigned char ucMaxScfWfFlight;
+	unsigned char ucMaxScfBTFlight;
+	unsigned char ucMaxScfConnFlight;
+	unsigned char ucReserve[2]; /* 4 bytes alignment*/
 }; /* 32 bytes */
 
 struct tasar_wifi_channel_group {
 	unsigned char ucBand;
 	unsigned char ucLowChannel;
 	unsigned char ucUppChannel;
-	unsigned char ucReserve;
-}; /* 4 bytes */
+	unsigned char ucSisoMimoDelta;
+	unsigned char ucReserve[4];
+}; /* 8 bytes */
 
 struct tasar_scf_factor {
 	unsigned char ucSub6Cust;
@@ -99,9 +115,9 @@ struct tasar_config {
 	struct tasar_algorithm_common common; /* 20 bytes */
 	struct tasar_algorithm_reg_specific reg_specific; /* 32 bytes */
 	struct tasar_wifi_channel_group chngrp[TASAR_WIFI_CHANNEL_GRP_NUM];
-		/* 4 * 10 = 40 bytes*/
+		/* 8 * 10 = 80 bytes*/
 	struct tasar_plimit plimit[TASAR_ECI_NUM]; /* 140 * 40 = 5600 bytes */
-}; /* 4 + 20 + 32 + 40 + 5600 = 5696 bytes*/
+}; /* 4 + 20 + 32 + 80 + 5600 = 5736 bytes*/
 
 /******************************************************************************
  *                            P U B L I C   D A T A

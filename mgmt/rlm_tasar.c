@@ -125,13 +125,20 @@ static void tasarDumpCurrentConfig(struct tasar_config *rCfg)
 
 	DBGLOG(RLM, INFO, "[TAS]version [%d]\n", TAS_VERSION(rCfg));
 
-	DBGLOG(RLM, INFO, "[TAS]common [%d/%d/%d]\n",
+	DBGLOG(RLM, INFO, "[TAS]common [%d/%d/%d/%d/%d/%d/%d/%d/%d/%d]\n",
 		CONN_STATUS_RESEND_INTERVAL(rCfg),
 		CONN_STATUS_RESEND_TIMES(rCfg),
-		SCF_UART_ERR_MARGIN(rCfg));
+		SCF_UART_ERR_MARGIN(rCfg),
+		TIME_WD_0_SEC(rCfg),
+		TIME_WD_2_SEC(rCfg),
+		TIME_WD_4_SEC(rCfg),
+		TIME_WD_30_SEC(rCfg),
+		TIME_WD_60_SEC(rCfg),
+		TIME_WD_100_SEC(rCfg),
+		TIME_WD_360_SEC(rCfg));
 
 	DBGLOG(RLM, INFO,
-		"[TAS]reg_specific [%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d]\n",
+		"[TAS]Reg[%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d]\n",
 		SCF_CHIPS_LAT_MARGIN(rCfg),
 		SCF_DELIMIT_MARGIN(rCfg),
 		SCF_MD_DELIMIT(rCfg),
@@ -142,13 +149,25 @@ static void tasarDumpCurrentConfig(struct tasar_config *rCfg)
 		SCF_CONN_OFF_MARGIN(rCfg),
 		SCF_MD_OFF_MARGIN(rCfg),
 		SCF_CHG_INSTANT_EN(rCfg),
-		IS_MD_FBO_EN(rCfg));
+		IS_FBO_EN(rCfg),
+		BT_TA_VER(rCfg),
+		WIFI_TA_VER(rCfg),
+		SCF_SUB6_EXP_TH(rCfg),
+		SMOOTH_CHG_SPEED_SCALE(rCfg),
+		REGULATORY(rCfg));
+
+	DBGLOG(RLM, INFO,
+		"[TAS]Reg[%d/%d/%d]\n",
+		MAX_SCF_WF_FLIGHT(rCfg),
+		MAX_SCF_BT_FLIGHT(rCfg),
+		MAX_SCF_CONN_FLIGHT(rCfg));
 
 	for (u4Grp = 0; u4Grp < TASAR_WIFI_CHANNEL_GRP_NUM; u4Grp++)
 		DBGLOG(RLM, TRACE, "[TAS]chngrp [grp:%d][%d/%d/%d]\n", u4Grp,
 			WIFI_CHANNEL_GRP_BAND(rCfg, u4Grp),
 			WIFI_CHANNEL_GRP_LOW_CH(rCfg, u4Grp),
-			WIFI_CHANNEL_GRP_UP_CH(rCfg, u4Grp));
+			WIFI_CHANNEL_GRP_UP_CH(rCfg, u4Grp),
+			WIFI_CHANNEL_GRP_SISO_MIMO_DELTA(rCfg, u4Grp));
 
 	for (u4Eci = 0; u4Eci < TASAR_ECI_NUM; u4Eci++) {
 		DBGLOG(RLM, TRACE, "[TAS]plimit scf [eci:%d][%d/%d/%d/%d]\n",
@@ -296,11 +315,12 @@ static uint32_t tasarSendPowerLimit(
 	prTasarCfg = &prAdapter->rTasarCfg;
 
 	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
-		"coex tasar_set 20 %d %d %d %d %d %d %d %d %d %d\n",
+		"coex tasar_set 20 %d %d %d %d %d %d %d %d %d %d %d\n",
 		u4ChannelGroup,
 		WIFI_CHANNEL_GRP_BAND(prTasarCfg, u4ChannelGroup),
 		WIFI_CHANNEL_GRP_LOW_CH(prTasarCfg, u4ChannelGroup),
 		WIFI_CHANNEL_GRP_UP_CH(prTasarCfg, u4ChannelGroup),
+		WIFI_CHANNEL_GRP_SISO_MIMO_DELTA(prTasarCfg, u4ChannelGroup),
 		WIFI_PLIMIT_WF0_ANT0(prTasarCfg, u4ChannelGroup, u4Eci),
 		WIFI_PLIMIT_WF0_ANT1(prTasarCfg, u4ChannelGroup, u4Eci),
 		WIFI_PLIMIT_WF1_ANT0(prTasarCfg, u4ChannelGroup, u4Eci),
@@ -313,7 +333,160 @@ static uint32_t tasarSendPowerLimit(
 	return rWlanStatus;
 }
 
-static uint32_t tasarSendCmdToFW(struct ADAPTER *prAdapter, uint32_t u4Eci)
+static uint32_t tasarSendCommonField(
+	struct ADAPTER *prAdapter)
+{
+	char pcTasCommand[CHIP_CONFIG_RESP_SIZE];
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t pos = 0;
+	struct tasar_config *prTasarCfg;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, INFO, "[TAS] prAdapter\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTasarCfg = &prAdapter->rTasarCfg;
+
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 0 %d %d %d\n",
+		CONN_STATUS_RESEND_INTERVAL(prTasarCfg),
+		CONN_STATUS_RESEND_TIMES(prTasarCfg),
+		SCF_UART_ERR_MARGIN(prTasarCfg)
+	);
+
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	return rWlanStatus;
+}
+
+static uint32_t tasarSendRegSpecificField(
+	struct ADAPTER *prAdapter)
+{
+	char pcTasCommand[CHIP_CONFIG_RESP_SIZE];
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t pos = 0;
+	struct tasar_config *prTasarCfg;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, INFO, "[TAS] prAdapter\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTasarCfg = &prAdapter->rTasarCfg;
+
+	kalMemZero(pcTasCommand, sizeof(pcTasCommand));
+	pos = 0;
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 1 %d %d %d %d\n",
+		SCF_CHIPS_LAT_MARGIN(prTasarCfg),
+		SCF_DELIMIT_MARGIN(prTasarCfg),
+		SCF_MD_DELIMIT(prTasarCfg),
+		SCF_CONN_DELIMIT(prTasarCfg)
+	);
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	kalMemZero(pcTasCommand, sizeof(pcTasCommand));
+	pos = 0;
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 2 %d %d %d %d %d\n",
+		MD_MAX_REF_PERIOD(prTasarCfg),
+		MD_MAX_POWER(prTasarCfg),
+		JOINT_MODE(prTasarCfg),
+		SCF_CONN_OFF_MARGIN(prTasarCfg),
+		SCF_MD_OFF_MARGIN(prTasarCfg)
+	);
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	kalMemZero(pcTasCommand, sizeof(pcTasCommand));
+	pos = 0;
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 3 %d %d %d %d %d %d %d\n",
+		SCF_CHG_INSTANT_EN(prTasarCfg),
+		IS_FBO_EN(prTasarCfg),
+		BT_TA_VER(prTasarCfg),
+		WIFI_TA_VER(prTasarCfg),
+		SCF_SUB6_EXP_TH(prTasarCfg),
+		SMOOTH_CHG_SPEED_SCALE(prTasarCfg),
+		REGULATORY(prTasarCfg)
+	);
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	kalMemZero(pcTasCommand, sizeof(pcTasCommand));
+	pos = 0;
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 4 %d %d %d\n",
+		MAX_SCF_WF_FLIGHT(prTasarCfg),
+		MAX_SCF_BT_FLIGHT(prTasarCfg),
+		MAX_SCF_CONN_FLIGHT(prTasarCfg)
+	);
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	return rWlanStatus;
+}
+
+
+static uint32_t tasarSendAlgoDataToFW(struct ADAPTER *prAdapter)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(RLM, INFO, "[TAS] update algorithm data\n");
+	rWlanStatus = tasarSendCommonField(prAdapter);
+	rWlanStatus = tasarSendRegSpecificField(prAdapter);
+
+	return rWlanStatus;
+}
+
+static uint32_t tasarSendScf(struct ADAPTER *prAdapter, uint32_t u4Eci)
+{
+	char pcTasCommand[CHIP_CONFIG_RESP_SIZE];
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t pos = 0;
+	struct tasar_config *prTasarCfg;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, INFO, "[TAS] prAdapter invalid\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	if (u4Eci >= TASAR_ECI_NUM) {
+		DBGLOG(RLM, INFO, "[TAS] u4Eci invalid\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTasarCfg = &prAdapter->rTasarCfg;
+
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 5 %d %d %d %d\n",
+		WIFI_PLIMIT_SCF_SUB6(prTasarCfg, u4Eci),
+		WIFI_PLIMIT_SCF_MMW6(prTasarCfg, u4Eci),
+		WIFI_PLIMIT_SCF_WF(prTasarCfg, u4Eci),
+		WIFI_PLIMIT_SCF_BT(prTasarCfg, u4Eci)
+	);
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	return rWlanStatus;
+}
+
+static uint32_t tasarSendConfigEnable(struct ADAPTER *prAdapter)
+{
+	char pcTasCommand[CHIP_CONFIG_RESP_SIZE];
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t pos = 0;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, INFO, "[TAS] prAdapter invalid\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
+		"coex tasar_set 21 20\n"
+	);
+	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
+
+	return rWlanStatus;
+}
+
+static uint32_t tasarSendPwrLimitToFW(struct ADAPTER *prAdapter, uint32_t u4Eci)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4ChGrp;
@@ -324,6 +497,9 @@ static uint32_t tasarSendCmdToFW(struct ADAPTER *prAdapter, uint32_t u4Eci)
 		DBGLOG(RLM, INFO, "[TAS] u4Eci invalid\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	/* TAS Scaling Factor*/
+	rWlanStatus = tasarSendScf(prAdapter, u4Eci);
 
 	/* WF Channel Group Power Limit*/
 	for (u4ChGrp = 0; u4ChGrp < TASAR_WIFI_CHANNEL_GRP_NUM; u4ChGrp++)
@@ -339,7 +515,7 @@ uint32_t tasarDataExtract(uint8_t *ctx, uint32_t cnt)
 	uint32_t i, j = 0;
 
 	for (i = 0; i < cnt; i++)
-		j += ctx[i] << ((cnt - i - 1) * 8);
+		j += ctx[i] << (i * 8);
 	return j;
 }
 
@@ -409,8 +585,19 @@ void tasarUpdateScenrio(
 			return;
 	}
 
+	/* Reg Change need to send common & reg specific field data */
+	if (fgRegChange) {
+		rWlanStatus = tasarSendAlgoDataToFW(prAdapter);
+		if (rWlanStatus != WLAN_STATUS_SUCCESS)
+			return;
+	}
+
+	/* ECI change need to send different power limit */
 	if (fgRegChange || prAdapter->rTasarScenrio.u4Eci != rScenrio.u4Eci) {
-		rWlanStatus = tasarSendCmdToFW(prAdapter, rScenrio.u4Eci);
+		rWlanStatus = tasarSendPwrLimitToFW(prAdapter, rScenrio.u4Eci);
+		if (rWlanStatus != WLAN_STATUS_SUCCESS)
+			return;
+		rWlanStatus = tasarSendConfigEnable(prAdapter);
 		if (rWlanStatus != WLAN_STATUS_SUCCESS)
 			return;
 	}

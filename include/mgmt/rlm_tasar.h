@@ -77,6 +77,20 @@ struct tasar_scenrio_ctrl {
 	(acc(_config->common.ucConnStatusResendtimes))
 #define SCF_UART_ERR_MARGIN(_config) \
 	(acc(_config->common.ucScfUartErrMargin))
+#define TIME_WD_0_SEC(_config) \
+	(_config->common.ucTimeWindow0Sec)
+#define TIME_WD_2_SEC(_config) \
+	(_config->common.ucTimeWindow2Sec)
+#define TIME_WD_4_SEC(_config) \
+	(_config->common.ucTimeWindow4Sec)
+#define TIME_WD_30_SEC(_config) \
+	(_config->common.ucTimeWindow30Sec)
+#define TIME_WD_60_SEC(_config) \
+	(_config->common.ucTimeWindow60Sec)
+#define TIME_WD_100_SEC(_config) \
+	(_config->common.ucTimeWindow100Sec)
+#define TIME_WD_360_SEC(_config) \
+	(_config->common.ucTimeWindow360Sec)
 
 /*tasar_algorithm_reg_specific*/
 #define SCF_CHIPS_LAT_MARGIN(_config) \
@@ -99,8 +113,24 @@ struct tasar_scenrio_ctrl {
 	(acc(_config->reg_specific.ucScfMdOffMargin))
 #define SCF_CHG_INSTANT_EN(_config) \
 	(_config->reg_specific.ucScfChgInstantEn)
-#define IS_MD_FBO_EN(_config) \
-	(_config->reg_specific.ucIsMdFboEn)
+#define IS_FBO_EN(_config) \
+	(_config->reg_specific.ucIsFboEn)
+#define BT_TA_VER(_config) \
+	(_config->reg_specific.ucBtTaVer)
+#define WIFI_TA_VER(_config) \
+	(_config->reg_specific.ucWifiTaVer)
+#define SCF_SUB6_EXP_TH(_config) \
+	(acc(_config->reg_specific.ucScfSub6ExpireThresh))
+#define SMOOTH_CHG_SPEED_SCALE(_config) \
+	(_config->reg_specific.ucSmoothChgSpeedScale)
+#define REGULATORY(_config) \
+	(_config->reg_specific.ucRegulatory)
+#define MAX_SCF_WF_FLIGHT(_config) \
+	(_config->reg_specific.ucMaxScfWfFlight)
+#define MAX_SCF_BT_FLIGHT(_config) \
+	(_config->reg_specific.ucMaxScfBTFlight)
+#define MAX_SCF_CONN_FLIGHT(_config) \
+	(_config->reg_specific.ucMaxScfConnFlight)
 
 /*tasar_wifi_channel_group*/
 #define WIFI_CHANNEL_GRP_BAND(_config, _grp) \
@@ -109,6 +139,8 @@ struct tasar_scenrio_ctrl {
 	(_config->chngrp[_grp].ucLowChannel)
 #define WIFI_CHANNEL_GRP_UP_CH(_config, _grp) \
 	(_config->chngrp[_grp].ucUppChannel)
+#define WIFI_CHANNEL_GRP_SISO_MIMO_DELTA(_config, _grp) \
+	(_config->chngrp[_grp].ucSisoMimoDelta)
 
 /*tasar_scf_factor*/
 #define WIFI_PLIMIT_SCF_SUB6(_config, _eci) \
