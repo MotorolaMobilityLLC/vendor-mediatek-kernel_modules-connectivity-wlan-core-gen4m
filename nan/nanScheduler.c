@@ -32,6 +32,7 @@
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 /* 6G chnl info */
+#define NAN_6G_CERT_DEFAULT_CHANNEL	37
 #define NAN_6G_BW20_DEFAULT_CHANNEL	5
 #define NAN_6G_BW40_DEFAULT_CHANNEL	3
 #define NAN_6G_BW80_DEFAULT_CHANNEL	7
@@ -1830,7 +1831,7 @@ nanParserGenChnlEntryField(struct ADAPTER *prAdapter,
 			   union _NAN_BAND_CHNL_CTRL *prChnlCtrl,
 			   struct _NAN_CHNL_ENTRY_T *prChnlEntry)
 {
-	uint32_t u4Bw;
+	uint32_t u4Bw = 0;
 	uint8_t ucPrimaryChnl;
 	uint8_t ucOperatingClass;
 	uint8_t ucCenterChnl = 0;
@@ -5861,8 +5862,13 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	g_r6gDefChnl.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
 	g_r6gDefChnl.u4AuxCenterChnl = 0;
 	if (prNanScheduler->fgEn6g) {
-		g_r6gDefChnl.u4PrimaryChnl =
-			NAN_6G_BW20_DEFAULT_CHANNEL;
+
+		if (nanGetFeatureIsSigma(prAdapter))
+			g_r6gDefChnl.u4PrimaryChnl =
+				NAN_6G_CERT_DEFAULT_CHANNEL;
+		else
+			g_r6gDefChnl.u4PrimaryChnl =
+				NAN_6G_BW20_DEFAULT_CHANNEL;
 
 		if (ucDisc6GChnlBw == NAN_CHNL_BW_20)
 			g_r6gDefChnl.u4OperatingClass =
