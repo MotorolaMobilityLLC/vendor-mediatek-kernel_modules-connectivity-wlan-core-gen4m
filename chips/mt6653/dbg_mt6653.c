@@ -2346,7 +2346,6 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 	u_int8_t dumpViaBt = 0;
 #endif
 
-
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
@@ -2374,12 +2373,9 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 	if (prHifInfo->fgEnablePcieCfgDump) {
 		mtk_pcie_disable_cfg_dump(0);
 		prHifInfo->fgEnablePcieCfgDump = FALSE;
-	} else if (prHifInfo == NULL)
-		mtk_pcie_disable_cfg_dump(0);
+	}
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
-
-
 
 	DBGLOG(HAL, INFO, "Phase1: Trigger PCIe Scan Dump.\n");
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)

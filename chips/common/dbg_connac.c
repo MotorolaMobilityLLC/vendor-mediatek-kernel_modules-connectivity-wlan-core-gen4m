@@ -1483,7 +1483,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%-20s%s%u.%1u dBm\n",
+					"%-20s%s%u.%1lu dBm\n",
 					"Chip Out TX Power", " = ",
 					TX_VECTOR_GET_TX_PWR(
 					    &prQueryStaStatistics->rTxVector[

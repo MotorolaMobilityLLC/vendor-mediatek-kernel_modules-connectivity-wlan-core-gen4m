@@ -1784,6 +1784,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
+	void __iomem * const *iomap_table;
 	int ret = 0, i;
 
 	ASSERT(pdev);
@@ -1840,8 +1841,8 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	g_prDev = pdev;
 	prChipInfo->pdev = (void *)pdev;
-	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev) ?
-		pcim_iomap_table(pdev)[i] : NULL;
+	iomap_table = pcim_iomap_table(pdev);
+	prChipInfo->CSRBaseAddress = iomap_table ? iomap_table[i] : NULL;
 	prChipInfo->u8CsrOffset = pci_resource_start(pdev, i);
 
 	DBGLOG(INIT, INFO, "ioremap for device %s[%d], region 0x%lX @ 0x%lX\n",

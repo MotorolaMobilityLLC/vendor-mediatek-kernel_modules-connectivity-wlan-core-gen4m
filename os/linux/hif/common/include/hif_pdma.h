@@ -1135,7 +1135,7 @@ struct pcie_msi_layout {
 	irqreturn_t (*top_handler)(int irq, void *dev_instance);
 	irqreturn_t (*thread_handler)(int irq, void *dev_instance);
 	enum pcie_msi_int_type type;
-	uint32_t irq_num;
+	int32_t irq_num;
 };
 
 struct pcie_msi_info {

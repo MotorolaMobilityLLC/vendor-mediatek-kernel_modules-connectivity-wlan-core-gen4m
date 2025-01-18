@@ -240,8 +240,8 @@ u_int8_t isMdResetSinceLastQuery;
 ********************************************************************************
 */
 
-static bool wait_for_md_on_complete(void);
-static bool wait_for_md_off_complete(void);
+static int32_t wait_for_md_on_complete(void);
+static int32_t wait_for_md_off_complete(void);
 static void save_mddp_stats(void);
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
 static void save_mddp_lls_stats(void);
@@ -2337,9 +2337,8 @@ int32_t __mddpNotifyWifiOnEnd(u_int8_t fgIsForce)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END_QOS);
 #endif
 	if (ret == 0)
-		ret = wait_for_md_on_complete() ?
-				WLAN_STATUS_SUCCESS :
-				WLAN_STATUS_FAILURE;
+		ret = wait_for_md_on_complete();
+
 	return ret;
 }
 
@@ -2597,7 +2596,7 @@ int32_t mddpMdNotifyInfoHandleResetInd(
 	__mddpNotifyWifiOnStart(fgIsForceNotify);
 	ret = __mddpNotifyWifiOnEnd(fgIsForceNotify);
 	mutex_unlock(&rMddpLock);
-	if (ret != WLAN_STATUS_SUCCESS) {
+	if (ret) {
 		DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
 		return 0;
 	}
@@ -2903,12 +2902,12 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 
 }
 
-static bool wait_for_md_off_complete(void)
+static int32_t wait_for_md_off_complete(void)
 {
 	uint32_t u4Value = 0;
 	uint32_t u4StartTime, u4CurTime;
-	bool fgTimeout = false;
 	uint32_t u4MDOffTimeoutTime = MD_ON_OFF_TIMEOUT;
+	int32_t ret = 0;
 
 	if (mddpIsCasanFWload() == TRUE)
 		u4MDOffTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
@@ -2932,29 +2931,29 @@ static bool wait_for_md_off_complete(void)
 		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
 				u4MDOffTimeoutTime)) {
 			DBGLOG(INIT, ERROR, "wait for md off timeout\n");
-			fgTimeout = true;
+			ret = -1;
 			break;
 		}
 
 		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
 	} while (TRUE);
 
-	return !fgTimeout;
+	return ret;
 }
 
-static bool wait_for_md_on_complete(void)
+static int32_t wait_for_md_on_complete(void)
 {
 	uint32_t u4Value = 0;
 	uint32_t u4StartTime, u4CurTime;
-	bool fgCompletion = false;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4MDOnTimeoutTime = MD_ON_OFF_TIMEOUT;
+	int32_t ret = 0;
 
 	u4StartTime = kalGetTimeTick();
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
-		return false;
+		return -1;
 	}
 	if (mddpIsCasanFWload() == TRUE)
 		u4MDOnTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
@@ -2965,11 +2964,10 @@ static bool wait_for_md_on_complete(void)
 
 		if ((u4Value & g_rSettings.u4MdOnBit) > 0) {
 			DBGLOG(INIT, INFO, "md on end.\n");
-			fgCompletion = true;
 			break;
 		} else if (!prGlueInfo->u4ReadyFlag) {
 			DBGLOG(INIT, WARN, "Skip waiting due to ready flag.\n");
-			fgCompletion = false;
+			ret = -1;
 			break;
 		}
 
@@ -2977,14 +2975,14 @@ static bool wait_for_md_on_complete(void)
 		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
 				u4MDOnTimeoutTime)) {
 			DBGLOG(INIT, ERROR, "wait for md on timeout\n");
-			fgCompletion = false;
+			ret = -1;
 			break;
 		}
 
 		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
 	} while (TRUE);
 
-	return fgCompletion;
+	return ret;
 }
 
 void setMddpSupportRegister(struct ADAPTER *prAdapter)
