@@ -638,7 +638,9 @@ static void halWarningTxTimeout(struct ADAPTER *prAdapter,
 	uint32_t u4LongestPending, uint8_t ucBssIndex)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo;
 	uint32_t u4AvgIdleSlot = 0;
+	char aee_str[64] = {0};
 
 	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
 		return;
@@ -653,16 +655,24 @@ static void halWarningTxTimeout(struct ADAPTER *prAdapter,
 			return;
 	}
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	kalSnprintf(aee_str, sizeof(aee_str),
+		"Tx Timeout BSS_Idx[%d](%s)",
+		ucBssIndex,
+		bssGetRoleTypeString(prAdapter, prBssInfo));
 	/* always show if SameToken > thr */
 	if (prAdapter->u4SameTokenCnt > prWifiVar->u4SameTokenThr) {
 		/* only trigger SER when enable in wifi.cfg */
 		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
-		kalSendAeeWarning("Tx Timeout",
+		kalSendAeeWarning(aee_str,
 			"Bss_Idx[%u] Tx timeout same token > %d , idle slot %d SER!\n",
 			ucBssIndex, prWifiVar->u4SameTokenThr,
 			u4AvgIdleSlot);
 	} else if (u4LongestPending >= prWifiVar->u4TxTimeoutWarningThr) {
-		kalSendAeeWarning("Tx Timeout",
+		kalSendAeeWarning(aee_str,
 			"Bss_Idx[%u] Tx timeout > %ds, Warning, idle slot %d\n",
 			ucBssIndex, prWifiVar->u4TxTimeoutWarningThr,
 			u4AvgIdleSlot);
