@@ -13501,6 +13501,10 @@ int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo)
 void kalFbNotifierUnReg(struct GLUE_INFO *prGlueInfo)
 {
 #if IS_ENABLED(CONFIG_DRM_MEDIATEK_V2)
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
+		return;
+	}
 #if CFG_MTK_ANDROID_WMT && \
 	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	mtk_disp_notifier_unregister(&prGlueInfo->wlan_fb_notifier);
