@@ -3073,6 +3073,9 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 	struct P2P_JOIN_INFO *prJoinInfo = (struct P2P_JOIN_INFO *) NULL;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_DESC *prBssDesc;
+#endif
 
 	prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) prMsgHdr;
 
@@ -3108,6 +3111,15 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 
 	if (bss->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		goto error;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+			prP2pConnReqMsg->aucBssid, FALSE, NULL);
+	if (prBssDesc && prBssDesc->rMlInfo.ucLinkId > 0) {
+		DBGLOG(P2P, ERROR, "Only support connect to 1st link\n");
+		goto error;
+	}
+#endif
 
 	/* In case the network is already activated, we need to re-activate
 	 * the network. Otherwise, the connection may be failed in dbdc cases.
@@ -3201,7 +3213,20 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 					  P2P_ROLE_STATE_REQING_CHANNEL);
 	}
 
+	goto done;
+
 error:
+	/* Join failed */
+	if (prP2pRoleFsmInfo)
+		kalP2PGCIndicateConnectionStatus(
+			prAdapter->prGlueInfo,
+			prP2pRoleFsmInfo->ucRoleIndex,
+			prConnReqInfo,
+			NULL,
+			0,
+			STATUS_CODE_UNSPECIFIED_FAILURE,
+			WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
+done:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventConnectionRequest */
 

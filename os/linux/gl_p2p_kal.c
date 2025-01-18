@@ -1593,142 +1593,137 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 	struct MLD_STA_RECORD *prMldStaRec = NULL;
 #endif
 
-	do {
-		if (prGlueInfo == NULL) {
-			ASSERT(FALSE);
-			break;
-		}
+	if (prGlueInfo == NULL) {
+		ASSERT(FALSE);
+		return;
+	}
 
-		prAdapter = prGlueInfo->prAdapter;
-		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
-		prP2pRoleFsmInfo =
-			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIndex);
-		prStaRec = p2pGetLinkStaRec(prP2pRoleFsmInfo,
-			P2P_MAIN_LINK_INDEX);
+	prAdapter = prGlueInfo->prAdapter;
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIndex);
+	prStaRec = p2pGetLinkStaRec(prP2pRoleFsmInfo, P2P_MAIN_LINK_INDEX);
 
-		/* FIXME: This exception occurs at wlanRemove. */
-		if ((prGlueP2pInfo == NULL) ||
-		    (prAdapter->rP2PNetRegState !=
-				ENUM_NET_REG_STATE_REGISTERED) ||
-		    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1) ||
-		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
-		    (prGlueP2pInfo->aprRoleHandler->reg_state !=
-				NETREG_REGISTERED)) {
-			break;
-		}
+	/* FIXME: This exception occurs at wlanRemove. */
+	if ((prGlueP2pInfo == NULL) ||
+	    (prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_REGISTERED) ||
+	    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1) ||
+	    (prGlueP2pInfo->aprRoleHandler == NULL) ||
+	    (prGlueP2pInfo->aprRoleHandler->reg_state != NETREG_REGISTERED))
+		return;
 
-		if (prP2pConnInfo) {
-			uint8_t aucBssid[MAC_ADDR_LEN];
+	if (prP2pConnInfo) {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			struct BSS_DESC *prBssDesc = NULL;
+		struct BSS_DESC *prBssDesc = NULL;
 #endif
 
-			COPY_MAC_ADDR(aucBssid,
-				prP2pConnInfo->aucBssid);
-
-			/* switch netif on */
-			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
-
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
-	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
-	(CFG_SUPPORT_802_11BE_MLO == 1)
-			prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
-			if (prMldStaRec) {
-				struct cfg80211_connect_resp_params params;
-				uint8_t i;
+(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
+(CFG_SUPPORT_802_11BE_MLO == 1)
+		prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (prMldStaRec) {
+			struct cfg80211_connect_resp_params params;
+			uint8_t i;
 
-				kalMemSet(&params, 0, sizeof(params));
-				params.status = u2StatusReason;
-				params.req_ie = prP2pConnInfo->aucIEBuf;
-				params.req_ie_len = prP2pConnInfo->u4BufLength;
-				params.resp_ie = pucRxIEBuf;
-				params.resp_ie_len = u2RxIELen;
-				params.timeout_reason =
-					NL80211_TIMEOUT_UNSPECIFIED;
-				params.ap_mld_addr =
-					prMldStaRec->aucPeerMldAddr;
+			kalMemSet(&params, 0, sizeof(params));
+			params.status = u2StatusReason;
+			params.req_ie = prP2pConnInfo->aucIEBuf;
+			params.req_ie_len = prP2pConnInfo->u4BufLength;
+			params.resp_ie = pucRxIEBuf;
+			params.resp_ie_len = u2RxIELen;
+			params.timeout_reason = NL80211_TIMEOUT_UNSPECIFIED;
+			params.ap_mld_addr = prMldStaRec->aucPeerMldAddr;
 
-				for (i = 0; i < MLD_LINK_MAX; i++) {
-					struct BSS_INFO *prP2pLinkBssInfo =
-						p2pGetLinkBssInfo(
-						prP2pRoleFsmInfo, i);
-					struct STA_RECORD *prStaRec =
-						p2pGetLinkStaRec(
-						prP2pRoleFsmInfo, i);
-					uint8_t id;
+			for (i = 0; i < MLD_LINK_MAX; i++) {
+				struct BSS_INFO *prP2pLinkBssInfo =
+					p2pGetLinkBssInfo(prP2pRoleFsmInfo, i);
+				struct STA_RECORD *prStaRec =
+					p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
+				uint8_t id;
 
-					if (!prP2pLinkBssInfo || !prStaRec)
-						continue;
+				if (!prP2pLinkBssInfo || !prStaRec)
+					continue;
 
-					id = prStaRec->ucLinkId;
-					params.valid_links |= BIT(id);
-					params.links[id].addr =
-						prP2pLinkBssInfo->aucOwnMacAddr;
-					params.links[id].bssid =
-						prStaRec->aucMacAddr;
+				id = prStaRec->ucLinkId;
+				params.valid_links |= BIT(id);
+				params.links[id].addr =
+					prP2pLinkBssInfo->aucOwnMacAddr;
+				params.links[id].bssid =
+					prStaRec->aucMacAddr;
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+				if (u2StatusReason == STATUS_CODE_SUCCESSFUL) {
 					prBssDesc = p2pGetLinkBssDesc(
 						prP2pRoleFsmInfo, i);
 					if (prBssDesc)
 						rlmDomain6GPwrModeUpdate(
-							prAdapter,
-							prP2pLinkBssInfo
-							->ucBssIndex,
-							prBssDesc->e6GPwrMode);
-#endif
+						 prAdapter,
+						 prP2pLinkBssInfo->ucBssIndex,
+						 prBssDesc->e6GPwrMode);
 				}
-
-				cfg80211_connect_done(
-					prGlueP2pInfo->aprRoleHandler,
-					&params, GFP_KERNEL);
-			} else
 #endif
-			{
+			}
+
+			cfg80211_connect_done(
+				prGlueP2pInfo->aprRoleHandler,
+				&params, GFP_KERNEL);
+		} else
+#endif
+		{
+			uint8_t aucBssid[MAC_ADDR_LEN];
+
+			COPY_MAC_ADDR(aucBssid, prP2pConnInfo->aucBssid);
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-				prBssDesc = p2pGetTargetBssDesc(prAdapter,
+			if (u2StatusReason == STATUS_CODE_SUCCESSFUL) {
+				prBssDesc = p2pGetTargetBssDesc(
+					prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex);
 				if (prBssDesc)
-					rlmDomain6GPwrModeUpdate(prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						prBssDesc->e6GPwrMode);
-#endif
-				cfg80211_connect_result(
-					prGlueP2pInfo->aprRoleHandler,
-					/* struct net_device * dev, */
-					aucBssid,
-					prP2pConnInfo->aucIEBuf,
-					prP2pConnInfo->u4BufLength,
-					pucRxIEBuf, u2RxIELen,
-					u2StatusReason,
-					/* gfp_t gfp *//* allocation flags */
-					GFP_KERNEL);
+					rlmDomain6GPwrModeUpdate(
+					  prAdapter,
+					  prP2pRoleFsmInfo->ucBssIndex,
+					  prBssDesc->e6GPwrMode);
 			}
-			prP2pConnInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
+#endif
+			cfg80211_connect_result(
+				prGlueP2pInfo->aprRoleHandler,
+				/* struct net_device * dev, */
+				aucBssid,
+				prP2pConnInfo->aucIEBuf,
+				prP2pConnInfo->u4BufLength,
+				pucRxIEBuf, u2RxIELen,
+				u2StatusReason,
+				/* gfp_t gfp *//* allocation flags */
+				GFP_KERNEL);
+		}
+		prP2pConnInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
+
+		if (u2StatusReason == STATUS_CODE_SUCCESSFUL) {
+			/* switch netif on */
+			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
+
 #if (CFG_SUPPORT_NAN == 1)
 			/* TODO: GC connected */
 			DBGLOG(INIT, DEBUG, "GC connected\n");
 			nanConcurrencyHandler(prAdapter);
 #endif
-		} else {
-			DBGLOG(INIT, DEBUG,
-				"indicate disconnection event to kernel, reason=%d, locally_generated=%d\n",
-				u2StatusReason,
-				eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY
-				);
-			/* Disconnect, what if u2StatusReason == 0? */
-			cfg80211_disconnected(prGlueP2pInfo->aprRoleHandler,
-				/* struct net_device * dev, */
-				u2StatusReason,
-				pucRxIEBuf, u2RxIELen,
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-				eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY,
-#endif
-				GFP_KERNEL);
 		}
-
-	} while (FALSE);
-
+	} else {
+		DBGLOG(INIT, DEBUG,
+			"indicate disconnection event to kernel, reason=%d, locally_generated=%d\n",
+			u2StatusReason,
+			eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
+		/* Disconnect, what if u2StatusReason == 0? */
+		cfg80211_disconnected(prGlueP2pInfo->aprRoleHandler,
+			/* struct net_device * dev, */
+			u2StatusReason,
+			pucRxIEBuf, u2RxIELen,
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+			eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY,
+#endif
+			GFP_KERNEL);
+	}
 }				/* kalP2PGCIndicateConnectionStatus */
 
 void
