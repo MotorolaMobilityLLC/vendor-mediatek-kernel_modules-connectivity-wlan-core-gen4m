@@ -79,6 +79,9 @@
 #define BUFFER_MODE_CONTENT_MAX 1024
 #define BUFFER_ACCESS_CONTENT_MAX 16
 
+/* UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP */
+#define DELAY_WAKEUP_PKT_INFO_LEN 43
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -9033,6 +9036,7 @@ struct UNI_EVENT_UPDATE_LP {
 enum ENUM_UNI_EVENT_UPDATE_LP_TAG {
 	UNI_EVENT_UPDATE_LP_TX_DELAY = 0,
 	UNI_EVENT_UPDATE_LP_GEN_SWITCH,
+	UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP = 2,
 	UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT = 3,
 	UNI_EVENT_UPDATE_LP_TAG_NUM
 };
@@ -9062,8 +9066,31 @@ struct UNI_EVENT_UPDATE_LP_TX_DELAY_T {
 } __KAL_ATTRIB_PACKED__;
 
 /**
+ * This structure is used for UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP tag(0x02)
+ * of UNI_EVENT_UPDATE_LP event (0x77) to identify delayed wakeup info
+ *
+ * @param[in] u2Tag         Tag id
+ * @param[in] u2Length      The length of this TLV
+ * @param[in] ucWakeupId    Event type for delayed wakeup
+ * @param[in] ucPktCnt      Buffered packet count
+ * @param[in] ucDataLen     Length of buffered packet information
+ * @param[in] aucPktInfo    Information of buffered packet
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBssIndex;
+	uint8_t ucWakeupId;
+	uint8_t ucPktCnt;
+	uint8_t ucDataLen;
+	uint8_t aucPadding[2];
+	uint8_t aucPktInfo[DELAY_WAKEUP_PKT_INFO_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+/**
  * This structure is used for UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT tag(0x03)
- * of UNI_EVENT_UPDATE_LP event (0x77) to identify leaky AP detection status
+ * of UNI_EVENT_UPDATE_LP event (0x77) to identify leakdy AP detection statues
  *
  * @param[in] u2Tag         Tag id
  * @param[in] u2Length      The length of this TLV

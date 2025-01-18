@@ -405,6 +405,15 @@ extern uint32_t arEventTableSize;
 	nicUniEventHelper(ad, evt, EVENT_ID_LAYER_0_EXT_MAGIC_NUM, _EXT_EID, \
 		(uint8_t *)(_pdata), sizeof(*(_pdata)))
 
+#define DUMP_PKT_INFO_16 \
+	"%02x %02x %02x %02x %02x %02x %02x %02x" \
+	"%02x %02x %02x %02x %02x %02x %02x %02x" \
+	"%02x %02x %02x %02x %02x %02x %02x %02x" \
+	"%02x %02x %02x %02x %02x %02x %02x %02x\n"
+
+#define DUMP_PKT_INFO_6 \
+	"%02x %02x %02x %02x %02x %02x\n"
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -15146,6 +15155,24 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #else
 			DBGLOG(NIC, WARN, "not support Tx delay.\n");
 #endif
+		}
+			break;
+		case UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP: {
+#if defined(CFG_SUPPORT_TWT_EXT) && (CFG_SUPPORT_TWT_EXT == 1)
+			struct UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP_T *info =
+			(struct UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP_T *) tag;
+
+			/* dump event content */
+			DBGLOG(REQ, INFO,
+				"[DW]: idx[%u] wake[%u] cnt[%u] len[%u]\n",
+				info->ucBssIndex, info->ucWakeupId,
+				info->ucPktCnt, info->ucDataLen);
+
+			/* Send vendor event to upper layer */
+			DelayedWakeupEventNotify(ad, info->ucBssIndex,
+				info->ucWakeupId, info->ucPktCnt,
+				info->ucDataLen, info->aucPktInfo);
+#endif /* CFG_SUPPORT_TWT_EXT */
 		}
 			break;
 		case UNI_EVENT_UPDATE_LP_LEAKY_AP_DETECT: {
