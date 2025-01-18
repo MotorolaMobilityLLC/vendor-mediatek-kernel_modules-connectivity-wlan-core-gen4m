@@ -1171,6 +1171,8 @@ void scnSetSchedScanPlan(struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
+u_int8_t scnDoAllowScanCheck(struct ADAPTER *prAdapter);
+
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 void scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
 			struct EVENT_SCAN_DONE *prScanDone,

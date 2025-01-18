@@ -11848,6 +11848,9 @@ static void aisScanProcessReqCh(struct ADAPTER *prAdapter,
 			prScanReqMsg);
 		break;
 	default:
+		DBGLOG(AIS, WARN,
+			"[Scan] ScanChannel Type(%d).\n",
+			prScanReqMsg->eScanChannel);
 		break;
 	}
 }

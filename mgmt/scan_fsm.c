@@ -151,9 +151,14 @@ void scnFsmSteps(struct ADAPTER *prAdapter,
 			break;
 
 		case SCAN_STATE_SCANNING:
-#if CFG_ENABLE_CSA_BLOCK_SCAN
-			/* If CSA is ongoing, directly report scan done. */
-			if (p2pFuncIsCsaBlockScan(prAdapter)) {
+			if (scnDoAllowScanCheck(prAdapter)) {
+				/* Support AP Selection */
+				prScanInfo->u4ScanUpdateIdx++;
+				if (prScanParam->fgIsScanV2 == FALSE)
+					scnSendScanReq(prAdapter);
+				else
+					scnSendScanReqV2(prAdapter);
+			} else {
 				scnFsmGenerateScanDoneMsg(prAdapter,
 					prScanParam->eMsgId,
 					prScanParam->ucSeqNum,
@@ -164,15 +169,7 @@ void scnFsmSteps(struct ADAPTER *prAdapter,
 				/* switch to next pending scan */
 				eNextState = SCAN_STATE_IDLE;
 				fgIsTransition = TRUE;
-				break;
 			}
-#endif
-			/* Support AP Selection */
-			prScanInfo->u4ScanUpdateIdx++;
-			if (prScanParam->fgIsScanV2 == FALSE)
-				scnSendScanReq(prAdapter);
-			else
-				scnSendScanReqV2(prAdapter);
 			break;
 
 		default:
@@ -2202,6 +2199,34 @@ scnSetSchedScanPlan(struct ADAPTER *prAdapter,
 }
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief                 Check if we can allow conduct a scan process now
+ * \param prAdapter       adapter
+ *
+ * \return                TRUE if we can conduct scan;
+ *                        FALSE if we should not start a scan.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t
+scnDoAllowScanCheck(struct ADAPTER *prAdapter)
+{
+#if CFG_ENABLE_CSA_BLOCK_SCAN
+	if (p2pFuncIsCsaBlockScan(prAdapter)) {
+		log_dbg(SCN, INFO, "Abort Scan due to CSA blocking.\n");
+		return FALSE;
+	}
+#endif
+
+#if CFG_SUPPORT_RTT
+	if (rttIsRunning(prAdapter)) {
+		log_dbg(SCN, INFO, "Abort Scan due to RTT blocking.\n");
+		return FALSE;
+	}
+#endif
+	return TRUE;
+}
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 /*----------------------------------------------------------------------------*/

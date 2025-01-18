@@ -1669,7 +1669,9 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 				*prBand = prBssInfo->eBand;
 				*pucPrimaryChannel
 					= prBssInfo->ucPrimaryChannel;
-
+				DBGLOG(AIS, INFO,
+					 "fixed band %d, channel %d\n",
+					 *prBand, *pucPrimaryChannel);
 				return TRUE;
 
 			}
