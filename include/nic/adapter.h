@@ -3395,6 +3395,8 @@ struct ADAPTER {
 
 	struct QUE rTimeoutedHrtimerInfoQue; /* already timeout */
 	struct LINK rHrtimerList; /* still not timeout */
+
+	struct CAP_P2P rP2pChipCap;
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

@@ -10467,6 +10467,18 @@ int priv_driver_set_chip_config(struct net_device *prNetDev,
 			i4BytesWritten = -1;
 		}
 
+		if (kalStrnCmp(rChipConfigInfo.aucCmd, "EnCnmPnoa", 9) == 0) {
+			char *buf;
+
+			if (prAdapter->rP2pChipCap.u4P2pCap &
+			    P2P_CAP_SUPPORT_PNOA_BIT)
+				buf = "Chip support";
+			else
+				buf = "Chip unsupport";
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			       "%s\n", buf);
+		}
+
 #if CFG_SUPPORT_MET_LOG
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 1", 8) == 0) {
 			i4Ret = met_log_start(prGlueInfo);

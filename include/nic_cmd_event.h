@@ -1122,9 +1122,6 @@ enum NIC_CAPABILITY_V2_TAG {
 #if CFG_SUPPORT_ANT_SWAP
 	TAG_CAP_ANTSWP = 0x16,
 #endif
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-	TAG_CAP_P2P = 0x17,
-#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	TAG_CAP_6G_CAP = 0x18,
 #endif
@@ -1156,6 +1153,7 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_MBRAIN_EMI_INFO = 0x26,
 #endif
 	TAG_CAP_LIMITED = 0x27,
+	TAG_CAP_P2P = 0x28,
 #if CFG_SUPPORT_MLR
 	TAG_CAP_MLR_CAP = 0x38,
 #endif
@@ -1290,6 +1288,16 @@ struct CAP_LIMITED {
 	uint8_t ucLimitedMaxMcsMap5g; /* Limited 5G Max MCS map */
 	uint8_t ucLimitedMaxMcsMap6g; /* Limited 6G Max MCS map */
 	uint8_t ucReserved[1];
+};
+
+enum ENUM_P2P_CAP_BITMAP {
+	P2P_CAP_SUPPORT_PNOA = 0,
+};
+
+#define P2P_CAP_SUPPORT_PNOA_BIT	BIT(P2P_CAP_SUPPORT_PNOA)
+
+struct CAP_P2P {
+	uint32_t u4P2pCap;	/* Bit(0): PNOA, Bits(1-31): Reserved */
 };
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)

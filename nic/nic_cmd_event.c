@@ -93,10 +93,6 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_ANTSWP,
 				nicCfgChipCapAntSwpCap),
 #endif
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_P2P,
-				nicCfgChipP2PCap),
-#endif
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PSE_RX_QUOTA,
 				nicCfgChipPseRxQuota),
@@ -152,6 +148,8 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PERF_IND_FROM_EMI,
 				nicCfgChipCapPerfIndFromEMI),
 #endif
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_P2P,
+				nicCfgChipP2PCap),
 
 };
 
@@ -2951,22 +2949,14 @@ uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-uint32_t nicCfgChipP2PCap(struct ADAPTER *prAdapter,
-					 uint8_t *pucEventBuf)
+uint32_t nicCfgChipP2PCap(struct ADAPTER *prAdapter, uint8_t *pucEventBuf)
 {
-#if 0
-	struct CAP_PHY_CAP *prPhyCap =
-	(struct CAP_PHY_CAP *)pucEventBuf;
-	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
-#endif
-	wlanCfgSetUint32(prAdapter, "P2pGoACSEnable",
-		FEATURE_ENABLED);
-	DBGLOG(INIT, DEBUG, "P2pGoACSEnable:ACS Enable[%d]\n",
-		FEATURE_ENABLED);
+	struct CAP_P2P *prP2pCap = (struct CAP_P2P *)pucEventBuf;
+
+	kalMemCopy(&prAdapter->rP2pChipCap, prP2pCap, sizeof(*prP2pCap));
+
 	return WLAN_STATUS_SUCCESS;
-	}
-#endif
+}
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
 uint32_t nicCfgChipPseRxQuota(struct ADAPTER *prAdapter,
