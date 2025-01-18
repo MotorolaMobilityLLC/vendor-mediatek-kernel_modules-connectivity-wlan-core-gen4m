@@ -1994,6 +1994,11 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 
 		prRetSwRfb = prNextSwRfb;
 	}
+#if CFG_SUPPORT_RX_GRO
+#if (CFG_SUPPORT_RX_NAPI == 0)
+	kal_gro_flush_queue(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI == 0 */
+#endif /* CFG_SUPPORT_RX_GRO */
 }
 
 void nicRxEnqueueRfbMainToNapi(struct ADAPTER *ad, struct QUE *prQue)

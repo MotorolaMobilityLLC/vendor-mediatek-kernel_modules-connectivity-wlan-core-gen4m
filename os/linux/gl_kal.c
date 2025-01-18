@@ -2033,7 +2033,7 @@ static inline void napi_gro_flush_list(struct napi_struct *napi)
 #endif
 }
 
-static inline void kal_gro_flush_queue(struct GLUE_INFO *prGlueInfo)
+void kal_gro_flush_queue(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->u4PendingFlushNum) {
 		preempt_disable();
