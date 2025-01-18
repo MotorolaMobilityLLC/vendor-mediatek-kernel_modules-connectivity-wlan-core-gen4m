@@ -74,18 +74,21 @@ p2pRoleFsmConnectionChnlsSetup(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 
 void
-p2pRoleFsmStaCsaUpdt(struct ADAPTER *prAdapter,
-		struct LINK *prClientList,
-		enum ENUM_BAND eBand)
+p2pRoleFsmStaCsaUpdt(struct ADAPTER *prAdapter, struct BSS_INFO *prP2pBssInfo)
 {
+	struct LINK *prClientList = &prP2pBssInfo->rStaRecOfClientList;
 	struct STA_RECORD *prCurrStaRec;
 
-	if (prClientList && prClientList->u4NumElem > 0) {
-		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
-				rLinkEntry, struct STA_RECORD) {
-			nicRefillPendingPktTxdForCsa(prAdapter, prCurrStaRec);
-			qmSetStaRecTxAllowed(prAdapter, prCurrStaRec, TRUE);
+	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+			    rLinkEntry, struct STA_RECORD) {
+		if (prCurrStaRec->u2BSSBasicRateSet !=
+		    prP2pBssInfo->u2BSSBasicRateSet) {
+			prCurrStaRec->u2BSSBasicRateSet =
+				prP2pBssInfo->u2BSSBasicRateSet;
+			nicTxUpdateStaRecDefaultRate(prAdapter, prCurrStaRec);
 		}
+		nicRefillPendingPktTxdForCsa(prAdapter, prCurrStaRec);
+		qmSetStaRecTxAllowed(prAdapter, prCurrStaRec, TRUE);
 	}
 }
 
@@ -3968,7 +3971,6 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t u4CacTimeMs;
-	struct LINK *prClientList;
 #endif
 	uint8_t ucTokenID = 0;
 	uint8_t eNewBw;
@@ -4092,13 +4094,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				p2pFuncDfsSwitchCh(prAdapter,
 					prBssInfo,
 					&prP2pRoleFsmInfo->rChnlReqInfo);
+				p2pRoleFsmStaCsaUpdt(prAdapter, prBssInfo);
 			}
-
-			prClientList = &prBssInfo->rStaRecOfClientList;
-
-			p2pRoleFsmStaCsaUpdt(prAdapter,
-				prClientList,
-				prBssInfo->eBand);
 
 			p2pRoleFsmStateTransition(prAdapter,
 						  prP2pRoleFsmInfo,
