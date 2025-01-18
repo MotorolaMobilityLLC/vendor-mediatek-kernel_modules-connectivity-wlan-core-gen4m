@@ -489,6 +489,17 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			unsigned char *pfgNotChoose6G);
 #endif
 
+static u_int8_t nanIsP2pAisMCC(struct ADAPTER *prAdapter, size_t szTimeLineIdx,
+			       union _NAN_BAND_CHNL_CTRL *prP2pChnlInfo,
+			       union _NAN_BAND_CHNL_CTRL *prAisChnlInfo);
+#define NAN_IS_P2P_AIS_MCC(_prAdapter, _eBand)  ({      \
+	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo; \
+	union _NAN_BAND_CHNL_CTRL rAisChnlInfo; \
+	size_t szTimeLine = nanGetTimelineMgmtIndexByBand(_prAdapter, _eBand); \
+	nanIsP2pAisMCC(_prAdapter, szTimeLine,  \
+		       &rP2pChnlInfo, &rAisChnlInfo);   \
+})
+
 static u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 		    struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
 		    struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
@@ -813,7 +824,8 @@ u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 		return prNanScheduler->fgEn2g;
 
 	if (eBand == BAND_5G)
-		return prNanScheduler->fgEn5gL || prNanScheduler->fgEn5gH;
+		return (prNanScheduler->fgEn5gL || prNanScheduler->fgEn5gH) &&
+			!NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G); /* Use 2.4G */
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 	for (i = 0; i < NAN_TIMELINE_MGMT_SIZE; i++) {
@@ -2211,7 +2223,6 @@ nanQueryPeerPotentialChnlInfoBySlot(
 		uint8_t ucWantedPriChannel, uint32_t u4PrefBandMask)
 {
 	uint32_t u4Idx;
-	uint32_t u4AvailType;
 	struct _NAN_AVAILABILITY_DB_T *prAvailabilityDB;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
@@ -2250,12 +2261,11 @@ nanQueryPeerPotentialChnlInfoBySlot(
 		    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND)
 			continue;
 
-		u4AvailType = NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN;
-		if ((prNanAvailEntry->rEntryCtrl.u2Type & u4AvailType) == 0) {
+		if (!prNanAvailEntry->rEntryCtrl.b1Potential) {
 			DBGLOG(NAN, LOUD,
 			       "Entry:%d, Slot:%d, Type:%d not equal\n", u4Idx,
 			       u2SlotIdx,
-			       prNanAvailEntry->rEntryCtrl.u2Type);
+			       prNanAvailEntry->rEntryCtrl.b3Type);
 			continue;
 		}
 
@@ -2663,11 +2673,11 @@ nanQueryPeerChnlInfoBySlot(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 		else
 			u4AvailType = NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COND;
 
-		if ((prNanAvailEntry->rEntryCtrl.u2Type & u4AvailType) == 0) {
+		if ((prNanAvailEntry->rEntryCtrl.b3Type & u4AvailType) == 0) {
 			NAN_DW_DBGLOG(NAN, LOUD, TRUE, u2SlotIdx,
 				     "Entry:%d, Slot:%d, Type:%d not equal\n",
 				     u4Idx, u2SlotIdx,
-				     prNanAvailEntry->rEntryCtrl.u2Type);
+				     prNanAvailEntry->rEntryCtrl.b3Type);
 			continue;
 		}
 
@@ -2806,7 +2816,7 @@ nanGetPeerMaxBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 					u4OperatingClass =
 					    prBandChnlCtrl->u4OperatingClass;
 					u4AvailType = u4COMMIT_COND;
-					if ((prNanAvailEntry->rEntryCtrl.u2Type
+					if ((prNanAvailEntry->rEntryCtrl.b3Type
 					     & u4AvailType) == 0)
 						continue;
 
@@ -2873,7 +2883,7 @@ nanGetPeerMinBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 					u4AvailType =
 				    (NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COMMIT |
 				     NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COND);
-					if ((prNanAvailEntry->rEntryCtrl.u2Type
+					if ((prNanAvailEntry->rEntryCtrl.b3Type
 					     & u4AvailType) == 0)
 						continue;
 
@@ -4283,7 +4293,6 @@ static uint8_t mergeCommittedPotentialTimeBitmap(uint8_t ucPotentialPriChnl,
 }
 #endif
 
-
 static u_int8_t*
 scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		     struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T *pr6gConditional)
@@ -4303,6 +4312,7 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	uint32_t u4CommittedBitmap = 0;
 	u_int8_t fgCommitted6G = FALSE;
 	u_int8_t fgConditional = FALSE;
+	u_int8_t fgCommitted2G = FALSE;
 	uint8_t *pConditionalPtr = NULL;
 
 	prChnlEntry = &pr6gConditional->channelEntry.rChnlEntry;
@@ -4351,21 +4361,48 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 						*(uint32_t *)pTimeBitmapTmp;
 					if (IS_6G_OP_CLASS(ucOC))
 						fgCommitted6G = TRUE;
+					if (IS_2G_OP_CLASS(ucOC))
+						fgCommitted2G = TRUE;
 				}
 
-				if (!IS_6G_OP_CLASS(ucOC) ||
-				    !prAvailEntry->rCtrl.u2TypePotential)
+				if (!prAvailEntry->rCtrl.u2TypePotential)
 					continue;
 
-				/* Reach here: 6G && Potential */
-				if (pChosen) {
-					if (pChosen->ucOperatingClass < ucOC) {
+				if (IS_6G_OP_CLASS(ucOC)) {
+					/* Reach here: 6G && Potential */
+					if (!pChosen &&
+					    !fgCommitted6G && !fgConditional) {
 						pChosen = &prBandChnlList[i];
 						pucTimeBitmap = pTimeBitmapTmp;
 					}
-				} else if (!fgCommitted6G && !fgConditional) {
-					pChosen = &prBandChnlList[i];
-					pucTimeBitmap = pTimeBitmapTmp;
+
+					if (!pChosen)
+						continue;
+
+					/* pChosen */
+					if (pChosen->ucOperatingClass < ucOC) {
+						/* better chosen */
+						pChosen = &prBandChnlList[i];
+						pucTimeBitmap = pTimeBitmapTmp;
+					}
+				}
+
+				if (IS_2G_OP_CLASS(ucOC)) {
+					/* Reach here: 2G && Potential */
+					if (!pChosen &&
+					    !fgCommitted2G && !fgConditional) {
+						pChosen = &prBandChnlList[i];
+						pucTimeBitmap = pTimeBitmapTmp;
+					}
+					if (!pChosen)
+						continue;
+
+					/* pChosen */
+					if (pChosen->ucOperatingClass < ucOC) {
+						/* better chosen */
+						pChosen = &prBandChnlList[i];
+						pucTimeBitmap = pTimeBitmapTmp;
+					}
 				}
 			}
 		}
@@ -4511,6 +4548,47 @@ nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter,
 		return ENUM_SUPPORTED_BN_2G;
 }
 
+struct _NAN_ATTR_NAN_AVAILABILITY_T*
+nanInsertConditionalAvailability(uint8_t *pucAvailabilityAttr,
+			struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T *prConditional,
+			uint8_t *p)
+{
+	uint8_t *end;
+	size_t orig_size;
+	size_t new_size;
+	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility;
+	uint8_t *pucAvailAttrCond;
+
+	prAttrNanAvailibility = (struct _NAN_ATTR_NAN_AVAILABILITY_T *)
+		pucAvailabilityAttr;
+
+	orig_size = prAttrNanAvailibility->u2Length + 3;
+	new_size = orig_size + sizeof(*prConditional);
+
+	DBGDUMP_HEX(NAN, INFO, "Before add conditional",
+		    prAttrNanAvailibility, orig_size);
+	pucAvailAttrCond = kalMemAlloc(new_size, VIR_MEM_TYPE);
+	if (!pucAvailAttrCond)
+		return NULL;
+
+	end = pucAvailabilityAttr + orig_size;
+	kalMemCopy(pucAvailAttrCond, pucAvailabilityAttr,
+		   p - pucAvailabilityAttr);
+	kalMemCopy(pucAvailAttrCond + (p - pucAvailabilityAttr),
+		   prConditional, sizeof(*prConditional));
+	kalMemCopy(pucAvailAttrCond + (p - pucAvailabilityAttr) +
+		   sizeof(*prConditional), p, end - p);
+
+	prAttrNanAvailibility =
+		(struct _NAN_ATTR_NAN_AVAILABILITY_T *)pucAvailAttrCond;
+	prAttrNanAvailibility->u2Length += sizeof(*prConditional);
+
+	DBGDUMP_HEX(NAN, INFO, "After add conditional",
+		    prAttrNanAvailibility, new_size);
+
+	return prAttrNanAvailibility;
+}
+
 uint32_t
 nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 				   uint8_t *pucNmiAddr,
@@ -4518,6 +4596,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 				   struct _NAN_NDP_INSTANCE_T *prNDP)
 {
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility;
+	struct _NAN_ATTR_NAN_AVAILABILITY_T *prCondAttrNanAvailibility;
 	struct _NAN_AVAILABILITY_DB_T *prNanAvailDB;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
 	uint16_t u2AttributeControl;
@@ -4526,11 +4605,9 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 	uint32_t u4Token;
-	u_int8_t fgFillByPotential = FALSE;
-	uint8_t *pucAvailAttrCond = NULL;
-	uint8_t *p = NULL;
-	uint8_t *end;
-	size_t orig_size;
+	u_int8_t fgFill6gByPotential = FALSE;
+	uint8_t *p2 = NULL;
+	uint8_t *p6 = NULL;
 	size_t new_size;
 	struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T r6gConditional = {
 		.u2Length = 14,
@@ -4542,14 +4619,35 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		 */
 		.aucTimeBitmap = {0, 0, 0, 0},
 
-		.channelEntry.ucType = 1, /* OC and channel entries */
+		/* OC and channel entries */
+		.channelEntry.ucType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 		.channelEntry.ucNonContiguous = 0,
 		.channelEntry.ucNumberOfEntry = 1,
 
 		/* To be filled by scan result */
 		.channelEntry.rChnlEntry.ucOperatingClass = 0,
-		.channelEntry.rChnlEntry.ucPrimaryChnlBitmap = 0,
 		.channelEntry.rChnlEntry.u2ChannelBitmap = 0,
+		.channelEntry.rChnlEntry.ucPrimaryChnlBitmap = 0,
+	};
+	struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T r2gConditional = {
+		.u2Length = 14,
+		.u2EntryControl = 0x1204, /* Conditional, Time Bitmap Present */
+		.u2TimeBitmapControl = 0x0018, /* Duration: 16TU, Period: 512 */
+		.ucTimeBitmapLength = 4,
+		/* To be filled by mergeCommittedPotentialTimeBitmap()
+		 * in updateAvailability
+		 */
+		.aucTimeBitmap = {0xfe, 0xff, 0xff, 0xff},
+
+		/* OC and channel entries */
+		.channelEntry.ucType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+		.channelEntry.ucNonContiguous = 0,
+		.channelEntry.ucNumberOfEntry = 1,
+
+		/* To be filled by scan result */
+		.channelEntry.rChnlEntry.ucOperatingClass = 81,
+		.channelEntry.rChnlEntry.u2ChannelBitmap = 0x2000,
+		.channelEntry.rChnlEntry.ucPrimaryChnlBitmap = 0,
 	};
 
 	if (!pucAvailabilityAttr) {
@@ -4597,50 +4695,50 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		prNanAvailEntry->fgActive = FALSE;
 	}
 
+	/* Check and optionally add conditional to 2.4G availability */
+	if (NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G))
+		p2 = scanAvailabilityAttr(prAttrNanAvailibility,
+			&r2gConditional);
+	if (p2) {
+		prCondAttrNanAvailibility =
+			nanInsertConditionalAvailability(pucAvailabilityAttr,
+						 &r2gConditional, p2);
+		new_size = prAttrNanAvailibility->u2Length + 3 +
+			sizeof(r2gConditional);
+		if (prCondAttrNanAvailibility)
+			prAttrNanAvailibility = prCondAttrNanAvailibility;
+	}
+
+	/* Check and optionally add conditional to 5G/6G availability */
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	prPeerSchDesc->fgEht = FALSE;
 #endif
 	if (!nanGetFeatureIsSigma(prAdapter) &&
 	    prNDP && prNDP->eCurrentNDPProtocolState == NDP_IDLE)
-		fgFillByPotential = TRUE;
-
-	if (fgFillByPotential)
-		p = scanAvailabilityAttr(prAttrNanAvailibility,
+		fgFill6gByPotential = TRUE;
+	if (fgFill6gByPotential) {
+		p6 = scanAvailabilityAttr(prAttrNanAvailibility,
 			&r6gConditional);
-	if (p) {
-		orig_size = prAttrNanAvailibility->u2Length + 3;
-		new_size = orig_size + sizeof(r6gConditional);
-
-		DBGDUMP_HEX(NAN, INFO, "Before add conditional",
-			    prAttrNanAvailibility, orig_size);
-		pucAvailAttrCond = kalMemAlloc(new_size, VIR_MEM_TYPE);
-		if (!pucAvailAttrCond) {
-			rRetStatus = WLAN_STATUS_FAILURE;
-			goto done;
-		}
-
-		end = pucAvailabilityAttr + orig_size;
-		kalMemCopy(pucAvailAttrCond, pucAvailabilityAttr,
-			   p - pucAvailabilityAttr);
-		kalMemCopy(pucAvailAttrCond + (p - pucAvailabilityAttr),
-			   &r6gConditional, sizeof(r6gConditional));
-		kalMemCopy(pucAvailAttrCond + (p - pucAvailabilityAttr) +
-			   sizeof(r6gConditional), p, end - p);
-
-		prAttrNanAvailibility =
-			(struct _NAN_ATTR_NAN_AVAILABILITY_T *)pucAvailAttrCond;
-		prAttrNanAvailibility->u2Length += sizeof(r6gConditional);
-
-		DBGDUMP_HEX(NAN, INFO, "After add conditional",
-			    prAttrNanAvailibility, new_size);
+	}
+	if (p6) {
+		if (p2)
+			DBGLOG(NAN, WARN,
+			       "p2 and p6 exists in one Availability entry");
+		prCondAttrNanAvailibility =
+			nanInsertConditionalAvailability(pucAvailabilityAttr,
+						 &r6gConditional, p6);
+		new_size = prAttrNanAvailibility->u2Length + 3 +
+			sizeof(r6gConditional);
+		if (prCondAttrNanAvailibility)
+			prAttrNanAvailibility = prCondAttrNanAvailibility;
 	}
 
 	if (updateAvailability(prAdapter, prPeerSchDesc, prAttrNanAvailibility,
-			       prNanAvailDB, fgFillByPotential)) {
+			       prNanAvailDB, fgFill6gByPotential)) {
 		rRetStatus = WLAN_STATUS_PENDING;
 	}
-	if (pucAvailAttrCond)
-		kalMemFree(pucAvailAttrCond, VIR_MEM_TYPE, new_size);
+	if (prCondAttrNanAvailibility)
+		kalMemFree(prCondAttrNanAvailibility, VIR_MEM_TYPE, new_size);
 
 	if (prPeerSchDesc->fgUsed) {
 		nanSchedPeerUpdateCommonFAW(prAdapter, prPeerSchDesc->u4SchIdx);
@@ -6376,7 +6474,7 @@ void nanSchedReleaseUnusedCommitSlot(struct ADAPTER *prAdapter)
 			}
 		}
 		DBGLOG(NAN, INFO,
-		       "timeline=%u peer=%02x-%02x-%02x-%02x, NDC=%02x-%02x-%02x-%02x, custom=%02x-%02x-%02x-%02x",
+		       "timeline=%u held by peer=%02x-%02x-%02x-%02x, NDC=%02x-%02x-%02x-%02x, custom=%02x-%02x-%02x-%02x",
 		       szTimeLineIdx,
 		       uTimeline[0].ucSlot[0], uTimeline[0].ucSlot[1],
 		       uTimeline[0].ucSlot[2], uTimeline[0].ucSlot[3],
@@ -8488,7 +8586,7 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter)
 	uint32_t u4SlotIdx;
 	uint32_t u4AvailDbIdx;
 	uint32_t u4AvailEntryIdx;
-	uint16_t u2Type;
+	uint16_t u2Ctrl;
 	uint32_t u4SchIdx;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
@@ -8532,10 +8630,10 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter)
 					    u4SlotIdx))
 					continue;
 
-				u2Type = prNanAvailEntry->rEntryCtrl.u2Type;
+				u2Ctrl = prNanAvailEntry->rEntryCtrl.u2RawData;
 
-				if (!NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2Type) &&
-				    !NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2Type))
+				if (!NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2Ctrl) &&
+				    !NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2Ctrl))
 					continue;
 
 				prChnlCur = prNanAvailEntry->arBandChnlCtrl;
@@ -11967,12 +12065,18 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 	     szTimeLineIdx++) {
 
-		if (szTimeLineIdx ==
-		    nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G) &&
-		    getPeerSchDescMaxCap(prPeerSchDesc) == BAND_2G4) {
-			DBGLOG(NAN, INFO,
-			       "Skip 5G availability by peer capability");
-			continue;
+
+		if (NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
+			if (getPeerSchDescMaxCap(prPeerSchDesc) == BAND_2G4) {
+				DBGLOG(NAN, INFO,
+				       "Skip 5G/6G availability by peer capability");
+				continue;
+			}
+			if (NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G)) {
+				DBGLOG(NAN, INFO,
+				       "Skip 5G/6G availability for local concurrent MCC");
+				continue;
+			}
 		}
 
 		prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter,
@@ -17093,8 +17197,8 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 	/* prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR */
 	/* Responder (NDP/Schedule response/confirm) */
 	/* If 5/6G already had intersection with peer, skip 2G chnl selection */
-	if (szTimeLineIdx ==
-		    nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4) &&
+	if (NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx) &&
+	    !NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G) && /* MCC case: all 2.4G */
 	    nanSchedNegoChk56GIntersectBySlot(prAdapter,
 					      prNegoCtrl->u4SchIdx,
 					      szSlotIdx)) {
@@ -17587,6 +17691,70 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 	return g_rNullChnl;
 }
 
+static u_int8_t nanPeerHas5G6GAvailability(struct ADAPTER *prAdapter,
+					   uint32_t u4SchIdx)
+{
+	/* default return TRUE, only when peer schecule descriptor exist */
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
+	struct _NAN_AVAILABILITY_DB_T *prNanAvailAttr;
+	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
+	union _NAN_BAND_CHNL_CTRL *prChnlCtrl;
+	size_t i;
+	size_t j;
+	uint8_t fgSupport2G = FALSE;
+	uint8_t fgSupport5G = FALSE;
+	uint8_t fgSupport6G = FALSE;
+
+
+	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+	if (prPeerSchRecord == NULL)
+		goto done;
+
+	prPeerSchDesc = prPeerSchRecord->prPeerSchDesc;
+	if (!prPeerSchDesc)
+		goto done;
+
+	for (i = 0; i < NAN_NUM_AVAIL_DB; i++) {
+		prNanAvailAttr = &prPeerSchDesc->arAvailAttr[i];
+		if (prNanAvailAttr->ucMapId == NAN_INVALID_MAP_ID)
+			continue;
+
+		for (j = 0; j < NAN_NUM_AVAIL_TIMELINE; j++) {
+			prNanAvailEntry = &prNanAvailAttr->arAvailEntryList[j];
+			if (prNanAvailEntry->fgActive == FALSE)
+				continue;
+
+			prChnlCtrl = prNanAvailEntry->arBandChnlCtrl;
+			if (prChnlCtrl->u4Type ==
+			    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND)
+				continue;
+
+			if (!prNanAvailEntry->rEntryCtrl.b1Committed &&
+			    !prNanAvailEntry->rEntryCtrl.b1Conditional)
+				continue;
+
+			if (IS_2G_OP_CLASS(prChnlCtrl->u4OperatingClass))
+				fgSupport2G = TRUE;
+			if (IS_5G_OP_CLASS(prChnlCtrl->u4OperatingClass))
+				fgSupport5G = TRUE;
+			if (IS_5G_OP_CLASS(prChnlCtrl->u4OperatingClass))
+				fgSupport6G = TRUE;
+		}
+	}
+
+
+done:
+	DBGLOG(NAN, INFO, "Check peer %u 2G=%u 5G=%u 6G=%u",
+	       u4SchIdx, fgSupport2G, fgSupport5G, fgSupport6G);
+
+	if (fgSupport2G)
+		return fgSupport5G || fgSupport6G;
+
+	return /* assume 5G/6G is supported if unknown */
+		TRUE;
+}
+
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					uint8_t fgChkRmtCondSlot)
 {
@@ -17697,8 +17865,11 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 		 * 1. highest common band is not 2G, and
 		 * 2. P2P & AIS is NOT MCC in 5G (New)
 		 */
-		else if (eHighestCommonBand != ENUM_SUPPORTED_BN_2G &&
-			 szTimeLineIdx == 0 && szNanActiveTimelineNum > 1 &&
+		else if ((eHighestCommonBand != ENUM_SUPPORTED_BN_2G &&
+			  nanPeerHas5G6GAvailability(prAdapter,
+						     prNegoCtrl->u4SchIdx)) &&
+			 NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx) &&
+			 szNanActiveTimelineNum > 1 &&
 			 /* !nanLinkNeedMlo(prAdapter) && */ /* FIXME */
 			 !nanIsP2pAisMCC(prAdapter, sz5gTimeLineIdx,
 				&rP2pChnlInfo, &rAisChnlInfo))

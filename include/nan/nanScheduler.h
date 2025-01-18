@@ -170,6 +170,31 @@
 			DBGLOG(Mod, Clz, Fmt, __VA_ARGS__);		\
 	} while (0)
 
+#define NAN_IS_2G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
+({                                                                      \
+	const size_t sz2gTimeLineIdx =                                  \
+		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_2G4);    \
+	_szTimeLineIdx == sz2gTimeLineIdx;                              \
+})
+
+#define NAN_IS_5G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
+({                                                                      \
+	const size_t sz5gTimeLineIdx =                                  \
+		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_5G);     \
+	_szTimeLineIdx == sz5gTimeLineIdx;                              \
+})
+
+#define NAN_IS_6G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
+({                                                                      \
+	const size_t sz6gTimeLineIdx =                                  \
+		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_6G);     \
+	_szTimeLineIdx == sz6gTimeLineIdx;                              \
+})
+
+#define NAN_IS_TIMELINE_MATCH_BAND(_prAdapter, _szTimeline, _eBand)     \
+	(nanGetTimelineMgmtIndexByBand(_prAdapter, _eBand) == _szTimeline)
+
+
 /* Define 0-index NAN band index for addressing array based on enum ENUM_BAND */
 enum NAN_BAND_IDX {
 	NAN_2G_IDX, /* 0 */
@@ -356,14 +381,21 @@ struct _NAN_FAW_NDC_TIMELINE_T {
 	uint32_t au4AvailMap[NAN_TOTAL_DW];
 };
 
+/* Table 96 */
 union _NAN_AVAIL_ENTRY_CTRL {
 	struct {
-		uint16_t u2Type : 3;
-		uint16_t u2Preference : 2;
-		uint16_t u2Util : 3;
-		uint16_t u2RxNss : 4;
-		uint16_t u2TimeMapAvail : 1;
-		uint16_t u2Rsvd : 3;
+		uint16_t b3Type :3,
+			 b16Reserved : 13;
+	};
+	struct {
+		uint16_t b1Committed :1,
+			 b1Potential :1,
+			 b1Conditional :1,
+			 b2Preference :2,
+			 b3Util :3,
+			 b4RxNss : 4,
+			 b1TimeMapAvail :1,
+			 b3Rsvd : 3;
 	} /* rField */;
 
 	uint16_t u2RawData;
@@ -456,7 +488,7 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 	uint32_t u4FinalQosMaxLatency;
 
 	int32_t i4InNegoContext;
-	enum ENUM_BAND eBand;
+	enum ENUM_BAND eBand; /* peer use band */
 
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 	/* Logging Flow Control V2 state and duration on handling event */
