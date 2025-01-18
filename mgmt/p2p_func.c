@@ -11456,24 +11456,17 @@ p2pFuncIsAllClientSupportCsa(struct ADAPTER *prAdapter,
 			continue;
 
 		/* assume only MTK device support CSA now */
-		if (!prStaRec->fgIsPeerWithMtkOui) {
-			DBGLOG(P2P, TRACE,
-			       "peer is not MTK device, starec idx:%u, mac:"
-			       MACSTR "\n",
-			       prStaRec->ucIndex,
-			       MAC2STR(prStaRec->aucMacAddr));
-			return FALSE;
-		}
+		if (prStaRec->fgIsPeerWithMtkOui)
+			continue;
 
-		if (!(prStaRec->u2CapInfo & CAP_INFO_SPEC_MGT)) {
-			DBGLOG(P2P, TRACE,
-			       "peer not support Spec Mgmt, starec idx:%u, mac:"
-			       MACSTR ", cap:0x%x\n",
-			       prStaRec->ucIndex,
-			       MAC2STR(prStaRec->aucMacAddr),
-			       prStaRec->u2CapInfo);
-			return FALSE;
-		}
+		DBGLOG(P2P, TRACE,
+		       "peer is not MTK device, starec idx:%u, mac:"
+		       MACSTR ", spec mgmt:%u\n",
+		       prStaRec->ucIndex,
+		       MAC2STR(prStaRec->aucMacAddr),
+		       !!(prStaRec->u2CapInfo & CAP_INFO_SPEC_MGT));
+
+		return FALSE;
 	}
 
 	return TRUE;
