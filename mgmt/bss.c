@@ -278,6 +278,10 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
 		if (prBssInfo == NULL)
 			goto BYPASS_SEC_CHECK;
+#if CFG_SUPPORT_WAPI
+		if (prBssDesc->fgIEWAPI)
+			goto BYPASS_SEC_CHECK;
+#endif
 		u4PTKCipher = prBssInfo->u4RsnSelectedPairwiseCipher;
 		u4GTKCipher = prBssInfo->u4RsnSelectedGroupCipher;
 
