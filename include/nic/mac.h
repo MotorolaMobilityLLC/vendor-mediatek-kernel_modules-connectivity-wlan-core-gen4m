@@ -2723,6 +2723,23 @@ struct IPV4_HEADER {
 	uint8_t aucDestinationAddr[IPV4_ADDR_LEN];
 	uint8_t aucL4[];
 } __KAL_ATTRIB_PACKED__;
+#define IPV4_HDR_IP_DF_BIT		BIT(14) /* Don't Fragment */
+#define IPV4_HDR_IP_MF_BIT		BIT(13) /* More Fragments */
+#define IPV4_HDR_IP_FRAG_OFFSET_BITS	BITS(0, 12) /* Fragment offset */
+
+#define IPV4_DF(_prIpv4) \
+	(!!(NTOHS(((struct IPV4_HEADER *)(_prIpv4))->u2FragmentOffset) & \
+	    IPV4_HDR_IP_DF_BIT))
+#define IPV4_MF(_prIpv4) \
+	(!!(NTOHS(((struct IPV4_HEADER *)(_prIpv4))->u2FragmentOffset) & \
+	    IPV4_HDR_IP_MF_BIT))
+#define IPV4_FRAG_OFFSET(_prIpv4) \
+	((NTOHS(((struct IPV4_HEADER *)(_prIpv4))->u2FragmentOffset) & \
+	  IPV4_HDR_IP_FRAG_OFFSET_BITS) << 3)
+#define IPV4_IS_FRAG(_prIpv4) \
+	(!!(NTOHS(((struct IPV4_HEADER *)(_prIpv4))->u2FragmentOffset) & \
+	    (IPV4_HDR_IP_MF_BIT | IPV4_HDR_IP_FRAG_OFFSET_BITS)))
+
 
 #define IPV4_HDR_LEN			(sizeof(struct IPV4_HEADER))
 

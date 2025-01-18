@@ -4461,6 +4461,14 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 		ucIcmpType = pucIcmp[0];
 		if (ucIcmpType == 3) /* don't log network unreachable packet */
 			return FALSE;
+
+		if (IPV4_IS_FRAG(pucIpHdr)) {
+			DBGLOG(TX, DEBUG,
+			       "Skip mark fratgmented ICMP, MF=%u, offset=%u",
+			       IPV4_MF(pucIpHdr), IPV4_FRAG_OFFSET(pucIpHdr));
+			return FALSE;
+		}
+
 		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMP);

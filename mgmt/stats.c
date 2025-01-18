@@ -539,6 +539,9 @@ static void statsParseIPV4Info(struct ADAPTER *prAdapter, void *pvPacket,
 	switch (ucIpProto) {
 	case IP_PRO_ICMP:
 		pucIcmp = pucL4Header;
+		if (IPV4_FRAG_OFFSET(prIPv4)) /* no valid ICMP header to log */
+			break;
+
 		statsParseICMPInfo(prAdapter, pvPacket, pucIcmp, eventType,
 				   u2IpId, u2SSN);
 		break;
