@@ -8859,7 +8859,7 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 #if CFG_CH_SELECT_ENHANCEMENT
 			(prP2pBssInfo->eInitBand != BAND_6G) &&
 #endif
-			p2pFuncIsBssWpa3OnlyCheck(prAdapter,
+			!p2pFuncIsBssWpa3OnlyCheck(prAdapter,
 				aliveSapBss[0])) {
 
 			p2pSapSwitchCandidateRemove(
@@ -9396,6 +9396,12 @@ bool p2pFuncSwitchSapChannel(
 	/* Check other ap */
 	p2pFuncSapAvailibilityCheck(prAdapter,
 			prP2pBssInfo);
+
+	if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy
+			== P2P_CHANNEL_SWITCH_POLICY_NONE) {
+		DBGLOG(P2P, TRACE, "Policy is set to do nothing\n");
+		goto exit;
+	}
 
 	ucSapChCandNum = p2pFuncSapSwichCandidatGen(prAdapter,
 						rSapSwitchCand,
