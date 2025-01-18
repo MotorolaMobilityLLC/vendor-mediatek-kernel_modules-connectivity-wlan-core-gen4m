@@ -294,6 +294,8 @@
 #define CFG_SUPPORT_LOWLATENCY_MODE	1
 #endif
 
+#define CFG_TC10_CUSTOMIZED_SCAN CFG_EXT_SCAN
+
 #define CFG_CH_SELECT_ENHANCEMENT (CFG_EXT_FEATURE && CFG_SUPPORT_SAP_CH_SEL)
 
 #define CFG_SAP_RPS_SUPPORT	(CFG_EXT_FEATURE && CFG_SUPPORT_SAP_RPS)
@@ -1779,7 +1781,7 @@
  * Value of scan cache result
  *------------------------------------------------------------------------------
  */
-#if CFG_MTK_ANDROID_WMT && CFG_MTK_WIFI_PLAT_ALPS
+#if CFG_MTK_ANDROID_WMT && CFG_MTK_WIFI_PLAT_ALPS && !CFG_TC10_CUSTOMIZED_SCAN
 #define CFG_SUPPORT_SCAN_CACHE_RESULT      (1)
 #else
 #define CFG_SUPPORT_SCAN_CACHE_RESULT      (0)
