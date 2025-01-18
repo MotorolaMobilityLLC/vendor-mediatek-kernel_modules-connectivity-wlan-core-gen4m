@@ -1669,6 +1669,9 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	;
 	uint32_t u4LinkPlanAABmap =
 		BIT(MLO_LINK_PLAN_2_5)
+#if (CFG_SUPPORT_EMLSR_SAME_A_BAND == 1)
+		| BIT(MLO_LINK_PLAN_5_5)
+#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		| BIT(MLO_LINK_PLAN_2_6)
 		| BIT(MLO_LINK_PLAN_5_6)
@@ -1679,6 +1682,9 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		BIT(MLO_LINK_PLAN_2_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		| BIT(MLO_LINK_PLAN_2_5_6)
+#endif
+#if (CFG_SUPPORT_EMLSR_SAME_A_BAND == 1)
+		| BIT(MLO_LINK_PLAN_2_5_5)
 #endif
 	;
 #endif

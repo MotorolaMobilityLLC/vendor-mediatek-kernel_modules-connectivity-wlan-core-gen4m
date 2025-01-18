@@ -1761,6 +1761,12 @@ ifeq ($(CONFIG_SUPPORT_MLO_HYBRID), y)
 	endif
 endif
 
+ifeq ($(CONFIG_SUPPORT_EMLSR_SAME_A_BAND), y)
+	ccflags-y += -DCFG_SUPPORT_EMLSR_SAME_A_BAND=1
+else
+	ccflags-y += -DCFG_SUPPORT_EMLSR_SAME_A_BAND=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_BW160), y)
     ccflags-y += -DCFG_SUPPORT_BW160=1
 else

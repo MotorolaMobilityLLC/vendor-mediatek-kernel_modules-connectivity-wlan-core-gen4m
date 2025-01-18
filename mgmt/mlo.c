@@ -5295,6 +5295,56 @@ void mldClearMLSRPausedLinkFlag(struct ADAPTER *prAdapter)
 	}
 }
 
+void mldMLSRLinkRemainLinkAdd(struct ADAPTER *prAdapter,
+	uint8_t *prucMLSRBandCount, uint8_t *prucMLSRBssIndex,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
+{
+#if (CFG_SUPPORT_EMLSR_SAME_A_BAND == 1)
+	uint8_t ucExistABnBssIdx = 0xff;
+	uint8_t ucExistABnBssChnl = 0;
+	uint8_t ucCurrBssChnl = 0;
+
+	/* If incoming BSS's RF band is same as existing BSS(only
+	 * when 5G or 6G), remap it as 5G or 6G role according to
+	 * the DBDC band of each BSS.
+	 */
+	if (prucMLSRBandCount[prBssDesc->eBand] == 1 &&
+		prBssDesc->eBand == aisGetTargetBssDesc(
+		prAdapter, prucMLSRBssIndex[prBssDesc->eBand])->eBand &&
+		(prBssDesc->eBand == BAND_5G ||	prBssDesc->eBand == BAND_6G)) {
+
+		ucExistABnBssIdx = prucMLSRBssIndex[prBssDesc->eBand];
+		ucExistABnBssChnl = GET_BSS_INFO_BY_INDEX(prAdapter,
+			ucExistABnBssIdx)->ucPrimaryChannel;
+		ucCurrBssChnl = GET_BSS_INFO_BY_INDEX(prAdapter,
+			ucBssIndex)->ucPrimaryChannel;
+
+		if (ucExistABnBssChnl > ucCurrBssChnl) {
+			prucMLSRBssIndex[BAND_6G] = ucExistABnBssIdx;
+			prucMLSRBssIndex[BAND_5G] = ucBssIndex;
+
+		} else {
+			prucMLSRBssIndex[BAND_5G] = ucExistABnBssIdx;
+			prucMLSRBssIndex[BAND_6G]  = ucBssIndex;
+		}
+
+		prucMLSRBandCount[BAND_6G] = 1;
+		prucMLSRBandCount[BAND_5G] = 1;
+
+		DBGLOG(ML, STATE,
+		"2 %dG BSS found, remap BSS%d as 5G and BSS%d as 6G\n",
+		prBssDesc->eBand == BAND_5G ? 5 : 6,
+		prucMLSRBssIndex[BAND_5G], prucMLSRBssIndex[BAND_6G]);
+		return;
+	}
+#endif
+	prucMLSRBandCount[prBssDesc->eBand]++;
+	/*map band to BssIndex*/
+	prucMLSRBssIndex[prBssDesc->eBand] = ucBssIndex;
+
+}
+
+
 /* Decision which link need remain when MLSR & legacy Bss Concurrent
  * return the Remain MLSR BssIndex
  */
@@ -5344,9 +5394,11 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 			if (prBssDesc &&
 				prBssDesc->eBand > BAND_NULL &&
 				prBssDesc->eBand < BAND_NUM) {
-				ucMLSRBandCount[prBssDesc->eBand]++;
-				/*map band to BssIndex*/
-				ucMLSRBssIndex[prBssDesc->eBand] = ucBssIndex;
+				mldMLSRLinkRemainLinkAdd(prAdapter,
+					ucMLSRBandCount,
+					ucMLSRBssIndex,
+					prBssDesc,
+					ucBssIndex);
 			}
 		}
 	}
