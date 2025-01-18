@@ -3033,9 +3033,6 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	/* Setup channel and bandwidth */
 	rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 
-	/* Reset HW TSF Update Mode and Beacon Mode */
-	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
-
 	/* Update Beacon to FW. Note that we have to set Op mode Rx
 	 * flag to TRUE in order to update VHT OP Notification IE.
 	 * Otherwise, clients will not be able to process VHT OP
@@ -3082,6 +3079,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 #endif
 
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
+
+	/* Reset HW TSF Update Mode and Beacon Mode */
+	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
 	nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
 
