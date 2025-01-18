@@ -1126,7 +1126,7 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 
 	prGlueInfo = wlanDevGetGlueInfo(prDev);
 
-	if (!prGlueInfo)
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
 		return;
 
 	/* trigger driver SER after AER */
