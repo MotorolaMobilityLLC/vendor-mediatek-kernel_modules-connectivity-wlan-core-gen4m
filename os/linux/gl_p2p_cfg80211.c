@@ -2527,7 +2527,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 
-#if KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE
+		link_id = params->link_id;
+#elif KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE
 		link_id = params->beacon_csa.link_id;
 #endif
 
