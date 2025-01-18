@@ -838,18 +838,18 @@ u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 		    prAdapter->chip_info->ucMaxConcurrentLimit &&
 		    prAdapter->chip_info->ucMaxConcurrentLimit == 4 &&
 		    /* case 1 */
-		    prNanScheduler->arP2pAisMcc[sz2gTimeLine].fgIsP2pAisMCC &&
-		    prAisChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
-					    g_r2gDwChnl.u4PrimaryChnl &&
-		    prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
-					    g_r2gDwChnl.u4PrimaryChnl ||
-		    /* case 2 */
-		    prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl &&
-		    prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
-					    g_r2gDwChnl.u4PrimaryChnl &&
-		    prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl &&
-		    prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl !=
-					    g_r5gDwChnl.u4PrimaryChnl)
+		    (prNanScheduler->arP2pAisMcc[sz2gTimeLine].fgIsP2pAisMCC &&
+		     prAisChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
+			     g_r2gDwChnl.u4PrimaryChnl &&
+		     prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
+			     g_r2gDwChnl.u4PrimaryChnl ||
+		     /* case 2 */
+		     prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl &&
+		     prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
+			     g_r2gDwChnl.u4PrimaryChnl &&
+		     prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl &&
+		     prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl !=
+			     g_r5gDwChnl.u4PrimaryChnl))
 			return FALSE;
 		return prNanScheduler->fgEn6g;
 	}
