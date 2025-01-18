@@ -611,6 +611,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 	}
 #endif
 
+#if (CFG_MTK_FPGA_PLATFORM == 0)
 	/* check min rcpi */
 	if (bss->ucRCPI < RCPI_FOR_DONT_ROAM) {
 		APSLOG(APS, TRACE, MACSTR " low rssi %d\n",
@@ -618,6 +619,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 			RCPI_TO_dBm(bss->ucRCPI));
 		return FALSE;
 	}
+#endif /* CFG_MTK_FPGA_PLATFORM == 0 */
 
 	/* check min score */
 	switch (eRoamReason) {
