@@ -3156,10 +3156,10 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	}
 #endif
 
+done:
 	if (prChipInfo->apsFillBssDescSet)
 		prChipInfo->apsFillBssDescSet(ad, set, bidx);
 
-done:
 	/* first bss desc is main bss */
 	set->prMainBssDesc = set->aprBssDesc[0];
 

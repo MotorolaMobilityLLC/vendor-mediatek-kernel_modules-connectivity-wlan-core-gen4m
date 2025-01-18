@@ -4968,6 +4968,12 @@ static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_MLC == 0)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t i, bss5G = MLD_LINK_MAX, bss6G = MLD_LINK_MAX;
+	struct CONNECTION_SETTINGS *conn =
+		aisGetConnSettings(prAdapter, ucBssidx);
+	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
+
+	if (policy == CONNECT_BY_BSSID)
+		return;
 
 	for (i = 0; i < prSet->ucLinkNum; i++) {
 		if (prSet->aprBssDesc[i]->eBand == BAND_5G)

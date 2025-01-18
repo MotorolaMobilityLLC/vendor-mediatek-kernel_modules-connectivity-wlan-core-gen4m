@@ -1753,6 +1753,10 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
 	uint8_t i;
 	uint8_t ucL3BnlimitBmap = prAdapter->rWifiVar.ucLink3BandLimitBitmap;
+	struct CONNECTION_SETTINGS *conn =
+		aisGetConnSettings(prAdapter, ucBssIndex);
+	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
+
 
 	/* swap link 3 to link 2 depend on fw capbility
 	 *(2g or 5g can't be the 3rd link)
@@ -1784,6 +1788,9 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		for (i = 0; i < set->ucLinkNum; i++)
 			set->afgSyncOm[i] = FALSE;
 	}
+
+	if (policy == CONNECT_BY_BSSID)
+		return;
 
 #if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
 	if (prAdapter->ucForceLinkSort) {
