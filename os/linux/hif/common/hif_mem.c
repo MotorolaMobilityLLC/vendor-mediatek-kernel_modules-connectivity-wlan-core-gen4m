@@ -402,6 +402,7 @@ int halAllocHifMem(struct platform_device *pdev,
 	struct device_node *node = NULL;
 #endif
 #endif
+	uint8_t fgNeed32BAlign = 0, fgRet = TRUE;
 
 	prChipInfo = prDriverData->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -518,6 +519,7 @@ int halAllocHifMem(struct platform_device *pdev,
 			/* copy path using prealloc rx data size */
 #if (CFG_SUPPORT_WED_PROXY == 1) && (CFG_SUPPORT_RX_ZERO_COPY == 0)
 			u4Size = prBusInfo->rx_data_ring_size;
+			fgNeed32BAlign = 1;
 #else
 			u4Size = prBusInfo->rx_data_ring_prealloc_size;
 #endif
@@ -529,18 +531,28 @@ int halAllocHifMem(struct platform_device *pdev,
 		} else {
 			if (u4EvtNum == 0)
 				continue;
-
+			fgNeed32BAlign = 0;
 			u4Size = prBusInfo->rx_evt_ring_size;
 			u4PktSize = RX_BUFFER_AGGRESIZE;
 			u4EvtNum--;
 		}
 		for (u4Cnt = 0; u4Cnt < u4Size; u4Cnt++) {
-			if (!halAllocRsvMem(u4PktSize,
+			/* allocate based on alignment requirement */
+			if (fgNeed32BAlign) {
+				fgRet = halAllocRsvMemAlign(u4PktSize,
 					&grMem.rRxMemBuf[u4Idx][u4Cnt],
-					WIFI_RSV_MEM_WFDMA)) {
+					WFDMA_RXDMAD_SDP_MEMORY_ALIGNMENT,
+					WIFI_RSV_MEM_WFDMA);
+			} else {
+				fgRet = halAllocRsvMem(u4PktSize,
+					&grMem.rRxMemBuf[u4Idx][u4Cnt],
+					WIFI_RSV_MEM_WFDMA);
+			}
+
+			if (!fgRet) {
 				DBGLOG(INIT, ERROR,
-				       "RxMemBuf[%u][%u] alloc fail\n",
-				       u4Idx, u4Cnt);
+					"RxMemBuf[%u][%u] alloc fail\n",
+					u4Idx, u4Cnt);
 			}
 		}
 	}
