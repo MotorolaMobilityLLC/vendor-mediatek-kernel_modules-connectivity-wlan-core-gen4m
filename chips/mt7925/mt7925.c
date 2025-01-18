@@ -1660,10 +1660,6 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	uint8_t ucTmpBssIndex;
 	uint8_t ucHasActiveBss = FALSE;
 	struct BSS_INFO *prBssInfo;
-#if CFG_SUPPORT_ROAMING
-	uint8_t ucIsRoamingDiscovery = FALSE;
-	struct ROAMING_INFO *roam = NULL;
-#endif
 	uint32_t u4TmpLinkPlanBmap;
 	uint32_t u4LinkPlanBmap =
 		BIT(MLO_LINK_PLAN_2_5)
@@ -1701,17 +1697,10 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	for (ucTmpBssIndex = 0;
 		ucTmpBssIndex < prAdapter->ucSwBssIdNum; ucTmpBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucTmpBssIndex];
-		if (IS_BSS_ALIVE(prAdapter, prBssInfo))
-			ucHasActiveBss = TRUE;
-#if CFG_SUPPORT_ROAMING
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
-			IS_BSS_AIS(prBssInfo)) {
-			roam = aisGetRoamingInfo(prAdapter, ucTmpBssIndex);
-			ucIsRoamingDiscovery =
-				(roam->eCurrentState ==
-				ROAMING_STATE_DISCOVERY) ? TRUE:FALSE;
-		}
-#endif
+			(IS_BSS_P2P(prBssInfo) ||
+			 IS_BSS_NAN(prBssInfo)))
+			ucHasActiveBss = TRUE;
 	}
 
 	if (prAdapter->rWifiFemCfg.u2WifiDBDCAwithA == TRUE)
@@ -1733,7 +1722,6 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	}
 
 	if (ucHasActiveBss &&
-		!ucIsRoamingDiscovery &&
 		prAdapter->rWifiVar.ucMaxSimuLinks == 0) {
 	/*has active Bss, block MLSR connection */
 		u4TmpLinkPlanBmap = u4LinkPlanNoneMLDBmap;
@@ -1861,7 +1849,7 @@ static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	uint32_t u4TotalTput = 0;
 	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
 	uint8_t i;
-	enum ENUM_MLO_MODE eMloMode = MLO_MODE_NUM;
+	enum ENUM_MLO_MODE eMloMode = MLO_MODE_SLSR;
 	uint8_t ucMaxSimuLinks = 0;
 	uint8_t tmpIsEmlsrPermittedAP = FALSE;
 	uint8_t fgNeedCheckEmlsrAllowlist = FALSE;
