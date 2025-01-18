@@ -1049,6 +1049,13 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=8192
     ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
 endif
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
+    ccflags-y += -DCFG_SDIO_INTR_ENHANCE_FORMAT=2
+    CONFIG_TX_RSRC_WMM_ENHANCE=y
+    CONFIG_SDIO_MAILBOX_EXTENSION=y
+    CONFIG_SUPPORT_SDIO_FORCE_DRV_OWN=y
+    CONFIG_SUPPORT_SDIO_DB_DELAY=y
+endif
 ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 endif
 
@@ -3809,7 +3816,9 @@ endif
 ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7935/mt7935.o
 CHIPS_OBJS += $(CHIPS)mt7935/dbg_mt7935.o
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 CHIPS_OBJS += $(CHIPS)mt7935/hal_dmashdl_mt7935.o
+endif
 endif
 
 ifneq ($(filter MT7999,$(MTK_COMBO_CHIP)),)

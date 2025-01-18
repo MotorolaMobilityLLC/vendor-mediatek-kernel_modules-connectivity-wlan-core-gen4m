@@ -1578,6 +1578,7 @@ void asicConnac3xWfdmaControl(
 	u_int8_t ucDmaIdx,
 	u_int8_t enable);
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 void asicConnac3xDmashdlLiteSetTotalPlePsePageSize(
 	struct ADAPTER *prAdapter,
 	uint16_t u2PlePageSize, uint16_t u2PsePageSize);
@@ -1617,6 +1618,7 @@ uint32_t asicConnac3xDynamicDmashdlQuotaDecision(
 	struct ADAPTER *prAdapter,
 	uint8_t ucWmmIndex);
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
+#endif /* #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryDFDInfo(

@@ -3009,6 +3009,7 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 #endif
 }
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 static void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
@@ -3402,6 +3403,7 @@ void connac3x_show_dmashdl_lite_info(struct ADAPTER *prAdapter)
 			"\tPLE used pages & total used pages mismatch!\n");
 	}
 }
+#endif
 
 #ifdef WF_PLE_TOP_BASE
 static void chip_get_ple_acq_stat(struct ADAPTER *prAdapter, uint32_t *ple_stat)

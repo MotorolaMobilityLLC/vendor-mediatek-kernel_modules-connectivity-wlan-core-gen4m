@@ -2209,6 +2209,7 @@ u_int8_t conn2_rst_L0_notify_step2(void)
 }
 #endif
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 void asicConnac3xDmashdlLiteSetTotalPlePsePageSize(
 	struct ADAPTER *prAdapter,
 	uint16_t u2PlePageSize, uint16_t u2PsePageSize)
@@ -2559,6 +2560,7 @@ uint32_t asicConnac3xDynamicDmashdlQuotaDecision(
 }
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 
+#endif /* #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
 #if CFG_WMT_RESET_API_SUPPORT
 static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 {
