@@ -1952,15 +1952,6 @@ s_int32 mt_op_set_channel(
 	}
 
 	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_CHNL_FREQ, SetFreq);
-
-	if (sys_bw == 6) {
-		SetFreq = tm_ch_num_to_freq((u_int32)central_ch1);
-		tm_rftest_set_auto_test(winfos,
-			(RF_AT_FUNCID_CHNL_FREQ | BIT(16)), SetFreq);
-	}
-
-	tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_CBW,
 			tm_bw_hqa_mapping_at((u_int32)sys_bw));
 
@@ -1979,6 +1970,15 @@ s_int32 mt_op_set_channel(
 
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_BAND, ch_band);
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_CHNL_FREQ, SetFreq);
+
+	if (sys_bw == 6) {
+		SetFreq = tm_ch_num_to_freq((u_int32)central_ch1);
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_CHNL_FREQ | BIT(16)), SetFreq);
+	}
 
 	return ret;
 }
