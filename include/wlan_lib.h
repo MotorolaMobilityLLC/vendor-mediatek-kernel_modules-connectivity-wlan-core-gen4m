@@ -2408,6 +2408,9 @@ uint32_t wlanCfgInit(struct ADAPTER *prAdapter, uint8_t *pucConfigBuf,
 
 void wlanCfgParseArgument(int8_t *cmdLine, int32_t *argc, int8_t *argv[]);
 
+void wlanCfgParseArgumentWithDelim(int8_t *cmdLine, int32_t *argc,
+				   int8_t *argv[], char delim);
+
 #if CFG_WOW_SUPPORT
 uint32_t wlanCfgParseArgumentLong(int8_t *cmdLine, int32_t *argc,
 				  int8_t *argv[]);

@@ -10233,7 +10233,14 @@ int priv_driver_get_em_cfg(struct net_device *prNetDev, char *pcCommand,
 
 }				/* priv_driver_get_cfg_em  */
 
-
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Supported command format example:
+ *	    1. iwpriv wlan0 driver 'set_cfg key val'
+ *	    2. iwpriv wlan0 driver 'set_cfg key val1 val2 | key val'
+ *	    3. iwpriv wlan0 driver 'set_cfg key val|key val1 val2 val3'
+ */
+/*----------------------------------------------------------------------------*/
 int priv_driver_set_cfg(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen)
 {
@@ -10244,85 +10251,72 @@ int priv_driver_set_cfg(struct net_device *prNetDev, char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
-
 	struct PARAM_CUSTOM_KEY_CFG_STRUCT rKeyCfgInfo;
+	char *pucSavedPtr = NULL;
+	uint8_t *pucItem = NULL;
+	char *delim = "|";
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL)
 		return -1; /* WLAN_STATUS_ADAPTER_NOT_READY */
 
-	kalMemZero(&rKeyCfgInfo, sizeof(rKeyCfgInfo));
+	pcCommand += kalStrLen(CMD_SET_CFG) + 1; /* skip "set_cfg" */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 
-	if (i4Argc >= 3) {
-
-		int8_t ucTmp[WLAN_CFG_VALUE_LEN_MAX];
-		uint8_t *pucCurrBuf = ucTmp;
-		uint8_t	i = 0;
+	pucItem = kalStrtokR(pcCommand, delim, &pucSavedPtr);
+	while (pucItem) {
+		int8_t ucValTmp[WLAN_CFG_VALUE_LEN_MAX];
+		uint8_t *pucCurrBuf = ucValTmp;
+		uint32_t i;
 		uint32_t offset = 0;
 
-		pucCurrBuf = ucTmp;
-		kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
-
-		if (i4Argc == 3) {
-			/* no space for it, driver can't accept space in the end
-			 * of the line
-			 */
-			/* ToDo: skip the space when parsing */
-			u4BufLen = kalStrLen(apcArgv[2]);
-			if (offset + u4BufLen > WLAN_CFG_VALUE_LEN_MAX - 1) {
-				DBGLOG(INIT, ERROR,
-				       "apcArgv[2] length [%d] overrun\n",
-				       u4BufLen);
-				return -1;
-			}
-			kalStrnCpy(pucCurrBuf + offset,
-					apcArgv[2], u4BufLen + 1);
-			offset += u4BufLen;
-		} else {
-			for (i = 2; i < i4Argc; i++) {
-				u4BufLen = kalStrLen(apcArgv[i]);
-				if (offset + u4BufLen >
-				    WLAN_CFG_VALUE_LEN_MAX - 1) {
-					DBGLOG(INIT, ERROR,
-					       "apcArgv[%d] length [%d] overrun\n",
-					       i, u4BufLen);
-					return -1;
-				}
-				kalStrnCpy(pucCurrBuf + offset, apcArgv[i],
-					   u4BufLen);
-				offset += u4BufLen;
-				if (i != i4Argc - 1) {
-					kalStrnCpy(pucCurrBuf + offset, " ",
-						   u4BufLen);
-					offset += 1;
-				}
-			}
-		}
-
-		DBGLOG(INIT, WARN, "Update to driver temp buffer as [%s]\n",
-		       ucTmp);
-		if (kalStrLen(apcArgv[1]) > WLAN_CFG_KEY_LEN_MAX - 1) {
-			DBGLOG(INIT, ERROR,
-				   "apcArgv[1] length [%lu] overrun\n",
-				   kalStrLen(apcArgv[1]));
+		wlanCfgParseArgumentWithDelim(pucItem, &i4Argc, apcArgv,
+					      *delim);
+		if (i4Argc < 2) {
+			DBGLOG(REQ, WARN, "Too few arguments %u\n", i4Argc);
 			return -1;
 		}
 
-		/* wlanCfgSet(prAdapter, apcArgv[1], apcArgv[2], 0); */
-		/* Call by  wlanoid because the set_cfg will trigger callback */
-		kalStrnCpy(rKeyCfgInfo.aucKey, apcArgv[1],
+		kalMemZero(&rKeyCfgInfo, sizeof(rKeyCfgInfo));
+		kalMemZero(ucValTmp, WLAN_CFG_VALUE_LEN_MAX);
+
+		for (i = 1; i < i4Argc; i++) {
+			u4BufLen = kalStrLen(apcArgv[i]);
+			if (offset + u4BufLen >= WLAN_CFG_VALUE_LEN_MAX - 1) {
+				DBGLOG(INIT, WARN,
+				       "apcArgv[%u] length [%u] overrun\n",
+				       i, u4BufLen);
+				return -1;
+			}
+
+			kalStrnCpy(pucCurrBuf + offset, apcArgv[i], u4BufLen);
+			offset += u4BufLen;
+
+			if (offset + 1 < WLAN_CFG_VALUE_LEN_MAX - 1 &&
+			    i != i4Argc - 1) {
+				/* cpy size 2 for coverity */
+				kalStrnCpy(pucCurrBuf + offset, " ", 2);
+				offset += 1;
+			}
+		}
+
+		if (kalStrLen(apcArgv[0]) > WLAN_CFG_KEY_LEN_MAX - 1) {
+			DBGLOG(INIT, WARN, "apcArgv[0] length [%lu] overrun\n",
+			       kalStrLen(apcArgv[0]));
+			return -1;
+		}
+
+		kalStrnCpy(rKeyCfgInfo.aucKey, apcArgv[0],
 			   WLAN_CFG_KEY_LEN_MAX - 1);
-		kalStrnCpy(rKeyCfgInfo.aucValue, ucTmp,
+		kalStrnCpy(rKeyCfgInfo.aucValue, ucValTmp,
 			   WLAN_CFG_VALUE_LEN_MAX - 1);
+		DBGLOG(INIT, TRACE, "cfg [%s:%s]\n", rKeyCfgInfo.aucKey,
+		       rKeyCfgInfo.aucValue);
 
 		rKeyCfgInfo.u4Flag = WLAN_CFG_DEFAULT;
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetKeyCfg, &rKeyCfgInfo,
@@ -10330,6 +10324,8 @@ int priv_driver_set_cfg(struct net_device *prNetDev, char *pcCommand,
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
+
+		pucItem = kalStrtokR(NULL, delim, &pucSavedPtr);
 	}
 
 	return i4BytesWritten;

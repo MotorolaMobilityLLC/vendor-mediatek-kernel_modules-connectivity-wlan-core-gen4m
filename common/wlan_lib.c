@@ -10266,7 +10266,8 @@ uint32_t wlanCfgSetUint32(struct ADAPTER *prAdapter,
 enum {
 	STATE_EOF = 0,
 	STATE_TEXT = 1,
-	STATE_NEWLINE = 2
+	STATE_NEWLINE = 2,
+	STATE_DELIM = 3
 };
 
 struct WLAN_CFG_PARSE_STATE_S {
@@ -10406,6 +10407,147 @@ textresume:
 	}
 	return STATE_EOF;
 }
+
+int32_t wlanCfgFindNextTokenWithDelim(struct WLAN_CFG_PARSE_STATE_S *state,
+				      char delim)
+{
+	int8_t *x = state->ptr;
+	int8_t *s;
+
+	if (state->nexttoken) {
+		int32_t t = state->nexttoken;
+
+		state->nexttoken = 0;
+		return t;
+	}
+
+	for (;;) {
+		if (*x == delim) {
+			x++;
+			state->ptr = x;
+			return STATE_DELIM;
+		}
+
+		switch (*x) {
+		case 0:
+			state->ptr = x;
+			return STATE_EOF;
+		case '\n':
+			x++;
+			state->ptr = x;
+			return STATE_NEWLINE;
+		case ' ':
+		case ',':
+		/*case ':':  should not including : , mac addr would be fail*/
+		case '\t':
+		case '\r':
+			x++;
+			continue;
+		case '#':
+			while (*x && (*x != '\n'))
+				x++;
+			if (*x == '\n') {
+				state->ptr = x + 1;
+				return STATE_NEWLINE;
+			}
+			state->ptr = x;
+			return STATE_EOF;
+
+		default:
+			goto text;
+		}
+	}
+
+textdone:
+	state->ptr = x;
+	*s = 0;
+	return STATE_TEXT;
+text:
+	state->text = s = x;
+textresume:
+	for (;;) {
+		if (*x == delim) {
+			state->nexttoken = STATE_DELIM;
+			x++;
+			goto textdone;
+		}
+
+		switch (*x) {
+		case 0:
+			goto textdone;
+		case ' ':
+		case ',':
+		/* case ':': */
+		case '\t':
+		case '\r':
+			x++;
+			goto textdone;
+		case '\n':
+			state->nexttoken = STATE_NEWLINE;
+			x++;
+			goto textdone;
+		case '"':
+			x++;
+			for (;;) {
+				switch (*x) {
+				case 0:
+					/* unterminated quoted thing */
+					state->ptr = x;
+					return STATE_EOF;
+				case '"':
+					x++;
+					goto textresume;
+				default:
+					*s++ = *x++;
+				}
+			}
+			break;
+		case '\\':
+			x++;
+			switch (*x) {
+			case 0:
+				goto textdone;
+			case 'n':
+				*s++ = '\n';
+				break;
+			case 'r':
+				*s++ = '\r';
+				break;
+			case 't':
+				*s++ = '\t';
+				break;
+			case '\\':
+				*s++ = '\\';
+				break;
+			case '\r':
+				/* \ <cr> <lf> -> line continuation */
+				if (x[1] != '\n') {
+					x++;
+					continue;
+				}
+				kal_fallthrough;
+			case '\n':
+				/* \ <lf> -> line continuation */
+				x++;
+				/* eat any extra whitespace */
+				while ((*x == ' ') || (*x == '\t'))
+					x++;
+				continue;
+			default:
+				/* unknown escape -- just copy */
+				*s++ = *x++;
+			}
+			continue;
+		default:
+			*s++ = *x++;
+#if CFG_SUPPORT_EASY_DEBUG
+			state->textsize++;
+#endif
+		}
+	}
+	return STATE_EOF;
+}
+
 
 /**
  * wlanCfgFindNextTokenWithEqual() - cfg and ini file parsing
@@ -10590,8 +10732,52 @@ void wlanCfgParseArgument(int8_t *cmdLine,
 
 exit:
 	*argc = nargs;
-	return;
 }
+
+void wlanCfgParseArgumentWithDelim(int8_t *cmdLine, int32_t *argc,
+				   int8_t *argv[], char delim)
+{
+	struct WLAN_CFG_PARSE_STATE_S state;
+	int8_t **args;
+	int32_t nargs;
+
+	if (cmdLine == NULL || argc == NULL || argv == NULL) {
+		DBGLOG(INIT, ERROR, "parameter is NULL: %p, %p, %p\n",
+		       cmdLine, argc, argv);
+		return;
+	}
+	args = argv;
+	nargs = 0;
+	*argc = 0;
+	state.ptr = cmdLine;
+	state.text = cmdLine;
+	state.nexttoken = 0;
+	state.maxSize = 0;
+#if CFG_SUPPORT_EASY_DEBUG
+	state.textsize = 0;
+#endif
+
+	for (;;) {
+		switch (wlanCfgFindNextTokenWithDelim(&state, delim)) {
+		case STATE_EOF:
+			goto exit;
+		case STATE_NEWLINE:
+		case STATE_DELIM:
+			goto exit;
+		case STATE_TEXT:
+			if (nargs < WLAN_CFG_ARGV_MAX) {
+				DBGLOG(REQ, LOUD, "arg%u=%s",
+				       nargs, state.text);
+				args[nargs++] = state.text;
+			}
+			break;
+		}
+	}
+
+exit:
+	*argc = nargs;
+}
+
 
 #if CFG_WOW_SUPPORT
 uint32_t wlanCfgParseArgumentLong(int8_t *cmdLine,
