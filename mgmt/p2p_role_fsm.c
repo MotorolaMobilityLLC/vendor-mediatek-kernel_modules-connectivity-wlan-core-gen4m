@@ -159,14 +159,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			(uintptr_t) prP2pRoleFsmInfo);
 #endif
 
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		cnmTimerInitTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-			(PFN_MGMT_TIMEOUT_FUNC)
-			p2pRoleFsmRunEventDfsShutDownTimeout,
-			(uintptr_t) prP2pRoleFsmInfo);
-#endif
-
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rWaitNextReqChnlTimer),
 			(PFN_MGMT_TIMEOUT_FUNC)
@@ -274,11 +266,6 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 		cnmTimerStopTimer(prAdapter,
 			&prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer);
-#endif
-
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		cnmTimerStopTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rDfsShutDownTimer));
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -805,10 +792,8 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 				p2pRoleFsmStateTransition(prAdapter,
 					prP2pRoleFsmInfo,
 					P2P_ROLE_STATE_IDLE);
-				cnmTimerStartTimer(prAdapter,
-					&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-					1000);
-				p2pFuncSetRadarDetectMode(0);
+				p2pRoleFsmRunEventDfsShutDown(prAdapter,
+						     prP2pRoleFsmInfo);
 			} else {
 				p2pRoleFsmStateTransition(prAdapter,
 					prP2pRoleFsmInfo,
@@ -816,9 +801,6 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 				kalP2PCacFinishedUpdate(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex);
 				p2pFuncSetDfsState(DFS_STATE_ACTIVE);
-				cnmTimerStartTimer(prAdapter,
-					&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-					5000);
 				/* start ap */
 				prP2pConnReqInfo =
 					&(prP2pRoleFsmInfo->rConnReqInfo);
@@ -1808,15 +1790,6 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 	p2pFuncSwitchOPMode(prAdapter, prP2pBssInfo, OP_MODE_ACCESS_POINT,
 			    FALSE);
 
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-	if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
-		DBGLOG(P2P, INFO,
-			"p2pRoleFsmRunEventStartAP: Stop DFS shut down timer.\n");
-		cnmTimerStopTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rDfsShutDownTimer));
-	}
-#endif
-
 	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 #if CFG_CH_SELECT_ENHANCEMENT
 	prP2pBssInfo->eInitBand =
@@ -2185,6 +2158,7 @@ void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
 
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
+	p2pFuncSetRadarDetectMode(0);
 
 SKIP_END_RDD:
 #endif
@@ -2317,9 +2291,7 @@ void p2pRoleFsmRunEventStopCac(struct ADAPTER *prAdapter,
 	p2pRoleFsmStateTransition(prAdapter,
 		prP2pRoleFsmInfo,
 		P2P_ROLE_STATE_IDLE);
-	cnmTimerStartTimer(prAdapter,
-		&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-		1000);
+	p2pRoleFsmRunEventDfsShutDown(prAdapter, prP2pRoleFsmInfo);
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
@@ -2357,13 +2329,6 @@ void p2pRoleFsmRunEventDfsCac(struct ADAPTER *prAdapter,
 		       "p2pRoleFsmRunEventDfsCac: Corresponding P2P Role FSM empty: %d.\n",
 		       prP2pDfsCacMsg->ucRoleIdx);
 		goto error;
-	}
-
-	if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
-		DBGLOG(P2P, INFO,
-			"p2pRoleFsmRunEventDfsCac: Stop DFS shut down timer.\n");
-		cnmTimerStopTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rDfsShutDownTimer));
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
@@ -2467,6 +2432,8 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo)
+		return;
 
 	DBGLOG(P2P, INFO,
 		"p2pRoleFsmRunEventRadarDet with Role(%d)\n",
@@ -2514,9 +2481,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		kalP2PRddDetectUpdate(prAdapter->prGlueInfo,
 			prP2pRoleFsmInfo->ucRoleIndex);
 
-		cnmTimerStartTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-			5000);
+		p2pRoleFsmRunEventDfsShutDown(prAdapter, prP2pRoleFsmInfo);
 
 		/* Get random ch */
 		rlmDomainGetChnlList(prAdapter,
@@ -2598,19 +2563,16 @@ error:
 }				/*p2pRoleFsmRunEventRadarDet*/
 
 
-void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
-		uintptr_t ulParamPtr)
+void p2pRoleFsmRunEventDfsShutDown(struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
-		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
-
-	DBGLOG(P2P, INFO,
-		"p2pRoleFsmRunEventDfsShutDownTimeout: DFS shut down.\n");
+	DBGLOG(P2P, INFO, "DFS shut down.\n");
 
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	p2pFuncResetRadarDetectCnt();
 	p2pFuncRadarDetectDoneUevent(prAdapter);
+	p2pFuncSetRadarDetectMode(0);
 }				/* p2pRoleFsmRunEventDfsShutDownTimeout */
 #endif
 

@@ -1030,10 +1030,16 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  ucBssIndex);
 
-		if (prBssInfo && prBssInfo->fgIsDfsActive) {
+		if (prBssInfo && prBssInfo->fgIsInUse &&
+		    prBssInfo->fgIsDfsActive) {
 			prP2pRddDetMsg->ucBssIndex = ucBssIndex;
 			break;
 		}
+	}
+
+	if (ucBssIndex == MAX_BSSID_NUM) {
+		DBGLOG(CNM, WARN, "No BSS in DFS active\n");
+		return;
 	}
 
 	log_dbg(CNM, INFO,

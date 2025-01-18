@@ -2826,6 +2826,7 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
+	struct BSS_INFO *prBssInfo;
 
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -2836,6 +2837,11 @@ void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 				"cnmMemAlloc for prCmdRddOnOffCtrl failed!\n");
 		return;
 	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo)
+		return;
+	prBssInfo->fgIsDfsActive = FALSE;
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_STOP;
 
