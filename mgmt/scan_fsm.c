@@ -619,7 +619,18 @@ void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 			scanlog_dbg(LOG_SCAN_ABORT_REQ_D2F, INFO, "Scan Abort#%u to Q: isExtCh=%u",
 				rCmdScanCancel.ucSeqNum,
 				rCmdScanCancel.ucIsExtChannel);
-
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			wlanSendSetQueryCmdHelper(
+#else
+			wlanSendSetQueryCmdAdv(
+#endif
+				prAdapter, CMD_ID_SCAN_CANCEL,
+				0, TRUE, FALSE, FALSE, NULL, NULL,
+				sizeof(struct CMD_SCAN_CANCEL),
+				(uint8_t *) &rCmdScanCancel, NULL, 0,
+				CMD_SEND_METHOD_REQ_RESOURCE);
+#else
 			wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SCAN_CANCEL,
 				TRUE,
@@ -631,6 +642,7 @@ void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 				(uint8_t *) &rCmdScanCancel,
 				NULL,
 				0);
+#endif /* CFG_MLO_CONCURRENT_SINGLE_PHY == 1 */
 
 			/* Full2Partial: ignore this statistics */
 			if (prScanInfo->fgIsScanForFull2Partial) {

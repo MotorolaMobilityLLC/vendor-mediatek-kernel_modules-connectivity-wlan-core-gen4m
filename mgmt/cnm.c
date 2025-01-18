@@ -4740,6 +4740,10 @@ void cnmDbdcPreConnectionEnableDecision(
 		== MLO_MODE_SLSR) {
 		log_dbg(CNM, INFO,
 			"[DBDC] MLSR 1st connected,Legacy Bss will connect now\n");
+		/* Abort Scan to prevent the driver and the firmware from
+		 * pausing different link when STA RSSI is between -50~-70dBm
+		 */
+		aisFsmStateAbort_SCAN_All(prAdapter);
 		mldMLSRDecisionLinkRemain(prAdapter, prDbdcDecisionInfo);
 	}
 #endif
