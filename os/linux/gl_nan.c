@@ -33,6 +33,7 @@
 
 #include "gl_cfg80211.h"
 #include "gl_vendor.h"
+#include "gl_vendor_ndp.h"
 #include "nan/nan_sec.h"
 
 /*******************************************************************************
@@ -156,6 +157,60 @@ const struct net_device_ops nan_netdev_ops = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
+void nanSendLowPowerCtrlCommand(
+	struct ADAPTER *prAdapter)
+{
+	uint32_t rStatus;
+	void *prCmdBuffer;
+	uint32_t u4CmdBufferLen;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct _NAN_CMD_LOWPOWER_CTRL_T *prCmd = NULL;
+
+	if (!g_ucNanLowPowerMode)
+		return;
+
+	g_ucNanLowPowerMode = FALSE;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+			 sizeof(struct _NAN_CMD_LOWPOWER_CTRL_T);
+	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
+	if (!prCmdBuffer) {
+		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return;
+	}
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+	prTlvCommon->u2TotalElementNum = 0;
+	rStatus =
+		nicNanAddNewTlvElement(
+			NAN_CMD_LOWPOWER_CTRL,
+			sizeof(struct _NAN_CMD_LOWPOWER_CTRL_T),
+			u4CmdBufferLen, prCmdBuffer);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return;
+	}
+	prTlvElement = nicNanGetTargetTlvElement(1, prCmdBuffer);
+	if (prTlvElement == NULL) {
+		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return;
+	}
+	prCmd =
+		(struct _NAN_CMD_LOWPOWER_CTRL_T *)
+		prTlvElement->aucbody;
+	prCmd->ucEnabled = 1;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_NAN_EXT_CMD, TRUE,
+		FALSE, FALSE, NULL,
+		nicCmdTimeoutCommon, u4CmdBufferLen,
+		(uint8_t *)prCmdBuffer, NULL, 0);
+	cnmMemFree(prAdapter, prCmdBuffer);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1018,6 +1073,9 @@ nanSetSuspendMode(struct GLUE_INFO *prGlueInfo, unsigned char fgEnable)
 
 	kalSetNetAddressFromInterface(prGlueInfo, prDev, fgEnable);
 	wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
+
+	if (!fgEnable)
+		nanSendLowPowerCtrlCommand(prGlueInfo->prAdapter);
 }
 
 /* Net Device Hooks */
@@ -1314,6 +1372,8 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 
 		__nanHardStartXmit(prGlueInfo, prDev, ucBssIndex, prSkb);
 	}
+
+	nanSendLowPowerCtrlCommand(prGlueInfo->prAdapter);
 
 	return NETDEV_TX_OK;
 }

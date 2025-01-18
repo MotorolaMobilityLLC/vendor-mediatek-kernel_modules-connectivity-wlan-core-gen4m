@@ -6931,6 +6931,10 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 		break;
 	case UNI_EVENT_NAN_DEVICE_INFO:
 		break;
+	case UNI_EVENT_NAN_TAG_LOWPOWER_CTRL:
+		mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
+			prAdapter, prTlvElement->aucbody);
+		break;
 	}
 }
 
@@ -7019,6 +7023,10 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_DEVICE_INFO:
+		break;
+	case NAN_EVENT_LOWPOWER_CTRL:
+		mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
+			prAdapter, prTlvElement->aucbody);
 		break;
 	}
 }

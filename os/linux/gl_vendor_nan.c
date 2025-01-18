@@ -53,6 +53,7 @@ uint8_t g_disableNAN = FALSE;
 uint8_t g_deEvent;
 uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
 uint8_t g_aucNanServiceId[6];
+uint8_t g_ucNanLowPowerMode = FALSE;
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -3381,6 +3382,74 @@ mtk_cfg80211_vendor_event_nan_schedule_config(
 	g_deEvent++;
 
 	nanUpdateAisBitmap(prAdapter, TRUE);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+int
+mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
+	struct ADAPTER *prAdapter,
+	uint8_t *pcuEvtBuf)
+{
+#define NAN_SET_TX_ALLOWED 0
+	struct _NAN_EVENT_LOWPOWER_CTRL *prFwEvt;
+#if (NAN_SET_TX_ALLOWED == 1)
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+	struct _NAN_NDP_CONTEXT_T *prNdpCxt;
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	uint8_t ucNdlIndex;
+	uint8_t ucNdpCxtIdx;
+	uint32_t i = 0;
+#endif
+
+	if (!prAdapter)
+		return -EFAULT;
+
+	prFwEvt = (struct _NAN_EVENT_LOWPOWER_CTRL *) pcuEvtBuf;
+
+	DBGLOG(NAN, DEBUG,
+		"Map: 0x%x\n",
+		prFwEvt->ucPeerSchRecordTxMap);
+
+#if (NAN_SET_TX_ALLOWED == 1)
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prDataPathInfo = &(prAdapter->rDataPathInfo);
+
+	for (ucNdlIndex = 0;
+		ucNdlIndex < NAN_MAX_SUPPORT_NDL_NUM;
+		ucNdlIndex++) {
+		prNDL = &prDataPathInfo->arNDL[ucNdlIndex];
+		if (prNDL->fgNDLValid == FALSE)
+			continue;
+
+		for (ucNdpCxtIdx = 0;
+			ucNdpCxtIdx < NAN_MAX_SUPPORT_NDP_CXT_NUM;
+			ucNdpCxtIdx++) {
+			prNdpCxt = &prNDL->arNdpCxt[ucNdpCxtIdx];
+			if (prNdpCxt->fgValid == FALSE)
+				continue;
+
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_NAN_NDL_FLOW_CTRL);
+
+			for (i = 0; i < NAN_LINK_NUM; i++) {
+				if (!prNdpCxt->prNanStaRec[i])
+					continue;
+
+				qmSetStaRecTxAllowed(
+					prAdapter,
+					prNdpCxt->prNanStaRec[i],
+					FALSE);
+			}
+
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_NAN_NDL_FLOW_CTRL);
+		}
+	}
+#endif
+
+	g_ucNanLowPowerMode = TRUE;
 
 	return WLAN_STATUS_SUCCESS;
 }
