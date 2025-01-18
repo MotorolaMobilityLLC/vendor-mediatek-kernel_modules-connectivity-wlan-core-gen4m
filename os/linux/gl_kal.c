@@ -98,6 +98,10 @@
 #endif
 #endif
 
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+#include "gl_ics.h"
+#endif
+
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -6483,7 +6487,11 @@ int main_thread(void *data)
 void kalTxTimeoutDump(struct ADAPTER *prAdapter)
 {
 	struct STA_RECORD *prStaRec;
-
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+#if CFG_SUPPORT_ICS_TIMER
+	IcsLogStartWithTimer(prAdapter);
+#endif /* CFG_SUPPORT_ICS_TIMER */
+#endif
 	secPrivacyDumpWTBL(prAdapter);
 
 	cnmDumpStaRec(prAdapter, prAdapter->ucTxTimeoutStaIdx);

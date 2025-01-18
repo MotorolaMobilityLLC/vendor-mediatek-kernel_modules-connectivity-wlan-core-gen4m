@@ -1952,8 +1952,6 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 			DBGLOG(QM, ERROR, "No channel occupation\n");
 		} else {
 			DBGLOG(QM, DEBUG, "Authorized, stop join timer.\n");
-			cnmTimerStopTimer(prAdapter,
-				&prAisFsmInfo->rJoinTimeoutTimer);
 			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
 		}
 
@@ -8177,9 +8175,9 @@ wlanoidSetHmAlg(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
+wlanSetIcsSniffer(struct ADAPTER *prAdapter,
 		      void *pvSetBuffer, uint32_t u4SetBufferLen,
-		      uint32_t *pu4SetInfoLen) {
+		      uint32_t *pu4SetInfoLen, u_int8_t isOid) {
 	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT *prSnifferInfo;
 	struct CMD_ICS_SNIFFER_INFO rCmdSniffer;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
@@ -8254,7 +8252,7 @@ wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 				  CMD_ID_SET_ICS_SNIFFER,
 				  TRUE,
 				  FALSE,
-				  TRUE,
+				  isOid,
 				  nicCmdEventSetCommon,
 				  nicOidCmdTimeoutCommon,
 				  sizeof(struct CMD_ICS_SNIFFER_INFO),
@@ -8262,6 +8260,16 @@ wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 				  pvSetBuffer, u4SetBufferLen);
 
 	return rWlanStatus;
+}
+
+uint32_t
+wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen)
+{
+	return wlanSetIcsSniffer(prAdapter,
+		pvSetBuffer, u4SetBufferLen,
+		pu4SetInfoLen, TRUE);
 }
 #endif /* CFG_SUPPORT_ICS */
 

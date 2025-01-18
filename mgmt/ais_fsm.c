@@ -21,6 +21,10 @@
 #include "precomp.h"
 #include "mddp.h"
 #include "gl_kal.h"
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+#include "gl_ics.h"
+#endif /* (CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1) */
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1138,7 +1142,7 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	/* 4 <1> Stop all timers */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBGScanTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer);
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
+	aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 	if (kalGetGlueScanReq(prAdapter->prGlueInfo) != NULL) {
 		/* call aisFsmRunEventScanDoneTimeOut()
 		 * to reset scan fsm
@@ -2059,11 +2063,8 @@ void aisFsmStateAbort_JOIN(struct ADAPTER *prAdapter,
 	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prJoinAbortMsg,
 		    MSG_SEND_METHOD_BUF);
 
-	/* 2. Return channel privilege */
-	aisFsmReleaseCh(prAdapter, ucBssIndex);
-
-	/* 3.1 stop join timeout timer */
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
+	/* stop join timeout timer */
+	aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 }				/* end of aisFsmAbortJOIN() */
 
 /*----------------------------------------------------------------------------*/
@@ -2141,18 +2142,11 @@ void aisFsmStateAbort_SCAN(struct ADAPTER *prAdapter,
 void aisFsmStateAbort_NORMAL_TR(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
-	struct AIS_FSM_INFO *prAisFsmInfo;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-
 	/* TODO(Kevin): Do abort other MGMT func */
 
-	/* 1. Release channel to CNM */
-	aisFsmReleaseCh(prAdapter, ucBssIndex);
-
-	/* 2.1 stop join timeout timer */
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
-}				/* end of aisFsmAbortNORMAL_TR() */
+	/* stop join timeout timer */
+	aisFsmStopJoinTimer(prAdapter, ucBssIndex);
+} /* end of aisFsmAbortNORMAL_TR() */
 
 #if CFG_SUPPORT_ADHOC
 /*----------------------------------------------------------------------------*/
@@ -4719,11 +4713,8 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	if (prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY)
 		prBssDesc->ucTempRejectCount++;
 
-	/* 2. release channel */
-	aisFsmReleaseCh(prAdapter, ucBssIndex);
-
-	/* 3.1 stop join timeout timer */
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
+	/* 2. stop join timeout timer */
+	aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 
 	DBGLOG(AIS, INFO,
 	       "<CONN> JOIN_FAIL bidx=%d count=%d,%d,%d status=%d reason=%d conn_state=%d\n",
@@ -6937,7 +6928,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 
 	case AIS_STATE_NORMAL_TR:
 		/* 1. release channel */
-		aisFsmReleaseCh(prAdapter, ucBssIndex);
+		aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAisFsmInfo->ucIsSapCsaPending == TRUE) {
@@ -6954,7 +6945,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 
 	default:
 		/* release channel */
-		aisFsmReleaseCh(prAdapter, ucBssIndex);
+		aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 		eNewState = prAisFsmInfo->eCurrentState;
 		break;
 
@@ -7234,10 +7225,11 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 
 		/* 3. state transition to join/ibss-alone/ibss-merge */
 		/* 3.1 set timeout timer in cases join could not be completed */
-		cnmTimerStartTimer(prAdapter,
-				   &prAisFsmInfo->rJoinTimeoutTimer,
-				   prAisFsmInfo->u4ChGrantedInterval -
-				   AIS_JOIN_CH_GRANT_THRESHOLD);
+		aisFsmStartJoinTimer(prAdapter,
+				     ucBssIndex,
+				     prAisFsmInfo->u4ChGrantedInterval -
+				     AIS_JOIN_CH_GRANT_THRESHOLD);
+
 		DBGLOG(AIS, INFO, "Start JOIN Timer!\n");
 		aisFsmSteps(prAdapter, AIS_STATE_JOIN, ucBssIndex);
 
@@ -12101,3 +12093,83 @@ u_int8_t aisFsmIsSwitchChannel(struct ADAPTER *ad,
 	}
 	return FALSE;
 }
+
+void aisFsmStartJoinTimer(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	uint32_t u4TimeoutMs)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(AIS, WARN, "prAisFsmInfo[%d] is NULL\n",
+				  ucBssIndex);
+		return;
+	}
+
+	cnmTimerStartTimer(prAdapter,
+			   &prAisFsmInfo->rJoinTimeoutTimer,
+			   u4TimeoutMs);
+#if (CFG_SUPPORT_ICS_STA == 1)
+	aisFsmIcsLogControl(prAdapter, ucBssIndex);
+#endif /* CFG_SUPPORT_ICS_STA */
+}
+
+void aisFsmStopJoinTimer(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(AIS, WARN, "prAisFsmInfo[%d] is NULL\n",
+				  ucBssIndex);
+		return;
+	}
+
+	if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
+		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
+
+	aisFsmReleaseCh(prAdapter, ucBssIndex);
+#if (CFG_SUPPORT_ICS_STA == 1)
+	aisFsmIcsLogControl(prAdapter, ucBssIndex);
+#endif /* CFG_SUPPORT_ICS_STA */
+}
+
+#if (CFG_SUPPORT_ICS_STA == 1)
+void aisFsmIcsLogControl(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct WIFI_VAR *prWifiVar;
+	uint8_t i;
+	u_int8_t fgOnOff = FALSE;
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prWifiVar->fgStaIcsLog)
+		return;
+
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		prAisFsmInfo = aisFsmGetInstance(prAdapter, i);
+
+		if (prAisFsmInfo &&
+		    timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
+			fgOnOff = TRUE;
+	}
+
+	DBGLOG(ICS, INFO, "Ais ICS log state [%u]\n", fgOnOff);
+
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	if (fgOnOff == TRUE)
+		ics_log_event_notification(prAdapter->prGlueInfo,
+			(int)ICS_LOG_CMD_SET_LEVEL,
+			ENUM_ICS_LOG_LEVEL_MAC,
+			FALSE);
+	else
+		ics_log_event_notification(prAdapter->prGlueInfo,
+			(int)ICS_LOG_CMD_SET_LEVEL,
+			ENUM_ICS_LOG_LEVEL_DISABLE,
+			FALSE);
+	ics_log_event_notification(prAdapter->prGlueInfo,
+		(int)ICS_LOG_CMD_ON_OFF, fgOnOff, FALSE);
+#endif /* (CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1) */
+}
+#endif /* CFG_SUPPORT_ICS_STA */

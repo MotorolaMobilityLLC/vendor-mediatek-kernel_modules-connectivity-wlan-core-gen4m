@@ -9527,7 +9527,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	INIT_UINT(prWifiVar->fgDynamicIcs, "DynamicIcsEn", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
-#endif
+#if CFG_SUPPORT_ICS_TIMER
+	INIT_UINT(prWifiVar->fgTxTimeoutIcsLog, "TxTimeoutIcsLog",
+		FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4TxTimeoutIcsLogDuration,
+		"TxTimeoutIcsLogDuration", 5000, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4TxTimeoutIcsLogInterval,
+		"TxTimeoutIcsLogInterval", 25000, FEATURE_TO_CUSTOMER);
+#endif /* CFG_SUPPORT_ICS_TIMER */
+#if (CFG_SUPPORT_ICS_STA == 1)
+	INIT_UINT(prWifiVar->fgStaIcsLog, "StaIcsLog",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+#endif /* CFG_SUPPORT_ICS_STA */
+#endif /* CFG_SUPPORT_ICS ||CFG_SUPPORT_PHY_ICS  */
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 #if (CFG_HW_DETECT_REPORT == 1)
 	INIT_UINT(prWifiVar->fgHwDetectReportEn, "HwDetectReportEnable",

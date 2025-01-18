@@ -1294,4 +1294,15 @@ u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t aucMacAddr[]);
 
+void aisFsmStartJoinTimer(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4TimeoutMs);
+
+void aisFsmStopJoinTimer(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+#if (CFG_SUPPORT_ICS_STA == 1)
+void aisFsmIcsLogControl(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+#endif /* CFG_SUPPORT_ICS_STA */
+
 #endif /* _AIS_FSM_H */

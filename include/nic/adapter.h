@@ -1419,6 +1419,14 @@ struct WIFI_VAR {
 #endif
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	uint8_t fgDynamicIcs;
+#if CFG_SUPPORT_ICS_TIMER
+	u_int8_t fgTxTimeoutIcsLog;
+	uint32_t u4TxTimeoutIcsLogDuration;
+	uint32_t u4TxTimeoutIcsLogInterval;
+#endif /* CFG_SUPPORT_ICS_TIMER */
+#if (CFG_SUPPORT_ICS_STA == 1)
+	u_int8_t fgStaIcsLog;
+#endif /* CFG_SUPPORT_ICS_STA */
 #endif
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	uint8_t ucLowLatencyModeScan;
@@ -3199,6 +3207,7 @@ struct ADAPTER {
 	u_int8_t fgEnTmacICS;
 	u_int8_t fgEnRmacICS;
 	uint16_t u2IcsSeqNo;
+	struct TIMER rIcsTimer;
 #endif /* CFG_SUPPORT_ICS */
 
 #if CFG_SUPPORT_PHY_ICS

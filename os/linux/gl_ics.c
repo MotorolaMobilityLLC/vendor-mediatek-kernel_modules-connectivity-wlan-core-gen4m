@@ -75,8 +75,9 @@ static u_int8_t ics_set_onoff(struct GLUE_INFO *prGlueInfo, int cmd, int value)
 }
 
 void ics_log_event_notification(struct GLUE_INFO *prGlueInfo,
-	int cmd, int value)
+	int cmd, int value, u_int8_t isOid)
 {
+	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer = {0};
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus;
@@ -90,6 +91,12 @@ void ics_log_event_notification(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL return");
+		return;
+	}
+
 	kalMemZero(&rSniffer,
 		sizeof(struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
 	rSniffer.ucModule = 2;
@@ -99,13 +106,16 @@ void ics_log_event_notification(struct GLUE_INFO *prGlueInfo,
 	/* Enable/Disable ICS for all band */
 	for (ucBand = ENUM_BAND_0; ucBand < ENUM_BAND_NUM; ucBand++) {
 		rSniffer.ucCondition[1] = ucBand;
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
-			&rSniffer, sizeof(rSniffer), &u4BufLen);
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(ICS, ERROR,
-				"wlanoidSetIcsSniffer Band[%u] failed\n",
-				ucBand);
+		if (isOid == TRUE) {
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
+				&rSniffer, sizeof(rSniffer), &u4BufLen);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(ICS, ERROR,
+					"wlanoidSetIcsSniffer Band[%u] failed\n",
+					ucBand);
+		} else {
+			wlanSetIcsSniffer(prAdapter, &rSniffer,
+				sizeof(rSniffer), &u4BufLen, FALSE);
 		}
 	}
 }
@@ -343,7 +353,7 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 				(int)level);
 			prIcsDev->pfFwEventFuncCB(prGlueInfo,
 				ICS_LOG_CMD_SET_LEVEL,
-				level);
+				level, TRUE);
 		} else {
 			DBGLOG(ICS, ERROR,
 				"ICS_FW_LOG_IOCTL_SET_LEVEL invoke failed\n");
@@ -362,7 +372,7 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 				"ICS_FW_LOG_IOCTL_ON_OFF invoke:%d\n",
 				(int)log_on_off);
 			prIcsDev->pfFwEventFuncCB(prGlueInfo,
-				ICS_LOG_CMD_ON_OFF, log_on_off);
+				ICS_LOG_CMD_ON_OFF, log_on_off, TRUE);
 		} else {
 			DBGLOG(ICS, ERROR,
 				"ICS_FW_LOG_IOCTL_ON_OFF invoke failed\n");
@@ -595,4 +605,58 @@ int IcsDeInit(struct GLUE_INFO *prGlueInfo)
 	return 0;
 }
 
+#if CFG_SUPPORT_ICS_TIMER
+void IcsTimerInit(struct ADAPTER *prAdapter)
+{
+	cnmTimerInitTimer(prAdapter,
+			&prAdapter->rIcsTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) IcsLogTimeout,
+			(uintptr_t) NULL);
+}
+
+void IcsLogStartWithTimer(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar;
+	static uint32_t u4NextUpdateTime;
+
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prWifiVar->fgTxTimeoutIcsLog)
+		return;
+
+	if (TIME_BEFORE(kalGetTimeTick(), u4NextUpdateTime))
+		return;
+
+	u4NextUpdateTime = kalGetTimeTick() +
+		prWifiVar->u4TxTimeoutIcsLogInterval;
+
+	ics_log_event_notification(prAdapter->prGlueInfo,
+		(int)ICS_LOG_CMD_SET_LEVEL,
+		ENUM_ICS_LOG_LEVEL_MAC,
+		FALSE);
+	cnmTimerStartTimer(prAdapter, &prAdapter->rIcsTimer,
+		prWifiVar->u4TxTimeoutIcsLogDuration);
+	DBGLOG(ICS, INFO, "Enable Txtimeout ICS log for %u ms\n",
+		prWifiVar->u4TxTimeoutIcsLogDuration);
+}
+
+void IcsLogTimeout(struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
+{
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	ics_log_event_notification(prAdapter->prGlueInfo,
+		(int)ICS_LOG_CMD_SET_LEVEL,
+		ENUM_ICS_LOG_LEVEL_DISABLE,
+		FALSE);
+	ics_log_event_notification(prAdapter->prGlueInfo,
+		(int)ICS_LOG_CMD_ON_OFF,
+		ENUM_ICS_LOG_LEVEL_DISABLE,
+		FALSE);
+	DBGLOG(ICS, INFO, "Timeout to disable Txtimeout ICS log\n");
+}
+#endif /* CFG_SUPPORT_ICS_TIMER */
 #endif /* CFG_SUPPORT_ICS */

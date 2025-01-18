@@ -7826,7 +7826,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	ics_log_event_notification(prGlueInfo,
 		(int)ICS_LOG_CMD_ON_OFF,
-		ics_get_onoff(prGlueInfo));
+		ics_get_onoff(prGlueInfo),
+		TRUE);
+#if CFG_SUPPORT_ICS_TIMER
+	IcsTimerInit(prAdapter);
+#endif /* CFG_SUPPORT_ICS_TIMER */
 #endif
 #endif
 

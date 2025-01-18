@@ -1764,12 +1764,8 @@ saaSendDisconnectMsgHandler(struct ADAPTER *prAdapter,
 		if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 			DBGLOG(SAA, INFO, "[SAA] Stop rJoinTimeoutTimer\n");
 
-			cnmTimerStopTimer(prAdapter,
-				&prAisFsmInfo->rJoinTimeoutTimer);
-
-			/* Release Channel */
-			aisFsmReleaseCh(prAdapter,
-			       aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
+			aisFsmStopJoinTimer(prAdapter,
+			    aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
 		}
 
 		/* NOTE(Kevin): Change state immediately to

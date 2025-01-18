@@ -4597,6 +4597,11 @@ wlanSetChipConfig(struct ADAPTER *prAdapter,
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 uint32_t
+wlanSetIcsSniffer(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen, u_int8_t isOid);
+
+uint32_t
 wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 		      void *pvSetBuffer, uint32_t u4SetBufferLen,
 		      uint32_t *pu4SetInfoLen);

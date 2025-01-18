@@ -8873,8 +8873,6 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			DBGLOG(QM, ERROR, "No channel occupation\n");
 		} else {
 			DBGLOG(QM, DEBUG, "Dhcp done, stop join timer.\n");
-			cnmTimerStopTimer(prAdapter,
-				&prAisFsmInfo->rJoinTimeoutTimer);
 			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
 		}
 	}

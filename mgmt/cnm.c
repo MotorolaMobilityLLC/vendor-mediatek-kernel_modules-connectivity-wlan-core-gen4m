@@ -7034,11 +7034,9 @@ void cnmStopPendingJoinTimerForSuspend(struct ADAPTER *prAdapter)
 		if (prAisFsmInfo &&
 		    timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 			DBGLOG(CNM, STATE, "[AIS] pending rJoinTimeoutTimer\n");
-			cnmTimerStopTimer(prAdapter,
-				&prAisFsmInfo->rJoinTimeoutTimer);
-			/* Release Channel */
-			aisFsmReleaseCh(prAdapter,
-			       aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
+
+			aisFsmStopJoinTimer(prAdapter,
+			    aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
 		}
 
 
