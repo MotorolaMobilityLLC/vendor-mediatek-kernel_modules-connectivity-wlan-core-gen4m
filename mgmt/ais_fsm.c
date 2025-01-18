@@ -8717,10 +8717,7 @@ aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
 
 	if (aisFunAddTxReq2Queue(prAdapter, prMgmtTxReqInfo,
 			prMgmtTxMsg, &prOffChnlTxReq) == FALSE)
-		goto error;
-
-	if (prOffChnlTxReq == NULL)
-		goto error;
+		return WLAN_STATUS_RESOURCES;
 
 	if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq,
 		ucBssIndex))
@@ -8736,7 +8733,6 @@ error:
 	LINK_REMOVE_KNOWN_ENTRY(
 			&(prMgmtTxReqInfo->rTxReqLink),
 			&prOffChnlTxReq->rLinkEntry);
-	cnmPktFree(prAdapter, prOffChnlTxReq->prMgmtTxMsdu);
 	cnmMemFree(prAdapter, prOffChnlTxReq);
 
 	return WLAN_STATUS_RESOURCES;
@@ -8793,8 +8789,10 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
-	if (prAisFsmInfo == NULL)
+	if (prAisFsmInfo == NULL) {
+		cnmMgtPktFree(prAdapter, prMgmtTxMsg->prMgmtMsduInfo);
 		goto exit;
+	}
 
 	if (!aisFunNeedOffchnlTx(prAdapter, prMgmtTxMsg)) {
 		aisFuncTxMgmtFrame(prAdapter,
@@ -8813,10 +8811,11 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 			  (uint32_t)
 			  prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength,
 			  ucBssIndex);
+		cnmMgtPktFree(prAdapter, prMgmtTxMsg->prMgmtMsduInfo);
 #endif
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE ||
-		   prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR ||
-		   aisFsmIsSwitchChannel(prAdapter, prAisFsmInfo)) {
+		   (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR &&
+		   !aisFsmIsSwitchChannel(prAdapter, prAisFsmInfo))) {
 		u4Status = aisFunHandleOffchnlTxReq(prAdapter,
 				prAisFsmInfo,
 				prMgmtTxMsg,
@@ -8831,6 +8830,7 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 				  (uint32_t)
 				  prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength,
 				  ucBssIndex);
+			cnmMgtPktFree(prAdapter, prMgmtTxMsg->prMgmtMsduInfo);
 		}
 	} else {
 		DBGLOG(AIS, WARN, "Disable TX mgmt when state=%s.\n",
@@ -8842,6 +8842,7 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 			  (uint32_t)
 			  prMgmtTxMsg->prMgmtMsduInfo->u2FrameLength,
 			  ucBssIndex);
+		cnmMgtPktFree(prAdapter, prMgmtTxMsg->prMgmtMsduInfo);
 	}
 
 exit:
