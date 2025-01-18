@@ -11783,6 +11783,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
+	uint32_t u4CurRxRate, u4MaxRxRate;
 #endif
 	OS_SYSTIME now, last;
 	int32_t period;
@@ -11920,7 +11921,16 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-	pos += kalSnprintf(pos, end - pos, "LQ[%llu:%llu:%llu] ",
+	/* get current rx rate */
+	if (wlanGetRxRateByBssid(glue,
+			aisGetDefaultLinkBssIndex(prAdapter),
+			&u4CurRxRate, &u4MaxRxRate, NULL) < 0)
+		lq->u4CurRxRate = 0;
+	else
+		lq->u4CurRxRate = u4CurRxRate;
+
+	pos += kalSnprintf(pos, end - pos, "LQ[%lu,%llu,%llu,%llu] ",
+		(unsigned long long) lq->u4CurRxRate,
 		(unsigned long long) lq->u8TxTotalCount,
 		(unsigned long long) lq->u8RxTotalCount,
 		(unsigned long long) lq->u8DiffIdleSlotCount);
