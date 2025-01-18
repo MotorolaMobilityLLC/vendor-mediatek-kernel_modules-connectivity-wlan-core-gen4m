@@ -2950,7 +2950,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
+#if !CFG_SUPPORT_ELL_CSA
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
+#endif
 	struct WIFI_VAR *prWifiVar;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -2967,6 +2969,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
 	u_int8_t fgUpdatePunctBitmap = FALSE;
 #endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
+#if CFG_SUPPORT_ELL_CSA
+	struct LINK *prClientList = &prBssInfo->rStaRecOfClientList;
+#endif
 
 	if (!prBssInfo) {
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
@@ -3067,6 +3072,22 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	/* Setup channel and bandwidth */
 	rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 
+
+#if CFG_SUPPORT_ELL_CSA
+	/* MTK proprietary probe resp for ELL-CSA (should before bcn update) */
+	if (prClientList && prClientList->u4NumElem > 0) {
+		struct STA_RECORD *prCurrStaRec;
+
+		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+				rLinkEntry, struct STA_RECORD) {
+			if (prCurrStaRec->fgIsPeerWithMtkOui)
+				p2pFuncEllCsaSendProbeRsp(prAdapter,
+						   prBssInfo->ucBssIndex,
+						   prCurrStaRec);
+		}
+	}
+#endif
+
 	/* Update Beacon to FW. Note that we have to set Op mode Rx
 	 * flag to TRUE in order to update VHT OP Notification IE.
 	 * Otherwise, clients will not be able to process VHT OP
@@ -3131,6 +3152,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 				FALSE);
 #endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
 
+#if !CFG_SUPPORT_ELL_CSA
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(*prCmdRddOnOffCtrl));
@@ -3171,6 +3193,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		NULL, 0);
 
 	cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
+#endif
 
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
@@ -6388,6 +6411,124 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 	return prRetMsduInfo;
 }				/* p2pFuncProcessP2pProbeRsp */
 
+#if CFG_SUPPORT_ELL_CSA
+uint32_t p2pFuncEllCsaSendProbeRsp(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, struct STA_RECORD *prStaRec)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	uint16_t u2EstimateSize = 0, u2EstimatedExtraIELen = 0;
+	uint32_t u4Idx = 0;
+	enum ENUM_P2P_CONNECT_STATE eConnState = P2P_CNN_NORMAL;
+
+	if (!prStaRec)
+		return WLAN_STATUS_FAILURE;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	/* Check the total size & current frame. */
+	u2EstimateSize = WLAN_MAC_MGMT_HEADER_LEN +
+	    TIMESTAMP_FIELD_LEN +
+	    BEACON_INTERVAL_FIELD_LEN +
+	    CAP_INFO_FIELD_LEN +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET);
+
+	u2EstimatedExtraIELen = 0;
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(txProbeRspIETable); u4Idx++) {
+		if (txProbeRspIETable[u4Idx].u2EstimatedFixedIELen) {
+			u2EstimatedExtraIELen += txProbeRspIETable[u4Idx]
+					.u2EstimatedFixedIELen;
+		}
+
+		else {
+			if (!txProbeRspIETable[u4Idx]
+				.pfnCalculateVariableIELen) {
+				DBGLOG(P2P, ERROR, "no handler implemented");
+				return WLAN_STATUS_FAILURE;
+			}
+
+			u2EstimatedExtraIELen +=
+				(uint16_t) (txProbeRspIETable[u4Idx]
+					.pfnCalculateVariableIELen(
+						prAdapter, ucBssIdx, NULL));
+		}
+	}
+
+	u2EstimateSize += u2EstimatedExtraIELen;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	u2EstimateSize += ELEM_HDR_LEN + MAX_LEN_OF_MLIE +
+			  ELEM_HDR_LEN + MAX_LEN_OF_FRAGMENT;
+#endif
+
+	/* build pkt */
+	prMsduInfo = nicAllocMgmtPktForDataQ(prAdapter, u2EstimateSize);
+	if (prMsduInfo == NULL) {
+		DBGLOG(P2P, WARN, "pkt alloc fail\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	prMsduInfo->ucBssIndex = ucBssIdx;
+
+	bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
+		((uintptr_t)(prMsduInfo->prPacket)
+		+ MAC_TX_RESERVED_FIELD),
+		prStaRec->aucMacAddr,
+		prP2pBssInfo->aucOwnMacAddr,
+		prP2pBssInfo->aucBSSID,
+		prP2pBssInfo->u2BeaconInterval,
+		prP2pBssInfo->u2CapInfo);
+
+	prMsduInfo->u2FrameLength =
+	    (WLAN_MAC_MGMT_HEADER_LEN +
+	    TIMESTAMP_FIELD_LEN +
+	    BEACON_INTERVAL_FIELD_LEN + CAP_INFO_FIELD_LEN);
+
+	bssBuildBeaconProbeRespFrameCommonIEs(prMsduInfo,
+		prP2pBssInfo, prStaRec->aucMacAddr);
+
+	prMsduInfo->ucStaRecIndex = STA_REC_INDEX_NOT_FOUND;
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(txProbeRspIETable); u4Idx++) {
+		if (txProbeRspIETable[u4Idx].pfnAppendIE)
+			txProbeRspIETable[u4Idx]
+				.pfnAppendIE(prAdapter, prMsduInfo);
+	}
+
+	sortMgmtFrameIE(prAdapter, prMsduInfo);
+
+	DBGLOG(P2P, TRACE, "Dump probe response content.\n");
+	DBGLOG_MEM8(P2P, TRACE, prMsduInfo->prPacket,
+		prMsduInfo->u2FrameLength);
+
+	TX_SET_MMPDU(prAdapter,
+		prMsduInfo,
+		prMsduInfo->ucBssIndex,
+		prStaRec->ucIndex,
+		WLAN_MAC_MGMT_HEADER_LEN,
+		prMsduInfo->u2FrameLength,
+		p2pDevFsmRunEventMgmtFrameTxDone,
+		MSDU_RATE_MODE_AUTO);
+
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo,
+			    DEFAULT_P2P_PROBERESP_LIFE_TIME);
+
+	if (!p2pFuncIsBufferableMMPDU(prAdapter, eConnState, prMsduInfo))
+		nicTxConfigPktControlFlag(prMsduInfo,
+			MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+
+	DBGLOG(P2P, TRACE, "send probe resp to " MACSTR " to allow TX\n",
+	       MAC2STR(prStaRec->aucMacAddr));
+
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 static void
 p2pFuncProcessP2pProbeRspSsid(struct ADAPTER *prAdapter,
 		uint8_t *pucIEBuf,
@@ -7506,7 +7647,8 @@ static u_int8_t p2pFuncSwitchSapChannelToDbdc(
 
 		cnmSapChannelSwitchReq(prAdapter,
 			&rRfChnlInfo,
-			prP2pBssInfo->u4PrivateData);
+			prP2pBssInfo->u4PrivateData,
+			MODE_DISALLOW_TX);
 
 		return TRUE;
 
@@ -7533,9 +7675,11 @@ void p2pFuncSwitchGcChannel(
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	uint8_t role_idx = 0;
 	uint8_t ucMaxBw = 0;
+#if (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT)
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
+#endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
 #if CFG_SUPPORT_DFS_MASTER
 	fgEnable = TRUE;
 #endif
@@ -7585,8 +7729,17 @@ void p2pFuncSwitchGcChannel(
 	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
 #endif
 	{
-		/* Indicate PM abort to sync BSS state with FW */
+#if !CFG_SUPPORT_ELL_CSA
+		/* Indicate PM abort to sync BSS state with FW.
+		 * Remove because covered by deactivate.
+		 * TODO: survey whether non ELL-CSA project need this.
+		 */
 		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+#endif
+
+		/* Set to zero for PM enable after receive first beacon at
+		 * new channel
+		 */
 		prP2pBssInfo->ucDTIMPeriod = 0;
 
 		/* Update BSS with temp. disconnect state to FW */
@@ -7595,10 +7748,14 @@ void p2pFuncSwitchGcChannel(
 			FALSE);
 		p2pChangeMediaState(prAdapter, prP2pBssInfo,
 			MEDIA_STATE_DISCONNECTED);
+#if !CFG_SUPPORT_ELL_CSA
 		nicUpdateBssEx(prAdapter,
 			prP2pBssInfo->ucBssIndex,
 			FALSE);
+#endif
 
+	/* connac 2 & ce need this */
+#if (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT)
 #if CFG_SUPPORT_DBDC
 		CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 			prP2pBssInfo->ucBssIndex,
@@ -7609,6 +7766,7 @@ void p2pFuncSwitchGcChannel(
 		cnmDbdcPreConnectionEnableDecision(prAdapter,
 			&rDbdcDecisionInfo);
 #endif
+#endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
 	}
 
 	/* Update channel parameters & channel request info */
@@ -7657,7 +7815,11 @@ void p2pFuncSwitchGcChannel(
 	prChnlReqInfo->ucCenterFreqS1 = prP2pBssInfo->ucVhtChannelFrequencyS1;
 	prChnlReqInfo->ucCenterFreqS2 = prP2pBssInfo->ucVhtChannelFrequencyS2;
 	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
+#if CFG_SUPPORT_ELL_CSA
+	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_CSA;
+#else
 	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_JOIN;
+#endif
 
 	p2pRoleFsmStateTransition(prAdapter,
 				  prP2pRoleFsmInfo,
@@ -9607,7 +9769,8 @@ bool p2pFuncSwitchSapChannel(
 
 	cnmSapChannelSwitchReq(prAdapter,
 		&rRfChnlInfo,
-		prP2pBssInfo->u4PrivateData);
+		prP2pBssInfo->u4PrivateData,
+		MODE_DISALLOW_TX);
 
 	return TRUE;
 
@@ -10815,7 +10978,8 @@ void
 p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		enum ENUM_CHNL_SWITCH_POLICY ePolicy,
-		struct RF_CHANNEL_INFO *prNewChannelInfo)
+		struct RF_CHANNEL_INFO *prNewChannelInfo,
+		uint8_t ucMode)
 {
 	struct BSS_INFO *prBssInfo;
 	struct LINK *prClientList;
@@ -10866,13 +11030,18 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		break;
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
-		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+		prAdapter->rWifiVar.ucChannelSwitchMode = ucMode;
 		prAdapter->rWifiVar.eNewBand = prNewChannelInfo->eBand;
 		prAdapter->rWifiVar.ucNewOperatingClass =
 			nicChannelInfo2OpClass(prNewChannelInfo);
 		prAdapter->rWifiVar.ucNewChannelNumber =
 			prNewChannelInfo->ucChannelNum;
-		prAdapter->rWifiVar.ucChannelSwitchCount = 5;
+		if (IS_BSS_GO(prAdapter, prBssInfo) &&
+		    prAdapter->rWifiVar.ucChannelSwitchMode == MODE_ALLOW_TX)
+			/* for stress test stability */
+			prAdapter->rWifiVar.ucChannelSwitchCount = 7;
+		else
+			prAdapter->rWifiVar.ucChannelSwitchCount = 5;
 		prAdapter->rWifiVar.ucSecondaryOffset =
 			rlmGetScoByChnInfo(prAdapter, prNewChannelInfo);
 		prAdapter->rWifiVar.ucNewChannelWidth =

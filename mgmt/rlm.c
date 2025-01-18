@@ -5175,11 +5175,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prCSAIE->ucChannelSwitchCount;
 
-			if (prCSAIE->ucChannelSwitchMode == 1) {
+			if (prCSAIE->ucChannelSwitchMode == MODE_DISALLOW_TX) {
 				/* Mode 1: Need to stop data
 				 * transmission immediately
 				 */
-				if (!prCSAParams->fgHasStopTx) {
+				if (!prCSAParams->fgHasStopTx
+#if CFG_SUPPORT_ELL_CSA
+				    && !IS_MLD_BSSINFO_MULTI(mldBssGetByBss(
+						prAdapter, prBssInfo))
+#endif
+				    ) {
 					prCSAParams->fgHasStopTx = TRUE;
 					kalIndicateAllQueueTxAllowed(
 						prAdapter->prGlueInfo,
@@ -5338,8 +5343,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				WLAN_GET_FIELD_24(
 					&prMaxCSATimeIE->ucChannelSwitchTime[0],
 					&u4MaxSwitchTime);
-				prCSAParams->u4MaxSwitchTime =
-					TU_TO_MSEC(u4MaxSwitchTime);
+				if (IS_BSS_INDEX_AIS(prAdapter,
+						     prBssInfo->ucBssIndex))
+					prCSAParams->u4MaxSwitchTime =
+						TU_TO_MSEC(u4MaxSwitchTime);
 				DBGLOG(RLM, INFO,
 					"[CSA] Max switch time %d in TU, %d in MSEC\n",
 					u4MaxSwitchTime,
@@ -8839,9 +8846,18 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 			rlmGetBssOpBwByChannelWidth(prCSAParams->eSco,
 						    prCSAParams->ucVhtBw));
 
-	if (ucChannelSwitchMode == 1) {
+	if (ucChannelSwitchMode == MODE_DISALLOW_TX) {
+#if CFG_SUPPORT_ELL_CSA
+		struct BSS_INFO *prBssInfo =
+			GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+#endif
 		/* Need to stop data transmission immediately */
-		if (!prCSAParams->fgHasStopTx) {
+		if (!prCSAParams->fgHasStopTx
+#if CFG_SUPPORT_ELL_CSA
+		    && !IS_MLD_BSSINFO_MULTI(mldBssGetByBss(
+				prAdapter, prBssInfo))
+#endif
+		    ) {
 			prCSAParams->fgHasStopTx = TRUE;
 			kalIndicateAllQueueTxAllowed(
 				prAdapter->prGlueInfo,
@@ -9059,7 +9075,13 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					/* Need to stop data
 					 * transmission immediately
 					 */
-					if (!prCSAParams->fgHasStopTx) {
+					if (!prCSAParams->fgHasStopTx
+#if CFG_SUPPORT_ELL_CSA
+					    && !IS_MLD_BSSINFO_MULTI(
+						mldBssGetByBss(prAdapter,
+							       prBssInfo))
+#endif
+					    ) {
 						prCSAParams->fgHasStopTx = TRUE;
 						kalIndicateAllQueueTxAllowed(
 							prAdapter->prGlueInfo,
@@ -9365,6 +9387,18 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	prBssInfo->eBssScoBeforeCsa = prBssInfo->eBssSCO;
 	if (HAS_SCO_PARAMS(prCSAParams))
 		prBssInfo->eBssSCO = prCSAParams->eSco;
+
+	if (!prCSAParams->fgHasStopTx &&
+	    prCSAParams->ucCsaMode == MODE_ALLOW_TX
+#if CFG_SUPPORT_ELL_CSA
+	    /* MLO CSA should keep TX by other link */
+	    && !IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prBssInfo))
+#endif
+	    ) {
+		/* mode 0 is no need to stop kernel queue */
+		qmSetStaRecTxAllowed(prAdapter, prStaRec, FALSE);
+		prCSAParams->fgHasStopTx = TRUE;
+	}
 
 	COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
 		  prBssInfo->aucSSID, prBssInfo->ucSSIDLen);

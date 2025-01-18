@@ -3536,6 +3536,12 @@ else
     ccflags-y += -DCFG_PF_ARP_NS_MAX_NUM=3
 endif
 
+ifeq ($(CONFIG_SUPPORT_ELL_CSA), y)
+    ccflags-y += -DCFG_SUPPORT_ELL_CSA=1
+else
+    ccflags-y += -DCFG_SUPPORT_ELL_CSA=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------

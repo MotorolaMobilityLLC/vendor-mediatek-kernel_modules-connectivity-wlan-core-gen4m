@@ -564,7 +564,7 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
-	uint8_t ch_num, uint8_t ucRoleIdx);
+	uint8_t ch_num, uint8_t ucMode, uint8_t ucRoleIdx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -636,7 +636,7 @@ void cnmCsaResetParams(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO *prRfChannelInfo,
-	uint8_t ucRoleIdx);
+	uint8_t ucRoleIdx, uint8_t ucMode);
 #endif
 
 /*----------------------------------------------------------------------------*/

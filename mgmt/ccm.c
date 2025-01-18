@@ -615,7 +615,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	else if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss, &u4TargetCh,
 				      eTargetHwBandIdx, &eTargetBand)) {
 		cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
-				     bss->u4PrivateData);
+			     MODE_DISALLOW_TX, bss->u4PrivateData);
 		fgIsSwitching = TRUE;
 	}
 

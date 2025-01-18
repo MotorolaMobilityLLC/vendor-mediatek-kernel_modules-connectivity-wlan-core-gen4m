@@ -524,8 +524,6 @@ int priv_driver_set_country(struct net_device *prNetDev,
 #if CFG_SUPPORT_IDC_CH_SWITCH
 int priv_driver_set_csa_ex(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
-int priv_driver_set_csa(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_IDC_CH_SWITCH */
 int priv_driver_get_country(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

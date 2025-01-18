@@ -91,11 +91,6 @@ struct CMD_VALIDATE_POLICY set_cas_ex_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 #endif
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
 };
-
-struct CMD_VALIDATE_POLICY set_cas_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
-};
-
 #endif
 
 struct CMD_VALIDATE_POLICY get_chnls_policy[COMMON_CMD_GET_ARG_NUM(2)] = {
@@ -355,7 +350,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 	{
 		.pcCmdStr  = CMD_CSA_EX,
 		.pfHandler = priv_driver_set_csa_ex,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
 		.policy    = set_cas_ex_policy,
 		.u4PolicySize = ARRAY_SIZE(set_cas_ex_policy)
@@ -939,16 +934,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = set_country_policy,
 		.u4PolicySize = ARRAY_SIZE(set_country_policy)
 	},
-#if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
-	{
-		.pcCmdStr  = CMD_CSA,
-		.pfHandler = priv_driver_set_csa,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = set_cas_policy,
-		.u4PolicySize = ARRAY_SIZE(set_cas_policy)
-	},
-#endif
 	{
 		.pcCmdStr  = CMD_GET_COUNTRY,
 		.pfHandler = priv_driver_get_country,

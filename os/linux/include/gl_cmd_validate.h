@@ -64,7 +64,6 @@
 #define CMD_GET_HIF_INFO		"GET_HIF"
 #define CMD_GET_TP_INFO			"GET_TP"
 #define CMD_COUNTRY			"COUNTRY"
-#define CMD_CSA				"CSA"
 #define CMD_CSA_EX			"CSA_EX"
 #define CMD_GET_COUNTRY			"GET_COUNTRY"
 #define CMD_GET_CHANNELS		"GET_CHANNELS"

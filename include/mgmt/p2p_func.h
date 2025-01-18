@@ -408,6 +408,10 @@ struct MSDU_INFO *p2pFuncAllocateDirectTxMsdu(struct ADAPTER *prAdapter,
 enum ENUM_P2P_CONNECT_STATE
 p2pFuncTagMgmtFrame(struct MSDU_INFO *prMgmtTxMsdu,
 		uint64_t u8Cookie);
+#if CFG_SUPPORT_ELL_CSA
+uint32_t p2pFuncEllCsaSendProbeRsp(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, struct STA_RECORD *prStaRec);
+#endif
 
 void
 p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
@@ -707,7 +711,8 @@ void
 p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		enum ENUM_CHNL_SWITCH_POLICY ePolicy,
-		struct RF_CHANNEL_INFO *prNewChannelInfo);
+		struct RF_CHANNEL_INFO *prNewChannelInfo,
+		uint8_t ucMode);
 
 void
 p2pFunChnlSwitchNotifyDone(struct ADAPTER *prAdapter);

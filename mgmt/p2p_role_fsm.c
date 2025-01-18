@@ -2532,7 +2532,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 				FEATURE_DISABLED;
 			cnmSapChannelSwitchReq(prAdapter,
 				&prP2pConnReqInfo->rChannelInfo,
-				prP2pBssInfo->u4PrivateData);
+				prP2pBssInfo->u4PrivateData, MODE_DISALLOW_TX);
 			prAdapter->rWifiVar.ucCsaDeauthClient =
 				ucCsaDeauthClientOri;
 
@@ -2628,7 +2628,11 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 	prChnlReqInfo->u2PunctBitmap = prRfChannelInfo->u2PunctBitmap;
 #endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */
 	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
+#if CFG_SUPPORT_ELL_CSA
+	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_CSA;
+#else
 	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_GO_START_BSS;
+#endif
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -2638,13 +2642,18 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
+#if (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT)
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
 
-	/* Indicate PM abort to sync BSS state with FW */
+	/* Indicate PM abort to sync BSS state with FW.
+	 * Remove because covered by deactivate.
+	 * TODO: survey whether non ELL-CSA project need this.
+	 */
 	nicPmIndicateBssAbort(prAdapter,
 		prP2pBssInfo->ucBssIndex);
+#endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
 
 	nicDeactivateNetworkEx(prAdapter,
 		NETWORK_ID(prP2pBssInfo->ucBssIndex,
@@ -2653,9 +2662,14 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 	p2pChangeMediaState(prAdapter, prP2pBssInfo,
 		MEDIA_STATE_DISCONNECTED);
 
+#if !CFG_SUPPORT_ELL_CSA
 	nicUpdateBssEx(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		FALSE);
+#endif
+
+	/* connac 2 & ce need this */
+#if (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT)
 #if CFG_SUPPORT_DBDC
 	CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 		prP2pBssInfo->ucBssIndex,
@@ -2665,7 +2679,8 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 
 	cnmDbdcPreConnectionEnableDecision(prAdapter,
 		&rDbdcDecisionInfo);
-#endif /*CFG_SUPPORT_DBDC*/
+#endif /* CFG_SUPPORT_DBDC*/
+#endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
 }
 
 #if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1) && \
@@ -2945,15 +2960,21 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "CSA from band: %d to %d\n",
 		prP2pBssInfo->eBand,
 		prChnlReqInfo->eBand);
+
+#if CFG_SUPPORT_ELL_CSA
+	/* MLO CSA should keep TX by other link */
+	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
+#endif
+		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+				    rLinkEntry, struct STA_RECORD)
+			qmSetStaRecTxAllowed(prAdapter, prCurrStaRec, FALSE);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
 #endif
 	{
 		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
 				    rLinkEntry, struct STA_RECORD) {
-			qmSetStaRecTxAllowed(prAdapter,
-				prCurrStaRec, FALSE);
-
 #if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1) && \
 (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
 			p2pCsaAdjustStarecCap(prAdapter,

@@ -2932,7 +2932,8 @@ void __kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 
 queue_ctrl:
 	if (fgQuiet)
-		netif_tx_stop_all_queues(prNetdevice);
+		kalIndicateAllQueueTxAllowed(prAdapter->prGlueInfo,
+					     prBssInfo->ucBssIndex, FALSE);
 }
 
 void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
@@ -3108,7 +3109,8 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	}
 
 	netif_carrier_on(prNetdevice);
-	netif_tx_wake_all_queues(prNetdevice);
+	kalIndicateAllQueueTxAllowed(prAdapter->prGlueInfo,
+				     prBssInfo->ucBssIndex, TRUE);
 }
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 void kalP2pChnlSwitchNotifyWork(struct work_struct *work)

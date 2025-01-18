@@ -419,6 +419,7 @@ uint8_t nicGetS1(enum ENUM_BAND eBand,
 uint8_t nicGetS2(enum ENUM_BAND eBand,
 		uint8_t ucPriCh,
 		uint8_t ucBw);
+
 /* Utility to get center channel instread of CCFS */
 uint8_t nicGetCenterCh(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucSco,
 		       uint8_t ucBw);

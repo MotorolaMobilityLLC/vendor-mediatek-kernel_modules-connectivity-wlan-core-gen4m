@@ -998,7 +998,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		prEventBody->u4GrantInterval;
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
-		    (struct MSG_HDR *)prChResp, MSG_SEND_METHOD_BUF);
+		    (struct MSG_HDR *)prChResp, MSG_SEND_METHOD_UNBUF);
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1334,7 +1334,7 @@ uint8_t cnmDecideSapNewChannel(
 
 uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
-	uint8_t ucCh, uint8_t ucRoleIdx)
+	uint8_t ucCh, uint8_t ucMode, uint8_t ucRoleIdx)
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
@@ -1347,9 +1347,9 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 		WLAN_STATUS_SUCCESS)
 		return -1;
 
-	DBGLOG(REQ, DEBUG,
-		"[CSA]RoleIdx=%d, Band=%d, CH=%d, BssIdx=%d\n",
-		ucRoleIdx, eBand, ucCh, ucBssIdx);
+	DBGLOG(REQ, INFO,
+		"[CSA]RoleIdx=%d, Band=%d, CH=%d, Mode=%u, BssIdx=%d\n",
+		ucRoleIdx, eBand, ucCh, ucMode, ucBssIdx);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
@@ -1369,7 +1369,8 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 
 		p2pFuncSetChannel(prAdapter, ucRoleIdx, &rRfChnlInfo);
 
-		cnmSapChannelSwitchReq(prAdapter, &rRfChnlInfo, ucRoleIdx);
+		cnmSapChannelSwitchReq(prAdapter, &rRfChnlInfo, ucRoleIdx,
+				       ucMode);
 
 		/* Record Last Channel Switch Time */
 		GET_CURRENT_SYSTIME(&g_rLastCsaSysTime);
@@ -1548,6 +1549,7 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 				cnmIdcCsaReq(prAdapter,
 					prBssInfo->eBand,
 					ucNewChannel,
+					MODE_DISALLOW_TX,
 					prBssInfo->u4PrivateData);
 				DBGLOG(CNM, INFO,
 					"IDC Version %d, Bss=%d, NewCH=%d\n",
@@ -5304,7 +5306,7 @@ cnmGetAliveNonSapBssInfo(
 
 uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO *prRfChannelInfo,
-	uint8_t ucRoleIdx)
+	uint8_t ucRoleIdx, uint8_t ucMode)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
@@ -5395,7 +5397,7 @@ uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 
 	p2pFunNotifyChnlSwitch(prAdapter, ucBssIdx,
 		prGlueInfo->prP2PInfo[ucRoleIdx]->eChnlSwitchPolicy,
-		prRfChannelInfo);
+		prRfChannelInfo, ucMode);
 
 	return 0;
 
@@ -6520,8 +6522,9 @@ void cnmRddOpmodeEventHandler(
 			rfChannelInfo.ucChnlBw);
 		rfChannelInfo.u4CenterFreq2 = 0;
 		cnmSapChannelSwitchReq(prAdapter,
-		&rfChannelInfo,
-		ucRoleIndex);
+			&rfChannelInfo,
+			ucRoleIndex,
+			MODE_DISALLOW_TX);
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo,
 			prBssInfo);
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
@@ -7048,4 +7051,3 @@ uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter)
 {
 	return ++prAdapter->ucCnmTokenID;
 }
-
