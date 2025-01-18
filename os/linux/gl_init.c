@@ -5862,7 +5862,7 @@ static void wlan_late_resume(struct early_suspend *h)
 #if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC) && CFG_ENABLE_WIFI_DIRECT
 
 void reset_p2p_mode(struct GLUE_INFO *prGlueInfo,
-	uint8_t fgIsRtnlLockAcquired)
+	uint8_t fgIsRtnlLockAcquired, u_int8_t fgIsWiphyLockHeld)
 {
 	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
@@ -5875,7 +5875,7 @@ void reset_p2p_mode(struct GLUE_INFO *prGlueInfo,
 	rSetP2P.u4Mode = 0;
 	rSetP2P.fgIsRtnlLockAcquired = fgIsRtnlLockAcquired;
 
-	p2pNetUnregister(prGlueInfo, fgIsRtnlLockAcquired);
+	p2pNetUnregister(prGlueInfo, fgIsRtnlLockAcquired, fgIsWiphyLockHeld);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
 			(void *) &rSetP2P,
@@ -5902,6 +5902,7 @@ int set_p2p_mode_handler_wrapper(struct net_device *netdev,
 	rP2pmodeWithLock.u4Mode = p2pmode.u4Mode;
 
 	rP2pmodeWithLock.fgIsRtnlLockAcquired = TRUE;
+	rP2pmodeWithLock.fgIsWiphyLockHeld = FALSE;
 	rtnl_lock();
 	ret = set_p2p_mode_handler(netdev, rP2pmodeWithLock);
 	rtnl_unlock();
@@ -5950,7 +5951,8 @@ int set_p2p_mode_handler(struct net_device *netdev,
 		&& prGlueInfo->prAdapter->fgIsP2PRegistered
 		&& !kalIsResetting()) {
 		DBGLOG(INIT, WARN, "Resetting p2p mode\n");
-		reset_p2p_mode(prGlueInfo, p2pmode.fgIsRtnlLockAcquired);
+		reset_p2p_mode(prGlueInfo, p2pmode.fgIsRtnlLockAcquired,
+			       p2pmode.fgIsWiphyLockHeld);
 	}
 
 	rSetP2P.u4Enable = p2pmode.u4Enable;
@@ -5958,7 +5960,8 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	rSetP2P.fgIsRtnlLockAcquired = p2pmode.fgIsRtnlLockAcquired;
 
 	if ((!rSetP2P.u4Enable) && (kalIsResetting() == FALSE))
-		p2pNetUnregister(prGlueInfo, p2pmode.fgIsRtnlLockAcquired);
+		p2pNetUnregister(prGlueInfo, p2pmode.fgIsRtnlLockAcquired,
+				 p2pmode.fgIsWiphyLockHeld);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
 			(void *) &rSetP2P,
@@ -7646,6 +7649,7 @@ void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
 		rSetP2P.u4Enable = 1;
 		rSetP2P.u4Mode = prAdapter->rWifiVar.ucRegP2pMode;
 		rSetP2P.fgIsRtnlLockAcquired = fgIsRtnlLockAcquired;
+		rSetP2P.fgIsWiphyLockHeld = FALSE;
 
 		if (set_p2p_mode_handler(prWdev->netdev, rSetP2P) == 0)
 			DBGLOG(INIT, DEBUG,
@@ -7815,6 +7819,7 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable,
 		rSetP2P.u4Mode = 0;
 		rSetP2P.u4Enable = 0;
 		rSetP2P.fgIsRtnlLockAcquired = fgIsHoldRtnlLock;
+		rSetP2P.fgIsWiphyLockHeld = TRUE;
 		set_p2p_mode_handler(netdev, rSetP2P);
 	}
 #else
@@ -9023,9 +9028,9 @@ void wlanRemove(void)
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered) {
 		DBGLOG(INIT, DEBUG, "p2pNetUnregister...\n");
 #if (CFG_TESTMODE_FWDL_SUPPORT == 1)
-		p2pNetUnregister(prGlueInfo, g_fgWlanOnOffHoldRtnlLock);
+		p2pNetUnregister(prGlueInfo, g_fgWlanOnOffHoldRtnlLock, FALSE);
 #else
-		p2pNetUnregister(prGlueInfo, FALSE);
+		p2pNetUnregister(prGlueInfo, FALSE, FALSE);
 #endif
 		DBGLOG(INIT, DEBUG, "p2pRemove...\n");
 		/*p2pRemove must before wlanAdapterStop */

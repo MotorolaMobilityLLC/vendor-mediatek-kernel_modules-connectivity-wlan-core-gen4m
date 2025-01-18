@@ -314,7 +314,8 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		uint8_t fgIsRtnlLockAcquired);
 
 u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
-		uint8_t fgIsRtnlLockAcquired);
+		uint8_t fgIsRtnlLockAcquired,
+		u_int8_t fgIsWiphyLockHeld);
 
 
 u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex);

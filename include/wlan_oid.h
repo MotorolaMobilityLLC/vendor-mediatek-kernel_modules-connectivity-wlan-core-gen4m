@@ -2279,6 +2279,7 @@ struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT {
 	uint32_t u4Enable;
 	uint32_t u4Mode;
 	uint8_t fgIsRtnlLockAcquired;
+	u_int8_t fgIsWiphyLockHeld;
 };
 
 #define MAX_NUMBER_OF_ACL 20

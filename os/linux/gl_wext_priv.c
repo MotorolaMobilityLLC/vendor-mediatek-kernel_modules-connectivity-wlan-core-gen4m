@@ -740,7 +740,7 @@ __priv_set_int(struct net_device *prNetDev,
 		rSetP2P.fgIsRtnlLockAcquired = TRUE;
 #if 1
 		if (!rSetP2P.u4Enable)
-			p2pNetUnregister(prGlueInfo, TRUE);
+			p2pNetUnregister(prGlueInfo, TRUE, FALSE);
 
 		/* pu4IntBuf[0] is used as input SubCmd */
 		rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
@@ -10696,6 +10696,7 @@ int priv_driver_set_ap_start_impl(struct net_device *prNetDev, char *pcCommand,
 			rSetP2P.u4Enable = 1;
 
 		rSetP2P.fgIsRtnlLockAcquired = fgIsRtnlLockAcquired;
+		rSetP2P.fgIsWiphyLockHeld = FALSE;
 
 		set_p2p_mode_handler(prNetDev, rSetP2P);
 	}

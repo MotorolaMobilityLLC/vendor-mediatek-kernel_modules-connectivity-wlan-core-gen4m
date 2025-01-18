@@ -322,7 +322,8 @@ retry:
 		if (prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED &&
 			prAdapter->rP2PNetRegState ==
 				ENUM_NET_REG_STATE_REGISTERED) {
-			p2pNetUnregister(prGlueInfo, fgIsRtnlLockAcquired);
+			p2pNetUnregister(prGlueInfo, fgIsRtnlLockAcquired,
+					 FALSE);
 			break;
 		}
 

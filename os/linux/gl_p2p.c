@@ -823,7 +823,8 @@ static void p2pNetUnregisterMldLinks(struct GLUE_INFO *prGlueInfo,
 #endif
 
 u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
-		uint8_t fgIsRtnlLockAcquired)
+		uint8_t fgIsRtnlLockAcquired,
+		u_int8_t fgIsWiphyLockHeld)
 {
 	u_int8_t fgDoUnregister = FALSE;
 	uint8_t ucRoleIdx;
@@ -963,8 +964,15 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			if (prRoleDev->reg_state == NETREG_REGISTERED) {
 				if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+					struct wireless_dev *ptr =
+						prRoleDev->ieee80211_ptr;
+
+					if (!fgIsWiphyLockHeld)
+						wiphy_lock(ptr->wiphy);
 					cfg80211_unregister_netdevice(
-						prRoleDev);
+							prRoleDev);
+					if (!fgIsWiphyLockHeld)
+						wiphy_unlock(ptr->wiphy);
 #else
 					unregister_netdevice(prRoleDev);
 #endif
@@ -992,7 +1000,13 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 			if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+				struct wireless_dev *ptr = prDev->ieee80211_ptr;
+
+				if (!fgIsWiphyLockHeld)
+					wiphy_lock(ptr->wiphy);
 				cfg80211_unregister_netdevice(prDev);
+				if (!fgIsWiphyLockHeld)
+					wiphy_unlock(ptr->wiphy);
 #else
 				unregister_netdevice(prDev);
 #endif
