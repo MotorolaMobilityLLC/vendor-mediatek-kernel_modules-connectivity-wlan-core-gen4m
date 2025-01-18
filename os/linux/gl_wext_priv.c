@@ -13853,6 +13853,49 @@ int priv_driver_get_wow_reason(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+int priv_driver_get_dongle_type(struct net_device *prNetDev,
+				   char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+
+	if (prNetDev == NULL)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo == NULL) {
+		DBGLOG(REQ, ERROR, " prGlueInfo is NULL\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, " prAdapter is NULL\n");
+		return -1;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(REQ, ERROR, " prChipInfo is NULL\n");
+		return -1;
+	}
+
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "0x%08x",
+			(unsigned int)prChipInfo->chip_id);
+
+	DBGLOG(REQ, INFO, "command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+}
+
 
 #if (CFG_SUPPORT_MDNS_OFFLOAD && CFG_SUPPORT_MDNS_OFFLOAD_TV)
 int priv_support_mdns_offload(struct net_device *prNetDev,

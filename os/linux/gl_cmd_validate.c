@@ -545,6 +545,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+	{
+		.pcCmdStr  = CMD_GET_DONGLE_TYPE,
+		.pfHandler = priv_driver_get_dongle_type,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
 #if CFG_SUPPORT_MDNS_OFFLOAD
 	{
 		.pcCmdStr  = CMD_SHOW_MDNS_RECORD,

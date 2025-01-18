@@ -689,6 +689,8 @@ int priv_driver_get_wow_port(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_wow_reason(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_get_dongle_type(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 #if CFG_SUPPORT_MDNS_OFFLOAD
 int priv_driver_show_mdns_record(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
