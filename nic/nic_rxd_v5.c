@@ -360,12 +360,15 @@ u_int8_t nic_rxd_v5_sanity_check(
 	    && !HAL_MAC_CONNAC5X_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)
 #endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 	) {
-		if (!HAL_MAC_CONNAC5X_RX_STATUS_IS_NAMP(prRxStatus))
+		/* The condition for FRAGMENT must be higher than NAMP to
+		 * enter the nicRxDeFragMPDU flow
+		 */
+		if (HAL_MAC_CONNAC5X_RX_STATUS_IS_FRAG(prRxStatus))
+			prSwRfb->fgFragFrame = TRUE;
+		else if (!HAL_MAC_CONNAC5X_RX_STATUS_IS_NAMP(prRxStatus))
 			prSwRfb->fgReorderBuffer = TRUE;
 		else if (HAL_MAC_CONNAC5X_RX_STATUS_IS_NDATA(prRxStatus))
 			prSwRfb->fgDataFrame = FALSE;
-		else if (HAL_MAC_CONNAC5X_RX_STATUS_IS_FRAG(prRxStatus))
-			prSwRfb->fgFragFrame = TRUE;
 	} else {
 		fgDrop = TRUE;
 		if (!HAL_MAC_CONNAC5X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
