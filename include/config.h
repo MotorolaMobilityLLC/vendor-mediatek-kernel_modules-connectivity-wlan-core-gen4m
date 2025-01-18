@@ -2009,14 +2009,6 @@
 #define CFG_SUPPORT_SINGLE_SKU_6G_1SS1T 0
 #endif
 
-#ifndef CFG_SUPPORT_BW160
-#define CFG_SUPPORT_BW160 0
-#endif
-
-#ifndef CFG_SUPPORT_BW320
-#define CFG_SUPPORT_BW320 0
-#endif
-
 /*------------------------------------------------------------------------------
  * Direct Control for RF/PHY/BB/MAC for Manual Configuration via command/api
  *------------------------------------------------------------------------------
@@ -2400,10 +2392,6 @@
 #define CFG_SUPPORT_SCREENON_OFLD 1
 #else
 #define CFG_SUPPORT_SCREENON_OFLD 0
-#endif
-
-#ifndef CFG_SUPPORT_MDNS_WHITELIST
-#define CFG_SUPPORT_MDNS_WHITELIST 0
 #endif
 
 /*------------------------------------------------------------------------------

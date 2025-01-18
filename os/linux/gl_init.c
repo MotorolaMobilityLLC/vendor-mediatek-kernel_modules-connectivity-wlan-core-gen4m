@@ -5754,7 +5754,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(INIT, ERROR, "set packet filter failed.\n");
 
 #if (!CFG_SUPPORT_DROP_ALL_MC_PACKET && \
-	(!CFG_WOW_SUPPORT || CFG_SUPPORT_MDNS_WHITELIST == 1))
+	(!CFG_WOW_SUPPORT || CFG_SUPPORT_MDNS_ALLOWLIST == 1))
 		if (fgEnable) {
 			/* Prepare IPv6 RA packet when suspend */
 			struct PARAM_MULTICAST_LIST rMcAddrList;
@@ -5762,7 +5762,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			uint8_t aucDefaultAddr[MAC_ADDR_LEN] = {
 					0x33, 0x33, 0, 0, 0, 1};
 
-#if (CFG_SUPPORT_MDNS_WHITELIST == 1)
+#if (CFG_SUPPORT_MDNS_ALLOWLIST == 1)
 			uint8_t aucMdnsIpv4Addr[MAC_ADDR_LEN] = {
 					0x01, 0x00, 0x5E, 0, 0, 0xFB};
 			uint8_t aucMdnsIpv6Addr[MAC_ADDR_LEN] = {
@@ -5786,7 +5786,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 					aucDefaultAddr);
 				ucNum++;
 			}
-#if (CFG_SUPPORT_MDNS_WHITELIST == 1)
+#if (CFG_SUPPORT_MDNS_ALLOWLIST == 1)
 			if (ucNum < MAX_NUM_GROUP_ADDR) {
 				COPY_MAC_ADDR(
 					&rMcAddrList.aucMcAddrList[ucNum],
