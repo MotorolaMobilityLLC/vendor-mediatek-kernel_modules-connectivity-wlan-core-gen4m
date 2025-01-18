@@ -526,7 +526,7 @@ uint32_t glRegisterShutdownCB(remove_card pfShutdown)
 /*----------------------------------------------------------------------------*/
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
-	int ret = 0;
+	uint32_t ret = 0;
 
 	ASSERT(pfProbe);
 	ASSERT(pfRemove);
