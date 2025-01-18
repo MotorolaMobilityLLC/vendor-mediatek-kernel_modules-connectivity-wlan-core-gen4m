@@ -1220,23 +1220,41 @@ void nanBackToNormal(struct ADAPTER *prAdapter)
 	nanExtBackToNormal(prAdapter);
 }
 
-struct BSS_INFO *nanIsSapOrP2pActive(struct ADAPTER *prAdapter)
+u_int8_t nanIsAisActive(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t i;
 
 	if (!prAdapter)
-		return NULL;
+		return FALSE;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (prBssInfo && IS_BSS_AIS(prBssInfo) &&
+		    prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+		    prBssInfo->fgIsInUse && prBssInfo->fgIsNetActive)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+u_int8_t nanIsSapOrP2pActive(struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
+
+	if (!prAdapter)
+		return FALSE;
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (prBssInfo &&
 		    IS_BSS_P2P(prBssInfo) &&
 		    IS_BSS_ALIVE(prAdapter, prBssInfo))
-			return prBssInfo;
+			return TRUE;
 	}
 
-	return NULL;
+	return FALSE;
 }
 
 u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
@@ -1245,7 +1263,8 @@ u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
 		return FALSE;
 
 #if CFG_SUPPORT_NAN && CFG_ENABLE_WIFI_DIRECT
-	return nanIsSapOrP2pActive(prAdapter) &&
+	return (nanIsSapOrP2pActive(prAdapter) ||
+		nanIsAisActive(prAdapter)) &&
 		nanIsOn(prAdapter);
 #else
 	return FALSE;
