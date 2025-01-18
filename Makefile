@@ -15,14 +15,14 @@ ifneq ($(CONNECTIVITY_OUT_PATH),)
 ifneq ($(_CONNAC_VER), 1_0)
 	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/conninfra/Module.symvers)
 	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/Module.symvers)
-	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/wlan/adaptor/wlan_page_pool/Module.symvers)
+	EXTRA_SYMBOLS += $(wildcard $(abspath $(CONNECTIVITY_OUT_PATH)/wlan/adaptor/wlan_page_pool/*Module.symvers))
 endif
 	EXTRA_SYMBOLS += $(foreach dep, $(_CONNAC_DENPENDENCY_SYMBOLS), $(abspath $(CONNECTIVITY_OUT_PATH)/$(dep)))
 else
 	KERNEL_DIR=/lib/modules/$(shell uname -r)/build
 	MODULE_PWD=$(PWD)
 	EXTRA_SYMBOLS := $(MODULE_PWD)/../conninfra/Module.symvers
-	EXTRA_SYMBOLS += $(MODULE_PWD)/../adaptor/wlan_page_pool/Module.symvers
+	EXTRA_SYMBOLS += $(wildcard $(MODULE_PWD)/../adaptor/wlan_page_pool/*Module.symvers)
 	EXTRA_SYMBOLS += $(MODULE_PWD)/../connfem/Module.symvers
 endif
 MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m
