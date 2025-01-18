@@ -980,6 +980,9 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	uint32_t u4BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldSta;
+#endif
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1056,7 +1059,15 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		kalMemZero(prMddpTxd->nw_if_name,
 			   sizeof(prMddpTxd->nw_if_name));
 	}
-	kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldSta)
+		kalMemCopy(prMddpTxd->aucMacAddr, prMldSta->aucPeerMldAddr,
+			   MAC_ADDR_LEN);
+	else
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+		kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr,
+			   MAC_ADDR_LEN);
 	kalMemCopy(prMddpTxd->local_mac,
 		   prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
 	if (fgActivate) {
