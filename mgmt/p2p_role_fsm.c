@@ -3869,6 +3869,7 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	struct P2P_JOIN_INFO *prP2pJoinInfo =
 		&(prP2pRoleFsmInfo->rJoinInfo);
 	struct P2P_SCAN_REQ_INFO *prScanInfo;
+	u_int8_t fgAbortIdle = FALSE;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, TRACE, "prP2pRoleFsmInfo is NULL\n");
@@ -3926,6 +3927,7 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 					       prP2pRoleFsmInfo->ucRoleIndex,
 					       prAcsReqInfo);
 			eNextState = P2P_ROLE_STATE_IDLE;
+			fgAbortIdle = TRUE;
 		} else {
 			eNextState = P2P_ROLE_STATE_IDLE;
 		}
@@ -3947,6 +3949,8 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	prScanReqInfo->fgIsScanRequest = FALSE;
 
 	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
+	if (fgAbortIdle)
+		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
