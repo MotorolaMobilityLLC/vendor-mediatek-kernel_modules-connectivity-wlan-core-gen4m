@@ -12419,6 +12419,10 @@ nanSchedGetTimelineByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand)
 			}
 
 			prNdcCtrl = prPeerSchRec->prCommNdcCtrl;
+
+			if (!prNdcCtrl || !prNdcCtrl->fgValid)
+				continue;
+
 			prTimeline =
 				&prNdcCtrl->arTimeline[ucTimelineIdx];
 
