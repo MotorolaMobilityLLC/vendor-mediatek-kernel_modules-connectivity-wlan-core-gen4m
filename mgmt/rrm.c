@@ -1106,7 +1106,9 @@ void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
 		OS_SYSTIME rCurrent;
 
 		prRmReq->rBcnRmParam.eState = RM_ON_GOING;
+#if (CFG_EXT_FEATURE == 0)
 		prBcnReq->ucChannel = 0;
+#endif /* CFG_EXT_FEATURE == 0 */
 		GET_CURRENT_SYSTIME(&rCurrent);
 
 		DBGLOG(RRM, DEBUG,
