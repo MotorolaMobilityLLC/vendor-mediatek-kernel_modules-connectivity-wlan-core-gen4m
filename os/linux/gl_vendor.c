@@ -103,6 +103,7 @@ const struct nla_policy nla_parse_wifi_attribute[
 #endif
 	[WIFI_ATTRIBUTE_ROAMING_STATE] = {.type = NLA_U32},
 	[WIFI_ATTRIBUTE_TX_POWER_SCENARIO] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_LATENCY_MODE] = {.type = NLA_U32},
 };
 
 const struct nla_policy nla_parse_wifi_multista[
@@ -561,6 +562,138 @@ nla_put_failure:
 	kfree_skb(skb);
 	return -EFAULT;
 }
+
+#if CFG_SUPPORT_LLW_SCAN
+uint32_t wlanoidSetLatency(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	uint32_t *pu4Mode;
+	struct AIS_FSM_INFO *ais;
+	uint8_t ucBssIndex = 0;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pvSetBuffer) {
+		DBGLOG(REQ, ERROR, "pvGetBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	pu4Mode = (uint32_t *) pvSetBuffer;
+
+	ais->ucLatencyCrtDataMode = 0;
+	/* Mode 2: Restrict full roam scan triggered by Firmware
+	 *         due to low RSSI.
+	 * Mode 3: Restrict off channel time due to full scan to < 40ms
+	 */
+	ais->ucLatencyCrtDataMode = *pu4Mode;
+
+	if (ais->ucLatencyCrtDataMode == 3) {
+		ais->ucDfsChDwellTimeMs = 20;
+		ais->ucNonDfsChDwellTimeMs = 35;
+		ais->u2OpChStayTimeMs = 0;
+		ais->ucPerScanChannelCnt = 1;
+	} else if (ais->ucLatencyCrtDataMode == 0) {
+		ais->ucDfsChDwellTimeMs = 0;
+		ais->ucNonDfsChDwellTimeMs = 0;
+		ais->u2OpChStayTimeMs = 0;
+		ais->ucPerScanChannelCnt = 0;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+int mtk_cfg80211_vendor_set_latency_mode(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *prAttr;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SetInfoLen = 0, u4Mode = 0;
+	struct AIS_FSM_INFO *ais;
+	uint8_t ucBssIndex = 0;
+
+	if (wiphy == NULL) {
+		DBGLOG(REQ, ERROR, "wiphy is NULL\n");
+		return -EFAULT;
+	}
+
+	if (wdev == NULL) {
+		DBGLOG(REQ, ERROR, "wdev is NULL\n");
+		return -EFAULT;
+	}
+
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
+
+	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	prAttr = (struct nlattr *)data;
+	if (prAttr->nla_type == WIFI_ATTRIBUTE_LATENCY_MODE)
+		u4Mode = nla_get_u32(prAttr);
+	else {
+		DBGLOG(REQ, INFO, "Unknown nla type:%d\n", prAttr->nla_type);
+		return -EINVAL;
+	}
+
+	ais = aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex);
+
+	DBGLOG(REQ, INFO,
+		"Input Mode = %d, Current = %d\n",
+		u4Mode, ais->ucLatencyCrtDataMode);
+
+	/* Do further scan handling for mode 2 and mode 3,
+	 * reset if u4Mode == 0
+	 */
+	if (u4Mode >= 2 || u4Mode == 0) {
+		if (u4Mode == 0)
+			wlanChipConfigWithType(prGlueInfo->prAdapter,
+				"SET_LATENCY_CRT_DATA 0",
+				22,
+				CHIP_CONFIG_TYPE_WO_RESPONSE);
+
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidSetLatency,
+			&u4Mode, sizeof(uint32_t),
+			&u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR,
+				"SET_CRT_DATA fail 0x%x\n", rStatus);
+		else
+			DBGLOG(INIT, TRACE,
+				"SET_CRT_DATA success\n");
+	} else {
+		if (ais->ucLatencyCrtDataMode)
+			goto exit;
+
+		/* for mode 1 */
+		wlanChipConfigWithType(prGlueInfo->prAdapter,
+			"SET_LATENCY_CRT_DATA 1",
+			22,
+			CHIP_CONFIG_TYPE_WO_RESPONSE);
+	}
+
+exit:
+
+	return rStatus;
+}
+#endif
 
 int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,

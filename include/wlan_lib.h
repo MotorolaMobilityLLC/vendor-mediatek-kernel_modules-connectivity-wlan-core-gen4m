@@ -94,6 +94,8 @@
 #define WIFI_FEATURE_SET_TX_POWER_LIMIT (0x4000000)
 /* Support Using Body/Head Proximity for SAR */
 #define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
+/* Support Set Latency Mode */
+#define WIFI_FEATURE_SET_LATENCY_MODE  (0x40000000)
 /* Support Random P2P MAC */
 #define WIFI_FEATURE_P2P_RAND_MAC  (0x80000000)
 /* Support MLO SoftAp */

@@ -172,6 +172,7 @@ enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_SET_MULTISTA_PRIMARY_CONNECTION,		/* 0x000d */
 	WIFI_SUBCMD_SET_MULTISTA_USE_CASE,			/* 0x000e */
 	WIFI_SUBCMD_SET_SCAN_PARAM,				/* 0x000f */
+	WIFI_SUBCMD_SET_LATENCY_MODE = 0x0011,	/* 0x0011 */
 };
 
 enum RTT_SUB_COMMAND {
@@ -273,6 +274,7 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_ROAMING_STATE,
 	WIFI_ATTRIBUTE_TX_POWER_SCENARIO,
 	WIFI_ATTRIBUTE_CONCURRENCY_MATRIX,
+	WIFI_ATTRIBUTE_LATENCY_MODE,
 	WIFI_ATTRIBUTE_MAX,
 };
 
@@ -1773,6 +1775,11 @@ int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
 
 int mtk_cfg80211_vendor_get_chip_capabilities(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
+
+#if CFG_SUPPORT_LLW_SCAN
+int mtk_cfg80211_vendor_set_latency_mode(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+#endif
 
 int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
