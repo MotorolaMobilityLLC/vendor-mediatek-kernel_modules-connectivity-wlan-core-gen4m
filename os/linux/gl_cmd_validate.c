@@ -346,6 +346,10 @@ struct CMD_VALIDATE_POLICY show_ahdbg_policy[COMMON_CMD_SET_ARG_NUM(4)] = {
 	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
 };
 
+/*-----------------------------------------------------------------------------
+ * Priv cmd for customer.
+ *-----------------------------------------------------------------------------
+ */
 /* Available in user load, should be no security problem */
 struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 	{
@@ -860,9 +864,22 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = set_flag_policy,
 		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
-	}
+	},
+	{
+		.pcCmdStr  = CMD_GET_BW160_CAPA,
+		.pfHandler = priv_driver_get_bw160_capa,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = set_flag_policy,
+		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
+	},
+
 };
 
+/*-----------------------------------------------------------------------------
+ * Priv cmd for debug only.
+ *-----------------------------------------------------------------------------
+ */
 /* Debug only, unavailable in user load */
 #if BUILD_QA_DBG
 struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
@@ -2622,6 +2639,11 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 };
 #endif /* BUILD_QA_DBG */
 
+
+/*-----------------------------------------------------------------------------
+ * Str cmd for customer.
+ *-----------------------------------------------------------------------------
+ */
 /* Available in user load, should be no security problem */
 struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 	{
@@ -2759,6 +2781,11 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 };
 
+
+/*-----------------------------------------------------------------------------
+ * Str cmd for debug only.
+ *-----------------------------------------------------------------------------
+ */
 /* Debug only, unavailable in user load */
 #if BUILD_QA_DBG
 struct STR_CMD_HANDLER str_cmd_handlers_debug[] = {

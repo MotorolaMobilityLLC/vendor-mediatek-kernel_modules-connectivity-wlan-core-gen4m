@@ -412,6 +412,9 @@
 #if (CFG_PCIE_GEN_SWITCH == 1)
 #define CMD_MDDP_SET_GEN_SWITCH			"set-genswitch"
 #endif /* CFG_PCIE_GEN_SWITCH */
+#if CFG_ENABLE_WIFI_DIRECT
+#define CMD_GET_BW160_CAPA			"GET_BW160_CAPA"
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command
  *------------------------------------------------------------------------------

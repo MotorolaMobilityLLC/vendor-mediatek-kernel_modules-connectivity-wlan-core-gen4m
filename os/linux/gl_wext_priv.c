@@ -25123,4 +25123,45 @@ error:
 	return kalSnprintf(pcCommand, i4TotalLen, "FAILED");
 }
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+
+int32_t priv_driver_get_bw160_capa(struct net_device *prNetDev, char *pcCommand,
+				  int32_t i4TotalLen)
+{
+	int32_t i4BytesWritten = 0, i4Argc = 0, status;
+	uint8_t ucRole;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int8_t icRet = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	status = kalkStrtou8(apcArgv[1], 0, &ucRole);
+	if (status) {
+		DBGLOG(REQ, ERROR, "paese role failed, status=%d\n", status);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/* [ucRole] 0: P2P, 1: SAP
+	 * [icRet]
+	 * 0 for not chip not support bw160,
+	 * 1 for chip supported bw160,
+	 * -1 for cmd error.
+	 */
+	if (ucRole == 0 || ucRole == 1) {
+#if (CFG_SUPPORT_BW320 == 1) || (CFG_SUPPORT_BW160 == 1)
+		icRet = 1;
+#endif
+	} else
+		icRet = -1;
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "%d\n", icRet);
+
+	return i4BytesWritten;
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */

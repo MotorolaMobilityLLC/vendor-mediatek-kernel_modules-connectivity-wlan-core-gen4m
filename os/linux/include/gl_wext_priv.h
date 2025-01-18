@@ -1166,6 +1166,9 @@ int priv_driver_update_wmm_params(struct net_device *prNetDev,
 int priv_driver_trigger_critical_update(struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+int32_t priv_driver_get_bw160_capa(struct net_device *prNetDev, char *pcCommand,
+				   int32_t i4TotalLen);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 /*******************************************************************************
  *                              F U N C T I O N S
