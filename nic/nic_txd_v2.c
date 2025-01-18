@@ -345,7 +345,13 @@ void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	kalMemZero(prTxDesc, u4TxDescAndPaddingLength);
 
-	nicTxForceAmsduForCert(prAdapter, (uint8_t *)prTxDesc);
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
+		if (prAdapter->rWifiVar.ucHeAmsduInAmpduTx &&
+		    prAdapter->rWifiVar.ucHeCertForceAmsdu)
+			HAL_MAC_CONNAC2X_TXD_SET_HW_AMSDU(prTxDesc);
+	}
+#endif
 
 	/* Ether-type offset */
 	if (prMsduInfo->fgIs802_11) {

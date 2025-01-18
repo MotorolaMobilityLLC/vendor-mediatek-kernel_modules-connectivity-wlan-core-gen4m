@@ -167,10 +167,10 @@
 #define CFG_SUPPORT_ICAP_SOLICITED_EVENT	0
 #endif
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_SUPPORT_CONNAC3X_SMALL_PKT        1
+#if (CFG_SUPPORT_CONNAC1X == 1 || CFG_SUPPORT_CONNAC2X == 1)
+#define CFG_SUPPORT_SMALL_PKT        0
 #else
-#define CFG_SUPPORT_CONNAC3X_SMALL_PKT        0
+#define CFG_SUPPORT_SMALL_PKT        1
 #endif
 
 /* Enable TX BF Support */
@@ -754,6 +754,7 @@
  */
 
 /*! Maximum number of SW TX packet queue */
+#ifndef CFG_TX_MAX_PKT_NUM
 #if defined(MT6653) || defined(MT7990)
 #define CFG_TX_MAX_PKT_NUM                      20000
 #elif (CFG_SUPPORT_CONNAC3X == 1)
@@ -768,6 +769,7 @@
 #else
 #define CFG_TX_MAX_PKT_NUM                      1024
 #endif
+#endif /* CFG_TX_MAX_PKT_NUM */
 
 /*! Maximum number of SW TX CMD packet buffer */
 #define CFG_TX_MAX_CMD_PKT_NUM                  144 /* WIFI7 support */
@@ -842,12 +844,6 @@
 /* Cache RX reordering MSDU pointers by SN to locate search starting point */
 #ifndef CFG_SUPPORT_RX_CACHE_INDEX
 #define CFG_SUPPORT_RX_CACHE_INDEX		1
-#endif
-
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_PF_ARP_NS_MAX_NUM                   5
-#else
-#define CFG_PF_ARP_NS_MAX_NUM                   3
 #endif
 
 #define CFG_COMPRESSION_DEBUG			0
@@ -3024,10 +3020,10 @@
  *------------------------------------------------------------------------------
  */
 #ifndef CFG_SUPPORT_CSI
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_SUPPORT_CSI 1
-#else
+#if (CFG_SUPPORT_CONNAC1X == 1 || CFG_SUPPORT_CONNAC2X == 1)
 #define CFG_SUPPORT_CSI 0
+#else
+#define CFG_SUPPORT_CSI 1
 #endif
 #endif
 
@@ -3056,12 +3052,12 @@
 #endif
 
 #ifndef CFG_SUPPORT_RTT
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_SUPPORT_RTT 1
+#if (CFG_SUPPORT_CONNAC1X == 1 || CFG_SUPPORT_CONNAC2X == 1)
+#define CFG_SUPPORT_RTT 0
 #define CFG_SUPPORT_RTT_RSTA 0
 #define CFG_SUPPORT_PASN 0
 #else
-#define CFG_SUPPORT_RTT 0
+#define CFG_SUPPORT_RTT 1
 #define CFG_SUPPORT_RTT_RSTA 0
 #define CFG_SUPPORT_PASN 0
 #endif
@@ -3071,10 +3067,10 @@
 #define CFG_RTT_MAX_CANDIDATES 10	/* ISTA maximum peer APs */
 #define CFG_RTT_MAX_CLIENTS 1		/* RSTA maximum clients */
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_WIFI_IGTK_GTK_SEPARATE	0
-#else
+#if (CFG_SUPPORT_CONNAC1X == 1 || CFG_SUPPORT_CONNAC2X == 1)
 #define CFG_WIFI_IGTK_GTK_SEPARATE	1
+#else
+#define CFG_WIFI_IGTK_GTK_SEPARATE	0
 #endif
 
 #if (CFG_MTK_ANDROID_WMT == 1) && (CFG_TC10_FEATURE == 0)

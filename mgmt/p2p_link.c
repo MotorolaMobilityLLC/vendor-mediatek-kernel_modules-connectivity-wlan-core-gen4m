@@ -836,7 +836,7 @@ void p2pGetLinkWmmQueSet(
 	bss = p2pGetDefaultLinkBssInfo(prAdapter, prBssInfo);
 	cnmWmmIndexDecision(prAdapter, bss);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_WLAN_CONNAC3_DEV == 0)
 	/* connac3 MLO all bss use the same wmm index as main bss use */
 	if (p2pRoleFsmNeedMlo(prAdapter, prBssInfo->u4PrivateData)) {
 		prBssInfo->fgIsWmmInited = TRUE;

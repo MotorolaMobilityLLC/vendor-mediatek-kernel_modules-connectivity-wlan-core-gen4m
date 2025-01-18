@@ -909,9 +909,7 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 
 	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
 	fw_log_handler();
-#endif
 
 	return IRQ_HANDLED;
 }

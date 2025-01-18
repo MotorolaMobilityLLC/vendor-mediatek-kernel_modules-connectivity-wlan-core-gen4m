@@ -372,7 +372,10 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	kalMemZero(prTxDesc, u4TxDescAndPaddingLength);
 
-	nicTxForceAmsduForCert(prAdapter, (uint8_t *)prTxDesc);
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prAdapter->rWifiVar.ucEhtAmsduInAmpduTx)
+		HAL_MAC_CONNAC3X_TXD_SET_HW_AMSDU(prTxDesc);
+#endif
 
 	/** DW0 **/
 	/* Packet Format */

@@ -645,6 +645,7 @@ ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 CONFIG_SUPPORT_UNII4=y
+CONFIG_PF_ARP_NS_MAX_NUM=5
 endif
 
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
@@ -995,6 +996,7 @@ CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 CONFIG_BCN_PROT=y
 CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL=n
 CONFIG_SUPPORT_UNII4=y
+CONFIG_PF_ARP_NS_MAX_NUM=5
 endif
 
 ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
@@ -1423,8 +1425,8 @@ ifeq ($(CONFIG_UPDATE_STATIC_DBDC_QUOTA), y)
     endif
 endif
 
-ifeq ($(CONFIG_TX_MGMT_BY_DATA_Q), n)
-        ccflags-y += -DCFG_TX_MGMT_BY_DATA_Q=0
+ifeq ($(CONFIG_TX_MGMT_BY_DATA_Q), y)
+    ccflags-y += -DCFG_TX_MGMT_BY_DATA_Q=1
 endif
 
 ifeq ($(CONFIG_TX_CUSTOMIZE_LTO), y)
@@ -3467,6 +3469,16 @@ ifeq ($(CONFIG_MTK_MLRP_ALR_BALANCE), y)
     ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=1
 else
     ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=0
+endif
+
+ifneq ($(CONFIG_TX_MAX_PKT_NUM),)
+    ccflags-y += -DCFG_TX_MAX_PKT_NUM=$(CONFIG_TX_MAX_PKT_NUM)
+endif
+
+ifneq ($(CONFIG_PF_ARP_NS_MAX_NUM),)
+    ccflags-y += -DCFG_PF_ARP_NS_MAX_NUM=$(CONFIG_PF_ARP_NS_MAX_NUM)
+else
+    ccflags-y += -DCFG_PF_ARP_NS_MAX_NUM=3
 endif
 
 # ---------------------------------------------------

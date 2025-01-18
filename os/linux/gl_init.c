@@ -1299,7 +1299,7 @@ const uint32_t mtk_cipher_suites[] = {
 #endif
 	/* keep last -- depends on hw flags! */
 	WLAN_CIPHER_SUITE_AES_CMAC,
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC1X == 0)
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 	WLAN_CIPHER_SUITE_GCMP_256,
 	WLAN_CIPHER_SUITE_BIP_GMAC_256,
@@ -9187,7 +9187,7 @@ void wlanRemove(void)
 		DBGLOG(INIT, ERROR, "MET_TAG_UNINIT error!\n");
 #endif
 
-#if CFG_SUPPORT_MET_LOG && (CFG_SUPPORT_CONNAC3X == 1)
+#if CFG_SUPPORT_MET_LOG
 	met_log_stop(prGlueInfo);
 #endif
 

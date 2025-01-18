@@ -1841,38 +1841,6 @@ nicTxComposeDesc(
 		DBGLOG(TX, ERROR, "no nic_txd_compose?\n");
 }
 
-/**
- * NOTE: TXS is based on MPDU, for those frames set TXS the frames shall not
- * be AMSDU.
- * HW_AMSDU flag will be unset in nic_txd_v2_compose(), nic_txd_v3_compose()
- * when checking Setting TXS.
- * Therefore, this function were intended to be called at the beginning
- * of before calling those two compose functions right after memzero the buffer.
- */
-void nicTxForceAmsduForCert(struct ADAPTER *prAdapter, u_int8_t *prTxDescBuffer)
-{
-#if (CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_CONNAC3X == 1)
-	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc =
-		(struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
-#elif (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1)
-	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc =
-		(struct HW_MAC_CONNAC2X_TX_DESC *) prTxDescBuffer;
-#endif
-
-#if (CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_CONNAC3X == 1)
-	if (/* TODO: fgEfuseCtrlBeOn == */ 1) {
-		if (prAdapter->rWifiVar.ucEhtAmsduInAmpduTx)
-			HAL_MAC_CONNAC3X_TXD_SET_HW_AMSDU(prTxDesc);
-	}
-#elif (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1)
-	if (fgEfuseCtrlAxOn == 1) {
-		if (prAdapter->rWifiVar.ucHeAmsduInAmpduTx &&
-		    prAdapter->rWifiVar.ucHeCertForceAmsdu)
-			HAL_MAC_CONNAC2X_TXD_SET_HW_AMSDU(prTxDesc);
-	}
-#endif
-}
-
 #if CFG_TX_CUSTOMIZE_LTO
 u_int8_t nicTxEnableLTO(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, struct BSS_INFO *prBssInfo)

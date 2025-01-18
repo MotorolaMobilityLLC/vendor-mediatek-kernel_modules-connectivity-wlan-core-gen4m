@@ -2164,8 +2164,6 @@ uint8_t nicTxGetAcIdxByTc(uint8_t ucTC);
  */
 
 u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
-void nicTxForceAmsduForCert(struct ADAPTER *prAdapter,
-				u_int8_t *prTxDescBuffer);
 
 uint32_t nicTxGetFrameLength(struct MSDU_INFO *prMsduInfo);
 

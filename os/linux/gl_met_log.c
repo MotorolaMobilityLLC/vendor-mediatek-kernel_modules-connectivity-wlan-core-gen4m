@@ -284,23 +284,18 @@ void met_log_print_long_data(uint8_t *buffer, uint32_t size,
 
 int met_log_start(struct GLUE_INFO *prGlueInfo)
 {
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if defined(CFG_MTK_CONNSYS_DEDICATED_LOG_PATH) && (CFG_SUPPORT_CONNINFRA == 1)
 	struct conn_metlog_info rMetInfo;
 	phys_addr_t u4ConEmiPhyBase = 0;
 	uint32_t u4EmiMetOffset = 0;
 #endif
-#endif
 
 	DBGLOG(MET, DEBUG, "Start MET log.\n");
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
 #if CFG_MTK_WIFI_MET_LOG_EMI
 	return met_log_emi_init(prGlueInfo->prAdapter);
-#endif
 #else
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if defined(CFG_MTK_CONNSYS_DEDICATED_LOG_PATH) && (CFG_SUPPORT_CONNINFRA == 1)
 	u4ConEmiPhyBase = emi_mem_get_phy_base(
 				prGlueInfo->prAdapter->chip_info);
 	u4EmiMetOffset = emi_mem_offset_convert(
@@ -321,29 +316,24 @@ int met_log_start(struct GLUE_INFO *prGlueInfo)
 	rMetInfo.output_len = 64;
 
 	return conn_metlog_start(&rMetInfo);
-#endif
-#endif
-#endif
-
+#else
 	return 0;
+#endif
+#endif
 }
 
 int met_log_stop(struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(MET, DEBUG, "Stop MET log.\n");
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
 #if CFG_MTK_WIFI_MET_LOG_EMI
 	return met_log_emi_deinit(prGlueInfo->prAdapter);
-#endif
 #else
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if defined(CFG_MTK_CONNSYS_DEDICATED_LOG_PATH) && (CFG_SUPPORT_CONNINFRA == 1)
 	return conn_metlog_stop(CONNDRV_TYPE_WIFI);
-#endif
-#endif
-#endif
-
+#else
 	return 0;
+#endif
+#endif
 }
 #endif /* CFG_SUPPORT_MET_LOG */
