@@ -732,6 +732,7 @@ struct WAKE_INFO_T {
 #if DBG_DISABLE_ALL_LOG
 #define DBGLOG(_Module, _Class, _Fmt, ...)
 #define DBGLOG_LIMITED(_Module, _Class, _Fmt, ...)
+#define DBGLOG_BY_OPTION(_Module, _Class, _isUnlimited, _Fmt, ...)
 #define DBGLOG_HEX(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length)
@@ -792,6 +793,13 @@ struct WAKE_INFO_T {
 			__func__, ##__VA_ARGS__); \
 	} while (0)
 #endif
+#define DBGLOG_BY_OPTION(_Mod, _Clz, _isUnlimited, _Fmt, ...) \
+	do { \
+		if (_isUnlimited) \
+			DBGLOG(_Mod, _Clz, _Fmt, __VA_ARGS__); \
+		else \
+			DBGLOG_LIMITED(_Mod, _Clz, _Fmt, __VA_ARGS__); \
+	} while (0)
 #define TOOL_PRINTLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
 		if ((au2DebugModule[DBG_##_Mod##_IDX] & \

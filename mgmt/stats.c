@@ -383,8 +383,9 @@ static const char *dhcp_msg(uint32_t u4DhcpTypeOpt)
 	return "";
 }
 
-void statsParseICMPInfo(void *pvPacket, uint8_t *pucIcmp, uint8_t eventType,
-			uint16_t u2IpId, uint16_t u2SSN)
+void statsParseICMPInfo(struct ADAPTER *prAdapter, void *pvPacket,
+			uint8_t *pucIcmp, uint8_t eventType, uint16_t u2IpId,
+			uint16_t u2SSN)
 {
 	struct ICMP_ECHO_HEADER *prIcmpEcho;
 	uint8_t ucIcmpType;
@@ -409,18 +410,20 @@ void statsParseICMPInfo(void *pvPacket, uint8_t *pucIcmp, uint8_t eventType,
 	if (eventType == EVENT_RX) {
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMP);
-		DBGLOG_LIMITED(RX, INFO,
-			       "<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
-			       MACSTR " SSN:%u\n",
-			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
-			       MAC2STR(prEth->aucSrcAddr), u2SSN);
+		DBGLOG_BY_OPTION(RX, INFO,
+				prAdapter->rWifiVar.b1IcmpRxDataLogUnlimited,
+				"<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
+				MACSTR " SSN:%u\n",
+				u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
+				MAC2STR(prEth->aucSrcAddr), u2SSN);
 	} else { /* EVENT_TX */
-		DBGLOG_LIMITED(TX, INFO,
-			       "<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
-			       MACSTR " SeqNo: %d\n",
-			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
-			       MAC2STR(prEth->aucDestAddr),
-			       GLUE_GET_PKT_SEQ_NO(pvPacket));
+		DBGLOG_BY_OPTION(TX, INFO,
+				prAdapter->rWifiVar.b1IcmpTxDataLogUnlimited,
+				"<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
+				MACSTR " SeqNo: %d\n",
+				u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
+				MAC2STR(prEth->aucDestAddr),
+				GLUE_GET_PKT_SEQ_NO(pvPacket));
 	}
 }
 
@@ -507,8 +510,9 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 	}
 }
 
-static void statsParseIPV4Info(void *pvPacket, uint8_t *pucIPv4,
-			       uint8_t eventType, uint16_t u2SSN)
+static void statsParseIPV4Info(struct ADAPTER *prAdapter, void *pvPacket,
+			       uint8_t *pucIPv4, uint8_t eventType,
+			       uint16_t u2SSN)
 {
 	/* IP header without options */
 	struct IPV4_HEADER *prIPv4 = (struct IPV4_HEADER *)pucIPv4;
@@ -535,7 +539,8 @@ static void statsParseIPV4Info(void *pvPacket, uint8_t *pucIPv4,
 	switch (ucIpProto) {
 	case IP_PRO_ICMP:
 		pucIcmp = pucL4Header;
-		statsParseICMPInfo(pvPacket, pucIcmp, eventType, u2IpId, u2SSN);
+		statsParseICMPInfo(prAdapter, pvPacket, pucIcmp, eventType,
+				   u2IpId, u2SSN);
 		break;
 
 	case IP_PRO_UDP:
@@ -900,7 +905,8 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 
 	case ETH_P_IPV4:
 		statsLogData(prAdapter, eventType, WLAN_WAKE_IPV4);
-		statsParseIPV4Info(pvPacket, pucEthBody, eventType, u2SSN);
+		statsParseIPV4Info(prAdapter, pvPacket, pucEthBody, eventType,
+				   u2SSN);
 		break;
 
 	case ETH_P_IPV6:
