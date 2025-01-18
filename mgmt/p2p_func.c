@@ -8955,7 +8955,9 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 	uint8_t ucNumAliveSapBss;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t i;
+	uint8_t ucHwBandIdx = 255;
 #endif
+
 	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
 						prAdapter, aliveNonSapBss);
 	ucNumAliveSapBss = cnmGetAliveSapBssInfo(
@@ -8970,12 +8972,26 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 	for (i = *ucChSwitchCandNum; i > 0; i--) {
 		if (aliveSapBss[0]->eBand == BAND_5G &&
 			prSapSwitchCand[i-1].eRfBand == BAND_6G &&
+			(
 #if CFG_CH_SELECT_ENHANCEMENT
-			(prP2pBssInfo->eInitBand != BAND_6G) &&
+			(prP2pBssInfo->eInitBand != BAND_6G) ||
 #endif
 			!p2pFuncIsBssWpa3OnlyCheck(prAdapter,
-				aliveSapBss[0])) {
-
+				aliveSapBss[0]))) {
+			if (prSapSwitchCand[i-1].eHwBand !=
+				ENUM_BAND_NUM)
+				ucHwBandIdx =
+					prSapSwitchCand[i-1].eHwBand;
+			p2pSapSwitchCandidateRemove(
+				ucChSwitchCandNum,
+				prSapSwitchCand,
+				i-1);
+		}
+	}
+	for (i = *ucChSwitchCandNum; i > 0; i--) {
+		if (aliveSapBss[0]->eBand == BAND_5G &&
+			prSapSwitchCand[i-1].eRfBand == BAND_5G &&
+			ucHwBandIdx == aliveSapBss[0]->eHwBandIdx) {
 			p2pSapSwitchCandidateRemove(
 				ucChSwitchCandNum,
 				prSapSwitchCand,
