@@ -5237,6 +5237,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 	u_int8_t fgMoveWinOnMissingLast;
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
+	struct STA_RECORD *prStaRec;
 	u_int8_t fgDequeuHead, fgMissing;
 	OS_SYSTIME rCurrentTime, *prMissTimeout;
 	/* RX reorder for one MSDU in AMSDU issue */
@@ -5267,6 +5268,8 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 		/* Always examine the head packet */
 		prReorderedSwRfb = QUEUE_GET_HEAD(prReorderQue);
 		fgDequeuHead = FALSE;
+
+		prStaRec = prReorderedSwRfb->prStaRec;
 
 		/* RX reorder for one MSDU in AMSDU issue */
 		/* frameType = curr.frameType */
@@ -5335,7 +5338,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 					&prReorderQueParm->rReorderBubbleTimer,
-					prAdapter->u4QmRxBaMissTimeout);
+					prStaRec->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -5350,10 +5353,9 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			}
 
 			if (fgMissing &&
-				CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
-				MSEC_TO_SYSTIME(
-				prAdapter->u4QmRxBaMissTimeout
-				))) {
+			    CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
+				MSEC_TO_SYSTIME(prStaRec->u4QmRxBaMissTimeout))
+				) {
 
 				DBGLOG(RX, TRACE,
 					"QM:RX BA Timeout Next Tid %u SSN %u, WinStart:%u->%u\n",
@@ -5413,6 +5415,7 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 {
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
+	struct STA_RECORD *prStaRec;
 	u_int8_t fgDequeuHead;
 	uint8_t fgIsAmsduSubframe; /* RX reorder for one MSDU in AMSDU issue */
 	u_int8_t fgWinAdvanced = FALSE;
@@ -5430,6 +5433,8 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 		/* Always examine the head packet */
 		prReorderedSwRfb = QUEUE_GET_HEAD(prReorderQue);
 		fgDequeuHead = FALSE;
+
+		prStaRec = prReorderedSwRfb->prStaRec;
 
 		/* RX reorder for one MSDU in AMSDU issue */
 		fgIsAmsduSubframe = prReorderedSwRfb->ucPayloadFormat;
@@ -5488,7 +5493,7 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 					&prReorderQueParm->rReorderBubbleTimer,
-					prAdapter->u4QmRxBaMissTimeout);
+					prStaRec->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;

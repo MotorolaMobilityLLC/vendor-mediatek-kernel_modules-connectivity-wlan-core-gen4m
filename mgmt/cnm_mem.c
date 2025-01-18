@@ -788,6 +788,11 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 					  rsnApStartSaQueryTimer,
 					  (uintptr_t)prStaRec);
 #endif /* CFG_SUPPORT_802_11W */
+
+			/* Default QM RX BA timeout */
+			prStaRec->u4QmRxBaMissTimeout =
+				prAdapter->rWifiVar.u4BaMissTimeoutMs;
+
 			break;
 		}
 	}

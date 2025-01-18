@@ -975,7 +975,6 @@ void wlanOnPostNicInitAdapter(struct ADAPTER *prAdapter,
 void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 		struct REG_INFO *prRegInfo)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct WLAN_INFO *prWlanInfo;
 
 	DBGLOG(INIT, TRACE, "start.\n");
@@ -1164,9 +1163,6 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 				    prRegInfo->u4ArSysParam2,
 				    prRegInfo->u4ArSysParam3);
 #endif
-
-	/* Default QM RX BA timeout */
-	prAdapter->u4QmRxBaMissTimeout = prWifiVar->u4BaMissTimeoutMs;
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanAdapterStartForLowLatency(prAdapter);
@@ -8756,6 +8752,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4BaMissTimeoutMs, "BaMissTimeoutMs",
 		  QM_RX_BA_ENTRY_MISS_TIMEOUT_MS, FEATURE_TO_CUSTOMER);
 
+	INIT_UINT(prWifiVar->u4BaIotApMissTimeoutMs, "BaIotApMissTimeoutMs",
+		QM_RX_BA_ENTRY_IOTAP_MISS_TIMEOUT_MS, FEATURE_TO_CUSTOMER);
+
 	INIT_UINT(prWifiVar->u4PerfMonPendingTh, "PerfMonPendingTh", 80,
 		  FEATURE_DEBUG_ONLY);
 
@@ -13590,6 +13589,7 @@ uint32_t wlanSetLowLatencyMode(
 	uint32_t u4Events, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = TRUE; /* Power management */
@@ -13603,6 +13603,12 @@ uint32_t wlanSetLowLatencyMode(
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(SW4, DEBUG, "Invalid BssInfo index[%u]\n", ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec) {
+		DBGLOG(SW4, INFO, "prStaRec is NULL\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -13699,10 +13705,10 @@ uint32_t wlanSetLowLatencyMode(
 		 * Change QM RX BA timeout if the gaming mode state changed
 		 */
 		if (fgEnMode) {
-			prAdapter->u4QmRxBaMissTimeout
+			prStaRec->u4QmRxBaMissTimeout
 				= prWifiVar->u4BaShortMissTimeoutMs;
 		} else {
-			prAdapter->u4QmRxBaMissTimeout
+			prStaRec->u4QmRxBaMissTimeout
 				= prWifiVar->u4BaMissTimeoutMs;
 		}
 	}

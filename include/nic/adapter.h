@@ -1470,6 +1470,9 @@ struct WIFI_VAR {
 #endif /* CFG_DEBUG_RX_SEGMENT */
 
 	uint32_t u4BaShortMissTimeoutMs;
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
+	uint32_t u4BaIotApMissTimeoutMs;
+#endif /* CFG_SUPPORT_IOT_AP_BLOCKLIST */
 	uint32_t u4BaMissTimeoutMs;
 
 	/* Tx Msdu Queue method */
@@ -3009,9 +3012,6 @@ struct ADAPTER {
 	struct RECAL_INFO_T rReCalInfo;
 
 	struct _ATE_LOG_DUMP_CB rRddRawData;
-
-	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
-	uint32_t u4QmRxBaMissTimeout;
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	u_int8_t fgEnLowLatencyMode;
