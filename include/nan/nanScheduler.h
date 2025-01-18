@@ -460,6 +460,7 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 #endif
 
 	struct _NAN_NDL_CUSTOMIZED_T arCustomized[NAN_BAND_NUM];
+	u_int8_t fgDef5GNDCConflict;
 };
 
 struct _NAN_CHANNEL_TIMELINE_T {

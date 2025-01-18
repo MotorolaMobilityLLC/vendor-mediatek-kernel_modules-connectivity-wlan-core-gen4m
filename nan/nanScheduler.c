@@ -1228,13 +1228,14 @@ nanSchedResetPeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
 
 	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
-
 	if (!prPeerSchRecord) {
 		DBGLOG(NAN, ERROR, "prPeerSchRecord error!\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	kalMemZero((uint8_t *)prPeerSchRecord, sizeof(*prPeerSchRecord));
 
+	kalMemZero(prPeerSchRecord, sizeof(*prPeerSchRecord));
+
+	/* Set non-zero initialized fields */
 	for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++)
 		for (i = 0; i < NAN_LINK_NUM; i++)
 			prPeerSchRecord->aucStaRecIdx[i][u4Idx] =
@@ -1248,10 +1249,6 @@ nanSchedResetPeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		prPeerSchRecord->arCommFawTimeline[u4Idx].ucMapId =
 			NAN_INVALID_MAP_ID;
 	}
-
-	prPeerSchRecord->prCommNdcCtrl = NULL;
-	prPeerSchRecord->fgUseDataPath = FALSE;
-	prPeerSchRecord->fgUseRanging = FALSE;
 
 	prPeerSchRecord->u4FinalQosMaxLatency = NAN_INVALID_QOS_MAX_LATENCY;
 	prPeerSchRecord->u4FinalQosMinSlots = NAN_INVALID_QOS_MIN_SLOTS;
@@ -8464,7 +8461,6 @@ nanSchedNegoIsRmtCrbConflict(
 	uint8_t fgIsPeerNDC2G = FALSE, fgIsPeerNDC5GOr6G = FALSE;
 	union _NAN_BAND_CHNL_CTRL rRmtSlot9ChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rLocalSlot9ChnlInfo;
-	uint8_t fgDef5GNDCConflict = FALSE;
 	uint8_t fgNotNormalNDCTimeline = FALSE;
 	uint32_t u4NotNormalSlotIdx = 0;
 	uint32_t u4NegoTransIdx = nanSchedGetCurrentNegoTransIdx(prAdapter);
@@ -8512,12 +8508,19 @@ nanSchedNegoIsRmtCrbConflict(
 
 		if (rRmtSlot9ChnlInfo.u4PrimaryChnl != 0 &&
 		    (eRmtBand == BAND_5G || eRmtBand == BAND_6G) &&
-		    (rRmtSlot9ChnlInfo.u4PrimaryChnl !=
-		     rLocalSlot9ChnlInfo.u4PrimaryChnl)) {
+		    rRmtSlot9ChnlInfo.u4PrimaryChnl !=
+		    rLocalSlot9ChnlInfo.u4PrimaryChnl) {
 			DBGLOG(NAN, WARN,
 			       "Def 5G NDC slot conflict, use another slot\n");
-			fgDef5GNDCConflict = TRUE;
+			prPeerSchRecord->fgDef5GNDCConflict = TRUE;
 		}
+		DBGLOG(NAN, INFO,
+		       "Remote#9=%u, eRmtBand=%u, Local#9=%u, highest_common=%u, NDC_5G_conflict=%u",
+		       rRmtSlot9ChnlInfo.u4PrimaryChnl, eRmtBand,
+		       rLocalSlot9ChnlInfo.u4PrimaryChnl,
+		       nanSchedGetHighestCommonBand(prAdapter,
+						    prNegoCtrl->u4SchIdx),
+		       prPeerSchRecord->fgDef5GNDCConflict);
 
 		for (u4SlotIdx = 0; u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 		     u4SlotIdx++) {
@@ -8532,12 +8535,23 @@ nanSchedNegoIsRmtCrbConflict(
 				DBGLOG(NAN, ERROR, "rmt channel invalid\n");
 				return TRUE;
 			}
-			if (!nanIsAllowedChannel(
-				    prAdapter,
-				    rRmtChnlInfo)) {
+			if (!nanIsAllowedChannel(prAdapter, rRmtChnlInfo)) {
 				DBGLOG(NAN, WARN,
 				       "rmt channel (%d) not allowed\n",
 				       rRmtChnlInfo.u4PrimaryChnl);
+				return TRUE;
+			}
+
+			/* Default NDC slot not match */
+			if (NAN_SLOT_INDEX(u4SlotIdx) ==
+					    NAN_5G_DEFAULT_NDC_INDEX &&
+			    rRmtChnlInfo.u4PrimaryChnl !=
+				    g_r5gDwChnl.u4PrimaryChnl) {
+				DBGLOG(NAN, WARN,
+				       "NDC slot %u rmt channel %d != local %u",
+				       u4SlotIdx,
+				       rRmtChnlInfo.u4PrimaryChnl,
+				       g_r5gDwChnl.u4PrimaryChnl);
 				return TRUE;
 			}
 
@@ -8566,8 +8580,8 @@ nanSchedNegoIsRmtCrbConflict(
 				fgIsPeerNDC5GOr6G = TRUE;
 
 				if (NAN_SLOT_INDEX(u4SlotIdx) !=
-				    NAN_5G_DEFAULT_NDC_INDEX &&
-				    !fgDef5GNDCConflict) {
+					    NAN_5G_DEFAULT_NDC_INDEX &&
+				    !prPeerSchRecord->fgDef5GNDCConflict) {
 					fgNotNormalNDCTimeline = TRUE;
 					u4NotNormalSlotIdx = u4SlotIdx;
 					break;
