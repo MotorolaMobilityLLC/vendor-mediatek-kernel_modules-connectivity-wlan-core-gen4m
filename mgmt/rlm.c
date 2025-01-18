@@ -802,15 +802,15 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
 	struct BSS_INFO *prBssInfo;
-#if (CFG_SUPPORT_MLR == 1)
+#if (CFG_SUPPORT_MLR_V2 == 1)
 	struct STA_RECORD *prStaRec;
 	u_int8_t fgMlrBandCheck = FALSE;
 	u_int8_t fgMlrCapCheck = FALSE;
+	u_int8_t fgGenMlrIe = FALSE;
 #endif
 	uint8_t *pucBuffer;
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint16_t len;
-	u_int8_t fgGenMlrIe = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);

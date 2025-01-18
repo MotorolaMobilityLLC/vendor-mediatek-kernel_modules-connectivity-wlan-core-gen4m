@@ -8562,8 +8562,10 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 	struct PARAM_CUSTOM_KEY_CFG_STRUCT *prKeyCfgInfo;
 	uint8_t *pucKey = NULL;
 	uint8_t aucKey[MAX_CMD_NAME_MAX_LENGTH] = {0};
+#if CFG_SUPPORT_MLR
 	uint32_t u4TargetCfg = 0;
 	int32_t i4Ret = 0;
+#endif
 
 	DBGLOG(INIT, LOUD, "\n");
 

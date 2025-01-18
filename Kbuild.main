@@ -910,6 +910,7 @@ else
 endif
 
 ifeq ($(CONFIG_WIFI_DX5), y)
+    CONFIG_MTK_MLR_V2_BALANCE=y
     ifeq ($(CONFIG_WLAN_PLATFORM),mt6993)
         CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT=y
     endif
@@ -3429,6 +3430,29 @@ else
     ccflags-y += -DCFG_SUPPORT_IPC_WITHOUT_MMIO_READ=0
 endif
 
+ifeq ($(CONFIG_MTK_MLR_V1), y)
+    ccflags-y += -DCFG_SUPPORT_MLR=1
+else
+    ccflags-y += -DCFG_SUPPORT_MLR=0
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V2), y)
+    ccflags-y += -DCFG_SUPPORT_MLR_V2=1
+else
+    ccflags-y += -DCFG_SUPPORT_MLR_V2=0
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V2_BALANCE), y)
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRV2=1
+else
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRV2=0
+endif
+
+ifeq ($(CONFIG_MTK_MLRP_ALR_BALANCE), y)
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=1
+else
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=0
+endif
 
 # ---------------------------------------------------
 # Directory List

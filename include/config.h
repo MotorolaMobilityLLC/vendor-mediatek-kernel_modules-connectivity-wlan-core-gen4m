@@ -1329,35 +1329,35 @@
 #endif /* CFG_SUPPORT_ROAMING */
 
 #ifndef CFG_SUPPORT_MLR
-#define CFG_SUPPORT_MLR				1
+#define CFG_SUPPORT_MLR		0
 #endif
 
 #ifndef CFG_SUPPORT_MLR_V2
-#if (CFG_SUPPORT_MLR == 1)
-#define CFG_SUPPORT_MLR_V2		1
-#else
 #define CFG_SUPPORT_MLR_V2		0
-#endif
 #endif
 
 #ifndef CFG_SUPPORT_BALANCE_MLRV2
-#if ((CFG_SUPPORT_MLR == 1) && (CFG_SUPPORT_MLR_V2 == 1))
-#define CFG_SUPPORT_BALANCE_MLRV2		1
-#else
 #define CFG_SUPPORT_BALANCE_MLRV2		0
-#endif
 #endif
 
 #ifndef CFG_SUPPORT_BALANCE_MLRP_ALR
-#if ((CFG_SUPPORT_MLR == 1) && (CFG_SUPPORT_MLR_V2 == 1) \
-	&& (CFG_SUPPORT_BALANCE_MLRV2 == 1))
-/* Currently, this feature does not have requirements for MP.
- * Therefore, it is disabled by default.
- */
-#define CFG_SUPPORT_BALANCE_MLRP_ALR			0
-#else
-#define CFG_SUPPORT_BALANCE_MLRP_ALR			0
-#endif /* CFG_SUPPORT_MLR */
+#define CFG_SUPPORT_BALANCE_MLRP_ALR		0
+#endif
+
+#if (CFG_SUPPORT_MLR == 0) && (CFG_SUPPORT_MLR_V2 == 1)
+#error "CFG_SUPPORT_MLR_V2 is based on CFG_SUPPORT_MLR"
+#endif
+
+#if (CFG_SUPPORT_MLR == 0 || CFG_SUPPORT_MLR_V2 == 0) && \
+	(CFG_SUPPORT_BALANCE_MLRV2 == 1)
+#error \
+"CFG_SUPPORT_BALANCE_MLRV2 is based on CFG_SUPPORT_MLR and CFG_SUPPORT_MLR_V2"
+#endif
+
+#if (CFG_SUPPORT_MLR == 0 || CFG_SUPPORT_MLR_V2 == 0) && \
+	(CFG_SUPPORT_BALANCE_MLRP_ALR == 1)
+#error \
+"CFG_SUPPORT_BALANCE_MLRP_ALR is based on CFG_SUPPORT_MLR and CFG_SUPPORT_MLR_V2"
 #endif
 
 #define CFG_SUPPORT_SWCR			1
