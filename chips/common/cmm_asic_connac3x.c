@@ -2623,6 +2623,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 
 	wifi_coredump_set_enable(TRUE);
 	glResetUpdateFlag(TRUE);
+	glResetUpdateFwAsserted(TRUE);
 	g_IsWfsysBusNoAck = TRUE;
 
 #if CFG_MTK_MDDP_SUPPORT

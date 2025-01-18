@@ -9255,6 +9255,7 @@ void wlanRemove(void)
 WLAN_REMOVE_RETURN:
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUpdateFlag(FALSE);
+	glResetUpdateFwAsserted(FALSE);
 #endif
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOffEnd();
