@@ -791,11 +791,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_DYNAMIC_RFB_ADJUSTMENT=y
         CONFIG_MTK_WIFI_PCIE_SUPPORT=y
         ifeq ($(CONFIG_MTK_WIFI_PCIE_SUPPORT), y)
-            ifeq ($(CONFIG_WLAN_PLATFORM), mt6993)
-                CONFIG_MTK_WIFI_PCIE_SR=n
-            else
-                CONFIG_MTK_WIFI_PCIE_SR=y
-            endif
+            CONFIG_MTK_WIFI_PCIE_SR=y
         endif
         CONFIG_DRV_OWN_INT_MODE=y
         CONFIG_SUPPORT_PCIE_GEN_SWITCH=n
@@ -3371,12 +3367,6 @@ ifeq ($(CONFIG_SUPPORT_PHY_ICS_V4), y)
     ccflags-y += -DCFG_SUPPORT_PHY_ICS_V4=1
 else
     ccflags-y += -DCFG_SUPPORT_PHY_ICS_V4=0
-endif
-
-ifeq ($(CONFIG_WLAN_PLATFORM), mt6993)
-    ccflags-y += -DCFG_DX5_BRINGUP=1
-else
-    ccflags-y += -DCFG_DX5_BRINGUP=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_P2P_SET_ML_BSS_NUM), y)
