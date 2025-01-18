@@ -39,14 +39,6 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
-enum ENUM_OP_NOTIFY_STATE_T {
-	OP_NOTIFY_STATE_KEEP = 0, /* Won't change OP mode */
-	OP_NOTIFY_STATE_SENDING,  /* Sending OP notification frame */
-	OP_NOTIFY_STATE_SUCCESS,  /* OP notification Tx success */
-	OP_NOTIFY_STATE_FAIL,     /* OP notification Tx fail(over retry limit)*/
-	OP_NOTIFY_STATE_ROLLBACK, /* OP notification rollback */
-	OP_NOTIFY_STATE_NUM
-};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -10422,7 +10414,11 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 			/* Re-send notification frame */
 			if (prBssInfo
 				    ->aucOpModeChangeRetryCnt[ucOpChangeType] <=
-			    OPERATION_NOTICATION_TX_LIMIT) {
+			    OPERATION_NOTICATION_TX_LIMIT
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+			    && !prAdapter->rWifiVar.fgDbdcFastSwitch
+#endif
+			) {
 				u4Status = rlmSendOpModeFrameByType(prAdapter,
 					prStaRec, ucOpChangeType,
 					prBssInfo->ucOpChangeChannelWidth,

@@ -21,7 +21,7 @@
  */
 #include "precomp.h"
 #include "wsys_cmd_handler_fw.h"
-
+#include "rlm.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3992,7 +3992,16 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(struct ADAPTER *prAdapter)
 		prDbdcInfo->eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	if (!prAdapter->rWifiVar.fgDbdcFastSwitch)
+		DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
+
+	if (prAdapter->rWifiVar.fgDbdcFastSwitch)
+		cnmDbdcGuardTimerCallback(prAdapter, (uintptr_t)NULL);
+#else
 	DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
+#endif
+
 #if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
 	cnmDbdcDisableGuardTimeImmediately(prAdapter);
 #endif
@@ -4047,9 +4056,18 @@ cnmDbdcFsmEntryFunc_DISABLE_GUARD(struct ADAPTER *prAdapter)
 		prDbdcInfo->eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
-	DBDC_SET_GUARD_TIME(prAdapter, DBDC_DISABLE_GUARD_TIME);
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	if (!prAdapter->rWifiVar.fgDbdcFastSwitch)
+#endif
+		DBDC_SET_GUARD_TIME(prAdapter, DBDC_DISABLE_GUARD_TIME);
 
 	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
+
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	if (prAdapter->rWifiVar.fgDbdcFastSwitch)
+		cnmDbdcGuardTimerCallback(prAdapter, (uintptr_t)NULL);
+#endif
+
 #if (CFG_SUPPORT_DISABLE_DBDC_GUARD_TIME == 1)
 	cnmDbdcDisableGuardTimeImmediately(prAdapter);
 #endif
@@ -4095,10 +4113,16 @@ cnmDbdcFsmEventHandler_DISABLE_IDLE(
 		}
 		break;
 
-	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
-	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
 	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
 	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+		DBGLOG(CNM, WARN,
+		"[DBDC] Abnormal event %d If resume just happened then ignore\n",
+		eEvent);
+		break;
+#endif
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
 	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
 		/* ABNORMAL CASE*/
 		DBDC_FSM_MSG_WRONG_EVT(prAdapter, eEvent);
@@ -4333,6 +4357,12 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 
 	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
 	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+		DBGLOG(CNM, WARN,
+		"[DBDC] Abnormal event %d If resume just happened then ignore\n",
+		eEvent);
+		break;
+#endif
 	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
 		/* ABNORMAL CASE*/
 		DBDC_FSM_MSG_WRONG_EVT(prAdapter, eEvent);
@@ -4634,6 +4664,33 @@ bool cnmDbdcIsDisabled(struct ADAPTER *prAdapter)
 
 	return FALSE;
 }
+
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+/*!
+ * @brief Checks if the CNM DBDC FSM is DISABLE_IDLE or
+ *        ENABLE_IDLE based on the provided adapter.
+ *        check whether DBDC is idle
+ *        to avoid DBDC FSM confusion when suspend
+ *
+ * @param ADAPTER
+ *
+ * @return boolean
+ */
+u_int8_t cnmDbdcFsmIsIdle(struct ADAPTER *prAdapter)
+{
+	enum ENUM_DBDC_FSM_STATE_T eCurrFsm;
+
+	if (prAdapter == NULL)
+		return FALSE;
+
+	eCurrFsm = prAdapter->rDbdcInfo.eDbdcFsmCurrState;
+	if (eCurrFsm == ENUM_DBDC_FSM_STATE_ENABLE_IDLE ||
+		eCurrFsm == ENUM_DBDC_FSM_STATE_DISABLE_IDLE)
+		return TRUE;
+
+	return FALSE;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6860,6 +6917,79 @@ void cnmPowerControlErrorHandling(
 		break;
 	default:
 		break;
+	}
+}
+#endif
+
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+void cnmDbdcPreResumeFlow(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex, i;
+	struct DBDC_INFO_T *prDbdcInfo;
+	struct BSS_INFO *prBssInfo;
+
+	if (!prAdapter) {
+		DBGLOG(CNM, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	prAdapter->rWifiVar.fgDbdcFastSwitch = FALSE;
+	prDbdcInfo = &prAdapter->rDbdcInfo;
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum;
+		ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		for (i = 0; i < OP_NOTIFY_TYPE_NUM; i++) {
+			if (prBssInfo->aucOpModeChangeState[i]
+				== OP_NOTIFY_STATE_FAIL) {
+				switch (prDbdcInfo->eDbdcFsmCurrState) {
+				case ENUM_DBDC_FSM_STATE_DISABLE_IDLE:
+					cnmDbdcOpmodeChangeAndWait(
+						prAdapter, FALSE);
+					break;
+				case ENUM_DBDC_FSM_STATE_ENABLE_IDLE:
+					cnmDbdcOpmodeChangeAndWait(
+						prAdapter, TRUE);
+					break;
+				default:
+				DBGLOG(CNM, ERROR,
+					"[DBDC] FSM %d is abnormal\n",
+					prDbdcInfo->eDbdcFsmCurrState);
+					break;
+				}
+				return;
+			}
+		}
+	}
+}
+
+void cnmDbdcPreSuspendFlow(struct ADAPTER *prAdapter)
+{
+	struct DBDC_INFO_T *prDbdcInfo;
+
+	if (!prAdapter) {
+		DBGLOG(CNM, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+	prDbdcInfo = &prAdapter->rDbdcInfo;
+	prAdapter->rWifiVar.fgDbdcFastSwitch = TRUE;
+
+	switch (prDbdcInfo->eDbdcFsmCurrState) {
+	case ENUM_DBDC_FSM_STATE_ENABLE_GUARD:
+	case ENUM_DBDC_FSM_STATE_DISABLE_GUARD:
+		if (timerPendingTimer(&prDbdcInfo->rDbdcGuardTimer)) {
+			log_dbg(CNM, INFO,
+				"[DBDC] Stop Guard Timer type %u\n",
+				prDbdcInfo->eDdbcGuardTimerType);
+			cnmTimerStopTimer(prAdapter,
+				&prDbdcInfo->rDbdcGuardTimer);
+			cnmDbdcGuardTimerCallback(prAdapter,
+				(uintptr_t)NULL);
+		}
+		break;
+	default:
+		DBGLOG(CNM, WARN, "DBDC FSM state: %d\n",
+			prDbdcInfo->eDbdcFsmCurrState);
 	}
 }
 #endif

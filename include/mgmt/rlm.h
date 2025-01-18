@@ -269,6 +269,15 @@ static const char * const apucVhtOpBw[CW_NUM] = {
  *******************************************************************************
  */
 
+enum ENUM_OP_NOTIFY_STATE_T {
+	OP_NOTIFY_STATE_KEEP = 0, /* Won't change OP mode */
+	OP_NOTIFY_STATE_SENDING,  /* Sending OP notification frame */
+	OP_NOTIFY_STATE_SUCCESS,  /* OP notification Tx success */
+	OP_NOTIFY_STATE_FAIL,     /* OP notification Tx fail(over retry limit)*/
+	OP_NOTIFY_STATE_ROLLBACK, /* OP notification rollback */
+	OP_NOTIFY_STATE_NUM
+};
+
 #if (CFG_SUPPORT_FACT_CAL == 1)
 
 enum FACT_CAL_ACTION {

@@ -1246,6 +1246,9 @@ struct WIFI_VAR {
 	uint8_t ucSigmaTestMode;
 	enum ENUM_CNM_DBDC_MODE eDbdcMode;
 	u_int8_t fgDbDcModeEn;
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	u_int8_t fgDbdcFastSwitch;
+#endif
 	uint8_t ucDbdcOMFrame;
 	u_int8_t fgWmmConcurrent;
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)

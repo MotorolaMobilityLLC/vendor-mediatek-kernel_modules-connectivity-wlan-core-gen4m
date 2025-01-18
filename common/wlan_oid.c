@@ -15583,6 +15583,9 @@ wlanoidAisPreSuspend(struct ADAPTER *prAdapter,
 	prAdapter->fgWowLinkDownPendFlag = FALSE;
 #endif
 
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	cnmDbdcPreSuspendFlow(prAdapter);
+#endif
 	return WLAN_STATUS_SUCCESS;
 } /* wlanoidPreSuspend */
 

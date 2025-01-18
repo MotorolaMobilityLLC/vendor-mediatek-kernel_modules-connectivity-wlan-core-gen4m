@@ -15843,6 +15843,32 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 #endif
 }
 
+u_int8_t
+wlanCheckFeatureSuspendReady(struct GLUE_INFO *prGlueInfo)
+{
+	u_int8_t fgIsSuspendReady = TRUE;
+	u_int8_t fgIsPreSuspendDone = FALSE;
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	u_int8_t fgIsDbdcSuspendDone = FALSE;
+#endif
+
+	if (prGlueInfo->prAdapter == NULL)
+		return FALSE;
+
+	/* Check preSuspend done*/
+	fgIsPreSuspendDone = (u_int8_t)KAL_TEST_BIT(
+		SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+		prGlueInfo->prAdapter->ulSuspendFlag);
+	fgIsSuspendReady &= fgIsPreSuspendDone;
+
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	/* Check DBDC FSM switch done */
+	fgIsDbdcSuspendDone = cnmDbdcFsmIsIdle(prGlueInfo->prAdapter);
+	fgIsSuspendReady &= fgIsDbdcSuspendDone;
+#endif
+	return fgIsSuspendReady;
+}
+
 void
 wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
 {
@@ -15857,8 +15883,7 @@ wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
 	if (prGlueInfo->prAdapter == NULL)
 		return;
 
-	while (!(KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
-		prGlueInfo->prAdapter->ulSuspendFlag))) {
+	while (!wlanCheckFeatureSuspendReady(prGlueInfo)) {
 		if (u1Count > HIF_SUSPEND_MAX_WAIT_TIME) {
 			DBGLOG(HAL, ERROR, "cfg80211 not suspend\n");
 			/* no cfg80211 suspend called */

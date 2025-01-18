@@ -909,6 +909,23 @@ uint32_t cnmUpdateDbdcSetting(
 /*----------------------------------------------------------------------------*/
 bool cnmDbdcIsDisabled(struct ADAPTER *prAdapter);
 
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function checks if the CNM DBDC FSM is DISABLE_IDLE or
+ *        ENABLE_IDLE based on the provided adapter.
+ *        check whether DBDC is idle
+ *        to avoid DBDC FSM confusion when suspend
+ *
+ * @param[in]   prAdapter       Pointer to the ADAPTER structure.
+ *
+ * @return  TRUE if CNM DbDc FSM is DISABLE_IDLE or ENABLE_IDLE,
+ * FALSE otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t cnmDbdcFsmIsIdle(struct ADAPTER *prAdapter);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief	This function enables or disables the pre-connection
@@ -997,6 +1014,10 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t cnmDBDCIsReqPeivilegeLock(struct ADAPTER *prAdapter);
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+void cnmDbdcPreResumeFlow(struct ADAPTER *prAdapter);
+void cnmDbdcPreSuspendFlow(struct ADAPTER *prAdapter);
+#endif /*CFG_SUPPORT_DBDC_SUSPEND_FLOW*/
 #endif /*CFG_SUPPORT_DBDC*/
 
 /*----------------------------------------------------------------------------*/

@@ -6601,6 +6601,9 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 		       rStatus);
 	halSetSuspendFlagToFw(prGlueInfo->prAdapter, FALSE);
 	fw_log_handler();
+#if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
+	cnmDbdcPreResumeFlow(prAdapter);
+#endif
 end:
 	kalHaltUnlock();
 

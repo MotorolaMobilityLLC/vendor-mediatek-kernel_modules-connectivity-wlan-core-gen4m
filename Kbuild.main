@@ -1783,6 +1783,12 @@ else
     ccflags-y += -DCFG_SUPPORT_DISABLE_DBDC_GUARD_TIME=0
 endif
 
+ifeq ($(CONFIG_DBDC_SUSPEND_FLOW), y)
+    ccflags-y += -DCFG_SUPPORT_DBDC_SUSPEND_FLOW=1
+else
+    ccflags-y += -DCFG_SUPPORT_DBDC_SUSPEND_FLOW=0
+endif
+
 ifneq ($(CONFIG_NSS),)
     ccflags-y += -DCFG_NSS=$(CONFIG_NSS)
 endif
