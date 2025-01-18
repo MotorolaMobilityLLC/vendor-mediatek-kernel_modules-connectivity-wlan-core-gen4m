@@ -1349,10 +1349,13 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 	/* if FW receive beacon update before ch grant, beacon will always
 	 * in bn0 with Skayhawk.
 	 */
-	if (!IS_BSS_ACTIVE(prBssInfo) || prBssInfo->fgIsSwitchingChnl) {
-		DBGLOG(P2P, TRACE,
-		       "skip update beacon to FW, active=%u, chnlSwitching=%u\n",
-		       IS_BSS_ACTIVE(prBssInfo), prBssInfo->fgIsSwitchingChnl);
+	if (!IS_BSS_ACTIVE(prBssInfo) || !prBssInfo->fgIsApGoGranted ||
+	    prBssInfo->fgIsSwitchingChnl) {
+		DBGLOG(P2P, WARN,
+			"skip update beacon to FW, active=%u, granted=%u chnlSwitching=%u\n",
+			IS_BSS_ACTIVE(prBssInfo),
+			prBssInfo->fgIsApGoGranted,
+			prBssInfo->fgIsSwitchingChnl);
 		u4Status = WLAN_STATUS_NOT_ACCEPTED;
 		goto exit;
 	}

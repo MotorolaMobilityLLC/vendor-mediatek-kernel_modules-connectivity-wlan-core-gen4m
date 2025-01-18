@@ -1832,12 +1832,6 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_SAP_PUNCTURE */
 
-	/*
-	 * beacon content is related with Nss number ,
-	 * need to update because of modification
-	 */
-	bssUpdateBeaconContent(prAdapter, prP2pBssInfo->ucBssIndex);
-
 	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
 	    (prP2pBssInfo->eIntendOPMode != OP_MODE_NUM)) {
 		/* 1. No switch to AP mode.
