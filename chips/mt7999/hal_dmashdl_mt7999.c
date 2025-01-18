@@ -263,6 +263,8 @@ void mt7999DmashdlInit(struct ADAPTER *prAdapter)
 	u4Addr = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_ADDR;
 	u4Val = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_SW_RST_B_MASK |
 		WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_WLAN_ID_DEC_EN_MASK;
+	/* pse_page_size(bit[21:20]) should set to 256B(0x1) */
+	u4Val |= (1 << 20);
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	asicConnac5xDmashdlLiteSetTotalPlePsePageSize(
