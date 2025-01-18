@@ -1799,7 +1799,7 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 			prCliStaRec->u2AssocReqIeLen;
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
-	(CFG_ADVANCED_80211_MLO == 1)
+	(CFG_ADVANCED_80211_MLO == 1 && CFG_MTK_ANDROID_WMT == 1)
 		if (prCliStaRec->pucAssocRespIe &&
 		    prCliStaRec->u2AssocRespIeLen) {
 			rStationInfo.assoc_resp_ies =
@@ -1841,7 +1841,7 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 			prCliStaRec->fgIsConnected = FALSE;
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
-	(CFG_ADVANCED_80211_MLO == 1)
+	(CFG_ADVANCED_80211_MLO == 1 && CFG_MTK_ANDROID_WMT == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IS_MLD_BSSINFO_MULTI(prMldBss) || prMldSta) {
 				rStationInfo.mlo_params_valid = true;
