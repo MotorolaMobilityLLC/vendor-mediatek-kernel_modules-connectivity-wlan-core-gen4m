@@ -712,14 +712,25 @@ uint16_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 {
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
 	uint8_t i;
+	uint8_t ssid_num, ssid_ext_num;
 	uint8_t *pos = tag->aucSsidBuffer;
-	uint8_t ssid_num = kal_min_t(uint8_t, cmd->ucSSIDNum, 4);
-	uint8_t ssid_ext_num = kal_min_t(uint8_t, cmd->ucSSIDExtNum, 6);
-	uint16_t len = sizeof(*tag) +
-		(ssid_num + ssid_ext_num) * sizeof(struct PARAM_SSID);
+	uint16_t len;
+
+	if (cmd->ucSSIDNum > 4)
+		ssid_num = 4;
+	else
+		ssid_num = cmd->ucSSIDNum;
+
+	if (cmd->ucSSIDExtNum > 6)
+		ssid_ext_num = 6;
+	else
+		ssid_ext_num = cmd->ucSSIDExtNum;
 
 	if ((ssid_num + ssid_ext_num) == 0)
 		return 0;
+
+	len = sizeof(*tag) +
+		(ssid_num + ssid_ext_num) * sizeof(struct PARAM_SSID);
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID;
 	tag->u2Length = len;
@@ -812,15 +823,26 @@ uint16_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	struct UNI_CMD_SCAN_CHANNEL_INFO *tag =
 		(struct UNI_CMD_SCAN_CHANNEL_INFO *)buf;
 	uint8_t i;
+	uint8_t chnl_num, chnl_ext_num;
 	uint8_t *pos = tag->aucChnlInfoBuffer;
-	uint8_t chnl_num = kal_min_t(uint8_t, cmd->ucChannelListNum, 32);
-	uint8_t chnl_ext_num = kal_min_t(uint8_t, cmd->ucChannelListExtNum, 32);
-	uint16_t len = sizeof(*tag) +
-	       ALIGN_4((chnl_num + chnl_ext_num) * sizeof(struct CHANNEL_INFO));
+	uint16_t len;
+
+	if (cmd->ucChannelListNum > 32)
+		chnl_num = 32;
+	else
+		chnl_num = cmd->ucChannelListNum;
+
+	if (cmd->ucChannelListExtNum > 32)
+		chnl_ext_num = 32;
+	else
+		chnl_ext_num = cmd->ucChannelListExtNum;
 
 	if (cmd->ucChannelType == SCAN_CHANNEL_FULL &&
 		(chnl_num + chnl_ext_num) == 0)
 		return 0;
+
+	len = sizeof(*tag) +
+	ALIGN_4((chnl_num + chnl_ext_num) * sizeof(struct CHANNEL_INFO));
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_CHANNEL;
 	tag->u2Length = len;
@@ -1689,12 +1711,18 @@ uint16_t nicUniCmdSchedScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 {
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
 	uint8_t i;
+	uint8_t num;
 	uint8_t *pos = tag->aucSsidBuffer;
-	uint8_t num = kal_min_t(uint8_t, cmd->ucSsidNum, 10);
-	uint16_t len = sizeof(*tag) + num * sizeof(struct PARAM_SSID);
+	uint16_t len;
 
-	if (num == 0)
+	if (cmd->ucSsidNum > 10)
+		num = 10;
+	else if (cmd->ucSsidNum != 0)
+		num = cmd->ucSsidNum;
+	else
 		return 0;
+
+	len = sizeof(*tag) + num * sizeof(struct PARAM_SSID);
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID;
 	tag->u2Length = len;
@@ -1714,13 +1742,19 @@ uint16_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	struct UNI_CMD_SCAN_CHANNEL_INFO *tag =
 		(struct UNI_CMD_SCAN_CHANNEL_INFO *)buf;
 	uint8_t i;
+	uint8_t num;
 	uint8_t *pos = tag->aucChnlInfoBuffer;
-	uint8_t num = kal_min_t(uint8_t, cmd->ucChnlNum, 64);
-	uint16_t len = sizeof(*tag) +
-			ALIGN_4(num * sizeof(struct CHANNEL_INFO));
+	uint16_t len;
 
-	if (num == 0)
+	if (cmd->ucChnlNum > 64)
+		num = 64;
+	else if (cmd->ucChnlNum != 0)
+		num = cmd->ucChnlNum;
+	else
 		return 0;
+
+	len = sizeof(*tag) +
+			ALIGN_4(num * sizeof(struct CHANNEL_INFO));
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_CHANNEL;
 	tag->u2Length = len;
@@ -1757,12 +1791,18 @@ uint16_t nicUniCmdSchedScanTagSsidMatchSets(struct ADAPTER *ad, uint8_t *buf,
 	struct UNI_CMD_SCAN_SSID_MATCH_SETS *tag =
 		(struct UNI_CMD_SCAN_SSID_MATCH_SETS *)buf;
 	uint8_t i;
+	uint8_t num;
 	uint8_t *pos = tag->aucMatchSsidBuffer;
-	uint8_t num = kal_min_t(uint8_t, cmd->ucMatchSsidNum, 16);
-	uint16_t len = sizeof(*tag) + num * sizeof(struct SSID_MATCH_SETS);
+	uint16_t len;
 
-	if (num == 0)
+	if (cmd->ucMatchSsidNum > 16)
+		num = 16;
+	else if (cmd->ucMatchSsidNum != 0)
+		num = cmd->ucMatchSsidNum;
+	else
 		return 0;
+
+	len = sizeof(*tag) + num * sizeof(struct SSID_MATCH_SETS);
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID_MATCH_SETS;
 	tag->u2Length = len;
