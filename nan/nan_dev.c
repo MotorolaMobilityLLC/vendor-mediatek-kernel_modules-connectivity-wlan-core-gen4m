@@ -1313,10 +1313,21 @@ u_int8_t nanTrySwitchSapChannel(
 			prNANSpecInfo->ucBssIndex,
 			ucIdx);
 
-		if (sta2g)
+		/* Single SAP or MLO 2G SAP */
+		if (sta2g && !ucIdx)
 			nan = sta2g;
-		if (!fgIsSingleSap && !ucIdx && sta5g)
+		/* MLO 5/6G SAP */
+		if (!fgIsSingleSap && ucIdx && sta5g)
 			nan = sta5g;
+
+		if (fgIsSingleSap &&
+			(nan->ucPrimaryChannel ==
+			sap->ucPrimaryChannel)) {
+			DBGLOG(NAN, DEBUG,
+				"Skip ch = %d\n",
+				nan->ucPrimaryChannel);
+			break;
+		}
 
 		ccmChannelSwitchProducer(
 			prAdapter,
@@ -1341,6 +1352,9 @@ uint8_t nanGetSapCsaChannel(
 	uint8_t ucSta2gCh = 0;
 	uint8_t ucNan2gCh = 0;
 
+	if (!prAdapter->rWifiVar.fgNanConcurrency)
+		return FALSE;
+
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		struct BSS_INFO *b =
 			(struct BSS_INFO *)NULL;
@@ -1357,18 +1371,29 @@ uint8_t nanGetSapCsaChannel(
 			ucNan2gCh = b->ucPrimaryChannel;
 	}
 
-	if (nanIsOn(prAdapter)) {
+	/* Restore Trigger */
+	if (prAdapter->fgIsNANRegistered &&
+		prP2pBssInfo &&
+		prP2pBssInfo->ucBackupCh) {
+		*eRfBand = prP2pBssInfo->eBackupBand;
+		*ucCh = prP2pBssInfo->ucBackupCh;
+		/* Reset */
+		prP2pBssInfo->ucBackupCh = 0;
+		DBGLOG(NAN, DEBUG,
+			"Restore ch = %d\n", *ucCh);
+		return TRUE;
+	}
+
+	/* Normal Single SAP */
+	if (!prAdapter->fgIsNANRegistered &&
+		nanIsOn(prAdapter)) {
 		*eRfBand = BAND_2G4;
 		if (ucSta2gCh)
 			*ucCh = ucSta2gCh;
 		else
 			*ucCh = ucNan2gCh;
-
-		return TRUE;
-	} else if (prP2pBssInfo &&
-		prP2pBssInfo->ucBackupCh) {
-		*eRfBand = prP2pBssInfo->eBackupBand;
-		*ucCh = prP2pBssInfo->ucBackupCh;
+		DBGLOG(NAN, DEBUG,
+			"Nan on ch = %d\n", *ucCh);
 		return TRUE;
 	}
 
@@ -1411,6 +1436,9 @@ void nanRestoreSapChannel(
 		return;
 
 	if (!prAdapter->rWifiVar.fgNanConcurrency)
+		return;
+
+	if (!prAdapter->fgIsNANRegistered)
 		return;
 
 	prNANSpecInfo = prAdapter->rWifiVar
