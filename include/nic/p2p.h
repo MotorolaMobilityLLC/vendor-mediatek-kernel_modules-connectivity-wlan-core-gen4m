@@ -288,6 +288,7 @@ struct P2P_ACS_REQ_INFO {
 	uint8_t ucVhtSeg1;
 	uint16_t u2PunctBitmap;
 	uint32_t au4SafeChnl[ENUM_SAFE_CH_MASK_MAX_NUM];
+	uint32_t au4ValidChnl[ENUM_SAFE_CH_MASK_MAX_NUM];
 };
 
 struct P2P_CHNL_REQ_INFO {

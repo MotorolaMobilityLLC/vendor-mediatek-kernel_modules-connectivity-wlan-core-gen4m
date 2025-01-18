@@ -89,6 +89,7 @@ struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSccOnlyChCandFilterTable[] = {
 };
 
 struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSingleApMccFilterTable[] = {
+	{P2P_ACS_CAND_FILTER, p2pAcsCandFilter},
 	{P2P_DUAL_A_BAND_FILTER, p2pDualABandFilter},
 	{P2P_RFBAND_CHECK_FILTER, p2pRfBandCheckFilter},
 	{P2P_ALIVE_BSS_SYNC_FILTER, p2pMccAliveBssSyncFilter},
@@ -2226,6 +2227,39 @@ SKIP_START_RDD:
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
+
+
+void p2pFuncGetMaxBw(struct ADAPTER *prAdapter,
+		uint8_t *ucMaxBw,
+		enum ENUM_BAND eBand,
+		u_int8_t fgIsSap)
+{
+	if (fgIsSap) {
+		if (eBand == BAND_2G4)
+			*ucMaxBw =
+				prAdapter->rWifiVar.ucAp2gBandwidth;
+		else if (eBand == BAND_5G)
+			*ucMaxBw =
+				prAdapter->rWifiVar.ucAp5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			*ucMaxBw =
+				prAdapter->rWifiVar.ucAp6gBandwidth;
+#endif
+	} else {
+		if (eBand == BAND_2G4)
+			*ucMaxBw =
+				prAdapter->rWifiVar.ucP2p2gBandwidth;
+		else if (eBand == BAND_5G)
+			*ucMaxBw =
+				prAdapter->rWifiVar.ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			*ucMaxBw =
+				prAdapter->rWifiVar.ucP2p6gBandwidth;
+#endif
+	}
+}
 
 void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo)
@@ -8686,6 +8720,52 @@ void p2pForbiddenChRemove(struct ADAPTER *prAdapter,
 	}
 }
 
+uint8_t p2pReturnMaxBit(struct ADAPTER *prAdapter,
+		uint32_t u4ChBitMap)
+{
+	uint8_t i = 0xff;
+
+	if (!u4ChBitMap)
+		return i;
+
+	while (u4ChBitMap != 0) {
+		if (i == 0xff)
+			i = 0;
+		else
+			i++;
+		u4ChBitMap &= ~(BIT(i));
+	}
+	return i;
+}
+
+void p2pAcsCandFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwitchCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	uint8_t i;
+	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prP2pBssInfo->u4PrivateData);
+	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
+
+	if (prAcsReqInfo->au4ValidChnl[0] == 0)
+		return;
+
+	for (i = *ucChSwitchCandNum; i > 0; i--) {
+		if (prSapSwitchCand[i-1].eRfBand == BAND_2G4 &&
+			p2pReturnMaxBit(prAdapter,
+			prAcsReqInfo->au4ValidChnl[0]) <=
+			MAX_2G_BAND_CHN_NUM)
+			prSapSwitchCand[i-1].ucChUpperBound =
+			p2pReturnMaxBit(prAdapter,
+			prAcsReqInfo->au4ValidChnl[0]);
+	}
+}
+
 void p2pHwBandMccRemove(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwitchCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand)
@@ -10455,6 +10535,7 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 	struct WIFI_VAR *prWifiVar;
 	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
 	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
+	uint8_t ucTempBw = MAX_BW_20MHZ;
 
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
@@ -10469,6 +10550,13 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 			"No chosed channel, use default channel %d\n",
 			prAcsReqInfo->ucPrimaryCh);
 	}
+	eSCO = nicGetSco(prGlueInfo->prAdapter,
+			 prAcsReqInfo->eBand,
+			 prAcsReqInfo->ucPrimaryCh);
+	nicReviseBwByCh(prGlueInfo->prAdapter,
+			prAcsReqInfo->eBand,
+			prAcsReqInfo->ucPrimaryCh,
+			eSCO, &ucTempBw);
 
 	if (!prGlueInfo->prAdapter->rWifiVar.fgSapOverwriteAcsChnlBw ||
 	    prAcsReqInfo->fgIsAis)
@@ -10489,7 +10577,8 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		ucMaxBandwidth = prWifiVar->ucApBandwidth;
 
 	if (prAcsReqInfo->eBand != BAND_2G4 &&
-	    ucMaxBandwidth != prAcsReqInfo->eChnlBw) {
+	    ucMaxBandwidth != prAcsReqInfo->eChnlBw &&
+	    ucTempBw >= ucMaxBandwidth) {
 		uint8_t ucS1;
 
 		ucS1 = nicGetS1(prAcsReqInfo->eBand,
@@ -10509,10 +10598,6 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 
 skip_bw_overwrite:
 	if (prAcsReqInfo->eChnlBw > MAX_BW_20MHZ) {
-		eSCO = nicGetSco(prGlueInfo->prAdapter,
-				 prAcsReqInfo->eBand,
-				 prAcsReqInfo->ucPrimaryCh);
-
 		prAcsReqInfo->ucSecondCh =
 			nicGetSecCh(prGlueInfo->prAdapter,
 				    prAcsReqInfo->eBand,

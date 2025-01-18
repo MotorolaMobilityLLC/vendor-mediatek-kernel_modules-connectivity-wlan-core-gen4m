@@ -5201,6 +5201,7 @@ static void initAcsParams(struct ADAPTER *prAdapter,
 {
 	struct RF_CHANNEL_INFO *prRfChannelInfo;
 	uint8_t i;
+	uint8_t ucChnlNum;
 
 	if (!prAdapter || !prMsgAcsRequest || !prAcsReqInfo)
 		return;
@@ -5250,9 +5251,29 @@ static void initAcsParams(struct ADAPTER *prAdapter,
 		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
 			prRfChannelInfo =
 				&(prMsgAcsRequest->arChannelListInfo[i]);
+			ucChnlNum = prRfChannelInfo->ucChannelNum;
 			DBGLOG(REQ, TRACE, "[%d] band=%d, ch=%d\n", i,
 				prRfChannelInfo->eBand,
 				prRfChannelInfo->ucChannelNum);
+			if (prRfChannelInfo->eBand == BAND_2G4 &&
+				ucChnlNum <= MAX_2G_BAND_CHN_NUM)
+				prAcsReqInfo->au4ValidChnl[0] |=
+					BIT(ucChnlNum);
+
+			else if (prRfChannelInfo->eBand == BAND_5G &&
+				ucChnlNum >= 36 &&
+				ucChnlNum <= 144)
+				prAcsReqInfo->au4ValidChnl[1] |=
+					BIT((ucChnlNum - 36) / 4);
+			else if (prRfChannelInfo->eBand == BAND_5G &&
+				ucChnlNum >= 149 && ucChnlNum <= 181)
+				prAcsReqInfo->au4ValidChnl[2] |=
+					BIT((ucChnlNum - 149) / 4);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prRfChannelInfo->eBand == BAND_6G)
+				prAcsReqInfo->au4ValidChnl[3] |=
+					BIT((ucChnlNum - 5) / 16);
+#endif
 		}
 	}
 
@@ -5559,6 +5580,81 @@ static void p2pRoleFsmSetSafeBitmap(struct ADAPTER *prAdapter,
 #endif
 }
 
+void p2pRoleFsmRunEventAcsCandOpt(struct ADAPTER *prAdapter,
+		struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest)
+{
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	uint8_t i;
+	enum ENUM_CHNL_EXT eSco;
+	uint8_t ucMaxBw = MAX_BW_20MHZ;
+	uint8_t ucTempBw = MAX_BW_20MHZ;
+	struct RF_CHANNEL_INFO *prRfChInfoArray;
+	uint32_t u4MsgSize;
+	uint32_t j = 0;
+
+	if (!prMsgAcsRequest->u4NumChannel)
+		return;
+
+	u4MsgSize = prMsgAcsRequest->u4NumChannel *
+		sizeof(struct RF_CHANNEL_INFO);
+
+	prRfChInfoArray = (struct RF_CHANNEL_INFO *)
+		kalMemAlloc(u4MsgSize, VIR_MEM_TYPE);
+	if (!prRfChInfoArray)
+		goto exit;
+
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo =
+			&(prMsgAcsRequest->arChannelListInfo[i]);
+		eSco = nicGetSco(prAdapter,
+				 prRfChannelInfo->eBand,
+				 prRfChannelInfo->ucChannelNum);
+		p2pFuncGetMaxBw(prAdapter,
+				&ucTempBw,
+				prRfChannelInfo->eBand,
+				TRUE);
+
+		nicReviseBwByCh(prAdapter, prRfChannelInfo->eBand,
+				prRfChannelInfo->ucChannelNum,
+				eSco, &ucTempBw);
+		if (ucTempBw >= ucMaxBw)
+			ucMaxBw = ucTempBw;
+	}
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo =
+			&(prMsgAcsRequest->arChannelListInfo[i]);
+		eSco = nicGetSco(prAdapter,
+				 prRfChannelInfo->eBand,
+				 prRfChannelInfo->ucChannelNum);
+		p2pFuncGetMaxBw(prAdapter,
+				&ucTempBw,
+				prRfChannelInfo->eBand,
+				TRUE);
+
+		nicReviseBwByCh(prAdapter, prRfChannelInfo->eBand,
+				prRfChannelInfo->ucChannelNum,
+				eSco, &ucTempBw);
+		if (ucTempBw >= ucMaxBw) {
+			prRfChInfoArray[j] =
+				*prRfChannelInfo;
+			DBGLOG(REQ, TRACE,
+				"[%d] band=%d, ch=%d, eSco=%u, maxBw=%u\n",
+				i,
+				prRfChannelInfo->eBand,
+				prRfChannelInfo->ucChannelNum,
+				eSco, ucTempBw);
+			j++;
+		}
+	}
+	kalMemCopy(prMsgAcsRequest->arChannelListInfo,
+		prRfChInfoArray,
+		j * sizeof(struct RF_CHANNEL_INFO));
+	prMsgAcsRequest->u4NumChannel = j;
+exit:
+	if (prRfChInfoArray)
+		kalMemFree(prRfChInfoArray, VIR_MEM_TYPE, u4MsgSize);
+}
+
 void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -5792,7 +5888,6 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	/* prevent modem IDC safe chnl not cover requesting chnl */
 	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
 		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
-
 		if (p2pFuncIsLteSafeChnl(prRfChannelInfo->eBand,
 					 prRfChannelInfo->ucChannelNum,
 					 prMsgAcsRequest->au4SafeChnl)) {
@@ -5818,6 +5913,8 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			*pu4SafeChInfo_5g_1,
 			*pu4SafeChInfo_6g);
 	}
+	p2pRoleFsmRunEventAcsCandOpt(prAdapter,
+			prMsgAcsRequest);
 
 	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
 		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);

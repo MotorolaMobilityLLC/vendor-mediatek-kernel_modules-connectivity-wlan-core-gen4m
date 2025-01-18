@@ -61,6 +61,7 @@ enum ENUM_P2P_CH_FILTER_TYPE {
 	P2P_DUAL_A_BAND_FILTER,
 	P2P_USER_PREF_CH_FILTER,
 	P2P_SET_DEFAULT_CH_FILTER,
+	P2P_ACS_CAND_FILTER,
 	P2P_MAX_CH_FILTER_NUM
 };
 
@@ -193,6 +194,11 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
 		struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo,
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
+
+void p2pFuncGetMaxBw(struct ADAPTER *prAdapter,
+		uint8_t *ucMaxBw,
+		enum ENUM_BAND eBand,
+		u_int8_t fgIsSap);
 
 void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo);
@@ -553,6 +559,12 @@ void p2pBtDesenseChFilter(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
 
 void p2pDualABandFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pAcsCandFilter(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwithCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
 		struct BSS_INFO *prP2pBssInfo,
