@@ -1352,10 +1352,6 @@ u_int8_t nanTrySwitchSapChannel(
 
 	fgIsSingleSap = (sapnum == 1);
 
-	ccmRegisterStableCb(
-		prAdapter,
-		nanCcmStableCallback);
-
 	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
 		prNANSpecInfo = prAdapter->rWifiVar
 			.aprNanSpecificBssInfo[ucIdx];
@@ -1391,6 +1387,10 @@ u_int8_t nanTrySwitchSapChannel(
 		if (fgIsSingleSap)
 			break;
 	}
+
+	ccmRegisterStableCb(
+		prAdapter,
+		nanCcmStableCallback);
 
 	return TRUE;
 #endif /* CFG_ENABLE_WIFI_DIRECT && CFG_NAN_CONCURRENCY */
