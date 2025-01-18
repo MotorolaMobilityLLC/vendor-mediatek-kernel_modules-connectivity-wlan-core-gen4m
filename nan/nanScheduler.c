@@ -17519,6 +17519,7 @@ void nanUpdateMbmcIdx(struct ADAPTER *ad,
 		    prBssInfo->eHwBandIdx != ENUM_BAND_AUTO)
 			nicUniUpdateStaRecFastAll(ad, prBssInfo);
 #endif
+		/* TODO */
 		prBssInfo->eBackupHwBandIdx = prBssInfo->eHwBandIdx;
 		prBssInfo->eHwBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

@@ -2948,6 +2948,10 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	if (prBssInfo->eBand != prP2pChnlReqInfo->eBand)
 		fgIsCrossBand = TRUE;
 
+#if (CFG_NAN_CONCURRENCY == 1)
+	nanBackupSapChannel(prAdapter, prBssInfo);
+#endif
+
 	/*  Setup Channel, Band */
 	prBssInfo->ucPrimaryChannel = prP2pChnlReqInfo->ucReqChnlNum;
 	prBssInfo->eBand = prP2pChnlReqInfo->eBand;
@@ -7791,33 +7795,6 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 		return TRUE;
 	}
 
-#if CFG_SUPPORT_NAN
-	if (nanIsOn(prAdapter)) {
-		*ucStaChannelNum =
-			AP_DEFAULT_CHANNEL_2G;
-		*eStaBand = BAND_2G4;
-		prAdapter->ucNanSapCh =
-			*ucSapChannelNum;
-		prAdapter->eNanSapBand =
-			*eSapBand;
-		DBGLOG(NAN, INFO,
-			"[SCC] StaCH:%d,SapCH:%d\n",
-			*ucStaChannelNum,
-			*ucSapChannelNum);
-		return TRUE;
-	} else if (prAdapter->ucNanSapCh) {
-		*ucStaChannelNum =
-			prAdapter->ucNanSapCh;
-		*eStaBand =
-			prAdapter->eNanSapBand;
-		DBGLOG(NAN, INFO,
-			"[SCC] StaCH:%d,SapCH:%d\n",
-			*ucStaChannelNum,
-			*ucSapChannelNum);
-		return TRUE;
-	}
-#endif
-
 	return FALSE;
 }
 
@@ -7834,42 +7811,6 @@ void p2pFuncCrossBandChannelSwitchCheck(
 #endif
 	u_int8_t *fgDbDcModeEn)
 {
-#if CFG_SUPPORT_DBDC
-#if CFG_SUPPORT_NAN
-	if (nanIsOn(prAdapter)) {
-		if (*eStaBand != BAND_2G4) {
-			*ucStaChannelNum =
-				AP_DEFAULT_CHANNEL_2G;
-			*eStaBand = BAND_2G4;
-		}
-		prAdapter->ucNanSapCh =
-			*ucSapChannelNum;
-		prAdapter->eNanSapBand =
-			*eSapBand;
-		*fgDbDcModeEn = FALSE;
-		DBGLOG(NAN, INFO,
-			"[SCC][Bss%d]StaCH:%d,SapCH:%d\n",
-			prP2pBssInfo->ucBssIndex,
-			*ucStaChannelNum,
-			*ucSapChannelNum);
-		return;
-	} else if (prAdapter->ucNanSapCh) {
-		*ucStaChannelNum =
-			prAdapter->ucNanSapCh;
-		*eStaBand =
-			prAdapter->eNanSapBand;
-		prAdapter->ucNanSapCh = 0;
-		*fgDbDcModeEn = FALSE;
-		DBGLOG(NAN, INFO,
-			"[SCC][Bss%d]StaCH:%d,SapCH:%d\n",
-			prP2pBssInfo->ucBssIndex,
-			*ucStaChannelNum,
-			*ucSapChannelNum);
-		return;
-	}
-#endif
-#endif
-
 #if CFG_SUPPORT_DBDC
 	*fgDbDcModeEn = (prAdapter->rWifiVar.eDbdcMode !=
 		ENUM_DBDC_MODE_DISABLED);
@@ -9501,6 +9442,13 @@ bool p2pFuncSwitchSapChannel(
 			prP2pBssInfo,
 			&eFilterScnario);
 
+#if CFG_SUPPORT_NAN
+	if (nanGetSapCsaChannel(prAdapter,
+		prP2pBssInfo,
+		&rSapSwitchCand[0].eRfBand,
+		&rSapSwitchCand[0].ucChUpperBound))
+		ucSapChCandNum = 1;
+#endif /* CFG_SUPPORT_NAN */
 
 	/* Use sta ch info to do sap ch switch */
 	if (ucSapChCandNum == 0 ||

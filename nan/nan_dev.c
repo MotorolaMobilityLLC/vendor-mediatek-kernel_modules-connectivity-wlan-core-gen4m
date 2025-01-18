@@ -538,6 +538,10 @@ nanDevDisableRequest(struct ADAPTER *prAdapter) {
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 
+#if (CFG_ENABLE_WIFI_DIRECT == 1)
+	nanRestoreSapChannel(prAdapter);
+#endif /* (CFG_ENABLE_WIFI_DIRECT == 1) */
+
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		return NAN_STATUS_SUCCESS;
 	else
@@ -936,23 +940,7 @@ nanDevSendEnableRequest(
 		else
 			nanDevGenEnableRequest(prAdapter);
 	} else {
-		prAdapter->ucNanSapCh = 0;
-
-#if (CFG_ENABLE_WIFI_DIRECT == 1)
-#if (CFG_NAN_CONCURRENCY == 1)
-		if (prAdapter->rWifiVar.fgNanConcurrency) {
-			for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
-				prNANSpecInfo = prAdapter->rWifiVar
-						.aprNanSpecificBssInfo[ucIdx];
-				prnanBssInfo = prAdapter->aprBssInfo[
-					prNANSpecInfo->ucBssIndex];
-
-				ccmChannelSwitchProducer(prAdapter,
-						prnanBssInfo, __func__);
-			}
-		}
-#endif /* (CFG_NAN_CONCURRENCY == 1) */
-#endif /* (CFG_ENABLE_WIFI_DIRECT == 1) */
+		nanTrySwitchSapChannel(prAdapter);
 
 		/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
 		if (!p2pFuncIsSapCsa(prAdapter))
@@ -1247,6 +1235,211 @@ u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
 #else
 	return FALSE;
 #endif
+}
+
+u_int8_t nanTrySwitchSapChannel(
+	struct ADAPTER *prAdapter)
+{
+#if CFG_ENABLE_WIFI_DIRECT && CFG_NAN_CONCURRENCY
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
+		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+	struct BSS_INFO *nan =
+		(struct BSS_INFO *)NULL;
+	struct BSS_INFO *sta2g =
+		(struct BSS_INFO *)NULL;
+	struct BSS_INFO *sta5g =
+		(struct BSS_INFO *)NULL;
+	struct BSS_INFO *sap =
+		(struct BSS_INFO *)NULL;
+	uint8_t ucIdx = 0;
+	uint8_t i = 0;
+	uint8_t sapnum = 0;
+	u_int8_t fgIsSingleSap = TRUE;
+
+	if (!prAdapter)
+		return FALSE;
+
+	if (!prAdapter->rWifiVar.fgNanConcurrency)
+		return FALSE;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		struct BSS_INFO *b =
+			(struct BSS_INFO *)NULL;
+		b = prAdapter->aprBssInfo[i];
+
+		if (!IS_BSS_ALIVE(prAdapter, b))
+			continue;
+
+		b->ucBackupCh = 0;
+
+		if (IS_BSS_AIS(b) &&
+			(b->eBand == BAND_2G4))
+			sta2g = b;
+		if (IS_BSS_AIS(b) &&
+			(b->eBand != BAND_2G4))
+			sta5g = b;
+		if (IS_BSS_P2P(b) &&
+			p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[b->u4PrivateData])) {
+			sap = b;
+			sapnum++;
+		}
+	}
+
+	if (!sap)
+		return FALSE;
+
+	fgIsSingleSap = (sapnum == 1);
+
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		prNANSpecInfo = prAdapter->rWifiVar
+			.aprNanSpecificBssInfo[ucIdx];
+
+		nan = prAdapter->aprBssInfo[
+			prNANSpecInfo->ucBssIndex];
+
+		nanUpdateMbmcIdx(prAdapter,
+			prNANSpecInfo->ucBssIndex,
+			ucIdx);
+
+		if (sta2g)
+			nan = sta2g;
+		if (!fgIsSingleSap && !ucIdx && sta5g)
+			nan = sta5g;
+
+		ccmChannelSwitchProducer(
+			prAdapter,
+			nan,
+			__func__);
+
+		if (fgIsSingleSap)
+			break;
+	}
+
+	return TRUE;
+#endif /* CFG_ENABLE_WIFI_DIRECT && CFG_NAN_CONCURRENCY */
+}
+
+uint8_t nanGetSapCsaChannel(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prP2pBssInfo,
+	enum ENUM_BAND *eRfBand,
+	uint8_t *ucCh)
+{
+	uint8_t i = 0;
+	uint8_t ucSta2gCh = 0;
+	uint8_t ucNan2gCh = 0;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		struct BSS_INFO *b =
+			(struct BSS_INFO *)NULL;
+		b = prAdapter->aprBssInfo[i];
+
+		if (!IS_BSS_ALIVE(prAdapter, b))
+			continue;
+
+		if (IS_BSS_AIS(b) &&
+			(b->eBand == BAND_2G4))
+			ucSta2gCh = b->ucPrimaryChannel;
+		if (IS_BSS_NAN(b) &&
+			(b->eBand == BAND_2G4))
+			ucNan2gCh = b->ucPrimaryChannel;
+	}
+
+	if (nanIsOn(prAdapter)) {
+		*eRfBand = BAND_2G4;
+		if (ucSta2gCh)
+			*ucCh = ucSta2gCh;
+		else
+			*ucCh = ucNan2gCh;
+
+		return TRUE;
+	} else if (prP2pBssInfo &&
+		prP2pBssInfo->ucBackupCh) {
+		*eRfBand = prP2pBssInfo->eBackupBand;
+		*ucCh = prP2pBssInfo->ucBackupCh;
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+void nanBackupSapChannel(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+#if (CFG_NAN_CONCURRENCY == 1)
+	if (!prAdapter || !prBssInfo)
+		return;
+
+	if (!nanIsOn(prAdapter))
+		return;
+
+	if (!prAdapter->rWifiVar.fgNanConcurrency)
+		return;
+
+	prBssInfo->eBackupBand =
+		prBssInfo->eBand;
+	prBssInfo->ucBackupCh =
+		prBssInfo->ucPrimaryChannel;
+#endif /* (CFG_NAN_CONCURRENCY == 1) */
+}
+
+void nanRestoreSapChannel(
+	struct ADAPTER *prAdapter)
+{
+#if (CFG_NAN_CONCURRENCY == 1)
+#if CFG_SUPPORT_CCM
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
+		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+	struct BSS_INFO *prBssInfo =
+		(struct BSS_INFO *)NULL;
+	uint8_t i = 0;
+
+	if (!prAdapter)
+		return;
+
+	if (!prAdapter->rWifiVar.fgNanConcurrency)
+		return;
+
+	prNANSpecInfo = prAdapter->rWifiVar
+			.aprNanSpecificBssInfo[NAN_BSS_INDEX_BAND0];
+	if (!prNANSpecInfo)
+		return;
+	prBssInfo = prAdapter->aprBssInfo[
+		prNANSpecInfo->ucBssIndex];
+	if (!prBssInfo)
+		return;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		struct BSS_INFO *sap =
+			(struct BSS_INFO *)NULL;
+		sap = prAdapter->aprBssInfo[i];
+
+		if (!IS_BSS_ALIVE(prAdapter, sap))
+			continue;
+
+		if (sap->ucBackupCh && IS_BSS_P2P(sap)) {
+			prBssInfo->eBand =
+				sap->eBackupBand;
+			prBssInfo->ucPrimaryChannel =
+				sap->ucBackupCh;
+			/* TODO */
+			if (prBssInfo->eBand == BAND_2G4)
+				prBssInfo->eHwBandIdx =
+					ENUM_BAND_0;
+			else
+				prBssInfo->eHwBandIdx =
+					ENUM_BAND_1;
+			ccmChannelSwitchProducer(
+				prAdapter,
+				prBssInfo,
+				__func__);
+		}
+	}
+#endif /* CFG_SUPPORT_CCM */
+#endif /* (CFG_NAN_CONCURRENCY == 1) */
 }
 
 void nanConcurrencyHandler(struct ADAPTER *prAdapter)

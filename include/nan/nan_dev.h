@@ -68,6 +68,19 @@ uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter);
 void nanConcurrencyHandler(struct ADAPTER *prAdapter);
 void nanBackToNormal(struct ADAPTER *prAdapter);
 
+void nanBackupSapChannel(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+void nanRestoreSapChannel(
+	struct ADAPTER *prAdapter);
+u_int8_t nanTrySwitchSapChannel(
+	struct ADAPTER *prAdapter);
+uint8_t nanGetSapCsaChannel(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prP2pBssInfo,
+	enum ENUM_BAND *eRfBand,
+	uint8_t *ucCh);
+
 /*========================= FUNCTIONs ============================*/
 #endif
 #endif /* __NAN_DEV_H__ */

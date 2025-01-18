@@ -591,6 +591,9 @@ struct BSS_INFO {
 	struct TIMER rTwtWaitRspTimer;
 #endif
 
+	enum ENUM_BAND eBackupBand;
+	uint8_t ucBackupCh;
+
 	/* Buffer for WPA2 PMKID */
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
 	struct LINK rPmkidCache;
@@ -2698,9 +2701,6 @@ struct ADAPTER {
 
 	/* Store customizable AIS (to AP) time slots */
 	struct _NAN_AIS_BITMAP arNanAisSlots[NAN_BAND_NUM];
-
-	uint8_t ucNanSapCh;
-	enum ENUM_BAND eNanSapBand;
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
