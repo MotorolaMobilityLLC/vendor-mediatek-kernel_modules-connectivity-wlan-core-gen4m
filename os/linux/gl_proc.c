@@ -2098,7 +2098,7 @@ static const struct file_operations test_ops = {
 
 
 
-int32_t procInitFs(void)
+int32_t procInitFs(struct GLUE_INFO *prGlueInfo)
 {
 	struct proc_dir_entry *prEntry;
 
@@ -2124,8 +2124,8 @@ int32_t procInitFs(void)
 		      KGIDT_INIT(PROC_GID_WIFI));
 
 #if (BUILD_QA_DBG)
-	prEntry =
-	     proc_create(PROC_DBG_LEVEL_NAME, 0664, gprProcRoot, &dbglevel_ops);
+	prEntry = proc_create_data(PROC_DBG_LEVEL_NAME, 0664,
+		gprProcRoot, &dbglevel_ops, prGlueInfo);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 			"Unable to create /proc entry dbgLevel\n\r");

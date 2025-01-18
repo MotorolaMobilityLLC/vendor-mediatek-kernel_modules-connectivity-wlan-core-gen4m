@@ -9557,13 +9557,6 @@ static int initWlan(void)
 
 	wlanRegisterNetdevNotifier();
 
-#if WLAN_INCLUDE_PROC
-	procInitFs();
-#endif
-#if WLAN_INCLUDE_SYS
-	sysInitFs();
-#endif
-
 	wlanCreateWirelessDevice();
 	if (gprWdev[0] == NULL) {
 		ret = -ENOMEM;
@@ -9571,6 +9564,12 @@ static int initWlan(void)
 	}
 
 	WIPHY_PRIV(wlanGetWiphyByWdev(gprWdev[0]), prGlueInfo);
+#if WLAN_INCLUDE_PROC
+	procInitFs(prGlueInfo);
+#endif
+#if WLAN_INCLUDE_SYS
+	sysInitFs();
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
 	if (gprWdev[0])
 		glP2pCreateWirelessDevice(prGlueInfo);

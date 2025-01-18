@@ -1914,7 +1914,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo);
 int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo);
 
 
-int32_t procInitFs(void);
+int32_t procInitFs(struct GLUE_INFO *prGlueInfo);
 int32_t procUninitProcFs(void);
 
 
