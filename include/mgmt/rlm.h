@@ -204,6 +204,8 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 #define FACT_CAL_CH_NUM_6G (109) /* ARRAY_SIZE g_au1ChList6G */
 #define FACT_CAL_CH_NUM_ALL ((FACT_CAL_CH_NUM_2G) + (FACT_CAL_CH_NUM_5G)+ \
 					+ (FACT_CAL_CH_NUM_6G))
+#define FACT_CAL_CH_PATH_ALL \
+	((FACT_CAL_CH_NUM_ALL)*(FACT_CAL_DATA_BUF_NUM_MAX))
 
 #define FACT_CAL_DATA_BUF_CFG_U32_LEN (4)
 #define FACT_CAL_DATA_BUF_CFG_U8_LEN (16)
@@ -293,7 +295,8 @@ enum FACT_CAL_TYPE_CE {
 	FACT_CAL_TYPE_POWERON = 0,
 	FACT_CAL_TYPE_SETCHANNEL = 1,
 	FACT_CAL_TYPE_BAND = 2,
-	FACT_CAL_TYPE_GET_ALL = 3
+	FACT_CAL_TYPE_GET_ALL = 3,
+	FACT_CAL_TYPE_MAPPING_TBL = 4
 };
 
 enum FACT_CAL_COMMON_BAND {
@@ -433,12 +436,60 @@ struct FACT_CAL_BASE_LOOKUP_TABLE {
 	struct FACT_CAL_COMMON_LOOKUP_TABLE *common_t;
 	struct FACT_CAL_GROUP_LOOKUP_TABLE *group_t;
 	struct FACT_CAL_CHANNEL_LOOKUP_TABLE *channel_t;
-#if defined(_HIF_PCIE)
+#if (CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL == 1)
 	dma_addr_t Group_pa;
 	dma_addr_t Common_pa;
 	dma_addr_t Channel_pa;
-#endif
+#endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
 };
+
+#if (CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL == 1)
+#define GROUP_1 1  // Aband Group Start
+#define GROUP_24 24 // Aband BW160 Group Start
+
+struct FACT_CAL_COMMON_MAPPING_TABLE {
+	uint32_t u4PhyAddr_H;
+	uint32_t u4PhyAddr_L;
+	uint32_t u4Offset;
+	uint8_t ucBand[FACT_CAL_COMMON_BAND_NUM];
+	uint8_t aucReserved[2];
+};
+struct FACT_CAL_GROUP_MAPPING_TABLE {
+	uint32_t u4PhyAddr_H;
+	uint32_t u4PhyAddr_L;
+	uint32_t u4Offset;
+	uint8_t u1Group[FACT_CAL_GROUP_NUM];
+	uint8_t aucReserved;
+};
+
+/*
+ * u4CacheMark made 32-bits mark, in format:
+ * BIT[31]:     channel is bw160 or not
+ * BITS[30:28]: cal path, from input ucCalPath
+ * BITS[27:24]: antenna position, from input ucAntPos
+ * BITS[23:00]: channel, from input u4DpdCalCh
+ */
+struct FACT_CAL_CHANNEL_MAPPING_TABLE {
+	uint32_t u4PhyAddr_H;
+	uint32_t u4PhyAddr_L;
+	uint32_t u4Offset;
+	uint32_t u4CenterCh[FACT_CAL_CH_NUM_ALL];
+	uint32_t u4TotalBufNum[FACT_CAL_CH_NUM_ALL];
+	uint32_t u4CacheMark[FACT_CAL_CH_PATH_ALL];
+	int8_t cTemperature[FACT_CAL_CH_PATH_ALL];
+};
+
+struct FACT_CAL_MAPPING_TABLE {
+	struct FACT_CAL_COMMON_MAPPING_TABLE CommMap_t;
+	struct FACT_CAL_GROUP_MAPPING_TABLE GrpMap_t;
+	struct FACT_CAL_CHANNEL_MAPPING_TABLE ChMap_t;
+	uint32_t u4ComLen;
+	uint32_t u4GrpALen;
+	uint32_t u4GrpABW160Len;
+	uint32_t u4ChLen;
+};
+#endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
+
 #endif
 
 typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(
@@ -897,7 +948,10 @@ uint32_t rlmFactCalFileHandler(struct ADAPTER *prAdapter, uint32_t u4CalType,
 			uint8_t fgWrite);
 
 uint32_t rlmFactCalSetDefaultComAndGrp(struct ADAPTER *prAdapter);
-#endif
+#if (CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL == 1)
+uint32_t rlmFactCalSetMappingTable(struct ADAPTER *prAdapter);
+#endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
+#endif /* CFG_SUPPORT_FACT_CAL */
 
 void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 			uint8_t *pucVhtChannelFrequencyS2,

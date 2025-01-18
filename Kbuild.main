@@ -1018,6 +1018,7 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 endif
 ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 CONFIG_BCN_PROT=y
+CONFIG_FACTORY_CALIBRATION_SUPPORT=n
 endif
 
 ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
@@ -2343,8 +2344,14 @@ endif
 
 ifeq ($(CONFIG_FACTORY_CALIBRATION_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_FACT_CAL=1
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL=1
+    else
+        ccflags-y += -DCFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_FACT_CAL=0
+    ccflags-y += -DCFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL=0
 endif
 
 CONFIG_MTK_WIFI_MCC_SUPPORT=y

@@ -4022,6 +4022,259 @@ uint32_t rlmFactCalUpdateStruct(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL == 1)
+uint32_t rlmFactCalSetMappingTblForSend(
+			struct ADAPTER *prAdapter,
+			struct FACT_CAL_MAPPING_TABLE *prFactCalMap)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	uint8_t ucBufSeq = 0;
+	struct UNI_CMD_FACT_CAL_DATA *prCalDataForSend = NULL;
+	uint32_t au4BufCfgInfo[FACT_CAL_DATA_MAX_BUF_LEN];
+	uint32_t u4leaveLength = 0, u4Offset = 0, u4MappingTblLen = 0;
+	uint32_t u4SeqNumPerBuf = 0;
+
+	prCalDataForSend = kalMemAlloc(
+		sizeof(struct UNI_CMD_FACT_CAL_DATA), VIR_MEM_TYPE);
+	if (prCalDataForSend) {
+		kalMemZero(prCalDataForSend,
+			sizeof(struct UNI_CMD_FACT_CAL_DATA));
+	} else {
+		DBGLOG(RLM, ERROR, "Memory alloc failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	u4Offset = 0;
+	/* Get Mapping tbl size */
+	u4MappingTblLen = sizeof(struct FACT_CAL_MAPPING_TABLE);
+	au4BufCfgInfo[1] = u4MappingTblLen;
+
+	/* Get Seq Number per Buf */
+	u4SeqNumPerBuf =
+		((u4MappingTblLen % FACT_CAL_DATA_BUF_LEN) == 0) ?
+		(u4MappingTblLen/FACT_CAL_DATA_BUF_LEN) :
+		((u4MappingTblLen/FACT_CAL_DATA_BUF_LEN) + 1);
+
+	DBGLOG(RLM, INFO, "Send size[%d], u4SeqNumPerBuf[%d]\n",
+		sizeof(struct FACT_CAL_MAPPING_TABLE),
+		u4SeqNumPerBuf);
+
+	/* 1. Send buffer config header */
+	prCalDataForSend->ucCalType = FACT_CAL_TYPE_MAPPING_TBL;
+	prCalDataForSend->u4SeqNum = 0;
+	prCalDataForSend->ucDone = FALSE;
+	prCalDataForSend->u4BufDataLength =
+		FACT_CAL_DATA_BUF_CFG_U8_LEN;
+
+	kalMemCopy(prCalDataForSend->aucBufData,
+		au4BufCfgInfo,
+		FACT_CAL_DATA_BUF_CFG_U8_LEN);
+
+	u4Status =
+		nicUniCmdFactCal(prAdapter,
+			FACT_CAL_ACTION_SET,
+			prCalDataForSend);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto SEND_FAIL;
+
+	/* 2. Send Cal Data */
+	u4leaveLength = sizeof(struct FACT_CAL_MAPPING_TABLE);
+	for (ucBufSeq = 0; ucBufSeq < u4SeqNumPerBuf; ucBufSeq++) {
+		prCalDataForSend->u4SeqNum++;
+		prCalDataForSend->ucDone = FALSE;
+		if (u4leaveLength <= FACT_CAL_DATA_BUF_LEN)
+			prCalDataForSend->u4BufDataLength =
+				u4leaveLength;
+		else {
+			prCalDataForSend->u4BufDataLength =
+				FACT_CAL_DATA_BUF_LEN;
+			u4leaveLength -= FACT_CAL_DATA_BUF_LEN;
+		}
+		kalMemCopy(
+			prCalDataForSend->aucBufData,
+			(((uint8_t *)prFactCalMap) + u4Offset),
+			prCalDataForSend->u4BufDataLength);
+		u4Offset += prCalDataForSend->u4BufDataLength;
+
+		DBGLOG_MEM8(RLM, LOUD,
+			prCalDataForSend->aucBufData,
+			prCalDataForSend->u4BufDataLength);
+
+		u4Status =
+			nicUniCmdFactCal(prAdapter,
+			FACT_CAL_ACTION_SET, prCalDataForSend);
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto SEND_FAIL;
+	}
+
+
+	/* Send Done */
+	prCalDataForSend->u4SeqNum++;
+	prCalDataForSend->ucDone = TRUE;
+	prCalDataForSend->u4BufDataLength = 0;
+	u4Status =
+		nicUniCmdFactCal(prAdapter,
+		FACT_CAL_ACTION_SET, prCalDataForSend);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto SEND_FAIL;
+
+SEND_FAIL:
+	kalMemFree(prCalDataForSend, VIR_MEM_TYPE,
+			sizeof(struct UNI_CMD_FACT_CAL_DATA));
+	return u4Status;
+}
+
+uint32_t rlmFactCalSetMappingTable(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
+	void *prFileBuf = NULL;
+	struct FACT_CAL_BUF_INFO *prFileBufInfo = NULL;
+	uint8_t u1Group = 0;
+	uint32_t u4Cnt = 0, u4BufCnt = 0, u4PathCnt = 0;
+	uint32_t u4CenterCh = 0, u4CacheMark = 0;
+	uint32_t u4TotalBufNum = 0;
+	int8_t cTemperature = 0;
+	struct FACT_CAL_MAPPING_TABLE *prFactCalMap = NULL;
+	struct FACT_CAL_GROUP_MAPPING_TABLE *prGrpMap = NULL;
+	struct FACT_CAL_CHANNEL_MAPPING_TABLE *prChMap = NULL;
+
+	prFactCalMap = kalMemAlloc(
+		sizeof(struct FACT_CAL_MAPPING_TABLE), VIR_MEM_TYPE);
+	if (prFactCalMap) {
+		kalMemZero(prFactCalMap,
+			sizeof(struct FACT_CAL_MAPPING_TABLE));
+	} else {
+		DBGLOG(RLM, ERROR, "Memory alloc failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prFactCalFile = &prAdapter->rFactCalFile;
+
+	/* Init mapping table parameter */
+	prGrpMap = &(prFactCalMap->GrpMap_t);
+	prGrpMap->u4Offset = FACT_CAL_BUF_LEN_GRP
+		+ sizeof(struct FACT_CAL_BUF_INFO);
+	prChMap = &(prFactCalMap->ChMap_t);
+	prChMap->u4Offset = FACT_CAL_BUF_LEN_CH
+		+ sizeof(struct FACT_CAL_BUF_INFO);
+	prFileBuf = &(prFactCalFile->channel_t->rChCalData[0]);
+
+	DBGLOG(RLM, INFO, "Group PA Start addr.[0x%016lx]\n",
+		((uint64_t)((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Group_pa + 1)));
+	DBGLOG(RLM, INFO, "Channel PA Start addr.[0x%016lx]\n",
+		((uint64_t)(struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Channel_pa + 1));
+
+	prGrpMap->u4PhyAddr_L =
+		(uint32_t)(((uint64_t)((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Group_pa + 1)) & BITS(0, 31));
+	prGrpMap->u4PhyAddr_H =
+		(uint32_t)((((uint64_t)(((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Group_pa) + 1)) & BITS(32, 63)) >> 32);
+	prChMap->u4PhyAddr_L =
+		(uint32_t)(((uint64_t)(struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Channel_pa + 1) & BITS(0, 31));
+	prChMap->u4PhyAddr_H =
+		(uint32_t)((((uint64_t)(((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Channel_pa) + 1)) & BITS(32, 63)) >> 32);
+
+	DBGLOG(RLM, INFO,
+		"Group PA_L[0x%08x] PA_H[0x%08x]\n",
+		prGrpMap->u4PhyAddr_L, prGrpMap->u4PhyAddr_H);
+	DBGLOG(RLM, INFO,
+		"Channel PA_L[0x%08x] PA_H[0x%08x]\n",
+		prChMap->u4PhyAddr_L, prChMap->u4PhyAddr_H);
+	DBGLOG(RLM, INFO, "FACT_CAL_MAPPING_TABLE size = %d\n",
+		sizeof(struct FACT_CAL_MAPPING_TABLE));
+
+	DBGLOG(RLM, INFO, "FACT_CAL_COMMON_MAPPING_TABLE size = %d\n",
+		sizeof(struct FACT_CAL_COMMON_MAPPING_TABLE));
+	DBGLOG(RLM, INFO, "FACT_CAL_GROUP_MAPPING_TABLE size = %d\n",
+		sizeof(struct FACT_CAL_GROUP_MAPPING_TABLE));
+	DBGLOG(RLM, INFO, "FACT_CAL_CHANNEL_MAPPING_TABLE size = %d\n",
+		sizeof(struct FACT_CAL_CHANNEL_MAPPING_TABLE));
+
+	// Group mapping table
+	for (u4Cnt = 0; u4Cnt < FACT_CAL_GROUP_NUM; u4Cnt++) {
+
+		prFileBuf = &(prFactCalFile->group_t->rGrpCalData[u4Cnt]);
+		prFileBufInfo =
+			&(((struct FACT_CAL_GRP *)prFileBuf)->rFactCalBufInfo);
+
+		u1Group = prFileBufInfo->u4CalParam & BITS(0, 7);
+		prGrpMap->u1Group[u4Cnt] = u1Group;
+
+		// Get Aband group size for mapping tbl
+		if (u1Group == GROUP_1)
+			prFactCalMap->u4GrpALen =
+				prFileBufInfo->au4BufCfgInfo[1];
+		// Get Aband BW160 group size for mapping tbl
+		else if (u1Group == GROUP_24)
+			prFactCalMap->u4GrpABW160Len =
+				prFileBufInfo->au4BufCfgInfo[1];
+
+		DBGLOG(RLM, INFO, "u1Group[%d] looping\n", u1Group);
+	}
+
+	// Channel mapping table
+	for (u4Cnt = 0; u4Cnt < FACT_CAL_CH_NUM_ALL; u4Cnt++) {
+
+		prFileBuf = &(prFactCalFile->channel_t->rChCalData[u4Cnt]);
+		prFileBufInfo =
+			&(((struct FACT_CAL_CH *)prFileBuf)->rFactCalBufInfo);
+
+		u4CenterCh = ((prFileBufInfo->u4CalParam)
+			& FACT_CAL_CENT_CH_PARAM_CHAN_MASK);
+		u4TotalBufNum =
+			prFileBufInfo->u4TotalBufNum;
+
+		for (u4BufCnt = 0;
+			u4BufCnt < FACT_CAL_DATA_BUF_NUM_MAX; u4BufCnt++) {
+			u4CacheMark =
+				prFileBufInfo->au4BufCfgInfo[u4BufCnt*4 + 2];
+			cTemperature =
+				(int8_t)
+				(prFileBufInfo->au4BufCfgInfo[u4BufCnt*4 + 3]);
+			u4PathCnt = u4Cnt*FACT_CAL_DATA_BUF_NUM_MAX+u4BufCnt;
+			prChMap->u4CacheMark[u4PathCnt] = u4CacheMark;
+			prChMap->cTemperature[u4PathCnt] = cTemperature;
+		}
+
+		prChMap->u4CenterCh[u4Cnt] = u4CenterCh;
+		prChMap->u4TotalBufNum[u4Cnt] = u4TotalBufNum;
+
+		// Get channel size for mapping tbl
+		if (u4Cnt == 0)
+			prFactCalMap->u4ChLen = prFileBufInfo->au4BufCfgInfo[1];
+
+	}
+
+	DBGLOG(RLM, INFO,
+		"Mapping tbl Aband Grp Len[%d] BW160 Len[%d] Channel Len[%d]\n",
+		prFactCalMap->u4GrpALen,
+		prFactCalMap->u4GrpABW160Len,
+		prFactCalMap->u4ChLen);
+
+	DBGLOG_MEM8(RLM, LOUD,
+		prFactCalMap,
+		sizeof(struct FACT_CAL_MAPPING_TABLE));
+
+	u4Status = rlmFactCalSetMappingTblForSend(prAdapter, prFactCalMap);
+	if (u4Status == WLAN_STATUS_FAILURE) {
+		DBGLOG(RLM, ERROR, "%s: Send Mapping Tbl Failed!\n", __func__);
+		goto SEND_FAIL;
+	}
+
+SEND_FAIL:
+	kalMemFree(prFactCalMap, VIR_MEM_TYPE,
+			sizeof(struct FACT_CAL_MAPPING_TABLE));
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Read and write the cal data from/to file

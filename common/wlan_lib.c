@@ -1680,7 +1680,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_FACT_CAL == 1)
-#if defined(_HIF_PCIE)
+#if (CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL == 1)
 	prAdapter->rFactCalFile.common_t =
 	KAL_DMA_ALLOC_COHERENT(prAdapter->prGlueInfo->rHifInfo.prDmaDev,
 		sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE),
@@ -1704,7 +1704,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 	kalMemZero(prAdapter->rFactCalFile.channel_t,
 		sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
-#else //USB
+#else /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
 	prAdapter->rFactCalFile.common_t =
 		(struct FACT_CAL_COMMON_LOOKUP_TABLE *)kalMemAlloc(
 			sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE),
@@ -1728,8 +1728,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 	kalMemZero(prAdapter->rFactCalFile.channel_t,
 		sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
-#endif
-#endif //CFG_SUPPORT_FACT_CAL
+#endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
+#endif /* CFG_SUPPORT_FACT_CAL */
 
 	return u4Status;
 }				/* wlanAdapterStart */
