@@ -36,6 +36,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
+	uint8_t ucOmacIdx = INVALID_OMAC_IDX;
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR,
@@ -43,8 +44,18 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		return MAX_BSSID_NUM;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (ucIdx != NAN_DEFAULT_INDEX) {
+		struct BSS_INFO *bss = (struct BSS_INFO *) NULL;
+
+		bss = nanGetDefaultLinkBssInfo(prAdapter, NULL);
+		if (bss)
+			ucOmacIdx = bss->ucOwnMacIndex;
+	}
+#endif
+
 	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter,
-		NETWORK_TYPE_NAN, FALSE, INVALID_OMAC_IDX);
+		NETWORK_TYPE_NAN, FALSE, ucOmacIdx);
 	if (prnanBssInfo == NULL) {
 		DBGLOG(NAN, DEBUG, "No enough BSS INDEX\n");
 		return MAX_BSSID_NUM;

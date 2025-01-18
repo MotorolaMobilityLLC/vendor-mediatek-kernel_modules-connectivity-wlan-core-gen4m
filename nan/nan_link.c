@@ -25,7 +25,7 @@ struct BSS_INFO *nanGetDefaultLinkBssInfo(
 	if (!ad)
 		return bss;
 
-	for (i = 0; i < ad->ucHwBssIdNum; i++) {
+	for (i = 0; i < ad->ucSwBssIdNum; i++) {
 		prBssInfo = ad->aprBssInfo[i];
 
 		if (prBssInfo &&
@@ -157,8 +157,9 @@ void nanGetLinkWmmQueSet(
 		prBssInfo->fgIsWmmInited = TRUE;
 		prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
 
-		if (bss != prBssInfo)
-			prBssInfo->ucOwnMacIndex = bss->ucOwnMacIndex;
+		/* if (bss != prBssInfo)
+		 *	prBssInfo->ucOwnMacIndex = bss->ucOwnMacIndex;
+		 */
 	} else
 #endif
 	{

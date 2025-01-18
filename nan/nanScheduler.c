@@ -14758,11 +14758,7 @@ uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
 	prChnl->u4RawData = 0;
 	*pu4SlotBitmap = 0;
 
-#ifdef NAN_TODO
 	ucBssCount = prAdapter->ucSwBssIdNum;
-#else
-	ucBssCount = prAdapter->ucHwBssIdNum;
-#endif
 
 	for (i = 0; i < ucBssCount; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
@@ -14859,11 +14855,7 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 	prChnl->u4RawData = 0;
 	*pu4SlotBitmap = 0;
 
-#ifdef NAN_TODO
 	ucBssCount = prAdapter->ucSwBssIdNum;
-#else
-	ucBssCount = prAdapter->ucHwBssIdNum;
-#endif
 
 	for (i = 0; i < ucBssCount; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
