@@ -595,7 +595,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 		      uint32_t *pu4QueryInfoLen)
 {
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t i, u4BssidListExLen;
+	uint32_t i, u4BssidListExLen, u4SavedApCount = 0;
 	struct PARAM_BSSID_LIST_EX *prList;
 	struct PARAM_BSSID_EX *prBssidEx;
 	uint8_t *cp;
@@ -627,8 +627,18 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 	u4BssidListExLen = 0;
 
 	if (prAdapter->fgIsRadioOff == FALSE) {
-		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++)
+		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
+			/* If scan results size bigger than buffer size,
+			 * not to add further.
+			 */
+			if ((u4BssidListExLen +
+				ALIGN_4(prScanResult[i].u4Length) + 4)
+				> u4QueryBufferLen)
+				break;
+
 			u4BssidListExLen += ALIGN_4(prScanResult[i].u4Length);
+		}
+		u4SavedApCount = i;
 	}
 
 	if (u4BssidListExLen)
@@ -650,7 +660,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsRadioOff == FALSE &&
 	    prWlanInfo->u4ScanResultNum > 0) {
 		/* fill up for each entry */
-		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
+		for (i = 0; i < u4SavedApCount; i++) {
 			prBssidEx = (struct PARAM_BSSID_EX *) cp;
 
 			/* copy structure */
