@@ -9542,6 +9542,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
 
+	INIT_UINT(prWifiVar->u4PmkRefreshThreshold, "PmkRefreshThresholdSec",
+		  PMK_REFRESH_THRESHOLD_SEC, FEATURE_TO_CUSTOMER);
+
 #if WLAN_INCLUDE_SYS
 	sysGetExtCfg(prAdapter);
 #endif

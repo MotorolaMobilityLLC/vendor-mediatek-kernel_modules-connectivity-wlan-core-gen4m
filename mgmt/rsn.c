@@ -2906,11 +2906,12 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO,
 		"[%d] Set " MACSTR
-		", cacheid(set=%d)=0x%2x%2x, total %d, PMKID " PMKSTR "\n",
+		", cacheid(set=%d)=0x%2x%2x, total %d, expiration at %d, PMKID"
+		PMKSTR "\n",
 		prPmkid->ucBssIdx,
 		MAC2STR(prPmkid->arBSSID), prPmkid->fgFilsCacheIdSet,
 		prPmkid->arFilsCacheId[0], prPmkid->arFilsCacheId[1],
-		cache->u4NumElem,
+		cache->u4NumElem, prPmkid->u4Expiration,
 		prPmkid->arPMKID[0], prPmkid->arPMKID[1], prPmkid->arPMKID[2],
 		prPmkid->arPMKID[3], prPmkid->arPMKID[4], prPmkid->arPMKID[5],
 		prPmkid->arPMKID[6], prPmkid->arPMKID[7], prPmkid->arPMKID[8],
@@ -3049,6 +3050,60 @@ void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
 				     sizeof(struct PARAM_INDICATION_EVENT),
 				     ucBssIndex);
 } /* rsnGeneratePmkidIndication */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to chek PMK expiration. If it will expire
+ *        within PMK_REFRESH_THRESHOLD_SEC seconds, don't set PMKID in
+ *        ASSOC REQ.
+ *
+ * \retval TRUE, if pmk is going to expire
+ * \retval FALSE, otherwise
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rsnCheckPmkExpiration(struct ADAPTER *prAdapter,
+					struct PMKID_ENTRY *targetEntry,
+					uint8_t ucBssIndex)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo;
+	struct PMKID_ENTRY *entry;
+	struct LINK *cache;
+	uint32_t u4MinExpiration, u4RefreshThreshold;
+	OS_SYSTIME now;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return FALSE;
+	}
+	cache = &prBssInfo->rPmkidCache;
+
+	u4RefreshThreshold = prWifiVar->u4PmkRefreshThreshold;
+	u4MinExpiration = targetEntry->rBssidInfo.u4Expiration;
+	GET_BOOT_SYSTIME(&now);
+
+	LINK_FOR_EACH_ENTRY(entry, cache, rLinkEntry, struct PMKID_ENTRY) {
+		if ((targetEntry->rBssidInfo.u2PMKLen ==
+			entry->rBssidInfo.u2PMKLen) &&
+		    !kalMemCmp(targetEntry->rBssidInfo.arPMK,
+				entry->rBssidInfo.arPMK,
+				entry->rBssidInfo.u2PMKLen) &&
+		    (entry->rBssidInfo.u4Expiration < u4MinExpiration))
+			u4MinExpiration = entry->rBssidInfo.u4Expiration;
+	}
+
+	if (CHECK_FOR_EXPIRATION(MSEC_TO_SEC(now) + u4RefreshThreshold,
+				u4MinExpiration)) {
+		DBGLOG(RSN, INFO,
+			"PMK is almost expired, pmk expired time=%d, refresh threshold time=%llu!\n",
+			u4MinExpiration,
+			MSEC_TO_SEC(now) + u4RefreshThreshold);
+		return TRUE;
+	}
+
+	return FALSE;
+}
 
 #if CFG_SUPPORT_802_11W
 

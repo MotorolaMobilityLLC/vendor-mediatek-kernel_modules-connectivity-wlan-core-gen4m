@@ -1294,10 +1294,15 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 
 	/* Do not use PMKID if
 	 * 1. it is invalid
-	 * 2. auth type is SAE
+	 * 2. it's pmk is going to expire
+	 * 3. auth type is SAE
 	 */
 	if (entry &&
 	    (rsnApInvalidPMK(entry->u2StatusCode, prConnSettings->eAuthMode) ||
+#if (CFG_EXT_FEATURE == 0)
+	     rsnCheckPmkExpiration(prAdapter, entry,
+				   prAisBssInfo->ucBssIndex) ||
+#endif /* CFG_EXT_FEATURE == 0 */
 	     prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)) {
 		DBGLOG(RSN, INFO,
 			"Do not apply PMKID in RSNIE if invalidPMK or auth type is SAE");

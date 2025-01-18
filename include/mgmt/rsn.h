@@ -240,6 +240,8 @@
 #define SA_QUERY_RETRY_TIMEOUT	3000
 #define SA_QUERY_TIMEOUT	501
 
+#define PMK_REFRESH_THRESHOLD_SEC	600
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -375,6 +377,10 @@ uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
 
 uint32_t rsnFlushPmkid(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
+
+uint8_t rsnCheckPmkExpiration(struct ADAPTER *prAdapter,
+				struct PMKID_ENTRY *targetEntry,
+				uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_802_11W
 uint32_t rsnCheckBipKeyInstalled(struct ADAPTER

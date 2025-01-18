@@ -544,6 +544,7 @@ struct PARAM_PMKID {
 	uint16_t u2PMKLen;
 	uint8_t arFilsCacheId[2];
 	uint8_t fgFilsCacheIdSet;
+	uint32_t u4Expiration;
 };
 
 struct PARAM_PMKID_CANDIDATE {
