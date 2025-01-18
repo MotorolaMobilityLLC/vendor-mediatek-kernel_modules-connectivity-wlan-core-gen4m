@@ -14257,7 +14257,6 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 
 	if (*prEnable) {
-		nanConcurrencyHandler(prAdapter);
 		if (nanLaunch(prAdapter->prGlueInfo)) {
 			/* ToDo:: ASSERT */
 			if (!prAdapter->fgIsNANRegistered) {

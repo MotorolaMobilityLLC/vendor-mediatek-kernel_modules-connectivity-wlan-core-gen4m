@@ -278,7 +278,7 @@ ReleaseNanSlotsForSchedulePrep(struct ADAPTER *prAdapter,
 				     &rAisChnlInfo, &u4SlotBitmap,
 				     &ucAisPhyTypeSet) == WLAN_STATUS_SUCCESS) {
 				nanSchedReleaseReschedCommitSlot(prAdapter,
-					NAN_SLOT_MASK_TYPE_DEFAULT,
+					NAN_SLOT_MASK_CONCURRENT_FULL,
 					nanGetTimelineMgmtIndexByBand(prAdapter,
 								eAisBand));
 			}

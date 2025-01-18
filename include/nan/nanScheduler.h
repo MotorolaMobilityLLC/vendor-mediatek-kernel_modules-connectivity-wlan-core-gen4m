@@ -130,6 +130,9 @@
 	(NAN_SLOT_MASK_TYPE_DEFAULT_NDL & ~nanGetFcSlots(_adapter))
 #define NAN_SLOT_MASK_TYPE_DEFAULT 0xFFFFFFFF /* For NDP setup */
 
+/* For P2P SCC concurrent, slot #8, #9 are special for NDC and channel switch */
+#define NAN_SLOT_MASK_CONCURRENT_FULL 0xFFFFF8FF
+
 #define NAN_DW_INDEX(__szSlotIdx) ((__szSlotIdx) / NAN_SLOTS_PER_DW_INTERVAL)
 #define NAN_SLOT_INDEX(__szSlotIdx) ((__szSlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)
 #define NAN_FULL_SLOT_INDEX(__szDwIdx, __szSlotIdx) \
@@ -569,8 +572,7 @@ uint32_t nanSchedNegoGenLocalCrbProposal(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoChkRmtCrbProposal(struct ADAPTER *prAdapter,
 			uint32_t *pu4RejectCode);
 
-unsigned char nanSchedNegoIsRmtCrbConflict(
-	struct ADAPTER *prAdapter,
+unsigned char nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 	struct _NAN_SCHEDULE_TIMELINE_T arTimeline[NAN_NUM_AVAIL_DB],
 	unsigned char *pfgEmptyMapSet,
 	uint32_t au4EmptyMap[NAN_TIMELINE_MGMT_SIZE][NAN_TOTAL_DW]);
@@ -898,6 +900,8 @@ u_int8_t nanCheck2gOnlyPeerExists(struct ADAPTER *prAdapter);
 void nanSchedNegoUpdateNegoResult(struct ADAPTER *prAdapter);
 
 uint32_t nanSchedGetCurrentNegoTransIdx(struct ADAPTER *prAdapter);
+
+void nanSetConcurrentCustomFAW(struct ADAPTER *prAdapter);
 
 void nanUpdateMbmcIdx(struct ADAPTER *ad,
 	uint8_t ucBssIdx,
