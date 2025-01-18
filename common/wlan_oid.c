@@ -17098,10 +17098,11 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 	/*
 	 * Firmware roaming Integration Test case
-	 * Roaming 1 2 3 (parameter is optional)
+	 * Roaming 1 2 3 4 (parameter is optional)
 	 * Parameter 1: Scan type, 0: normal, 1: partial only, 2: full only
 	 * Parameter 2: Scan count, 0, normal, N: scan at most N times
 	 * Parameter 3: Scan mode, 0: normal, 1: low latency scan
+	 * Parameter 4: BSSID
 	 */
 	if (!kalStrniCmp(pucCmd, "Roaming", 7)) {
 #if CFG_SUPPORT_ROAMING
@@ -17116,17 +17117,25 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		DBGLOG(OID, DEBUG, "FW event is [%s]\n", pucCmd);
 		wlanCfgParseArgument(pucCmd, &i4Argc, apcArgv);
 
-		if (i4Argc > 1 && i4Argc != 4) {
+		if (i4Argc == 0 || i4Argc == 2 || i4Argc == 3) {
 			DBGLOG(OID, ERROR,
 				"Unexpected argument counts %d\n", i4Argc);
 			return WLAN_STATUS_SUCCESS;
-		} else if (i4Argc == 4) {
+		}
+
+		if (i4Argc >= 4) {
 			kalkStrtou8(apcArgv[1], 0,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanType);
 			kalkStrtou8(apcArgv[2], 0,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanCount);
 			kalkStrtou8(apcArgv[3], 0,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanMode);
+		}
+
+		if (i4Argc >= 5) {
+			prRoamingFsmInfo->rRoamScanParam.fgSpecifyBssid = TRUE;
+			wlanHwAddrToBin(apcArgv[4],
+				&prRoamingFsmInfo->rRoamScanParam.aucBssid[0]);
 		}
 
 		/* Check roaming FSM and CSA states*/
