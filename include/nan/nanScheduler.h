@@ -360,7 +360,7 @@ union _NAN_AVAIL_ENTRY_CTRL {
 		uint16_t u2RxNss : 4;
 		uint16_t u2TimeMapAvail : 1;
 		uint16_t u2Rsvd : 3;
-	} rField;
+	} /* rField */;
 
 	uint16_t u2RawData;
 };

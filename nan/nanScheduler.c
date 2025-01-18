@@ -2108,12 +2108,11 @@ nanQueryPeerPotentialChnlInfoBySlot(
 			continue;
 
 		u4AvailType = NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN;
-		if ((prNanAvailEntry->rEntryCtrl.rField.u2Type & u4AvailType) ==
-		    0) {
+		if ((prNanAvailEntry->rEntryCtrl.u2Type & u4AvailType) == 0) {
 			DBGLOG(NAN, LOUD,
 			       "Entry:%d, Slot:%d, Type:%d not equal\n", u4Idx,
 			       u2SlotIdx,
-			       prNanAvailEntry->rEntryCtrl.rField.u2Type);
+			       prNanAvailEntry->rEntryCtrl.u2Type);
 			continue;
 		}
 
@@ -2521,12 +2520,11 @@ nanQueryPeerChnlInfoBySlot(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 		else
 			u4AvailType = NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COND;
 
-		if ((prNanAvailEntry->rEntryCtrl.rField.u2Type & u4AvailType) ==
-		    0) {
+		if ((prNanAvailEntry->rEntryCtrl.u2Type & u4AvailType) == 0) {
 			NAN_DW_DBGLOG(NAN, LOUD, TRUE, u2SlotIdx,
 				     "Entry:%d, Slot:%d, Type:%d not equal\n",
 				     u4Idx, u2SlotIdx,
-				     prNanAvailEntry->rEntryCtrl.rField.u2Type);
+				     prNanAvailEntry->rEntryCtrl.u2Type);
 			continue;
 		}
 
@@ -2665,9 +2663,8 @@ nanGetPeerMaxBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 					u4OperatingClass =
 					    prBandChnlCtrl->u4OperatingClass;
 					u4AvailType = u4COMMIT_COND;
-					if ((prNanAvailEntry->rEntryCtrl.rField
-						     .u2Type &
-					     u4AvailType) == 0)
+					if ((prNanAvailEntry->rEntryCtrl.u2Type
+					     & u4AvailType) == 0)
 						continue;
 
 					if (nanRegGetBw(u4OperatingClass) >
@@ -2733,8 +2730,8 @@ nanGetPeerMinBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 					u4AvailType =
 				    (NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COMMIT |
 				     NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COND);
-					if ((prNanAvailEntry->rEntryCtrl.rField
-						.u2Type & u4AvailType) == 0)
+					if ((prNanAvailEntry->rEntryCtrl.u2Type
+					     & u4AvailType) == 0)
 						continue;
 
 					if (nanRegGetNanChnlBand(
@@ -8359,13 +8356,10 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter)
 					    u4SlotIdx))
 					continue;
 
-				u2Type = prNanAvailEntry->rEntryCtrl.rField
-						 .u2Type;
+				u2Type = prNanAvailEntry->rEntryCtrl.u2Type;
 
-				if (!(u2Type &
-				      NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COMMIT) &&
-				    !(u2Type &
-				      NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_COND))
+				if (!NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2Type) &&
+				    !NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2Type))
 					continue;
 
 				if (prNanAvailEntryTmp == NULL) {
