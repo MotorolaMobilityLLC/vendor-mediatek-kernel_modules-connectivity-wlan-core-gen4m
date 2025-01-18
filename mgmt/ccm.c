@@ -17,19 +17,77 @@ struct P2P_CCM_CSA_ENTRY {
 	enum ENUM_BAND eTargetBand;
 };
 
-static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
-				       struct BSS_INFO *prTargetBss,
-				       const char *pucSrcFunc);
-
-static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
-			    struct BSS_INFO *prBssInfo,
-			    uint32_t *u4TargetCh,
-			    enum ENUM_MBMC_BN eTargetHwBandIdx,
-			    enum ENUM_BAND *eTargetBand);
+struct CCM_STABLE_CB_ENTRY {
+	struct LINK_ENTRY rLinkEntry;
+	CCM_CALLBACK_FUNC pfCcmStableCb;
+};
 
 void ccmInit(struct ADAPTER *prAdapter)
 {
 	LINK_INITIALIZE(&prAdapter->rCcmCheckCsList);
+	LINK_INITIALIZE(&prAdapter->rCcmStableCbList);
+	prAdapter->ucCcmSwitchingCnt = 0;
+}
+
+void ccmUninit(struct ADAPTER *prAdapter)
+{
+	struct LINK *prCcmStableCbList = &prAdapter->rCcmStableCbList;
+	struct CCM_STABLE_CB_ENTRY *prCcmCbEntry;
+	struct CCM_STABLE_CB_ENTRY *prCcmCbEntryNext;
+
+	if (!LINK_IS_EMPTY(prCcmStableCbList)) {
+		LINK_FOR_EACH_ENTRY_SAFE(prCcmCbEntry, prCcmCbEntryNext,
+				 prCcmStableCbList, rLinkEntry,
+				 struct CCM_STABLE_CB_ENTRY) {
+			LINK_REMOVE_KNOWN_ENTRY(prCcmStableCbList,
+						prCcmCbEntry);
+			cnmMemFree(prAdapter, prCcmCbEntry);
+		}
+	}
+}
+
+void ccmRegisterStableCb(struct ADAPTER *prAdapter,
+			 CCM_CALLBACK_FUNC func)
+{
+	struct LINK *prCcmStableCbList = &prAdapter->rCcmStableCbList;
+	struct CCM_STABLE_CB_ENTRY *prCcmCbEntry;
+
+	LINK_FOR_EACH_ENTRY(prCcmCbEntry, prCcmStableCbList, rLinkEntry,
+			    struct CCM_STABLE_CB_ENTRY) {
+		if (prCcmCbEntry->pfCcmStableCb == func)
+			return;
+	}
+
+	prCcmCbEntry = cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct CCM_STABLE_CB_ENTRY));
+	prCcmCbEntry->pfCcmStableCb = func;
+	LINK_INSERT_TAIL(prCcmStableCbList, &prCcmCbEntry->rLinkEntry);
+	DBGLOG(CCM, TRACE, "Register callback func=%ps[%u]\n", func,
+	       prCcmStableCbList->u4NumElem);
+}
+
+void ccmUnregisterStableCb(struct ADAPTER *prAdapter,
+			   CCM_CALLBACK_FUNC func)
+{
+	struct LINK *prCcmStableCbList = &prAdapter->rCcmStableCbList;
+	struct CCM_STABLE_CB_ENTRY *prCcmCbEntry;
+	struct CCM_STABLE_CB_ENTRY *prCcmCbEntryNext;
+
+	if (LINK_IS_EMPTY(prCcmStableCbList))
+		return;
+
+	LINK_FOR_EACH_ENTRY_SAFE(prCcmCbEntry, prCcmCbEntryNext,
+				 prCcmStableCbList, rLinkEntry,
+				 struct CCM_STABLE_CB_ENTRY) {
+		if (prCcmCbEntry->pfCcmStableCb == func) {
+			LINK_REMOVE_KNOWN_ENTRY(prCcmStableCbList,
+						prCcmCbEntry);
+			cnmMemFree(prAdapter, prCcmCbEntry);
+			DBGLOG(CCM, TRACE, "Unregister func=%ps[%u]\n", func,
+			       prCcmStableCbList->u4NumElem);
+			break;
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -49,7 +107,7 @@ void ccmRemoveBssPendingEntry(struct ADAPTER *prAdapter,
 				 struct P2P_CCM_CSA_ENTRY) {
 		if (prCcmCsaEntry->prBssInfo != prBssInfo)
 			continue;
-		DBGLOG(CCM, INFO, "bss=%u free, remove pending entry",
+		DBGLOG(CCM, INFO, "bss=%u free, remove pending entry\n",
 		       prBssInfo->ucBssIndex);
 		LINK_REMOVE_KNOWN_ENTRY(prCcmCheckCsList, prCcmCsaEntry);
 		cnmMemFree(prAdapter, prCcmCsaEntry);
@@ -63,6 +121,83 @@ static void ccmPendingEventTimeout(struct ADAPTER *prAdapter,
 
 	prAdapter->fgIsCcmPending = FALSE;
 	ccmChannelSwitchProducer(prAdapter, targetBss, __func__);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if channel switch allowed and prepare to switchh to A+A channel
+ *        or original input target channel.
+ *
+ * \param[in] u4TargetCh  Point to target channel we want to switch to,
+ *                        may be modified for A+A.
+ *            eTargetBand Point to target band we want to switch to,
+ *                        may be modified for A+A.
+ *
+ * \return TRUE, ready to channel switch.
+ *         FALSE, not alloed to channel switch.
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo,
+			    uint32_t *u4TargetCh,
+			    enum ENUM_MBMC_BN eTargetHwBandIdx,
+			    enum ENUM_BAND *eTargetBand)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
+#else
+	uint32_t freqList[MAX_5G_BAND_CHN_NUM] = {};
+#endif
+	uint32_t u4FreqListNum;
+	uint32_t u4Idx;
+	uint32_t u4ChForAa;
+	enum ENUM_BAND eBandForAa = BAND_NULL;
+	uint32_t u4Freq;
+
+	/* pass for MCC only */
+	if (prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
+	    prBssInfo->ucPrimaryChannel == *u4TargetCh) {
+		DBGLOG(CCM, INFO,
+		       "do not trigger CSA, [%s]Bss%u, ch=%u, hwBand=%u, rfBand=%u [Target]ch=%u, hwBand=%u, rfBand=%u\n",
+		       bssGetRoleTypeString(prAdapter, prBssInfo),
+		       prBssInfo->ucBssIndex, prBssInfo->ucPrimaryChannel,
+		       prBssInfo->eHwBandIdx, prBssInfo->eBand,
+		       *u4TargetCh, eTargetHwBandIdx, *eTargetBand);
+		return FALSE;
+	}
+
+	if ((prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	     || prBssInfo->eBand == BAND_6G
+#endif
+	     ) &&
+	    p2pFuncIsPreferWfdAa(prAdapter, prBssInfo)) {
+		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
+						     freqList);
+		for (u4Idx = 0; u4Idx < u4FreqListNum; u4Idx++) {
+			u4Freq = freqList[u4Idx];
+			u4ChForAa = nicFreq2ChannelNum(u4Freq * 1000);
+			if (u4Freq >= 2412 && u4Freq <= 2484)
+				eBandForAa = BAND_2G4;
+			else if (u4Freq >= 5180 && u4Freq <= 5900)
+				eBandForAa = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (u4Freq >= 5955 && u4Freq <= 7115)
+				eBandForAa = BAND_6G;
+#endif
+			if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo,
+				u4ChForAa, eBandForAa) == CSA_STATUS_SUCCESS) {
+				/* modify the input ch and band! */
+				*u4TargetCh = u4ChForAa;
+				*eTargetBand = eBandForAa;
+				return TRUE;
+			}
+		}
+	} else if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo, *u4TargetCh,
+				 *eTargetBand) == CSA_STATUS_SUCCESS)
+		return TRUE;
+
+	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -198,218 +333,10 @@ static void ccmGetOtherAliveBssHwBitmap(struct ADAPTER *prAdapter,
 
 		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
 	}
-	DBGLOG(P2P, TRACE,
+	DBGLOG(CCM, TRACE,
 	       "alive BSS hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
 	       pau4Bitmap[AA_HW_BAND_0], pau4Bitmap[AA_HW_BAND_1],
 	       pau4Bitmap[AA_HW_BAND_2]);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Entry Point of CCM, other modules should call this.
- */
-/*----------------------------------------------------------------------------*/
-void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
-			      struct BSS_INFO *prTargetBss,
-			      const char *pucSrcFunc)
-{
-	if (!prAdapter->fgIsP2PRegistered)
-		return;
-
-	if (!prTargetBss) {
-		DBGLOG(CCM, INFO, "null target Bss\n");
-		return;
-	}
-
-	if (prAdapter->fgIsCcmPending) {
-		DBGLOG(CCM, INFO, "skip CCM due to pending");
-		return;
-	}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (IS_BSS_GC(prTargetBss) || IS_BSS_AIS(prTargetBss)) {
-		struct BSS_INFO *bss;
-		struct MLD_BSS_INFO *prMldBss = mldBssGetByBss(prAdapter,
-							       prTargetBss);
-
-		if (prMldBss) {
-			/* MLO GC/STA only ch abort once */
-			LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
-					    rLinkEntryMld, struct BSS_INFO)
-				__ccmChannelSwitchProducer(prAdapter, bss,
-							   pucSrcFunc);
-		} else
-			__ccmChannelSwitchProducer(prAdapter, prTargetBss,
-						   pucSrcFunc);
-	} else if (IS_BSS_APGO(prTargetBss) || IS_BSS_NAN(prTargetBss))
-#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
-		__ccmChannelSwitchProducer(prAdapter, prTargetBss, pucSrcFunc);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if channel switch allowed and prepare to switchh to A+A channel
- *        or original input target channel.
- *
- * \param[in] u4TargetCh  Point to target channel we want to switch to,
- *                        may be modified for A+A.
- *            eTargetBand Point to target band we want to switch to,
- *                        may be modified for A+A.
- *
- * \return TRUE, ready to channel switch.
- *         FALSE, not alloed to channel switch.
- */
-/*----------------------------------------------------------------------------*/
-static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
-			    struct BSS_INFO *prBssInfo,
-			    uint32_t *u4TargetCh,
-			    enum ENUM_MBMC_BN eTargetHwBandIdx,
-			    enum ENUM_BAND *eTargetBand)
-{
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
-#else
-	uint32_t freqList[MAX_5G_BAND_CHN_NUM] = {};
-#endif
-	uint32_t u4FreqListNum;
-	uint32_t u4Idx;
-	uint32_t u4ChForAa;
-	enum ENUM_BAND eBandForAa = BAND_NULL;
-	uint32_t u4Freq;
-
-	/* pass for MCC only */
-	if (prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
-	    prBssInfo->ucPrimaryChannel == *u4TargetCh) {
-		DBGLOG(CCM, INFO,
-		       "do not trigger CSA, [%s]Bss%u, ch=%u, hwBand=%u, rfBand=%u [Target]ch=%u, hwBand=%u, rfBand=%u\n",
-		       bssGetRoleTypeString(prAdapter, prBssInfo),
-		       prBssInfo->ucBssIndex, prBssInfo->ucPrimaryChannel,
-		       prBssInfo->eHwBandIdx, prBssInfo->eBand,
-		       *u4TargetCh, eTargetHwBandIdx, *eTargetBand);
-		return FALSE;
-	}
-
-	if ((prBssInfo->eBand == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	     || prBssInfo->eBand == BAND_6G
-#endif
-	     ) &&
-	    p2pFuncIsPreferWfdAa(prAdapter, prBssInfo)) {
-		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
-						     freqList);
-		for (u4Idx = 0; u4Idx < u4FreqListNum; u4Idx++) {
-			u4Freq = freqList[u4Idx];
-			u4ChForAa = nicFreq2ChannelNum(u4Freq * 1000);
-			if (u4Freq >= 2412 && u4Freq <= 2484)
-				eBandForAa = BAND_2G4;
-			else if (u4Freq >= 5180 && u4Freq <= 5900)
-				eBandForAa = BAND_5G;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (u4Freq >= 5955 && u4Freq <= 7115)
-				eBandForAa = BAND_6G;
-#endif
-			if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo,
-				u4ChForAa, eBandForAa) == CSA_STATUS_SUCCESS) {
-				/* modify the input ch and band! */
-				*u4TargetCh = u4ChForAa;
-				*eTargetBand = eBandForAa;
-				return TRUE;
-			}
-		}
-	} else if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo, *u4TargetCh,
-				 *eTargetBand) == CSA_STATUS_SUCCESS)
-		return TRUE;
-
-	return FALSE;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Each time consume one entry in queue to check whether it needs to CS.
- *        Only trigger by __ccmChannelSwitchProducer,
- *        p2pRoleStateAbort_SWITCH_CHANNEL and itself.
- *
- * \param[in] pvAdapter Pointer to the adapter descriptor.
- *
- * \return status
- */
-/*----------------------------------------------------------------------------*/
-void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
-{
-	struct LINK *prCcmCheckCsList = &prAdapter->rCcmCheckCsList;
-	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntry;
-	struct BSS_INFO *bss;
-	uint32_t u4TargetCh;
-	enum ENUM_MBMC_BN eTargetHwBandIdx;
-	enum ENUM_BAND eTargetBand;
-	u_int8_t fgIsSwitching = FALSE;
-	u_int8_t fgIsMlo = FALSE;
-	int8_t i;
-
-	if (prAdapter->rWifiVar.fgCsaInProgress) {
-		/* csa start countdown till csadone */
-		DBGLOG(CCM, INFO, "skip due to CSA still in progress\n");
-		return;
-	} else {
-		/* start switching channel till ch granted */
-		for (i = 0; i < MAX_BSSID_NUM; ++i) {
-			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-
-			if (IS_BSS_P2P(bss) && bss->fgIsSwitchingChnl)
-				break;
-			else if (IS_BSS_AIS(bss) && bss->fgIsAisSwitchingChnl)
-				break;
-		}
-
-		if (i < MAX_BSSID_NUM) {
-			DBGLOG(CCM, INFO,
-			       "skip due to Bss%u channel switch still in progress\n",
-			       i);
-			return;
-		}
-	}
-
-	if (!LINK_IS_EMPTY(prCcmCheckCsList)) {
-		LINK_REMOVE_HEAD(prCcmCheckCsList, prCcmCsaEntry,
-			struct P2P_CCM_CSA_ENTRY *);
-		bss = prCcmCsaEntry->prBssInfo;
-		u4TargetCh = prCcmCsaEntry->u4TargetCh;
-		eTargetHwBandIdx = prCcmCsaEntry->eTargetHwBandIdx;
-		eTargetBand = prCcmCsaEntry->eTargetBand;
-
-		if (!IS_BSS_APGO(bss))
-			return;
-
-		cnmMemFree(prAdapter, prCcmCsaEntry);
-	} else {
-		DBGLOG(CCM, INFO,
-		       "all BSS align new connection or CSA chnl done\n");
-		return;
-	}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	fgIsMlo = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, bss));
-#endif
-
-	DBGLOG(CCM, INFO,
-	       "checking [%s]bss=%u ch=%u, hwBand=%u, rfBand=%u, is_mlo=%u, [Target]ch=%u, hwBand=%u, rfBand=%u\n",
-	       bssGetRoleTypeString(prAdapter, bss),
-	       bss->ucBssIndex, bss->ucPrimaryChannel,
-	       bss->eHwBandIdx, bss->eBand, fgIsMlo,
-	       u4TargetCh, eTargetHwBandIdx, eTargetBand);
-
-	if (IS_BSS_AP(prAdapter, bss) && !fgIsMlo)
-		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
-					P2P_DEFAULT_SCENARIO);
-	else if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss, &u4TargetCh,
-				      eTargetHwBandIdx, &eTargetBand)) {
-		cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
-				     bss->u4PrivateData);
-		fgIsSwitching = TRUE;
-	}
-
-	if (!fgIsSwitching)
-		ccmChannelSwitchConsumer(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -497,12 +424,13 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 						 &prCcmCsaEntry->rLinkEntry);
 			}
 
-			DBGLOG(CCM, INFO, "insert GO bss=%u waiting to check\n",
+			DBGLOG(CCM, TRACE,
+			       "insert GO bss=%u waiting to check\n",
 			       bss->ucBssIndex);
 		}
 	} else {
 		/* we should still notify SAP even if P2P CCM is disabled */
-		DBGLOG(CCM, WARN, "P2P CCM is disabled, skip to ckeck GO\n");
+		DBGLOG(CCM, WARN, "CCM is disabled, skip to ckeck GO\n");
 	}
 
 	/* SAP must do CSA last, enqueue SAP at the end */
@@ -535,11 +463,169 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		LINK_INSERT_TAIL(prCcmCheckCsList,
 				 &prCcmCsaEntry->rLinkEntry);
 
-		DBGLOG(CCM, INFO, "insert SAP bss=%u waiting to check\n",
+		DBGLOG(CCM, TRACE, "insert SAP bss=%u waiting to check\n",
 		       bss->ucBssIndex);
 	}
 
 	ccmChannelSwitchConsumer(prAdapter);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Entry Point of CCM, other modules should call this.
+ */
+/*----------------------------------------------------------------------------*/
+void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prTargetBss,
+			      const char *pucSrcFunc)
+{
+	if (!prAdapter->fgIsP2PRegistered)
+		return;
+
+	if (!prTargetBss) {
+		DBGLOG(CCM, INFO, "null target Bss\n");
+		return;
+	}
+
+	if (prAdapter->fgIsCcmPending) {
+		DBGLOG(CCM, INFO, "skip CCM due to pending");
+		return;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (IS_BSS_GC(prTargetBss) || IS_BSS_AIS(prTargetBss)) {
+		struct BSS_INFO *bss;
+		struct MLD_BSS_INFO *prMldBss = mldBssGetByBss(prAdapter,
+							       prTargetBss);
+
+		if (prMldBss) {
+			/* MLO GC/STA only ch abort once */
+			LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
+					    rLinkEntryMld, struct BSS_INFO)
+				__ccmChannelSwitchProducer(prAdapter, bss,
+							   pucSrcFunc);
+		} else
+			__ccmChannelSwitchProducer(prAdapter, prTargetBss,
+						   pucSrcFunc);
+	} else if (IS_BSS_APGO(prTargetBss) || IS_BSS_NAN(prTargetBss))
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
+		__ccmChannelSwitchProducer(prAdapter, prTargetBss, pucSrcFunc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Each time consume one entry in queue to check whether it needs to CS.
+ *        Only trigger by __ccmChannelSwitchProducer,
+ *        p2pRoleStateAbort_SWITCH_CHANNEL and itself.
+ *
+ * \param[in] pvAdapter Pointer to the adapter descriptor.
+ *
+ * \return status
+ */
+/*----------------------------------------------------------------------------*/
+void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
+{
+	struct LINK *prCcmCheckCsList = &prAdapter->rCcmCheckCsList;
+	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntry;
+	struct BSS_INFO *bss;
+	uint32_t u4TargetCh;
+	enum ENUM_MBMC_BN eTargetHwBandIdx;
+	enum ENUM_BAND eTargetBand;
+	u_int8_t fgIsSwitching = FALSE;
+	u_int8_t fgIsMlo = FALSE;
+	int8_t i;
+
+	if (p2pFuncIsSapGoCsa(prAdapter) ||
+	    /* csa sta countdown till csadone */
+	    prAdapter->rWifiVar.fgCsaInProgress) {
+		DBGLOG(CCM, INFO, "skip due to CSA still in progress\n");
+		return;
+	} else {
+		/* start switching channel till ch granted */
+		for (i = 0; i < MAX_BSSID_NUM; ++i) {
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+			if (IS_BSS_P2P(bss) && bss->fgIsSwitchingChnl)
+				break;
+			else if (IS_BSS_AIS(bss) && bss->fgIsAisSwitchingChnl)
+				break;
+		}
+
+		if (i < MAX_BSSID_NUM) {
+			DBGLOG(CCM, INFO,
+			       "skip due to Bss%u channel switch still in progress\n",
+			       i);
+			return;
+		}
+	}
+
+	if (!LINK_IS_EMPTY(prCcmCheckCsList)) {
+		LINK_REMOVE_HEAD(prCcmCheckCsList, prCcmCsaEntry,
+			struct P2P_CCM_CSA_ENTRY *);
+		bss = prCcmCsaEntry->prBssInfo;
+		u4TargetCh = prCcmCsaEntry->u4TargetCh;
+		eTargetHwBandIdx = prCcmCsaEntry->eTargetHwBandIdx;
+		eTargetBand = prCcmCsaEntry->eTargetBand;
+
+		if (!IS_BSS_APGO(bss))
+			return;
+
+		cnmMemFree(prAdapter, prCcmCsaEntry);
+	} else {
+		struct LINK *prCcmStableCbList = &prAdapter->rCcmStableCbList;
+		struct CCM_STABLE_CB_ENTRY *prCcmCbEntry;
+
+		/* CCM stable only means not trigger new CSA any more,
+		 * but someone may still in CSA progress, which not means net is
+		 * stable.
+		 */
+		DBGLOG(CCM, INFO,
+		       "CCM is stable, switching cnt = %u, cb Num=%u\n",
+		       prAdapter->ucCcmSwitchingCnt,
+		       prCcmStableCbList->u4NumElem);
+
+		/* This means net is stable */
+		if (prAdapter->ucCcmSwitchingCnt == 0 &&
+		    !LINK_IS_EMPTY(prCcmStableCbList)) {
+			LINK_FOR_EACH_ENTRY(prCcmCbEntry, prCcmStableCbList,
+					    rLinkEntry,
+					    struct CCM_STABLE_CB_ENTRY) {
+				DBGLOG(CCM, TRACE, "enter stable cb:%ps\n",
+				       prCcmCbEntry->pfCcmStableCb);
+				prCcmCbEntry->pfCcmStableCb(prAdapter);
+			}
+		}
+		return;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgIsMlo = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, bss));
+#endif
+
+	DBGLOG(CCM, INFO,
+	       "checking [%s]bss=%u ch=%u, hwBand=%u, rfBand=%u, is_mlo=%u, [Target]ch=%u, hwBand=%u, rfBand=%u\n",
+	       bssGetRoleTypeString(prAdapter, bss),
+	       bss->ucBssIndex, bss->ucPrimaryChannel,
+	       bss->eHwBandIdx, bss->eBand, fgIsMlo,
+	       u4TargetCh, eTargetHwBandIdx, eTargetBand);
+
+	if (IS_BSS_AP(prAdapter, bss) && !fgIsMlo)
+		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
+					P2P_DEFAULT_SCENARIO);
+	else if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss, &u4TargetCh,
+				      eTargetHwBandIdx, &eTargetBand)) {
+		cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
+				     bss->u4PrivateData);
+		fgIsSwitching = TRUE;
+	}
+
+	if (!fgIsSwitching)
+		ccmChannelSwitchConsumer(prAdapter);
+	else {
+		prAdapter->ucCcmSwitchingCnt++;
+		DBGLOG(CCM, INFO, "switching channel triggered, count=%u\n",
+		       prAdapter->ucCcmSwitchingCnt);
+	}
 }
 
 

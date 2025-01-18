@@ -20001,14 +20001,17 @@ wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)pvQueryBuffer;
 
 	if (!prAdapter) {
-		DBGLOG(P2P, ERROR, "no adapter found");
+		DBGLOG(CCM, ERROR, "no adapter found\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
 	if (!prBssInfo) {
-		DBGLOG(P2P, ERROR, "no BssInfo found");
+		DBGLOG(CCM, ERROR, "no BssInfo found\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	if (prAdapter->ucCcmSwitchingCnt > 0)
+		prAdapter->ucCcmSwitchingCnt--;
 
 	/* do not support CSA by upper layer within CCM */
 	if (LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList))

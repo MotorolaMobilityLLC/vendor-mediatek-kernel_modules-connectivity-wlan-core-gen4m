@@ -665,7 +665,7 @@ u_int8_t
 p2pFuncNeedForceSleep(struct ADAPTER *prAdapter);
 
 u_int8_t
-p2pFuncIsSapCsa(struct ADAPTER *prAdapter);
+p2pFuncIsSapGoCsa(struct ADAPTER *prAdapter);
 
 void
 p2pFunClearAllTxReq(struct ADAPTER *prAdapter,

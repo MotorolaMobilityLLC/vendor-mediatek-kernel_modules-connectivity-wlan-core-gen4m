@@ -2706,6 +2706,7 @@ struct ADAPTER {
 	bool fgIsNanSendRequestToCnm;
 	uint8_t ucNanReqTokenId;
 	u_int8_t fgNanMultipleMapTimeline;
+	u_int8_t fgNanRestoreCh;
 	struct _NAN_PUBLISH_INFO_T rPublishInfo;
 	struct _NAN_SUBSCRIBE_INFO_T rSubscribeInfo;
 
@@ -3353,6 +3354,8 @@ struct ADAPTER {
 	struct LINK rCcmCheckCsList;
 	u_int8_t fgIsCcmPending;
 	struct TIMER rCcmPendingTimer;
+	struct LINK rCcmStableCbList;
+	uint8_t ucCcmSwitchingCnt;
 #endif
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)

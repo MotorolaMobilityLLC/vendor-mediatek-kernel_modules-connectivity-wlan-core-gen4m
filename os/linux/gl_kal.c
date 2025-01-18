@@ -13631,9 +13631,7 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	mutex_unlock(&prDevHandler->ieee80211_ptr->mtx);
 #endif
 
-	/* Check SAP channel */
-	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter,
-		P2P_DEFAULT_SCENARIO);
+	ccmChannelSwitchProducer(prGlueInfo->prAdapter, prBssInfo, __func__);
 }
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 void kalAisChnlSwitchNotifyWork(struct work_struct *work)

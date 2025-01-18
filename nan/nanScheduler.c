@@ -17712,9 +17712,18 @@ void nanUpdateMbmcIdx(struct ADAPTER *ad,
 
 	if (prBssInfo) {
 #if (CFG_SUPPORT_NAN_DBDC == 1)
-		if (prBssInfo->eBand == BAND_5G)
-			prBssInfo->ucPrimaryChannel =
-				g_r5gDwChnl.u4PrimaryChnl;
+		if (prBssInfo->eBand == BAND_5G) {
+			if (rlmDomainIsLegalChannel(ad,
+			    BAND_5G,
+			    NAN_5G_LOW_DISC_CHANNEL))
+				prBssInfo->ucPrimaryChannel =
+				NAN_5G_LOW_DISC_CHANNEL;
+			if (rlmDomainIsLegalChannel(ad,
+			    BAND_5G,
+			    NAN_5G_HIGH_DISC_CHANNEL))
+				prBssInfo->ucPrimaryChannel =
+				NAN_5G_HIGH_DISC_CHANNEL;
+		}
 		if (prBssInfo->eBand == BAND_2G4)
 			prBssInfo->ucPrimaryChannel =
 				g_r2gDwChnl.u4PrimaryChnl;

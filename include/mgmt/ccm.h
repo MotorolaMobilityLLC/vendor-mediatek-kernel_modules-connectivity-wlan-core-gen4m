@@ -13,6 +13,8 @@ enum ENUM_P2P_CCM_MODE {
 };
 #endif /* CFG_SUPPORT_CCM */
 
+typedef void(*CCM_CALLBACK_FUNC) (struct ADAPTER *);
+
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************
@@ -32,6 +34,14 @@ struct CCM_AA_FOBIDEN_REGION_UNIT {
 
 #if CFG_SUPPORT_CCM
 void ccmInit(struct ADAPTER *prAdapter);
+
+void ccmUninit(struct ADAPTER *prAdapter);
+
+void ccmRegisterStableCb(struct ADAPTER *prAdapter,
+			 CCM_CALLBACK_FUNC func);
+
+void ccmUnregisterStableCb(struct ADAPTER *prAdapter,
+			   CCM_CALLBACK_FUNC func);
 
 void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,
@@ -62,6 +72,15 @@ bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 
 #else
 static inline void ccmInit(struct ADAPTER *prAdapter) {}
+
+static inline void
+ccmUninit(struct ADAPTER *prAdapter) {}
+
+static inline void
+ccmRegisterStableCb(struct ADAPTER *prAdapter, CCM_CALLBACK_FUNC func) {}
+
+static inline void
+ccmUnregisterStableCb(struct ADAPTER *prAdapter, CCM_CALLBACK_FUNC func) {}
 
 static inline void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,

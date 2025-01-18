@@ -4525,10 +4525,10 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 	pasnInit(prAdapter);
 #endif
 
-#if CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_CCM
 	/* CCM Module - initialization */
 	ccmInit(prAdapter);
-#endif /* CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT */
+#endif /* CFG_SUPPORT_CCM */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4584,6 +4584,10 @@ void nicUninitMGMT(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_PASN
 	pasnUninit(prAdapter);
 #endif
+
+#if CFG_SUPPORT_CCM
+	ccmUninit(prAdapter);
+#endif /* CFG_SUPPORT_CCM */
 }
 
 /*----------------------------------------------------------------------------*/

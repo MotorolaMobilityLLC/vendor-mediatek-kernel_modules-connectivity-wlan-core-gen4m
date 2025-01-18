@@ -7214,10 +7214,6 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 		cnmTimerStartTimer(prAdapter,
 				&prAisBssInfo->rCsaDoneTimer,
 				SEC_TO_MSEC(prWifiVar->ucCsaDoneTimeout));
-
-#if CFG_SUPPORT_CCM
-		ccmChannelSwitchProducer(prAdapter, prAisBssInfo, __func__);
-#endif /* CFG_SUPPORT_CCM */
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN
 	    && prAisFsmInfo->ucSeqNumOfChReq == ucTokenID) {
 		/* 2. channel privilege has been approved */

@@ -2975,7 +2975,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		fgIsCrossBand = TRUE;
 
 #if (CFG_NAN_CONCURRENCY == 1)
-	nanBackupSapChannel(prAdapter, prBssInfo);
+	if (prP2pChnlReqInfo->ucReqChnlNum !=
+		prBssInfo->ucPrimaryChannel)
+		nanBackupSapChannel(prAdapter, prBssInfo);
 #endif
 
 	/*  Setup Channel, Band */
@@ -3223,6 +3225,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_NAN == 1)
+#if !CFG_SUPPORT_CCM
 	/* Set complete for nan init */
 	if (!kal_completion_done(
 		&prAdapter->prGlueInfo->rNanHaltComp)) {
@@ -3230,6 +3233,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 			"Concurrency: Complete NAN\n");
 		complete(&prAdapter->prGlueInfo->rNanHaltComp);
 	}
+#endif
 #endif /* CFG_SUPPORT_NAN */
 } /* p2pFuncDfsSwitchCh */
 
@@ -9506,8 +9510,18 @@ bool p2pFuncSwitchSapChannel(
 	if (nanGetSapCsaChannel(prAdapter,
 		prP2pBssInfo,
 		&rSapSwitchCand[0].eRfBand,
-		&rSapSwitchCand[0].ucChUpperBound))
+		&rSapSwitchCand[0].ucChUpperBound)) {
 		ucSapChCandNum = 1;
+		if (rSapSwitchCand[0].eRfBand ==
+			prP2pBssInfo->eBand &&
+			rSapSwitchCand[0].ucChUpperBound ==
+			prP2pBssInfo->ucPrimaryChannel) {
+			DBGLOG(P2P, INFO,
+				"[SCC] Keep StaCH(%d)\n",
+				prP2pBssInfo->ucPrimaryChannel);
+			goto exit;
+		}
+	}
 #endif /* CFG_SUPPORT_NAN */
 
 	/* Use sta ch info to do sap ch switch */
@@ -10265,7 +10279,7 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 }
 
 u_int8_t
-p2pFuncIsSapCsa(struct ADAPTER *prAdapter)
+p2pFuncIsSapGoCsa(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo =
 		prAdapter->prGlueInfo;

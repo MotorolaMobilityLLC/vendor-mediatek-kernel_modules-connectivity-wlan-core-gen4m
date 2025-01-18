@@ -2814,6 +2814,16 @@ void __kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prBssInfo || !prRfChnlInfo)
 		return;
 
+#if (CFG_SUPPORT_NAN == 1)
+	/* Set complete for nan init */
+	if (!kal_completion_done(
+		&prAdapter->prGlueInfo->rNanHaltComp)) {
+		DBGLOG(NAN, DEBUG,
+			"Concurrency: Skip lock NAN\n");
+		fgLockHeld = TRUE;
+	}
+#endif /* CFG_SUPPORT_NAN */
+
 	ucRoleIdx = prBssInfo->u4PrivateData;
 #if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
@@ -2936,6 +2946,7 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	enum nl80211_channel_type rChannelType;
 	enum ENUM_MAX_BANDWIDTH_SETTING eBandWidth;
 	uint8_t linkIdx = 0;
+	u_int8_t fgLockHeld = FALSE;
 #if CFG_SUPPORT_CCM
 	uint32_t u4BufLen = 0;
 #endif
@@ -2959,16 +2970,17 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prP2PInfo->fgChannelSwitchReq = false;
+#if (CFG_SUPPORT_NAN == 1)
+	/* Set complete for nan init */
+	if (!kal_completion_done(
+		&prAdapter->prGlueInfo->rNanHaltComp)) {
+		DBGLOG(NAN, DEBUG,
+			"Concurrency: Skip lock NAN\n");
+		fgLockHeld = TRUE;
+	}
+#endif /* CFG_SUPPORT_NAN */
 
-#if CFG_SUPPORT_CCM
-	/* Call CCM check if any BSS want to CSA,
-	 * Should be triggered after fgChannelSwitchReq set to false.
-	 */
-	DBGLOG(P2P, TRACE, "CSA done, re-trigger to notify other GO/SAP");
-	kalIoctl(prAdapter->prGlueInfo, wlanoidCcmRetrigger, prBssInfo,
-			    sizeof(struct BSS_INFO), &u4BufLen);
-#endif /* CFG_SUPPORT_CCM */
+	prP2PInfo->fgChannelSwitchReq = false;
 
 	if ((prP2PInfo->aprRoleHandler != NULL) &&
 		(prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler))
@@ -3050,11 +3062,23 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		chandef.center_freq2,
 		chandef.chan->dfs_state);
 
+
+#if CFG_SUPPORT_CCM
+	/* Call CCM check if any BSS want to CSA,
+	 * Should be triggered after fgChannelSwitchReq set to false.
+	 */
+	DBGLOG(CCM, TRACE, "CSA done, re-trigger CCM\n");
+	kalIoctl(prAdapter->prGlueInfo, wlanoidCcmRetrigger, prBssInfo,
+				sizeof(struct BSS_INFO), &u4BufLen);
+#endif /* CFG_SUPPORT_CCM */
+
+	if (!fgLockHeld) {
 #if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
-	wiphy_lock(prNetdevice->ieee80211_ptr->wiphy);
+		wiphy_lock(prNetdevice->ieee80211_ptr->wiphy);
 #else
-	mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
+		mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
 #endif
+	}
 
 #if (KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE)
 #if (CFG_SUPPORT_802_11BE == 1)
@@ -3075,11 +3099,13 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	cfg80211_ch_switch_notify(prNetdevice, &chandef);
 #endif
 
+	if (!fgLockHeld) {
 #if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
-	wiphy_unlock(prNetdevice->ieee80211_ptr->wiphy);
+		wiphy_unlock(prNetdevice->ieee80211_ptr->wiphy);
 #else
-	mutex_unlock(&prNetdevice->ieee80211_ptr->mtx);
+		mutex_unlock(&prNetdevice->ieee80211_ptr->mtx);
 #endif
+	}
 
 	netif_carrier_on(prNetdevice);
 	netif_tx_wake_all_queues(prNetdevice);

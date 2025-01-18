@@ -947,6 +947,8 @@ nanDevSendEnableRequest(
 			prnanBssInfo->ucBssIndex);
 	}
 
+	prAdapter->fgNanRestoreCh = FALSE;
+
 	if (nanGetFeatureIsSigma(prAdapter)) {
 		if (prAdapter->rNanDiscType == NAN_UNSYNC_DISC)
 			nanDevGenEnableUnsync(prAdapter);
@@ -956,7 +958,7 @@ nanDevSendEnableRequest(
 		nanTrySwitchSapChannel(prAdapter);
 
 		/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
-		if (!p2pFuncIsSapCsa(prAdapter))
+		if (!p2pFuncIsSapGoCsa(prAdapter))
 			complete(&prAdapter->prGlueInfo->rNanHaltComp);
 		else
 			DBGLOG(NAN, DEBUG,
@@ -1250,6 +1252,24 @@ u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
 #endif
 }
 
+void nanCcmStableCallback(struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_CCM
+	/* Set complete for nan init */
+	if (!prAdapter->rWifiVar.fgCsaInProgress
+		&& !p2pFuncIsSapGoCsa(prAdapter)
+		&& LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList)
+		&& !kal_completion_done(
+		&prAdapter->prGlueInfo->rNanHaltComp)) {
+		DBGLOG(NAN, DEBUG,
+			"Concurrency: Complete NAN\n");
+		complete(&prAdapter->prGlueInfo->rNanHaltComp);
+	} else
+#endif
+		DBGLOG(NAN, DEBUG,
+			"Concurrency: Don't Complete NAN\n");
+}
+
 u_int8_t nanTrySwitchSapChannel(
 	struct ADAPTER *prAdapter)
 {
@@ -1301,6 +1321,10 @@ u_int8_t nanTrySwitchSapChannel(
 		return FALSE;
 
 	fgIsSingleSap = (sapnum == 1);
+
+	ccmRegisterStableCb(
+		prAdapter,
+		nanCcmStableCallback);
 
 	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
 		prNANSpecInfo = prAdapter->rWifiVar
@@ -1372,7 +1396,8 @@ uint8_t nanGetSapCsaChannel(
 	}
 
 	/* Restore Trigger */
-	if (prAdapter->fgIsNANRegistered &&
+	if (prAdapter->fgNanRestoreCh &&
+		prAdapter->fgIsNANRegistered &&
 		prP2pBssInfo &&
 		prP2pBssInfo->ucBackupCh) {
 		*eRfBand = prP2pBssInfo->eBackupBand;
@@ -1385,7 +1410,7 @@ uint8_t nanGetSapCsaChannel(
 	}
 
 	/* Normal Single SAP */
-	if (!prAdapter->fgIsNANRegistered &&
+	if (/* !prAdapter->fgIsNANRegistered && */
 		nanIsOn(prAdapter)) {
 		*eRfBand = BAND_2G4;
 		if (ucSta2gCh)
@@ -1441,6 +1466,10 @@ void nanRestoreSapChannel(
 	if (!prAdapter->fgIsNANRegistered)
 		return;
 
+	ccmUnregisterStableCb(
+		prAdapter,
+		nanCcmStableCallback);
+
 	prNANSpecInfo = prAdapter->rWifiVar
 			.aprNanSpecificBssInfo[NAN_BSS_INDEX_BAND0];
 	if (!prNANSpecInfo)
@@ -1449,6 +1478,8 @@ void nanRestoreSapChannel(
 		prNANSpecInfo->ucBssIndex];
 	if (!prBssInfo)
 		return;
+
+	prAdapter->fgNanRestoreCh = TRUE;
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		struct BSS_INFO *sap =
