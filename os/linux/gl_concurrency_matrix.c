@@ -174,7 +174,7 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 #endif
 };
 #elif (defined(MT6653) && (CFG_WIFI_DX4 == 1) && \
-	(CFG_WIFI_LIBER_TRIBAND == 0)) /* DX4 2G2A */ || \
+	(CONFIG_BAND_NUM == 2)) /* DX4 2G2A */ || \
 	defined(MT6639) /* DX2/DX3 */ || \
 	(CFG_SUPPORT_CONNAC2X == 1) /* Legacy */
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
@@ -209,7 +209,7 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 #endif
 };
 #elif defined(MT6653) && (CFG_WIFI_DX4 == 1) && \
-	(CFG_WIFI_LIBER_TRIBAND == 1) /* DX4 triband */
+	(CONFIG_BAND_NUM == 3) /* DX4 triband */
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 	{
 		.max_ifaces = 3,

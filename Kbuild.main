@@ -736,8 +736,8 @@ CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCFG_SUPPORT_GLOBAL_AAD_NONCE
 ifeq ($(CONFIG_MTK_WIFI_MT6653_DEV), y)
     ccflags-y += -DCFG_MAX_BSSID_NUM=6
-    ccflags-y += -DCFG_P2P_NUM=3
     ccflags-y += -DCFG_REUSE_RSN_IE=1
+    CONFIG_P2P_NUM=3
     CONFIG_SUPPORT_CONTROL_PORT_OVER_NL80211=y
     CONFIG_MTK_PRE_WIFI7=n
     CONFIG_AP_EHT_DEFAULT_VALUE=1
@@ -869,11 +869,6 @@ ifeq ($(CONFIG_MTK_WIFI_MT6653_DEV), y)
     CONFIG_SUPPORT_MDDP_DYNAMIC_DISABLE=y
     CONFIG_PCIE_GEN_SWITCH=n
 endif
-ifneq ($(CONFIG_WIFI_DX4), y)
-    CONFIG_MTK_WIFI_SAP_PUNCTURE_SUPPORT=y
-    CONFIG_MTK_WIFI_SAP_CSA_PUNCTURE_SUPPORT=y
-    CONFIG_MTK_WIFI_SAP_BCN_CRI_UPD_SUPPORT=y
-endif
 ccflags-y += -DCFG_AP_GO_DELAY_CARRIER_ON
 ccflags-y += -DCFG_SUPPORT_6G_OVERWRITE_ACS_BW
 ccflags-y += -DCFG_MAX_BSSID_NUM=6
@@ -891,19 +886,26 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_SUPPORT_RX_GRO=0
 endif
 
-ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
-    CONFIG_BAND_NUM=3
-    CONFIG_MTK_WIFI_11BE_EMLSR=y
-    ccflags-y += -DCFG_P2P_NUM=3
-    ccflags-y += -DCFG_STA_NUM=3
-endif
-
 ifeq ($(CONFIG_WIFI_DX4), y)
+    ifeq ($(CONFIG_WIFI_TRIBAND), y)
+        CONFIG_BAND_NUM=3
+        CONFIG_MTK_WIFI_11BE_EMLSR=y
+        CONFIG_P2P_NUM=3
+        CONFIG_STA_NUM=3
+    endif
     CONFIG_MLD_LINK_MAX=2
     CONFIG_SINGLE_BAND_MLSR_56=y
 else
+    ifeq ($(CONFIG_WIFI_TRIBAND), y)
+        CONFIG_BAND_NUM=3
+    endif
     CONFIG_MLD_LINK_MAX=3
     CONFIG_SUPPORT_MLC=y
+    CONFIG_MTK_WIFI_SAP_PUNCTURE_SUPPORT=y
+    CONFIG_MTK_WIFI_SAP_CSA_PUNCTURE_SUPPORT=y
+    CONFIG_MTK_WIFI_SAP_BCN_CRI_UPD_SUPPORT=y
+    CONFIG_P2P_NUM=3
+    CONFIG_STA_NUM=3
     ccflags-y += -DCFG_PERF_IND_FROM_EMI_DRIVER_SUPPORT_VER=1
 endif
 
@@ -1158,11 +1160,12 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_SUPPORT_RX_GRO=0
 endif
 
-ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
+ifeq ($(CONFIG_WIFI_TRIBAND), y)
     CONFIG_BAND_NUM=3
-    ccflags-y += -DCFG_P2P_NUM=3
-    ccflags-y += -DCFG_STA_NUM=3
 endif
+
+CONFIG_P2P_NUM=3
+CONFIG_STA_NUM=3
 
 ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
@@ -2035,9 +2038,16 @@ ifeq ($(CONFIG_SNIFFER_RADIOTAP), y)
 endif
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
-    ccflags-y += -DCFG_STA_NUM=1
+    CONFIG_STA_NUM=1
 else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
-    ccflags-y += -DCFG_STA_NUM=1
+    CONFIG_STA_NUM=1
+endif
+
+ifneq ($(CONFIG_P2P_NUM),)
+    ccflags-y += -DCFG_P2P_NUM=$(CONFIG_P2P_NUM)
+endif
+ifneq ($(CONFIG_STA_NUM),)
+    ccflags-y += -DCFG_STA_NUM=$(CONFIG_STA_NUM)
 endif
 
 ifneq ($(filter 6779, $(WLAN_CHIP_ID)),)
@@ -3373,12 +3383,6 @@ ifeq ($(CONFIG_WIFI_DX4), y)
     ccflags-y += -DCFG_WIFI_DX4=1
 else
     ccflags-y += -DCFG_WIFI_DX4=0
-endif
-
-ifeq ($(CONFIG_WIFI_LIBER_TRIBAND), y)
-    ccflags-y += -DCFG_WIFI_LIBER_TRIBAND=1
-else
-    ccflags-y += -DCFG_WIFI_LIBER_TRIBAND=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_UNII4), y)
