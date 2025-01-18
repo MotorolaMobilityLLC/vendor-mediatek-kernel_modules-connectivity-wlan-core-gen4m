@@ -913,6 +913,12 @@ scanSearchBssDescCountByMldAddrSsid(struct ADAPTER *prAdapter,
 		if (!prBssDesc->rMlInfo.fgValid)
 			continue;
 
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+			prBssDesc->rUpdateTime, SEC_TO_SYSTIME(
+			wlanWfdEnabled(prAdapter) ?
+			SCN_BSS_DESC_STALE_SEC_WFD : SCN_BSS_DESC_STALE_SEC)))
+			continue;
+
 		if (EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucMldAddr)) {
 			if (fgCheckSsid == FALSE || prSsid == NULL ||
 			    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,

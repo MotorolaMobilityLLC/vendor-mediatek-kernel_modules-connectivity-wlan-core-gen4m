@@ -1122,7 +1122,7 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	prRoamingFsmInfo->ucRspBssIndex = ucBssIndex;
 
 	DBGLOG(ROAMING, EVENT,
-	       "[AIS%d][%d] <CONN> EVENT-ROAMING DISCOVERY reason=%d Current Time=%u\n",
+	       "[AIS%d][%d] <CONN> EVENT-ROAMING DISCOVERY reason=%s Current Time=%u\n",
 	       AIS_INDEX(prAdapter, ucBssIndex), ucBssIndex,
 	       prTransit->eReason < ROAMING_REASON_NUM ?
 	       apucRoamingReasonStr[prTransit->eReason] : "UNKNOWN",

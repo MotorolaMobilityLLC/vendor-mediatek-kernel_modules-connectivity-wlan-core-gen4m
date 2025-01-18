@@ -2513,12 +2513,17 @@ uint8_t aisBssDescAllowed(struct ADAPTER *prAdapter,
 	fgAllowed = match != prBssDescSet->ucLinkNum;
 done:
 
-	DBGLOG(AIS, INFO,
-		"<CONN> %s bidx=%d bssid="MACSTR" link_num=%d",
-		fgAllowed ? "ROAM_START" : "NO_ROAM",
-		aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo),
-		MAC2STR(prBssDescSet->prMainBssDesc),
-		prBssDescSet->ucLinkNum);
+	if (prBssDescSet->prMainBssDesc)
+		DBGLOG(AIS, INFO,
+			"<CONN> %s bidx=%d bssid="MACSTR" link_num=%d",
+			fgAllowed ? "ROAM_START" : "NO_ROAM",
+			aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo),
+			MAC2STR(prBssDescSet->prMainBssDesc),
+			prBssDescSet->ucLinkNum);
+	else
+		DBGLOG(AIS, INFO,
+			"<CONN> NO_ROAM bidx=%d bssid=(null) link_num=0",
+			aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
 
 	/* allow when different combination */
 	return fgAllowed;
