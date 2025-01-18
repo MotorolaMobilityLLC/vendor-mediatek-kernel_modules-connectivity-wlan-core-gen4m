@@ -1457,6 +1457,7 @@ struct list_mode_gen_seg {
 struct list_mode_seg_cfg {
 	u_int32	u4OfsTime;
 	u_int32	u4MeasTime;
+	u_int32	u4PrepareTime;
 };
 
 #define	LIST_SEG_MAX 100
