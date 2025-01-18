@@ -3400,6 +3400,14 @@ else
     ccflags-y += -DCFG_SUPPORT_TAS_HOST_CONTROL=0
 endif
 
+ifeq ($(CONFIG_MTK_SUPPORT_ICS), n)
+    ccflags-y += -DCFG_SUPPORT_ICS=0
+endif
+
+ifeq ($(CONFIG_MTK_SUPPORT_PHY_ICS), n)
+    ccflags-y += -DCFG_SUPPORT_PHY_ICS=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_PHY_ICS_V3), y)
     ccflags-y += -DCFG_SUPPORT_PHY_ICS_V3=1
 else
