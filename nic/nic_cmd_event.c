@@ -7126,12 +7126,18 @@ void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prSwRfb->ucWlanIdx = prSSN->ucWlanIdx;
+	prSwRfb->ucTid = prSSN->ucTid;
+	prSwRfb->ucWlanIdx = getPrimaryWlanIdx(prAdapter, prSSN->ucTid,
+					prSSN->ucWlanIdx);
+	if (prSSN->ucWlanIdx != prSwRfb->ucWlanIdx) {
+		DBGLOG(NIC, DEBUG,
+			"Change primary wlan_idx from %d to %d\n",
+			prSSN->ucWlanIdx, prSwRfb->ucWlanIdx);
+	}
 	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
 			prSwRfb->ucWlanIdx);
 	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
 		prSwRfb->ucStaRecIdx);
-	prSwRfb->ucTid = prSSN->ucTid;
 	prSwRfb->u2SSN = prSSN->u2SSN;
 	prSwRfb->ucPayloadFormat = prSSN->ucAmsduFormat;
 	prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
