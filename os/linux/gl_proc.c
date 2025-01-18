@@ -1507,6 +1507,8 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 		 * the following safeguards will be needed."
 		 * u4NewDbgLevel |= DBG_CLASS_DEBUG;
 		 */
+		u4NewDbgLevel |= DBG_CLASS_DEBUG;
+
 #if (CFG_SUPPORT_UV == 1)
 		wlanSetDbgMaskForUvTestMode(&u4NewDbgLevel);
 #endif
