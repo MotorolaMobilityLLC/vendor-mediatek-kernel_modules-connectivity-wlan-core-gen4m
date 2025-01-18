@@ -9585,6 +9585,12 @@ nanSchedNegoCheckNdcCrbConflict(struct ADAPTER *prAdapter,
 				   nanRegGetNanChnlBand(rLocalChnlInfo) !=
 					nanRegGetNanChnlBand(rRmtChnlInfo)) {
 				fgConflict = FALSE;
+			} else if (eHighestCommonBand == ENUM_SUPPORTED_BN_2G &&
+				   nanRegGetNanChnlBand(
+						rLocalChnlInfo) == BAND_2G4 &&
+				   nanRegGetNanChnlBand(
+						rRmtChnlInfo) == BAND_2G4) {
+				return fgConflict;
 			}
 		} else {
 #ifdef NAN_UNUSED /* Disable potential check with same reason as conditional */
