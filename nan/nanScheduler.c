@@ -8651,7 +8651,8 @@ nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 			}
 
 			/* Default NDC slot not match */
-			if (NAN_SLOT_INDEX(u4SlotIdx) ==
+			if (!nanGetFeatureIsSigma(prAdapter) &&
+				NAN_SLOT_INDEX(u4SlotIdx) ==
 					    NAN_5G_DEFAULT_NDC_INDEX &&
 			    rRmtChnlInfo.u4PrimaryChnl !=
 				    g_r5gDwChnl.u4PrimaryChnl) {

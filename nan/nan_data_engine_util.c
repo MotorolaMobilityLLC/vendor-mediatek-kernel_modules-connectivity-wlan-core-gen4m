@@ -2871,7 +2871,7 @@ nanDataEngineDevCapExtAttrLength(struct ADAPTER *prAdapter,
 	if ((prNDL == NULL) && (prNDP == NULL))
 		return 0;
 
-	if (nanGetFeatureIsSigma(prAdapter))
+	if (!prAdapter->rWifiVar.ucNanEnable6g)
 		return 0;
 
 	nanSchedGetDevCapabilityExtAttr(prAdapter, &pucDevCapExtAttr,
