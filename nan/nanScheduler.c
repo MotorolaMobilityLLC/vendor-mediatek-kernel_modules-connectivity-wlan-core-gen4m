@@ -14480,7 +14480,7 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 					    uint8_t *ucPhyTypeSet)
 {
 	struct BSS_INFO *prBssInfo = NULL;
-	uint32_t u4Bw;
+	uint32_t u4Bw = 0;
 	uint8_t i;
 	struct _NAN_AIS_BITMAP *prAisSlots;
 	uint8_t band_idx;

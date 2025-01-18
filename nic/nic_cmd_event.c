@@ -6455,9 +6455,9 @@ void nanGetSubCmdIdString(uint32_t tag, char subcmd[], size_t szBufSize)
 	uint16_t u2CmdTag = -1;
 
 	if (nanGetSubCmdId(tag, &u2CmdTag) >= 0)
-		kalSnprintf(subcmd, szBufSize, "(Subcmd:%d),", u2CmdTag);
+		kalSnprintf(subcmd, szBufSize, "(Subcmd:%d)", u2CmdTag);
 #else
-	kalSnprintf(subcmd, szBufSize, ",");
+	kalSnprintf(subcmd, szBufSize, "");
 #endif
 }
 
