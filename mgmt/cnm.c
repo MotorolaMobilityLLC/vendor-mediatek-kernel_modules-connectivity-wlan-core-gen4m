@@ -3238,7 +3238,7 @@ static bool cnmIsWmmConcurrent(
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-		if (!prBssInfo->fgIsInUse)
+		if (!prBssInfo->fgIsInUse || !IS_BSS_ACTIVE(prBssInfo))
 			continue;
 
 		ucWmmQueSet = prBssInfo->ucWmmQueSet;
@@ -4961,13 +4961,17 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 #endif
 		/* If WMM concurrent is changed, update DBDC quota */
 		/* even if DBDC state haven't changed */
-		fgIsWmmConcurrent = cnmIsWmmConcurrent(prAdapter);
-		if (fgIsWmmConcurrent !=
-			prAdapter->rWifiVar.fgWmmConcurrent) {
-			log_dbg(CNM, INFO, "[DBDC] WMM concurrent state %d->%d\n",
+		if (fgIsAgConcurrent) {
+			fgIsWmmConcurrent = cnmIsWmmConcurrent(prAdapter);
+			if (fgIsWmmConcurrent !=
+				prAdapter->rWifiVar.fgWmmConcurrent) {
+				log_dbg(CNM, INFO,
+					"[DBDC] WMM concurrent state %d->%d\n",
 					prAdapter->rWifiVar.fgWmmConcurrent,
 					fgIsWmmConcurrent);
-			cnmUpdateDbdcQuota(prAdapter, fgIsWmmConcurrent);
+				cnmUpdateDbdcQuota(prAdapter,
+						fgIsWmmConcurrent);
+			}
 		}
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 		/* EMLSR disconnect after concurrent */
