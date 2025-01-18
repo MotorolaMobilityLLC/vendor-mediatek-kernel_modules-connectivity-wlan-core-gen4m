@@ -14033,6 +14033,7 @@ uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo)
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prGlueInfo->u4ReadyFlag &&
+	    prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->rWifiVar.ucApMldLinkMax >= 2)
 		u8FeatureSet |= WIFI_FEATURE_MLO_SAP;
 #endif
