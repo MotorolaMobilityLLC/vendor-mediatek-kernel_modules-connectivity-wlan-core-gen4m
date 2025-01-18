@@ -516,6 +516,12 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_PHY_CAP_STBC_RX_LT_OR_EQ_80M(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[2] |= HE_PHY_CAP2_STBC_RX_LT_OR_EQ_80M)
 
+#define HE_UNSET_PHY_CAP_FULL_BW_UL_MU_MIMO(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[2] &= ~HE_PHY_CAP2_FULL_BW_UL_MU_MIMO)
+
+#define HE_UNSET_PHY_CAP_PARTIAL_BW_UL_MU_MIMO(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[2] &= ~HE_PHY_CAP2_PARTIAL_BW_UL_MU_MIMO)
+
 #define HE_UNSET_PHY_CAP_SU_BFMER(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[3] &= ~HE_PHY_CAP3_SU_BFMER)
 

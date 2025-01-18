@@ -674,6 +674,12 @@ void heRlmFillHeCapIE(
 	}
 #endif
 
+	if (IS_BSS_APGO(prBssInfo)) {
+		/* SAP not support UL MU MIMO */
+		HE_UNSET_PHY_CAP_FULL_BW_UL_MU_MIMO(prHeCap->ucHePhyCap);
+		HE_UNSET_PHY_CAP_PARTIAL_BW_UL_MU_MIMO(prHeCap->ucHePhyCap);
+	}
+
 #if (CFG_SUPPORT_HE_ER == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->u4ExtendedRange)) {
 		if (IS_FEATURE_ENABLED(prWifiVar->fgErTx)) {
