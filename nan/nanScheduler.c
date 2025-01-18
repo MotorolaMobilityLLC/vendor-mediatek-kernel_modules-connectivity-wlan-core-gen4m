@@ -15844,6 +15844,7 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 		       rP2pChnlInfo.u4PrimaryChnl, rAisChnlInfo.u4PrimaryChnl,
 		       prP2pAisMcc->fgIsP2pAisMCC);
 	}
+	nanSetConcurrentCustomFAW(prAdapter);
 }
 
 static u_int8_t nanIsP2pAisMCC(struct ADAPTER *prAdapter, size_t szTimeLineIdx,
@@ -15881,47 +15882,66 @@ void nanSetConcurrentCustomFAW(struct ADAPTER *prAdapter)
 {
 	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rAisChnlInfo;
-	uint32_t r = WLAN_STATUS_FAILURE;
+	uint32_t r = WLAN_STATUS_SUCCESS;
+	/* Now only one customized items */
+	static struct _NAN_CUST_FAW_ENTRY rCurrent;
+	struct _NAN_CUST_FAW_ENTRY rNew = { 0 };
+	enum ENUM_BAND eBand = BAND_5G;
 
 	if (nanIsP2pAisMCC(prAdapter,
 			   nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G),
 			   &rP2pChnlInfo, &rAisChnlInfo)) {
 		/* TODO: Disable 5G/6G to use 2.4GHz */
+		rCurrent = (const struct _NAN_CUST_FAW_ENTRY){0};
+		nanSchedNegoCustFawRemoveEntry(prAdapter, pcConcurrentTag);
+		nanSchedNegoCustFawReconfigure(prAdapter);
 		DBGLOG(NAN, INFO, "MCC, return");
 		return;
 	}
 
-	nanSchedNegoCustFawRemoveEntry(prAdapter, pcConcurrentTag);
 	/* SCC or P2P only */
 	if (rAisChnlInfo.u4PrimaryChnl && rP2pChnlInfo.u4PrimaryChnl ||
 	    !rAisChnlInfo.u4PrimaryChnl && rP2pChnlInfo.u4PrimaryChnl) {
-		r = nanSchedNegoCustFawAddEntry(prAdapter,
-				&(struct _NAN_CUST_FAW_ENTRY){
+		if (IS_6G_OP_CLASS(rP2pChnlInfo.u4OperatingClass))
+			eBand = BAND_6G;
+		rNew = (struct _NAN_CUST_FAW_ENTRY){
 				.pcTag = pcConcurrentTag,
 				.ucOpChannel = rP2pChnlInfo.u4PrimaryChnl,
-				.eBand = BAND_5G,
+				.eBand = eBand,
 				.u4Bitmap = NAN_SLOT_MASK_CONCURRENT_FULL,
-				});
+		};
 		DBGLOG(NAN, INFO, "SCC or P2P only, set ch=%u, 0x%08x",
 		       rP2pChnlInfo.u4PrimaryChnl, BITS(0, 7) | BITS(11, 31));
 	}
 
 	/* AIS only */
 	if (rAisChnlInfo.u4PrimaryChnl && !rP2pChnlInfo.u4PrimaryChnl) {
-		r = nanSchedNegoCustFawAddEntry(prAdapter,
-				&(struct _NAN_CUST_FAW_ENTRY){
+		if (IS_6G_OP_CLASS(rAisChnlInfo.u4OperatingClass))
+			eBand = BAND_6G;
+		rNew = (struct _NAN_CUST_FAW_ENTRY){
 				.pcTag = pcConcurrentTag,
 				.ucOpChannel = rAisChnlInfo.u4PrimaryChnl,
-				.eBand = BAND_5G,
+				.eBand = eBand,
 				.u4Bitmap = NAN_SLOT_MASK_TYPE_AIS,
-				});
+		};
 		DBGLOG(NAN, INFO, "SCC or P2P only, set ch=%u, 0x%08x",
 		       rAisChnlInfo.u4PrimaryChnl, BITS(0, 7) | BITS(16, 23));
 	}
 
-	if (r == WLAN_STATUS_SUCCESS)
-		nanSchedNegoCustFawReconfigure(prAdapter);
+	if (rCurrent.eBand == rNew.eBand &&
+	    rCurrent.ucOpChannel == rNew.ucOpChannel &&
+	    rCurrent.u4Bitmap == rNew.u4Bitmap) {
+		DBGLOG(NAN, INFO, "Same custom channel info, skip setting");
+		return;
+	}
 
+	nanSchedNegoCustFawRemoveEntry(prAdapter, pcConcurrentTag);
+	if (rNew.pcTag) /* Need to set custom */
+		r = nanSchedNegoCustFawAddEntry(prAdapter, &rNew);
+	if (r == WLAN_STATUS_SUCCESS) {
+		nanSchedNegoCustFawReconfigure(prAdapter);
+		rCurrent = rNew;
+	}
 }
 
 uint8_t select6gChannel(struct ADAPTER *prAdapter)

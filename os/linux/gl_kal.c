@@ -3243,7 +3243,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 #if CFG_SUPPORT_NAN
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
-		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1) {
+		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1 &&
+		    nanIsOn(prAdapter)) {
 			nanSchedUpdateP2pAisMcc(prAdapter);
 			nanRescheduleNdlIfNeeded(prAdapter,
 				AIS_CONNECTED, NULL);
@@ -3472,7 +3473,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		}
 #if CFG_SUPPORT_NAN
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
-		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1) {
+		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1 &&
+		    nanIsOn(prAdapter)) {
 			nanSchedUpdateP2pAisMcc(prAdapter);
 			nanRescheduleNdlIfNeeded(prAdapter,
 				AIS_DISCONNECTED, NULL);

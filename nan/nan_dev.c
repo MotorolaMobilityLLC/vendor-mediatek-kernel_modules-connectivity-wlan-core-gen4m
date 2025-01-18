@@ -1548,7 +1548,6 @@ void nanConcurrencyHandler(struct ADAPTER *prAdapter)
 
 	DBGLOG(NAN, STATE, "NAN handle P2P status changed\n");
 	nanSchedUpdateP2pAisMcc(prAdapter);
-	nanSetConcurrentCustomFAW(prAdapter);
 	nanRescheduleNdlIfNeeded(prAdapter, P2P_CONNECTED, NULL);
 #endif
 }
