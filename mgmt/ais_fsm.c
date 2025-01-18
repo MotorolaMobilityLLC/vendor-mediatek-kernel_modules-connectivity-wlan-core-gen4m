@@ -8716,7 +8716,7 @@ static void aisRestoreOmac(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo || !prBssInfo->fgIsOmacBackupValid)
 		return;
 
 	DBGLOG(AIS, INFO,
@@ -8725,10 +8725,11 @@ static void aisRestoreOmac(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	       prBssInfo->fgIsOmacBackupValid,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucOwnMacAddrBackup));
-	if (prBssInfo->fgIsOmacBackupValid)
-		COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr,
-			      prBssInfo->aucOwnMacAddrBackup);
+
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr,
+		      prBssInfo->aucOwnMacAddrBackup);
 	prBssInfo->fgIsOmacBackupValid = FALSE;
+
 	DBGLOG(AIS, INFO,
 	       "after - fg: %d, bss omac:" MACSTR
 	       ", bss backup:" MACSTR"\n",
