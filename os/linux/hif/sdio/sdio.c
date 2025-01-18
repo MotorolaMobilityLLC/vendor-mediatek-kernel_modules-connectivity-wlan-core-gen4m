@@ -1942,6 +1942,12 @@ u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
 
 	SDIO_REC_TIME_START();
 #if CFG_SUPPORT_MULTITHREAD
+	if (!HAL_IS_TX_DIRECT(prAdapter)) {
+		if (prMsduInfo->pfHifTxMsduDoneCb)
+			prMsduInfo->pfHifTxMsduDoneCb(
+				prAdapter,
+				prMsduInfo);
+	}
 	if (!prMsduInfo->pfTxDoneHandler)
 		kalFreeTxMsdu(prAdapter, prMsduInfo);
 #else
