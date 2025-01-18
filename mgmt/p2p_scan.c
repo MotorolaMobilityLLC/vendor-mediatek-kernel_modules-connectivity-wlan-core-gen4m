@@ -224,15 +224,22 @@ static u_int8_t scanP2pNeedTriggerMlScan(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet,
 	struct BSS_DESC *prBssDesc)
 {
-	/* mlo NOT enabled */
-	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE) ||
-	    prBssDesc->rMlInfo.fgMldType == MLD_TYPE_ICV_METHOD_V1)
-		return FALSE;
+	u_int8_t fgIsMlEnable =
+		mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE);
 
-	/* peer is non-mlo */
-	if (prBssDesc->rMlInfo.fgValid == FALSE ||
-	    prBssDesc->rMlInfo.ucMaxSimuLinks <= 1)
+	/* mlo NOT enabled or peer is non-mlo */
+	if (!fgIsMlEnable ||
+	    prBssDesc->rMlInfo.fgMldType == MLD_TYPE_ICV_METHOD_V1 ||
+	    prBssDesc->rMlInfo.fgValid == FALSE ||
+	    prBssDesc->rMlInfo.ucMaxSimuLinks <= 1) {
+		DBGLOG(P2P, TRACE,
+		       "[ML] do not trigger ML scan enable=%u, type=%u, valid=%u, maxSimuLinks=%u\n",
+		       fgIsMlEnable,
+		       prBssDesc->rMlInfo.fgMldType,
+		       prBssDesc->rMlInfo.fgValid,
+		       prBssDesc->rMlInfo.ucMaxSimuLinks);
 		return FALSE;
+	}
 
 	/*
 	 * peer is mld with multi links and
