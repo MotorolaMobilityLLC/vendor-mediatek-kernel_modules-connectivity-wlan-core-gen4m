@@ -985,6 +985,7 @@ struct PMKID_ENTRY {
 	struct LINK_ENTRY rLinkEntry;
 	struct PARAM_PMKID rBssidInfo;
 	uint16_t u2StatusCode;
+	uint16_t u2ReasonCode;
 };
 
 struct CMD_802_11_PMKID {

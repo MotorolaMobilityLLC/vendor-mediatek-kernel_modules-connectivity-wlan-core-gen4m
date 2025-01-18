@@ -791,6 +791,8 @@
 #define REASON_CODE_PEER_TIME_OUT                   39
 /* Peer does not support the requested cipher suite */
 #define REASON_CODE_PEER_CIPHER_UNSUPPORTED         45
+/* Invalid PMKID */
+#define REASON_CODE_INVALID_PMKID                   49
 /* for beacon timeout, defined by mediatek */
 #define REASON_CODE_BEACON_TIMEOUT		    100
 /* for power control, op mode change fail neeed to disconnect */

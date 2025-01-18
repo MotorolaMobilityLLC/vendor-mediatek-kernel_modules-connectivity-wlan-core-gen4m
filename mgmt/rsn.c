@@ -259,7 +259,7 @@ uint8_t rsnApOverload(uint16_t status, uint16_t reason)
 	return FALSE;
 }
 
-uint8_t rsnApInvalidPMK(uint16_t status,
+uint8_t rsnApInvalidPMK(uint16_t status, uint16_t reason,
 	enum ENUM_PARAM_AUTH_MODE AuthMode)
 {
 	switch (status) {
@@ -275,6 +275,12 @@ uint8_t rsnApInvalidPMK(uint16_t status,
 		    AuthMode == AUTH_MODE_WPA3_SAE)
 			return TRUE;
 		break;
+	}
+
+	switch (reason) {
+	case REASON_CODE_PREV_AUTH_INVALID:
+	case REASON_CODE_INVALID_PMKID:
+		return TRUE;
 	}
 	return FALSE;
 }
@@ -2954,6 +2960,7 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 
 	kalMemCopy(&entry->rBssidInfo, prPmkid, sizeof(struct PARAM_PMKID));
 	entry->u2StatusCode = STATUS_CODE_SUCCESSFUL;
+	entry->u2ReasonCode = REASON_CODE_RESERVED;
 	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 	LINK_INSERT_TAIL(cache, &entry->rLinkEntry);
 	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);

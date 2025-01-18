@@ -1302,7 +1302,8 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	 * 3. auth type is SAE
 	 */
 	if (entry &&
-	    (rsnApInvalidPMK(entry->u2StatusCode, prConnSettings->eAuthMode) ||
+	    (rsnApInvalidPMK(entry->u2StatusCode,
+			     entry->u2ReasonCode, prConnSettings->eAuthMode) ||
 #if (CFG_EXT_FEATURE == 0)
 	     rsnCheckPmkExpiration(prAdapter, entry,
 				   prAisBssInfo->ucBssIndex) ||
@@ -1878,6 +1879,7 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 	    prMainStaRec->u2StatusCode != STATUS_CODE_AUTH_TIMEOUT &&
 	    /* try without invalid PMKID */
 	    !rsnApInvalidPMK(prMainStaRec->u2StatusCode,
+			     prMainStaRec->u2ReasonCode,
 			     prConnSettings->eAuthMode)) {
 		prAisFsmInfo->ucAvailableAuthTypes = 0;
 		return FALSE;
@@ -4135,6 +4137,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_DESC *prBssDesc;
 	uint8_t ucBssIndex = 0;
+	struct PMKID_ENTRY *prPmkidEntry;
 
 	/* 4 <1> Extract information of Abort Message and then free memory. */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *)prMsgHdr;
@@ -4158,6 +4161,8 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prPmkidEntry = aisSearchPmkidEntry(prAdapter,
+				prBssInfo->prStaRecOfAP, ucBssIndex);
 
 	cnmMemFree(prAdapter, prMsgHdr);
 
@@ -4174,6 +4179,9 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DISASSOCIATED) {
 		prBssInfo->u2DeauthReason = u2DeauthReason;
 		aisAddDeauthBlockList(prAdapter, prBssDesc, u2DeauthReason);
+
+		if (prPmkidEntry)
+			prPmkidEntry->u2ReasonCode = u2DeauthReason;
 	}
 
 	/* to support user space triggered roaming */
