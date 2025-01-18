@@ -46,7 +46,14 @@
  */
 
 /* Consistent order with enum ENUM_AVERAGE_TX_DELAY_TYPE */
-static const char delayTypeChar[] = {'D', 'H', 'C', 'M', 'A', 'F'};
+static const char delayTypeChar[MAX_AVERAGE_TX_DELAY_TYPE] = {
+	[DRIVER_TX_DELAY] = 'D',
+	[DRIVER_HIF_TX_DELAY] = 'H',
+	[CONNSYS_TX_DELAY] = 'C',
+	[MAC_TX_DELAY] = 'M',
+	[AIR_TX_DELAY] = 'A',
+	[FAIL_CONNSYS_TX_DELAY] = 'F',
+};
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -6893,7 +6900,7 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	char *buf;
 	uint32_t u4BufferSize = 512, pos = 0;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	struct TX_LATENCY_STATS rDiff = {0};
+	struct TX_LATENCY_STATS *prDiff;
 	struct TX_LATENCY_STATS *report;
 	uint8_t report_num = 1; /* Default: sum up */
 	uint32_t (*pAverage)[MAX_BSSID_NUM + 1] =
@@ -6906,6 +6913,10 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	if (buf == NULL)
 		return;
 	kalMemZero(buf, u4BufferSize);
+
+	prDiff = kalMemZAlloc(sizeof(*prDiff), VIR_MEM_TYPE);
+	if (!prDiff)
+		return;
 
 	/* By wifi.cfg first. If it is not set 1s by default; 100ms on more. */
 	if (prWifiVar->u4MsduStatsUpdateInterval != 0)
@@ -6927,23 +6938,23 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	 */
 	report = &stats->rCounting;
 	if (!prWifiVar->fgTxLatencyKeepCounting) {
-		diffTxDelayCounts(&rDiff, &stats->rCounting, &stats->rReported);
+		diffTxDelayCounts(prDiff, &stats->rCounting, &stats->rReported);
 
 		/* Accumulated counters */
-		diffTxAccDelayCounts(&rDiff, &stats->rCounting,
+		diffTxAccDelayCounts(prDiff, &stats->rCounting,
 				&stats->rReported);
 
 		/* Accumulated delays / count */
-		updateAverageTx(prAdapter, &rDiff, pAverage);
+		updateAverageTx(prAdapter, prDiff, pAverage);
 
-		rDiff.u4TxFail = stats->rCounting.u4TxFail -
+		prDiff->u4TxFail = stats->rCounting.u4TxFail -
 				 stats->rReported.u4TxFail;
 
-		report = &rDiff;
+		report = prDiff;
 	}
 	stats->rReported = stats->rCounting;
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
-	stats->rDiff = rDiff;
+	stats->rDiff = *prDiff;
 #endif
 
 	if (prWifiVar->fgTxLatencyPerBss)
@@ -6964,6 +6975,7 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
+	kalMemFree(prDiff, VIR_MEM_TYPE, sizeof(*prDiff));
 #endif
 }
 
@@ -7099,10 +7111,14 @@ static void kalWFDBssBalanceGetLatencyStats(
 	enum ENUM_AVERAGE_TX_DELAY_TYPE t;
 	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	struct TX_LATENCY_STATS rDiff = {0};
+	struct TX_LATENCY_STATS *prDiff;
 	struct TX_LATENCY_STATS *report = NULL;
 
 	if (!stats->fgTxLatencyEnabled)
+		return;
+
+	prDiff = kalMemZAlloc(sizeof(*prDiff), VIR_MEM_TYPE);
+	if (!prDiff)
 		return;
 
 	/* Set 'counting' to be reoprted by default.
@@ -7119,16 +7135,18 @@ static void kalWFDBssBalanceGetLatencyStats(
 				continue;
 			diffTxDelayCounter(
 				MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-				rDiff.aaau4TxLatency[t][0],
+				prDiff->aaau4TxLatency[t][0],
 				report->aaau4TxLatency[t][0],
 				stats->rReported4SccB.aaau4TxLatency[t][0]);
 		}
-		rDiff.u4TxFail = stats->rCounting.u4TxFail -
+		prDiff->u4TxFail = stats->rCounting.u4TxFail -
 				 stats->rReported4SccB.u4TxFail;
-		report = &rDiff;
+		report = prDiff;
 	}
 	stats->rReported4SccB = stats->rCounting;
-	stats->rDiff = rDiff;
+	stats->rDiff = *prDiff;
+
+	kalMemFree(prDiff, VIR_MEM_TYPE, sizeof(*prDiff));
 #endif
 }
 
