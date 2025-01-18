@@ -1636,6 +1636,8 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 		return 169;
 	case 5865000:
 		return 173;
+	case 5885000:
+		return 177;
 	default:
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (u4FreqInKHz % 5000 == 0) {
