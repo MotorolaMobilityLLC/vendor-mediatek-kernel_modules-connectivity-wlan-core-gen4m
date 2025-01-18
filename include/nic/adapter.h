@@ -666,6 +666,10 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MSG_HDR *prMsgPendingAcsReq;
 #endif /* CFG_SUPPORT_802_11BE_MLO */
+
+#if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
+	int64_t i8TsfValue;
+#endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

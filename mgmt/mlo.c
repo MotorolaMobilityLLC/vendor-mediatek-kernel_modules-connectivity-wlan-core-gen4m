@@ -1171,10 +1171,14 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	 * to 0. An AP sets this subfield to 1 when the element carries
 	 * complete profile.
 	 */
-	if (IS_BSS_APGO(bss))
+	if (IS_BSS_APGO(bss)) {
 		control |= (ML_STA_CTRL_BCN_INTV_PRESENT |
 			    ML_STA_CTRL_DTIM_INFO_PRESENT |
 			    ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT);
+#if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
+		control |= ML_STA_CTRL_TSF_OFFSET_PRESENT;
+#endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
+	}
 
 	sta_ctrl->ucSubID = SUB_IE_MLD_PER_STA_PROFILE;
 	sta_ctrl->ucLength = 0;
@@ -1209,6 +1213,22 @@ uint8_t *mldGenerateBasicCompleteProfile(
 		WLAN_SET_FIELD_16(cp, bss->u2BeaconInterval);
 		cp += 2;
 	}
+
+#if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
+	if (BE_IS_ML_STA_CTRL_PRESENCE_TSF_OFFSET(sta_ctrl->u2StaCtrl)) {
+		struct BSS_INFO *rpting = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prMsduInfo->ucBssIndex);
+		struct BSS_INFO *rpted = bss;
+		int64_t tsf;
+
+		tsf = (rpted->i8TsfValue - rpting->i8TsfValue) >> 1;
+
+		DBGLOG(ML, TRACE, "\tLinkID=%d, TSF OFFSET = %lld",
+			link, tsf);
+		WLAN_SET_FIELD_64(cp, tsf);
+		cp += 8;
+	}
+#endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
 
 	if (BE_IS_ML_STA_CTRL_PRESENCE_DTIM(sta_ctrl->u2StaCtrl)) {
 		DBGLOG(ML, TRACE, "\tLinkID=%d, DTIM_INFO = 0x%x%x",

@@ -12844,6 +12844,32 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 			break;
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
+#if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
+		case UNI_EVENT_SAP_TAG_NOTIFY_LINK_TSF: {
+			struct UNI_EVENT_LINK_TSF *tsf =
+				(struct UNI_EVENT_LINK_TSF *) tag;
+			struct LINK_TSF_ENTRY *entry;
+			struct BSS_INFO *bss;
+			uint8_t i;
+
+			for (i = 0; i < tsf->ucLinkNum && i < MLD_LINK_MAX;
+			     i++) {
+				entry = &tsf->aucLinkTsf[i];
+				bss = GET_BSS_INFO_BY_INDEX(ad,
+					entry->ucBssIdx);
+
+				if (!bss)
+					continue;
+
+				bss->i8TsfValue =
+					((int64_t)entry->u4TsfBit0_31) +
+					((int64_t)entry->u4TsfBit63_32 << 32);
+				DBGLOG(NIC, INFO, "bss=%u tsf=%lld\n",
+					bss->ucBssIndex, bss->i8TsfValue);
+			}
+		}
+			break;
+#endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
