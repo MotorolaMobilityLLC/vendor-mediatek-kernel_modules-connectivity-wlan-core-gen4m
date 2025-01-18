@@ -933,6 +933,7 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 				prBaseLq->ucMediumBusyPercentage,
 				prBaseLq->ucIsLQ0Rdy);
 
+		prLinkSpeed->rLq[i].fgIsLinkRateValid = prLq->fgIsLinkRateValid;
 		prLinkSpeed->rLq[i].u2TxLinkSpeed = prLq->u2TxLinkSpeed;
 		prLinkSpeed->rLq[i].u2RxLinkSpeed = prLq->u2RxLinkSpeed;
 		prLinkSpeed->rLq[i].cRssi = prLq->cRssi;
