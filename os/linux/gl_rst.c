@@ -247,8 +247,10 @@ u_int8_t kalIsResetOnEnd(void)
 
 void glResetOnEndUpdateFlag(u_int8_t reset_on_end)
 {
+#if (CFG_CHIP_RESET_SUPPORT == 1)
 	DBGLOG(INIT, TRACE, "reset_on_end: %d\n", reset_on_end);
 	fgIsResetOnEnd = reset_on_end;
+#endif /* CFG_CHIP_RESET_SUPPORT */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -272,11 +274,13 @@ u_int8_t kalIsResetting(void)
 
 void glResetUpdateFlag(u_int8_t reset)
 {
+#if (CFG_CHIP_RESET_SUPPORT == 1)
 	DBGLOG(INIT, TRACE, "reset: %d\n", reset);
 	fgIsResetting = reset;
 #if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
 	update_driver_reset_status(fgIsResetting);
 #endif
+#endif /* CFG_CHIP_RESET_SUPPORT */
 }
 
 void glResetCleanResetFlag(void)
