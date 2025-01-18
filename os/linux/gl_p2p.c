@@ -962,6 +962,22 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 #endif
 
 			if (prRoleDev->reg_state == NETREG_REGISTERED) {
+				if (prRoleDev->flags & IFF_UP) {
+					DBGLOG(P2P, TRACE,
+					       "unset role dev flag UP\n");
+					if (!fgIsRtnlLockAcquired)
+						rtnl_lock();
+#if KERNEL_VERSION(5, 0, 0) <= CFG80211_VERSION_CODE
+					dev_change_flags(prRoleDev,
+					      prRoleDev->flags ^ IFF_UP, NULL);
+#else
+					dev_change_flags(prRoleDev,
+					      prRoleDev->flags ^ IFF_UP);
+#endif
+					if (!fgIsRtnlLockAcquired)
+						rtnl_unlock();
+				}
+
 				if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 					struct wireless_dev *ptr =
@@ -996,6 +1012,20 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 				DBGLOG(INIT, DEBUG,
 					"set p2p role as NULL too\n");
 				prP2PInfo->aprRoleHandler = NULL;
+			}
+
+			if (prDev->flags & IFF_UP) {
+				DBGLOG(P2P, TRACE, "unset p2pdev flag UP\n");
+				if (!fgIsRtnlLockAcquired)
+					rtnl_lock();
+#if KERNEL_VERSION(5, 0, 0) <= CFG80211_VERSION_CODE
+				dev_change_flags(prDev, prDev->flags ^ IFF_UP,
+						 NULL);
+#else
+				dev_change_flags(prDev, prDev->flags ^ IFF_UP);
+#endif
+				if (!fgIsRtnlLockAcquired)
+					rtnl_unlock();
 			}
 
 			if (fgIsRtnlLockAcquired) {
