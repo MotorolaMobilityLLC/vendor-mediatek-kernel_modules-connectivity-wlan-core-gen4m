@@ -6429,6 +6429,148 @@ int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
 #endif  /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = {0};
+	int32_t i4Argc = 0, rStatus = 0, i4Ret = 0, i4BytesWritten = -1;
+	int32_t i4Value = 0, u4SetInfoLen = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t i = 0, icPwrSetting[SET_CUSTOM_TX_POWER_CALLING_PARA_NUM] = {0};
+	int8_t aucSetting[CUSTOM_TX_POWER_CALLING_BUFFER_SIZE] = {0};
+	uint8_t fgApplied = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo == NULL)
+		return -EINVAL;
+
+	/*
+	 * Command format: Core0_ANT1_{2.4G, 5G, 6G}, Core0_ANT2_{2.4G, 5G, 6G},
+	 *                 Core1_ANT1_{2.4G, 5G, 6G}, Core1_ANT2_{2.4G, 5G, 6G}
+	 */
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != SET_CUSTOM_TX_POWER_CALLING_PARA_NUM) {
+		DBGLOG(REQ, ERROR,
+			"Parse argument fail, i4Argc=%d\n",
+			i4Argc);
+		return -EINVAL;
+	}
+
+	for (i = 1; i < SET_CUSTOM_TX_POWER_CALLING_PARA_NUM; i++) {
+
+		i4Ret = kalkStrtos32(apcArgv[i], 0, &i4Value);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR,
+				"Parse apcArgv[%d]:%s to i4Value error[%d]\n",
+				i, apcArgv[i], i4Ret);
+			return -EINVAL;
+		}
+
+		if (i4Value == SET_CUSTOM_TX_POWER_CALLING_DISABLE) {
+			icPwrSetting[i - 1] = MAX_TX_POWER;
+		} else {
+			/* Switch to LSB = 0.5dBm  */
+			i4Value = i4Value * 2;
+
+			if (i4Value < MIN_TX_POWER)
+				i4Value = MIN_TX_POWER;
+			else if (i4Value > MAX_TX_POWER)
+				i4Value = MAX_TX_POWER;
+
+			icPwrSetting[i - 1] = (int8_t)i4Value;
+		}
+	}
+
+#if ((CFG_SUPPORT_CONNAC1X == 1) || (CFG_SUPPORT_CONNAC2X == 1))
+	/* 1. For CONNAC1 & CONNAC2 due to HW limitation, we will not
+	 *    support format of <CHAIN_ABS>.
+	 * 2. It will only consider Core0_ANT1_{2.4G, 5G, 6G} for power
+	 *    setting, and ignore others.
+	 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	i4BytesWritten = snprintf(aucSetting,
+			CUSTOM_TX_POWER_CALLING_BUFFER_SIZE,
+			"[2G4,%d][5G,%d][6G,%d]\0",
+			icPwrSetting[0],  /* 2.4G */
+			icPwrSetting[1],  /* 5G */
+			icPwrSetting[2]); /* 6G */
+#else  /* CFG_SUPPORT_WIFI_6G */
+	i4BytesWritten = snprintf(aucSetting,
+			CUSTOM_TX_POWER_CALLING_BUFFER_SIZE,
+			"[2G4,%d][5G,%d]\0",
+			icPwrSetting[0],  /* 2.4G */
+			icPwrSetting[1]); /* 5G */
+#endif /* CFG_SUPPORT_WIFI_6G */
+
+#else /* CFG_SUPPORT_CONNAC1X || CFG_SUPPORT_CONNAC2X */
+
+	/* Since the dynamic txpower by chain command is only set by band
+	 * we will only consider Core0_ANT1_{2.4G, 5G, 6G} and
+	 * Core0_ANT2_{2.4G, 5G, 6G} for power setting, and ignore others.
+	 */
+
+	i4BytesWritten = snprintf(aucSetting,
+			CUSTOM_TX_POWER_CALLING_BUFFER_SIZE,
+			"[ALL,Legacy,,,,,,,,,]<CHAIN_ABS,2,3,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d>\0",
+			icPwrSetting[0],  /* 2.4G WF0 */
+			icPwrSetting[1],  /* 5G Band1 WF0 */
+			icPwrSetting[1],  /* 5G Band2 WF0 */
+			icPwrSetting[1],  /* 5G Band3 WF0 */
+			icPwrSetting[1],  /* 5G Band4 WF0 */
+			icPwrSetting[2],  /* 6G Band1 WF0 */
+			icPwrSetting[2],  /* 6G Band2 WF0 */
+			icPwrSetting[2],  /* 6G Band3 WF0 */
+			icPwrSetting[2],  /* 6G Band4 WF0 */
+			icPwrSetting[3],  /* 2.4G WF1 */
+			icPwrSetting[4],  /* 5G Band0 WF1 */
+			icPwrSetting[4],  /* 5G Band1 WF1 */
+			icPwrSetting[4],  /* 5G Band2 WF1 */
+			icPwrSetting[4],  /* 5G Band3 WF1 */
+			icPwrSetting[5],  /* 6G Band1 WF1 */
+			icPwrSetting[5],  /* 6G Band2 WF1 */
+			icPwrSetting[5],  /* 6G Band3 WF1 */
+			icPwrSetting[5]); /* 6G Band4 WF1 */
+#endif
+
+	if (i4BytesWritten <= 0) {
+		DBGLOG(REQ, ERROR,
+			"Write setting fail[%d]\n",
+			i4BytesWritten);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	for (i = 0; i < SET_CUSTOM_TX_POWER_CALLING_PARA_NUM; i++) {
+		if (icPwrSetting[i] != MAX_TX_POWER) {
+			fgApplied = 1;
+			break;
+		}
+	}
+
+	kalMemZero(&rPwrCtrlParam, sizeof(struct PARAM_TX_PWR_CTRL_IOCTL));
+	rPwrCtrlParam.fgApplied = fgApplied;
+	rPwrCtrlParam.name = "_Cus_TxPwr_Call";
+	rPwrCtrlParam.index = 1;
+	rPwrCtrlParam.newSetting = aucSetting;
+
+	DBGLOG(REQ, INFO, "applied=[%d], name=[%s], index=[%u], setting=[%s]\n",
+		rPwrCtrlParam.fgApplied,
+		rPwrCtrlParam.name,
+		rPwrCtrlParam.index,
+		rPwrCtrlParam.newSetting);
+
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidTxPowerControl,
+		(void *)&rPwrCtrlParam,
+		sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+		&u4SetInfoLen);
+
+	return rStatus;
+}
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	struct wiphy *wiphy, char *data, int len)
 {

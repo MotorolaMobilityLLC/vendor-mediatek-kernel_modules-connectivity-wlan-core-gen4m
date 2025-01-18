@@ -471,7 +471,7 @@
 #define CMD_AP_TRIGGER_CRITICAL_UPDATE		"BCN_CRI_UPD"
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-
+#define CMD_SET_CUSTOM_TX_POWER_CALLING         "SET_CUSTOM_TX_POWER_CALLING"
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

@@ -2772,6 +2772,13 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.policy    = NULL
 	},
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+	{
+		.pcCmdStr  = CMD_SET_CUSTOM_TX_POWER_CALLING,
+		.pfHandler = testmode_set_custom_tx_power_calling,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(13),
+		.policy    = NULL
+	},
 };
 
 

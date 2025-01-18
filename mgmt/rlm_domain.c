@@ -334,6 +334,7 @@ char *g_au1TxPwrDefaultSetting[] = {
 	"_G_Scenario;3;2;1;[ALL,,,,,,,,,,,,]",
 	"_G_Scenario;4;2;1;[ALL,,,,,,,,,,,,]",
 	"_G_Scenario;5;2;1;[ALL,,,,,,,,,,,,]",
+	"_Cus_TxPwr_Call;1;2;1;[ALL,,,,,,,,,,,,]",
 #else
 	"_SAR_PwrLevel;1;2;1;[2G4,,,,,,,,,][5G,,,,,,,,,]",
 	"_G_Scenario;1;2;1;[ALL,,,,,,,,,]",
@@ -341,6 +342,7 @@ char *g_au1TxPwrDefaultSetting[] = {
 	"_G_Scenario;3;2;1;[ALL,,,,,,,,,]",
 	"_G_Scenario;4;2;1;[ALL,,,,,,,,,]",
 	"_G_Scenario;5;2;1;[ALL,,,,,,,,,]",
+	"_Cus_TxPwr_Call;1;2;1;[ALL,,,,,,,,,]",
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
 };
 #endif
