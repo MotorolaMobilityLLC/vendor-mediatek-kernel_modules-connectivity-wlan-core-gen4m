@@ -346,6 +346,25 @@ char *g_au1TxPwrDefaultSetting[] = {
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
 };
 #endif
+
+#if (CFG_SUPPORT_RLM_DOMAIN_LOAD_FILE == 1)
+#define WLAN_CFG_FILE_BUF_SIZE 2048
+#define REG_DOMAIN_CFG_NUM 9
+const char *g_aucDomainCfgFileName[REG_DOMAIN_CFG_NUM] = {
+	"REG1_ChPlan.cfg",
+	"REG2_ChPlan.cfg",
+	"REG3_ChPlan.cfg",
+	"REG4_ChPlan.cfg",
+	"REG5_ChPlan.cfg",
+	"REG6_ChPlan.cfg",
+	"REG7_ChPlan.cfg",
+	"REG8_ChPlan.cfg",
+	"REG9_ChPlan.cfg"
+};
+static uint16_t g_u2CfgCountryCode = {0};
+struct DOMAIN_INFO_ENTRY g_arCurRegDomain = {0};
+#endif
+
 /* The following country or domain shall be set from host driver.
  * And host driver should pass specified DOMAIN_INFO_ENTRY to MT6620 as
  * the channel list of being a STA to do scanning/searching AP or being an
@@ -354,6 +373,7 @@ char *g_au1TxPwrDefaultSetting[] = {
 
 /* Define mapping tables between country code and its channel set
  */
+
 static const uint16_t g_u2CountryGroup0[] = {
 	COUNTRY_CODE_AD, COUNTRY_CODE_AF, COUNTRY_CODE_AO, COUNTRY_CODE_AZ,
 	COUNTRY_CODE_BF, COUNTRY_CODE_BI, COUNTRY_CODE_BJ, COUNTRY_CODE_BT,
@@ -1900,8 +1920,8 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 
 	struct DOMAIN_INFO_ENTRY *prDomainInfo = NULL;
 	struct REG_INFO *prRegInfo;
-	uint16_t u2TargetCountryCode;
-	uint16_t i, j;
+	uint8_t ucFound = FALSE;
+	uint16_t u2TargetCountryCode, i, j;
 
 	ASSERT(prAdapter);
 
@@ -1933,9 +1953,83 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 		prDomainInfo = &prRegInfo->rDomainInfo;
 	} else {
 		/* by country code */
-		u2TargetCountryCode =
-				prAdapter->rWifiVar.u2CountryCode;
+		u2TargetCountryCode = prAdapter->rWifiVar.u2CountryCode;
+#if (CFG_SUPPORT_RLM_DOMAIN_LOAD_FILE == 1)
+		struct DOMAIN_INFO_CFG_ENTRY *prDomainInfoCfg;
+		uint8_t *pucConfigBuf = NULL, ucCfgCountryNum;
+		uint16_t u2CfgCountryCode;
+		uint32_t u4CfgReadLen = 0;
 
+		pucConfigBuf = (uint8_t *)kalMemAlloc(WLAN_CFG_FILE_BUF_SIZE,
+						      VIR_MEM_TYPE);
+		kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
+
+		/* Check each cfg file to find target country. */
+		for (i = 0; i < REG_DOMAIN_CFG_NUM; i++) {
+			if (kalRequestFirmware(g_aucDomainCfgFileName[i],
+				&pucConfigBuf, &u4CfgReadLen, FALSE,
+				prAdapter->prGlueInfo->prDev) == 0) {
+				/* ToDo:: Nothing */
+			} else {
+				/* File not exist */
+				DBGLOG(RLM, INFO, "CFG file not existed!\n");
+				if (pucConfigBuf)
+					kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
+						WLAN_CFG_FILE_BUF_SIZE);
+				break;
+			}
+
+			ucCfgCountryNum =
+			  u4CfgReadLen / sizeof(struct DOMAIN_INFO_CFG_ENTRY);
+			prDomainInfoCfg =
+			  (struct DOMAIN_INFO_CFG_ENTRY *) pucConfigBuf;
+
+			DBGLOG(RLM, TRACE,
+				"%s ChannelPlan size[%d] CountryNum[%d]\n",
+				g_aucDomainCfgFileName[i],
+				u4CfgReadLen, ucCfgCountryNum);
+
+			for (j = 0; j < ucCfgCountryNum; j++) {
+
+				u2CfgCountryCode =
+					(prDomainInfoCfg->u2CountryGroup >> 8) |
+					((prDomainInfoCfg->u2CountryGroup
+					& 0x00ff) << 8);
+				/* Hit the target country. */
+				if (u2TargetCountryCode == u2CfgCountryCode) {
+					g_u2CfgCountryCode = u2CfgCountryCode;
+					g_arCurRegDomain.pu2CountryGroup =
+					  &g_u2CfgCountryCode;
+
+					/* Save target country channel plan. */
+					g_arCurRegDomain.u4CountryNum = 1;
+					kalMemCopy(g_arCurRegDomain.rSubBand,
+					  prDomainInfoCfg->rSubBand,
+					  sizeof(g_arCurRegDomain.rSubBand));
+
+				    DBGLOG(RLM, TRACE, "country %c%c in %s!\n",
+					(g_arCurRegDomain.pu2CountryGroup[0]
+					>> 8),
+					(g_arCurRegDomain.pu2CountryGroup[0]
+					& 0x00ff),
+					g_aucDomainCfgFileName[i]);
+					ucFound = TRUE;
+					break;
+				}
+				prDomainInfoCfg++;
+			}
+			kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
+				WLAN_CFG_FILE_BUF_SIZE);
+			if (ucFound) {
+				prAdapter->prDomainInfo = &g_arCurRegDomain;
+				return prAdapter->prDomainInfo;
+			}
+		}
+#endif
+
+		/* External cfg file not existed or country not found,
+		 * use driver's.
+		 */
 		for (i = 0; i < REG_DOMAIN_GROUP_NUM; i++) {
 			prDomainInfo = &arSupportedRegDomains[i];
 
@@ -1946,18 +2040,19 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 				     j < prDomainInfo->u4CountryNum;
 				     j++) {
 					if (prDomainInfo->pu2CountryGroup[j] ==
-							u2TargetCountryCode)
+							u2TargetCountryCode) {
+						ucFound = TRUE;
 						break;
+					}
 				}
-				if (j < prDomainInfo->u4CountryNum)
-					break;	/* Found */
+				if (ucFound)
+					break;
 			}
 		}
-
 		/* If no matched country code,
 		 * use the default regulatory domain
 		 */
-		if (i >= REG_DOMAIN_GROUP_NUM) {
+		if (!ucFound) {
 			DBGLOG(RLM, INFO,
 			       "No matched country code, use the default regulatory domain\n");
 			prDomainInfo = &arSupportedRegDomains

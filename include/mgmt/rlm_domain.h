@@ -1044,6 +1044,14 @@ struct DOMAIN_INFO_ENTRY {
 	struct DOMAIN_SUBBAND_INFO rSubBand[MAX_SUBBAND_NUM];
 	enum ENUM_REGULATORY_CATEGORY eRegCat;
 };
+
+#if (CFG_SUPPORT_RLM_DOMAIN_LOAD_FILE == 1)
+/* Parse domain_info from outside cfg */
+struct DOMAIN_INFO_CFG_ENTRY {
+	uint16_t u2CountryGroup;
+	struct DOMAIN_SUBBAND_INFO rSubBand[8];
+};
+#endif
 #endif
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY

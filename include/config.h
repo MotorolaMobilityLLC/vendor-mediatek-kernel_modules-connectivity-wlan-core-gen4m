@@ -398,6 +398,12 @@
 #define CFG_SUPPORT_SKB_CLONED_COPY             1
 #endif /* CFG_DEDICATED_TXD */
 
+#if (CFG_TC10_FEATURE == 1)
+#define CFG_SUPPORT_RLM_DOMAIN_LOAD_FILE        1
+#else
+#define CFG_SUPPORT_RLM_DOMAIN_LOAD_FILE        0
+#endif
+
 /* Support windows Scatter/gather IO (NETIF_F_SG) */
 #ifndef CFG_SUPPORT_TX_SG
 #define CFG_SUPPORT_TX_SG                       0
