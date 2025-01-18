@@ -782,6 +782,13 @@ enum ENUM_WEP_STATUS {
 	ENUM_ENCRYPTION_NUM
 };
 
+enum ENUM_RSN_OVERRIDE {
+	RSN_OVERRIDE_NOT_USED,
+	RSN_OVERRIDE_RSNE,
+	RSN_OVERRIDE_RSNE_OVERRIDE,
+	RSN_OVERRIDE_RSNE_OVERRIDE_2,
+};
+
 /*---------------------------------------------------------------------------*/
 /* CMD Packets                                                            */
 /*---------------------------------------------------------------------------*/

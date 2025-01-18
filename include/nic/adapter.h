@@ -1003,6 +1003,11 @@ struct WIFI_VAR {
 	u_int8_t fgEnEpcs;
 #endif
 #endif
+
+#if (CFG_SUPPORT_RSNO == 1)
+	u_int8_t fgEnStaRSNO;
+#endif /* CFG_SUPPORT_RSNO */
+
 	uint8_t ucApHt;
 	uint8_t ucApVht;
 	uint8_t ucP2pGoHt;

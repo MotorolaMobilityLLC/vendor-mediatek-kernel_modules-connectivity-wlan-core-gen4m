@@ -7640,6 +7640,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  "DisEmlsrAllowList", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif /* CFG_SUPPORT_802_11BE */
+#if (CFG_SUPPORT_RSNO == 1)
+	INIT_UINT(prWifiVar->fgEnStaRSNO,
+		  "EnStaRSNO", CFG_DEFAULT_ENABLE_RSNO, FEATURE_TO_CUSTOMER);
+#endif /* CFG_SUPPORT_RSNO */
 	INIT_UINT(prWifiVar->ucApHt, "ApHT", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
 #if CFG_TC1_FEATURE

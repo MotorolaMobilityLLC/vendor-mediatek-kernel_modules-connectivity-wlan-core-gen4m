@@ -1378,6 +1378,14 @@
 #define CFG_SHOW_FULL_IPADDR			0
 #endif
 
+#ifndef CFG_SUPPORT_RSNO
+#define CFG_SUPPORT_RSNO			1
+#endif
+
+#ifndef CFG_DEFAULT_ENABLE_RSNO
+#define CFG_DEFAULT_ENABLE_RSNO			0
+#endif
+
 #ifndef CFG_SUPPORT_VO_ENTERPRISE
 #define CFG_SUPPORT_VO_ENTERPRISE               1
 #endif

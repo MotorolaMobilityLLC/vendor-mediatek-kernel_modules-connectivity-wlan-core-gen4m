@@ -3134,6 +3134,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	prBssDesc->fgIEWPA = FALSE;
 	prBssDesc->fgIERSNX = FALSE;
 
+#if (CFG_SUPPORT_RSNO == 1)
+	prBssDesc->fgIERSNO = FALSE;
+	prBssDesc->fgIERSNO2 = FALSE;
+	prBssDesc->fgIERSNXO = FALSE;
+#endif /* CFG_SUPPORT_RSNO */
+
 	/*Reset VHT OP IE relative settings */
 	prBssDesc->eChannelWidth = CW_20_40MHZ;
 
@@ -3306,7 +3312,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_RSN:
-			if (rsnParseRsnIE(prAdapter, RSN_IE(pucIE),
+			if (rsnParseRsnIE(prAdapter, pucIE,
 				&prBssDesc->rRSNInfo)) {
 				uint8_t i;
 
@@ -3321,9 +3327,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_RSNX:
-			if (rsnParseRsnxIE(prAdapter, RSNX_IE(pucIE),
+			if (rsnParseRsnxIE(prAdapter, pucIE,
 				&prBssDesc->rRSNXInfo)) {
-
 				prBssDesc->fgIERSNX = TRUE;
 				prBssDesc->u2RsnxCap
 					= prBssDesc->rRSNXInfo.u2Cap;
@@ -3493,17 +3498,43 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 			if (rsnParseCheckForWFAInfoElem(prAdapter,
 				pucIE, &ucOuiType, &u2SubTypeVersion)) {
-				if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
-					&& (u2SubTypeVersion
-					== VERSION_WPA)
-					&& (rsnParseWpaIE(prAdapter,
-						WPA_IE(pucIE),
-						&prBssDesc
-							->rWPAInfo))) {
+				if (ucOuiType == VENDOR_OUI_TYPE_WPA &&
+				    rsnParseWpaIE(prAdapter, WPA_IE(pucIE),
+						  &prBssDesc->rWPAInfo))
 					prBssDesc->fgIEWPA = TRUE;
+			}
+#if (CFG_SUPPORT_RSNO == 1)
+			if (rsnParseCheckForWFASpecificElem(prAdapter,
+				pucIE, &ucOuiType)) {
+				if (ucOuiType == VENDOR_OUI_TYPE_RSNO &&
+				    rsnParseRsnIE(prAdapter, pucIE,
+						&prBssDesc->rRSNOInfo)) {
+					prBssDesc->fgIERSNO = TRUE;
+					prBssDesc->u2RsnoCap =
+						prBssDesc->rRSNOInfo.u2RsnCap;
 				}
 			}
-
+			if (rsnParseCheckForWFASpecificElem(prAdapter,
+				pucIE, &ucOuiType)) {
+				if (ucOuiType == VENDOR_OUI_TYPE_RSNO2 &&
+				    rsnParseRsnIE(prAdapter, pucIE,
+						&prBssDesc->rRSNO2Info)) {
+					prBssDesc->fgIERSNO2 = TRUE;
+					prBssDesc->u2Rsno2Cap =
+						prBssDesc->rRSNO2Info.u2RsnCap;
+				}
+			}
+			if (rsnParseCheckForWFASpecificElem(prAdapter,
+				pucIE, &ucOuiType)) {
+				if (ucOuiType == VENDOR_OUI_TYPE_RSNXO &&
+				    rsnParseRsnxIE(prAdapter, pucIE,
+						&prBssDesc->rRSNXOInfo)) {
+					prBssDesc->fgIERSNXO = TRUE;
+					prBssDesc->u2RsnxoCap =
+						prBssDesc->rRSNXOInfo.u2Cap;
+				}
+			}
+#endif /* CFG_SUPPORT_RSNO */
 			if (prBssDesc->fgIsVHTPresent == FALSE)
 				scanCheckEpigramVhtIE(pucIE, prBssDesc);
 #if CFG_SUPPORT_PASSPOINT
@@ -3520,13 +3551,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 			if (prAdapter->fgIsP2PRegistered) {
-				if ((p2pFuncParseCheckForP2PInfoElem(
-					prAdapter, pucIE, &ucOuiType))
-					&& (ucOuiType
-					== VENDOR_OUI_TYPE_P2P)) {
-					prBssDesc->fgIsP2PPresent
-						= TRUE;
-				}
+				if (rsnParseCheckForWFASpecificElem(
+					prAdapter, pucIE, &ucOuiType) &&
+				    ucOuiType == VENDOR_OUI_TYPE_P2P)
+					prBssDesc->fgIsP2PPresent = TRUE;
 			}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 #if CFG_SUPPORT_MBO

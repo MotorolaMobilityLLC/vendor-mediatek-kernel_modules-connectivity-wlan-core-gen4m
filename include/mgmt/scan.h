@@ -427,6 +427,21 @@ struct BSS_DESC {
 	u_int8_t fgIEOsen;
 	u_int8_t fgIERSNX;
 
+#if (CFG_SUPPORT_RSNO == 1)
+	enum ENUM_RSN_OVERRIDE eRsnSelectedRSNOverride;
+
+	struct RSN_INFO rRSNOInfo;
+	struct RSN_INFO rRSNO2Info;
+	struct RSNX_INFO rRSNXOInfo;
+	u_int8_t fgIERSNO;
+	u_int8_t fgIERSNO2;
+	u_int8_t fgIERSNXO;
+
+	uint16_t u2RsnoCap;
+	uint16_t u2Rsno2Cap;
+	uint16_t u2RsnxoCap;
+#endif /* CFG_SUPPORT_RSNO */
+
 #if CFG_ENABLE_WIFI_DIRECT
 	u_int8_t fgIsP2PPresent;
 	u_int8_t fgIsP2PReport;	/* TRUE: report to upper layer */

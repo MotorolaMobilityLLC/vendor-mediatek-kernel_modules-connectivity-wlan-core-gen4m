@@ -1794,7 +1794,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			struct RSN_INFO rRsnInfo;
 
 			if (rsnParseRsnIE(prGlueInfo->prAdapter,
-			    (struct RSN_INFO_ELEM *)prDesiredIE, &rRsnInfo)) {
+			    prDesiredIE, &rRsnInfo)) {
 				prWpaInfo->u4CipherGroupMgmt =
 					rRsnInfo.u4GroupMgmtCipherSuite;
 				DBGLOG(RSN, INFO,
@@ -1820,8 +1820,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			struct RSNX_INFO rRsnxeInfo;
 
 			if (rsnParseRsnxIE(prGlueInfo->prAdapter,
-				(struct RSNX_INFO_ELEM *)prDesiredIE,
-					&rRsnxeInfo)) {
+				prDesiredIE, &rRsnxeInfo)) {
 				prWpaInfo->u2RSNXCap = rRsnxeInfo.u2Cap;
 				if (prWpaInfo->u2RSNXCap &
 					BIT(WLAN_RSNX_CAPAB_SAE_H2E)) {

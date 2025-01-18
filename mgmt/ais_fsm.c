@@ -2998,7 +2998,12 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 {
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+#if (CFG_SUPPORT_RSNO == 1)
+	uint8_t i;
+#endif /* CFG_SUPPORT_RSNO */
 
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 
@@ -3011,7 +3016,6 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	}
 #endif
 
-
 #if CFG_SUPPORT_802_11W
 	prAisSpecificBssInfo->fgMgmtProtection = !!prBss->u4RsnSelectedPmf;
 
@@ -3020,6 +3024,24 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	       kalGetRsnIeMfpCap(prAdapter->prGlueInfo, ucBssIndex),
 	       prAisSpecificBssInfo->fgMgmtProtection);
 #endif
+
+#if (CFG_SUPPORT_RSNO == 1)
+	prAisSpecificBssInfo->eRsnSelectedRSNOverride = RSN_OVERRIDE_NOT_USED;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
+
+		if (prBssDesc && prBssDesc->eRsnSelectedRSNOverride !=
+			RSN_OVERRIDE_NOT_USED) {
+			prAisSpecificBssInfo->eRsnSelectedRSNOverride =
+				prBssDesc->eRsnSelectedRSNOverride;
+			break;
+		}
+	}
+
+	DBGLOG(AIS, INFO, "RSN Overriding = %d\n",
+		prAisSpecificBssInfo->eRsnSelectedRSNOverride);
+#endif /* CFG_SUPPORT_RSNO */
 
 	return TRUE;
 }

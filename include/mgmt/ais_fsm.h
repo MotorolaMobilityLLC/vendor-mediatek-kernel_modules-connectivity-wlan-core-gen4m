@@ -292,6 +292,10 @@ struct AIS_SPECIFIC_BSS_INFO {
 #endif
 	uint8_t ucKeyAlgorithmId;
 
+#if (CFG_SUPPORT_RSNO == 1)
+	enum ENUM_RSN_OVERRIDE eRsnSelectedRSNOverride;
+#endif /* CFG_SUPPORT_RSNO */
+
 	/* Support AP Selection */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 	uint8_t ucRoamSkipTimes;
