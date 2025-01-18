@@ -1132,6 +1132,10 @@ struct GLUE_INFO {
 	struct delayed_work rChanNoiseGetInfoWork;
 #endif
 
+#if CFG_SUPPORT_LOGGER
+	struct delayed_work rLoggerWork;
+#endif
+
 	uint32_t u4InfType;
 
 	uint32_t IsrCnt;

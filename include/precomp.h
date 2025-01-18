@@ -270,6 +270,10 @@
 #include "nan_func.h"
 #endif
 
+#if CFG_SUPPORT_LOGGER
+#include "gl_vendor_logger.h"
+#endif
+
 #if CFG_SUPPORT_ROAMING
 #include "roaming_fsm.h"
 #endif /* CFG_SUPPORT_ROAMING */

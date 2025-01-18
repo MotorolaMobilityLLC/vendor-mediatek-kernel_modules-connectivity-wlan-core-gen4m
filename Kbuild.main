@@ -3530,6 +3530,7 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_cfg80211.o \
 		$(OS_DIR)gl_proc.o \
 		$(OS_DIR)gl_vendor.o \
+		$(OS_DIR)gl_vendor_logger.o \
 		$(OS_DIR)gl_custom.o \
 		$(OS_DIR)platform.o \
 		$(OS_DIR)gl_emi.o \

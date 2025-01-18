@@ -1673,6 +1673,73 @@ static const struct wiphy_vendor_command
 		.maxattr = LOGGER_ATTRIBUTE_MAX
 #endif
 	},
+#if CFG_SUPPORT_LOGGER
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LOGGER_START_LOGGING
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_start_logging,
+	#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = nla_get_version_policy,
+		.maxattr = LOGGER_ATTRIBUTE_MAX
+	#endif
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LOGGER_RESET_LOGGING
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_reset_logging,
+	#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = nla_get_version_policy,
+		.maxattr = LOGGER_ATTRIBUTE_MAX
+	#endif
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LOGGER_GET_RING_STATUS
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_ring_status,
+	#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = nla_get_version_policy,
+		.maxattr = LOGGER_ATTRIBUTE_MAX
+	#endif
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LOGGER_GET_RING_DATA
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_ring_data,
+	#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = nla_get_version_policy,
+		.maxattr = LOGGER_ATTRIBUTE_MAX
+	#endif
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LOGGER_GET_FEATURE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_logging_feature,
+	#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = nla_get_version_policy,
+		.maxattr = LOGGER_ATTRIBUTE_MAX
+	#endif
+	},
+#endif
 	/* Get Supported Feature Set */
 	{
 		{
@@ -2281,6 +2348,12 @@ static const struct nl80211_vendor_cmd_info
 		.subcmd = MTK_SUBCMD_NAN_EXT
 	},
 #endif /* CFG_SUPPORT_NAN_EXT */
+#if CFG_SUPPORT_LOGGER
+	[WIFI_EVENT_RING_EVENT] {
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_RING_EVENT
+	},
+#endif
 };
 #endif
 
@@ -7776,6 +7849,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	kalVnfActive(prAdapter);
 #endif
 
+#if CFG_SUPPORT_LOGGER
+	logger_work_init(prGlueInfo);
+#endif
+
 #if CFG_SUPPORT_CABLE_DETECT
 	cable_detect_gpio_parse();
 #endif
@@ -9019,6 +9096,10 @@ void wlanRemove(void)
 	kalVnfUninit();
 #endif
 
+#if CFG_SUPPORT_LOGGER
+	logger_work_uninit(prGlueInfo);
+#endif
+
 	/* Destroy wakelock */
 	wlanWakeLockUninit(prGlueInfo);
 
@@ -9538,6 +9619,9 @@ static int initWlan(void)
 		return ret;
 	}
 #endif /* CFG_SUPPORT_SA_LOG */
+#if CFG_SUPPORT_LOGGER
+	logger_init(prGlueInfo);
+#endif
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 	FwLogDevInit();
 #endif
@@ -9735,6 +9819,10 @@ static void exitWlan(void)
 #if (CFG_SUPPORT_SA_LOG == 1)
 	SalogDeInit();
 #endif /* CFG_SUPPORT_SA_LOG */
+
+#if CFG_SUPPORT_LOGGER
+	logger_deinit(prGlueInfo);
+#endif
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	IcsDeInit();

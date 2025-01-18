@@ -130,6 +130,17 @@ const struct nla_policy nla_get_version_policy[
 	[LOGGER_ATTRIBUTE_DRIVER_VER] = { .type = NLA_UNSPEC },
 	[LOGGER_ATTRIBUTE_FW_VER] = { .type = NLA_UNSPEC },
 #endif
+#if CFG_SUPPORT_LOGGER
+	[LOGGER_ATTRIBUTE_RING_ID] = { .type = NLA_U32 },
+	[LOGGER_ATTRIBUTE_RING_NAME] = { .type = NLA_NUL_STRING },
+	[LOGGER_ATTRIBUTE_RING_FLAGS] = { .type = NLA_U32 },
+	[LOGGER_ATTRIBUTE_LOG_LEVEL] = { .type = NLA_U32 },
+	[LOGGER_ATTRIBUTE_LOG_TIME_INTVAL] = { .type = NLA_U32 },
+	[LOGGER_ATTRIBUTE_LOG_MIN_DATA_SIZE] = { .type = NLA_U32 },
+	[LOGGER_ATTRIBUTE_RING_DATA] = { .type = NLA_BINARY },
+	[LOGGER_ATTRIBUTE_RING_STATUS] = { .type = NLA_BINARY },
+	[LOGGER_ATTRIBUTE_RING_NUM] = { .type = NLA_U32 },
+#endif
 };
 
 const struct nla_policy nla_parse_offloading_policy[
