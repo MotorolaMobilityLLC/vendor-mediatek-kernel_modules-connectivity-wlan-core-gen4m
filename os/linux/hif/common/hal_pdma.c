@@ -2410,7 +2410,7 @@ static void halAddTxDelayCount(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (eDelayType == MAC_DELAY)
+	if (eDelayType == MAC_TX_DELAY)
 		wlanCountTxDelayOverLimit(prAdapter, MAC_DELAY, u4TxLatency);
 }
 #endif
