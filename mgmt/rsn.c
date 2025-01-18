@@ -1882,14 +1882,8 @@ uint32_t _addWPAIE_impl(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return FALSE;
 
-	/* AP + GO */
-	if (!IS_BSS_APGO(prBssInfo))
-		return FALSE;
-
 	/* AP only */
-	if (!p2pFuncIsAPMode(
-		prAdapter->rWifiVar.
-		prP2PConnSettings[prBssInfo->u4PrivateData]))
+	if (!IS_BSS_AP(prAdapter, prBssInfo))
 		return FALSE;
 
 	prP2pSpecBssInfo =
@@ -1934,14 +1928,8 @@ uint32_t _addRSNIE_impl(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return FALSE;
 
-	/* AP + GO */
-	if (!IS_BSS_APGO(prBssInfo))
-		return FALSE;
-
 	/* AP only */
-	if (!p2pFuncIsAPMode(
-		prAdapter->rWifiVar.
-		prP2PConnSettings[prBssInfo->u4PrivateData]))
+	if (!IS_BSS_AP(prAdapter, prBssInfo))
 		return FALSE;
 
 	prP2pSpecBssInfo =

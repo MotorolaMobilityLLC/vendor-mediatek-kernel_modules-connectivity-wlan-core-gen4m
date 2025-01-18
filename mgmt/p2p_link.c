@@ -226,8 +226,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		goto exit;
 	}
 
-	fgIsApMode = p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-		prBssInfo->u4PrivateData]);
+	fgIsApMode = IS_BSS_AP(prAdapter, prBssInfo);
 	u2IELength = prSwRfb->u2PacketLen -
 		(uint16_t) OFFSET_OF(struct WLAN_AUTH_FRAME,
 		aucInfoElem[0]);

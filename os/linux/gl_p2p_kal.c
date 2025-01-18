@@ -2823,8 +2823,7 @@ void __kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 #if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!IS_BSS_APGO(prBssInfo) ||
-	    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]))
+	if (IS_BSS_GC(prBssInfo) || IS_BSS_AP(prAdapter, prBssInfo))
 		ucLinkIdx = prBssInfo->ucLinkId;
 #endif
 #endif
@@ -2950,8 +2949,7 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		return;
 
 	role_idx = prBssInfo->u4PrivateData;
-	if (!IS_BSS_APGO(prBssInfo) ||
-	    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[role_idx]))
+	if (IS_BSS_GC(prBssInfo) || IS_BSS_AP(prAdapter, prBssInfo))
 		linkIdx = prBssInfo->ucLinkId;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[role_idx];
 

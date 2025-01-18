@@ -112,9 +112,7 @@ void ccmPendingCheck(struct ADAPTER *prAdapter,
 #endif
 
 		/* Only check GO, because only GO has NoA */
-		if (!IS_BSS_APGO(bss) || !IS_BSS_ALIVE(prAdapter, bss) ||
-		    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-				    bss->u4PrivateData]))
+		if (!IS_BSS_ALIVE(prAdapter, bss) || !IS_BSS_GO(prAdapter, bss))
 			continue;
 
 		/* Must copy, because
@@ -400,8 +398,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	       bss->eHwBandIdx, bss->eBand, fgIsMlo,
 	       u4TargetCh, eTargetHwBandIdx, eTargetBand);
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-		bss->u4PrivateData]) && !fgIsMlo)
+	if (IS_BSS_AP(prAdapter, bss) && !fgIsMlo)
 		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
 					P2P_DEFAULT_SCENARIO);
 	else if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss, &u4TargetCh,
@@ -452,8 +449,7 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 	/* find the first SAP entry in list */
 	LINK_FOR_EACH_ENTRY(prCcmCsaEntry, prCcmCheckCsList, rLinkEntry,
 			    struct P2P_CCM_CSA_ENTRY) {
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-				prCcmCsaEntry->prBssInfo->u4PrivateData])) {
+		if (IS_BSS_AP(prAdapter, prCcmCsaEntry->prBssInfo)) {
 			prFirstSap = prCcmCsaEntry;
 			DBGLOG(CCM, TRACE, "first SAP in list is bss=%u\n",
 			       prFirstSap->prBssInfo->ucBssIndex);
@@ -466,10 +462,8 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		for (i = 0; i < MAX_BSSID_NUM; ++i) {
 			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-			if (!IS_BSS_APGO(bss) || !IS_BSS_ALIVE(prAdapter, bss)
-			    || p2pFuncIsAPMode(
-					prAdapter->rWifiVar.prP2PConnSettings[
-							bss->u4PrivateData]))
+			if (!IS_BSS_ALIVE(prAdapter, bss) ||
+			    !IS_BSS_GO(prAdapter, bss))
 				continue;
 
 			/* skip target bss itself */
@@ -515,9 +509,7 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!IS_BSS_APGO(bss) || !IS_BSS_ALIVE(prAdapter, bss)
-		    || !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-					bss->u4PrivateData]))
+		if (!IS_BSS_ALIVE(prAdapter, bss) || !IS_BSS_AP(prAdapter, bss))
 			continue;
 
 		/* skip target bss itself */

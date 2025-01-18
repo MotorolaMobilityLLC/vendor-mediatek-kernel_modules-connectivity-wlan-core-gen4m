@@ -717,8 +717,7 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 	/* Overwrite SCO settings by wifi cfg */
 	if (IS_BSS_P2P(prBssInfo)) {
 		/* AP mode */
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar
-			.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		if (IS_BSS_AP(prAdapter, prBssInfo)) {
 			if (prAdapter->rWifiVar.ucApSco == CHNL_EXT_SCA
 				|| prAdapter->rWifiVar.ucApSco == CHNL_EXT_SCB)
 				eTempSCO =
@@ -765,8 +764,7 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 	/* Overwrite SCO settings by wifi cfg bandwidth setting */
 	if (IS_BSS_P2P(prBssInfo)) {
 		/* AP mode */
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar
-			.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		if (IS_BSS_AP(prAdapter, prBssInfo)) {
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth =
 					prAdapter->rWifiVar.ucAp2gBandwidth;

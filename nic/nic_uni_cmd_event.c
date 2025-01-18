@@ -9782,8 +9782,7 @@ void nicUniCmdEventGetTsfDone(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		twtHotspotPlannerGetTsfDone(prAdapter,
 			prCmdInfo, (uint8_t *)&legacy);
 	} else {

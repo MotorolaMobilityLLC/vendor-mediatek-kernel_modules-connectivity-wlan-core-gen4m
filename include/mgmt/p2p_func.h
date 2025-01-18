@@ -357,7 +357,7 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb,
 		u_int8_t fgIsDevInterface, uint8_t ucRoleIdx);
 
-u_int8_t p2pFuncIsAPMode(struct P2P_CONNECTION_SETTINGS *prP2pConnSettings);
+u_int8_t p2pFuncIsAPMode(struct ADAPTER *prAdapter, uint8_t ucRoleIdx);
 
 u_int8_t p2pFuncIsDualAPMode(struct ADAPTER *prAdapter);
 

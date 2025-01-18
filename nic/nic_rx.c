@@ -1547,7 +1547,6 @@ static void nicRxDuplicateBmcPkts(struct ADAPTER *prAdapter,
 {
 	struct SW_RFB *prSwRfbDuplicated;
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_MLO_GRP_FRAME_XMIT == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct MLD_BSS_INFO *prMldBss;
 	struct LINK *prBssList;
 	struct BSS_INFO *prBssInfo;
@@ -1560,9 +1559,7 @@ static void nicRxDuplicateBmcPkts(struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		GLUE_GET_PKT_BSS_IDX(prSwRfb->pvPacket));
 	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
-	if (!prBssInfo || !prMldBss ||
-	    !p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[
-		prBssInfo->u4PrivateData]) ||
+	if (!prBssInfo || !prMldBss || !IS_BSS_AP(prAdapter, prBssInfo) ||
 	    !RLM_NET_IS_11BE(prBssInfo))
 		goto legacy;
 

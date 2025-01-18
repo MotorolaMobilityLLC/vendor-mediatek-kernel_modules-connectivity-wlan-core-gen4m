@@ -2768,9 +2768,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 			}
 			/* Need the probe response to detect the PBC overlap */
 			rCmdSetBssInfo.ucIsApMode =
-				p2pFuncIsAPMode(
-					prAdapter->rWifiVar.prP2PConnSettings[
-					prBssInfo->u4PrivateData]);
+				IS_BSS_AP(prAdapter, prBssInfo);
 
 		}
 #else

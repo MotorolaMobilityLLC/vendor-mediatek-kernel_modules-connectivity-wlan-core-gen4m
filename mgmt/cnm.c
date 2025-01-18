@@ -1530,20 +1530,13 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
 		fgIsMloSap = IS_MLD_BSSINFO_MULTI(prMldBss) &&
-			p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-				prBssInfo->u4PrivateData]);
+			IS_BSS_AP(prAdapter, prBssInfo);
 		if (fgIsMloSap)
 			continue;
 #endif
 
-		if (prBssInfo &&
-			IS_BSS_P2P(prBssInfo) &&
-			p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]) &&
-			IS_NET_PWR_STATE_ACTIVE(
-			prAdapter,
-			prBssInfo->ucBssIndex)) {
+		if (IS_BSS_AP(prAdapter, prBssInfo) &&
+		    IS_NET_PWR_STATE_ACTIVE(prAdapter, prBssInfo->ucBssIndex)) {
 			if (cnmIsSafeCh(prBssInfo))
 				continue;
 			ucNewChannel = cnmDecideSapNewChannel(
@@ -1667,9 +1660,7 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P
 			&& !cnmSapIsConcurrent(prAdapter)) {
 			u_int8_t fgFixedChannel =
-				p2pFuncIsAPMode(
-					prAdapter->rWifiVar.prP2PConnSettings[
-						prBssInfo->u4PrivateData]);
+				IS_BSS_AP(prAdapter, prBssInfo);
 
 			if (fgFixedChannel) {
 
@@ -2077,9 +2068,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 				->ucRddBw;
 		} else {
 			/* AP mode */
-			if (p2pFuncIsAPMode(
-					prAdapter->rWifiVar.prP2PConnSettings[
-						prBssInfo->u4PrivateData])) {
+			if (IS_BSS_AP(prAdapter, prBssInfo)) {
 				if (prBssInfo->eBand == BAND_2G4) {
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucAp2gBandwidth;
@@ -4789,9 +4778,7 @@ static bool IsLastDisconnectBssInMlo(
 		return false;
 
 	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
-	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) || IS_BSS_APGO(prBssInfo) ||
-		p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-			prBssInfo->u4PrivateData]))
+	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) || IS_BSS_APGO(prBssInfo))
 		return false;
 
 	ucWmmCompare = prBssInfo->ucWmmQueSet;
@@ -5186,14 +5173,9 @@ cnmGetOtherSapBssInfo(
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
-		if ((prSapBssInfo != prBssInfo) &&
-			IS_BSS_P2P(prBssInfo) &&
-			p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]) &&
-			IS_NET_PWR_STATE_ACTIVE(
-			prAdapter,
-			prBssInfo->ucBssIndex)) {
+		if (prSapBssInfo != prBssInfo &&
+		    IS_BSS_AP(prAdapter, prBssInfo) &&
+		    IS_NET_PWR_STATE_ACTIVE(prAdapter, prBssInfo->ucBssIndex)) {
 			DBGLOG(P2P, INFO,
 				"Get other sap (role%d)\n",
 				prSapBssInfo->u4PrivateData);
@@ -5218,13 +5200,8 @@ cnmGetAliveSapBssInfo(
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
-		if (IS_BSS_P2P(prBssInfo) &&
-			p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]) &&
-			IS_NET_PWR_STATE_ACTIVE(
-			prAdapter,
-			prBssInfo->ucBssIndex)) {
+		if (IS_BSS_AP(prAdapter, prBssInfo) &&
+		    IS_NET_PWR_STATE_ACTIVE(prAdapter, prBssInfo->ucBssIndex)) {
 			prSapBssInfo[j] = prBssInfo;
 			j++;
 		}
@@ -5248,13 +5225,9 @@ cnmGetAliveNonSapBssInfo(
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
-			!(IS_BSS_P2P(prBssInfo) &&
-			p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]) &&
-			IS_NET_PWR_STATE_ACTIVE(
-			prAdapter,
-			prBssInfo->ucBssIndex))) {
+		    !(IS_BSS_AP(prAdapter, prBssInfo) &&
+		      IS_NET_PWR_STATE_ACTIVE(prAdapter,
+					      prBssInfo->ucBssIndex))) {
 			prNonSapBssInfo[j] = prBssInfo;
 			j++;
 		}
@@ -6692,11 +6665,8 @@ struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter)
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
-		if (prBssInfo &&
-		    IS_BSS_P2P(prBssInfo) &&
-		    !p2pFuncIsAPMode(
-		    prAdapter->rWifiVar.prP2PConnSettings
-		    [prBssInfo->u4PrivateData]) &&
+		if ((IS_BSS_GO(prAdapter, prBssInfo) ||
+		     IS_BSS_GC(prBssInfo)) &&
 		    IS_BSS_ALIVE(prAdapter, prBssInfo))
 			return prBssInfo;
 	}

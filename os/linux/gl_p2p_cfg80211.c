@@ -2093,9 +2093,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 		if (dev->ieee80211_ptr &&
 			(dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) &&
-			!p2pFuncIsAPMode(
-				prGlueInfo->prAdapter->rWifiVar.
-				prP2PConnSettings[ucRoleIdx])) {
+			!p2pFuncIsAPMode(prGlueInfo->prAdapter, ucRoleIdx)) {
 			DBGLOG(P2P, ERROR,
 				"Set fgIsApMode (role%d)\n",
 				ucRoleIdx);
@@ -2154,8 +2152,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			prAdapter = prGlueInfo->prAdapter;
 			prWifiVar = &prAdapter->rWifiVar;
 
-			if (p2pFuncIsAPMode(
-				prWifiVar->prP2PConnSettings[ucRoleIdx])) {
+			if (p2pFuncIsAPMode(prAdapter, ucRoleIdx)) {
 				if ((prWifiVar->ucApChannel != 0) &&
 					(prWifiVar->ucApChnlDefFromCfg != 0) &&
 					(prWifiVar->ucApChannel !=
@@ -4820,8 +4817,7 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(struct wiphy *wiphy,
 	switch (index) {
 	case 1:		/* Max Clients */
 		for (i = 0; i < KAL_P2P_NUM; i++)
-			if (p2pFuncIsAPMode(prGlueInfo->prAdapter
-				->rWifiVar.prP2PConnSettings[i]))
+			if (p2pFuncIsAPMode(prGlueInfo->prAdapter, i))
 				kalP2PSetMaxClients(prGlueInfo, value, i);
 		break;
 	default:
@@ -5176,8 +5172,7 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(struct wiphy *wiphy,
 	case 109:		/* Max Clients */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 		for (i = 0; i < KAL_P2P_NUM; i++)
-			if (p2pFuncIsAPMode(prGlueInfo->prAdapter
-				->rWifiVar.prP2PConnSettings[i]))
+			if (p2pFuncIsAPMode(prGlueInfo->prAdapter, i))
 				kalP2PSetMaxClients(prGlueInfo, value, i);
 #endif
 		break;

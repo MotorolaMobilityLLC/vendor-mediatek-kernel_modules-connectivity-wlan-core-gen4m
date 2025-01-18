@@ -1660,8 +1660,7 @@ twtHotspotRespFsmRunEventRxSetup(
 
 	ASSERT(prBssInfo);
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		switch (prBssInfo->aeTWTRespState) {
 		case TWT_HOTSPOT_RESP_STATE_IDLE:
 			/* transition to the TWT hotspot receive setup state */

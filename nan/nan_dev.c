@@ -1291,10 +1291,7 @@ u_int8_t nanTrySwitchSapChannel(
 		if (IS_BSS_AIS(b) &&
 			(b->eBand != BAND_2G4))
 			sta5g = b;
-		if (IS_BSS_P2P(b) &&
-			p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[b->u4PrivateData])) {
+		if (IS_BSS_AP(prAdapter, b)) {
 			sap = b;
 			sapnum++;
 		}

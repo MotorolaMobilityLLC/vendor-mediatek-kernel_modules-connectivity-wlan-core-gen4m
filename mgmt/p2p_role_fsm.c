@@ -61,8 +61,7 @@ u_int8_t p2pRoleFsmNeedMlo(
 	uint8_t ucRoleIdx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	u_int8_t fgIsApMode = p2pFuncIsAPMode(
-		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]);
+	u_int8_t fgIsApMode = p2pFuncIsAPMode(prAdapter, ucRoleIdx);
 
 	return mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, fgIsApMode);
 #else
@@ -318,8 +317,7 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 	/* For BSS_INFO back trace to P2P Role & get Role FSM. */
 	prP2pBssInfo->u4PrivateData = ucRoleIdx;
 
-	if (p2pFuncIsAPMode(
-		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx])) {
+	if (IS_BSS_AP(prAdapter, prP2pBssInfo)) {
 		prP2pBssInfo->ucConfigAdHocAPMode = AP_MODE_11G;
 		prP2pBssInfo->u2HwDefaultFixedRateCode =
 			RATE_CCK_1M_LONG;
@@ -680,8 +678,7 @@ u_int8_t p2pRoleFsmExtendChnlTimer(struct ADAPTER *prAdapter,
 	else if (!timerPendingTimer(
 		&prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer))
 		return FALSE;
-	else if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-			prP2pGoBssInfo->u4PrivateData]))
+	else if (IS_BSS_AP(prAdapter, prP2pGoBssInfo))
 		return FALSE;
 
 	/* check if p2p dev would tx in the same channel as GO */
@@ -877,10 +874,8 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 	 * processing. 4-way handshake will NOT be triggered.
 	 */
 	if ((prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2 ||
-			prStaRec->eAuthAssocState == AAA_STATE_SEND_ASSOC2) &&
-		(prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
-		(p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prP2pBssInfo->u4PrivateData]) == FALSE)) {
+	     prStaRec->eAuthAssocState == AAA_STATE_SEND_ASSOC2) &&
+	    IS_BSS_GO(prAdapter, prP2pBssInfo)) {
 		DBGLOG(P2P, WARN,
 			"Skip deauth tx done since AAA fsm is in progress.\n");
 		return;
@@ -1519,8 +1514,6 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	uint8_t ucChannelNum;
 	enum ENUM_CHNL_EXT eSco;
 	struct BSS_INFO *prBssInfo;
-	struct P2P_CONNECTION_SETTINGS *prP2PConnSettings;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucRfBw;
 
 	prP2pStartAPMsg = (struct MSG_P2P_START_AP *) prMsgHdr;
@@ -1556,12 +1549,10 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	prP2PConnSettings =
-		prWifiVar->prP2PConnSettings[prBssInfo->u4PrivateData];
-	if (p2pFuncIsAPMode(prP2PConnSettings))
-		ucRfBw = prWifiVar->ucAp5gBandwidth;
+	if (IS_BSS_AP(prAdapter, prBssInfo))
+		ucRfBw = prAdapter->rWifiVar.ucAp5gBandwidth;
 	else
-		ucRfBw = prWifiVar->ucP2p5gBandwidth;
+		ucRfBw = prAdapter->rWifiVar.ucP2p5gBandwidth;
 
 	/* whether to do RDD */
 	if (eBand == BAND_5G &&
@@ -1579,9 +1570,8 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	}
 
 	/* STA+SAP will follow STA BW */
-	if (!bSkipRdd && p2pGetAisBssByBand(prAdapter, BAND_5G)
-		&& p2pFuncIsAPMode(prAdapter->rWifiVar
-			.prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx]))
+	if (!bSkipRdd && p2pGetAisBssByBand(prAdapter, BAND_5G) &&
+	    p2pFuncIsAPMode(prAdapter, prP2pStartAPMsg->ucRoleIdx))
 		bSkipRdd = TRUE;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	if (!bSkipRdd && p2pFuncIsManualCac() &&
@@ -1716,8 +1706,7 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 			prP2pStartAPMsg->u2SsidLen);
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx])) {
+	if (IS_BSS_AP(prAdapter, prP2pBssInfo)) {
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
 
 		/* Overwrite AP channel */
@@ -2332,11 +2321,12 @@ void p2pRoleFsmRunEventDfsCac(struct ADAPTER *prAdapter,
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+	if (!prP2pBssInfo)
+		return;
 
 	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prP2pDfsCacMsg->ucRoleIdx]))
+	if (IS_BSS_AP(prAdapter, prP2pBssInfo))
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
 	else
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
@@ -5455,7 +5445,6 @@ indicateApLinkAcsOverwrite(struct ADAPTER *prAdapter,
 			   struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
 			   struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 	struct MLD_BSS_INFO *prMldBss;
 	struct BSS_INFO *prBssInfo, *prMainBssInfo;
@@ -5480,7 +5469,7 @@ indicateApLinkAcsOverwrite(struct ADAPTER *prAdapter,
 	if (!prMldBss || !prMainBssInfo || !prBssInfo)
 		return FALSE;
 
-	fgIsApMode = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx]);
+	fgIsApMode = IS_BSS_AP(prAdapter, prBssInfo);
 	eMainLinkBand = prMainBssInfo->eBand;
 	u4MainLinkFreq = nicChannelNum2Freq(prMainBssInfo->ucPrimaryChannel,
 					    eMainLinkBand) / 1000;
@@ -5992,9 +5981,7 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 		eOPMode = prBssInfo->eCurrentOPMode;
 #if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
 		ucRoleIndex = prBssInfo->u4PrivateData;
-		fgIsApMode = p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIndex]
-			);
+		fgIsApMode = IS_BSS_AP(prAdapter, prBssInfo);
 #endif
 
 		/* Deactive GO/AP bss to let TOP sleep */
@@ -6278,9 +6265,7 @@ void p2pRoleFsmRunEventApGoStarted(struct ADAPTER *prAdapter,
 {
 	struct MSG_P2P_NOTIFY_APGO_STARTED *prNotifyMsg =
 		(struct MSG_P2P_NOTIFY_APGO_STARTED *)prMsgHdr;
-	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prP2pBssInfo;
-	uint8_t ucRoleIdx;
 	u_int8_t fgIsSap = FALSE;
 
 	if (!prAdapter || !prNotifyMsg) {
@@ -6289,15 +6274,13 @@ void p2pRoleFsmRunEventApGoStarted(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prWifiVar = &prAdapter->rWifiVar;
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prNotifyMsg->ucBssIdx);
 	if (!prP2pBssInfo) {
 		DBGLOG(P2P, ERROR, "Invalid bss idx=%u\n",
 			prNotifyMsg->ucBssIdx);
 		goto exit;
 	}
-	ucRoleIdx = (uint8_t)prP2pBssInfo->u4PrivateData;
-	fgIsSap = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx]);
+	fgIsSap = IS_BSS_AP(prAdapter, prP2pBssInfo);
 
 	if (!IS_NET_PWR_STATE_ACTIVE(prAdapter, prNotifyMsg->ucBssIdx)) {
 		DBGLOG(P2P, WARN, "bss(%u)'s power state NOT active\n",

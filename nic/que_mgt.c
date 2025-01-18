@@ -8727,16 +8727,7 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	if (!fgCheckDrop && mddpIsSupportMddpWh() &&
 	    prAdapter->fgMddpActivated &&
 	    prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
-		struct WIFI_VAR *prWifiVar = NULL;
-		struct P2P_CONNECTION_SETTINGS *prP2PConnSettings = NULL;
-
-		prWifiVar = &prAdapter->rWifiVar;
-		if (prWifiVar && prBssInfo->u4PrivateData < BSS_P2P_NUM) {
-			prP2PConnSettings = prWifiVar->prP2PConnSettings[
-				prBssInfo->u4PrivateData];
-			fgCheckDrop = prP2PConnSettings &&
-				p2pFuncIsAPMode(prP2PConnSettings);
-		}
+		fgCheckDrop = IS_BSS_AP(prAdapter, prBssInfo);
 	}
 #endif
 

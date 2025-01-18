@@ -2178,20 +2178,13 @@ SKIP_START_RDD:
 		}
 #endif
 
-		if (prBssInfo &&
-			IS_BSS_P2P(prBssInfo) &&
-			IS_NET_PWR_STATE_ACTIVE(
-				prAdapter,
-				prBssInfo->ucBssIndex)) {
-			if (p2pFuncIsAPMode(
-				  prAdapter->rWifiVar.prP2PConnSettings
-				  [ucRoleIdx])) {
-				prAdapter->aprSapBssInfo[ucRoleIdx]
-					  = prBssInfo;
+		if (IS_BSS_APGO(prBssInfo) &&
+		    IS_NET_PWR_STATE_ACTIVE(prAdapter, prBssInfo->ucBssIndex)) {
+			if (IS_BSS_AP(prAdapter, prBssInfo)) {
+				prAdapter->aprSapBssInfo[ucRoleIdx] = prBssInfo;
 			} else {
 				p2pDevFsmNotifyGoState(prAdapter,
-					prBssInfo->ucBssIndex,
-					TRUE);
+					prBssInfo->ucBssIndex, TRUE);
 			}
 		}
 
@@ -2259,8 +2252,7 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		prAdapter->aprSapBssInfo[prP2pBssInfo->u4PrivateData]
 			= NULL;
 
-		if (!p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
-			  [prP2pBssInfo->u4PrivateData])) {
+		if (IS_BSS_GO(prAdapter, prP2pBssInfo)) {
 			p2pDevFsmNotifyGoState(prAdapter,
 				prP2pBssInfo->ucBssIndex, FALSE);
 		}
@@ -2990,9 +2982,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 	}
 
-	fgIsPureAp = p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]);
+	fgIsPureAp = IS_BSS_AP(prAdapter, prBssInfo);
 
 	/* Overwrite BSS PHY type set by Feature Options */
 	bssDetermineApBssInfoPhyTypeSet(prAdapter,
@@ -4709,8 +4699,7 @@ p2pFuncValidateP2pDevRxActionFrame(struct ADAPTER *prAdapter,
 
 		prP2pBssInfo = prAdapter->aprBssInfo[
 			prP2pRoleFsmInfo->ucBssIndex];
-		if (!prP2pBssInfo ||
-		    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[i]))
+		if (!prP2pBssInfo || IS_BSS_AP(prAdapter, prP2pBssInfo))
 			continue;
 
 		if (prP2pBssInfo->ucPrimaryChannel == ucSwRfbChannel) {
@@ -4831,9 +4820,7 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 					&fgBufferFrame);
 			}
 		} else if (ucOuiType == DPP_OUI_TYPE) {
-			if (!p2pFuncIsAPMode(
-				prAdapter->rWifiVar.
-					prP2PConnSettings[ucRoleIdx])) {
+			if (!p2pFuncIsAPMode(prAdapter, ucRoleIdx)) {
 				/* P2P doesn't support DPP */
 				return;
 			}
@@ -4876,8 +4863,7 @@ u_int8_t p2pFuncIsDualAPMode(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return FALSE;
 
-	if (!p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[0]) ||
-	    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[1]))
+	if (!p2pFuncIsAPMode(prAdapter, 0) || !p2pFuncIsAPMode(prAdapter, 1))
 		return FALSE;
 
 	/* use netdev to check whether mlo sap or dual sap */
@@ -4904,18 +4890,22 @@ u_int8_t p2pFuncIsDualAPActive(struct ADAPTER *prAdapter)
 	     ucBssIndex < prAdapter->ucSwBssIdNum;
 	     ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-		if (prBssInfo &&
-		    IS_BSS_APGO(prBssInfo) &&
-		    IS_BSS_ACTIVE(prBssInfo)) {
+		if (IS_BSS_APGO(prBssInfo) && IS_BSS_ACTIVE(prBssInfo))
 			ucActiveSapNum += 1;
-		}
 	}
 
 	return ucActiveSapNum > 1 ? TRUE : FALSE;
 }
 
-u_int8_t p2pFuncIsAPMode(struct P2P_CONNECTION_SETTINGS *prP2pConnSettings)
+u_int8_t p2pFuncIsAPMode(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 {
+	struct P2P_CONNECTION_SETTINGS *prP2pConnSettings;
+
+	if (!prAdapter || ucRoleIdx >= BSS_P2P_NUM)
+		return FALSE;
+
+	prP2pConnSettings = prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx];
+
 	if (prP2pConnSettings) {
 		if (prP2pConnSettings->fgIsWPSMode == 1)
 			return FALSE;
@@ -4924,8 +4914,6 @@ u_int8_t p2pFuncIsAPMode(struct P2P_CONNECTION_SETTINGS *prP2pConnSettings)
 		return FALSE;
 	}
 }
-
-/* p2pFuncIsAPMode */
 
 void
 p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
@@ -4968,9 +4956,7 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 	prP2pSpecificBssInfo->u2OweIeLen = 0;
 	prP2pSpecificBssInfo->u2TpeIeLen = 0;
 	prP2pSpecificBssInfo->fgMlIeExist = FALSE;
-	fgIsApMode = p2pFuncIsAPMode(
-		prAdapter->rWifiVar.prP2PConnSettings
-		[prP2pBssInfo->u4PrivateData]);
+	fgIsApMode = IS_BSS_AP(prAdapter, prP2pBssInfo);
 
 	ASSERT_BREAK(pucIEInfo != NULL);
 
@@ -6568,13 +6554,10 @@ uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
 		if (!prAdapter->fgIsP2PRegistered)
 			break;
 
-		if (p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]))
+		if (!prBssInfo || IS_BSS_AP(prAdapter, prBssInfo))
 			break;
 
-		if (!p2pNeedAppendP2pIE(prAdapter,
-			prBssInfo)) {
+		if (!p2pNeedAppendP2pIE(prAdapter, prBssInfo)) {
 			DBGLOG(BSS, LOUD,
 				"Skip p2p ie for role%d\n",
 				prBssInfo->u4PrivateData);
@@ -6616,9 +6599,7 @@ void p2pFuncGenerateP2p_IEForBeacon(struct ADAPTER *prAdapter,
 		if (!prP2pSpeBssInfo)
 			break;
 
-		if (p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]))
+		if (IS_BSS_AP(prAdapter, prBssInfo))
 			break;
 
 		if (!p2pNeedAppendP2pIE(prAdapter,
@@ -6743,10 +6724,7 @@ void p2pFuncGenerateP2p_IEForAssocRsp(struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prMsduInfo->ucBssIndex);
-	fgIsApMode = prBssInfo != NULL ?
-		p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]) :
-		FALSE;
+	fgIsApMode = IS_BSS_AP(prAdapter, prBssInfo);
 
 	if (IS_STA_IN_P2P(prAdapter, prStaRec) && !fgIsApMode) {
 		DBGLOG(P2P, TRACE, "Generate NULL P2P IE for Assoc Rsp.\n");
@@ -7348,9 +7326,7 @@ uint32_t p2pFuncCalculateP2P_IE_NoA(struct ADAPTER *prAdapter,
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
-	if (p2pFuncIsAPMode(
-		prAdapter->rWifiVar.prP2PConnSettings
-		[prBssInfo->u4PrivateData]))
+	if (!prBssInfo || IS_BSS_AP(prAdapter, prBssInfo))
 		return 0;
 
 	prP2pSpecificBssInfo =
@@ -7381,9 +7357,7 @@ void p2pFuncGenerateP2P_IE_NoA(struct ADAPTER *prAdapter,
 
 	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
 
-	if (p2pFuncIsAPMode(
-		prAdapter->rWifiVar.prP2PConnSettings
-		[prBssInfo->u4PrivateData]))
+	if (IS_BSS_AP(prAdapter, prBssInfo))
 		return;
 
 	prIeP2P = (struct IE_P2P *)
@@ -9501,7 +9475,6 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx)
 {
 #if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct BSS_INFO *prBssInfo;
 	struct GL_P2P_INFO *prP2PInfo;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
@@ -9521,7 +9494,7 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 		ucRoleIdx);
 	prP2pChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
-	fgIsSap = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx]);
+	fgIsSap = IS_BSS_AP(prAdapter, prBssInfo);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter,
 							 prBssInfo));
@@ -10649,10 +10622,11 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 	if (!prClientList || prClientList->u4NumElem <= 0)
 		return CHNL_SWITCH_POLICY_NO_CLIENT;
 
-	if (!p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[prBssInfo->u4PrivateData]))
+	/* GO */
+	if (IS_BSS_GO(prAdapter, prBssInfo))
 		return ePolicy;
 
+	/* SAP */
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient))
 		return ePolicy;
 
@@ -11527,9 +11501,7 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	}
 #endif
 	/* SAP should not consider the capability of peers */
-	else if (IS_BSS_APGO(prBssInfo) &&
-	    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-				    prBssInfo->u4PrivateData])) {
+	else if (IS_BSS_GO(prAdapter, prBssInfo)) {
 		/* prepare chnl info */
 		rRfChnlInfo.ucChannelNum = u4TargetCh;
 		rRfChnlInfo.eBand = eTargetBand;

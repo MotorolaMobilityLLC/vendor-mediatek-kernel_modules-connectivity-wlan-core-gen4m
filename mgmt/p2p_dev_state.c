@@ -53,9 +53,7 @@ p2pDevStateInit_IDLE(struct ADAPTER *prAdapter,
 								u4Idx, FALSE);
 				if ((prRoleHandler != NULL) &&
 				(prRoleHandler != prDevHandler) &&
-				!p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings
-				[u4Idx])) {
+				!p2pFuncIsAPMode(prAdapter, u4Idx)) {
 					fgIsShareInterface = FALSE;
 					break;
 				}

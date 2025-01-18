@@ -497,11 +497,8 @@ uint32_t bssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo)
 			return CONNECTION_P2P_GC;
 		} else if (bssinfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 #if CFG_ENABLE_WIFI_DIRECT
-			if (ad->fgIsP2PRegistered &&
-			    !p2pFuncIsAPMode(ad->rWifiVar.prP2PConnSettings[
-					bssinfo->u4PrivateData])) {
+			if (ad->fgIsP2PRegistered && IS_BSS_GO(ad, bssinfo))
 				return CONNECTION_P2P_GO;
-			}
 #endif
 			return CONNECTION_INFRA_AP;
 		} else if (bssinfo->eCurrentOPMode == OP_MODE_P2P_DEVICE) {
@@ -936,18 +933,12 @@ const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 	if (IS_BSS_AIS(bss))
 		return "STA";
 #if CFG_ENABLE_WIFI_DIRECT
-	else if (IS_BSS_P2P(bss)) {
-		if (IS_BSS_GC(bss))
-			return "GC";
-		else if (IS_BSS_APGO(bss)) {
-			if (p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings[
-					bss->u4PrivateData]))
-				return "SAP";
-			else
-				return "GO";
-		}
-	}
+	else if (IS_BSS_GC(bss))
+		return "GC";
+	else if (IS_BSS_AP(prAdapter, bss))
+		return "SAP";
+	else if (IS_BSS_GO(prAdapter, bss))
+		return "GO";
 #endif
 	else if (IS_BSS_NAN(bss))
 		return "NAN";

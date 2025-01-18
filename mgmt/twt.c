@@ -1232,8 +1232,7 @@ twtHotspotGetFreeFlowId(
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
 			if ((prBssInfo->twt_flow_id_bitmap & (1 << i)) == 0) {
 				*p_ucTWTFlowId = i;
@@ -1288,8 +1287,7 @@ twtHotspotReturnFlowId(
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		i = prBssInfo->twt_flow_id_bitmap;
 		prBssInfo->twt_flow_id_bitmap &= (~(1 << ucTWTFlowId));
 
@@ -1327,8 +1325,7 @@ twtHotspotGetStaRecIndexByFlowId(
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
 			if ((prBssInfo->arTWTSta[i].used == 1) &&
 				(prBssInfo->arTWTSta[i].flow_id ==
@@ -1370,8 +1367,7 @@ twtHotspotGetStaRecByFlowId(
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
 			if ((prBssInfo->arTWTSta[i].used == 1) &&
 				(prBssInfo->arTWTSta[i].flow_id ==
@@ -1418,9 +1414,7 @@ twtHotspotGetFreeStaNodeIndex(
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
-
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
 			if (prBssInfo->arTWTSta[i].used == 0) {
 				prBssInfo->arTWTSta[i].used = 1;
@@ -1475,9 +1469,7 @@ twtHotspotGetFreeStaNode(
 		return;
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
-
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
 			if (prBssInfo->arTWTSta[i].used == 0) {
 				prBssInfo->arTWTSta[i].used = 1;
@@ -1559,8 +1551,7 @@ twtHotspotResetStaNode(
 	}
 
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		/* Reset hotspot sta node */
 		prTWTHotspotStaNode->used = 0;
 
@@ -1654,9 +1645,7 @@ twtHotspotGetNearestTargetTSF(
 					"[TWT_RESP]NULL node\n");
 		return;
 	}
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
-
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		p_twt_sch_link = &prBssInfo->twt_sch_link;
 
 		/* Build the whole schedule from

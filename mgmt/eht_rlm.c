@@ -1185,8 +1185,7 @@ void ehtRlmGenMlTrafficIndiIE(struct ADAPTER *prAdapter,
 	    !IS_MLD_BSSINFO_MULTI(prMldBssInfo))
 		return;
 
-	if (p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[
-			prBssInfo->u4PrivateData]))
+	if (IS_BSS_AP(prAdapter, prBssInfo))
 		ucMldLinkMax = prWifiVar->ucApMldLinkMax;
 	else
 		ucMldLinkMax = prWifiVar->ucP2pMldLinkMax;

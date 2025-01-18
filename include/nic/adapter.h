@@ -3402,6 +3402,7 @@ struct ADAPTER {
 	(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex) && \
 	IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex)))
 
+/* AP belongs to P2P */
 #define IS_BSS_P2P(_prBssInfo) \
 	(_prBssInfo && \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_P2P))
@@ -3417,6 +3418,14 @@ struct ADAPTER {
 #define IS_BSS_APGO(_prBssInfo) \
 	(IS_BSS_P2P(_prBssInfo) && \
 	(_prBssInfo)->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+
+#define IS_BSS_AP(_prAdapter, _prBssInfo) \
+	(IS_BSS_APGO(_prBssInfo) && \
+	 p2pFuncIsAPMode(_prAdapter, (_prBssInfo)->u4PrivateData))
+
+#define IS_BSS_GO(_prAdapter, _prBssInfo) \
+	(IS_BSS_APGO(_prBssInfo) && \
+	 !p2pFuncIsAPMode(_prAdapter, (_prBssInfo)->u4PrivateData))
 
 #define IS_BSS_GC(_prBssInfo) \
 	(IS_BSS_P2P(_prBssInfo) && \

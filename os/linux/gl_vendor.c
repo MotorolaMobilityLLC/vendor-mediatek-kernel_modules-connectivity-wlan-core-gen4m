@@ -2700,10 +2700,7 @@ void forcePredBrIdx(
 			src->rBitRate.u4PredictBitrate;
 		(*pucAisIdx)++;
 	} else if (IS_BSS_P2P(prBssInfo)) {
-		if (p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData])) {
-
+		if (IS_BSS_AP(prAdapter, prBssInfo)) {
 			dest->au4CurrentBitrate[SAP_IDX] =
 				src->rBitRate.u4CurrentBitrate;
 			dest->au4PredictBitrate[SAP_IDX] =
@@ -2743,9 +2740,7 @@ void forcePredBrIdx(
 				sizeof(src->au4CurrentBitrate[i]));
 			aisIdx++;
 		} else if (IS_BSS_P2P(prBssInfo)) {
-			if (p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings
-				[prBssInfo->u4PrivateData])) {
+			if (IS_BSS_AP(prAdapter, prBssInfo)) {
 				/* sap */
 				kalMemCopy(&dest->au4CurrentBitrate[SAP_IDX],
 					&src->au4CurrentBitrate[i],

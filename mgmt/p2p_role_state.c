@@ -14,8 +14,7 @@ p2pRoleStateInit_IDLE(struct ADAPTER *prAdapter,
 {
 	cnmTimerStartTimer(prAdapter,
 		&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-		p2pFuncIsAPMode(prAdapter->rWifiVar.
-		prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIndex])
+		IS_BSS_AP(prAdapter, prP2pBssInfo)
 		? prAdapter->rWifiVar.u4ApChnlHoldTime
 		: prAdapter->rWifiVar.u4P2pChnlHoldTime);
 }				/* p2pRoleStateInit_IDLE */
@@ -126,7 +125,6 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
-	struct WIFI_VAR *prWifiVar = NULL;
 	u_int8_t fgIsStartGO = FALSE;
 	uint8_t ucRoleIdx;
 
@@ -135,7 +133,6 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 			&& (prP2pRoleBssInfo != NULL)
 			&& (prP2pRoleFsmInfo != NULL));
 
-		prWifiVar = &prAdapter->rWifiVar;
 		ucRoleIdx = prP2pRoleFsmInfo->ucRoleIndex;
 
 		if (eNextState == P2P_ROLE_STATE_IDLE) {
@@ -200,8 +197,7 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 	} while (FALSE);
 
 #ifndef CFG_AP_GO_DELAY_CARRIER_ON
-	if (fgIsStartGO && prWifiVar &&
-	    p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[ucRoleIdx])) {
+	if (fgIsStartGO && IS_BSS_AP(prAdapter, prP2pRoleBssInfo)) {
 		p2pFuncNotifySapStarted(prAdapter,
 			prP2pRoleBssInfo->ucBssIndex);
 	}
@@ -296,8 +292,7 @@ p2pRoleStateAbort_AP_CHNL_DETECTION(struct ADAPTER *prAdapter,
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 	struct BSS_INFO *prBssInfo = NULL;
-	uint32_t rRoleIdx;
-	struct P2P_CONNECTION_SETTINGS *prP2pConnSettings;
+
 	do {
 		if (eNextState == P2P_ROLE_STATE_REQING_CHANNEL) {
 			prBssInfo =
@@ -334,11 +329,8 @@ p2pRoleStateAbort_AP_CHNL_DETECTION(struct ADAPTER *prAdapter,
 				prP2pSpecificBssInfo->ucPreferredChannel;
 			prChnlReqInfo->eBand = prP2pSpecificBssInfo->eRfBand;
 			prChnlReqInfo->eChnlSco = prP2pSpecificBssInfo->eRfSco;
-			rRoleIdx = prBssInfo->u4PrivateData;
-			prP2pConnSettings =
-				prAdapter->rWifiVar.prP2PConnSettings[rRoleIdx];
 
-			if (p2pFuncIsAPMode(prP2pConnSettings))
+			if (IS_BSS_AP(prAdapter, prBssInfo))
 				prChnlReqInfo->u4MaxInterval =
 					prAdapter->rWifiVar.u4ApChnlHoldTime;
 			else
@@ -512,8 +504,6 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(struct ADAPTER *prAdapter,
 	uint8_t ucChannelBackup;
 	enum ENUM_CHNL_EXT eSCOBackup;
 	uint8_t ucRfBw;
-	uint32_t rRoleIdx;
-	struct P2P_CONNECTION_SETTINGS *prP2pConnSettings;
 
 	do {
 		/* P2P BSS info is for temporarily use
@@ -548,11 +538,8 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(struct ADAPTER *prAdapter,
 			prConnReqInfo->rChannelInfo.ucChannelNum;
 		prChnlReqInfo->eBand = prConnReqInfo->rChannelInfo.eBand;
 		prChnlReqInfo->eChnlSco = prBssInfo->eBssSCO;
-		rRoleIdx = prBssInfo->u4PrivateData;
-		prP2pConnSettings =
-			prAdapter->rWifiVar.prP2PConnSettings[rRoleIdx];
 
-		if (p2pFuncIsAPMode(prP2pConnSettings))
+		if (IS_BSS_AP(prAdapter, prBssInfo))
 			prChnlReqInfo->u4MaxInterval =
 			prAdapter->rWifiVar.u4ApChnlHoldTime;
 		else

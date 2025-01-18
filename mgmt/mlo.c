@@ -4965,8 +4965,7 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	}
 
 	enable = IS_FEATURE_ENABLED(prWifiVar->ucEnableMlo);
-	fgIsApMode = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[
-		bss->u4PrivateData]);
+	fgIsApMode = IS_BSS_AP(prAdapter, bss);
 	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
 		bss->u4PrivateData];
 

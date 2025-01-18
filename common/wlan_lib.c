@@ -13240,9 +13240,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (IS_BSS_APGO(prBssInfo)) {
-		if (p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData])) {
+		if (IS_BSS_AP(prAdapter, prBssInfo)) {
 			if (prBssInfo->eBand == BAND_2G4)
 				ucRetValNss = prAdapter->rWifiVar.ucAp2gNSS;
 			else if (prBssInfo->eBand == BAND_5G)
