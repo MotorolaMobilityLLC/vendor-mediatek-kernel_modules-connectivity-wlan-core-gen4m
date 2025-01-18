@@ -1448,6 +1448,17 @@ struct list_mode_rx_status {
 	u_int32	u4RSSI1;
 };
 
+struct list_mode_gen_seg {
+	u_int32	u4ExtId;
+	u_int32	u4SegNumStart;
+	u_int32	u4TestType;
+};
+
+struct list_mode_seg_cfg {
+	u_int32	u4OfsTime;
+	u_int32	u4MeasTime;
+};
+
 #define	LIST_SEG_MAX 100
 #define LIST_MODE_FW_SEG_NUM_MAX	6
 #define LIST_MODE_FW_SEG_PARA_NUM_MAX 30
@@ -1460,6 +1471,7 @@ struct list_mode_event {
 	union {
 		u_int32 u4TxStatus[LIST_SEG_MAX];
 		struct list_mode_rx_status tRxStatus[LIST_SEG_MAX];
+		struct list_mode_seg_cfg tSegCfg[LIST_SEG_MAX];
 	};
 };
 

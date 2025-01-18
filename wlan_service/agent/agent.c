@@ -6942,6 +6942,90 @@ static s_int32 hqa_do_xo_calibration(
 }
 #endif /* CFG_SUPPORT_XONVRAM */
 
+static s_int32 hqa_listmode_gencfg(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret;
+	u_char *data = hqa_frame->data;
+	u_int8 *ptr = hqa_frame->data + 2;
+	u_int32 ext_id = 0, rsp_len = 0;
+	u_int32 frm_sz = 0, cnvt = 0, i, item_num, seg_i;
+	u_int32 *cast = NULL;
+	struct list_mode_gen_seg seg = {0};
+	struct list_mode_event rsp = {0};
+
+	enum SERV_DBG {
+		STEST = SERV_DBG_CAT_TEST,
+		LTC = SERV_DBG_LVL_TRACE
+	};
+
+	get_param_and_shift_buf(TRUE, sizeof(ext_id), &data, (u_char *)&ext_id);
+	SERV_LOG(STEST, LTC, ("%s ext_id(%d)\n", __func__, ext_id));
+
+	seg.u4ExtId = ext_id;
+	ret = mt_serv_listmode_cmd(serv_test, (u_char *) &seg, sizeof(seg),
+		&rsp_len, &rsp);
+
+	/* first event, save total_num and ext_id */
+	sys_ad_move_mem(ptr, &rsp.u4ExtId, sizeof(rsp.u4ExtId));
+	ptr += sizeof(rsp.u4ExtId);
+	frm_sz += sizeof(rsp.u4ExtId);
+	SERV_LOG(STEST, LTC, ("%s ExtId(%d)\n", __func__, rsp.u4ExtId));
+
+	/* Get total number of segments */
+	sys_ad_move_mem(ptr, &rsp.u4SegNumTotal, sizeof(rsp.u4SegNumTotal));
+	ptr += sizeof(rsp.u4SegNumTotal);
+	frm_sz += sizeof(rsp.u4SegNumTotal);
+	SERV_LOG(STEST, LTC, ("%s SegNTotal:%d", __func__, rsp.u4SegNumTotal));
+
+	for (seg_i = 0; seg_i < rsp.u4SegNumTotal; seg_i++) {
+		/* Get segment configuration information */
+		cast = (u_int32 *)&rsp.tSegCfg;
+		item_num = rsp.u4SegNumRead *
+			sizeof(struct list_mode_seg_cfg) / sizeof(u_int32);
+		SERV_LOG(STEST, LTC, ("%s rsp->u4SegNumRead(%d)\n",
+			__func__, rsp.u4SegNumRead));
+
+		if (rsp.u4SegNumRead == 0)
+			break;
+
+		/* convert and put data */
+		for (i = 0; i < item_num; i++) {
+			cnvt = cast[i];
+			sys_ad_move_mem(ptr, &cnvt, sizeof(cnvt));
+			ptr += sizeof(cnvt);
+			frm_sz += sizeof(cnvt);
+			SERV_LOG(STEST, LTC, ("%s cast[%d](%d), cnvt(%d)\n",
+				__func__, i, cast[i], cnvt));
+		}
+
+		seg_i += rsp.u4SegNumRead;
+		SERV_LOG(STEST, LTC, ("%s seg_i(%d)\n", __func__, seg_i));
+
+		/* no next */
+		if (seg_i >= rsp.u4SegNumTotal)
+			break;
+
+		seg.u4ExtId = ext_id;
+		seg.u4SegNumStart = seg_i;
+		ret = mt_serv_listmode_cmd(serv_test,
+			(u_char *) &seg, sizeof(seg), &rsp_len, &rsp);
+	}
+
+	if (ret == SERV_STATUS_SUCCESS) {
+		/* Update hqa_frame with response: status (2 bytes) */
+		SERV_LOG(STEST, LTC, ("%s frm_sz(%d)\n", __func__, frm_sz));
+		update_hqa_frame(hqa_frame, frm_sz + 2, ret);
+		return SERV_STATUS_SUCCESS;
+	}
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	sys_ad_move_mem(hqa_frame->data + 2, (u_char *)&ext_id, sizeof(ext_id));
+	update_hqa_frame(hqa_frame, 2 + sizeof(ext_id), ret);
+	SERV_LOG(STEST, LTC, ("%s ret(%d)\n", __func__, ret));
+	return ret;
+}
+
 static struct hqa_cmd_entry CMD_SET6[] = {
 	/* cmd id start from 0x1600 */
 	{0x1,	hqa_set_channel_ext},
@@ -6969,7 +7053,8 @@ static struct hqa_cmd_entry CMD_SET6[] = {
 #if CFG_SUPPORT_XONVRAM
 	{0x2d,	hqa_do_xo_calibration},
 #endif /* CFG_SUPPORT_XONVRAM */
-	{0x2e,  hqa_get_default_power}
+	{0x2e,  hqa_get_default_power},
+	{0x3a,  hqa_listmode_gencfg}
 };
 
 static struct hqa_cmd_table CMD_TABLES[] = {
