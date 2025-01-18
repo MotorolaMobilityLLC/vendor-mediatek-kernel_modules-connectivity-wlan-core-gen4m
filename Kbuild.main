@@ -2042,7 +2042,9 @@ endif
 
 ifeq ($(CONFIG_SNIFFER_RADIOTAP), y)
     ccflags-y += -DCFG_SUPPORT_SNIFFER_RADIOTAP
-    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER
+    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER=1
+else
+    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER=0
 endif
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)

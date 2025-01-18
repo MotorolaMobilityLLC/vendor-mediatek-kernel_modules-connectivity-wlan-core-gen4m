@@ -730,8 +730,13 @@ struct RTMP_RX_RING {
 	uint32_t u4LastRxEventWaitDmaDoneCnt;
 	uint32_t u4PendingCnt;
 	uint32_t u4TotalCnt;
-	void *pvPacket;
-	uint32_t u4PacketLen;
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
+	void *pvSegPkt;
+	uint32_t u4SegPktLen;
+	uint32_t u4SegPktLenMax;
+	uint32_t u4SegPktIdx;
+	uint32_t u4SegPktIdxMax;
+#endif
 	uint32_t u4MagicCnt;
 #if CFG_MTK_WIFI_WFDMA_WB
 	u_int8_t fgEnEmiDidx;

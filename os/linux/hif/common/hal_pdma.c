@@ -3276,8 +3276,13 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	pRxRing->u4RingSize = u4Size;
 	pRxRing->u4RingIdx = u4Num;
 	pRxRing->fgRxSegPkt = FALSE;
-	pRxRing->pvPacket = NULL;
-	pRxRing->u4PacketLen = 0;
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
+	pRxRing->pvSegPkt = NULL;
+	pRxRing->u4SegPktLen = 0;
+	pRxRing->u4SegPktLenMax = 0;
+	pRxRing->u4SegPktIdx = 0;
+	pRxRing->u4SegPktIdxMax = 0;
+#endif
 	pRxRing->u4MagicCnt = 0;
 
 	/* Cell idx sanity */

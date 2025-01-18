@@ -1534,14 +1534,27 @@ u_int8_t kalProcessRadiotap(void *pvPacket,
 	uint16_t u2RxByteCount)
 {
 	struct sk_buff *prSkb;
+	uint16_t total_len;
 
 	prSkb = (struct sk_buff *)pvPacket;
 	/* exceed skb headroom the kernel will panic */
 	if (skb_headroom(prSkb) < radiotap_len) {
 		DBGLOG(INIT, ERROR,
-			"radiotap[%u] exceed skb headroom[%u]!\n",
+			"prSkb[0x%p] radiotap[%u] exceed skb headroom[%u]!\n",
+			prSkb,
 			radiotap_len,
 			skb_headroom(prSkb));
+		return FALSE;
+	}
+
+	total_len = radiotap_len + u2RxByteCount;
+	if (SKB_WITH_OVERHEAD(prSkb->truesize) < total_len) {
+		DBGLOG(INIT, ERROR,
+			"prSkb[0x%p] truesize[%u] is smaller than total_len[%u][%u:%u]\n",
+			prSkb,
+			SKB_WITH_OVERHEAD(prSkb->truesize),
+			total_len, radiotap_len,
+			u2RxByteCount);
 		return FALSE;
 	}
 
@@ -1551,7 +1564,7 @@ u_int8_t kalProcessRadiotap(void *pvPacket,
 
 	skb_reset_tail_pointer(prSkb);
 	skb_trim(prSkb, 0);
-	skb_put(prSkb, (radiotap_len + u2RxByteCount));
+	skb_put(prSkb, total_len);
 
 	return TRUE;
 }
