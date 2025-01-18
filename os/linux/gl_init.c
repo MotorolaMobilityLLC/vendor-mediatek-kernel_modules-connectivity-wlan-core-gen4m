@@ -3256,6 +3256,35 @@ struct GLUE_INFO *wlanDevGetGlueInfo(struct device *prDev)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get glue info by Dev Num
+ *
+ * \param[in] u4DevNum  The glue info number
+ *
+ * \retval != NULL   The address of glue info.
+ * \retval == NULL   The glue info not found.
+ */
+/*----------------------------------------------------------------------------*/
+struct GLUE_INFO *wlanGetGlueInfoByNum(uint32_t u4DevNum)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t i = 0;
+
+#if (CFG_SUPPORT_MULTI_CARD == 0)
+	prGlueInfo = aprGlueInfo[i];
+#else
+	for (i = 0; i < CFG_MAX_WLAN_DEVICES; i++) {
+		if (u4DevNum == aprGlueInfo[i]->u4DevNum) {
+			prGlueInfo = aprGlueInfo[i];
+			break;
+		}
+	}
+#endif
+
+	return prGlueInfo;
+}				/* end of wlanGetGlueInfoByNum() */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief A method of struct net_device, a primary SOCKET interface to configure
  *        the interface lively. Handle an ioctl call on one of our devices.
  *        Everything Linux ioctl specific is done here. Then we pass the
@@ -4666,14 +4695,14 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 
 #if (CFG_SUPPORT_MULTI_CARD == 0)
 	prGlueInfo->u4DevNum = u4GlueIdx;
+	aprGlueInfo[u4GlueIdx] = prGlueInfo;
 #else
 	for (u4GlueIdx = 0; u4GlueIdx < CFG_MAX_WLAN_DEVICES; u4GlueIdx++) {
-		if (aprGlueInfo[u4GlueIdx])
-			continue;
-
-		aprGlueInfo[u4GlueIdx] = prGlueInfo;
-		prGlueInfo->u4DevNum = u4GlueIdx;
-		break;
+		if (!aprGlueInfo[u4GlueIdx]) {
+			aprGlueInfo[u4GlueIdx] = prGlueInfo;
+			prGlueInfo->u4DevNum = u4GlueIdx;
+			break;
+		}
 	}
 	if (u4GlueIdx >= CFG_MAX_WLAN_DEVICES) {
 		DBGLOG(INIT, ERROR, "GLUE_INFO memory is full\n");
@@ -7794,8 +7823,9 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-	ics_log_event_notification((int)ICS_LOG_CMD_ON_OFF,
-		ics_get_onoff());
+	ics_log_event_notification(prGlueInfo,
+		(int)ICS_LOG_CMD_ON_OFF,
+		ics_get_onoff(prGlueInfo));
 #endif
 #endif
 
@@ -9825,7 +9855,7 @@ static void exitWlan(void)
 #endif
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-	IcsDeInit();
+	IcsDeInit(prGlueInfo);
 #endif /* CFG_SUPPORT_ICS */
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 	FwLogDevUninit();
@@ -9936,7 +9966,7 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 #endif
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-		IcsDeInit();
+		IcsDeInit(prGlueInfo);
 #endif /* CFG_SUPPORT_ICS */
 
 		g_u4WlanInitFlag = 0;

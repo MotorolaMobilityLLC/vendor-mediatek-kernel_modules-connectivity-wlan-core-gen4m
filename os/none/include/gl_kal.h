@@ -2143,7 +2143,7 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif
 
-#define kalIcsWrite(buf, size) \
+#define kalIcsWrite(prGl, buf, size) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalIndexWrite(buf, size) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)

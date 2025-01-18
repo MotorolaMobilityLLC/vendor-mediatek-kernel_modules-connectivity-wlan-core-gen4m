@@ -4185,7 +4185,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 			u4PhyIcsBufSize);
 
 	/* write to ring, ret: written */
-	ret = kalIcsWrite(pucBuf, u4Size);
+	ret = kalIcsWrite(prAdapter->prGlueInfo, pucBuf, u4Size);
 	if (ret != u4Size) {
 		DBGLOG_LIMITED(NIC, ERROR,
 			"dropped written:%d write\t"
@@ -4308,7 +4308,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 				prPhyIcsEvent->u4DataLen * sizeof(uint32_t));
 
 		/* write to ring, ret: written */
-		ret = kalIcsWrite(pucRecvBuff, u4Size);
+		ret = kalIcsWrite(prAdapter->prGlueInfo, pucRecvBuff, u4Size);
 		if (ret != u4Size)
 			DBGLOG_LIMITED(NIC, ERROR,
 				"dropped written:%ld write PHY ICS log into file fail\n",

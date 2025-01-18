@@ -2557,7 +2557,8 @@ static void nicRxWriteIcsTimeSync(struct ADAPTER *prAdapter,
 	prIcsTimeSyncHeader->u2SeqNo = prAdapter->u2IcsSeqNo++;
 	prIcsTimeSyncHeader->u8Time = kalGetUIntRealTime();
 
-	ret = kalIcsWrite(pucRecvBuff,
+	ret = kalIcsWrite(prAdapter->prGlueInfo,
+		pucRecvBuff,
 		sizeof(struct ICS_BIN_TIMESYNC_HDR));
 	if (ret != sizeof(struct ICS_BIN_TIMESYNC_HDR)) {
 		DBGLOG_LIMITED(NIC, DEBUG,
@@ -2612,7 +2613,7 @@ static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 			prIcsAggHeader, prIcsAggHeader->rxByteCount);
 
 	/* write to ring, ret: written */
-	ret = kalIcsWrite(pucBuf, u4Size);
+	ret = kalIcsWrite(prAdapter->prGlueInfo, pucBuf, u4Size);
 	if (ret != u4Size) {
 		DBGLOG_LIMITED(NIC, DEBUG,
 			"dropped written:%zd rxByteCount:%u\n",

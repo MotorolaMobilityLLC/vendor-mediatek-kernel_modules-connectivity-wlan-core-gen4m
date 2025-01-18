@@ -61,7 +61,7 @@ struct ics_ring {
 	void *ring_base;
 };
 
-typedef void (*ics_fwlog_event_func_cb)(int, int);
+typedef void (*ics_fwlog_event_func_cb)(struct GLUE_INFO *, int, int);
 
 struct ics_dev {
 	/* device related variable */
@@ -78,14 +78,16 @@ struct ics_dev {
 	struct ICS_LOG_CACHE rIcsLogCache;
 };
 
-u_int8_t ics_get_onoff(void);
-void ics_log_event_notification(int cmd, int value);
+u_int8_t ics_get_onoff(struct GLUE_INFO *prGlueInfo);
+void ics_log_event_notification(struct GLUE_INFO *prGlueInfo,
+	int cmd, int value);
 
-extern ssize_t wifi_ics_fwlog_write(char *buf, size_t count);
+extern ssize_t wifi_ics_fwlog_write(struct GLUE_INFO *prGlueInfo,
+	char *buf, size_t count);
 extern void wifi_ics_event_func_register(ics_fwlog_event_func_cb pfFwlog);
 
 int IcsInit(void);
-int IcsDeInit(void);
+int IcsDeInit(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_ICS */
 
 #endif /*_FW_LOG_ICS_H_*/

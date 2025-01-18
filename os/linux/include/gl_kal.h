@@ -2859,8 +2859,8 @@ uint8_t kalIndicatePasnEvent(struct ADAPTER *prAdapter,
 #define kal_fallthrough do {} while (0)  /* fallthrough */
 #endif
 
-#define kalIcsWrite(buf, size) \
-	wifi_ics_fwlog_write(buf, size)
+#define kalIcsWrite(prGl, buf, size) \
+	wifi_ics_fwlog_write(prGl, buf, size)
 #define kalIndexWrite(buf, size) \
 	wifi_index_fwlog_write(buf, size)
 #if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)

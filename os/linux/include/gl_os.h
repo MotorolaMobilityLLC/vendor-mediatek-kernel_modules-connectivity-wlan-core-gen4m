@@ -1352,12 +1352,6 @@ struct GLUE_INFO {
 
 	struct KAL_HALT_CTRL_T rHaltCtrl;
 
-#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-	/* variable of ics log */
-	struct ics_dev *prIcsDev;
-	uint8_t aucIcsDevSaveName[20];
-#endif
-
 	/* format: "wlanInterfaceName wiphyName" */
 	uint8_t aucWlanLog[25];
 #endif /* CFG_SUPPORT_MULTI_CARD */
@@ -2010,6 +2004,7 @@ u_int8_t wlanIsRemoving(void);
 uint32_t wlanSearchDevIdx(struct device *prDev);
 int wlanGetDevIdx(struct net_device *prDev);
 struct GLUE_INFO *wlanDevGetGlueInfo(struct device *prDev);
+struct GLUE_INFO *wlanGetGlueInfoByNum(uint32_t u4DevNum);
 
 struct semaphore *wlanGetHaltSem(struct GLUE_INFO *prGlueInfo);
 
