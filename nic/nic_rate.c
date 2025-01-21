@@ -386,7 +386,8 @@ nicRateCode2DataRate(
 		u4PhyRateIn100Kbps = (nicGetHwRateByPhyRate(
 					      ucPhyRate & BITS(0, 3))) * 5;
 	} else {
-		ASSERT(FALSE);
+		DBGLOG(INIT, ERROR, "Invalid TxMode = %x\n", u2TxMode);
+		return 0;
 	}
 	return u4PhyRateIn100Kbps;
 }
