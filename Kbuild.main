@@ -2754,12 +2754,6 @@ else
     ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=0
 endif
 
-ifeq ($(CONFIG_RX_SW_PROCESS_DBG), y)
-    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=1
-else
-    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=0
-endif
-
 ifeq ($(CONFIG_PERF_MON_FAST), y)
     ccflags-y += -DCFG_PERF_MON_FAST=1
 else
