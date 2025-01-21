@@ -1816,6 +1816,7 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			skb_headroom(prSkb));
 		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
 		prSwRfb->pvPacket = NULL;
+		prSwRfb->prRxStatus = NULL;
 	}
 }
 

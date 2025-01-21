@@ -3010,6 +3010,25 @@ end:
 }
 #endif /* CFG_SUPPORT_PDMA_SCATTER */
 
+void kalCheckRxDmadAddr(struct RTMP_DMACB *pRxCell,
+	struct RXD_STRUCT *pRxD, struct RTMP_DMABUF *prDmaBuf)
+{
+	uint64_t u8Addr = 0;
+
+	u8Addr = pRxD->SDPtr0;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
+	u8Addr |= ((uint64_t)pRxD->SDPtr1 & DMA_HIGHER_4BITS_MASK) <<
+			DMA_BITS_OFFSET;
+#endif
+	if (u8Addr != (uint64_t)prDmaBuf->AllocPa) {
+		DBGLOG(HAL, ERROR, "Dump RXDMAD PA[0x%llx]!=[0x%llx]:\n",
+			u8Addr, (uint64_t)prDmaBuf->AllocPa);
+		DBGLOG_MEM32(RX, INFO, pRxCell->AllocVa,
+			sizeof(struct RXD_STRUCT));
+		ASSERT(0);
+	}
+}
+
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb)
 {
@@ -3095,6 +3114,8 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	}
 
 	prDmaBuf = &pRxCell->DmaBuf;
+
+	kalCheckRxDmadAddr(pRxCell, pRxD, prDmaBuf);
 
 	if (prMemOps->copyRxData &&
 	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
