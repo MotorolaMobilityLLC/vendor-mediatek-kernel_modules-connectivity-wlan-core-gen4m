@@ -2165,7 +2165,6 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 	prSkb = pvPkt;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSkb);
-	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT);
 #if DBG && 0
 	do {
 		uint8_t *pu4Head = (uint8_t *) &prSkb->cb[0];
@@ -2194,8 +2193,11 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 
 	if (prNetDev->dev_addr == NULL) {
 		DBGLOG(RX, WARN, "dev_addr == NULL\n");
+		kalPacketFree(prGlueInfo, pvPkt);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT);
 
 	prNetDev->stats.rx_bytes += prSkb->len;
 	prNetDev->stats.rx_packets++;
