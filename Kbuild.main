@@ -716,6 +716,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_SUPPORT_6G_PWR_MODE=y
     ifneq ($(CONFIG_WIFI_6989_6653), y)
         CONFIG_SUPPORT_P2P_SET_ML_BSS_NUM=y
+    else
         CONFIG_MLD_P2P_LINK_MAX=1
     endif
 endif
