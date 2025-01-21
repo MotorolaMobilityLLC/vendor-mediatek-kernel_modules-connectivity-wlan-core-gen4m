@@ -709,6 +709,11 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->ucULTidBitmap = 0xff;
 			prStaRec->ucDLTidBitmap = 0xff;
 #endif
+
+			/* Default QM RX BA timeout */
+			prStaRec->u4QmRxBaMissTimeout =
+				prAdapter->rWifiVar.u4BaMissTimeoutMs;
+
 			break;
 		}
 	}

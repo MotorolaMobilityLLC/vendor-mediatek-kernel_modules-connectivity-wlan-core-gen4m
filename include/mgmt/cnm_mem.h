@@ -680,6 +680,9 @@ struct STA_RECORD {
 	/* Reorder Parameter reference table */
 	struct RX_BA_ENTRY *aprRxReorderParamRefTbl[CFG_RX_MAX_BA_TID_NUM];
 
+	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
+	uint32_t u4QmRxBaMissTimeout;
+
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 	struct TIMINGMSMT_PARAM rWNMTimingMsmt;
 #endif
