@@ -4706,6 +4706,77 @@ void aisChangeAllMediaState(struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
+void aisRunIotApAction(struct ADAPTER *prAdapter,
+			enum ENUM_PARAM_MEDIA_STATE eConnectionState)
+{
+	uint32_t u4iotApAction = WLAN_IOT_AP_VOID;
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_DESC *prBssDesc;
+	struct STA_RECORD *prStaRec;
+	uint32_t u4NewRxBaMissTimeout;
+	uint8_t ucAisIndex;
+	uint8_t ucBssIndex = 0;
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	/* Check AIS for IOT Action */
+	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
+
+		if (!AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex))
+			continue;
+
+		ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		u4iotApAction = bssGetIotApAction(prAdapter, prBssDesc);
+		if (u4iotApAction != WLAN_IOT_AP_VOID)
+			break;
+	}
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	if (!prStaRec)
+		return;
+
+	u4NewRxBaMissTimeout = prStaRec->u4QmRxBaMissTimeout;
+
+	/* Handle IOT AP Action */
+	switch (u4iotApAction) {
+	case WLAN_IOT_AP_BA_MISS_TIMEOUT:
+
+		if (eConnectionState == MEDIA_STATE_CONNECTED)
+			u4NewRxBaMissTimeout =
+					prWifiVar->u4BaIotApMissTimeoutMs;
+
+		break;
+
+
+	default:
+		/* No IOT AP conneted or STA disconnected, set to default */
+		u4NewRxBaMissTimeout = prWifiVar->u4BaMissTimeoutMs;
+
+		break;
+	}
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Always short reorder timeout for game mode */
+	if (prAdapter->fgEnLowLatencyMode)
+		u4NewRxBaMissTimeout = prWifiVar->u4BaShortMissTimeoutMs;
+#endif
+
+	if (u4NewRxBaMissTimeout != prStaRec->u4QmRxBaMissTimeout) {
+
+		DBGLOG(AIS, INFO,
+			"Change AP reorder timeout from [%d] to [%d]\n",
+			prStaRec->u4QmRxBaMissTimeout,
+			u4NewRxBaMissTimeout);
+
+		prStaRec->u4QmRxBaMissTimeout = u4NewRxBaMissTimeout;
+	}
+
+}
+#endif
+
 enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 					     struct MSG_HDR *prMsgHdr)
 {
@@ -4876,6 +4947,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 
 				rsnAllowCrossAkm(prAdapter, ucBssIndex);
 			}
+
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
+			/* Check IOT AP action after connection */
+			aisRunIotApAction(prAdapter, MEDIA_STATE_CONNECTED);
+#endif
 
 #if CFG_SUPPORT_ROAMING
 			if (prConnSettings->eConnectionPolicy !=
