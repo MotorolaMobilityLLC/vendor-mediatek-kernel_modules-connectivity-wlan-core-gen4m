@@ -1412,11 +1412,13 @@ static void mtk_wifi_remove(struct platform_device *pdev)
 #if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 static void mtk_wifi_shutdown(struct platform_device *pdev)
 {
+	wfsys_lock();
 	if (g_fgDriverProbed && pfWlanShutdown) {
 		DBGLOG(INIT, INFO, "do shutdown\n");
 		pfWlanShutdown();
 		g_fgDriverProbed = FALSE;
 	}
+	wfsys_unlock();
 }
 #endif
 

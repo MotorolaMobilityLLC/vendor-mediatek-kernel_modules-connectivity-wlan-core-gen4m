@@ -9251,7 +9251,6 @@ void wlanShutdown(void)
 		}
 	}
 
-	wfsys_lock();
 	/* wifi is off */
 	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0)) {
 		wfsys_unlock();
@@ -9260,7 +9259,6 @@ void wlanShutdown(void)
 
 	DBGLOG(INIT, INFO, "do wifi off\n");
 	wlanFuncOff();
-	wfsys_unlock();
 
 exit:
 	DBGLOG(REQ, INFO, "wifi shutdown finished\n");
