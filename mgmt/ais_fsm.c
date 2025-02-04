@@ -3050,6 +3050,10 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			prAisFsmInfo->u4SleepInterval =
 			    AIS_BG_SCAN_INTERVAL_MSEC;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prAisFsmInfo->ucMlProbeSendCount = 0;
+#endif
+
 #if (CFG_WOW_SUPPORT == 1)
 			if (prAdapter->fgWowLinkDownPendFlag == TRUE) {
 				prAdapter->fgWowLinkDownPendFlag = FALSE;
@@ -3276,6 +3280,10 @@ send_msg:
 				DISCONNECT_REASON_CODE_RESERVED;
 
 			prConnSettings->u2LinkIdBitmap = 0xFFFF;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prAisFsmInfo->ucMlProbeSendCount = 0;
+#endif
 
 			eNewState = aisFsmHandleNextReq_NORMAL_TR(prAdapter,
 				prAisFsmInfo, ucBssIndex);
@@ -10698,6 +10706,13 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 		kalMemCopy(prScanReqMsg->aucIEMl, aucIe, u4ScanIELen);
 		prScanReqMsg->u2IELenMl = (uint16_t)u4ScanIELen;
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* MLO probe should only be sent once
+	 * in one scan process.
+	 */
+	prAisFsmInfo->ucMlProbeEnable = FALSE;
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
