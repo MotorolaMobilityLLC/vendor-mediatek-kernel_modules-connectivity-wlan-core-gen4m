@@ -138,6 +138,7 @@ static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting;
 u_int8_t fgIsL0Resetting;
 u_int8_t fgIsResetOnEnd;
+u_int8_t g_IsFwAsserted;
 u_int8_t fgIsDrvTriggerWholeChipReset;
 enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 u_int8_t fgIsRstPreventFwOwn;
@@ -306,6 +307,26 @@ void glResetUpdateL0Flag(u_int8_t status)
 #endif
 }
 
+u_int8_t glIsFwAsserted(void)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	return g_IsFwAsserted;
+#else
+	return FALSE;
+#endif
+}
+
+void glResetUpdateFwAsserted(u_int8_t isFwAsserted)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	if (g_IsFwAsserted != isFwAsserted)
+		DBGLOG(INIT, INFO, "isFwAsserted: %u\n", isFwAsserted);
+	else
+		DBGLOG(INIT, TRACE, "isFwAsserted: %u\n", isFwAsserted);
+	g_IsFwAsserted = isFwAsserted;
+#endif
+}
+
 #if CFG_CHIP_RESET_SUPPORT
 /*----------------------------------------------------------------------------*/
 /*!
@@ -336,6 +357,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
 	fgSimplifyResetFlow = FALSE;
 	fgIsDrvTriggerWholeChipReset = FALSE;
+	g_IsFwAsserted = FALSE;
 	glResetCleanResetFlag();
 
 	fgIsRstPreventFwOwn = FALSE;
@@ -713,6 +735,12 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 
 	if (kalIsResetting() || kalIsResetOnEnd()) {
 		DBGLOG(INIT, INFO, "already in reset\n");
+		goto exit;
+	}
+
+	if (glIsFwAsserted() && eResetReason != RST_FW_ASSERT) {
+		DBGLOG(INIT, WARN,
+			"FW already asserted. Not trigger again.\n");
 		goto exit;
 	}
 
