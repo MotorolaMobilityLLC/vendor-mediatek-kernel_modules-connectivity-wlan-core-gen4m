@@ -2600,6 +2600,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	wifi_coredump_set_enable(TRUE);
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
+	glResetUpdateFwAsserted(TRUE);
 
 #if CFG_MTK_MDDP_SUPPORT
 #if (CFG_PCIE_GEN_SWITCH == 1)

@@ -260,6 +260,8 @@ u_int8_t kalIsResetOnEnd(void);
 u_int8_t kalIsRstPreventFwOwn(void);
 
 void glResetUpdateFlag(u_int8_t fgIsResetting);
+u_int8_t glIsFwAsserted(void);
+void glResetUpdateFwAsserted(u_int8_t isFwAsserted);
 
 #if CFG_CHIP_RESET_SUPPORT
 void glResetInit(struct GLUE_INFO *prGlueInfo);
