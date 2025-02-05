@@ -4473,15 +4473,13 @@ static void mt7999LowPowerOwnSet(struct ADAPTER *prAdapter,
 
 	*pfgResult = (u4RegValue &
 		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
-
+#else
+	*pfgResult = TRUE;
+#endif
 #if defined(_HIF_PCIE)
 	if (prChipInfo->bus_info->hwControlVote)
 		prChipInfo->bus_info->hwControlVote(prAdapter,
 			TRUE, PCIE_VOTE_USER_DRVOWN);
-#endif
-
-#else
-	*pfgResult = TRUE;
 #endif
 }
 
