@@ -28,6 +28,9 @@
 #define MBR_TXTIMEOUT_QUE_CNT_MAX	50
 #define MBR_TXTIMEOUT_INTERVAL		20000 /* 20s*/
 
+#if CFG_SUPPORT_MBRAIN_TXPWR_RPT
+#define TXPWR_MBRAIN_ANT_NUM 2
+#endif
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -96,10 +99,11 @@ typedef uint16_t (*PFN_WIFI2MBR_DATA_NUM) (struct ADAPTER*,
  */
 struct wifi2mbr_handler {
 	enum wifi2mbr_tag eTag;
-	uint8_t ucExpdLen;
+	uint16_t ucExpdLen;
 	PFN_WIFI2MBR_HANDLER pfnHandler;
 	PFN_WIFI2MBR_DATA_NUM pfnGetDataNum;
 };
+
 
 #if CFG_SUPPORT_WIFI_ICCM
 struct ICCM_POWER_STATE_T {
@@ -115,6 +119,47 @@ struct ICCM_T {
 };
 #endif /* CFG_SUPPORT_WIFI_ICCM */
 
+#if CFG_SUPPORT_MBRAIN_TXPWR_RPT
+struct TXPWR_MBRAIN_RPT_COEX_INFO_T {
+	bool fgBtOn;
+	bool fgLteOn;
+	uint8_t ucReserved[2];
+	uint32_t u4BtProfile;
+	uint32_t u4PtaGrant;
+	uint32_t u4PtaReq;
+	uint32_t u4CurrOpMode;
+};
+
+struct TXPWR_MBRAIN_RPT_D_DIE_INFO_T {
+	int32_t i4Delta;
+	int8_t icTargetPwr;
+	uint8_t ucCompGrp;
+	uint8_t ucFeGainMode;
+	uint8_t ucReserved[5];
+};
+
+struct TXPWR_MBRAIN_RPT_INFO_T {
+	bool fgEpaSupport;
+	uint8_t ucCalTpye;
+	uint8_t ucCenterCh;
+	uint8_t ucMccIdx;
+	uint32_t u4RfBand;
+	int32_t i4Temp;
+	uint32_t u4Antsel;
+	struct TXPWR_MBRAIN_RPT_COEX_INFO_T rCoex;
+	struct TXPWR_MBRAIN_RPT_D_DIE_INFO_T rDdieInfo;
+};
+
+struct TXPWR_MBRAIN_RPT_T {
+	uint8_t u1Ver;
+	uint8_t ucRptType;
+	uint8_t ucMaxBnNum;
+	uint8_t ucMaxAntNum;
+	struct TXPWR_MBRAIN_RPT_INFO_T
+		arInfo[ENUM_BAND_NUM][TXPWR_MBRAIN_ANT_NUM];
+};
+#endif
+
 struct mbrain_emi_data {
 	/*
 	 * this struct should be the same as the struct defined in fw
@@ -125,6 +170,9 @@ struct mbrain_emi_data {
 #if CFG_SUPPORT_WIFI_ICCM
 	struct ICCM_T rMbrIccmData;
 #endif /* CFG_SUPPORT_WIFI_ICCM */
+#if CFG_SUPPORT_MBRAIN_TXPWR_RPT
+	struct TXPWR_MBRAIN_RPT_T rMbrTxPwrRpt;
+#endif /* CFG_SUPPORT_MBRAIN_TXPWR_RPT */
 };
 
 struct MBRAIN_TXTIMEOUT_ENTRY {
@@ -159,6 +207,9 @@ enum wifi2mbr_status mbrWifiTxTimeoutHandler(struct ADAPTER *prAdapter,
 	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
 	void *buf, uint16_t *pu2Len);
 
+enum wifi2mbr_status mbr_wifi_txpwr_handler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len);
 
 /* get tag total data num */
 uint16_t mbr_wifi_lls_get_total_data_num(
@@ -168,6 +219,9 @@ uint16_t mbr_wifi_lp_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
 
 uint16_t mbrWifiTxTimeoutGetTotalDataNum(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
+
+uint16_t mbr_wifi_txpwr_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
 
 void mmbrTxTimeoutEnqueue(struct ADAPTER *prAdapter,

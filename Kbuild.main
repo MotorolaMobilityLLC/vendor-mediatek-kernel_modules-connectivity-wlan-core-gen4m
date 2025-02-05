@@ -3481,6 +3481,20 @@ else
     ccflags-y += -DCFG_SUPPORT_UNII4=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_MBRAIN_TXPWR_RPT), y)
+    ifeq ($(CONFIG_WIFI_DX5), y)
+        ifeq ($(call kver_ge,6,12),1)
+            ccflags-y += -DCFG_SUPPORT_MBRAIN_TXPWR_RPT=1
+        else
+            ccflags-y += -DCFG_SUPPORT_MBRAIN_TXPWR_RPT=0
+        endif
+    else
+        ccflags-y += -DCFG_SUPPORT_MBRAIN_TXPWR_RPT=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_TXPWR_RPT=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)
     ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
 endif
