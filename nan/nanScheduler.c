@@ -1638,6 +1638,8 @@ uint32_t nanSchedInit(struct ADAPTER *prAdapter)
 		sizeof_field(struct _NAN_SCHEDULER_T, aarPotentialChnlList));
 	prNanScheduler->ucCommitDwInterval =
 		prAdapter->rWifiVar.ucNanCommittedDw;
+	kalMemZero(prNanScheduler->arCustFawEntry,
+		   sizeof(prNanScheduler->arCustFawEntry));
 
 	for (u4Idx = 0; u4Idx < NAN_MAX_NDC_RECORD; u4Idx++)
 		prNanScheduler->arNdcCtrl[u4Idx].fgValid = FALSE;
@@ -7276,25 +7278,36 @@ uint32_t nanSchedNegoCustFawAddEntry(struct ADAPTER *prAdapter,
 	size_t n = ARRAY_SIZE(prScheduler->arCustFawEntry);
 	struct _NAN_CUST_FAW_ENTRY *prCustFawEntry;
 	size_t i;
+	u_int8_t fgUpdated = FALSE;
 
 	prCustFawEntry = prScheduler->arCustFawEntry;
 	for (i = 0; i < n; i++) {
+		if (prCustFawEntry[i].pcTag &&
+		    prCustFawEntry[i].pcTag == prNewEntry->pcTag &&
+		    prCustFawEntry[i].ucOpChannel == prNewEntry->ucOpChannel &&
+		    prCustFawEntry[i].eBand == prNewEntry->eBand &&
+		    prCustFawEntry[i].u4Bitmap == prNewEntry->u4Bitmap) {
+			break;
+		}
+
 		if (prCustFawEntry[i].pcTag)
 			continue;
 
 		prCustFawEntry[i] = *prNewEntry;
+		fgUpdated = TRUE;
 		break;
 	}
 
 	DBGLOG(NAN, DEBUG,
-	       "add to %zu, %s, ch=%u, band=%u, bitmap=%02x-%02x-%02x-%02x\n",
+	       "%s to %zu, %s, ch=%u, band=%u, bitmap=%02x-%02x-%02x-%02x\n",
+	       fgUpdated ? "Add" : "Duplicate",
 	       i, prNewEntry->pcTag, prNewEntry->ucOpChannel, prNewEntry->eBand,
 	       ((uint8_t *)&prNewEntry->u4Bitmap)[0],
 	       ((uint8_t *)&prNewEntry->u4Bitmap)[1],
 	       ((uint8_t *)&prNewEntry->u4Bitmap)[2],
 	       ((uint8_t *)&prNewEntry->u4Bitmap)[3]);
 
-	if (i == n)
+	if (i == n || !fgUpdated)
 		return WLAN_STATUS_FAILURE;
 
 	return WLAN_STATUS_SUCCESS;
@@ -7320,8 +7333,8 @@ uint32_t nanSchedNegoCustFawRemoveEntry(struct ADAPTER *prAdapter,
 			dst++;
 		}
 	}
-	memset(&prCustFawEntry[dst], 0,
-	       sizeof(struct _NAN_CUST_FAW_ENTRY) * (n - dst));
+	kalMemZero(&prCustFawEntry[dst],
+		   sizeof(struct _NAN_CUST_FAW_ENTRY) * (n - dst));
 
 	DBGLOG(NAN, DEBUG, "remove all entries of %s, remain=%zu\n",
 	       pcTag, dst);

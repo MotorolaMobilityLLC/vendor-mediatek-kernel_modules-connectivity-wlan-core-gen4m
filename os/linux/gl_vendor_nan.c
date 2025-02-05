@@ -1078,6 +1078,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct sk_buff *skb = NULL;
 	struct ADAPTER *prAdapter;
+	struct _NAN_SCHEDULER_T *prNanScheduler;
 
 	struct _NanMsgHeader nanMsgHdr;
 	struct _NanTlv outputTlv;
@@ -1253,6 +1254,33 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				memcpy(&nanEnableReq.master_pref,
 				       outputTlv.value, outputTlv.length);
 				break;
+			case NAN_TLV_TYPE_ENABLE_INSTANT_MODE:
+				if (outputTlv.length != sizeof(uint32_t)) {
+					DBGLOG(NAN, ERROR,
+						"type%d outputTlv.length %u is invalid!\n",
+						outputTlv.type,
+						outputTlv.length);
+					continue;
+				}
+				nanEnableReq.fgNanInstantMode =
+					!!(*(uint32_t *)outputTlv.value);
+				DBGLOG(NAN, INFO,
+				       "Set fgNanInstantMode=%u\n",
+				       nanEnableReq.fgNanInstantMode);
+				break;
+			case NAN_TLV_TYPE_ENABLE_INSTANT_MODE_CHANNEL:
+				if (outputTlv.length != sizeof(uint32_t)) {
+					DBGLOG(NAN, ERROR,
+						"type%d outputTlv.length %u is invalid!\n",
+						outputTlv.type,
+						outputTlv.length);
+				}
+				memcpy(&nanEnableReq.u4NanInstantModeChannel,
+				       outputTlv.value, outputTlv.length);
+				DBGLOG(NAN, INFO,
+				       "Set u4NanInstantModeChannel=%u\n",
+				       nanEnableReq.u4NanInstantModeChannel);
+				break;
 			default:
 				break;
 			}
@@ -1302,6 +1330,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			msleep(100);
 		}
 
+		prNanScheduler = nanGetScheduler(prAdapter);
+		prNanScheduler->fgNanInstantMode = FALSE;
+		prNanScheduler->u4NanInstantModeChannel = 0;
+		prNanScheduler->u4NanInstantModeBitmap = NAN_ICM_DEFAULT_BITMAP;
+
+		prNanScheduler->fgNanInstantMode =
+			nanEnableReq.fgNanInstantMode;
+		prNanScheduler->u4NanInstantModeChannel =
+			nanEnableReq.u4NanInstantModeChannel;
+		/* TODO: set bitmap according to the value in request */
 skip_enable:
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANEnableRsp,
 				    (void *)&nanEnableRsp,

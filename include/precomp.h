@@ -253,6 +253,7 @@
 #include "gl_vendor_nan.h"
 #include "nan_data_engine.h"
 #include "nanDiscovery.h"
+#include "nanInstantCommMode.h"
 #include "nanScheduler.h"
 #include "nanReg.h"
 #include "nan_base.h"

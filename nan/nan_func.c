@@ -33,6 +33,7 @@ void __weak
 nanExtEnableReq(struct ADAPTER *prAdapter)
 {
 	nanSetFlashCommunication(prAdapter, TRUE);
+	nanInstantCommModeOnHandler(prAdapter);
 }
 
 void __weak
@@ -69,6 +70,7 @@ nanExtHoldNdl(struct _NAN_NDL_INSTANCE_T *prNDL)
 void __weak
 nanExtBackToNormal(struct ADAPTER *prAdapter)
 {
+	nanInstantCommModeBackToNormal(prAdapter);
 }
 
 void __weak

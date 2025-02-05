@@ -1056,6 +1056,12 @@ struct NanEnableRequest {
 
 	/* Enable/disable NAN slot statistics */
 	uint8_t enable_log_slot_statistics;
+
+
+	/* Instant communication mode */
+	u_int8_t fgNanInstantMode;
+	uint32_t u4NanInstantModeChannel; /* frequency, e.g., 2437 for ch 6 */
+
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 /* Enable Unsync Message Structure

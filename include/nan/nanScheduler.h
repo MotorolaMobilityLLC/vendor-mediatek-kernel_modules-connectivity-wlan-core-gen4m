@@ -166,6 +166,15 @@
 		 (_band == BAND_2G4 ? NAN_2G_DEFAULT_NDC_INDEX :	\
 				      NAN_5G_DEFAULT_NDC_INDEX))
 
+/**
+ * NAN 4.0 Figure 72. Availability Schedule for Instant Communication
+ * slot 0: 2.4G DW (Ch 6)
+ * slot 1: 2.4G NDC (Ch 6)
+ * slot 2~23: Instant Communication Channel (>= 352 TU) (NAN Discovery Channel)
+ * slot 24~31: Other Channel (<= 128 TU)
+ */
+#define NAN_ICM_DEFAULT_BITMAP 0x00FFFFFC
+
 /* Limited log */
 #define NAN_DW_DBGLOG(Mod, Clz, Print, Index, Fmt, ...)			\
 	do {								\
@@ -638,6 +647,11 @@ struct _NAN_SCHEDULER_T {
 
 	/* Last customized channel for concurrency to avoid redundant set */
 	struct _NAN_CUST_FAW_ENTRY arConcurrentCust[2]; /* 2 & 5/6 G bands */
+
+	/* Instant Communication */
+	u_int8_t fgNanInstantMode;
+	uint32_t u4NanInstantModeChannel; /* frequency, e.g., 2437 for ch 6 */
+	uint32_t u4NanInstantModeBitmap;
 };
 
 uint8_t *nanGetNanIEBuffer(void);

@@ -6405,6 +6405,7 @@ const char *nanCmdTagString(uint32_t tag)
 		[NAN_CMD_VENDOR_PAYLOAD] = "Vendor Payload",
 		[NAN_CMD_SET_HOST_ELECTION] = "Set Host Election",
 		[NAN_CMD_SET_ELECTION_ROLE] = "Set Election Role",
+		[NAN_CMD_INSTANT_COMM_MODE] = "Instant Comm Mode",
 	};
 
 	/* Reserve for vendor s, 200 ~ 299 */
