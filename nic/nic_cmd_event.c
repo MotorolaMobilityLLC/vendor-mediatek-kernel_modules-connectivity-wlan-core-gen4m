@@ -3316,7 +3316,12 @@ uint32_t checkMbrOffset(uint32_t num,
 	 * pu4OffsetMap[MBRAIN_EMI_OFFSET_TEST] =
 	 *	OFFSET_OF(struct mbrain_emi_data, u4Mbr_test2),
 	 */
-
+	if (num != MBRAIN_EMI_OFFSET_NUM) {
+		DBGLOG(INIT, WARN, "Offset num mismatch %u/%u\n",
+			num, MBRAIN_EMI_OFFSET_NUM);
+		status = WLAN_STATUS_FAILURE;
+		goto end;
+	}
 #if CFG_SUPPORT_WIFI_ICCM
 	pu4OffsetMap[MBRAIN_EMI_OFFSET_ICCM] =
 		OFFSET_OF(struct mbrain_emi_data, rMbrIccmData);

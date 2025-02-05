@@ -379,6 +379,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
 	[UNI_EVENT_ID_BT_CTRL] = nicUniCmdEventQueryBtCtrl,
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+#if CFG_SUPPORT_MBRAIN
+	[UNI_EVENT_ID_MBRAIN] = nicUniUnsolicitMbrEvt,
+#endif
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -14261,6 +14264,41 @@ void nicUniUnsolicitStatsEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		kalReportMlChnlCond(ad, arMlChnlCond, ucMlChnlCondLinkNum);
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 }
+
+#if CFG_SUPPORT_MBRAIN
+void nicUniUnsolicitMbrEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	uint8_t *tag;
+	uint16_t tags_len;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_MBRAIN);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint16_t offset = 0;
+
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		return;
+	}
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset)
+	{
+		switch (TAG_ID(tag)) {
+			/* each user should handle tlv here.
+			 * parsing tlv and transform to mbrain struct, then
+			 * notify mbrain or cache in driver and notify later.
+			 */
+		default:
+			DBGLOG(NIC, WARN, "invalid tag:%u\n",
+				TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif
 
 void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {

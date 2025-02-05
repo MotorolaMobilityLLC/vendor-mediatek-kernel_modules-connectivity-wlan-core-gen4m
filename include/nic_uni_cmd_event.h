@@ -5923,6 +5923,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_PHY_LIST_DUMP   = 0x7f,
 	UNI_EVENT_ID_OMI	     = 0x84,
 	UNI_EVENT_ID_MLC	     = 0x86,
+	UNI_EVENT_ID_MBRAIN      = 0x89,
 	UNI_EVENT_ID_NUM
 };
 
@@ -9428,6 +9429,15 @@ struct UNI_EVENT_BT_CTRL_DATA_T {
 
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MBRAIN {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -10227,6 +10237,10 @@ void nicUniCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
 			    struct WIFI_UNI_EVENT *prEvt);
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 
+#if CFG_SUPPORT_MBRAIN
+void nicUniUnsolicitMbrEvt(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
