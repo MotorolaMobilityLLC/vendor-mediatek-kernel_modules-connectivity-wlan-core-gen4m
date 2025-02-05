@@ -1731,13 +1731,13 @@ void rttProcessFTMR(struct ADAPTER *prAdapter,
 	uint16_t u2Offset = 0;
 	struct FTM_INFO_ELEM *prFtmInfoElem;
 	struct WLAN_ACTION_FRAME *prActFrame;
+	struct ACTION_FTM_REQUEST_FRAME *prRxFrame;
 
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
-	struct ACTION_FTM_REQUEST_FRAME *prRxFrame;
+	prRxFrame = (struct ACTION_FTM_REQUEST_FRAME *) prSwRfb->pvHeader;
 
 	u2IELength = prSwRfb->u2PacketLen - (uint16_t)OFFSET_OF(
 		struct ACTION_FTM_REQUEST_FRAME, aucInfoElem[0]);
-	prRxFrame = (struct ACTION_FTM_REQUEST_FRAME *) prSwRfb->pvHeader;
 	pucIE = prRxFrame->aucInfoElem;
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {

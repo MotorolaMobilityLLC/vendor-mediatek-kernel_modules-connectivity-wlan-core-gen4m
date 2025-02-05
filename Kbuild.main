@@ -2691,6 +2691,24 @@ else
     ccflags-y += -DCFG_SUPPORT_NAN_EXT=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_RTT), y)
+    ccflags-y += -DCFG_SUPPORT_RTT=1
+else
+    ccflags-y += -DCFG_SUPPORT_RTT=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_RTT_RSTA), y)
+    ccflags-y += -DCFG_SUPPORT_RTT_RSTA=1
+else
+    ccflags-y += -DCFG_SUPPORT_RTT_RSTA=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_PASN), y)
+    ccflags-y += -DCFG_SUPPORT_PASN=1
+else
+    ccflags-y += -DCFG_SUPPORT_PASN=0
+endif
+
 ifneq ($(CFG_SYS_DVT_SUPPORT),)
     ifeq ($(CFG_SYS_DVT_SUPPORT), 0)
         # Check dependency

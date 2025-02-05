@@ -3053,18 +3053,6 @@
 #define CFG_FAST_PATH_SUPPORT 0
 #endif
 
-#ifndef CFG_SUPPORT_RTT
-#if (CFG_SUPPORT_CONNAC1X == 1 || CFG_SUPPORT_CONNAC2X == 1)
-#define CFG_SUPPORT_RTT 0
-#define CFG_SUPPORT_RTT_RSTA 0
-#define CFG_SUPPORT_PASN 0
-#else
-#define CFG_SUPPORT_RTT 1
-#define CFG_SUPPORT_RTT_RSTA 0
-#define CFG_SUPPORT_PASN 0
-#endif
-#endif
-
 #define CFG_RTT_TEST_MODE 0
 #define CFG_RTT_MAX_CANDIDATES 10	/* ISTA maximum peer APs */
 #define CFG_RTT_MAX_CLIENTS 1		/* RSTA maximum clients */
