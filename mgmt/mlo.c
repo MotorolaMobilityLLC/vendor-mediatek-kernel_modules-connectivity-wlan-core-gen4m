@@ -4450,9 +4450,14 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 		prMldStarec->eT2LMState = T2LM_STATE_IDLE;
+		prMldStarec->eT2LMNextState = T2LM_STATE_IDLE;
 		cnmTimerInitTimer(prAdapter,
 			&prMldStarec->rT2LMTimer,
 			(PFN_MGMT_TIMEOUT_FUNC) t2lmTimeout,
+			(uintptr_t) prMldStarec);
+		cnmTimerInitTimer(prAdapter,
+			&prMldStarec->rT2LMFsmTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) t2lmFsmTimeout,
 			(uintptr_t) prMldStarec);
 #endif
 		mldBssAddClient(prAdapter, prMldBssInfo, prMldStarec);
@@ -4484,6 +4489,7 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	cnmTimerStopTimer(prAdapter, &prMldStarec->rT2LMTimer);
+	cnmTimerStopTimer(prAdapter, &prMldStarec->rT2LMFsmTimer);
 #endif
 	mldBssRemoveClient(prAdapter, prMldBssInfo, prMldStarec);
 	kalMemZero(prMldStarec, sizeof(struct MLD_STA_RECORD));

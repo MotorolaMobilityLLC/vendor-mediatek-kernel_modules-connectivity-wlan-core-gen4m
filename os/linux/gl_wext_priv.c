@@ -5892,6 +5892,229 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#if (CFG_SUPPORT_802_11BE_T2LM_NEGO == 1)
+int priv_driver_t2lm_request(struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int8_t *this_char = NULL;
+	int32_t i4Argc = 0;
+	int32_t i4Recv = 0;
+	int32_t i4Ret = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t ucBssIndex = 0;
+	uint8_t ucIdx = 0;
+	uint8_t ucBand = 0;
+	uint16_t au2BandLinkIdx[3] = {0};
+	uint32_t au4ULTidBitmap[3] = {0};
+	uint32_t au4DLTidBitmap[3] = {0};
+	struct T2LM_INFO *prT2LMParams = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4Ret = -1;
+		goto exit;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo) {
+		i4Ret = -1;
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4Ret = -1;
+		goto exit;
+	}
+	this_char++;
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(REQ, ERROR, "Invalid ucBssIndex = %d\n", ucBssIndex);
+		i4Ret = -1;
+		goto exit;
+	}
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	if (!prStaRec) {
+		DBGLOG(REQ, ERROR, "prStaRec is NULL\n");
+		i4Ret = -1;
+		goto exit;
+
+	}
+
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (!prMldStaRec) {
+		DBGLOG(REQ, ERROR, "prMldStaRec is NULL\n");
+		i4Ret = -1;
+		goto exit;
+
+	}
+
+	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
+
+	prT2LMParams = (struct T2LM_INFO *)
+		kalMemAlloc(sizeof(struct T2LM_INFO), VIR_MEM_TYPE);
+	if (prT2LMParams == NULL) {
+		DBGLOG(REQ, ERROR, "alloc memory fail\n");
+		i4Ret = -1;
+		goto exit;
+	}
+
+	kalMemZero(prT2LMParams, sizeof(struct T2LM_INFO));
+	prT2LMParams->ucDirection = 2;
+	prT2LMParams->ucDefaultLM = 0;
+	prT2LMParams->ucLMSize = 1;
+	prT2LMParams->ucLMIndicator = 255;
+
+	i4Recv = sscanf(this_char,
+		"%u-%02x-%02x-%u-%02x-%02x-%u-%02x-%02x-%u-%u",
+		&au2BandLinkIdx[0],
+		&au4ULTidBitmap[0],
+		&au4DLTidBitmap[0],
+		&au2BandLinkIdx[1],
+		&au4ULTidBitmap[1],
+		&au4DLTidBitmap[1],
+		&au2BandLinkIdx[2],
+		&au4ULTidBitmap[2],
+		&au4DLTidBitmap[2],
+		&prT2LMParams->u4SwitchDelayMs,
+		&prT2LMParams->u4ExpectedDuration);
+	if (i4Recv < 10) {
+		DBGLOG(REQ, ERROR,
+			"T2LM REQ CMD Number of PARAMETERS:[%d] is WRONG\n",
+			i4Recv);
+		i4Ret = -1;
+		goto exit;
+	}
+
+	for (ucIdx = 0; ucIdx < MAX_NUM_T2LM_TIDS; ucIdx++) {
+		for (ucBand = 0; ucBand < 3; ucBand++) {
+			if (!(prMldStaRec->u2ValidLinks &
+				BIT(au2BandLinkIdx[ucBand])))
+				continue;
+
+			if (au4ULTidBitmap[ucBand] & BIT(ucIdx))
+				prT2LMParams->au2LMTid[ucIdx] |=
+					BIT(au2BandLinkIdx[ucBand]);
+
+			DBGLOG(REQ, LOUD,
+				"Idx[%u] B[%u] ULBmap[0x%02x] Tid[0x%02x] VL[0x%02x] BNLK[%u]\n",
+				ucIdx, ucBand,
+				au4ULTidBitmap[ucBand],
+				prT2LMParams->au2LMTid[ucIdx],
+				prMldStaRec->u2ValidLinks,
+				au2BandLinkIdx[ucBand]);
+		}
+	}
+
+	prT2LMParams->u4SwitchDelayMs = 0;
+
+	if (prT2LMParams->u4ExpectedDuration) {
+		prT2LMParams->ucDurationPresent = 1;
+		prT2LMParams->u4T2lmDurationMs =
+			TU_TO_MSEC(prT2LMParams->u4ExpectedDuration) +
+				2 * prAdapter->rWifiVar.u4T2LMMarginMs;
+	}
+
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSendT2LMRequest,
+			prT2LMParams, sizeof(struct T2LM_INFO),
+			&u4BufLen, ucBssIndex);
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
+		rStatus, prGlueInfo, u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		i4Ret = -1;
+		goto exit;
+	}
+exit:
+	if (prT2LMParams)
+		kalMemFree(prT2LMParams, VIR_MEM_TYPE,
+			sizeof(struct T2LM_INFO));
+
+	return i4Ret;
+}
+
+int priv_driver_t2lm_teardown(struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t ucBssIndex = 0;
+	struct T2LM_INFO *prT2LMParams = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4Ret = -1;
+		goto exit;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo) {
+		i4Ret = -1;
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(REQ, ERROR, "Invalid ucBssIndex = %d\n", ucBssIndex);
+		i4Ret = -1;
+		goto exit;
+	}
+
+	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
+
+	prT2LMParams = (struct T2LM_INFO *)
+		kalMemAlloc(sizeof(struct T2LM_INFO), VIR_MEM_TYPE);
+	if (prT2LMParams == NULL) {
+		DBGLOG(REQ, ERROR, "alloc memory fail\n");
+		i4Ret = -1;
+		goto exit;
+	}
+
+	kalMemZero(prT2LMParams, sizeof(struct T2LM_INFO));
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSendT2LMTeardown,
+			prT2LMParams, sizeof(struct T2LM_INFO),
+			&u4BufLen, ucBssIndex);
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
+		rStatus, prGlueInfo, u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		i4Ret = -1;
+		goto exit;
+	}
+exit:
+	if (prT2LMParams)
+		kalMemFree(prT2LMParams, VIR_MEM_TYPE,
+			sizeof(struct T2LM_INFO));
+
+	return i4Ret;
+}
+#endif /* CFG_SUPPORT_802_11BE_T2LM_NEGO */
+
 #if CFG_ENABLE_WIFI_DIRECT
 int priv_driver_get_ml_2nd_freq(struct net_device *prNetDev,
 	char *pcCommand,

@@ -9615,7 +9615,7 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 		      prBssDesc->rMlInfo.ucLinkId, u2MapValue);
 
 		t2lmSend(prAdapter, TID2LINK_REQUEST,
-				prBssInfo, prT2LMParams);
+				prBssInfo->prStaRecOfAP, prT2LMParams);
 		kalMemFree(prT2LMParams, VIR_MEM_TYPE,
 			sizeof(struct prT2LMParams));
 		/* per spec, no need to send btm if already send t2lm */

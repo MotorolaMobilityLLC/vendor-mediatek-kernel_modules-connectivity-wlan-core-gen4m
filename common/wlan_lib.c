@@ -7585,6 +7585,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4T2LMMapValue, "T2LMMapValue", 0,
 		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4T2LMRetryLimit, "T2LMRetryLimit", 1,
+		  FEATURE_DEBUG_ONLY);
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	INIT_UINT(prWifiVar->fgEnEpcs, "EnableEpcs", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
@@ -14010,10 +14012,15 @@ uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo)
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prGlueInfo->u4ReadyFlag &&
-	    prGlueInfo->prAdapter &&
-	    prGlueInfo->prAdapter->rWifiVar.ucApMldLinkMax >= 2)
-		u8FeatureSet |= WIFI_FEATURE_MLO_SAP;
+	if (prGlueInfo->u4ReadyFlag && prGlueInfo->prAdapter) {
+		struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+		if (prWifiVar->ucApMldLinkMax >= 2)
+			u8FeatureSet |= WIFI_FEATURE_MLO_SAP;
+
+		if (prWifiVar->ucT2LMNegotiationSupport != T2LM_NO_SUPPORT)
+			u8FeatureSet |= WIFI_FEATURE_T2LM_NEGO;
+	}
 #endif
 
 	return u8FeatureSet;

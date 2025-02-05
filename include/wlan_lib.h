@@ -98,6 +98,8 @@
 #define WIFI_FEATURE_SET_LATENCY_MODE  (0x40000000)
 /* Support Random P2P MAC */
 #define WIFI_FEATURE_P2P_RAND_MAC  (0x80000000)
+/* Support TID-To-Link mapping negotiation */
+#define WIFI_FEATURE_T2LM_NEGO  (0x400000000)
 /* Support MLO SoftAp */
 #define WIFI_FEATURE_MLO_SAP  (0x4000000000)
 

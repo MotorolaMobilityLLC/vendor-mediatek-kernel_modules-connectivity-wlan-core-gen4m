@@ -1711,6 +1711,11 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     else
         ccflags-y += -DCFG_SUPPORT_802_11BE_T2LM=0
     endif
+    ifeq ($(CONFIG_MTK_WIFI_11BE_T2LM_NEGO), y)
+        ccflags-y += -DCFG_SUPPORT_802_11BE_T2LM_NEGO=1
+    else
+        ccflags-y += -DCFG_SUPPORT_802_11BE_T2LM_NEGO=0
+    endif
     ifeq ($(CONFIG_SUPPORT_CONTROL_PORT_OVER_NL80211), y)
         ccflags-y += -DCFG_SUPPORT_CONTROL_PORT_OVER_NL80211=1
     else

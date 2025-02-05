@@ -936,6 +936,12 @@ int priv_driver_get_ml_prefer_freqlist(
 	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
 int priv_driver_get_ml_2nd_freq(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+#if (CFG_SUPPORT_802_11BE_T2LM_NEGO == 1)
+int priv_driver_t2lm_request(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_t2lm_teardown(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_802_11BE_T2LM_NEGO */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 int priv_driver_get_dpd_cache(struct net_device *prNetDev,

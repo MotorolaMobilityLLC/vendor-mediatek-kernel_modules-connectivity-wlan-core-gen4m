@@ -2348,6 +2348,108 @@ wlanoidPresetLinkId(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_802_11BE_T2LM_NEGO == 1)
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief This routine is called to send T2LM REQ frames
+ *        from oid
+ *
+ * \param  prAdapter       A pointer to the Adapter structure.
+ * \param  pvSetBuffer     A pointer to the buffer that holds the
+ *                             OID-specific data to be set.
+ * \param  u4SetBufferLen  The number of bytes the set buffer.
+ * \param  pu4SetInfoLen   Points to the number of bytes it read or is
+ *                             needed
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidSendT2LMRequest(struct ADAPTER *prAdapter,
+	void *pvSetBuffer, uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucBssIndex = 0;
+	struct T2LM_INFO *prT2LMParams;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
+		DBGLOG(OID, ERROR, "didn't connected any Access Point\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	if (!prStaRec)
+		return WLAN_STATUS_FAILURE;
+
+	prT2LMParams = (struct T2LM_INFO *) pvSetBuffer;
+	if (prT2LMParams == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(OID, INFO, "Send T2LM Request\n");
+	t2lmSend(prAdapter, TID2LINK_REQUEST, prStaRec, prT2LMParams);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief This routine is called to send T2LM TEARDOWN frames
+ *        from oid
+ *
+ * \param  prAdapter       A pointer to the Adapter structure.
+ * \param  pvSetBuffer     A pointer to the buffer that holds the
+ *                             OID-specific data to be set.
+ * \param  u4SetBufferLen  The number of bytes the set buffer.
+ * \param  pu4SetInfoLen   Points to the number of bytes it read or is
+ *                             needed
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidSendT2LMTeardown(struct ADAPTER *prAdapter,
+	void *pvSetBuffer, uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucBssIndex = 0;
+	struct T2LM_INFO *prT2LMParams;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
+		DBGLOG(OID, ERROR, "didn't connected any Access Point\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	if (!prStaRec)
+		return WLAN_STATUS_FAILURE;
+
+	prT2LMParams = (struct T2LM_INFO *) pvSetBuffer;
+	if (prT2LMParams == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(OID, INFO, "Send T2LM Teardown\n");
+	t2lmSend(prAdapter, TID2LINK_TEARDOWN, prStaRec, prT2LMParams);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_802_11BE_T2LM_NEGO */
+
 #if (CFG_SUPPORT_MLC == 1)
 uint32_t
 wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
@@ -2436,7 +2538,6 @@ wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 		pvQueryBuffer, u4QueryBufferLen);
 }
 #endif /* CFG_SUPPORT_MLC */
-
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 #if CFG_SUPPORT_802_11W

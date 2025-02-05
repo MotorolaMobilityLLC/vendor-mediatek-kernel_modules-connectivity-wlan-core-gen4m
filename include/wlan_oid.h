@@ -5662,6 +5662,18 @@ uint32_t
 wlanoidPresetLinkId(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
 
+#if (CFG_SUPPORT_802_11BE_T2LM_NEGO == 1)
+uint32_t
+wlanoidSendT2LMRequest(struct ADAPTER *
+		prAdapter, void *pvSetBuffer,
+		uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSendT2LMTeardown(struct ADAPTER *
+		prAdapter, void *pvSetBuffer,
+		uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_802_11BE_T2LM_NEGO */
+
 #if (CFG_SUPPORT_MLC == 1)
 uint32_t
 wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
@@ -5671,7 +5683,6 @@ uint32_t
 wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
 #endif /* CFG_SUPPORT_MLC */
-
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 uint32_t

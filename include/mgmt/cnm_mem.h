@@ -906,7 +906,9 @@ struct MLD_STA_RECORD {
 	struct TIMER rEpcsTimer;
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	enum ENUM_T2LM_STATE eT2LMState;
+	enum ENUM_T2LM_STATE eT2LMNextState;
 	struct TIMER rT2LMTimer;
+	struct TIMER rT2LMFsmTimer;
 	struct T2LM_INFO rT2LMParams;
 #endif
 };

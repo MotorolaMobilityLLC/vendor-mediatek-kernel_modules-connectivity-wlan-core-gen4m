@@ -757,6 +757,24 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = u32_policy,
 		.u4PolicySize = ARRAY_SIZE(u32_policy)
 	},
+#if (CFG_SUPPORT_802_11BE_T2LM_NEGO == 1)
+	{
+		.pcCmdStr  = CMD_T2LM_REQUEST,
+		.pfHandler = priv_driver_t2lm_request,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_T2LM_TEARDOWN,
+		.pfHandler = priv_driver_t2lm_teardown,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_SUPPORT_802_11BE_T2LM_NEGO */
 #endif
 #if CFG_SUPPORT_CSI
 	{
