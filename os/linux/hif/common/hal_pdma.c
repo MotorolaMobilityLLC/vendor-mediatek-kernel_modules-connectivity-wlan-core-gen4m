@@ -69,13 +69,25 @@ static const char delayTypeChar[MAX_AVERAGE_TX_DELAY_TYPE] = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+static u_int8_t fgIsKernelWarningTriggered = FALSE;
+#endif
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
  */
+
 #define DUMP_DRV_OWN_DONE "DRIVER OWN Done[%u us] Send[%u us]\n"
 #define DUMP_DRV_OWN_FAIL "DRIVER OWN Failed[%u us] Send[%u us]\n"
+
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+#define DUMP_FW_OWN_RESULT_WITH_DRV_OWN_INFO \
+	"FW OWN:%u, IntSta:0x%08x, Last Drv Own Info:%s\n"
+#define CONSEC_DRV_OWN_FAIL_MSG "Consecutive abnormal driver own failed for %u times.\n"
+#endif
+
+#define DUMP_FW_OWN_RESULT "FW OWN:%u, IntSta:0x%08x\n"
+
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -565,7 +577,12 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+uint32_t halSetDriverOwn(struct ADAPTER *prAdapter,
+	struct DRV_OWN_INFO *prDrvOwnInfo)
+#else /* (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 0) */
+uint32_t halSetDriverOwn(struct ADAPTER *prAdapter)
+#endif /* (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 0) */
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -580,10 +597,19 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #if (CFG_PCIE_GEN_SWITCH == 1)
 	uint32_t u4PollingCnt = 0;
 #endif
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+	uint32_t u4Status = WLAN_STATUS_NOT_INDICATING;
+#endif
 
 	KAL_BOOTTIME_INTERVAL_DECLARATION();
 
 	ASSERT(prAdapter);
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+	if (prDrvOwnInfo == NULL) {
+		DBGLOG(HAL, ERROR, "NULL prDrvOwnInfo\n");
+		return WLAN_STATUS_FAILURE;
+	}
+#endif
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -591,7 +617,6 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	prWifiVar = &prAdapter->rWifiVar;
 
 	KAL_HIF_OWN_LOCK(prAdapter);
-
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
 	if (prAdapter->fgIsFwOwn == FALSE)
@@ -625,7 +650,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	KAL_BOOT_TIME_START();
 	u4CurrTick = kalGetTimeTick();
-
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+	halUpdateDrvOwnInfo(prAdapter, prDrvOwnInfo,
+			    DRV_OWN_INFO_UPDATE_START,
+			    fgResult, NULL);
+#endif
 	while (1) {
 		/* Delay for LP engine to complete its operation. */
 #if CFG_SUPPORT_RX_WORK
@@ -634,6 +663,10 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #else /* !CFG_SUPPORT_RX_WORK */
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
 #endif /* !CFG_SUPPORT_RX_WORK */
+
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+		u4Status = WLAN_STATUS_FAILURE;
+#endif /* (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1) */
 
 #if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 		if (prAdapter->fgIsWiFiOnDrvOwn) {
@@ -786,10 +819,30 @@ done:
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 
 	} else
-		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
+		DBGLOG(INIT, ERROR, DUMP_DRV_OWN_FAIL,
 			u4DrvOwnElapsed, u4Send);
-
 end:
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+	if (u4Status != WLAN_STATUS_NOT_INDICATING) {
+		u4Status = fgResult ?
+			WLAN_STATUS_SUCCESS :
+			WLAN_STATUS_FAILURE;
+	} else {
+		kalMemFree(prDrvOwnInfo, PHY_MEM_TYPE,
+			sizeof(struct DRV_OWN_INFO));
+		prDrvOwnInfo = NULL;
+	}
+	halUpdateDrvOwnInfo(prAdapter, prDrvOwnInfo,
+			    DRV_OWN_INFO_UPDATE_END,
+			    u4Status, NULL);
+	halUpdateDrvOwnInfo(prAdapter, prDrvOwnInfo,
+			    DRV_OWN_INFO_UPDATE_TABLE,
+			    u4Status, NULL);
+	if (u4Status == WLAN_STATUS_FAILURE)
+		halAccessDrvOwnTable(prAdapter, DRV_OWN_INFO_CHECK_CONSEC_FAIL);
+#endif
+	if (fgStatus && prAdapter->fgWiFiInSleepyState == TRUE)
+		prAdapter->fgWiFiInSleepyState = FALSE;
 	KAL_HIF_OWN_UNLOCK(prAdapter);
 
 #if !CFG_SUPPORT_RX_WORK
@@ -800,8 +853,9 @@ end:
 					u4CurrTick, fgTimeout);
 	}
 #endif /* !CFG_SUPPORT_RX_WORK */
-
-	return fgStatus;
+	return fgStatus == TRUE ?
+		WLAN_STATUS_SUCCESS :
+		WLAN_STATUS_FAILURE;
 }
 
 uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter)
@@ -870,14 +924,21 @@ void halManualUpdateWfdmaDmaDone(struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt,
+	enum ENUM_DRV_OWN_SRC eDrvOwnSrc)
+#else
 void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
+#endif /* (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 0) */
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgResult;
-
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+	uint8_t *pucDbgLog = NULL;
+#endif
 	ASSERT(prAdapter);
 
 	prChipInfo = prAdapter->chip_info;
@@ -895,36 +956,36 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	 * driver own fail (MCU can't process it).
 	 */
 	if (prAdapter->fgN9AssertDumpOngoing == TRUE) {
-		DBGLOG(INIT, TRACE, "fgN9AssertDumpOngoing\n");
+		DBGLOG(HAL, TRACE, "fgN9AssertDumpOngoing\n");
 		goto unlock;
 	}
 #endif
 
 	if (p2pFuncNeedForceSleep(prAdapter))
-		DBGLOG(INIT, TRACE, "SAP: Skip fgWiFiInSleepyState check\n");
+		DBGLOG(HAL, TRACE, "SAP: Skip fgWiFiInSleepyState check\n");
 	else if (!(prAdapter->fgWiFiInSleepyState)
 #if CFG_CHIP_RESET_SUPPORT
 		&& (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE)
 #endif
 		) {
-		DBGLOG(INIT, LOUD, "not in fgWiFiInSleepyState\n");
+		DBGLOG(HAL, LOUD, "not in fgWiFiInSleepyState\n");
 		goto unlock;
 	}
 
 	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0) {
-		DBGLOG(INIT, TRACE, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
+		DBGLOG(HAL, TRACE, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
 			prAdapter->u4PwrCtrlBlockCnt);
 		goto unlock;
 	}
 
 	if (prAdapter->fgIsFwOwn == TRUE) {
-		DBGLOG(INIT, LOUD, "alreaddy FW OWN\n");
+		DBGLOG(HAL, LOUD, "Already FW OWN\n");
 		goto unlock;
 	}
 
 	if (!prHifInfo->fgIsPowerOff && halGetWfdmaRxCnt(prAdapter)) {
-		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
 		/* pending interrupts */
+		DBGLOG(HAL, STATE, "Skip FW OWN due to pending INT\n");
 		goto unlock;
 	}
 
@@ -940,7 +1001,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	halManualUpdateWfdmaDmaDone(prAdapter);
 #if CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 	if (!halIsWfdmaTxRingEmpty(prAdapter)) {
-		DBGLOG(INIT, INFO, "halIsWfdmaTxRing not Empty\n");
+		DBGLOG(HAL, INFO, "halIsWfdmaTxRing not Empty\n");
 		goto unlock;
 	}
 #endif  /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
@@ -948,7 +1009,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		if (!halMawdSleep(prAdapter->prGlueInfo)) {
-			DBGLOG(INIT, STATE,
+			DBGLOG(HAL, STATE,
 			       "Skip FW OWN due to Mawd pending INT\n");
 			goto unlock;
 		}
@@ -993,12 +1054,37 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 
 		/* call from ICS log not print in default */
-		if (prHifInfo->u4WakeupIntSta & BIT(15))
-			DBGLOG(INIT, TRACE, "FW OWN:%u, IntSta:0x%08x\n",
-			fgResult, prHifInfo->u4WakeupIntSta);
-		else
-			DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
-			fgResult, prHifInfo->u4WakeupIntSta);
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+		halUpdateDrvOwnInfo(prAdapter, NULL,
+			    DRV_OWN_INFO_GET_DEBUG_LOG,
+			    fgResult, &pucDbgLog);
+		if (pucDbgLog != NULL && pucDbgLog[0] != '\0') {
+			if (prHifInfo->u4WakeupIntSta & BIT(15))
+				DBGLOG(HAL, TRACE,
+					DUMP_FW_OWN_RESULT_WITH_DRV_OWN_INFO,
+					fgResult,
+					prHifInfo->u4WakeupIntSta,
+					pucDbgLog);
+			else
+				DBGLOG(HAL, INFO,
+					DUMP_FW_OWN_RESULT_WITH_DRV_OWN_INFO,
+					fgResult,
+					prHifInfo->u4WakeupIntSta,
+					pucDbgLog);
+		} else
+#endif
+		{
+			if (prHifInfo->u4WakeupIntSta & BIT(15))
+				DBGLOG(HAL, TRACE,
+					DUMP_FW_OWN_RESULT,
+					fgResult,
+					prHifInfo->u4WakeupIntSta);
+			else
+				DBGLOG(HAL, INFO,
+					DUMP_FW_OWN_RESULT,
+					fgResult,
+					prHifInfo->u4WakeupIntSta);
+		}
 		prHifInfo->u4WakeupIntSta = 0;
 	}
 
@@ -5618,9 +5704,11 @@ void halTxWork(struct GLUE_INFO *prGlueInfo)
 
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    HIF_TX_NAPI_TOKENS_UNUSED_BIT, prNapiDev->ulFlag)) {
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_TX_WORK);
 		halHandleAllTokensUnused(prAdapter, FALSE);
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_TX_WORK);
 	}
 
 	if (KAL_TEST_AND_CLEAR_BIT(
@@ -5636,7 +5724,8 @@ void halTxWork(struct GLUE_INFO *prGlueInfo)
 
 		halCancleTxDelayTimer(prGlueInfo->prAdapter);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY */
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_TX_WORK);
 		GLUE_INC_REF_CNT(prNapiDev->u4DrvOwnCnt);
 		halProcessBeforeTxData(prAdapter);
 		kal_napi_schedule(&prNapiDev->napi);
@@ -5646,7 +5735,8 @@ void halTxWork(struct GLUE_INFO *prGlueInfo)
 		    HIF_TX_NAPI_SET_FW_OWN_BIT, prNapiDev->ulFlag) &&
 	    GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
 		GLUE_DEC_REF_CNT(prNapiDev->u4DrvOwnCnt);
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_TX_WORK);
 
 		if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
 			kal_napi_schedule(&prNapiDev->napi);
@@ -5693,7 +5783,10 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, prGlueInfo->rRxWorkerLock))
 			KAL_WAKE_LOCK(prAdapter, prGlueInfo->rRxWorkerLock);
 #endif
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_HAL_RX_WORK);
+
 		GLUE_INC_REF_CNT(prNapiDev->u4DrvOwnCnt);
 		kal_napi_schedule(&prNapiDev->napi);
 	}
@@ -5702,8 +5795,8 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		    HIF_RX_NAPI_SET_FW_OWN_BIT, prNapiDev->ulFlag) &&
 	    GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
 		GLUE_DEC_REF_CNT(prNapiDev->u4DrvOwnCnt);
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_HAL_RX_WORK);
 		if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
 			kal_napi_schedule(&prNapiDev->napi);
 		} else {
@@ -5739,7 +5832,8 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 				  prGlueInfo->rRxWorkerLock);
 #endif
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_RX_WORK);
 
 	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
@@ -5774,8 +5868,9 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
 	}
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_RX_WORK);
 
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
 	if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
 				 prGlueInfo->rRxWorkerLock))
@@ -5806,7 +5901,8 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_HIF_POWER_OFF_WIFI);
 
 	prAdapter->fgIsPwrOffProcIST = TRUE;
 
@@ -5892,7 +5988,8 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		prBusInfo->powerOffPcieMac(prAdapter);
 #endif /* _HIF_PCIE */
 
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_HIF_POWER_OFF_WIFI);
 
 	if (prBusInfo->disableSwInterrupt)
 		prBusInfo->disableSwInterrupt(prAdapter);
@@ -7508,7 +7605,9 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 		!prChipInfo->asicPollWfsysSwInitDone(prAdapter))
 		DBGLOG(INIT, ERROR, "[SER][L0.5] WF L0.5 Reset FAIL!\n");
 
-	halSetFWOwn(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter,
+		FALSE,
+		DRV_OWN_SRC_TOGGLE_WFSYS_RST);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -7583,3 +7682,190 @@ uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+uint32_t halUpdateDrvOwnInfo(struct ADAPTER *prAdapter,
+			     struct DRV_OWN_INFO *prDrvOwnInfo,
+			     enum DRV_OWN_INFO_ACTION eAction,
+			     uint32_t u4Result,
+			     uint8_t **ppucLog)
+{
+	int32_t i4TotalLen = 0, i4Written = 0;
+	uint32_t u4Idx = 0, u4Count = 0, fgRet = WLAN_STATUS_SUCCESS;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL) {
+		DBGLOG(HAL, ERROR, "NULL pointer\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_DRV_OWN);
+	u4Idx = prAdapter->u4DrvOwnIdx;
+	switch (eAction) {
+	/* Update the start time of each driver own */
+	case DRV_OWN_INFO_UPDATE_START:
+		if (prDrvOwnInfo == NULL ||
+			prDrvOwnInfo->ucThrdName[0] == '\0' ||
+			u4Result == WLAN_STATUS_NOT_INDICATING) {
+			fgRet = WLAN_STATUS_NOT_INDICATING;
+			goto done;
+		}
+
+		prDrvOwnInfo->u8StartSec = local_clock();
+		prDrvOwnInfo->u4StartTick = kalGetTimeTick();
+		break;
+	/* Update the result after driver own finished */
+	case DRV_OWN_INFO_UPDATE_END:
+		if (prDrvOwnInfo == NULL ||
+			prDrvOwnInfo->ucThrdName[0] == '\0' ||
+			u4Result == WLAN_STATUS_NOT_INDICATING) {
+			fgRet = WLAN_STATUS_NOT_INDICATING;
+			goto done;
+		}
+
+		prDrvOwnInfo->u8EndSec = local_clock();
+		prDrvOwnInfo->u4EndTick = kalGetTimeTick();
+		prDrvOwnInfo->fgStatus =
+			(u4Result == WLAN_STATUS_SUCCESS ?
+					 TRUE :
+					 FALSE);
+		prDrvOwnInfo->fgIsValid = TRUE;
+
+		/* Refine time data for readability in log */
+		prDrvOwnInfo->u8DiffSec = prDrvOwnInfo->u8EndSec -
+				prDrvOwnInfo->u8StartSec;
+		prDrvOwnInfo->u8StartNSec = kal_mod64(
+				prDrvOwnInfo->u8StartSec, NSEC_PER_SEC) /
+				MSEC_PER_SEC;
+		prDrvOwnInfo->u8EndNSec = kal_mod64(
+				prDrvOwnInfo->u8EndSec, NSEC_PER_SEC) /
+				MSEC_PER_SEC;
+		prDrvOwnInfo->u8DiffNSec = kal_mod64(
+				prDrvOwnInfo->u8DiffSec, NSEC_PER_SEC) /
+				MSEC_PER_SEC;
+
+		i4TotalLen = ARRAY_SIZE(prAdapter->rDrvOwnTable[0].ucLog);
+		if (i4TotalLen - i4Written > 0)
+			i4Written += kalSnprintf(
+			    &prDrvOwnInfo->ucLog[i4Written],
+			    i4TotalLen - i4Written,
+			    "Caller:[%s @ %s:%d], ",
+			    prDrvOwnInfo->ucFuncName,
+			    prDrvOwnInfo->ucThrdName,
+			    prDrvOwnInfo->rThrdPid);
+		if (i4TotalLen - i4Written > 0)
+			i4Written += kalSnprintf(
+			    &prDrvOwnInfo->ucLog[i4Written],
+			    i4TotalLen - i4Written,
+			    "S/E/P:[%lu.%06lu/%lu.%06lu/%lu.%06lu]",
+			    prDrvOwnInfo->u8StartSec,
+			    prDrvOwnInfo->u8StartNSec,
+			    prDrvOwnInfo->u8EndSec,
+			    prDrvOwnInfo->u8EndNSec,
+			    prDrvOwnInfo->u8DiffSec,
+			    prDrvOwnInfo->u8DiffNSec);
+		break;
+	/* Pass the result string to pointer */
+	case DRV_OWN_INFO_GET_DEBUG_LOG:
+		u4Count = ARRAY_SIZE(prAdapter->rDrvOwnTable);
+		do {
+			u4Idx = (u4Idx == 0) ?
+				ARRAY_SIZE(prAdapter->rDrvOwnTable) - 1 :
+				u4Idx - 1;
+			if (prAdapter->rDrvOwnTable[u4Idx].fgIsValid) {
+				*ppucLog = prAdapter->rDrvOwnTable[u4Idx].ucLog;
+				break;
+			}
+		} while (u4Count-- > 0);
+		break;
+	case DRV_OWN_INFO_UPDATE_TABLE:
+		if (prDrvOwnInfo == NULL ||
+			u4Result == WLAN_STATUS_NOT_INDICATING) {
+			fgRet = WLAN_STATUS_NOT_INDICATING;
+			goto done;
+		}
+
+		kalMemCopy(&prAdapter->rDrvOwnTable[prAdapter->u4DrvOwnIdx],
+			   prDrvOwnInfo,
+			   sizeof(struct DRV_OWN_INFO));
+		kalMemFree(prDrvOwnInfo, PHY_MEM_TYPE,
+			sizeof(struct DRV_OWN_INFO));
+		prAdapter->u4DrvOwnIdx = (prAdapter->u4DrvOwnIdx + 1) %
+				ARRAY_SIZE(prAdapter->rDrvOwnTable);
+		break;
+	default:
+		DBGLOG(HAL, WARN, "eAction(%d) is not supported.\n");
+		break;
+	}
+done:
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_DRV_OWN);
+	return fgRet;
+}
+
+void halAccessDrvOwnTable(struct ADAPTER *prAdapter,
+			enum DRV_OWN_INFO_ACTION eAction)
+{
+	uint32_t u4Idx, u4Count = 0, u4FailCnt = 0;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL) {
+		DBGLOG(HAL, ERROR, "NULL prAdapter.\n");
+		return;
+	}
+
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_DRV_OWN);
+	u4Count = ARRAY_SIZE(prAdapter->rDrvOwnTable);
+	u4Idx = (prAdapter->u4DrvOwnIdx == 0) ?
+		u4Count - 1 :
+		prAdapter->u4DrvOwnIdx - 1;
+
+	switch (eAction) {
+	case DRV_OWN_INFO_DUMP_TABLE:
+		while (u4Count--) {
+			if (prAdapter->rDrvOwnTable[u4Idx].fgIsValid) {
+				DBGLOG(HAL, INFO,
+					"#%u:%s\n",
+					u4Idx,
+					prAdapter->rDrvOwnTable[u4Idx].ucLog);
+				u4Idx = (u4Idx == 0) ?
+					ARRAY_SIZE(prAdapter->rDrvOwnTable)
+					 - 1 :
+					u4Idx - 1;
+			} else {
+				break;
+			}
+		}
+		break;
+	case DRV_OWN_INFO_CHECK_CONSEC_FAIL:
+		while (u4Count--) {
+			if (kalIsResetting() || fgIsKernelWarningTriggered)
+				break;
+			if (prAdapter->rDrvOwnTable[u4Idx].fgIsValid &&
+			    prAdapter->rDrvOwnTable[u4Idx].fgStatus == FALSE) {
+				u4FailCnt++;
+				if (u4FailCnt == LP_OWN_BACK_FAILED_RETRY_CNT) {
+					kalSendAeeWarning("WLAN",
+						CONSEC_DRV_OWN_FAIL_MSG,
+						u4FailCnt);
+					fgIsKernelWarningTriggered = TRUE;
+					break;
+				}
+				u4Idx = (u4Idx == 0) ?
+					ARRAY_SIZE(prAdapter->rDrvOwnTable)
+					 - 1 :
+					u4Idx - 1;
+			}
+		}
+		break;
+	default:
+		DBGLOG(HAL, WARN,
+			"No action for (%d)\n",
+			eAction);
+		break;
+	}
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_DRV_OWN);
+}
+#endif /* CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE */
+

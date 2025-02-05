@@ -69,35 +69,6 @@ void nicpmWakeUpWiFi(struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is used to process the POWER ON procedure.
- *
- * \param[in] pvAdapter Pointer to the Adapter structure.
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-void nicpmSetFWOwn(struct ADAPTER *prAdapter,
-		   u_int8_t fgEnableGlobalInt)
-{
-	halSetFWOwn(prAdapter, fgEnableGlobalInt);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is used to process the POWER OFF procedure.
- *
- * \param[in] pvAdapter Pointer to the Adapter structure.
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t nicpmSetDriverOwn(struct ADAPTER *prAdapter)
-{
-	return halSetDriverOwn(prAdapter);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is used to set ACPI power mode to D0.
  *
  * \param[in] pvAdapter Pointer to the Adapter structure.

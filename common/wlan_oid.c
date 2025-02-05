@@ -6217,13 +6217,14 @@ wlanoidQueryMcrRead(struct ADAPTER *prAdapter,
 				"Get Chip ID [0x%08x] from FW\n",
 				prMcrRdInfo->u4McrData);
 		} else {
-			ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+			ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+				DRV_OWN_SRC_QUERY_MCR_READ);
 			HAL_RMCR_RD(OID_DBG, prAdapter,
 				/* address is in DWORD unit */
 				(prMcrRdInfo->u4McrOffset & BITS(2, 31)),
 				   &prMcrRdInfo->u4McrData);
-			RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
+			RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+				DRV_OWN_SRC_QUERY_MCR_READ);
 			DBGLOG(INIT, TRACE,
 			       "MCR Read: Offset = %#08x, Data = %#08x\n",
 			       prMcrRdInfo->u4McrOffset,
@@ -6690,12 +6691,13 @@ wlanoidQueryDrvMcrRead(struct ADAPTER *prAdapter,
 	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)
 		      pvQueryBuffer;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_QUERY_DRV_MCR_READ);
 	HAL_RMCR_RD(OID_DBG, prAdapter,
 		       (prMcrRdInfo->u4McrOffset & BITS(2, 31)),
 		       &prMcrRdInfo->u4McrData);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_QUERY_DRV_MCR_READ);
 	DBGLOG(INIT, TRACE,
 	       "DRV MCR Read: Offset = %#08x, Data = %#08x\n",
 	       prMcrRdInfo->u4McrOffset, prMcrRdInfo->u4McrData);
@@ -6742,12 +6744,13 @@ wlanoidSetDrvMcrWrite(struct ADAPTER *prAdapter,
 
 	prMcrWrInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)
 		      pvSetBuffer;
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_SET_DRV_MCR_WRITE);
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	HAL_MCR_WR(prAdapter, (prMcrWrInfo->u4McrOffset & BITS(2,
 			       31)), prMcrWrInfo->u4McrData);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_SET_DRV_MCR_WRITE);
 	DBGLOG(INIT, TRACE,
 	       "DRV MCR Write: Offset = %#08x, Data = %#08x\n",
 	       prMcrWrInfo->u4McrOffset, prMcrWrInfo->u4McrData);
@@ -6776,11 +6779,13 @@ wlanoidQueryDrvMcrReadDirectly(struct ADAPTER *prAdapter,
 
 	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvQueryBuffer;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_QUERY_DRV_MCR_READ_DIRECT);
 	kalDevRegReadDirectly(prAdapter->prGlueInfo,
 			      (prMcrRdInfo->u4McrOffset & BITS(2, 31)),
 			      &prMcrRdInfo->u4McrData);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_QUERY_DRV_MCR_READ_DIRECT);
 
 	DBGLOG(INIT, TRACE,
 	       "DRV MCR Read: Offset = %#08x, Data = %#08x\n",
@@ -6809,11 +6814,13 @@ wlanoidSetDrvMcrWriteDirectly(struct ADAPTER *prAdapter,
 
 	prMcrWrInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvSetBuffer;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_SET_DRV_MCR_WRITE_DIRECT);
 	kalDevRegWriteDirectly(prAdapter->prGlueInfo,
 			       prMcrWrInfo->u4McrOffset & BITS(2, 31),
 			       prMcrWrInfo->u4McrData);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_SET_DRV_MCR_WRITE_DIRECT);
 
 	DBGLOG(INIT, TRACE,
 	       "DRV MCR Write: Offset = %#08x, Data = %#08x\n",
@@ -6848,12 +6855,13 @@ uint32_t wlanoidQueryEmiMcrRead(
 
 	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvQueryBuffer;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_QUERY_EMI_MCR_READ);
 	HAL_MCR_EMI_RD(prAdapter,
 		       prMcrRdInfo->u4McrOffset & BITS(2, 31),
 		       &prMcrRdInfo->u4McrData, &fgRet);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_QUERY_EMI_MCR_READ);
 	DBGLOG(INIT, TRACE,
 	       "EMI MCR Read: Offset = %#08x, Data = %#08x\n",
 	       prMcrRdInfo->u4McrOffset, prMcrRdInfo->u4McrData);
@@ -6922,10 +6930,14 @@ wlanoidQueryUhwMcrRead(struct ADAPTER *prAdapter,
 	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)
 		      pvQueryBuffer;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_QUERY_UHW_MCR_READ);
+
 	HAL_UHW_RD(prAdapter, (prMcrRdInfo->u4McrOffset & BITS(2, 31)),
 		   &prMcrRdInfo->u4McrData, &fgStatus);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_QUERY_UHW_MCR_READ);
 
 	if (fgStatus)
 		DBGLOG(OID, TRACE,
@@ -6987,10 +6999,12 @@ wlanoidSetUhwMcrWrite(struct ADAPTER *prAdapter,
 
 	prMcrWrInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)
 		      pvSetBuffer;
-
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_SET_UHW_MCR_WRITE);
 	HAL_UHW_WR(prAdapter, (prMcrWrInfo->u4McrOffset & BITS(2, 31)),
 		   prMcrWrInfo->u4McrData, &fgStatus);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_SET_UHW_MCR_WRITE);
 
 	if (fgStatus)
 		DBGLOG(INIT, TRACE,
@@ -17507,7 +17521,8 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 		"parse u4Reason %u i4Ret=%d\n",
 		u4Reason, i4Ret);
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_SHOW_AHDBG_INFO);
 
 	if (prDbgOps && prDbgOps->setFwDebug) {
 		/* trigger tx debug sop */
@@ -17524,7 +17539,8 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 		       u4Module, u4BssIndex, u4Reason);
 	}
 
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_SHOW_AHDBG_INFO);
 
 	return WLAN_STATUS_SUCCESS;
 }

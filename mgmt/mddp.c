@@ -3430,7 +3430,8 @@ static void mddpMDDrvOwnReqHdlr(struct mddpw_md_notify_info_t *md_info)
 		return;
 	}
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+				DRV_OWN_SRC_MD_DRV_OWN_REQ);
 	if (prAdapter->fgIsFwOwn == FALSE) {
 		DBGLOG(INIT, DEBUG, "[MDDP] Already Drv Owned.\n");
 		mddpNotifyDrvOwn(STATUS_SUCCESS);
@@ -3460,7 +3461,8 @@ static void mddpMDDrvOwnReleaseHdlr(
 		return;
 	}
 
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_MD_DRV_OWN_REQ);
 	g_rSettings.is_drv_own_acquired = FALSE;
 }
 

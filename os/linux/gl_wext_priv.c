@@ -24898,7 +24898,9 @@ int priv_driver_dump_wfsys_cpupcr(struct net_device *prNetDev,
 	chip_info = prAdapter->chip_info;
 	debug_ops = chip_info->prDebugOps;
 
-	wlanAcquirePowerControl(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_DUMP_WFSYS_CPUPCR);
+
 	if (!prAdapter->fgIsFwOwn) {
 		if (debug_ops && debug_ops->dumpwfsyscpupcr)
 			debug_ops->dumpwfsyscpupcr(prAdapter);
@@ -24908,8 +24910,8 @@ int priv_driver_dump_wfsys_cpupcr(struct net_device *prNetDev,
 	} else {
 		DBGLOG(REQ, WARN, "driver own failed.\n");
 	}
-	wlanReleasePowerControl(prAdapter);
-
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_DUMP_WFSYS_CPUPCR);
 	return i4BytesWritten;
 }
 

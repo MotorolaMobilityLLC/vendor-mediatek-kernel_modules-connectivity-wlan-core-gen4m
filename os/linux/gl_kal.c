@@ -5588,8 +5588,9 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 	if (prCmdQue->u4NumElem > 0) {
 		if (*pfgNeedHwAccess == FALSE) {
 			*pfgNeedHwAccess = TRUE;
-
-			wlanAcquirePowerControl(prGlueInfo->prAdapter);
+			ACQUIRE_POWER_CONTROL_FROM_PM(
+				prGlueInfo->prAdapter,
+				DRV_OWN_SRC_MAIN_THREAD);
 		}
 		wlanProcessCommandQueue(prGlueInfo->prAdapter, prCmdQue);
 	}
@@ -5755,7 +5756,8 @@ int hif_thread(void *data)
 				  &prGlueInfo->ulFlag);
 			continue;
 		}
-		wlanAcquirePowerControl(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_HIF_THREAD);
 
 		/* Handle Interrupt */
 		fgEnInt = test_and_clear_bit(
@@ -5874,7 +5876,8 @@ int hif_thread(void *data)
 		halDumpHifStats(prAdapter);
 
 		/* Release to FW own */
-		wlanReleasePowerControl(prAdapter);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_HIF_THREAD);
 		kalTraceEnd(); /* hif_thread */
 	}
 
@@ -6178,8 +6181,9 @@ int main_thread(void *data)
 		if (prGlueInfo->fgEnSdioTestPattern == TRUE) {
 			if (fgNeedHwAccess == FALSE) {
 				fgNeedHwAccess = TRUE;
-
-				wlanAcquirePowerControl(prGlueInfo->prAdapter);
+				ACQUIRE_POWER_CONTROL_FROM_PM(
+					prGlueInfo->prAdapter,
+					DRV_OWN_SRC_MAIN_THREAD);
 			}
 
 			if (prGlueInfo->fgIsSdioTestInitialized == FALSE) {
@@ -6212,8 +6216,9 @@ int main_thread(void *data)
 			kalTraceBegin("INT");
 			if (fgNeedHwAccess == FALSE) {
 				fgNeedHwAccess = TRUE;
-
-				wlanAcquirePowerControl(prGlueInfo->prAdapter);
+				ACQUIRE_POWER_CONTROL_FROM_PM(
+					prGlueInfo->prAdapter,
+					DRV_OWN_SRC_MAIN_THREAD);
 			}
 
 			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
@@ -6329,7 +6334,9 @@ int main_thread(void *data)
 #if CFG_SUPPORT_MULTITHREAD
 #else
 		if (fgNeedHwAccess == TRUE)
-			wlanReleasePowerControl(prGlueInfo->prAdapter);
+			RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter,
+				FALSE,
+				DRV_OWN_SRC_MAIN_THREAD);
 #endif
 		/* handle cnmTimer time out */
 #ifdef UT_TEST_MODE

@@ -84,27 +84,48 @@ struct PM_PROFILE_SETUP_INFO {
  *******************************************************************************
  */
 #if !CFG_ENABLE_FULL_PM
-#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter)
-#define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST)
-#else
-
-#if CFG_MTK_ANDROID_WMT
-#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter) \
-	{ \
-		wlanAcquirePowerControl(_prAdapter); \
+#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter, _eDrvOwnSrc)
+#define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST,	 \
+				_eDrvOwnSrc)
+#else /* CFG_ENABLE_FULL_PM */
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter, _eDrvOwnSrc)		\
+	{								\
+		struct DRV_OWN_INFO *_prDrvOwnInfo = NULL;		\
+		_prDrvOwnInfo = kalMemZAlloc(				\
+				sizeof(struct DRV_OWN_INFO),		\
+					PHY_MEM_TYPE);			\
+		if (_prDrvOwnInfo != NULL) {				\
+			kalMemCopy(_prDrvOwnInfo->ucThrdName,		\
+				current->comm,				\
+				min(sizeof(_prDrvOwnInfo->ucThrdName) - 1,\
+				kalStrLen(current->comm)));		\
+			_prDrvOwnInfo->rThrdPid = current->pid;		\
+			kalMemCopy(_prDrvOwnInfo->ucFuncName,		\
+				__func__,				\
+				min(sizeof(_prDrvOwnInfo->ucFuncName) - 1,\
+				kalStrLen(__func__)));			\
+			_prDrvOwnInfo->eDrvOwnSrc = _eDrvOwnSrc;	\
+		}							\
+		halSetDriverOwn(_prAdapter, _prDrvOwnInfo);		\
 	}
-#else
-#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter) \
+#define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, \
+	_fgEnableGINT_in_IST, _eDrvOwnSrc) \
 	{ \
-		nicpmSetDriverOwn(_prAdapter); \
+		halSetFWOwn(_prAdapter, _fgEnableGINT_in_IST, _eDrvOwnSrc); \
 	}
-#endif
-
-#define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST) \
+#else /* (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 0) */
+#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter, _eDrvOwnSrc)		\
+	{								\
+		   halSetDriverOwn(_prAdapter);				\
+	}
+#define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST,\
+				_eDrvOwnSrc) \
 	{ \
-		nicpmSetFWOwn(_prAdapter, _fgEnableGINT_in_IST); \
+		halSetFWOwn(_prAdapter, _fgEnableGINT_in_IST); \
 	}
-#endif
+#endif /* (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 0) */
+#endif /* !CFG_ENABLE_FULL_PM */
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

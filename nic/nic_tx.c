@@ -6371,7 +6371,8 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	wlanAcquirePowerControl(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_TX_DIRECT_START_XMIT_MAIN);
 #endif
 	while (prMsduInfo) {
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
@@ -6411,7 +6412,8 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* Release to FW own */
-	wlanReleasePowerControl(prAdapter);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_TX_DIRECT_START_XMIT_MAIN);
 #endif
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 	return WLAN_STATUS_SUCCESS;

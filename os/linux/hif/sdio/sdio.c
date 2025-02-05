@@ -1348,7 +1348,7 @@ u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 
 Exit:
 	if (fgIssueOwn)
-		nicpmSetFWOwn(prGlueInfo->prAdapter, FALSE);
+		halSetFWOwn(prGlueInfo->prAdapter, FALSE);
 
 	prGlueInfo->prAdapter->fgGetMailBoxRWAck = FALSE;
 
@@ -1521,7 +1521,7 @@ u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 
 Exit:
 	if (fgIssueOwn)
-		nicpmSetFWOwn(prGlueInfo->prAdapter, FALSE);
+		halSetFWOwn(prGlueInfo->prAdapter, FALSE);
 
 	prGlueInfo->prAdapter->fgGetMailBoxRWAck = FALSE;
 

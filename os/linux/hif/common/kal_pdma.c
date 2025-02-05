@@ -3424,9 +3424,11 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 		goto exit;
 	}
 
-	halSetDriverOwn(prGlueInfo->prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter,
+		DRV_OWN_SRC_REG_START_WRAPPER);
 	if (prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
-		DBGLOG_LIMITED(HAL, WARN, "Driver own fail.\n");
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver own fail.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -3449,13 +3451,14 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 	if (ret)
 		goto exit;
 
-	halSetFWOwn(prGlueInfo->prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter,
+		FALSE,
+		DRV_OWN_SRC_REG_START_WRAPPER);
 
 	GLUE_DEC_REF_CNT(prGlueInfo->u4HifRegStartCnt);
 	DBGLOG(HAL, DEBUG, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
 	       prGlueInfo->prAdapter->u4PwrCtrlBlockCnt,
 	       prGlueInfo->u4HifRegStartCnt);
-
 exit:
 	return ret;
 }

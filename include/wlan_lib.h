@@ -317,6 +317,11 @@ struct TPENHANCE_PKT_MAP {
 #define ED_VALUE_SITE		2
 #endif
 
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+#define DRV_OWN_LOG_MAX_SIZE	200
+#define FUNC_NAME_LENGTH	30
+#endif
+
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
 	CMD_VER_1_EXT
@@ -1969,6 +1974,25 @@ struct ML_CHNL_COND_RESULT {
 	uint8_t ucReserved;
 	uint32_t au4ccaRatio[ML_CHNL_COND_MAX_P20_NUM];
 };
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+struct DRV_OWN_INFO {
+	uint8_t ucLog[DRV_OWN_LOG_MAX_SIZE]; /* Store the debug log */
+	uint8_t ucThrdName[TASK_COMM_LEN];
+	uint8_t ucFuncName[FUNC_NAME_LENGTH];
+	enum ENUM_DRV_OWN_SRC eDrvOwnSrc;
+	u_int8_t fgIsValid;
+	u_int8_t fgStatus; /* TRUE: success FALSE: failed */
+	uint64_t u8StartSec;
+	uint64_t u8StartNSec;
+	uint64_t u8EndSec;
+	uint64_t u8EndNSec;
+	uint64_t u8DiffSec;
+	uint64_t u8DiffNSec;
+	uint32_t u4StartTick;
+	uint32_t u4EndTick;
+	pid_t rThrdPid;
+};
+#endif
 
 struct ECO_INFO {
 	uint8_t ucHwVer;
@@ -2220,13 +2244,6 @@ uint32_t wlanFlushTxPendingPackets(struct ADAPTER *prAdapter);
 
 uint32_t wlanTxPendingPackets(struct ADAPTER *prAdapter,
 			      u_int8_t *pfgHwAccess);
-
-/*----------------------------------------------------------------------------*/
-/* Low Power Acquire/Release (for Glue Layer)                                 */
-/*----------------------------------------------------------------------------*/
-uint32_t wlanAcquirePowerControl(struct ADAPTER *prAdapter);
-
-uint32_t wlanReleasePowerControl(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* Pending Packets Number Reporting (for Glue Layer)                          */

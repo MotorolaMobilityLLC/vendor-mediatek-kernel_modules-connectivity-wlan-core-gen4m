@@ -478,7 +478,7 @@ u_int8_t halFWOwnClr(struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+uint32_t halSetDriverOwn(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgStatus = TRUE;
 	uint32_t i, j, u4CurrTick = 0;
@@ -591,9 +591,15 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		u4DriverOwnTime, u4Cr4ReadyTime, ((j == 0x77889901)?"1":"0"), i);
 
 unlock:
+#if CFG_MTK_ANDROID_WMT
+	if (fgStatus && prAdapter->fgWiFiInSleepyState == TRUE)
+		prAdapter->fgWiFiInSleepyState = FALSE;
+#endif
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 
-	return fgStatus;
+	return fgStatus == TRUE ?
+		WLAN_STATUS_SUCCESS :
+		WLAN_STATUS_FAILURE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -651,7 +657,13 @@ u_int8_t halPollMailBoxSts(struct ADAPTER *prAdapter,
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 0)
 void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
+#else
+void halSetFWOwn(struct ADAPTER *prAdapter,
+		u_int8_t fgEnableGlobalInt,
+		struct DRV_OWN_INFO *prDrvOwnInfo)
+#endif
 {
 
 	u_int8_t fgResult;

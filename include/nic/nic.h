@@ -330,11 +330,6 @@ u_int8_t nicVerifyChipID(struct ADAPTER *prAdapter);
 
 void nicpmWakeUpWiFi(struct ADAPTER *prAdapter);
 
-u_int8_t nicpmSetDriverOwn(struct ADAPTER *prAdapter);
-
-void nicpmSetFWOwn(struct ADAPTER *prAdapter,
-		   u_int8_t fgEnableGlobalInt);
-
 u_int8_t nicpmSetAcpiPowerD0(struct ADAPTER *prAdapter);
 
 void nicTriggerAHDBG(struct ADAPTER *prAdapter,

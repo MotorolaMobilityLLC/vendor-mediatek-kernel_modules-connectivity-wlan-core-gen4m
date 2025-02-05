@@ -790,7 +790,6 @@ struct ADAPTER *wlanAdapterCreate(struct GLUE_INFO
 #endif
 		kalMemZero(prAdpater, sizeof(struct ADAPTER));
 		prAdpater->prGlueInfo = prGlueInfo;
-
 	} while (FALSE);
 
 	return prAdpater;
@@ -1359,13 +1358,18 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
 		prAdapter->fgIsWiFiOnDrvOwn = TRUE;
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_ADAPTER_START);
 		prAdapter->fgIsWiFiOnDrvOwn = FALSE;
 		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
 #if (CFG_ENABLE_FULL_PM == 0)
-		nicpmSetDriverOwn(prAdapter);
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+		halSetDriverOwn(prAdapter, DRV_OWN_SRC_ADAPTER_START);
+#else
+		halSetDriverOwn(prAdapter);
+#endif
 #endif
 
 #if !defined(_HIF_USB)
@@ -1560,7 +1564,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 					DBGLOG(INIT, WARN,
 						"wlanQueryNicCapabilityV2 failed.\n");
 					RECLAIM_POWER_CONTROL_TO_PM(
-						prAdapter, FALSE);
+						prAdapter, FALSE,
+						DRV_OWN_SRC_ADAPTER_START);
 					eFailReason = WAIT_FIRMWARE_READY_FAIL;
 					break;
 				}
@@ -1623,7 +1628,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_ADAPTER_START);
 
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 		wlanOpenIdxLogBin(prAdapter);
@@ -5260,8 +5266,8 @@ uint32_t wlanTxPendingPackets(struct ADAPTER *prAdapter,
 			/* <2> Acquire LP-OWN if necessary */
 			if (*pfgHwAccess == FALSE) {
 				*pfgHwAccess = TRUE;
-
-				wlanAcquirePowerControl(prAdapter);
+				ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+					DRV_OWN_SRC_MAIN_THREAD);
 			}
 #endif
 			/* <3> send packets */
@@ -5275,53 +5281,6 @@ uint32_t wlanTxPendingPackets(struct ADAPTER *prAdapter,
 		} else
 			wlanProcessQueuedMsduInfo(prAdapter, prMsduInfo);
 	}
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called to acquire power control from firmware
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- *
- * @return WLAN_STATUS_SUCCESS
- */
-/*----------------------------------------------------------------------------*/
-uint32_t wlanAcquirePowerControl(struct ADAPTER *prAdapter)
-{
-	ASSERT(prAdapter);
-
-	/* DBGLOG(INIT, DEBUG, ("Acquire Power Ctrl\n")); */
-
-#if CFG_ENABLE_FULL_PM
-	if (nicpmSetDriverOwn(prAdapter) != TRUE)
-		return WLAN_STATUS_FAILURE;
-#endif
-
-	/* Reset sleepy state */
-	if (prAdapter->fgWiFiInSleepyState == TRUE)
-		prAdapter->fgWiFiInSleepyState = FALSE;
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called to release power control to firmware
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- *
- * @return WLAN_STATUS_SUCCESS
- */
-/*----------------------------------------------------------------------------*/
-uint32_t wlanReleasePowerControl(struct ADAPTER *prAdapter)
-{
-	ASSERT(prAdapter);
-
-	/* DBGLOG(INIT, DEBUG, ("Release Power Ctrl\n")); */
-
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	return WLAN_STATUS_SUCCESS;
 }

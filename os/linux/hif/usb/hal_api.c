@@ -1479,9 +1479,9 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+uint32_t halSetDriverOwn(struct ADAPTER *prAdapter)
 {
-	return TRUE;
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/

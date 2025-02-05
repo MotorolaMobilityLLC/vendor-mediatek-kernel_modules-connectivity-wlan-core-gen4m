@@ -55,7 +55,8 @@ static void fw_log_emi_update_rp(struct ADAPTER *ad,
 	struct FW_LOG_EMI_SUB_CTRL *sub_ctrl,
 	uint32_t rp)
 {
-	ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+	ACQUIRE_POWER_CONTROL_FROM_PM(ad,
+		DRV_OWN_SRC_FW_LOG_EMI_UPDATE);
 
 	if (ad->fgIsFwOwn == FALSE) {
 		DBGLOG(INIT, LOUD,
@@ -67,8 +68,8 @@ static void fw_log_emi_update_rp(struct ADAPTER *ad,
 					     sub_ctrl->type,
 					     rp);
 	}
-
-	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE,
+		DRV_OWN_SRC_FW_LOG_EMI_UPDATE);
 }
 
 static u_int8_t fw_log_emi_is_empty(struct FW_LOG_EMI_SUB_CTRL *sub_ctrl)

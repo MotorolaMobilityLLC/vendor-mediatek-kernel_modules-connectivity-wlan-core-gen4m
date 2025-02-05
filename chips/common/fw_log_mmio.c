@@ -253,12 +253,18 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 	KAL_WAKE_LOCK(prAdapter, prCtrl->prWakeLock);
 #endif
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_FW_LOG);
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_FW_LOG_MMIO_HANDLER);
+
 	if (prAdapter->fgIsFwOwn == TRUE) {
 		DBGLOG(INIT, WARN,
 			"Skip due to driver own failed.\n");
 		prStats->skipped++;
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_FW_LOG_MMIO_HANDLER);
+
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
 #if CFG_ENABLE_WAKE_LOCK
 		KAL_WAKE_UNLOCK(prAdapter, prCtrl->prWakeLock);
@@ -272,7 +278,9 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl,
 				    fgForceRead);
 	}
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_FW_LOG_MMIO_HANDLER);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_UNLOCK(prAdapter, prCtrl->prWakeLock);

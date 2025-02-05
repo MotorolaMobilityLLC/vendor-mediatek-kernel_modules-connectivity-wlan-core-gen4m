@@ -46,6 +46,9 @@
 #define MAX_STA_INFO_MCS_NUM 32
 
 #define NUM_OF_SKIP_DUMP_EE_REASON_LIST 2
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+#define DRV_OWN_INFO_TABLE_SIZE 10
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -3381,6 +3384,11 @@ struct ADAPTER {
 	uint8_t ucForceLinkSort;
 	uint8_t ucForceLinkSortType;
 #endif
+
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+	struct DRV_OWN_INFO rDrvOwnTable[DRV_OWN_INFO_TABLE_SIZE];
+	uint32_t u4DrvOwnIdx;
+#endif /* CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE */
 
 #if CFG_SUPPORT_DBDC
 	struct DBDC_INFO_T rDbdcInfo;

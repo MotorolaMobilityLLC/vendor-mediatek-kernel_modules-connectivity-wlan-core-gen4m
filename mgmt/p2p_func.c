@@ -3802,12 +3802,14 @@ p2pFuncDissolve(struct ADAPTER *prAdapter,
 
 		/* Make the deauth frame send to FW ASAP. */
 #if !CFG_SUPPORT_MULTITHREAD
-		wlanAcquirePowerControl(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_P2P_FUNC_DISSOLVE);
 #endif
 		wlanProcessCommandQueue(prAdapter,
 			&prAdapter->prGlueInfo->rCmdQueue);
 #if !CFG_SUPPORT_MULTITHREAD
-		wlanReleasePowerControl(prAdapter);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter,
+			DRV_OWN_SRC_P2P_FUNC_DISSOLVE);
 #endif
 
 		/* Change Connection Status. */
@@ -3948,12 +3950,14 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 
 			/* Make the deauth frame send to FW ASAP. */
 #if !CFG_SUPPORT_MULTITHREAD
-			wlanAcquirePowerControl(prAdapter);
+			ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+				DRV_OWN_SRC_P2P_FUNC_DISCONNECT);
 #endif
 			wlanProcessCommandQueue(prAdapter,
 				&prAdapter->prGlueInfo->rCmdQueue);
 #if !CFG_SUPPORT_MULTITHREAD
-			wlanReleasePowerControl(prAdapter);
+			RECLAIM_POWER_CONTROL_TO_PM(prAdapter,
+				DRV_OWN_SRC_P2P_FUNC_DISCONNECT);
 #endif
 		} else {
 			p2pLinkStaRecFree(prAdapter, prStaRec, prP2pBssInfo);

@@ -827,7 +827,8 @@ void connac3x_get_lwtbl(
 	uint32_t wtbl_offset, addr;
 
 	prChipInfo = prAdapter->chip_info;
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_GET_LWTBL);
 	CONNAC3X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
 	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
 		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
@@ -851,7 +852,8 @@ void connac3x_get_lwtbl(
 			(uint32_t *)&wtbl_raw_dw[wtbl_offset],
 			&u4Value, sizeof(uint32_t));
 	}
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_GET_LWTBL);
 }
 
 void connac3x_get_rssi_from_wtbl(
@@ -871,10 +873,12 @@ void connac3x_get_rssi_from_wtbl(
 	prChipInfo = prAdapter->chip_info;
 	DBGLOG(REQ, DEBUG, "WTBL : index = %d\n", u4Index);
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_GET_RSSI_FROM_WTBL);
 	rCmdAccessReg.u4Address = CONNAC3X_LWTBL_IDX2BASE(
 		prChipInfo->u4LmacWtblDUAddr, u4Index, 34);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_GET_RSSI_FROM_WTBL);
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMcrRead,
 			   &rCmdAccessReg, sizeof(rCmdAccessReg),
@@ -1049,7 +1053,10 @@ int32_t connac3x_show_umac_wtbl_info(
 		UWTBL_IDX2BASE(u4Index, 0));
 
 	prChipInfo = prAdapter->chip_info;
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_SHOW_UMAC_WTBL_INFO);
+
 	/* UMAC */
 	CONNAC3X_UWTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr, u4Index);
 	wtbl_umac_baseaddr = CONNAC3X_UWTBL_IDX2BASE(
@@ -1162,7 +1169,9 @@ int32_t connac3x_show_umac_wtbl_info(
 		puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc0,
 		puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc1,
 		keyloc2);
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_SHOW_UMAC_WTBL_INFO);
 
 	/* UMAC WTBL DW 8 */
 	amsdu_len = puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_len;

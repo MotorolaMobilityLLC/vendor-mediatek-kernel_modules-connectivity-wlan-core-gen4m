@@ -1944,7 +1944,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo->fgIsInSuspendMode = TRUE;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+		DRV_OWN_SRC_PCI_SUSPEND);
 
 	/* Stop upper layers calling the device hard_start_xmit routine. */
 	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
@@ -2004,7 +2005,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	/* FW own */
 	/* Set FW own directly without waiting sleep notify */
 	prAdapter->fgWiFiInSleepyState = TRUE;
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_PCI_SUSPEND);
 
 	/* Wait for
 	*  1. The other unfinished ownership handshakes
@@ -2021,7 +2023,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 			break;
 		}
 
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_PCI_SUSPEND);
 		/* Prevent that suspend without FW Own:
 		 * Set Drv own has failed,
 		 * and then Set FW Own is skipped
@@ -2033,8 +2036,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		/* For single core CPU */
 		/* let hif_thread can be completed */
 		usleep_range(1000, 3000);
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_PCI_SUSPEND);
 		wait++;
 	}
 
@@ -2123,7 +2126,8 @@ int mtk_pci_resume(struct pci_dev *pdev)
 
 	/* Driver own */
 	/* Include restore PDMA settings */
-	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter,
+		DRV_OWN_SRC_PCI_RESUME);
 
 	if (prBusInfo->initPcieInt)
 		prBusInfo->initPcieInt(prGlueInfo);
@@ -2145,7 +2149,8 @@ int mtk_pci_resume(struct pci_dev *pdev)
 	wlanResumePmHandle(prGlueInfo);
 
 	/* FW own */
-	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE,
+		DRV_OWN_SRC_PCI_RESUME);
 
 	prGlueInfo->fgIsInSuspendMode = FALSE;
 	/* Allow upper layers to call the device hard_start_xmit routine. */

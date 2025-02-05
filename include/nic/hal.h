@@ -1659,9 +1659,24 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter,
 void halEnableInterrupt(struct ADAPTER *prAdapter);
 void halDisableInterrupt(struct ADAPTER *prAdapter);
 
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter);
+#if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
+uint32_t halSetDriverOwn(struct ADAPTER *prAdapter,
+	struct DRV_OWN_INFO *prDrvOwnInfo);
+void halSetFWOwn(struct ADAPTER *prAdapter,
+	u_int8_t fgEnableGlobalInt,
+	enum ENUM_DRV_OWN_SRC eDrvOwnSrc);
+uint32_t halUpdateDrvOwnInfo(struct ADAPTER *prAdapter,
+			     struct DRV_OWN_INFO *prDrvOwnInfo,
+			     enum DRV_OWN_INFO_ACTION eAction,
+			     uint32_t u4Result,
+			     uint8_t **ppucLog);
+void halAccessDrvOwnTable(struct ADAPTER *prAdapter,
+			enum DRV_OWN_INFO_ACTION eAction);
+#else
+uint32_t halSetDriverOwn(struct ADAPTER *prAdapter);
 void halSetFWOwn(struct ADAPTER *prAdapter,
 	u_int8_t fgEnableGlobalInt);
+#endif
 
 void halDevInit(struct ADAPTER *prAdapter);
 void halEnableFWDownload(struct ADAPTER *prAdapter,

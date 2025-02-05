@@ -3466,7 +3466,8 @@ static void mt7999_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec)
 {
-	ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+	ACQUIRE_POWER_CONTROL_FROM_PM(ad,
+		DRV_OWN_SRC_CCIF_NOTIFY_UTC_TIME_TO_FW);
 	if (ad->fgIsFwOwn == TRUE)
 		goto exit;
 
@@ -3481,7 +3482,8 @@ static void mt7999_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 		SW_INT_TIME_SYNC);
 
 exit:
-	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE,
+		DRV_OWN_SRC_CCIF_NOTIFY_UTC_TIME_TO_FW);
 }
 
 static void mt7999_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
@@ -4564,7 +4566,8 @@ int mt7999PowerDumpStart(void *priv_data, unsigned int force_dump)
 	if (force_dump == TRUE) {
 		DBGLOG(REQ, DEBUG, "PowerDumpStart force_dump\n");
 		ad->fgIsPowerDumpDrvOwn = TRUE;
-		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+		ACQUIRE_POWER_CONTROL_FROM_PM(ad,
+			DRV_OWN_SRC_POWER_DUMP_START);
 		ad->fgIsPowerDumpDrvOwn = FALSE;
 
 		if (ad->fgIsFwOwn == TRUE) {
@@ -4582,7 +4585,8 @@ int mt7999PowerDumpStart(void *priv_data, unsigned int force_dump)
 
 		if (u4Val == 0x10) {
 			ad->fgIsPowerDumpDrvOwn = TRUE;
-			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+			ACQUIRE_POWER_CONTROL_FROM_PM(ad,
+				DRV_OWN_SRC_POWER_DUMP_START);
 			ad->fgIsPowerDumpDrvOwn = FALSE;
 
 			if (ad->fgIsFwOwn == TRUE) {
@@ -4609,7 +4613,8 @@ int mt7999PowerDumpEnd(void *priv_data)
 	}
 
 	if (ad->fgIsFwOwn == FALSE && glue->u4ReadyFlag)
-		RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE,
+			DRV_OWN_SRC_POWER_DUMP_START);
 
 	return 0;
 }
