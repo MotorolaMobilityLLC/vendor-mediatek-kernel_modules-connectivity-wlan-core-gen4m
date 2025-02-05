@@ -962,6 +962,9 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 #endif
 
 			if (prRoleDev->reg_state == NETREG_REGISTERED) {
+				/* Kernel may lock wiphy again if UP flag still
+				 * raised, force unset to avoid deadlock.
+				 */
 				if (prRoleDev->flags & IFF_UP) {
 					DBGLOG(P2P, TRACE,
 					       "unset role dev flag UP\n");
@@ -1014,6 +1017,9 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 				prP2PInfo->aprRoleHandler = NULL;
 			}
 
+			/* Kernel may lock wiphy again if UP flag still
+			 * raised, force unset to avoid deadlock.
+			 */
 			if (prDev->flags & IFF_UP) {
 				DBGLOG(P2P, TRACE, "unset p2pdev flag UP\n");
 				if (!fgIsRtnlLockAcquired)
