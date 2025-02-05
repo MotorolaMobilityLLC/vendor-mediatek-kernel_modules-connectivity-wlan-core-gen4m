@@ -124,15 +124,16 @@
 #define NAN_NON_DBDC_5G_AIS 0x00FF00FC
 #define NAN_NON_DBDC_6G_AIS 0x00FF00FC
 
+#define NAN_T0_SLOT_MASK_TYPE_AIS 0xFF00FF00 /* 8~15, 23~31 */
 #define NAN_SLOT_MASK_TYPE_AIS 0x00FF00FF /* 0~7, 16~23 */
-#define NAN_SLOT_MASK_TYPE_DEFAULT_NDL 0xFF00FF00 /* *9~15, 24~31 */
 
-#define nanGetNdlSlots(_adapter) \
-	(NAN_SLOT_MASK_TYPE_DEFAULT_NDL & ~nanGetFcSlots(_adapter))
+#define NAN_T0_SLOT_MASK_TYPE_DEFAULT_NDL 0x00FF00FF /* 0~7, 16~23 */
+#define NAN_SLOT_MASK_TYPE_DEFAULT_NDL 0xFF00FF00 /* 9~15, 24~31 */
+
 #define NAN_SLOT_MASK_TYPE_DEFAULT 0xFFFFFFFF /* For NDP setup */
 
-/* For P2P SCC concurrent, slot #0 for DW. #1 for NDC? */
-#define NAN_T0_SLOT_MASK_CONCURRENT_FULL 0xFFFFFFFC
+/* For P2P SCC concurrent, slot #0 for DW. #1, #2 for NDC and channel switch */
+#define NAN_T0_SLOT_MASK_CONCURRENT_FULL 0xFFFFFFF8
 
 /* For P2P SCC concurrent, slot #8, #9 are special for NDC and channel switch */
 #define NAN_T1_SLOT_MASK_CONCURRENT_FULL 0xFFFFF8FF
@@ -142,10 +143,49 @@
 #define NAN_FULL_SLOT_INDEX(__szDwIdx, __szSlotIdx) \
 	((__szDwIdx) * NAN_SLOTS_PER_DW_INTERVAL + (__szSlotIdx))
 
-#define NAN_SLOT_IS_AIS(_szSlotIdx)					\
-	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_AIS)
-#define NAN_SLOT_IS_NDL(_adapter, _szSlotIdx)				\
-	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & nanGetNdlSlots(_adapter))
+#define NAN_IS_2G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
+({                                                                      \
+	const size_t sz2gTimeLineIdx =                                  \
+		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_2G4);    \
+	_szTimeLineIdx == sz2gTimeLineIdx;                              \
+})
+
+#define NAN_IS_5G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
+({                                                                      \
+	const size_t sz5gTimeLineIdx =                                  \
+		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_5G);     \
+	_szTimeLineIdx == sz5gTimeLineIdx;                              \
+})
+
+#define NAN_IS_6G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
+({                                                                      \
+	const size_t sz6gTimeLineIdx =                                  \
+		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_6G);     \
+	_szTimeLineIdx == sz6gTimeLineIdx;                              \
+})
+
+#define NAN_SLOT_IS_AIS(_prAdapter, _szTimeLineIdx, _szSlotIdx)		\
+({									\
+	uint32_t u4Bitmap = NAN_SLOT_MASK_TYPE_AIS;			\
+	if (NAN_IS_2G_TIMELINE(_prAdapter, _szTimeLineIdx))		\
+		u4Bitmap = NAN_T0_SLOT_MASK_TYPE_AIS;			\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & u4Bitmap);			\
+})
+
+#define nanGetNdlSlots(_adapter)			\
+	(NAN_SLOT_MASK_TYPE_DEFAULT_NDL & ~nanGetFcSlots(_adapter))	\
+
+#define NAN_SLOT_IS_NDL(_adapter, _szTimeLineIdx, _szSlotIdx)		\
+({									\
+	uint32_t u4Bitmap = NAN_SLOT_MASK_TYPE_DEFAULT_NDL;		\
+	uint32_t u4FcSlots = 0;				\
+	if (NAN_IS_2G_TIMELINE(_adapter, _szTimeLineIdx))		\
+		u4Bitmap = NAN_T0_SLOT_MASK_TYPE_DEFAULT_NDL;		\
+	else								\
+		u4FcSlots = nanGetFcSlots(_adapter);			\
+	BIT(NAN_SLOT_INDEX(_szSlotIdx)) & (u4Bitmap & ~u4FcSlots);	\
+})
+
 #define NAN_SLOT_IS_FC(_adapter, _szSlotIdx)				\
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & nanGetFcSlots(_adapter))
 #define NAN_SLOT_TIMELINE_IS_FC(_adapter, _szTimelineIdx, _szSlotIdx)	\
@@ -181,27 +221,6 @@
 		if (Print && Index < NAN_SLOTS_PER_DW_INTERVAL)		\
 			DBGLOG(Mod, Clz, Fmt, __VA_ARGS__);		\
 	} while (0)
-
-#define NAN_IS_2G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
-({                                                                      \
-	const size_t sz2gTimeLineIdx =                                  \
-		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_2G4);    \
-	_szTimeLineIdx == sz2gTimeLineIdx;                              \
-})
-
-#define NAN_IS_5G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
-({                                                                      \
-	const size_t sz5gTimeLineIdx =                                  \
-		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_5G);     \
-	_szTimeLineIdx == sz5gTimeLineIdx;                              \
-})
-
-#define NAN_IS_6G_TIMELINE(_prAdapter, _szTimeLineIdx)                  \
-({                                                                      \
-	const size_t sz6gTimeLineIdx =                                  \
-		nanGetTimelineMgmtIndexByBand(_prAdapter, BAND_6G);     \
-	_szTimeLineIdx == sz6gTimeLineIdx;                              \
-})
 
 #define NAN_IS_CHANNEL_6G(_rChnlInfo) \
 	(IS_6G_OP_CLASS((_rChnlInfo).u4OperatingClass))
@@ -598,6 +617,7 @@ struct _NAN_CUST_FAW_ENTRY {
 
 struct NAN_P2P_AIS_MCC_RECORD {
 	u_int8_t fgIsP2pAisMCC;
+	u_int8_t ucNumOfChannel;
 	union _NAN_BAND_CHNL_CTRL rAisChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
 };
@@ -993,6 +1013,10 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter);
 u_int8_t nanIsFollowP2pInNonSocialChannel(struct ADAPTER *prAdapter,
 					  size_t szTimelineIdx,
 					  union _NAN_BAND_CHNL_CTRL *prP2pChnl);
+
+union _NAN_BAND_CHNL_CTRL
+nanGetActiveChnl(struct ADAPTER *prAdapter,
+		 enum ENUM_NETWORK_TYPE eNetworkType, enum ENUM_BAND eBand);
 
 uint8_t nanGetP2pActiveChannel(struct ADAPTER *prAdapter, enum ENUM_BAND eBand);
 

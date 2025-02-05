@@ -798,20 +798,51 @@ nanGetNegoControlBlock(struct ADAPTER *prAdapter)
 	return &g_rNanSchNegoCtrl;
 }
 
+static u_int8_t nanChnlInfoEqual(union _NAN_BAND_CHNL_CTRL a,
+				 union _NAN_BAND_CHNL_CTRL b)
+{
+	return NAN_GET_CHNL_BAND_INFO(a) == NAN_GET_CHNL_BAND_INFO(b) &&
+		a.u4PrimaryChnl == b.u4PrimaryChnl;
+}
+
+u_int8_t nanOverConcurrentChannelLimit(struct ADAPTER *prAdapter,
+				       struct _NAN_SCHEDULER_T *prNanScheduler,
+				       uint8_t ucMaxConcurrentLimit,
+				       union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
+{
+	uint8_t i;
+	uint8_t ucChannelNum = 1; /* the passed-in rNanChnlInfo */
+	struct NAN_P2P_AIS_MCC_RECORD *prP2pAisMcc;
+	union _NAN_BAND_CHNL_CTRL rSocialChnlInfo;
+
+	for (i = 0; i < ARRAY_SIZE(prNanScheduler->arP2pAisMcc); i++) {
+		prP2pAisMcc = &prNanScheduler->arP2pAisMcc[i];
+		ucChannelNum += prP2pAisMcc->ucNumOfChannel;
+		if (NAN_IS_2G_TIMELINE(prAdapter, i))
+			rSocialChnlInfo = g_r2gDwChnl;
+		else
+			rSocialChnlInfo = g_r5gDwChnl;
+
+		if (prP2pAisMcc->rAisChnlInfo.u4PrimaryChnl &&
+		    nanChnlInfoEqual(prP2pAisMcc->rAisChnlInfo, rNanChnlInfo) ||
+		    prP2pAisMcc->rP2pChnlInfo.u4PrimaryChnl &&
+		    nanChnlInfoEqual(prP2pAisMcc->rP2pChnlInfo, rNanChnlInfo) ||
+		    nanChnlInfoEqual(rSocialChnlInfo, rNanChnlInfo)) {
+			ucChannelNum--;
+		}
+
+	}
+	DBGLOG(NAN, INFO, "ucChannelNum=%u, ucMaxConcurrentLimit=%u",
+	       ucChannelNum, ucMaxConcurrentLimit);
+
+	return ucChannelNum > ucMaxConcurrentLimit;
+}
+
 u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 			     union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 {
 	enum ENUM_BAND eBand;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
-#if (CFG_SUPPORT_NAN_6G == 1)
-	union _NAN_BAND_CHNL_CTRL *prAisChnlInfo[NAN_TIMELINE_MGMT_SIZE];
-	union _NAN_BAND_CHNL_CTRL *prP2pChnlInfo[NAN_TIMELINE_MGMT_SIZE];
-	const size_t sz2gTimeLine =
-		nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4);
-	const size_t sz5gTimeLine =
-		nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
-	size_t i;
-#endif
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
@@ -829,10 +860,6 @@ u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 			!NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G); /* Use 2.4G */
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	for (i = 0; i < NAN_TIMELINE_MGMT_SIZE; i++) {
-		prAisChnlInfo[i] = &prNanScheduler->arP2pAisMcc[i].rAisChnlInfo;
-		prP2pChnlInfo[i] = &prNanScheduler->arP2pAisMcc[i].rP2pChnlInfo;
-	}
 	if (eBand == BAND_6G) {
 		/**
 		 * limited to 4 channels:
@@ -852,20 +879,11 @@ u_int8_t nanIsAllowedChannel(struct ADAPTER *prAdapter,
 		if (prAdapter->chip_info &&
 		    prAdapter->chip_info->ucMaxConcurrentLimit &&
 		    prAdapter->chip_info->ucMaxConcurrentLimit == 4 &&
-		    /* case 1 */
-		    (prNanScheduler->arP2pAisMcc[sz2gTimeLine].fgIsP2pAisMCC &&
-		     prAisChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
-			     g_r2gDwChnl.u4PrimaryChnl &&
-		     prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
-			     g_r2gDwChnl.u4PrimaryChnl ||
-		     /* case 2 */
-		     prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl &&
-		     prP2pChnlInfo[sz2gTimeLine]->u4PrimaryChnl !=
-			     g_r2gDwChnl.u4PrimaryChnl &&
-		     prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl &&
-		     prAisChnlInfo[sz5gTimeLine]->u4PrimaryChnl !=
-			     g_r5gDwChnl.u4PrimaryChnl))
+		    nanOverConcurrentChannelLimit(prAdapter, prNanScheduler,
+			prAdapter->chip_info->ucMaxConcurrentLimit,
+			rNanChnlInfo))
 			return FALSE;
+
 		return prNanScheduler->fgEn6g;
 	}
 #endif
@@ -8984,6 +9002,15 @@ nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 				return TRUE;
 			}
 
+			/* Highest is 2G */
+			if (eHighestCommonBand == ENUM_SUPPORTED_BN_2G &&
+			    !NAN_IS_CHANNEL_2G(rRmtChnlInfo)) {
+				DBGLOG(NAN, WARN,
+				       "rmt channel (%d) not allowed for concurrent\n",
+				       rRmtChnlInfo.u4PrimaryChnl);
+				return TRUE;
+			}
+
 			/* Default NDC slot not match */
 			if (!nanGetFeatureIsSigma(prAdapter) &&
 				NAN_SLOT_INDEX(u4SlotIdx) ==
@@ -11283,7 +11310,7 @@ WAIT_RSP_STATE_DONE:
 	if (pu4RejectCode != NULL)
 		*pu4RejectCode = u4ReasonCode;
 
-	DBGLOG(NAN, DEBUG, "pu4RejectCode = %u\n", u4ReasonCode);
+	DBGLOG(NAN, DEBUG, "*pu4RejectCode = %u\n", u4ReasonCode);
 
 	return rRetStatus;
 }
@@ -11854,7 +11881,8 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		for (szSlotIdx = 0;
 		     szSlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 		     szSlotIdx++) {
-			if (NAN_SLOT_IS_AIS(NAN_SLOT_INDEX(szSlotIdx)))
+			if (NAN_SLOT_IS_AIS(prAdapter, szTimeLineIdx,
+					    NAN_SLOT_INDEX(szSlotIdx)))
 				NAN_TIMELINE_UNSET(au4PotentialAvailMap,
 						   szSlotIdx);
 		}
@@ -12036,7 +12064,8 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		for (szSlotIdx = 0;
 		     szSlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 		     szSlotIdx++) {
-			if (NAN_SLOT_IS_AIS(NAN_SLOT_INDEX(szSlotIdx)))
+			if (NAN_SLOT_IS_AIS(prAdapter, szTimeLineIdx,
+					    NAN_SLOT_INDEX(szSlotIdx)))
 				NAN_TIMELINE_UNSET(au4PotentialAvailMap,
 						   szSlotIdx);
 		}
@@ -12222,6 +12251,8 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 
 
 		if (NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
+			union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
+
 			if (getPeerSchDescMaxCap(prPeerSchDesc) == BAND_2G4) {
 				DBGLOG(NAN, INFO,
 				       "Skip 5G/6G availability by peer capability");
@@ -12238,6 +12269,18 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 			    eHighestCommonBand == ENUM_SUPPORTED_BN_2G) {
 				DBGLOG(NAN, INFO,
 				       "Skip 5G/6G availability to use 2G");
+				continue;
+			}
+
+			rP2pChnlInfo = nanGetActiveChnl(prAdapter,
+							NETWORK_TYPE_P2P,
+							BAND_5G);
+			if (rP2pChnlInfo.u4PrimaryChnl &&
+			    !NAN_CHNL_IN_COMMON_BAND(prAdapter, prNegoCtrl,
+						     rP2pChnlInfo)) {
+				DBGLOG(NAN, INFO,
+				       "Skip 5G/6G availability since P2P channel %u not in common band",
+				       rP2pChnlInfo.u4PrimaryChnl);
 				continue;
 			}
 		}
@@ -15962,6 +16005,7 @@ static u_int8_t nanCountryCodeConflict(struct ADAPTER *prAdapter)
 void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 {
 	struct _NAN_SCHEDULER_T *prScheduler;
+	union _NAN_BAND_CHNL_CTRL rSocialChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rAisChnlInfo = {0};
 	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo = {0};
 	size_t szTimeline;
@@ -15975,6 +16019,7 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 	for (szTimeline = 0; szTimeline < szNanActiveTimelineNum;
 	     szTimeline++) {
 		prP2pAisMcc = &prScheduler->arP2pAisMcc[szTimeline];
+		prP2pAisMcc->ucNumOfChannel = 1; /* NAN social channel */
 
 		nanSchedGetConnChnlUsageByTimeline(prAdapter, NETWORK_TYPE_AIS,
 						  szTimeline, &rAisChnlInfo,
@@ -15995,10 +16040,26 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 		prP2pAisMcc->rP2pChnlInfo = rP2pChnlInfo;
 		prP2pAisMcc->rAisChnlInfo = rAisChnlInfo;
 
-		DBGLOG(NAN, DEBUG, "Tidx=%u p2p=%u, ais=%u, MCC=%u\n",
+		if (NAN_IS_2G_TIMELINE(prAdapter, szTimeline))
+			rSocialChnlInfo = g_r2gDwChnl;
+		else
+			rSocialChnlInfo = g_r5gDwChnl;
+
+		if (rP2pChnlInfo.u4PrimaryChnl &&
+		    !nanChnlInfoEqual(rP2pChnlInfo, rSocialChnlInfo))
+			prP2pAisMcc->ucNumOfChannel++;
+		if (rAisChnlInfo.u4PrimaryChnl &&
+		    !nanChnlInfoEqual(rAisChnlInfo, rSocialChnlInfo))
+			prP2pAisMcc->ucNumOfChannel++;
+		if (rP2pChnlInfo.u4PrimaryChnl &&
+		    rAisChnlInfo.u4PrimaryChnl &&
+		    nanChnlInfoEqual(rP2pChnlInfo, rAisChnlInfo))
+			prP2pAisMcc->ucNumOfChannel--;
+
+		DBGLOG(NAN, DEBUG, "Tidx=%u p2p=%u, ais=%u, MCC=%u, Num=%u\n",
 		       szTimeline,
 		       rP2pChnlInfo.u4PrimaryChnl, rAisChnlInfo.u4PrimaryChnl,
-		       prP2pAisMcc->fgIsP2pAisMCC);
+		       prP2pAisMcc->fgIsP2pAisMCC, prP2pAisMcc->ucNumOfChannel);
 	}
 	nanSetConcurrentCustomFAW(prAdapter);
 }
@@ -17870,7 +17931,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (NAN_SLOT_IS_AIS(szSlotIdx)) {
+	if (NAN_SLOT_IS_AIS(prAdapter, szTimeLineIdx, szSlotIdx)) {
 		rSelChnlInfo = nanSchedNegoFindAisSlotCrb(prAdapter,
 						eHighestCommonBand, fgPrintLog,
 						szTimeLineIdx, szSlotIdx);
@@ -17908,7 +17969,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			      NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G));
 	}
 
-	if (NAN_SLOT_IS_NDL(prAdapter, szSlotIdx)) {
+	if (NAN_SLOT_IS_NDL(prAdapter, szTimeLineIdx, szSlotIdx)) {
 		rSelChnlInfo = nanSchedNegoFindNdlSlotCrb(prAdapter,
 						eHighestCommonBand, fgPrintLog,
 						szTimeLineIdx, szSlotIdx,
@@ -18353,6 +18414,32 @@ u_int8_t nanIsFollowP2pInNonSocialChannel(struct ADAPTER *prAdapter,
 	if (prP2pChnl)
 		*prP2pChnl = rP2pChnl;
 	return FALSE;
+}
+
+/* Get Active Channel by Net and Band, based on nanSchedUpdateP2pAisMcc() */
+union _NAN_BAND_CHNL_CTRL
+nanGetActiveChnl(struct ADAPTER *prAdapter,
+		 enum ENUM_NETWORK_TYPE eNetworkType, enum ENUM_BAND eBand)
+{
+	struct _NAN_SCHEDULER_T *prScheduler;
+	size_t szTimeline;
+	union _NAN_BAND_CHNL_CTRL rChnlInfo = g_rNullChnl;
+
+	if (!prAdapter)
+		return rChnlInfo;
+
+	prScheduler = nanGetScheduler(prAdapter);
+	if (!prScheduler)
+		return rChnlInfo;
+
+	szTimeline = nanGetTimelineMgmtIndexByBand(prAdapter, eBand);
+
+	if (eNetworkType == NETWORK_TYPE_P2P)
+		rChnlInfo = prScheduler->arP2pAisMcc[szTimeline].rP2pChnlInfo;
+	else if (eNetworkType == NETWORK_TYPE_AIS)
+		rChnlInfo = prScheduler->arP2pAisMcc[szTimeline].rAisChnlInfo;
+
+	return rChnlInfo;
 }
 
 /* Get P2P Active Channel by Band, based on nanSchedUpdateP2pAisMcc() result */
