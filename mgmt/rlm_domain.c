@@ -11337,6 +11337,12 @@ void txPwrCtrlInit(struct ADAPTER *prAdapter)
 			VIR_MEM_TYPE);
 
 	prGlueInfo = prAdapter->prGlueInfo;
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTxPowerEmiWakeLock,
+			   "Tx Power");
+#endif
+
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
 	timer_setup(&prGlueInfo->rTxPowerLimitTimer,
 		txPwrCtrlCMDTimeout, 0);
@@ -11427,6 +11433,19 @@ void txPwrCtrlUninit(struct ADAPTER *prAdapter)
 		* PWR_LIMIT_RF_BAND_NUM);
 
 	del_timer_sync(&prAdapter->prGlueInfo->rTxPowerLimitTimer);
+
+#if CFG_ENABLE_WAKE_LOCK
+	/* Make sure wakelock ctrl is not race condition with
+	 * txPwrCtrlCMDTimeout, so we use del_timer_sync to make
+	 * here is always after txPwrCtrlCMDTimeout.
+	 */
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+				 prAdapter->prGlueInfo->rTxPowerEmiWakeLock))
+		KAL_WAKE_UNLOCK(NULL,
+			prAdapter->prGlueInfo->rTxPowerEmiWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL,
+		prAdapter->prGlueInfo->rTxPowerEmiWakeLock);
+#endif
 #endif
 }
 /* dynamic tx power control: end **********************************************/
@@ -14220,9 +14239,6 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 			KAL_WAKE_UNLOCK(prAdapter, rTxWakeLock);
 		}
 #endif
-		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, TRUE);
-		rlmDomainSendCachePwrLmtData(prAdapter);
-		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, FALSE);
 		break;
 	default:
 		break;
@@ -14615,7 +14631,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
 	enum ENUM_PWR_LIMIT_TYPE eLimitType;
 	struct EMI_POWER_LIMIT_INFO *prPerTxpwrEmiInfo;
-	struct CMD_EMI_POWER_LIMIT_FORMAT *prEmiFormat;
+	struct CMD_EMI_POWER_LIMIT_FORMAT rEmiFormat;
 	uint32_t offset = 0, size = 0, u4ChIdx = 0;
 	uint8_t *prTxPowrEmiAddress = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
@@ -14758,36 +14774,28 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 	}
 #endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
-	/* EMI_POWER_LIMIT_FORMAT */
-	prEmiFormat = (struct CMD_EMI_POWER_LIMIT_FORMAT *) kalMemAlloc(
-		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT), VIR_MEM_TYPE);
 
-	if (prEmiFormat == NULL) {
-		DBGLOG(NIC, DEBUG, "TXP alloc prEmiFormat fail\n");
-		return;
-	}
-
-	prEmiFormat->u1RFBandNum = PWR_LIMIT_RF_BAND_NUM;
-	prEmiFormat->u1ProtocolNum = PWR_LIMIT_PROTOCOL_NUM;
-	prEmiFormat->u1ApplyMethod = rlmDomainPwrLmtGetChannelDefine();
-	prEmiFormat->u1ScenarioType = TX_PWR_EMI_SCENARIO_TYPE_UPDATE;
+	rEmiFormat.u1RFBandNum = PWR_LIMIT_RF_BAND_NUM;
+	rEmiFormat.u1ProtocolNum = PWR_LIMIT_PROTOCOL_NUM;
+	rEmiFormat.u1ApplyMethod = rlmDomainPwrLmtGetChannelDefine();
+	rEmiFormat.u1ScenarioType = TX_PWR_EMI_SCENARIO_TYPE_UPDATE;
 #if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
-	prEmiFormat->u1MultiBandVer = 0;
-	prEmiFormat->u1MultiBandNum = PWR_LIMIT_MULTIBAND_TYPE_NUM;
-	prEmiFormat->u1MultiBandSize = PWR_LIMIT_MULTIBAND_NUM;
+	rEmiFormat.u1MultiBandVer = 0;
+	rEmiFormat.u1MultiBandNum = PWR_LIMIT_MULTIBAND_TYPE_NUM;
+	rEmiFormat.u1MultiBandSize = PWR_LIMIT_MULTIBAND_NUM;
 #endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
 	DBGLOG(RLM, INFO,
 		"TXP CMD[RFN:%d,ProN:%d,M:%d,T:%d,MBV:%d,MBN:%d,MBS:%d]\n",
-		prEmiFormat->u1RFBandNum,
-		prEmiFormat->u1ProtocolNum,
-		prEmiFormat->u1ApplyMethod,
-		prEmiFormat->u1ScenarioType,
-		prEmiFormat->u1MultiBandVer,
-		prEmiFormat->u1MultiBandNum,
-		prEmiFormat->u1MultiBandSize);
+		rEmiFormat.u1RFBandNum,
+		rEmiFormat.u1ProtocolNum,
+		rEmiFormat.u1ApplyMethod,
+		rEmiFormat.u1ScenarioType,
+		rEmiFormat.u1MultiBandVer,
+		rEmiFormat.u1MultiBandNum,
+		rEmiFormat.u1MultiBandSize);
 
-	kalMemCopy(&prEmiFormat->rTxpwrEmiInfo,
+	kalMemCopy(&rEmiFormat.rTxpwrEmiInfo,
 		&prAdapter->rTxpwrEmiInfo, sizeof(prAdapter->rTxpwrEmiInfo));
 
 	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
@@ -14795,20 +14803,14 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 			DBGLOG(RLM, INFO,
 			"TXP EMI INFO[%d][%d] [ofs:%d,type:%d,Size:%d,ChNum%d]\n",
 			eRF, eProt,
-			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u4EmiAddrOffset,
-			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u1LimitType,
-			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u1Size,
-			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u2ChannelNum);
+			rEmiFormat.rTxpwrEmiInfo[eRF][eProt].u4EmiAddrOffset,
+			rEmiFormat.rTxpwrEmiInfo[eRF][eProt].u1LimitType,
+			rEmiFormat.rTxpwrEmiInfo[eRF][eProt].u1Size,
+			rEmiFormat.rTxpwrEmiInfo[eRF][eProt].u2ChannelNum);
 		}
 	}
 
-	rlmDomainSendPwrLimitEmiInfo(prAdapter, prEmiFormat);
-
-	kalMemFree(
-		prEmiFormat,
-		VIR_MEM_TYPE,
-		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT));
-	prEmiFormat = NULL;
+	rlmDomainSendPwrLimitEmiInfo(prAdapter, &rEmiFormat);
 }
 
 #if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)

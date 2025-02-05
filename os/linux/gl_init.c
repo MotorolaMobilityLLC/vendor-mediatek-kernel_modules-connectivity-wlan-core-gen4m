@@ -5131,10 +5131,6 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->prDrvOwnWakeLock,
 			   "WLAN Drv Own");
 #endif
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTxPowerEmiWakeLock,
-			   "Tx Power");
-#endif
 #if CFG_SUPPORT_HRTIMER
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->prHrtimerWakeLock,
 			   "Hrtimer");
@@ -5171,13 +5167,6 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 				 prGlueInfo->prDrvOwnWakeLock))
 		KAL_WAKE_UNLOCK(NULL, prGlueInfo->prDrvOwnWakeLock);
 	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->prDrvOwnWakeLock);
-#endif
-
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	if (KAL_WAKE_LOCK_ACTIVE(NULL,
-				 prGlueInfo->rTxPowerEmiWakeLock))
-		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rTxPowerEmiWakeLock);
-	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rTxPowerEmiWakeLock);
 #endif
 
 #if CFG_SUPPORT_HRTIMER
