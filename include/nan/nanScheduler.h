@@ -747,7 +747,8 @@ uint8_t nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 					 uint8_t ucOperatingClass,
 					 uint16_t *pu2ChnlBitmap,
 					 unsigned char fgNonContBw,
-					 uint8_t ucPriChnlBitmap);
+					 uint8_t ucPriChnlBitmap,
+					 uint8_t *pucTimeBitmap);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 uint32_t nanSchedGetDevCapabilityExtAttr(struct ADAPTER *prAdapter,

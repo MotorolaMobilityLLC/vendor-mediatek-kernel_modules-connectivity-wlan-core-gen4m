@@ -3361,13 +3361,15 @@ uint8_t nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 					 uint8_t ucOperatingClass,
 					 uint16_t *pu2ChnlBitmap,
 					 unsigned char fgNonContBw,
-					 uint8_t ucPriChnlBitmap)
+					 uint8_t ucPriChnlBitmap,
+					 uint8_t *pucTimeBitmap)
 {
 	uint8_t ucChnl;
 	uint8_t ucFirstChnl;
 	uint8_t ucPriChnl;
 	union _NAN_BAND_CHNL_CTRL rNanChnlInfo;
 	enum ENUM_BAND eBand;
+	const uint16_t u2ChnlBitmap = *pu2ChnlBitmap;
 
 	ucPriChnl = ucFirstChnl = 0;
 
@@ -3422,9 +3424,11 @@ uint8_t nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 		ucPriChnl = ucFirstChnl;
 
 	DBGLOG(NAN, DEBUG,
-	       "OC=%u, ChnlBitmap=0x%04x, PriChnlBitmap=%u, fgNonContBw=%u, ucPriChnl=%u\n",
-	       ucOperatingClass, *pu2ChnlBitmap, ucPriChnlBitmap, fgNonContBw,
-	       ucPriChnl);
+	       "OC=%u, ChnlBitmap=0x%04x, PriChnlBitmap=%u, fgNonContBw=%u, ucPriChnl=%u, bitmap=%02x-%02x-%02x-%02x\n",
+	       ucOperatingClass, u2ChnlBitmap, ucPriChnlBitmap, fgNonContBw,
+	       ucPriChnl,
+	       pucTimeBitmap[0], pucTimeBitmap[1],
+	       pucTimeBitmap[2], pucTimeBitmap[3]);
 
 	return ucPriChnl;
 }
@@ -5000,6 +5004,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 				&pucTimeBitmapAndBandChnlEntry[3],
 				prNanAvailEntry->au4AvailMap);
 
+			pucBitmap = &prTimeBitmapAndBandChnlEntry[3];
 #if MERGE_POTENTIAL
 			u2DstTimeBitmapControl = u2TimeBitmapControl;
 
@@ -5008,8 +5013,6 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			   (NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl) ||
 			    NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl))) {
 				uint32_t i;
-
-				pucBitmap = &prTimeBitmapAndBandChnlEntry[3];
 
 				for (i = 0; i < TYPICAL_BITMAP_LENGTH; i++) {
 					aucCommitConditionalBitmap[i] |=
@@ -5144,7 +5147,8 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 					      /* NOTE: data will be updated */
 					      &prAttrChnlEntry->u2ChannelBitmap,
 					      fgNonContinuousBw,
-					      ucPrimaryChnlBitmap);
+					      ucPrimaryChnlBitmap,
+					      pucBitmap);
 				prTmpChnl = &prNanAvailEntry->arBandChnlCtrl
 					[ucNumBandChnlCtrl];
 				prTmpChnl->u4Type =
