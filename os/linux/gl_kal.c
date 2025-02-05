@@ -9911,7 +9911,7 @@ uint16_t kalGetMdnsUplRecSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo)
 uint16_t kalGetMdnsUplPTSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo)
 {
 	uint16_t count = 0;
-	int j = 0;
+	uint16_t j = 0;
 
 	if (prMdnsUplayerInfo == NULL) {
 		DBGLOG(REQ, ERROR,
@@ -9923,10 +9923,12 @@ uint16_t kalGetMdnsUplPTSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo)
 		if (prMdnsUplayerInfo->name[j] == 0x00)
 			break;
 	}
-	count = j >= MDNS_QUESTION_NAME_MAX_LEN ? MDNS_QUESTION_NAME_MAX_LEN
-			: j+1;
+	if (j >= MDNS_QUESTION_NAME_MAX_LEN)
+		count = MDNS_QUESTION_NAME_MAX_LEN + 2;
+	else
+		count = j + 1 + 2;
 	/*add 2 bytes for passthrough length */
-	count += 2;
+
 	return count;
 }
 

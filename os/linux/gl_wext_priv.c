@@ -13811,6 +13811,7 @@ int priv_support_mdns_offload(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
 	int ret = 0;
+	uint32_t u4ret = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -13835,11 +13836,10 @@ int priv_support_mdns_offload(struct net_device *prNetDev,
 
 	prMdnsUplayerInfo->name[MDNS_QUESTION_NAME_MAX_LEN - 1] = '\0';
 
-	ret = kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
-
-	if (ret == WLAN_STATUS_SUCCESS)
+	u4ret = kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+	if (u4ret == WLAN_STATUS_SUCCESS)
 		ret = 0;
-	else if (ret == WLAN_STATUS_FAILURE)
+	else if (u4ret == WLAN_STATUS_FAILURE)
 		ret = -1;
 exit:
 	kfree(prMdnsUplayerInfo);
@@ -14016,11 +14016,8 @@ int priv_driver_test_add_mdns_record(struct net_device *prNetDev,
 		}
 		DBGLOG(REQ, DEBUG, "test add mdns rcord! [%d]\n", ucIndex);
 		/*ucIndex == 0, ptr_name is _googlecast.tcp.local[Idx]  */
-		if (ucIndex >= 0) {
-			/*  3 + '0' : 0x30 + 3 = '0x33'*/
-			p_name[23] = (uint8_t)ucIndex + '0';
-		} else
-			p_name[23] = '0';
+		/*  3 + '0' : 0x30 + 3 = '0x33'*/
+		p_name[23] = (uint8_t)ucIndex + '0';
 		p_name[17] = 0x06;
 		p_name[24] = 0x00;
 	} else if (i4Argc == 1) {

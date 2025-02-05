@@ -1250,7 +1250,7 @@ endif
 # ===== Hif specified setting =====
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_SUPPORT_RX_NAPI=0
-    ccflags-y += -DCFG_SUPPORT_RX_GRO=0
+    ccflags-y += -DCFG_SUPPORT_RX_GRO=1
 endif
 
 # ---------------------------------------------------

@@ -14032,15 +14032,19 @@ void rlmTxPwrEnvMaxPwrSend(
 		return;
 
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
-		return rlmSendTpeLimit(
-				prAdapter,
-				eBand,
-				ucPriCh,
-				ucPwrLmtNum,
-				picTxPwrEnvMaxPwr,
-				fgPwrLmtEnable);
-#endif  /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1 */
-
+	UNUSED(rStatus);
+	UNUSED(u4CmdSize);
+	UNUSED(eBwType);
+	UNUSED(prTxPwrEnvPwrLmt);
+	UNUSED(prCmd);
+	return rlmSendTpeLimit(
+			prAdapter,
+			eBand,
+			ucPriCh,
+			ucPwrLmtNum,
+			picTxPwrEnvMaxPwr,
+			fgPwrLmtEnable);
+#else
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdSize);
 	if (!prCmd) {
 		DBGLOG(RLM, ERROR, "TxPwr Envelope: Alloc cmd buffer failed\n");
@@ -14091,6 +14095,7 @@ void rlmTxPwrEnvMaxPwrSend(
 		DBGLOG(RLM, INFO, "Send TxPwrEnv success 0x%08x\n", rStatus);
 err:
 	cnmMemFree(prAdapter, prCmd);
+#endif  /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1 */
 }
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 /*----------------------------------------------------------------------------*/
