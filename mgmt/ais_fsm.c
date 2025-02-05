@@ -3253,6 +3253,10 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			prAisFsmInfo->u4SleepInterval =
 			    AIS_BG_SCAN_INTERVAL_MSEC;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prAisFsmInfo->ucMlProbeSendCount = 0;
+#endif
+
 #if (CFG_WOW_SUPPORT == 1)
 			if (prAdapter->fgWowLinkDownPendFlag == TRUE) {
 				prAdapter->fgWowLinkDownPendFlag = FALSE;
@@ -3476,8 +3480,6 @@ send_msg:
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prAisFsmInfo->ucMlProbeSendCount = 0;
-			prAisFsmInfo->ucMlProbeEnable = FALSE;
-			prAisFsmInfo->prMlProbeBssDesc = NULL;
 #endif
 
 			eNewState = aisFsmHandleNextReq_NORMAL_TR(prAdapter,
@@ -5726,10 +5728,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	aisRemoveTimeoutBlocklist(prAdapter, 0);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	aisRemoveTimeoutMldBlocklist(prAdapter, 0);
-
-	prAisFsmInfo->ucMlProbeSendCount = 0;
-	prAisFsmInfo->ucMlProbeEnable = FALSE;
-	prAisFsmInfo->prMlProbeBssDesc = NULL;
 #endif
 
 #if CFG_SUPPORT_NCHO
@@ -11514,6 +11512,13 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 			prScanReqMsg->u2ChannelDwellTime,
 			prScanReqMsg->ucScnFuncMask,
 			prScanReqMsg->u4ScnFuncMaskExtend);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* MLO probe should only be sent once
+	 * in one scan process.
+	 */
+	prAisFsmInfo->ucMlProbeEnable = FALSE;
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }

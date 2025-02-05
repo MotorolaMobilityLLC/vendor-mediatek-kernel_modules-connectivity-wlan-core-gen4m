@@ -1656,7 +1656,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (ais->ucMlProbeEnable &&
+	if (ais->ucMlProbeSendCount && ais->prMlProbeBssDesc &&
 	    (!prBssDesc->rMlInfo.fgValid ||
 	     UNEQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
 			      ais->prMlProbeBssDesc->rMlInfo.aucMldAddr))) {
