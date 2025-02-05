@@ -160,6 +160,20 @@ struct TXPWR_MBRAIN_RPT_T {
 };
 #endif
 
+#if CFG_SUPPORT_PCIE_MBRAIN
+struct PCIE_T {
+	uint32_t u4UpdateTimeUtcSec;
+	uint32_t u4UpdateTimeUtcUsec;
+	uint32_t u4ReqRecoveryCount;
+	uint32_t u4L0TimeS;
+	uint32_t u4L0TimeUs;
+	uint32_t u4L1TimeS;
+	uint32_t u4L1TimeUs;
+	uint32_t u4L1ssTimeS;
+	uint32_t u4L1ssTimeUs;
+};
+#endif /* CFG_SUPPORT_PCIE_MBRAIN */
+
 struct mbrain_emi_data {
 	/*
 	 * this struct should be the same as the struct defined in fw
@@ -173,6 +187,9 @@ struct mbrain_emi_data {
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 	struct TXPWR_MBRAIN_RPT_T rMbrTxPwrRpt;
 #endif /* CFG_SUPPORT_MBRAIN_TXPWR_RPT */
+#if CFG_SUPPORT_PCIE_MBRAIN
+	struct PCIE_T rMbrPcieData;
+#endif /* CFG_SUPPORT_PCIE_MBRAIN */
 };
 
 struct MBRAIN_TXTIMEOUT_ENTRY {
@@ -211,6 +228,10 @@ enum wifi2mbr_status mbr_wifi_txpwr_handler(struct ADAPTER *prAdapter,
 	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
 	void *buf, uint16_t *pu2Len);
 
+enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len);
+
 /* get tag total data num */
 uint16_t mbr_wifi_lls_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
@@ -232,6 +253,9 @@ struct MBRAIN_TXTIMEOUT_ENTRY *mbrTxTimeoutDequeue(struct ADAPTER *prAdapter);
 
 void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 	uint32_t u4TokenId, uint32_t u4TxTimeoutDuration);
+
+uint16_t mbrWifiPcieGetTotalDataNum(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
 
 #endif /* CFG_SUPPORT_MBRAIN */
 #endif /* _GL_MBRAIN_H */

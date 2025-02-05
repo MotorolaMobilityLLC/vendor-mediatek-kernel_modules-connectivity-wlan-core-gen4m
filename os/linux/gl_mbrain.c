@@ -48,6 +48,10 @@
 #else
 #define WIFI_ICCM_LIMIT (0)
 #endif /* CFG_SUPPORT_WIFI_ICCM */
+
+#if CFG_SUPPORT_PCIE_MBRAIN
+#define PCIE_MBRAIN_DATA_NUM (1)
+#endif /* CFG_SUPPORT_PCIE_MBRAIN */
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -74,12 +78,19 @@ struct wifi2mbr_handler g_arMbrHdlr[] = {
 	{WIFI2MBR_TAG_TXPWR_RPT, sizeof(struct wifi2mbr_txpwr),
 		mbr_wifi_txpwr_handler, mbr_wifi_txpwr_get_total_data_num},
 #endif
+#if CFG_SUPPORT_PCIE_MBRAIN
+	{WIFI2MBR_TAG_PCIE, sizeof(struct wifi2mbr_PcieInfo),
+		mbrWifiPcieHandler, mbrWifiPcieGetTotalDataNum},
+#endif /* CFG_SUPPORT_PCIE_MBRAIN */
 };
 
 int32_t g_i4CurTag = -1;
 uint16_t g_u2LeftLoopNum;
 uint16_t g_u2LoopNum;
 struct ICCM_T g_rMbrIccm = {0};
+#if CFG_SUPPORT_PCIE_MBRAIN
+struct PCIE_T g_rMbrPcie = {0};
+#endif /* CFG_SUPPORT_PCIE_MBRAIN */
 
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 struct TXPWR_MBRAIN_RPT_T g_rMbrTxPwrRpt = {0};
@@ -792,6 +803,110 @@ void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 			u4TxTimeoutDuration, u4AvgIdleSlot);
 	}
 }
+#if CFG_SUPPORT_PCIE_MBRAIN
+enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len)
+{
+	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
+
+	struct wifi2mbr_PcieInfo *dest = (struct wifi2mbr_PcieInfo *)buf;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	uint64_t u8Time;
+	uint32_t u4Ret = WLAN_STATUS_FAILURE;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "prAdapter is null\n");
+		return WIFI2MBR_END;
+	}
+
+	if (!prAdapter->pucLinkStatsSrcBufAddr) {
+		DBGLOG(REQ, WARN, "EMI mapping not done");
+		return WIFI2MBR_END;
+	}
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return WIFI2MBR_END;
+	}
+
+	if (!pu2Len) {
+		DBGLOG(REQ, WARN, "pu2Len is null\n");
+		return WIFI2MBR_END;
+	}
+
+	dest->hdr.tag = WIFI2MBR_TAG_PCIE;
+	dest->hdr.ver = 1;
+	u8Time = kalGetBootTime();
+	dest->timestamp = USEC_TO_MSEC(u8Time);
+
+	if (u2CurLoopIdx == 0) {
+		GET_MBR_EMI_FIELD(prAdapter, u4Ret, rMbrPcieData, g_rMbrPcie);
+
+		if (u4Ret != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN, "GET_MBR_EMI fail: 0x%x\n", u4Ret);
+			return status;
+		}
+		DBGLOG(REQ, DEBUG,
+			"[Mbrain PCIe][%llu]-[%u.%u][%u:%u.%u:%u.%u:%u.%u]\n",
+			dest->timestamp,
+			g_rMbrPcie.u4UpdateTimeUtcSec,
+			g_rMbrPcie.u4UpdateTimeUtcUsec,
+			g_rMbrPcie.u4ReqRecoveryCount,
+			g_rMbrPcie.u4L0TimeS,
+			g_rMbrPcie.u4L0TimeUs,
+			g_rMbrPcie.u4L1TimeS,
+			g_rMbrPcie.u4L1TimeUs,
+			g_rMbrPcie.u4L1ssTimeS,
+			g_rMbrPcie.u4L1ssTimeUs);
+	}
+#ifdef MBRAIN_READY
+	dest->update_time_utc_sec = g_rMbrPcie.u4UpdateTimeUtcSec;
+	dest->update_time_utc_usec = g_rMbrPcie.u4UpdateTimeUtcUsec;
+	dest->req_recovery_count = g_rMbrPcie.u4ReqRecoveryCount;
+	dest->l0_time_s = g_rMbrPcie.u4L0TimeS;
+	dest->l0_time_us = g_rMbrPcie.u4L0TimeUs;
+	dest->l1_time_s = g_rMbrPcie.u4L1TimeS;
+	dest->l1_time_us = g_rMbrPcie.u4L1TimeUs;
+	dest->l1ss_time_s = g_rMbrPcie.u4L1ssTimeS;
+	dest->l1ss_time_us = g_rMbrPcie.u4L1ssTimeUs;
+#else
+	dest->update_time = g_rMbrPcie.u4UpdateTimeUtcUsec;
+	dest->req_recovery_count = g_rMbrPcie.u4ReqRecoveryCount;
+	dest->l0_time = g_rMbrPcie.u4L0TimeUs;
+	dest->l1_time = g_rMbrPcie.u4L1TimeUs;
+	dest->l1p2_time = g_rMbrPcie.u4L1ssTimeUs;
+#endif
+	*pu2Len = sizeof(*dest);
+
+	status = WIFI2MBR_SUCCESS;
+
+	return status;
+}
+
+uint16_t mbrWifiPcieGetTotalDataNum(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag)
+{
+	uint16_t num = 0;
+
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return 0;
+	}
+
+	if (!prAdapter->prMbrEmiData) {
+		DBGLOG(REQ, WARN, "EMI mapping not done");
+		return 0;
+	}
+
+	num = PCIE_MBRAIN_DATA_NUM;
+
+	return num;
+}
+#endif /* CFG_SUPPORT_PCIE_MBRAIN */
 
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 enum wifi2mbr_status mbr_wifi_txpwr_info_fill_hanler(struct ADAPTER *prAdapter,

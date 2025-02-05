@@ -921,6 +921,13 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         ifeq ($(CONFIG_WLAN_PLATFORM),mt6993)
             CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT=y
         endif
+        ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+            ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
+                ifeq ($(call kver_ge,6,12),1)
+                    CONFIG_SUPPORT_PCIE_MBRAIN=y
+                endif
+            endif
+        endif
     endif
 
     ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
@@ -2985,6 +2992,12 @@ ifeq ($(CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT), y)
     ccflags-y += -DCFG_MTK_MDDP_IDC_UART_3_0_SUPPORT=1
 else
     ccflags-y += -DCFG_MTK_MDDP_IDC_UART_3_0_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_PCIE_MBRAIN), y)
+    ccflags-y += -DCFG_SUPPORT_PCIE_MBRAIN=1
+else
+    ccflags-y += -DCFG_SUPPORT_PCIE_MBRAIN=0
 endif
 
 ifneq ($(CONFIG_MTK_ADVANCED_80211_MLO),)

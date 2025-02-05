@@ -3325,6 +3325,10 @@ uint32_t checkMbrOffset(uint32_t num,
 	pu4OffsetMap[MBRAIN_EMI_OFFSET_TXPWR] =
 		OFFSET_OF(struct mbrain_emi_data, rMbrTxPwrRpt);
 #endif
+#if CFG_SUPPORT_PCIE_MBRAIN
+	pu4OffsetMap[MBRAIN_EMI_OFFSET_PCIE] =
+		OFFSET_OF(struct mbrain_emi_data, rMbrPcieData);
+#endif
 	for (i = 0; i < num; i++, prOffsetInfo++) {
 		if (prOffsetInfo->u4Tag >= MBRAIN_EMI_OFFSET_NUM) {
 			DBGLOG(INIT, WARN, "invalid tag:%u offset:%u\n",
