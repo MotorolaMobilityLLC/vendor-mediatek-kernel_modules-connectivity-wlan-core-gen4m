@@ -13564,14 +13564,13 @@ uint32_t wlanSetLowLatencyMode(
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = TRUE; /* Power management */
 	u_int8_t fgEnRoaming = TRUE; /* Roaming management */
-	struct PARAM_POWER_MODE_ rPowerMode;
 	struct WIFI_VAR *prWifiVar = NULL;
 	char arCmd[64]; /* Roaming command buffer */
 
 	ASSERT(prAdapter);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo) {
+	if (!prBssInfo || !IS_BSS_AIS(prBssInfo)) {
 		DBGLOG(SW4, DEBUG, "Invalid BssInfo index[%u]\n", ucBssIndex);
 		return WLAN_STATUS_INVALID_DATA;
 	}
@@ -13599,8 +13598,6 @@ uint32_t wlanSetLowLatencyMode(
 		(uint32_t)prWifiVar->ucLowLatencyModeScan,
 		(uint32_t)prWifiVar->ucLowLatencyModeReOrder,
 		(uint32_t)prWifiVar->ucLowLatencyModePower);
-
-	rPowerMode.ucBssIdx = ucBssIndex;
 
 	/* Enable/disable low latency mode decision:
 	 *
@@ -13692,15 +13689,12 @@ uint32_t wlanSetLowLatencyMode(
 	 * Or, do if 1. the power saving caller is not including GPU
 	 * and 2. it will enable low latency mode.
 	 */
-	if (prWifiVar->ucLowLatencyModePower == FEATURE_ENABLED) {
-		if (fgEnPM == FALSE)
-			rPowerMode.ePowerMode = Param_PowerModeCAM;
-		else
-			rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
-
-		nicConfigPowerSaveProfile(prAdapter, rPowerMode.ucBssIdx,
-			rPowerMode.ePowerMode, FALSE, PS_CALLER_GPU);
-	}
+	if (prWifiVar->ucLowLatencyModePower == FEATURE_ENABLED)
+		aisConfigPowerSaveProfileAllLink(prAdapter,
+			fgEnPM == FALSE ?
+			Param_PowerModeCAM :
+			Param_PowerModeFast_PSP,
+			PS_CALLER_GPU, ucBssIndex);
 
 	/* Roaming management:
 	 *

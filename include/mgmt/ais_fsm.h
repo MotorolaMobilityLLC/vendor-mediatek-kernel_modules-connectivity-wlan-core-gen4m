@@ -1123,6 +1123,10 @@ void aisClearAllLink(struct AIS_FSM_INFO *prAisFsmInfo);
 void aisDeactivateAllLink(struct ADAPTER *prAdapter,
 			struct AIS_FSM_INFO *prAisFsmInfo);
 
+void aisConfigPowerSaveProfileAllLink(struct ADAPTER *prAdapter,
+	enum PARAM_POWER_MODE ePwrMode, enum POWER_SAVE_CALLER ucCaller,
+	uint8_t ucBssIndex);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 

@@ -10421,6 +10421,33 @@ void aisDeactivateAllLink(struct ADAPTER *prAdapter,
 #endif
 }
 
+void aisConfigPowerSaveProfileAllLink(struct ADAPTER *prAdapter,
+	enum PARAM_POWER_MODE ePwrMode, enum POWER_SAVE_CALLER ucCaller,
+	uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	uint8_t i;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (!prAisFsmInfo)
+		return;
+
+	DBGLOG(AIS, INFO, "AIS[%d][%d] ePwrMode=%d caller=%d\n",
+		prAisFsmInfo->ucAisIndex, ucBssIndex, ePwrMode, ucCaller);
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prAisBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		if (!prAisBssInfo)
+			continue;
+
+		nicConfigPowerSaveProfile(prAdapter,
+			prAisBssInfo->ucBssIndex, ePwrMode,
+			FALSE, ucCaller);
+	}
+}
+
 struct AIS_LINK_INFO *aisGetLink(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
