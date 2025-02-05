@@ -8760,10 +8760,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->u4BaMissTimeoutMs, "BaMissTimeoutMs",
 		  QM_RX_BA_ENTRY_MISS_TIMEOUT_MS, FEATURE_TO_CUSTOMER);
-
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	INIT_UINT(prWifiVar->u4BaIotApMissTimeoutMs, "BaIotApMissTimeoutMs",
 		QM_RX_BA_ENTRY_IOTAP_MISS_TIMEOUT_MS, FEATURE_TO_CUSTOMER);
-
+#endif
 	INIT_UINT(prWifiVar->u4PerfMonPendingTh, "PerfMonPendingTh", 80,
 		  FEATURE_DEBUG_ONLY);
 

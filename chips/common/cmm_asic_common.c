@@ -536,3 +536,24 @@ int wlan_test_mode_on(bool uIsSwtichTestMode)
 #endif
 	return ret;
 }
+#if defined(_HIF_SDIO)
+void fillSdioHifTxDesc(uint8_t **pDest, uint16_t *pInfoBufLen,
+	uint8_t ucPacketType)
+{
+	/* SDIO TX Descriptor (4 bytes)*/
+
+	/* BIT[15:00] - TX Bytes Count
+	 * BIT[17:16] - Packet Type
+	 * BIT[31:18] - Reserved
+	 */
+	struct SDIO_HIF_TX_HEADER sdio_hif_header = {0};
+
+	sdio_hif_header.InfoBufLen = (*pInfoBufLen + SDIO_HIF_TXD_LEN);
+	sdio_hif_header.Type =
+		(ucPacketType & SDIO_HIF_TXD_PKG_TYPE_MASK)
+				<< SDIO_HIF_TXD_PKG_TYPE_SHIFT;
+
+	kalMemZero((void *)*pDest, SDIO_HIF_TXD_LEN);
+	kalMemCopy((void *)*pDest, &sdio_hif_header, SDIO_HIF_TXD_LEN);
+}
+#endif /* _HIF_SDIO */

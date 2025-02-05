@@ -614,6 +614,12 @@ struct BUS_INFO mt7935_bus_info = {
 	/* for compiler need one entry */
 	.DmaShdlInit = NULL
 #endif
+#if defined(_HIF_SDIO)
+	.halTxGetFreeResource = halTxGetFreeResource_v1,
+	.halTxReturnFreeResource = halTxReturnFreeResource_v1,
+	.halRestoreTxResource = halRestoreTxResource_v1,
+	.halUpdateTxDonePendingCount = halUpdateTxDonePendingCount_v1,
+#endif /* _HIF_SDIO */
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD

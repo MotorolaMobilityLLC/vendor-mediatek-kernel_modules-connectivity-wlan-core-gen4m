@@ -283,10 +283,6 @@
 #endif /* _HIF_USB */
 
 #if defined(_HIF_SDIO)
-#define SDIO_HIF_TXD_LEN		sizeof(struct SDIO_HIF_TX_HEADER)
-#define SDIO_HIF_TXD_PKG_TYPE_SHIFT		(0)
-#define SDIO_HIF_TXD_PKG_TYPE_MASK		(0x3)
-
 /* For support mcu debug mechanism. +*/
 #define SDIO_CTRL_EN                    (1 << 31)
 #define CONNAC2X_SDIO_WM_MONITER_SEL    (~(0x40000000))
@@ -1145,14 +1141,6 @@ struct fwtbl_umac_struct {
 	struct wtbl_keylink_amsdu klink_amsdu;
 	struct wtbl_key_tb key_tb;
 };
-
-#if defined(_HIF_SDIO)
-struct SDIO_HIF_TX_HEADER {
-	uint16_t     InfoBufLen;
-	uint8_t      Type;
-	uint8_t      Reserved;
-};
-#endif /* defined(_HIF_SDIO) */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern u_int8_t g_IsWfsysBusNoAck;

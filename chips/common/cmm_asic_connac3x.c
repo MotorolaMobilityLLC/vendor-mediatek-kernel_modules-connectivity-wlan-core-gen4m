@@ -216,6 +216,15 @@ void asicConnac3xCapInit(
 #endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
 		break;
 #endif /* _HIF_USB */
+#if defined(_HIF_SDIO)
+	case MT_DEV_INF_SDIO:
+		prChipInfo->u2HifTxdSize = SDIO_HIF_TXD_LEN;
+		prChipInfo->fillHifTxDesc = fillSdioHifTxDesc;
+		prChipInfo->u4ExtraTxByteCount =
+				EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
+		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD_PAYLOAD;
+		break;
+#endif /* _HIF_SDIO */
 	default:
 		break;
 	}

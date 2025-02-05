@@ -147,6 +147,16 @@
 #define SDIO_COM_DBG_RDATA		0x3	/* con_infra */
 #define SDIO_INFRA_CSR_RDATA	0x4	/* con_infra */
 
+#define SDIO_HIF_TXD_LEN		sizeof(struct SDIO_HIF_TX_HEADER)
+#define SDIO_HIF_TXD_PKG_TYPE_SHIFT		(0)
+#define SDIO_HIF_TXD_PKG_TYPE_MASK		(0x3)
+
+struct SDIO_HIF_TX_HEADER {
+	uint16_t     InfoBufLen;
+	uint8_t      Type;
+	uint8_t      Reserved;
+};
+
 enum HIF_TX_COUNT_IDX_T {
 	HIF_TXC_IDX_0,
 	HIF_TXC_IDX_1,
