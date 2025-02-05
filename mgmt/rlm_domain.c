@@ -14149,6 +14149,8 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 		"NAN_INIT_END",
 		"NAN_TIMELINE_UPDATE_START",
 		"NAN_TIMELINE_UPDATE_END",
+		"CNM_RLM_SYNC_OP_PARAMS_START",
+		"CNM_RLM_SYNC_OP_PARAMS_END",
 	};
 	prGlueInfo = prAdapter->prGlueInfo;
 
@@ -14171,6 +14173,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	case TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_START:
 	case TX_PWR_EMI_STATUS_ACTION_NAN_INIT_START:
 	case TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_START:
+	case TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_START:
 		prAdapter->i4PwrLmtLockCounter++;
 		if (prAdapter->i4PwrLmtLockCounter == 1) {
 #if CFG_ENABLE_WAKE_LOCK
@@ -14188,6 +14191,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	case TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_END:
 	case TX_PWR_EMI_STATUS_ACTION_NAN_INIT_END:
 	case TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_END:
+	case TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_END:
 		prAdapter->i4PwrLmtLockCounter--;
 		if (prAdapter->i4PwrLmtLockCounter <= 0) {
 #if CFG_ENABLE_WAKE_LOCK
@@ -14257,6 +14261,8 @@ void rlmDomainConnectionNotifiey(
 		type = TX_PWR_EMI_SCENARIO_TYPE_NAN_INIT;
 	else if (reason == NAN_TIMELINE_UPDATE)
 		type = TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE;
+	else if (reason == CNM_RLM_SYNC_OP_PARAMS)
+		type = TX_PWR_EMI_SCENARIO_TYPE_CNM_RLM_SYNC_OP_PARAMS;
 	else
 		return;
 
@@ -14529,6 +14535,10 @@ void rlmDomainPowerLimitEmiEvent(struct ADAPTER *prAdapter,
 		TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE) {
 		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
 			TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_END);
+	} else if (u4SenarioType ==
+		TX_PWR_EMI_SCENARIO_TYPE_CNM_RLM_SYNC_OP_PARAMS) {
+		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
+			TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_END);
 	}
 
 }
@@ -14573,6 +14583,8 @@ void rlmDomainPwrLmtConnectionCMD(
 		action = TX_PWR_EMI_STATUS_ACTION_NAN_INIT_START;
 	else if (type == TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE)
 		action = TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_START;
+	else if (type == TX_PWR_EMI_SCENARIO_TYPE_CNM_RLM_SYNC_OP_PARAMS)
+		action = TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_START;
 	else
 		return;
 

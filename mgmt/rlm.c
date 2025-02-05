@@ -26,6 +26,10 @@
 #include "rlm.h"
 #endif
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+#include "rlm_txpwr_limit_emi.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -7571,6 +7575,10 @@ void rlmSyncOperationParams(struct ADAPTER *prAdapter,
 		NULL,				      /* pvSetQueryBuffer */
 		0				      /* u4SetQueryBufferLen */
 		);
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	rlmDomainConnectionNotifiey(prAdapter, CNM_RLM_SYNC_OP_PARAMS);
+#endif
 
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
 	if (rStatus != WLAN_STATUS_PENDING)
