@@ -37,11 +37,11 @@
  */
 
 struct PARAM_RX_STAT g_HqaRxStat;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 struct TESTMODE_CAP g_HqaCap;
 #endif
 
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 uint32_t u4RxStatSeqNum;
 #else
 uint16_t u2RxStatSeqNum;
@@ -53,7 +53,7 @@ uint32_t	u4EepromMode = 4;
 uint32_t g_u4Chip_ID;
 uint32_t g_ucEepromCurrentMode = EFUSE_MODE;
 
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 static struct hqa_rx_stat_band_format g_backup_band0_info;
 static struct hqa_rx_stat_band_format g_backup_band1_info;
 #endif
@@ -3782,7 +3782,7 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device
 				      struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_RX_STAT rRxStatisticsTest;
@@ -4789,7 +4789,7 @@ int32_t hqa_genStatBandReport(
 {
 
 	int32_t ret = 0;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	if (band_idx == HQA_M_BAND_0) {
 		rx_st_band->mac_rx_fcs_err_cnt =
 			ntohl(g_HqaRxStat.MAC_FCS_Err) +
@@ -4909,7 +4909,7 @@ int32_t hqa_genStatPathReport(
 	struct hqa_rx_stat_path_format *rx_st_path)
 {
 	int32_t ret = 0;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	switch (blk_idx) {
 	case HQA_ANT_WF0:
 		rx_st_path->rcpi =
@@ -4954,7 +4954,7 @@ int32_t hqa_genStatUserReport(
 	struct hqa_rx_stat_user_format *rx_st_user)
 {
 	int32_t ret = WLAN_STATUS_SUCCESS;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	rx_st_user->freq_offset_from_rx =
 		ntohl(g_HqaRxStat.FreqOffsetFromRX);
 	if (band_idx == HQA_M_BAND_0)
@@ -4974,7 +4974,7 @@ int32_t hqa_genStatCommReport(
 	struct hqa_rx_stat_comm_format *rx_st_comm)
 {
 	int32_t ret = WLAN_STATUS_SUCCESS;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	rx_st_comm->rx_fifo_full =
 		ntohl(g_HqaRxStat.OutOfResource);
 	rx_st_comm->aci_hit_low =
@@ -5007,7 +5007,7 @@ int32_t hqa_getRxStatisticsByType(
 	struct hqa_rx_stat_u *st)
 {
 	int32_t i4Ret = 0;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_RX_STAT rx_stat_test;
 
@@ -8845,7 +8845,7 @@ static int32_t hqa_start_rx_ext(struct net_device *prNetDev,
 				struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	uint32_t u4Ext_id = 0;
 	uint32_t u4Param_num = 0;
 	uint32_t u4Band_idx = 0;

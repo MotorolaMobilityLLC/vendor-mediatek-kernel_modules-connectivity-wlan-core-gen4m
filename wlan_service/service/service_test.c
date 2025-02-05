@@ -35,7 +35,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_set_antswap = mt_op_set_antswap;
 	ops->op_set_rx_filter_pkt_len = mt_op_set_rx_filter_pkt_len;
 	ops->op_set_freq_offset = mt_op_set_freq_offset;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	ops->op_set_freq_offset_C2 = mt_op_set_freq_offset_C2;
 #endif
 	ops->op_set_phy_counter = mt_op_set_phy_counter;
@@ -82,7 +82,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_set_get_pwr_type = mt_op_set_get_pwr_type;
 	ops->op_set_tx_pwr = mt_op_set_tx_pwr;
 	ops->op_get_freq_offset = mt_op_get_freq_offset;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	ops->op_get_freq_offset_C2 = mt_op_get_freq_offset_C2;
 #endif
 	ops->op_get_cfg_on_off = mt_op_get_cfg_on_off;
@@ -94,7 +94,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_get_thermal_val = mt_op_get_thermal_val;
 	ops->op_set_cal_bypass = mt_op_set_cal_bypass;
 	ops->op_set_dpd = mt_op_set_dpd;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	ops->op_set_max_pac_ext = mt_op_set_max_pac_ext;
 #endif
 	ops->op_set_tssi = mt_op_set_tssi;
@@ -387,11 +387,11 @@ s_int32 mt_serv_init_test(struct service_test *serv_test)
 			sizeof(struct test_band_state));
 	} else {
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 		serv_test->test_winfo->dbdc_mode = TEST_DBDC_ENABLE;
 #else
 		serv_test->test_winfo->dbdc_mode = TEST_DBDC_DISABLE;
-#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1) */
 
 		serv_test->test_winfo->hw_tx_enable = TEST_HWTX_DISABLE;
 	}
@@ -983,7 +983,7 @@ s_int32 mt_serv_set_freq_offset(struct service_test *serv_test, u_int32 type)
 			serv_test->test_winfo,
 			rf_freq_offset,
 			ctrl_band_idx);
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	} else if (type == SERV_FREQ_C2) {
 		ret = ops->op_set_freq_offset_C2(
 			serv_test->test_winfo,
@@ -1084,7 +1084,7 @@ s_int32 mt_serv_get_freq_offset(
 			serv_test->test_winfo,
 			ctrl_band_idx,
 			freq_offset);
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	} else if (type == SERV_FREQ_C2) {
 		ret = ops->op_get_freq_offset_C2(
 			serv_test->test_winfo,
@@ -1219,7 +1219,7 @@ s_int32 mt_serv_set_dpd(
 	return ret;
 }
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 s_int32 mt_serv_set_max_pac_ext(
 	struct service_test *serv_test,
 	u_int32 max_pac_ext)
@@ -1669,7 +1669,7 @@ s_int32 mt_serv_get_rx_stat(
 	case TEST_RX_STAT_PATH:
 		if (blk_idx >= TEST_ANT_NUM)
 			break;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 		if ((dbdc_mode == 1) && (band_idx == 1))
 			blk_idx = ANT_WF1;
 #endif
@@ -1960,9 +1960,9 @@ s_int32 mt_serv_get_antswap_capability(
 
 	ret = ops->op_get_antswap_capability(
 			serv_test->test_winfo,
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 			serv_test->ctrl_band_idx,
-#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1) */
 			antswap_support);
 
 	return ret;

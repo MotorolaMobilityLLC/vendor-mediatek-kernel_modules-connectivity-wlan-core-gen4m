@@ -5472,7 +5472,7 @@ wlanoidQueryRxStatistics(struct ADAPTER *prAdapter,
 	*pu4QueryInfoLen = 8 + prRxStatistics->u4TotalNum;
 
 	do {
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 		prCmdAccessRxStat->u4SeqNum =
 			prRxStatistics->u4SeqNum;
 		prCmdAccessRxStat->u4TotalNum =

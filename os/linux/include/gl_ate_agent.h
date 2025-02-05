@@ -19,7 +19,7 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 extern uint32_t u4RxStatSeqNum;
 #else
 extern uint16_t u2RxStatSeqNum;

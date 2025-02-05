@@ -900,9 +900,9 @@ struct CHIP_DBG_OPS mt7999_DebugOps = {
 #if (CONFIG_WLAN_SERVICE == 1)
 struct test_capability mt7999_toolCapability = {
 	/* u_int32 version; */
-	8,
+	0xD,
 	/* u_int32 tag_num; */
-	2,
+	3,
 	/* struct test_capability_ph_cap ph_cap; */
 	{
 		/* GET_CAPABILITY_TAG_PHY */
@@ -937,13 +937,13 @@ struct test_capability mt7999_toolCapability = {
 
 		/* BIT[15:0]: Band2 5G, 6G, 0x6 */
 		/* BIT[31:16]: Band3 2.4G, 5G, 6G, 0x7 */
-		0x00070006,	/* u_int32 channel_band_dbdc_ext */
+		0x00000000,	/* u_int32 channel_band_dbdc_ext */
 
 		/* BIT[7:0]: Support phy 0xF (bitwise),
 		 *           phy0, phy1, phy2, phy3(little)
 		 */
 		/* BIT[15:8]: Support Adie 0x1 (bitwise) */
-		0x010F,	/* u_int32 phy_adie_index; CFG_SUPPORT_CONNAC5X */
+		0x0103,	/* u_int32 phy_adie_index; CFG_SUPPORT_CONNAC5X */
 
 		/* BIT[7:0]: Band0 TX path 2 */
 		/* BIT[15:8]: Band0 RX path 2 */
@@ -955,13 +955,13 @@ struct test_capability mt7999_toolCapability = {
 		/* BIT[15:8]: Band2 RX path 1*/
 		/* BIT[23:16]: Band3 TX path 0 */
 		/* BIT[31:24]: Band3 RX path 1 */
-		0x02000101,	/* u_int32 band_2_3_wf_path_num; */
+		0x00000000,	/* u_int32 band_2_3_wf_path_num; */
 
 		/* BIT[7:0]: Band0 BW20, 0x1 */
 		/* BIT[15:8]: Band1 BW320, 0x2F */
 		/* BIT[23:16]: Band2 BW160, 0xF */
 		/* BIT[31:24]: Band3 BW20, 0x1 */
-		0x010F2F01,	/* u_int32 band_bandwidth; */
+		0x00002F01,	/* u_int32 band_bandwidth; */
 
 		{ 0, 0, 0, 0 }	/* u_int32 reserved[4]; */
 	},
@@ -982,11 +982,30 @@ struct test_capability mt7999_toolCapability = {
 		/* BIT6: MLR+, ALR support 0 */
 		/* BIT7: Bandwidth duplcate debug support 0 */
 		/* BIT8: dRU support 1 */
-		0x12C,	/*u_int32 feature1; */
+		/* BIT12: TX time 1 */
+		/* BIT13: keep full power switch 1*/
+		0x312C,	/*u_int32 feature1; */
 
 		/* u_int32 reserved[15]; */
 		{ 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0 }
+	},
+
+	{
+		/* GET_CAPABILITY_TAG_RX_INFO */
+		3,	/* u_int32 tag; */
+		/* GET_CAPABILITY_TAG_RX_INFO_LEN */
+		32,	/* u_int32 tag_len; */
+		/* u_int32 reserved[64]; */
+		{0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0
+		}
 	}
 };
 #endif

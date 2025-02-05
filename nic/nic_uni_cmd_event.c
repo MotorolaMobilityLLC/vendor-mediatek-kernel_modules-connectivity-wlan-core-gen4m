@@ -7330,7 +7330,7 @@ uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_ACCESS_RX_STAT *) info->pucInfoBuffer;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
 				max_cmd_len, nicUniEventQueryRxStatAll,
 				nicUniCmdTimeoutCommon);
@@ -7346,7 +7346,7 @@ uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *)entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *)uni_cmd->aucTlvBuffer;
 	tag->u2Length = sizeof(*tag);
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL;
 	tag->u1DbdcIdx = 0;
 #else
@@ -10900,7 +10900,7 @@ void nicUniEventRfTestPlCal(struct ADAPTER *ad,
 #endif /* CFG_SUPPORT_PLCAL */
 
 #if CFG_SUPPORT_QA_TOOL
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 void nicUniEventQueryRxStatAll(struct ADAPTER
 	  *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {

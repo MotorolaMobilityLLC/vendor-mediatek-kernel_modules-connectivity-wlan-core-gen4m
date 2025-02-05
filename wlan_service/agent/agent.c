@@ -745,7 +745,7 @@ static s_int32 hqa_set_freq_offset(
 	return ret;
 }
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 static s_int32 hqa_set_freq_offset_c2(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -809,7 +809,7 @@ static s_int32 hqa_get_antswap_capability(
 	s_int32 ret;
 	u_int32 antswap_support = 0;
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 
@@ -819,7 +819,7 @@ static s_int32 hqa_get_antswap_capability(
 	/* Set parameters */
 	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
 
-#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1) */
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR, ("%s\n", __func__));
 
@@ -872,7 +872,7 @@ static struct hqa_cmd_entry CMD_SET1[] = {
 	{0xb,	hqa_low_power},
 	{0xd,	hqa_get_antswap_capability},
 	{0xe,	hqa_set_antswap},
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	{0x10,	hqa_set_freq_offset_c2}
 #endif
 };
@@ -2606,7 +2606,7 @@ static s_int32 hqa_get_rx_statistics_all(
 	u_int8 path_len = 0;
 	u_int8 *ptr;
 	u_char *data = hqa_frame->data;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	u_int8 band_info_ver = 0, path_info_ver = 0,
 		user_info_ver = 0, comm_info_ver = 0;
 #else
@@ -4475,7 +4475,7 @@ error1:
 	return ret;
 }
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 static s_int32 hqa_set_max_pac_ext(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -4762,7 +4762,7 @@ static s_int32 hqa_set_ru_info(
 
 #define RU_SEG_STA_CNT_MAX	4
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 static s_int32 hqa_set_ru_info_v2(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -5496,7 +5496,7 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x83,	hqa_get_dump_rdd},
 	{0x91,	hqa_get_hetb_info},
 	{0x94,	hqa_set_ru_info},
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	{0x90,  hqa_set_max_pac_ext},
 	{0x96,	hqa_set_ru_info_v2},
 #endif
@@ -5505,7 +5505,7 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x9b,	hqa_set_tx_gain},
 	{0x9c,	hqa_set_etssi_gain},
 	{0x9d,	hqa_get_tssi_meas_dbv},
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	{0xA1,	hqa_set_ru_info_v3},
 #endif
 	{0xA2,	hqa_get_sleep_check},
@@ -5776,7 +5776,7 @@ static s_int32 hqa_start_tx_ext(
 	get_param_and_shift_buf(TRUE, sizeof(param.hw_tx_enable),
 				&data, (u_char *)&param.hw_tx_enable);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	get_param_and_shift_buf(TRUE, sizeof(param.puncture),
 				&data, (u_char *)&param.puncture);
 #endif
@@ -5819,7 +5819,7 @@ static s_int32 hqa_start_tx_ext(
 			(u_int32)param.pwr, param.band_idx);
 	WINFO_SET_PARAM(serv_test, hw_tx_enable, param.hw_tx_enable);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	CONFIG_SET_PARAM(serv_test, puncture,
 			(u_int16)param.puncture, param.band_idx);
 #endif
@@ -5842,7 +5842,7 @@ static s_int32 hqa_start_tx_ext(
 		("%s: gi=%u, nss=%u hwtx=%u\n",
 		__func__, param.gi, param.nss, param.hw_tx_enable));
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: puncture=%u\n", __func__, param.puncture));
 #endif

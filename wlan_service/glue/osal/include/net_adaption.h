@@ -327,7 +327,7 @@ enum test_phy_mode_type {
 	TEST_MODE_HE_TB,
 	TEST_MODE_HE_MU,
 	TEST_MODE_VHT_MIMO,
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	TEST_MODE_EHT_MU_DL_SU,
 	TEST_MODE_EHT_MU_UL_SU,
 	TEST_MODE_EHT_MU_DL_OFDMA = 15,
@@ -596,7 +596,7 @@ struct test_rx_stat_band_info {
 	u_int32 phy_rx_tag_err_ofdm;
 	u_int32 phy_rx_mdrdy_cnt_cck;
 	u_int32 phy_rx_mdrdy_cnt_ofdm;
-#if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	u_int32 aci_hit_low;
 	u_int32 aci_hit_high;
 	u_int32 phy_rx_pd_alr; /* band info v2*/
@@ -612,7 +612,7 @@ struct test_rx_stat_path_info {
 	u_int32 fagc_wb_rssi;
 	u_int32 inst_ib_rssi;
 	u_int32 inst_wb_rssi;
-#if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	u_int32 adc_rssi;
 	u_int32 cca_idle_pwr;
 #endif
@@ -628,7 +628,7 @@ struct test_rx_stat_user_info {
 /* Test rx stat comm info */
 struct test_rx_stat_comm_info {
 	u_int32 rx_fifo_full;
-#if (CFG_SUPPORT_CONNAC3X == 0) /* comm_info v0 */
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	u_int32 aci_hit_low;
 	u_int32 aci_hit_high;
 #endif
@@ -636,7 +636,7 @@ struct test_rx_stat_comm_info {
 	u_int32 sig_mcs;
 	u_int32 sinr;
 	u_int32 driver_rx_count;
-#if (CFG_SUPPORT_CONNAC3X == 1) /* comm_info v1 */
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	u_int32 ne_var_db;
 #endif
 };
@@ -724,7 +724,7 @@ struct GNU_PACKED test_rx_stat_leg {
 	u_int32 fcs_error_cnt[TEST_USER_NUM];
 };
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 
 struct GNU_PACKED hqa_rx_band_info
 {
@@ -1164,7 +1164,7 @@ struct test_ru_info {
 	u_int8 pe_disamb;
 	s_int16 punc;
 	u_int32 l_len;
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	u_int8 ps160;
 	u_int8 isEHT;
 	boolean dRU_valid;
@@ -1548,9 +1548,9 @@ struct test_operation {
 		u_int8 enable, u_char band_idx, u_int32 rx_pkt_len);
 	s_int32 (*op_get_antswap_capability)(
 			struct test_wlan_info *winfos,
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 			u_char band_idx,
-#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1) */
 			u_int32 *antswap_support);
 	s_int32 (*op_set_antswap)(
 			struct test_wlan_info *winfos,
@@ -1558,7 +1558,7 @@ struct test_operation {
 	s_int32 (*op_set_freq_offset)(
 		struct test_wlan_info *winfos,
 		u_int32 freq_offset, u_char band_idx);
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	s_int32 (*op_set_freq_offset_C2)(
 		struct test_wlan_info *winfos,
 		u_int32 freq_offset, u_char band_idx);
@@ -1747,7 +1747,7 @@ struct test_operation {
 		struct test_wlan_info *winfos,
 		u_char band_idx,
 		u_int32 *freq_offset);
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	s_int32 (*op_get_freq_offset_C2)(
 		struct test_wlan_info *winfos,
 		u_char band_idx,
@@ -1806,7 +1806,7 @@ struct test_operation {
 		struct test_wlan_info *winfos,
 		u_int32 on_off,
 		u_int32 wf_sel);
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	s_int32 (*op_set_max_pac_ext)(
 		struct test_wlan_info *winfos,
 		u_int32 mac_pac_ext);

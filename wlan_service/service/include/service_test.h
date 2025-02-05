@@ -190,7 +190,7 @@ s_int32 mt_serv_set_dpd(
 	u_int32 on_off,
 	u_int32 wf_sel);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 s_int32 mt_serv_set_max_pac_ext(
 	struct service_test *serv_test,
 	u_int32 max_pac_ext);

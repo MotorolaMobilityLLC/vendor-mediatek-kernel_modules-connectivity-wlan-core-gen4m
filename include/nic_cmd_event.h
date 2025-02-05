@@ -1137,7 +1137,7 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_CASAN_LOAD_TYPE = 0x1d,
 	TAG_CAP_REDL_INFO = 0x1e,
 	TAG_CAP_HOST_SUSPEND_INFO = 0x1f,
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 #if (CFG_SUPPORT_QA_TOOL == 1)
 	TAG_CAP_RF_TEST_CAP = 0x21,
 #endif
@@ -1831,7 +1831,7 @@ struct EVENT_PFMU_TAG_READ {
 
 #endif
 
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 struct CMD_ACCESS_RX_STAT {
 	uint32_t u4SeqNum;
 	uint32_t u4TotalNum;
@@ -4428,7 +4428,7 @@ uint32_t nicCfgChipCapMlr(struct ADAPTER *prAdapter,
 			       uint8_t *pucEventBuf);
 #endif
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 #if (CFG_SUPPORT_QA_TOOL == 1)
 uint32_t nicCmdEventTestmodeCap(struct ADAPTER
 	  *prAdapter, uint8_t *pucEventBuf);

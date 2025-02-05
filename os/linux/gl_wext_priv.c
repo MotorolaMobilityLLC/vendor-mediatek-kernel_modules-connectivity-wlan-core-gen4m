@@ -3425,7 +3425,7 @@ int priv_driver_get_rx_statistics(struct net_device *prNetDev,
 
 	if (i4Argc >= 2) {
 		kalMemSet(&rRxStatisticsTest, 0, sizeof(rRxStatisticsTest));
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 		u4Ret = kalkStrtou32(apcArgv[1], 0,
 				     &(rRxStatisticsTest.u4SeqNum));
 #else
@@ -7299,7 +7299,7 @@ out:
 }
 
 #if CFG_SUPPORT_QA_TOOL
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 					struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen,
@@ -8241,7 +8241,7 @@ int priv_driver_show_rx_stat(struct net_device *prNetDev,
 			VIR_MEM_TYPE);
 		if (!prRxStatisticsTest)
 			return -1;
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 		prRxStatisticsTest->u4SeqNum = u4RxStatSeqNum;
 #else
 		prRxStatisticsTest->u2SeqNum = u2RxStatSeqNum;
@@ -8260,7 +8260,7 @@ int priv_driver_show_rx_stat(struct net_device *prNetDev,
 			return -1;
 		}
 
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 		i4BytesWritten = priv_driver_dump_rx_stat_info(prAdapter,
 			prNetDev, pcCommand, i4TotalLen, fgResetCnt);
 #else
@@ -21177,7 +21177,7 @@ int priv_driver_show_txd_info(
 int8_t *RxStatCommonUser[] = {
 	/* common user stat info */
 	"RxFifoFull:0x%08x\n",
-#if (CFG_SUPPORT_CONNAC3X == 0) /* comm_info v1 */
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 	"AciHitLow:0x%08x\n",
 	"AciHitHigh:0x%08x\n",
 #endif
@@ -21185,7 +21185,7 @@ int8_t *RxStatCommonUser[] = {
 	"SigMcs:0x%08x\n",
 	"Sinr:0x%08x\n",
 	"DrvRxCnt:0x%08x\n",
-#if (CFG_SUPPORT_CONNAC3X == 1) /* comm_info v1 */
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	"NeVarDb:0x%08x\n"
 #endif
 };
@@ -21205,7 +21205,7 @@ int8_t *RxStatPerAnt[] = {
 	"FagcWbRssi:%d\n",
 	"InstIbRssi:%d\n",
 	"InstWbRssi:%d\n",
-#if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 	"AdcRssi:%d\n",
 	"CcaIP:%d\n"
 #endif
@@ -21227,7 +21227,7 @@ int8_t *RxStatPerBand[] = {
 	"PhyTagErrOfdm:0x%08x\n",
 	"PhyMdyCck:0x%08x\n",
 	"PhyMdyOfdm:0x%08x\n",
-#if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1) /* band info v1*/
 	"AciHitLow:0x%08x\n",
 	"AciHitHigh:0x%08x\n",
 	"PhyPdAlr:0x%08x\n",	/* band info v2*/

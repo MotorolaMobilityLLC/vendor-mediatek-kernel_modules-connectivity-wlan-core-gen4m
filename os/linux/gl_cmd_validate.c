@@ -179,7 +179,7 @@ struct CMD_VALIDATE_POLICY get_wow_port_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 #endif
 
 #if CFG_SUPPORT_QA_TOOL
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) || (CFG_SUPPORT_CONNAC5X == 0)
 struct CMD_VALIDATE_POLICY get_rx_stats_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
 };

@@ -4555,7 +4555,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		capability->ph_cap.max_bandwidth =
 			BITS(0, prAdapter->rWifiVar.u4PhyMaxBandwidth);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 		/* ph_cap.ant_num */
 
 		if (g_HqaCap.support_mimo && g_HqaCap.support_dbdc) {
@@ -4641,7 +4641,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (capability->ph_cap.protocol & BIT(3))
 			capability->ext_cap.feature1 |= BIT(1);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
 		capability->ext_cap.feature1 |= BIT(2);
 
 		if (g_HqaCap.support_mimo && g_HqaCap.support_dbdc)
@@ -5009,7 +5009,7 @@ uint32_t ServiceWlanOid(void *winfos,
 #if CFG_SUPPORT_QA_TOOL
 	if ((prStatsData) &&
 		(oidType == OP_WLAN_OID_QUERY_RX_STATISTICS)) {
-#if (CFG_SUPPORT_CONNAC3X == 0)
+#if (CFG_SUPPORT_CONNAC3X == 0) && (CFG_SUPPORT_CONNAC5X == 0)
 		kalMemCopy(prStatsData,
 					&g_HqaRxStat,
 					HQA_RX_STATISTIC_NUM*4);
