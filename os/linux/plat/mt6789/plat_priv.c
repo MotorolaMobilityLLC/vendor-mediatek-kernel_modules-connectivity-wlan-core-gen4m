@@ -318,7 +318,10 @@ int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
 
 	switch (adie_chip_id) {
 	case 0x6635:
-		*flavor = 'a';
+		*flavor = 'e';
+		break;
+	case 0x6631:
+		*flavor = 'd';
 		break;
 	default:
 		ret = 0;
