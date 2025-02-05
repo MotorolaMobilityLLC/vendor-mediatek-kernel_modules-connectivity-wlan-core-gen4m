@@ -5000,24 +5000,21 @@ static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_WIFI_6G */
 #else /* CFG_SUPPORT_MLC */
-	uint8_t i, aband_count = 0;
-
 	if (!IS_MLC_ENABLED(prAdapter))
 		return;
 
-	for (i = 0; i < prSet->ucLinkNum; i++) {
-		uint8_t aband = FALSE;
+	/* 2 or 3 link: om = 0 + 1 + 0 */
+	if (prSet->ucLinkNum > 1)
+		prSet->afgSyncOm[1] = FALSE;
 
-		if (prSet->aprBssDesc[i]->eBand != BAND_2G4) {
-			aband = TRUE;
-			aband_count++;
-		}
+	/* A + G + A -> A + A + G */
+	if (prSet->ucLinkNum == 3 &&
+	    prSet->aprBssDesc[0]->eBand != BAND_2G4 &&
+	    prSet->aprBssDesc[1]->eBand == BAND_2G4) {
+		struct BSS_DESC *prBssDesc = prSet->aprBssDesc[1];
 
-		/* use different omac for single band MLSR A+A */
-		if (aband && aband_count > 1)
-			prSet->afgSyncOm[i] = FALSE;
-		else
-			prSet->afgSyncOm[i] = TRUE;
+		prSet->aprBssDesc[1] = prSet->aprBssDesc[2];
+		prSet->aprBssDesc[2] = prBssDesc;
 	}
 #endif /* CFG_SUPPORT_MLC */
 }
