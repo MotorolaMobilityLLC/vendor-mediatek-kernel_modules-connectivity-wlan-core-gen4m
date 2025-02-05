@@ -6522,7 +6522,9 @@ void cnmRddOpmodeEventHandler(
 			rfChannelInfo.ucChannelNum,
 			prP2pConnReqInfo->eChnlExt,
 			rfChannelInfo.ucChnlBw);
-		rfChannelInfo.u4CenterFreq2 = 0;
+		rfChannelInfo.u4CenterFreq2 = nicGetS2Freq(rfChannelInfo.eBand,
+			rfChannelInfo.ucChannelNum,
+			rfChannelInfo.ucChnlBw);
 		cnmSapChannelSwitchReq(prAdapter,
 			&rfChannelInfo,
 			ucRoleIndex,
@@ -6531,6 +6533,15 @@ void cnmRddOpmodeEventHandler(
 			prBssInfo);
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
 			->prRddPostOpchng = pEventOpMode;
+
+		/* Activate DFS setting if rdd opmode to DFS (ZWDFS) */
+		if (rfChannelInfo.eBand == BAND_5G &&
+		    (rlmDomainIsLegalDfsChannel(prAdapter, rfChannelInfo.eBand,
+						rfChannelInfo.ucChannelNum) ||
+		     rfChannelInfo.ucChnlBw >= MAX_BW_160MHZ)) {
+			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+			prBssInfo->fgIsDfsActive = TRUE;
+		}
 	} else if (pEventOpMode) {
 		if (p2pFuncGetDfsState() != DFS_STATE_CHECKING)
 			cnmOpmodeEventHandler(prAdapter, pEventOpMode);

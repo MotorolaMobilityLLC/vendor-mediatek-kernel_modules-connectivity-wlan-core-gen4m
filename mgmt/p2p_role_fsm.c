@@ -2522,8 +2522,12 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 			prAdapter,
 			prP2pBssInfo->ucBssIndex)) {
 
-			prAdapter->rWifiVar.ucAp5gBandwidth =
-				MAX_BW_80MHZ;
+			if (IS_BSS_AP(prAdapter, prP2pBssInfo))
+				prAdapter->rWifiVar.ucAp5gBandwidth =
+					MAX_BW_80MHZ;
+			else if (IS_BSS_GO(prAdapter, prP2pBssInfo))
+				prAdapter->rWifiVar.ucP2p5gBandwidth =
+					MAX_BW_80MHZ;
 			rlmGetChnlInfoForCSA(prAdapter,
 				BAND_5G, ucChannelNum,
 				prP2pBssInfo->ucBssIndex,
