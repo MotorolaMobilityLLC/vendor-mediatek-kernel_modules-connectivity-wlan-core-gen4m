@@ -8944,6 +8944,9 @@ void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
 
+	if (!prAdapter->prGlueInfo->fgWlanUevent)
+		goto end;
+
 	prMiscDev = &prAdapter->prGlueInfo->wlan_object;
 
 	DBGLOG(INIT, DEBUG, "Send UEvent: %s", src);
