@@ -2113,6 +2113,7 @@ int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 				continue;
 
 			ucBssIndex = prTempBss->ucBssIndex;
+			prBssInfo = prTempBss;
 			fgFound = TRUE;
 			break;
 		}
