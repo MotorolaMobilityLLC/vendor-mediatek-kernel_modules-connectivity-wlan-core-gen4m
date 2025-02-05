@@ -28,6 +28,10 @@
 #define NAN_5G_HIGH_BW80_DISC_CH_OP_CLASS 128
 #define NAN_5G_LOW_BW80_DISC_CH_OP_CLASS 128
 
+#define NAN_5G_HIGH_BW160_DISC_CH_OP_CLASS 129
+#define NAN_5G_LOW_BW160_DISC_CH_OP_CLASS 129
+#define NAN_5G_BW160_DEF_CHANNEL 36
+
 #if (CFG_SUPPORT_NAN_DBDC == 1)
 #define NAN_FAW_OFFSET 1 /* slot 0 dedicate for 2.4G DW with single timeline */
 #else

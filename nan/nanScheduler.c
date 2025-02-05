@@ -370,6 +370,13 @@ union _NAN_BAND_CHNL_CTRL g_r5gDwChnl = {
 	.u4AuxCenterChnl = 0
 };
 
+union _NAN_BAND_CHNL_CTRL g_r5g160Chnl = {
+	.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+	.u4OperatingClass = NAN_5G_LOW_BW160_DISC_CH_OP_CLASS,
+	.u4PrimaryChnl = NAN_5G_BW160_DEF_CHANNEL,
+	.u4AuxCenterChnl = 0
+};
+
 #if (CFG_SUPPORT_NAN_6G == 1)
 union _NAN_BAND_CHNL_CTRL g_r6gDefChnl = {
 	.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
@@ -6177,6 +6184,15 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 		else
 			g_r5gDwChnl.u4OperatingClass =
 				NAN_5G_LOW_BW80_DISC_CH_OP_CLASS;
+	}
+
+	if (ucDisc5GChnlBw == NAN_CHNL_BW_160) {
+		g_r5g160Chnl.u4Type =
+			NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
+		g_r5g160Chnl.u4OperatingClass =
+			NAN_5G_LOW_BW160_DISC_CH_OP_CLASS;
+		g_r5g160Chnl.u4PrimaryChnl =
+			NAN_5G_BW160_DEF_CHANNEL;
 	}
 
 #if (CFG_SUPPORT_NAN_6G == 1)
@@ -12499,7 +12515,6 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 						&u4RetLength);
 				u2EntryLength += u4RetLength;
 				pucPos += u4RetLength;
-
 				prAvailEntry->u2Length = u2EntryLength;
 				prAvailAttr->u2Length +=
 					(u2EntryLength + 2 /* length(2) */);
@@ -17126,6 +17141,10 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 				       eMaxBand :
 				       eAllPeerAbandMaxCap;
 
+			if (prAdapter->rWifiVar.ucNan5gBandwidth
+				== NAN_CHNL_BW_160)
+				rSelChnlInfo = g_r5g160Chnl;
+
 #if (CFG_SUPPORT_NAN_6G == 1)
 			if (eMinBand == BAND_6G &&
 			    nanIsAllowedChannel(prAdapter, g_r6gDefChnl))
@@ -17447,6 +17466,10 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 			eMinBand = eMaxBand < eAllPeerAbandMaxCap ?
 				       eMaxBand :
 				       eAllPeerAbandMaxCap;
+
+			if (prAdapter->rWifiVar.ucNan5gBandwidth
+				== NAN_CHNL_BW_160)
+				rSelChnlInfo = g_r5g160Chnl;
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 			fgIs6GDefChnlAllowed =

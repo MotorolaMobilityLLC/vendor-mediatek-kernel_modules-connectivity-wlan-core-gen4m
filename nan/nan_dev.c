@@ -194,7 +194,9 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 #if (CFG_SUPPORT_NAN_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1)
-			prnanBssInfo->ucVhtChannelWidth = CW_80MHZ;
+			prnanBssInfo->ucVhtChannelWidth =
+				prAdapter->rWifiVar.ucNan5gBandwidth
+				== NAN_CHNL_BW_160 ? CW_160MHZ : CW_80MHZ;
 		else
 			prnanBssInfo->ucVhtChannelWidth = CW_20_40MHZ;
 #else

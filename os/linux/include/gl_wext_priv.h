@@ -645,6 +645,8 @@ int priv_driver_set_faw_apply(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_nan_stat(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_nan_5g_160(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_NAN */
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 int priv_driver_set_dfs_channel_available(struct net_device *prNetDev,

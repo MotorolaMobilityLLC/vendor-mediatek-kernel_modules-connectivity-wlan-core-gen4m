@@ -11316,11 +11316,13 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	       prEventDeviceInfo->au4Tsf[0]);
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"Cluster["MACSTR"] [NSS:%u] %s %s\n\n",
+		"Cluster["MACSTR"] [NSS:%u] %s %s [2G_BW:%u] [5G_BW:%u]\n\n",
 		MAC2STR(prEventDeviceInfo->aucClusterID),
 		prAdapter->rWifiVar.ucNSS,
 		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT ? "[HT]" : "",
-		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT ? "[VHT]" : "");
+		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT ? "[VHT]" : "",
+		prAdapter->rWifiVar.ucNan2gBandwidth,
+		prAdapter->rWifiVar.ucNan5gBandwidth);
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			"This Device["MACSTR"]\n",
@@ -11638,6 +11640,44 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	}
 
 	return i4BytesWritten;
+}
+
+int
+priv_driver_set_nan_5g_160(struct net_device *prNetDev, char *pcCommand,
+			  int i4TotalLen)
+{
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	uint32_t u4Enable = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &(u4Enable));
+	if (u4Ret) {
+		DBGLOG(REQ, WARN,
+		       "parse nan-5g-160 error (u4Enable) u4Ret=%d\n",
+		       u4Ret);
+		return -1;
+	}
+
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN,
+		       "%s adapter null\n", __func__);
+		return -1;
+	}
+
+	prAdapter->rWifiVar.ucNan5gBandwidth =
+		u4Enable ? NAN_CHNL_BW_160 : NAN_CHNL_BW_80;
+
+	return 0;
 }
 #endif
 

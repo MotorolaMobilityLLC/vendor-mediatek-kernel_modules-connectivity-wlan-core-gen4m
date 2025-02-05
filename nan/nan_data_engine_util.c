@@ -4183,7 +4183,23 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 		prVhtCap = &(prNDL->rIeVhtCap);
 
 		prStaRec->u4VhtCapInfo = prVhtCap->u4VhtCapInfo;
-
+		if (prAdapter->rWifiVar.uc5GBandwidthMode == NAN_CHNL_BW_160) {
+			ucPeerBW = 160;
+			prStaRec->u4VhtCapInfo |=
+				VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
+			if (IS_FEATURE_ENABLED
+				(prAdapter->rWifiVar.ucRxShortGI)) {
+				prStaRec->u4VhtCapInfo |=
+					VHT_CAP_INFO_SHORT_GI_80;
+				prStaRec->u4VhtCapInfo |=
+					VHT_CAP_INFO_SHORT_GI_160_80P80;
+			} else {
+				prStaRec->u4VhtCapInfo &=
+					(~VHT_CAP_INFO_SHORT_GI_80);
+				prStaRec->u4VhtCapInfo &=
+					(~VHT_CAP_INFO_SHORT_GI_160_80P80);
+			}
+		}
 		/* Set Tx LDPC capability */
 		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxLdpc))
 			prStaRec->u4VhtCapInfo |= VHT_CAP_INFO_RX_LDPC;

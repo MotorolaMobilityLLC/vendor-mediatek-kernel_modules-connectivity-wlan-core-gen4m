@@ -448,6 +448,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+	{
+		.pcCmdStr  = CMD_SET_NAN_5G_160,
+		.pfHandler = priv_driver_set_nan_5g_160,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
 #endif
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{
