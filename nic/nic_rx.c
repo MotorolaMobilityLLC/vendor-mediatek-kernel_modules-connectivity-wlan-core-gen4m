@@ -3763,6 +3763,28 @@ uint32_t nicRxNANPMFCheck(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+
+static uint32_t (* const nanActionFrameHandler[NAN_ACTION_NUM])
+		(struct ADAPTER *, struct SW_RFB *) = {
+	[NAN_ACTION_RANGING_REQUEST] = nanRangingRequestRx,
+	[NAN_ACTION_RANGING_RESPONSE] = nanRangingResponseRx,
+	[NAN_ACTION_RANGING_TERMINATION] = nanRangingTerminationRx,
+	[NAN_ACTION_RANGING_REPORT] = nanRangingReportRx,
+
+	[NAN_ACTION_DATA_PATH_REQUEST] = nanNdpProcessDataRequest,
+	[NAN_ACTION_DATA_PATH_RESPONSE] = nanNdpProcessDataResponse,
+	[NAN_ACTION_DATA_PATH_CONFIRM] = nanNdpProcessDataConfirm,
+	[NAN_ACTION_DATA_PATH_KEY_INSTALLMENT] = nanNdpProcessDataKeyInstall,
+	[NAN_ACTION_DATA_PATH_TERMINATION] = nanNdpProcessDataTermination,
+
+	[NAN_ACTION_SCHEDULE_REQUEST] = nanNdlProcessScheduleRequest,
+	[NAN_ACTION_SCHEDULE_RESPONSE] = nanNdlProcessScheduleResponse,
+	[NAN_ACTION_SCHEDULE_CONFIRM] = nanNdlProcessScheduleConfirm,
+	[NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION] =
+		nanNdlProcessScheduleUpdateNotification,
+
+};
+
 uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 			      struct SW_RFB *prSwRfb)
 {
@@ -3791,6 +3813,9 @@ uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 		    WLAN_STATUS_FAILURE)
 			return WLAN_STATUS_FAILURE;
 	}
+
+	DBGDUMP_HEX(NAN, INFO, "RX NAN Action Frame:",
+		   prActionFrame, prSwRfb->u2PacketLen);
 
 	if (ucOuiType == VENDOR_OUI_TYPE_NAN_NAF ||
 	    ucOuiType == VENDOR_OUI_TYPE_NAN_SDF) {
@@ -3831,59 +3856,10 @@ uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 			}
 		}
 
-		switch (ucOuiSubtype) {
-		case NAN_ACTION_RANGING_REQUEST:
-			rWlanStatus = nanRangingRequestRx(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_RANGING_RESPONSE:
-			rWlanStatus = nanRangingResponseRx(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_RANGING_TERMINATION:
+		if (ucOuiSubtype < NAN_ACTION_NUM)
 			rWlanStatus =
-				nanRangingTerminationRx(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_RANGING_REPORT:
-			rWlanStatus = nanRangingReportRx(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_DATA_PATH_REQUEST:
-			rWlanStatus =
-				nanNdpProcessDataRequest(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_DATA_PATH_RESPONSE:
-			rWlanStatus =
-				nanNdpProcessDataResponse(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_DATA_PATH_CONFIRM:
-			rWlanStatus =
-				nanNdpProcessDataConfirm(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_DATA_PATH_KEY_INSTALLMENT:
-			rWlanStatus =
-				nanNdpProcessDataKeyInstall(prAdapter, prSwRfb);
-			break;
-		case NAN_ACTION_DATA_PATH_TERMINATION:
-			rWlanStatus = nanNdpProcessDataTermination(prAdapter,
-								   prSwRfb);
-			break;
-		case NAN_ACTION_SCHEDULE_REQUEST:
-			rWlanStatus = nanNdlProcessScheduleRequest(prAdapter,
-								   prSwRfb);
-			break;
-		case NAN_ACTION_SCHEDULE_RESPONSE:
-			rWlanStatus = nanNdlProcessScheduleResponse(prAdapter,
+				nanActionFrameHandler[ucOuiSubtype](prAdapter,
 								    prSwRfb);
-			break;
-		case NAN_ACTION_SCHEDULE_CONFIRM:
-			rWlanStatus = nanNdlProcessScheduleConfirm(prAdapter,
-								   prSwRfb);
-			break;
-		case NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION:
-			rWlanStatus = nanNdlProcessScheduleUpdateNotification(
-				prAdapter, prSwRfb);
-			break;
-		default:
-			break;
-		}
 	}
 	return rWlanStatus;
 }

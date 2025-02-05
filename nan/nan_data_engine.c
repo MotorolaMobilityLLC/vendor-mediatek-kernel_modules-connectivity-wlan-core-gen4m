@@ -6708,6 +6708,7 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		     struct STA_RECORD *prSelectStaRec)
 {
 	struct _NAN_ACTION_FRAME_T *prNAF = NULL;
+	uint8_t ucOuiSubtype;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
@@ -6744,6 +6745,20 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 	/* NAN_CHK_PNT log message */
 	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
 	nanLogTx(prNAF);
+
+	DBGDUMP_HEX(NAN, INFO, "TX NAN Action Frame:",
+		    prMsduInfo->prPacket, u2FrameLength);
+
+	if (prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_NAF ||
+	    prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_SDF) {
+		ucOuiSubtype = prNAF->ucOUISubtype;
+		DBGLOG(NAN, INFO,
+		       "Tx NAN Pub Action, StaIdx:%d, Wtbl:%d, OUISubtype:%d(%s), Src: "
+		       MACSTR " Dest: " MACSTR "\n",
+		       prMsduInfo->ucStaRecIndex, prMsduInfo->ucWlanIndex,
+		       ucOuiSubtype, nanActionFrameOuiString(ucOuiSubtype),
+		       MAC2STR(prNAF->aucSrcAddr), MAC2STR(prNAF->aucDestAddr));
+	}
 
 	nicTxSetPktRetryLimit(prMsduInfo, NAF_TX_RETRY_COUNT_LIMIT);
 

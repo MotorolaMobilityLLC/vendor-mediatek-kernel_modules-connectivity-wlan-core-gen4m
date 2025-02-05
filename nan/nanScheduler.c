@@ -5953,12 +5953,18 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	}
 
 	if (prPeerSchRecord->prCommNdcCtrl) {
-		DBGLOG(NAN, INFO, "sch idx=%u, NDC=%02x-%02x-%02x-%02x\n",
+		struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
+
+		prCommNdcCtrl = prPeerSchRecord->prCommNdcCtrl;
+		DBGLOG(NAN, INFO,
+		       "sch idx=%u, NDC=%02x-%02x-%02x-%02x-%02x-%02x\n",
 		       u4SchIdx,
 		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[0],
 		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[1],
 		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[2],
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[3]);
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[3],
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[4],
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[5]);
 	}
 
 	/* Set eBand by collected slot number with higher band preferred */
