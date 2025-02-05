@@ -7,9 +7,6 @@
 
 #if CFG_ENABLE_WIFI_DIRECT
 
-#define IS_6G_PSC_CHANNEL(_ch) \
-	(((_ch - 5) % 16) == 0)
-
 struct APPEND_VAR_ATTRI_ENTRY txAssocRspAttributesTable[] = {
 	{(P2P_ATTRI_HDR_LEN + P2P_ATTRI_MAX_LEN_STATUS), NULL,
 		p2pFuncAppendAttriStatusForAssocRsp}
