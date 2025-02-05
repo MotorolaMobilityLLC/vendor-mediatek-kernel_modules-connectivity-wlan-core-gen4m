@@ -397,6 +397,8 @@
 #define CMD_RM_IT		"RM-IT"
 #define CMD_BTM_IT		"BTM-IT"
 #define CMD_BT_IT		"BT-IT"
+#define CMD_CHNL_LOAD_IT	"CHNLLOAD-IT"
+#define CMD_STATISTICS_IT	"STATISTICS-IT"
 #define CMD_DUMP_UAPSD		"dumpuapsd"
 #define CMD_FW_EVENT		"FW-EVENT"
 #if CFG_SUPPORT_EASY_DEBUG

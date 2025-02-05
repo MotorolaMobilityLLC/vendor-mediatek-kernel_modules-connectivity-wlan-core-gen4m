@@ -8888,6 +8888,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  BSS_MAX_IDLE_PERIOD_VALUE, FEATURE_TO_CUSTOMER);
 #endif
 
+	INIT_UINT(prWifiVar->ucLDtStaSkipLowRCPIACKThres,
+		  "LdtBTONullAckRCPIThres", RCPI_FOR_DONT_BTO,
+		  FEATURE_TO_CUSTOMER);
+
 #if (CFG_SUPPORT_NAN == 1)
 	INIT_UINT(prWifiVar->ucNanMacAddrOverride, "NanMacOverride", 0,
 		  FEATURE_TO_CUSTOMER);

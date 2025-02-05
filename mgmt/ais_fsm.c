@@ -7627,12 +7627,34 @@ void aisHandleBeaconTimeout(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
-	int8_t rssi;
+	int32_t i4DataRssi0 = 0, i4DataRssi1 = 0, i4DataRssi, i4BcnRssi;
+	struct STA_RECORD *prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 
-	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
+	if (!prStaRec)
+		return FALSE;
 
-	DBGLOG(NIC, DEBUG, "RX in the past duration and rssi=%d\n", rssi);
-	return rssi > RCPI_FOR_DONT_ROAM;
+	i4BcnRssi = (int32_t)prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
+
+	i4DataRssi0 = RCPI_TO_dBm((prStaRec->au4RxV[3] & RX_VT_RCPI0_MASK) >>
+			      RX_VT_RCPI0_OFFSET);
+	i4DataRssi1 = RCPI_TO_dBm((prStaRec->au4RxV[3] & RX_VT_RCPI1_MASK) >>
+			      RX_VT_RCPI1_OFFSET);
+
+	if ((i4DataRssi0 != RCPI_TO_dBm(RCPI_MEASUREMENT_NOT_AVAILABLE)) &&
+	    (i4DataRssi1 != RCPI_TO_dBm(RCPI_MEASUREMENT_NOT_AVAILABLE)))
+		i4DataRssi = i4DataRssi0 > i4DataRssi1 ?
+					i4DataRssi0 : i4DataRssi1;
+	else if (i4DataRssi0 != RCPI_TO_dBm(RCPI_MEASUREMENT_NOT_AVAILABLE))
+		i4DataRssi = i4DataRssi0;
+	else
+		i4DataRssi = i4DataRssi1;
+
+	DBGLOG(NIC, DEBUG, "RX in the past duration, Beacon = %d, Data = %d\n",
+				i4BcnRssi, i4DataRssi);
+
+	return  (dBm_TO_RCPI(i4BcnRssi) > RCPI_FOR_DONT_ROAM) &&
+		(dBm_TO_RCPI(i4DataRssi) >
+			prAdapter->rWifiVar.ucLDtStaSkipLowRCPIACKThres);
 }
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
@@ -9536,8 +9558,11 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 	    !prAdapter->rWifiVar.fgRoamByBTM &&
 	    (prBssDesc->rMlInfo.u2MldCap & MLD_CAP_TID_TO_LINK_NEGO_MASK) &&
 	    !(ucReqMode & WNM_BSS_TM_REQ_BSS_TERMINATION_INCLUDED)) {
+		struct T2LM_INFO *prT2LMParams;
+		struct BSS_INFO *prBssInfo;
+		uint16_t u2MapValue, u2PrefLinks;
 		struct MLD_STA_RECORD *prMldStarec;
-		uint16_t u2PrefLinks;
+		int32_t i;
 
 		prMldStarec = mldStarecGetByStarec(prAdapter,
 			aisGetMainLinkStaRec(prAisFsmInfo));
@@ -9547,70 +9572,53 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 		u2PrefLinks = aisGetNeighborMldAPPrefLinks(
 			prAdapter, prBssDesc, ucBssIndex);
 
-		if (u2PrefLinks || prAdapter->rWifiVar.u4T2LMMapValue) {
-			int i;
-			struct T2LM_INFO *prT2LMParams;
-			struct BSS_INFO *prBssInfo;
-			uint16_t u2MapValue;
-
-			/* skip t2lm if
-			 * 1. all links are not preferred (AB->another AP)
-			 * 2. there are links not in validlinks (AB->BC)
-			 */
-			if ((u2PrefLinks & prMldStarec->u2ValidLinks) == 0 ||
-			    (u2PrefLinks & ~prMldStarec->u2ValidLinks) != 0) {
-				DBGLOG(AIS, WARN,
-				     "Skip t2lm, ValidLinks=0x%x PrefLinks=0x%x\n",
-				     prMldStarec->u2ValidLinks, u2PrefLinks);
-				goto skip_t2lm;
-			}
-
-			if (prAdapter->rWifiVar.u4T2LMMapValue != 0) {
-				u2MapValue = prAdapter->rWifiVar.u4T2LMMapValue;
-			} else {
-				u2MapValue =
-				    u2PrefLinks & prMldStarec->u2ValidLinks;
-			}
-
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prBtmParam->ucRspBssIndex);
-			prT2LMParams = (struct T2LM_INFO *)
-				kalMemZAlloc(sizeof(struct T2LM_INFO),
-				VIR_MEM_TYPE);
-			if (!prT2LMParams) {
-				DBGLOG(AIS, WARN, "alloc t2lm params failed\n");
-				goto skip_t2lm;
-			}
-			prT2LMParams->ucDirection = 2;
-			prT2LMParams->ucDefaultLM = 0;
-			prT2LMParams->ucSwitchTimePresent = 0;
-			prT2LMParams->ucDurationPresent = 0;
-			prT2LMParams->ucLMSize = 1;
-			prT2LMParams->ucLMIndicator = 255;
-			for (i = 0; i < MAX_NUM_T2LM_TIDS; i++)
-				prT2LMParams->au2LMTid[i] = u2MapValue;
-
-			DBGLOG(AIS, INFO,
-			      "Send t2lm for load balance ValidLinks=0x%x PrefLinks=0x%x LinkId=%d T2LMMapValue=0x%x\n",
-			      prMldStarec->u2ValidLinks, u2PrefLinks,
-			      prBssDesc->rMlInfo.ucLinkId, u2MapValue);
-
-			t2lmSend(prAdapter, TID2LINK_REQUEST,
-					prBssInfo, prT2LMParams);
-			kalMemFree(prT2LMParams, VIR_MEM_TYPE,
-				sizeof(struct prT2LMParams));
-			/* per spec, no need to send btm if already send t2lm */
-		} else if (prBtmParam->fgPendingResponse) {
-			prBtmParam->fgPendingResponse = false;
-			wnmSendBTMResponseFrame(prAdapter,
-				aisGetStaRecOfAP(prAdapter,
-				prBtmParam->ucRspBssIndex),
-				NULL,
-				prBtmParam->ucDialogToken,
-				WNM_BSS_TM_REJECT_UNSPECIFIED,
-				MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
-				0, NULL);
+		/* skip t2lm if
+		 * 1. all links are not preferred (AB->another AP)
+		 * 2. there are links not in validlinks (AB->BC)
+		 */
+		if ((u2PrefLinks & prMldStarec->u2ValidLinks) == 0 ||
+		    (u2PrefLinks & ~prMldStarec->u2ValidLinks) != 0) {
+			DBGLOG(AIS, WARN,
+			     "Skip t2lm, ValidLinks=0x%x PrefLinks=0x%x\n",
+			     prMldStarec->u2ValidLinks, u2PrefLinks);
+			goto skip_t2lm;
 		}
+
+		if (prAdapter->rWifiVar.u4T2LMMapValue != 0) {
+			u2MapValue = prAdapter->rWifiVar.u4T2LMMapValue;
+		} else {
+			u2MapValue =
+			    u2PrefLinks & prMldStarec->u2ValidLinks;
+		}
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prBtmParam->ucRspBssIndex);
+		prT2LMParams = (struct T2LM_INFO *)
+			kalMemZAlloc(sizeof(struct T2LM_INFO),
+			VIR_MEM_TYPE);
+		if (!prT2LMParams) {
+			DBGLOG(AIS, WARN, "alloc t2lm params failed\n");
+			goto skip_t2lm;
+		}
+		prT2LMParams->ucDirection = 2;
+		prT2LMParams->ucDefaultLM = 0;
+		prT2LMParams->ucSwitchTimePresent = 0;
+		prT2LMParams->ucDurationPresent = 0;
+		prT2LMParams->ucLMSize = 1;
+		prT2LMParams->ucLMIndicator = 255;
+		for (i = 0; i < MAX_NUM_T2LM_TIDS; i++)
+			prT2LMParams->au2LMTid[i] = u2MapValue;
+
+		DBGLOG(AIS, INFO,
+		      "Send t2lm for load balance ValidLinks=0x%x PrefLinks=0x%x LinkId=%d T2LMMapValue=0x%x\n",
+		      prMldStarec->u2ValidLinks, u2PrefLinks,
+		      prBssDesc->rMlInfo.ucLinkId, u2MapValue);
+
+		t2lmSend(prAdapter, TID2LINK_REQUEST,
+				prBssInfo, prT2LMParams);
+		kalMemFree(prT2LMParams, VIR_MEM_TYPE,
+			sizeof(struct prT2LMParams));
+		/* per spec, no need to send btm if already send t2lm */
 
 		return;
 	}

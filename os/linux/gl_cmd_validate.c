@@ -2553,6 +2553,22 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = ARRAY_SIZE(it_operation_policy)
 	},
 	{
+		.pcCmdStr  = CMD_CHNL_LOAD_IT,
+		.pfHandler = priv_driver_it_operation,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(5),
+		.policy    = it_operation_policy,
+		.u4PolicySize = ARRAY_SIZE(it_operation_policy)
+	},
+	{
+		.pcCmdStr  = CMD_STATISTICS_IT,
+		.pfHandler = priv_driver_it_operation,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(4),
+		.policy    = it_operation_policy,
+		.u4PolicySize = ARRAY_SIZE(it_operation_policy)
+	},
+	{
 		.pcCmdStr  = CMD_FW_EVENT,
 		.pfHandler = priv_driver_fw_event,
 		.argPolicy = VERIFY_MIN_ARG_NUM,

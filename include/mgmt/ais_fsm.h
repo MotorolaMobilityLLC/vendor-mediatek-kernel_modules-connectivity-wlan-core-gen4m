@@ -124,6 +124,8 @@
 #define RCPI_FOR_DONT_ROAM		    60 /*-80dbm*/
 #endif
 
+#define RCPI_FOR_DONT_BTO                   66 /*-77dbm*/
+
 #define AIS_BTM_DIS_IMMI_THRESHOLD	    60000 /* MSEC */
 #define AIS_BTM_DIS_IMMI_STATE_0	    0
 #define AIS_BTM_DIS_IMMI_STATE_1	    1
