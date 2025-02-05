@@ -7834,12 +7834,18 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	else {
+		/* Fix Wifi6 SAP Cert 4.14.2
+		 * OpMode should refer peer's HE PHY Cap
+		 * VHT only client should bypass this flow
+		 */
 		if ((prBssInfo->eBand == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			|| prBssInfo->eBand == BAND_6G
 #endif
 			) &&
 			RLM_NET_IS_11AX(prBssInfo) &&
+			(prStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11AX) &&
 			!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
 			prStaRec->ucHePhyCapInfo))
 			prStaRec->ucVhtOpMode = 0;
