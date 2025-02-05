@@ -11979,6 +11979,10 @@ void aisFunSwitchChannel(struct ADAPTER *prAdapter,
 	}
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
+	/* abort ongoing scan to handle csa immediately */
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN)
+		aisFsmStateAbort_SCAN(prAdapter, prBssInfo->ucBssIndex);
+
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 		aisFunSwitchChannelImpl(prAdapter, prBssInfo->ucBssIndex);
 		return;
