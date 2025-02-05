@@ -127,6 +127,7 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 
 	kalMemSet(prEmi, 0, sizeof(struct MBU_EMI_CTX));
 	prMbuInfo->fgIsEnable = TRUE;
+	prMbuInfo->fgIsDumpDebugCr = FALSE;
 
 	/* set remap */
 	if (prMbuInfo->u4RemapAddr) {
@@ -371,6 +372,14 @@ exit:
 		halMbuDebug(prGlueInfo);
 
 	return fgRet;
+}
+
+void halMbuEnableDebug(struct GLUE_INFO *prGlueInfo)
+{
+	struct SW_EMI_RING_INFO *prMbuInfo =
+		&prGlueInfo->prAdapter->chip_info->bus_info->rSwEmiRingInfo;
+
+	prMbuInfo->fgIsDumpDebugCr = FALSE;
 }
 
 void halMbuDebug(struct GLUE_INFO *prGlueInfo)

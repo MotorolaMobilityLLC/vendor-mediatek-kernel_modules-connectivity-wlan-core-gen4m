@@ -840,6 +840,7 @@ struct BUS_INFO mt6653_bus_info = {
 			.uninit = halMbuUninit,
 			.read = halMbuRead4,
 			.read8 = halMbuRead8,
+			.enableDebug = halMbuEnableDebug,
 			.debug = halMbuDebug,
 			.dumpDebugCr = mt6653MbuDumpDebugCr,
 		},
@@ -5274,14 +5275,17 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		0x74130048, 0x7413004C, 0x74130050, 0x74130054,
 		0x74130058, 0x7413005C, 0x74138000, 0x74138004,
 		0x74138008, 0x7413800C, 0x74138010, 0x74138014,
-		0x74138018, 0x7413801C, 0x74138020, 0x74138060,
-		0x74138064, 0x74138100, 0x74138104, 0x74138108
+		0x74138018, 0x7413801C, 0x74138020, 0x74138024,
+		0x74138060, 0x74138064, 0x74138100, 0x74138104
 	};
 	const uint32_t au4DbgCr2[] = {
 		/* mbu */
-		0x7413810C, 0x74138110, 0x74138114, 0x74138118,
-		0x7413811C, 0x74138120, 0x74138160, 0x74138164,
-		0x7413D008, 0x7413B008, 0x7413B00C,
+		0x74138108, 0x7413810C, 0x74138110, 0x74138114,
+		0x74138118, 0x7413811C, 0x74138120, 0x74138160,
+		0x74138164, 0x7413D008, 0x7413B008, 0x7413B00C,
+		/* mbu ram */
+		0x74040A00, 0x74040A04, 0x74040A40, 0x74040200,
+		0x74040230, 0x74040300, 0x7404032C,
 		/* pcie mac */
 		0x74030150, 0x74030154, 0x74030184, 0x74031010,
 		0x74031204, 0x74031210, 0x740301A8, 0x740301D4,
@@ -5324,6 +5328,11 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, WARN, "buffer alloc fail\n");
 		return;
 	}
+
+	/* enable CB_INFRA_FORCE_AWAKE */
+	HAL_RMCR_RD(PLAT_DBG, prAdapter, 0x70025010, &u4Val);
+	u4Val |= BIT(24);
+	HAL_MCR_WR(prAdapter, 0x70025010, u4Val);
 
 	kalMemZero(aucBuf, u4BufferSize);
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr1); u4Idx++) {
@@ -5382,6 +5391,12 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 				u4Val);
 		}
 	}
+
+	/* disable CB_INFRA_FORCE_AWAKE */
+	HAL_RMCR_RD(PLAT_DBG, prAdapter, 0x70025010, &u4Val);
+	u4Val &= ~BIT(24);
+	HAL_MCR_WR(prAdapter, 0x70025010, u4Val);
+
 	DBGLOG(HAL, DEBUG, "%s\n", aucBuf);
 
 	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);

@@ -982,6 +982,7 @@ struct SW_EMI_RING_OPS {
 	u_int8_t (*read8)(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 			  uint32_t *pu4LowVal, uint32_t *pu4HighVal);
 	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
+	void (*enableDebug)(struct GLUE_INFO *prGlueInfo);
 	void (*debug)(struct GLUE_INFO *prGlueInfo);
 	void (*dumpDebugCr)(struct GLUE_INFO *prGlueInfo);
 };
@@ -1435,6 +1436,7 @@ u_int8_t halMbuRead4(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 		     uint32_t *pu4Val);
 u_int8_t halMbuRead8(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 		     uint32_t *pu4LowVal, uint32_t *pu4HighVal);
+void halMbuEnableDebug(struct GLUE_INFO *prGlueInfo);
 void halMbuDebug(struct GLUE_INFO *prGlueInfo);
 #endif
 

@@ -2340,6 +2340,9 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 	struct mt66xx_chip_info *chip_info = NULL;
 	struct CHIP_DBG_OPS *debug_ops = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+#if CFG_MTK_WIFI_SW_EMI_RING
+	struct SW_EMI_RING_OPS *prSwEmiRingOps;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	u_int8_t readable = TRUE;
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	int ret = 0;
@@ -2358,6 +2361,9 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 	chip_info = ad->chip_info;
 	debug_ops = chip_info->prDebugOps;
 	prHifInfo = &ad->prGlueInfo->rHifInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
+	prSwEmiRingOps = &chip_info->bus_info->rSwEmiRingInfo.rOps;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
 		DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
@@ -2367,6 +2373,11 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 
 	if (mt6653_CheckSkipDebugSOPEEReason(ad))
 		goto dump_end;
+
+#if CFG_MTK_WIFI_SW_EMI_RING
+	if (prSwEmiRingOps->enableDebug)
+		prSwEmiRingOps->enableDebug(ad->prGlueInfo);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
