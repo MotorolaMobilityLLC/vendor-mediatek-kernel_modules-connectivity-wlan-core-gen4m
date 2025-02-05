@@ -400,18 +400,6 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
  */
 struct GLUE_INFO;
 
-#if CFG_SW_TSO
-struct TSO_SW {
-	struct tso_t rTso;
-	uint32_t u4PktCnt;     /* pkt cnt after desegmentation */
-	uint32_t u4HdrLen;     /* header len for all pkt */
-	uint32_t u4TotLen;     /* total left payload len for the large pkt */
-	uint32_t u4CurrPktLen; /* packet len of current pkt */
-	uint32_t u4CurrPktIdx; /* packet idx of current pkt */
-	u_int8_t fgIsLastPkt;  /* is current pkt is the last one */
-};
-#endif /* CFG_SW_TSO */
-
 struct GL_WPA_INFO {
 	uint32_t u4WpaVersion;
 	uint32_t u4KeyMgmt;

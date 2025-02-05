@@ -15794,6 +15794,42 @@ void kalTxStartTsoSw(struct MSDU_INFO *prMsduInfo)
 		prTso->u4PktCnt = 1;
 }
 
+void kalTxProcessTsoSw(struct TSO_SW *prTso, void *prPacket,
+	uint8_t *pucBuffer, uint32_t *u4CopyLen)
+{
+	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
+	uint32_t u4SegSize;
+	uint32_t u4Offset = *u4CopyLen;
+
+	u4SegSize = min_t(int, skb_shinfo(prSkb)->gso_size, prTso->u4TotLen);
+	prTso->u4TotLen -= u4SegSize;
+	prTso->fgIsLastPkt = (prTso->u4TotLen == 0);
+
+	/* prepare packet headers: MAC + IP + TCP */
+	tso_build_hdr(prSkb, pucBuffer + u4Offset, &prTso->rTso, u4SegSize,
+			prTso->fgIsLastPkt);
+	u4Offset += prTso->u4HdrLen;
+
+	/* record pkt len for current pkt */
+	prTso->u4CurrPktLen = prTso->u4HdrLen + u4SegSize;
+	prTso->u4CurrPktIdx++;
+
+	while (u4SegSize > 0) {
+		uint32_t u4Size;
+
+		u4Size = min_t(int, prTso->rTso.size, u4SegSize);
+
+		kalMemCopy(pucBuffer + u4Offset, prTso->rTso.data, u4Size);
+		u4Offset += u4Size;
+		u4SegSize -= u4Size;
+
+		/* Config rTso for next data section */
+		tso_build_data(prSkb, &prTso->rTso, u4Size);
+	}
+
+	*u4CopyLen = u4Offset;
+}
+
 uint32_t kalTxGetPktCnt(struct MSDU_INFO *prMsduInfo)
 {
 	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
@@ -15804,7 +15840,158 @@ uint32_t kalTxGetPktCnt(struct MSDU_INFO *prMsduInfo)
 
 	return 1;
 }
+
+void kalTxProcessTsoSwForTxFrag(struct ADAPTER *ad,
+	struct MSDU_INFO *prMsduInfo, struct QUE *prOutputQue)
+{
+	struct GLUE_INFO *pr = ad->prGlueInfo;
+	struct sk_buff *prOrgSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	uint8_t ucBssIndex;
+	uint16_t u2QueueIdx;
+	uint32_t u4SegSizeMax;
+	struct TSO_SW rTso;
+	struct sk_buff *prNskb;
+	uint8_t *pucRecvBuff;
+	struct MSDU_INFO *prNewMsduInfo;
+	uint32_t u4CopyLen;
+	uint32_t u4TotLen;
+
+	ucBssIndex = GLUE_GET_PKT_BSS_IDX(prOrgSkb);
+	u2QueueIdx = skb_get_queue_mapping(prOrgSkb);
+	kalMemCopy(&rTso, &prMsduInfo->rTsoSw, sizeof(struct TSO_SW));
+	kalMemZero(&prMsduInfo->rTsoSw, sizeof(struct TSO_SW));
+	u4SegSizeMax = skb_shinfo(prOrgSkb)->gso_size + rTso.u4HdrLen;
+
+	DBGLOG(INIT, TEMP,
+		"prOrgSkb[%p] truesize[%u] nr_frags[%u] Len[%u] SegSizeMax[%u/%u/%u]\n",
+		prOrgSkb,
+		SKB_WITH_OVERHEAD(prOrgSkb->truesize),
+		skb_shinfo(prOrgSkb)->nr_frags,
+		prOrgSkb->len,
+		u4SegSizeMax,
+		skb_shinfo(prOrgSkb)->gso_size,
+		rTso.u4HdrLen);
+
+	u4TotLen = rTso.u4TotLen;
+	while (rTso.fgIsLastPkt == FALSE) {
+		prNskb = kalPacketAlloc(pr, u4SegSizeMax, TRUE, &pucRecvBuff);
+		if (!prNskb) {
+			DBGLOG_LIMITED(INIT, ERROR,
+				"prNskb NULL PktIdx[%u/%u] PktLen[%u/%u/%u/%u]\n",
+				rTso.u4CurrPktIdx, rTso.u4PktCnt,
+				u4CopyLen, rTso.u4HdrLen, rTso.u4TotLen,
+				u4TotLen);
+			break;
+		}
+
+		/* Do TSO early due to Tx Frag */
+		u4CopyLen = 0;
+		kalTxProcessTsoSw(&rTso, prOrgSkb, prNskb->data, &u4CopyLen);
+		skb_put(prNskb, u4CopyLen);
+
+		/* for kalSendComplete */
+		skb_copy_queue_mapping(prNskb, prOrgSkb);
+		kalSkbCopyCbData(prNskb, prOrgSkb);
+		GLUE_SET_PKT_FRAME_LEN(prNskb, kalQueryPacketLength(prNskb));
+
+		DBGLOG(INIT, TEMP,
+			"prNskb[%p] nr_frags[%u] gso_size[%u] len[%u] PktIdx[%u/%u] PktLen[%u/%u/%u/%u]\n",
+			prNskb,
+			skb_shinfo(prNskb)->nr_frags,
+			skb_shinfo(prNskb)->gso_size,
+			prNskb->len,
+			rTso.u4CurrPktIdx, rTso.u4PktCnt,
+			u4CopyLen, rTso.u4HdrLen, rTso.u4TotLen, u4TotLen);
+
+		prNewMsduInfo = cnmPktAlloc(ad, 0);
+		if (!prNewMsduInfo) {
+			kalPacketFree(pr, prNskb);
+			DBGLOG_LIMITED(INIT, ERROR,
+				"prNewMsduInfo NULL PktIdx[%u/%u] PktLen[%u/%u/%u/%u]\n",
+				rTso.u4CurrPktIdx, rTso.u4PktCnt,
+				u4CopyLen, rTso.u4HdrLen, rTso.u4TotLen,
+				u4TotLen);
+			break;
+		}
+
+		kalMemCopy(prNewMsduInfo, prMsduInfo, sizeof(struct MSDU_INFO));
+		prNewMsduInfo->prPacket = prNskb;
+		prNewMsduInfo->u2FrameLength = GLUE_GET_PKT_FRAME_LEN(prNskb);
+
+		QUEUE_INSERT_TAIL(prOutputQue, prNewMsduInfo);
+
+		/* increase pending count for new pkt */
+		GLUE_INC_REF_CNT(pr->i4TxPendingFrameNum);
+		GLUE_INC_REF_CNT(pr->ai4TxPendingFrameNumPerQueue[
+					ucBssIndex][u2QueueIdx]);
+	}
+
+	/* release the original Skb and MsduInfo */
+	kalSendComplete(pr, prMsduInfo->prPacket, WLAN_STATUS_SUCCESS);
+	nicTxReturnMsduInfo(ad, prMsduInfo);
+}
 #endif /* CFG_SW_TSO */
+
+#if CFG_SUPPORT_MLR
+void __kalDoFragPacket(struct ADAPTER *ad, struct QUE *prInputQue,
+	struct QUE *prFragmentedQue)
+{
+	uint8_t fgDoFragSuccess = FALSE;
+	uint16_t u2TxFragSplitSize = 0, u2TxFragThr = 0;
+	struct MSDU_INFO *prMsduInfo;
+	struct sk_buff *prSkb;
+
+	QUEUE_REMOVE_HEAD(prInputQue, prMsduInfo, struct MSDU_INFO *);
+	if (!prMsduInfo)
+		return;
+
+	/* Get Tx Frag split size and threshold */
+	mlrGetTxFragParameter(ad, prMsduInfo, &u2TxFragSplitSize, &u2TxFragThr);
+
+	do {
+		prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+		if (skb_is_gso(prSkb)) {
+			DBGLOG_LIMITED(INIT, ERROR,
+				"Fallback due to unexpected GSO prSkb[%p] Len[%u]\n",
+				prSkb, GLUE_GET_PKT_FRAME_LEN(prSkb));
+			/* fallback to non Tx Frag path */
+			QUEUE_INSERT_TAIL(prFragmentedQue, prMsduInfo);
+		} else {
+			/* Do fragment */
+			fgDoFragSuccess = mlrDoFragPacket(ad, prMsduInfo,
+						u2TxFragSplitSize, u2TxFragThr,
+						(void *)prMsduInfo->prPacket,
+						prFragmentedQue);
+			if (!fgDoFragSuccess) {
+				/* fallback to non Tx Frag path */
+				QUEUE_INSERT_TAIL(prFragmentedQue, prMsduInfo);
+			}
+		}
+		QUEUE_REMOVE_HEAD(prInputQue, prMsduInfo, struct MSDU_INFO *);
+	} while (prMsduInfo);
+}
+
+void kalDoFragPacket(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo,
+	struct QUE *prFragmentedQue)
+{
+#if CFG_SW_TSO
+	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+#endif /* CFG_SW_TSO */
+	struct QUE rQue;
+	struct QUE *prQue = &rQue;
+
+	QUEUE_INITIALIZE(prQue);
+
+#if CFG_SW_TSO
+	if (skb_is_gso(prSkb))
+		kalTxProcessTsoSwForTxFrag(ad, prMsduInfo, prQue);
+	else
+#endif /* CFG_SW_TSO */
+		QUEUE_INSERT_TAIL(prQue, prMsduInfo);
+
+	__kalDoFragPacket(ad, prQue, prFragmentedQue);
+}
+#endif /* CFG_SUPPORT_MLR */
 
 uint32_t kalGetTxPktIdx(struct MSDU_INFO *prMsduInfo)
 {

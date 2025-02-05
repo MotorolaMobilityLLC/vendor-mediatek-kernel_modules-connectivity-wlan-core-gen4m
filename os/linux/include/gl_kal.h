@@ -620,6 +620,18 @@ enum HIF_DEV_REG_REASON {
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+#if CFG_SW_TSO
+struct TSO_SW {
+	struct tso_t rTso;
+	uint32_t u4PktCnt;     /* pkt cnt after desegmentation */
+	uint32_t u4HdrLen;     /* header len for all pkt */
+	uint32_t u4TotLen;     /* total left payload len for the large pkt */
+	uint32_t u4CurrPktLen; /* packet len of current pkt */
+	uint32_t u4CurrPktIdx; /* packet idx of current pkt */
+	u_int8_t fgIsLastPkt;  /* is current pkt is the last one */
+};
+#endif /* CFG_SW_TSO */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2603,11 +2615,17 @@ void kalTxGsoInit(struct net_device *prDev);
 #if CFG_SW_TSO
 void kalTxTsoSwInit(struct net_device *prDev);
 void kalTxStartTsoSw(struct MSDU_INFO *prMsduInfo);
+void kalTxProcessTsoSw(struct TSO_SW *prTso, void *prPacket,
+	uint8_t *pucBuffer, uint32_t *u4CopyLen);
 uint32_t kalTxGetPktCnt(struct MSDU_INFO *prMsduInfo);
 #define GET_TX_PKT_CNT(prMsduInfo) kalTxGetPktCnt(prMsduInfo)
 #else /* CFG_SW_TSO */
 #define GET_TX_PKT_CNT(prMsduInfo) (1)
 #endif /* CFG_SW_TSO */
+#if CFG_SUPPORT_MLR
+void kalDoFragPacket(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, struct QUE *prFragmentedQue);
+#endif /* CFG_SUPPORT_MLR */
 uint32_t kalGetTxPktIdx(struct MSDU_INFO *prMsduInfo);
 
 void kal_napi_complete_done(struct napi_struct *n, int work_done);

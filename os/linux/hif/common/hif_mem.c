@@ -1469,36 +1469,9 @@ bool halCopyPathCopyTxDataHandleGsoPkt(struct MSDU_TOKEN_ENTRY *prToken,
 	uint32_t u4CopyLen)
 {
 	struct MSDU_INFO *prMsduInfo = prToken->prMsduInfo;
-	struct sk_buff *prSkb = (struct sk_buff *)prMsduInfo->prPacket;
-	struct TSO_SW *prTso = &prMsduInfo->rTsoSw;
-	uint32_t u4SegSize;
-	uint8_t *pucBuffer = prToken->prPacket;
 
-	u4SegSize = min_t(int, skb_shinfo(prSkb)->gso_size, prTso->u4TotLen);
-	prTso->u4TotLen -= u4SegSize;
-	prTso->fgIsLastPkt = (prTso->u4TotLen == 0);
-
-	/* prepare packet headers: MAC + IP + TCP */
-	tso_build_hdr(prSkb, pucBuffer + u4CopyLen, &prTso->rTso, u4SegSize,
-			prTso->fgIsLastPkt);
-	u4CopyLen += prTso->u4HdrLen;
-
-	/* record pkt len for current pkt */
-	prTso->u4CurrPktLen = prTso->u4HdrLen + u4SegSize;
-	prTso->u4CurrPktIdx++;
-
-	while (u4SegSize > 0) {
-		uint32_t u4Size;
-
-		u4Size = min_t(int, prTso->rTso.size, u4SegSize);
-
-		kalMemCopy(pucBuffer + u4CopyLen, prTso->rTso.data, u4Size);
-		u4CopyLen += u4Size;
-		u4SegSize -= u4Size;
-
-		/* Config rTso for next data section */
-		tso_build_data(prSkb, &prTso->rTso, u4Size);
-	}
+	kalTxProcessTsoSw(&prMsduInfo->rTsoSw, prMsduInfo->prPacket,
+				prToken->prPacket, &u4CopyLen);
 
 	return true;
 }
