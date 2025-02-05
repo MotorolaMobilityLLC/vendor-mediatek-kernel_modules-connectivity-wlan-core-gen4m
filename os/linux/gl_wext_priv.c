@@ -20804,6 +20804,13 @@ int priv_driver_trigger_whole_chip_reset(
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
+#if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
+	if (get_wifi_process_status()) {
+		DBGLOG(REQ, WARN, "wifi on/off is ongoing, skip reset cmd\n");
+		return -1;
+	}
+#endif
+
 	if ((!prGlueInfo) ||
 	    (prGlueInfo->u4ReadyFlag == 0) ||
 	    kalIsResetting()) {
@@ -20843,6 +20850,13 @@ int priv_driver_trigger_wfsys_reset(
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+#if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
+	if (get_wifi_process_status()) {
+		DBGLOG(REQ, WARN, "wifi on/off is ongoing, skip reset cmd\n");
+		return -1;
+	}
+#endif
 
 	if ((!prGlueInfo) ||
 	    (prGlueInfo->u4ReadyFlag == 0) ||
