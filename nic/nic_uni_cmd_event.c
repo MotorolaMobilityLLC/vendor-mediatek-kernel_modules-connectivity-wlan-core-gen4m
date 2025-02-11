@@ -14994,22 +14994,115 @@ void nicUniEventEfuseFreeBlock(struct ADAPTER
 	struct UNI_EVENT_EFUSE_FREE_BLOCK *prEfuseStatus;
 	struct PARAM_CUSTOM_EFUSE_FREE_BLOCK *prQueryBuffer;
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4QueryInfoLen;
+	uint32_t u4QueryInfoLen = 0;
+	struct UNI_EVENT_EFUSE_FREE_BLOCK *prBankInfo;
+	uint8_t i, efuse_bank_num, efuse_ctrl_tlv_offset;
+	uint16_t total_tlv_len;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_EFUSE_CONTROL);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(uni_evt);
+	uint32_t ret = WLAN_STATUS_SUCCESS;
 
-	prEfuseStatus = (struct UNI_EVENT_EFUSE_FREE_BLOCK *)evt->aucTlvBuffer;
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		ret = WLAN_STATUS_FAILURE;
+		goto efuse_chk_err;
+	}
+
+	/* calculate aucTlvBuffer member offset */
+	efuse_ctrl_tlv_offset =
+		offsetof(struct UNI_EVENT_EFUSE_CONTROL, aucTlvBuffer);
+
+	total_tlv_len = data_len - efuse_ctrl_tlv_offset;
+
+	/* check if total_tlv_len reasonable */
+	if (total_tlv_len % sizeof(struct UNI_EVENT_EFUSE_FREE_BLOCK)) {
+		DBGLOG(NIC, ERROR, "Invalid total_tlv_len:%d\n",
+			total_tlv_len);
+		ret = WLAN_STATUS_FAILURE;
+		goto efuse_chk_err;
+	}
+
+	/* calculate total bank number based on TLV entry number */
+	efuse_bank_num = total_tlv_len /
+		sizeof(struct UNI_EVENT_EFUSE_FREE_BLOCK);
+
+	DBGLOG(NIC, LOUD, "total_tlv_len %d efuse_bank_num %d\n",
+			total_tlv_len, efuse_bank_num);
+
+	if (efuse_bank_num > MAX_EFUSE_BANK_NUM) {
+		DBGLOG(NIC, ERROR, "efuse_bank_num %d exceed %d\n",
+			efuse_bank_num, MAX_EFUSE_BANK_NUM);
+		ret = WLAN_STATUS_FAILURE;
+		goto efuse_chk_err;
+	}
+
+	prEfuseStatus =
+		(struct UNI_EVENT_EFUSE_FREE_BLOCK *)evt->aucTlvBuffer;
+
+	if (prEfuseStatus == NULL) {
+		DBGLOG(NIC, ERROR, "TAG error!\n");
+		ret = WLAN_STATUS_FAILURE;
+		goto efuse_chk_err;
+	}
+
+efuse_chk_err:
+	if (ret != WLAN_STATUS_SUCCESS) {
+		if (prCmdInfo->fgIsOid) {
+			prGlueInfo = prAdapter->prGlueInfo;
+
+			/* Update Query Information Length */
+			kalOidComplete(prGlueInfo, prCmdInfo,
+				u4QueryInfoLen, ret);
+		}
+		return;
+	}
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
+
 		prQueryBuffer = (struct PARAM_CUSTOM_EFUSE_FREE_BLOCK *)
 				prCmdInfo->pvInformationBuffer;
 
-		prQueryBuffer->ucGetFreeBlock = prEfuseStatus->ucGetFreeBlock;
-		prQueryBuffer->ucGetTotalBlock = prEfuseStatus->ucTotalBlockNum;
-		u4QueryInfoLen = sizeof(struct UNI_EVENT_EFUSE_ACCESS);
+		DBGLOG(NIC, LOUD, "query bank %d info:\n",
+				prQueryBuffer->ucDieIdx);
+
+		for (i = 0; i < efuse_bank_num; i++) {
+			prBankInfo =
+			(struct UNI_EVENT_EFUSE_FREE_BLOCK *)
+				(prEfuseStatus + i);
+
+			if (prBankInfo == NULL) {
+				/* DO error handling */
+				DBGLOG(NIC, ERROR, "query bank %d info error\n",
+					prQueryBuffer->ucDieIdx);
+				ret = WLAN_STATUS_FAILURE;
+				break;
+			}
+
+			DBGLOG(NIC, LOUD,
+				"bank %d Len %d free %d total %d ver %d\n",
+				i,
+				prBankInfo->u2Length,
+				prBankInfo->ucGetFreeBlock,
+				prBankInfo->ucTotalBlockNum,
+				prBankInfo->ucVersion);
+
+			if (i == prQueryBuffer->ucDieIdx) {
+				prQueryBuffer->ucGetFreeBlock =
+					prBankInfo->ucGetFreeBlock;
+				prQueryBuffer->ucGetTotalBlock =
+					prBankInfo->ucTotalBlockNum;
+				u4QueryInfoLen =
+					sizeof(struct UNI_EVENT_EFUSE_ACCESS);
+				break;
+			}
+		}
 
 		/* Update Query Information Length */
 		kalOidComplete(prGlueInfo, prCmdInfo,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+			       u4QueryInfoLen, ret);
 	}
 }
 

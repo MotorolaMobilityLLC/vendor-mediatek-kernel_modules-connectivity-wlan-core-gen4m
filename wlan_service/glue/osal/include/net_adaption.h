@@ -1403,7 +1403,7 @@ struct test_eeprom {
 	/* For read/write bulk cr usage */
 	u_int16 length;
 	/* Determine size by length */
-	u_int16 *value;
+	u_int8 value[16];  /* stored 2 bytes swap done content */
 	/* For get efuse block count only */
 	u_int32 efuse_free_block;
 	u_int32 efuse_total_block;

@@ -4251,13 +4251,13 @@ uint32_t ServiceRfTestInit(void *winfos)
 
 	/* eFuse parameter init */
 	prTestWinfo->chip_cap.efuse_size = MAX_EEPROM_BUFFER_SIZE;
-	prTestWinfo->e2p_cur_mode = 0;
+	prTestWinfo->e2p_cur_mode = SERV_BUFFER_MODE;
 	if (prAdapter->fgIsSupportQAAccessEfuse) {
 		prTestWinfo->use_efuse = TRUE;
-		prTestWinfo->e2p_access_mode = 1;
+		prTestWinfo->e2p_access_mode = SERV_EFUSE_MODE;
 	} else {
 		prTestWinfo->use_efuse = FALSE;
-		prTestWinfo->e2p_access_mode = 0;
+		prTestWinfo->e2p_access_mode = SERV_BUFFER_MODE;
 	}
 
 	return rStatus;
@@ -4823,7 +4823,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		return WLAN_STATUS_SUCCESS;
 
 	case OP_WLAN_OID_GET_EFUSE_FREE_BLOCK:
-		if (prTestWinfo->e2p_cur_mode == 1) {
+		if (prTestWinfo->e2p_cur_mode == SERV_EFUSE_MODE) {
 			struct test_eeprom *eprms = (struct test_eeprom *)param;
 			struct PARAM_CUSTOM_EFUSE_FREE_BLOCK rEfuseFreeBlock;
 			uint32_t len = 0;
@@ -4833,8 +4833,8 @@ uint32_t ServiceWlanOid(void *winfos,
 			rEfuseFreeBlock.ucDieIdx =
 				(uint8_t)eprms->efuse_die_idx;
 
-			DBGLOG(INIT, DEBUG,
-				"OP_WLAN_OID_GET_EFUSE_FREE_BLOCK, rEfuseFreeBlock.ucDieIdx=%d\n",
+			DBGLOG(RFTEST, INFO,
+				"query Free Block DieIdx %d\n",
 				rEfuseFreeBlock.ucDieIdx);
 
 			i4Status = kalIoctl(prGlueInfo,
@@ -4848,153 +4848,176 @@ uint32_t ServiceWlanOid(void *winfos,
 				(uint32_t)rEfuseFreeBlock.ucGetFreeBlock;
 				eprms->efuse_total_block =
 				(uint32_t)rEfuseFreeBlock.ucGetTotalBlock;
+
+				DBGLOG(RFTEST, INFO,
+					"DieIdx %d FreeBlock %d TotalBlock %d\n",
+					rEfuseFreeBlock.ucDieIdx,
+					rEfuseFreeBlock.ucGetFreeBlock,
+					rEfuseFreeBlock.ucGetTotalBlock);
+			} else {
+				DBGLOG(RFTEST, ERROR,
+					"query DieIdx %d efuse info error (0x%08x)\n",
+					rEfuseFreeBlock.ucDieIdx,
+					i4Status);
 			}
 
-			DBGLOG(INIT, DEBUG,
-				"OP_WLAN_OID_GET_EFUSE_FREE_BLOCK, i4Status(%d), rEfuseFreeBlock.ucDieIdx=%d, ucGetFreeBlock=%d, ucGetTotalBlock=%d\n",
-				i4Status,
-				rEfuseFreeBlock.ucDieIdx,
-				rEfuseFreeBlock.ucGetFreeBlock,
-				rEfuseFreeBlock.ucGetTotalBlock);
+
 		} else {
-			DBGLOG(INIT, DEBUG,
+			DBGLOG(RFTEST, ERROR,
 				"OP_WLAN_OID_GET_EFUSE_FREE_BLOCK, QA tool current no efuse\n");
 		}
 		return i4Status;
 
 	case OP_WLAN_OID_EPRM_READ:
-		if (prTestWinfo->e2p_cur_mode == 1) {
+		{
 			struct test_eeprom *eprms = (struct test_eeprom *)param;
 			struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoRead;
 			uint32_t len = 0;
 			uint32_t alignByte = 0;
 
-			kalMemSet(&rAccessEfuseInfoRead, 0,
-				  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+			if (eprms->length > EFUSE_BLOCK_SIZE)
+				return WLAN_STATUS_INVALID_LENGTH;
 
 			alignByte = eprms->offset % EFUSE_BLOCK_SIZE;
+
+			kalMemSet(&rAccessEfuseInfoRead, 0,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
 			rAccessEfuseInfoRead.u4Address =
 				eprms->offset - alignByte;
 
 			DBGLOG(INIT, DEBUG,
-				"OP_WLAN_OID_EPRM_READ, qa_addr=0x%x, u4Address=0x%x, qa_len=%d\n",
-				eprms->offset,
-				rAccessEfuseInfoRead.u4Address,
+				"EPRM_READ(%s), offset 0x%x len %d\n",
+				(prTestWinfo->e2p_cur_mode == SERV_EFUSE_MODE) ?
+					"EFUSE":"EEPROM", eprms->offset,
 				eprms->length);
 
-			if (eprms->length > EFUSE_BLOCK_SIZE)
-				return WLAN_STATUS_INVALID_LENGTH;
+			if (prTestWinfo->e2p_cur_mode == SERV_EFUSE_MODE) {
 
-			i4Status = kalIoctl(prGlueInfo,
-				wlanoidQueryProcessAccessEfuseRead,
-				&rAccessEfuseInfoRead,
-				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-				&len);
+				i4Status = kalIoctl(prGlueInfo,
+					wlanoidQueryProcessAccessEfuseRead,
+					&rAccessEfuseInfoRead,
+					sizeof(struct
+						PARAM_CUSTOM_ACCESS_EFUSE),
+					&len);
 
-			if (i4Status == WLAN_STATUS_SUCCESS &&
-				rAccessEfuseInfoRead.u4Valid) {
+			if (i4Status == WLAN_STATUS_SUCCESS) {
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 				kalMemCopy(eprms->value,
-				&rAccessEfuseInfoRead.aucData[alignByte],
-				EFUSE_BLOCK_SIZE);
-			}
-		} else {
-			DBGLOG(INIT, DEBUG,
-				"OP_WLAN_OID_EPRM_READ, QA tool current no efuse\n");
-		}
-		return i4Status;
-
-	case OP_WLAN_OID_EPRM_WRITE:
-		if (prTestWinfo->e2p_cur_mode == 1) {
-			struct test_eeprom *eprms = (struct test_eeprom *)param;
-			struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoAccess;
-			uint32_t len = 0;
-			uint32_t alignByte = 0;
-			uint32_t count = 0;
-
-			if (eprms->length < EFUSE_BLOCK_SIZE) {
-
-				kalMemSet(&rAccessEfuseInfoAccess, 0,
-				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
-
-				alignByte = eprms->offset % EFUSE_BLOCK_SIZE;
-
-				rAccessEfuseInfoAccess.u4Address =
-				eprms->offset - alignByte;
-
-				DBGLOG(INIT, DEBUG,
-					"OP_WLAN_OID_EPRM_WRITE, qa_addr=0x%x, u4Address=0x%x, qa_len=%d\n",
-					eprms->offset,
-					rAccessEfuseInfoAccess.u4Address,
-					eprms->length);
-
-				/* read back first for 16 bytes align */
-				i4Status = kalIoctl(prGlueInfo,
-				wlanoidQueryProcessAccessEfuseRead,
-				&rAccessEfuseInfoAccess,
-				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-				&len);
-
-				if (i4Status != WLAN_STATUS_SUCCESS) {
-					DBGLOG(INIT, DEBUG,
-						"OP_WLAN_OID_EPRM_WRITE, read back fail\n");
-						return WLAN_STATUS_INVALID_DATA;
+					rAccessEfuseInfoRead.aucData,
+					EFUSE_BLOCK_SIZE);
+#else
+				kalMemCopy(eprms->value,
+					&prAdapter->aucEepromVaule[alignByte],
+					EFUSE_BLOCK_SIZE);
+#endif
 				}
-
-				rAccessEfuseInfoAccess.u4Address =
-				eprms->offset - alignByte;
-
-				/* write data */
-				kalMemCopy(
-				&rAccessEfuseInfoAccess.aucData[alignByte],
-				(uint8_t *)eprms->value,
-				eprms->length);
-
-				i4Status = kalIoctl(prGlueInfo,
-				wlanoidQueryProcessAccessEfuseWrite,
-				&rAccessEfuseInfoAccess,
-				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-				&len);
-			} else if (eprms->length + eprms->offset
-				< MAX_EEPROM_BUFFER_SIZE) {
-
-				DBGLOG(INIT, DEBUG,
-					"OP_WLAN_OID_EPRM_WRITE, qa_addr=0x%x, qa_len=%d\n",
-					eprms->offset,
-					eprms->length);
-
-				/* 16 bytes align write */
-				for (count = 0; count < eprms->length;
-						count += EFUSE_BLOCK_SIZE) {
-					rAccessEfuseInfoAccess.u4Address =
-					eprms->offset + count;
-
-					kalMemCopy(
-						rAccessEfuseInfoAccess.aucData,
-						(uint8_t *)eprms->value + count,
-						EFUSE_BLOCK_SIZE);
-
-				i4Status = kalIoctl(prGlueInfo,
-				wlanoidQueryProcessAccessEfuseWrite,
-				&rAccessEfuseInfoAccess,
-				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-				&len);
+			} else if (prTestWinfo->e2p_cur_mode ==
+					SERV_BUFFER_MODE) {
+				if ((eprms->offset + eprms->length) <=
+					MAX_EEPROM_BUFFER_SIZE) {
+					memcpy(eprms->value,
+						uacEEPROMImage + eprms->offset,
+						 eprms->length);
 				}
 			} else {
 				DBGLOG(INIT, DEBUG,
-					"OP_WLAN_OID_EPRM_WRITE, qa_addr=0x%x, qa_len=%d, over %d\n",
+					"OID_EPRM_READ,e2p_cur_mode %d not supported\n",
+					prTestWinfo->e2p_cur_mode);
+			}
+			return i4Status;
+		}
+	case OP_WLAN_OID_EPRM_WRITE:
+		{
+			struct test_eeprom *eprms = (struct test_eeprom *)param;
+			struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo;
+			uint32_t len = 0;
+			uint32_t alignByte = 0;
+			uint8_t *pucWriteData = rAccessEfuseInfo.aucData;
+
+			alignByte = eprms->offset % EFUSE_BLOCK_SIZE;
+
+			if (prTestWinfo->e2p_cur_mode == SERV_EFUSE_MODE) {
+				/* only support 2 bytes or 16 bytes */
+				if (eprms->length <= EFUSE_BLOCK_SIZE) {
+					kalMemSet(&rAccessEfuseInfo, 0,
+					sizeof(
+						struct PARAM_CUSTOM_ACCESS_EFUSE
+					));
+
+
+					rAccessEfuseInfo.u4Address =
+					eprms->offset - alignByte;
+
+					DBGLOG(INIT, DEBUG,
+						"OID_EPRM_WRITE: offset 0x%x, len=%d\n",
+						eprms->offset, eprms->length);
+
+					/* read back first for 16 bytes align */
+					i4Status = kalIoctl(prGlueInfo,
+					wlanoidQueryProcessAccessEfuseRead,
+					&rAccessEfuseInfo,
+					sizeof(struct
+						PARAM_CUSTOM_ACCESS_EFUSE),
+					&len);
+
+					if (i4Status != WLAN_STATUS_SUCCESS) {
+						DBGLOG(INIT, DEBUG,
+							"OID_EPRM_WRITE read fail\n");
+						return WLAN_STATUS_INVALID_DATA;
+					}
+
+					/* assign 16 bytes aligned offset */
+					rAccessEfuseInfo.u4Address =
+					eprms->offset - alignByte;
+
+					/* write data */
+					kalMemCopy(
+						&(pucWriteData[alignByte]),
+						(uint8_t *)eprms->value,
+						eprms->length);
+
+					i4Status = kalIoctl(prGlueInfo,
+					wlanoidQueryProcessAccessEfuseWrite,
+					&rAccessEfuseInfo,
+					sizeof(struct
+						PARAM_CUSTOM_ACCESS_EFUSE),
+					&len);
+				} else {
+					DBGLOG(INIT, DEBUG,
+					"OD_EPRM_WRITE  addr 0x%x len %d, max %d\n",
 					eprms->offset,
 					eprms->length,
 					MAX_EEPROM_BUFFER_SIZE);
 
-				return WLAN_STATUS_INVALID_LENGTH;
-			}
-		} else {
-			DBGLOG(INIT, DEBUG,
-			"OP_WLAN_OID_EPRM_WRITE, QA tool current no efuse\n");
-		}
-		return i4Status;
+					return WLAN_STATUS_INVALID_LENGTH;
+				}
+			} else if (prTestWinfo->e2p_cur_mode ==
+					SERV_BUFFER_MODE) {
+				u_int32 u4TotalOffset;
 
+				u4TotalOffset = eprms->offset + eprms->length;
+
+				if (u4TotalOffset >
+					MAX_EEPROM_BUFFER_SIZE - 1) {
+					DBGLOG(INIT, ERROR,
+					"%s u4TotalOffset : %d not supported\n",
+					__func__, u4TotalOffset);
+					return WLAN_STATUS_FAILURE;
+				}
+
+				/* update eeprm table content */
+				memcpy(uacEEPROMImage + eprms->offset,
+					eprms->value, eprms->length);
+
+				/* update fw eeprom table */
+
+			} else {
+				DBGLOG(INIT, DEBUG,
+				"OP_WLAN_OID_EPRM_WRITE, QA tool current no efuse\n");
+			}
+			return i4Status;
+		}
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;

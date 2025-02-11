@@ -92,6 +92,10 @@
 #define BUFFER_BIN_MODE 0x0
 #define EFUSE_MODE 0x2
 
+#define HQA_EEPROM_CMD_OFFSET_SZ    2
+#define HQA_EEPROM_CMD_LEN_SZ    2
+
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************

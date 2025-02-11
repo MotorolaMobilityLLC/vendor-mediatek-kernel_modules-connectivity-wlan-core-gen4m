@@ -82,6 +82,9 @@
 /* UNI_EVENT_UPDATE_LP_DELAYED_WAKEUP */
 #define DELAY_WAKEUP_PKT_INFO_LEN 43
 
+/* MT6639 efuse bank number is 5, which is the current MAX */
+#define MAX_EFUSE_BANK_NUM  5
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************

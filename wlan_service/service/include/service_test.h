@@ -74,7 +74,8 @@ enum {
 	SERV_TEST_EEPROM_WRITE,
 	SERV_TEST_EEPROM_READ_BULK,
 	SERV_TEST_EEPROM_WRITE_BULK,
-	SERV_TEST_EEPROM_GET_FREE_EFUSE_BLOCK
+	SERV_TEST_EEPROM_GET_FREE_EFUSE_BLOCK,
+	SERV_TEST_EEPROM_WRITE_WRITE_BUFFER_DONE
 };
 
 /* Service test mps related operation */
@@ -98,6 +99,18 @@ enum {
 	SERV_FREQ_C1 = 1,
 	SERV_FREQ_C2,
 
+};
+
+/* Service test EFUSE mode */
+enum {
+	SERV_BUFFER_MODE = 0,
+	SERV_EFUSE_MODE = 1,
+};
+
+/* Service test interpret inband command used EFUSE mode */
+enum {
+	SERV_INBAND_EFUSE_MODE = 0,
+	SERV_INBAND_BUFFER_MODE = 1,
 };
 
 /*****************************************************************************

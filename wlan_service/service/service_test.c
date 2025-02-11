@@ -2125,6 +2125,9 @@ s_int32 mt_serv_reg_eprm_operation(
 		}
 		break;
 
+	case SERV_TEST_EEPROM_WRITE_WRITE_BUFFER_DONE:
+		break;
+
 	default:
 		return SERV_STATUS_SERV_TEST_INVALID_PARAM;
 	}
