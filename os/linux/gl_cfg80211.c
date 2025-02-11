@@ -1128,6 +1128,11 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 
 	kalScanReqLog(request);
 
+#if CFG_SUPPORT_NAN
+	mtk_cfg80211_vendor_event_nan_infra_scan_start_indication(
+		prGlueInfo->prAdapter, request);
+#endif
+
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL) {
 		DBGLOG(REQ, ERROR, "prGlueInfo->prScanRequest != NULL\n");

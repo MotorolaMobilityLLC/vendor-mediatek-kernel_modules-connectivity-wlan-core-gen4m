@@ -16,6 +16,16 @@ enum ENUM_MODULE {
 	ENUM_NAN_MODULE_NUM
 };
 
+/* T.B.D Unify NAN-Display */
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
+struct _NAN_CMD_EVENT_SET_DISC_BCN_T {
+	uint8_t ucDiscBcnType;
+	uint8_t ucDiscBcnPeriod;
+	uint8_t aucReserved[2];
+	struct _NAN_SCHEDULE_TIMELINE_T
+		rDiscBcnTimeline[2];
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -34,6 +44,18 @@ nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
 
 void nanDevSetMasterPreference(struct ADAPTER *prAdapter,
 			       uint8_t ucMasterPreference);
+
+enum NanStatusType
+nanDevSetDiscBcn(
+	struct ADAPTER *prAdapter,
+	struct _NAN_CMD_EVENT_SET_DISC_BCN_T *prNanSetDiscBcn);
+void
+nanDevDiscBcnPeriodEvtHandler(
+	struct ADAPTER *prAdapter,
+	uint8_t *pcuEvtBuf);
+uint32_t nanUpdateDfspConfig(
+	struct ADAPTER *prAdapter,
+	struct _NAN_CMD_DFSP_CONFIG *ptrDfspCfg);
 
 enum NanStatusType nanDevEnableRequest(struct ADAPTER *prAdapter,
 				       struct NanEnableRequest *prEnableReq);

@@ -511,6 +511,20 @@ struct _NAN_CMD_DATA_END {
 	uint32_t ndp_instance_id;
 };
 
+#define NAN_MAX_OOB_ACTION_DATA_LEN	960
+struct _NAN_CMD_OOB_ACTION {
+	uint8_t ucReasonCode; /* refer to NAN_REASON_CODE_* */
+	uint8_t aucDestAddress[6];
+	uint8_t aucSrcAddress[6];
+	uint8_t aucBssid[6];
+	uint8_t ucMapId;	/* 0: 2G4, 1: 5G */
+	uint16_t ucTimeout;	/* unit: ms */
+	uint8_t ucSecurity;	/* 1: sec, 0: open */
+	uint16_t ucToken;
+	uint8_t aucPayload[NAN_MAX_OOB_ACTION_DATA_LEN];
+	uint8_t ucPayloadLen;
+};
+
 struct _NAN_PARAMETER_NDL_SCH {
 	uint8_t ucType; /* bit#0: unicast */
 	uint8_t ucNDPId;
@@ -706,6 +720,16 @@ uint32_t nanNdpSendDataPathKeyInstall(struct ADAPTER *prAdapter,
 
 uint32_t nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
 				       struct _NAN_NDP_INSTANCE_T *prNDP);
+
+uint32_t nanNdpOOBActionTxDone(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+uint32_t nanNdpSendOOBAction(struct ADAPTER *prAdapter,
+				struct _NAN_CMD_OOB_ACTION *prNanCmdOOBAction);
+
+uint32_t nanNdlProcessOob(struct ADAPTER *prAdapter,
+		 struct SW_RFB *prSwRfb);
 
 uint32_t nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
 				   struct _NAN_NDL_INSTANCE_T *prNDL);

@@ -2673,6 +2673,9 @@ void kalBatNotifierUnReg(void);
 #if CFG_SUPPORT_NAN
 void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer);
 void kalNanHandlePendingCmd(struct ADAPTER *prAdapter, uint8_t *prBuffer);
+void kalNanPrivWorkInit(struct GLUE_INFO *prGlueInfo);
+void kalNanPrivWorkUninit(struct GLUE_INFO *prGlueInfo);
+void kalNanPrivWork(struct work_struct *work);
 #endif
 
 void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo);

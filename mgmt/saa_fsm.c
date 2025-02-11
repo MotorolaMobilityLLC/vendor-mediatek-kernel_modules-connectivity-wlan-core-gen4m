@@ -439,6 +439,12 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 			    (struct MSG_HDR *) prSaaFsmCompMsg,
 			    MSG_SEND_METHOD_UNBUF);
+#if CFG_SUPPORT_NAN
+		mtk_cfg80211_vendor_event_nan_infra_assoc_done_indication(
+			prAdapter,
+			rJoinStatus,
+			prStaRec);
+#endif
 
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -1026,6 +1032,11 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 
 	if (!IS_AP_STA(prStaRec))
 		return;
+
+#if CFG_SUPPORT_NAN
+	mtk_cfg80211_vendor_event_nan_infra_auth_rx_indication(
+		prAdapter, prSwRfb);
+#endif /* CFG_SUPPORT_NAN */
 
 	switch (prStaRec->eAuthAssocState) {
 	case SAA_STATE_SEND_AUTH1:

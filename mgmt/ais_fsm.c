@@ -7038,7 +7038,10 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	case AIS_STATE_NORMAL_TR:
 		/* 1. release channel */
 		aisFsmStopJoinTimer(prAdapter, ucBssIndex);
-
+#if CFG_SUPPORT_NAN
+		mtk_cfg80211_vendor_event_nan_infra_assoc_ready_indication(
+			prAdapter);
+#endif /* CFG_SUPPORT_NAN */
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAisFsmInfo->ucIsSapCsaPending == TRUE) {
 			ccmChannelSwitchProducer(prAdapter, prAisBssInfo,
@@ -11191,6 +11194,17 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 	prAisFsmInfo->fgIsChannelRequested = TRUE;
 	prMsgChReq->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
+
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+#if CFG_SUPPORT_NAN
+	mtk_cfg80211_vendor_event_nan_infra_assoc_st_ind(
+		prAdapter,
+		prAisFsmInfo->prTargetBssDesc->eBand,
+		prAisFsmInfo->prTargetBssDesc->ucChannelNum,
+		prAisFsmInfo->prTargetBssDesc->eChannelWidth,
+		prAisFsmInfo->prTargetBssDesc->eSco);
+#endif
+#endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	tmpReqCHType = mldDecideCnmReqCHType(prAdapter,

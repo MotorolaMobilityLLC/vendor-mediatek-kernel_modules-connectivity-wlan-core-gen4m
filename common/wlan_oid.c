@@ -13772,6 +13772,10 @@ wlanoidSetCountryCode(struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if CFG_SUPPORT_NAN
+	mtk_cfg80211_vendor_event_nan_country_chng_ind(prAdapter);
+#endif /* CFG_SUPPORT_NAN */
+
 	return WLAN_STATUS_SUCCESS;
 }
 

@@ -116,7 +116,11 @@ enum mtk_wlan_ndp_sub_cmd {
 	/* Command to indicate the peer about the end request being received */
 	MTK_WLAN_VENDOR_ATTR_NDP_END_IND = 11,
 	/* Command to indicate the peer of schedule update */
-	MTK_WLAN_VENDOR_ATTR_NDP_SCHEDULE_UPDATE_IND = 12
+	MTK_WLAN_VENDOR_ATTR_NDP_SCHEDULE_UPDATE_IND = 12,
+	/* Command to transmit Out-of-bound action frame for keep-alive */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TX = 13,
+	/* Command to transmit Out-of-bound action frame was sent */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TX_STATUS = 14,
 };
 
 enum mtk_wlan_vendor_attr_ndp_params {
@@ -208,6 +212,27 @@ enum mtk_wlan_vendor_attr_ndp_params {
 	 * and ndp confirm.
 	 */
 	MTK_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PROTOCOL = 29,
+
+	/* Out-of-bound Action frame */
+	/* Interface destination MAC address. An array of 6 Unsigned int8 */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_DEST_MAC_ADDR,
+	/* Interface source MAC address. An array of 6 Unsigned int8 */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_SRC_MAC_ADDR,
+	/* Interface BSSID. An array of 6 Unsigned int8 */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_BSSID,
+	/* Unsigned 8-bit value */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_MAP_ID,
+	/* Unsigned 16-bit value */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TIMEOUT,
+	/* Unsigned 8-bit value */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_SECURITY,
+	/* Unsigned 16-bit value */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TOKEN,
+	/* Action Frame payload. Array of u8 */
+	MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_PAYLOAD = 37,
+	/* Unsigned 16-bit value */
+	MTK_WLAN_VENDOR_ATTR_NDP_PUB_ID = 38,
+
 	/* keep last */
 	MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_AFTER_LAST,
 	MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX =
@@ -248,6 +273,13 @@ uint32_t nanNdpEndRspEvent(struct ADAPTER *prAdapter,
 				 enum _ENUM_DP_PROTOCOL_REASON_CODE_T eReason,
 				 uint16_t u2TransId,
 				 uint32_t rTxDoneStatus);
+
+uint32_t nanNdpOOBActionTxDoneEvent(struct ADAPTER *prAdapter,
+				uint16_t ucTokenId,
+				uint32_t rTxDoneStatus);
+
+uint32_t nanNdpOOBActionTxHandler(struct GLUE_INFO *prGlueInfo,
+				struct nlattr **tb);
 
 int32_t nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
 

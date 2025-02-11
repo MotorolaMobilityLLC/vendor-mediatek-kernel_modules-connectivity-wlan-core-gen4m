@@ -261,7 +261,7 @@ nanAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 
 		for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
 			prWifiVar->aprNanSpecificBssInfo[ucIdx] =
-				kalMemAlloc(
+				kalMemZAlloc(
 				sizeof(struct _NAN_SPECIFIC_BSS_INFO_T),
 				VIR_MEM_TYPE);
 		}

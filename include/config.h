@@ -2459,6 +2459,8 @@
 
 #define CFG_SUPPORT_NAN_SHOULD_REMOVE_FOR_NO_TYPEDEF 1
 
+#define CFG_SUPPORT_NAN_FAST_DISC 1
+
 /* NAN scheduler version
 * 0: AIS use last 8 slots
 * 1: AIS+NAN SCC, or AIS use 0x00FF00FF for MCC

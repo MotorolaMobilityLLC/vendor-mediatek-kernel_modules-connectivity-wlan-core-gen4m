@@ -1043,7 +1043,7 @@ utf8_unescape(const char *inp, size_t in_size, char *outp, size_t out_size) {
 		in_size--;
 	}
 
-	while (in_size--) {
+	while (in_size) {
 		if (res_size >= out_size)
 			return 0;
 
@@ -1054,8 +1054,6 @@ utf8_unescape(const char *inp, size_t in_size, char *outp, size_t out_size) {
 			return res_size;
 
 		case '\\':
-			if (!in_size--)
-				return 0;
 			inp++;
 		kal_fallthrough;
 
@@ -1063,6 +1061,8 @@ utf8_unescape(const char *inp, size_t in_size, char *outp, size_t out_size) {
 			*outp++ = *inp++;
 			res_size++;
 		}
+
+		in_size--;
 	}
 
 	/* NUL terminate if space allows */

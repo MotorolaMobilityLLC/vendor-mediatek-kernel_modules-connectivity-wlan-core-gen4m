@@ -320,6 +320,7 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint16_t u2CreateRspLen;
 
 	if (prAdapter == NULL) {
@@ -331,8 +332,12 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, DEBUG, "Send NDI Create Rsp event\n");
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2CreateRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			 (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
@@ -425,7 +430,7 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter,
 	prNetDevice = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
 	if (prNetDevice == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prNetDevice is NULL\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
+		return -EFAULT;
 	}
 	wdev = prNetDevice->ieee80211_ptr;
 	u2CreateRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
@@ -500,6 +505,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint16_t u2InitiatorRspLen;
 	uint32_t u4Id = 0;
 
@@ -516,8 +522,12 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, DEBUG, "[%s] Send NDP Initiator Rsp event\n", __func__);
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2InitiatorRspLen = (4 * sizeof(uint32_t)) + (1 * sizeof(uint16_t)) +
 			    (5 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
@@ -604,6 +614,7 @@ nanNdpResponderUserTimeoutEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint16_t u2ResponderRspLen;
 
 	if (prAdapter == NULL) {
@@ -622,8 +633,12 @@ nanNdpResponderUserTimeoutEvent(struct ADAPTER *prAdapter,
 	}
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2ResponderRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			    (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
@@ -678,6 +693,7 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint16_t u2ResponderRspLen;
 
 	if (prAdapter == NULL) {
@@ -701,8 +717,12 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 	}
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2ResponderRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			    (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
@@ -778,6 +798,7 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint16_t u2EndRspLen;
 
 	if (prAdapter == NULL) {
@@ -788,8 +809,12 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, DEBUG, "Send NDI End Rsp event\n");
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2EndRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 		      (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
@@ -845,6 +870,234 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter,
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 	return WLAN_STATUS_SUCCESS;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief After Out-of-bound Action frame TxDone, send ack response to wifi hal
+ *
+ * \param[in]
+ *
+ * \return WLAN_STATUS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+nanNdpOOBActionTxDoneEvent(struct ADAPTER *prAdapter,
+			uint16_t ucTokenId,
+			uint32_t rTxDoneStatus)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
+	uint16_t u2OOBActionTxDoneLen;
+
+	if (prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	DBGLOG(NAN, INFO,
+		"Send OOB Action tx done event rTxDoneStatus: %d\n",
+		rTxDoneStatus);
+
+	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
+	u2OOBActionTxDoneLen = (3 * sizeof(uint32_t)) + (2 * sizeof(uint16_t)) +
+			    (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
+
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2OOBActionTxDoneLen,
+					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
+
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD,
+			MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TX_STATUS) <
+			0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	/* to pass check, put 20 (OOB Action Tx) in transaction id */
+	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
+				 20) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TOKEN,
+				 ucTokenId) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	/* prNDP no NanInternalStatusType field,
+	 * set NAN_I_STATUS_SUCCESS and NAN_I_STATUS_TIMEOUT as workaround
+	 */
+	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
+		if (unlikely(nla_put_u32(skb,
+			    MTK_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE,
+			    NAN_I_STATUS_SUCCESS) < 0)) {
+			DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+			kfree_skb(skb);
+			return -EFAULT;
+		}
+	} else {
+		if (unlikely(nla_put_u32(skb,
+			    MTK_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE,
+			    NAN_I_STATUS_TIMEOUT) < 0)) {
+			DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+			kfree_skb(skb);
+			return -EFAULT;
+		}
+	}
+
+	/* to pass check, put 0 (success) in DRV_RETURN_VALUE */
+	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+				 0) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle NDP initiator request vendor cmd.
+ *
+ * \param[in] prGlueInfo: Pointer to glue info structure.
+ *
+ * \param[in] tb: NDP vendor cmd attributes.
+ *
+ * \return WLAN_STATUS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+nanNdpOOBActionTxHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo = NULL;
+	struct _NAN_CMD_OOB_ACTION *prNanCmdOOBAction = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "prAdapter is null\n");
+		return -EINVAL;
+	}
+
+	/* Get BSS info */
+	prNanSpecificBssInfo = nanGetSpecificBssInfo(
+		prAdapter,
+		NAN_BSS_INDEX_BAND0);
+	if (prNanSpecificBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prNanSpecificBssInfo is null\n");
+		return -EINVAL;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+			prAdapter,
+			prNanSpecificBssInfo->ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prBssInfo is null\n");
+		return -EINVAL;
+	}
+
+	prNanCmdOOBAction = &prAdapter->rNanCmdOOBAction;
+	kalMemZero(prNanCmdOOBAction, sizeof(struct _NAN_CMD_OOB_ACTION));
+
+	/* Get transaction ID */
+	if (!tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
+		DBGLOG(NAN, ERROR, "Get NDP Transaction ID error!\n");
+		return -EINVAL;
+	}
+
+	if (!tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_PAYLOAD]) {
+		DBGLOG(NAN, ERROR, "Get OOB action frame payload error!\n");
+		return -EINVAL;
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_DEST_MAC_ADDR]) {
+		kalMemCopy(
+			prNanCmdOOBAction->aucDestAddress,
+			nla_data(
+			tb[
+			MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_DEST_MAC_ADDR]),
+			NAN_MAC_ADDR_LEN);
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_SRC_MAC_ADDR]) {
+		kalMemCopy(
+			prNanCmdOOBAction->aucSrcAddress,
+			nla_data(
+			tb[
+			MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_SRC_MAC_ADDR]),
+			NAN_MAC_ADDR_LEN);
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_BSSID]) {
+		kalMemCopy(
+			prNanCmdOOBAction->aucBssid,
+			nla_data(
+				tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_BSSID]),
+			NAN_MAC_ADDR_LEN);
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_MAP_ID]) {
+		prNanCmdOOBAction->ucMapId =
+			nla_get_u8(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_MAP_ID]);
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TIMEOUT]) {
+		prNanCmdOOBAction->ucTimeout =
+			nla_get_u16(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TIMEOUT]);
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_SECURITY]) {
+		prNanCmdOOBAction->ucSecurity =
+			nla_get_u8(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_SECURITY]);
+	}
+
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TOKEN]) {
+		prNanCmdOOBAction->ucToken =
+			nla_get_u16(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_TOKEN]);
+	}
+
+	prNanCmdOOBAction->ucPayloadLen = nla_len(
+		tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_PAYLOAD]);
+
+	kalMemCopy(
+		prNanCmdOOBAction->aucPayload,
+		nla_data(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_OOB_ACTION_PAYLOAD]),
+			prNanCmdOOBAction->ucPayloadLen);
+
+	prAdapter->ucNanOobNum++;
+	DBGLOG(NAN, LOUD, "OOB frame dump: len[%d] wait[%d]\n",
+		prNanCmdOOBAction->ucPayloadLen,
+		prAdapter->ucNanOobNum);
+
+	return rStatus;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1328,7 +1581,7 @@ int32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
 int32_t nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb)
 {
 	struct _NAN_CMD_DATA_END rNanCmdDataEnd;
-	int32_t rStatus;
+	int32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t instanceIdNum;
 	uint32_t i;
 
@@ -1394,6 +1647,7 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint16_t u2IndiEventLen;
 	uint32_t u4Id = 0;
 
@@ -1415,8 +1669,12 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 	}
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2IndiEventLen = (3 * sizeof(uint32_t)) + (2 * MAC_ADDR_LEN) +
 			 prNDP->u2AppInfoLen + NAN_SCID_DEFAULT_LEN +
 			 (6 * NLA_HDRLEN) + NLMSG_HDRLEN;
@@ -1529,6 +1787,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint32_t u2ConfirmEventLen;
 	uint32_t u4Id = 0;
 	struct NanChannelInfo
@@ -1549,8 +1808,12 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	}
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2ConfirmEventLen = (4 * sizeof(uint32_t)) + MAC_ADDR_LEN +
 			    +NLMSG_HDRLEN + (6 * NLA_HDRLEN) +
 			    prNDP->u2AppInfoLen;
@@ -1702,6 +1965,7 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDevHandler = NULL;
 	uint32_t u2ConfirmEventLen;
 	uint32_t *pu2NDPInstance;
 	uint32_t u4Id = 0;
@@ -1720,8 +1984,12 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, DEBUG, "Send NDP Data Termination event\n");
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL\n");
+		return -EFAULT;
+	}
+	wdev = prDevHandler->ieee80211_ptr;
 	u2ConfirmEventLen = sizeof(uint32_t) + NLMSG_HDRLEN + (2 * NLA_HDRLEN) +
 			    1 * sizeof(*pu2NDPInstance);
 
@@ -1814,6 +2082,11 @@ int mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prGlueInfo is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	if (!prGlueInfo->prAdapter->fgIsNANRegistered) {
+		DBGLOG(NAN, ERROR, "NAN Not Register yet!\n");
 		return -EINVAL;
 	}
 

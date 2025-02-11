@@ -999,6 +999,7 @@ struct GLUE_INFO {
 #endif
 #if CFG_SUPPORT_NAN
 	struct _GL_NAN_INFO_T *aprNANDevInfo[NAN_BSS_INDEX_NUM];
+	struct workqueue_struct *prNANPrivCmdWorkQueue;
 #endif
 
 	/* NVRAM availability */

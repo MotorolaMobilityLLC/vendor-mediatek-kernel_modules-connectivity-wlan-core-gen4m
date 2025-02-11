@@ -575,6 +575,11 @@ uint32_t nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 uint32_t nanAddVendorPayload(struct ADAPTER *prAdapter,
 			struct NanVendorPayload *payload);
 
+enum NanStatusType
+nanDiscSetCustomAttribute(
+	struct ADAPTER *prAdapter,
+	struct NanCustomAttribute *prNanCustomAttr);
+
 uint32_t nanPublishRequest(struct ADAPTER *prAdapter,
 			  struct NanPublishRequest *msg);
 

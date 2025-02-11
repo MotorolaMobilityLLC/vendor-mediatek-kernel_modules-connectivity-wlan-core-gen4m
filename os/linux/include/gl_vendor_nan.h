@@ -84,6 +84,39 @@ struct NanDisableRspMsg {
 	u16 reserved;
 } PACKED;
 
+/* Get Country Code Rsp */
+struct NanGetCountryCodeRspMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 countryCode[2];
+} PACKED;
+
+/* INFRA BSSID Rsp */
+struct NanGetInfraBssidRspMsg {
+	struct _NanMsgHeader fwHeader;
+	/* BSSID of infra */
+	u8 MacAddr[6];
+} PACKED;
+
+struct NanGetInfraChannelRspMsg {
+	struct _NanMsgHeader fwHeader;
+	/* BSSID of infra */
+	u32 Channel;
+	u32 Flag;
+} PACKED;
+
+struct NanDriverCapabilitiesRspMsg {
+	struct _NanMsgHeader fwHeader;
+	u16 capabilities; /* wfpal_wifi_driver_capability_flags_t */
+} PACKED;
+
+struct NanInfraAssocReadyIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u16 status;
+	u16 is_ipv6;
+	u8 addressv4[4];
+	u8 addressv6[16];
+} PACKED;
+
 /* NAN Configuration Rsp */
 struct NanConfigRspMsg {
 	struct _NanMsgHeader fwHeader;
@@ -114,6 +147,10 @@ struct NanSubscribeServiceRspMsg {
 	/* status of the request */
 	u16 status;
 	u16 value;
+} PACKED;
+
+struct NanDfspConfigReqMsg {
+	struct _NanMsgHeader fwHeader;
 } PACKED;
 
 struct NanSubscribeServiceCancelRspMsg {
@@ -329,6 +366,299 @@ struct NanDebugParams {
 	u8 debug_cmd_data[NAN_MAX_DEBUG_MESSAGE_DATA_LEN];
 } PACKED;
 
+struct _NanAvailabilityTimeBitmap {
+	u16 offset;
+	u8 period;
+	u8 bitDuration;
+	u8 time_bitmap_length;
+	u8 time_bitmap[NAN_MAX_AVAILABILITY_BITMAP_LENGTH];
+} PACKED;
+
+struct _NanChannelAvailabilityEntry {
+	u8 usage_preference;
+	u8 utilization;
+	u8 rx_nss;
+	struct _NanAvailabilityTimeBitmap time_bitmap;
+	u8 op_class;
+	u8 primary_channel_bitmap;
+	u16 op_class_bitmap;
+	u16 auxiliary_channel_bitmap;
+} PACKED;
+
+struct _NanCommittedChannelSchedule {
+	u8 max_period;
+	u8 num_entries;
+	u8 map_id;
+	struct _NanChannelAvailabilityEntry
+		channel_entries[NAN_MAX_AVAILABILITY_CHANNEL_ENTRIES];
+} PACKED;
+
+struct _NanCommittedAvailability {
+	u8 num_maps_ids;
+	struct _NanCommittedChannelSchedule schedule[NAN_MAX_MAP_IDS];
+} PACKED;
+
+struct _NanPotentialChannelSchedule {
+	u8 map_id;
+	u8 num_band_entries;
+	u8 band_ids[NAN_MAX_BAND_IDS];
+	u8 num_entries;
+	struct _NanChannelAvailabilityEntry
+		channel_entries[NAN_MAX_AVAILABILITY_CHANNEL_ENTRIES];
+} PACKED;
+
+struct _NanPotentialAvailability {
+	u8 num_maps_ids;
+	struct _NanPotentialChannelSchedule potential[NAN_MAX_MAP_IDS];
+} PACKED;
+
+struct _NanDataClusterID {
+	u8 octet[NAN_MAC_ADDR_LEN];
+} PACKED;
+
+struct _NanDataClusterAvailabilityParams {
+	struct _NanDataClusterID ndc_id;
+	u8 map_id;
+	u8 selected;
+	struct _NanAvailabilityTimeBitmap time_bitmap;
+} PACKED;
+
+struct _NanDataClusterAvailability {
+	u8 num_maps_ids;
+	struct _NanDataClusterAvailabilityParams ndc[NAN_MAX_MAP_IDS];
+} PACKED;
+
+struct _NanForcedDiscBeaconTxAvailabilityParams {
+	u8 map_id;
+	struct _NanAvailabilityTimeBitmap time_bitmap;
+} PACKED;
+
+struct _NanForcedDiscBeaconTxAvailability {
+	u8 num_maps_ids;
+	struct _NanForcedDiscBeaconTxAvailabilityParams slots[NAN_MAX_MAP_IDS];
+} PACKED;
+
+struct _NanForcedDiscBeaconTransmission {
+	u8 enable;
+	u32 beacon_interval;
+	struct _NanForcedDiscBeaconTxAvailability availability;
+	u8 reason;
+} PACKED;
+
+struct _NanDfspConfig {
+	u16 version;
+	u16 length;
+	u16 flags; /* bit 0 = enable;no other defined */
+	u16 max_bcn_miss_duration; /* duration of no beacon for suspension */
+	u8 mcsp_ttl;
+	u8 bcsa_cnt;
+	u8 max_empty_aw;
+	u16 mon_chan; /* passive monitor channel */
+	u8 mon_bssid[NAN_MAC_ADDR_LEN]; /* bssid of the AP */
+	u16 max_bcn_miss_af_duration;
+};
+
+struct DFSP_EVENT_CSA_T {
+	uint16_t flags;
+	uint8_t length;
+	uint8_t dfs_tlv_data[];
+} PACKED;
+
+struct IE_DFS_EXT_CSA {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucChannelSwitchMode;
+	uint8_t ucNewChannelNum;
+	uint8_t ucChannelSwitchCount;
+} PACKED;
+
+struct IE_DFS_MESH_CSP {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucTimetoLive;
+	uint8_t ucFlags;
+	uint8_t u2ReasonCodes;
+	uint8_t u2ProcedenceValue;
+} PACKED;
+
+struct IE_WIDE_BW_CS {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucNewChannelWidth;
+	uint8_t ucChannelS1;
+	uint8_t ucChannelS2;
+} PACKED;
+
+struct DFSP_COMBINED_EVENT_DATA_T {
+	struct IE_DFS_EXT_CSA csa_data;
+	struct IE_DFS_MESH_CSP mesh_csp;
+	struct IE_WIDE_BW_CS wide_bw_cs;
+} PACKED;
+
+struct DFSP_EVENT_CSA_COMPLETE_T {
+	uint8_t ucNewChannelNum;
+} PACKED;
+
+struct DFSP_SUSPEND_RESUME_T {
+	uint16_t flags;
+	uint8_t suspended;
+	uint8_t resumed;
+} PACKED;
+
+struct NanDfspCsaIndMsg {
+	struct _NanMsgHeader fwHeader;
+	struct DFSP_EVENT_CSA_T csaInd;
+} PACKED;
+
+struct NanDfspCsaCompleteIndMsg {
+	struct _NanMsgHeader fwHeader;
+	struct DFSP_EVENT_CSA_COMPLETE_T csaCompleteInd;
+} PACKED;
+
+struct NanDfspSusResIndMsg {
+	struct _NanMsgHeader fwHeader;
+	struct DFSP_SUSPEND_RESUME_T susResInd;
+} PACKED;
+
+struct wfpal_channel {
+	u32 channel;
+	u32 flags;
+} PACKED;
+
+#define WFPAL_MAX_PMK_LENGTH 64
+#define WFPAL_PMKID_LENGTH 16
+
+struct NanInfraAuthRxIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u32 status;
+	u8 reason;
+	u8 peer_mac[6];
+	u32 pmk_len;
+	u8 pmk[WFPAL_MAX_PMK_LENGTH];
+	u32 pmkid_len;
+	u8 pmkid[WFPAL_PMKID_LENGTH];
+} PACKED;
+
+struct NanInfraAssocStartIndMsg {
+	struct _NanMsgHeader fwHeader;
+	struct wfpal_channel channel;
+} PACKED;
+
+struct _NanWfpalJoinSubstateInfo {
+	u8 bssid[6];
+	u8 flags;
+	u32 auth_status;
+	u8 auth_reason;
+	u32 assoc_status;
+	u8 assoc_reason;
+	u32 set_ssid_status;
+	u8 set_ssid_reason;
+	u32 supplicant_status;
+	u8 supplicant_reason;
+} PACKED;
+
+#define WFPAL_MAX_ASSOC_BSSID 3
+struct NanInfraAssocDoneIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 join_address[6];
+	u32 return_val;
+	u32 ieee_status;
+	struct _NanWfpalJoinSubstateInfo substate_info[WFPAL_MAX_ASSOC_BSSID];
+	u32 extension_return_val;
+} PACKED;
+
+struct NanInfraAssocReceivedIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u32 status;
+	u32 reason;
+} PACKED;
+
+#define WFPAL_MAX_CHANNELS 128
+struct NanInfraScanStartIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 num_of_24G_channels;
+	u8 num_of_5G_channels;
+	u8 channel_list[WFPAL_MAX_CHANNELS];
+} PACKED;
+
+struct NanInfraScanCompleteIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 status;
+} PACKED;
+
+struct NanDwStartIndMsg {
+	struct _NanMsgHeader fwHeader;
+	struct wfpal_channel channel;
+	u32 expected_tsf_l;
+	u32 expected_tsf_h;
+	u32 actual_tsf_l;
+	u32 actual_tsf_h;
+	u8 dw_num;
+} PACKED;
+
+struct NanRoleChangedIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 role;
+	u8 hopcount;
+} PACKED;
+
+#define WFPAL_NAN_OUT_OF_BOUND_ACTION_FRAME_MAX_SIZE 960
+struct NanOobAfRxIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 dst_addr[MAC_ADDR_LEN];
+	u8 src_addr[MAC_ADDR_LEN];
+	u8 bssid[MAC_ADDR_LEN];
+	struct wfpal_channel channel;
+	u8 rx_rssi;
+	u16 length;
+	u8 data[WFPAL_NAN_OUT_OF_BOUND_ACTION_FRAME_MAX_SIZE];
+} PACKED;
+
+struct NanChipRstIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 state;
+} PACKED;
+
+#define NAN_PRIV_CMD_MAX_SIZE 32
+struct NanDrvPrivCmdWork {
+	struct work_struct work;
+	struct GLUE_INFO *prGlueInfo;
+	u8 cmd[NAN_PRIV_CMD_MAX_SIZE];
+} PACKED;
+
+struct NanDrvPrivCmd {
+	u8 cmd[NAN_PRIV_CMD_MAX_SIZE];
+} PACKED;
+
+struct NanBcnRxIndMsg {
+	struct _NanMsgHeader fwHeader;
+	s32 rssi;
+	struct wfpal_channel channel;
+	u8 rate;
+	u32 local_tsf_offset_h;
+	u32 local_tsf_offset_l;
+	u16 length;
+	u8 frame[];
+} PACKED;
+
+#define NAN_CHANNEL_REPORT_MAX_SIZE 128
+struct NanCountryCodeChangedIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u8 countryCode[4];
+	u32 channel_num;
+	struct wfpal_channel channel[NAN_CHANNEL_REPORT_MAX_SIZE];
+} PACKED;
+
+enum nan_driver_capability_flags {
+	WFPAL_WIFI_DRIVER_SUPPORTS_NAN = (1 << 0),
+	WFPAL_WIFI_DRIVER_SUPPORTS_DUAL_BAND = (1 << 2),
+	WFPAL_WIFI_DRIVER_SUPPORTS_SIMULTANEOUS_DUAL_BAND = (1 << 3),
+	WFPAL_WIFI_DRIVER_IS_CLM_RESTRICTED = (1 << 4),
+	WFPAL_WIFI_DRIVER_PEER_COUNTRY_CODE_LEARNING_CAPABLE = (1 << 5),
+} PACKED;
+
+extern const struct nla_policy mtk_wlan_vendor_nan_policy[NL80211_ATTR_MAX + 1];
+
 /* Service Discovery Extended Attribute params Format to HAL */
 struct NanFWSdeaCtrlParams {
 	u32 fsd_required : 1;
@@ -385,8 +715,36 @@ enum NanMsgId {
 	NAN_MSG_ID_SELF_TRANSMIT_FOLLOWUP_IND = 35,
 	NAN_MSG_ID_RANGING_REQUEST_RECEVD_IND = 36,
 	NAN_MSG_ID_RANGING_RESULT_IND = 37,
+	NAN_MSG_ID_GET_INFRA_BSSID = 38,
+	NAN_MSG_ID_GET_INFRA_CHANNEL = 39,
+	NAN_MSG_ID_INFRA_CHANGED_IND = 40,
+	NAN_MSG_ID_SET_COMMITTED_AVAILABILITY = 41,
+	NAN_MSG_ID_SET_POTENTIAL_AVAILABILITY = 42,
+	NAN_MSG_ID_SET_DATA_CLUSTER_AVAILABILITY = 43,
+	NAN_MSG_ID_UPDATE_DFSP_CONFIG = 44,
+	NAN_MSG_ID_UPDATE_DFSP_CSA_IND = 45,
+	NAN_MSG_ID_UPDATE_DFSP_CSA_COMPLETE_IND = 46,
+	NAN_MSG_ID_UPDATE_DFSP_SUSPEND_RESUME_IND = 47,
+	NAN_MSG_ID_INFRA_ASSOC_START_IND = 48,
+	NAN_MSG_ID_INFRA_ASSOC_DONE_IND = 49,
+	NAN_MSG_ID_INFRA_ASSOC_RECEIVED_IND = 50,
+	NAN_MSG_ID_INFRA_SCAN_START_IND = 51,
+	NAN_MSG_ID_INFRA_SCAN_COMPLETE_IND = 52,
+	NAN_MSG_ID_DW_START_IND = 53,
+	NAN_MSG_ID_INFRA_ASSOC_READY_IND = 54,
+	NAN_MSG_ID_FORCED_BEACON_TRANSMISSION = 55,
+	NAN_MSG_ID_ROLE_CHANGED_IND = 56,
+	NAN_MSG_ID_OOB_AF_RX_IND = 57,
+	NAN_MSG_ID_UPDATE_CUSTOM_ATTRIBUTE = 58,
+	NAN_MSG_ID_BEACON_RX_IND = 59,
+	NAN_MSG_ID_INFRA_AUTH_RX_IND = 60,
+	NAN_MSG_ID_CHIP_RST_IND = 61,
+	NAN_MSG_ID_COUNTRY_CODE_CHANGED = 62,
+	NAN_MSG_ID_GET_COUNTRY_CODE = 63,
+	NAN_MSG_ID_GET_DRIVER_CAPABILITIES = 64,
 	NAN_MSG_ID_EXT_CMD = 92,
 	NAN_MSG_ID_EXT_IND = 93,
+	NAN_MSG_ID_PRIV_CMD = 1024,
 	NAN_MSG_ID_TESTMODE_REQ = 1025,
 	NAN_MSG_ID_TESTMODE_RSP = 1026
 };
@@ -686,6 +1044,48 @@ enum NanInternalStatusType {
 	NDP_I_VENDOR_SPECIFIC_ERROR = 9500
 };
 
+enum NanChannelFlag {
+	/* no flags */
+	NAN_C_FLAG_NONE = 0x0,
+	/* 10 MHz wide */
+	NAN_C_FLAG_10MHZ = 0x1,
+	/* 20 MHz wide */
+	NAN_C_FLAG_20MHZ = 0x2,
+	/* 40 MHz wide */
+	NAN_C_FLAG_40MHZ = 0x4,
+	/* 2.4 GHz */
+	NAN_C_FLAG_2GHZ = 0x8,
+	/* 5 GHz */
+	NAN_C_FLAG_5GHZ = 0x10,
+	/* IBSS supported */
+	NAN_C_FLAG_IBSS = 0x20,
+	/* HOST AP mode supported */
+	NAN_C_FLAG_HOST_AP = 0x40,
+	/* active scanning supported */
+	NAN_C_FLAG_ACTIVE = 0x80,
+	/* DFS required */
+	NAN_C_FLAG_DFS = 0x100,
+	/* If 40 Mhz, extension channel above.
+	 * If this flag is not set, then the extension channel is below.
+	 */
+	NAN_C_FLAG_EXTENSION_ABOVE = 0x200,
+	/* 80 MHz 11ac 5GHz */
+	NAN_C_FLAG_80MHZ = 0x400,
+	/* 160 MHz 11ac 5GHz */
+	NAN_C_FLAG_160MHZ = 0x800,
+	/* Reported RSSI is inaccurate */
+	NAN_C_FLAG_RSSI_INVALID = 0x1000,
+	/* Channel is in passive mode */
+	NAN_C_PASSIVE_MODE = 0x2000,
+	/* Restricted use channel */
+	NAN_C_INDOOR_RESTRICTED = 0x4000,
+	/* Channel restricted in CLM (i.e. by default) */
+	NAN_C_CLM_RESTRICTED = 0x8000,
+	/* 6 GHz */
+	NAN_C_FLAG_6GHZ = 0x10000,
+	NAN_C_FLAG_ALL = UINT_MAX,
+};
+
 /* #define SIZEOF_TLV_HDR (sizeof(NanTlv.type) + sizeof(NanTlv.length)) */
 #define SIZEOF_TLV_HDR                                                  \
 	(sizeof(((struct _NanTlv *)0)->type) + \
@@ -769,6 +1169,9 @@ enum NanInternalStatusType {
 	((flags & SDEA_CTRL_PARMS_FSD_WITH_GAS) >> 1) /* fgGAS */
 #define GET_SDEA_RANGE_LIMIT_PRESENT(flags)                                    \
 	((flags & SDEA_CTRL_PARMS_RANGE_LIMIT_PRESENT) >> 8) /* fgRangeLimit */
+#define GET_SDEA_SERVICE_UPDATE_IND_PRESENT(flags)                             \
+	((flags & SDEA_CTRL_PARMS_SERVICE_UPDATE_IND_PRESENT) >>               \
+	 9) /* eServUpdateInd */
 
 /* Get flags
  * BIT0 - Disable publish termination indication.
@@ -885,4 +1288,75 @@ mtk_cfg80211_vendor_event_nan_disable_indication(struct ADAPTER *prAdapter,
 void
 nanNdpDissolve(struct ADAPTER *prAdapter,
 	uint32_t u4Timeout);
+
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_changed_indication(
+						struct ADAPTER *prAdapter);
+
+uint32_t
+mtk_cfg80211_vendor_event_nan_dfsp_csa(struct ADAPTER *prAdapter,
+					uint8_t *pcuEvtBuf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_dfsp_csa_complete(
+					struct ADAPTER *prAdapter,
+					uint8_t *pcuEvtBuf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_dfsp_suspend_resume(
+					struct ADAPTER *prAdapter,
+					uint8_t *pcuEvtBuf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_auth_rx_indication(
+					struct ADAPTER *prAdapter,
+					struct SW_RFB *prSwRfb);
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_assoc_st_ind(
+					struct ADAPTER *prAdapter,
+					enum ENUM_BAND eBand,
+					uint8_t ucChannelNum,
+					uint8_t ucChnlBw,
+					enum ENUM_CHNL_EXT eSco);
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_assoc_done_indication(
+					struct ADAPTER *prAdapter,
+					uint32_t rJoinStatus,
+					struct STA_RECORD *prStaRec);
+uint32_t
+
+mtk_cfg80211_vendor_event_nan_infra_assoc_rx_ind(
+					struct ADAPTER *prAdapter,
+					uint8_t *buf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_assoc_ready_indication(
+					struct ADAPTER *prAdapter);
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_scan_start_indication(
+					struct ADAPTER *prAdapter,
+					struct cfg80211_scan_request *request);
+uint32_t
+mtk_cfg80211_vendor_event_nan_infra_scan_complete_indication(
+					struct ADAPTER *prAdapter,
+					uint8_t ucStatus);
+uint32_t
+mtk_cfg80211_vendor_event_nan_report_dw_start(struct ADAPTER *prAdapter,
+					uint8_t *pcuEvtBuf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_report_dw_end(struct ADAPTER *prAdapter,
+					uint8_t *pcuEvtBuf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_role_changed_received(struct ADAPTER *prAdapter,
+					uint8_t *pcuEvtBuf);
+uint32_t
+mtk_cfg80211_vendor_event_nan_oob_af_rx(struct ADAPTER *prAdapter,
+					uint8_t *ucDestAddr,
+					uint8_t *ucSrcAddr,
+					uint8_t *ucBssid,
+					struct RF_CHANNEL_INFO *prSunriseChnl,
+					uint8_t ucRssi,
+					uint16_t u2DataLen,
+					uint8_t *ucData);
+uint32_t
+mtk_cfg80211_vendor_event_nan_chip_reset(struct ADAPTER *prAdapter,
+					uint8_t fgIsReset);
+uint32_t
+mtk_cfg80211_vendor_event_nan_country_chng_ind(struct ADAPTER *prAdapter);
 #endif

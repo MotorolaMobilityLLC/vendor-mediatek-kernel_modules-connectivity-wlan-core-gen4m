@@ -462,6 +462,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if CFG_SUPPORT_NAN_FAST_DISC
+	{
+		.pcCmdStr  = CMD_SET_NAN_FAST_DISC,
+		.pfHandler = priv_driver_set_nan_fast_discovery,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 #endif
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{

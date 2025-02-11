@@ -80,13 +80,11 @@ static struct _APPEND_ATTR_ENTRY_T txDataAttributeTable[] = {
 	  nanDataEngineSecContextAttrAppend },
 	{ NAN_ATTR_ID_SHARED_KEY_DESCRIPTOR, nanDataEngineSharedKeyAttrLength,
 	  nanDataEngineSharedKeyAttrAppend },
-#if CFG_SUPPORT_NAN_EXT
 	{ NAN_ATTR_ID_VENDOR_SPECIFIC, nanDataEngineVendorAttrLength,
 	  nanDataEngineVendorAttrAppend },
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	{ NAN_ATTR_ID_VENDOR_SPECIFIC, nanDataEngineVendorEhtAttrLength,
 	  nanDataEngineVendorEhtAttrAppend },
-#endif
 #endif
 };
 
@@ -1498,6 +1496,7 @@ nanDataFreeNdl(struct ADAPTER *prAdapter, struct _NAN_NDL_INSTANCE_T *prNDL) {
 void
 nanDataEngineInit(struct ADAPTER *prAdapter, uint8_t *pu1NMIAddress) {
 	uint8_t i, j;
+	uint32_t u4offset;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
@@ -1523,12 +1522,13 @@ nanDataEngineInit(struct ADAPTER *prAdapter, uint8_t *pu1NMIAddress) {
 			kalMemZero(&(prDataPathInfo->arNDL[i].arNDP[j]),
 				   sizeof(struct _NAN_NDP_INSTANCE_T));
 			prDataPathInfo->arNDL[i].arNDP[j].ucNdlIndex = i;
+			u4offset = i * NAN_MAX_SUPPORT_NDP_NUM + j;
 			prDataPathInfo->arNDL[i].arNDP[j].prInitiatorSecSmInfo =
 				nanSecGetInitiatorSm(
-					i * NAN_MAX_SUPPORT_NDP_NUM + j);
+					(uint8_t)(u4offset));
 			prDataPathInfo->arNDL[i].arNDP[j].prResponderSecSmInfo =
 				nanSecGetResponderSm(
-					i * NAN_MAX_SUPPORT_NDP_NUM + j);
+					(uint8_t)(u4offset));
 		}
 
 		/* initialize token for NAN scheduler */
@@ -5481,6 +5481,85 @@ send:
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Incoming frame handlers for NAN Action Frame
+ *  - Reserved
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+nanNdlProcessOob(struct ADAPTER *prAdapter,
+		 struct SW_RFB *prSwRfb)
+{
+	struct _NAN_ACTION_FRAME_T *prNaf = NULL;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint8_t ucRcpi, ucRssi;
+	struct RF_CHANNEL_INFO sunriseChannel;
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+	struct RX_DESC_OPS_T *prRxDescOps;
+	uint8_t ucHwBand, ucHwChannelNum;
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+#endif
+
+#if (ENABLE_NDP_UT_LOG == 1)
+	DBGLOG(NAN, INFO, "Enter\n");
+#endif
+
+	if (!prSwRfb) {
+		DBGLOG(NAN, ERROR, "prSwRfb error\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (prSwRfb->u2PacketLen < prSwRfb->u2HeaderLen) {
+		DBGLOG(NAN, ERROR, "Invalid packet length\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prNaf = (struct _NAN_ACTION_FRAME_T *)(prSwRfb->pvHeader);
+	if (!prNaf) {
+		DBGLOG(NAN, ERROR, "prNaf error\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/* RSSI */
+	ucRcpi = nicRxGetRcpiValueFromRxv(prAdapter, RCPI_MODE_MAX, prSwRfb);
+	ucRssi = RCPI_TO_dBm(ucRcpi);
+
+	/* Channel */
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	RX_STATUS_GET(prRxDescOps, ucHwBand, get_rf_band, prSwRfb->prRxStatus);
+	RX_STATUS_GET(prRxDescOps, ucHwChannelNum, get_ch_num,
+			prSwRfb->prRxStatus);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	nicRxdChNumTranslate((enum ENUM_BAND) ucHwBand, &ucHwChannelNum);
+#endif
+
+	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3_V2 *)
+			prSwRfb->prRxStatusGroup3;
+	sunriseChannel.ucChannelNum = ucHwChannelNum;
+	sunriseChannel.eBand = (enum ENUM_BAND) ucHwBand;
+	sunriseChannel.ucChnlBw = CONNAC2X_HAL_RX_VECTOR_GET_BW(prGroup3);
+#endif
+
+	rStatus = mtk_cfg80211_vendor_event_nan_oob_af_rx(
+		prAdapter,
+		prNaf->aucDestAddr,
+		prNaf->aucSrcAddr,
+		prNaf->aucClusterID,
+		&sunriseChannel,
+		ucRssi,
+		(prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen),
+		&prNaf->ucCategory
+		);
+
+	return rStatus;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief            Send NAF - Data Path Termination
  *
  * \param[in]
@@ -5581,6 +5660,117 @@ uint32_t nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
 	return nanDataEngineSendNAF(prAdapter,
 				    prMsduInfo, prMsduInfo->u2FrameLength,
 				    nanDPTerminationTxDone, prStaRec);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief            NAF TX Done Callback - for NDP negotiation (DP Response)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+nanNdpOOBActionTxDone(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "[%s] prAdapter NULL\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prMsduInfo) {
+		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/* Send rsp event to wifi hal */
+	if (nanNdpOOBActionTxDoneEvent(
+		prAdapter,
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+		prMsduInfo->ucTokenId,
+#else
+		0,
+#endif
+		rTxDoneStatus) !=
+		WLAN_STATUS_SUCCESS) {
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief            Send NAF - Out-of-bound Action frame
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+nanNdpSendOOBAction(
+	struct ADAPTER *prAdapter,
+	struct _NAN_CMD_OOB_ACTION *prNanCmdOOBAction)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	uint16_t u2EstimatedFrameLen = 0;
+
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "[%s] prAdapter error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	u2EstimatedFrameLen =
+			OFFSET_OF(struct _NAN_ACTION_FRAME_T, ucCategory);
+
+	u2EstimatedFrameLen += prNanCmdOOBAction->ucPayloadLen;
+
+	/* allocate MSDU_INFO_T */
+	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+	if (prMsduInfo == NULL) {
+		DBGLOG(NAN, WARN,
+		       "NAN Data Engine: packet allocation failure\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+	kalMemZero((uint8_t *)prMsduInfo->prPacket,
+		u2EstimatedFrameLen);
+
+	kalMemCopy(((uint8_t *)prMsduInfo->prPacket +
+		WLAN_MAC_MGMT_HEADER_LEN),
+		prNanCmdOOBAction->aucPayload,
+		prNanCmdOOBAction->ucPayloadLen);
+
+	prMsduInfo->u2FrameLength =
+		(WLAN_MAC_MGMT_HEADER_LEN + prNanCmdOOBAction->ucPayloadLen);
+
+	prStaRec = nanGetStaRecByNDI(prAdapter,
+		prNanCmdOOBAction->aucDestAddress);
+	if (!prStaRec)
+		DBGLOG(NAN, WARN,
+	       "sta_rec is NULL! Send OOB use MAIN BSSINFO\n");
+
+	nanDataEngineComposeNAFHeader(
+		prAdapter,
+		prMsduInfo,
+		NAN_ACTION_RESERVED,
+		prNanCmdOOBAction->aucSrcAddress,
+		prNanCmdOOBAction->aucDestAddress,
+		prStaRec);
+
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+	prMsduInfo->fgSecurity = prNanCmdOOBAction->ucSecurity;
+	prMsduInfo->ucTokenId = prNanCmdOOBAction->ucToken;
+#endif
+
+	return nanDataEngineSendNAF(
+		prAdapter, prMsduInfo, prMsduInfo->u2FrameLength,
+		(PFN_TX_DONE_HANDLER)nanNdpOOBActionTxDone, prStaRec);
 }
 
 /*----------------------------------------------------------------------------*/

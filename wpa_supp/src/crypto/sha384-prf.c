@@ -61,11 +61,11 @@ int sha384_prf_bits(const u8 *key, size_t key_len, const char *label,
 		    size_t buf_len_bits)
 {
 	u16 counter = 1;
-	size_t pos, plen;
-	u8 hash[SHA384_MAC_LEN];
-	const u8 *addr[4];
-	size_t len[4];
-	u8 counter_le[2], length_le[2];
+	size_t pos = 0, plen = 0;
+	u8 hash[SHA384_MAC_LEN] = {0};
+	const u8 *addr[4] = {NULL};
+	size_t len[4] = {0};
+	u8 counter_le[2] = {0}, length_le[2] = {0};
 	size_t buf_len = (buf_len_bits + 7) / 8;
 
 	addr[0] = counter_le;
@@ -102,7 +102,7 @@ int sha384_prf_bits(const u8 *key, size_t key_len, const char *label,
 	 * Mask out unused bits in the last octet if it does not use all the
 	 * bits.
 	 */
-	if (buf_len_bits % 8) {
+	if ((buf_len_bits % 8) && (pos > 0)) {
 		u8 mask = 0xff << (8 - buf_len_bits % 8);
 
 		buf[pos - 1] &= mask;

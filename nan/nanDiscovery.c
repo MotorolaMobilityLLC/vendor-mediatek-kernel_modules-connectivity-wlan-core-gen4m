@@ -20,24 +20,13 @@ struct _CMD_NAN_CANCEL_REQUEST {
 	uint16_t publish_subscribe_id;
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
-int8_t atoi(uint8_t ch)
-{
-	if (ch >= 'a' && ch <= 'f')
-		return ch - 87;
-	else if (ch >= 'A' && ch <= 'F')
-		return ch - 55;
-	else if (ch >= '0' && ch <= '9')
-		return ch - 48;
-
-	return 0;
-}
-
 void
 nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		      uint8_t ucFilterSrcLen, uint16_t *pucFilterDstLen) {
 	uint32_t u4Idx;
 	uint8_t ucLen;
 	uint16_t ucFilterLen;
+	int i4Ret = 0;
 
 	ucFilterLen = 0;
 	for (u4Idx = 0; u4Idx < ucFilterSrcLen;) {
@@ -48,7 +37,9 @@ nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		}
 		DBGLOG(INIT, DEBUG, "nan: filter[%d] = %p\n", u4Idx,
 		       pucFilterSrc);
-		ucLen = atoi(*pucFilterSrc);
+		i4Ret = kalkStrtou8(pucFilterSrc, 10, &ucLen);
+		if (i4Ret || ucLen == 0)
+			continue;
 		*pucFilterDst = ucLen;
 		pucFilterDst++;
 		u4Idx++;
@@ -942,6 +933,13 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 		NAN_MAX_SUBSCRIBE_MAX_ADDRESS;
 	kalMemCopy(prSubscribeReq->intf_addr, msg->intf_addr,
 		   prSubscribeReq->num_intf_addr_present * MAC_ADDR_LEN);
+
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+	if (msg->fgNeedExtCmd)
+		nanSubscribeRequestExt(prAdapter,
+			prSubscribeReq->subscribe_id, msg);
+#endif
+
 	/* send command to fw */
 	wlanSendSetQueryCmd(prAdapter,		/* prAdapter */
 			    CMD_ID_NAN_EXT_CMD,	/* ucCID */
@@ -1322,5 +1320,78 @@ uint32_t nanDiscUpdateCipherSuiteInfoAttr(struct ADAPTER *prAdapter,
 
 	return rRetStatus;
 }
+
+enum NanStatusType
+nanDiscSetCustomAttribute(
+	struct ADAPTER *prAdapter,
+	struct NanCustomAttribute *prNanCustomAttr)
+{
+	uint32_t rStatus;
+	void *prCmdBuffer = NULL;
+	uint32_t u4CmdBufferLen = 0;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct _NAN_CMD_UPDATE_CUSTOM_ATTR_T *prAttr = NULL;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+		sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+		sizeof(struct _NAN_CMD_UPDATE_CUSTOM_ATTR_T);
+	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
+
+	if (!prCmdBuffer) {
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
+		return NAN_STATUS_INTERNAL_FAILURE;
+	}
+
+	kalMemZero(prCmdBuffer, u4CmdBufferLen);
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+
+	rStatus = nicNanAddNewTlvElement(
+		NAN_CMD_UPDATE_CUSTOM_ATTR,
+		sizeof(struct _NAN_CMD_UPDATE_CUSTOM_ATTR_T),
+		u4CmdBufferLen, prCmdBuffer);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return NAN_STATUS_INTERNAL_FAILURE;
+	}
+
+	prTlvElement = nicNanGetTargetTlvElement(1, prCmdBuffer);
+
+	if (prTlvElement == NULL) {
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return NAN_STATUS_INTERNAL_FAILURE;
+	}
+
+	prAttr =
+		(struct _NAN_CMD_UPDATE_CUSTOM_ATTR_T *)
+		prTlvElement->aucbody;
+
+	prAttr->u2Length = prNanCustomAttr->length;
+
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+	kalMemCpyS(prAttr->aucData,
+		sizeof(prAttr->aucData),
+		prNanCustomAttr->data,
+		prNanCustomAttr->length);
+#endif
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_NAN_EXT_CMD,
+		TRUE, FALSE, FALSE, NULL,
+		nicCmdTimeoutCommon, u4CmdBufferLen,
+		(uint8_t *)prCmdBuffer, NULL, 0);
+
+	cnmMemFree(prAdapter, prCmdBuffer);
+
+	if (rStatus == WLAN_STATUS_SUCCESS || rStatus == WLAN_STATUS_PENDING)
+		return NAN_STATUS_SUCCESS;
+	else
+		return NAN_STATUS_INTERNAL_FAILURE;
+}
+
 
 #endif /* CFG_SUPPORT_NAN */

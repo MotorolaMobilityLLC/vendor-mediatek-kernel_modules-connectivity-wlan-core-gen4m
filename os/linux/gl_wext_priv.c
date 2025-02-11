@@ -1766,9 +1766,18 @@ int __priv_nan_struct(struct net_device *prNetDev,
 		       subReq->tx_match_filter);
 
 		subid = nanSubscribeRequest(prGlueInfo->prAdapter, subReq);
-
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+		if (subid != 0) {
+			nanDiscInstanceAdd(prGlueInfo->prAdapter,
+				(uint8_t)subid,
+				NAN_SUBSCRIBE,
+				subReq->aucServiceHash,
+				subReq->service_name,
+				subReq->service_name_len);
+		}
+#endif
 		if (copy_to_user(prIwReqData->data.pointer, &subid,
-				 sizeof(signed char))) {
+				 sizeof(subid))) {
 			DBGLOG(REQ, DEBUG, "copy_to_user oidBuf fail\n");
 			status = -EFAULT;
 		}
@@ -11724,6 +11733,81 @@ priv_driver_set_nan_5g_160(struct net_device *prNetDev, char *pcCommand,
 
 	return 0;
 }
+
+#if CFG_SUPPORT_NAN_FAST_DISC
+int priv_driver_set_nan_fast_discovery(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct _NAN_CMD_EVENT_SET_DISC_BCN_T rNanSetDiscBcn = {};
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t u4Ret = 0, u4Slot = 0;
+	uint32_t rStatus = 0;
+	int8_t i = 0, j = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+	if (!prGlueInfo) {
+		DBGLOG(NAN, ERROR, "prGlueInfo is NULL");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "prGlueInfo->prAdapter is NULL");
+		return -1;
+	}
+
+	DBGLOG(NAN, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(NAN, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Slot);
+		if (u4Ret)
+			DBGLOG(NAN, INFO, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+
+		DBGLOG(NAN, INFO,
+			"set_fast_discovery %d\n",
+			u4Slot);
+	} else {
+		DBGLOG(NAN, ERROR, "Argc %d < 2", i4Argc);
+		return -1;
+	}
+
+	kalMemZero(&rNanSetDiscBcn,
+		sizeof(struct _NAN_CMD_EVENT_SET_DISC_BCN_T));
+
+	if (u4Slot == 0) {
+		DBGLOG(NAN, INFO, "[FastDisc] Periodic based\n");
+
+		rNanSetDiscBcn.ucDiscBcnType = ENUM_DISC_BCN_PERIOD;
+		rNanSetDiscBcn.ucDiscBcnPeriod = 100;
+	} else {
+		DBGLOG(NAN, INFO, "[FastDisc] Slot based\n");
+		rNanSetDiscBcn.ucDiscBcnType = ENUM_DISC_BCN_SLOT;
+		rNanSetDiscBcn.ucDiscBcnPeriod = 0;
+		for (i = 0; i < NAN_TIMELINE_MGMT_SIZE; i++) {
+			rNanSetDiscBcn.rDiscBcnTimeline[i].ucMapId = i;
+			for (j = 0; j < NAN_TOTAL_DW; j++)
+				rNanSetDiscBcn.rDiscBcnTimeline[i]
+					.au4AvailMap[j] = 0xFFFF;
+		}
+	}
+	rStatus = nanDevSetDiscBcn(prAdapter, &rNanSetDiscBcn);
+
+	if (rStatus != NAN_STATUS_SUCCESS) {
+		DBGLOG(NAN, ERROR, "Set Disc Bcn Period error!!\n");
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 #endif
 
 int priv_driver_get_linkspeed(struct net_device *prNetDev,

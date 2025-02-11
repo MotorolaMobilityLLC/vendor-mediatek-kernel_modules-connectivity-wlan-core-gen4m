@@ -1041,4 +1041,10 @@ void nanUpdateMbmcIdx(struct ADAPTER *ad,
 	uint8_t ucBssIdx,
 	uint8_t ucBandIdx);
 
+uint32_t
+nanParserInterpretTimeBitmapField(struct ADAPTER *prAdapter,
+		  uint16_t u2TimeBitmapCtrl,
+		  uint8_t ucTimeBitmapLength,
+		  uint8_t *pucTimeBitmap, uint32_t *pu4AvailMap);
+
 #endif /* _NAN_SCHEDULER_H_ */

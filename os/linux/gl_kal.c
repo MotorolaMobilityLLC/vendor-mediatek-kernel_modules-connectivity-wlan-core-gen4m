@@ -3245,6 +3245,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		kalUpdate6GPwrMode(prAdapter, ucBssIndex);
 #endif
 #if CFG_SUPPORT_NAN
+		mtk_cfg80211_vendor_event_nan_infra_changed_indication(
+			prGlueInfo->prAdapter);
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1 &&
 		    nanIsOn(prAdapter)) {
@@ -3475,6 +3477,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 		}
 #if CFG_SUPPORT_NAN
+		mtk_cfg80211_vendor_event_nan_infra_changed_indication(
+			prGlueInfo->prAdapter);
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1 &&
 		    nanIsOn(prAdapter)) {
@@ -3512,7 +3516,10 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->prScanRequest = NULL;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
+#if CFG_SUPPORT_NAN
+		mtk_cfg80211_vendor_event_nan_infra_scan_complete_indication(
+			prGlueInfo->prAdapter, fgScanAborted);
+#endif
 		break;
 
 #if 0
@@ -15137,6 +15144,13 @@ static const char *nan_unisubevent_str(uint32_t u4SubEvent)
 		[UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2] = "NDL Flow Ctrl v2",
 		[UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY] = "Device Capability",
 		[UNI_EVENT_NAN_ID_MATCH_EXPIRE] = "Match Expire",
+		[UNI_EVENT_NAN_TAG_DISC_BCN_PERIOD] = "Discovery Beacon",
+		[UNI_EVENT_NAN_TAG_DFSP_CSA] = "DFSP CSA",
+		[UNI_EVENT_NAN_TAG_DFSP_CSA_COMPLETE] = "DFSP CSA Complete",
+		[UNI_EVENT_NAN_TAG_DFSP_SUSPEND_RESUME] = "DFSP Suspend Resume",
+		[UNI_EVENT_NAN_TAG_REPORT_DW_START] = "DW Start",
+		[UNI_EVENT_NAN_TAG_REPORT_DW_END] = "DW End",
+		[UNI_EVENT_NAN_TAG_DEVICE_ROLE] = "Device Role",
 		[UNI_EVENT_NAN_DEVICE_INFO] = "Device Info",
 		[UNI_EVENT_NAN_TAG_REPORT_BEACON] = "Report Beacon",
 		[UNI_EVENT_NAN_TAG_SLOT_STATISTICS] = "Slot Statistics",
@@ -15251,6 +15265,41 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		mtk_cfg80211_vendor_event_nan_disable_indication(
 			prAdapter, prTlvElement->aucbody);
 		break;
+#if CFG_SUPPORT_NAN_FAST_DISC
+	case UNI_EVENT_NAN_TAG_DISC_BCN_PERIOD:
+		nanDevDiscBcnPeriodEvtHandler(prAdapter,
+			prTlvElement->aucbody);
+		break;
+#endif
+	case UNI_EVENT_NAN_TAG_DFSP_CSA:
+		mtk_cfg80211_vendor_event_nan_dfsp_csa(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_DFSP_CSA_COMPLETE:
+		mtk_cfg80211_vendor_event_nan_dfsp_csa_complete(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_DFSP_SUSPEND_RESUME:
+		mtk_cfg80211_vendor_event_nan_dfsp_suspend_resume(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_REPORT_DW_START:
+		if (prAdapter->ucNanOobNum > 0) {
+			nanNdpSendOOBAction(prAdapter,
+				&prAdapter->rNanCmdOOBAction);
+			prAdapter->ucNanOobNum--;
+		}
+		mtk_cfg80211_vendor_event_nan_report_dw_start(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_REPORT_DW_END:
+		mtk_cfg80211_vendor_event_nan_report_dw_end(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_DEVICE_ROLE:
+		mtk_cfg80211_vendor_event_nan_role_changed_received(
+			prAdapter, prTlvElement->aucbody);
+		break;
 	case UNI_EVENT_NAN_ID_MATCH_EXPIRE:
 		status = mtk_cfg80211_vendor_event_nan_match_expire(
 			prAdapter, prTlvElement->aucbody);
@@ -15303,6 +15352,12 @@ static const char *nan_subevent_str(uint32_t u4SubEvent)
 	[NAN_EVENT_NDL_FLOW_CTRL_V2] = "NDL Flow Ctrl v2",
 	[NAN_EVENT_ID_DEVICE_CAPABILITY] = "Device Capability",
 	[NAN_EVENT_DISC_BCN_PERIOD] = "Discovery Beacon",
+	[NAN_EVENT_DFSP_CSA] = "DFSP CSA",
+	[NAN_EVENT_DFSP_CSA_COMPLETE] = "DFSP CSA Complete",
+	[NAN_EVENT_DFSP_SUSPEND_RESUME] = "DFSP Suspend Resume",
+	[NAN_EVENT_REPORT_DW_START] = "DW Start",
+	[NAN_EVENT_REPORT_DW_END] = "DW End",
+	[NAN_EVENT_DEVICE_ROLE] = "Device Role",
 	[NAN_EVENT_SERVICE_DISC_CAPABILITY] =  "Service Discovery Capability",
 	[NAN_EVENT_DEVICE_INFO] = "Device Info",
 	[NAN_EVENT_REPORT_BEACON] = "Report Beacon",
@@ -15431,6 +15486,41 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		mtk_cfg80211_vendor_event_nan_match_expire(
 			prAdapter, prTlvElement->aucbody);
 		break;
+#if CFG_SUPPORT_NAN_FAST_DISC
+	case NAN_EVENT_DISC_BCN_PERIOD:
+		nanDevDiscBcnPeriodEvtHandler(prAdapter,
+			prTlvElement->aucbody);
+		break;
+#endif
+	case NAN_EVENT_DFSP_CSA:
+		mtk_cfg80211_vendor_event_nan_dfsp_csa(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_DFSP_CSA_COMPLETE:
+		mtk_cfg80211_vendor_event_nan_dfsp_csa_complete(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_DFSP_SUSPEND_RESUME:
+		mtk_cfg80211_vendor_event_nan_dfsp_suspend_resume(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_REPORT_DW_START:
+		if (prAdapter->ucNanOobNum > 0) {
+			nanNdpSendOOBAction(prAdapter,
+				&prAdapter->rNanCmdOOBAction);
+			prAdapter->ucNanOobNum--;
+		}
+		mtk_cfg80211_vendor_event_nan_report_dw_start(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_REPORT_DW_END:
+		mtk_cfg80211_vendor_event_nan_report_dw_end(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_DEVICE_ROLE:
+		mtk_cfg80211_vendor_event_nan_role_changed_received(
+			prAdapter, prTlvElement->aucbody);
+		break;
 	case NAN_EVENT_REPORT_BEACON:
 		mtk_cfg80211_vendor_event_nan_report_beacon(
 			prAdapter, prTlvElement->aucbody);
@@ -15472,7 +15562,53 @@ void kalNanHandlePendingCmd(struct ADAPTER *prAdapter,
 	}
 }
 
+void kalNanPrivWorkInit(struct GLUE_INFO *prGlueInfo)
+{
+	prGlueInfo->prNANPrivCmdWorkQueue =
+		create_workqueue("nan_priv_work");
+	if (!prGlueInfo->prNANPrivCmdWorkQueue)
+		DBGLOG(INIT, ERROR,
+		"prNANPrivCmdWorkQueue is NULL\n");
+}
+
+void kalNanPrivWorkUninit(struct GLUE_INFO *prGlueInfo)
+{
+	struct workqueue_struct *prWq;
+
+	prWq = prGlueInfo->prNANPrivCmdWorkQueue;
+	prGlueInfo->prNANPrivCmdWorkQueue = NULL;
+
+	if (prWq) {
+		flush_workqueue(prWq);
+		destroy_workqueue(prWq);
+	}
+}
+
+void kalNanPrivWork(struct work_struct *work)
+{
+#ifdef NAN_TODO /* T.B.D Unify NAN-Display */
+	struct NanDrvPrivCmdWork *prWork =
+		ENTRY_OF(work,
+		struct NanDrvPrivCmdWork,
+		work);
+	struct net_device *prNetDev = NULL;
+
+	prNetDev = wlanGetNetDev(prWork->prGlueInfo,
+		AIS_DEFAULT_INDEX);
+
+	if (!prNetDev)
+		return;
+
+	priv_driver_cmds(prWork->prGlueInfo,
+		prNetDev,
+		prWork->cmd,
+		kalStrLen(prWork->cmd));
+
+	kalMemFree(prWork, PHY_MEM_TYPE,
+		sizeof(struct NanDrvPrivCmdWork));
 #endif
+}
+#endif /* CFG_SUPPORT_NAN */
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void kalApplyCustomRegulatory(const void *pRegdom,

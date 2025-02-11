@@ -3604,6 +3604,10 @@ void rlmDomainCountryCodeUpdate(
 	}
 #endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
+#if CFG_SUPPORT_NAN
+	mtk_cfg80211_vendor_event_nan_country_chng_ind(prAdapter);
+#endif /* CFG_SUPPORT_NAN */
+
 	/* Send commands to firmware */
 	rlmDomainSendCmd(prAdapter, TRUE);
 

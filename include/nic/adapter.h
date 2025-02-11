@@ -1660,6 +1660,7 @@ struct WIFI_VAR {
 	uint8_t ucNan5gBandwidth;
 	uint8_t ucNdlFlowCtrlVer;
 	unsigned char fgNanWmmSeq;
+	uint8_t ucDiscBcnPeriod;
 	uint8_t ucNanMaxNdpSession;
 	uint8_t ucNanMacAddrOverride;
 	uint8_t aucNanMacAddrStr[WLAN_CFG_VALUE_LEN_MAX];
@@ -2756,6 +2757,11 @@ struct ADAPTER {
 
 	/* Store customizable AIS (to AP) time slots */
 	struct _NAN_AIS_BITMAP arNanAisSlots[NAN_BAND_NUM];
+
+	struct NanCustomAttribute rNanCustomAttr;
+	/* NDP OOB frame */
+	uint32_t ucNanOobNum;
+	struct _NAN_CMD_OOB_ACTION rNanCmdOOBAction;
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT

@@ -3821,6 +3821,61 @@ struct _NAN_CMD_GET_DEVICE_INFO {
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+enum ENUM_NAN_DISC_BCN_TYPE {
+	ENUM_DISC_BCN_PERIOD = 0,
+	ENUM_DISC_BCN_SLOT
+};
+
+/* Due to the firmware size limitation, we have temporarily set it to 256.
+ * The data sent from wifip2pd is often 35, and the recommended setting
+ * is 512 or 1024.
+ */
+#define NAN_CUSTOM_ATTRIBUTE_MAX_SIZE 256
+struct NanCustomAttribute {
+	u16 length;
+	u8 data[NAN_CUSTOM_ATTRIBUTE_MAX_SIZE];
+};
+
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
+struct _NAN_CMD_DFSP_CONFIG {
+	uint16_t version;
+	uint16_t length;
+	uint16_t flags;
+	/* bit 0 = enable;no other defined */
+	/* duration of no beacon for suspension */
+	uint16_t max_bcn_miss_duration;
+	uint8_t mcsp_ttl;
+	uint8_t bcsa_cnt;
+	uint8_t max_empty_aw;
+	uint16_t mon_chan;
+	/* passive monitor channel */
+	uint8_t mon_bssid[MAC_ADDR_LEN];
+	/* bssid of the AP */
+	uint16_t max_bcn_miss_af_duration;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
+
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
+struct _NAN_CMD_UPDATE_CUSTOM_ATTR_T {
+	uint16_t u2Length;
+	uint8_t aucReserved[2];
+	uint8_t aucData[256];
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
+
+struct NAN_EVENT_REPORT_DW_T {
+	uint32_t expected_tsf_h;
+	uint32_t expected_tsf_l;
+	uint32_t actual_tsf_h;
+	uint32_t actual_tsf_l;
+	uint16_t channel;
+	uint16_t dw_num;
+};
+
+struct NAN_EVENT_DEVICE_ROLE_T {
+	uint8_t ucNanDeviceRole;
+	uint8_t ucHopCount;
+	uint8_t aucReserved[2];
+};
+
 __KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_CMD_LOWPOWER_CTRL_T {
 	uint8_t ucEnabled;
