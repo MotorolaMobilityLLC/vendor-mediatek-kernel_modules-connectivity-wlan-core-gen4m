@@ -263,6 +263,9 @@ enum ENUM_MSG_ID {
 	MID_MNY_P2P_GC_CSA_REQ,
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+#if CFG_FLUSH_TX_PENDING_PKT
+	MID_FLUSH_TX_PENDING_Q,
+#endif
 	MID_TOTAL_NUM
 };
 
@@ -479,6 +482,14 @@ struct MSG_P2P_BCN_CRI_UPD {
 };
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+
+#if CFG_FLUSH_TX_PENDING_PKT
+struct MSG_FLUSH_TX_PENDING_Q {
+	struct MSG_HDR rMsgHdr; /* Must be the first member */
+	uint8_t ucIndex;
+	enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType;
+};
+#endif
 
 /* specific message data types */
 

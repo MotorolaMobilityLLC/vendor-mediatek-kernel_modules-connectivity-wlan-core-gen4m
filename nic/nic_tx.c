@@ -2554,6 +2554,10 @@ void nicHifTxMsduDoneCb(struct ADAPTER *prAdapter,
 	if (prMsduInfo->pfTxDoneHandler) {
 		KAL_SPIN_LOCK_DECLARATION();
 
+#if CFG_FLUSH_TX_PENDING_PKT
+		prMsduInfo->u4EnqPendingQTime = kalGetTimeTick();
+#endif
+
 		/* Record native packet pointer for Tx done log */
 		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
 			WLAN_GET_FIELD_32(&prMsduInfo->prPacket,

@@ -208,6 +208,9 @@ enum ENUM_REMOVE_BY_MSDU_TPYE {
 	MSDU_REMOVE_BY_WLAN_INDEX = 0,
 	MSDU_REMOVE_BY_BSS_INDEX,
 	MSDU_REMOVE_BY_ALL,
+#if CFG_FLUSH_TX_PENDING_PKT
+	MSDU_REMOVE_BY_ALL_DATA,
+#endif
 	ENUM_REMOVE_BY_MSDU_TPYE_NUM
 };
 
@@ -358,6 +361,14 @@ struct CMD_INFO *nicGetPendingCmdInfo(struct ADAPTER *prAdapter,
 					uint8_t ucSeqNum);
 void removeDuplicatePendingCmd(struct ADAPTER *prAdapter,
 				struct CMD_INFO *prCmdInfo);
+
+#if CFG_FLUSH_TX_PENDING_PKT
+void nicFreePendingTxMsduSendMsg(struct ADAPTER *prAdapter,
+	uint8_t ucIndex, enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType);
+
+void nicFreePendingTxMsduHandleMsg(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
+#endif
 
 struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 		uint8_t ucWlanIndex, uint8_t ucPID, uint8_t ucTID);

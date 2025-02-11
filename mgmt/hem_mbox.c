@@ -206,6 +206,9 @@ static const char * const apucDebugMsg[] = {
 	"MID_MNY_P2P_GC_CSA_REQ",
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+#if CFG_FLUSH_TX_PENDING_PKT
+	"MID_FLUSH_TX_PENDING_Q",
+#endif
 };
 
 /*lint -restore */
@@ -421,6 +424,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_GC_CSA_REQ, p2pRoleFsmRunEventGcCsaReq},
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+#if CFG_FLUSH_TX_PENDING_PKT
+	{MID_FLUSH_TX_PENDING_Q, nicFreePendingTxMsduHandleMsg},
+#endif
 };
 
 /*******************************************************************************

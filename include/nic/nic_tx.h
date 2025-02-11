@@ -189,6 +189,10 @@
 
 #define NIC_TX_BMC_REMAINING_TX_TIME        2000	/* in unit of ms */
 
+#if CFG_FLUSH_TX_PENDING_PKT
+#define NIC_TX_DATA_PENDING_VALID_TIME		2000	/* in unit of ms */
+#endif
+
 #define NIC_TX_CRITICAL_DATA_TID                7
 /*802.1d Voice Traffic,use AC_VO */
 #define NIC_TX_PRIORITY_DATA_TID                6
@@ -862,6 +866,9 @@ struct MSDU_INFO {
 	PFN_HIF_TX_MSDU_DONE_CB pfHifTxMsduDoneCb;
 	uint32_t u4TxDoneTag;	/* Tag for data frame Tx done log */
 	uint8_t ucPktType;
+#if CFG_FLUSH_TX_PENDING_PKT
+	uint32_t u4EnqPendingQTime; /* Record enqueue pending queue time*/
+#endif
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	struct PKT_PROFILE rPktProfile;

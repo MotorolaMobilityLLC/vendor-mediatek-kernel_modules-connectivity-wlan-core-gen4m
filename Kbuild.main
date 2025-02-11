@@ -1500,6 +1500,12 @@ else
     ccflags-y += -DCFG_SUPPORT_TX_WORK=0
 endif
 
+ifeq ($(CONFIG_FLUSH_TX_PENDING_PKT), y)
+    ccflags-y += -DCFG_FLUSH_TX_PENDING_PKT=1
+else
+    ccflags-y += -DCFG_FLUSH_TX_PENDING_PKT=0
+endif
+
 ifeq ($(CONFIG_PER_CPU_TX), y)
     ccflags-y += -DCFG_SUPPORT_PER_CPU_TX=1
 else

@@ -980,6 +980,55 @@ static u_int8_t isPendingTxsData(uint8_t ucPID, struct MSDU_INFO *prMsduInfo)
 	return result;
 }
 
+#if CFG_FLUSH_TX_PENDING_PKT
+void nicFreePendingTxMsduSendMsg(struct ADAPTER *prAdapter,
+	uint8_t ucIndex, enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType)
+{
+	struct MSG_FLUSH_TX_PENDING_Q *prFlushTxMsg;
+
+	prFlushTxMsg = (struct MSG_FLUSH_TX_PENDING_Q *)cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct MSG_FLUSH_TX_PENDING_Q));
+	if (!prFlushTxMsg) {
+		DBGLOG(TX, WARN, "cnmMemAlloc Fail\n");
+		return;
+	}
+
+	prFlushTxMsg->rMsgHdr.eMsgId = MID_FLUSH_TX_PENDING_Q;
+	prFlushTxMsg->ucIndex = ucIndex;
+	prFlushTxMsg->ucFreeType = ucFreeType;
+
+	DBGLOG(TX, LOUD,
+		"Handle Msg eMsgId:%u ucIndex:%u ucFreeType:%u\n",
+		prFlushTxMsg->rMsgHdr.eMsgId,
+		prFlushTxMsg->ucIndex,
+		prFlushTxMsg->ucFreeType);
+
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *) prFlushTxMsg, MSG_SEND_METHOD_BUF);
+}
+
+void nicFreePendingTxMsduHandleMsg(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_FLUSH_TX_PENDING_Q *prFlushTxMsg;
+
+	prFlushTxMsg = (struct MSG_FLUSH_TX_PENDING_Q *)prMsgHdr;
+	if (!prFlushTxMsg)
+		return;
+
+	DBGLOG(TX, LOUD,
+		"Handle Msg eMsgId:%u ucIndex:%u ucFreeType:%u\n",
+		prFlushTxMsg->rMsgHdr.eMsgId,
+		prFlushTxMsg->ucIndex,
+		prFlushTxMsg->ucFreeType);
+
+	nicFreePendingTxMsduInfo(prAdapter, prFlushTxMsg->ucIndex,
+				prFlushTxMsg->ucFreeType);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This procedure is used to dequeue from
@@ -1134,16 +1183,40 @@ void nicFreePendingTxMsduInfo(struct ADAPTER *prAdapter,
 		case MSDU_REMOVE_BY_ALL:
 			ucRemoveByIndex = 0xFF;
 			break;
+#if CFG_FLUSH_TX_PENDING_PKT
+		case MSDU_REMOVE_BY_ALL_DATA:
+			if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA &&
+			    prMsduInfo->u4EnqPendingQTime &&
+			    TIME_AFTER(kalGetTimeTick(),
+				prMsduInfo->u4EnqPendingQTime
+					+ NIC_TX_DATA_PENDING_VALID_TIME))
+				ucRemoveByIndex = 0xFE;
+			break;
+#endif
 		default:
 			break;
 		}
 
 		if (ucRemoveByIndex == ucIndex) {
-			DBGLOG(TX, TRACE,
-			       "%s: Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
-			       __func__, prMsduInfo->ucWlanIndex,
-			       prMsduInfo->ucPID,
-			       prMsduInfo->ucTxSeqNum);
+#if CFG_FLUSH_TX_PENDING_PKT
+			/* MSDU_REMOVE_BY_ALL_DATA tigger by stopping Tx,
+			 * it need to print all packet log that avoid to miss
+			 * tx done log information.
+			 */
+			if (ucFreeType == MSDU_REMOVE_BY_ALL_DATA)
+				DBGLOG(TX, INFO,
+					"Get Data packet missed TX done WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
+					__func__, prMsduInfo->ucWlanIndex,
+					prMsduInfo->ucPID,
+					prMsduInfo->ucTxSeqNum);
+
+			else
+#endif
+				DBGLOG(TX, TRACE,
+					"%s: Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
+					__func__, prMsduInfo->ucWlanIndex,
+					prMsduInfo->ucPID,
+					prMsduInfo->ucTxSeqNum);
 
 			if (prMsduInfoListHead == NULL) {
 				prMsduInfoListHead =

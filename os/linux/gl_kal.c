@@ -4136,6 +4136,11 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		       GLUE_GET_REF_CNT(
 			       prGlueInfo->ai4TxPendingFrameNumPerQueue
 			       [ucBssIndex][u2QueueIdx]));
+#if CFG_FLUSH_TX_PENDING_PKT
+		/* Flush the packets that miss Tx done event*/
+		nicFreePendingTxMsduSendMsg(prAdapter, 0xFE,
+			MSDU_REMOVE_BY_ALL_DATA);
+#endif
 	}
 
 	/* Update NetDev statisitcs */
