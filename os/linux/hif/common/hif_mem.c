@@ -402,7 +402,10 @@ int halAllocHifMem(struct platform_device *pdev,
 	struct device_node *node = NULL;
 #endif
 #endif
-	uint8_t fgNeed32BAlign = 0, fgRet = TRUE;
+	uint8_t fgRet = TRUE;
+#if (CFG_SUPPORT_WED_PROXY == 1) && (CFG_SUPPORT_RX_ZERO_COPY == 0)
+	uint8_t fgNeed32BAlign = 0;
+#endif
 
 	prChipInfo = prDriverData->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -531,23 +534,26 @@ int halAllocHifMem(struct platform_device *pdev,
 		} else {
 			if (u4EvtNum == 0)
 				continue;
+#if (CFG_SUPPORT_WED_PROXY == 1) && (CFG_SUPPORT_RX_ZERO_COPY == 0)
 			fgNeed32BAlign = 0;
+#endif
 			u4Size = prBusInfo->rx_evt_ring_size;
 			u4PktSize = RX_BUFFER_AGGRESIZE;
 			u4EvtNum--;
 		}
 		for (u4Cnt = 0; u4Cnt < u4Size; u4Cnt++) {
 			/* allocate based on alignment requirement */
-			if (fgNeed32BAlign) {
+#if (CFG_SUPPORT_WED_PROXY == 1) && (CFG_SUPPORT_RX_ZERO_COPY == 0)
+			if (fgNeed32BAlign)
 				fgRet = halAllocRsvMemAlign(u4PktSize,
 					&grMem.rRxMemBuf[u4Idx][u4Cnt],
 					WFDMA_RXDMAD_SDP_MEMORY_ALIGNMENT,
 					WIFI_RSV_MEM_WFDMA);
-			} else {
+			else
+#endif
 				fgRet = halAllocRsvMem(u4PktSize,
 					&grMem.rRxMemBuf[u4Idx][u4Cnt],
 					WIFI_RSV_MEM_WFDMA);
-			}
 
 			if (!fgRet) {
 				DBGLOG(INIT, ERROR,
