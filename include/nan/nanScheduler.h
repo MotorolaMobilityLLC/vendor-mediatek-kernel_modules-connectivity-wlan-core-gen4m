@@ -1023,8 +1023,6 @@ union _NAN_BAND_CHNL_CTRL
 nanGetActiveChnl(struct ADAPTER *prAdapter,
 		 enum ENUM_NETWORK_TYPE eNetworkType, enum ENUM_BAND eBand);
 
-uint8_t nanGetP2pActiveChannel(struct ADAPTER *prAdapter, enum ENUM_BAND eBand);
-
 uint32_t
 nanSchedDbgDumpTimelineDb(struct ADAPTER *prAdapter, const char *pucFunction,
 			  uint32_t u4Line);

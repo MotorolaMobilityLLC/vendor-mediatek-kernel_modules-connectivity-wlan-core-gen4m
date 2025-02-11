@@ -204,6 +204,10 @@ ReleaseNanSlotsForSchedulePrep(struct ADAPTER *prAdapter,
 	uint32_t u4SlotBitmap = 0;
 	uint8_t ucAisPhyTypeSet;
 	enum ENUM_BAND eAisBand;
+	const size_t sz2gTimeLineIdx = nanGetTimelineMgmtIndexByBand(prAdapter,
+								     BAND_2G4);
+	const size_t sz5gTimeLineIdx = nanGetTimelineMgmtIndexByBand(prAdapter,
+								     BAND_5G);
 	union _NAN_BAND_CHNL_CTRL arDwChnl[BAND_NUM] = {
 		[BAND_NULL] = g_rNullChnl,
 		[BAND_2G4] = g_r2gDwChnl,
@@ -235,11 +239,9 @@ ReleaseNanSlotsForSchedulePrep(struct ADAPTER *prAdapter,
 		}
 	} else if (event == AIS_DISCONNECTED) {
 		nanSchedReleaseReschedCommitSlot(prAdapter,
-			NAN_SLOT_MASK_TYPE_AIS,
-			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4));
+			NAN_SLOT_MASK_TYPE_AIS, sz2gTimeLineIdx);
 		nanSchedReleaseReschedCommitSlot(prAdapter,
-			NAN_SLOT_MASK_TYPE_AIS,
-			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G));
+			NAN_SLOT_MASK_TYPE_AIS, sz5gTimeLineIdx);
 	} else if (event == NEW_NDL) {
 		uint32_t u4ReschedSlot = 0;
 
@@ -252,15 +254,12 @@ ReleaseNanSlotsForSchedulePrep(struct ADAPTER *prAdapter,
 #endif
 
 		nanSchedReleaseReschedCommitSlot(prAdapter,
-			u4ReschedSlot,
-			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G));
+			u4ReschedSlot, sz5gTimeLineIdx);
 	} else if (event == REMOVE_NDL) {
 /* Only need release if REMOVE_NDL condition recover to customer requirement */
 #ifdef NAN_UNUSED
 		nanSchedReleaseReschedCommitSlot(prAdapter,
-			nanGetNdlSlots(prAdapter)),
-			nanGetTimelineMgmtIndexByBand(prAdapter,
-			BAND_5G));
+			nanGetNdlSlots(prAdapter), sz5gTimeLineIdx);
 #else
 		DBGLOG(NAN, WARN, "Not release slot when REMOVE NDL\n");
 		/* Not release committed forcely,
