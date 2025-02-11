@@ -9826,20 +9826,43 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 							 prBssInfo));
 #endif
 
-	if (!fgIsSap || fgIsMloSap)
+	if (!fgIsSap)
 		return;
 
-	prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
-	p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
-	if (prP2PInfo->eChnlSwitchPolicy != CHNL_SWITCH_POLICY_NONE) {
-		if (prP2pChnlReqInfo->fgIsChannelRequested)
-			p2pFuncReleaseCh(prAdapter, ucBssIdx,
-					 prP2pChnlReqInfo);
+	if (fgIsMloSap) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		uint8_t i;
 
-		cnmTimerStopTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+		for (i = 0; i < MAX_BSSID_NUM; ++i) {
+			struct BSS_INFO *bss =
+				GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+			if (bss == prBssInfo ||
+			    !IS_BSS_ALIVE(prAdapter, bss) ||
+			    bss->ucGroupMldId == prBssInfo->ucGroupMldId ||
+			    bss->eHwBandIdx != prBssInfo->eHwBandIdx ||
+			    (bss->eBand == prBssInfo->eBand &&
+			     bss->ucPrimaryChannel ==
+			     prBssInfo->ucPrimaryChannel))
+				continue;
+
+			ccmChannelSwitchProducer(prAdapter, bss, __func__);
+			break;
+		}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+	} else {
+		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
+		p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
+		if (prP2PInfo->eChnlSwitchPolicy != CHNL_SWITCH_POLICY_NONE) {
+			if (prP2pChnlReqInfo->fgIsChannelRequested)
+				p2pFuncReleaseCh(prAdapter, ucBssIdx,
+						 prP2pChnlReqInfo);
+
+			cnmTimerStopTimer(prAdapter,
+				&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+		}
 	}
-#endif
+#endif /* CFG_HOTSPOT_SUPPORT_ADJUST_SCC */
 }
 
 /*---------------------------------------------------------------------------*/
