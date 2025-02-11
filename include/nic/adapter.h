@@ -1454,6 +1454,8 @@ struct WIFI_VAR {
 	uint8_t ucLowLatencyModeReOrder;
 	uint8_t ucLowLatencyModePower;
 	uint8_t ucLowLatencyPacketPriority;
+	uint16_t u2LlmDataRtyCnt;
+	uint8_t ucLlmCriticalData;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	uint8_t ucChannelSwtichColdownTime;

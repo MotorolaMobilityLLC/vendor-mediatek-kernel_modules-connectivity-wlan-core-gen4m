@@ -598,6 +598,13 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		prMsduInfo->ucRetryLimit =
 			nicTxGetTxCountLimitByTc(prMsduInfo->ucTC);
 	}
+
+#if (CFG_SUPPORT_LOWLATENCY_MODE == 1)
+	if (prAdapter->rWifiVar.u2LlmDataRtyCnt != 0 &&
+	    nicTxIsLowLatencyCriticalData(prAdapter, prMsduInfo))
+		prMsduInfo->ucRetryLimit = prAdapter->rWifiVar.u2LlmDataRtyCnt;
+#endif
+
 	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_TX_COUNT(
 		prTxDesc, prMsduInfo->ucRetryLimit);
 

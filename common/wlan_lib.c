@@ -8819,6 +8819,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"LowLatencyModePower", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucLowLatencyPacketPriority,
 		"LowLatencyPacketPriority", BITS(0, 1), FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u2LlmDataRtyCnt, "LlmDataRtyCnt",
+		  NIC_TX_DATA_DEFAULT_RETRY_COUNT_LIMIT,
+		  FEATURE_TO_CUSTOMER);
+	/* LlmCriticalData : Low latency mode critical tid priority bitmap
+	 * Bit(0) = WMM_AC_BE_INDEX, Bit(1) = WMM_AC_BK_INDEX
+	 * Bit(2) = WMM_AC_VI_INDEX, Bit(3) = WMM_AC_VO_INDEX
+	 */
+	INIT_UINT(prWifiVar->ucLlmCriticalData, "LlmCriticalData",
+		  BIT(WMM_AC_VI_INDEX) | BIT(WMM_AC_VO_INDEX),
+		  FEATURE_TO_CUSTOMER);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	INIT_UINT(prWifiVar->u4MTU, "MTU", 0, FEATURE_DEBUG_ONLY);

@@ -1907,6 +1907,23 @@ u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
 	return FALSE;
 }
 
+#if (CFG_SUPPORT_LOWLATENCY_MODE == 1)
+u_int8_t nicTxIsLowLatencyCriticalData(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prAdapter->fgEnLowLatencyMode)
+		return FALSE;
+
+	if (prWifiVar->ucLlmCriticalData &
+		BIT(aucTid2ACI[prMsduInfo->ucUserPriority]))
+		return TRUE;
+
+	return FALSE;
+}
+#endif
+
 #if !CFG_DEDICATED_TXD
 static bool nicIsNeedTXDAppend(struct MSDU_INFO *prMsduInfo)
 {

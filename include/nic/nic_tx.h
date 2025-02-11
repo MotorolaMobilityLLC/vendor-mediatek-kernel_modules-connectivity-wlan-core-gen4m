@@ -2147,6 +2147,11 @@ void nicHifTxMsduDoneCb(struct ADAPTER *prAdapter,
 u_int8_t nicTxIsPrioPackets(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo);
 
+#if (CFG_SUPPORT_LOWLATENCY_MODE == 1)
+u_int8_t nicTxIsLowLatencyCriticalData(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+#endif
+
 #if CFG_TX_CUSTOMIZE_LTO
 u_int8_t nicTxEnableLTO(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, struct BSS_INFO *prBssInfo);
