@@ -837,8 +837,18 @@ u_int8_t nanOverConcurrentChannelLimit(struct ADAPTER *prAdapter,
 		}
 
 	}
-	DBGLOG(NAN, INFO, "ucChannelNum=%u, ucMaxConcurrentLimit=%u",
-	       ucChannelNum, ucMaxConcurrentLimit);
+	if (ucChannelNum > ucMaxConcurrentLimit)
+		DBGLOG(NAN, DEBUG,
+		       "Check OC=%u, ch=%u, ucChannelNum=%u, Limit=%u",
+		       rNanChnlInfo.u4OperatingClass,
+		       rNanChnlInfo.u4PrimaryChnl,
+		       ucChannelNum, ucMaxConcurrentLimit);
+	else
+		DBGLOG(NAN, LOUD,
+		       "Check OC=%u, ch=%u, ucChannelNum=%u, Limit=%u",
+		       rNanChnlInfo.u4OperatingClass,
+		       rNanChnlInfo.u4PrimaryChnl,
+		       ucChannelNum, ucMaxConcurrentLimit);
 
 	return ucChannelNum > ucMaxConcurrentLimit;
 }
@@ -17560,6 +17570,29 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					    "Tidx(%u) NDL slot(%zu): Peer ch=%u not allowed, counter with %u!\n",
 					    szTimeLineIdx, szSlotIdx,
 					    u4RmtPrimaryChnl,
+					    g_r5gDwChnl.u4PrimaryChnl);
+				prCurrNegoTrans->fgCounterCountry = TRUE;
+				return rSelChnlInfo;
+			} else if (NAN_IS_CHANNEL_6G(rRmtChnlInfo) &&
+				   eHighestCommonBand == ENUM_SUPPORTED_BN_6G) {
+				/* 6G hit max channel limit, fallback to 5G */
+				struct mt66xx_chip_info *prChipInfo;
+
+				prChipInfo = prAdapter->chip_info;
+				prCurrNegoTrans =
+					&prNegoCtrl->rNegoTrans[u4NegoTransIdx];
+
+				rSelChnlInfo = g_r5gDwChnl;
+				nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, szSlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
+					    "Tidx(%u) NDL slot(%zu): Peer 6G ch=%u not allowed (hit limit %u?), counter with %u!\n",
+					    szTimeLineIdx, szSlotIdx,
+					    u4RmtPrimaryChnl,
+					    prChipInfo == NULL ? 0 :
+					    prChipInfo->ucMaxConcurrentLimit,
 					    g_r5gDwChnl.u4PrimaryChnl);
 				prCurrNegoTrans->fgCounterCountry = TRUE;
 				return rSelChnlInfo;
