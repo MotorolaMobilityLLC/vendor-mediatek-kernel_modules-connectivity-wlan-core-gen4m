@@ -12600,13 +12600,16 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	struct net_device *prDevHandler = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo = NULL;
 	uint32_t u4BoostCpuTh = prAdapter->rWifiVar.u4BoostCpuTh;
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t u4CoalescingIntTh;
 #endif
 	bool fgIsStopPerfMon = FALSE;
 	u_int8_t *prWlanPerfEnable = NULL;
-
+#if (CFG_TC10_FEATURE == 1)
+	u_int8_t fgIsAIS = TRUE;
+#endif
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
 
@@ -12615,8 +12618,6 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	DBGLOG(SW4, TRACE, "enter kalPerMonHandler\n");
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		struct BSS_INFO *prBssInfo;
-
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 		prDevHandler = wlanGetNetInterfaceByBssIdx(prGlueInfo, i);
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) && prDevHandler) {
@@ -12654,6 +12655,21 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+
+#if (CFG_TC10_FEATURE == 1)
+	/* Check that only one STA is active */
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (prBssInfo &&
+		    prBssInfo->eNetworkType != NETWORK_TYPE_AIS &&
+		    prBssInfo->fgIsInUse) {
+			fgIsAIS = FALSE;
+			DBGLOG(SW4, INFO, "BSS:%u, Network:%u\n",
+				i, prBssInfo->eNetworkType);
+			break;
+		}
+	}
+#endif
 
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgBoostCpuByPPSEn)) {
@@ -12744,6 +12760,12 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			u4SetTarPerfLevel = u4CurrTputLv;
 			u4SetBoostCpuTh = u4BoostCpuTh;
 
+#if (CFG_TC10_FEATURE == 1)
+			if (fgIsAIS) {
+				u4SetBoostCpuTh = PERF_MON_STA_ONLY_THRESHOLD;
+				DBGLOG(SW4, INFO, "Is STA only\n");
+			}
+#endif
 #if (CFG_SUPPORT_NAN == 1)
 			if (prAdapter->rPerMonitor.u4NanBoostCpu) {
 				u4SetTarPerfLevel = u4SetBoostCpuTh =
