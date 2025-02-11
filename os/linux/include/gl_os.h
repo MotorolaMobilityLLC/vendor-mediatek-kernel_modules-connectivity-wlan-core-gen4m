@@ -1263,6 +1263,7 @@ struct GLUE_INFO {
 	uint8_t aucFbName[WORKER_NAME_STR_MAX];
 	struct notifier_block wlan_fb_notifier;
 	struct notifier_block wlan_netdev_notifier;
+	struct notifier_block wlan_netevent_notifier;
 	struct notifier_block inetaddr_notifier;
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	struct notifier_block wf_pdwnc_notifier;
@@ -2023,6 +2024,8 @@ void wlanRegisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo);
 void wlanUnregisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo);
 void wlanRegisterNetdevNotifier(void);
 void wlanUnregisterNetdevNotifier(void);
+void wlanRegisterNeteventNotifier(struct GLUE_INFO *prGlueInfo);
+void wlanUnregisterNeteventNotifier(struct GLUE_INFO *prGlueInfo);
 #if CFG_POWER_OFF_CTRL_SUPPORT
 extern void wlanRegisterRebootNotifier(struct GLUE_INFO *prGlueInfo);
 extern void wlanUnregisterRebootNotifier(struct GLUE_INFO *prGlueInfo);

@@ -9581,6 +9581,8 @@ static int initWlan(void)
 		glP2pCreateWirelessDevice(prGlueInfo);
 #endif
 
+	wlanRegisterNeteventNotifier(prGlueInfo);
+
 #if CFG_DC_USB_WOW_CALLBACK
 	/* register system DC wow enable/disable callback function */
 	do {
@@ -9861,6 +9863,7 @@ static void exitWlan(void)
 #endif
 
 	wlanUnregisterNetdevNotifier();
+	wlanUnregisterNeteventNotifier(prGlueInfo);
 
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
@@ -9926,6 +9929,7 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
 
 		wlanUnregisterNetdevNotifier();
+		wlanUnregisterNeteventNotifier(prGlueInfo);
 		kalFbNotifierUnReg(prGlueInfo);
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
