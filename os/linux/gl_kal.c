@@ -235,6 +235,7 @@ static void kalRxGroTcCheck(struct GLUE_INFO *glue);
 #endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
 
 #if CFG_SUPPORT_RX_NAPI
+static void kalNapiScheduleCheck(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_RX_WORK
 static void kalNapiWakeup(void);
 #endif /* CFG_SUPPORT_RX_WORK */
@@ -11868,6 +11869,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	if (ret != WLAN_STATUS_SUCCESS)
 		goto done;
 
+#if (CFG_SUPPORT_RX_NAPI == 1)
+	kalNapiScheduleCheck(glue);
+#endif
+
 #if CFG_NAPI_DELAY
 	kalNapiDelayCheck(glue);
 #endif /* CFG_NAPI_DELAY */
@@ -16171,6 +16176,43 @@ static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
 #else /* CFG_SUPPORT_RX_NAPI_WORK */
 	__kalNapiSchedule(prAdapter);
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
+}
+
+static void kalNapiScheduleCheck(struct GLUE_INFO *prGlueInfo)
+{
+	static OS_SYSTIME now, last;
+	uint32_t u4ScheduleTimeout;
+	uint32_t u4ScheduleCnt, u4NapiPollCnt;
+
+	GET_BOOT_SYSTIME(&now);
+
+	u4ScheduleCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_SCHEDULE_COUNT);
+	u4NapiPollCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_POLL_COUNT);
+
+	if (!prGlueInfo->fgNapiScheduled) {
+		prGlueInfo->u4LastScheduleCnt = u4ScheduleCnt;
+		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
+		last = now;
+		return;
+	}
+
+	if (prGlueInfo->u4LastNapiPollCnt != 0 &&
+	    u4ScheduleCnt > prGlueInfo->u4LastScheduleCnt &&
+	    u4NapiPollCnt == prGlueInfo->u4LastNapiPollCnt) {
+		u4ScheduleTimeout =
+			prGlueInfo->prAdapter->rWifiVar.u4NapiScheduleTimeout
+				* MSEC_PER_SEC;
+		if (CHECK_FOR_TIMEOUT(now, last,
+			MSEC_TO_SYSTIME(u4ScheduleTimeout)))
+			kalSendAeeWarning("Napi Schedule Timeout",
+				"Napi Schedule Timeout\n");
+	} else {
+		prGlueInfo->u4LastScheduleCnt = u4ScheduleCnt;
+		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
+		last = now;
+	}
 }
 
 #if CFG_NAPI_DELAY

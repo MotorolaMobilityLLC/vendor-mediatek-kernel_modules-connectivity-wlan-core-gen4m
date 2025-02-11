@@ -1376,6 +1376,9 @@ struct WIFI_VAR {
 	uint32_t u4HifDumpStatsPeriod;
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+#if CFG_SUPPORT_RX_NAPI
+	uint32_t u4NapiScheduleTimeout;
+#endif
 #if CFG_NAPI_DELAY
 	uint32_t u4NapiDelayTputTh;
 	uint32_t u4NapiDelayCntTh;

@@ -8452,6 +8452,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[11], "PerfMonLv12", 5000,
 		  FEATURE_TO_CUSTOMER);
 
+#if CFG_SUPPORT_RX_NAPI
+	/* unit: s */
+	INIT_UINT(prWifiVar->u4NapiScheduleTimeout, "NapiScheduleTimeout", 60,
+		  FEATURE_TO_CUSTOMER);
+#endif
+
 #if CFG_NAPI_DELAY
 	/* unit: Mbps */
 	INIT_UINT(prWifiVar->u4NapiDelayTputTh, "NapiDelayTputTh", 200,
