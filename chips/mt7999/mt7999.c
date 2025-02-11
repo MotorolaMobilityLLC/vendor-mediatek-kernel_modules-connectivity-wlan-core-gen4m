@@ -1173,9 +1173,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7999 = {
 	.isWfdmaRxReady = mt7999IsWfdmaRxReady,
 #endif /* _HIF_PCIE */
 #endif
-#if CFG_SUPPORT_WFDMA_RX_DELAY_INT
-	.updatePrdcInt = mt7999UpdateWfdmaPrdcInt,
-#endif /* CFG_SUPPORT_WFDMA_RX_DELAY_INT */
 	.txd_append_size = MT7999_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT7999_HIF_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT7999_RX_DESC_LENGTH,
@@ -2191,6 +2188,7 @@ static void mt7999WfdmaConfigWriteBack(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_CTRL_AP_ADDR;
 	u4WrVal = 100 <<
 		WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_CTRL_AP_PER_TIME_SHFT;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
 #if (CFG_SUPPORT_DISABLE_TX_DDONE_INTR == 1)
 	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_ADDR;
@@ -2608,35 +2606,6 @@ static void mt7999ConfigWfdmaRxRingThreshold(
 	}
 }
 
-static void mt7999UpdateWfdmaPrdcInt(
-	struct GLUE_INFO *prGlueInfo, u_int8_t fgForceEn)
-{
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4Addr, u4Val, u4Time;
-
-	u4Time = prGlueInfo->fgIsInSuspendMode ?
-		prWifiVar->u4SuspendPrdcIntTime : prWifiVar->u4PrdcIntTime;
-
-	if (!fgForceEn && u4Time == prAdapter->u4CurPrdcIntTime)
-		return;
-
-	prAdapter->u4CurPrdcIntTime = u4Time;
-
-	/* clear before set */
-	u4Addr = WF_P0_WFDMA_HOST_PER_DLY_INT_CFG_ADDR;
-	HAL_MCR_WR(prAdapter, u4Addr, 0);
-
-	/* Enable RX periodic delayed interrupt (unit: 20us) */
-	u4Val = 0x1F00000 | u4Time;
-#if CFG_MTK_MDDP_SUPPORT
-	u4Val |= 0x3E000000;
-#endif
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-
-	DBGLOG(HAL, DEBUG, "prdc int: %uus", u4Time * 20);
-}
-
 static void mt7999WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_SUPPORT_WFDMA_RX_DELAY_INT
@@ -2715,8 +2684,6 @@ static void mt7999WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	       prWifiVar->u4DlyIntTime * 20,
 	       prWifiVar->u4DlyIntCnt);
 #endif /* CFG_SUPPORT_WFDMA_RX_DELAY_INT */
-
-	mt7999UpdateWfdmaPrdcInt(prGlueInfo, TRUE);
 }
 
 static void mt7999WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)

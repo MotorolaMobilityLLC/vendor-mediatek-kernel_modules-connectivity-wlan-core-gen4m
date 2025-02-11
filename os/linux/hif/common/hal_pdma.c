@@ -3830,10 +3830,10 @@ void halWpdmaInitRxRing(struct GLUE_INFO *prGlueInfo)
 			DMA_LOWER_32BITS_MASK);
 		prRxRing->RxCpuIdx = prRxRing->u4RingSize - 1;
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_desc_base, phy_addr);
-		kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr,
-			prRxRing->RxCpuIdx);
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr,
 			prRxRing->u4RingSize & prRxRing->hw_cnt_mask);
+		kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr,
+			prRxRing->RxCpuIdx);
 		/* Reset DMADONE bit */
 		for (j = 0; j < prRxRing->u4RingSize; j++) {
 			pRxD = (struct RXD_STRUCT *) prRxRing->Cell[j].AllocVa;
