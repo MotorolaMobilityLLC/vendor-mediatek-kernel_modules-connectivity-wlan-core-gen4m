@@ -382,6 +382,12 @@ const struct nla_policy nla_connect_ext_policy[
 	    .type = NLA_BINARY, .len = (NUM_QCA_CONNECT_EXT_FEATURES + 7) / 8 },
 };
 
+const struct nla_policy nla_parse_wifi_mlo_mode_policy[
+		MTK_MLO_MODE_ATTRIBUTE_MAX + 1] = {
+	[MTK_MLO_MODE_ATTRIBUTE_INVALID] = {.type = NLA_U32},
+	[MTK_MLO_MODE_ATTRIBUTE_MLO_MODE] = {.type = NLA_U32},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -3868,6 +3874,102 @@ errHandleLabel:
 	return -EOPNOTSUPP;
 }
 
+int mtk_cfg80211_vendor_set_mlo_mode(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+#if CFG_SUPPORT_MLC
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct nlattr *attr;
+	struct sk_buff *skb;
+	uint32_t u4Mode;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SetInfoLen = 0;
+	uint8_t ucBssIdx = 0;
+	union PARAM_MLC rMlcParam = {0};
+
+	if (!wiphy || !wdev || !data || !data_len)
+		return -EINVAL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return -EFAULT;
+
+	if (prAdapter->rWifiVar.ucDisableFwkMlc)
+		return -EOPNOTSUPP;
+
+	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	if (!IS_BSS_INDEX_VALID(ucBssIdx))
+		return -EINVAL;
+
+	attr = (struct nlattr *)data;
+	if (attr->nla_type == MTK_MLO_MODE_ATTRIBUTE_MLO_MODE)
+		u4Mode = nla_get_u32(attr);
+	else {
+		DBGLOG(REQ, ERROR, "Unknown nla type: %u\n", attr->nla_type);
+		return -EINVAL;
+	}
+
+	if (u4Mode < PARAM_MLO_MODE_MAX) {
+		switch (u4Mode) {
+		case PARAM_MLO_MODE_DEFAULT:
+			rMlcParam.rReq.eMlcMode = MLC_MODE_DEFAULT;
+			break;
+		case PARAM_MLO_MODE_LOW_LATENCY:
+			rMlcParam.rReq.eMlcMode = MLC_MODE_LOW_LATENCY;
+			break;
+		case PARAM_MLO_MODE_HIGH_THROUGHPUT:
+			rMlcParam.rReq.eMlcMode = MLC_MODE_HIGH_TPUT;
+			break;
+		case PARAM_MLO_MODE_LOW_POWER:
+			rMlcParam.rReq.eMlcMode = MLC_MODE_LOW_POWER;
+			break;
+		default:
+			return -EINVAL;
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "invalid mlo mode: %u\n", u4Mode);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, DEBUG, "mlcReq=%d, data1=0x%x data2=0x%x\n",
+		rMlcParam.rReq.eMlcMode, rMlcParam.rReq.u4Data1,
+		rMlcParam.rReq.u4Data2);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetMlcMode,
+		 (void *)&rMlcParam, sizeof(struct PARAM_MLC_REQ),
+		 &u4SetInfoLen, ucBssIdx);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(
+	    nla_put_nohdr(skb, sizeof(rStatus), &rStatus) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto errHandleLabel;
+	}
+
+	DBGLOG(REQ, DEBUG, "rStatus=0x%x\n", rStatus);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+errHandleLabel:
+	kfree_skb(skb);
+#endif /* CFG_SUPPORT_MLC */
+	return -EOPNOTSUPP;
+}
+
+
 int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
@@ -4430,11 +4532,19 @@ nla_put_failure:
 int mtk_cfg80211_vendor_get_chip_capabilities(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct sk_buff *reply_skb;
 	int32_t chip_capabilities[NUM_CHIP_CAPABILITIES] = {0};
 
 	if (!wiphy || !wdev)
 		return -EINVAL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
+		return -EINVAL;
+	}
 
 	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 				sizeof(chip_capabilities) + NLMSG_HDRLEN);
@@ -4445,7 +4555,8 @@ int mtk_cfg80211_vendor_get_chip_capabilities(struct wiphy *wiphy,
 	/* return -1 if driver doesn't support the capabilities */
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	chip_capabilities[MAX_MLO_ASSOCIATION_LINK_COUNT] = MLD_LINK_MAX;
-	chip_capabilities[MAX_MLO_STR_LINK_COUNT] = MLD_LINK_MAX;
+	chip_capabilities[MAX_MLO_STR_LINK_COUNT] =
+		prGlueInfo->prAdapter->rWifiVar.ucMaxSimuLinksCap + 1;
 #else
 	chip_capabilities[MAX_MLO_ASSOCIATION_LINK_COUNT] = -1;
 	chip_capabilities[MAX_MLO_STR_LINK_COUNT] = -1;

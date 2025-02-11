@@ -6349,7 +6349,7 @@ int testmode_get_ml_link_state(struct wiphy *wiphy,
 	}
 
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-		wlanoidGetMlcMode,
+		wlanoidQueryMlcLinkState,
 		&rMlcParam,
 		sizeof(union PARAM_MLC),
 		&u4BufLen,
@@ -6363,10 +6363,11 @@ int testmode_get_ml_link_state(struct wiphy *wiphy,
 	i4BytesWritten = 0;
 	i4BytesWritten += snprintf(buf + i4BytesWritten,
 		512 - i4BytesWritten, "%d\n%d\n",
-		rMlcParam.rQuery.ucLinkNum, rMlcParam.rQuery.eMlcMode);
-	for (i = 0; i < rMlcParam.rQuery.ucLinkNum; i++) {
+		rMlcParam.rQueryLinkState.ucLinkNum,
+		rMlcParam.rQueryLinkState.eMlcMode);
+	for (i = 0; i < rMlcParam.rQueryLinkState.ucLinkNum; i++) {
 		struct PARAM_MLC_LINK_INFO *prLinkInfo =
-			 &rMlcParam.rQuery.arLinkInfo[i];
+			 &rMlcParam.rQueryLinkState.arLinkInfo[i];
 
 		i4BytesWritten += snprintf(buf + i4BytesWritten,
 			512 - i4BytesWritten, "%d %d %d\n",
@@ -6376,7 +6377,8 @@ int testmode_get_ml_link_state(struct wiphy *wiphy,
 	}
 
 	DBGLOG(REQ, DEBUG, "Get Mlc mode [Num=%d][Mode=%d]\n",
-	       rMlcParam.rQuery.ucLinkNum, rMlcParam.rQuery.eMlcMode);
+	       rMlcParam.rQueryLinkState.ucLinkNum,
+	       rMlcParam.rQueryLinkState.eMlcMode);
 
 	return mtk_cfg80211_process_str_cmd_reply(wiphy,
 		buf, i4BytesWritten + 1);

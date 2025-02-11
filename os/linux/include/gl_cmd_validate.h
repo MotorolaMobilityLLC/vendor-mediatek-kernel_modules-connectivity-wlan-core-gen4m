@@ -332,6 +332,7 @@
 #define CMD_DBG_SHOW_MLD_BSS		"show-mld-bss"
 #define CMD_DBG_SHOW_MLD_STA		"show-mld-sta"
 #define CMD_DBG_SHOW_EML		"show-eml"
+#define CMD_DBG_SHOW_MLC		"show-mlc"
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #if CFG_WMT_RESET_API_SUPPORT
 #define CMD_SET_WHOLE_CHIP_RESET	"SET_WHOLE_CHIP_RESET"

@@ -3920,15 +3920,22 @@ struct PARAM_MLC_LINK_INFO {
 	uint32_t u4FreqInMHz;
 };
 
-struct PARAM_MLC_QUERY {
+struct PARAM_MLC_QUERY_LINK_STATE {
 	enum ENUM_MLC_MODE eMlcMode;
 	uint8_t ucLinkNum;
 	struct PARAM_MLC_LINK_INFO arLinkInfo[MLD_LINK_MAX];
 };
 
+struct PARAM_MLC_QUERY_INFO {
+	uint32_t u4AvailablePlanBmap;
+	uint8_t ucCurrentPlan;
+	uint8_t ucCurrentUser;
+};
+
 union PARAM_MLC {
 	struct PARAM_MLC_REQ rReq;
-	struct PARAM_MLC_QUERY rQuery;
+	struct PARAM_MLC_QUERY_LINK_STATE rQueryLinkState;
+	struct PARAM_MLC_QUERY_INFO rQueryInfo;
 };
 
 #endif /* CFG_SUPPORT_MLC */
@@ -5779,7 +5786,11 @@ wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+wlanoidQueryMlcLinkState(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidQueryMlcInfo(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
 #endif /* CFG_SUPPORT_MLC */
 #endif /* CFG_SUPPORT_802_11BE_MLO */

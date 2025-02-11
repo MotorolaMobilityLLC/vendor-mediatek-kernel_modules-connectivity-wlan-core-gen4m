@@ -373,6 +373,12 @@ enum wifi_radio_combinations_matrix_attributes {
 	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MAX
 };
 
+enum WIFI_MLO_MODE_ATTRIBUTE {
+	MTK_MLO_MODE_ATTRIBUTE_INVALID,
+	MTK_MLO_MODE_ATTRIBUTE_MLO_MODE,
+	MTK_MLO_MODE_ATTRIBUTE_MAX
+};
+
 #define MAX_FW_ROAMING_BLOCKLIST_SIZE	16
 #define MAX_FW_ROAMING_ALLOWLIST_SIZE	8
 
@@ -984,6 +990,13 @@ struct ANDROID_T_COMB_MATRIX {
 	struct ANDROID_T_COMB_UNIT comb_mtx[COMB_MATRIX_LEN];
 };
 
+enum PARAM_MLO_MODE {
+	PARAM_MLO_MODE_DEFAULT = 0,
+	PARAM_MLO_MODE_LOW_LATENCY,
+	PARAM_MLO_MODE_HIGH_THROUGHPUT,
+	PARAM_MLO_MODE_LOW_POWER,
+	PARAM_MLO_MODE_MAX,
+};
 
 /*******************************************************************************
  *                                 M A C R O S

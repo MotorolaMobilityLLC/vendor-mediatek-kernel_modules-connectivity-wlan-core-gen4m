@@ -2256,6 +2256,23 @@ static const struct wiphy_vendor_command
 		.maxattr = QCA_WLAN_VENDOR_ATTR_CONNECT_EXT_MAX
 #endif
 	},
+#if CFG_SUPPORT_MLC
+	/* MLO set different modes */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = MTK_SUBCMD_SET_MLO_MODE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_mlo_mode
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = nla_parse_wifi_mlo_mode_policy,
+		.maxattr = MTK_MLO_MODE_ATTRIBUTE_MAX
+#endif
+	},
+#endif /* CFG_SUPPORT_MLC */
 };
 
 static const struct nl80211_vendor_cmd_info

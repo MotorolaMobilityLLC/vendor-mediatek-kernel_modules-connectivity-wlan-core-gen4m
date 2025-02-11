@@ -7016,15 +7016,15 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 	return status;
 }
 
-uint32_t nicUniCmdSendMlcQuery(struct ADAPTER *prAdapter,
+uint32_t nicUniCmdSendMlcQueryLinkState(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	void *pvQueryBuffer, uint32_t u4QueryBufferLen)
 {
 	struct UNI_CMD_MLC *uni_cmd;
-	struct UNI_CMD_MLC_QUERY *tag;
+	struct UNI_CMD_MLC_QUERY_LINK_STATE *tag;
 	uint32_t status;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLC) +
-			       sizeof(struct UNI_CMD_MLC_QUERY);
+			       sizeof(struct UNI_CMD_MLC_QUERY_LINK_STATE);
 
 	if (!prMldBssInfo)
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -7039,8 +7039,8 @@ uint32_t nicUniCmdSendMlcQuery(struct ADAPTER *prAdapter,
 
 	uni_cmd->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 	uni_cmd->ucTokenID = ++prMldBssInfo->ucMlcToken;
-	tag = (struct UNI_CMD_MLC_QUERY *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_MLC_TAG_QUERY;
+	tag = (struct UNI_CMD_MLC_QUERY_LINK_STATE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MLC_TAG_QUERY_LINK_STATE;
 	tag->u2Length = sizeof(*tag);
 
 	status = wlanSendSetQueryUniCmd(prAdapter,
@@ -7048,7 +7048,49 @@ uint32_t nicUniCmdSendMlcQuery(struct ADAPTER *prAdapter,
 			     FALSE,
 			     FALSE,
 			     TRUE,
-			     nicUniEventMlcQueryDone,
+			     nicUniEventMlcQueryLinkStateDone,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, pvQueryBuffer, u4QueryBufferLen);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	return status;
+}
+
+uint32_t nicUniCmdSendMlcQueryInfo(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	void *pvQueryBuffer, uint32_t u4QueryBufferLen)
+{
+	struct UNI_CMD_MLC *uni_cmd;
+	struct UNI_CMD_MLC_QUERY_INFO *tag;
+	uint32_t status;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLC) +
+			       sizeof(struct UNI_CMD_MLC_QUERY_INFO);
+
+	if (!prMldBssInfo)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	uni_cmd = (struct UNI_CMD_MLC *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(ML, ERROR,
+		       "Allocate UNI_CMD_MLC ==> FAILED.\n");
+		return 0;
+	}
+
+	uni_cmd->ucGroupMldId = prMldBssInfo->ucGroupMldId;
+	uni_cmd->ucTokenID = ++prMldBssInfo->ucMlcToken;
+	tag = (struct UNI_CMD_MLC_QUERY_INFO *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MLC_TAG_QUERY_INFO;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_MLC,
+			     FALSE,
+			     FALSE,
+			     TRUE,
+			     nicUniEventMlcQueryInfoDone,
 			     nicUniCmdTimeoutCommon,
 			     max_cmd_len,
 			     (void *)uni_cmd, pvQueryBuffer, u4QueryBufferLen);
@@ -11422,17 +11464,17 @@ done:
 			tag->u4Status : u4Status);
 }
 
-void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
+void nicUniEventMlcQueryLinkStateDone(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
 	struct UNI_EVENT_MLC *evt =
 		(struct UNI_EVENT_MLC *)uni_evt->aucBuffer;
-	struct UNI_EVENT_MLC_QUERY *tag =
-		(struct UNI_EVENT_MLC_QUERY *) evt->aucTlvBuffer;
+	struct UNI_EVENT_MLC_QUERY_LINK_STATE *tag =
+		(struct UNI_EVENT_MLC_QUERY_LINK_STATE *) evt->aucTlvBuffer;
 	struct UNI_CMD_MLC_LINK_INFO *link;
 	struct MLD_BSS_INFO *mld_bssinfo;
-	struct PARAM_MLC_QUERY *prQueryBuffer;
+	struct PARAM_MLC_QUERY_LINK_STATE *prQueryBuffer;
 	uint32_t u4QueryInfoLen = 0, u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t i;
 
@@ -11464,7 +11506,7 @@ void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
 		goto done;
 	}
 
-	prQueryBuffer = (struct PARAM_MLC_QUERY *)
+	prQueryBuffer = (struct PARAM_MLC_QUERY_LINK_STATE *)
 			prCmdInfo->pvInformationBuffer;
 	prQueryBuffer->eMlcMode = tag->ucMlcMode;
 	prQueryBuffer->ucLinkNum = tag->ucLinkNum;
@@ -11493,7 +11535,63 @@ void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
 			prInfo->u4FreqInMHz);
 	}
 
-	u4QueryInfoLen = sizeof(struct PARAM_MLC_QUERY);
+	u4QueryInfoLen = sizeof(struct PARAM_MLC_QUERY_LINK_STATE);
+
+done:
+	if (prCmdInfo->fgIsOid)
+		/* Update Query Information Length */
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, u4Status);
+}
+
+void nicUniEventMlcQueryInfoDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_MLC *evt =
+		(struct UNI_EVENT_MLC *)uni_evt->aucBuffer;
+	struct UNI_EVENT_MLC_QUERY_INFO *tag =
+		(struct UNI_EVENT_MLC_QUERY_INFO *) evt->aucTlvBuffer;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct PARAM_MLC_QUERY_INFO *prQueryBuffer;
+	uint32_t u4QueryInfoLen = 0, u4Status = WLAN_STATUS_SUCCESS;
+
+	if (uni_evt->ucEID != UNI_EVENT_ID_MLC ||
+	    tag->u2Tag != UNI_EVENT_MLC_TAG_QUERY) {
+		DBGLOG(ML, WARN,
+			"Ignore Event[%d] CID[0x%x] OID[%d] TagId[%d]\n",
+			uni_evt->ucEID, prCmdInfo->ucCID,
+			prCmdInfo->fgIsOid, tag->u2Tag);
+		u4Status = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+
+	DBGLOG(ML, INFO,
+		"GrpMldId=%d TokenId=%d AvailablePlanBmap=0x%0x CurPlan=%d CurUser=%d\n",
+		evt->ucGroupMldId, evt->ucTokenID,
+		tag->u4AvailablePlanBmap, tag->ucCurrentPlan,
+		tag->ucCurrentUser);
+
+	mld_bssinfo = mldBssGetByIdx(prAdapter, evt->ucGroupMldId);
+	if (!mld_bssinfo) {
+		DBGLOG(ML, WARN, "mld bssinfo %d not exist\n",
+			evt->ucGroupMldId);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto done;
+	}
+	if (mld_bssinfo->ucMlcToken != evt->ucTokenID) {
+		DBGLOG(ML, WARN, "Token %d doesn't match expected %d\n",
+			evt->ucTokenID, mld_bssinfo->ucMlcToken);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto done;
+	}
+
+	prQueryBuffer = (struct PARAM_MLC_QUERY_INFO *)
+			prCmdInfo->pvInformationBuffer;
+
+	prQueryBuffer->u4AvailablePlanBmap = tag->u4AvailablePlanBmap;
+	prQueryBuffer->ucCurrentPlan = tag->ucCurrentPlan;
+	prQueryBuffer->ucCurrentUser = tag->ucCurrentUser;
 
 done:
 	if (prCmdInfo->fgIsOid)

@@ -5554,7 +5554,52 @@ int priv_driver_dump_eml(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
-#endif
+#if (CFG_SUPPORT_MLC == 1)
+int priv_driver_dump_mlc(struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus;
+	struct PARAM_MLC_QUERY_INFO rQueryMlcInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo->u4ReadyFlag)
+		return i4BytesWritten;
+
+	kalMemZero(&rQueryMlcInfo, sizeof(rQueryMlcInfo));
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMlcInfo,
+		&rQueryMlcInfo, sizeof(struct PARAM_MLC_QUERY_INFO),
+		&u4BufLen);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s",
+					     "\n\nMLC Info:\n");
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"Available Plan Bmap	= 0x%x\n",
+			rQueryMlcInfo.u4AvailablePlanBmap);
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"Current Plan		= %d\n",
+			rQueryMlcInfo.ucCurrentPlan);
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"Current User		= 0x%x\n",
+			rQueryMlcInfo.ucCurrentUser);
+	} else
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s",
+					     "\n\nNo MLC Info:\n");
+	return i4BytesWritten;
+}
+#endif /* CFG_SUPPORT_MLC */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 int priv_driver_get_bainfo(struct net_device *prNetDev,
 	char *pcCommand,
@@ -17731,10 +17776,27 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten,
-			"[MLD Group %d][MLO LinkIdx %d]",
-		prBssInfo->ucGroupMldId, prCnmInfo->ucBssLinkIdx[ucBssIdx]);
+		if (eNetworkType == ENUM_CNM_NETWORK_TYPE_AIS &&
+			prBssInfo->prStaRecOfAP) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"[MLD Group %d][#%d MLO LinkId %d][LINK_STATE %s]",
+				prBssInfo->ucGroupMldId,
+				prCnmInfo->ucBssLinkIdx[ucBssIdx],
+				prBssInfo->ucLinkId,
+				cnmStaRecIsActive(prGlueInfo->prAdapter,
+				prBssInfo->prStaRecOfAP) ?
+				"ACTIVE" : "INACTIVE");
+		} else {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"[MLD Group %d][#%d MLO LinkId %d][LINK_STATE ACTIVE]",
+				prBssInfo->ucGroupMldId,
+				prCnmInfo->ucBssLinkIdx[ucBssIdx],
+				prBssInfo->ucLinkId);
+		}
 #endif
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,

@@ -1948,7 +1948,17 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
-#endif
+#if (CFG_SUPPORT_MLC == 1)
+	{
+		.pcCmdStr  = CMD_DBG_SHOW_MLC,
+		.pfHandler = priv_driver_dump_mlc,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+#endif /* CFG_SUPPORT_MLC */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 	{
 		.pcCmdStr  = CMD_GET_BAINFO,
 		.pfHandler = priv_driver_get_bainfo,

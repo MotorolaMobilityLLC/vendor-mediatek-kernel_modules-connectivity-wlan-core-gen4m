@@ -217,6 +217,7 @@ enum MTK_WIFI_VENDOR_SUB_COMMAND {
 #if CFG_SUPPORT_WIFI_ADJUST_DTIM
 	MTK_SUBCMD_SET_CHIP_DTIM_PERIOD = 85,
 #endif
+	MTK_SUBCMD_SET_MLO_MODE = 86,
 	MTK_SUBCMD_NAN_EXT = 92,
 
 	MTK_SUBCMD_STRING_CMD = 0x2454,
@@ -706,6 +707,13 @@ enum WIFI_USABLE_CHANNEL_REQ_ATTRIBUTE {
 	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX
 };
 
+enum WIFI_MLO_MODE_ATTRIBUTE {
+	MTK_MLO_MODE_ATTRIBUTE_INVALID,
+	MTK_MLO_MODE_ATTRIBUTE_MLO_MODE,
+	MTK_MLO_MODE_ATTRIBUTE_MAX
+};
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -780,6 +788,9 @@ extern const struct nla_policy mtk_usable_channel_policy[
 
 extern const struct nla_policy nla_connect_ext_policy[
 	QCA_WLAN_VENDOR_ATTR_CONNECT_EXT_MAX + 1];
+
+extern const struct nla_policy nla_parse_wifi_mlo_mode_policy[
+	MTK_MLO_MODE_ATTRIBUTE_MAX + 1];
 
 enum WIFIBAND {
 	WIFIBAND_BAND_24GHZ = 1 << 0,
@@ -1586,6 +1597,14 @@ struct PARAM_ML_CHNL_COND_REPORT {
 	struct ML_CHNL_COND_INFO mlChnlInfo[MLD_LINK_MAX];
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+
+enum PARAM_MLO_MODE {
+	PARAM_MLO_MODE_DEFAULT = 0,
+	PARAM_MLO_MODE_LOW_LATENCY,
+	PARAM_MLO_MODE_HIGH_THROUGHPUT,
+	PARAM_MLO_MODE_LOW_POWER,
+	PARAM_MLO_MODE_MAX,
+};
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -1737,6 +1756,10 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	uint8_t ucBssIdx, int rssi);
 
 int mtk_cfg80211_vendor_set_tx_power_scenario(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_mlo_mode(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
 

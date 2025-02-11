@@ -2488,32 +2488,17 @@ wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	if (prMlcReq->eMlcMode == MLC_MODE_USER_CONFIG) {
-		struct LINK *list;
-		struct STA_RECORD *cur;
 		uint32_t valid_links = prMlcReq->u4Data1;
-		uint8_t num = 0;
 
-		/* valid link num != total link num */
-		if (wlanNumBitSet(valid_links) !=
-		    prMldStaRec->rStarecList.u4NumElem)
+		if (valid_links != prMldStaRec->u2ValidLinks)
 			return WLAN_STATUS_INVALID_DATA;
-
-		list = &prMldStaRec->rStarecList;
-		LINK_FOR_EACH_ENTRY(cur, list, rLinkEntryMld,
-				struct STA_RECORD) {
-			if (valid_links & BIT(cur->ucLinkId))
-				num++;
-		}
-
-		if (num != prMldStaRec->rStarecList.u4NumElem)
-			return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	return nicUniCmdSendMlcRequest(prAdapter, prMldBssInfo, prMlcReq);
 }
 
 uint32_t
-wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+wlanoidQueryMlcLinkState(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
 {
 	struct MLD_BSS_INFO *prMldBssInfo;
@@ -2523,7 +2508,7 @@ wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	ASSERT(u4QueryBufferLen);
 	ASSERT(pvQueryBuffer);
 
-	if (u4QueryBufferLen < sizeof(struct PARAM_MLC_QUERY))
+	if (u4QueryBufferLen < sizeof(struct PARAM_MLC_QUERY_LINK_STATE))
 		return WLAN_STATUS_INVALID_LENGTH;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
@@ -2534,7 +2519,32 @@ wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 	if (!prMldBssInfo)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	return nicUniCmdSendMlcQuery(prAdapter, prMldBssInfo,
+	return nicUniCmdSendMlcQueryLinkState(prAdapter, prMldBssInfo,
+		pvQueryBuffer, u4QueryBufferLen);
+}
+
+uint32_t
+wlanoidQueryMlcInfo(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	struct MLD_BSS_INFO *prMldBssInfo;
+	uint8_t ucBssIndex;
+
+	if (!prAdapter || !pvQueryBuffer || !u4QueryBufferLen)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_MLC_QUERY_INFO))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prMldBssInfo = aisGetMldBssInfo(prAdapter, ucBssIndex);
+	if (!prMldBssInfo)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	return nicUniCmdSendMlcQueryInfo(prAdapter, prMldBssInfo,
 		pvQueryBuffer, u4QueryBufferLen);
 }
 #endif /* CFG_SUPPORT_MLC */

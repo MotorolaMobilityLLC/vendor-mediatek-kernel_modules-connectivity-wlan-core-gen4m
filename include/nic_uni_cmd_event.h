@@ -5652,10 +5652,11 @@ enum ENUM_UNI_CMD_MLC_TAG {
 	UNI_CMD_MLC_TAG_REQ_DEFAULT = 0,
 	UNI_CMD_MLC_TAG_REQ_USER_CONFIG = 1,
 	UNI_CMD_MLC_TAG_REQ_ACTIVE_NUM = 2,
-	UNI_CMD_MLC_TAG_QUERY = 3,
+	UNI_CMD_MLC_TAG_QUERY_LINK_STATE = 3,
 	UNI_CMD_MLC_TAG_REQ_LOW_POWER = 4,
 	UNI_CMD_MLC_TAG_REQ_LOW_LATENCY = 5,
 	UNI_CMD_MLC_TAG_REQ_HIGH_TPUT = 6,
+	UNI_CMD_MLC_TAG_QUERY_INFO = 7,
 	UNI_CMD_MLC_TAG_NUM
 };
 
@@ -5718,7 +5719,15 @@ struct UNI_CMD_MLC_REQ_HIGH_TPUT {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_MLC_QUERY {
+struct UNI_CMD_MLC_QUERY_LINK_STATE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_QUERY_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -9378,9 +9387,9 @@ struct UNI_EVENT_MLC_RESP {
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
-/* MLC query (Tag1) */
+/* MLC query link (Tag1) */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_MLC_QUERY {
+struct UNI_EVENT_MLC_QUERY_LINK_STATE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -9389,6 +9398,19 @@ struct UNI_EVENT_MLC_QUERY {
 	uint8_t aucReserved[6];
 	uint8_t aucLinkInfo[];
 } __KAL_ATTRIB_PACKED__;
+
+/* MLC query info (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MLC_QUERY_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4AvailablePlanBmap;
+	uint8_t ucCurrentPlan;
+	uint8_t ucCurrentUser;
+	uint8_t aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
 
 #if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
 __KAL_ATTRIB_PACKED_FRONT__
@@ -9880,7 +9902,10 @@ uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
 uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct PARAM_MLC_REQ *prMlcReq);
-uint32_t nicUniCmdSendMlcQuery(struct ADAPTER *prAdapter,
+uint32_t nicUniCmdSendMlcQueryLinkState(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	void *pvQueryBuffer, uint32_t u4QueryBufferLen);
+uint32_t nicUniCmdSendMlcQueryInfo(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	void *pvQueryBuffer, uint32_t u4QueryBufferLen);
 #endif /* CFG_SUPPORT_MLC */
@@ -10075,7 +10100,9 @@ void nicUniEventMLSRSwitchDone(struct ADAPTER *ad,
 #if (CFG_SUPPORT_MLC == 1)
 void nicUniEventMlcReqDone(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
-void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
+void nicUniEventMlcQueryLinkStateDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventMlcQueryInfoDone(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif /* CFG_SUPPORT_MLC */
 
