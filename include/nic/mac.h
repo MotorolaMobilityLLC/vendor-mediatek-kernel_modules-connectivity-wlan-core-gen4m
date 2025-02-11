@@ -1700,6 +1700,7 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_EXT_CAP_BCN_PROT_BIT                   84
 #define ELEM_EXT_CAP_MSCS_BIT                       85
 #define ELEM_EXT_CAP_SAE_PK_BIT                     88
+#define ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT             104
 
 #define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
 
@@ -1708,7 +1709,7 @@ enum BEACON_REPORT_DETAIL {
 #endif
 
 /* This length should synchronize with wpa_supplicant */
-#define ELEM_MAX_LEN_EXT_CAP                        (11)
+#define ELEM_MAX_LEN_EXT_CAP                        (15)
 #if CFG_SAP_EXT_CAP_IE
 #define SAP_ELEM_MAX_LEN_EXT_CAP                    (8)
 #endif
@@ -2240,10 +2241,13 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 
 #define ACTION_UNPROTECTED_WNM_TIM                  0
 #define ACTION_UNPROTECTED_WNM_TIMING_MEASUREMENT   1
+#define ACTION_UNPROTECTED_WNM_TIMING_MEAS_LEN      12
+
 #define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_QUERY  6
 #define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ    7
 #define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_RSP    8
-#define ACTION_UNPROTECTED_WNM_TIMING_MEAS_LEN      12
+#define ACTION_WNM_CHANNEL_USAGE_REQ                21
+#define ACTION_WNM_CHANNEL_USAGE_RESP               22
 
 /* 8.5.23.1 VHT Action */
 #define ACTION_VHT_COMPRESSED_BFEAMFORMING          0
@@ -2277,6 +2281,7 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define VENDOR_OUI_TYPE_HS20                        16
 #define VENDOR_OUI_TYPE_MBO                         22
 #define VENDOR_OUI_TYPE_OWE                         28
+#define VENDOR_OUI_TYPE_P2P2                        40
 #define VENDOR_OUI_TYPE_RSNO                        41
 #define VENDOR_OUI_TYPE_RSNO2                       42
 #define VENDOR_OUI_TYPE_RSNXO                       43
@@ -2681,6 +2686,13 @@ enum CUS_BLOCKLIST_LIMIT_TYPE {
 #define FTM_FORMAT_BW_VHT_BW80          13
 #define FTM_FORMAT_BW_VHT_BW160         16
 #endif /* CFG_SUPPORT_RTT */
+
+#define CHANNEL_USAGE_MODE_AIDABLE_BSS			0
+#define CHANNEL_USAGE_MODE_TDLS_DIRECT_LINK		1
+#define CHANNEL_USAGE_MODE_AIDABLE_BSS_ESS		2
+#define CHANNEL_USAGE_MODE_UNAVAI_INDICATION		3
+#define CHANNEL_USAGE_MODE_CHAN_SWITCH_REQ		4
+#define CHANNEL_USAGE_MODE_CAP_NOTIF			5
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -5325,6 +5337,50 @@ struct MMIE_ELEM {
 	uint16_t u2KeyId;
 	uint8_t aucIPN[6];
 	uint8_t aucMIC[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_CHANNEL_USAGE_ENTRY {
+	uint8_t ucOpClass;
+	uint8_t ucChannel;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_CHANNEL_USAGE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucMode;
+	struct IE_CHANNEL_USAGE_ENTRY aucEntries[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_CHANNEL_USAGE_FRAME {
+	uint16_t u2FrameCtrl;
+	uint16_t u2Duration;
+	uint8_t aucDestAddr[MAC_ADDR_LEN];
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint16_t u2SeqCtrl;
+	uint8_t ucCategory;
+	uint8_t ucAction;
+	uint8_t ucDialogToken;
+	uint8_t aucInfoElem[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_P2P_ATTR {
+	uint8_t ucId;
+	uint16_t u2Length;
+	uint8_t aucBody[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_P2P2 {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t aucOui[3];
+	uint8_t ucType;
+	uint8_t aucAttrs[];
 } __KAL_ATTRIB_PACKED__;
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)

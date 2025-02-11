@@ -1177,6 +1177,11 @@ int priv_driver_trigger_critical_update(struct net_device *prNetDev,
 
 int32_t priv_driver_get_bw160_capa(struct net_device *prNetDev, char *pcCommand,
 				   int32_t i4TotalLen);
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+int priv_driver_set_p2p2_gc_csa(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen);
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 /*******************************************************************************
  *                              F U N C T I O N S

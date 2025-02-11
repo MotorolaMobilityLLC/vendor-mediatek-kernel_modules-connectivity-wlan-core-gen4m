@@ -914,6 +914,10 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_P2P_NUM=3
         CONFIG_STA_NUM=3
         CONFIG_PERF_IND_FROM_EMI_DRV_SUPPORT_VER=1
+        CONFIG_P2P2_SUPPORT=y
+        CONFIG_PRE_P2P2_SUPPORT=y
+        CONFIG_P2P2_SUPPORT_GC_REQ_CSA=y
+        CONFIG_P2P2_SUPPORT_CAP_NOTIFICATION=y
     endif
 
     ifeq ($(CONFIG_WIFI_DX5), y)
@@ -3613,6 +3617,30 @@ ifeq ($(CONFIG_SUPPORT_ELL_CSA), y)
     ccflags-y += -DCFG_SUPPORT_ELL_CSA=1
 else
     ccflags-y += -DCFG_SUPPORT_ELL_CSA=0
+endif
+
+ifeq ($(CONFIG_P2P2_SUPPORT), y)
+    ccflags-y += -DCFG_P2P2_SUPPORT=1
+    ifeq ($(CONFIG_PRE_P2P2_SUPPORT), y)
+        ccflags-y += -DCFG_PRE_P2P2_SUPPORT=1
+    else
+        ccflags-y += -DCFG_PRE_P2P2_SUPPORT=0
+    endif
+    ifeq ($(CONFIG_P2P2_SUPPORT_GC_REQ_CSA), y)
+        ccflags-y += -DCFG_P2P2_SUPPORT_GC_REQ_CSA=1
+    else
+        ccflags-y += -DCFG_P2P2_SUPPORT_GC_REQ_CSA=0
+    endif
+    ifeq ($(CONFIG_P2P2_SUPPORT_CAP_NOTIFICATION), y)
+        ccflags-y += -DCFG_P2P2_SUPPORT_CAP_NOTIFICATION=1
+    else
+        ccflags-y += -DCFG_P2P2_SUPPORT_CAP_NOTIFICATION=0
+    endif
+else
+    ccflags-y += -DCFG_P2P2_SUPPORT=0
+    ccflags-y += -DCFG_PRE_P2P2_SUPPORT=0
+    ccflags-y += -DCFG_P2P2_SUPPORT_GC_REQ_CSA=0
+    ccflags-y += -DCFG_P2P2_SUPPORT_CAP_NOTIFICATION=0
 endif
 
 # ---------------------------------------------------

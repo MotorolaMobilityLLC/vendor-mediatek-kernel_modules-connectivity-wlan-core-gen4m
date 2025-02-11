@@ -2096,7 +2096,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 	prStaRec->ucDesiredPhyTypeSet =
 		prStaRec->ucPhyTypeSet & prBssInfo->ucPhyTypeSet;
 
-	rlmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
+	rlmProcessAssocReq(prAdapter, prStaRec, pucIEStart, u2IELength);
 
 	*pu2StatusCode = u2StatusCode;
 

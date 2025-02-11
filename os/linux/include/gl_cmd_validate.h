@@ -477,6 +477,9 @@
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
 #define CMD_AP_TRIGGER_CRITICAL_UPDATE		"BCN_CRI_UPD"
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+#define CMD_P2P2_GC_CSA				"P2P2_GC_CSA"
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 #define CMD_SET_CUSTOM_TX_POWER_CALLING         "SET_CUSTOM_TX_POWER_CALLING"
 /*****************************************************************************

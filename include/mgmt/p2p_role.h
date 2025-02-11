@@ -226,6 +226,14 @@ struct MSG_P2P_DEL_MLD_LINK {
 	uint8_t ucLinkIdx;
 };
 
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+struct MSG_P2P_GC_CSA_REQUEST {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIndex;
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+};
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
 /* 3  --------------- WFA P2P Attributes Handler prototype --------------- */
 typedef uint32_t(*PFN_APPEND_ATTRI_FUNC) (struct ADAPTER *,
 		uint8_t, u_int8_t, uint16_t *, uint8_t *, uint16_t);
@@ -613,5 +621,10 @@ void p2pRoleFsmRunEventUpdateWmmParams(struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventBcnCriUpd(struct ADAPTER *prAdapter,
 				 struct MSG_HDR *prMsgHdr);
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+void p2pRoleFsmRunEventGcCsaReq(struct ADAPTER *prAdapter,
+				struct MSG_HDR *prMsgHdr);
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 #endif

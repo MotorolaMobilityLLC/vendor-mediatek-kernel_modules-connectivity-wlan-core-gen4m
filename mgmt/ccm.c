@@ -389,8 +389,13 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		for (i = 0; i < MAX_BSSID_NUM; ++i) {
 			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-			if (!IS_BSS_ALIVE(prAdapter, bss) ||
-			    !IS_BSS_GO(prAdapter, bss))
+			if (!IS_BSS_ALIVE(prAdapter, bss))
+				continue;
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+			else if (!IS_BSS_P2P(bss))
+#else
+			else if (!IS_BSS_GO(prAdapter, bss))
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 				continue;
 
 			/* skip target bss itself */
@@ -425,8 +430,9 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			}
 
 			DBGLOG(CCM, TRACE,
-			       "insert GO bss=%u waiting to check\n",
-			       bss->ucBssIndex);
+				"insert %s bss=%u waiting to check\n",
+				bssGetRoleTypeString(prAdapter, bss),
+				bss->ucBssIndex);
 		}
 	} else {
 		/* we should still notify SAP even if P2P CCM is disabled */
@@ -567,7 +573,11 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 		eTargetHwBandIdx = prCcmCsaEntry->eTargetHwBandIdx;
 		eTargetBand = prCcmCsaEntry->eTargetBand;
 
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+		if (!IS_BSS_P2P(bss))
+#else
 		if (!IS_BSS_APGO(bss))
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 			return;
 
 		cnmMemFree(prAdapter, prCcmCsaEntry);
@@ -609,25 +619,192 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	       bss->eHwBandIdx, bss->eBand, fgIsMlo,
 	       u4TargetCh, eTargetHwBandIdx, eTargetBand);
 
+	/* Legacy SAP */
 	if (IS_BSS_AP(prAdapter, bss) && !fgIsMlo)
 		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
 					P2P_DEFAULT_SCENARIO);
+	/* GO/GC/MLO SAP */
 	else if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss, &u4TargetCh,
 				      eTargetHwBandIdx, &eTargetBand)) {
-		cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
-			     MODE_DISALLOW_TX, bss->u4PrivateData);
-		fgIsSwitching = TRUE;
+		if (IS_BSS_APGO(bss)) {
+			cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
+				     MODE_DISALLOW_TX, bss->u4PrivateData);
+			fgIsSwitching = TRUE;
+		}
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+		else { /* GC */
+			struct MSG_P2P_GC_CSA_REQUEST *prGcCsaParam;
+			enum ENUM_CHNL_EXT eSco =
+				nicGetSco(prAdapter, eTargetBand, u4TargetCh);
+			uint8_t ucBw = p2pFuncGetMaxBw(prAdapter, eTargetBand,
+						       FALSE);
+			struct RF_CHANNEL_INFO rRfChnlInfo = {
+				.eBand = eTargetBand,
+				.u4CenterFreq1 = nicGetS1Freq(eTargetBand,
+							      u4TargetCh,
+							      eSco,
+							      ucBw),
+				.u4CenterFreq2 = nicGetS2Freq(eTargetBand,
+							      u4TargetCh,
+							      ucBw),
+				.u2PriChnlFreq = nicGetCenterChFreq(eTargetBand,
+							u4TargetCh, eSco, ucBw),
+				.ucChnlBw = ucBw,
+				.eSco = eSco,
+				.ucChannelNum = u4TargetCh,
+				.fgDFS = (eTargetBand == BAND_5G) ?
+					rlmDomainIsDfsChnls(prAdapter,
+						     u4TargetCh) : FALSE,
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+				.u2PunctBitmap = 0,
+#endif
+			};
+
+			prGcCsaParam = (struct MSG_P2P_GC_CSA_REQUEST *)
+				cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					    sizeof(*prGcCsaParam));
+			if (!prGcCsaParam) {
+				DBGLOG(CCM, WARN, "Alloc msg %zu failed.\n",
+					sizeof(*prGcCsaParam));
+				goto exit;
+			}
+			prGcCsaParam->rMsgHdr.eMsgId =
+				MID_MNY_P2P_GC_CSA_REQ;
+			prGcCsaParam->ucBssIndex = bss->ucBssIndex;
+			kalMemCopy(&prGcCsaParam->rRfChnlInfo, &rRfChnlInfo,
+				   sizeof(rRfChnlInfo));
+
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				    (struct MSG_HDR *)prGcCsaParam,
+				    MSG_SEND_METHOD_UNBUF);
+		}
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 	}
 
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+exit:
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 	if (!fgIsSwitching)
 		ccmChannelSwitchConsumer(prAdapter);
-	else {
+	else if (IS_BSS_APGO(bss)) {
 		prAdapter->ucCcmSwitchingCnt++;
 		DBGLOG(CCM, INFO, "switching channel triggered, count=%u\n",
 		       prAdapter->ucCcmSwitchingCnt);
 	}
 }
 
+u_int8_t ccmIsGcCsaReqChanAcceptable(struct ADAPTER *prAdapter,
+				     struct BSS_INFO *prBssInfo,
+				     struct RF_CHANNEL_INFO *prTargetChnlInfo)
+{
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *aprOtherAliveBss[MAX_BSSID_NUM] = { 0 };
+	uint8_t i, j = 0, num_2g = 0, num_5g = 0, num_6g = 0;
+	u_int8_t fgMlo = FALSE, fgAccept;
+
+	if (prWifiVar->eP2pCcmMode == P2P_CCM_MODE_DISABLE)
+		return FALSE;
+
+	if (prTargetChnlInfo->eBand == prBssInfo->eBand &&
+	    prTargetChnlInfo->ucChannelNum == prBssInfo->ucPrimaryChannel) {
+		DBGLOG(CCM, WARN, "same band:%u ch %u, no need to CSA\n",
+			prTargetChnlInfo->eBand,
+			prTargetChnlInfo->ucChannelNum);
+		return FALSE;
+	}
+
+	/* GC trigger GO CSA condition check:
+	 *     1. Avoid ping-pong effect from different clients,
+	 *        restrict to only 1 clients.
+	 *     2. Check whether target band/channel is valid.
+	 */
+	if (prBssInfo->rStaRecOfClientList.u4NumElem > 1 ||
+	    p2pFuncIsCsaAllowed(prAdapter, prBssInfo,
+				prTargetChnlInfo->ucChannelNum,
+				prTargetChnlInfo->eBand) != CSA_STATUS_SUCCESS)
+		return FALSE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgMlo = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prBssInfo));
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	/* Do NOT break MLO A+G rule, 2+5 & 2+6 */
+	if (fgMlo) {
+		if (prBssInfo->eBand == BAND_2G4 &&
+		    prTargetChnlInfo->eBand != BAND_2G4) {
+			fgAccept = FALSE;
+			goto exit;
+		} else if (prBssInfo->eBand != BAND_2G4 &&
+			   prTargetChnlInfo->eBand == BAND_2G4) {
+			fgAccept = FALSE;
+			goto exit;
+		}
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!IS_BSS_ALIVE(prAdapter, bss) || bss == prBssInfo)
+			continue;
+
+		if (bss->eBand == BAND_2G4)
+			num_2g++;
+		else if (bss->eBand == BAND_5G)
+			num_5g++;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (bss->eBand == BAND_6G)
+			num_6g++;
+#endif /* CFG_SUPPORT_WIFI_6G */
+
+		aprOtherAliveBss[j++] = bss;
+	}
+
+	if (j == 0) {
+		fgAccept = TRUE;
+		goto exit;
+	} else {
+		if (prTargetChnlInfo->eBand == BAND_2G4) {
+			if (num_2g == 0) {
+				fgAccept = TRUE;
+				goto exit;
+			}
+		} else {
+			if (num_5g == 0 && num_6g == 0) {
+				fgAccept = TRUE;
+				goto exit;
+			}
+		}
+	}
+
+	fgAccept = FALSE;
+	for (i = 0; i < j; i++) {
+		struct BSS_INFO *bss = aprOtherAliveBss[i];
+
+		if (fgMlo) {
+			if (bss->eHwBandIdx == prBssInfo->eHwBandIdx &&
+			    bss->eBand == prTargetChnlInfo->eBand &&
+			    bss->ucPrimaryChannel ==
+			    prTargetChnlInfo->ucChannelNum) {
+				fgAccept = TRUE;
+				break;
+			}
+		} else {
+			if (bss->eBand == prTargetChnlInfo->eBand &&
+			    bss->ucPrimaryChannel ==
+			    prTargetChnlInfo->ucChannelNum) {
+				fgAccept = TRUE;
+				break;
+			}
+		}
+	}
+
+exit:
+	return fgAccept;
+#else
+	return FALSE;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+}
 
 /*******************************************************************************
  *                                A + A Related

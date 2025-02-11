@@ -765,31 +765,15 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 	if (IS_BSS_P2P(prBssInfo)) {
 		/* AP mode */
 		if (IS_BSS_AP(prAdapter, prBssInfo)) {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth =
-					prAdapter->rWifiVar.ucAp2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
-				ucMaxBandwidth =
-					prAdapter->rWifiVar.ucAp5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth =
-					prAdapter->rWifiVar.ucAp6gBandwidth;
-#endif
+			ucMaxBandwidth = p2pFuncGetMaxBw(prAdapter,
+							 prBssInfo->eBand,
+							 TRUE);
 		}
 		/* P2P mode */
 		else {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth =
-					prAdapter->rWifiVar.ucP2p2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
-				ucMaxBandwidth =
-					prAdapter->rWifiVar.ucP2p5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth =
-					prAdapter->rWifiVar.ucP2p6gBandwidth;
-#endif
+			ucMaxBandwidth = p2pFuncGetMaxBw(prAdapter,
+							 prBssInfo->eBand,
+							 FALSE);
 		}
 
 		if (ucMaxBandwidth < MAX_BW_40MHZ)
@@ -1207,4 +1191,799 @@ u_int8_t rlmValidatePunctBitmap(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_SAP_PUNCTURE */
 
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+void p2pRlmTriggerP2pGcCsa(struct ADAPTER *prAdapter,
+			   struct BSS_INFO *prBssInfo,
+			   struct STA_RECORD *prStarec,
+			   struct RF_CHANNEL_INFO *prRfChnlInfo,
+			   const uint8_t *prSuppOpClassIe,
+			   const uint8_t ucSuppOpClassIeLen)
+{
+	struct CHANNEL_USAGE_REQ_PARAM *prParam = NULL;
+
+	if (!prStarec->fgCapGcCsaSupp)
+		return;
+
+	prParam = (struct CHANNEL_USAGE_REQ_PARAM *)
+		kalMemZAlloc(sizeof(*prParam), VIR_MEM_TYPE);
+	if (!prParam) {
+		DBGLOG(RLM, ERROR,
+			"Alloc prParam failed.\n");
+		goto exit;
+	}
+
+	if (prBssInfo->ucWnmDialogToken == 0)
+		prBssInfo->ucWnmDialogToken++;
+	prParam->ucDialogToken = prBssInfo->ucWnmDialogToken;
+	prParam->ucMode = CHANNEL_USAGE_MODE_CHAN_SWITCH_REQ;
+	prParam->ucTargetOpClass = nicChannelInfo2OpClass(prRfChnlInfo);
+	prParam->ucTargetOpChannel = prRfChnlInfo->ucChannelNum;
+	prParam->prSuppOpClassIe = prSuppOpClassIe;
+	prParam->ucSuppOpClassIeLen = ucSuppOpClassIeLen;
+
+	rlmSendChanUsageReqFrame(prAdapter, prBssInfo, prStarec, prParam);
+
+exit:
+	if (prParam)
+		kalMemFree(prParam, VIR_MEM_TYPE, sizeof(*prParam));
+}
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+void p2pRlmReSyncCapAfterCsa(struct ADAPTER *prAdapter,
+			     struct BSS_INFO *prBssInfo,
+			     struct STA_RECORD *prStarec)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+	struct CHANNEL_USAGE_REQ_PARAM rParam = {0};
+	uint32_t u4CapIeLen = 0;
+	uint16_t u2Offset = 0;
+	uint8_t *pucIE = NULL;
+
+	u4CapIeLen += (ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP);
+#if CFG_SUPPORT_802_11AC
+	u4CapIeLen += (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP);
+#endif /* CFG_SUPPORT_802_11AC */
+#if CFG_SUPPORT_802_11AX
+	u4CapIeLen += heRlmCalculateHeCapIELen(prAdapter,
+					       prBssInfo->ucBssIndex,
+					       prStarec);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	u4CapIeLen += (ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP);
+#endif /* CFG_SUPPORT_WIFI_6G */
+#endif /* CFG_SUPPORT_802_11AX */
+#if (CFG_SUPPORT_802_11BE == 1)
+	u4CapIeLen += ehtRlmCalculateCapIELen(prAdapter,
+					      prBssInfo->ucBssIndex,
+					      prStarec);
+#endif /* CFG_SUPPORT_802_11BE */
+
+	prMsduInfo = cnmMgtPktAlloc(prAdapter, u4CapIeLen);
+	if (!prMsduInfo) {
+		DBGLOG(RLM, ERROR, "cnmMgtPktAlloc failed.\n");
+		return;
+	}
+
+	prMsduInfo->ucBssIndex = prBssInfo->ucBssIndex;
+	prMsduInfo->ucStaRecIndex = prStarec->ucIndex;
+
+	rlmReqGenerateHtCapIE(prAdapter, prMsduInfo);
+#if CFG_SUPPORT_802_11AC
+	rlmReqGenerateVhtCapIE(prAdapter, prMsduInfo);
+#endif /* CFG_SUPPORT_802_11AC */
+#if CFG_SUPPORT_802_11AX
+	heRlmReqGenerateHeCapIE(prAdapter, prMsduInfo);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	heRlmReqGenerateHe6gBandCapIE(prAdapter, prMsduInfo);
+#endif /* CFG_SUPPORT_WIFI_6G */
+#endif /* CFG_SUPPORT_802_11AX */
+#if (CFG_SUPPORT_802_11BE == 1)
+	ehtRlmReqGenerateCapIE(prAdapter, prMsduInfo);
+#endif /* CFG_SUPPORT_802_11BE */
+
+	pucIE = (uint8_t *)prMsduInfo->prPacket;
+
+	kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
+	rRfChnlInfo.eBand = prBssInfo->eBand;
+	rRfChnlInfo.ucChnlBw =
+		rlmVhtBw2OpBw(prBssInfo->ucVhtChannelWidth,
+			      prBssInfo->eBssSCO);
+	rRfChnlInfo.eSco = prBssInfo->eBssSCO;
+	rRfChnlInfo.u4CenterFreq1 =
+		nicGetS1Freq(prBssInfo->eBand,
+			     prBssInfo->ucPrimaryChannel,
+			     prBssInfo->eBssSCO,
+			     rRfChnlInfo.ucChnlBw);
+	rRfChnlInfo.u4CenterFreq2 =
+		nicGetS2Freq(prBssInfo->eBand,
+			     prBssInfo->ucPrimaryChannel,
+			     rRfChnlInfo.ucChnlBw);
+	rRfChnlInfo.u2PriChnlFreq =
+		nicChannelNum2Freq(prBssInfo->ucPrimaryChannel,
+				   prBssInfo->eBand);
+	rRfChnlInfo.ucChannelNum = prBssInfo->ucPrimaryChannel;
+	rRfChnlInfo.fgDFS = prBssInfo->eBand == BAND_5G ?
+		rlmDomainIsDfsChnls(prAdapter,
+				    prBssInfo->ucPrimaryChannel) :
+		FALSE;
+
+	if (prBssInfo->ucWnmDialogToken == 0)
+		prBssInfo->ucWnmDialogToken++;
+	rParam.ucDialogToken = prBssInfo->ucWnmDialogToken;
+	rParam.ucMode = CHANNEL_USAGE_MODE_CAP_NOTIF;
+	rParam.ucTargetOpClass = nicChannelInfo2OpClass(&rRfChnlInfo);
+	rParam.ucTargetOpChannel = prBssInfo->ucPrimaryChannel;
+	IE_FOR_EACH(pucIE, prMsduInfo->u2FrameLength, u2Offset) {
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_HT_CAP:
+			rParam.prIeHtCap = pucIE;
+			rParam.ucIeHtCapSize = IE_SIZE(pucIE);
+			break;
+#if CFG_SUPPORT_802_11AC
+		case ELEM_ID_VHT_CAP:
+			rParam.prIeVhtCap = pucIE;
+			rParam.ucIeVhtCapSize = IE_SIZE(pucIE);
+			break;
+#endif /* CFG_SUPPORT_802_11AC */
+		case ELEM_ID_RESERVED:
+		{
+			switch (IE_ID_EXT(pucIE)) {
+#if (CFG_SUPPORT_802_11AX == 1)
+			case ELEM_EXT_ID_HE_CAP:
+				rParam.prIeHeCap = pucIE;
+				rParam.ucIeHeCapSize = IE_SIZE(pucIE);
+				break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			case ELEM_EXT_ID_HE_6G_BAND_CAP:
+				rParam.prIeHe6gCap = pucIE;
+				rParam.ucIeHe6gCapSize = IE_SIZE(pucIE);
+				break;
+#endif /* CFG_SUPPORT_WIFI_6G */
+#endif /* CFG_SUPPORT_802_11AX */
+#if (CFG_SUPPORT_802_11BE == 1)
+			case ELEM_EXT_ID_EHT_CAPS:
+				rParam.prIeEhtCap = pucIE;
+				rParam.ucIeEhtCapSize = IE_SIZE(pucIE);
+				break;
+#endif /* CFG_SUPPORT_802_11BE */
+			default:
+				break;
+			}
+		}
+			break;
+		default:
+			break;
+		}
+	}
+
+	rlmSendChanUsageReqFrame(prAdapter, prBssInfo, prStarec, &rParam);
+
+	cnmMgtPktFree(prAdapter, prMsduInfo);
+}
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+
+static uint32_t rlmChanUsageReqTxDone(struct ADAPTER *prAdapter,
+				      struct MSDU_INFO *prMsduInfo,
+				      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	DBGLOG(RLM, INFO,
+		"bss=%u, sta=%u, seq=%u, widx=%u, pid=%u, status=%d\n",
+		prMsduInfo->ucBssIndex,
+		prMsduInfo->ucStaRecIndex,
+		prMsduInfo->ucTxSeqNum,
+		prMsduInfo->ucWlanIndex,
+		prMsduInfo->ucPID,
+		rTxDoneStatus);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void rlmSendChanUsageReqFrame(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prBssInfo,
+			      struct STA_RECORD *prStarec,
+			      struct CHANNEL_USAGE_REQ_PARAM *prParam)
+{
+#define MAX_LEN_OF_CHANNEL_USAGE_REQ_FRAME		(1024)
+
+	struct MSDU_INFO *prMsduInfo;
+	struct ACTION_CHANNEL_USAGE_FRAME *prFrame;
+	struct IE_CHANNEL_USAGE *prIeChanUsage;
+	struct IE_CHANNEL_USAGE_ENTRY *prIeChanUsageEntry;
+	uint16_t u2EstimatedFrameLen = MAX_LEN_OF_CHANNEL_USAGE_REQ_FRAME;
+	uint8_t *start, *pos;
+
+	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+	if (!prMsduInfo) {
+		DBGLOG(RLM, ERROR,
+			"cnmMgtPktAlloc failed, size=%u\n",
+			u2EstimatedFrameLen);
+		return;
+	}
+
+	DBGLOG(RLM, INFO,
+		"bss=%u sta=%u token=0x%x mode=%u class/channel=%u/%u %u/%u/%u/%u/%u/%u\n",
+		prBssInfo->ucBssIndex,
+		prStarec->ucIndex,
+		prParam->ucDialogToken,
+		prParam->ucMode,
+		prParam->ucTargetOpClass,
+		prParam->ucTargetOpChannel,
+		prParam->ucSuppOpClassIeLen,
+		prParam->ucIeHtCapSize,
+		prParam->ucIeVhtCapSize,
+		prParam->ucIeHeCapSize,
+		prParam->ucIeHe6gCapSize,
+		prParam->ucIeEhtCapSize);
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+	start = pos = (uint8_t *)prMsduInfo->prPacket;
+	prFrame = (struct ACTION_CHANNEL_USAGE_FRAME *)pos;
+
+	prFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prFrame->aucDestAddr, prStarec->aucMacAddr);
+	COPY_MAC_ADDR(prFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prFrame->aucBSSID, prBssInfo->aucBSSID);
+	prFrame->ucCategory = CATEGORY_WNM_ACTION;
+	prFrame->ucAction = ACTION_WNM_CHANNEL_USAGE_REQ;
+	prFrame->ucDialogToken = prParam->ucDialogToken;
+	pos += sizeof(*prFrame);
+
+	prIeChanUsage = (struct IE_CHANNEL_USAGE *)pos;
+	prIeChanUsage->ucId = ELEM_ID_CHNNEL_USAGE;
+	prIeChanUsage->ucLength = 1 + 2;
+	prIeChanUsage->ucMode = prParam->ucMode;
+	pos += sizeof(*prIeChanUsage);
+
+	prIeChanUsageEntry = (struct IE_CHANNEL_USAGE_ENTRY *)pos;
+	prIeChanUsageEntry->ucOpClass = prParam->ucTargetOpClass;
+	prIeChanUsageEntry->ucChannel = prParam->ucTargetOpChannel;
+	pos += sizeof(*prIeChanUsageEntry);
+
+	if (prParam->ucMode != CHANNEL_USAGE_MODE_CAP_NOTIF &&
+	    prParam->prSuppOpClassIe && prParam->ucSuppOpClassIeLen) {
+		kalMemCopy(pos,
+			   prParam->prSuppOpClassIe,
+			   prParam->ucSuppOpClassIeLen);
+		pos += prParam->ucSuppOpClassIeLen;
+	}
+
+	/* TWT element */
+	/* Timeout interval element */
+
+	if (prParam->ucMode == CHANNEL_USAGE_MODE_CHAN_SWITCH_REQ ||
+	    prParam->ucMode == CHANNEL_USAGE_MODE_CAP_NOTIF) {
+		if (prParam->prIeHtCap && prParam->ucIeHtCapSize) {
+			kalMemCopy(pos,
+				   prParam->prIeHtCap,
+				   prParam->ucIeHtCapSize);
+			pos += prParam->ucIeHtCapSize;
+		}
+		if (prParam->prIeVhtCap && prParam->ucIeVhtCapSize) {
+			kalMemCopy(pos,
+				   prParam->prIeVhtCap,
+				   prParam->ucIeVhtCapSize);
+			pos += prParam->ucIeVhtCapSize;
+		}
+		if (prParam->prIeHeCap && prParam->ucIeHeCapSize) {
+			kalMemCopy(pos,
+				   prParam->prIeHeCap,
+				   prParam->ucIeHeCapSize);
+			pos += prParam->ucIeHeCapSize;
+		}
+		if (prParam->prIeHe6gCap && prParam->ucIeHe6gCapSize) {
+			kalMemCopy(pos,
+				   prParam->prIeHe6gCap,
+				   prParam->ucIeHe6gCapSize);
+			pos += prParam->ucIeHe6gCapSize;
+		}
+		if (prParam->prIeEhtCap && prParam->ucIeEhtCapSize) {
+			kalMemCopy(pos,
+				   prParam->prIeEhtCap,
+				   prParam->ucIeEhtCapSize);
+			pos += prParam->ucIeEhtCapSize;
+		}
+	}
+
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prBssInfo->ucBssIndex,
+		     prStarec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     (uint16_t)(pos - start),
+		     rlmChanUsageReqTxDone,
+		     MSDU_RATE_MODE_AUTO);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	nicTxConfigPktControlFlag(prMsduInfo,
+				  MSDU_CONTROL_FLAG_FORCE_LINK,
+				  TRUE);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
+static uint32_t rlmChanUsageRespTxDone(struct ADAPTER *prAdapter,
+				       struct MSDU_INFO *prMsduInfo,
+				       enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	DBGLOG(RLM, INFO,
+		"bss=%u, sta=%u, seq=%u, widx=%u, pid=%u, status=%d\n",
+		prMsduInfo->ucBssIndex,
+		prMsduInfo->ucStaRecIndex,
+		prMsduInfo->ucTxSeqNum,
+		prMsduInfo->ucWlanIndex,
+		prMsduInfo->ucPID,
+		rTxDoneStatus);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void rlmSendChanUsageRespFrame(struct ADAPTER *prAdapter,
+			       struct BSS_INFO *prBssInfo,
+			       struct STA_RECORD *prStarec,
+			       struct CHANNEL_USAGE_RESP_PARAM *prParam)
+{
+#define MAX_LEN_OF_CHANNEL_USAGE_RESP_FRAME		(1024)
+
+	struct MSDU_INFO *prMsduInfo;
+	struct ACTION_CHANNEL_USAGE_FRAME *prFrame;
+	struct IE_CHANNEL_USAGE *prIeChanUsage;
+	struct IE_CHANNEL_USAGE_ENTRY *prIeChanUsageEntry;
+	uint16_t u2EstimatedFrameLen = MAX_LEN_OF_CHANNEL_USAGE_RESP_FRAME;
+	uint8_t *start, *pos;
+
+	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+	if (!prMsduInfo) {
+		DBGLOG(RLM, ERROR,
+			"cnmMgtPktAlloc failed, size=%u\n",
+			u2EstimatedFrameLen);
+		return;
+	}
+
+	DBGLOG(RLM, INFO,
+		"bss=%u sta=%u token=0x%x mode=%u class/channel=%u/%u country=%s\n",
+		prBssInfo->ucBssIndex,
+		prStarec->ucIndex,
+		prParam->ucDialogToken,
+		prParam->ucMode,
+		prParam->ucTargetOpClass,
+		prParam->ucTargetOpChannel,
+		prParam->aucCountry);
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+	start = pos = (uint8_t *)prMsduInfo->prPacket;
+	prFrame = (struct ACTION_CHANNEL_USAGE_FRAME *)pos;
+
+	prFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prFrame->aucDestAddr, prStarec->aucMacAddr);
+	COPY_MAC_ADDR(prFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prFrame->aucBSSID, prBssInfo->aucBSSID);
+	prFrame->ucCategory = CATEGORY_WNM_ACTION;
+	prFrame->ucAction = ACTION_WNM_CHANNEL_USAGE_RESP;
+	prFrame->ucDialogToken = prParam->ucDialogToken;
+	pos += sizeof(*prFrame);
+
+	prIeChanUsage = (struct IE_CHANNEL_USAGE *)pos;
+	prIeChanUsage->ucId = ELEM_ID_CHNNEL_USAGE;
+	prIeChanUsage->ucLength = 1;
+	prIeChanUsage->ucMode = prParam->ucMode;
+	pos += sizeof(*prIeChanUsage);
+
+	if (prParam->ucTargetOpClass && prParam->ucTargetOpChannel) {
+		prIeChanUsageEntry = (struct IE_CHANNEL_USAGE_ENTRY *)pos;
+		prIeChanUsageEntry->ucOpClass = prParam->ucTargetOpClass;
+		prIeChanUsageEntry->ucChannel = prParam->ucTargetOpChannel;
+		pos += sizeof(*prIeChanUsageEntry);
+
+		prIeChanUsage->ucLength += 2;
+	}
+
+	kalMemCopy(pos, prParam->aucCountry, sizeof(prParam->aucCountry));
+	pos += sizeof(prParam->aucCountry);
+
+	/* Power constraint element */
+	/* EDCA parameter set element */
+	/* Transmit power envelope element */
+	/* TWT element */
+	/* Timeout interval element */
+
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prBssInfo->ucBssIndex,
+		     prStarec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     (uint16_t)(pos - start),
+		     rlmChanUsageRespTxDone,
+		     MSDU_RATE_MODE_AUTO);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	nicTxConfigPktControlFlag(prMsduInfo,
+				  MSDU_CONTROL_FLAG_FORCE_LINK,
+				  TRUE);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
+static void p2pRlmHandleChanUsageReqFrame(struct ADAPTER *prAdapter,
+					  struct SW_RFB *prSwRfb,
+					  struct BSS_INFO *prBssInfo,
+					  struct STA_RECORD *prStaRec)
+{
+	struct ACTION_CHANNEL_USAGE_FRAME *prFrame;
+	struct IE_CHANNEL_USAGE *prIeChanUsage;
+	struct IE_CHANNEL_USAGE_ENTRY *prIeChanUsageEntry;
+	uint32_t u4RemainLen = prSwRfb->u2PacketLen;
+
+	if (u4RemainLen < (sizeof(*prFrame) + sizeof(*prIeChanUsage) +
+			   sizeof(*prIeChanUsageEntry))) {
+		DBGLOG(RLM, ERROR,
+			"Invalid length (%u) for channel usage request frame.\n",
+			u4RemainLen);
+		return;
+	}
+
+	u4RemainLen -= (sizeof(*prFrame) + sizeof(*prIeChanUsage) +
+			sizeof(*prIeChanUsageEntry));
+	prFrame = (struct ACTION_CHANNEL_USAGE_FRAME *)prSwRfb->pvHeader;
+	if (prFrame->ucDialogToken == 0) {
+		DBGLOG(RLM, ERROR,
+			"Invalid token\n");
+		return;
+	}
+
+	prIeChanUsage = (struct IE_CHANNEL_USAGE *)prFrame->aucInfoElem;
+	prIeChanUsageEntry = (struct IE_CHANNEL_USAGE_ENTRY *)
+		prIeChanUsage->aucEntries;
+
+	switch (prIeChanUsage->ucMode) {
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	case CHANNEL_USAGE_MODE_CHAN_SWITCH_REQ:
+	{
+		struct CHANNEL_USAGE_RESP_PARAM rParam = {0};
+		struct RF_CHANNEL_INFO rChnlInfo = {0};
+		uint16_t u2Bw, u2CountryCode;
+		u_int8_t fgReqAcceptable;
+
+		u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
+
+		DBGLOG(RLM, INFO,
+			"MODE_CHAN_SWITCH_REQ token=%u op_class/op_channel=%u/%u\n",
+			prFrame->ucDialogToken,
+			prIeChanUsageEntry->ucOpClass,
+			prIeChanUsageEntry->ucChannel);
+
+		u2Bw = rlmOpClassToBandwidth(prIeChanUsageEntry->ucOpClass);
+
+		rChnlInfo.eBand =
+			scanOpClassToBand(prIeChanUsageEntry->ucOpClass);
+		rChnlInfo.ucChannelNum = prIeChanUsageEntry->ucChannel;
+		rChnlInfo.u2PriChnlFreq =
+			nicChannelNum2Freq(rChnlInfo.ucChannelNum,
+					   rChnlInfo.eBand);
+		switch (u2Bw) {
+		case BW_20:
+			rChnlInfo.ucChnlBw = MAX_BW_20MHZ;
+			break;
+		case BW_40:
+			rChnlInfo.ucChnlBw = MAX_BW_40MHZ;
+			break;
+		case BW_80:
+			rChnlInfo.ucChnlBw = MAX_BW_80MHZ;
+			break;
+		case BW_160:
+			rChnlInfo.ucChnlBw = MAX_BW_160MHZ;
+			break;
+		case BW_8080:
+			rChnlInfo.ucChnlBw = MAX_BW_80_80_MHZ;
+			break;
+		case BW_320:
+			rChnlInfo.ucChnlBw = MAX_BW_320_1MHZ;
+			break;
+		default:
+			DBGLOG(RLM, ERROR,
+				"Unknown bandwidth=%u\n",
+				u2Bw);
+			rChnlInfo.ucChnlBw = MAX_BW_20MHZ;
+			break;
+		}
+		if (u2Bw > BW_20)
+			rChnlInfo.eSco = nicGetSco(prAdapter, rChnlInfo.eBand,
+						   rChnlInfo.ucChannelNum);
+		rChnlInfo.u4CenterFreq1 =
+			nicGetS1Freq(rChnlInfo.eBand,
+				     rChnlInfo.ucChannelNum,
+				     rChnlInfo.eSco,
+				     rChnlInfo.ucChnlBw);
+		rChnlInfo.u4CenterFreq2 =
+			nicGetS2Freq(rChnlInfo.eBand,
+				     rChnlInfo.ucChannelNum,
+				     rChnlInfo.ucChnlBw);
+
+		fgReqAcceptable =
+			ccmIsGcCsaReqChanAcceptable(prAdapter, prBssInfo,
+						    &rChnlInfo);
+
+		rParam.ucDialogToken = prFrame->ucDialogToken;
+		rParam.ucMode = prIeChanUsage->ucMode;
+		if (fgReqAcceptable) {
+			rParam.ucTargetOpClass =
+				prIeChanUsageEntry->ucOpClass;
+			rParam.ucTargetOpChannel =
+				prIeChanUsageEntry->ucChannel;
+		}
+		kalSnprintf(rParam.aucCountry,
+			    sizeof(rParam.aucCountry),
+			    "%c%c",
+			    (u2CountryCode & 0xff00) >> 8,
+			    (u2CountryCode & 0x00ff));
+
+		rlmSendChanUsageRespFrame(prAdapter, prBssInfo, prStaRec,
+					  &rParam);
+
+		if (fgReqAcceptable == TRUE)
+			cnmIdcCsaReq(prAdapter, rChnlInfo.eBand,
+				     prIeChanUsageEntry->ucChannel,
+				     MODE_DISALLOW_TX,
+				     prBssInfo->u4PrivateData);
+	}
+		break;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+	case CHANNEL_USAGE_MODE_CAP_NOTIF:
+	{
+		uint8_t *pucIE;
+		uint16_t u2IELength;
+
+		pucIE = (uint8_t *)(prSwRfb->pvHeader +
+			(prSwRfb->u2PacketLen - u4RemainLen));
+		u2IELength = u4RemainLen;
+
+		DBGLOG(RLM, INFO, "MODE_CAP_NOTIF\n");
+		DBGLOG_MEM8(RLM, TRACE, pucIE, u2IELength);
+
+		/* re-use assoc req flow to update ht/vht/he/he_6g/eht cap */
+		rlmProcessAssocReq(prAdapter, prStaRec, pucIE, u2IELength);
+		cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+		cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
+	}
+		break;
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+
+	default:
+		break;
+	}
+}
+
+static void p2pRlmHandleChanUsageRespFrame(struct ADAPTER *prAdapter,
+					   struct SW_RFB *prSwRfb,
+					   struct BSS_INFO *prBssInfo,
+					   struct STA_RECORD *prStaRec)
+{
+	struct ACTION_CHANNEL_USAGE_FRAME *prFrame;
+	struct IE_CHANNEL_USAGE *prIeChanUsage;
+	uint32_t u4RemainLen = prSwRfb->u2PacketLen;
+
+	if (u4RemainLen < sizeof(*prFrame)) {
+		DBGLOG(RLM, ERROR,
+			"Invalid length (%u) for channel usage response frame.\n",
+			u4RemainLen);
+		return;
+	}
+
+	u4RemainLen -= sizeof(*prFrame);
+	prFrame = (struct ACTION_CHANNEL_USAGE_FRAME *)prSwRfb->pvHeader;
+	if (prFrame->ucDialogToken == 0) {
+		DBGLOG(RLM, ERROR,
+			"Invalid token\n");
+		return;
+	} else if (prBssInfo->ucWnmDialogToken != prFrame->ucDialogToken) {
+		DBGLOG(RLM, WARN,
+			"WNM token mismatch, expected %u but %u\n",
+			prBssInfo->ucWnmDialogToken,
+			prFrame->ucDialogToken);
+		return;
+	}
+
+	if (u4RemainLen < sizeof(*prIeChanUsage)) {
+		DBGLOG(RLM, ERROR,
+			"Invalid length (%u) for IE_CHANNEL_USAGE.\n",
+			u4RemainLen);
+		return;
+	}
+
+	u4RemainLen -= sizeof(*prIeChanUsage);
+	prIeChanUsage = (struct IE_CHANNEL_USAGE *)prFrame->aucInfoElem;
+	if (prIeChanUsage->ucId != ELEM_ID_CHNNEL_USAGE) {
+		DBGLOG(RLM, WARN,
+			"Invalid channel usage id %u\n",
+			prIeChanUsage->ucId);
+		return;
+	}
+
+	switch (prIeChanUsage->ucMode) {
+	case CHANNEL_USAGE_MODE_CHAN_SWITCH_REQ:
+	{
+		struct IE_CHANNEL_USAGE_ENTRY *prIeChanUsageEntry;
+
+		if (prIeChanUsage->ucLength >= (sizeof(*prIeChanUsageEntry) +
+		    sizeof(prIeChanUsage->ucMode))) {
+			u4RemainLen -= sizeof(*prIeChanUsageEntry);
+			prIeChanUsageEntry =
+				(struct IE_CHANNEL_USAGE_ENTRY *)
+				prIeChanUsage->aucEntries;
+			DBGLOG(RLM, INFO,
+				"op_class/op_channel=%u/%u is acceptable by peer\n",
+				prIeChanUsageEntry->ucOpClass,
+				prIeChanUsageEntry->ucChannel);
+		} else {
+			DBGLOG(RLM, INFO,
+				"Channel is NOT acceptable by peer\n");
+		}
+	}
+		break;
+
+	default:
+		break;
+	}
+}
+
+void p2pRlmProcessWnmActionFrame(struct ADAPTER *prAdapter,
+				 struct SW_RFB *prSwRfb)
+{
+	struct WLAN_ACTION_FRAME *prRxFrame;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+	if (prSwRfb->prStaRec)
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prSwRfb->prStaRec->ucBssIndex);
+
+	DBGLOG(RX, TRACE, "action=%u\n",
+		prRxFrame->ucAction);
+
+	switch (prRxFrame->ucAction) {
+	case ACTION_WNM_CHANNEL_USAGE_REQ:
+		if (prBssInfo)
+			p2pRlmHandleChanUsageReqFrame(prAdapter, prSwRfb,
+						      prBssInfo,
+						      prSwRfb->prStaRec);
+		break;
+
+	case ACTION_WNM_CHANNEL_USAGE_RESP:
+		if (prBssInfo)
+			p2pRlmHandleChanUsageRespFrame(prAdapter, prSwRfb,
+						       prBssInfo,
+						       prSwRfb->prStaRec);
+		break;
+
+	default:
+		DBGLOG(RX, INFO,
+			"Unhandled wnm action frame %u from " MACSTR "\n",
+			prRxFrame->ucAction,
+			MAC2STR(prRxFrame->aucSrcAddr));
+		break;
+	}
+}
+
+void p2pRlmParseP2p2Ie(struct ADAPTER *prAdapter,
+		       struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		       const uint8_t *pucBuffer)
+{
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	struct IE_P2P2 *prIeP2p2;
+	uint32_t u4RemainIeLen = IE_SIZE(pucBuffer);
+	uint8_t *pucPos;
+
+	if (u4RemainIeLen < sizeof(*prIeP2p2))
+		return;
+
+	prIeP2p2 = (struct IE_P2P2 *)pucBuffer;
+	u4RemainIeLen -= sizeof(*prIeP2p2);
+	if (prIeP2p2->ucId != ELEM_ID_P2P ||
+	    kalMemCmp(prIeP2p2->aucOui, aucWfaOui, sizeof(prIeP2p2->aucOui)))
+		return;
+
+	pucPos = (uint8_t *)prIeP2p2->aucAttrs;
+	do {
+		struct IE_P2P_ATTR *prP2pAttr;
+
+		if (u4RemainIeLen < sizeof(struct IE_P2P_ATTR))
+			break;
+
+		prP2pAttr = (struct IE_P2P_ATTR *)pucPos;
+		u4RemainIeLen -= sizeof(struct IE_P2P_ATTR);
+
+		switch (prP2pAttr->ucId) {
+		case P2P_ATTR_CAPABILITY_EXTENSION:
+		{
+			uint16_t u2CapInfo = 0;
+
+			if (u4RemainIeLen < sizeof(u2CapInfo))
+				break;
+
+			kalMemCopy(&u2CapInfo, prP2pAttr->aucBody,
+				   sizeof(u2CapInfo));
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+			prStaRec->fgCapGcCsaSupp =
+				(u2CapInfo & P2P_PCEA_CLI_REQ_CS) ?
+				TRUE : FALSE;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+		}
+			break;
+		default:
+			break;
+		}
+
+		if (u4RemainIeLen < prP2pAttr->u2Length)
+			break;
+		u4RemainIeLen -= prP2pAttr->u2Length;
+	} while (u4RemainIeLen);
+}
+
+uint32_t p2pRlmCalcP2p2IeLen(struct ADAPTER *prAdapter,
+			     uint8_t ucBssIndex,
+			     struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+							   ucBssIndex);
+
+	if (!prBssInfo || !IS_BSS_GO(prAdapter, prBssInfo))
+		return 0;
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	return sizeof(struct IE_P2P2) +
+		sizeof(struct IE_P2P_ATTR) + sizeof(uint16_t);
+#else
+	return 0;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+}
+
+uint16_t p2pRlmGenP2p2Ie(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo)
+{
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	struct BSS_INFO *prBssInfo;
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	struct IE_P2P2 *prIeP2p2;
+	struct IE_P2P_ATTR *prP2pAttr;
+	uint16_t u2CapInfo = 0;
+	uint8_t *pucBuffer, *pucPos;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prMsduInfo->ucBssIndex);
+	if (!prBssInfo || !IS_BSS_GO(prAdapter, prBssInfo))
+		return 0;
+	else if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgP2pGcCsaReq))
+		return 0;
+
+	u2CapInfo |= P2P_PCEA_CLI_REQ_CS;
+
+	pucPos = pucBuffer =
+		(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+			    (uintptr_t)prMsduInfo->u2FrameLength);
+	prIeP2p2 = (struct IE_P2P2 *)pucPos;
+
+	prIeP2p2->ucId = ELEM_ID_P2P;
+	/* let length to be filled later */
+	kalMemCopy(prIeP2p2->aucOui, aucWfaOui, sizeof(prIeP2p2->aucOui));
+	prIeP2p2->ucType = VENDOR_OUI_TYPE_P2P2;
+	pucPos += sizeof(*prIeP2p2);
+
+	u2CapInfo |= (sizeof(u2CapInfo) - 1) & P2P_PCEA_LEN_MASK;
+
+	prP2pAttr = (struct IE_P2P_ATTR *)prIeP2p2->aucAttrs;
+	prP2pAttr->ucId = P2P_ATTR_CAPABILITY_EXTENSION;
+	/* let length to be filled later */
+	kalMemCopy(prP2pAttr->aucBody, &u2CapInfo, sizeof(u2CapInfo));
+	pucPos += sizeof(struct IE_P2P_ATTR) + sizeof(u2CapInfo);
+
+	prP2pAttr->u2Length = (pucPos - (uint8_t *)prP2pAttr - 1 - 2);
+	prIeP2p2->ucLength = (pucPos - pucBuffer - 1 - 1);
+
+	DBGLOG(P2P, TRACE, "IE_P2P2");
+	DBGLOG_MEM8(P2P, TRACE, prIeP2p2, IE_SIZE(prIeP2p2));
+
+	return IE_SIZE(prIeP2p2);
+#else
+	return 0;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */

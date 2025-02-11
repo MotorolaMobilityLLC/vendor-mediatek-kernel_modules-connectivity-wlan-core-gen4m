@@ -715,9 +715,8 @@ void rlmSyncAntCtrl(struct ADAPTER *prAdapter, uint8_t txNss, uint8_t rxNss);
 void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo);
 
-void rlmProcessAssocReq(struct ADAPTER *prAdapter,
-			struct SW_RFB *prSwRfb, uint8_t *pucIE,
-			uint16_t u2IELength);
+void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+			uint8_t *pucIE, uint16_t u2IELength);
 
 void rlmBssAborted(struct ADAPTER *prAdapter,
 		   struct BSS_INFO *prBssInfo);

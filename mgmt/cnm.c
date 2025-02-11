@@ -2073,18 +2073,10 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		} else {
 			/* AP mode */
 			if (IS_BSS_AP(prAdapter, prBssInfo)) {
-				if (prBssInfo->eBand == BAND_2G4) {
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucAp2gBandwidth;
-				} else if (prBssInfo->eBand == BAND_5G) {
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucAp5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-				} else if (prBssInfo->eBand == BAND_6G) {
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucAp6gBandwidth;
-#endif
-				}
+				ucMaxBandwidth =
+					p2pFuncGetMaxBw(prAdapter,
+							prBssInfo->eBand,
+							TRUE);
 
 				if (ucMaxBandwidth
 					> prAdapter->rWifiVar.ucApBandwidth)
@@ -2101,17 +2093,10 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 				else
 					eBand = prBssInfo->eBand;
 
-				if (eBand == BAND_2G4)
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucP2p2gBandwidth;
-				else if (eBand == BAND_5G)
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucP2p5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-				else if (eBand == BAND_6G)
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucP2p6gBandwidth;
-#endif
+				ucMaxBandwidth =
+					p2pFuncGetMaxBw(prAdapter,
+							eBand,
+							FALSE);
 
 				/* gc only, max bw is BW320_1 but go is BW320_2,
 				 * downgrade to BW160

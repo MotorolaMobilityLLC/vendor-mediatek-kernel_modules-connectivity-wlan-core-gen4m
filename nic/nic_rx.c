@@ -4065,9 +4065,13 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 			prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 			DBGLOG(RX, DEBUG, "WNM action frame: %d\n", __LINE__);
 			wnmWNMAction(prAdapter, prSwRfb);
-		} else
+		} else if (prSwRfb->prStaRec && prBssInfo &&
+			   prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+			p2pRlmProcessWnmActionFrame(prAdapter, prSwRfb);
+		} else {
 			DBGLOG(RX, DEBUG,
 				"WNM action frame:%d, do nothing!\n", __LINE__);
+		}
 	}
 	break;
 

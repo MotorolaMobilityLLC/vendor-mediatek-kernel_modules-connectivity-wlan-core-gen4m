@@ -195,10 +195,8 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 		struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo,
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
 
-void p2pFuncGetMaxBw(struct ADAPTER *prAdapter,
-		uint8_t *ucMaxBw,
-		enum ENUM_BAND eBand,
-		u_int8_t fgIsSap);
+uint8_t p2pFuncGetMaxBw(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+			u_int8_t fgIsSap);
 
 void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo);

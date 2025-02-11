@@ -70,6 +70,9 @@ bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 			 struct RF_CHANNEL_INFO *prRfChnlInfo1,
 			 struct RF_CHANNEL_INFO *prRfChnlInfo2);
 
+u_int8_t ccmIsGcCsaReqChanAcceptable(struct ADAPTER *prAdapter,
+				     struct BSS_INFO *prBssInfo,
+				     struct RF_CHANNEL_INFO *prChnlInfo);
 #else
 static inline void ccmInit(struct ADAPTER *prAdapter) {}
 
@@ -93,6 +96,13 @@ static inline void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 
 static inline void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter) {}
 
+static inline
+u_int8_t ccmIsGcCsaReqChanAcceptable(struct ADAPTER *prAdapter,
+				     struct BSS_INFO *prBssInfo,
+				     struct RF_CHANNEL_INFO *prChnlInfo)
+{
+	return FALSE;
+}
 #endif /* CFG_SUPPORT_CCM */
 
 #endif /* _CCM_H */

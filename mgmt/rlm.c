@@ -727,7 +727,7 @@ uint32_t rlmCalculateMTKOuiIELen(
 	uint8_t ucBssIndex,
 	struct STA_RECORD *prStaRec)
 {
-	uint8_t len = 0;
+	uint16_t len = 0;
 
 	len += ELEM_MIN_LEN_MTK_OUI;
 
@@ -743,6 +743,9 @@ uint32_t rlmCalculateMTKOuiIELen(
 #if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLRV2 == 1) \
 	|| (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	len += sizeof(struct IE_MTK_MLR);
+#endif
+#if (CFG_PRE_P2P2_SUPPORT == 1)
+	len += p2pRlmCalcP2p2IeLen(prAdapter, ucBssIndex, prStaRec);
 #endif
 	return len;
 }
@@ -1028,6 +1031,13 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	}
 
 #endif
+#if (CFG_PRE_P2P2_SUPPORT == 1)
+	if (IS_BSS_GO(prAdapter, prBssInfo)) {
+		len = p2pRlmGenP2p2Ie(prAdapter, prMsduInfo);
+		MTK_OUI_IE(pucBuffer)->ucLength += len;
+		prMsduInfo->u2FrameLength += len;
+	}
+#endif /* CFG_PRE_P2P2_SUPPORT */
 } /* rlmGenerateMTKOuiIE */
 
 /*----------------------------------------------------------------------------*/
@@ -1860,6 +1870,14 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		DBGLOG(RLM, INFO,
 			"Disable BTM cap due to wifi.cfg or sub Wi-Fi");
 	}
+
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+		if (IS_BSS_GO(prAdapter, prBssInfo) &&
+		    IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pCapNotif))
+			SET_EXT_CAP(prExtCap->aucCapabilities,
+				    ELEM_MAX_LEN_EXT_CAP,
+				    ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT);
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 
 	while ((prExtCap->ucLength > 0 &&
 		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0)
@@ -4712,6 +4730,10 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 				);
 		}
 #endif
+#if (CFG_PRE_P2P2_SUPPORT == 1)
+		if (IE_ID(ie) == ELEM_ID_P2P)
+			p2pRlmParseP2p2Ie(prAdapter, prBssInfo, prStaRec, ie);
+#endif /* CFG_PRE_P2P2_SUPPORT */
 	}
 }
 
@@ -6150,10 +6172,14 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 		case ELEM_ID_EXTENDED_CAP:
 			DBGLOG(P2P, TRACE, "Dump ext cap.\n");
 			DBGLOG_MEM8(P2P, TRACE, pucIE, IE_SIZE(pucIE));
-			if (EXT_CAP_IE(pucIE)->ucLength > sizeof(uint8_t) &&
+			if (EXT_CAP_IE(pucIE)->ucLength >= 1 &&
 			    (EXT_CAP_IE(pucIE)->aucCapabilities[0] &
-			     ELEM_EXT_CAP_ECSA_CAP))
+			     BIT(ELEM_EXT_CAP_ECSA_CAP % 8)))
 				prStaRec->fgEcsaCapable = TRUE;
+			else if (EXT_CAP_IE(pucIE)->ucLength >= 14 &&
+				 (EXT_CAP_IE(pucIE)->aucCapabilities[13] &
+				  BIT(ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT % 8)))
+				prStaRec->fgCapNotifSupp = TRUE;
 			break;
 		case ELEM_ID_VENDOR:
 			rlmParseMtkOuiForAssocResp(prAdapter, prStaRec,
@@ -7597,11 +7623,10 @@ void rlmSyncOperationParams(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			uint8_t *pucIE, uint16_t u2IELength)
 {
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
 	struct IE_HT_CAP *prHtCap;
 #if CFG_SUPPORT_802_11AC
@@ -7612,12 +7637,8 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 #endif
 
 	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
 	ASSERT(pucIE);
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	if (!prStaRec)
-		return;
 	if (prStaRec->ucBssIndex > prAdapter->ucSwBssIdNum)
 		return;
 

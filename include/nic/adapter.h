@@ -673,6 +673,11 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
 	int64_t i8TsfValue;
 #endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
+
+	uint8_t ucWnmDialogToken;
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+	u_int8_t fgReSyncCap;
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -2008,6 +2013,13 @@ struct WIFI_VAR {
 	u_int8_t fgP2pPrefSkipDfs;
 
 	uint32_t u4PmkRefreshThreshold;
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	u_int8_t fgP2pGcCsaReq;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+	u_int8_t fgP2pCapNotif;
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 };
 
 /* cnm_timer module */

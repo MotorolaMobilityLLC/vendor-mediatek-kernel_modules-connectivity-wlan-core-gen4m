@@ -25421,4 +25421,181 @@ int32_t priv_driver_get_bw160_capa(struct net_device *prNetDev, char *pcCommand,
 
 	return i4BytesWritten;
 }
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+int priv_driver_set_p2p2_gc_csa(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct WIFI_VAR *prWifiVar;
+	struct MSG_P2P_GC_CSA_REQUEST *prGcCsaParam = NULL;
+	struct RF_CHANNEL_INFO *prRfChnlInfo;
+	int32_t i4Argc = 0, i4BytesWritten = 0;
+	uint32_t u4Idx, u4Value;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucMaxBw, ucBw = MAX_BW_UNKNOWN;
+
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prNetDev);
+	prGlueInfo = prNetDevPriv->prGlueInfo;
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, ERROR, "driver is not ready\n");
+		goto error;
+	} else if (prNetDev->ieee80211_ptr->iftype !=
+		   NL80211_IFTYPE_P2P_CLIENT) {
+		DBGLOG(REQ, WARN, "Not support for iftype(%d)\n",
+			prNetDev->ieee80211_ptr->iftype);
+		goto error;
+	}
+#if KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE
+	else if (!prNetDev->ieee80211_ptr->connected) {
+		DBGLOG(REQ, WARN, "Not connected\n");
+		goto error;
+	}
+#endif
+
+	prAdapter = prGlueInfo->prAdapter;
+	prWifiVar = &prAdapter->rWifiVar;
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	prGcCsaParam = (struct MSG_P2P_GC_CSA_REQUEST *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(*prGcCsaParam));
+	if (!prGcCsaParam) {
+		DBGLOG(REQ, ERROR, "Alloc mem(%zu) failed\n",
+			sizeof(*prGcCsaParam));
+		goto error;
+	}
+
+	kalMemZero(prGcCsaParam, sizeof(*prGcCsaParam));
+	prGcCsaParam->rMsgHdr.eMsgId =
+		MID_MNY_P2P_GC_CSA_REQ;
+	prGcCsaParam->ucBssIndex = prNetDevPriv->ucBssIdx;
+	prRfChnlInfo = &prGcCsaParam->rRfChnlInfo;
+
+	for (u4Idx = 1; u4Idx < i4Argc; u4Idx++) {
+		if (kalStrStr(apcArgv[u4Idx], "band=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 5, 0,
+					 &u4Value) != 0)
+				goto error;
+			else if (u4Value <= BAND_NULL ||
+				 u4Value >= BAND_NUM)
+				goto error;
+
+			prRfChnlInfo->eBand = (enum ENUM_BAND)u4Value;
+		} else if (kalStrStr(apcArgv[u4Idx], "channel=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 8, 0,
+					 &u4Value) != 0)
+				goto error;
+
+			prRfChnlInfo->ucChannelNum = (uint8_t)u4Value;
+		} else if (kalStrStr(apcArgv[u4Idx], "bw=")) {
+			if (kalkStrtou32(apcArgv[u4Idx] + 3, 0,
+					 &u4Value) != 0)
+				goto error;
+
+			ucBw = (uint8_t)u4Value;
+		}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		else if (kalStrStr(apcArgv[u4Idx], "link=")) {
+			struct MLD_BSS_INFO *prMldBss;
+			struct BSS_INFO *prBss;
+
+			if (kalkStrtou32(apcArgv[u4Idx] + 5, 0,
+					 &u4Value) != 0)
+				goto error;
+			else if (u4Value >= prWifiVar->ucP2pMldLinkMax)
+				goto error;
+
+			prMldBss = mldBssGetByIdx(prAdapter,
+				prNetDevPriv->ucMldBssIdx);
+			prBss = mldGetBssInfoByLinkID(prAdapter,
+						      prMldBss,
+						      u4Value,
+						      FALSE);
+			if (!prBss) {
+				DBGLOG(REQ, ERROR,
+					"search bss failed.\n");
+				goto error;
+			}
+
+			prGcCsaParam->ucBssIndex = prBss->ucBssIndex;
+		}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+	}
+
+	if (!rlmDomainIsLegalChannel(prAdapter,
+				     prRfChnlInfo->eBand,
+				     prRfChnlInfo->ucChannelNum)) {
+		DBGLOG(REQ, ERROR,
+			"Illegal channel, band=%d channel=%u\n",
+			prRfChnlInfo->eBand,
+			prRfChnlInfo->ucChannelNum);
+		goto error;
+	}
+
+	ucMaxBw = p2pFuncGetMaxBw(prAdapter,
+				  prRfChnlInfo->eBand,
+				  FALSE);
+
+	prRfChnlInfo->u2PriChnlFreq =
+		nicChannelNum2Freq(prRfChnlInfo->ucChannelNum,
+				   prRfChnlInfo->eBand);
+	if (ucBw != MAX_BW_UNKNOWN && ucBw < ucMaxBw)
+		prRfChnlInfo->ucChnlBw = ucBw;
+	else
+		prRfChnlInfo->ucChnlBw = ucMaxBw;
+	if (prRfChnlInfo->ucChnlBw > MAX_BW_20MHZ)
+		prRfChnlInfo->eSco =
+			nicGetSco(prAdapter,
+				  prRfChnlInfo->eBand,
+				  prRfChnlInfo->ucChannelNum);
+	prRfChnlInfo->u4CenterFreq1 =
+		nicGetS1Freq(prRfChnlInfo->eBand,
+			     prRfChnlInfo->ucChannelNum,
+			     prRfChnlInfo->eSco,
+			     prRfChnlInfo->ucChnlBw);
+	prRfChnlInfo->u4CenterFreq2 = 0;
+	prRfChnlInfo->fgDFS =
+		(prRfChnlInfo->eBand == BAND_5G) ?
+		rlmDomainIsDfsChnls(prAdapter,
+			prRfChnlInfo->ucChannelNum) : FALSE;
+#if (CFG_SUPPORT_SAP_PUNCTURE == 1)
+	prRfChnlInfo->u2PunctBitmap = 0,
+#endif
+
+	nicReviseBwByCh(prAdapter, prRfChnlInfo->eBand,
+			prRfChnlInfo->ucChannelNum,
+			prRfChnlInfo->eSco,
+			&prRfChnlInfo->ucChnlBw);
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prGcCsaParam,
+		    MSG_SEND_METHOD_BUF);
+
+	return kalSnprintf(pcCommand, i4TotalLen, "OK");
+
+error:
+	if (prGcCsaParam)
+		cnmMemFree(prAdapter, prGcCsaParam);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				      i4TotalLen - i4BytesWritten,
+				      "FAILED\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				      i4TotalLen - i4BytesWritten,
+				      "Command template\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				      i4TotalLen - i4BytesWritten,
+				      "iwpriv <interface> band=<band> channel=<channel> [bw=<bandwidth>] [link=<link>]\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				      i4TotalLen - i4BytesWritten,
+				      "    <band> - 1: 2.4G, 2: 5G, 3: 6G\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				      i4TotalLen - i4BytesWritten,
+				      "    <bandwidth> - 0: BW20, 1: BW40, 2: BW80, 3: BW160, 4: BW80+80, 5: BW320-1, 6: BW320-2\n");
+
+	return i4BytesWritten;
+}
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -303,14 +303,9 @@ uint8_t rttGetBssMaxBwByBand(struct ADAPTER *prAdapter,
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
 		/* P2P mode */
-		if (prBssInfo->eBand == BAND_2G4)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucP2p2gBandwidth;
-		else if (prBssInfo->eBand == BAND_5G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucP2p5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prBssInfo->eBand == BAND_6G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucP2p6gBandwidth;
-#endif
+		ucMaxBandwidth = p2pFuncGetMaxBw(prAdapter, prBssInfo->eBand,
+						 IS_BSS_AP(prAdapter,
+							   prBssInfo));
 	}
 
 	return ucMaxBandwidth;

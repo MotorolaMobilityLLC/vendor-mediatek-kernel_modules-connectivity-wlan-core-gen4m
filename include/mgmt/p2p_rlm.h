@@ -37,6 +37,32 @@
  *                             D A T A   T Y P E S
  ******************************************************************************
  */
+struct CHANNEL_USAGE_REQ_PARAM {
+	uint8_t ucDialogToken;
+	uint8_t ucMode;
+	uint8_t ucTargetOpClass;
+	uint8_t ucTargetOpChannel;
+	const uint8_t *prSuppOpClassIe;
+	uint8_t ucSuppOpClassIeLen;
+	const uint8_t *prIeHtCap;
+	uint8_t ucIeHtCapSize;
+	const uint8_t *prIeVhtCap;
+	uint8_t ucIeVhtCapSize;
+	const uint8_t *prIeHeCap;
+	uint8_t ucIeHeCapSize;
+	const uint8_t *prIeHe6gCap;
+	uint8_t ucIeHe6gCapSize;
+	const uint8_t *prIeEhtCap;
+	uint8_t ucIeEhtCapSize;
+};
+
+struct CHANNEL_USAGE_RESP_PARAM {
+	uint8_t ucDialogToken;
+	uint8_t ucMode;
+	uint8_t ucTargetOpClass;
+	uint8_t ucTargetOpChannel;
+	uint8_t aucCountry[3];
+};
 
 /******************************************************************************
  *                            P U B L I C   D A T A
@@ -114,6 +140,44 @@ u_int8_t rlmValidatePunctBitmap(struct ADAPTER *prAdapter,
 				uint8_t ucPriCh, uint16_t u2PunctBitmap);
 #endif /* CFG_SUPPORT_SAP_PUNCTURE */
 
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+void p2pRlmTriggerP2pGcCsa(struct ADAPTER *prAdapter,
+			   struct BSS_INFO *prBssInfo,
+			   struct STA_RECORD *prStarec,
+			   struct RF_CHANNEL_INFO *prRfChnlInfo,
+			   const uint8_t *prSuppOpClassIe,
+			   const uint8_t ucSuppOpClassIeLen);
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+void p2pRlmReSyncCapAfterCsa(struct ADAPTER *prAdapter,
+			     struct BSS_INFO *prBssInfo,
+			     struct STA_RECORD *prStarec);
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+
+void rlmSendChanUsageReqFrame(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prBssInfo,
+			      struct STA_RECORD *prStarec,
+			      struct CHANNEL_USAGE_REQ_PARAM *prParam);
+
+void rlmSendChanUsageRespFrame(struct ADAPTER *prAdapter,
+			       struct BSS_INFO *prBssInfo,
+			       struct STA_RECORD *prStarec,
+			       struct CHANNEL_USAGE_RESP_PARAM *prParam);
+
+void p2pRlmProcessWnmActionFrame(struct ADAPTER *prAdapter,
+				 struct SW_RFB *prSwRfb);
+
+void p2pRlmParseP2p2Ie(struct ADAPTER *prAdapter,
+		       struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		       const uint8_t *pucBuffer);
+
+uint32_t p2pRlmCalcP2p2IeLen(struct ADAPTER *prAdapter,
+			     uint8_t ucBssIndex,
+			     struct STA_RECORD *prStaRec);
+
+uint16_t p2pRlmGenP2p2Ie(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #endif

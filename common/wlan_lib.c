@@ -9658,6 +9658,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgP2pPrefSkipDfs, "P2pPrefSkipDfs",
 		  FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	INIT_UINT(prWifiVar->fgP2pGcCsaReq, "P2pGcCsaReq", FEATURE_ENABLED,
+		  FEATURE_DEBUG_ONLY);
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+	INIT_UINT(prWifiVar->fgP2pCapNotif, "P2pCapNotif", FEATURE_ENABLED,
+		  FEATURE_DEBUG_ONLY);
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

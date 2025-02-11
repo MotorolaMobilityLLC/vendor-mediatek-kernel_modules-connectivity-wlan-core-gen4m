@@ -122,21 +122,33 @@ scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			}
 			/* P2P GC */
 			/* Connected */
-			if ((prP2pBssInfo->eCurrentOPMode ==
-					OP_MODE_INFRASTRUCTURE) &&
-				(prP2pBssInfo->eConnectionState ==
-					MEDIA_STATE_CONNECTED)) {
-				fgIsSkipThisBeacon = TRUE;
-				/* First Time. */
-				if ((!prP2pBssInfo->ucDTIMPeriod)) {
-					prP2pBssInfo->ucDTIMPeriod =
-						prBssDesc->ucDTIMPeriod;
-					nicPmIndicateBssConnected(
-					prAdapter,
+			if (prP2pBssInfo->eCurrentOPMode !=
+				OP_MODE_INFRASTRUCTURE ||
+			    prP2pBssInfo->eConnectionState !=
+				MEDIA_STATE_CONNECTED)
+				continue;
+
+			fgIsSkipThisBeacon = TRUE;
+			/* First Time. */
+			if (!prP2pBssInfo->ucDTIMPeriod) {
+				prP2pBssInfo->ucDTIMPeriod =
+					prBssDesc->ucDTIMPeriod;
+				nicPmIndicateBssConnected(prAdapter,
 					prP2pBssInfo->ucBssIndex);
-				}
 			}
 
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+			if (prP2pBssInfo->fgReSyncCap) {
+				struct STA_RECORD *prStarec;
+
+				prP2pBssInfo->fgReSyncCap = FALSE;
+
+				prStarec = prP2pBssInfo->prStaRecOfAP;
+				p2pRlmReSyncCapAfterCsa(prAdapter,
+							prP2pBssInfo,
+							prStarec);
+			}
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 		}
 
 	}

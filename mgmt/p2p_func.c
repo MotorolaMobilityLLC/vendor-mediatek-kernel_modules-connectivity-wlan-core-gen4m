@@ -2234,36 +2234,38 @@ SKIP_START_RDD:
 }				/* p2pFuncStartGO() */
 
 
-void p2pFuncGetMaxBw(struct ADAPTER *prAdapter,
-		uint8_t *ucMaxBw,
-		enum ENUM_BAND eBand,
-		u_int8_t fgIsSap)
+uint8_t p2pFuncGetMaxBw(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+			u_int8_t fgIsSap)
 {
+	uint8_t ucBw = MAX_BW_20MHZ;
+
 	if (fgIsSap) {
 		if (eBand == BAND_2G4)
-			*ucMaxBw =
-				prAdapter->rWifiVar.ucAp2gBandwidth;
+			ucBw = prAdapter->rWifiVar.ucAp2gBandwidth;
 		else if (eBand == BAND_5G)
-			*ucMaxBw =
-				prAdapter->rWifiVar.ucAp5gBandwidth;
+			ucBw = prAdapter->rWifiVar.ucAp5gBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (eBand == BAND_6G)
-			*ucMaxBw =
-				prAdapter->rWifiVar.ucAp6gBandwidth;
+			ucBw = prAdapter->rWifiVar.ucAp6gBandwidth;
 #endif
+		else
+			DBGLOG(P2P, WARN,
+				"[SAP] Invalid band(%d).\n", eBand);
 	} else {
 		if (eBand == BAND_2G4)
-			*ucMaxBw =
-				prAdapter->rWifiVar.ucP2p2gBandwidth;
+			ucBw = prAdapter->rWifiVar.ucP2p2gBandwidth;
 		else if (eBand == BAND_5G)
-			*ucMaxBw =
-				prAdapter->rWifiVar.ucP2p5gBandwidth;
+			ucBw = prAdapter->rWifiVar.ucP2p5gBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (eBand == BAND_6G)
-			*ucMaxBw =
-				prAdapter->rWifiVar.ucP2p6gBandwidth;
+			ucBw = prAdapter->rWifiVar.ucP2p6gBandwidth;
 #endif
+		else
+			DBGLOG(P2P, WARN,
+				"[P2P] Invalid band(%d).\n", eBand);
 	}
+
+	return ucBw;
 }
 
 void p2pFuncStopGO(struct ADAPTER *prAdapter,
@@ -7674,6 +7676,7 @@ void p2pFuncSwitchGcChannel(
 		(struct GL_P2P_INFO *) NULL;
 	struct P2P_CSA_REQ_INFO *prCsaReqInfo;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
+	struct STA_RECORD *prStaRecOfAP;
 	uint8_t role_idx = 0;
 	uint8_t ucMaxBw = 0;
 #if (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT)
@@ -7681,6 +7684,8 @@ void p2pFuncSwitchGcChannel(
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
 #endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
+	u_int8_t fgCrossBand;
+
 #if CFG_SUPPORT_DFS_MASTER
 	fgEnable = TRUE;
 #endif
@@ -7688,9 +7693,14 @@ void p2pFuncSwitchGcChannel(
 	if (!prAdapter || !fgEnable) {
 		DBGLOG(P2P, TRACE, "Not support DFS function\n");
 		return;
+	} else if (!prP2pBssInfo->prStaRecOfAP) {
+		DBGLOG(P2P, ERROR, "No connected GO, bss=%u\n",
+			prP2pBssInfo->ucBssIndex);
+		return;
 	}
 
 	role_idx = prP2pBssInfo->u4PrivateData;
+	prStaRecOfAP = prP2pBssInfo->prStaRecOfAP;
 
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, role_idx);
 	if (!prP2pRoleFsmInfo) {
@@ -7700,6 +7710,7 @@ void p2pFuncSwitchGcChannel(
 
 	prChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
 	prCsaReqInfo = &prP2pRoleFsmInfo->rCsaReqInfo;
+	fgCrossBand = prP2pBssInfo->eBand != prChnlReqInfo->eBand;
 
 	/* Free chandef buffer */
 	prGlueP2pInfo = prAdapter->prGlueInfo->prP2PInfo[role_idx];
@@ -7821,6 +7832,11 @@ void p2pFuncSwitchGcChannel(
 #else
 	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_JOIN;
 #endif
+
+#if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
+	if (prStaRecOfAP->fgCapNotifSupp && fgCrossBand == TRUE)
+		prP2pBssInfo->fgReSyncCap = TRUE;
+#endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 
 	p2pRoleFsmStateTransition(prAdapter,
 				  prP2pRoleFsmInfo,
@@ -10152,15 +10168,16 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 	for (ch = 0; ch < ucCandidateChnlNum; ++ch) {
 		prRfChnlInfo1 = &paChnlList[ch];
 
-		if (prRfChnlInfo1->eBand == BAND_5G)
-			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p5gBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prRfChnlInfo1->eBand == BAND_6G) {
+		if (prRfChnlInfo1->eBand == BAND_6G) {
 			if (!prWifiVar->fgEnP2pPref6g)
 				continue;
-			prRfChnlInfo1->ucChnlBw =  prWifiVar->ucP2p6gBandwidth;
 		}
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
+		prRfChnlInfo1->ucChnlBw =
+			p2pFuncGetMaxBw(prAdapter,
+					prRfChnlInfo1->eBand,
+					FALSE);
 
 		prRfChnlInfo1->u4CenterFreq1 = nicGetCenterChFreq(
 			prRfChnlInfo1->eBand, prRfChnlInfo1->ucChannelNum,
@@ -11803,13 +11820,15 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	uint8_t ucTargetOpClass;
 	enum ENUM_CSA_STATUS rStatus = CSA_STATUS_SUCCESS;
 
-	if (rlmDomainIsDfsChnls(prAdapter, u4TargetCh))
+	if (eTargetBand == BAND_5G &&
+	    rlmDomainIsDfsChnls(prAdapter, u4TargetCh))
 		rStatus = CSA_STATUS_DFS_NOT_SUP;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eTargetBand == BAND_6G && !IS_6G_PSC_CHANNEL(u4TargetCh))
 		rStatus = CSA_STATUS_NON_PSC_NOT_SUP;
 	else if (eTargetBand == BAND_6G &&
-	    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
+		 IS_BSS_GO(prAdapter, prBssInfo) &&
+		 !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
 		DBGLOG(CCM, WARN, "Skip CSA to 6G if auth type not SAE\n");
 		rStatus = CSA_STATUS_NON_SAE_NOT_SUP;
 	}

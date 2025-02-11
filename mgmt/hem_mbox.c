@@ -202,6 +202,9 @@ static const char * const apucDebugMsg[] = {
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
 	"MID_MNY_P2P_BCN_CRI_UPD",
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	"MID_MNY_P2P_GC_CSA_REQ",
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 };
 
@@ -414,6 +417,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
 	{MID_MNY_P2P_BCN_CRI_UPD, p2pRoleFsmRunEventBcnCriUpd},
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	{MID_MNY_P2P_GC_CSA_REQ, p2pRoleFsmRunEventGcCsaReq},
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 };
 

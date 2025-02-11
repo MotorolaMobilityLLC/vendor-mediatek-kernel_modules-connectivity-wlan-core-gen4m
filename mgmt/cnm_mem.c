@@ -1906,6 +1906,10 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		*(uint8_t *)(prStaRec->ucHePhyCapInfo + 10),
 		*(uint16_t *)(prStaRec->ucHePhyCapInfo + 8),
 		*(uint64_t *)(prStaRec->ucHePhyCapInfo));
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	log_dbg(SW4, DEBUG, "[He6gBandCap][0x%02x]\n",
+		prStaRec->u2He6gBandCapInfo);
+#endif /* CFG_SUPPORT_WIFI_6G */
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	log_dbg(SW4, DEBUG, "[EhtMacCap][0x%04x],[EhtPhyCap][0x%016llx],[EhtPhyCapExt][0x%016llx]\n",
@@ -1922,6 +1926,12 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		MAC2STR(prStaRec->aucMldAddr));
 #endif
 #endif
+
+#if (CFG_P2P2_SUPPORT == 1)
+	log_dbg(SW4, DEBUG, "[CapNotifSupp][%u], [CapGcCsaSupp][%u]\n",
+		prStaRec->fgCapNotifSupp,
+		prStaRec->fgCapGcCsaSupp);
+#endif /* CFG_P2P2_SUPPORT */
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		if (prStaRec->aprRxReorderParamRefTbl[i]) {

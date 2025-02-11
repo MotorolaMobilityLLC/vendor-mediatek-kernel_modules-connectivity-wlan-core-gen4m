@@ -2655,6 +2655,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	{
+		.pcCmdStr  = CMD_P2P2_GC_CSA,
+		.pfHandler = priv_driver_set_p2p2_gc_csa,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 /*
  *	{
