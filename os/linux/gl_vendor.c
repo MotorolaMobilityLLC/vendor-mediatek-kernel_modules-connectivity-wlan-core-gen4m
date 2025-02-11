@@ -568,52 +568,6 @@ nla_put_failure:
 }
 
 #if CFG_SUPPORT_LLW_SCAN
-uint32_t wlanoidSetLatency(
-	struct ADAPTER *prAdapter,
-	void *pvSetBuffer,
-	uint32_t u4SetBufferLen,
-	uint32_t *pu4SetInfoLen)
-{
-	uint32_t *pu4Mode;
-	struct AIS_FSM_INFO *ais;
-	uint8_t ucBssIndex = 0;
-
-	if (!prAdapter) {
-		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	}
-
-	if (!pvSetBuffer) {
-		DBGLOG(REQ, ERROR, "pvGetBuffer is NULL\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	pu4Mode = (uint32_t *) pvSetBuffer;
-
-	ais->ucLatencyCrtDataMode = 0;
-	/* Mode 2: Restrict full roam scan triggered by Firmware
-	 *         due to low RSSI.
-	 * Mode 3: Restrict off channel time due to full scan to < 40ms
-	 */
-	ais->ucLatencyCrtDataMode = *pu4Mode;
-
-	if (ais->ucLatencyCrtDataMode == 3) {
-		ais->ucDfsChDwellTimeMs = 20;
-		ais->ucNonDfsChDwellTimeMs = 35;
-		ais->u2OpChStayTimeMs = 0;
-		ais->ucPerScanChannelCnt = 1;
-	} else if (ais->ucLatencyCrtDataMode == 0) {
-		ais->ucDfsChDwellTimeMs = 0;
-		ais->ucNonDfsChDwellTimeMs = 0;
-		ais->u2OpChStayTimeMs = 0;
-		ais->ucPerScanChannelCnt = 0;
-	}
-
-	return WLAN_STATUS_SUCCESS;
-}
-
 int mtk_cfg80211_vendor_set_latency_mode(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)

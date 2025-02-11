@@ -5135,6 +5135,14 @@ wlanoidQueryEepromType(struct ADAPTER *prAdapter,
 		       uint32_t u4QueryBufferLen,
 		       uint32_t *pu4QueryInfoLen);
 
+#if CFG_SUPPORT_LLW_SCAN
+uint32_t
+wlanoidSetLatency(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer,
+		      uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
+#endif
+
 uint32_t
 wlanoidSetCountryCode(struct ADAPTER *prAdapter,
 		      void *pvSetBuffer,
