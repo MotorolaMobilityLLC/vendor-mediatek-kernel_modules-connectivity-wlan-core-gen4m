@@ -5187,6 +5187,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 
 	if (g_u4HaltFlag) {
 		up(&g_halt_sem);
+		DBGLOG(OID, WARN, "g_u4HaltFlag = %u\n", g_u4HaltFlag);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
@@ -5202,13 +5203,15 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	if (kalIsResetting()) {
 		up(&prGlueInfo->ioctl_sem);
 		up(&g_halt_sem);
-		return WLAN_STATUS_SUCCESS;
+		DBGLOG(OID, WARN, "Driver is resetting.\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
 	if (wlanIsChipAssert(prGlueInfo->prAdapter)) {
 		up(&prGlueInfo->ioctl_sem);
 		up(&g_halt_sem);
-		return WLAN_STATUS_SUCCESS;
+		DBGLOG(OID, WARN, "wlanIsChipAssert.\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
 	if (prGlueInfo->main_thread == NULL) {
