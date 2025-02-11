@@ -17,11 +17,12 @@ ifneq ($(_CONNAC_VER), 1_0)
 	EXTRA_SYMBOLS += $(wildcard $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/*Module.symvers))
 	EXTRA_SYMBOLS += $(wildcard $(abspath $(CONNECTIVITY_OUT_PATH)/wlan/adaptor/wlan_page_pool/*Module.symvers))
 endif
-ifneq ($(_CONNAC_VER), 3_0)
+ifeq ($(_CONNAC_VER), 1_0)
 	EXTRA_SYMBOLS += $(foreach dep, $(_CONNAC_DENPENDENCY_SYMBOLS), $(abspath $(CONNECTIVITY_OUT_PATH)/$(dep)))
 endif
-ifeq ($(_CONNAC_VER), 3_0)
+ifneq ($(_CONNAC_VER), 1_0)
 	EXTRA_SYMBOLS += $(wildcard $(abspath $(CONNECTIVITY_OUT_PATH)/wlan/adaptor/build/connac3x/*Module.symvers))
+	EXTRA_SYMBOLS += $(wildcard $(abspath $(CONNECTIVITY_OUT_PATH)/wlan/adaptor/build/connac2x/*Module.symvers))
 endif
 
 else
