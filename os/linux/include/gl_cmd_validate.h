@@ -405,6 +405,7 @@
 #define CMD_CHNL_LOAD_IT	"CHNLLOAD-IT"
 #define CMD_STATISTICS_IT	"STATISTICS-IT"
 #define CMD_DUMP_UAPSD		"dumpuapsd"
+#define CMD_ROAMING_POLICY	"Roaming-Policy"
 #define CMD_FW_EVENT		"FW-EVENT"
 #if CFG_SUPPORT_EASY_DEBUG
 #define CMD_FW_PARAM				"set_fw_param"

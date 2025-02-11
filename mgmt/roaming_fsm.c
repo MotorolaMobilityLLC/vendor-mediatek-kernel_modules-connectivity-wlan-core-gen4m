@@ -505,6 +505,7 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->u4BssIdxBmap = 0;
 	prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
+	prRoamingFsmInfo->fgIsAggressive = FALSE;
 	prRoamingFsmInfo->rRoamScanParam.ucScanType = ROAMING_SCAN_TYPE_NORMAL;
 	prRoamingFsmInfo->rRoamScanParam.ucScanCount = 0;
 	prRoamingFsmInfo->rRoamScanParam.ucScanMode = ROAMING_SCAN_MODE_NORMAL;
@@ -651,6 +652,8 @@ void roamingFsmSendStartCmd(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			rTransit.u2Event = ROAMING_EVENT_START;
 			rTransit.u2Data = i;
 			rTransit.ucBssidx = i;
+			rTransit.fgIsAggressive =
+				prRoamingFsmInfo->fgIsAggressive;
 			roamingFsmSendCmd(prAdapter,
 				(struct CMD_ROAMING_TRANSIT *) &rTransit);
 		}

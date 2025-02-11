@@ -5565,7 +5565,7 @@ uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 	tag->eReason = cmd->eReason;
 	tag->u4RoamingTriggerTime = cmd->u4RoamingTriggerTime;
 	tag->u2RcpiLowThreshold = cmd->u2RcpiLowThreshold;
-	tag->ucIsSupport11B = cmd->ucIsSupport11B;
+	tag->fgIsAggressive = cmd->fgIsAggressive;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -12981,7 +12981,6 @@ void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.u2Event = status->u2Event;
 			legacy.u2Data = status->u2Data;
 			legacy.u2RcpiLowThreshold = status->u2RcpiLowThreshold;
-			legacy.ucIsSupport11B = TRUE; /* unused */
 			legacy.eReason = status->eReason;
 			legacy.u4RoamingTriggerTime =
 				status->u4RoamingTriggerTime;

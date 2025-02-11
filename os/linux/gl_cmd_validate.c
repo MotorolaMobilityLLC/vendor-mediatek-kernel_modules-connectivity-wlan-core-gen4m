@@ -327,6 +327,12 @@ struct CMD_VALIDATE_POLICY it_operation_policy[COMMON_CMD_SET_ARG_NUM(5)] = {
 	[COMMON_CMD_ATTR_IDX(4)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
 };
 
+#if (CFG_SUPPORT_ROAMING == 1)
+struct CMD_VALIDATE_POLICY roaming_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
+};
+#endif
+
 struct CMD_VALIDATE_POLICY fw_event_policy[COMMON_CMD_SET_ARG_NUM(5)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 7},
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
@@ -2578,6 +2584,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = it_operation_policy,
 		.u4PolicySize = ARRAY_SIZE(it_operation_policy)
 	},
+#if (CFG_SUPPORT_ROAMING == 1)
+	{
+		.pcCmdStr  = CMD_ROAMING_POLICY,
+		.pfHandler = priv_driver_roaming_policy,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = roaming_policy,
+		.u4PolicySize = ARRAY_SIZE(roaming_policy)
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_CHNL_LOAD_IT,
 		.pfHandler = priv_driver_it_operation,

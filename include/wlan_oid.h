@@ -355,6 +355,10 @@
 /* must >= UNI_CMD_MIB_CNT_MAX_NUM */
 #define MAX_UNI_CMD_MIB_NUM	212
 
+#define ROAMING_NOT_ALLOWED		0
+#define ROAMING_ALLOWED_WITHIN_ESS	1
+#define ROAMING_MODE_AGGRESSIVE		2
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -24959,6 +24959,31 @@ int priv_driver_it_operation(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#if (CFG_SUPPORT_ROAMING == 1)
+int priv_driver_roaming_policy(struct net_device *prNetDev,
+			 char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4RoamingMode = 0;
+	int32_t i4BytesWritten = 0, u4Ret = 0;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	u4Ret = kalkStrtou32((pcCommand + 15), 0, &u4RoamingMode);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse roaming policy error, u4Ret = %d\n",
+					u4Ret);
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	kalIoctl(prGlueInfo, wlanoidSetDrvRoamingPolicy,
+		&u4RoamingMode, sizeof(uint32_t),
+		&i4BytesWritten);
+
+	return i4BytesWritten;
+}
+#endif
+
 int priv_driver_fw_event(struct net_device *prNetDev,
 			 char *pcCommand, int i4TotalLen)
 {

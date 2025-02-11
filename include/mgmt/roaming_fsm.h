@@ -74,7 +74,7 @@ struct CMD_ROAMING_TRANSIT {
 	uint16_t u2Event;
 	uint16_t u2Data;
 	uint16_t u2RcpiLowThreshold;
-	uint8_t ucIsSupport11B;
+	u_int8_t fgIsAggressive;
 	uint8_t ucBssidx;
 	enum ENUM_ROAMING_REASON eReason;
 	uint32_t u4RoamingTriggerTime; /*sec in mcu*/
@@ -178,6 +178,7 @@ struct ROAMING_INFO {
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
 	uint8_t ucRspBssIndex;
+	u_int8_t fgIsAggressive;
 	struct ROAMING_REPORT_INFO rReportInfo;
 #if (CFG_EXT_ROAMING == 1)
 	struct ROAMING_SCAN_CADENCE rScanCadence;

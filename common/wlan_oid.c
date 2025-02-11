@@ -16321,9 +16321,16 @@ wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 
 	/* enable/disable fw roaming only when roaming fsm started */
 	if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_IDLE) {
-		if (u4RoamingPoily == 1) {
+		if (u4RoamingPoily == ROAMING_ALLOWED_WITHIN_ESS) {
 			prConnSettings->eConnectionPolicy =
 				CONNECT_BY_SSID_BEST_RSSI;
+			prRoamingFsmInfo->fgIsAggressive = FALSE;
+			/* roaming fsm already started, enable fw roaming */
+			roamingFsmSendStartCmd(prAdapter, ucBssIndex);
+		} else if (u4RoamingPoily == ROAMING_MODE_AGGRESSIVE) {
+			prConnSettings->eConnectionPolicy =
+				CONNECT_BY_SSID_BEST_RSSI;
+			prRoamingFsmInfo->fgIsAggressive = TRUE;
 			/* roaming fsm already started, enable fw roaming */
 			roamingFsmSendStartCmd(prAdapter, ucBssIndex);
 		} else {
@@ -16331,7 +16338,7 @@ wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(REQ, DEBUG, "RoamingPoily=%d, conn policy [%d] -> [%d]\n",
+	DBGLOG(REQ, DEBUG, "RoamingPoily = %d, Conn policy [%d] -> [%d]\n",
 	       u4RoamingPoily, u4CurConPolicy,
 	       prConnSettings->eConnectionPolicy);
 	return WLAN_STATUS_SUCCESS;

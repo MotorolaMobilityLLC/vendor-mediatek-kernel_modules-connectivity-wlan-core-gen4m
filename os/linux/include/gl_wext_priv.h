@@ -1151,6 +1151,10 @@ int priv_driver_tspec_operation(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_it_operation(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+#if (CFG_SUPPORT_ROAMING == 1)
+int priv_driver_roaming_policy(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 int priv_driver_fw_event(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_uapsd(struct net_device *prNetDev,

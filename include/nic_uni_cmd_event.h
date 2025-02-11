@@ -1765,7 +1765,7 @@ struct UNI_CMD_ROAMING_TRANSIT_FSM {
 	uint32_t eReason; /*ENUM_ROAMING_REASON_T*/
 	uint32_t u4RoamingTriggerTime;
 	uint16_t u2RcpiLowThreshold;
-	uint8_t  ucIsSupport11B;
+	u_int8_t fgIsAggressive;
 	uint8_t  aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
