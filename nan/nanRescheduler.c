@@ -583,6 +583,7 @@ static void handleRemoveNDL(struct ADAPTER *prAdapter,
 			       prReScheduleToken->ucTokenID,
 			       RESCHEDULE_SRC[event]);
 			FreeReScheduleToken(prAdapter, prReScheduleToken);
+			return;
 		}
 
 		ReleaseNanSlotsForSchedulePrep(prAdapter, event, FALSE);
