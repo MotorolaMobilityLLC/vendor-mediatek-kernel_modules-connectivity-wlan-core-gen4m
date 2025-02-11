@@ -2922,7 +2922,7 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);
 
-	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+	for (i = 0; i < ARRAY_SIZE(prDomainInfo->rSubBand); i++) {
 		prSubband = &prDomainInfo->rSubBand[i];
 
 		if (prSubband->ucBand == BAND_5G && !prAdapter->fgEnable5GBand)

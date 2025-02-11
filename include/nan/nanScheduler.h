@@ -897,6 +897,8 @@ void nanSchedPeerPrepareNegoState(struct ADAPTER *prAdapter,
 void nanSchedPeerCompleteNegoState(struct ADAPTER *prAdapter,
 				   uint8_t *pucNmiAddr);
 
+const char *nanGetNanReasonString(uint32_t u4ReasonCode);
+
 uint32_t nanSchedNegoCustFawAddEntry(struct ADAPTER *prAdapter,
 				     struct _NAN_CUST_FAW_ENTRY *prEntry);
 uint32_t nanSchedNegoCustFawRemoveEntry(struct ADAPTER *prAdapter,

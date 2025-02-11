@@ -1198,12 +1198,56 @@ nanSchedPeerSchRecordIsValid(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	return FALSE;
 }
 
-void
-nanSchedDumpPeerSchDesc(struct ADAPTER *prAdapter,
-			struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc)
+/* For printing the channgl of NDC specified by Map ID and Availability */
+static union _NAN_BAND_CHNL_CTRL
+nanGetChnlInfoByMapIdAndBitmap(struct ADAPTER *prAdapter,
+			       uint8_t ucMapId, uint32_t u4Avail,
+			       uint8_t *fgIsCommitted)
+{
+	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
+	struct _NAN_CHANNEL_TIMELINE_T *prTimeline;
+	size_t i;
+	size_t szTimeLineIdx;
+	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
+
+	DBGLOG(NAN, INFO, "Find Map=%u, Avail=%08x\n", ucMapId, u4Avail);
+
+	for (szTimeLineIdx = szNanActiveTimelineNum; szTimeLineIdx--; ) {
+		prNanTimelineMgmt =
+			nanGetTimelineMgmt(prAdapter, szTimeLineIdx);
+		if (prNanTimelineMgmt->ucMapId != ucMapId)
+			continue;
+
+		for (i = ARRAY_SIZE(prNanTimelineMgmt->arChnlList); i--; ) {
+			prTimeline = &prNanTimelineMgmt->arChnlList[i];
+
+			if ((prTimeline->au4AvailMap[0] & u4Avail) == 0)
+				continue;
+
+			*fgIsCommitted = TRUE;
+			return  prTimeline->rChnlInfo;
+		}
+
+		for (i = ARRAY_SIZE(prNanTimelineMgmt->arChnlList); i--; ) {
+			prTimeline = &prNanTimelineMgmt->arCondChnlList[i];
+
+			if ((prTimeline->au4AvailMap[0] & u4Avail) == 0)
+				continue;
+
+			return  prTimeline->rChnlInfo;
+		}
+
+	}
+
+	return g_rNullChnl;
+}
+
+void nanSchedDumpPeerSchDesc(struct ADAPTER *prAdapter,
+			     struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc)
 {
 	uint32_t u4Idx;
 	struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
+	u_int8_t fgPrinted = FALSE;
 
 	if (prPeerSchDesc == NULL) {
 		DBGLOG(NAN, DEBUG, "null peer sch desc\n");
@@ -1213,9 +1257,8 @@ nanSchedDumpPeerSchDesc(struct ADAPTER *prAdapter,
 	nanSchedDbgDumpPeerAvailability(prAdapter, prPeerSchDesc->aucNmiAddr);
 
 	if (prPeerSchDesc->rSelectedNdcCtrl.fgValid == TRUE) {
-		nanUtilDump(prAdapter, "NDC ID",
-				prPeerSchDesc->rSelectedNdcCtrl.aucNdcId,
-				NAN_NDC_ATTRIBUTE_ID_LENGTH);
+		union _NAN_BAND_CHNL_CTRL rChnl;
+		u_int8_t fgIsCommitted;
 
 		for (u4Idx = 0; u4Idx < NAN_NUM_AVAIL_DB; u4Idx++) {
 			prTimeline = &prPeerSchDesc->rSelectedNdcCtrl
@@ -1223,12 +1266,38 @@ nanSchedDumpPeerSchDesc(struct ADAPTER *prAdapter,
 			if (prTimeline->ucMapId == NAN_INVALID_MAP_ID)
 				continue;
 
-			nanUtilDump(prAdapter, "Selected NDC",
-					(uint8_t *)prTimeline->au4AvailMap,
-					sizeof(prTimeline->au4AvailMap));
-			DBGLOG(NAN, DEBUG, "NDC MapID:%d, DbIdx:%u\n",
-				prTimeline->ucMapId, u4Idx);
+			rChnl = nanGetChnlInfoByMapIdAndBitmap(prAdapter,
+						prTimeline->ucMapId,
+						prTimeline[0].au4AvailMap[0],
+						&fgIsCommitted);
+			DBGLOG(NAN, DEBUG,
+			       "NDC ID: %02x:%02x:%02x:%02x:%02x:%02x MapID:%d, DbIdx:%u, Avail:%02x-%02x-%02x-%02x, ch=%u(%c)",
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[0],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[1],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[2],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[3],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[4],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[5],
+			       prTimeline->ucMapId, u4Idx,
+			       ((uint8_t *)prTimeline[0].au4AvailMap)[0],
+			       ((uint8_t *)prTimeline[0].au4AvailMap)[1],
+			       ((uint8_t *)prTimeline[0].au4AvailMap)[2],
+			       ((uint8_t *)prTimeline[0].au4AvailMap)[3],
+			       rChnl.u4PrimaryChnl,
+			       rChnl.u4PrimaryChnl ?
+				       (fgIsCommitted ? 'C' : 'c') : ' ');
+			fgPrinted = TRUE;
 		}
+
+		if  (!fgPrinted)
+			DBGLOG(NAN, INFO,
+			       "NDC ID: %02x:%02x:%02x:%02x:%02x:%02x",
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[0],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[1],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[2],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[3],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[4],
+			       prPeerSchDesc->rSelectedNdcCtrl.aucNdcId[5]);
 	}
 
 	if (prPeerSchDesc->fgImmuNdlTimelineValid) {
@@ -3061,7 +3130,6 @@ nanSchedDbgDumpTimelineDb(struct ADAPTER *prAdapter, const char *pucFunction,
 	struct _NAN_CHANNEL_TIMELINE_T *prChnlTimeline = NULL;
 	union _NAN_BAND_CHNL_CTRL *prChnlInfo;
 
-	DBGLOG(NAN, DEBUG, "\n");
 	DBGLOG(NAN, DEBUG, "Dump timeline DB [%s:%d]\n", pucFunction, u4Line);
 	for (ucTimeLineIdx = 0;
 		ucTimeLineIdx < NAN_TIMELINE_MGMT_SIZE; ucTimeLineIdx++) {
@@ -3181,7 +3249,7 @@ uint32_t nanSchedDbgDumpPeerAvailability(struct ADAPTER *prAdapter,
 			     u4Idx2 < prNanAvailEntry->ucNumBandChnlCtrl;
 			     u4Idx2++)
 				DBGLOG(NAN, INFO,
-				  "[%d] PriChnl:%u Bitmap:%02x-%02x-%02x-%02x\n",
+				  "   [%d] PriChnl:%u Bitmap:%02x-%02x-%02x-%02x\n",
 				  u4Idx2,
 				  prNanAvailEntry->arBandChnlCtrl[u4Idx2]
 				  .u4PrimaryChnl,
@@ -3428,7 +3496,6 @@ uint8_t nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 	       ucPriChnl,
 	       pucTimeBitmap[0], pucTimeBitmap[1],
 	       pucTimeBitmap[2], pucTimeBitmap[3]);
-
 	return ucPriChnl;
 }
 
@@ -4927,7 +4994,8 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 	uint8_t *pucCommitTimeBitmap;
 	uint8_t aucCommitTimeBitmap[TYPICAL_BITMAP_LENGTH] = {0}; /* exclude */
 
-	uint8_t *pucBitmap;
+	uint8_t aucZeroTimeBitmap[TYPICAL_BITMAP_LENGTH] = {0};
+	uint8_t *pucBitmap = aucZeroTimeBitmap;
 	uint8_t aucCommitConditionalBitmap[TYPICAL_BITMAP_LENGTH] = {0};
 
 	/* selected target bitmap, C or c */
@@ -5504,9 +5572,8 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 	struct _NAN_NDC_CTRL_T *prNanNdcCtrl;
 	struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntryList;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
-
-	DBGLOG(NAN, DEBUG, "\n\n");
-	DBGLOG(NAN, DEBUG, "------>\n");
+	struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntry;
+	struct _NAN_ATTR_TIME_BITMAP_CONTROL_T *prTimeBitmapCtrl;
 
 	do {
 		prPeerSchDesc =
@@ -5530,8 +5597,36 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			break;
 		}
 
-		nanUtilDump(prAdapter, "[Peer NDC]", (uint8_t *)prAttrNdc,
-			    prAttrNdc->u2Length + 3);
+		prScheduleEntry = (struct _NAN_SCHEDULE_ENTRY_T *)
+					prAttrNdc->aucScheduleEntryList;
+		prTimeBitmapCtrl = (struct _NAN_ATTR_TIME_BITMAP_CONTROL_T *)
+					&prScheduleEntry->u2TimeBitmapControl;
+		if (NAN_ATTR_SIZE(prAttrNdc) >=
+		    sizeof(*prAttrNdc) + sizeof(*prScheduleEntry) +
+		    sizeof(uint8_t) * 4) {
+			DBGLOG(NAN, INFO,
+			       "NDCID=%02x:%02x:%02x:%02x:%02x:%02x, Selected=%u, MapId=%u, Duration=%u, Period=%u, Offset=%u, TimeBitmapLen=%u, TimeBitmap=%02x-%02x-%02x-%02x",
+			       prAttrNdc->aucNDCID[0], prAttrNdc->aucNDCID[1],
+			       prAttrNdc->aucNDCID[2], prAttrNdc->aucNDCID[3],
+			       prAttrNdc->aucNDCID[4], prAttrNdc->aucNDCID[5],
+			       prAttrNdc->selected_ndc,
+			       prScheduleEntry->ucMapID,
+			       prTimeBitmapCtrl->u2BitDuration,
+			       prTimeBitmapCtrl->u2Period,
+			       prTimeBitmapCtrl->u2StartOffset,
+			       prScheduleEntry->ucTimeBitmapLength,
+			       prScheduleEntry->aucTimeBitmap[0],
+			       prScheduleEntry->aucTimeBitmap[1],
+			       prScheduleEntry->aucTimeBitmap[2],
+			       prScheduleEntry->aucTimeBitmap[3]);
+		} else {
+			DBGLOG(NAN, INFO,
+			       "NDCID=%02x:%02x:%02x:%02x:%02x:%02x, Selected=%u,",
+			       prAttrNdc->aucNDCID[0], prAttrNdc->aucNDCID[1],
+			       prAttrNdc->aucNDCID[2], prAttrNdc->aucNDCID[3],
+			       prAttrNdc->aucNDCID[4], prAttrNdc->aucNDCID[5],
+			       prAttrNdc->selected_ndc);
+		}
 
 		prNanNdcCtrl = &prPeerSchDesc->rSelectedNdcCtrl;
 		kalMemZero(prNanNdcCtrl, sizeof(struct _NAN_NDC_CTRL_T));
@@ -5548,7 +5643,6 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		}
 	} while (FALSE);
 
-	DBGLOG(NAN, DEBUG, "<------\n");
 	return rRetStatus;
 }
 
@@ -5845,6 +5939,8 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	uint8_t ucTimeLineIdx = 0;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
 	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt = NULL;
+	struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
+	size_t i;
 
 	DBGLOG(NAN, DEBUG, "Update common FAW idx=%u\n", u4SchIdx);
 
@@ -5858,9 +5954,7 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		return;
 
 	/* have a preference for 5G band */
-	for (ucTimeLineIdx = (szNanActiveTimelineNum - 1);
-		ucTimeLineIdx < szNanActiveTimelineNum;
-		ucTimeLineIdx--) {
+	for (ucTimeLineIdx = szNanActiveTimelineNum; ucTimeLineIdx--; ) {
 
 		prTimeline = &prPeerSchRecord->arCommFawTimeline[ucTimeLineIdx];
 		kalMemZero(prTimeline->au4AvailMap,
@@ -5957,18 +6051,40 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	}
 
 	if (prPeerSchRecord->prCommNdcCtrl) {
-		struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
+		union _NAN_BAND_CHNL_CTRL rChnl;
+		u_int8_t fgIsCommitted;
 
 		prCommNdcCtrl = prPeerSchRecord->prCommNdcCtrl;
-		DBGLOG(NAN, INFO,
-		       "sch idx=%u, NDC=%02x-%02x-%02x-%02x-%02x-%02x\n",
-		       u4SchIdx,
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[0],
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[1],
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[2],
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[3],
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[4],
-		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[5]);
+
+		prTimeline = prCommNdcCtrl->arTimeline;
+		for (i = 0; i < ARRAY_SIZE(prCommNdcCtrl->arTimeline); i++) {
+			if (prTimeline[i].ucMapId == NAN_INVALID_MAP_ID)
+				continue;
+
+			prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter,
+					ucTimeLineIdx);
+			rChnl = nanGetChnlInfoByMapIdAndBitmap(prAdapter,
+						prTimeline[i].ucMapId,
+						prTimeline[i].au4AvailMap[0],
+						&fgIsCommitted);
+			DBGLOG(NAN, INFO,
+			       "sch idx=%u, timeline=%u, NDC=%02x:%02x:%02x:%02x:%02x:%02x MapID=%u, Avail=%02x-%02x-%02x-%02x, ch=%u(%c)",
+			       u4SchIdx, i,
+			       prCommNdcCtrl->aucNdcId[0],
+			       prCommNdcCtrl->aucNdcId[1],
+			       prCommNdcCtrl->aucNdcId[2],
+			       prCommNdcCtrl->aucNdcId[3],
+			       prCommNdcCtrl->aucNdcId[4],
+			       prCommNdcCtrl->aucNdcId[5],
+			       prTimeline[i].ucMapId,
+			       ((uint8_t *)prTimeline[i].au4AvailMap)[0],
+			       ((uint8_t *)prTimeline[i].au4AvailMap)[1],
+			       ((uint8_t *)prTimeline[i].au4AvailMap)[2],
+			       ((uint8_t *)prTimeline[i].au4AvailMap)[3],
+			       rChnl.u4PrimaryChnl,
+			       rChnl.u4PrimaryChnl ?
+				       (fgIsCommitted ? 'C' : 'c') : ' ');
+		}
 	}
 
 	/* Set eBand by collected slot number with higher band preferred */
@@ -6552,13 +6668,12 @@ void nanSchedReleaseUnusedCommitSlot(struct ADAPTER *prAdapter)
 			prCommFawTimeline = prPeerSchRecord->arCommFawTimeline;
 			prRangingTimeline =
 				prPeerSchRecord->arCommRangingTimeline;
-			if (prPeerSchRecord->fgUseDataPath == TRUE) {
+			if (prPeerSchRecord->fgUseDataPath)
 				prTimeline = &prCommFawTimeline[szTimeLineIdx];
-			} else if (prPeerSchRecord->fgUseRanging == TRUE) {
+			else if (prPeerSchRecord->fgUseRanging)
 				prTimeline = &prRangingTimeline[szTimeLineIdx];
-			} else {
+			else
 				continue;
-			}
 
 			for (u4Idx = 0; u4Idx < NAN_TOTAL_DW; u4Idx++) {
 				au4UsedAvailMap[u4Idx] |=
@@ -10598,9 +10713,8 @@ uint32_t nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter)
 	return nanAllocateNewNdc(prAdapter);
 }
 
-uint32_t
-nanSchedNegoAllocNdcCtrl(struct ADAPTER *prAdapter,
-			 struct _NAN_NDC_CTRL_T *prSelectedNdcCtrl)
+uint32_t nanSchedNegoAllocNdcCtrl(struct ADAPTER *prAdapter,
+				  struct _NAN_NDC_CTRL_T *prSelectedNdcCtrl)
 {
 	struct _NAN_NDC_CTRL_T *prNdcCtrl = NULL;
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
@@ -11145,8 +11259,7 @@ nanSchedNegoDataPathChkRmtCrbProposalForRspState(struct ADAPTER *prAdapter,
 
 DATA_RESPONDER_STATE_DONE:
 	if ((rRetStatus == WLAN_STATUS_SUCCESS) &&
-	     (fgCounterProposal == TRUE ||
-	      fgDelayUpdateAvailability == TRUE))
+	     (fgCounterProposal == TRUE || fgDelayUpdateAvailability == TRUE))
 		rRetStatus = WLAN_STATUS_PENDING;
 
 	if (pu4RejectCode != NULL)
@@ -11207,6 +11320,35 @@ RANG_RESPONDER_STATE_DONE:
 		*pu4RejectCode = u4ReasonCode;
 
 	return rRetStatus;
+}
+
+const char *nanGetNanReasonString(uint32_t u4ReasonCode)
+{
+	static const char * const reason_code_str[] = {
+		[NAN_REASON_CODE_RESERVED] = "Reserved",
+		[NAN_REASON_CODE_UNSPECIFIED] = "Unspecified",
+		[NAN_REASON_CODE_RESOURCE_LIMITATION] = "Resource_Limitation",
+		[NAN_REASON_CODE_INVALID_PARAMS] = "Invalid_Params",
+		[NAN_REASON_CODE_FTM_PARAMS_INCAPABLE] = "Ftm_Params_Incapable",
+		[NAN_REASON_CODE_NO_MOVEMENT] = "No_Movement",
+		[NAN_REASON_CODE_INVALID_AVAILABILITY] = "Invalid_Availability",
+		[NAN_REASON_CODE_IMMUTABLE_UNACCEPTABLE] =
+			"Immutable_Unacceptable",
+		[NAN_REASON_CODE_SECURITY_POLICY] = "Security_Policy",
+		[NAN_REASON_CODE_QOS_UNACCEPTABLE] = "Qos_Unacceptable",
+		[NAN_REASON_CODE_NDP_REJECTED] = "NDP_Rejected",
+		[NAN_REASON_CODE_NDL_UNACCEPTABLE] = "NDL_Unacceptable",
+		[NAN_REASON_CODE_RANGING_SCHEDULE_UNACCEPTABLE] =
+			"Ranging_Schedule_Unacceptable",
+		[NAN_REASON_CODE_PAIRING_BOOTSTRAPPING_REJECTED] =
+			"Pairing_Bootstrapping_Rejected",
+	};
+
+
+	if (u4ReasonCode < ARRAY_SIZE(reason_code_str))
+		return reason_code_str[u4ReasonCode];
+
+	return "";
 }
 
 uint32_t
@@ -11282,8 +11424,7 @@ nanSchedNegoDataPathChkRmtCrbProposalForWaitRspState(struct ADAPTER *prAdapter,
 
 	/* determine NDC CRB */
 	if (prPeerSchDesc->rSelectedNdcCtrl.fgValid == TRUE) {
-		if (nanSchedNegoIsRmtCrbConflict(
-			    prAdapter,
+		if (nanSchedNegoIsRmtCrbConflict(prAdapter,
 			    prPeerSchDesc->rSelectedNdcCtrl.arTimeline,
 			    &fgEmptyMapSet, aau4EmptyMap) == TRUE) {
 			rRetStatus = WLAN_STATUS_FAILURE;
@@ -11330,7 +11471,8 @@ WAIT_RSP_STATE_DONE:
 	if (pu4RejectCode != NULL)
 		*pu4RejectCode = u4ReasonCode;
 
-	DBGLOG(NAN, DEBUG, "*pu4RejectCode = %u\n", u4ReasonCode);
+	DBGLOG(NAN, DEBUG, "*pu4RejectCode = %u(%s)\n",
+	       u4ReasonCode, nanGetNanReasonString(u4ReasonCode));
 
 	return rRetStatus;
 }
@@ -11401,9 +11543,6 @@ uint32_t nanSchedNegoChkRmtCrbProposal(struct ADAPTER *prAdapter,
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchRec =
 		nanSchedGetPeerSchRecord(prAdapter, prNegoCtrl->u4SchIdx);
-
-	DBGLOG(NAN, DEBUG, "\n\n");
-	DBGLOG(NAN, DEBUG, "------>\n");
 
 	nanSchedNegoDumpState(prAdapter, (uint8_t *) __func__, __LINE__);
 
@@ -11536,8 +11675,8 @@ RMT_PROPOSAL_DONE:
 		*pu4RejectCode = u4ReasonCode;
 
 	nanSchedDbgDumpTimelineDb(prAdapter, __func__, __LINE__);
-	DBGLOG(NAN, DEBUG, "Reason:%x\n", u4ReasonCode);
-	DBGLOG(NAN, DEBUG, "<------\n");
+	DBGLOG(NAN, DEBUG, "Reason:%u(%s)\n",
+	       u4ReasonCode, nanGetNanReasonString(u4ReasonCode));
 
 	return rRetStatus;
 }
