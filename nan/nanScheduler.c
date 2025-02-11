@@ -1711,9 +1711,6 @@ uint32_t nanSchedInit(struct ADAPTER *prAdapter)
 	}
 #endif
 
-	/* May set customized slots after NAN started */
-	nanConcurrencyHandler(prAdapter);
-
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -13663,6 +13660,14 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
 
 	prScheduler = nanGetScheduler(prAdapter);
+
+	if (!(prScheduler->fgEn2g |
+	      prScheduler->fgEn5gL | prScheduler->fgEn5gH |
+	      prScheduler->fgEn6g)) {
+		/* Updated in nanSchedConfigAllowedBand */
+		DBGLOG(NAN, WARN, "NAN scheduler not ready\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	do {
 		if (prScheduler->u2NanAvailAttrControlField &
