@@ -6832,14 +6832,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
 			prStaRec->rNanExpiredSendTime = rExpiryTime;
 
-			if (prStaRec->fgNanSendTimeExpired
-#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
-				&& IS_2G_OP_CLASS(u4OpClass)
-				&& mldIsMultiLinkFormed(
-				prAdapter,
-				prStaRec)
-#endif
-				) {
+			if (prStaRec->fgNanSendTimeExpired) {
 				prStaRec->fgNanSendTimeExpired = FALSE;
 
 				DBGLOG(NAN, DEBUG, "Trigger NAN tx request\n");
