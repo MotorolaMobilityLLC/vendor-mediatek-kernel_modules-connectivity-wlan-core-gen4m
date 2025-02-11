@@ -1149,15 +1149,18 @@ enum NIC_CAPABILITY_V2_TAG {
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	TAG_CAP_SW_SYNC_BY_EMI = 0x25,
 #endif
-#if CFG_SUPPORT_MBRAIN
-	TAG_CAP_MBRAIN_EMI_INFO = 0x26,
-#endif
 	TAG_CAP_LIMITED = 0x27,
 	TAG_CAP_P2P = 0x28,
 #if CFG_SUPPORT_MLR
 	TAG_CAP_MLR_CAP = 0x38,
 #endif
 	TAG_CAP_PERF_IND_FROM_EMI = 0x40,
+#if CFG_SUPPORT_MBRAIN
+	TAG_CAP_MBRAIN_EMI_INFO = 0x41,
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	TAG_CAP_MBRAIN_BIGDATA_VER = 0x42,
+#endif
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -1474,6 +1477,12 @@ enum MBRAIN_EMI_OFFSET_TYPE {
 #if CFG_SUPPORT_PCIE_MBRAIN
 	MBRAIN_EMI_OFFSET_PCIE,
 #endif
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	MBRAIN_EMI_OFFSET_BSS_STAT,
+	MBRAIN_EMI_OFFSET_ABT_CNT,
+	MBRAIN_EMI_OFFSET_PHY_CNT,
+	MBRAIN_EMI_OFFSET_STA_INFO,
+#endif /* #if CFG_SUPPORT_MBRAIN_BIGDATA */
 	MBRAIN_EMI_OFFSET_NUM
 };
 
@@ -1486,6 +1495,12 @@ struct CAP_MBRAIN_EMI_INFO {
 	uint32_t u4PcieGenSwRsvd;
 	uint32_t u4OffsetNum;
 };
+
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+struct CAP_MBRAIN_BIGDATA_VER {
+	uint32_t u4Ver;
+};
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 #endif
 
 #define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
@@ -3229,13 +3244,7 @@ struct EVENT_STA_STATISTICS {
 	uint8_t ucDynamicGband256QAMState;
 	uint8_t ucVhtNonSpRateState;
 #endif
-
-#if CFG_SUPPORT_STA_INFO
-	uint32_t u4RxBmcCnt;
-	uint8_t aucReserved[3];
-#else
 	uint8_t aucReserved[4];
-#endif
 };
 
 struct EVENT_LTE_SAFE_CHN {
@@ -4478,6 +4487,11 @@ uint32_t nicCfgGetSwSyncEMIOffset(
 uint32_t nicCfgChipMbrEmiInfo(
 		struct ADAPTER *prAdapter,
 		uint8_t *pucEventBuf);
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+uint32_t nicCfgChipMbrBigDataVer(
+		struct ADAPTER *prAdapter,
+		uint8_t *pucEventBuf);
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 #endif
 
 #if (CFG_SUPPORT_PERF_IND == 1)

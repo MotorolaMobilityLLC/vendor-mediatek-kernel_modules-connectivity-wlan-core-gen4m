@@ -2478,6 +2478,82 @@ struct STATS_LLS_TX_BIT_RATE {
 };
 #endif /* CFG_SUPPORT_LLS */
 
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+struct BIG_DATA_BSS_CNT_T {
+	uint32_t u4RtsFail;
+	uint32_t u4RtsTx;
+	uint32_t u4BaseRtsFail;
+	uint32_t u4BaseRtsTx;
+	uint8_t ucCuAll;
+	uint8_t ucCuNotMe;
+	uint8_t rsvd[10];
+};
+
+struct BIG_DATA_ABT_CNT {
+	uint32_t u4TmacAbt;
+	uint32_t u4AggAbt;
+	uint32_t u4ArbAbt;
+	uint32_t u4PtaAbt;
+	uint32_t u4CcaAbt;
+	uint32_t u4MloAbt;
+};
+
+struct BIG_DATA_PHY_CNT {
+	uint32_t u4CckPd;
+	uint32_t u4OfdmPd;
+	uint32_t u4CckSfdErr;
+	uint32_t u4CckSigErr;
+	uint32_t u4OfdmTaqErr;
+	uint32_t u4OfdmSigErr;
+	uint32_t u4CckFcsErr;
+	uint32_t u4OfdmFcsErr;
+	uint32_t u4CckMdrdy;
+	uint32_t u4OfdmMdrdy;
+	uint32_t u4CckRxOk;
+	uint32_t u4OfdmRxOk;
+	uint32_t u4CckTx;
+	uint32_t u4OfdmTx;
+	uint32_t u4Pop;
+};
+
+#define BIG_DATA_MAX_STA_NUM 10
+struct BIG_DATA_STA_INFO {
+	uint16_t u2WtblIdx;
+	uint8_t fgValid;
+	uint8_t reserved;
+#if CFG_SUPPORT_STA_INFO
+	uint32_t u4RxBmcMgmtCnt;
+#endif
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint16_t u2TxLinkSpeed; //Unit: 100Kbps
+	uint8_t aucSnr[MAX_ANTENNA_NUM];
+	uint8_t aucRsvd1[14];
+};
+
+struct PARAM_QUERY_STA_BIG_DATA {
+	uint8_t ucWlanIdx;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucRsvd;
+	uint8_t aucSnr[MAX_ANTENNA_NUM];
+	uint16_t u2TxLinkSpeed; //Unit: 100Kbps
+#if CFG_SUPPORT_STA_INFO
+	uint32_t u4RxBmcMgmtCnt;
+#endif
+};
+
+#define IPI_HIST_LEVEL_NUM 11
+struct PARAM_QUERY_TRX_LATENCY_BIG_DATA {
+	struct BIG_DATA_ABT_CNT rAbtCnt;
+	uint32_t u4RtsFailRate;
+	uint32_t au4IPIHist[MAX_ANTENNA_NUM][IPI_HIST_LEVEL_NUM];
+	uint32_t u4Nbi; //[7:0] power, [25:16] freq
+	uint8_t ucCuAll;
+	uint8_t ucCuNotMe;
+	uint8_t ucPhyRxPer;
+	uint8_t rsvd;
+};
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
+
 struct TX_LAT_MONTR_PARAM_STRUCT {
 	bool fgEnabled;
 	uint32_t u4Intvl;
@@ -5598,6 +5674,17 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen);
 #endif
+
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+uint32_t
+wlanoidQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
+uint32_t
+wlanoidQueryTrxLatBigData(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */

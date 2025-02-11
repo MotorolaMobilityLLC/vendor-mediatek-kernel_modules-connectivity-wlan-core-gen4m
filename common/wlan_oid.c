@@ -4855,6 +4855,56 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+uint32_t
+wlanoidQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rResult = WLAN_STATUS_FAILURE;
+
+	if (!prAdapter || !pvQueryBuffer || !pu4QueryInfoLen)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (prAdapter->fgIsEnableLpdvt)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_QUERY_STA_BIG_DATA))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	rResult = wlanQueryStaBigDataByWidx(prAdapter,
+				pvQueryBuffer,
+				u4QueryBufferLen,
+				pu4QueryInfoLen,
+				TRUE);
+	return rResult;
+}
+
+uint32_t
+wlanoidQueryTrxLatBigData(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rResult = WLAN_STATUS_FAILURE;
+
+	if (!prAdapter || !pvQueryBuffer || !pu4QueryInfoLen)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (prAdapter->fgIsEnableLpdvt)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_QUERY_TRX_LATENCY_BIG_DATA))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	rResult = wlanQueryTrxLatBigDataByBssIdx(prAdapter,
+				pvQueryBuffer,
+				u4QueryBufferLen,
+				pu4QueryInfoLen,
+				TRUE, GET_IOCTL_BSSIDX(prAdapter));
+	return rResult;
+}
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to set tx latency monitor parameter

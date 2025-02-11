@@ -190,6 +190,12 @@ struct mbrain_emi_data {
 #if CFG_SUPPORT_PCIE_MBRAIN
 	struct PCIE_T rMbrPcieData;
 #endif /* CFG_SUPPORT_PCIE_MBRAIN */
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	struct BIG_DATA_BSS_CNT_T arBssStatCnt[MAX_BSSID_NUM];
+	struct BIG_DATA_ABT_CNT arAbtCnt[ENUM_BAND_NUM];
+	struct BIG_DATA_PHY_CNT arPhyCnt[ENUM_BAND_NUM];
+	struct BIG_DATA_STA_INFO arStaInfo[BIG_DATA_MAX_STA_NUM];
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 };
 
 struct MBRAIN_TXTIMEOUT_ENTRY {

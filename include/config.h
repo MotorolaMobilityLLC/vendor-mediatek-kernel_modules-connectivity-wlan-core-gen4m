@@ -1736,6 +1736,10 @@
 #define CFG_SUPPORT_MBRAIN 0
 #endif
 
+#ifndef CFG_SUPPORT_MBRAIN_BIGDATA
+#define CFG_SUPPORT_MBRAIN_BIGDATA 0
+#endif
+
 /* Before (including) Android T, use single interface report structure */
 #ifndef AOSP_LLS_V1_SINGLE_INTERFACE
 #define AOSP_LLS_V1_SINGLE_INTERFACE 0

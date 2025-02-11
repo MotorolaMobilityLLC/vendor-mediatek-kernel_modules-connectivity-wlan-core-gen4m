@@ -35,6 +35,10 @@
 #include "gl_csi.h"
 #endif
 
+
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
 #if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
 
 /*******************************************************************************
@@ -2538,7 +2542,6 @@ static void dumpSourceBufferData(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	}
 }
 #endif /* CFG_SUPPORT_LLS */
-
 
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)

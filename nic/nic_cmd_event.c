@@ -143,6 +143,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if CFG_SUPPORT_MBRAIN
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MBRAIN_EMI_INFO,
 				nicCfgChipMbrEmiInfo),
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MBRAIN_BIGDATA_VER,
+				nicCfgChipMbrBigDataVer),
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 #endif
 #if (CFG_SUPPORT_PERF_IND == 1)
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PERF_IND_FROM_EMI,
@@ -2088,10 +2092,6 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 					prEvent->arLinkStatistics[eAci].
 					u4TxRetryMsdu;
 			}
-#if CFG_SUPPORT_STA_INFO
-			prStaStatistics->u4RxBmcCnt = prEvent->u4RxBmcCnt;
-			prStaRec->u4RxBmcCnt = prEvent->u4RxBmcCnt;
-#endif
 		}
 		if (prEvent->u4TxCount) {
 			uint32_t u4TxDoneAirTimeMs =
@@ -3334,6 +3334,16 @@ uint32_t checkMbrOffset(uint32_t num,
 	pu4OffsetMap[MBRAIN_EMI_OFFSET_PCIE] =
 		OFFSET_OF(struct mbrain_emi_data, rMbrPcieData);
 #endif
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	pu4OffsetMap[MBRAIN_EMI_OFFSET_BSS_STAT] =
+		OFFSET_OF(struct mbrain_emi_data, arBssStatCnt);
+	pu4OffsetMap[MBRAIN_EMI_OFFSET_ABT_CNT] =
+		OFFSET_OF(struct mbrain_emi_data, arAbtCnt);
+	pu4OffsetMap[MBRAIN_EMI_OFFSET_PHY_CNT] =
+		OFFSET_OF(struct mbrain_emi_data, arPhyCnt);
+	pu4OffsetMap[MBRAIN_EMI_OFFSET_STA_INFO] =
+		OFFSET_OF(struct mbrain_emi_data, arStaInfo);
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 	for (i = 0; i < num; i++, prOffsetInfo++) {
 		if (prOffsetInfo->u4Tag >= MBRAIN_EMI_OFFSET_NUM) {
 			DBGLOG(INIT, WARN, "invalid tag:%u offset:%u\n",
@@ -3400,6 +3410,19 @@ uint32_t nicCfgChipMbrEmiInfo(struct ADAPTER *prAdapter,
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+uint32_t nicCfgChipMbrBigDataVer(struct ADAPTER *prAdapter,
+		uint8_t *pucEventBuf)
+{
+	struct CAP_MBRAIN_BIGDATA_VER *prCap =
+		(struct CAP_MBRAIN_BIGDATA_VER *)pucEventBuf;
+
+	prAdapter->u4BigDataVer = prCap->u4Ver;
+	DBGLOG(INIT, INFO, "Ver=%u", prAdapter->u4BigDataVer);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 #endif
 
 #if (CFG_SUPPORT_PERF_IND == 1)

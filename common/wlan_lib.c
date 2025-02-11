@@ -29,6 +29,10 @@
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 #include "gl_coredump.h"
 #endif
+
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+#include "gl_mbrain.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -15037,6 +15041,208 @@ int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 	}
 
 }
+
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
+{
+	uint32_t u4Status = WLAN_STATUS_NOT_SUPPORTED;
+
+	struct PARAM_QUERY_STA_BIG_DATA *prBigDataParam;
+	struct BIG_DATA_STA_INFO *prStaInfo;
+	struct BIG_DATA_STA_INFO arStaInfo[BIG_DATA_MAX_STA_NUM];
+	struct PARAM_GET_STATS_ONE_CMD rParam;
+	uint8_t i;
+	uint32_t u4QueryInfoLen;
+
+	if (!pvQueryBuffer || !prAdapter || !pu4QueryInfoLen)
+		return WLAN_STATUS_FAILURE;
+
+	if (prAdapter->u4BigDataVer < 1)
+		return u4Status;
+
+	/* query all regular stats */
+	rParam.u4Period = SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY);
+	if (wlanQueryStatsOneCmd(prAdapter, &rParam, sizeof(rParam),
+		&u4QueryInfoLen, fgIsOid, GET_IOCTL_BSSIDX(prAdapter))
+		!= WLAN_STATUS_SUCCESS)
+		return u4Status;
+
+	prBigDataParam = (struct PARAM_QUERY_STA_BIG_DATA *)pvQueryBuffer;
+
+	GET_MBR_EMI_FIELD(prAdapter, u4Status, arStaInfo, arStaInfo);
+
+	for (i = 0; i < BIG_DATA_MAX_STA_NUM; i++) {
+		prStaInfo = &arStaInfo[i];
+
+		if (!prStaInfo->fgValid)
+			break;
+
+		if (prStaInfo->u2WtblIdx != prBigDataParam->ucWlanIdx ||
+			!EQUAL_MAC_ADDR(prBigDataParam->aucMacAddr,
+				prStaInfo->aucMacAddr))
+			continue;
+
+		prBigDataParam->aucSnr[0] = WTBL_SNR_MAPPING(
+			prStaInfo->aucSnr[0]);
+		prBigDataParam->aucSnr[1] = WTBL_SNR_MAPPING(
+			prStaInfo->aucSnr[1]);
+		prBigDataParam->u2TxLinkSpeed = prStaInfo->u2TxLinkSpeed;
+
+#if CFG_SUPPORT_STA_INFO
+		prBigDataParam->u4RxBmcMgmtCnt = prStaInfo->u4RxBmcMgmtCnt;
+#endif /* CFG_SUPPORT_STA_INFO */
+		*pu4QueryInfoLen = sizeof(struct PARAM_QUERY_STA_BIG_DATA);
+		u4Status = WLAN_STATUS_SUCCESS;
+	}
+
+	return u4Status;
+}
+
+int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
+	struct PARAM_QUERY_TRX_LATENCY_BIG_DATA *prParam,
+	uint8_t ucBssIdx)
+{
+	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
+	struct BIG_DATA_BSS_CNT_T tmpBssCnt[MAX_BSSID_NUM];
+	struct BIG_DATA_ABT_CNT arAbtCnt[ENUM_BAND_NUM];
+	struct BIG_DATA_PHY_CNT arPhyCnt[ENUM_BAND_NUM];
+	static uint32_t lastFcsOk[ENUM_BAND_NUM];
+	static uint32_t lastMdrdy[ENUM_BAND_NUM];
+	static uint32_t au4lastRtsFail[MAX_BSSID_NUM],
+		au4lastRtsTx[MAX_BSSID_NUM];
+	struct BIG_DATA_PHY_CNT *prPhyCnt;
+	struct BIG_DATA_STA_INFO arStaInfo[BIG_DATA_MAX_STA_NUM];
+	struct BIG_DATA_BSS_CNT_T *cur;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucDbdcIdx;
+	uint32_t u4DeltaFcsOk, u4DeltaMdrdy, u4RtsTotalDiff;
+	uint32_t *pu4lastRtsFail, *pu4lastRtsTx;
+
+	if (prAdapter->u4BigDataVer < 1)
+		return rStatus;
+
+	if (!prParam)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (ucBssIdx >= MAX_BSSID_NUM || !IS_NET_ACTIVE(prAdapter, ucBssIdx))
+		return WLAN_STATUS_INVALID_DATA;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	ucDbdcIdx = prBssInfo->eHwBandIdx;
+
+	GET_MBR_EMI_FIELD(prAdapter, rStatus, arBssStatCnt, tmpBssCnt);
+	GET_MBR_EMI_FIELD(prAdapter, rStatus, arAbtCnt, arAbtCnt);
+	GET_MBR_EMI_FIELD(prAdapter, rStatus, arPhyCnt, arPhyCnt);
+	GET_MBR_EMI_FIELD(prAdapter, rStatus, arStaInfo, arStaInfo);
+
+	cur = &tmpBssCnt[ucBssIdx];
+	pu4lastRtsFail = &au4lastRtsFail[ucBssIdx];
+	pu4lastRtsTx = &au4lastRtsTx[ucBssIdx];
+
+	*pu4lastRtsFail = (cur->u4BaseRtsFail > *pu4lastRtsFail ?
+		cur->u4BaseRtsFail : *pu4lastRtsFail);
+	*pu4lastRtsTx = (cur->u4BaseRtsTx > *pu4lastRtsTx ?
+		cur->u4BaseRtsTx : *pu4lastRtsTx);
+	u4RtsTotalDiff = cur->u4RtsFail - *pu4lastRtsFail +
+		cur->u4RtsTx - *pu4lastRtsTx;
+
+	prParam->ucCuAll = cur->ucCuAll;
+	prParam->ucCuNotMe = cur->ucCuNotMe;
+	prParam->u4RtsFailRate = (u4RtsTotalDiff == 0 ? 0 : (uint32_t)((
+		cur->u4RtsFail - au4lastRtsFail[ucBssIdx]) /
+		u4RtsTotalDiff));
+
+	DBGLOG(NIC, INFO,
+		"bss(%u) rtsFail:%u(%u->%u) rtsTx:%u(%u->%u) rtsFailRate:%u CU[all/notme]=%u/%u\n",
+		ucBssIdx, cur->u4RtsFail - *pu4lastRtsFail, *pu4lastRtsFail,
+		cur->u4RtsFail, cur->u4RtsTx - *pu4lastRtsTx,
+		*pu4lastRtsTx, cur->u4RtsTx,
+		prParam->u4RtsFailRate,
+		prParam->ucCuAll, prParam->ucCuNotMe);
+	*pu4lastRtsFail = cur->u4RtsFail;
+	*pu4lastRtsTx = cur->u4RtsTx;
+
+	kalMemCopy(&prParam->rAbtCnt, &arAbtCnt[ucDbdcIdx],
+		sizeof(prParam->rAbtCnt));
+	DBGLOG(NIC, INFO,
+		"B(%u) abt tmac:%u agg:%u arb:%u pta:%u cca:%u mlo:%u\n\n",
+		ucDbdcIdx, arAbtCnt[ucDbdcIdx].u4TmacAbt,
+		arAbtCnt[ucDbdcIdx].u4AggAbt,
+		arAbtCnt[ucDbdcIdx].u4ArbAbt,
+		arAbtCnt[ucDbdcIdx].u4PtaAbt,
+		arAbtCnt[ucDbdcIdx].u4CcaAbt,
+		arAbtCnt[ucDbdcIdx].u4MloAbt);
+
+	prPhyCnt = &arPhyCnt[ucDbdcIdx];
+	u4DeltaFcsOk = (prPhyCnt->u4CckRxOk - prPhyCnt->u4CckFcsErr +
+		prPhyCnt->u4OfdmRxOk - prPhyCnt->u4OfdmFcsErr) -
+		lastFcsOk[ucDbdcIdx];
+	u4DeltaMdrdy = (prPhyCnt->u4OfdmMdrdy +
+		prPhyCnt->u4CckMdrdy - lastMdrdy[ucDbdcIdx]);
+	prParam->ucPhyRxPer = ((u4DeltaMdrdy - u4DeltaFcsOk) *
+		100 / u4DeltaMdrdy);
+
+	lastFcsOk[ucDbdcIdx] = (prPhyCnt->u4CckRxOk -
+		prPhyCnt->u4CckFcsErr + prPhyCnt->u4OfdmRxOk -
+		prPhyCnt->u4OfdmFcsErr);
+	lastMdrdy[ucDbdcIdx] = (prPhyCnt->u4OfdmMdrdy +
+		prPhyCnt->u4CckMdrdy);
+
+	DBGLOG(REQ, INFO,
+		"B%u [pd/md/ok/sigE/fcsE/taqE/tx/PER] ofdm:%u/%u/%u/%u/%u/%u/%u cck:%u/%u/%u/%u/%u/%u sfdE/pop:%u/%u PER:%u%%\n",
+		ucDbdcIdx, prPhyCnt->u4OfdmPd, prPhyCnt->u4OfdmMdrdy,
+		prPhyCnt->u4OfdmRxOk, prPhyCnt->u4OfdmSigErr,
+		prPhyCnt->u4OfdmFcsErr, prPhyCnt->u4OfdmTaqErr,
+		prPhyCnt->u4OfdmTx, prPhyCnt->u4CckPd,
+		prPhyCnt->u4CckMdrdy, prPhyCnt->u4CckRxOk,
+		prPhyCnt->u4CckSigErr, prPhyCnt->u4CckFcsErr,
+		prPhyCnt->u4CckTx, prPhyCnt->u4CckSfdErr,
+		prPhyCnt->u4Pop, prParam->ucPhyRxPer);
+	return WLAN_STATUS_SUCCESS;
+}
+
+int wlanQueryTrxLatBigDataByBssIdx(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid,
+		uint8_t ucBssIdx)
+{
+	uint32_t u4Status = WLAN_STATUS_NOT_SUPPORTED;
+	struct PARAM_QUERY_TRX_LATENCY_BIG_DATA *prBigDataParam;
+	struct PARAM_GET_STATS_ONE_CMD rParam;
+	uint32_t u4QueryInfoLen;
+
+	if (!pvQueryBuffer || !prAdapter || !pu4QueryInfoLen)
+		return WLAN_STATUS_FAILURE;
+
+	if (prAdapter->u4BigDataVer == 0)
+		return u4Status;
+
+	/* query all regular stats */
+	rParam.u4Period = SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY);
+	u4Status = wlanQueryStatsOneCmd(prAdapter,
+				&rParam, sizeof(rParam), &u4QueryInfoLen,
+				fgIsOid, ucBssIdx);
+	DBGLOG(REQ, TRACE,
+			"u4Status=%u", u4Status);
+
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		return u4Status;
+
+	prBigDataParam = (struct PARAM_QUERY_TRX_LATENCY_BIG_DATA *)
+		pvQueryBuffer;
+
+	u4Status = wlanGetTrxLatencyBigData(prAdapter, prBigDataParam,
+		ucBssIdx);
+
+	if (u4Status == WLAN_STATUS_SUCCESS)
+		*pu4QueryInfoLen = sizeof(
+			struct PARAM_QUERY_TRX_LATENCY_BIG_DATA);
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)

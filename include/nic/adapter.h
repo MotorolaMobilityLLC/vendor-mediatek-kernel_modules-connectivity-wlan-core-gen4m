@@ -2822,6 +2822,9 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_MBRAIN
 	struct mbrain_emi_data *prMbrEmiData;
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	uint32_t u4BigDataVer;
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
 #endif
 
 #if CFG_SUPPORT_MSP
