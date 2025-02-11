@@ -35,7 +35,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-
+#define CFG_WED_TRX_MAX_PKT_SIZE	1792
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -449,8 +449,8 @@ int wedInfoSetup(struct ADAPTER *prAdapter)
 	prwedinfo->rx_dma_glo_cfg = WIFI_HOST_DMA0_WPDMA_GLO_CFG;
 	prwedinfo->txd_size = TXD_SIZE;
 	prwedinfo->rxd_size = MAX_RXD_SIZE;
-	prwedinfo->tx_pkt_size = CFG_TX_MAX_PKT_SIZE;
-	prwedinfo->rx_pkt_size = CFG_RX_MAX_PKT_SIZE;
+	prwedinfo->tx_pkt_size = CFG_WED_TRX_MAX_PKT_SIZE;
+	prwedinfo->rx_pkt_size = CFG_WED_TRX_MAX_PKT_SIZE;
 	prwedinfo->tx_ring_size = TX_RING_SIZE;
 	prwedinfo->rx_ring_size = RX_RING_MAX_SIZE;
 	prwedinfo->tx_token_nums = HIF_TX_MSDU_TOKEN_NUM; /* 0x2F00 */
@@ -1071,6 +1071,7 @@ static uint32_t wedRxInfoGet(struct RXD_STRUCT *pRxD, struct SW_RFB *prSwRfb)
 {
 	struct WED_RX_INFO *prWedRxInfo = NULL;
 	uint32_t DW1 = *(uint32_t *)((uint32_t *)pRxD + 1);
+	uint32_t DW2 = *(uint32_t *)((uint32_t *)pRxD + 2);
 	uint32_t DW3 = *(uint32_t *)((uint32_t *)pRxD + 3);
 	uint8_t fgDrop = FALSE;
 	struct sk_buff *prSkb = (struct sk_buff *)prSwRfb->pvPacket;
@@ -1091,9 +1092,14 @@ static uint32_t wedRxInfoGet(struct RXD_STRUCT *pRxD, struct SW_RFB *prSwRfb)
 		prWedRxInfo->pPacket = prSwRfb->pvPacket;
 		prWedRxInfo->u2PpeEntry = ((DW3 & RXDMAD_PPE_ENTRY_MASK) >>
 			RXDMAD_PPE_ENTRY_SHIFT);
-		prWedRxInfo->ucCsrn = ((DW3 & RXDMAD_CSRN_MASK) >>
-			RXDMAD_CSRN_SHIFT);
-
+		if (grWedInfo.fgCsrnExt)
+			prWedRxInfo->ucCsrn =
+			(((DW3 & RXDMAD_CSRN_MASK) >> RXDMAD_CSRN_SHIFT) |
+			((DW2 & RXDMAD_CSRN_EXT_MASK) >>
+				(RXDMAD_CSRN_EXT_SHIFT - 5)));
+		else
+			prWedRxInfo->ucCsrn =
+			((DW3 & RXDMAD_CSRN_MASK) >> RXDMAD_CSRN_SHIFT);
 		prSwRfb->prWedRxInfo = prWedRxInfo;
 		WED_SET_PPE_TYPE(prSkb, RX_PPE_VALID);
 
@@ -1430,7 +1436,6 @@ uint32_t wedHwTxRequest(struct ADAPTER *prAdapter,
 	prWedTxInfo->ucBssIndex = prMsduInfo->ucBssIndex;
 	prWedTxInfo->ucWlanIndex = ucWlanIndex; /* HIF_TxD v0.1 DW9[15:8] */
 	prWedTxInfo->ringIdx = u2Port;
-
 	ret = wedProxyHookCall(PROXY_WLAN_HOOK_TX, prWedTxInfo);
 
 	kalMemFree(prWedTxInfo, PHY_MEM_TYPE, sizeof(struct WED_MSDU_INFO));

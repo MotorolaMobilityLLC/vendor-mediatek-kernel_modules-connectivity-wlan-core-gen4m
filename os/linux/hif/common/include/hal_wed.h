@@ -43,6 +43,10 @@
 #define RXDMAD_RXD_DROP (1 << 14)
 #define RXDMAD_M_DONE (1 << 15)
 
+	/* RxDmad DW2 */
+#define RXDMAD_CSRN_EXT_SHIFT 11
+#define RXDMAD_CSRN_EXT_MASK (0x1 << 11)
+
 	/* RxDmad DW3 */
 #define RXDMAD_PPE_VLD 31
 #define RXDMAD_CSRN_MASK (0x1f << 11)
@@ -51,7 +55,6 @@
 #define RXDMAD_PPE_ENTRY_SHIFT 16
 #define RXDMAD_TOKEN_ID_MASK (0xffff << 16)
 #define RXDMAD_TOKEN_ID_SHIFT 16
-
 #define WPDMA_OFFSET	0xd4000
 
 #define WIFI_RING_OFFSET    0x10
@@ -309,6 +312,8 @@ struct WED_MSDU_INFO {
 	uint32_t ringIdx;
 	bool fgDrop;
 	void *pMsduInfo;
+	uint8_t ucPrior;
+	uint8_t ucUserInfo;
 };
 
 struct WED_INFO {
@@ -367,9 +372,12 @@ struct WED_INFO {
 	void *prGlueInfo;
 	bool fgAttached;
 	uint8_t wed_ver;
+	uint8_t wed_subver;
 	unsigned long pcie_msi_msg_addr_lo;
 	unsigned long pcie_msi_msg_addr_hi;
 
+	bool fgCsrnExt;
+	bool fgCopyMode;
 	/* ser */
 	void (*wifi_reset)(void);
 };
