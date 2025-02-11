@@ -45,7 +45,7 @@
  * type definition of pointer to p2p structure
  */
 /* typedef struct GL_P2P_INFO   GL_P2P_INFO_T, *P_GL_P2P_INFO_T; */
-struct P2P_INFO;	/* declare P2P_INFO_T */
+struct P2P_DEV_INFO;	/* declare P2P_INFO_T */
 
 struct P2P_FSM_INFO;	/* declare P2P_FSM_INFO_T */
 

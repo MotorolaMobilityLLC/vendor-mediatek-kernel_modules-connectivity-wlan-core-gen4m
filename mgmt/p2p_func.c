@@ -1725,6 +1725,7 @@ drop:
 			ucRetryLimit, u4TxLifeTimeInMs);
 
 		prAdapter->prP2pInfo->eConnState = eConnState;
+		prAdapter->prP2pInfo->prWaitTxDoneMsdu = prMgmtTxMsdu;
 
 		/* Bufferable MMPDUs are suggested to be queued */
 		/* when GC is sleeping according to SPEC, */
@@ -2563,6 +2564,9 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 			break;
 
 		prChnlReqInfo->fgIsChannelRequested = FALSE;
+
+		if (prAdapter->prP2pInfo->prWaitTxDoneMsdu)
+			prAdapter->prP2pInfo->prWaitTxDoneMsdu = NULL;
 
 		/* 1. return channel privilege to CNM immediately */
 		prMsgChRelease = (struct MSG_CH_ABORT *)

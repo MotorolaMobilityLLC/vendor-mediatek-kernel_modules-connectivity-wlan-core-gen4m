@@ -138,7 +138,7 @@ enum ENUM_P2P_CONNECT_STATE {
 	P2P_CNN_PROV_DISC_RESP
 };
 
-struct P2P_INFO {
+struct P2P_DEV_INFO {
 	uint32_t u4DeviceNum;
 	enum ENUM_P2P_CONNECT_STATE eConnState;
 	struct EVENT_P2P_DEV_DISCOVER_RESULT
@@ -147,6 +147,7 @@ struct P2P_INFO {
 	/* A common pool for IE of all scan results. */
 	uint8_t aucCommIePool[CFG_MAX_COMMON_IE_BUF_LEN];
 	uint8_t ucExtendChanFlag;
+	struct MSDU_INFO *prWaitTxDoneMsdu;
 };
 
 enum ENUM_P2P_PEER_TYPE {

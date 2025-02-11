@@ -7638,7 +7638,7 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetdevPriv = NULL;
-	struct P2P_INFO *prP2pInfo = NULL;
+	struct P2P_DEV_INFO *prP2pInfo = NULL;
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 	u32 *flags = NULL;
 #endif

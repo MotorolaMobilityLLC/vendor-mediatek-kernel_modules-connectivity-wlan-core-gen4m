@@ -424,7 +424,8 @@ void p2pDevFsmRunEventTimeout(struct ADAPTER *prAdapter,
 				break;
 			}
 			if (p2pFuncNeedWaitRsp(prAdapter,
-					prAdapter->prP2pInfo->eConnState)) {
+					prAdapter->prP2pInfo->eConnState) ||
+			    prAdapter->prP2pInfo->prWaitTxDoneMsdu) {
 				DBGLOG(P2P, INFO,
 					"P2P: re-enter CHNL_ON_HAND with state: %d\n",
 					prAdapter->prP2pInfo->eConnState);
@@ -1270,6 +1271,9 @@ p2pDevFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 				"Mgmt Frame TX Done. cookie: 0x%llx\n",
 				*pu8GlCookie);
 		}
+
+		if (prAdapter->prP2pInfo->prWaitTxDoneMsdu == prMsduInfo)
+			prAdapter->prP2pInfo->prWaitTxDoneMsdu = NULL;
 
 		kalP2PIndicateMgmtTxStatus(prAdapter->prGlueInfo,
 			prMsduInfo,

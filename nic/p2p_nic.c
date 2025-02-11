@@ -77,7 +77,7 @@ nicRxAddP2pDevice(struct ADAPTER *prAdapter,
 		uint8_t *pucRxIEBuf,
 		uint16_t u2RxIELength)
 {
-	struct P2P_INFO *prP2pInfo = (struct P2P_INFO *) NULL;
+	struct P2P_DEV_INFO *prP2pInfo = (struct P2P_DEV_INFO *) NULL;
 	struct EVENT_P2P_DEV_DISCOVER_RESULT *prTargetResult =
 		(struct EVENT_P2P_DEV_DISCOVER_RESULT *) NULL;
 	uint32_t u4Idx = 0;

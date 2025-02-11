@@ -2772,7 +2772,7 @@ struct ADAPTER {
 	enum ENUM_NET_REG_STATE rP2PNetRegState;
 	enum ENUM_P2P_REG_STATE rP2PRegState;
 	/* BOOLEAN             fgIsWlanLaunched; */
-	struct P2P_INFO *prP2pInfo;
+	struct P2P_DEV_INFO *prP2pInfo;
 	u_int8_t fgDelIface[KAL_P2P_NUM];
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 	OS_SYSTIME rP2pLinkQualityUpdateTime;

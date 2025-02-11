@@ -353,7 +353,7 @@ const struct net_device_ops p2p_netdev_ops = {
 
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief Allocate memory for P2P_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
+ * \brief Allocate memory for P2P_DEV_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
  *                                          P2P_SPECIFIC_BSS_INFO, P2P_FSM_INFO
  *
  * \param[in] prGlueInfo      Pointer to glue info
@@ -396,11 +396,11 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 
 			if (prAdapter->prP2pInfo == NULL) {
 				prAdapter->prP2pInfo =
-					kalMemAlloc(sizeof(struct P2P_INFO),
+					kalMemAlloc(sizeof(struct P2P_DEV_INFO),
 						    VIR_MEM_TYPE);
 				if (prAdapter->prP2pInfo) {
 					kalMemZero(prAdapter->prP2pInfo,
-						   sizeof(struct P2P_INFO));
+						   sizeof(struct P2P_DEV_INFO));
 				}
 			}
 
@@ -542,7 +542,7 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 	}
 	if (prAdapter->prP2pInfo) {
 		kalMemFree(prAdapter->prP2pInfo,
-			VIR_MEM_TYPE, sizeof(struct P2P_INFO));
+			VIR_MEM_TYPE, sizeof(struct P2P_DEV_INFO));
 
 		prAdapter->prP2pInfo = NULL;
 	}
@@ -552,7 +552,7 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief Free memory for P2P_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
+ * \brief Free memory for P2P_DEV_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
  *                                          P2P_SPECIFIC_BSS_INFO, P2P_FSM_INFO
  *
  * \param[in] prGlueInfo      Pointer to glue info
@@ -632,7 +632,7 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 
 		p2pFreeMemSafe(prGlueInfo,
 			(void **)&prAdapter->prP2pInfo,
-			sizeof(struct P2P_INFO));
+			sizeof(struct P2P_DEV_INFO));
 
 		if (prGlueInfo->prP2PDevInfo) {
 			p2pFreeMemSafe(prGlueInfo,
