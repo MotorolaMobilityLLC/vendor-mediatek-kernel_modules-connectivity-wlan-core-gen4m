@@ -9220,6 +9220,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,
 		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
+
+#if CFG_SUPPORT_CCM
+	/* 1: Disable FW aliasing limitation */
+	INIT_UINT(prWifiVar->fgEnMspBw320, "EnMspBw320",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
