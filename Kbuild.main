@@ -718,6 +718,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_SUPPORT_P2P_SET_ML_BSS_NUM=y
     else
         CONFIG_MLD_P2P_LINK_MAX=1
+        CONFIG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=y
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
@@ -1395,12 +1396,18 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     ifneq ($(CONFIG_AP_EHT_DEFAULT_VALUE),)
         ccflags-y += -DCFG_AP_EHT_DEFAULT_VALUE=$(CONFIG_AP_EHT_DEFAULT_VALUE)
     endif
+    ifeq ($(CONFIG_SAP_SKIP_CHECK_HOSTAPD_ML_IE), y)
+        ccflags-y += -DCFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=1
+    else
+        ccflags-y += -DCFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
     ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_EPCS=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_T2LM=0
     ccflags-y += -DCFG_SUPPORT_CONTROL_PORT_OVER_NL80211=0
+    ccflags-y += -DCFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=0
 endif
 
 ifeq ($(CONFIG_MLO_EMLSR_CONCURRENT_ENHANCEMENT), y)
