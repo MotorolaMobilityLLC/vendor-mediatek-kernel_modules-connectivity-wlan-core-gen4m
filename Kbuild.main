@@ -718,7 +718,10 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_SUPPORT_P2P_SET_ML_BSS_NUM=y
     else
         CONFIG_MLD_P2P_LINK_MAX=1
-        CONFIG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=y
+        ifneq ($(call kver_ge,6,6),1)
+            CONFIG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=y
+            CONFIG_MTK_PRE_WIFI7=y
+        endif
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
