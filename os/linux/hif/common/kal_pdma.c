@@ -3272,7 +3272,7 @@ exit:
 
 int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 {
-	struct ADAPTER *ad;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDebugOps;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
@@ -3283,9 +3283,8 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
-	ad = glue->prAdapter;
-	if (!ad) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
+	if (!glue->prHifRegFifoBuf) {
+		DBGLOG(HAL, ERROR, "fifo is free\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -3310,9 +3309,22 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 	}
 #endif
 
-	prDebugOps = ad->chip_info->prDebugOps;
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo) {
+		DBGLOG(HAL, ERROR, "chip info is NULL\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (!glue->prAdapter) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	prDebugOps = prChipInfo->prDebugOps;
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt(ad);
+		dumpViaBt = prDebugOps->checkDumpViaBt(glue->prAdapter);
 
 	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN, "PCIe AER.\n");
