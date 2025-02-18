@@ -1813,6 +1813,10 @@ struct WIFI_VAR {
 #endif
 
 	uint32_t u4PmkRefreshThreshold;
+
+#if CFG_SUPPORT_CCM
+	u_int8_t fgEnMspBw320;
+#endif
 };
 
 /* cnm_timer module */

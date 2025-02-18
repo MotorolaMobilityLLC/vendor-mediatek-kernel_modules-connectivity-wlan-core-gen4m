@@ -799,9 +799,11 @@ bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 {
 	uint16_t arTargetBw[2];
 	uint8_t prForbiddenListLen;
-	struct CCM_AA_FOBIDEN_REGION_UNIT arRegionOutput[2];
+	struct CCM_AA_FOBIDEN_REGION_UNIT arRegOut[2];
 	struct RF_CHANNEL_INFO *prChnlInfo_h;
 	struct RF_CHANNEL_INFO *prChnlInfo_l;
+	u_int8_t fgIsSkipAliasing = prAdapter->rWifiVar.fgEnMspBw320;
+	u_int8_t fgAliasingCheck, fgIsolationCheck;
 
 	if (!ccmIsPreferAA(prAdapter, NULL))
 		return FALSE;
@@ -830,18 +832,21 @@ bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 	arTargetBw[0] = ccmAABwEnumToValue(prChnlInfo_l->ucChnlBw);
 
 	ccmAAForbiddenRegionCal(prAdapter, prChnlInfo_h, &prForbiddenListLen,
-				arTargetBw, arRegionOutput);
+				arTargetBw, arRegOut);
 
-	if (/* ADC Aliasing Forbidden Spacing */
-	    (arRegionOutput[0].u4BoundForward1 <= prChnlInfo_l->u4CenterFreq1 ||
-	    arRegionOutput[0].u4BoundForward2 >= prChnlInfo_l->u4CenterFreq1)
-	    &&
-	    (arRegionOutput[0].u4BoundInverse1 <= prChnlInfo_l->u4CenterFreq1 ||
-	    arRegionOutput[0].u4BoundInverse2 >= prChnlInfo_l->u4CenterFreq1)
-	    /* Isolation Channel Spacing */
-	    &&
-	    arRegionOutput[0].u4BoundIsolate > prChnlInfo_l->u4CenterFreq1 &&
-	    prChnlInfo_l->u4CenterFreq1 != prChnlInfo_h->u4CenterFreq1)
+	/* ADC Aliasing Forbidden Spacing */
+	fgAliasingCheck =
+		(arRegOut[0].u4BoundForward1 <= prChnlInfo_l->u4CenterFreq1 ||
+		 arRegOut[0].u4BoundForward2 >= prChnlInfo_l->u4CenterFreq1) &&
+		(arRegOut[0].u4BoundInverse1 <= prChnlInfo_l->u4CenterFreq1 ||
+		 arRegOut[0].u4BoundInverse2 >= prChnlInfo_l->u4CenterFreq1);
+	/* Isolation Channel Spacing */
+	fgIsolationCheck =
+		arRegOut[0].u4BoundIsolate >= prChnlInfo_l->u4CenterFreq1 &&
+		prChnlInfo_l->u4CenterFreq1 != prChnlInfo_h->u4CenterFreq1;
+
+	if ((fgIsSkipAliasing && fgIsolationCheck) ||
+	    (!fgIsSkipAliasing && fgAliasingCheck && fgIsolationCheck))
 		return TRUE;
 	else
 		return FALSE;
