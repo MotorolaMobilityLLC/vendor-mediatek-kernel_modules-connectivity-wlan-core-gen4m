@@ -8355,6 +8355,7 @@ int32_t wlanOnAtReset(void)
 				"%d inform disconnected\n", u4Idx);
 		}
 	} else {
+		glTxRxUninit(prGlueInfo);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
