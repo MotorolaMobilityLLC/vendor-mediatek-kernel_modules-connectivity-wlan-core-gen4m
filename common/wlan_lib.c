@@ -1711,6 +1711,7 @@ uint32_t wlanCheckWifiFunc(struct ADAPTER *prAdapter,
 {
 	u_int8_t fgResult, fgTimeout;
 	uint32_t u4Result = 0, u4Status, u4StartTime, u4CurTime;
+	uint32_t u4LoopCnt = 0;
 	const uint32_t ready_bits =
 		prAdapter->chip_info->sw_ready_bits;
 
@@ -1724,8 +1725,13 @@ uint32_t wlanCheckWifiFunc(struct ADAPTER *prAdapter,
 #endif
 
 	while (TRUE) {
-		DBGLOG(INIT, TRACE,
+		u4LoopCnt++;
+		DBGLOG(INIT, INFO,
 			"Check ready_bits(=0x%x)\n", ready_bits);
+
+		if (u4LoopCnt > 5)
+			kalSendAeeWarning("WFSYS", "wlanCheckWifiFunc fail\n");
+
 		if (fgRdyChk)
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter,
 					ready_bits /* WIFI_FUNC_READY_BITS */,
