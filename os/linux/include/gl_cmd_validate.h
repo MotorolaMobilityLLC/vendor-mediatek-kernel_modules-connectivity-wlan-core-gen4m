@@ -488,7 +488,12 @@
 #define CMD_P2P2_GC_CSA				"P2P2_GC_CSA"
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+#if (CFG_TC10_FEATURE == 1)
 #define CMD_SET_CUSTOM_TX_POWER_CALLING         "SET_CUSTOM_TX_POWER_CALLING"
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#define CMD_GET_WIFI6E_CHANNELS                 "GET_WIFI6E_CHANNELS"
+#endif /* CFG_TC10_FEATURE */
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

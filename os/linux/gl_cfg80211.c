@@ -6437,6 +6437,7 @@ int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
 #endif  /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+#if (CFG_TC10_FEATURE == 1)
 int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
 {
@@ -6578,6 +6579,108 @@ int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
 
 	return rStatus;
 }
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+int testmode_get_wifi6e_channels(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct RF_CHANNEL_INFO *aucChannelList;
+	int32_t i4Argc = 0, rStatus = 0, i4BytesWritten = 0, i4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucNumOfChannel = 0;
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
+	uint8_t i = 0, fgSupport = TRUE, ucQueryIdx = 0;
+	int8_t aucSetting[GET_WIFI6E_CAHNNELS_MSG_MAX_SIZE] = {0};
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -EINVAL;
+	if (!prAdapter->fgIsHwSupport6G)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	i4Ret = kalkStrtou8(apcArgv[1], 0, &ucQueryIdx);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR,
+			"Parse %s to ucQueryIdx error[%d]\n",
+			apcArgv[1], i4Ret);
+			return -EINVAL;
+	}
+
+	switch (ucQueryIdx) {
+	case 0: /* Low Power Indoor */
+		e6GPwrMode = PWR_MODE_6G_LPI;
+		break;
+	case 1: /* Very Low Power */
+		e6GPwrMode = PWR_MODE_6G_VLP;
+		break;
+	case 2: /* Low Power Indoor */
+		e6GPwrMode = PWR_MODE_6G_SP;
+		break;
+	default:
+		DBGLOG(REQ, INFO,
+			"parse non-support setting[%d]\n",
+			ucQueryIdx);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, INFO, "QueryIdx[%d] 6G power mode[%d]\n",
+		ucQueryIdx, e6GPwrMode);
+
+	aucChannelList = (struct RF_CHANNEL_INFO *)
+		kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM,
+		VIR_MEM_TYPE);
+
+	kalMemZero(aucChannelList, sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
+	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE,
+		MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+
+	for (i = 0; i < ucNumOfChannel; i++) {
+		rStatus = rlmDomain6GPwrModeCountrySupportChk(
+			aucChannelList[i].eBand,
+			aucChannelList[i].ucChannelNum,
+			prAdapter->rWifiVar.u2CountryCode,
+			e6GPwrMode,
+			&fgSupport);
+
+		if ((rStatus != WLAN_STATUS_SUCCESS) || (fgSupport == FALSE))
+			continue;
+
+		/* message body */
+		i4BytesWritten += kalScnprintf(aucSetting + i4BytesWritten,
+			GET_WIFI6E_CAHNNELS_MSG_MAX_SIZE - i4BytesWritten,
+			"%d ",
+			aucChannelList[i].ucChannelNum);
+	}
+
+	/* message tail */
+	if (i4BytesWritten >= 1)
+		aucSetting[i4BytesWritten - 1] = '\0';
+	else
+		aucSetting[0] = '\0';
+
+	pcCommand = aucSetting;
+
+	DBGLOG(REQ, INFO, "Country[%c%c]6GPwrMode[%d]:%s\n",
+		((prAdapter->rWifiVar.u2CountryCode & 0xff00) >> 8),
+		(prAdapter->rWifiVar.u2CountryCode & 0x00ff),
+		e6GPwrMode,
+		pcCommand);
+
+	kalMemFree(aucChannelList, VIR_MEM_TYPE,
+		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+#endif /* CFG_TC10_FEATURE */
 
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	struct wiphy *wiphy, char *data, int len)

@@ -311,7 +311,15 @@ struct CMD_VALIDATE_POLICY set_6g_pwr_mode_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 				.min = 0,
 				.max = PWR_MODE_6G_NUM}
 };
-#endif
+#if (CFG_TC10_FEATURE == 1)
+struct CMD_VALIDATE_POLICY
+		get_wifi6e_channels_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8,
+				.min = 0,
+				.max = PWR_MODE_6G_NUM}
+};
+#endif /* CFG_TC10_FEATURE */
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #if CFG_SUPPORT_EASY_DEBUG
 struct CMD_VALIDATE_POLICY set_fw_param_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
@@ -2877,6 +2885,7 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.policy    = NULL
 	},
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+#if (CFG_TC10_FEATURE == 1)
 	{
 		.pcCmdStr  = CMD_SET_CUSTOM_TX_POWER_CALLING,
 		.pfHandler = testmode_set_custom_tx_power_calling,
@@ -2884,6 +2893,17 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(13),
 		.policy    = NULL
 	},
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	{
+		.pcCmdStr  = CMD_GET_WIFI6E_CHANNELS,
+		.pfHandler = testmode_get_wifi6e_channels,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = get_wifi6e_channels_policy,
+		.u4PolicySize = ARRAY_SIZE(get_wifi6e_channels_policy)
+	},
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+#endif /* CFG_TC10_FEATURE */
 };
 
 
