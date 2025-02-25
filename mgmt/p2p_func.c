@@ -10803,7 +10803,7 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 	struct WIFI_VAR *prWifiVar;
 	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
 	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
-	uint8_t ucTempBw = MAX_BW_20MHZ;
+	uint8_t ucTempBw = MAX_BW_320_2MHZ;
 
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
