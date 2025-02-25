@@ -1978,12 +1978,12 @@ static bool nicIsNanStaRecTxAllowed(
 		links, rLinkEntryMld,
 		struct STA_RECORD) {
 		if (!starec) {
-			DBGLOG(NAN, WARN,
+			DBGLOG(NAN, LOUD,
 				"\tNull starec\n");
 			continue;
 		}
 
-		DBGLOG(INIT, DEBUG,
+		DBGLOG(INIT, LOUD,
 			"\tsta: %d, wid: %d, bss: %d => %d\n",
 			starec->ucIndex,
 			starec->ucWlanIndex,
