@@ -351,7 +351,7 @@ struct GL_HIF_INFO {
 	uint32_t u4WakeupIntSta;
 	bool fgIsBackupIntSta;
 
-	enum pcie_suspend_state eSuspendtate;
+	enum pcie_suspend_state eSuspendState;
 	uint32_t u4VoteState;
 #if CFG_SUPPORT_PCIE_ASPM
 	uint32_t u4PcieLTR;
@@ -705,6 +705,9 @@ void halPcieHwControlVote(
 	uint32_t u4WifiUser);
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+void pcieSetUserCount(uint16_t count);
+#endif
 uint32_t glReadPcieCfgSpace(int offset, uint32_t *value);
 uint32_t glWritePcieCfgSpace(int offset, uint32_t value);
 void glNotifyPciePowerDown(void);

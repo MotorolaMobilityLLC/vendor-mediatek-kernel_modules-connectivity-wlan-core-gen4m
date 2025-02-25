@@ -2462,6 +2462,23 @@ void kalReleaseHifOwnLock(struct ADAPTER *prAdapter)
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 }
 
+int kalHifOwnTryLock(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+#if ((CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) && \
+	(CFG_SUPPORT_RX_WORK == 0)) || \
+	(CFG_MTK_WIFI_DRV_OWN_INT_MODE == 0)
+
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		return spin_trylock(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+#endif
+		return mutex_trylock(
+			&prAdapter->prGlueInfo->arMutex[MUTEX_SET_OWN]);
+}
+
 u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
 	struct MSDU_INFO *prMsduInfo)
 {

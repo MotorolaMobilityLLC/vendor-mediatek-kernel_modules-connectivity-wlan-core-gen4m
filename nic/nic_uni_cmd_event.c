@@ -13756,7 +13756,9 @@ void nicUniEventHifCtrl(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucHifRxTrafficStatus =
 				basic->ucHifRxTrafficStatus;
 			legacy.ucHifSuspend = basic->ucHifSuspend;
-
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+			legacy.u2HifPcieUserCount = basic->u2HifPcieUserCount;
+#endif
 			RUN_RX_EVENT_HANDLER(EVENT_ID_HIF_CTRL,	&legacy);
 		}
 			break;

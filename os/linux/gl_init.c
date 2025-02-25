@@ -5494,7 +5494,9 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 
 	/* initialize semaphore for ioctl */
 	sema_init(&prGlueInfo->ioctl_sem, 1);
-
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	sema_init(&prGlueInfo->rSuspendSem, 1);
+#endif
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 	/* initialize SDIO read-write pattern control */
 	prGlueInfo->fgEnSdioTestPattern = FALSE;

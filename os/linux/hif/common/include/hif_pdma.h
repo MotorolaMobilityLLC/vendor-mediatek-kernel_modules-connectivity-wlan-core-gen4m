@@ -1359,6 +1359,9 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 #define KAL_HIF_OWN_UNLOCK(prAdapter) \
 	kalReleaseHifOwnLock(prAdapter)
 
+#define KAL_HIF_OWN_TRYLOCK(prAdapter) \
+	kalHifOwnTryLock(prAdapter)
+
 void kalBhDisable(struct GLUE_INFO *prGlueInfo);
 void kalBhEnable(struct GLUE_INFO *prGlueInfo);
 void kalAcquireHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
@@ -1373,6 +1376,7 @@ void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 		unsigned long ulHifTxRingFlags);
 void kalAcquireHifOwnLock(struct ADAPTER *prAdapter);
 void kalReleaseHifOwnLock(struct ADAPTER *prAdapter);
+int kalHifOwnTryLock(struct ADAPTER *prAdapter);
 
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb);

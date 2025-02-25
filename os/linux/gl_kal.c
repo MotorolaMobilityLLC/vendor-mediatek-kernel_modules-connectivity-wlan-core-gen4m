@@ -5698,11 +5698,11 @@ int hif_thread(void *data)
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
+
 	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
-			   prHifThreadWakeLock, "WLAN hif_thread");
+		prHifThreadWakeLock, "WLAN_hif_thread");
 	KAL_WAKE_LOCK(prGlueInfo->prAdapter, prHifThreadWakeLock);
 #endif
-
 	DBGLOG(INIT, DEBUG, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
@@ -5759,10 +5759,16 @@ int hif_thread(void *data)
 			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_TX_CMD);
 
 #if CFG_ENABLE_WAKE_LOCK
-		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+		if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			prGlueInfo->fgIsInSuspend))
+#endif
+		{
+			if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
 					  prHifThreadWakeLock))
-			KAL_WAKE_LOCK(prGlueInfo->prAdapter,
+				KAL_WAKE_LOCK(prGlueInfo->prAdapter,
 				      prHifThreadWakeLock);
+		}
 #endif
 		if (prAdapter->fgIsFwOwn
 		    && (prGlueInfo->ulFlag == GLUE_FLAG_HIF_FW_OWN)) {
@@ -5830,7 +5836,7 @@ int hif_thread(void *data)
 			/* Process TX data packet to HIF */
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_BIT,
 					       &prGlueInfo->ulFlag))
-				TRACE(nicTxMsduQueueMthread(prAdapter),	"TX");
+				TRACE(nicTxMsduQueueMthread(prAdapter), "TX");
 #endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
 		}
 
@@ -6108,7 +6114,7 @@ int main_thread(void *data)
 
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
-			   prTxThreadWakeLock, "WLAN main_thread");
+			   prTxThreadWakeLock, "WLAN_main_thread");
 	KAL_WAKE_LOCK(prGlueInfo->prAdapter, prTxThreadWakeLock);
 #endif
 
@@ -6148,10 +6154,16 @@ int main_thread(void *data)
 				!= 0));
 		} while (ret != 0);
 #if CFG_ENABLE_WAKE_LOCK
-		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
-					  prTxThreadWakeLock))
-			KAL_WAKE_LOCK(prGlueInfo->prAdapter,
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+		if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			prGlueInfo->fgIsInSuspend))
+#endif
+		{
+			if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+					prTxThreadWakeLock))
+				KAL_WAKE_LOCK(prGlueInfo->prAdapter,
 				      prTxThreadWakeLock);
+		}
 #endif
 		kalTraceBegin("main_thread");
 
@@ -6487,13 +6499,19 @@ int main_thread(void *data)
 
 	complete(&prGlueInfo->rHaltComp);
 #if CFG_ENABLE_WAKE_LOCK
-	if (KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
-				 prTxThreadWakeLock))
-		KAL_WAKE_UNLOCK(prGlueInfo->prAdapter, prTxThreadWakeLock);
-	KAL_WAKE_LOCK_DESTROY(prGlueInfo->prAdapter,
-			      prTxThreadWakeLock);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+		prGlueInfo->fgIsInSuspend))
 #endif
-
+	{
+		if (KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+				 prTxThreadWakeLock))
+			KAL_WAKE_UNLOCK(prGlueInfo->prAdapter,
+				prTxThreadWakeLock);
+		KAL_WAKE_LOCK_DESTROY(prGlueInfo->prAdapter,
+			      prTxThreadWakeLock);
+	}
+#endif
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
@@ -7324,7 +7342,10 @@ uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 
 void kalSetIntEvent(struct GLUE_INFO *pr)
 {
-	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME, pr->fgIsInSuspend))
+#endif
+		KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
 
 	/* Do not wakeup hif_thread in direct mode */
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))
@@ -7514,8 +7535,10 @@ void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr)
 {
 	if (!pr->hif_thread)
 		return;
-
-	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME, pr->fgIsInSuspend))
+#endif
+		KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 

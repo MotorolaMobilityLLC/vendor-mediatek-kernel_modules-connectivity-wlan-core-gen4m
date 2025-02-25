@@ -5972,8 +5972,12 @@ struct UNI_EVENT_HIF_CTRL_BASIC {
 	uint8_t ucHifTxTrafficStatus;
 	uint8_t ucHifRxTrafficStatus;
 	uint8_t ucHifSuspend;
-
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	uint16_t u2HifPcieUserCount;
+	uint8_t aucReserved[2];
+#else
 	uint8_t aucReserved[4];
+#endif
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

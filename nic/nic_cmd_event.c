@@ -1780,6 +1780,10 @@ void nicEventHifCtrl(struct ADAPTER *prAdapter,
 	       "prEventHifCtrl->ucHifTxTrafficStatus, prEventHifCtrl->ucHifRxTrafficStatus = %hhu, %hhu\n",
 	       prEventHifCtrl->ucHifTxTrafficStatus,
 	       prEventHifCtrl->ucHifRxTrafficStatus);
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	DBGLOG(HAL, DEBUG, "prEventHifCtrl->u2HifPcieUserCount = %d\n",
+		prEventHifCtrl->u2HifPcieUserCount);
+#endif
 
 #if defined(_HIF_USB)
 	if (prBusInfo->u4SuspendVer == SUSPEND_V2) {
@@ -1830,12 +1834,14 @@ void nicEventHifCtrl(struct ADAPTER *prAdapter,
 				halPciePreSuspendTimeout(prAdapter, NULL);
 			}
 		}  else {
-			prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
+			prAdapter->prGlueInfo->rHifInfo.eSuspendState =
 				PCIE_STATE_PRE_RESUME_DONE;
 		}
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+		pcieSetUserCount(prEventHifCtrl->u2HifPcieUserCount);
+#endif
 	}
 #endif
-
 }
 
 #if CFG_SUPPORT_BUILD_DATE_CODE

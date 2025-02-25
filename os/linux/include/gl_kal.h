@@ -3045,4 +3045,3 @@ void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);
 #endif /* _GL_KAL_H */
-

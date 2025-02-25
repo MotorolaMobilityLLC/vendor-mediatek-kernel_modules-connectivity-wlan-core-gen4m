@@ -386,6 +386,10 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define WAKE_LOCK_RX_TIMEOUT                            300	/* ms */
 #define WAKE_LOCK_THREAD_WAKEUP_TIMEOUT                 50	/* ms */
 
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+#define WAKE_LOCK_OOB_TIMEOUT_MS			10	/* ms */
+#endif
+
 #define IW_AUTH_CIPHER_GCMP128  0x00000040
 #define IW_AUTH_CIPHER_GCMP256  0x00000080
 
@@ -1251,6 +1255,9 @@ struct GLUE_INFO {
 	/* GLUE_INFO reserved START area for each wlanProbe */
 	u_int8_t reserved_start;
 
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	struct semaphore rSuspendSem; /* semaphore used in PCIE suspend */
+#endif
 	uint32_t u4DevNum;
 
 	const struct firmware *fw_entry;

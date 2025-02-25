@@ -3135,7 +3135,12 @@ struct EVENT_HIF_CTRL {
 	uint8_t ucHifTxTrafficStatus;
 	uint8_t ucHifRxTrafficStatus;
 	uint8_t ucHifSuspend;
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	uint16_t u2HifPcieUserCount;
+	uint8_t aucReserved2[30];
+#else
 	uint8_t aucReserved2[32];
+#endif
 };
 
 #if CFG_SUPPORT_BUILD_DATE_CODE

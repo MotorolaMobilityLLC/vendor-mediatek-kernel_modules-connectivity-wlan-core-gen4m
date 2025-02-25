@@ -616,6 +616,15 @@ uint32_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+#if CFG_ENABLE_WAKE_LOCK
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			prAdapter->prGlueInfo->fgIsInSuspend))
+		KAL_WAKE_LOCK(prAdapter,
+			prAdapter->prGlueInfo->prDrvOwnWakeLock);
+#endif
+	down(&prAdapter->prGlueInfo->rSuspendSem);
+#endif
 	KAL_HIF_OWN_LOCK(prAdapter);
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
@@ -766,11 +775,18 @@ done:
 			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 	}
 
-#if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
+#if !CFG_CONTROL_ASPM_BY_FW
 	glBusConfigASPM(prHifInfo->pdev, DISABLE_ASPM_L1);
-#endif
-#endif
+#else /* CFG_CONTROL_ASPM_BY_FW */
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+		if (prBusInfo->updatePcieAspm)
+			prBusInfo->updatePcieAspm(
+				prAdapter->prGlueInfo,
+				TRUE);
+#endif /* CFG_WIFI_PCIE_L2_SUPPORT == 1 */
+#endif /* CFG_CONTROL_ASPM_BY_FW */
+#endif /* CFG_SUPPORT_PCIE_ASPM */
 
 	/* For Low power Test */
 	/* 1. Driver need to polling until CR4 ready,
@@ -817,7 +833,6 @@ done:
 	}
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
-
 	} else
 		DBGLOG(INIT, ERROR, DUMP_DRV_OWN_FAIL,
 			u4DrvOwnElapsed, u4Send);
@@ -844,6 +859,15 @@ end:
 	if (fgStatus && prAdapter->fgWiFiInSleepyState == TRUE)
 		prAdapter->fgWiFiInSleepyState = FALSE;
 	KAL_HIF_OWN_UNLOCK(prAdapter);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	up(&prAdapter->prGlueInfo->rSuspendSem);
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
+		prAdapter->prGlueInfo->prDrvOwnWakeLock))
+		KAL_WAKE_UNLOCK(prAdapter,
+			prAdapter->prGlueInfo->prDrvOwnWakeLock);
+#endif
+#endif
 
 #if !CFG_SUPPORT_RX_WORK
 	if (fgIsDriverOwnTimeout) {
@@ -946,7 +970,12 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	KAL_HIF_OWN_LOCK(prAdapter);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	down(&prAdapter->prGlueInfo->rSuspendSem);
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF,
+		prAdapter->prGlueInfo->fgIsInSuspend))
+#endif
+		KAL_HIF_OWN_LOCK(prAdapter);
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
@@ -1028,15 +1057,31 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		if (prBusInfo->recordWFDMAIdx)
 			prBusInfo->recordWFDMAIdx(prAdapter);
 
-#if !CFG_CONTROL_ASPM_BY_FW
+
 #if CFG_SUPPORT_PCIE_ASPM
-		glBusConfigASPML1SS(prHifInfo->pdev,
-			PCI_L1PM_CTR1_ASPM_L12_EN |
-			PCI_L1PM_CTR1_ASPM_L11_EN);
-		glBusConfigASPM(prHifInfo->pdev,
-			ENABLE_ASPM_L1);
-#endif
-#endif
+#if !CFG_CONTROL_ASPM_BY_FW
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+		if (!KAL_TEST_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF,
+			prAdapter->prGlueInfo->fgIsInSuspend))
+#endif /* CFG_WIFI_PCIE_L2_SUPPORT == 1 */
+		{
+			glBusConfigASPML1SS(prHifInfo->pdev,
+				PCI_L1PM_CTR1_ASPM_L12_EN |
+				PCI_L1PM_CTR1_ASPM_L11_EN);
+			glBusConfigASPM(prHifInfo->pdev,
+				ENABLE_ASPM_L1);
+		}
+#else /* CFG_CONTROL_ASPM_BY_FW */
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+		if (KAL_TEST_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF,
+			prAdapter->prGlueInfo->fgIsInSuspend))
+			if (prBusInfo->updatePcieAspm)
+				prBusInfo->updatePcieAspm(
+					prAdapter->prGlueInfo,
+					FALSE);
+#endif /* CFG_WIFI_PCIE_L2_SUPPORT == 1 */
+#endif /* CFG_CONTROL_ASPM_BY_FW */
+#endif /* CFG_SUPPORT_PCIE_ASPM */
 
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
@@ -1090,6 +1135,12 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 
 unlock:
 	KAL_HIF_OWN_UNLOCK(prAdapter);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF,
+		prAdapter->prGlueInfo->fgIsInSuspend) ||
+		!prAdapter->fgIsFwOwn)
+		up(&prAdapter->prGlueInfo->rSuspendSem);
+#endif
 }
 
 void halWakeUpWiFi(struct ADAPTER *prAdapter)
@@ -5798,8 +5849,14 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    HIF_RX_NAPI_SET_DRV_OWN_BIT, prNapiDev->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
-		if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, prGlueInfo->rRxWorkerLock))
-			KAL_WAKE_LOCK(prAdapter, prGlueInfo->rRxWorkerLock);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+		if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			prGlueInfo->fgIsInSuspend))
+#endif
+			if (!KAL_WAKE_LOCK_ACTIVE(prAdapter,
+				prGlueInfo->rRxWorkerLock))
+				KAL_WAKE_LOCK(prAdapter,
+					prGlueInfo->rRxWorkerLock);
 #endif
 
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
@@ -5844,9 +5901,13 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
-	if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+	if (!KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+		prGlueInfo->fgIsInSuspend))
+#endif
+		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
 				  prGlueInfo->rRxWorkerLock))
-		KAL_WAKE_LOCK(prGlueInfo->prAdapter,
+			KAL_WAKE_LOCK(prGlueInfo->prAdapter,
 				  prGlueInfo->rRxWorkerLock);
 #endif
 

@@ -69,6 +69,11 @@
 #include "mddp.h"
 #endif
 
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
+#include <linux/irqreturn.h>
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -269,6 +274,12 @@ const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
 #define FW_RX_IDLE	2
 #endif
 
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+static int wlan_host_wake_up;
+static int wlan_host_wake_irq;
+static uint16_t pcie_user_count;
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -401,8 +412,8 @@ static u_int8_t g_ucBypassException;
  *******************************************************************************
  */
 
-static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
-static void halPcieResumeCmd(struct ADAPTER *prAdapter);
+static uint32_t halPciePreSuspendCmd(struct ADAPTER *prAdapter);
+static uint32_t halPcieResumeCmd(struct ADAPTER *prAdapter);
 
 static irqreturn_t mtk_wifi_isr(int irq, void *dev_instance);
 static irqreturn_t mtk_wifi_isr_thread(int irq, void *dev_instance);
@@ -411,6 +422,12 @@ static irqreturn_t mtk_wifi_isr_thread(int irq, void *dev_instance);
 extern u_int8_t fgIsL2Finished;
 #endif
 
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+static int mtk_pci_suspend_recovery(void);
+#endif
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+static uint16_t pcieGetUserCount(void);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -1912,29 +1929,26 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 
 static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 {
-#if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 0)
 #if (KERNEL_VERSION(5, 2, 0) <= CFG80211_VERSION_CODE)
-	struct device *dev = &pdev->dev;
+	struct device *prdev = &pdev->dev;
 
-	dev->power.driver_flags = DPM_FLAG_SMART_SUSPEND;
-	dev->power.runtime_status = RPM_SUSPENDED;
+	prdev->power.driver_flags = DPM_FLAG_SMART_SUSPEND;
+	prdev->power.runtime_status = RPM_SUSPENDED;
 	pdev->skip_bus_pm = true;
 #endif
 	return 0;
-
-#else
+#else /* CFG_WIFI_PCIE_L2_SUPPORT == 1 */
+	struct device *prdev = &pdev->dev;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
-	uint32_t count = 0;
-	int wait = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	int count = 0, wait = 0, ret;
 	struct ADAPTER *prAdapter = NULL;
-	uint8_t drv_own_fail = FALSE;
-	int ret;
-	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, STATE, "mtk_pci_suspend()\n");
 
-	prGlueInfo = wlanDevGetGlueInfo(prDev);
+	prGlueInfo = wlanDevGetGlueInfo(prdev);
 
 	if (!prGlueInfo) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
@@ -1944,6 +1958,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo->fgIsInSuspendMode = TRUE;
 
+
+	KAL_SET_BIT(SUSPEND_FLAG_FOR_L2_START, prGlueInfo->fgIsInSuspend);
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
 		DRV_OWN_SRC_PCI_SUSPEND);
 
@@ -1951,9 +1967,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
 
 #if CFG_ENABLE_WAKE_LOCK
-	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_SUSPEND_ENTERING;
+	prGlueInfo->rHifInfo.eSuspendState = PCIE_STATE_SUSPEND_ENTERING;
 #endif
-
 	/* wait wiphy device do cfg80211 suspend done, then start hif suspend */
 	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
 		wlanWaitCfg80211SuspendDone(prGlueInfo);
@@ -1961,31 +1976,38 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	wlanSuspendPmHandle(prGlueInfo);
 
 #if !CFG_ENABLE_WAKE_LOCK
-	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_PRE_SUSPEND_WAITING;
+	prGlueInfo->rHifInfo.eSuspendState = PCIE_STATE_PRE_SUSPEND_WAITING;
 #endif
-
-	halPciePreSuspendCmd(prAdapter);
-
-	while (prGlueInfo->rHifInfo.eSuspendtate !=
+	/* If send suspend event failed, this suspend is considered as failed */
+	u4Status = halPciePreSuspendCmd(prAdapter);
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter,
+			FALSE,
+			DRV_OWN_SRC_PCI_SUSPEND);
+		ret = -EAGAIN;
+		goto SUSPEND_PRE_SUSPEND_FAIL;
+	}
+	while (prGlueInfo->rHifInfo.eSuspendState !=
 		PCIE_STATE_PRE_SUSPEND_DONE) {
 		if (count > 500) {
-			DBGLOG(HAL, ERROR, "pcie pre_suspend timeout\n");
+			DBGLOG(HAL, ERROR,
+			      "pcie pre_suspend timeout\n");
 			ret = -EAGAIN;
-			goto SUSPEND_PRESUSPEND_FAIL;
+			goto SUSPEND_PRE_SUSPEND_FAIL;
 		}
 		kalMsleep(2);
 		count++;
 	}
 	DBGLOG(HAL, ERROR, "pcie pre_suspend done\n");
 
-	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_SUSPEND;
+	prGlueInfo->rHifInfo.eSuspendState = PCIE_STATE_SUSPEND;
 
 	/* Polling until HIF side PDMAs are all idle */
 	prBusInfo = prAdapter->chip_info->bus_info;
 	if (prBusInfo->pdmaPollingIdle) {
 		if (prBusInfo->pdmaPollingIdle(prGlueInfo) != TRUE) {
 			ret = -EAGAIN;
-			goto SUSPEND_POLL_IDLE_FAIL;
+			goto SUSPEND_POLLING_IDLE_FAIL;
 		}
 	} else
 		DBGLOG(HAL, ERROR, "PDMA polling idle API didn't register\n");
@@ -2001,43 +2023,72 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
 
 	halDisableInterrupt(prAdapter);
+	halSetSuspendFlagToFw(prGlueInfo->prAdapter, TRUE);
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	/* If user count returned by FW != 0, this suspend should be
+	 * abandoned to prevent from bus issue.
+	 */
+	if (pcieGetUserCount() != 0) {
+		DBGLOG(HAL, ERROR, "pcieGetUserCount != 0 !!\n");
+		RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter,
+			FALSE,
+			DRV_OWN_SRC_PCI_SUSPEND);
+		ret = -EAGAIN;
+		goto SUSPEND_FW_PCIE_USER_CHECK_FAIL;
+	}
+#endif /* CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1 */
 
-	/* FW own */
-	/* Set FW own directly without waiting sleep notify */
-	prAdapter->fgWiFiInSleepyState = TRUE;
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
-		DRV_OWN_SRC_PCI_SUSPEND);
-
-	/* Wait for
-	*  1. The other unfinished ownership handshakes
-	*  2. FW own back
-	*/
+	/*  Wait for
+	 *  1. The other unfinished ownership handshakes
+	 *  2. FW own back
+	 */
 	while (wait < 500) {
-		if ((prAdapter->u4PwrCtrlBlockCnt == 0) &&
-		    (prAdapter->fgIsFwOwn == TRUE) &&
-		    (drv_own_fail == FALSE)) {
-			DBGLOG(HAL, STATE, "*********************\n");
-			DBGLOG(HAL, STATE, "* Enter PCIE Suspend *\n");
-			DBGLOG(HAL, STATE, "*********************\n");
-			DBGLOG(HAL, DEBUG, "wait = %d\n\n", wait);
-			break;
-		}
-
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
-			DRV_OWN_SRC_PCI_SUSPEND);
-		/* Prevent that suspend without FW Own:
-		 * Set Drv own has failed,
-		 * and then Set FW Own is skipped
+		/* If u4PwrCtrlBlockCnt == 1 after driver own lock is acquired,
+		 * it means that only one FW own is unfinished, which is the
+		 * current suspend flow.
+		 * The SUSPEND_FLAG_FOR_RC_POWER_OFF bit will be set and the
+		 * semaphore is not allowed to be uped by FW own.
 		 */
-		if (prAdapter->fgIsFwOwn == FALSE)
-			drv_own_fail = FALSE;
-		else
-			drv_own_fail = TRUE;
-		/* For single core CPU */
-		/* let hif_thread can be completed */
+		if (KAL_HIF_OWN_TRYLOCK(prAdapter)) {
+			if ((prAdapter->u4PwrCtrlBlockCnt == 1)) {
+				prAdapter->fgWiFiInSleepyState = TRUE;
+				KAL_SET_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF,
+					prGlueInfo->fgIsInSuspend);
+
+				RECLAIM_POWER_CONTROL_TO_PM(
+					prGlueInfo->prAdapter,
+					FALSE,
+					DRV_OWN_SRC_PCI_SUSPEND);
+				if (prAdapter->fgIsFwOwn == FALSE) {
+					DBGLOG(HAL, ERROR,
+						"Cannot enter FW own.\n");
+					ret = -EAGAIN;
+					goto SUSPEND_FW_OWN_FAIL;
+				}
+				/* Save PCIE power state After FW own to
+				 * prevent from FW own MMIO write failed.
+				 * FW own will disable ASPM to prevent
+				 * from CmplTO while accessing EP config space.
+				 * CBTOP can enter deep sleep after PERST
+				 * is pulled low when PCIE enter L2.
+				 */
+#if (CFG_SUPPORT_PCIE_ASPM == 1) && (CFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND == 1)
+				DBGLOG(HAL, STATE,
+				"not switch D-state due to ASPM enable!\n");
+#else
+				pci_save_state(pdev);
+				pci_set_power_state(pdev,
+					pci_choose_state(pdev, state));
+#endif
+				DBGLOG(HAL, STATE, "*********************\n");
+				DBGLOG(HAL, STATE, "* Enter PCIE Suspend *\n");
+				DBGLOG(HAL, STATE, "*********************\n");
+				DBGLOG(HAL, INFO, "wait = %d\n", wait);
+				break;
+			}
+			KAL_HIF_OWN_UNLOCK(prAdapter);
+		}
 		usleep_range(1000, 3000);
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
-			DRV_OWN_SRC_PCI_SUSPEND);
 		wait++;
 	}
 
@@ -2048,16 +2099,12 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP == 1 */
 		if (wait >= 500) {
 			DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
+			RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter,
+				FALSE,
+				DRV_OWN_SRC_PCI_SUSPEND);
 			ret = -EAGAIN;
 			goto SUSPEND_FW_OWN_FAIL;
 		}
-
-#if (CFG_SUPPORT_PCIE_ASPM == 1) && (CFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND == 1)
-	DBGLOG(HAL, STATE, "not switch D-state due to ASPM enable!\n");
-#else
-	pci_save_state(pdev);
-	pci_set_power_state(pdev, pci_choose_state(pdev, state));
-#endif
 
 	DBGLOG(HAL, STATE, "mtk_pci_suspend() done!\n");
 
@@ -2070,22 +2117,12 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	return 0;
 
 SUSPEND_FW_OWN_FAIL:
-	halEnableInterrupt(prGlueInfo->prAdapter);
-
-	/* Enable HIF side PDMA TX/RX */
-	if (prBusInfo->pdmaStop)
-		prBusInfo->pdmaStop(prGlueInfo, FALSE);
-	else
-		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
-
-#if CFG_SUPPORT_WED_PROXY
-	kalIoctl(prGlueInfo, wlanoidWedResume, NULL, 0, &ret);
-#endif
-
-SUSPEND_POLL_IDLE_FAIL:
-SUSPEND_PRESUSPEND_FAIL:
-	halPcieResumeCmd(prGlueInfo->prAdapter);
-
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+SUSPEND_FW_PCIE_USER_CHECK_FAIL:
+#endif /* CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1 */
+SUSPEND_POLLING_IDLE_FAIL:
+SUSPEND_PRE_SUSPEND_FAIL:
+	mtk_pci_suspend_recovery();
 	return ret;
 #endif
 }
@@ -2093,17 +2130,16 @@ SUSPEND_PRESUSPEND_FAIL:
 
 int mtk_pci_resume(struct pci_dev *pdev)
 {
-#if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 0)
 	struct device *dev = &pdev->dev;
-
 	dev->power.runtime_status = RPM_ACTIVE;
 	return 0;
-#else
+#else /* CFG_WIFI_PCIE_L2_SUPPORT == 1 */
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 #if CFG_SUPPORT_WED_PROXY
 	uint32_t ret;
-#endif
+#endif /* CFG_SUPPORT_WED_PROXY */
 	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, STATE, "mtk_pci_resume()\n");
@@ -2126,8 +2162,14 @@ int mtk_pci_resume(struct pci_dev *pdev)
 
 	/* Driver own */
 	/* Include restore PDMA settings */
+	KAL_CLR_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF, prGlueInfo->fgIsInSuspend);
+	KAL_CLR_BIT(SUSPEND_FLAG_FOR_L2_START, prGlueInfo->fgIsInSuspend);
+	up(&prGlueInfo->rSuspendSem);
 	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter,
 		DRV_OWN_SRC_PCI_RESUME);
+
+	halSetSuspendFlagToFw(prGlueInfo->prAdapter, FALSE);
+	fw_log_handler();
 
 	if (prBusInfo->initPcieInt)
 		prBusInfo->initPcieInt(prGlueInfo);
@@ -2148,7 +2190,6 @@ int mtk_pci_resume(struct pci_dev *pdev)
 
 	wlanResumePmHandle(prGlueInfo);
 
-	/* FW own */
 	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE,
 		DRV_OWN_SRC_PCI_RESUME);
 
@@ -2161,6 +2202,56 @@ int mtk_pci_resume(struct pci_dev *pdev)
 	return 0;
 #endif
 }
+
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+static int mtk_pci_suspend_recovery(void)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo;
+
+	DBGLOG(HAL, STATE, "PCIE suspend recovery...\n");
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
+		return -1;
+	}
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	/* Driver own */
+	/* Include restore PDMA settings */
+	KAL_CLR_BIT(SUSPEND_FLAG_FOR_RC_POWER_OFF, prGlueInfo->fgIsInSuspend);
+	KAL_CLR_BIT(SUSPEND_FLAG_FOR_L2_START, prGlueInfo->fgIsInSuspend);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter,
+		DRV_OWN_SRC_PCI_SUSPEND);
+
+	halSetSuspendFlagToFw(prGlueInfo->prAdapter, FALSE);
+	if (prBusInfo->initPcieInt)
+		prBusInfo->initPcieInt(prGlueInfo);
+
+	/* Enable HIF side PDMA TX/RX */
+	if (prBusInfo->pdmaStop)
+		prBusInfo->pdmaStop(prGlueInfo, FALSE);
+	else
+		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
+
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctl(prGlueInfo, wlanoidWedResume, NULL, 0, &ret);
+#endif
+	halPcieResumeCmd(prGlueInfo->prAdapter);
+
+	wlanResumePmHandle(prGlueInfo);
+	/* FW own */
+	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE,
+		DRV_OWN_SRC_PCI_SUSPEND);
+
+	/* Allow upper layers to call the device hard_start_xmit routine. */
+	netif_tx_wake_all_queues(prGlueInfo->prDevHandler);
+
+	DBGLOG(HAL, STATE, "Suspend recovery done!\n");
+	return 0;
+}
+#endif /* CFG_WIFI_PCIE_L2_SUPPORT == 1 */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2617,6 +2708,19 @@ static int32_t glBusSetLegacyIrq(struct pci_dev *pdev,
 		prGlueInfo);
 }
 
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+static irqreturn_t mtk_oob_interrupt(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = dev_instance;
+
+	DBGLOG(HAL, TRACE, "irq= %d\n", irq);
+	KAL_WAKE_LOCK_TIMEOUT(prGlueInfo->prAdapter,
+		prGlueInfo->rTimeoutWakeLock,
+		MSEC_TO_JIFFIES(WAKE_LOCK_OOB_TIMEOUT_MS));
+	return IRQ_HANDLED;
+}
+#endif /* CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1 */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Setup bus interrupt operation and interrupt handler for os.
@@ -2639,6 +2743,23 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	struct pcie_msi_info *prMsiInfo = NULL;
 	struct pci_dev *pdev = NULL;
 	int ret = 0;
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	struct platform_device *ppdev;
+	int err = 0;
+	struct device_node *root_node = NULL;
+
+	kalGetPlatDev(&ppdev);
+
+	if (!ppdev) {
+		DBGLOG(INIT, ERROR, "Cannot get plat dev\n");
+		return -ENODEV;
+	}
+	root_node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
+	if (root_node == NULL) {
+		DBGLOG(INIT, ERROR, "Get device node failed\n");
+		return -ENODEV;
+	}
+#endif
 
 	prNetDevice = (struct net_device *)pvData;
 	prGlueInfo = (struct GLUE_INFO *)pvCookie;
@@ -2669,6 +2790,42 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 
 	if (prBusInfo->initPcieInt)
 		prBusInfo->initPcieInt(prGlueInfo);
+
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	wlan_host_wake_up = of_get_named_gpio(
+				ppdev->dev.of_node,
+				"wifi-wake-gpio",
+				0);
+	if (!gpio_is_valid(wlan_host_wake_up)) {
+		DBGLOG(INIT, ERROR, "Invalid GPIO pin : %d\n",
+			wlan_host_wake_up);
+		return -ENODEV;
+	}
+	DBGLOG(INIT, INFO, "Valid GPIO pin : %d\n",
+		wlan_host_wake_up);
+
+	if (gpio_request(wlan_host_wake_up, "WLAN_HOST_WAKE")) {
+		DBGLOG(INIT, ERROR,
+			"Request GPIO(WLAN_HOST_WAKE) failed.\n");
+		return -ENODEV;
+	}
+	DBGLOG(INIT, INFO,
+		"Request GPIO(WLAN_HOST_WAKE) success.\n");
+
+	gpio_direction_input(wlan_host_wake_up);
+	gpiod_export(gpio_to_desc(wlan_host_wake_up), 1);
+	wlan_host_wake_irq = gpio_to_irq(wlan_host_wake_up);
+	DBGLOG(INIT, INFO, "OOB irq  = %d\n", wlan_host_wake_irq);
+	request_irq(wlan_host_wake_irq, mtk_oob_interrupt,
+#if KERNEL_VERSION(6, 12, 0) <= LINUX_VERSION_CODE
+			IRQF_TRIGGER_FALLING,
+#else
+			IRQF_TRIGGER_FALLING | IRQF_NO_SUSPEND,
+#endif
+			prNetDevice->name, prGlueInfo);
+	err = enable_irq_wake(wlan_host_wake_irq);
+	DBGLOG(INIT, INFO, "enable irq wake = %d\n", err);
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	setupPlatDevIrq(prChipInfo->platform_device, prGlueInfo,
@@ -2795,6 +2952,15 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	pci_free_irq_vectors(pdev);
 #endif
 
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+	if (wlan_host_wake_irq > 0) {
+		disable_irq_wake(wlan_host_wake_irq);
+		disable_irq(wlan_host_wake_irq);
+		free_irq(wlan_host_wake_irq, prGlueInfo);
+		wlan_host_wake_irq = 0;
+		gpio_free(wlan_host_wake_up);
+	}
+#endif
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)
@@ -2945,7 +3111,7 @@ bool glBusConfigASPML1SS(struct pci_dev *dev, int i4Enable)
 
 #endif
 
-static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)
+static uint32_t halPciePreSuspendCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl = {0};
 	uint32_t rStatus;
@@ -2969,10 +3135,16 @@ static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)
 			0	/* u4SetQueryBufferLen */
 			);
 
-	ASSERT(rStatus == WLAN_STATUS_PENDING);
+	if (rStatus != WLAN_STATUS_PENDING) {
+		DBGLOG(HAL, ERROR,
+			"Pre-suspend CMD isn't pending (%u)\n",
+			rStatus);
+		return WLAN_STATUS_FAILURE;
+	}
+	return WLAN_STATUS_SUCCESS;
 }
 
-static void halPcieResumeCmd(struct ADAPTER *prAdapter)
+static uint32_t halPcieResumeCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl = {0};
 	uint32_t rStatus;
@@ -2995,8 +3167,13 @@ static void halPcieResumeCmd(struct ADAPTER *prAdapter)
 			NULL,	/* pvSetQueryBuffer */
 			0	/* u4SetQueryBufferLen */
 			);
-
-	ASSERT(rStatus == WLAN_STATUS_PENDING);
+	if (rStatus != WLAN_STATUS_PENDING) {
+		DBGLOG(HAL, ERROR,
+			"Resume CMD isn't Pending (%u)\n",
+			rStatus);
+		return WLAN_STATUS_FAILURE;
+	}
+	return WLAN_STATUS_SUCCESS;
 }
 
 void halPciePreSuspendDone(
@@ -3006,9 +3183,23 @@ void halPciePreSuspendDone(
 {
 	ASSERT(prAdapter);
 
-	prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
+	prAdapter->prGlueInfo->rHifInfo.eSuspendState =
 		PCIE_STATE_PRE_SUSPEND_DONE;
 }
+
+#if (CFG_WIFI_PCIE_L2_MOBILE_ONLY == 1)
+void pcieSetUserCount(uint16_t count)
+{
+	pcie_user_count = count;
+	DBGLOG(HAL, DEBUG, "Set count: %d\n", count);
+}
+
+static uint16_t pcieGetUserCount(void)
+{
+	DBGLOG(HAL, DEBUG, "Get count: %d\n", pcie_user_count);
+	return pcie_user_count;
+}
+#endif
 
 void halPciePreSuspendTimeout(
 	struct ADAPTER *prAdapter,
@@ -3016,7 +3207,7 @@ void halPciePreSuspendTimeout(
 {
 	ASSERT(prAdapter);
 
-	prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
+	prAdapter->prGlueInfo->rHifInfo.eSuspendState =
 		PCIE_STATE_PRE_SUSPEND_FAIL;
 }
 

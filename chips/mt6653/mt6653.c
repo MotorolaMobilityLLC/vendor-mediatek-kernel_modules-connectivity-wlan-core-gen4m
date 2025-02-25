@@ -1171,7 +1171,8 @@ enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_OID_DBG,
 	HIF_DEV_REG_PCIEASPM_READ,
 	HIF_DEV_REG_NOMMIO_DBG,
-#if (CFG_MTK_WIFI_WFDMA_WB == 0)
+	/* temp solution for stopping PDMA in suspend failed problem */
+#if (CFG_MTK_WIFI_WFDMA_WB == 0) || (CFG_WIFI_PCIE_L2_SUPPORT == 1)
 	HIF_DEV_REG_HIF_READ,
 	HIF_DEV_REG_HIF_RING,
 #endif

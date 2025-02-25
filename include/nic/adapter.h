@@ -3464,6 +3464,10 @@ struct ADAPTER {
 
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON (0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME (1)
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 1)
+#define SUSPEND_FLAG_FOR_RC_POWER_OFF  (2)
+#define SUSPEND_FLAG_FOR_L2_START      (3)
+#endif
 
 /* Macros for argument _BssIndex */
 #define IS_NET_ACTIVE(_prAdapter, _BssIndex) \

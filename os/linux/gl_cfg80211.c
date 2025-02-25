@@ -6701,7 +6701,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
 		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 0)
 		halSetSuspendFlagToFw(prGlueInfo->prAdapter, TRUE);
+#endif
 	}
 end:
 	kalHaltUnlock();
@@ -6751,8 +6753,10 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "ScanResultLog error:%x\n",
 		       rStatus);
+#if (CFG_WIFI_PCIE_L2_SUPPORT == 0)
 	halSetSuspendFlagToFw(prGlueInfo->prAdapter, FALSE);
 	fw_log_handler();
+#endif
 #if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
 	cnmDbdcPreResumeFlow(prAdapter);
 #endif
