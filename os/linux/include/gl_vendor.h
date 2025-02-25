@@ -172,6 +172,7 @@ enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_SET_MULTISTA_PRIMARY_CONNECTION,		/* 0x000d */
 	WIFI_SUBCMD_SET_MULTISTA_USE_CASE,			/* 0x000e */
 	WIFI_SUBCMD_SET_SCAN_PARAM,				/* 0x000f */
+	WIFI_SUBCMD_CHANNEL_POLICY,				/* 0x0010 */
 	WIFI_SUBCMD_SET_LATENCY_MODE = 0x0011,	/* 0x0011 */
 };
 
@@ -291,6 +292,18 @@ enum WIFI_STATS_ATTRIBUTE {
 	WIFI_ATTRIBUTE_STATS_CGS_TAG_LIST,
 	WIFI_ATTRIBUTE_STATS_VERSION,
 	WIFI_ATTRIBUTE_STATS_MAX,
+};
+
+enum WIFI_STA_CHANNEL_FOR_P2P_ATTRIBUTE {
+	WIFI_ATTRIBUTE_STA_CHANNEL_FOR_P2P_INVALID,
+	WIFI_ATTRIBUTE_ENABLE_STA_CHANNEL_FOR_P2P_ENABLE_FLAG,
+	/* Add more attributes here */
+	WIFI_ATTRIBUTE_ENABLE_STA_CHANNEL_FOR_P2P_MAX
+};
+
+enum CHANNEL_CATEROGY_MASK {
+	INDOOR_CHANNEL = 1 << 0,
+	DFS_CHANNEL = 1 << 1
 };
 
 #define TX_LAT_MONTR_INTVL_MIN		10
@@ -785,6 +798,9 @@ extern const struct nla_policy nla_trx_stats_policy[
 
 extern const struct nla_policy mtk_usable_channel_policy[
 	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX + 1];
+
+extern const struct nla_policy mtk_enable_sta_channel_for_peer_network_policy[
+	WIFI_ATTRIBUTE_ENABLE_STA_CHANNEL_FOR_P2P_MAX + 1];
 
 extern const struct nla_policy nla_connect_ext_policy[
 	QCA_WLAN_VENDOR_ATTR_CONNECT_EXT_MAX + 1];
@@ -1851,6 +1867,10 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 					   int data_len);
 
 int mtk_cfg80211_vendor_trigger_reset(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_enable_sta_channel_for_peer_network(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
 

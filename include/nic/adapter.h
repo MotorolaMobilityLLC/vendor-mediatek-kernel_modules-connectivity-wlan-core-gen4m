@@ -37,6 +37,12 @@
 
 #define MIN_TX_DURATION_TIME_MS 100
 
+#define IS_STA_DFS_CHANNEL_ENABLED(_ad) \
+	((_ad) && (_ad)->fgEnableStaDfsChannel)
+
+#define IS_STA_INDOOR_CHANNEL_ENABLED(_ad) \
+	((_ad) && (_ad)->fgEnableStaIndoorChannel)
+
 #define SET_HE_MCS_MAP 1
 #define SET_EHT_BW20_MCS_MAP 2
 #define SET_EHT_BW80_MCS_MAP 4
@@ -2780,6 +2786,8 @@ struct ADAPTER {
 	struct LINK_QUALITY rP2pLinkQuality;
 #endif
 #endif
+	u_int8_t fgEnableStaDfsChannel;
+	u_int8_t fgEnableStaIndoorChannel;
 
 	/* Online Scan Option */
 	u_int8_t fgEnOnlineScan;
