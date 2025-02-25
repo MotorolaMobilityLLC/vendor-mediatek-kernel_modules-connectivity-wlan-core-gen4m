@@ -4085,7 +4085,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 		prFollowupEvt->service_specific_info[0]);
 
 	/* NAN_CHK_PNT log message */
-		nanLogRx(NAN_ACTION_FOLLOW_UP, prFollowupEvt->addr);
+		nanLogRx("Follow_Up", prFollowupEvt->addr);
 
 	/* Ranging report
 	 * To be implement. NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO

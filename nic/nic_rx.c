@@ -3833,7 +3833,8 @@ uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 		       MAC2STR(prActionFrame->aucDestAddr));
 
 		/* NAN_CHK_PNT log message */
-		nanLogRx(ucOuiSubtype, prActionFrame->aucSrcAddr);
+		nanLogRx(nanActionFrameOuiString(ucOuiSubtype),
+			 prActionFrame->aucSrcAddr);
 
 		/* NAN_CHK_PNT log message */
 		if (UNEQUAL_MAC_ADDR(prActionFrame->aucClusterID,

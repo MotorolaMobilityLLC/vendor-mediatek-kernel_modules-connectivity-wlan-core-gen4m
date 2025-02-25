@@ -144,7 +144,7 @@ static inline void nanLogTxAndTxDoneFollowup(const char *pucTypeStr,
 }
 
 /* Rx */
-static inline void nanLogRx(uint8_t ucNafOui, uint8_t *pucSrcMacAddr)
+static inline void nanLogRx(const char *pcFrameType, uint8_t *pucSrcMacAddr)
 {
 }
 
