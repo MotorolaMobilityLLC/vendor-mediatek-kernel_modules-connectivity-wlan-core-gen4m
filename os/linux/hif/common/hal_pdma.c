@@ -2331,6 +2331,7 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	del_timer_sync(&prHifInfo->rSerTimer);
+	prHifInfo->fgIsTimerStart = FALSE;
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 #if CFG_SUPPORT_HRTIMER
 	hrtimer_cancel(&prHifInfo->rTxDelayTimer);
@@ -5194,11 +5195,32 @@ void halHwRecoveryTimeout(unsigned long arg)
 #if CFG_CHIP_RESET_SUPPORT
 		kalSetSerTimeoutEvent(prGlueInfo);
 #endif
+		prHifInfo->fgIsTimerStart = FALSE;
 		return;
 	}
 
 	mod_timer(&prHifInfo->rSerTimer,
 		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
+}
+
+static void halStartSerTimer(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (prHifInfo->fgIsTimerStart) {
+		DBGLOG(HAL, INFO, "SER timer is start\n");
+		return;
+	}
+
+	prHifInfo->rErrRecoveryCtl.u4TimeoutCnt = 0;
+	prHifInfo->fgIsTimerStart = TRUE;
+	mod_timer(&prHifInfo->rSerTimer,
+		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
+	DBGLOG(HAL, INFO, "Start SER timer\n");
 }
 
 void halSetDrvSer(struct ADAPTER *prAdapter)
@@ -5219,20 +5241,8 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 	halSerRecovery(prAdapter);
 
 	DBGLOG(HAL, INFO, "Set Driver Ser\n");
+	halStartSerTimer(prAdapter);
 	halTriggerSwInterrupt(prAdapter, MCU_INT_DRIVER_SER);
-}
-
-static void halStartSerTimer(struct ADAPTER *prAdapter)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct GL_HIF_INFO *prHifInfo;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prHifInfo->rErrRecoveryCtl.u4TimeoutCnt = 0;
-	mod_timer(&prHifInfo->rSerTimer,
-		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
-	DBGLOG(HAL, INFO, "Start SER timer\n");
 }
 
 void halHwRecoveryFromError(struct ADAPTER *prAdapter)
@@ -5409,6 +5419,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 	case ERR_RECOV_WAIT_MCU_NORMAL:
 		if (u4Status & ERROR_DETECT_MCU_NORMAL_STATE) {
 			del_timer_sync(&prHifInfo->rSerTimer);
+			prHifInfo->fgIsTimerStart = FALSE;
 #if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");

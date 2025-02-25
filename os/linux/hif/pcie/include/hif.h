@@ -318,6 +318,7 @@ struct GL_HIF_INFO {
 
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	struct timer_list rSerTimer;
+	u_int8_t fgIsTimerStart;
 	unsigned long rSerTimerData;
 #if CFG_MTK_MDDP_SUPPORT
 	uint8_t fgMdResetInd;
