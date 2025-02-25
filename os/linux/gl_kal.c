@@ -20004,6 +20004,11 @@ static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 	if (!prPerCpuTxInfo->fgReady || !prSkb)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
+	ucBssIndex = GLUE_GET_PKT_BSS_IDX(prSkb);
+	prDev = wlanGetNetDev(pr, ucBssIndex);
+	if (!prDev)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
 	prInfo = get_cpu_ptr(prPerCpuTxInfo->prInfo);
 
 	__skb_queue_tail(&prInfo->rSkbQ, prSkb);
@@ -20030,8 +20035,6 @@ static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 		}
 		tasklet_schedule(&prInfo->rTask);
 	} else {
-		ucBssIndex = GLUE_GET_PKT_BSS_IDX(prSkb);
-		prDev = wlanGetNetDev(pr, ucBssIndex);
 		stopped = netif_subqueue_stopped(prDev, prSkb);
 		if (unlikely(stopped)) {
 			u2QueueIdx = skb_get_queue_mapping(prSkb);
