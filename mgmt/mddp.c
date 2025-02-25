@@ -1647,6 +1647,15 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 		goto end;
 	}
 
+	if (prHifInfo->u4GenSwitchState != MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE,
+			u2genSwitchSeq, u2GenSwitchRsp);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		goto end;
+	}
 
 	if (prMdInfo->buf_len >= 4) {
 		u2genSwitchSeq = prAckRsp->u2Seq;
@@ -1671,9 +1680,9 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	}
 
+end:
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
 
-end:
 	return 0;
 }
 
@@ -2094,6 +2103,19 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 
 		ret = mddpNotifyMDGenSwithAction(
 			WFPM_DRVINFO_PCIE_GENSWITCH_END);
+	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
+			MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState, MDDP_GEN_SWITCH_END_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_END_STATE;
+		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
+			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
+			  MSEC_PER_SEC);
+		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+		ret = mddpNotifyMDGenSwithAction(
+			WFPM_DRVINFO_PCIE_GENSWITCH_END);
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
 			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE) {
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
