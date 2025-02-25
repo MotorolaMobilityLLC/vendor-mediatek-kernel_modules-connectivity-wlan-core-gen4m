@@ -1510,9 +1510,20 @@ int32_t connac3x_show_stat_info(
 				    pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_1));
 
 		/* Last Beacon RSSI */
-		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "Beacon RSSI", " = ", rRssi);
+		if (ucBssIndex < MAX_BSSID_NUM)
+			i4BytesWritten +=
+			kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d (%d,%d)\n", "Beacon RSSI", " = ", rRssi,
+			RCPI_TO_dBm(
+			prAdapter->aucScanRcpiAnt[ucBssIndex][ANTENNA_WF0]),
+			RCPI_TO_dBm(
+			prAdapter->aucScanRcpiAnt[ucBssIndex][ANTENNA_WF1]));
+		else
+			i4BytesWritten +=
+			kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Beacon RSSI", " = ", rRssi);
 	}
 
 	/* =========== Group 0x0008 =========== */
