@@ -1161,6 +1161,7 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_MBRAIN_BIGDATA_VER = 0x42,
 #endif
 #endif
+	UNI_CAP_CNM_BAND = 0x43,
 	TAG_CAP_TOTAL
 };
 
@@ -1301,6 +1302,29 @@ enum ENUM_P2P_CAP_BITMAP {
 
 struct CAP_P2P {
 	uint32_t u4P2pCap;	/* Bit(0): PNOA, Bits(1-31): Reserved */
+};
+
+enum ENUM_PHY_CAP_CNM_BAND_BW {
+	ENUM_PHY_CAP_CNM_NOT_SUPP    = 0,
+	ENUM_PHY_CAP_CNM_BW_20MHZ    = 1,
+	ENUM_PHY_CAP_CNM_BW_40MHZ    = 2,
+	ENUM_PHY_CAP_CNM_BW_80MHZ    = 3,
+	ENUM_PHY_CAP_CNM_BW_160MHZ   = 4,
+	ENUM_PHY_CAP_CNM_BW_80P80MHZ = 5,
+	ENUM_PHY_CAP_CNM_BW_5MHZ     = 6,
+	ENUM_PHY_CAP_CNM_BW_10MHZ    = 7,
+	ENUM_PHY_CAP_CNM_BW_320MHZ   = 8,
+	ENUM_PHY_CAP_CNM_BW_NUM
+};
+
+struct CAP_CNM_BAND {
+	uint8_t ucBandNum;	/* Actually supoorted number of hw band */
+	uint8_t aucMaxBw2g[4];
+	uint8_t aucMaxBw5g[4];
+	uint8_t aucMaxBw6g[4];
+	uint8_t aucMaxNss[4];
+	uint8_t aucMaxMcs[4];
+	uint8_t aucReserved[7];
 };
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
@@ -4484,6 +4508,7 @@ uint32_t nicCfgChipP2PCap(struct ADAPTER *prAdapter,
 		uint8_t *pucEventBuf);
 
 #endif
+uint32_t nicCfgChipCnmCap(struct ADAPTER *prAdapter, uint8_t *pucEventBuf);
 
 uint32_t nicCmdEventHostStatusEmiOffset(struct ADAPTER *prAdapter,
 					uint8_t *pucEventBuf);

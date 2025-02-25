@@ -154,7 +154,8 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #endif
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_P2P,
 				nicCfgChipP2PCap),
-
+	NIC_FILL_CAP_V2_REF_TBL(UNI_CAP_CNM_BAND,
+				nicCfgChipCnmCap),
 };
 
 /*******************************************************************************
@@ -3734,6 +3735,267 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Get the max rf bw of all hw band which support the rf band.
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t
+nicCfgChipGetMaxBwByRf(struct ADAPTER *prAdapter, uint8_t ucBand,
+		       struct CNM_CHIP_CAP_INFO *prCnmChipCap)
+{
+	uint8_t ucValidHwBn = 0;
+	uint8_t *pucRfMaxBw = NULL;
+	uint8_t i;
+	uint8_t ucMaxBw = MAX_BW_20MHZ;
+
+	if (!(ucBand >= BAND_2G4 && ucBand < BAND_NUM))
+		return ucMaxBw;
+
+	if (ucBand == BAND_2G4) {
+		ucValidHwBn = prCnmChipCap->ucValidHwBn2g;
+		pucRfMaxBw = prCnmChipCap->aucMaxBw2g;
+	} else if (ucBand == BAND_5G) {
+		ucValidHwBn = prCnmChipCap->ucValidHwBn5g;
+		pucRfMaxBw = prCnmChipCap->aucMaxBw5g;
+	} else {
+		ucValidHwBn = prCnmChipCap->ucValidHwBn6g;
+		pucRfMaxBw = prCnmChipCap->aucMaxBw6g;
+	}
+
+	if (!ucValidHwBn)
+		return ucMaxBw;
+
+	for (i = 0; i < CONFIG_BAND_NUM; i++) {
+		if (!(ucValidHwBn & BIT(i)))
+			continue;
+		ucMaxBw = kal_max_t(uint8_t, ucMaxBw, pucRfMaxBw[i]);
+	}
+
+	return ucMaxBw;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Get the max rf NSS of all hw band which support the rf band.
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t
+nicCfgChipGetMaxNssByRf(struct ADAPTER *prAdapter, uint8_t ucBand,
+			struct CNM_CHIP_CAP_INFO *prCnmChipCap)
+{
+	uint8_t ucValidHwBn = 0;
+	uint8_t *pucRfMaxNss = prCnmChipCap->aucMaxNss;
+	uint8_t i;
+	uint8_t ucMaxNss = 1;
+
+	if (!(ucBand >= BAND_2G4 && ucBand < BAND_NUM))
+		return ucMaxNss;
+
+	if (ucBand == BAND_2G4)
+		ucValidHwBn = prCnmChipCap->ucValidHwBn2g;
+	else if (ucBand == BAND_5G)
+		ucValidHwBn = prCnmChipCap->ucValidHwBn5g;
+	else
+		ucValidHwBn = prCnmChipCap->ucValidHwBn6g;
+
+	if (!ucValidHwBn)
+		return ucMaxNss;
+
+	for (i = 0; i < CONFIG_BAND_NUM; i++) {
+		if (!(ucValidHwBn & BIT(i)) || !pucRfMaxNss[i])
+			continue;
+		ucMaxNss = kal_max_t(uint8_t, ucMaxNss, pucRfMaxNss[i]);
+	}
+
+	return ucMaxNss;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Revise cap by the max cap all hw band can support because we do not
+ *        know which hw band we will be allocated to when ch grant.
+ */
+/*----------------------------------------------------------------------------*/
+static void
+nicCfgChipReviseCnmCap(struct ADAPTER *prAdapter,
+		       struct CNM_CHIP_CAP_INFO *prCnmChipCap)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t ucMaxBw;
+	uint8_t ucMaxNss;
+
+	/* 2G BW */
+	ucMaxBw = nicCfgChipGetMaxBwByRf(prAdapter, BAND_2G4, prCnmChipCap);
+	if (prWifiVar->ucSta2gBandwidth > ucMaxBw) {
+		prWifiVar->ucSta2gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "Sta2gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "Sta2gBw", ucMaxBw);
+	}
+	if (prWifiVar->ucP2p2gBandwidth > ucMaxBw) {
+		prWifiVar->ucP2p2gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "P2p2gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "P2p2gBw", ucMaxBw);
+	}
+	if (prWifiVar->ucAp2gBandwidth > ucMaxBw) {
+		prWifiVar->ucAp2gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "Ap2gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "Ap2gBw", ucMaxBw);
+	}
+
+	/* 5G BW */
+	ucMaxBw = nicCfgChipGetMaxBwByRf(prAdapter, BAND_5G, prCnmChipCap);
+	if (prWifiVar->ucSta5gBandwidth > ucMaxBw) {
+		prWifiVar->ucSta5gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "Sta5gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "Sta5gBw", ucMaxBw);
+	}
+	if (prWifiVar->ucP2p5gBandwidth > ucMaxBw) {
+		prWifiVar->ucP2p5gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "P2p5gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "P2p5gBw", ucMaxBw);
+	}
+	if (prWifiVar->ucAp5gBandwidth > ucMaxBw) {
+		prWifiVar->ucAp5gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "Ap5gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "Ap5gBw", ucMaxBw);
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6G BW */
+	ucMaxBw = nicCfgChipGetMaxBwByRf(prAdapter, BAND_6G, prCnmChipCap);
+	if (prWifiVar->ucSta6gBandwidth > ucMaxBw) {
+		prWifiVar->ucSta6gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "Sta6gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "Sta6gBw", ucMaxBw);
+	}
+	if (prWifiVar->ucP2p6gBandwidth > ucMaxBw) {
+		prWifiVar->ucP2p6gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "P2p6gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "P2p6gBw", ucMaxBw);
+	}
+	if (prWifiVar->ucAp6gBandwidth > ucMaxBw) {
+		prWifiVar->ucAp6gBandwidth = ucMaxBw;
+		wlanCfgSetUint32(prAdapter, "Ap6gBw", ucMaxBw);
+		wlanCfgRecordValue(prAdapter, "Ap6gBw", ucMaxBw);
+	}
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+
+	/* 2G NSS */
+	ucMaxNss = nicCfgChipGetMaxNssByRf(prAdapter, BAND_2G4, prCnmChipCap);
+	if (prWifiVar->ucGo2gNSS > ucMaxNss) {
+		prWifiVar->ucGo2gNSS = ucMaxNss;
+		wlanCfgSetUint32(prAdapter, "Go2gNss", ucMaxNss);
+		wlanCfgRecordValue(prAdapter, "Go2gNss", ucMaxNss);
+	}
+	if (prWifiVar->ucAp2gNSS > ucMaxNss) {
+		prWifiVar->ucAp2gNSS = ucMaxNss;
+		wlanCfgSetUint32(prAdapter, "Ap2gNss", ucMaxNss);
+		wlanCfgRecordValue(prAdapter, "Ap2gNss", ucMaxNss);
+	}
+
+	/* 5G NSS */
+	ucMaxNss = nicCfgChipGetMaxNssByRf(prAdapter, BAND_5G, prCnmChipCap);
+	if (prWifiVar->ucGo5gNSS > ucMaxNss) {
+		prWifiVar->ucGo5gNSS = ucMaxNss;
+		wlanCfgSetUint32(prAdapter, "Go5gNss", ucMaxNss);
+		wlanCfgRecordValue(prAdapter, "Go5gNss", ucMaxNss);
+	}
+	if (prWifiVar->ucAp5gNSS > ucMaxNss) {
+		prWifiVar->ucAp5gNSS = ucMaxNss;
+		wlanCfgSetUint32(prAdapter, "Ap5gNss", ucMaxNss);
+		wlanCfgRecordValue(prAdapter, "Ap5gNss", ucMaxNss);
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6G NSS */
+	ucMaxNss = nicCfgChipGetMaxNssByRf(prAdapter, BAND_6G, prCnmChipCap);
+	if (prWifiVar->ucGo6gNSS > ucMaxNss) {
+		prWifiVar->ucGo6gNSS = ucMaxNss;
+		wlanCfgSetUint32(prAdapter, "Go6gNss", ucMaxNss);
+		wlanCfgRecordValue(prAdapter, "Go6gNss", ucMaxNss);
+	}
+	if (prWifiVar->ucAp6gNSS > ucMaxNss) {
+		prWifiVar->ucAp6gNSS = ucMaxNss;
+		wlanCfgSetUint32(prAdapter, "Ap6gNss", ucMaxNss);
+		wlanCfgRecordValue(prAdapter, "Ap6gNss", ucMaxNss);
+	}
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+}
+
+uint32_t nicCfgChipCnmCap(struct ADAPTER *prAdapter, uint8_t *pucEventBuf)
+{
+	struct CAP_CNM_BAND *prCnmCap = (struct CAP_CNM_BAND *)pucEventBuf;
+	struct CNM_CHIP_CAP_INFO rCnmChipCap;
+	uint8_t i;
+	const uint16_t u2MaxSize = 256;
+	char ucBuf[256] = { 0 };
+	char *pucBuf = ucBuf;
+	uint16_t u2Len = 0;
+
+	if (prCnmCap->ucBandNum != CONFIG_BAND_NUM) {
+		DBGLOG(NIC, ERROR, "HW band num unmatch\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	LOGBUF(pucBuf, u2MaxSize, u2Len, "CNM PHY CAP ");
+	for (i = 0; i < CONFIG_BAND_NUM; i++) {
+		uint8_t ucRfBn;
+
+		LOGBUF(pucBuf, u2MaxSize, u2Len, "Bn%u [BW ", i);
+		for (ucRfBn = BAND_2G4; ucRfBn < BAND_NUM; ucRfBn++) {
+			uint8_t *pucDstMaxBw, *pucDstValidHwBn;
+			uint8_t ucSrcMaxbw = MAX_BW_UNKNOWN;
+
+			if (ucRfBn == BAND_2G4) {
+				pucDstMaxBw = &rCnmChipCap.aucMaxBw2g[i];
+				ucSrcMaxbw = prCnmCap->aucMaxBw2g[i];
+				pucDstValidHwBn = &rCnmChipCap.ucValidHwBn2g;
+				LOGBUF(pucBuf, u2MaxSize, u2Len, "2G:");
+			} else if (ucRfBn == BAND_5G) {
+				pucDstMaxBw = &rCnmChipCap.aucMaxBw5g[i];
+				ucSrcMaxbw = prCnmCap->aucMaxBw5g[i];
+				pucDstValidHwBn = &rCnmChipCap.ucValidHwBn5g;
+				LOGBUF(pucBuf, u2MaxSize, u2Len, "5G:");
+			} else {
+				pucDstMaxBw = &rCnmChipCap.aucMaxBw6g[i];
+				ucSrcMaxbw = prCnmCap->aucMaxBw6g[i];
+				pucDstValidHwBn = &rCnmChipCap.ucValidHwBn6g;
+				LOGBUF(pucBuf, u2MaxSize, u2Len, "6G:");
+			}
+
+			if (ucSrcMaxbw >= ENUM_PHY_CAP_CNM_BW_20MHZ &&
+			    ucSrcMaxbw <= ENUM_PHY_CAP_CNM_BW_80P80MHZ)
+				*pucDstMaxBw = ucSrcMaxbw - 1;
+			else if (ucSrcMaxbw == ENUM_PHY_CAP_CNM_BW_320MHZ)
+				*pucDstMaxBw = MAX_BW_320_2MHZ;
+			else
+				*pucDstMaxBw = MAX_BW_UNKNOWN;
+
+			if (*pucDstMaxBw >= MAX_BW_UNKNOWN)
+				*pucDstValidHwBn &= ~BIT(i);
+			else
+				*pucDstValidHwBn |= BIT(i);
+
+			LOGBUF(pucBuf, u2MaxSize, u2Len, "%u", *pucDstMaxBw);
+			if (ucRfBn < BAND_NUM - 1)
+				LOGBUF(pucBuf, u2MaxSize, u2Len, "-");
+		}
+		rCnmChipCap.aucMaxNss[i] = prCnmCap->aucMaxNss[i];
+		rCnmChipCap.aucMaxMcs[i] = prCnmCap->aucMaxMcs[i];
+		LOGBUF(pucBuf, u2MaxSize, u2Len, "][NSS:%u][MCS:%u]",
+		       prCnmCap->aucMaxNss[i],
+		       prCnmCap->aucMaxMcs[i]);
+		if (i < CONFIG_BAND_NUM - 1)
+			LOGBUF(pucBuf, u2MaxSize, u2Len, ", ");
+	}
+	DBGLOG(NIC, INFO, "%s\n", pucBuf);
+
+	nicCfgChipReviseCnmCap(prAdapter, &rCnmChipCap);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t nicEventQueryTxResource(struct ADAPTER
 				 *prAdapter, uint8_t *pucEventBuf)

@@ -376,6 +376,20 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	CNM_OPMODE_REQ_MAX_CAP    = 13
 };
 
+struct CNM_CHIP_CAP_INFO {
+	uint8_t aucMaxBw2g[CONFIG_BAND_NUM];
+	uint8_t aucMaxBw5g[CONFIG_BAND_NUM];
+	uint8_t aucMaxBw6g[CONFIG_BAND_NUM];
+	/* indicate which hw bn can be allocate by rf band,
+	 * Bit(0): Bn0, Bit(1): Bn1, Bit(2): Bn2.
+	 */
+	uint8_t ucValidHwBn2g;
+	uint8_t ucValidHwBn5g;
+	uint8_t ucValidHwBn6g;
+	uint8_t aucMaxNss[CONFIG_BAND_NUM];
+	uint8_t aucMaxMcs[CONFIG_BAND_NUM];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
