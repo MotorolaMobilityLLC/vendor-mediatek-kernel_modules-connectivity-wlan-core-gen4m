@@ -3182,6 +3182,10 @@ struct ADAPTER {
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 #endif
 	uint8_t ucScanRcpi[MAX_BSSID_NUM];
+	uint8_t aucScanRcpiAnt[MAX_BSSID_NUM][MAX_ANTENNA_NUM];
+	uint8_t aucDataRcpiAnt[MAX_BSSID_NUM][MAX_ANTENNA_NUM];
+	uint8_t aucRespRcpiAnt[MAX_BSSID_NUM][MAX_ANTENNA_NUM];
+
 	struct PARAM_802_11_STATISTICS_STRUCT rStat;
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */

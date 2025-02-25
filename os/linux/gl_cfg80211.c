@@ -527,7 +527,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
-	uint32_t rStatus;
+	uint32_t rStatus, i = 0;
 	uint32_t u4BufLen = 0, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
 
@@ -550,15 +550,18 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBandIdx = 0;
 	struct MIB_INFO_STAT *prMibInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_TC10_FEATURE == 1)
 	uint8_t tmpBssIdx;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	struct BSS_INFO *prLinkBss;
-	struct STA_RECORD *prStaRec;
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
 	uint32_t u4TotalTxCount = 0;
 #endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
 #endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
+	int32_t ai4DataRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
+	int32_t ai4BSSDescRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
+	int32_t ai4RespRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->prAdapter)
@@ -699,6 +702,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN,
 				"LR invalid, use scan result:%d\n", i4Rssi);
 	}
+	for (i = ANTENNA_WF0; i < MAX_ANTENNA_NUM; i++)
+		ai4BSSDescRssi[ucBssIndex][i] =
+			RCPI_TO_dBm(prAdapter->aucScanRcpiAnt[ucBssIndex][i]);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN,
@@ -725,6 +731,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	/* set not_in_use link RSSI to -127 */
 	if (!cnmStaRecIsActive(prAdapter, prStaRec))
 		sinfo->signal = -127;
+#else
+	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
 
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
@@ -850,14 +858,36 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			u4FcsError = prMibInfo->u4FcsError;
 	}
 
+	if (prStaRec) {
+		nicRxGetDataLastRxAntRcpi(prAdapter,
+			prStaRec->ucWlanIndex, ucBssIndex);
+		for (i = ANTENNA_WF0; i < MAX_ANTENNA_NUM; i++)
+			ai4DataRssi[ucBssIndex][i] =
+			RCPI_TO_dBm(
+			prAdapter->aucDataRcpiAnt[ucBssIndex][i]);
+	}
+
+	for (i = ANTENNA_WF0; i < MAX_ANTENNA_NUM; i++)
+		ai4RespRssi[ucBssIndex][i] =
+			RCPI_TO_dBm(
+			prAdapter->aucRespRcpiAnt[ucBssIndex][i]);
+
 #define TEMP_LOG_TEMPLATE \
-	"link speed=%u/%u, bw=%u/%u, rssi=%d, mac:[" MACSTR "], idx=%u," \
+	"link speed=%u/%u, bw=%u/%u, BCN_rssi=%d, " \
+	"Raw_rssi=[BSSDesc(%d,%d)Data(%d,%d)" \
+	"Resp(%d,%d)], mac:[" MACSTR "], idx=%u," \
 	"TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n"
 	DBGLOG(REQ, INFO,
 		TEMP_LOG_TEMPLATE,
 		sinfo->txrate.legacy, sinfo->rxrate.legacy,
 		sinfo->txrate.bw, sinfo->rxrate.bw,
 		sinfo->signal,
+		ai4BSSDescRssi[ucBssIndex][ANTENNA_WF0],
+		ai4BSSDescRssi[ucBssIndex][ANTENNA_WF1],
+		ai4DataRssi[ucBssIndex][ANTENNA_WF0],
+		ai4DataRssi[ucBssIndex][ANTENNA_WF1],
+		ai4RespRssi[ucBssIndex][ANTENNA_WF0],
+		ai4RespRssi[ucBssIndex][ANTENNA_WF1],
 		MAC2STR(mac),
 		ucBssIndex,
 		prGetStaStats->u4TxFailCount,

@@ -4186,6 +4186,33 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
  * @retval
  */
 /*----------------------------------------------------------------------------*/
+void nicRxGetAllRcpiValueFromRxv(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t *aucRxRCPIAnt)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint8_t i = 0, j = 0;
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->asicRxGetRcpiValueFromRxv)
+		for (i = ANTENNA_WF0, j = RCPI_MODE_WF0;
+				i < MAX_ANTENNA_NUM; i++, j++)
+			aucRxRCPIAnt[i] =
+			prChipInfo->asicRxGetRcpiValueFromRxv(j, prSwRfb);
+	else
+		DBGLOG(RX, ERROR, "No asicRxGetRcpiValueFromRxv!!!\n");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief
+ *
+ * @param
+ *
+ * @retval
+ */
+/*----------------------------------------------------------------------------*/
 uint8_t nicRxGetRcpiValueFromRxv(
 	struct ADAPTER *prAdapter,
 	uint8_t ucRcpiMode,
@@ -4295,6 +4322,37 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 			"Last RX Data RSSI", " = ", i4RSSI0, i4RSSI1);
 
 	return i4BytesWritten;
+}
+
+int32_t nicRxGetDataLastRxAntRcpi(struct ADAPTER *prAdapter,
+				uint8_t ucWlanIdx, uint8_t ucBssIndex)
+{
+	uint32_t u4RxV3 = 0;
+	uint8_t ucStaIdx = 0;
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+	    WLAN_STATUS_SUCCESS) {
+		u4RxV3 = prAdapter->arStaRec[ucStaIdx].au4RxV[3];
+		DBGLOG(REQ, LOUD, "****** RX Vector3 = 0x%08x ******\n",
+		       u4RxV3);
+	} else {
+		return -1;
+	}
+
+	prAdapter->aucDataRcpiAnt[ucBssIndex][0] =
+		(u4RxV3 & RX_VT_RCPI0_MASK) >> RX_VT_RCPI0_OFFSET;
+	prAdapter->aucDataRcpiAnt[ucBssIndex][1] =
+		(u4RxV3 & RX_VT_RCPI1_MASK) >> RX_VT_RCPI1_OFFSET;
+
+	if (MAX_ANTENNA_NUM > 2 &&
+		prAdapter->rWifiVar.ucNSS > 2) {
+		prAdapter->aucDataRcpiAnt[ucBssIndex][2] =
+			(u4RxV3 & RX_VT_RCPI2_MASK) >> RX_VT_RCPI2_OFFSET;
+		prAdapter->aucDataRcpiAnt[ucBssIndex][3] =
+			(u4RxV3 & RX_VT_RCPI3_MASK) >> RX_VT_RCPI3_OFFSET;
+	}
+
+	return 0;
 }
 
 /**

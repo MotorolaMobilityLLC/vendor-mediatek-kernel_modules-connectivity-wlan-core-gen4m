@@ -2444,6 +2444,7 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	uint8_t ucIeHtChannelNum, struct BSS_DESC *prBssDesc)
 {
 	uint8_t ucRxRCPI;
+	uint8_t aucRxRCPIAnt[MAX_ANTENNA_NUM] = {0};
 	uint8_t ucHwChannelNum;
 
 
@@ -2466,6 +2467,8 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	ucHwChannelNum = prSwRfb->ucChnlNum;
 
 	ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter, RCPI_MODE_MAX, prSwRfb);
+	nicRxGetAllRcpiValueFromRxv(prAdapter, prSwRfb, aucRxRCPIAnt);
+
 	if (prBssDesc->eBand == BAND_2G4) {
 		/* Update RCPI if in right channel */
 		if (ucIeDsChannelNum >= 1 && ucIeDsChannelNum <= 14) {
@@ -2474,8 +2477,11 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			 * from adjacent channel.
 			 */
 			if ((ucIeDsChannelNum == ucHwChannelNum)
-				|| (ucRxRCPI > prBssDesc->ucRCPI))
+				|| (ucRxRCPI > prBssDesc->ucRCPI)) {
 				prBssDesc->ucRCPI = ucRxRCPI;
+				kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+					sizeof(prBssDesc->aucRCPIAnt));
+			}
 			/* trust channel information brought by IE */
 			prBssDesc->ucChannelNum = ucIeDsChannelNum;
 		} else if (ucIeHtChannelNum >= 1
@@ -2484,12 +2490,17 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			 * from adjacent channel.
 			 */
 			if ((ucIeHtChannelNum == ucHwChannelNum)
-				|| (ucRxRCPI > prBssDesc->ucRCPI))
+				|| (ucRxRCPI > prBssDesc->ucRCPI)) {
 				prBssDesc->ucRCPI = ucRxRCPI;
+				kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+					sizeof(prBssDesc->aucRCPIAnt));
+			}
 			/* trust channel information brought by IE */
 			prBssDesc->ucChannelNum = ucIeHtChannelNum;
 		} else {
 			prBssDesc->ucRCPI = ucRxRCPI;
+			kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+				sizeof(prBssDesc->aucRCPIAnt));
 			prBssDesc->ucChannelNum = ucHwChannelNum;
 		}
 	}
@@ -2500,13 +2511,18 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			 * from adjacent channel.
 			 */
 			if ((ucIeHtChannelNum == ucHwChannelNum)
-				|| (ucRxRCPI > prBssDesc->ucRCPI))
+				|| (ucRxRCPI > prBssDesc->ucRCPI)) {
 				prBssDesc->ucRCPI = ucRxRCPI;
+				kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+					sizeof(prBssDesc->aucRCPIAnt));
+			}
 			/* trust channel information brought by IE */
 			prBssDesc->ucChannelNum = ucIeHtChannelNum;
 		} else {
 			/* Always update RCPI */
 			prBssDesc->ucRCPI = ucRxRCPI;
+			kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+				sizeof(prBssDesc->aucRCPIAnt));
 			prBssDesc->ucChannelNum = ucHwChannelNum;
 		}
 	}
@@ -2524,10 +2540,15 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 			if (!prBssDesc->fgIsHE6GPresent) {
 				prBssDesc->ucRCPI = ucRxRCPI;
+				kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+					sizeof(prBssDesc->aucRCPIAnt));
 				prBssDesc->ucChannelNum = ucHwChannelNum;
 			}
-		} else
-		    prBssDesc->ucRCPI = ucRxRCPI;
+		} else {
+			prBssDesc->ucRCPI = ucRxRCPI;
+			kalMemCopy(prBssDesc->aucRCPIAnt, aucRxRCPIAnt,
+				sizeof(prBssDesc->aucRCPIAnt));
+		}
 	}
 #endif
 

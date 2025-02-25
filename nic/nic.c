@@ -5902,8 +5902,11 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
 	prBssDesc =
 		scanSearchBssDescByBssid(prAdapter, prBssInfo->aucBSSID);
 
-	if (prBssDesc)
+	if (prBssDesc) {
 		prAdapter->ucScanRcpi[ucBssIndex] = prBssDesc->ucRCPI;
+		kalMemCopy(prAdapter->aucScanRcpiAnt[ucBssIndex],
+		prBssDesc->aucRCPIAnt, sizeof(prBssDesc->aucRCPIAnt));
+	}
 
 	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:

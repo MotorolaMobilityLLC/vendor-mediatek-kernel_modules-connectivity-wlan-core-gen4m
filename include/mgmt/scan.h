@@ -407,6 +407,7 @@ struct BSS_DESC {
 	u_int8_t fgIsLargerTSF;
 
 	uint8_t ucRCPI;
+	uint8_t aucRCPIAnt[MAX_ANTENNA_NUM];
 
 	uint8_t fgIsUapsdSupported;
 

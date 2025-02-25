@@ -1875,6 +1875,11 @@ uint32_t nicRxFlush(struct ADAPTER *prAdapter);
 uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 
+void nicRxGetAllRcpiValueFromRxv(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t *aucRxRCPIAnt);
+
 uint8_t nicRxGetRcpiValueFromRxv(
 	struct ADAPTER *prAdapter,
 	uint8_t ucRcpiMode,
@@ -1885,6 +1890,9 @@ uint8_t nicRxGetRxModeValueFromRxv(struct ADAPTER *prAdapter,
 
 int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 			int i4TotalLen, uint8_t ucWlanIdx);
+
+int32_t nicRxGetDataLastRxAntRcpi(struct ADAPTER *prAdapter,
+			uint8_t ucWlanIdx, uint8_t ucBssIndex);
 
 void nicRxProcessRxv(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
