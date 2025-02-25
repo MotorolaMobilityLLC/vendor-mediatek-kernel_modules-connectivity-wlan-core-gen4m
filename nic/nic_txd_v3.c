@@ -314,7 +314,8 @@ static uint8_t nicConnac3TxGetTxDestQueue(struct ADAPTER *prAdapter,
 			ucTarQueueLmac = MAC_TXQ_ALTX_0_INDEX;
 		} else {
 			ucTarQueueLmac =
-				nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+				nicTxGetTxDestQIdxByTc(
+					prMsduInfo->ucTC) % WMM_AC_INDEX_NUM;
 			ucTarQueueLmac += ucWmmQueSet * WMM_AC_INDEX_NUM;
 		}
 

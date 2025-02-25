@@ -1286,7 +1286,7 @@ extern struct QUE_MGT g_rQM;
 #endif
 extern const uint8_t aucTid2ACI[TX_DESC_TID_NUM];
 extern const uint8_t aucACI2TxQIdx[WMM_AC_INDEX_NUM];
-extern const uint8_t arNetwork2TcResource[MAX_BSSID_NUM +
+extern const uint8_t arNetwork2TcResource[WMM_AC_INDEX_NUM +
 		1][NET_TC_NUM];
 
 #endif /* _QUE_MGT_H */

@@ -54,17 +54,17 @@ static const struct TX_RESOURCE_CONTROL
 	{PORT_INDEX_MCU, MCU_Q0_INDEX, HIF_TX_CPU_INDEX},
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-		{PORT_INDEX_LMAC, MAC_TXQ_AC10_INDEX, HIF_TX_AC10_INDEX},
-		{PORT_INDEX_LMAC, MAC_TXQ_AC11_INDEX, HIF_TX_AC11_INDEX},
-		{PORT_INDEX_LMAC, MAC_TXQ_AC12_INDEX, HIF_TX_AC12_INDEX},
-		{PORT_INDEX_LMAC, MAC_TXQ_AC13_INDEX, HIF_TX_AC13_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC10_INDEX, HIF_TX_AC10_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC11_INDEX, HIF_TX_AC11_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC12_INDEX, HIF_TX_AC12_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC13_INDEX, HIF_TX_AC13_INDEX},
 
-		{PORT_INDEX_LMAC, MAC_TXQ_AC20_INDEX, HIF_TX_AC20_INDEX},
-		{PORT_INDEX_LMAC, MAC_TXQ_AC21_INDEX, HIF_TX_AC21_INDEX},
-		{PORT_INDEX_LMAC, MAC_TXQ_AC22_INDEX, HIF_TX_AC22_INDEX},
-		{PORT_INDEX_LMAC, MAC_TXQ_AC23_INDEX, HIF_TX_AC23_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC20_INDEX, HIF_TX_AC20_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC21_INDEX, HIF_TX_AC21_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC22_INDEX, HIF_TX_AC22_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC23_INDEX, HIF_TX_AC23_INDEX},
 
-		{PORT_INDEX_LMAC, MAC_TXQ_AC30_INDEX, HIF_TX_AC3X_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC30_INDEX, HIF_TX_AC3X_INDEX},
 #endif
 
 	/* Second HW queue */
@@ -1206,6 +1206,22 @@ uint8_t nicTxDescLengthByTc(uint8_t ucTc)
 	return arTcTrafficSettings[ucTc].u4TxDescLength;
 }
 
+uint8_t needUpdateTargetQueueWithWmmSet(struct MSDU_INFO *prMsduInfo,
+						uint8_t ucTarPort)
+{
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	/* Note for SDIO resource ctrl
+	 * There are cases for TargetQ update
+	 * 1. ResV1 + TC <= TC4 : WmmSet may greater than 0, go to update
+	 * 2. ResV2 + TC <= TC4 : WmmSet always 0
+	 * 3. ResV2 + TC >  TC4 : TargetQ prepared in nicTxGetTxDestQIdxByTc()
+	 */
+	return (ucTarPort == PORT_INDEX_LMAC && prMsduInfo->ucTC <= TC4_INDEX);
+#else
+	return (ucTarPort == PORT_INDEX_LMAC);
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll aggregate frame(PACKET_INFO_T)
@@ -2263,6 +2279,7 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 
@@ -2275,6 +2292,10 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 
 	if (!prMsduInfo)
 		return WLAN_STATUS_RESOURCES;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
 
 	prChipInfo = prAdapter->chip_info;
 
@@ -2321,7 +2342,7 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 				ucTc = prAdapter->rWifiVar.ucTcRestrict;
 			else
 				ucTc = nicTxWmmTc2ResTc(prAdapter,
-					prStaRec->ucBssIndex,
+					prBssInfo->ucWmmQueSet,
 					aucTid2ACI[ucTid]);
 
 			u4TxDescSize = nicTxDescLengthByTc(ucTc);
@@ -2361,7 +2382,7 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 				ucTc = prAdapter->rWifiVar.ucTcRestrict;
 			else
 				ucTc = nicTxWmmTc2ResTc(prAdapter,
-					prStaRec->ucBssIndex,
+					prBssInfo->ucWmmQueSet,
 					NET_TC_WMM_AC_BE_INDEX);
 
 			/* ucTxDescSize =
@@ -6173,7 +6194,7 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			switch (prMsduInfo->ucStaRecIndex) {
 			case STA_REC_INDEX_BMCAST:
 				ucTC = nicTxWmmTc2ResTc(prAdapter,
-					prMsduInfo->ucBssIndex,
+					prBssInfo->ucWmmQueSet,
 					NET_TC_BMC_INDEX);
 
 				/* Always set BMC packet retry limit
@@ -7085,7 +7106,7 @@ uint8_t nicTxWmmTc2ResTc(struct ADAPTER *prAdapter,
 {
 	uint8_t ucTC;
 
-	if (ucWmmSet >= MAX_BSSID_NUM + 1
+	if (ucWmmSet >= WMM_AC_INDEX_NUM + 1
 		|| ucWmmTC >= NET_TC_NUM) {
 		DBGLOG(TX, ERROR, "Invalid WmmSet:%d WmmTC:%d\n",
 			ucWmmSet, ucWmmTC);

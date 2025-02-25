@@ -5407,35 +5407,6 @@ void cnmWmmIndexDecision(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
-#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	u_int8_t ucWmmIdx;
-
-	if (!prAdapter || !prBssInfo) {
-		DBGLOG(CNM, ERROR, "Set WMM fail\n");
-		return;
-	}
-
-	if (prBssInfo->fgIsWmmInited)
-		return;
-
-	ucWmmIdx = prBssInfo->ucBssIndex;
-
-	if (prAdapter->ucHwWmmEnBit & BIT(ucWmmIdx))
-		DBGLOG(CNM, WARN, "Duplicated WMM%d found\n", ucWmmIdx);
-
-	prAdapter->ucHwWmmEnBit |= BIT(ucWmmIdx);
-	prBssInfo->fgIsWmmInited = TRUE;
-
-	if (ucWmmIdx > MAX_HW_WMM_INDEX) {
-		DBGLOG(CNM, ERROR, "Invalid WMM%d found, fallback to WMM%d\n",
-			ucWmmIdx,
-			ucWmmIdx % HW_WMM_NUM);
-		ucWmmIdx %= HW_WMM_NUM;
-	}
-
-	prBssInfo->ucWmmQueSet = ucWmmIdx;
-
-#else /* (CFG_TX_RSRC_WMM_ENHANCE == 1) */
 	uint8_t ucWmmIndex = 0;
 
 	if (!prAdapter || !prBssInfo || !prBssInfo->fgIsInUse) {
@@ -5489,7 +5460,6 @@ void cnmWmmIndexDecision(
 			prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
 			prBssInfo->fgIsWmmInited = TRUE;
 			prBssInfo->ucWmmQueSet = ucWmmIndex;
-
 			DBGLOG(CNM, INFO, "NAN bss%d assign ucWmmIndex: %d\n",
 				prBssInfo->ucBssIndex, ucWmmIndex);
 			return;
@@ -5509,7 +5479,6 @@ void cnmWmmIndexDecision(
 			return;
 		}
 	}
-#endif /* (CFG_TX_RSRC_WMM_ENHANCE == 1) */
 }
 /*----------------------------------------------------------------------------*/
 /*!

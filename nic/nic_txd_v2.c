@@ -241,22 +241,6 @@ void nic_txd_v2_fill_by_pkt_option(
 
 }
 
-static u_int8_t needUpdateTargetQueueWithWmmSet(struct MSDU_INFO *prMsduInfo,
-						uint8_t ucTarPort)
-{
-#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	/* Note for SDIO resource ctrl
-	 * There are cases for TargetQ update
-	 * 1. ResV1 + TC <= TC4 : WmmSet may greater than 0, go to update
-	 * 2. ResV2 + TC <= TC4 : WmmSet always 0
-	 * 3. ResV2 + TC >  TC4 : TargetQ prepared in nicTxGetTxDestQIdxByTc()
-	 */
-	return (ucTarPort == PORT_INDEX_LMAC && prMsduInfo->ucTC <= TC4_INDEX);
-#else
-	return (ucTarPort == PORT_INDEX_LMAC);
-#endif
-}
-
 static uint8_t  nicConnac2TxGetTxDestQueue(struct ADAPTER *prAdapter,
 					   struct MSDU_INFO *prMsduInfo,
 					   struct BSS_INFO *prBssInfo)

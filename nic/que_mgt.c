@@ -64,30 +64,20 @@ const uint8_t *apucACI2Str[WMM_AC_INDEX_NUM] = {
 	"BE", "BK", "VI", "VO"
 };
 
-const uint8_t arNetwork2TcResource[MAX_BSSID_NUM + 1][NET_TC_NUM] = {
+const uint8_t arNetwork2TcResource[WMM_AC_INDEX_NUM + 1][NET_TC_NUM] = {
 	/* HW Queue Set 1 */
 	/* AC_BE, AC_BK, AC_VI, AC_VO, MGMT, BMC */
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	/* AIS */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
-	/* P2P/BoW */
 	{TC6_INDEX, TC5_INDEX, TC7_INDEX, TC8_INDEX, TC4_INDEX, TC6_INDEX},
-	/* P2P/BoW */
 	{TC10_INDEX, TC9_INDEX, TC11_INDEX, TC12_INDEX, TC4_INDEX, TC10_INDEX},
-	/* P2P/BoW */
 	{TC13_INDEX, TC13_INDEX, TC13_INDEX, TC13_INDEX, TC4_INDEX, TC13_INDEX},
-	/* P2P_DEV */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
 #else
-	/* AIS */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
-	/* P2P/BoW */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
-	/* P2P/BoW */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
-	/* P2P/BoW */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
-	/* P2P_DEV */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},
 #endif
 };
@@ -891,7 +881,8 @@ struct QUE *qmDetermineStaTxQueue(struct ADAPTER *prAdapter,
 				if (eAci < WMM_AC_INDEX_NUM) {
 					ucQueIdx = aucACI2TxQIdx[eAci];
 					ucTC = nicTxWmmTc2ResTc(prAdapter,
-						prMsduInfo->ucBssIndex, eAci);
+						prBssInfo->ucWmmQueSet,
+						eAci);
 				}
 			} else {
 				ucQueIdx = TX_QUEUE_INDEX_AC1;
@@ -921,13 +912,14 @@ struct QUE *qmDetermineStaTxQueue(struct ADAPTER *prAdapter,
 				if (eAci < WMM_AC_INDEX_NUM) {
 					ucQueIdx = aucACI2TxQIdx[eAci];
 					ucTC = nicTxWmmTc2ResTc(prAdapter,
-						prMsduInfo->ucBssIndex, eAci);
+						prBssInfo->ucWmmQueSet,
+						eAci);
 				}
 			} else {
 #endif
 				ucQueIdx = TX_QUEUE_INDEX_NON_QOS;
 				ucTC = nicTxWmmTc2ResTc(prAdapter,
-					prMsduInfo->ucBssIndex,
+					prBssInfo->ucWmmQueSet,
 					NET_TC_WMM_AC_BE_INDEX);
 #if CFG_NON_QOS_ARP_USE_QOS_TXQ_MAPPING
 			}
@@ -1167,7 +1159,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 				prTxQue =
 					&prQM->arTxQueue[TX_QUEUE_INDEX_BMCAST];
 				ucTC = nicTxWmmTc2ResTc(prAdapter,
-					prCurrentMsduInfo->ucBssIndex,
+					prBssInfo->ucWmmQueSet,
 					NET_TC_BMC_INDEX);
 
 				/* Always set BMC packet retry limit

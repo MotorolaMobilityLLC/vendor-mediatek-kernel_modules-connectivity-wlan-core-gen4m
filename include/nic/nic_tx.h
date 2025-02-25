@@ -1896,6 +1896,9 @@ uint8_t nicTxGetTxDestQIdxByTc(uint8_t ucTc);
 uint32_t nicTxGetRemainingTxTimeByTc(uint8_t ucTc);
 uint8_t nicTxGetTxCountLimitByTc(uint8_t ucTc);
 uint8_t nicTxDescLengthByTc(uint8_t ucTc);
+uint8_t needUpdateTargetQueueWithWmmSet(
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t ucTarPort);
 #if CFG_SUPPORT_MULTITHREAD
 uint32_t nicTxMsduInfoListMthread(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfoListHead);
