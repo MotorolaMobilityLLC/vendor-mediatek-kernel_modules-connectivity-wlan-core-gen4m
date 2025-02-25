@@ -449,8 +449,8 @@ static void statsParseDNSInfo(void *pvPacket, struct UDP_HEADER *prUdp,
 	}
 }
 
-void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
-		       uint16_t u2IpId, uint16_t u2SSN)
+void statsParseUDPInfo(struct ADAPTER *prAdapter, void *pvPacket,
+	uint8_t *pucUdp, uint8_t eventType, uint16_t u2IpId, uint16_t u2SSN)
 {
 	/* the number of DHCP packets is seldom so we print log here */
 	struct UDP_HEADER *prUdp = (struct UDP_HEADER *)pucUdp;
@@ -484,10 +484,10 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 				msg_type, u2IpId, prDhcp->aucDhcpOption[2],
 				u4TransID, u2SSN);
 #if (CFG_SUPPORT_CONN_LOG == 1)
-			connLogDhcpRx(g_prAdapter,
+			connLogDhcpRx(prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
-				u4TransID,
-				u4DhcpOpt);
+				u4DhcpOpt,
+				prDhcp);
 #endif
 		} else { /* EVENT_TX */
 			DBGLOG_LIMITED(TX, INFO,
@@ -496,9 +496,8 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
 				prDhcp->aucDhcpOption[2],
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
 #if (CFG_SUPPORT_CONN_LOG == 1)
-			connLogDhcpTx(g_prAdapter,
+			connLogDhcpTx(prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
-				u4TransID,
 				u4DhcpOpt,
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
 #endif
@@ -548,7 +547,8 @@ static void statsParseIPV4Info(struct ADAPTER *prAdapter, void *pvPacket,
 
 	case IP_PRO_UDP:
 		pucUdp = pucL4Header;
-		statsParseUDPInfo(pvPacket, pucUdp, eventType, u2IpId, u2SSN);
+		statsParseUDPInfo(prAdapter, pvPacket, pucUdp,
+			eventType, u2IpId, u2SSN);
 		break;
 	}
 }
