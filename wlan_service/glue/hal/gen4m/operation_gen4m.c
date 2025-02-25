@@ -3000,6 +3000,9 @@ s_int32 mt_op_mps_set_seq_data(
 		mode = mps_setting[i+1].tx_mode;
 		mcs = mps_setting[i+1].mcs;
 		tx_path = mps_setting[i+1].tx_ant;
+#if (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1)
+		/* QA tool pass through to FW */
+#else
 
 		if (mode == 1) {
 			mode = 0;
@@ -3022,7 +3025,7 @@ s_int32 mt_op_mps_set_seq_data(
 		} else if (mode >= 2 && mode <= 4) {
 			mcs |= 0x80000000;
 		}
-
+#endif  /* (CFG_SUPPORT_CONNAC3X == 1) || (CFG_SUPPORT_CONNAC5X == 1) */
 		mps_set[i] = (mcs) | (tx_path << 8) | (mode << 24);
 
 	}
