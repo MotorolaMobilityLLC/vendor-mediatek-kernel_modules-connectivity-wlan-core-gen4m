@@ -548,6 +548,8 @@ void cnmInit(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	g_rLastCsaSysTime = 0;
 #endif
+
+	prAdapter->rWifiVar.ucBssIdxInProgress = MAX_BSSID_NUM;
 }	/* end of cnmInit()*/
 
 /*----------------------------------------------------------------------------*/
@@ -1134,7 +1136,7 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 		DBGLOG(CNM, WARN, "Receive duplicate cnmCsaDoneEvent.\n");
 		return;
 	}
-	ucBssIndex = p2pFuncGetCsaBssIndex();
+	ucBssIndex = prAdapter->rWifiVar.ucBssIdxInProgress;
 	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
 		log_dbg(CNM, ERROR, "Csa bss is invalid!\n");
 		return;
@@ -1143,17 +1145,20 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 
 	/* Clean up CSA variable */
 	cnmCsaResetParams(prAdapter, prP2pBssInfo);
-	if (!prP2pBssInfo ||
-		prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 		return;
 
-	p2pFunChnlSwitchNotifyDone(prAdapter);
+	p2pFuncChnlSwitchNotifyDone(prAdapter, ucBssIndex);
 }
 
 void cnmCsaResetParams(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
+	if (prAdapter->rWifiVar.ucBssIdxInProgress != prBssInfo->ucBssIndex)
+		return;
+
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
+	prAdapter->rWifiVar.ucBssIdxInProgress = MAX_BSSID_NUM;
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
 	prAdapter->rWifiVar.eNewBand = BAND_NULL;
 	prAdapter->rWifiVar.ucNewOperatingClass = 0;
@@ -2440,6 +2445,8 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 #ifdef CFG_SUPPORT_TWT_EXT
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rTwtWaitRspTimer);
 #endif
+
+	cnmCsaResetParams(prAdapter, prBssInfo);
 
 	prBssInfo->fgIsInUse = FALSE;
 	kalCsaNotifyWorkDeinit(prAdapter,
@@ -5370,7 +5377,6 @@ uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 
 	prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 	prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
-	p2pFuncSetCsaBssIndex(ucBssIdx);
 	mboxSendMsg(prAdapter,
 		MBOX_ID_0,
 		(struct MSG_HDR *) prP2pSetNewChannelMsg,

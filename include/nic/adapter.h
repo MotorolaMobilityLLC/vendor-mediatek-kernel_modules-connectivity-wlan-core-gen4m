@@ -1213,6 +1213,7 @@ struct WIFI_VAR {
 	uint8_t fgApLegacyQosMap;
 
 	uint8_t fgCsaInProgress;
+	uint8_t ucBssIdxInProgress;
 	uint8_t ucChannelSwitchMode;
 	enum ENUM_BAND eNewBand;
 	uint8_t ucNewOperatingClass;

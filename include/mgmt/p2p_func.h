@@ -286,9 +286,6 @@ void p2pFuncRecordCacStartBootTime(void);
 
 uint32_t p2pFuncGetCacRemainingTime(void);
 #endif
-uint8_t p2pFuncGetCsaBssIndex(void);
-
-void p2pFuncSetCsaBssIndex(uint8_t ucBssIdx);
 
 void p2pFuncSetChannel(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIdx,
@@ -712,8 +709,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO *prNewChannelInfo,
 		uint8_t ucMode);
 
-void
-p2pFunChnlSwitchNotifyDone(struct ADAPTER *prAdapter);
+void p2pFuncChnlSwitchNotifyDone(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
 uint8_t p2pFuncIsBufferableMMPDU(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_CONNECT_STATE eConnState,

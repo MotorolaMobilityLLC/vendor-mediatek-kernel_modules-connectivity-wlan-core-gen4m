@@ -937,7 +937,8 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 		if (prP2PInfo && prP2PInfo->eChnlSwitchPolicy ==
 				CHNL_SWITCH_POLICY_DEAUTH) {
 			prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
-			p2pFunChnlSwitchNotifyDone(prAdapter);
+			p2pFuncChnlSwitchNotifyDone(prAdapter,
+						    prP2pBssInfo->ucBssIndex);
 		}
 	}
 

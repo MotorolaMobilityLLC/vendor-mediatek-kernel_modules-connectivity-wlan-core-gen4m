@@ -2605,6 +2605,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
 		/* Set CSA IE parameters */
+		prWifiVar->ucBssIdxInProgress = ucBssIdx;
 		prWifiVar->ucChannelSwitchMode = params->block_tx;
 		prWifiVar->eNewBand = rRfChnlInfo.eBand;
 		prWifiVar->ucNewOperatingClass =
@@ -2666,7 +2667,6 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 		prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
-		p2pFuncSetCsaBssIndex(ucBssIdx);
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 			    (struct MSG_HDR *) prP2pSetNewChannelMsg,
 			    MSG_SEND_METHOD_BUF);

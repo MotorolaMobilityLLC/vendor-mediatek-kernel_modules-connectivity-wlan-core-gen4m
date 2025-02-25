@@ -111,8 +111,6 @@ struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pDualApCandFilterTable[] = {
 	{P2P_DUAL_AP_CH_FILTER, p2pDualApChFilter}
 };
 
-uint8_t g_ucBssIdx;
-
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 u_int8_t g_fgManualCac = FALSE;
 uint32_t g_u4DriverCacTime;
@@ -3476,20 +3474,7 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 	}
 	*pucOutNumOfChannel = j;
 }
-
 #endif
-uint8_t p2pFuncGetCsaBssIndex(void)
-{
-	return g_ucBssIdx;
-}
-
-void p2pFuncSetCsaBssIndex(uint8_t ucBssIdx)
-{
-	DBGLOG(P2P, TRACE,
-		"ucBssIdx = %d\n", ucBssIdx);
-
-	g_ucBssIdx = ucBssIdx;
-}
 
 void p2pFuncParseH2E(struct BSS_INFO *prP2pBssInfo)
 {
@@ -10953,9 +10938,7 @@ void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
 uint8_t p2pFuncIsCsaBlockScan(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prP2pBssInfo;
-	uint8_t ucBssIndex;
-
-	ucBssIndex = p2pFuncGetCsaBssIndex();
+	uint8_t ucBssIndex = prAdapter->rWifiVar.ucBssIdxInProgress;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prP2pBssInfo)
@@ -11080,11 +11063,12 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 			}
 			/* wait for deauth TX done & switch channel */
 		} else {
-			p2pFunChnlSwitchNotifyDone(prAdapter);
+			p2pFuncChnlSwitchNotifyDone(prAdapter, ucBssIdx);
 		}
 		break;
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
+		prAdapter->rWifiVar.ucBssIdxInProgress = ucBssIdx;
 		prAdapter->rWifiVar.ucChannelSwitchMode = ucMode;
 		prAdapter->rWifiVar.eNewBand = prNewChannelInfo->eBand;
 		prAdapter->rWifiVar.ucNewOperatingClass =
@@ -11140,7 +11124,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 		break;
 	case CHNL_SWITCH_POLICY_NO_CLIENT:
-		p2pFunChnlSwitchNotifyDone(prAdapter);
+		p2pFuncChnlSwitchNotifyDone(prAdapter, ucBssIdx);
 		break;
 	default:
 		DBGLOG(P2P, WARN, "invalid policy for channel switch: %d\n",
@@ -11149,25 +11133,21 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	}
 }
 
-void
-p2pFunChnlSwitchNotifyDone(struct ADAPTER *prAdapter)
+void p2pFuncChnlSwitchNotifyDone(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct GL_P2P_INFO *prP2PInfo;
 	struct BSS_INFO *prBssInfo;
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
-	uint8_t ucBssIndex;
 
 	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
 
 	/* Check SAP interface */
-	ucBssIndex = p2pFuncGetCsaBssIndex();
-	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+	if (!IS_BSS_INDEX_VALID(ucBssIdx)) {
 		log_dbg(CNM, ERROR, "Csa bss is invalid!\n");
 		return;
 	}
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo || !IS_BSS_P2P(prBssInfo)) {
 		log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
 		return;
