@@ -4543,8 +4543,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 
 	/* only check tlv */
 	if (IE_LEN(pucIE) < ELEM_MIN_LEN_MTK_OUI ||
-	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)) ||
-	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)))
 		return;
 
 	prStaRec->fgIsPeerWithMtkOui = TRUE;
@@ -4554,7 +4553,8 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	ie_len = IE_LEN(pucIE) - 7;
 
 	IE_FOR_EACH(ie, ie_len, ie_offset) {
-		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
+		if ((IE_ID(ie) == MTK_OUI_ID_MLR) &&
+			(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV)) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 			/* LR bitmap:
 			 * BIT[0]-MLR_V1,
