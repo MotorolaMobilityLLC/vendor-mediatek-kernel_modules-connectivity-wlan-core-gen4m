@@ -1307,4 +1307,8 @@ void updateLinkStatsApRec(struct ADAPTER *prAdapter,
 
 const char *SSID2STR(const uint8_t *ssid, uint8_t ssid_len);
 
+#if (CONFIG_BAND_NUM > 2)
+uint8_t scnCheckIsOnlyAbandP2PConnected(struct ADAPTER *prAdapter);
+#endif
+
 #endif /* _SCAN_H */

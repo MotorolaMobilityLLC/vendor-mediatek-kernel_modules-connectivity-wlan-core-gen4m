@@ -376,6 +376,47 @@ u_int8_t scan6gPscIsBitSet(uint32_t bit, uint32_t bitMap[],
 }
 #endif
 
+#if (CONFIG_BAND_NUM > 2)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Check DUT has only one A band P2P connected.
+ *
+ * @param[in] prAdapter   Pointer to the Adapter structure.
+ *
+ * @return   TRUE if only one A band P2P, FALSE otherwise
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t scnCheckIsOnlyAbandP2PConnected(struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIdx, ucActiveBssCnt = 0, ucAbandP2PCnt = 0;
+
+	for (ucBssIdx = BSSID_0; ucBssIdx < BSSID_NUM; ucBssIdx++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
+			if ((IS_BSS_GC(prBssInfo) ||
+				(IS_BSS_GO(prAdapter, prBssInfo) &&
+				(prBssInfo->eConnectionState ==
+				MEDIA_STATE_CONNECTED))) &&
+				(prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+					|| prBssInfo->eBand == BAND_6G
+#endif
+			))
+				ucAbandP2PCnt++;
+			ucActiveBssCnt++;
+		}
+		if (ucActiveBssCnt >= 2)
+			return FALSE;
+	}
+	if ((ucActiveBssCnt == 1) && (ucAbandP2PCnt == 1))
+		return TRUE;
+
+	return FALSE;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Set the bit of the given bitmap.

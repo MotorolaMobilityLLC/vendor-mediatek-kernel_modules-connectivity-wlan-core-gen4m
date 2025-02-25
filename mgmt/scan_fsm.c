@@ -310,6 +310,11 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 	prCmdScanReq->u4ScnFuncMaskExtend |= prScanParam->u4ScnFuncMaskExtend;
 	prCmdScanReq->ucScnSourceMask = ENUM_SCN_NORMAL;
 
+#if (CONFIG_BAND_NUM > 2)
+	if (scnCheckIsOnlyAbandP2PConnected(prAdapter))
+		prCmdScanReq->u4ScnFuncMaskExtend |= ENUM_SCN_SILENT_SCAN;
+#endif
+
 	/* for 6G OOB scan */
 	kalMemCopy(prCmdScanReq->ucBssidMatchCh, prScanParam->ucBssidMatchCh,
 			CFG_SCAN_OOB_MAX_NUM);
