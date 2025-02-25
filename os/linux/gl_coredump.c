@@ -453,21 +453,22 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 	}
 }
 
-static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
+static uint32_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 	uint32_t src, uint32_t dest, uint32_t length)
 {
 #define SECURITY_COREDUMP_TIMEOUT_MS	1000
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t aes_busy = 1;
 	uint32_t u4CurrTick = 0;
-	u_int8_t ret = TRUE, fgTimeout = FALSE;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+	u_int8_t fgTimeout = FALSE;
 
 	if (!prGlueInfo)
-		return FALSE;
+		return WLAN_STATUS_FAILURE;
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (!prAdapter)
-		return FALSE;
+		return WLAN_STATUS_FAILURE;
 
 	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_AES_MAX_LEN,
 		0x3, S2P_CMD_WR);
@@ -505,8 +506,10 @@ static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 			? TRUE : FALSE;
 	}
 
-	if (fgTimeout)
+	if (fgTimeout) {
 		DBGLOG(INIT, ERROR, "aes busy get timeout\n");
+		ret = WLAN_STATUS_TIMEOUT;
+	}
 
 	return ret;
 }
@@ -653,7 +656,9 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 	if (chip_info->checkbusNoAck) {
 		if (chip_info->checkbusNoAck(glue->prAdapter, TRUE)) {
 			DBGLOG(INIT, DEBUG, "Bus check failed.\n");
+#if (CFG_WIFI_SECURITY_COREDUMP == 0)
 			mem->mem_region_num = 0;
+#endif
 		}
 	}
 
@@ -1115,14 +1120,26 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 	uint32_t idx = 0;
 	int ret = 0;
 	u_int8_t read_ret = FALSE;
+#if CFG_WIFI_SECURITY_COREDUMP
+	uint32_t aes_ret;
+#endif
 
 	for (idx = 0, region = mem->mem_regions;
 	     idx < mem->mem_region_num;
 	     idx++, region++) {
 
 #if CFG_WIFI_SECURITY_COREDUMP
-		if (coredump_aes_driver_control(glue, region->base,
-			SEC_COREDUMP_EMI_BASE, region->size) == FALSE) {
+		aes_ret = coredump_aes_driver_control(glue, region->base,
+				SEC_COREDUMP_EMI_BASE, region->size);
+		if (aes_ret == WLAN_STATUS_TIMEOUT) {
+			DBGLOG(INIT, ERROR,
+				"[%d] Trigger coredump timeout, %s 0x%x 0x%x\n",
+				idx,
+				region->name,
+				region->base,
+				region->size);
+			break;
+		} else if (aes_ret != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR,
 				"[%d] Trigger coredump failed, %s 0x%x 0x%x\n",
 				idx,

@@ -53,6 +53,7 @@
 #define WLAN_STATUS_FAILURE                     ((uint32_t) 0xC0000001L)
 #define WLAN_STATUS_RESOURCES                   ((uint32_t) 0xC000009AL)
 #define WLAN_STATUS_NOT_SUPPORTED               ((uint32_t) 0xC00000BBL)
+#define WLAN_STATUS_TIMEOUT                     ((uint32_t) 0xC00000CDL)
 
 #define WLAN_STATUS_MULTICAST_FULL              ((uint32_t) 0xC0010009L)
 #define WLAN_STATUS_INVALID_PACKET              ((uint32_t) 0xC001000FL)
