@@ -922,6 +922,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_PRE_P2P2_SUPPORT=y
         CONFIG_P2P2_SUPPORT_GC_REQ_CSA=y
         CONFIG_P2P2_SUPPORT_CAP_NOTIFICATION=y
+        CONFIG_SUPPORT_6G_CROSS_BAND_CSA=y
     endif
 
     ifeq ($(CONFIG_WIFI_DX5), y)
@@ -1645,10 +1646,16 @@ else
     ccflags-y += -DCFG_SUPPORT_UPSTREAM_TOOL=0
 endif
 
-ifeq ($(CONFIG_SUPPORT_APGO_CROSS_BAND_CSA), y)
-    ccflags-y += -DCFG_SUPPORT_APGO_CROSS_BAND_CSA=1
+ifeq ($(CONFIG_SUPPORT_5G_CROSS_BAND_CSA), y)
+    ccflags-y += -DCFG_SUPPORT_5G_CROSS_BAND_CSA=1
 else
-    ccflags-y += -DCFG_SUPPORT_APGO_CROSS_BAND_CSA=0
+    ccflags-y += -DCFG_SUPPORT_5G_CROSS_BAND_CSA=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_6G_CROSS_BAND_CSA), y)
+    ccflags-y += -DCFG_SUPPORT_6G_CROSS_BAND_CSA=1
+else
+    ccflags-y += -DCFG_SUPPORT_6G_CROSS_BAND_CSA=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)

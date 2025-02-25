@@ -2270,7 +2270,7 @@
  * issues, eg. cross band switch.
  *------------------------------------------------------------------------------
  */
-#define CFG_SEND_DEAUTH_DURING_CHNL_SWITCH    1
+#define CFG_SAP_DEAUTH_DURING_CHNL_SWITCH    1
 
 /*------------------------------------------------------------------------------
  *Smart Gear Feature Configure

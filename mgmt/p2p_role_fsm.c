@@ -2687,8 +2687,7 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 #endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
 }
 
-#if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1) && \
-	(CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
 static void p2pCsaAdjustStarecCap(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	enum ENUM_BAND eOrigBand,
@@ -2979,8 +2978,7 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	{
 		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
 				    rLinkEntry, struct STA_RECORD) {
-#if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1) && \
-(CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
 			p2pCsaAdjustStarecCap(prAdapter,
 					      prCurrStaRec,
 					      prP2pBssInfo->eBand,

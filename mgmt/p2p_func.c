@@ -10970,52 +10970,62 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		struct RF_CHANNEL_INFO *prNewChannelInfo)
 {
-	enum ENUM_CHNL_SWITCH_POLICY ePolicy = CHNL_SWITCH_POLICY_CSA;
+	enum ENUM_CHNL_SWITCH_POLICY ePolicy;
 	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	struct LINK *prClientList;
 
-	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
-		return ePolicy;
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo)) {
+		ePolicy = CHNL_SWITCH_POLICY_CSA;
+		goto exit;
+	}
 
 	prClientList = &prBssInfo->rStaRecOfClientList;
-	if (!prClientList || prClientList->u4NumElem <= 0)
-		return CHNL_SWITCH_POLICY_NO_CLIENT;
+	if (!prClientList || prClientList->u4NumElem <= 0) {
+		ePolicy = CHNL_SWITCH_POLICY_NO_CLIENT;
+		goto exit;
+	}
 
 	/* GO */
-	if (IS_BSS_GO(prAdapter, prBssInfo))
-		return ePolicy;
+	if (IS_BSS_GO(prAdapter, prBssInfo)) {
+		ePolicy = CHNL_SWITCH_POLICY_CSA;
+		goto exit;
+	}
 
 	/* SAP */
-	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient))
-		return ePolicy;
-
-#if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1)
-	DBGLOG(P2P, INFO, "cross band csa enable\n");
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prNewChannelInfo->eBand == BAND_6G &&
-		(prBssInfo->eBand == BAND_2G4 ||
-		prBssInfo->eBand == BAND_5G))
-		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
-	else if (prBssInfo->eBand == BAND_6G &&
-		(prNewChannelInfo->eBand == BAND_2G4 ||
-		prNewChannelInfo->eBand == BAND_5G))
-		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
-#endif
+#if (CFG_SAP_DEAUTH_DURING_CHNL_SWITCH == 0)
+	ePolicy = CHNL_SWITCH_POLICY_CSA;
 #else
-#if CFG_SEND_DEAUTH_DURING_CHNL_SWITCH
-	/* Send deauth frame to clients:
-	 * 1. Cross band
-	 * 2. BW > 20MHz
-	*/
-	if (prNewChannelInfo->eBand == BAND_5G ||
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		prNewChannelInfo->eBand == BAND_6G ||
-#endif
-		(prBssInfo && prBssInfo->eBand != prNewChannelInfo->eBand))
-		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
-#endif /* CFG_SEND_DEAUTH_DURING_CHNL_SWITCH */
-#endif /* CFG_SUPPORT_APGO_CROSS_BAND_CSA */
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient)) {
+		ePolicy = CHNL_SWITCH_POLICY_CSA;
+		goto exit;
+	} else {
+		if (prBssInfo->eBand != prNewChannelInfo->eBand) {
+			ePolicy = CHNL_SWITCH_POLICY_CSA;
 
+			if (prBssInfo->eBand == BAND_5G ||
+			    prNewChannelInfo->eBand == BAND_5G) {
+#if (CFG_SUPPORT_5G_CROSS_BAND_CSA == 0)
+				ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+				goto exit;
+#endif /* CFG_SUPPORT_5G_CROSS_BAND_CSA */
+			}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G ||
+			    prNewChannelInfo->eBand == BAND_6G) {
+#if (CFG_SUPPORT_6G_CROSS_BAND_CSA == 0)
+				ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+				goto exit;
+#endif /* CFG_SUPPORT_6G_CROSS_BAND_CSA */
+			}
+#endif /* CFG_SUPPORT_WIFI_6G */
+		} else {
+			ePolicy = CHNL_SWITCH_POLICY_CSA;
+		}
+	}
+#endif /* CFG_SAP_DEAUTH_DURING_CHNL_SWITCH */
+
+exit:
 	return ePolicy;
 }
 
