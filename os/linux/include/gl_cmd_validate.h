@@ -372,6 +372,7 @@
 #endif /* CFG_WIFI_GET_MCS_INFO */
 #if CFG_AP_80211K_SUPPORT
 #define CMD_STA_BEACON_REQUEST		"BeaconRequest"
+#define CMD_STA_CU_REQUEST		"CURequest"
 #endif /* CFG_AP_80211K_SUPPORT */
 #if CFG_AP_80211V_SUPPORT
 #define CMD_STA_BTM_REQUEST		"BTMRequest"

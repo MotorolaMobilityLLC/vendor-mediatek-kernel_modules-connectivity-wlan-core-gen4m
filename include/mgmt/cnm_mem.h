@@ -746,9 +746,6 @@ struct STA_RECORD {
 	/* STA PMF */
 	uint32_t u4assocComeBackTime;
 #endif
-#if CFG_AP_80211K_SUPPORT
-	uint16_t u2BcnReqRepetition;
-#endif
 #if CFG_AP_80211V_SUPPORT
 	struct TIMER rBTMReqDisassocTimer;
 #endif /* CFG_AP_80211V_SUPPORT */

@@ -433,4 +433,8 @@ void kalSetRilBridgeChannelInfo(
 void kalP2pStopApInterface(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
+void kalP2pCuRptUevent(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand, uint8_t ucPrimaryCh,
+	uint8_t ucChnlLoad);
+
 #endif /* _GL_P2P_KAL_H */

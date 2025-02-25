@@ -3785,6 +3785,19 @@ struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT {
 	uint8_t ucNumberOfAPChanReport;
 	uint8_t ucChanList[MAX_CHN_NUM];
 };
+
+struct PARAM_CUSTOM_CU_REP_REQ_STRUCT {
+	uint8_t ucBssIdx;
+	uint8_t ucUnitNum;
+	uint8_t aucPeerMac[MAC_ADDR_LEN];
+	uint16_t u2Repetition;
+	uint16_t u2MeasureDuration;
+	enum ENUM_BAND eBand;
+	uint16_t u2RandomInterval;
+	uint8_t ucMeasurementMode;
+	uint8_t ucChanList[MAX_CHN_NUM];
+};
+
 #endif /* CFG_AP_80211K_SUPPORT */
 
 #if CFG_AP_80211V_SUPPORT
@@ -5868,6 +5881,10 @@ uint32_t wlanoidSendBeaconReportRequest(struct ADAPTER *prAdapter,
 					void *pvSetBuffer,
 					uint32_t u4SetBufferLen,
 					uint32_t *pu4SetInfoLen);
+uint32_t wlanoidSendCuReportRequest(struct ADAPTER *prAdapter,
+				    void *pvSetBuffer,
+				    uint32_t u4SetBufferLen,
+				    uint32_t *pu4SetInfoLen);
 #endif /* CFG_AP_80211K_SUPPORT */
 
 #if CFG_AP_80211V_SUPPORT

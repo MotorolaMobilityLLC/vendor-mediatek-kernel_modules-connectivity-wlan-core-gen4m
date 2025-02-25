@@ -3975,7 +3975,7 @@ void p2pFuncSetChannel(struct ADAPTER *prAdapter,
 		prP2pConnReqInfo->u2PunctBitmap =
 			prRfChannelInfo->u2PunctBitmap;
 #endif /* CFG_SUPPORT_SAP_PUNCTURE */
-#if CFG_AP_80211KVR_INTERFACE
+#if CFG_AP_80211KVR_INTERFACE && 0
 		/* Update TX-pwr as soon as channel changed */
 		{
 			struct PARAM_CUSTOM_GET_TX_POWER rGetTxPower;

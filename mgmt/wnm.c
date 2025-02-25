@@ -43,6 +43,7 @@
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 static uint8_t ucTimingMeasToken;
 #endif
+static uint8_t ucBtmMgtToken = 1;
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -327,6 +328,11 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 #endif
 
 #endif /* CFG_SUPPORT_802_11V_TIMING_MEASUREMENT */
+
+uint8_t wnmGetBtmToken(void)
+{
+	return ucBtmMgtToken++;
+}
 
 static uint32_t wnmBTMQueryTxDone(struct ADAPTER *prAdapter,
 				  struct MSDU_INFO *prMsduInfo,

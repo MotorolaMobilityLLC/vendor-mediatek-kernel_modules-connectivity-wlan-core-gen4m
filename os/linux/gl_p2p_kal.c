@@ -3709,4 +3709,19 @@ void kalP2pStopApInterface(struct ADAPTER *prAdapter,
 	cfg80211_stop_iface(wiphy, prNetdevice->ieee80211_ptr, GFP_KERNEL);
 }
 
+void kalP2pCuRptUevent(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand, uint8_t ucPrimaryCh,
+	uint8_t ucChnlLoad)
+{
+	char uEvent[300];
+
+	kalSnprintf(uEvent, sizeof(uEvent),
+		"CuRpt=Band:%u,Ch:%u,Cu:%u",
+		eBand, ucPrimaryCh, ucChnlLoad);
+
+	DBGLOG(P2P, LOUD, "CuRpt: %u and %u\n",
+		ucPrimaryCh, ucChnlLoad);
+	kalSendUevent(prAdapter, uEvent);
+}
+
 #endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -4124,7 +4124,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		switch (prActFrame->ucAction) {
 #if CFG_AP_80211K_SUPPORT
 		case RM_ACTION_RM_REPORT:
-			rlmMulAPAgentProcessRadioMeasurementResponse(
+			rlmProcessRadioMeasurementResponse(
 				prAdapter, prSwRfb);
 			break;
 #endif /* CFG_AP_80211K_SUPPORT */

@@ -994,6 +994,8 @@ int32_t priv_driver_MulAPAgent_set_block_sta(
 #if CFG_AP_80211K_SUPPORT
 int32_t priv_driver_MulAPAgent_beacon_report_request(
 	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
+int32_t priv_driver_MulAPAgent_cu_report_request(
+	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
 #endif /* CFG_AP_80211K_SUPPORT */
 #if CFG_AP_80211V_SUPPORT
 int32_t priv_driver_MulAPAgent_BTM_request(

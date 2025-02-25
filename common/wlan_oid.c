@@ -18925,6 +18925,14 @@ wlanoidTxQueryMcsInfo(struct ADAPTER *prAdapter,
 #endif /* CFG_WIFI_GET_MCS_INFO */
 
 #if CFG_AP_80211K_SUPPORT
+static uint8_t wlanoidAcquireRadioMeasureToken(struct BSS_INFO *prBssInfo)
+{
+	prBssInfo->ucRMDialogToken++;
+	if (prBssInfo->ucRMDialogToken == 0)
+		prBssInfo->ucRMDialogToken++;
+	return prBssInfo->ucRMDialogToken;
+}
+
 uint32_t wlanoidSendBeaconReportRequest(struct ADAPTER *prAdapter,
 					void *pvSetBuffer,
 					uint32_t u4SetBufferLen,
@@ -18985,8 +18993,6 @@ uint32_t wlanoidSendBeaconReportRequest(struct ADAPTER *prAdapter,
 		DBGLOG(REQ, WARN, "can't find station\n");
 		return WLAN_STATUS_FAILURE;
 	}
-
-	prStaRec->u2BcnReqRepetition = prSetBcnRepReqInfo->u2Repetition;
 
 	/* allocate IE memory */
 	ucIELen = sizeof(*prIE) + 3
@@ -19101,11 +19107,141 @@ uint32_t wlanoidSendBeaconReportRequest(struct ADAPTER *prAdapter,
 
 	DBGLOG(OID, DEBUG, "Send Beacon Report Request\n");
 	rlmMulAPAgentTxMeasurementRequest(prAdapter,
-		prStaRec, prIE);
+		prStaRec, prIE,
+		wlanoidAcquireRadioMeasureToken(prBssInfo),
+		prSetBcnRepReqInfo->u2Repetition);
 
 	kalMemFree(prIE, PHY_MEM_TYPE, ucIELen);
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t wlanoidSendCuReportRequest(struct ADAPTER *prAdapter,
+				    void *pvSetBuffer,
+				    uint32_t u4SetBufferLen,
+				    uint32_t *pu4SetInfoLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	struct SUB_ELEMENT_LIST *prIE = NULL;
+	uint8_t *prIEHead = NULL;
+	uint8_t *prIETemp = NULL;
+	enum ENUM_CHNL_EXT eSCO;
+	uint8_t ucTempBw = MAX_BW_320_1MHZ;
+	struct IE_MEASUREMENT_REQ *prMeasureReqIE = NULL;
+	struct RM_CHNL_LOAD_REQ *prCuReqIE = NULL;
+	uint8_t ucIELen = 0;
+	uint8_t i = 0;
+	struct PARAM_CUSTOM_CU_REP_REQ_STRUCT *prSetCuRepReqInfo = NULL;
+	uint16_t u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
+	uint8_t ucToken;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prAdapter)
+		return WLAN_STATUS_INVALID_DATA;
+
+	/* check parameter */
+	if (pvSetBuffer == NULL ||
+	    u4SetBufferLen != sizeof(*prSetCuRepReqInfo)) {
+		DBGLOG(REQ, WARN, "Invalid input\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	prSetCuRepReqInfo =
+		(struct PARAM_CUSTOM_CU_REP_REQ_STRUCT *) pvSetBuffer;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prSetCuRepReqInfo->ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* get Station Record */
+	prStaRec = bssGetClientByMac(prAdapter,
+				prBssInfo,
+				prSetCuRepReqInfo->aucPeerMac);
+	if (prStaRec == NULL) {
+		DBGLOG(REQ, WARN, "can't find station\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* allocate IE memory */
+	ucIELen = (sizeof(*prIE) - sizeof(prIE->rSubIE)
+			+ sizeof(struct IE_MEASUREMENT_REQ)
+			+ sizeof(struct RM_CHNL_LOAD_REQ))
+			* prSetCuRepReqInfo->ucUnitNum;
+
+	prIEHead = kalMemAlloc(ucIELen, VIR_MEM_TYPE);
+	if (!prIEHead) {
+		DBGLOG(OID, ERROR, "No Memory\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	prIE = (struct SUB_ELEMENT_LIST *) prIEHead;
+
+	ucToken = wlanoidAcquireRadioMeasureToken(prBssInfo);
+
+	do {
+		prMeasureReqIE = (struct IE_MEASUREMENT_REQ *) &(prIE->rSubIE);
+
+		prCuReqIE = (struct RM_CHNL_LOAD_REQ *)
+			&(prMeasureReqIE->aucRequestFields[0]);
+		eSCO = nicGetSco(prGlueInfo->prAdapter,
+				 prSetCuRepReqInfo->eBand,
+				 prSetCuRepReqInfo->ucChanList[i]);
+		nicReviseBwByCh(prGlueInfo->prAdapter,
+				prSetCuRepReqInfo->eBand,
+				prSetCuRepReqInfo->ucChanList[i],
+				eSCO, &ucTempBw);
+
+		prCuReqIE->ucRegulatoryClass =
+			rlmGetOpClassForChannel(
+				prSetCuRepReqInfo->ucChanList[i],
+				prSetCuRepReqInfo->eBand, eSCO,
+				rlmGetVhtOpBwByBssOpBw(ucTempBw),
+				u2CountryCode);
+		prCuReqIE->ucChannel = prSetCuRepReqInfo->ucChanList[i];
+		DBGLOG(OID, INFO, "Request ch %u and op %u for CU\n",
+			prCuReqIE->ucChannel,
+			prCuReqIE->ucRegulatoryClass);
+		prCuReqIE->u2RandomInterval =
+			prSetCuRepReqInfo->u2RandomInterval;
+		prCuReqIE->u2Duration =
+			prSetCuRepReqInfo->u2MeasureDuration;
+
+
+		/* measurement ie */
+		prMeasureReqIE->ucId = ELEM_ID_MEASUREMENT_REQ;
+		prMeasureReqIE->ucLength =
+			3 + OFFSET_OF(struct RM_CHNL_LOAD_REQ, aucSubElements);
+
+		prMeasureReqIE->ucToken = ucToken;
+		prMeasureReqIE->ucRequestMode = 0;
+		prMeasureReqIE->ucMeasurementType = ELEM_RM_TYPE_CHNL_LOAD_REQ;
+		if ((prSetCuRepReqInfo->ucUnitNum - i) > 1) {
+			prIETemp =
+				(prIEHead + (i+1)*(sizeof(*prIE)
+				- sizeof(prIE->rSubIE)
+				+ sizeof(struct IE_MEASUREMENT_REQ)
+				+ sizeof(struct RM_CHNL_LOAD_REQ)));
+
+			prIE->prNext = (struct SUB_ELEMENT_LIST *) prIETemp;
+			prIE = prIE->prNext;
+		} else {
+			prIE->prNext = NULL;
+		}
+		i++;
+	} while (prSetCuRepReqInfo->ucUnitNum > i);
+
+	DBGLOG(OID, INFO, "Send CU Report Request\n");
+	rlmMulAPAgentTxMeasurementRequest(prAdapter,
+		prStaRec, (struct SUB_ELEMENT_LIST *) prIEHead,
+		ucToken,
+		prSetCuRepReqInfo->u2Repetition);
+
+	kalMemFree(prIEHead, VIR_MEM_TYPE, ucIELen);
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif /* CFG_AP_80211K_SUPPORT */
 
 #if CFG_AP_80211V_SUPPORT

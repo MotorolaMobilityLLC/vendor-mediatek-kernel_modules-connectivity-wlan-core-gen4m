@@ -910,6 +910,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = get_cfg_policy,
 		.u4PolicySize = ARRAY_SIZE(get_cfg_policy)
 	},
+#if CFG_AP_80211K_SUPPORT
+	{
+		.pcCmdStr  = CMD_STA_CU_REQUEST,
+		.pfHandler = priv_driver_MulAPAgent_cu_report_request,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_SETSUSPENDMODE,
 		.pfHandler = priv_driver_set_suspend_mode,

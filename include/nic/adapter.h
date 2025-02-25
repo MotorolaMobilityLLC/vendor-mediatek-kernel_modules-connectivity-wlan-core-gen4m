@@ -688,6 +688,7 @@ struct BSS_INFO {
 	u_int8_t fgReSyncCap;
 #endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 
+	uint8_t ucRMDialogToken; /* radio measurement dialog token */
 #if CFG_SUPPORT_MBRAIN
 	uint64_t u8TxStopTS;
 	uint64_t u8TxStartTS;

@@ -343,16 +343,6 @@ ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
     CONFIG_SUPPORT_PCIE_ASPM=y
     CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE=y
     CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
-
-    # AP KVR
-    ifeq ($(CFG_MTK_AP_80211KVR_INTERFACE), y)
-        CONFIG_WIFI_SUPPORT_GET_NOISE=y
-        CFG_WIFI_SUPPORT_NOISE_HISTOGRAM=y
-        ccflags-y += -DCFG_AP_80211KVR_INTERFACE=1
-        ccflags-y += -DCFG_AP_80211K_SUPPORT=1
-        ccflags-y += -DCFG_AP_80211V_SUPPORT=1
-    endif
-
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
         CONFIG_TX_RSRC_WMM_ENHANCE=y
     endif
@@ -3717,6 +3707,15 @@ else
     ccflags-y += -DCFG_PRE_P2P2_SUPPORT=0
     ccflags-y += -DCFG_P2P2_SUPPORT_GC_REQ_CSA=0
     ccflags-y += -DCFG_P2P2_SUPPORT_CAP_NOTIFICATION=0
+endif
+
+# AP KVR
+ifeq ($(CONFIG_MTK_AP_80211KVR_INTERFACE), y)
+    ccflags-y += -DCFG_AP_80211KVR_INTERFACE=1
+    ccflags-y += -DCFG_AP_80211K_SUPPORT=1
+    ccflags-y += -DCFG_AP_80211V_SUPPORT=1
+    ccflags-y += -DCFG_SUPPORT_TRAFFIC_REPORT=0
+    ccflags-y += -DCFG_WIFI_SUPPORT_NOISE_HISTOGRAM=0
 endif
 
 # ---------------------------------------------------

@@ -1026,13 +1026,18 @@ void rlmSetSrControl(struct ADAPTER *prAdapter, bool fgIsEnableSr);
 void rlmMulAPAgentGenerateApRRMEnabledCapIE(
 				struct ADAPTER *prAdapter,
 				struct MSDU_INFO *prMsduInfo);
-void rlmMulAPAgentTxMeasurementRequest(
-				struct ADAPTER *prAdapter,
-				struct STA_RECORD *prStaRec,
-				struct SUB_ELEMENT_LIST *prSubIEs);
+void rlmMulAPAgentTxMeasurementRequest(struct ADAPTER *prAdapter,
+				       struct STA_RECORD *prStaRec,
+				       struct SUB_ELEMENT_LIST *prSubIEs,
+				       uint8_t ucToken,
+				       uint16_t u2Repetitions);
 
 void rlmMulAPAgentProcessRadioMeasurementResponse(
 		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+
+void rlmProcessRadioMeasurementResponse(
+		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+
 #endif /* CFG_AP_80211K_SUPPORT */
 
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
