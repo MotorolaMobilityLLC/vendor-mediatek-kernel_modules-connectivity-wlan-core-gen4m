@@ -14021,6 +14021,10 @@ void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				sizeof(au4RawDataTag1));
 			memcpy(au4RawDataTag2, prPfmuTag2,
 				sizeof(au4RawDataTag2));
+#if CFG_SUPPORT_BF_CN_PRIV_CMD
+			memcpy(&ad->rPfmuTag1, prPfmuTag1,
+				sizeof(*prPfmuTag1));
+#endif /* CFG_SUPPORT_BF_CN_PRIV_CMD */
 
 			DBGLOG(INIT, DEBUG,
 				"========================== (R)Tag1 info ==========================\n"

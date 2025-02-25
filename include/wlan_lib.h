@@ -2336,7 +2336,8 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
-		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid,
+		uint8_t ucBssIdx);
 
 int wlanQueryTrxLatBigDataByBssIdx(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer, uint32_t u4QueryBufferLen,

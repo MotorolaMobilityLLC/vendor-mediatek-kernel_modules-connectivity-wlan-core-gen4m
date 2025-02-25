@@ -1314,6 +1314,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 	{
+		.pcCmdStr  = CMD_GET_BF_CN,
+		.pfHandler = priv_driver_get_bf_cn,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
 		.pcCmdStr  = CMD_SET_POLICY_ACL,
 		.pfHandler = priv_driver_set_acl_policy,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,

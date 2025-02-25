@@ -1052,7 +1052,7 @@ void mbrGetLatencyData(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	rStaParam.ucWlanIdx = prBssInfo->prStaRecOfAP->ucWlanIndex;
 	COPY_MAC_ADDR(rStaParam.aucMacAddr, prBssInfo->aucOwnMacAddr);
 	rStatus =  wlanQueryStaBigDataByWidx(prAdapter, &rStaParam,
-		sizeof(rStaParam), &u4QueryInfoLen, FALSE);
+		sizeof(rStaParam), &u4QueryInfoLen, FALSE, ucBssIdx);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN,

@@ -2483,6 +2483,8 @@ struct STATS_LLS_TX_BIT_RATE {
 #endif /* CFG_SUPPORT_LLS */
 
 #if CFG_SUPPORT_MBRAIN_BIGDATA
+#define IPI_HIST_LEVEL_NUM 11
+
 struct BIG_DATA_BSS_CNT_T {
 	uint32_t u4RtsFail;
 	uint32_t u4RtsTx;
@@ -2518,6 +2520,10 @@ struct BIG_DATA_PHY_CNT {
 	uint32_t u4CckTx;
 	uint32_t u4OfdmTx;
 	uint32_t u4Pop;
+	uint32_t au4IPIHist[MAX_ANTENNA_NUM][IPI_HIST_LEVEL_NUM];
+	uint8_t ucNbiPwr;
+	uint16_t u2NbiFreq;
+	uint8_t ucRsvd;
 };
 
 #define BIG_DATA_MAX_STA_NUM 10
@@ -2531,7 +2537,8 @@ struct BIG_DATA_STA_INFO {
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
 	uint16_t u2TxLinkSpeed; //Unit: 100Kbps
 	uint8_t aucSnr[MAX_ANTENNA_NUM];
-	uint8_t aucRsvd1[14];
+	uint8_t aucRespRcpi[MAX_ANTENNA_NUM];
+	uint8_t aucRsvd1[12];
 };
 
 struct PARAM_QUERY_STA_BIG_DATA {
@@ -2539,18 +2546,24 @@ struct PARAM_QUERY_STA_BIG_DATA {
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
 	uint8_t ucRsvd;
 	uint8_t aucSnr[MAX_ANTENNA_NUM];
+	uint8_t aucRespRcpi[MAX_ANTENNA_NUM];
 	uint16_t u2TxLinkSpeed; //Unit: 100Kbps
 #if CFG_SUPPORT_STA_INFO
 	uint32_t u4RxBmcMgmtCnt;
 #endif
 };
 
-#define IPI_HIST_LEVEL_NUM 11
 struct PARAM_QUERY_TRX_LATENCY_BIG_DATA {
 	struct BIG_DATA_ABT_CNT rAbtCnt;
 	uint32_t u4RtsFailRate;
 	uint32_t au4IPIHist[MAX_ANTENNA_NUM][IPI_HIST_LEVEL_NUM];
-	uint32_t u4Nbi; //[7:0] power, [25:16] freq
+	union {
+		struct {
+			int16_t pwr;
+			uint16_t freq;
+		} fields;
+		uint32_t u4Nbi;
+	};
 	uint8_t ucCuAll;
 	uint8_t ucCuNotMe;
 	uint8_t ucPhyRxPer;

@@ -620,6 +620,8 @@ int priv_driver_get_sta_stat(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_show_rx_stat(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_get_bf_cn(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_acl_policy(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_add_acl_entry(struct net_device *prNetDev,

@@ -3190,6 +3190,10 @@ struct ADAPTER {
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+#if CFG_SUPPORT_BF_CN_PRIV_CMD
+	union PFMU_PROFILE_TAG1 rPfmuTag1;
+#endif /* CFG_SUPPORT_BF_CN_PRIV_CMD */
+
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 	/* dynamic tx power control */
 	struct LINK rTxPwr_DefaultList;

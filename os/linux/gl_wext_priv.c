@@ -26070,3 +26070,62 @@ error:
 }
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+
+int priv_driver_get_bf_cn(struct net_device *prNetDev,
+				    char *pcCommand, int i4TotalLen)
+{
+#if CFG_SUPPORT_BF_CN_PRIV_CMD && CFG_SUPPORT_TX_BF
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo = {0};
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucSnr0, ucSnr1;
+	union PFMU_PROFILE_TAG1 *prPfmuTag1;
+
+	if (!prNetDev || !GLUE_CHK_PR2(prNetDev, pcCommand))
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		wlanGetBssIdx(prNetDev));
+	if (!prBssInfo)
+		return -1;
+
+	rTxBfActionInfo.rProfileTagRead.ucTxBfCategory =
+		BF_PFMU_TAG_READ;
+	rTxBfActionInfo.rProfileTagRead.ucProfileIdx = 0;
+	rTxBfActionInfo.rProfileTagRead.fgBfer = FALSE;
+	rTxBfActionInfo.rProfileTagRead.ucBandIdx = prBssInfo->eHwBandIdx;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidTxBfAction, &rTxBfActionInfo,
+			    sizeof(union PARAM_CUSTOM_TXBF_ACTION_STRUCT),
+				&u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	prPfmuTag1 = &prAdapter->rPfmuTag1;
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT) {
+		ucSnr0 = prPfmuTag1->rFieldv2.ucSNR_STS0;
+		ucSnr1 = prPfmuTag1->rFieldv2.ucSNR_STS1;
+	} else {
+		ucSnr0 = prPfmuTag1->rFieldv3.ucSNR_STS0;
+		ucSnr1 = prPfmuTag1->rFieldv3.ucSNR_STS1;
+	}
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+		i4TotalLen - i4BytesWritten,
+		"CN=%u\n", (ucSnr0 > ucSnr1 ?
+		ucSnr0 - ucSnr1 : ucSnr1 - ucSnr0));
+
+	return i4BytesWritten;
+
+#else /* CFG_SUPPORT_BF_CN_PRIV_CMD && CFG_SUPPORT_TX_BF */
+	return -EOPNOTSUPP;
+#endif /* CFG_SUPPORT_BF_CN_PRIV_CMD && CFG_SUPPORT_TX_BF */
+}

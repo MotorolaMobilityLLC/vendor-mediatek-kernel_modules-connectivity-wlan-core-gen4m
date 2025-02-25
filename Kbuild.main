@@ -805,6 +805,9 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         ifeq ($(call kver_ge,6,6),1)
             CONFIG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG=y
         endif
+        ifeq ($(CONFIG_WIFI_DX5), y)
+            CONFIG_SUPPORT_BF_CN_PRIV_CMD=y
+        endif
         CONFIG_PERF_MON_FAST=y
         CONFIG_WIFI_PLAT_SHUTDOWN_SUPPORT=y
         CONFIG_WIFI_COREDUMP_SUPPORT=y
@@ -3610,6 +3613,12 @@ endif
 
 ifeq ($(CFG_DRIVER_INITIAL_RUNNING_MODE),)
     ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
+endif
+
+ifeq ($(CONFIG_SUPPORT_BF_CN_PRIV_CMD), y)
+    ccflags-y += -DCFG_SUPPORT_BF_CN_PRIV_CMD=1
+else
+    ccflags-y += -DCFG_SUPPORT_BF_CN_PRIV_CMD=0
 endif
 
 ifeq ($(CONFIG_SDIO_MAILBOX_EXTENSION), y)
