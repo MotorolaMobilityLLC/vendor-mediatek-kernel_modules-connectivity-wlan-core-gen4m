@@ -2672,6 +2672,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if CFG_SUPPORT_NAN
+	{
+		.pcCmdStr  = CMD_NANSETCH,
+		.pfHandler = priv_driver_nan_setch,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
 	{
 		.pcCmdStr  = CMD_AP_SET_WMM_PARAM,

@@ -648,10 +648,11 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev,
 int priv_driver_set_nan_5g_160(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #if CFG_SUPPORT_NAN_FAST_DISC
-int priv_driver_set_nan_fast_discovery(
-	struct net_device *prNetDev,
+int priv_driver_set_nan_fast_discovery(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif
+int priv_driver_nan_setch(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_NAN */
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 int priv_driver_set_dfs_channel_available(struct net_device *prNetDev,

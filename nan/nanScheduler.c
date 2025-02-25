@@ -15069,6 +15069,64 @@ void nanUpdateAisBitmap(struct ADAPTER *prAdapter, u_int8_t fgSet)
 	}
 }
 
+static uint8_t
+nanGetMockedConcurrentChannelByBand(struct ADAPTER *prAdapter,
+				    enum ENUM_NETWORK_TYPE eNetworkType,
+				    enum ENUM_BAND eBand,
+				    union _NAN_BAND_CHNL_CTRL *prChnl,
+				    uint8_t *ucPhyTypeSet)
+{
+	struct WIFI_VAR *prWifiVar;
+	uint16_t u4Bw;
+	uint8_t ucChannel;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	ucChannel = prWifiVar->aucNanMockedChannel[eNetworkType][eBand];
+
+	if (ucChannel) {
+		u4Bw = nanSchedConfigGetAllowedBw(prAdapter, eBand);
+		*prChnl = nanRegGenNanChnlInfoByPriChannel(ucChannel,
+							   u4Bw, eBand);
+		*ucPhyTypeSet = PHY_TYPE_SET_802_11ABGNACAX;
+	}
+
+	return ucChannel;
+}
+
+static uint8_t nanGetMockedConcurrentChannel(struct ADAPTER *prAdapter,
+					enum ENUM_NETWORK_TYPE eNetworkType,
+					size_t szTimeline,
+					enum ENUM_BAND *peBand,
+					union _NAN_BAND_CHNL_CTRL *prChnl,
+					uint8_t *ucPhyTypeSet)
+{
+	const size_t sz5gTimeLineIdx =
+			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
+	enum ENUM_BAND eBand;
+	uint8_t ucChannel;
+
+	if (szTimeline == sz5gTimeLineIdx) {
+		for (eBand = BAND_5G; eBand < BAND_NUM; eBand++) {
+			ucChannel = nanGetMockedConcurrentChannelByBand(
+						prAdapter,
+						eNetworkType, eBand,
+						prChnl, ucPhyTypeSet);
+			if (ucChannel) {
+				*peBand = eBand;
+				break;
+			}
+		}
+	} else {
+		eBand = BAND_2G4;
+		*peBand = eBand;
+		ucChannel = nanGetMockedConcurrentChannelByBand(prAdapter,
+						eNetworkType, eBand,
+						prChnl, ucPhyTypeSet);
+	}
+
+	return ucChannel;
+}
+
 /**
  * nanSchedGetConnChnlUsage() - Get connected network channel and time slots
  * @prAdapter: pointer to adapter
@@ -15095,12 +15153,27 @@ uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
 	struct _NAN_AIS_BITMAP *prAisSlots;
 	uint8_t band_idx;
 	uint8_t ucBssCount;
+	uint8_t ucChannel;
 
 	if (!prAdapter || !prChnl || !pu4SlotBitmap)
 		return WLAN_STATUS_FAILURE;
 
 	prChnl->u4RawData = 0;
 	*pu4SlotBitmap = 0;
+
+	ucChannel = nanGetMockedConcurrentChannelByBand(prAdapter,
+							eNetworkType, eBand,
+							prChnl, ucPhyTypeSet);
+	if (ucChannel) {
+		DBGLOG(NAN, INFO, "Use mocked test channel=%u", ucChannel);
+		if (eNetworkType == NETWORK_TYPE_AIS) {
+			if (eBand == BAND_2G4)
+				*pu4SlotBitmap = NAN_DEFAULT_2G_AIS;
+			else
+				*pu4SlotBitmap = NAN_DEFAULT_5G_AIS;
+		}
+		goto channel_determined;
+	}
 
 	ucBssCount = prAdapter->ucSwBssIdNum;
 
@@ -15130,6 +15203,7 @@ uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+channel_determined:
 	if (eNetworkType == NETWORK_TYPE_AIS) {
 		prAisSlots = prAdapter->arNanAisSlots;
 		if (prChnl->u4RawData) {
@@ -15143,11 +15217,11 @@ uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
 		*pu4SlotBitmap = 0xFFFFFFFF;
 
 	DBGLOG(NAN, DEBUG,
-	       "network=%c, prBssInfo->eBand=%u, bw=%u, type=%c, BandIdMask=%u, OC=%u, primaryChnl=%u, auxChnl=%u, bitmap=0x%08x\n",
+	       "network=%c, eBand=%u, bw=%u, type=%c, BandIdMask=%u, OC=%u, primaryChnl=%u, auxChnl=%u, bitmap=0x%08x\n",
 	       eNetworkType == NETWORK_TYPE_AIS ? 'A' :
 	       eNetworkType == NETWORK_TYPE_P2P ? 'P' :
 	       '0' + eNetworkType,
-	       prBssInfo->eBand, u4Bw,
+	       eBand, u4Bw,
 	       prChnl->u4Type ==
 		       NAN_BAND_CH_ENTRY_LIST_TYPE_BAND ?
 		       'B' : 'C',
@@ -15186,12 +15260,28 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 	struct _NAN_AIS_BITMAP *prAisSlots;
 	uint8_t band_idx;
 	uint8_t ucBssCount;
+	uint8_t ucChannel;
+	enum ENUM_BAND eBand;
 
 	if (!prAdapter || !prChnl || !pu4SlotBitmap)
 		return WLAN_STATUS_FAILURE;
 
 	prChnl->u4RawData = 0;
 	*pu4SlotBitmap = 0;
+
+	ucChannel = nanGetMockedConcurrentChannel(prAdapter, eNetworkType,
+						  szTimeline, &eBand,
+						  prChnl, ucPhyTypeSet);
+	if (ucChannel) {
+		DBGLOG(NAN, INFO, "Use mocked test chanenl %u", ucChannel);
+		if (eNetworkType == NETWORK_TYPE_AIS) {
+			if (NAN_IS_2G_TIMELINE(prAdapter, szTimeline))
+				*pu4SlotBitmap = NAN_DEFAULT_2G_AIS;
+			else
+				*pu4SlotBitmap = NAN_DEFAULT_5G_AIS;
+		}
+		goto channel_determined;
+	}
 
 	ucBssCount = prAdapter->ucSwBssIdNum;
 
@@ -15205,14 +15295,12 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 		    prBssInfo->fgIsInUse && prBssInfo->fgIsNetActive &&
 		    NAN_IS_TIMELINE_MATCH_BAND(prAdapter, szTimeline,
 					       prBssInfo->eBand)) {
-
+			eBand = prBssInfo->eBand;
 			/* Use NAN BW instead of max(AIS,NAN) */
-			u4Bw = nanSchedConfigGetAllowedBw(prAdapter,
-							  prBssInfo->eBand);
+			u4Bw = nanSchedConfigGetAllowedBw(prAdapter, eBand);
 
 			*prChnl = nanRegGenNanChnlInfoByPriChannel(
-				prBssInfo->ucPrimaryChannel, u4Bw,
-				prBssInfo->eBand);
+				prBssInfo->ucPrimaryChannel, u4Bw, eBand);
 			*ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 			break;
 		}
@@ -15224,10 +15312,11 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+channel_determined:
 	if (eNetworkType == NETWORK_TYPE_AIS) {
 		prAisSlots = prAdapter->arNanAisSlots;
 		if (prChnl->u4RawData) {
-			band_idx = (enum NAN_BAND_IDX)(prBssInfo->eBand - 1);
+			band_idx = (enum NAN_BAND_IDX)(eBand - 1);
 			if (band_idx < NAN_BAND_NUM)
 				*pu4SlotBitmap = prAisSlots[band_idx].u4Bitmap;
 		}
@@ -15237,12 +15326,12 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 		*pu4SlotBitmap = 0xFFFFFFFF;
 
 	DBGLOG(NAN, DEBUG,
-	       "Timeline=%u, network=%c, prBssInfo->eBand=%u, bw=%u, type=%c, BandIdMask=%u, OC=%u, primaryChnl=%u, auxChnl=%u, bitmap=0x%08x\n",
+	       "Timeline=%u, network=%c, eBand=%u, bw=%u, type=%c, BandIdMask=%u, OC=%u, primaryChnl=%u, auxChnl=%u, bitmap=0x%08x\n",
 	       szTimeline,
 	       eNetworkType == NETWORK_TYPE_AIS ? 'A' :
 	       eNetworkType == NETWORK_TYPE_P2P ? 'P' :
 	       '0' + eNetworkType,
-	       prBssInfo->eBand, u4Bw,
+	       eBand, u4Bw,
 	       prChnl->u4Type ==
 		       NAN_BAND_CH_ENTRY_LIST_TYPE_BAND ?
 		       'B' : 'C',

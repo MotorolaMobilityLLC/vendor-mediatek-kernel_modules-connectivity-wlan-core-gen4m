@@ -1680,6 +1680,7 @@ struct WIFI_VAR {
 	u_int8_t fgNanInstantCommMode;
 	u_int8_t fgNanSkipAnqp;
 	u_int8_t fgNanConcurrency;
+	uint8_t aucNanMockedChannel[NETWORK_TYPE_P2P + 1][BAND_NUM];
 	uint32_t u4NanPreferBandMask;
 	uint32_t u4NanNdcPreferBandMask;
 	uint8_t ucNanMaxNdpDissolve;

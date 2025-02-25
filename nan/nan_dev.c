@@ -1402,6 +1402,25 @@ void nanBackToNormal(struct ADAPTER *prAdapter)
 	nanExtBackToNormal(prAdapter);
 }
 
+static u_int8_t nanIsMockedChannelSet(struct ADAPTER *prAdapter,
+				      enum ENUM_NETWORK_TYPE eNetworkType)
+{
+	struct WIFI_VAR *prWifiVar;
+	enum ENUM_BAND eBand;
+
+	if (eNetworkType != NETWORK_TYPE_AIS &&
+	    eNetworkType != NETWORK_TYPE_P2P)
+		return FALSE;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	for (eBand = BAND_2G4; eBand < BAND_NUM; eBand++) {
+		if (prWifiVar->aucNanMockedChannel[eNetworkType][eBand])
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 u_int8_t nanIsAisActive(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1409,6 +1428,9 @@ u_int8_t nanIsAisActive(struct ADAPTER *prAdapter)
 
 	if (!prAdapter)
 		return FALSE;
+
+	if (nanIsMockedChannelSet(prAdapter, NETWORK_TYPE_AIS))
+		return TRUE;
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
@@ -1427,6 +1449,9 @@ u_int8_t nanIsSapOrP2pActive(struct ADAPTER *prAdapter)
 
 	if (!prAdapter)
 		return FALSE;
+
+	if (nanIsMockedChannelSet(prAdapter, NETWORK_TYPE_P2P))
+		return TRUE;
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];

@@ -11808,6 +11808,113 @@ int priv_driver_set_nan_fast_discovery(
 	return 0;
 }
 #endif
+
+static void
+set_mocked_nan_concurrent_channel(struct ADAPTER *prAdapter,
+				      enum ENUM_NETWORK_TYPE eNetworkType,
+				      enum ENUM_BAND eBand,
+				      uint8_t ucPrimaryChannel)
+{
+	struct WIFI_VAR *prWifiVar;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prWifiVar->aucNanMockedChannel[eNetworkType][eBand] = ucPrimaryChannel;
+
+	DBGLOG(REQ, INFO, "Customize net=%u, band=%u, channel=%u",
+	       eNetworkType, eBand, ucPrimaryChannel);
+}
+
+static int nan_set_mocked_channels(struct ADAPTER *prAdapter,
+				   char *pcCommand, int i4TotalLen)
+{
+	enum ENUM_NETWORK_TYPE eNetworkType;
+	enum ENUM_BAND eBand;
+	uint8_t ucPrimaryChannel;
+	char *token;
+	char *networkTypeStr;
+	char *bandStr;
+	char *saveptr;
+	int ret;
+
+	/* Skip the "nan_setch " prefix */
+	token = strtok_r(pcCommand, " ", &saveptr);
+	if (token == NULL ||
+	    kalStrniCmp(token, "nan_setch", kalStrLen("nan_setch")) != 0)
+		return -1;
+
+	/* Get the network type */
+	networkTypeStr = strtok_r(NULL, "_", &saveptr);
+	if (networkTypeStr == NULL)
+		return -1;
+
+	/* Get the band */
+	bandStr = strtok_r(NULL, "_", &saveptr);
+	if (bandStr == NULL)
+		return -1;
+
+	/* Get the primary channel */
+	token = strtok_r(NULL, "_", &saveptr);
+	if (token == NULL)
+		return -1;
+	ret = kstrtou8(token, 10, &ucPrimaryChannel);
+	if (ret)
+		return -1;
+
+	if (kalStrniCmp(networkTypeStr, "AIS", kalStrLen("AIS")) == 0 ||
+	    kalStrniCmp(networkTypeStr, "STA", kalStrLen("STA")) == 0)
+		eNetworkType = NETWORK_TYPE_AIS;
+	else if (kalStrniCmp(networkTypeStr, "P2P", kalStrLen("P2P")) == 0 ||
+		 kalStrniCmp(networkTypeStr, "SAP", kalStrLen("SAP")) == 0)
+		eNetworkType = NETWORK_TYPE_P2P;
+	else
+		return -1;
+
+	if (kalStrniCmp(bandStr, "2G", kalStrLen("2G")) == 0)
+		eBand = BAND_2G4;
+	else if (kalStrniCmp(bandStr, "5G", kalStrLen("5G")) == 0)
+		eBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (kalStrniCmp(bandStr, "6G", kalStrLen("6G")) == 0)
+		eBand = BAND_6G;
+#endif
+	else
+		return -1;
+
+	set_mocked_nan_concurrent_channel(prAdapter, eNetworkType,
+					  eBand, ucPrimaryChannel);
+
+	return 0;
+}
+
+/**
+ * The string in pcCommand could be these types:
+ * iwpriv wlan0 driver "nan_setch AIS_6G_5"
+ * iwpriv wlan0 driver "nan_setch AIS_5G_149"
+ * iwpriv wlan0 driver "nan_setch AIS_2G_1"
+ * iwpriv wlan0 driver "nan_setch P2P_6G_5"
+ * iwpriv wlan0 driver "nan_setch P2P_5G_36"
+ * iwpriv wlan0 driver "nan_setch P2P_2G_11"
+ */
+int priv_driver_nan_setch(struct net_device *prNetDev,
+			  char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+
+	if (!prNetDev || GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	return nan_set_mocked_channels(prAdapter, pcCommand, i4TotalLen);
+}
 #endif
 
 int priv_driver_get_linkspeed(struct net_device *prNetDev,
