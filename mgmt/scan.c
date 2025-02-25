@@ -2004,7 +2004,6 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	uint8_t ucBssidNum = 0, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCnt, u2TbttInfoLen, u2CurrentLength = 0;
-	uint8_t fgNeedMlo = FALSE;
 	u_int8_t fgRnrChnlScan, fgRnrBssScan;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
@@ -2015,6 +2014,9 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eRfBand;
 	char *strbuf = (char *)kalMemAlloc(
 			SCN_SCAN_OOB_PRINT_BUFFER_LENGTH, VIR_MEM_TYPE);
+#if CFG_SUPPORT_802_11BE_MLO
+	uint8_t fgNeedMlo = FALSE;
+#endif
 
 	if (!scanIsNeedParsingRnr(prAdapter, prScanInfo)) {
 		DBGLOG(SCN, LOUD, "Skip oob scan Rnr parsing\n");
@@ -2118,10 +2120,20 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		 * directly check next neighborAPInfo if exist
 		 */
 		if (!IS_6G_OP_CLASS(ucOpClass) &&
-		    (!fgNeedMlo || !ucMldParamOffset)) {
+		    (!ucMldParamOffset
+#if CFG_SUPPORT_802_11BE_MLO
+				|| !fgNeedMlo
+#endif
+			)) {
+#if CFG_SUPPORT_802_11BE_MLO
 			DBGLOG(SCN, TRACE,
 				"No need RNR, tbttlen(%d) op(%d) mlo(%d)\n",
 				u2TbttInfoLen, ucOpClass, fgNeedMlo);
+#else
+			DBGLOG(SCN, TRACE,
+				"No need RNR, tbttlen(%d) op(%d)\n",
+				u2TbttInfoLen, ucOpClass);
+#endif
 
 			/* Calculate next NeighborAPInfo's index if exists */
 			u2CurrentLength += SCAN_TBTT_INFO_SET_OFFSET +
