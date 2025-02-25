@@ -12906,23 +12906,19 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct _NAN_SCHED_CMD_UPDATE_PONTENTIAL_CHNL_LIST_T
 		*prCmdUpdatePontentialChnlList = NULL;
-	struct _NAN_POTENTIAL_CHNL_MAP_T *prPotentialChnlMap;
+	struct _NAN_POTENTIAL_CHNL_MAP_T *prPotentialChnl;
 	struct _NAN_POTENTIAL_CHNL_T *prPotentialChnlList;
 	uint32_t u4Idx, u4Num;
 	enum ENUM_BAND eBand;
-	enum _NAN_CHNL_BW_MAP eBwMap;
+	enum _NAN_CHNL_BW_MAP eBw;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 	union _NAN_BAND_CHNL_CTRL rFixChnl;
 	struct _NAN_CHNL_ENTRY_T rChnlEntry;
 	size_t szTimeLineIdx;
 	uint32_t u4SuppBandIdMask = 0;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	size_t Idx;
-	uint8_t ucOpCls;
-	uint8_t ucPrChMapIdx;
-	uint16_t u2ChMapIdx;
-	struct _NAN_POTENTIAL_CHNL_T *prChLst;
-	struct _NAN_CHNL_ENTRY_T *prPoChLst;
+	uint8_t ucPrimaryChnl;
+	struct _NAN_CHNL_ENTRY_T *prSchedulerPotentialChannel;
 #if (CFG_SUPPORT_NAN_6G == 1)
 	struct _NAN_POTENTIAL_CHNL_T *pr6gPotentialChnlMap = NULL;
 #endif
@@ -12965,36 +12961,36 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 		(struct _NAN_SCHED_CMD_UPDATE_PONTENTIAL_CHNL_LIST_T *)
 			prTlvElement->aucbody;
 	kalMemZero(prCmdUpdatePontentialChnlList,
-		   sizeof(struct _NAN_SCHED_CMD_UPDATE_PONTENTIAL_CHNL_LIST_T));
+		   sizeof(*prCmdUpdatePontentialChnlList));
 
 	for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 	     szTimeLineIdx++) {
 		u4Num = 0;
-		Idx = szTimeLineIdx;
 		prPotentialChnlList =
-			prCmdUpdatePontentialChnlList->aarChnlList[Idx];
+		      prCmdUpdatePontentialChnlList->aarChnlList[szTimeLineIdx];
 		u4SuppBandIdMask =
-			nanGetTimelineSupportedBand(prAdapter, szTimeLineIdx);
+		      nanGetTimelineSupportedBand(prAdapter, szTimeLineIdx);
 
-		for (prPotentialChnlMap =
-			g_arPotentialChnlMap;
-			prPotentialChnlMap->ucPrimaryChnl != 0;
-			prPotentialChnlMap++) {
-			eBwMap = (prPotentialChnlMap->ucPrimaryChnl < 36) ?
+		for (prPotentialChnl = g_arPotentialChnlMap;
+		     prPotentialChnl->ucPrimaryChnl != 0;
+		     prPotentialChnl++) {
+			ucPrimaryChnl = prPotentialChnl->ucPrimaryChnl;
+
+			eBw = ucPrimaryChnl < 36 ?
 				prAdapter->rWifiVar.ucNan2gBandwidth :
 				prAdapter->rWifiVar.ucNan5gBandwidth;
 			/* NAN 2G BW check*/
-			if (((prPotentialChnlMap->ucPrimaryChnl < 36) ||
-			     (!prAdapter->rWifiVar.fgEnNanVHT)) &&
-			    (eBwMap > NAN_CHNL_BW_40))
-				eBwMap = NAN_CHNL_BW_40;
+			if ((ucPrimaryChnl < 36 ||
+			     !prAdapter->rWifiVar.fgEnNanVHT) &&
+			    eBw > NAN_CHNL_BW_40)
+				eBw = NAN_CHNL_BW_40;
 
-			if (prPotentialChnlMap->ucPrimaryChnl < 36) {
+			if (ucPrimaryChnl < 36) {
 				if (!prNanScheduler->fgEn2g)
 					continue;
 
 				eBand = BAND_2G4;
-			} else if (prPotentialChnlMap->ucPrimaryChnl < 100) {
+			} else if (ucPrimaryChnl < 100) {
 				if (!prNanScheduler->fgEn5gL)
 					continue;
 
@@ -13009,48 +13005,38 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 			if ((u4SuppBandIdMask & BIT(eBand)) == 0)
 				continue;
 
-			while (prPotentialChnlMap->aucOperatingClass[eBwMap]
-			       == 0)
-				eBwMap--;
+			while (eBw &&
+			       prPotentialChnl->aucOperatingClass[eBw] == 0)
+				eBw--;
 
 			if (!rlmDomainIsLegalChannel(prAdapter, eBand,
-				prPotentialChnlMap->ucPrimaryChnl))
+						     ucPrimaryChnl))
 				continue;
 
 			/* search the current potential channel list for the
 			 * same group
 			 */
 			for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
-				ucOpCls =
-				prPotentialChnlMap->aucOperatingClass[eBwMap];
-				ucPrChMapIdx =
-				prPotentialChnlMap->aucPriChnlMapIdx[eBwMap];
-				if ((prPotentialChnlList[u4Idx].ucOpClass ==
-				    ucOpCls) &&
-				    (prPotentialChnlList[u4Idx].ucPriChnlBitmap
-				    == ucPrChMapIdx))
+				if (prPotentialChnl->aucOperatingClass[eBw] ==
+				    prPotentialChnlList[u4Idx].ucOpClass &&
+				    prPotentialChnl->aucPriChnlMapIdx[eBw] ==
+				    prPotentialChnlList[u4Idx].ucPriChnlBitmap)
 					break;
 			}
 
-			if ((u4Idx == u4Num) &&
-				(u4Num < NAN_MAX_POTENTIAL_CHNL_LIST)) {
+			if (u4Idx == u4Num &&
+			    u4Num < NAN_MAX_POTENTIAL_CHNL_LIST) {
 				u4Num++;
 
-				ucOpCls =
-				prPotentialChnlMap->aucOperatingClass[eBwMap];
-				ucPrChMapIdx =
-				prPotentialChnlMap->aucPriChnlMapIdx[eBwMap];
 				prPotentialChnlList[u4Idx].ucOpClass =
-					ucOpCls;
+					prPotentialChnl->aucOperatingClass[eBw];
 				prPotentialChnlList[u4Idx].ucPriChnlBitmap =
-					ucPrChMapIdx;
+					prPotentialChnl->aucPriChnlMapIdx[eBw];
 			}
 
 			if (u4Idx < u4Num) {
-				u2ChMapIdx =
-				prPotentialChnlMap->au2ChnlMapIdx[eBwMap];
 				prPotentialChnlList[u4Idx].u2ChnlBitmap |=
-					u2ChMapIdx;
+					prPotentialChnl->au2ChnlMapIdx[eBw];
 			}
 		}
 
@@ -13058,14 +13044,14 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 		if (prNanScheduler->fgEn6g &&
 		    NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
 			/* Generate 6G potential channel list */
-			eBwMap = nanSchedGet6gNanBw(prAdapter);
+			eBw = nanSchedGet6gNanBw(prAdapter);
 			/* To limit channel entry num, only bring 6G BW > 40 */
 			u4Idx = NAN_CHNL_BW_80;
 			for (pr6gPotentialChnlMap =
-				&g_ar6gPotentialChnlMap[u4Idx];
-				(pr6gPotentialChnlMap->ucOpClass != 0) &&
-				(u4Idx <= eBwMap);
-				pr6gPotentialChnlMap++, u4Idx++) {
+				     &g_ar6gPotentialChnlMap[u4Idx];
+			     pr6gPotentialChnlMap->ucOpClass != 0 &&
+				     u4Idx <= eBw;
+			     pr6gPotentialChnlMap++, u4Idx++) {
 				if (u4Num < NAN_MAX_POTENTIAL_CHNL_LIST) {
 					prPotentialChnlList[u4Num] =
 						*pr6gPotentialChnlMap;
@@ -13086,44 +13072,36 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 			prCmdUpdatePontentialChnlList->au4Num[szTimeLineIdx]
 				= u4Num;
 
-			Idx = szTimeLineIdx;
-			prChLst =
-			&prCmdUpdatePontentialChnlList->aarChnlList[Idx][0];
-			prChLst->ucOpClass =
+			prPotentialChnlList->ucOpClass =
 				rFixChnl.u4OperatingClass;
-			prChLst->ucPriChnlBitmap =
+			prPotentialChnlList->ucPriChnlBitmap =
 				rChnlEntry.ucPrimaryChnlBitmap;
-			prChLst->u2ChnlBitmap =
+			prPotentialChnlList->u2ChnlBitmap =
 				rChnlEntry.u2ChannelBitmap;
 		}
 
 		for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
 			DBGLOG(NAN, DEBUG,
-				"[%zu][%d] OpClass:%d, PriChnlBitmap:0x%x, ChnlBitmap:0x%x, Bw:%d\n",
-				szTimeLineIdx, u4Idx,
-				prPotentialChnlList[u4Idx].ucOpClass,
-				prPotentialChnlList[u4Idx].ucPriChnlBitmap,
-				prPotentialChnlList[u4Idx].u2ChnlBitmap,
-				nanRegGetBw(prPotentialChnlList[u4Idx]
-				.ucOpClass));
+			     "[%zu][%d] OpClass:%d, PriChnlBitmap:0x%x, ChnlBitmap:0x%x, Bw:%d\n",
+			     szTimeLineIdx, u4Idx,
+			     prPotentialChnlList[u4Idx].ucOpClass,
+			     prPotentialChnlList[u4Idx].ucPriChnlBitmap,
+			     prPotentialChnlList[u4Idx].u2ChnlBitmap,
+			     nanRegGetBw(prPotentialChnlList[u4Idx].ucOpClass));
 		}
 
 		prNanScheduler->au4NumOfPotentialChnlList[szTimeLineIdx] =
-			prCmdUpdatePontentialChnlList->au4Num[szTimeLineIdx];
-		for (u4Idx = 0; u4Idx <
-		     prCmdUpdatePontentialChnlList->au4Num[szTimeLineIdx];
-		     u4Idx++) {
-			Idx = szTimeLineIdx;
-			prPoChLst =
-			&prNanScheduler->aarPotentialChnlList[Idx][u4Idx];
-			prChLst =
-			&prCmdUpdatePontentialChnlList->aarChnlList[Idx][u4Idx];
-			prPoChLst->ucOperatingClass =
-				prChLst->ucOpClass;
-			prPoChLst->u2ChannelBitmap =
-				prChLst->u2ChnlBitmap;
-			prPoChLst->ucPrimaryChnlBitmap =
-				prChLst->ucPriChnlBitmap;
+			u4Num;
+
+		prSchedulerPotentialChannel =
+			prNanScheduler->aarPotentialChnlList[szTimeLineIdx];
+		for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
+			prSchedulerPotentialChannel[u4Idx].ucOperatingClass =
+				prPotentialChnlList[u4Idx].ucOpClass;
+			prSchedulerPotentialChannel[u4Idx].u2ChannelBitmap =
+				prPotentialChnlList[u4Idx].u2ChnlBitmap;
+			prSchedulerPotentialChannel[u4Idx].ucPrimaryChnlBitmap =
+				prPotentialChnlList[u4Idx].ucPriChnlBitmap;
 		}
 	}
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
