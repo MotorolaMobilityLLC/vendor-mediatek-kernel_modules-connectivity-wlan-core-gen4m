@@ -7773,6 +7773,17 @@ uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+void halUpdateRxDmadSdp(struct RXD_STRUCT *pRxD, struct RTMP_DMABUF *prDmaBuf)
+{
+	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
+	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
+		DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+#else
+	pRxD->SDPtr1 = 0;
+#endif
+}
+
 #if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
 uint32_t halUpdateDrvOwnInfo(struct ADAPTER *prAdapter,
 			     struct DRV_OWN_INFO *prDrvOwnInfo,

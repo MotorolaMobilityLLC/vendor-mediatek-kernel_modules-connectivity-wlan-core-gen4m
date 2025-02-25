@@ -1444,6 +1444,8 @@ void halMbuEnableDebug(struct GLUE_INFO *prGlueInfo);
 void halMbuDebug(struct GLUE_INFO *prGlueInfo);
 #endif
 
+void halUpdateRxDmadSdp(struct RXD_STRUCT *pRxD, struct RTMP_DMABUF *prDmaBuf);
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 /* Host Offload */
 void halRroTurnOff(struct GLUE_INFO *prGlueInfo);
@@ -1544,8 +1546,9 @@ bool halCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
 			   void *pucSrc, uint32_t u4Len);
 bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMACB *pRxCell,
-			   struct RTMP_DMABUF *prDmaBuf,
-			   struct SW_RFB *prSwRfb);
+			   struct RXD_STRUCT *pRxD,
+			   struct SW_RFB *prSwRfb,
+			   u_int8_t fgUpdatePtr);
 void halCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
@@ -1575,10 +1578,6 @@ bool halZeroCopyPathCopyEvent(struct GL_HIF_INFO *prHifInfo,
 			  uint8_t *pucDst, uint32_t u4Len);
 bool halZeroCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
 			   void *pucSrc, uint32_t u4Len);
-bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
-			   struct RTMP_DMACB *pRxCell,
-			   struct RTMP_DMABUF *prDmaBuf,
-			   struct SW_RFB *prSwRfb);
 phys_addr_t halZeroCopyPathMapTxDataBuf(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
 phys_addr_t halZeroCopyPathMapTxCmdBuf(struct GL_HIF_INFO *prHifInfo,

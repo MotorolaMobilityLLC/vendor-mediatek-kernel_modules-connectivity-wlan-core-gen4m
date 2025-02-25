@@ -1531,10 +1531,11 @@ skip:
 
 bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			  struct RTMP_DMACB *pRxCell,
-			  struct RTMP_DMABUF *prDmaBuf,
-			  struct SW_RFB *prSwRfb)
+			  struct RXD_STRUCT *pRxD,
+			  struct SW_RFB *prSwRfb,
+			  u_int8_t fgUpdatePtr)
 {
-	struct RXD_STRUCT *pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
+	struct RTMP_DMABUF *prDmaBuf = &pRxCell->DmaBuf;
 	struct sk_buff *prSkb = ((struct sk_buff *)prSwRfb->pvPacket);
 	uint32_t u4Size = pRxD->SDLen0;
 
@@ -1554,6 +1555,9 @@ bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 	}
 
 	memcpy(prSkb->data, prDmaBuf->AllocVa, u4Size);
+
+	if (fgUpdatePtr)
+		halUpdateRxDmadSdp(pRxD, prDmaBuf);
 
 	return true;
 }
@@ -1761,9 +1765,11 @@ bool halZeroCopyPathCopyEvent(struct GL_HIF_INFO *prHifInfo,
 
 bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMACB *pRxCell,
-			   struct RTMP_DMABUF *prDmaBuf,
-			   struct SW_RFB *prSwRfb)
+			   struct RXD_STRUCT *pRxD,
+			   struct SW_RFB *prSwRfb,
+			   u_int8_t fgUpdatePtr)
 {
+	struct RTMP_DMABUF *prDmaBuf = &pRxCell->DmaBuf;
 	struct sk_buff *prSkb = (struct sk_buff *)prSwRfb->pvPacket;
 	void *pRxPacket = NULL;
 	dma_addr_t rAddr;
@@ -1774,7 +1780,7 @@ bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 
 #if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 1)
 	if (!prSkb->pp_recycle) {
-		halCopyPathCopyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb);
+		halCopyPathCopyRxData(prHifInfo, pRxCell, pRxD, prSwRfb, FALSE);
 		goto dma_map;
 	}
 #endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
@@ -1797,6 +1803,9 @@ dma_map:
 		return false;
 	}
 	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
+
+	if (fgUpdatePtr)
+		halUpdateRxDmadSdp(pRxD, prDmaBuf);
 
 	return true;
 }

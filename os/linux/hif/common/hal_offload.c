@@ -1544,8 +1544,9 @@ static u_int8_t halRroHandleRxRcb(
 	rRxCell.AllocVa = (void *)&rRxD;
 	rRxD.SDLen0 = CFG_RX_MAX_PKT_SIZE;
 
+	/* For RRO, PTR is updated later inside halRroUpdateWfdmaRxBlk c*/
 	if (prMemOps->copyRxData &&
-	    !prMemOps->copyRxData(prHifInfo, &rRxCell, &rDmaBuf, prSwRfb)) {
+	    !prMemOps->copyRxData(prHifInfo, &rRxCell, &rRxD, prSwRfb, FALSE)) {
 		DBGLOG_LIMITED(RX, ERROR, "Read Rxblk fail\n");
 		QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
 		return FALSE;
@@ -2558,14 +2559,8 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 
 		prRxCell->pPacket = prRcb->prSkb;
 
-		pRxD->SDPtr0 = ((uint64_t)pDmaBuf->AllocPa) &
-			DMA_LOWER_32BITS_MASK;
-#ifdef CONFIG_PHYS_ADDR_T_64BIT
-		pRxD->SDPtr1 = (((uint64_t)pDmaBuf->AllocPa >>
-			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
-#else
-		pRxD->SDPtr1 = 0;
-#endif
+		halUpdateRxDmadSdp(pRxD, pDmaBuf);
+
 		pRxD->SDLen0 = pDmaBuf->AllocSize;
 		pRxD->DMADONE = 0;
 		pRxD->MagicCnt = prRxRing->u4MagicCnt;

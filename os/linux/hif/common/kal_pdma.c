@@ -3046,7 +3046,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	struct RXD_STRUCT rRxD, *pRxD;
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *pRxCell;
-	struct RTMP_DMABUF *prDmaBuf;
 	u_int8_t fgRet = TRUE;
 	uint32_t u4CpuIdx = 0;
 	enum ENUM_RX_SEGMENT_TYPE eType = RX_SEGMENT_NONE;
@@ -3121,10 +3120,9 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #endif
 	}
 
-	prDmaBuf = &pRxCell->DmaBuf;
-
+	/* PTR is updated inside copyRxData */
 	if (prMemOps->copyRxData &&
-	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
+	    !prMemOps->copyRxData(prHifInfo, pRxCell, pRxD, prSwRfb, TRUE)) {
 		/* If it encounter copy Rx data Fail, it will trigger EE */
 		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
 			RST_WFDMA_MAP_FAIL, RST_FLAG_WF_RESET);
@@ -3141,14 +3139,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
 	NIC_DUMP_RXDMAD(prAdapter, (uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
-
-	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
-#ifdef CONFIG_PHYS_ADDR_T_64BIT
-	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
-		DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
-#else
-	pRxD->SDPtr1 = 0;
-#endif
 
 	if (fgDebugSegment) {
 		kalDevDebugSegment(prAdapter, prSwRfb, eType, pRxD->SDLen0);

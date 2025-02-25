@@ -84,8 +84,9 @@ struct HIF_MEM_OPS {
 			   void *pucSrc, uint32_t u4Len);
 	bool (*copyRxData)(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMACB *pRxCell,
-			   struct RTMP_DMABUF *prDmaBuf,
-			   struct SW_RFB *prSwRfb);
+			   struct RXD_STRUCT *pRxD,
+			   struct SW_RFB *prSwRfb,
+			   u_int8_t fgUpdatePtr);
 	phys_addr_t (*mapTxDataBuf)(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
 	phys_addr_t (*mapTxCmdBuf)(struct GL_HIF_INFO *prHifInfo,
