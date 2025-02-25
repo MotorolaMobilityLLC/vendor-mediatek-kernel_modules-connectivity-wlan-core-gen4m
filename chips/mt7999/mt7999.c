@@ -2385,6 +2385,7 @@ static void mt7999TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4CurDidx = 0;
 
 	if (!prChipInfo->is_support_wfdma_cidx_fetch)
 		return;
@@ -2402,7 +2403,9 @@ static void mt7999TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 		prHifInfo->fgIsNeedCidxFetchFlag = TRUE;
 	}
 
-	if (prTxRing->u4LastCidx == prTxRing->u4LastDidx)
+	HAL_GET_RING_DIDX(HIF_RING, prAdapter, prTxRing, &u4CurDidx);
+	if ((u4CurDidx == prTxRing->u4LastDidx) &&
+	    (u4CurDidx == prTxRing->u4LastCidx))
 		prHifInfo->fgIsNeedCidxFetchFlag = TRUE;
 
 	prHifInfo->fgIsCidxFetchNewTx = TRUE;
