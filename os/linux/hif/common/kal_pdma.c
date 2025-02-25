@@ -211,7 +211,10 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	}
 
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
-	kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	if (pcie2ap->def_val)
+		backup_val = pcie2ap->def_val;
+	else
+		kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
 	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, tmp_val);
@@ -246,7 +249,10 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 	}
 
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
-	kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	if (pcie2ap->def_val)
+		backup_val = pcie2ap->def_val;
+	else
+		kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
 	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, tmp_val);

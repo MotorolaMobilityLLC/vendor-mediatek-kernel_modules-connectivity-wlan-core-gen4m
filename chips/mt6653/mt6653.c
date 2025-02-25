@@ -414,7 +414,8 @@ struct pcie2ap_remap mt6653_pcie2ap_remap_cbtop = {
 	.reg_base = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg0_ADDR,
 	.reg_mask = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg0_MASK,
 	.reg_shift = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg0_SHFT,
-	.base_addr = MT6653_PCIE2AP_REMAP_CBTOP_BASE_ADDR
+	.base_addr = MT6653_PCIE2AP_REMAP_CBTOP_BASE_ADDR,
+	.def_val = 0x74037001,
 };
 
 struct ap2wf_remap mt6653_ap2wf_remap = {

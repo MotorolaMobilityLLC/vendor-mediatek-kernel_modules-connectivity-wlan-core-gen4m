@@ -764,6 +764,7 @@ struct pcie2ap_remap {
 	uint32_t reg_mask;
 	uint32_t reg_shift;
 	uint32_t base_addr;
+	uint32_t def_val;
 };
 
 struct ap2wf_remap {
