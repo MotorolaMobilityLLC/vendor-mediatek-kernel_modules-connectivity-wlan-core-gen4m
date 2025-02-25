@@ -769,53 +769,163 @@ uint16_t mbrWifiPcieGetTotalDataNum(
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 enum wifi2mbr_status mbr_wifi_txpwr_info_fill_hanler(struct ADAPTER *prAdapter,
 	uint8_t ucBnIdx, uint8_t ucAntIdx,
-	struct wifi2mbr_txpwr *dest)
+	struct TXPWR_MBRAIN_RPT_T *prSrc, struct wifi2mbr_txpwr *dest)
 {
 	dest->rpt_type =
-		g_rMbrTxPwrRpt.ucRptType;
+		prSrc->ucRptType;
 	dest->max_bn_num =
-		g_rMbrTxPwrRpt.ucMaxBnNum;
+		prSrc->ucMaxBnNum;
 	dest->max_ant_num =
-		g_rMbrTxPwrRpt.ucMaxAntNum;
+		prSrc->ucMaxAntNum;
 	/* scenario info */
 	dest->info[ucBnIdx][ucAntIdx].epa_support =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].fgEpaSupport;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].fgEpaSupport;
 	dest->info[ucBnIdx][ucAntIdx].cal_type =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].ucCalTpye;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].ucCalTpye;
 	dest->info[ucBnIdx][ucAntIdx].center_ch =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].ucCenterCh;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].ucCenterCh;
 	dest->info[ucBnIdx][ucAntIdx].mcc_idx =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].ucMccIdx;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].ucMccIdx;
 	dest->info[ucBnIdx][ucAntIdx].rf_band =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].u4RfBand;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].u4RfBand;
 	dest->info[ucBnIdx][ucAntIdx].temp =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].i4Temp;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].i4Temp;
 	dest->info[ucBnIdx][ucAntIdx].antsel =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].u4Antsel;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].u4Antsel;
 	/* coex info */
 	dest->info[ucBnIdx][ucAntIdx].coex.bt_on =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rCoex.fgBtOn;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rCoex.fgBtOn;
 	dest->info[ucBnIdx][ucAntIdx].coex.lte_on =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rCoex.fgLteOn;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rCoex.fgLteOn;
 	dest->info[ucBnIdx][ucAntIdx].coex.bt_profile =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rCoex.u4BtProfile;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rCoex.u4BtProfile;
 	dest->info[ucBnIdx][ucAntIdx].coex.pta_grant =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rCoex.u4PtaGrant;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rCoex.u4PtaGrant;
 	dest->info[ucBnIdx][ucAntIdx].coex.pta_req =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rCoex.u4PtaReq;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rCoex.u4PtaReq;
 	dest->info[ucBnIdx][ucAntIdx].coex.curr_op_mode =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rCoex.u4CurrOpMode;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rCoex.u4CurrOpMode;
 	/* d die info */
 	dest->info[ucBnIdx][ucAntIdx].d_die_info.delta =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rDdieInfo.i4Delta;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rDdieInfo.i4Delta;
 	dest->info[ucBnIdx][ucAntIdx].d_die_info.target_pwr =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rDdieInfo.icTargetPwr;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rDdieInfo.icTargetPwr;
 	dest->info[ucBnIdx][ucAntIdx].d_die_info.comp_grp =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rDdieInfo.ucCompGrp;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rDdieInfo.ucCompGrp;
 	dest->info[ucBnIdx][ucAntIdx].d_die_info.fe_gain_mode =
-		g_rMbrTxPwrRpt.arInfo[ucBnIdx][ucAntIdx].rDdieInfo.ucFeGainMode;
+		prSrc->arInfo[ucBnIdx][ucAntIdx].rDdieInfo.ucFeGainMode;
+
+	DBGLOG(REQ, INFO,
+		"bn[%d]ant[%d]ver[%d]tag[%d]rpt[%d]max_bn[%d]max_ant[%d]epa[%d]cal[%d]ch[%d]rf[%d]mcc[%d]temp[%d]ant[0X%X]\n",
+		ucBnIdx,
+		ucAntIdx,
+		dest->hdr.ver,
+		dest->hdr.tag,
+		dest->rpt_type,
+		dest->max_bn_num,
+		dest->max_ant_num,
+		dest->info[ucBnIdx][ucAntIdx].epa_support,
+		dest->info[ucBnIdx][ucAntIdx].cal_type,
+		dest->info[ucBnIdx][ucAntIdx].center_ch,
+		dest->info[ucBnIdx][ucAntIdx].mcc_idx,
+		dest->info[ucBnIdx][ucAntIdx].rf_band,
+		dest->info[ucBnIdx][ucAntIdx].temp,
+		dest->info[ucBnIdx][ucAntIdx].antsel);
+
+	DBGLOG(REQ, INFO,
+		"bn[%d]ant[%d]bt[%d]lte[%d]bt_pro[0X%X]pta_grant[0x%X]pta_req[0x%X]mode[%d]\n",
+		ucBnIdx,
+		ucAntIdx,
+		dest->info[ucBnIdx][ucAntIdx].coex.bt_on,
+		dest->info[ucBnIdx][ucAntIdx].coex.bt_profile,
+		dest->info[ucBnIdx][ucAntIdx].coex.lte_on,
+		dest->info[ucBnIdx][ucAntIdx].coex.pta_grant,
+		dest->info[ucBnIdx][ucAntIdx].coex.pta_req,
+		dest->info[ucBnIdx][ucAntIdx].coex.curr_op_mode);
+
+	DBGLOG(REQ, INFO,
+		"bn[%d]ant[%d]delta[%d]target[%d]CompGrp[%d]FeGainMode[%d]\n",
+		ucBnIdx,
+		ucAntIdx,
+		dest->info[ucBnIdx][ucAntIdx].d_die_info.delta,
+		dest->info[ucBnIdx][ucAntIdx].d_die_info.target_pwr,
+		dest->info[ucBnIdx][ucAntIdx].d_die_info.comp_grp,
+		dest->info[ucBnIdx][ucAntIdx].d_die_info.fe_gain_mode);
 
 	return WIFI2MBR_SUCCESS;
+}
+enum wifi2mbr_status mbr_wifi_txpwr_mbrain_notify(struct ADAPTER *prAdapter,
+	struct TXPWR_MBRAIN_RPT_T *prSrc, struct wifi2mbr_txpwr *dest
+
+)
+{
+	uint8_t ucBnIdx = 0;
+	uint8_t ucAntIdx = 0;
+	uint64_t u8Time = 0;
+	uint8_t ucMaxBn = ENUM_BAND_NUM;
+	uint8_t ucMaxAnt = 0;
+	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
+
+	kalMemZero(dest, sizeof(struct wifi2mbr_txpwr));
+
+	dest->hdr.tag = WIFI2MBR_TAG_TXPWR_RPT;
+	u8Time = kalGetBootTime();
+	dest->timestamp = USEC_TO_MSEC(u8Time);
+	dest->hdr.ver = prSrc->u1Ver;
+
+	if (prSrc->ucMaxBnNum < ENUM_BAND_NUM)
+		ucMaxBn = prSrc->ucMaxBnNum;
+	else
+		ucMaxBn = ENUM_BAND_NUM;
+
+	if (prSrc->ucMaxAntNum < TXPWR_MBRAIN_ANT_NUM)
+		ucMaxAnt = prSrc->ucMaxAntNum;
+	else
+		ucMaxAnt = TXPWR_MBRAIN_ANT_NUM;
+
+	for (ucBnIdx = 0; ucBnIdx < ucMaxBn; ucBnIdx++) {
+		for (ucAntIdx = 0; ucAntIdx < ucMaxAnt; ucAntIdx++) {
+			status = mbr_wifi_txpwr_info_fill_hanler(
+				prAdapter,
+				ucBnIdx,
+				ucAntIdx,
+				prSrc,
+				dest);
+
+			if (status != WIFI2MBR_SUCCESS)
+				return status;
+		}
+	}
+	/* Not only send info by cmd, but also let mbrain to get EMI info */
+	wifi2mbrain_notify(WIFI2MBR_TAG_TXPWR_RPT, dest,
+				sizeof(struct wifi2mbr_txpwr), 2);
+
+	return WIFI2MBR_SUCCESS;
+}
+enum wifi2mbr_status mbr_wifi_txpwr_uni_event_handler(struct ADAPTER *prAdapter,
+	struct TXPWR_MBRAIN_RPT_T *prMbrRpt
+)
+{
+	struct wifi2mbr_txpwr dest = {0};
+	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return WIFI2MBR_END;
+	}
+
+	if (!prAdapter->prMbrEmiData) {
+		DBGLOG(REQ, WARN, "EMI mapping not done");
+		return WIFI2MBR_END;
+	}
+
+	/* From Event */
+	mbr_wifi_txpwr_mbrain_notify(prAdapter, prMbrRpt, &dest);
+
+	status = WIFI2MBR_SUCCESS;
+
+	return status;
 }
 #endif
 
@@ -880,6 +990,7 @@ enum wifi2mbr_status mbr_wifi_txpwr_handler(struct ADAPTER *prAdapter,
 				prAdapter,
 				ucBnIdx,
 				ucAntIdx,
+				&g_rMbrTxPwrRpt,
 				dest);
 
 			if (status != WIFI2MBR_SUCCESS)

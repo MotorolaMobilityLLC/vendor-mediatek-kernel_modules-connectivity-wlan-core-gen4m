@@ -14412,6 +14412,16 @@ void nicUniUnsolicitMbrEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			 * parsing tlv and transform to mbrain struct, then
 			 * notify mbrain or cache in driver and notify later.
 			 */
+		case UNI_EVENT_MBRAAIN_TAG_TXPWR_RPT: {
+#if CFG_SUPPORT_MBRAIN_TXPWR_RPT
+			struct UNI_EVENT_TXPWR_MBRAIN_INFO *txpwr_mbrain_info =
+				(struct UNI_EVENT_TXPWR_MBRAIN_INFO *)tag;
+
+			mbr_wifi_txpwr_uni_event_handler(ad,
+					&(txpwr_mbrain_info->rMbrRpt));
+#endif
+			break;
+		}
 		default:
 			DBGLOG(NIC, WARN, "invalid tag:%u\n",
 				TAG_ID(tag));

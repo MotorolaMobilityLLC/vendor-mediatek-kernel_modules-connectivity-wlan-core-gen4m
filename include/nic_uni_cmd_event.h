@@ -24,7 +24,9 @@
 #include "gl_vendor.h"
 #include "wsys_cmd_handler_fw.h"
 #include "wlan_lib.h"
-
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -9506,6 +9508,19 @@ struct UNI_EVENT_MBRAIN {
 	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
+enum ENUM_UNI_EVENT_MBRAIN_TAG {
+	UNI_EVENT_MBRAAIN_TAG_TXPWR_RPT,
+	UNI_EVENT_MBRAAIN_TAG_NUM
+};
+
+#if CFG_SUPPORT_MBRAIN_TXPWR_RPT
+struct UNI_EVENT_TXPWR_MBRAIN_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	struct TXPWR_MBRAIN_RPT_T rMbrRpt;
+} __KAL_ATTRIB_PACKED__;
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

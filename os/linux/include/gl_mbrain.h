@@ -269,5 +269,12 @@ enum wifi2mbr_status mbrWifiTRxPerfHandler(struct ADAPTER *prAdapter,
 uint16_t mbrWifiTRxPerfGetTotalDataNum(struct ADAPTER *prAdapter,
 	enum wifi2mbr_tag eTag);
 #endif /* CFG_SUPPORT_MBRAIN_TRX_PERF */
+
+#if CFG_SUPPORT_MBRAIN_TXPWR_RPT
+enum wifi2mbr_status mbr_wifi_txpwr_uni_event_handler(struct ADAPTER *prAdapter,
+	struct TXPWR_MBRAIN_RPT_T *prMbrRpt
+);
+#endif
+
 #endif /* CFG_SUPPORT_MBRAIN */
 #endif /* _GL_MBRAIN_H */
