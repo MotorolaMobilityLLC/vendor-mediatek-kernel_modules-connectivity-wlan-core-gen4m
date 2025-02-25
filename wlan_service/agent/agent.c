@@ -1328,7 +1328,6 @@ boolean byte_swap(u_int8 *dest, u_int16 dest_len, u_int8 *src,
 			dest[i + 1] = src[i + 2];
 			dest[i + 2] = src[i + 1];
 			dest[i + 3] = src[i];
-			i += 4;
 		}
 	}
 	return TRUE;
