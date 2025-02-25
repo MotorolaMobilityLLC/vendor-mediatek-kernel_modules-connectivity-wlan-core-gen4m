@@ -13639,6 +13639,23 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	if (eEvent == WLAN_FB_EVENT_IGNORE)
 		goto end;
 
+	switch (eEvent) {
+	case WLAN_FB_EVENT_UNBLANK:
+		wlan_fb_power_down = FALSE;
+		break;
+	case WLAN_FB_EVENT_POWERDOWN:
+		wlan_fb_power_down = TRUE;
+		break;
+	default:
+		break;
+	}
+
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+			WLAN_DRV_READY_CHECK_RESET)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		goto end;
+	}
+
 	if (kalHaltTryLock(prGlueInfo))
 		goto end;
 
@@ -13647,25 +13664,11 @@ static int wlan_fb_notifier_callback(struct notifier_block
 		goto end;
 	}
 
-	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
-			WLAN_DRV_READY_CHECK_RESET)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return 0;
-	}
-
-	switch (eEvent) {
-	case WLAN_FB_EVENT_UNBLANK:
-		kalSetPerMonEnable(prGlueInfo);
-		wlan_fb_power_down = FALSE;
-		break;
-	case WLAN_FB_EVENT_POWERDOWN:
-		wlan_fb_power_down = TRUE;
+	if (wlan_fb_power_down) {
 		if (!prGlueInfo->wlan_perf_monitor_force_enable)
 			kalSetPerMonDisable(prGlueInfo);
-		break;
-	default:
-		break;
-	}
+	} else
+		kalSetPerMonEnable(prGlueInfo);
 
 	kalHaltUnlock(prGlueInfo);
 	TRACE_FUNC(SW4, DEBUG, "%s: end\n");
