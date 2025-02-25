@@ -2433,8 +2433,8 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 			if (prMsduInfo)
 				halWpdmaFreeMsdu(prGlueInfo, prMsduInfo,
 						 FALSE, NULL);
-			prHifInfo->u4TxDataQLen[u4Idx] -=
-				GET_TX_PKT_CNT(prMsduInfo);
+
+			prHifInfo->u4TxDataQLen[u4Idx] -= prTxDataReq->u4PktCnt;
 		}
 		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx], flags);
 	}

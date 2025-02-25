@@ -2509,10 +2509,11 @@ static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 	u4Port = halTxRingDataSelect(prGlueInfo->prAdapter, prMsduInfo);
 	prTxReq = &prMsduInfo->rTxReq;
 	prTxReq->prMsduInfo = prMsduInfo;
+	prTxReq->u4PktCnt = GET_TX_PKT_CNT(prMsduInfo);
 
 	KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ[u4Port]);
-	prHifInfo->u4TxDataQLen[u4Port] += GET_TX_PKT_CNT(prMsduInfo);
+	prHifInfo->u4TxDataQLen[u4Port] += prTxReq->u4PktCnt;
 	KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Port);
 
 	return true;

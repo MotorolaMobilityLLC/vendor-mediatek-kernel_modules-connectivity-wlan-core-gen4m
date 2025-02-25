@@ -1518,9 +1518,13 @@ bool halCopyPathCopyTxDataSG(struct MSDU_TOKEN_ENTRY *prToken,
 
 	for (i = 0; i < skb_shinfo(prSkb)->nr_frags; i++) {
 		skb_frag_t *frag = &skb_shinfo(prSkb)->frags[i];
+		void *addr = skb_frag_address(frag);
 
-		memcpy(prToken->prPacket + u4CopyLen, skb_frag_address(frag),
-			skb_frag_size(frag));
+		if (!addr)
+			continue;
+
+		memcpy(prToken->prPacket + u4CopyLen, addr,
+		       skb_frag_size(frag));
 		u4CopyLen += skb_frag_size(frag);
 	}
 

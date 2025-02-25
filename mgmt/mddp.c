@@ -1942,13 +1942,10 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 		goto end;
 	}
 
-	if (prHifInfo) {
-		if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
-			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
-			wlandioStopPcieStatus(prAdapter,
-				PCIE_MD_REJECT_GEN_SWITCH);
-			goto end;
-		}
+	if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
+		DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+		goto end;
 	}
 
 #if CFG_MTK_CCCI_SUPPORT

@@ -875,6 +875,7 @@ struct TX_CMD_REQ {
 struct TX_DATA_REQ {
 	struct MSDU_INFO *prMsduInfo;
 	struct list_head list;
+	uint32_t u4PktCnt;
 };
 
 struct AMSDU_MAC_TX_DESC {
