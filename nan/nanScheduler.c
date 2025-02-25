@@ -13775,6 +13775,44 @@ nanSchedCmdUpdateAvailabilityCtrl(struct ADAPTER *prAdapter)
 	return rStatus;
 }
 
+/* Public function to query whether NAN is using 6G channels */
+u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter)
+{
+	struct _NAN_SCHEDULER_T *prScheduler;
+
+	prScheduler = nanGetScheduler(prAdapter);
+	return prScheduler->fgIs6gInUse;
+}
+
+/* Update flag reflecting whether NAN is using 6G channels */
+static void nanUpdate6gUsage(struct ADAPTER *prAdapter,
+			     struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt)
+{
+	struct _NAN_SCHEDULER_T *prScheduler;
+	struct _NAN_CHANNEL_TIMELINE_T *prChnlTimeline;
+	union _NAN_BAND_CHNL_CTRL *prChnlInfo;
+	uint32_t u4Idx;
+
+	prScheduler = nanGetScheduler(prAdapter);
+	prScheduler->fgIs6gInUse = FALSE;
+
+	for (u4Idx = 0; u4Idx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM; u4Idx++) {
+		prChnlTimeline = &prNanTimelineMgmt->arChnlList[u4Idx];
+		if (prChnlTimeline->fgValid == FALSE)
+			continue;
+
+		prChnlInfo = &prChnlTimeline->rChnlInfo;
+		if (IS_6G_OP_CLASS(prChnlInfo->u4OperatingClass)) {
+			prScheduler->fgIs6gInUse = TRUE;
+			DBGLOG(NAN, TRACE, "NAN scheduler 6G %u in use",
+			       prChnlInfo->u4PrimaryChnl);
+		}
+	}
+
+	if (!prScheduler->fgIs6gInUse)
+		DBGLOG(NAN, TRACE, "NAN scheduler no 6G channels in use");
+}
+
 uint32_t
 nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 {
@@ -13835,6 +13873,9 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 				rStatus =
 				nanSchedCmdUpdateAvailabilityDb(prAdapter,
 					szTimeLineIdx, TRUE);
+
+			if (NAN_IS_6G_TIMELINE(prAdapter, szTimeLineIdx))
+				nanUpdate6gUsage(prAdapter, prNanTimelineMgmt);
 		}
 	} while (FALSE);
 
