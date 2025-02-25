@@ -6024,6 +6024,13 @@ uint32_t
 wlandioStopPcieStatus(struct ADAPTER *prAdapter,
 		uint8_t ucPcieStatus);
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+uint32_t
+wlanoidSetPcieMode(struct ADAPTER *prAdapter,
+		       void *pvSetBuffer,
+		       uint32_t u4SetBufferLen,
+		       uint32_t *pu4SetInfoLen);
+#endif /*CFG_EAP_PCIE_GEN_SWITCH*/
 
 #if CFG_SUPPORT_CCM
 uint32_t

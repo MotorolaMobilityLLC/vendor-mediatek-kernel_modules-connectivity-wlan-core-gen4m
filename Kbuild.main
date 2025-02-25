@@ -2667,6 +2667,7 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     #EXT_DIR     := ../gen4m_ext/
     CONFIG_MTK_WIFI_NAN=y
     CONFIG_MTK_WIFI_NAN_EXT=y
+    CONFIG_EAP_PCIE_GEN_SWITCH=y
     ccflags-y += -DCFG_REUSE_RSN_IE=1
     ccflags-y += -DCFG_EXT_VERSION=3
     ccflags-y += -DCFG_EXT_FEATURE=1
@@ -2703,6 +2704,16 @@ else
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=0
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=0
     ccflags-y += -DCFG_SUPPORT_NAN_LOG=0
+endif
+
+ifeq ($(CONFIG_EAP_PCIE_GEN_SWITCH), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_EAP_PCIE_GEN_SWITCH=1
+    else
+        ccflags-y += -DCFG_EAP_PCIE_GEN_SWITCH=0
+    endif
+else
+    ccflags-y += -DCFG_EAP_PCIE_GEN_SWITCH=0
 endif
 
 ifneq ($(CONFIG_MTK_MD1_SUPPORT), )

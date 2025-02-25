@@ -112,6 +112,11 @@ struct MLD_BSS_INFO;
  *******************************************************************************
  */
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+extern u_int8_t g_ucReceiveGenSwitch;
+extern u_int8_t g_ucBypassException;
+#endif
+
 /*******************************************************************************
  *                                 COMMAND
  *******************************************************************************
@@ -281,6 +286,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_MLC			= 0x81, /* Multi-link Control */
 	UNI_CMD_ID_UPDATE_LP	= 0x84, /*Update LP Parameter*/
 	UNI_CMD_ID_COEX	= 0x87, /*notify FW coex cmd*/
+	UNI_CMD_ID_UPDATE_PCIE	= 0x89, /*Update PCIE Parameter*/
 	UNI_CMD_ID_PHY_ICS = 0x8A, /*PHY ICS*/
 };
 
@@ -9352,6 +9358,7 @@ struct UNI_CMD_UPDATE_LP {
 enum ENUM_UNI_CMD_UPDATE_LP_TAG {
 	UNI_CMD_UPDATE_LP_TAG_DYN_QOS_PARAM = 0,
 	UNI_CMD_UPDATE_LP_TAG_GEN_SWITCH_PARAM,
+	UNI_CMD_UPDATE_LP_TAG_PCIE_PARAM,
 	UNI_CMD_UPDATE_LP_TAG_NUM
 };
 
@@ -9362,6 +9369,31 @@ struct UNI_CMD_UPDATE_LP_GEN_SWITCH_PARAM {
 	uint16_t u2Length;
 	uint8_t ucPcieTransitionStatus;
 	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_UPDATE_PCIE {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+	/**< the TLVs included in this field:
+	 *
+	 *   TAG                             | ID  | structure
+	 *   -------------                   | ----| -------------
+	 *   UNI_CMD_UPDATE_LP_TAG_PCIE_PARAM| 0x0 | UNI_CMD_UPDATE_PCIE_PARAM
+	 */
+} __KAL_ATTRIB_PACKED__;
+
+/* Set gen switch parameters (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_UPDATE_PCIE_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucGen;
+	uint8_t ucLane;
+	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -9960,6 +9992,10 @@ uint32_t nicUniCmdPowerLimitEmiInfo(struct ADAPTER *ad,
 uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+uint32_t nicUniCmdUpdatePcieParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif /*CFG_EAP_PCIE_GEN_SWITCH*/
 
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 uint32_t nicUniCmdUpdateTsfSyncParam(struct ADAPTER *ad,

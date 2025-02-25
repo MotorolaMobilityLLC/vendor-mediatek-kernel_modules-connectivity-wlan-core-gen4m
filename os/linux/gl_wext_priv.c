@@ -101,6 +101,7 @@
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 #define MAX_PCIE_SPEED		3
 #endif
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -24744,6 +24745,98 @@ int priv_driver_set_pcie_speed(struct net_device *prNetDev,
 	return i4Argc;
 }
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+int priv_driver_set_pcie_mode(struct net_device *prNetDev,
+			 char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Ret = -1;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucGen = 3;
+	uint8_t ucLane = 1;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct CMD_UPDATE_PCIE_PARAM *prCmdPcieStatus;
+	uint32_t u4SetInfoLen = 0;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(INIT, TRACE, "[GEN_SWITCH] command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	i4Ret = kalkStrtou8(apcArgv[1], 0, &ucGen);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "[GEN_SWITCH] ucGen %d\n", i4Ret);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	i4Ret = kalkStrtou8(apcArgv[2], 0, &ucLane);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "[GEN_SWITCH] ucLane %d\n", i4Ret);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	DBGLOG(REQ, TRACE, "[GEN_SWITCH] ucGen=%d, ucLane=%d\n", ucGen, ucLane);
+
+	prCmdPcieStatus = (struct CMD_UPDATE_PCIE_PARAM *) kalMemAlloc(
+			sizeof(struct CMD_UPDATE_PCIE_PARAM), VIR_MEM_TYPE);
+	if (!prCmdPcieStatus) {
+		DBGLOG(REQ, TRACE,
+			"[GEN_SWITCH] allocate memory for failed\n");
+		return rStatus;
+	}
+	prCmdPcieStatus->ucGen = ucGen;
+	prCmdPcieStatus->ucLane = ucLane;
+
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidSetPcieMode,
+		prCmdPcieStatus,
+		sizeof(struct CMD_UPDATE_PCIE_PARAM),
+		&u4SetInfoLen);
+
+	if (prCmdPcieStatus)
+		kalMemFree(prCmdPcieStatus, VIR_MEM_TYPE,
+		sizeof(struct CMD_UPDATE_PCIE_PARAM));
+
+	return rStatus;
+}
+int priv_driver_get_pcie_mode(struct net_device *prNetDev,
+			 char *pcCommand, int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0, i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct pci_dev *pci_dev = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t ucGen = 0, ucLane = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return i4BytesWritten;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	if (prHifInfo)
+		pci_dev = prHifInfo->pdev;
+	else
+		return i4BytesWritten;
+
+	pcie_gen_switch_get_pcie_mode(pci_dev, &ucGen, &ucLane);
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		   i4TotalLen - i4BytesWritten,
+		   "\n%d %d\n", ucGen, ucLane);
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	return i4BytesWritten;
+}
+
+#endif /* CFG_EAP_PCIE_GEN_SWITCH */
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen)

@@ -20125,6 +20125,35 @@ wlandioStopPcieStatus(struct ADAPTER *prAdapter,
 
 }
 #endif //CFG_PCIE_GEN_SWITCH
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+uint32_t
+wlanoidSetPcieMode(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	struct CMD_UPDATE_PCIE_PARAM *prCmdPcieStatus;
+
+	if (!prAdapter || !pvSetBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prCmdPcieStatus = (struct CMD_UPDATE_PCIE_PARAM *)pvSetBuffer;
+	DBGLOG(REQ, TRACE, "[Gen_Switch] ucGen=%d, ucLane=%d\n",
+		prCmdPcieStatus->ucGen, prCmdPcieStatus->ucLane);
+
+	return wlanSendSetQueryCmd(prAdapter, /* prAdapter */
+			   CMD_ID_UPDATE_PCIE, /* ucCID */
+			   TRUE, /* fgSetQuery */
+			   FALSE, /* fgNeedResp */
+			   TRUE, /* fgIsOid */
+			   nicCmdEventSetCommon, /* pfCmdDoneHandler*/
+			   nicOidCmdTimeoutCommon, /* pfCmdTimeoutHandler */
+			   sizeof(struct CMD_UPDATE_PCIE_PARAM),
+			   (uint8_t *) prCmdPcieStatus,/* pucInfoBuffer */
+			   pvSetBuffer, /* pvSetQueryBuffer */
+			   u4SetBufferLen); /* u4SetQueryBufferLen */
+}
+#endif /*CFG_EAP_PCIE_GEN_SWITCH*/
 
 #if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/

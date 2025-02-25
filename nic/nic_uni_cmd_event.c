@@ -251,6 +251,10 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_PCIE_GEN_SWITCH == 1)
 	[CMD_ID_UPDATE_LP] = nicUniCmdUpdateLowPowerParam,
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+	[CMD_ID_UPDATE_PCIE] = nicUniCmdUpdatePcieParam,
+#endif /*CFG_EAP_PCIE_GEN_SWITCH*/
+
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	[CMD_ID_BEACON_TSF_SYNC] = nicUniCmdUpdateTsfSyncParam,
 #endif
@@ -15467,6 +15471,8 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			DBGLOG(NIC, DEBUG,
 				"[Gen Switch] event status [%d]\n",
 					info->ucGenSwitchStatus);
+			g_ucReceiveGenSwitch = FALSE;
+			g_ucBypassException = FALSE;
 
 			prHifInfo = &ad->prGlueInfo->rHifInfo;
 
@@ -15913,6 +15919,45 @@ uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+uint32_t nicUniCmdUpdatePcieParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_UPDATE_PCIE_PARAM *cmd;
+	struct UNI_CMD_UPDATE_PCIE *uni_cmd;
+	struct UNI_CMD_UPDATE_PCIE_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_UPDATE_PCIE) +
+		sizeof(struct UNI_CMD_UPDATE_PCIE_PARAM);
+
+	if (info->ucCID != CMD_ID_UPDATE_PCIE ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_UPDATE_PCIE_PARAM *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_UPDATE_PCIE,
+		max_cmd_len, info->pfCmdDoneHandler, info->pfCmdTimeoutHandler);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_UPDATE_PCIE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_UPDATE_PCIE_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_UPDATE_LP_TAG_PCIE_PARAM;
+	tag->u2Length = sizeof(*tag);
+
+	tag->ucGen = cmd->ucGen;
+	tag->ucLane = cmd->ucLane;
+	DBGLOG(NIC, STATE, "[GEN_SWITCH] ucGen = %d ucLane =%d\n",
+		cmd->ucGen, cmd->ucLane);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+#endif /* CFG_EAP_PCIE_GEN_SWITCH */
 
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 void nicUniCmdEventTsfSyncDone(struct ADAPTER *prAdapter,

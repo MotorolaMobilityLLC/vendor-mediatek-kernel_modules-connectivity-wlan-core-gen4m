@@ -2471,6 +2471,23 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL
 	},
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+	{
+		.pcCmdStr  = CMD_SET_PCIE_MODE,
+		.pfHandler = priv_driver_set_pcie_mode,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_GET_PCIE_MODE,
+		.pfHandler = priv_driver_get_pcie_mode,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	{
 		.pcCmdStr  = CMD_SET_6G_POWER_MODE,

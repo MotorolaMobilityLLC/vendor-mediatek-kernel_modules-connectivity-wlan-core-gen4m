@@ -121,6 +121,10 @@
 #endif
 #define NIC7999_PCIe_DEVICE_ID 0x80F0
 
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+#define PCIE_LANE_OFFSET	4
+#endif
+
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6632_PCIe_DEVICE_ID),
@@ -397,8 +401,8 @@ static u_int8_t g_fgDriverProbed = FALSE;
 static struct pci_dev *g_prDev;
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-static u_int8_t g_ucReceiveGenSwitch;
-static u_int8_t g_ucBypassException;
+u_int8_t g_ucReceiveGenSwitch;
+u_int8_t g_ucBypassException;
 #endif
 
 
@@ -3552,6 +3556,24 @@ int mtk_pcie_retrain(struct pci_dev *dev)
 }
 #endif
 
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+void pcie_gen_switch_get_pcie_mode(struct pci_dev *pci_dev,
+	uint8_t *ucGen, uint8_t *ucLane)
+{
+	struct pci_dev *parent;
+	int ppos;
+	u16 plinksta = 0;
+
+	if (pci_dev) {
+		parent = pci_dev->bus->self;
+		ppos = parent->pcie_cap;
+		pci_read_config_word(parent, ppos + PCI_EXP_LNKSTA, &plinksta);
+	}
+	*ucGen = plinksta & PCI_EXP_LNKSTA_CLS;
+	*ucLane = (plinksta & PCI_EXP_LNKSTA_NLW) >> PCIE_LANE_OFFSET;
+}
+
+#endif
 #if (CFG_PCIE_GEN_SWITCH == 1)
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter)
 {

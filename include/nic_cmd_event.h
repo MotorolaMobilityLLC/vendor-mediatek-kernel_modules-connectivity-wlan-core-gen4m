@@ -4244,6 +4244,14 @@ struct CMD_UPDATA_LP_PARAM {
 };
 #endif
 
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+struct CMD_UPDATE_PCIE_PARAM {
+	uint8_t ucGen;
+	uint8_t ucLane;
+};
+#endif /* CFG_EAP_PCIE_GEN_SWITCH */
+
+
 #if (CFG_HW_DETECT_REPORT == 1)
 struct EVENT_HW_DETECT_REPORT {
 	bool fgIsReportNode;

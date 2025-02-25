@@ -786,6 +786,10 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg);
 void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter);
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+void pcie_gen_switch_get_pcie_mode(struct pci_dev *pci_dev,
+	uint8_t *ucGen, uint8_t *ucLane);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

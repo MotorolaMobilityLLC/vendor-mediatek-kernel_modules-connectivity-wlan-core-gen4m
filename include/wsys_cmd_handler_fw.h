@@ -403,6 +403,9 @@ enum ENUM_CMD_ID {
 #if (CFG_VOLT_INFO == 1)
 	CMD_ID_SEND_VOLT_INFO = 0xD7,
 #endif
+#if (CFG_EAP_PCIE_GEN_SWITCH == 1)
+	CMD_ID_UPDATE_PCIE = 0xD8,
+#endif
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
 	CMD_ID_SET_P2P_LO_START    = 0xE2, /* 0xE2 (Set) */
