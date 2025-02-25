@@ -700,18 +700,13 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
 
-		if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_8K)
+		if (bssAmsduLen & EHT_MAC_CAP_MAX_MPDU_LEN_8K)
 			amsduLen = APS_AMSDU_VHT_HE_EHT_8K;
-		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_11K)
+		else if (bssAmsduLen & EHT_MAC_CAP_MAX_MPDU_LEN_11K)
 			amsduLen = APS_AMSDU_VHT_HE_EHT_11K;
-		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_3K)
+		else
 			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
-		else {
-			APSLOG(APS, INFO,
-			       "Unexpected EHT maximum mpdu length, %d\n",
-			       bssAmsduLen);
-			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
-		}
+
 		return amsduLen;
 	}
 #endif
@@ -721,17 +716,13 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
 
-		if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_8K)
+		if (bssAmsduLen & HE_6G_CAP_INFO_MAX_MPDU_LEN_8K)
 			amsduLen = APS_AMSDU_VHT_HE_EHT_8K;
-		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_11K)
+		else if (bssAmsduLen & HE_6G_CAP_INFO_MAX_MPDU_LEN_11K)
 			amsduLen = APS_AMSDU_VHT_HE_EHT_11K;
-		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_3K)
+		else
 			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
-		else {
-			APSLOG(APS, INFO,
-				"Unexpected HE maximum mpdu length\n");
-			amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
-		}
+
 		return amsduLen;
 	}
 #endif
@@ -740,19 +731,12 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			VHT_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
 		if (bss->fgIsVHTPresent) {
-			if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_8K)
+			if (bssAmsduLen & VHT_CAP_INFO_MAX_MPDU_LEN_8K)
 				amsduLen = APS_AMSDU_VHT_HE_EHT_8K;
-			else if (bssAmsduLen ==
-				VHT_CAP_INFO_MAX_MPDU_LEN_11K)
+			else if (bssAmsduLen & VHT_CAP_INFO_MAX_MPDU_LEN_11K)
 				amsduLen = APS_AMSDU_VHT_HE_EHT_11K;
-			else if (bssAmsduLen ==
-				VHT_CAP_INFO_MAX_MPDU_LEN_3K)
+			else
 				amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
-			else {
-				APSLOG(APS, INFO,
-					"Unexpected VHT maximum mpdu length\n");
-				amsduLen = APS_AMSDU_VHT_HE_EHT_3K;
-			}
 		} else
 			amsduLen = APS_AMSDU_HT_8K;
 	} else {
@@ -1740,7 +1724,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 
 	/* Restrict STAs other than wlan0 */
-	if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+	if (ais->ucAisIndex != prAdapter->u4MultiStaPrimaryInterface) {
 		struct AIS_FSM_INFO *tempAis;
 		struct BSS_DESC *tempBssDesc;
 		uint8_t i, j;

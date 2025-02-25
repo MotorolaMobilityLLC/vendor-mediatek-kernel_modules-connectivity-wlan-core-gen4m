@@ -826,7 +826,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		}
 	}
 
-	if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+	if (ais->ucAisIndex != prAdapter->u4MultiStaPrimaryInterface) {
 		DBGLOG(WNM, INFO, "WNM: [wlan%d] not support btm roaming\n",
 			ais->ucAisIndex);
 		ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;

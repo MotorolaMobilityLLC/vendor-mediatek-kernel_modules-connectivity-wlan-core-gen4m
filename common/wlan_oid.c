@@ -16359,7 +16359,6 @@ wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 				    *prAdapter,
 				    void *pvSetBuffer,
@@ -16383,13 +16382,16 @@ uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 			prAdapter->u4MultiStaPrimaryInterface ==
 			AIS_DEFAULT_INDEX ? "wlan0" : "wlan1");
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 	if (prAdapter->ucIsMultiStaConnected && u4PrevPrimaryInterface !=
 			prAdapter->u4MultiStaPrimaryInterface)
 		aisMultiStaSetQuoteTime(prAdapter, TRUE);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaUseCase(struct ADAPTER
 				    *prAdapter,
 				    void *pvSetBuffer,

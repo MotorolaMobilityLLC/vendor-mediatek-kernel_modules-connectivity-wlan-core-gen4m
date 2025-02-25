@@ -601,7 +601,8 @@ void roamingFsmSendCmd(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prRoamingFsmInfo->eCurrentEvent[ucBssIndex] == prTransit->u2Event) {
+	if (prTransit->u2Event != ROAMING_EVENT_START &&
+	    prRoamingFsmInfo->eCurrentEvent[ucBssIndex] == prTransit->u2Event) {
 		DBGLOG(ROAMING, INFO,
 			"Ignore [%d](%s)->Send(%s): Current Time = %u\n",
 			ucBssIndex,

@@ -61,6 +61,7 @@
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
 #define AIS_ACTION_FRAME_TX_LIFE_TIME_MS    100
 #endif
+#define AIS_CSA_CH_REQUEST_INTERVAL         100
 
 /* Support AP Selection*/
 #define AIS_BLOCKLIST_TIMEOUT               15 /* seconds */

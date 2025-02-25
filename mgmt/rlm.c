@@ -1864,7 +1864,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	if (IS_BSS_AIS(prBssInfo) &&
 	    (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucBtmCap) ||
 	     AIS_INDEX(prAdapter, prBssInfo->ucBssIndex) !=
-			AIS_DEFAULT_INDEX)) {
+			prAdapter->u4MultiStaPrimaryInterface)) {
 		CLEAR_EXT_CAP(prExtCap->aucCapabilities,
 					ELEM_MAX_LEN_EXT_CAP,
 					ELEM_EXT_CAP_BSS_TRANSITION_BIT);
