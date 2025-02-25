@@ -255,6 +255,7 @@
 #include "nanDiscovery.h"
 #include "nanInstantCommMode.h"
 #include "nanScheduler.h"
+#include "nanRescheduler.h"
 #include "nanReg.h"
 #include "nan_base.h"
 #if CFG_SUPPORT_NAN_EXT

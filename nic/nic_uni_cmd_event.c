@@ -13462,6 +13462,7 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_STAREC *common;
+	struct WIFI_VAR *prWifiVar;
 
 	/* underflow check */
 	if (data_len < fixed_len) {
@@ -13469,6 +13470,8 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			data_len);
 		return;
 	}
+
+	prWifiVar = &ad->rWifiVar;
 
 	common = (struct UNI_EVENT_STAREC *) data;
 	tags_len = data_len - fixed_len;
@@ -13527,6 +13530,19 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 					state->ucLinkState,
 					state->ucReason);
 #endif
+
+#if CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
+				if (prWifiVar->ucNanEnable6gReschedInit == 1 &&
+				    nanIsOn(ad)) {
+					nanSchedUpdateP2pAisMcc(ad);
+					nanRescheduleNdlIfNeeded(ad,
+								 AIS_CONNECTED,
+								 NULL);
+				}
+#endif
+#endif
+
 #ifdef CFG_SUPPORT_TWT_EXT
 				twtmldCheckTeardown(ad,
 					prMldStaRec->u8ActiveStaBitmap);
