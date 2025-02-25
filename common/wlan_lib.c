@@ -8355,6 +8355,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->fgDisSecurityCheck, "DisSecurityCheck", 0,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgEhtAkmCheck, "EhtAkmCheck", 0,
+		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisClearECL, "DisClearECL", 1,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4RejectBtmReqReason, "RejectBtmReqReason", 0,

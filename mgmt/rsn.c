@@ -65,6 +65,12 @@ uint8_t rsnKeyMgmtSae(uint32_t akm)
 	       akm == RSN_AKM_SUITE_FT_SAE_EXT_KEY;
 }
 
+uint8_t rsnKeyMgmtEhtSae(uint32_t akm)
+{
+	return akm == RSN_AKM_SUITE_SAE_EXT_KEY ||
+	       akm == RSN_AKM_SUITE_FT_SAE_EXT_KEY;
+}
+
 uint8_t rsnKeyMgmtFT(uint32_t akm)
 {
 	return akm == RSN_AKM_SUITE_FT_PSK ||
@@ -327,6 +333,12 @@ uint8_t rsnIsKeyMgmtIeee8021x(uint32_t akm)
 	       akm == RSN_AKM_SUITE_FILS_SHA384 ||
 	       akm == RSN_AKM_SUITE_FT_FILS_SHA256 ||
 	       akm == RSN_AKM_SUITE_FT_FILS_SHA384;
+}
+
+uint8_t rsnIsKeyMgmtEhtIeee8021x(uint32_t akm)
+{
+	return akm == RSN_AKM_SUITE_FT_802_1X ||
+	       akm == RSN_AKM_SUITE_802_1X_SHA256;
 }
 
 uint8_t rsnKekLen(uint32_t akmp, uint16_t pmk_len)
@@ -689,6 +701,16 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 			SWAP32(prRsnInfo->au4AuthKeyMgtSuite[0]));
 	}
 
+	if (prRsnInfo->u4AuthKeyMgtSuiteCount == 0) {
+		DBGLOG(RSN, WARN,
+			"Fail to parse AKM in RSN IE\n");
+	}
+
+	if (prRsnInfo->u4PairwiseKeyCipherSuiteCount == 0) {
+		DBGLOG(RSN, WARN,
+			"Fail to parse cipher in RSN IE\n");
+	}
+
 	prRsnInfo->u2RsnCap = u2Cap;
 	prRsnInfo->fgRsnCapPresent = TRUE;
 	prRsnInfo->u2PmkidCount = u2PmkidCount;
@@ -1019,6 +1041,11 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 
 	/* check pairwise */
 	c = prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+	if (c == 0) {
+		DBGLOG(RSN, WARN, "No PTK found\n");
+		return FALSE;
+	}
+
 	for (i = 0; i < c; i++) {
 		k = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
 		if (rsnSearchSupportedCipher(prAdapter, k, ucBssIndex)) {
@@ -1037,6 +1064,11 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 
 	/* check akm */
 	c = prBssRsnInfo->u4AuthKeyMgtSuiteCount;
+	if (c == 0) {
+		DBGLOG(RSN, WARN, "No AuthKey found\n");
+		return FALSE;
+	}
+
 	for (i = 0; i < c; i++) {
 		k = prBssRsnInfo->au4AuthKeyMgtSuite[i];
 		if (rsnSearchAKMSuite(prAdapter, k, ucBssIndex)) {
@@ -1198,16 +1230,38 @@ uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
 uint8_t rsnIsKeyMgmtForEht(struct ADAPTER *ad,
 	struct BSS_DESC *prBss, uint8_t bssidx)
 {
-	if (rsnIsKeyMgmtIeee8021x(prBss->u4RsnSelectedAKMSuite))
-		return TRUE;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
 
-	if (rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
+	/* FC cert: only AKM3/5 is allowed for EHT WPA3 enterprise;
+	 * only AKM24/25 is allowed for EHT WPA3 personal
+	 */
+	if (prWifiVar->fgEhtAkmCheck) {
+		DBGLOG(RSN, TRACE,
+			"EHT AKM check: limited akm are allowed, akm=0x%04x\n",
+			prBss->u4RsnSelectedAKMSuite);
+		if (rsnIsKeyMgmtEhtIeee8021x(prBss->u4RsnSelectedAKMSuite))
+			return TRUE;
+
+		if (rsnKeyMgmtEhtSae(prBss->u4RsnSelectedAKMSuite) &&
+			rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
 #if (CFG_WIFI_EHT_H2E_CHK == 1)
 				bssidx, prBss, TRUE))
 #else
 				bssidx, prBss, FALSE))
 #endif
-		return TRUE;
+			return TRUE;
+	} else {
+	/* No strict EHT AKM check for IoT */
+		if (rsnIsKeyMgmtIeee8021x(prBss->u4RsnSelectedAKMSuite))
+			return TRUE;
+		if (rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
+#if (CFG_WIFI_EHT_H2E_CHK == 1)
+				bssidx, prBss, TRUE))
+#else
+				bssidx, prBss, FALSE))
+#endif
+			return TRUE;
+	}
 
 	return FALSE;
 }
@@ -1466,7 +1520,6 @@ u_int8_t rsnPerformPolicySelection(
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (prBss->rMlInfo.fgValid) {
 			fgIsMLO = TRUE;
-			fgTryRsno = FALSE;
 		}
 
 		/* MLO cases for RSN overriding are required to use RSNE
@@ -1529,6 +1582,10 @@ u_int8_t rsnPerformPolicySelection(
 #endif
 
 try_again:
+	DBGLOG(RSN, LOUD,
+		"try rsn, wpa=%d rsn=%d rsno=%d rsno2=%d\n",
+			fgTryWpa, fgTryRsn, fgTryRsno, fgTryRsno2);
+
 	if (eAuthMode == AUTH_MODE_WPA ||
 	    eAuthMode == AUTH_MODE_WPA_PSK ||
 	    eAuthMode == AUTH_MODE_WPA_NONE) {
@@ -1593,8 +1650,12 @@ try_again:
 		return FALSE;
 	}
 
-	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex))
+	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex)) {
+		DBGLOG(RSN, LOUD,
+			"not suitable BSS, try again! wpa=%d rsn=%d rsno=%d rsno2=%d\n",
+			fgTryWpa, fgTryRsn, fgTryRsno, fgTryRsno2);
 		goto try_again;
+	}
 
 	if (prBssRsnInfo->u4PairwiseKeyCipherSuiteCount == 1 &&
 	    GET_SELECTOR_TYPE(prBssRsnInfo->au4PairwiseKeyCipherSuite[0]) ==
@@ -2282,6 +2343,8 @@ void rsnGenerateRSNIEImpl(struct ADAPTER *prAdapter,
 		cp += 2;
 		/* AKM suite */
 		WLAN_SET_FIELD_32(cp, prBssInfo->u4RsnSelectedAKMSuite);
+		DBGLOG(RSN, LOUD, "RSN KeyMgtSuite 0x%04x\n",
+				prBssInfo->u4RsnSelectedAKMSuite);
 		cp += 4;
 	}
 

@@ -1355,6 +1355,7 @@ struct WIFI_VAR {
 	uint32_t fgDisRoaming;		/* 0:enable roaming 1:disable */
 	uint8_t fgDisGTKCipherCheck;
 	uint8_t fgDisSecurityCheck;
+	uint8_t fgEhtAkmCheck;
 	uint8_t fgDisClearECL;
 	uint32_t fgDisCrossPmf;		/* 0:enable cross pmf 1:disable */
 	u_int8_t fgEnBssidAllowList;
