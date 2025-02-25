@@ -422,6 +422,9 @@ struct BSS_INFO {
 #if CFG_CH_SELECT_ENHANCEMENT
 	enum ENUM_BAND eInitBand;
 #endif
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+	uint8_t ucForceTrxConfig;
+#endif
 	uint8_t ucPrimaryChannel;
 	uint8_t ucHtOpInfo1;
 	uint16_t u2HtOpInfo2;
@@ -924,7 +927,9 @@ struct WIFI_VAR {
 
 	uint8_t ucStaHt;
 	uint8_t ucStaVht;
-	uint8_t ucForceTrxConfig;
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+	uint8_t ucSap1NssCfg;
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucStaHe;
 	uint8_t ucApHe;
@@ -1092,6 +1097,8 @@ struct WIFI_VAR {
 	uint8_t ucRxLdpc;
 	uint8_t ucTxStbc;
 	uint8_t ucRxStbc;
+	uint8_t ucSapTxStbc;
+	uint8_t ucSapRxStbc;
 	uint8_t ucRxStbcNss;
 	uint8_t ucTxGf;
 	uint8_t ucRxGf;

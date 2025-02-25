@@ -2343,10 +2343,12 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_RX_LDPC;
 
 		/* Set Tx STBC capability */
-		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxStbc))
+		if (rlmCheckTxStbc(prAdapter,
+			prBssInfo->ucBssIndex, FEATURE_ENABLED))
 			prStaRec->u4VhtCapInfo |=
 				VHT_CAP_INFO_RX_STBC_MASK;
-		else if (IS_FEATURE_DISABLED(prWifiVar->ucTxStbc))
+		else if (rlmCheckTxStbc(prAdapter,
+			prBssInfo->ucBssIndex, FEATURE_DISABLED))
 			prStaRec->u4VhtCapInfo &=
 				~VHT_CAP_INFO_RX_STBC_MASK;
 

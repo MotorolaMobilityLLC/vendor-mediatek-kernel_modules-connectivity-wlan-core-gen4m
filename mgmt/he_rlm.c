@@ -248,18 +248,20 @@ static void heRlmFillMCSMap(
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 #if CFG_SUPPORT_TRX_LIMITED_CONFIG
-		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+		if (p2pFuncGetForceTrxConfig(prAdapter,
+				prBssInfo->ucBssIndex) !=
 			P2P_FORCE_TRX_CONFIG_NONE &&
-			prBssInfo->ucOpChangeTxNss <= i)
+			prBssInfo->ucOpTxNss <= i)
 			ucMcsMap = VHT_CAP_INFO_MCS_NOT_SUPPORTED;
 #endif
 #endif
 		prHeSupportedMcsSet->u2TxMcsMap |= (ucMcsMap << ucOffset);
 #if CFG_ENABLE_WIFI_DIRECT
 #if CFG_SUPPORT_TRX_LIMITED_CONFIG
-		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+		if (p2pFuncGetForceTrxConfig(prAdapter,
+				prBssInfo->ucBssIndex) !=
 			P2P_FORCE_TRX_CONFIG_NONE &&
-			prBssInfo->ucOpChangeRxNss <= i)
+			prBssInfo->ucOpRxNss <= i)
 			ucMcsMap = VHT_CAP_INFO_MCS_NOT_SUPPORTED;
 #endif
 #endif
@@ -603,13 +605,16 @@ void heRlmFillHeCapIE(
 	if (prBssInfo->ucOpTxNss < 2)
 		fgTxStbcEn = FALSE;
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc) && fgTxStbcEn) {
+	if (rlmCheckTxStbc(prAdapter, prBssInfo->ucBssIndex,
+		FEATURE_ENABLED) &&
+		fgTxStbcEn) {
 		HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (ucMaxBw >= MAX_BW_160MHZ)
 			HE_SET_PHY_CAP_STBC_TX_GT_80M(prHeCap->ucHePhyCap);
 	}
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		HE_SET_PHY_CAP_STBC_RX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (ucMaxBw >= MAX_BW_160MHZ)
 			HE_SET_PHY_CAP_STBC_RX_GT_80M(prHeCap->ucHePhyCap);
@@ -1132,13 +1137,15 @@ uint32_t heRlmFillNANHECapIE(
 	if (prBssInfo->ucOpTxNss < 2)
 		fgTxStbcEn = FALSE;
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc) && fgTxStbcEn) {
+	if (rlmCheckTxStbc(prAdapter, prBssInfo->ucBssIndex,
+		FEATURE_ENABLED) && fgTxStbcEn) {
 		HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (IS_BSS_AIS(prBssInfo))
 			HE_SET_PHY_CAP_STBC_TX_GT_80M(prHeCap->ucHePhyCap);
 	}
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		HE_SET_PHY_CAP_STBC_RX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (IS_BSS_AIS(prBssInfo))
 			HE_SET_PHY_CAP_STBC_RX_GT_80M(prHeCap->ucHePhyCap);
@@ -1558,6 +1565,17 @@ void heRlmRecHeCapInfo(
 	/* Set HE PPE Thresholds if it exists */
 	if (HE_IS_PHY_CAP_PPE_THRESHOLD(prStaRec->ucHePhyCapInfo))
 		heRlmRecHePPEThresholds(prAdapter, prStaRec, prHeCap, u4Offset);
+
+	if (rlmCheckTxStbc(prAdapter, prStaRec->ucBssIndex,
+		FEATURE_DISABLED))
+		HE_UNSET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(prStaRec->ucHePhyCapInfo);
+	if (rlmCheckRxStbc(prAdapter,
+		prStaRec->ucBssIndex, FEATURE_DISABLED))
+		HE_UNSET_PHY_CAP_STBC_RX_LT_OR_EQ_80M(prStaRec->ucHePhyCapInfo);
+
+	log_dbg(RLM, LOUD, "ucSapTxStbc: %d,ucSapRxStbc: %d\n",
+				prWifiVar->ucSapTxStbc,
+				prWifiVar->ucSapRxStbc);
 }
 
 void heRlmRecHeOperation(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,

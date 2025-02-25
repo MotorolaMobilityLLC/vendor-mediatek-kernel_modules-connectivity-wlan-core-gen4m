@@ -737,18 +737,6 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 			if (prP2pChnlReqInfo->fgIsChannelRequested) {
 				p2pFuncReleaseCh(prAdapter, ucBssIndex,
 					prP2pChnlReqInfo);
-#if CFG_SUPPORT_TRX_LIMITED_CONFIG
-				if (p2pFuncGetForceTrxConfig(prAdapter) ==
-					P2P_FORCE_TRX_CONFIG_MCS7)
-					p2pFuncSetApNss(prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						1, 1);
-				else if (p2pFuncGetForceTrxConfig(prAdapter) ==
-					P2P_FORCE_TRX_CONFIG_MCS9)
-					p2pFuncSetApNss(prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						2, 1);
-#endif
 #if CFG_SUPPORT_CCM
 				if (prP2pChnlReqInfo->eChnlReqType ==
 						CH_REQ_TYPE_GO_START_BSS)
@@ -1553,9 +1541,17 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	if (IS_BSS_AP(prAdapter, prBssInfo))
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
 		ucRfBw = prAdapter->rWifiVar.ucAp5gBandwidth;
-	else
+#if (CFG_SUPPORT_TRX_LIMITED_CONFIG == 1)
+		DBGLOG(P2P, INFO, "ucSap1NssCfg: %u\n",
+			prAdapter->rWifiVar.ucSap1NssCfg);
+		if (!IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucSap1NssCfg))
+			p2pFuncSetForceTrxConfig(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex,
+				P2P_FORCE_TRX_CONFIG_1NSS_LOW_POWER);
+#endif
+	} else
 		ucRfBw = prAdapter->rWifiVar.ucP2p5gBandwidth;
 
 	/* whether to do RDD */
@@ -1808,6 +1804,7 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 	cnmOpModeGetTRxNss(
 		prAdapter, prP2pBssInfo->ucBssIndex,
 		&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
+
 	prP2pBssInfo->eHiddenSsidType = prP2pStartAPMsg->ucHiddenSsidType;
 
 	DBGLOG(P2P, TRACE,
@@ -2135,6 +2132,11 @@ void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex);
 		goto error;
 	}
+#if (CFG_SUPPORT_TRX_LIMITED_CONFIG == 1)
+	p2pFuncSetForceTrxConfig(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex,
+				P2P_FORCE_TRX_CONFIG_NONE);
+#endif
 
 	p2pFuncClearUnsolProbeInfo(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	p2pFuncClearFilsInfo(prAdapter, prP2pRoleFsmInfo->ucBssIndex);

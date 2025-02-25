@@ -788,6 +788,14 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll);
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);
 
+u_int8_t rlmCheckRxStbc(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex,
+			enum ENUM_FEATURE_OPTION ucFeatureFlag);
+
+u_int8_t rlmCheckTxStbc(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex,
+			enum ENUM_FEATURE_OPTION ucFeatureFlag);
+
 void rlmCsaDoneTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);
 #endif

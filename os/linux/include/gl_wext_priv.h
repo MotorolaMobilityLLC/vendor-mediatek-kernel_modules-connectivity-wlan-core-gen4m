@@ -850,7 +850,9 @@ int priv_driver_set_power_control(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_DYNAMIC_PWR_LIMIT */
 #if CFG_SUPPORT_TRX_LIMITED_CONFIG
-int priv_driver_set_force_trx_config(struct net_device *prNetDev,
+int priv_driver_set_sap_force_trx_config(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_get_force_trx_support(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif
 #if CFG_WMT_RESET_API_SUPPORT

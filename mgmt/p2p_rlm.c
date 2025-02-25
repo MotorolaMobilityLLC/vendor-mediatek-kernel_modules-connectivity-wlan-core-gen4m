@@ -173,17 +173,10 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT) {
 		for (i = 0; i < 8; i++)
 			prBssInfo->u2VhtBasicMcsSet |= BITS(2 * i, (2 * i + 1));
-#if CFG_SUPPORT_TRX_LIMITED_CONFIG
-		if (p2pFuncGetForceTrxConfig(prAdapter) ==
-				P2P_FORCE_TRX_CONFIG_MCS7)
-			prBssInfo->u2VhtBasicMcsSet &=
-				(VHT_CAP_INFO_MCS_MAP_MCS7
-				<< VHT_CAP_INFO_MCS_1SS_OFFSET);
-		else
-#endif
-			prBssInfo->u2VhtBasicMcsSet &=
-				(VHT_CAP_INFO_MCS_MAP_MCS9
-				<< VHT_CAP_INFO_MCS_1SS_OFFSET);
+
+		prBssInfo->u2VhtBasicMcsSet &=
+			(VHT_CAP_INFO_MCS_MAP_MCS9
+			<< VHT_CAP_INFO_MCS_1SS_OFFSET);
 
 		ucMaxBw = cnmOpModeGetMaxBw(prAdapter,
 			prBssInfo);
@@ -308,7 +301,14 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 		prBssInfo->ucBssIndex,
 		&prBssInfo->ucOpRxNss,
 		&prBssInfo->ucOpTxNss);
-
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+	if (p2pFuncGetForceTrxConfig(prAdapter,
+			prBssInfo->ucBssIndex) ==
+		P2P_FORCE_TRX_CONFIG_1NSS_LOW_POWER) {
+		prBssInfo->ucOpRxNss = 1;
+		prBssInfo->ucOpTxNss = 1;
+	}
+#endif
 	DBGLOG(RLM, INFO,
 		"WLAN AP SCO=%d BW=%d S1=%d S2=%d CH=%d Band=%d TxN=%d RxN=%d\n",
 		prBssInfo->eBssSCO,

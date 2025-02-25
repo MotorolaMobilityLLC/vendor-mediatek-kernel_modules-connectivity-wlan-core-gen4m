@@ -7416,8 +7416,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->ucStaMaxMcsMap, "StaMaxMcsMap", 0xFF,
 		FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucForceTrxConfig,
-		"ForceTrxConfig", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+	INIT_UINT(prWifiVar->ucSap1NssCfg, "Sap1NssCfg", FEATURE_DISABLED,
+		  FEATURE_TO_CUSTOMER);
+#endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	INIT_UINT(prWifiVar->ucStaEht, "StaEHT", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
@@ -7671,6 +7673,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucRxLdpc, "LdpcRx", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucSapTxStbc, "SapStbcTx", FEATURE_ENABLED,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucSapRxStbc, "SapStbcRx", FEATURE_ENABLED,
+		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucTxStbc, "StbcTx", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucRxStbc, "StbcRx", FEATURE_ENABLED,
@@ -7878,9 +7884,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucAp2gBandwidth, "Ap2gBw", DEFAULT_SAP_2G_BW,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucAp5gBandwidth, "Ap5gBw", MAX_BW_80MHZ,
+	INIT_UINT(prWifiVar->ucAp5gBandwidth, "Ap5gBw", DEFAULT_SAP_5G_BW,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucAp6gBandwidth, "Ap6gBw", MAX_BW_320_1MHZ,
+	INIT_UINT(prWifiVar->ucAp6gBandwidth, "Ap6gBw", DEFAULT_SAP_6G_BW,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucApChnlDefFromCfg,
 		"ApChnlDefFromCfg", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);

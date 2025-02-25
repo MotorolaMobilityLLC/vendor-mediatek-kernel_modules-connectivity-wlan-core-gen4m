@@ -1528,11 +1528,13 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_LDPC_CAP;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc) &&
+	if (rlmCheckTxStbc(prAdapter, prBssInfo->ucBssIndex,
+		FEATURE_ENABLED) &&
 			prBssInfo->ucOpTxNss >= 2)
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_TX_STBC;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 
 		uint8_t tempRxStbcNss;
 
@@ -1629,9 +1631,10 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 	     ucIdx++) {
 #if CFG_ENABLE_WIFI_DIRECT
 #if CFG_SUPPORT_TRX_LIMITED_CONFIG
-		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+		if (p2pFuncGetForceTrxConfig(prAdapter,
+			prBssInfo->ucBssIndex) !=
 			P2P_FORCE_TRX_CONFIG_NONE) {
-			if (prBssInfo->ucOpChangeRxNss > ucIdx)
+			if (prBssInfo->ucOpRxNss > ucIdx)
 				prSupMcsSet->aucRxMcsBitmask[ucIdx] =
 				BITS(0, 7);
 		} else
@@ -2436,16 +2439,17 @@ static void rlmFillVhtCapIeMcs(struct ADAPTER *prAdapter,
 					VHT_CAP_INFO_MCS_MAP_MCS9);
 #if CFG_ENABLE_WIFI_DIRECT
 #if CFG_SUPPORT_TRX_LIMITED_CONFIG
-		} else if (p2pFuncGetForceTrxConfig(prAdapter) !=
-			P2P_FORCE_TRX_CONFIG_NONE) {
-			if (prBssInfo->ucOpChangeTxNss > ucAntIdx)
-				ucTxMcsMap = VHT_CAP_INFO_MCS_MAP_MCS7;
+		} else if (p2pFuncGetForceTrxConfig(prAdapter,
+				prBssInfo->ucBssIndex) ==
+			P2P_FORCE_TRX_CONFIG_1NSS_LOW_POWER) {
+			if (prBssInfo->ucOpTxNss > ucAntIdx)
+				ucTxMcsMap = VHT_CAP_INFO_MCS_MAP_MCS9;
 			else
 				ucTxMcsMap =
 					VHT_CAP_INFO_MCS_NOT_SUPPORTED;
 
-			if (prBssInfo->ucOpChangeRxNss > ucAntIdx)
-				ucRxMcsMap = VHT_CAP_INFO_MCS_MAP_MCS7;
+			if (prBssInfo->ucOpRxNss > ucAntIdx)
+				ucRxMcsMap = VHT_CAP_INFO_MCS_MAP_MCS9;
 			else
 				ucRxMcsMap =
 					VHT_CAP_INFO_MCS_NOT_SUPPORTED;
@@ -2560,7 +2564,8 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_RX_LDPC;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		uint8_t tempRxStbcNss;
 
 		if (prAdapter->rWifiVar.u4SwTestMode ==
@@ -2593,7 +2598,8 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 			 VHT_CAP_INFO_RX_STBC_MASK);
 	}
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc) &&
+	if (rlmCheckTxStbc(prAdapter, prBssInfo->ucBssIndex,
+		FEATURE_ENABLED) &&
 			prBssInfo->ucOpTxNss >= 2)
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
@@ -4954,9 +4960,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_LDPC_CAP;
 
 			/* Set STBC Tx capability */
-			if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxStbc))
+			if (rlmCheckTxStbc(prAdapter, prBssInfo->ucBssIndex,
+				FEATURE_FORCE_ENABLED))
 				prStaRec->u2HtCapInfo |= HT_CAP_INFO_RX_STBC;
-			else if (IS_FEATURE_DISABLED(prWifiVar->ucTxStbc))
+			else if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_DISABLED))
 				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_RX_STBC;
 
 			/* Set Short GI Tx capability */
@@ -5018,10 +5027,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_RX_LDPC;
 
 			/* Set Tx STBC capability */
-			if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxStbc))
+			if (rlmCheckTxStbc(prAdapter, prBssInfo->ucBssIndex,
+				FEATURE_FORCE_ENABLED))
 				prStaRec->u4VhtCapInfo |=
 					VHT_CAP_INFO_RX_STBC_MASK;
-			else if (IS_FEATURE_DISABLED(prWifiVar->ucTxStbc))
+			else if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_DISABLED))
 				prStaRec->u4VhtCapInfo &=
 					~VHT_CAP_INFO_RX_STBC_MASK;
 
@@ -7675,13 +7687,31 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 					 prAdapter->rWifiVar.ucTxLdpc))
 				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_LDPC_CAP;
 
+
+			DBGLOG(RLM, TRACE, "HT Sap STBC check: %u and %u\n",
+				prAdapter->rWifiVar.ucSapTxStbc,
+				prAdapter->rWifiVar.ucSapRxStbc);
+			DBGLOG(RLM, TRACE, "[u2HtCapInfo][0x%x]\n",
+				prStaRec->u2HtCapInfo);
+
 			/* Set STBC Tx capability */
-			if (IS_FEATURE_FORCE_ENABLED(
-				    prAdapter->rWifiVar.ucTxStbc))
+			if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_FORCE_ENABLED))
 				prStaRec->u2HtCapInfo |= HT_CAP_INFO_TX_STBC;
-			else if (IS_FEATURE_DISABLED(
-					 prAdapter->rWifiVar.ucTxStbc))
+			else if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_DISABLED))
 				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_TX_STBC;
+
+			if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_DISABLED))
+				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_RX_STBC;
+
+			DBGLOG(RLM, TRACE, "[u2HtCapInfo][0x%x]\n",
+				prStaRec->u2HtCapInfo);
+
 			/* Set Short GI Tx capability */
 			if (IS_FEATURE_FORCE_ENABLED(
 				    prAdapter->rWifiVar.ucTxShortGI)) {
@@ -7745,13 +7775,30 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 					 prAdapter->rWifiVar.ucTxLdpc))
 				prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_RX_LDPC;
 
+			DBGLOG(RLM, TRACE, "VHT Sap STBC check: %u and %u\n",
+				prAdapter->rWifiVar.ucSapTxStbc,
+				prAdapter->rWifiVar.ucSapRxStbc);
+			DBGLOG(RLM, TRACE, "[u2VhtTxMcsMap][0x%x]\n",
+					prStaRec->u4VhtCapInfo);
+
 			/* Set Tx STBC capability */
-			if (IS_FEATURE_FORCE_ENABLED(
-				    prAdapter->rWifiVar.ucTxStbc))
+			if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_FORCE_ENABLED))
 				prStaRec->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
-			else if (IS_FEATURE_DISABLED(
-					 prAdapter->rWifiVar.ucTxStbc))
+			else if (rlmCheckTxStbc(prAdapter,
+				prBssInfo->ucBssIndex,
+				FEATURE_DISABLED))
 				prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_TX_STBC;
+
+			/* Set Rx STBC capability */
+			if (rlmCheckRxStbc(prAdapter,
+				prStaRec->ucBssIndex, FEATURE_ENABLED))
+				prStaRec->u4VhtCapInfo &=
+					~VHT_CAP_INFO_RX_STBC_MASK;
+
+			DBGLOG(RLM, TRACE, "[u2VhtTxMcsMap][0x%x]\n",
+				prStaRec->u4VhtCapInfo);
 
 			/* Set Tx TXOP PS capability */
 			if (IS_FEATURE_FORCE_ENABLED(
@@ -7895,6 +7942,85 @@ void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 	    prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		rlmBssInitForAP(prAdapter, prBssInfo);
 #endif
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief It is for checking rx stbc capability
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmCheckRxStbc(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+		enum ENUM_FEATURE_OPTION ucFeatureFlag)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+
+	ASSERT(prAdapter);
+
+	prBssInfo =
+		prAdapter->aprBssInfo[ucBssIndex];
+
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
+		if (ucFeatureFlag == FEATURE_FORCE_ENABLED)
+			return IS_FEATURE_FORCE_ENABLED(
+				prAdapter->rWifiVar.ucSapRxStbc);
+		else if (ucFeatureFlag == FEATURE_ENABLED)
+			return IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucSapRxStbc);
+		else
+			return IS_FEATURE_DISABLED(
+				prAdapter->rWifiVar.ucSapRxStbc);
+	} else if (ucFeatureFlag == FEATURE_FORCE_ENABLED)
+		return IS_FEATURE_FORCE_ENABLED(
+			prAdapter->rWifiVar.ucRxStbc);
+	else if (ucFeatureFlag == FEATURE_ENABLED)
+		return IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucRxStbc);
+	else
+		return IS_FEATURE_DISABLED(
+			prAdapter->rWifiVar.ucRxStbc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief It is for checking tx stbc capability
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmCheckTxStbc(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+		enum ENUM_FEATURE_OPTION ucFeatureFlag)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+
+	ASSERT(prAdapter);
+
+	prBssInfo =
+		prAdapter->aprBssInfo[ucBssIndex];
+
+	if (IS_BSS_AP(prAdapter, prBssInfo)) {
+		if (ucFeatureFlag == FEATURE_FORCE_ENABLED)
+			return IS_FEATURE_FORCE_ENABLED(
+					prAdapter->rWifiVar.ucSapTxStbc);
+		else if (ucFeatureFlag == FEATURE_ENABLED)
+			return IS_FEATURE_ENABLED(
+					prAdapter->rWifiVar.ucSapTxStbc);
+		else
+			return IS_FEATURE_DISABLED(
+					prAdapter->rWifiVar.ucSapTxStbc);
+	} else if (ucFeatureFlag == FEATURE_FORCE_ENABLED)
+		return IS_FEATURE_FORCE_ENABLED(
+					prAdapter->rWifiVar.ucTxStbc);
+	else if (ucFeatureFlag == FEATURE_ENABLED)
+		return IS_FEATURE_ENABLED(
+					prAdapter->rWifiVar.ucTxStbc);
+	else
+		return IS_FEATURE_DISABLED(
+					prAdapter->rWifiVar.ucTxStbc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8107,7 +8233,8 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_RX_LDPC;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		uint8_t tempRxStbcNss = prAdapter->rWifiVar.ucRxStbcNss;
 
 		if (tempRxStbcNss > supportNss) {
@@ -8121,7 +8248,9 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 			 VHT_CAP_INFO_RX_STBC_MASK);
 	}
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc) &&
+	if (rlmCheckTxStbc(prAdapter,
+			prBssInfo->ucBssIndex,
+			FEATURE_ENABLED) &&
 			prBssInfo->ucOpTxNss >= 2)
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
@@ -8192,10 +8321,13 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_LDPC_CAP;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
+	if (rlmCheckTxStbc(prAdapter,
+		prBssInfo->ucBssIndex,
+		FEATURE_ENABLED))
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_TX_STBC;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		uint8_t tempRxStbcNss;
 
 		tempRxStbcNss = prAdapter->rWifiVar.ucRxStbcNss;
@@ -8332,7 +8464,8 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_RX_LDPC;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		uint8_t tempRxStbcNss;
 
 		if (prAdapter->rWifiVar.u4SwTestMode ==
@@ -8365,7 +8498,9 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 			 VHT_CAP_INFO_RX_STBC_MASK);
 	}
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
+	if (rlmCheckTxStbc(prAdapter,
+		prBssInfo->ucBssIndex,
+		FEATURE_ENABLED))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
 	/* set MCS map */
@@ -8512,11 +8647,14 @@ uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_LDPC_CAP;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc) &&
-			prBssInfo->ucOpTxNss >= 2)
+	if (rlmCheckTxStbc(prAdapter,
+		prBssInfo->ucBssIndex,
+		FEATURE_ENABLED) &&
+		prBssInfo->ucOpTxNss >= 2)
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_TX_STBC;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
+	if (rlmCheckRxStbc(prAdapter,
+		prBssInfo->ucBssIndex, FEATURE_ENABLED)) {
 		uint8_t tempRxStbcNss = prAdapter->rWifiVar.ucRxStbcNss;
 
 		if (tempRxStbcNss > supportNss) {

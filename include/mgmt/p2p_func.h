@@ -77,6 +77,8 @@ enum ENUM_P2P_FILTER_SCENARIO_TYPE {
 enum ENUM_P2P_FORCE_TRX_CONFIG {
 	P2P_FORCE_TRX_CONFIG_NONE = 0,
 	P2P_FORCE_TRX_CONFIG_MCS7,
+	P2P_FORCE_TRX_CONFIG_NORMAL,
+	P2P_FORCE_TRX_CONFIG_1NSS_LOW_POWER,
 	P2P_FORCE_TRX_CONFIG_MCS9
 };
 
@@ -170,7 +172,8 @@ void p2pFuncSetForceTrxConfig(struct ADAPTER *prAdapter,
 		uint8_t ucScenarioConfig);
 
 uint8_t
-p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter);
+p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx);
 
 void
 p2pFuncDisconnect(struct ADAPTER *prAdapter,

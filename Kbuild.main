@@ -726,7 +726,6 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
         CONFIG_SUPPORT_DISABLE_CMD_DDONE_INTR=y
         ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
         ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
-        ccflags-y += -DCFG_SUPPORT_TRX_LIMITED_CONFIG=1
         ifeq ($(CONFIG_WLAN_PLATFORM),mt6985)
             CONFIG_PRELOADER_PMIC_EN_PU=y
         endif
@@ -784,6 +783,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_MTK_WIFI_SAP_RPS_SUPPORT=y
         CONFIG_MTK_WIFI_SAP_SUSPEND_SUPPORT=y
         CONFIG_MTK_WIFI_SAP_CH_SEL_SUPPORT=y
+        CONFIG_MTK_WIFI_SUPPORT_TRX_LIMITED_CONFIG=y
         ifneq ($(CONFIG_PAGE_POOL),)
             CONFIG_RX_PAGE_POOL=y
         endif
@@ -1652,6 +1652,11 @@ else
     ccflags-y += -DCFG_SUPPORT_6G_CROSS_BAND_CSA=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_TRX_LIMITED_CONFIG), y)
+    ccflags-y += -DCFG_SUPPORT_TRX_LIMITED_CONFIG=1
+else
+    ccflags-y += -DCFG_SUPPORT_TRX_LIMITED_CONFIG=0
+endif
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11AX=1
 else

@@ -4149,9 +4149,11 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 		prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_LDPC_CAP;
 
 	/* Set STBC Tx capability */
-	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxStbc))
+	if (rlmCheckTxStbc(prAdapter, prStaRec->ucBssIndex,
+		FEATURE_FORCE_ENABLED))
 		prStaRec->u2HtCapInfo |= HT_CAP_INFO_RX_STBC;
-	else if (IS_FEATURE_DISABLED(prWifiVar->ucTxStbc))
+	else if (rlmCheckTxStbc(prAdapter, prStaRec->ucBssIndex,
+		FEATURE_DISABLED))
 		prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_RX_STBC;
 
 	/* Set Short GI Tx capability */
@@ -4207,9 +4209,11 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 			prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_RX_LDPC;
 
 		/* Set Tx STBC capability */
-		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxStbc))
+		if (rlmCheckTxStbc(prAdapter, prStaRec->ucBssIndex,
+			FEATURE_FORCE_ENABLED))
 			prStaRec->u4VhtCapInfo |= VHT_CAP_INFO_RX_STBC_MASK;
-		else if (IS_FEATURE_DISABLED(prWifiVar->ucTxStbc))
+		else if (rlmCheckTxStbc(prAdapter, prStaRec->ucBssIndex,
+			FEATURE_DISABLED))
 			prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_RX_STBC_MASK;
 
 		/* Set Tx TXOP PS capability */

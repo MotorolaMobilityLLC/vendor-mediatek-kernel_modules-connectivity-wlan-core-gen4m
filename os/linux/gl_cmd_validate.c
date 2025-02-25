@@ -910,6 +910,24 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = set_flag_policy,
 		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
 	},
+#if (CFG_SUPPORT_TRX_LIMITED_CONFIG == 1)
+	{
+		.pcCmdStr  = CMD_SET_TRX_LIMITED_CONFIG,
+		.pfHandler = priv_driver_set_sap_force_trx_config,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+	{
+		.pcCmdStr  = CMD_GET_TRX_LIMITED_SUPPORT,
+		.pfHandler = priv_driver_get_force_trx_support,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_GET_BW160_CAPA,
 		.pfHandler = priv_driver_get_bw160_capa,
@@ -918,7 +936,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = set_flag_policy,
 		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
 	},
-
 };
 
 /*-----------------------------------------------------------------------------
@@ -1535,16 +1552,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
-#if (CFG_SUPPORT_TRX_LIMITED_CONFIG == 1)
-	{
-		.pcCmdStr  = CMD_SET_TRX_LIMITED_CONFIG,
-		.pfHandler = priv_driver_set_force_trx_config,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = u8_policy,
-		.u4PolicySize = ARRAY_SIZE(u8_policy)
-	},
-#endif
 	{
 		.pcCmdStr  = CMD_GET_WTBL_INFO,
 		.pfHandler = priv_driver_get_wtbl_info,
