@@ -1946,6 +1946,8 @@ struct EVENT_SCAN_DONE {
 	uint8_t          aucChannelBAndPCnt[SCAN_DONE_EVENT_MAX_CHANNEL_NUM];
 	/* Mdrdy Count in each Channel  */
 	uint8_t          aucChannelMDRDYCnt[SCAN_DONE_EVENT_MAX_CHANNEL_NUM];
+	/* CU value in each Channel	*/
+	uint8_t          aucChannelUtilVal[SCAN_DONE_EVENT_MAX_CHANNEL_NUM];
 	uint32_t         u4ScanDurBcnCnt2G4;
 	uint32_t         u4ScanDurBcnCnt5G;
 	uint16_t         au2ChannelScanTime[SCAN_DONE_EVENT_MAX_CHANNEL_NUM];

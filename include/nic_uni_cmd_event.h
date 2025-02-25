@@ -6430,7 +6430,7 @@ struct UNI_EVENT_CHNLINFO {
 	uint8_t ucChannelNum;
 	uint8_t ucChannelBAndPCnt;
 	uint8_t ucChannelMDRDYCnt;
-	uint8_t aucPadding[1];
+	uint8_t ucChannelUtilVal;
 	uint16_t u2ChannelIdleTime;
 	uint16_t u2ChannelScanTime;
 } __KAL_ATTRIB_PACKED__;

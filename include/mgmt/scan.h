@@ -70,7 +70,8 @@
 #endif
 #endif
 
-#define SCAN_DONE_DIFFERENCE			3
+#define SCAN_DONE_DIFFERENCE				3
+#define SCAN_DONE_VERSION_SUPPORT_CU			4
 
 /* Full2Partial */
 /* Define a full scan as scan channel number larger than this number */
@@ -139,6 +140,16 @@
 #define SCN_SCAN_DONE_PRINT_BUFFER_LENGTH	500
 
 #define SCN_SCAN_OOB_PRINT_BUFFER_LENGTH	500
+
+#define SCN_2G_BAND_CHNL_SLOT_NUM	14
+
+#if (CFG_SUPPORT_UNII4 == 1)
+#define SCN_5G_BAND_CHNL_SLOT_NUM	28
+#else
+#define SCN_5G_BAND_CHNL_SLOT_NUM	25
+#endif
+
+#define SCN_6G_BAND_CHNL_SLOT_NUM	59
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -669,10 +680,26 @@ struct SCAN_LOG_CACHE {
 };
 
 struct CHNL_IDLE_SLOT {
-	uint16_t au2ChIdleTime2G4[14];
-	uint16_t au2ChIdleTime5G[25];
+	uint16_t au2ChIdleTime2G[SCN_2G_BAND_CHNL_SLOT_NUM];
+	uint16_t au2ChIdleTime5G[SCN_5G_BAND_CHNL_SLOT_NUM];
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	uint16_t au2ChIdleTime6G[59];
+	uint16_t au2ChIdleTime6G[SCN_6G_BAND_CHNL_SLOT_NUM];
+#endif
+};
+
+struct CHNL_DWELL_TIME {
+	uint16_t au2ChDwellTime2G[SCN_2G_BAND_CHNL_SLOT_NUM];
+	uint16_t au2ChDwellTime5G[SCN_5G_BAND_CHNL_SLOT_NUM];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t au2ChDwellTime6G[SCN_6G_BAND_CHNL_SLOT_NUM];
+#endif
+};
+
+struct CHNL_UTIL_VAL {
+	uint16_t au2ChUtilVal2G[SCN_2G_BAND_CHNL_SLOT_NUM];
+	uint16_t au2ChUtilVal5G[SCN_5G_BAND_CHNL_SLOT_NUM];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t au2ChUtilVal6G[SCN_6G_BAND_CHNL_SLOT_NUM];
 #endif
 };
 
@@ -686,6 +713,8 @@ struct SCAN_INFO {
 	struct SCHED_SCAN_PARAM rSchedScanParam;
 
 	uint32_t u4NumOfBssDesc;
+
+	uint8_t ucScanDoneVersion;
 
 	uint8_t aucScanBuffer[SCN_MAX_BUFFER_SIZE];
 
@@ -713,15 +742,17 @@ struct SCAN_INFO {
 	uint32_t au4ChannelBitMap[SCAN_CHANNEL_BITMAP_ARRAY_LEN];
 
 	/*channel idle count # Mike */
-	uint8_t		ucSparseChannelArrayValidNum;
-	uint8_t		aucReserved[3];
-	uint8_t		aucChannelNum[64];
+	uint8_t	 ucSparseChannelArrayValidNum;
+	uint8_t	 aucReserved[3];
+	uint8_t	 aucChannelNum[64];
 	uint16_t	au2ChannelIdleTime[64];
 	/* Mdrdy Count in each Channel  */
-	uint8_t		aucChannelMDRDYCnt[64];
+	uint8_t	 aucChannelMDRDYCnt[64];
 	/* Beacon and Probe Response Count in each Channel */
-	uint8_t		aucChannelBAndPCnt[64];
+	uint8_t	 aucChannelBAndPCnt[64];
 	uint16_t	au2ChannelScanTime[64];
+	/* CU value in each Channel  */
+	uint8_t	 aucChannelUtilVal[64];
 	/* eBand infor for differing the 2g4/6g */
 	enum ENUM_BAND aeChannelBand[64];
 
@@ -731,6 +762,10 @@ struct SCAN_INFO {
 	struct SCAN_LOG_CACHE rScanLogCache;
 
 	struct CHNL_IDLE_SLOT rSlotInfo;
+
+	struct CHNL_DWELL_TIME rDwellInfo;
+
+	struct CHNL_UTIL_VAL rChUtilVal;
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	uint8_t		ucScnZeroMdrdyTimes;
@@ -1210,10 +1245,17 @@ void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	enum ENUM_SCAN_LOG_PREFIX prefix);
 uint8_t *scanLogSSIDType(uint8_t ucSSIDType);
 
-void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
-	uint8_t ucChNum, uint16_t u2IdleTime);
+void scanFillChnlInfo(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum, uint16_t u2IdleTime, uint16_t u2DwellTime,
+	uint8_t ucChUtilVal);
 
 uint16_t scanGetChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum);
+
+uint16_t scanGetChnlDwellTime(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum);
+
+uint8_t scanGetChnlUtilVal(struct ADAPTER *ad, enum ENUM_BAND eBand,
 	uint8_t ucChNum);
 
 void scanRemoveBssDescFromList(struct ADAPTER *prAdapter,

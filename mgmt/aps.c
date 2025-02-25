@@ -1075,6 +1075,7 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint32_t airTime = 0, ideal = 0, tput = 0, est = 0;
 	int32_t idle = 0, a = 0, b = 0, delta = 5;
 	uint8_t *pucIEs = NULL;
+	struct SCAN_INFO *prScanInfo = &(ad->rWifiVar.rScanInfo);
 
 	if (aps->ucConsiderEsp) {
 		pucIEs = (uint8_t *) &bss->u4EspInfo[ESP_AC_BE];
@@ -1128,7 +1129,13 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 			airTime = 255 - bss->ucChnlUtilization;
 		} else {
 			ucChannelCuInfo = apsGetCuInfo(ad, bss, bidx);
+
 			if (ucChannelCuInfo) {
+				airTime = 255 - ucChannelCuInfo;
+			} else if (prScanInfo->ucScanDoneVersion >=
+					SCAN_DONE_VERSION_SUPPORT_CU) {
+				ucChannelCuInfo = scanGetChnlUtilVal(ad,
+						bss->eBand, bss->ucChannelNum);
 				airTime = 255 - ucChannelCuInfo;
 			} else {
 				slot = scanGetChnlIdleSlot(ad,
@@ -1364,6 +1371,7 @@ static uint16_t apsCalculateScoreByChnlLoad(struct ADAPTER *prAdapter,
 {
 	uint16_t slot = 0, idle, score = 0, cuRatio = 0;
 	uint8_t cu = 0;
+	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
 	if (eRoamType >= ROAM_TYPE_NUM) {
 		APSLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
@@ -1381,6 +1389,11 @@ static uint16_t apsCalculateScoreByChnlLoad(struct ADAPTER *prAdapter,
 	} else {
 		cu = apsGetCuInfo(prAdapter, prBssDesc, ucBssIndex);
 		if (cu) {
+			cuRatio = cu * 100 / 255;
+		} else if (prScanInfo->ucScanDoneVersion >=
+				SCAN_DONE_VERSION_SUPPORT_CU) {
+			cu = scanGetChnlUtilVal(prAdapter,
+				prBssDesc->eBand, prBssDesc->ucChannelNum);
 			cuRatio = cu * 100 / 255;
 		} else {
 			slot = scanGetChnlIdleSlot(prAdapter,
@@ -1419,11 +1432,11 @@ static uint16_t apsCalculateScoreByChnlLoad(struct ADAPTER *prAdapter,
 
 	APSLOG(APS, TRACE,
 		MACSTR
-		" Band[%s],chl[%d],slot[%d],fgIE[%d] Score %d, CU[%d,%d%%]\n",
+		" Band[%s], chl[%d], slot[%d], fgIE[%d], CU[%d, %d%%], Score %d\n",
 		MAC2STR(prBssDesc->aucBSSID),
 		apucBandStr[prBssDesc->eBand],
 		prBssDesc->ucChannelNum, slot,
-		prBssDesc->fgExistBssLoadIE, score, cu, cuRatio);
+		prBssDesc->fgExistBssLoadIE, cu, cuRatio, score);
 
 	return score * gasMtkWeightConfig[eRoamType].ucChnlLoadWeight;
 

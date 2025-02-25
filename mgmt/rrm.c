@@ -2415,7 +2415,7 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 }
 
 void rrmCollectChannelLoadReport(struct ADAPTER *prAdapter,
-	uint32_t airTime, uint8_t ucBssIndex)
+	uint8_t ucChnlUtil, uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReq =
 		aisGetRmReqParam(prAdapter, ucBssIndex);
@@ -2446,7 +2446,7 @@ void rrmCollectChannelLoadReport(struct ADAPTER *prAdapter,
 	rep.ucRegulatoryClass = chnlLoadReq->ucRegulatoryClass;
 	rep.ucChannel = chnlLoadReq->ucChannel;
 	rep.u2Duration = chnlLoadReq->u2Duration;
-	rep.ucChnlLoad = 255 - airTime;
+	rep.ucChnlLoad = ucChnlUtil;
 
 	u8Tsf = *(uint64_t *)&rTsf.au4Tsf[0];
 	if (rmReq->rStartTime >= rTsf.rTime)

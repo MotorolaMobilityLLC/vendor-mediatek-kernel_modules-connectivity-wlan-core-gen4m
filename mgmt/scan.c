@@ -5106,11 +5106,16 @@ uint8_t *scanLogSSIDType(uint8_t ucSSIDType)
 	return "INVALID";
 }
 
-void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
-	uint8_t ucChNum, uint16_t u2IdleTime)
+void scanFillChnlInfo(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum, uint16_t u2IdleTime, uint16_t u2DwellTime,
+	uint8_t ucChUtilVal)
 {
 	struct CHNL_IDLE_SLOT *prSlotInfo =
 		&(ad->rWifiVar.rScanInfo.rSlotInfo);
+	struct CHNL_DWELL_TIME *prDwellInfo =
+		&(ad->rWifiVar.rScanInfo.rDwellInfo);
+	struct CHNL_UTIL_VAL *prChUtilVal =
+		&(ad->rWifiVar.rScanInfo.rChUtilVal);
 	uint8_t index = 0;
 
 	if (eBand == BAND_2G4) {
@@ -5118,18 +5123,32 @@ void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 			return;
 
 		index = (ucChNum - 1);
-		prSlotInfo->au2ChIdleTime2G4[index] = u2IdleTime;
+		prSlotInfo->au2ChIdleTime2G[index] = u2IdleTime;
+		prDwellInfo->au2ChDwellTime2G[index] = u2DwellTime;
+		prChUtilVal->au2ChUtilVal2G[index] = ucChUtilVal;
 	} else if (eBand == BAND_5G) {
-		if (ucChNum < 36 || ucChNum > 165)
+		if (ucChNum < 36 ||
+#if (CFG_SUPPORT_UNII4 == 1)
+			ucChNum > 177)
+#else
+			ucChNum > 165)
+#endif
 			return;
 
 		if (ucChNum >= 36 && ucChNum <= 64)
 			index = (ucChNum - 36) / 4;
 		else if (ucChNum >= 100 && ucChNum <= 144)
 			index = (ucChNum - 68) / 4;
-		else if (ucChNum >= 149 && ucChNum <= 165)
+		else if (ucChNum >= 149 &&
+#if (CFG_SUPPORT_UNII4 == 1)
+				ucChNum <= 177)
+#else
+				ucChNum <= 165)
+#endif
 			index = (ucChNum - 69) / 4;
 		prSlotInfo->au2ChIdleTime5G[index] = u2IdleTime;
+		prDwellInfo->au2ChDwellTime5G[index] = u2DwellTime;
+		prChUtilVal->au2ChUtilVal5G[index] = ucChUtilVal;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	} else if (eBand == BAND_6G) {
 		if (ucChNum < 1 || ucChNum > 233)
@@ -5137,6 +5156,8 @@ void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 
 		index = (ucChNum - 1) / 4;
 		prSlotInfo->au2ChIdleTime6G[index] = u2IdleTime;
+		prDwellInfo->au2ChDwellTime6G[index] = u2DwellTime;
+		prChUtilVal->au2ChUtilVal6G[index] = ucChUtilVal;
 #endif
 	}
 }
@@ -5154,16 +5175,26 @@ uint16_t scanGetChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 			return 0;
 
 		index = (ucChNum - 1);
-		u2Slot = prSlotInfo->au2ChIdleTime2G4[index];
+		u2Slot = prSlotInfo->au2ChIdleTime2G[index];
 	} else if (eBand == BAND_5G) {
-		if (ucChNum < 36 || ucChNum > 165)
+		if (ucChNum < 36 ||
+#if (CFG_SUPPORT_UNII4 == 1)
+			ucChNum > 177)
+#else
+			ucChNum > 165)
+#endif
 			return 0;
 
 		if (ucChNum >= 36 && ucChNum <= 64)
 			index = (ucChNum - 36) / 4;
 		else if (ucChNum >= 100 && ucChNum <= 144)
 			index = (ucChNum - 68) / 4;
-		else if (ucChNum >= 149 && ucChNum <= 165)
+		else if (ucChNum >= 149 &&
+#if (CFG_SUPPORT_UNII4 == 1)
+				ucChNum <= 177)
+#else
+				ucChNum <= 165)
+#endif
 			index = (ucChNum - 69) / 4;
 		u2Slot = prSlotInfo->au2ChIdleTime5G[index];
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -5179,6 +5210,101 @@ uint16_t scanGetChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 	return u2Slot;
 }
 
+uint16_t scanGetChnlDwellTime(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum)
+{
+	struct CHNL_DWELL_TIME *prDwellInfo =
+		&(ad->rWifiVar.rScanInfo.rDwellInfo);
+	uint8_t index = 0;
+	uint16_t u2DwellTime = 0;
+
+	if (eBand == BAND_2G4) {
+		if (ucChNum < 1 || ucChNum > 14)
+			return 0;
+
+		index = (ucChNum - 1);
+		u2DwellTime = prDwellInfo->au2ChDwellTime2G[index];
+	} else if (eBand == BAND_5G) {
+		if (ucChNum < 36 ||
+#if (CFG_SUPPORT_UNII4 == 1)
+			ucChNum > 177)
+#else
+			ucChNum > 165)
+#endif
+			return 0;
+
+		if (ucChNum >= 36 && ucChNum <= 64)
+			index = (ucChNum - 36) / 4;
+		else if (ucChNum >= 100 && ucChNum <= 144)
+			index = (ucChNum - 68) / 4;
+		else if (ucChNum >= 149 &&
+#if (CFG_SUPPORT_UNII4 == 1)
+				ucChNum <= 177)
+#else
+				ucChNum <= 165)
+#endif
+			index = (ucChNum - 69) / 4;
+		u2DwellTime = prDwellInfo->au2ChDwellTime5G[index];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (ucChNum < 1 || ucChNum > 233)
+			return 0;
+
+		index = (ucChNum - 1) / 4;
+		u2DwellTime = prDwellInfo->au2ChDwellTime6G[index];
+#endif
+	}
+
+	return u2DwellTime;
+}
+
+uint8_t scanGetChnlUtilVal(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum)
+{
+	struct CHNL_UTIL_VAL *prChUtilVal =
+		&(ad->rWifiVar.rScanInfo.rChUtilVal);
+	uint8_t index = 0;
+	uint8_t ucChUtilVal = 0;
+
+	if (eBand == BAND_2G4) {
+		if (ucChNum < 1 || ucChNum > 14)
+			return 0;
+
+		index = (ucChNum - 1);
+		ucChUtilVal = prChUtilVal->au2ChUtilVal2G[index];
+	} else if (eBand == BAND_5G) {
+		if (ucChNum < 36 ||
+#if (CFG_SUPPORT_UNII4 == 1)
+			ucChNum > 177)
+#else
+			ucChNum > 165)
+#endif
+			return 0;
+
+		if (ucChNum >= 36 && ucChNum <= 64)
+			index = (ucChNum - 36) / 4;
+		else if (ucChNum >= 100 && ucChNum <= 144)
+			index = (ucChNum - 68) / 4;
+		else if (ucChNum >= 149 &&
+#if (CFG_SUPPORT_UNII4 == 1)
+				ucChNum <= 177)
+#else
+				ucChNum <= 165)
+#endif
+			index = (ucChNum - 69) / 4;
+		ucChUtilVal = prChUtilVal->au2ChUtilVal5G[index];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (ucChNum < 1 || ucChNum > 233)
+			return 0;
+
+		index = (ucChNum - 1) / 4;
+		ucChUtilVal = prChUtilVal->au2ChUtilVal6G[index];
+#endif
+	}
+
+	return ucChUtilVal;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

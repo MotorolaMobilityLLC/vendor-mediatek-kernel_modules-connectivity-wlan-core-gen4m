@@ -215,7 +215,7 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
 
 void rrmCollectChannelLoadReport(struct ADAPTER *prAdapter,
-	uint32_t airTime, uint8_t ucBssIndex);
+	uint8_t ucChnlUtil, uint8_t ucBssIndex);
 
 void rrmCollectStaStatsReport(struct ADAPTER *prAdapter, uintptr_t ulParam);
 

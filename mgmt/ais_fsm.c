@@ -4091,30 +4091,41 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 				(struct RM_CHNL_LOAD_REQ *)
 				&prCurrReq->aucRequestFields[0];
 		enum ENUM_BAND eBand;
+		struct SCAN_INFO *prScanInfo;
 		uint32_t slot = 0, airTime = 0, idle = 0;
+		uint8_t ucChnlUtil = 0;
 
+		prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 		eBand = scanOpClassToBand(prChnlLoadReq->ucRegulatoryClass);
-		slot = scanGetChnlIdleSlot(prAdapter,
+
+		if (prScanInfo->ucScanDoneVersion >=
+				SCAN_DONE_VERSION_SUPPORT_CU) {
+			ucChnlUtil = scanGetChnlUtilVal(prAdapter,
+					eBand, prChnlLoadReq->ucChannel);
+		} else {
+			slot = scanGetChnlIdleSlot(prAdapter,
 				eBand, prChnlLoadReq->ucChannel);
 
-		/* 90000 ms = 90ms dwell time to micro sec */
-		idle = (slot * 9 * 100) / (data->minDwellTime * 1000);
+			/* 90000 ms = 90ms dwell time to micro sec */
+			idle = (slot * 9 * 100) / (data->minDwellTime * 1000);
 
-		/* nomalized to 0~255 */
-		airTime = idle * 255 / 100;
-		airTime = airTime > 255 ? 255 : airTime;
+			/* nomalized to 0~255 */
+			airTime = idle * 255 / 100;
+			airTime = airTime > 255 ? 255 : airTime;
+			ucChnlUtil = 255 - (uint8_t) airTime;
+		}
 
 		if (data->reportingCondition == 1) {
-			if ((255 - airTime) >= data->chnlLoadRefValue)
+			if (ucChnlUtil >= data->chnlLoadRefValue)
 				rrmCollectChannelLoadReport(prAdapter,
-						airTime, ucBssIndex);
+						ucChnlUtil, ucBssIndex);
 		} else if (data->reportingCondition == 2) {
-			if ((255 - airTime) <= data->chnlLoadRefValue)
+			if (ucChnlUtil <= data->chnlLoadRefValue)
 				rrmCollectChannelLoadReport(prAdapter,
-						airTime, ucBssIndex);
+						ucChnlUtil, ucBssIndex);
 		} else {
 			rrmCollectChannelLoadReport(prAdapter,
-						airTime, ucBssIndex);
+						ucChnlUtil, ucBssIndex);
 		}
 #endif /* CFG_SUPPORT_802_11K == 1 */
 

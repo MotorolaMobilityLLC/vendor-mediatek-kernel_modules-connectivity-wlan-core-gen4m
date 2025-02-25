@@ -11727,6 +11727,8 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 					chnl->ucChannelMDRDYCnt;
 				legacy.au2ChannelScanTime[i] =
 					chnl->u2ChannelScanTime;
+				legacy.aucChannelUtilVal[i] =
+					chnl->ucChannelUtilVal;
 			}
 		}
 			break;
