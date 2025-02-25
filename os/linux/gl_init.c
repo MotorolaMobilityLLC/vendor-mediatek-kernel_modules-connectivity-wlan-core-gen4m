@@ -7657,6 +7657,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,
 				halDeAggRxPktWorker);
 	}
+
 	prGlueInfo->main_thread = kthread_run(main_thread,
 		prGlueInfo->prDevHandler, "main_thread");
 #if CFG_SUPPORT_MULTITHREAD
@@ -9165,8 +9166,10 @@ void wlanRemove(void)
 		cancel_work_sync(&(prNetDevPrivate->workq));
 
 #if CFG_AP_80211KVR_INTERFACE
+#if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM
 	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseControlWork);
 	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
+#endif
 #endif
 
 	down(&prGlueInfo->halt_sem);

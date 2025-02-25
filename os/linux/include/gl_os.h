@@ -1125,8 +1125,10 @@ struct GLUE_INFO {
 	uint32_t u4RxBwCache[MAX_BSSID_NUM];
 
 #if CFG_AP_80211KVR_INTERFACE
+#if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM
 	struct delayed_work rChanNoiseControlWork;
 	struct delayed_work rChanNoiseGetInfoWork;
+#endif
 #endif
 
 #if CFG_SUPPORT_LOGGER

@@ -22500,10 +22500,10 @@ int32_t priv_driver_MulAPAgent_bss_report_info(
 		DBGLOG(REQ, WARN, "bss is not active\n");
 		goto error;
 	}
-
+#if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM
 	schedule_delayed_work(
 		&prAdapter->prGlueInfo->rChanNoiseControlWork, 0);
-
+#endif
 
 	/* 1. BSS Measurement */
 	/* Interface Index */

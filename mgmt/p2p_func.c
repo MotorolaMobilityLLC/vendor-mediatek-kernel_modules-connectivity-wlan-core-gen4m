@@ -2285,10 +2285,12 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, TRACE, "p2pFuncStopGO\n");
 
 #if CFG_AP_80211KVR_INTERFACE
+#if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM
 		cancel_delayed_work_sync(
 			&prAdapter->prGlueInfo->rChanNoiseControlWork);
 		cancel_delayed_work_sync(
 			&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
+#endif
 #endif
 		u4ClientCount = bssGetClientCount(prAdapter, prP2pBssInfo);
 		prAdapter->aprSapBssInfo[prP2pBssInfo->u4PrivateData]
@@ -2749,9 +2751,6 @@ p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter,
 
 	prBssInfo =
 		prAdapter->aprBssInfo[ucBssIdx];
-	DBGLOG(P2P, INFO,
-			"ucForceTrxConfig %d\n",
-			prBssInfo->ucForceTrxConfig);
 
 	return prBssInfo->ucForceTrxConfig;
 #else
