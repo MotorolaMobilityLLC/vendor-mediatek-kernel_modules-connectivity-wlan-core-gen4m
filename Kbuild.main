@@ -808,6 +808,9 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         endif
         ifeq ($(CONFIG_MTK_MBRAINK_BRIDGE), m)
             CONFIG_SUPPORT_MBRAIN=y
+            ifeq ($(CONFIG_WIFI_DX5), y)
+                CONFIG_SUPPORT_MBRAIN_BIGDATA=y
+            endif
         endif
         ifeq ($(call kver_ge,6,6),1)
             CONFIG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG=y
@@ -851,9 +854,6 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_SUPPORT_MTK_WIFI_MBU=y
         CONFIG_SUPPORT_STATS_ONE_CMD=y
         CONFIG_SUPPORT_REG_STAT_FROM_EMI=y
-        ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
-            ccflags-y += -DCFG_SUPPORT_MBRAIN_BIGDATA=1
-        endif
         CONFIG_SUPPORT_WIFI_MET_CONNAC3_V2=y
         ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
         ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
@@ -3223,6 +3223,14 @@ endif
 ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
     ccflags-y += -DCFG_SUPPORT_MBRAIN=1
     ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mbraink
+    ifeq ($(CONFIG_SUPPORT_MBRAIN_BIGDATA), y)
+        ccflags-y += -DCFG_SUPPORT_MBRAIN_BIGDATA=1
+    else
+        ccflags-y += -DCFG_SUPPORT_MBRAIN_BIGDATA=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_MBRAIN=0
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_BIGDATA=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_ON_READ_BY_CFG_SPACE), y)
@@ -3575,6 +3583,21 @@ ifeq ($(CONFIG_SUPPORT_MBRAIN_TXPWR_RPT), y)
     endif
 else
     ccflags-y += -DCFG_SUPPORT_MBRAIN_TXPWR_RPT=0
+endif
+
+
+ifeq ($(CONFIG_SUPPORT_MBRAIN_TRX_PERF), y)
+    ifeq ($(CONFIG_WIFI_DX5), y)
+        ifeq ($(call kver_ge,6,12),1)
+            ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=1
+        else
+            ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=0
+        endif
+    else
+        ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)

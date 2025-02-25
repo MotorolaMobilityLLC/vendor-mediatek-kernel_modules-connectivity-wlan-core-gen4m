@@ -102,6 +102,10 @@
 #include "gl_ics.h"
 #endif
 
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
+
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -4135,6 +4139,13 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	u4StopTh = prGlueInfo->u4TxStopTh[ucBssIndex];
 	if (GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue
 	    [ucBssIndex][u2QueueIdx]) >= u4StopTh) {
+#if CFG_SUPPORT_MBRAIN
+		uint64_t u8NowTs;
+
+		u8NowTs = kalGetBootTime();
+		prBssInfo->u8TxStopTS = USEC_TO_MSEC(u8NowTs);
+		prBssInfo->u8TxStartTS = 0;
+#endif
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
 		DBGLOG_LIMITED(TX, DEBUG,
@@ -4320,6 +4331,13 @@ void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
 		if (netif_subqueue_stopped(prDev, prSkb) &&
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		    [u2QueueIdx] <= u4StartTh) {
+#if CFG_SUPPORT_MBRAIN
+			uint64_t u8NowTs;
+
+			u8NowTs = kalGetBootTime();
+			prBssInfo->u8TxStartTS = USEC_TO_MSEC(u8NowTs);
+			prBssInfo->u8TxStopTS = 0;
+#endif
 			netif_wake_subqueue(prDev, u2QueueIdx);
 			DBGLOG_LIMITED(TX, DEBUG,
 				"WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
@@ -12261,10 +12279,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif /* CFG_RFB_TRACK */
 
 	pos += kalSnprintf(pos, end - pos,
-		"drv[RM,IL,RI,RIE,NG|RF,PA,PF,DU,DA#RT,RM,RW,RA,RB|DT,NS,IB,HS,LS_DD,ME,BD,NI,DR|TE,PE,CE,DN,FE^DE,IE,TME,CM,FB#ID,FD,NL]:");
+		"drv[RM,IL,RI,RIE,NG|RF,PA,PF,DU,DA#RT,RM,RW,RA,RB|RTO,DT,NS,IB,HS_LS,DD,ME,BD,NI|DR,TE,PE,CE,DN^FE,DE,IE,TME,CM#FB,ID,FD,NL]:");
 
 	pos += kalSnprintf(pos, end - pos,
-		"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^%lu,%lu,%lu,%lu,%lu#%lu,%lu,%lu",
+		"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^%lu,%lu,%lu,%lu,%lu#%lu,%lu,%lu,%lu",
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
@@ -12280,6 +12298,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_WITHIN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_AHEAD_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_BEHIND_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_TIMEOUT_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NO_STA_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INACTIVE_BSS_DROP_COUNT),
@@ -12643,6 +12662,10 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #if (CFG_TC10_FEATURE == 1)
 	u_int8_t fgIsAIS = TRUE;
 #endif
+#if (CFG_SUPPORT_MBRAIN == 1) && (CFG_SUPPORT_MBRAIN_TRX_PERF == 1)
+	static uint32_t u4LastTRxPerfEnQTime;
+#endif
+
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
 
@@ -12899,6 +12922,18 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			wlanLinkQualityMonitor(prGlueInfo, FALSE);
 	}
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+#if (CFG_SUPPORT_MBRAIN == 1) && (CFG_SUPPORT_MBRAIN_TRX_PERF == 1)
+	/* The time interval to record trx performance must be greater
+	 * than interval time. If (last time + interval) < current time
+	 * will not record trx performance index.
+	 */
+	if (TIME_BEFORE(u4LastTRxPerfEnQTime, kalGetTimeTick())) {
+		u4LastTRxPerfEnQTime = kalGetTimeTick() +
+			MBR_TRX_PERF_TIMEOUT_INTERVAL;
+		mbrTRxPerfEnqueue(prAdapter);
+	}
+#endif /* CFG_SUPPORT_MBRAIN &&  CFG_SUPPORT_MBRAIN_TRX_PERF*/
 
 	/* check tx hang */
 	if (!fgIsStopPerfMon) {

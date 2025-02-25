@@ -72,8 +72,6 @@ struct wifi2mbr_handler g_arMbrHdlr[] = {
 		mbr_wifi_lls_handler, mbr_wifi_lls_get_total_data_num},
 	{WIFI2MBR_TAG_LP_RATIO, sizeof(struct wifi2mbr_lpRatioInfo),
 		mbr_wifi_lp_handler, mbr_wifi_lp_get_total_data_num},
-	{WIFI2MBR_TAG_TXTIMEOUT, sizeof(struct wifi2mbr_TxTimeoutInfo),
-		mbrWifiTxTimeoutHandler, mbrWifiTxTimeoutGetTotalDataNum},
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 	{WIFI2MBR_TAG_TXPWR_RPT, sizeof(struct wifi2mbr_txpwr),
 		mbr_wifi_txpwr_handler, mbr_wifi_txpwr_get_total_data_num},
@@ -82,6 +80,10 @@ struct wifi2mbr_handler g_arMbrHdlr[] = {
 	{WIFI2MBR_TAG_PCIE, sizeof(struct wifi2mbr_PcieInfo),
 		mbrWifiPcieHandler, mbrWifiPcieGetTotalDataNum},
 #endif /* CFG_SUPPORT_PCIE_MBRAIN */
+#if CFG_SUPPORT_MBRAIN_TRX_PERF
+	{WIFI2MBR_TAG_TRX_PERF, sizeof(struct wifi2mbr_TRxPerfInfo),
+		mbrWifiTRxPerfHandler, mbrWifiTRxPerfGetTotalDataNum},
+#endif
 };
 
 int32_t g_i4CurTag = -1;
@@ -616,173 +618,21 @@ uint16_t mbr_wifi_lp_get_total_data_num(
 	return num;
 }
 
-void mbrTxTimeoutEnqueue(struct ADAPTER *prAdapter,
-	uint32_t u4TokenId, uint32_t u4TxTimeoutDuration,
-	uint32_t u4AvgIdleSlot)
-{
-	struct MSDU_TOKEN_INFO *prTokenInfo;
-	struct MSDU_TOKEN_ENTRY *prToken;
-	struct MBRAIN_TXTIMEOUT_ENTRY *prTxTimeoutEntry = NULL;
-	struct wifi2mbr_TxTimeoutInfo *prTxTimeoutInfo = NULL;
-	struct BSS_INFO *prBssInfo = NULL;
-	enum ENUM_OP_MODE eOPMode = OP_MODE_NUM;
-	struct timespec64 rNowTs;
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	KAL_SPIN_LOCK_DECLARATION();
-
-	if (!prAdapter) {
-		DBGLOG(REQ, WARN, "prAdapter is null\n");
-		return;
-	}
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return;
-	}
-
-	prTxTimeoutEntry = kalMemAlloc(sizeof(struct MBRAIN_TXTIMEOUT_ENTRY),
-				VIR_MEM_TYPE);
-	if (prTxTimeoutEntry == NULL) {
-		DBGLOG(REQ, ERROR,
-			"[MBrain] txtimeout alloc memory fail %u\n",
-			sizeof(struct MBRAIN_TXTIMEOUT_ENTRY));
-		return;
-	}
-
-	kalMemZero(prTxTimeoutEntry, sizeof(struct MBRAIN_TXTIMEOUT_ENTRY));
-
-	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
-	prToken = &prTokenInfo->arToken[u4TokenId];
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-			prToken->ucBssIndex);
-	if (prBssInfo)
-		eOPMode = prBssInfo->eCurrentOPMode;
-
-	prTxTimeoutInfo = &prTxTimeoutEntry->rTxTimeoutInfo;
-
-	ktime_get_ts64(&rNowTs);
-	prTxTimeoutInfo->hdr.tag = WIFI2MBR_TAG_TXTIMEOUT;
-	prTxTimeoutInfo->hdr.ver = 1;
-	prTxTimeoutInfo->timestamp = KAL_TIME_TO_MSEC(rNowTs);
-	prTxTimeoutInfo->token_id = u4TokenId;
-	prTxTimeoutInfo->wlan_index = prToken->ucWlanIndex;
-	prTxTimeoutInfo->bss_index = prToken->ucBssIndex;
-	prTxTimeoutInfo->timeout_duration = u4TxTimeoutDuration;
-	prTxTimeoutInfo->operation_mode = eOPMode;
-	prTxTimeoutInfo->idle_slot_diff_cnt = u4AvgIdleSlot;
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TXTIMEOUT);
-	QUEUE_INSERT_TAIL(&prAdapter->rMbrTxTimeoutQueue,
-				&prTxTimeoutEntry->rQueEntry);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TXTIMEOUT);
-
-	if (prAdapter->rMbrTxTimeoutQueue.u4NumElem >
-		MBR_TXTIMEOUT_QUE_CNT_MAX) {
-		prTxTimeoutEntry = mbrTxTimeoutDequeue(prAdapter);
-		kalMemFree(prTxTimeoutEntry, VIR_MEM_TYPE,
-			sizeof(struct MBRAIN_TXTIMEOUT_ENTRY));
-	}
-}
-
-struct MBRAIN_TXTIMEOUT_ENTRY *mbrTxTimeoutDequeue(struct ADAPTER *prAdapter)
-{
-	struct MBRAIN_TXTIMEOUT_ENTRY *prTxTimeoutEntry = NULL;
-
-	KAL_SPIN_LOCK_DECLARATION();
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TXTIMEOUT);
-	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rMbrTxTimeoutQueue))
-		QUEUE_REMOVE_HEAD(&prAdapter->rMbrTxTimeoutQueue,
-			prTxTimeoutEntry, struct MBRAIN_TXTIMEOUT_ENTRY *);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TXTIMEOUT);
-
-	return prTxTimeoutEntry;
-}
-
-enum wifi2mbr_status mbrWifiTxTimeoutHandler(struct ADAPTER *prAdapter,
-	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
-	void *buf, uint16_t *pu2Len)
-{
-	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
-	struct wifi2mbr_TxTimeoutInfo *prTTInfoDest =
-		(struct wifi2mbr_TxTimeoutInfo *) buf;
-	struct MBRAIN_TXTIMEOUT_ENTRY *prTxTimeoutEntry = NULL;
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	if (!prAdapter) {
-		DBGLOG(REQ, WARN, "prAdapter is null\n");
-		return WIFI2MBR_END;
-	}
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return WIFI2MBR_END;
-	}
-
-	if (prAdapter->rMbrTxTimeoutQueue.u4NumElem <= 0) {
-		DBGLOG(REQ, DEBUG, "TxTimeout Queue is empty\n");
-		return WIFI2MBR_END;
-	}
-
-	prTxTimeoutEntry = mbrTxTimeoutDequeue(prAdapter);
-	if (!prTxTimeoutEntry)
-		return WIFI2MBR_END;
-
-	kalMemCopy(prTTInfoDest, &prTxTimeoutEntry->rTxTimeoutInfo,
-		sizeof(struct wifi2mbr_TxTimeoutInfo));
-	*pu2Len = sizeof(*prTTInfoDest);
-
-	kalMemFree(prTxTimeoutEntry, VIR_MEM_TYPE,
-			sizeof(struct MBRAIN_TXTIMEOUT_ENTRY));
-
-	status = WIFI2MBR_SUCCESS;
-
-	return status;
-}
-
-uint16_t mbrWifiTxTimeoutGetTotalDataNum(
-	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag)
-{
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-
-	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return 0;
-	}
-
-	return prAdapter->rMbrTxTimeoutQueue.u4NumElem;
-}
-
 void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 	uint32_t u4TokenId, uint32_t u4TxTimeoutDuration)
 {
 	struct BSS_INFO *prBssInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	static uint32_t u4LastTxTimeoutTime;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+	struct MSDU_TOKEN_ENTRY *prToken;
+	uint64_t u8NowTs;
 	uint32_t u4AvgIdleSlot = 0;
-	uint8_t i;
 
 	if (!prAdapter)
 		return;
 
 	/* Check that only one STA is active */
-	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
-		if (prBssInfo &&
-		    prBssInfo->eNetworkType != NETWORK_TYPE_AIS &&
-		    prBssInfo->fgIsInUse) {
-			return;
-		}
-	}
-
-	/* The time interval to record txtimeout must be greater than
-	 * interval time.If (last time + interval) > current time will not
-	 * record txtimeout.
-	 */
-	if (TIME_BEFORE(kalGetTimeTick(), u4LastTxTimeoutTime))
+	if (!aisGetConnectedBssInfo(prAdapter))
 		return;
 
 	if (prAdapter->u4TxTimeoutCnt > 0)
@@ -797,10 +647,18 @@ void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 
 	if (prAdapter->u4SameTokenCnt > prWifiVar->u4SameTokenThr ||
 		u4TxTimeoutDuration >= prWifiVar->u4TxTimeoutWarningThr) {
-		u4LastTxTimeoutTime = kalGetTimeTick() +
-			MBR_TXTIMEOUT_INTERVAL;
-		mbrTxTimeoutEnqueue(prAdapter, u4TokenId,
-			u4TxTimeoutDuration, u4AvgIdleSlot);
+		prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+		prToken = &prTokenInfo->arToken[u4TokenId];
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				prToken->ucBssIndex);
+		if (!prBssInfo)
+			return;
+
+		u8NowTs = kalGetBootTime();
+		prBssInfo->u8TxTimeoutTS = USEC_TO_MSEC(u8NowTs);
+		prBssInfo->u4TokenId = u4TokenId;
+		prBssInfo->u4TxTimeoutDuration = u4TxTimeoutDuration;
 	}
 }
 #if CFG_SUPPORT_PCIE_MBRAIN
@@ -1058,4 +916,275 @@ uint16_t mbr_wifi_txpwr_get_total_data_num(
 #endif /* CFG_SUPPORT_MBRAIN_TXPWR_RPT */
 	return num;
 }
+
+#if CFG_SUPPORT_MBRAIN_TRX_PERF
+void mbrGetLatencyData(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+	struct wifi2mbr_TRxPerfInfo *prTRxPerfInfo)
+{
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	struct PARAM_QUERY_STA_BIG_DATA rStaParam = {0};
+	struct PARAM_QUERY_TRX_LATENCY_BIG_DATA rBigDataParam = {0};
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t u4QueryInfoLen;
+	int32_t rStatus;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo)
+		return;
+
+	/* under BTO */
+	if (!prBssInfo->prStaRecOfAP) {
+		DBGLOG(REQ, DEBUG, "prStaRecOfAP is NULL\n");
+		return;
+	}
+
+	rStaParam.ucWlanIdx = prBssInfo->prStaRecOfAP->ucWlanIndex;
+	COPY_MAC_ADDR(rStaParam.aucMacAddr, prBssInfo->aucOwnMacAddr);
+	rStatus =  wlanQueryStaBigDataByWidx(prAdapter, &rStaParam,
+		sizeof(rStaParam), &u4QueryInfoLen, FALSE);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN,
+			"wlanQueryStaBigDataByWidx Status=%x",
+			rStatus);
+
+	DBGLOG(REQ, TRACE, "wtbl:%u snr:%u/%u u2TxLinkSpeed:%u\n",
+		rStaParam.ucWlanIdx, rStaParam.aucSnr[0],
+		rStaParam.aucSnr[1], rStaParam.u2TxLinkSpeed);
+
+	memcpy(prTRxPerfInfo->snr, &rStaParam.aucSnr,
+		sizeof(rStaParam.aucSnr));
+
+	rStatus = wlanQueryTrxLatBigDataByBssIdx(prAdapter, &rBigDataParam,
+		sizeof(rBigDataParam), &u4QueryInfoLen, FALSE, ucBssIdx);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN,
+			"wlanQueryTrxLatBigDataByBssIdx Status=%x",
+			rStatus);
+
+	DBGLOG(REQ, TRACE,
+		"rts fail rate:%u nbi:%u cu all/not me:%u/%u\n",
+		rBigDataParam.u4RtsFailRate, rBigDataParam.u4Nbi,
+		rBigDataParam.ucCuAll, rBigDataParam.ucCuNotMe);
+
+	prTRxPerfInfo->rts_fail_rate = rBigDataParam.u4RtsFailRate;
+	prTRxPerfInfo->nbi = rBigDataParam.u4Nbi;
+	prTRxPerfInfo->cu_all = rBigDataParam.ucCuAll;
+	prTRxPerfInfo->cu_not_me = rBigDataParam.ucCuNotMe;
+	memcpy(prTRxPerfInfo->ipi_hist, &rBigDataParam.au4IPIHist,
+		sizeof(rBigDataParam.au4IPIHist));
+#endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
+}
+
+uint32_t mbrGetRxReorderDropCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4RxReorderDropCnt = 0;
+
+	u4RxReorderDropCnt =
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl, RX_BAR_DROP_COUNT);
+
+	return u4RxReorderDropCnt;
+}
+
+uint32_t mbrGetRxSanityDropCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4RxSanityDropCnt = 0;
+
+	u4RxSanityDropCnt =
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MIC_ERROR_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl, RX_CLASS_ERR_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl, RX_FCS_ERR_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl, RX_DAF_ERR_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICV_ERR_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl, RX_TKIP_MIC_ERROR_DROP_COUNT)
+		+ RX_GET_CNT(&prAdapter->rRxCtrl,
+				RX_CIPHER_MISMATCH_DROP_COUNT);
+
+	return u4RxSanityDropCnt;
+}
+
+void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
+{
+	struct MBRAIN_TRXPERF_ENTRY *prTRxPerfEntry = NULL;
+	struct wifi2mbr_TRxPerfInfo *prTRxPerfInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
+	static uint32_t u4LastRxDropTotal, u4LastRxDropReorder;
+	static uint32_t u4LastRxDropSanity, u4LastRxNapiFull;
+	uint64_t u8NowTs;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "prAdapter is null\n");
+		return;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
+	prBssInfo = aisGetConnectedBssInfo(prAdapter);
+	if (!prBssInfo)
+		return;
+
+	/* under BTO */
+	if (!prBssInfo->prStaRecOfAP) {
+		DBGLOG(REQ, DEBUG, "prStaRecOfAP is NULL\n");
+		return;
+	}
+
+	prTRxPerfEntry = kalMemAlloc(sizeof(struct MBRAIN_TRXPERF_ENTRY),
+				VIR_MEM_TYPE);
+	if (prTRxPerfEntry == NULL) {
+		DBGLOG(REQ, ERROR,
+			"[MBrain] TRxPerf alloc memory fail %u\n",
+			sizeof(struct MBRAIN_TRXPERF_ENTRY));
+		return;
+	}
+
+	kalMemZero(prTRxPerfEntry, sizeof(struct MBRAIN_TRXPERF_ENTRY));
+
+	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+
+	prTRxPerfInfo = &prTRxPerfEntry->rTRxPerfInfo;
+
+	u8NowTs = kalGetBootTime();
+	prTRxPerfInfo->hdr.tag = WIFI2MBR_TAG_TRX_PERF;
+	prTRxPerfInfo->hdr.ver = 1;
+	prTRxPerfInfo->timestamp = USEC_TO_MSEC(u8NowTs);
+
+	prTRxPerfInfo->bss_index = prBssInfo->ucBssIndex;
+	prTRxPerfInfo->wlan_index = prBssInfo->prStaRecOfAP->ucWlanIndex;
+
+	prTRxPerfInfo->tx_stop_timestamp = prBssInfo->u8TxStopTS;
+	prTRxPerfInfo->tx_resume_timestamp = prBssInfo->u8TxStartTS;
+	prTRxPerfInfo->bto_timestamp = prBssInfo->u8BTOTS;
+
+	prTRxPerfInfo->tx_timeout_timestamp = prBssInfo->u8TxTimeoutTS;
+	prTRxPerfInfo->token_id = prBssInfo->u4TokenId;
+	prTRxPerfInfo->timeout_duration = prBssInfo->u4TxTimeoutDuration;
+	prTRxPerfInfo->operation_mode = prBssInfo->eCurrentOPMode;
+
+	prTRxPerfInfo->rx_drop_total =
+			((uint32_t) RX_GET_CNT(&prAdapter->rRxCtrl,
+					RX_DROP_TOTAL_COUNT)) -
+				u4LastRxDropTotal;
+	prTRxPerfInfo->rx_drop_reorder =
+			mbrGetRxReorderDropCnt(prAdapter) -
+				u4LastRxDropReorder;
+	prTRxPerfInfo->rx_drop_sanity =
+			mbrGetRxSanityDropCnt(prAdapter) -
+				u4LastRxDropSanity;
+	prTRxPerfInfo->rx_napi_full =
+			((uint32_t) RX_GET_CNT(&prAdapter->rRxCtrl,
+					RX_NAPI_FIFO_FULL_COUNT)) -
+				u4LastRxNapiFull;
+
+	u4LastRxDropTotal = (uint32_t) RX_GET_CNT(&prAdapter->rRxCtrl,
+						RX_DROP_TOTAL_COUNT);
+	u4LastRxDropReorder = mbrGetRxReorderDropCnt(prAdapter);
+	u4LastRxDropSanity = mbrGetRxSanityDropCnt(prAdapter);
+	u4LastRxNapiFull = (uint32_t) RX_GET_CNT(&prAdapter->rRxCtrl,
+						RX_NAPI_FIFO_FULL_COUNT);
+
+	prTRxPerfInfo->tput = prAdapter->rPerMonitor.ulThroughput;
+	prTRxPerfInfo->idle_slot = prLinkQualityInfo->u8DiffIdleSlotCount;
+
+	prTRxPerfInfo->tx_per = prLinkQualityInfo->u4CurTxPer;
+	prTRxPerfInfo->tx_rate = prLinkQualityInfo->u4CurTxRate;
+
+	prTRxPerfInfo->rx_rssi =
+		prAdapter->rLinkQuality.rLq[prBssInfo->ucBssIndex].cRssi;
+	prTRxPerfInfo->rx_rate = prLinkQualityInfo->u4CurRxRate;
+
+	mbrGetLatencyData(prAdapter, prBssInfo->ucBssIndex, prTRxPerfInfo);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TRXPERF);
+	QUEUE_INSERT_TAIL(&prAdapter->rMbrTRxPerfQueue,
+				&prTRxPerfEntry->rQueEntry);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TRXPERF);
+
+	if (prAdapter->rMbrTRxPerfQueue.u4NumElem >
+		MBR_TRX_PERF_QUE_CNT_MAX) {
+		prTRxPerfEntry = mbrTRxPerfDequeue(prAdapter);
+		kalMemFree(prTRxPerfEntry, VIR_MEM_TYPE,
+			sizeof(struct MBRAIN_TRXPERF_ENTRY));
+	}
+}
+
+struct MBRAIN_TRXPERF_ENTRY *mbrTRxPerfDequeue(struct ADAPTER *prAdapter)
+{
+	struct MBRAIN_TRXPERF_ENTRY *prTRxPerfEntry = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TRXPERF);
+	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rMbrTRxPerfQueue))
+		QUEUE_REMOVE_HEAD(&prAdapter->rMbrTRxPerfQueue,
+			prTRxPerfEntry, struct MBRAIN_TRXPERF_ENTRY *);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TRXPERF);
+
+	return prTRxPerfEntry;
+}
+
+enum wifi2mbr_status mbrWifiTRxPerfHandler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len)
+{
+	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
+	struct wifi2mbr_TRxPerfInfo *prPerfInfoDest =
+		(struct wifi2mbr_TRxPerfInfo *) buf;
+	struct MBRAIN_TRXPERF_ENTRY *prTRxPerfEntry = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "prAdapter is null\n");
+		return WIFI2MBR_END;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return WIFI2MBR_END;
+	}
+
+	if (prAdapter->rMbrTRxPerfQueue.u4NumElem == 0) {
+		DBGLOG(REQ, DEBUG, "TxTimeout Queue is empty\n");
+		return WIFI2MBR_END;
+	}
+
+	prTRxPerfEntry = mbrTRxPerfDequeue(prAdapter);
+	if (!prTRxPerfEntry)
+		return WIFI2MBR_END;
+
+	kalMemCopy(prPerfInfoDest, &prTRxPerfEntry->rTRxPerfInfo,
+		sizeof(struct wifi2mbr_TRxPerfInfo));
+	*pu2Len = sizeof(*prPerfInfoDest);
+
+	kalMemFree(prTRxPerfEntry, VIR_MEM_TYPE,
+			sizeof(struct MBRAIN_TRXPERF_ENTRY));
+
+	status = WIFI2MBR_SUCCESS;
+
+	return status;
+}
+
+uint16_t mbrWifiTRxPerfGetTotalDataNum(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return 0;
+	}
+
+	return prAdapter->rMbrTRxPerfQueue.u4NumElem;
+}
+#endif /* CFG_SUPPORT_MBRAIN_TRX_PERF */
 #endif /* CFG_SUPPORT_MBRAIN */

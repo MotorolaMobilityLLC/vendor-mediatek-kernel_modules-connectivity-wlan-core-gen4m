@@ -5596,6 +5596,7 @@ void qmHandleReorderBubbleTimeout(struct ADAPTER *prAdapter,
 	struct RX_BA_ENTRY *prReorderQueParm = (struct RX_BA_ENTRY *)ulParamPtr;
 	uint32_t rc;
 
+	RX_INC_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_TIMEOUT_COUNT);
 	addReorderQueParm(&prAdapter->rTimeoutRxBaEntry, prReorderQueParm,
 			prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT);
 	DBGLOG(QM, TRACE, "QM:(Bub Timeout Flush scheduled) STA[%u] TID[%u]\n",

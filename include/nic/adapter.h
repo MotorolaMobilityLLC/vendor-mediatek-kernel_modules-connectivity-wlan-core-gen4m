@@ -687,6 +687,15 @@ struct BSS_INFO {
 #if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
 	u_int8_t fgReSyncCap;
 #endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+
+#if CFG_SUPPORT_MBRAIN
+	uint64_t u8TxStopTS;
+	uint64_t u8TxStartTS;
+	uint64_t u8BTOTS; /* Beacon timeout Timestamp*/
+	uint64_t u8TxTimeoutTS;
+	uint32_t u4TokenId;
+	uint32_t u4TxTimeoutDuration;
+#endif
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -2721,9 +2730,6 @@ struct ADAPTER {
 	/* Rx queue that queue rx packets before ASSOC */
 	struct QUE rRxPendingQueue;
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-#if CFG_SUPPORT_MBRAIN
-	struct QUE rMbrTxTimeoutQueue;
-#endif
 
 	struct GLUE_INFO *prGlueInfo;
 
@@ -2853,6 +2859,8 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_MBRAIN
 	struct mbrain_emi_data *prMbrEmiData;
+	struct QUE rMbrTxTimeoutQueue;
+	struct QUE rMbrTRxPerfQueue;
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 	uint32_t u4BigDataVer;
 #endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
