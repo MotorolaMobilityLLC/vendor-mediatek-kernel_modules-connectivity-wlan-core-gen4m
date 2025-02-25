@@ -173,6 +173,13 @@ struct mddpw_drv_info_t {
 	uint8_t         info[];
 };
 
+struct mddpw_drv_info_t_v1 {
+	uint8_t         info_id;
+	uint8_t         reserve;
+	uint16_t        info_len;
+	uint8_t         info[];
+};
+
 struct mddpw_drv_own_t {
 	uint8_t         version;
 	uint8_t         resource;
@@ -234,6 +241,15 @@ struct mddpw_ap_virtual_buf_t {
 struct mddpw_drv_notify_info_t {
 	uint8_t         version;
 	uint8_t         buf_len;
+	uint8_t         info_num;
+	uint8_t         buf[];
+};
+
+struct mddpw_drv_notify_info_t_v1 {
+	uint8_t         version;
+	uint8_t         reserve_1;
+	uint16_t        buf_len;
+	uint8_t         reserve_2;
 	uint8_t         info_num;
 	uint8_t         buf[];
 };

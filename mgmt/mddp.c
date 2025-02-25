@@ -52,6 +52,12 @@
 #endif /* CFG_PCIE_GEN_SWITCH */
 #define MDDP_HIF_MD_SER			5
 
+#if KERNEL_VERSION(6, 12, 0) <= LINUX_VERSION_CODE
+#define MDDP_SUPPORT_NOTIFY_INFO_V1	1
+#else
+#define MDDP_SUPPORT_NOTIFY_INFO_V1	0
+#endif
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -977,12 +983,19 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct net_device *prNetdev;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
-	uint32_t u4BufSize = 0;
-	uint8_t *buff = NULL;
-	int32_t ret = 0;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta;
 #endif
+#if (MDDP_SUPPORT_NOTIFY_INFO_V1 == 1)
+	struct mddpw_drv_notify_info_t_v1 *prNotifyInfoV1;
+	struct mddpw_drv_info_t_v1 *prDrvInfoV1;
+	void *prTemplate;
+	u_int8_t fgIsNewFormat = FALSE;
+	uint32_t u4TxdNum = 1, u4Idx = 0;
+#endif /* MDDP_SUPPORT_NOTIFY_INFO_V1 */
+	uint32_t u4BufSize = 0;
+	uint8_t *buff = NULL;
+	int32_t ret = 0;
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1022,29 +1035,63 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		       prStaRec->ucBssIndex);
 	}
 
-	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
-			sizeof(struct mddpw_drv_info_t) +
-			sizeof(struct mddp_txd_t) +
-			NIC_TX_DESC_LONG_FORMAT_LENGTH);
+#if (MDDP_SUPPORT_NOTIFY_INFO_V1 == 1)
+	if (mddp_check_subfeature(MF_ID_COMMON, COM_LEN2B)) {
+		fgIsNewFormat = TRUE;
+		u4TxdNum = 8;
+		u4BufSize = (sizeof(struct mddpw_drv_notify_info_t_v1) +
+			      sizeof(struct mddpw_drv_info_t_v1) +
+			      sizeof(struct mddp_txd_t) +
+			      NIC_TX_DESC_LONG_FORMAT_LENGTH * u4TxdNum);
+	} else
+#endif /* MDDP_SUPPORT_NOTIFY_INFO_V1 */
+	{
+		u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			      sizeof(struct mddpw_drv_info_t) +
+			      sizeof(struct mddp_txd_t) +
+			      NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	}
 	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
-
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
 		ret = -1;
 		goto exit;
 	}
-	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
-	prNotifyInfo->version = 0;
-	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+
+#if (MDDP_SUPPORT_NOTIFY_INFO_V1 == 1)
+	if (fgIsNewFormat) {
+		prNotifyInfoV1 = (struct mddpw_drv_notify_info_t_v1 *) buff;
+		prNotifyInfoV1->version = 1;
+		prNotifyInfoV1->buf_len = sizeof(struct mddpw_drv_info_t_v1) +
+			sizeof(struct mddp_txd_t) +
+			NIC_TX_DESC_LONG_FORMAT_LENGTH * u4TxdNum;
+		prNotifyInfoV1->info_num = 1;
+		prDrvInfoV1 = (struct mddpw_drv_info_t_v1 *)
+			&(prNotifyInfoV1->buf[0]);
+		prDrvInfoV1->info_id = WSVC_DRVINFO_TXD_TEMPLATE;
+		prDrvInfoV1->info_len =
+			(sizeof(struct mddp_txd_t) +
+			NIC_TX_DESC_LONG_FORMAT_LENGTH * u4TxdNum);
+		prMddpTxd = (struct mddp_txd_t *) &(prDrvInfoV1->info[0]);
+		prMddpTxd->version = 2;
+	} else
+#endif /* MDDP_SUPPORT_NOTIFY_INFO_V1 */
+	{
+		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+		prNotifyInfo->version = 0;
+		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
 			sizeof(struct mddp_txd_t) +
 			NIC_TX_DESC_LONG_FORMAT_LENGTH;
-	prNotifyInfo->info_num = 1;
-	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-	prDrvInfo->info_id = WSVC_DRVINFO_TXD_TEMPLATE;
-	prDrvInfo->info_len = (sizeof(struct mddp_txd_t) +
-			NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	prMddpTxd = (struct mddp_txd_t *) &(prDrvInfo->info[0]);
-	prMddpTxd->version = 1;
+		prNotifyInfo->info_num = 1;
+		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+		prDrvInfo->info_id = WSVC_DRVINFO_TXD_TEMPLATE;
+		prDrvInfo->info_len =
+			(sizeof(struct mddp_txd_t) +
+			 NIC_TX_DESC_LONG_FORMAT_LENGTH);
+		prMddpTxd = (struct mddp_txd_t *) &(prDrvInfo->info[0]);
+		prMddpTxd->version = 1;
+	}
+
 	prMddpTxd->sta_idx = prStaRec->ucIndex;
 	prMddpTxd->wlan_idx = prStaRec->ucWlanIndex;
 	prMddpTxd->sta_mode = prStaRec->eStaType;
@@ -1061,6 +1108,10 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+	if (prMldSta && prMldSta->fgIsSbMlsr)
+		prMldSta = NULL;
+#endif /* CFG_SINGLE_BAND_MLSR_56*/
 	if (prMldSta)
 		kalMemCopy(prMddpTxd->aucMacAddr, prMldSta->aucPeerMldAddr,
 			   MAC_ADDR_LEN);
@@ -1072,13 +1123,31 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		   prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
 	if (fgActivate) {
 		prMddpTxd->txd_length = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+#if (MDDP_SUPPORT_NOTIFY_INFO_V1 == 1)
+		for (u4Idx = 0; u4Idx < u4TxdNum; u4Idx++) {
+			if (prStaRec->aprTxDescTemplate[u4Idx])
+				prTemplate = prStaRec->aprTxDescTemplate[u4Idx];
+			else
+				prTemplate = prStaRec->aprTxDescTemplate[0];
+			kalMemCopy(prMddpTxd->txd +
+				   u4Idx * prMddpTxd->txd_length,
+				   prTemplate,
+				   prMddpTxd->txd_length);
+		}
+#else
 		kalMemCopy(prMddpTxd->txd, prStaRec->aprTxDescTemplate[0],
 				prMddpTxd->txd_length);
+#endif /* MDDP_SUPPORT_NOTIFY_INFO_V1 */
 	} else {
 		prMddpTxd->txd_length = 0;
 	}
 
-	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+#if (MDDP_SUPPORT_NOTIFY_INFO_V1 == 1)
+	if (fgIsNewFormat)
+		ret = gMddpWFunc.notify_drv_info_v1(prNotifyInfoV1);
+	else
+#endif /* MDDP_SUPPORT_NOTIFY_INFO_V1 */
+		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 
 #define TEMP_LOG_TEMPLATE "ver:%d,idx:%d,w_idx:%d,mod:%d,bss:%d,wmm:%d," \
 		"name:%s,act:%d,ret:%d"
