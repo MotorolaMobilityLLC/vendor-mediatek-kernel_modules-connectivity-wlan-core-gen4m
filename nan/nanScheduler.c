@@ -1849,10 +1849,11 @@ nanUtilCalAttributeToken(struct _NAN_ATTR_HDR_T *prNanAttr)
 	return u4Token;
 }
 
-uint32_t nanUtilCheckBitOneCnt(uint8_t *pucBitMask, uint32_t u4Size)
+uint32_t nanUtilCheckBitOneCnt(void *pBuffer, uint32_t u4Size)
 {
 	uint32_t u4Num;
 	uint32_t u4Idx;
+	uint8_t *pucBitMask = pBuffer;
 
 	u4Num = 0;
 	for (u4Idx = 0; u4Idx < u4Size * 8; u4Idx++) {
@@ -3604,7 +3605,6 @@ uint32_t nanSchedMergeAvailabileChnlList(struct ADAPTER *prAdapter,
 							.au4AvailMap[u4DwIdx];
 				prChnlTimelineList[u4Idx1].i4Num =
 				    nanUtilCheckBitOneCnt(
-					(uint8_t *)
 					prChnlTimelineList[u4Idx1].au4AvailMap,
 					sizeof(prChnlTimelineList[u4Idx1]
 						.au4AvailMap));
@@ -3898,6 +3898,7 @@ nanSchedPeerChkQos(struct ADAPTER *prAdapter,
 	uint32_t u4QosMinSlots = 0;
 	uint32_t u4QosMaxLatency = 0;
 	uint32_t u4EmptySlots = 0;
+	uint32_t u4BitCount;
 	uint32_t i4Latency = 0;
 	uint32_t u4Idx1 = 0;
 	uint8_t ucTimeLineIdx = 0;
@@ -3924,10 +3925,10 @@ nanSchedPeerChkQos(struct ADAPTER *prAdapter,
 		for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) {
 			u4QosMinSlots = prPeerSchRec->u4FinalQosMinSlots;
 			if (u4QosMinSlots > NAN_INVALID_QOS_MIN_SLOTS) {
-				if (nanUtilCheckBitOneCnt(
-					(uint8_t *)
+				u4BitCount = nanUtilCheckBitOneCnt(
 					&prTimeline->au4AvailMap[u4DwIdx],
-					sizeof(uint32_t)) < u4QosMinSlots) {
+					sizeof(uint32_t));
+				if (u4BitCount < u4QosMinSlots) {
 					/* Qos min slot validation fail */
 					return WLAN_STATUS_FAILURE;
 				}
@@ -4057,9 +4058,12 @@ nanSchedPeerChkDataPath(struct ADAPTER *prAdapter,
 #ifdef NAN_UNUSED
 		prTimeline = &prPeerSchRec->arCommFawTimeline[0];
 		for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) {
-			if (nanUtilCheckBitOneCnt(
-			(PUINT_8)&prTimeline->au4AvailMap[u4DwIdx],
-			sizeof(UINT_32)) < prPeerSchRec->u4DefNdlNumSlots) {
+			uint32_t u4BitCount;
+
+			u4BitCount = nanUtilCheckBitOneCnt(
+					&prTimeline->au4AvailMap[u4DwIdx],
+					sizeof(uint32_t));
+			if (u4BitCount < prPeerSchRec->u4DefNdlNumSlots) {
 				rRetStatus = WLAN_STATUS_FAILURE;
 				break;
 			}
@@ -7633,7 +7637,7 @@ uint32_t nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter,
 		for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++)
 			prChnlTimeline->au4AvailMap[u4DwIdx] &= (~u4SlotBitmap);
 		prChnlTimeline->i4Num = nanUtilCheckBitOneCnt(
-					(uint8_t *)prChnlTimeline->au4AvailMap,
+					prChnlTimeline->au4AvailMap,
 					sizeof(prChnlTimeline->au4AvailMap));
 		if (prChnlTimeline->i4Num == 0)
 			prChnlTimeline->fgValid = FALSE;
@@ -7648,7 +7652,7 @@ uint32_t nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter,
 		for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++)
 			prChnlTimeline->au4AvailMap[u4DwIdx] |= u4SlotBitmap;
 		prChnlTimeline->i4Num = nanUtilCheckBitOneCnt(
-					(uint8_t *)prChnlTimeline->au4AvailMap,
+					prChnlTimeline->au4AvailMap,
 					sizeof(prChnlTimeline->au4AvailMap));
 		if (prChnlTimeline->i4Num)
 			prChnlTimeline->fgValid = TRUE;
@@ -7728,8 +7732,8 @@ uint32_t nanSchedCheckBandNDLSlotCommitNum(struct ADAPTER *prAdapter,
 		}
 	}
 
-	u4BitCount = nanUtilCheckBitOneCnt((uint8_t *)&u4NDLSlotAvailMap,
-				     sizeof(uint32_t));
+	u4BitCount = nanUtilCheckBitOneCnt(&u4NDLSlotAvailMap,
+					   sizeof(uint32_t));
 	DBGLOG(NAN, DEBUG, "BitCount=%u, %02x-%02x-%02x-%02x\n",
 	       u4BitCount,
 	       ((uint8_t *)&u4NDLSlotAvailMap)[0],
@@ -8566,19 +8570,16 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 
 		/* step1. check QoS min slots */
 		i4Num = 0;
-		if ((u4QosMinSlots > NAN_INVALID_QOS_MIN_SLOTS) &&
-		    (nanUtilCheckBitOneCnt(
-			     (uint8_t *)&u4FawSlotsAll,
-			     sizeof(uint32_t)) < u4QosMinSlots)) {
+		if (u4QosMinSlots > NAN_INVALID_QOS_MIN_SLOTS &&
+		    nanUtilCheckBitOneCnt(&u4FawSlotsAll, sizeof(uint32_t)) <
+					  u4QosMinSlots) {
 
 			i4Num = u4QosMinSlots -
-				nanUtilCheckBitOneCnt(
-					(uint8_t *)&u4FawSlotsAll,
-					sizeof(uint32_t));
-			if ((i4Num > 0) &&
-			    (nanUtilCheckBitOneCnt(
-				 (uint8_t *)&u4FreeSlotsAll,
-				 sizeof(uint32_t)) < i4Num)) {
+				nanUtilCheckBitOneCnt(&u4FawSlotsAll,
+						      sizeof(uint32_t));
+			if (i4Num > 0 &&
+			    nanUtilCheckBitOneCnt(&u4FreeSlotsAll,
+						  sizeof(uint32_t)) < i4Num) {
 
 				DBGLOG(NAN, DEBUG, "MinSlots:%d, Lack:%d\n",
 				       u4QosMinSlots, i4Num);
@@ -10756,13 +10757,11 @@ uint32_t nanSchedNegoAllocNdcCtrl(struct ADAPTER *prAdapter,
 
 		for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 		     szTimeLineIdx++) {
+			struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
 
-			szNum = nanUtilCheckBitOneCnt(
-				(uint8_t *)
-				prNdcCtrl->arTimeline[szTimeLineIdx]
-					.au4AvailMap,
-				sizeof(prNdcCtrl->arTimeline[szTimeLineIdx]
-					.au4AvailMap));
+			prTimeline = &prNdcCtrl->arTimeline[szTimeLineIdx];
+			szNum = nanUtilCheckBitOneCnt(prTimeline->au4AvailMap,
+					       sizeof(prTimeline->au4AvailMap));
 
 			DBGLOG(NAN, DEBUG,
 				"NDC MapID:%u, TIdx:%zu, SlotCnt:%zu\n",
@@ -16107,9 +16106,8 @@ static u_int8_t nanGetPeerCommitted(struct ADAPTER *prAdapter,
 		if (prTimeline->ucMapId == NAN_INVALID_MAP_ID)
 			continue;
 
-		u4BitCount = nanUtilCheckBitOneCnt(
-					(uint8_t *)prTimeline->au4AvailMap,
-					sizeof(uint32_t));
+		u4BitCount = nanUtilCheckBitOneCnt(prTimeline->au4AvailMap,
+						   sizeof(uint32_t));
 
 		DBGLOG(NAN, DEBUG,
 		       "u4SchIdx=%u, u4BitCount=%u, bitmap=%02x-%02x-%02x-%02x\n",
@@ -16707,10 +16705,10 @@ u_int8_t nanCheckIsNeedReschedule(struct ADAPTER *prAdapter,
 				       ((uint8_t *)&ais_slots)[2],
 				       ((uint8_t *)&ais_slots)[3]);
 
-				if (nanUtilCheckBitOneCnt((uint8_t *)&ndl_slots,
+				if (nanUtilCheckBitOneCnt(&ndl_slots,
 							  sizeof(uint32_t)) <
 					    NAN_FEW_COMMITTED_SLOTS ||
-				    nanUtilCheckBitOneCnt((uint8_t *)&ais_slots,
+				    nanUtilCheckBitOneCnt(&ais_slots,
 							  sizeof(uint32_t)) ==
 					    0)
 					return TRUE;

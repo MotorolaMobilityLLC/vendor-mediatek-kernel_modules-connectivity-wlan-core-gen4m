@@ -815,7 +815,7 @@ nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 enum _ENUM_NAN_WINDOW_T nanWindowType(struct ADAPTER *prAdapter,
 				      size_t szSlotIdx, size_t szTimeLineIdx);
 
-uint32_t nanUtilCheckBitOneCnt(uint8_t *pucBitMask, uint32_t u4Size);
+uint32_t nanUtilCheckBitOneCnt(void *pBuffer, uint32_t u4Size);
 
 void nanUtilDump(struct ADAPTER *prAdapter,
 		uint8_t *pucMsg, uint8_t *pucContent, uint32_t u4Length);
