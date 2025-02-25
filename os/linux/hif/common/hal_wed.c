@@ -737,7 +737,7 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 		return -1;
 	}
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter, DRV_OWN_SRC_WED_ATTACH);
 	DBGLOG(HAL, STATE, "WED proxy attaching, reason: %u\n", AttachType);
 
 	prwedinfo = &grWedInfo;
@@ -832,13 +832,15 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	enable_irq(prwedinfo->u4IrqId);
 	DBGLOG(HAL, STATE, "enable irq for %d\n", prwedinfo->u4IrqId);
 
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_WED_ATTACH);
 	return 0;
 
 error_release_token:
 	wedRxTokenInfoRelease(prAdapter);
 error:
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_WED_ATTACH);
 	return ret;
 }
 
@@ -884,7 +886,7 @@ static int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	}
 
 	flush_delayed_work(&rWedWoCmdWork);
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter, DRV_OWN_SRC_WED_DEATTACH);
 
 	DBGLOG(HAL, STATE, "WED proxy detaching, reason: %u\n", DetachType);
 
@@ -941,7 +943,8 @@ static int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	ret = 0;
 
 error:
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+		DRV_OWN_SRC_WED_DEATTACH);
 	return ret;
 }
 

@@ -2980,7 +2980,8 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		/* 0. Disable interrupt, this can be done without Driver own */
 		nicDisableInterrupt(prAdapter);
 
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_HIF_POWER_OFF_WIFI);
 
 		/* 1. Set CMD to FW to tell WIFI to stop (enter power off state) */
 		if (prAdapter->fgIsFwOwn == FALSE && wlanSendNicPowerCtrlCmd(prAdapter, 1) == WLAN_STATUS_SUCCESS) {
@@ -3019,7 +3020,8 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		}
 #endif
 
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_HIF_POWER_OFF_WIFI);
 		glSdioSetState(&prAdapter->prGlueInfo->rHifInfo,
 							SDIO_STATE_WIFI_OFF);
 	}

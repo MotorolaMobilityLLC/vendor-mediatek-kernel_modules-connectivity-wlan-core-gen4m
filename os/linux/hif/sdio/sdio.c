@@ -668,7 +668,8 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 			break;
 		}
 
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter,
+			DRV_OWN_SRC_SDIO_SUSPEND);
 		/* Prevent that suspend without FW Own:
 		 * Set Drv own has failed, and then Set FW Own is skipped
 		 */
@@ -678,7 +679,8 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 			drv_own_fail = TRUE;
 		/* For single core CPU, let hif_thread can be completed */
 		usleep_range(1000, 3000);
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE,
+			DRV_OWN_SRC_SDIO_SUSPEND);
 
 		wait++;
 	}
@@ -1251,7 +1253,7 @@ u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 	uint32_t value;
 	uint32_t u4Time, u4Current;
 	u_int8_t ucResult;/* For Unchecked return value*/
-	u_int8_t fgOwnStatus = 0;
+	u_int32_t fgOwnStatus = 0;
 	u_int8_t fgIssueOwn = FALSE;
 
 	if (!prGlueInfo || !prGlueInfo->prAdapter) {
@@ -1266,7 +1268,7 @@ u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 
 	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
 	if (!fgOwnStatus) {
-		fgOwnStatus = nicpmSetDriverOwn(prGlueInfo->prAdapter);
+		fgOwnStatus = halSetDriverOwn(prGlueInfo->prAdapter);
 		if (!fgOwnStatus) {
 			DBGLOG(HAL, ERROR,
 				"Driver own fail before R/W mailbox CR!");
@@ -1431,7 +1433,7 @@ u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 	uint32_t value;
 	uint32_t u4Time, u4Current;
 	uint8_t ucResult; /* For Unchecked return value*/
-	u_int8_t fgOwnStatus = 0;
+	u_int32_t fgOwnStatus = 0;
 	u_int8_t fgIssueOwn = FALSE;
 
 	if (!prGlueInfo || !prGlueInfo->prAdapter) {
@@ -1442,7 +1444,7 @@ u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 
 	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
 	if (!fgOwnStatus) {
-		fgOwnStatus = nicpmSetDriverOwn(prGlueInfo->prAdapter);
+		fgOwnStatus = halSetDriverOwn(prGlueInfo->prAdapter);
 		if (!fgOwnStatus) {
 			DBGLOG(HAL, ERROR,
 				"Driver own fail before R/W mailbox CR!");
