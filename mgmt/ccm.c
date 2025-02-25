@@ -392,7 +392,8 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			if (!IS_BSS_ALIVE(prAdapter, bss))
 				continue;
 #if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
-			else if (!IS_BSS_P2P(bss))
+			else if (!IS_BSS_GO(prAdapter, bss) &&
+				 !IS_BSS_GC(bss))
 #else
 			else if (!IS_BSS_GO(prAdapter, bss))
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
