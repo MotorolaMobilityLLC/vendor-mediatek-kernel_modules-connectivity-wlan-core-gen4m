@@ -12950,34 +12950,32 @@ int32_t rlmGetOpClassForChannel(int32_t channel,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* 6GHz Band */
 	if ((band == BAND_6G) != 0) {
-		/* Channels 1, 5. 9, 13, ... */
-		if ((channel & 0x03) == 0x01)
-			/* 20MHz channel */
-			return 131;
-
-		/* Channels 3, 11, 19, 27, ... */
-		if ((channel & 0x07) == 0x03)
-			/* 40MHz channel */
-			return 132;
-
-		/* Channels 7, 23, 39, 55, ... */
-		if ((channel & 0x0F) == 0x07)
-			/* 80MHz channel */
-			return 133;
-
-		/* Channels 15, 47, 69, ... */
-		if ((channel & 0x1F) == 0x0F)
-			/* 160MHz channel */
-			return 134;
-
-		/* Channels 31, 63, 95, ... */
-		if ((channel & 0x3F) == 0x1F)
-			/* 320MHz channel */
-			return 137;
+		if (channel < 1 || channel > 233)
+			/* Error */
+			return 0;
 
 		if (channel == 2)
-			/* 20MHz channel */
 			return 136;
+		else if (eChBw == CW_20_40MHZ && eSco == CHNL_EXT_SCN)
+			/* 20MHz channel */
+			return 131;
+		else if (eChBw == CW_20_40MHZ &&
+			(eSco == CHNL_EXT_SCA || eSco == CHNL_EXT_SCB))
+			/* 40MHz channel */
+			return 132;
+		else if (eChBw == CW_80MHZ)
+			/* 80MHz channel */
+			return 133;
+		else if (eChBw == CW_160MHZ)
+			/* 160MHz channel */
+			return 134;
+		else if (eChBw == CW_80P80MHZ)
+			/* 80_80MHz channel */
+			return 135;
+		else if (eChBw == CW_320_1MHZ ||
+			eChBw == CW_320_2MHZ)
+			/* 320MHz channel */
+			return 137;
 
 		/* Error */
 		return 0;

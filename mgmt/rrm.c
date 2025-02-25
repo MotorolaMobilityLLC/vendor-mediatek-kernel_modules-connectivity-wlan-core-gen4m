@@ -2540,8 +2540,8 @@ void rrmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 uint8_t rrmCheckIs6GOpClass(uint8_t ucOpClass)
 {
-	/* 6G band global operating class will be 131 ~ 135*/
-	if (ucOpClass >= 131 && ucOpClass <= 135)
+	/* 6G band global operating class will be 131 ~ 137 */
+	if (ucOpClass >= 131 && ucOpClass <= 137)
 		return TRUE;
 	else
 		return FALSE;
