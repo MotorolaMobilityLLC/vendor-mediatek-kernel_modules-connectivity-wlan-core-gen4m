@@ -17,7 +17,7 @@
 /* PDA - Patch Decryption Accelerator */
 #define PDA_N9                 0
 #define PDA_CR4                1
-#define PDA_DSP                2
+#define PDA_PHY                2
 
 #define MAX_FWDL_SECTION_NUM   10
 #define N9_FWDL_SECTION_NUM    2
@@ -125,7 +125,7 @@ enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_WIFI_ROM_EMI,
 	IMG_DL_IDX_BT_PATCH,
 	IMG_DL_IDX_ZB_PATCH,
-	IMG_DL_IDX_DSP_FW
+	IMG_DL_IDX_PHY_FW
 
 };
 
@@ -174,7 +174,7 @@ struct FWDL_OPS_T {
 	uint32_t (*downloadPatch)(struct ADAPTER *prAdapter);
 	uint32_t (*downloadFirmware)(struct ADAPTER *prAdapter,
 		enum ENUM_IMG_DL_IDX_T eDlIdx);
-	uint32_t (*downloadDspFw)(struct ADAPTER *prAdapter);
+	uint32_t (*downloadPhyFw)(struct ADAPTER *prAdapter);
 	uint32_t (*downloadByDynMemMap)(
 		struct ADAPTER *prAdapter, uint32_t u4Addr,
 		uint32_t u4Len,	uint8_t *pucStartPtr,
@@ -207,7 +207,7 @@ struct FWDL_OPS_T {
 		uint8_t **apucName, uint8_t *pucNameIdx);
 	uint32_t (*downloadZbPatch)(struct ADAPTER *prAdapter);
 #endif
-	void (*constructDspName)(struct GLUE_INFO *prGlueInfo,
+	void (*constructPhyName)(struct GLUE_INFO *prGlueInfo,
 		uint8_t **apucName, uint8_t *pucNameIdx);
 	uint32_t (*downloadEMI)(struct ADAPTER *prAdapter,
 		uint32_t u4DestAddr,
@@ -563,5 +563,5 @@ uint32_t asicConnac3xConfigBtImageSection(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
-uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter);
+uint32_t wlanDownloadPhyFw(struct ADAPTER *prAdapter);
 #endif /* _FW_DL_H */

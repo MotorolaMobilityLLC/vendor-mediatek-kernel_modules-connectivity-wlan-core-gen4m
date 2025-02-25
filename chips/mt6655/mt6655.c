@@ -81,7 +81,7 @@ static void mt6655_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt6655_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
-static void mt6655_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+static void mt6655_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
 #if defined(_HIF_PCIE)
@@ -516,9 +516,9 @@ struct FWDL_OPS_T mt6655_fw_dl_ops = {
 #else
 	.phyAction = NULL,
 #endif
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-	.constructDspName = mt6655_ConstructDspName,
-	.downloadDspFw = wlanDownloadDspFw,
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+	.constructPhyName = mt6655_ConstructPhyName,
+	.downloadPhyFw = wlanDownloadPhyFw,
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
@@ -863,7 +863,7 @@ static void mt6655_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 }
 
-static void mt6655_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+static void mt6655_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;

@@ -107,8 +107,8 @@ static void mt7999_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt7999_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-static void mt7999_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+static void mt7999_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 #endif
 
@@ -828,9 +828,9 @@ struct FWDL_OPS_T mt7999_fw_dl_ops = {
 #endif
 #endif
 	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-	.constructDspName = mt7999_ConstructDspName,
-	.downloadDspFw = wlanDownloadDspFw,
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+	.constructPhyName = mt7999_ConstructPhyName,
+	.downloadPhyFw = wlanDownloadPhyFw,
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
@@ -1492,8 +1492,8 @@ static void mt7999_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 }
 
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-static void mt7999_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+static void mt7999_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;

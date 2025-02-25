@@ -88,7 +88,7 @@ uint32_t wlanGetDataMode(struct ADAPTER *prAdapter,
 
 	if (eDlIdx == IMG_DL_IDX_CR4_FW)
 		u4DataMode |= DOWNLOAD_CONFIG_WORKING_PDA_OPTION;
-	else if (eDlIdx == IMG_DL_IDX_DSP_FW)
+	else if (eDlIdx == IMG_DL_IDX_PHY_FW)
 		u4DataMode |= DOWNLOAD_CONFIG_WORKING_PDA_OPTION;
 
 #if CFG_ENABLE_FW_DOWNLOAD_ACK
@@ -1394,7 +1394,7 @@ uint32_t wlanConfigWifiFunc(struct ADAPTER *prAdapter,
 
 	if (ucPDA == PDA_CR4)
 		rCmd.u4Override |= START_WORKING_PDA_OPTION;
-	else if (ucPDA == PDA_DSP)
+	else if (ucPDA == PDA_PHY)
 		rCmd.u4Override |= START_CRC_CHECK;
 
 	rCmd.u4Address = u4StartAddress;
@@ -2077,10 +2077,10 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		}
 	}
 
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-	DBGLOG(INIT, TRACE, "DSP FW download Start\n");
-	if (prFwDlOps->downloadDspFw) {
-		rStatus = prFwDlOps->downloadDspFw(prAdapter);
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+	DBGLOG(INIT, TRACE, "PHY FW download Start\n");
+	if (prFwDlOps->downloadPhyFw) {
+		rStatus = prFwDlOps->downloadPhyFw(prAdapter);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			goto exit;
 	}
@@ -2919,8 +2919,8 @@ out:
 #endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+uint32_t wlanDownloadPhyFw(struct ADAPTER *prAdapter)
 {
 	struct WIFI_VER_INFO *prVerInfo = NULL;
 	void *prFwBuffer = NULL;
@@ -2933,14 +2933,14 @@ uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 
-	DBGLOG(INIT, DEBUG, "DSP download start\n");
+	DBGLOG(INIT, DEBUG, "PHY download start\n");
 
 	kalFirmwareImageMapping(prAdapter->prGlueInfo,
 				&prFwBuffer,
 				&u4FwSize,
-				IMG_DL_IDX_DSP_FW);
+				IMG_DL_IDX_PHY_FW);
 	if (!prFwBuffer) {
-		DBGLOG(INIT, DEBUG, "No DSP image, skip download\n");
+		DBGLOG(INIT, DEBUG, "No PHY image, skip download\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -2957,7 +2957,7 @@ uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
 	u4Status = wlanGetConnacTailerInfo(prVerInfo,
 					   prFwBuffer,
 					   u4FwSize,
-					   IMG_DL_IDX_DSP_FW);
+					   IMG_DL_IDX_PHY_FW);
 	if (u4Status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "Get tailer info error!\n");
 		u4Status = WLAN_STATUS_FAILURE;
@@ -2972,7 +2972,7 @@ uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
 						 prFwBuffer,
 						 u4FwSize,
 						 ucRegionNum,
-						 IMG_DL_IDX_DSP_FW,
+						 IMG_DL_IDX_PHY_FW,
 						 &fgIsDynamicMemMap);
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		goto exit;
@@ -2980,10 +2980,10 @@ uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
 	u4Status = wlanConfigWifiFunc(prAdapter,
 				      (u4Addr == 0) ? FALSE : TRUE,
 				      0,
-				      PDA_DSP);
+				      PDA_PHY);
 
 exit:
-	DBGLOG(INIT, DEBUG, "DSP download end[%d].\n", u4Status);
+	DBGLOG(INIT, DEBUG, "PHY download end[%d].\n", u4Status);
 
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
 				  NULL,

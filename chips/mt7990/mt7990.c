@@ -57,7 +57,7 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
-static void mt7990_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+static void mt7990_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
 static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
@@ -361,9 +361,9 @@ struct FWDL_OPS_T mt7990_fw_dl_ops = {
 #endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-	.constructDspName = mt7990_ConstructDspName,
-	.downloadDspFw = wlanDownloadDspFw,
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+	.constructPhyName = mt7990_ConstructPhyName,
+	.downloadPhyFw = wlanDownloadPhyFw,
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
@@ -525,7 +525,7 @@ static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 }
 
-static void mt7990_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+static void mt7990_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;
