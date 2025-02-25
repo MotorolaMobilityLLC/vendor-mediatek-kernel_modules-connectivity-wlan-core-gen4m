@@ -178,6 +178,11 @@ struct IE_BW_INDICATION {
 #define SET_EHT_MAC_CAP_SCS(_aucMacCapInfo) \
 		(_aucMacCapInfo[0] |= EHT_MAC_CAP_SCS)
 
+#define SET_EHT_MAC_CAP_MPDU_LENGTH_8K(_aucMacCapInfo) \
+		(_aucMacCapInfo[0] |= EHT_MAC_CAP_MAX_MPDU_LEN_8K)
+#define SET_EHT_MAC_CAP_MPDU_LENGTH_11K(_aucMacCapInfo) \
+		(_aucMacCapInfo[0] |= EHT_MAC_CAP_MAX_MPDU_LEN_11K)
+
 /*
  * Indicates the maximum MPDU length
  * that the STA is capable of receiving

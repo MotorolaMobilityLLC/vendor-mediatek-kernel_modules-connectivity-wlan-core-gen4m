@@ -350,6 +350,9 @@ void ehtRlmFillCapIE(
 	if (IS_BSS_AIS(prBssInfo) && IS_FEATURE_ENABLED(prWifiVar->fgEnTuao))
 		SET_EHT_MAC_CAP_SCS(prEhtCap->ucEhtMacCap);
 
+	/* EHT Max MPDU Length: 11k */
+	SET_EHT_MAC_CAP_MPDU_LENGTH_11K(prEhtCap->ucEhtMacCap);
+
 	/*
 	 * RTWT support bit
 	 */
