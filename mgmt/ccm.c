@@ -629,7 +629,8 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 				      eTargetHwBandIdx, &eTargetBand)) {
 		if (IS_BSS_APGO(bss)) {
 			cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
-				     MODE_DISALLOW_TX, bss->u4PrivateData);
+				     MODE_DISALLOW_TX, MAX_BW_NUM,
+				     bss->u4PrivateData);
 			fgIsSwitching = TRUE;
 		}
 #if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)

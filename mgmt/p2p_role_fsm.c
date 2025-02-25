@@ -2458,6 +2458,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 			[MAX_5G_BAND_CHN_NUM] = {0};
 		struct RF_CHANNEL_INFO aucChannelListRdd
 			[MAX_5G_BAND_CHN_NUM] = {0};
+		uint8_t ucBw;
 
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC) {
 			p2pRoleFsmStateTransition(prAdapter,
@@ -2506,33 +2507,21 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		}
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
-		if (ucChannelNum == 165) {
-			prAdapter->rWifiVar
-				.prP2pSpecificBssInfo[ucRoleIndex]
-				->ucRddBw = MAX_BW_20MHZ;
-			prP2pConnReqInfo->rChannelInfo.ucChnlBw =
-				MAX_BW_20MHZ;
-		} else {
-			prAdapter->rWifiVar
-				.prP2pSpecificBssInfo[ucRoleIndex]
-				->ucRddBw = MAX_BW_80MHZ;
-			prP2pConnReqInfo->rChannelInfo.ucChnlBw =
-				MAX_BW_80MHZ;
-		}
+		/* Revise BW */
+		ucBw = MAX_BW_80MHZ;
+		nicReviseBwByCh(prAdapter, BAND_5G, ucChannelNum,
+				nicGetSco(prAdapter, BAND_5G, ucChannelNum),
+				&ucBw);
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[ucRoleIndex]
+			->ucRddBw = ucBw;
+		prP2pConnReqInfo->rChannelInfo.ucChnlBw = ucBw;
 		/* Use rConnReqInfo bw */
 
-		if (IS_NET_PWR_STATE_ACTIVE(
-			prAdapter,
-			prP2pBssInfo->ucBssIndex)) {
-
-			if (IS_BSS_AP(prAdapter, prP2pBssInfo))
-				prAdapter->rWifiVar.ucAp5gBandwidth =
-					MAX_BW_80MHZ;
-			else if (IS_BSS_GO(prAdapter, prP2pBssInfo))
-				prAdapter->rWifiVar.ucP2p5gBandwidth =
-					MAX_BW_80MHZ;
+		if (IS_NET_PWR_STATE_ACTIVE(prAdapter,
+					    prP2pBssInfo->ucBssIndex)) {
 			rlmGetChnlInfoForCSA(prAdapter,
-				BAND_5G, ucChannelNum,
+				BAND_5G, ucChannelNum, ucBw,
 				prP2pBssInfo->ucBssIndex,
 				&prP2pConnReqInfo->rChannelInfo);
 			prAdapter->rWifiVar.ucCsaDeauthClient =
@@ -4018,7 +4007,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 	uint32_t u4CacTimeMs;
 #endif
 	uint8_t ucTokenID = 0;
-	uint8_t eNewBw;
+	uint8_t eNewMaxBw;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!\n");
@@ -4120,13 +4109,15 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 					&prBssInfo->ucOpRxNss,
 					&prBssInfo->ucOpTxNss);
 				/* Renew BW */
-				eNewBw = cnmGetDbdcBwCapability(prAdapter,
+				eNewMaxBw = cnmGetDbdcBwCapability(prAdapter,
 						prBssInfo->ucBssIndex);
 				nicReviseBwByCh(prAdapter, prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
-					prBssInfo->eBssSCO, &eNewBw);
-				prBssInfo->ucVhtChannelWidth =
-					rlmGetVhtOpBwByBssOpBw(eNewBw);
+					prBssInfo->eBssSCO, &eNewMaxBw);
+				if (rlmGetVhtOpBwByBssOpBw(eNewMaxBw) <
+				    prBssInfo->ucVhtChannelWidth)
+					prBssInfo->ucVhtChannelWidth =
+					     rlmGetVhtOpBwByBssOpBw(eNewMaxBw);
 
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 				/* Indicate channel switch to kernel */

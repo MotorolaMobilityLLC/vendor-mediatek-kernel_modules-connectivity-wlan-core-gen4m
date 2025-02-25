@@ -3030,6 +3030,7 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		break;
 	case VHT_OP_CHANNEL_WIDTH_20_40:
 		/* handle in cfg80211_chandef_create above */
+		break;
 	default:
 		chandef.width = NL80211_CHAN_WIDTH_20;
 		break;

@@ -666,7 +666,7 @@ static void ehtRlmFillOpIE(
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
 
-	eht_bw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+	eht_bw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 #if CFG_SUPPORT_NAN
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
 		eht_bw = MAX_BW_320_1MHZ;

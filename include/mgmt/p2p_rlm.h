@@ -125,6 +125,7 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
 	uint8_t ucCh,
+	uint8_t ucBw,
 	uint8_t ucBssIdx,
 	struct RF_CHANNEL_INFO *prRfChnlInfo);
 

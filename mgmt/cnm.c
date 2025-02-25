@@ -1339,7 +1339,7 @@ uint8_t cnmDecideSapNewChannel(
 
 uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
-	uint8_t ucCh, uint8_t ucMode, uint8_t ucRoleIdx)
+	uint8_t ucCh, uint8_t ucMode, uint8_t ucBw, uint8_t ucRoleIdx)
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
@@ -1353,8 +1353,8 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 		return -1;
 
 	DBGLOG(REQ, INFO,
-		"[CSA]RoleIdx=%d, Band=%d, CH=%d, Mode=%u, BssIdx=%d\n",
-		ucRoleIdx, eBand, ucCh, ucMode, ucBssIdx);
+		"[CSA]RoleIdx=%d, Band=%d, CH=%d, Mode=%u, bw=%u, BssIdx=%d\n",
+		ucRoleIdx, eBand, ucCh, ucMode, ucBw, ucBssIdx);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
@@ -1362,7 +1362,7 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 		prBssInfo->ucPrimaryChannel != ucCh) {
 		kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
 		rlmGetChnlInfoForCSA(prAdapter,
-			eBand, ucCh, ucBssIdx, &rRfChnlInfo);
+			eBand, ucCh, ucBw, ucBssIdx, &rRfChnlInfo);
 
 		DBGLOG(REQ, DEBUG,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
@@ -1555,6 +1555,7 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 					prBssInfo->eBand,
 					ucNewChannel,
 					MODE_DISALLOW_TX,
+					MAX_BW_NUM,
 					prBssInfo->u4PrivateData);
 				DBGLOG(CNM, INFO,
 					"IDC Version %d, Bss=%d, NewCH=%d\n",
@@ -2000,7 +2001,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		       uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucMaxBandwidth = MAX_BW_320_2MHZ; /*chip capability*/
+	uint8_t ucMaxBandwidth = MAX_BW_UNKNOWN;
 	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
 #if CFG_ENABLE_WIFI_DIRECT
@@ -5341,6 +5342,12 @@ uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	if (!prP2pConnReqInfo)
 		goto error;
 
+	if (p2pFuncRoleToBssIdx(prAdapter, ucRoleIdx, &ucBssIdx) !=
+	    WLAN_STATUS_SUCCESS || !IS_BSS_INDEX_VALID(ucBssIdx)) {
+		DBGLOG(P2P, WARN, "Incorrect role index\n");
+		goto error;
+	}
+
 	prP2pConnReqInfo->rChannelInfo.ucChannelNum =
 		prRfChannelInfo->ucChannelNum;
 	prP2pConnReqInfo->rChannelInfo.eBand =
@@ -5351,13 +5358,6 @@ uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 #endif
-
-	if (p2pFuncRoleToBssIdx(
-		prAdapter, ucRoleIdx, &ucBssIdx) !=
-		WLAN_STATUS_SUCCESS) {
-		DBGLOG(P2P, WARN, "Incorrect role index");
-		goto error;
-	}
 
 	/* Set new channel */
 	prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)

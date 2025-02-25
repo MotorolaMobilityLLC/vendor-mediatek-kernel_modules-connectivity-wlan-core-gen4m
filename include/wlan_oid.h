@@ -6032,11 +6032,9 @@ wlanoidSetPcieMode(struct ADAPTER *prAdapter,
 		       uint32_t *pu4SetInfoLen);
 #endif /*CFG_EAP_PCIE_GEN_SWITCH*/
 
-#if CFG_SUPPORT_CCM
 uint32_t
 wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
-#endif
 
 #if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
 uint32_t wlanoidBtCoreDumpCtrl(struct ADAPTER *prAdapter, void *pvQueryBuffer,

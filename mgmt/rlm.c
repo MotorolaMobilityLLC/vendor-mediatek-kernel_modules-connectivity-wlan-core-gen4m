@@ -1220,6 +1220,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t *pucStart, *pucBuffer;
 	uint8_t ucChannelWidth, ucSeg0, ucSeg1, ucOpClass;
+	uint8_t ucMaxBandwidth;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -1236,13 +1237,11 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	ucSeg0 = prWifiVar->ucNewChannelS1;
 	ucSeg1 = prWifiVar->ucNewChannelS2;
 	ucOpClass = prWifiVar->ucNewOperatingClass;
+	ucMaxBandwidth = rlmVhtBw2OpBw(prWifiVar->ucNewChannelWidth,
+			      prWifiVar->ucSecondaryOffset);
 
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
 	if (prWifiVar->u2NewPunctBitmap) {
-		uint8_t ucMaxBandwidth =
-			rlmVhtBw2OpBw(prWifiVar->ucNewChannelWidth,
-				      prWifiVar->ucSecondaryOffset);
-
 		rlmPunctUpdateLegacyBw(prWifiVar->eNewBand,
 				       prWifiVar->u2NewPunctBitmap,
 				       prWifiVar->ucNewChannelNumber,
@@ -1275,7 +1274,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	/* Keep using the original bw instead of puncturing bw for
 	 * wide band channel ie
 	 */
-	if (prWifiVar->ucNewChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
+	if (ucMaxBandwidth >= MAX_BW_40MHZ) {
 		struct IE_CHANNEL_SWITCH_WRAPPER *prWrapperIe;
 
 		prWrapperIe = (struct IE_CHANNEL_SWITCH_WRAPPER *)pucBuffer;
@@ -12450,6 +12449,7 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	uint32_t u4LifeTimeout, u4MaxLifeTimeout;
 	uint32_t u4MarginTimeout = GO_CSA_ACTION_FRAME_LIFE_TIME_MARGIN_MS;
 	uint8_t ucChannelWidth, ucSeg0, ucSeg1;
+	uint8_t ucMaxBandwidth;
 
 	if (!prBssInfo || !prStarec)
 		return;
@@ -12470,13 +12470,11 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	ucChannelWidth = prWifiVar->ucNewChannelWidth;
 	ucSeg0 = prWifiVar->ucNewChannelS1;
 	ucSeg1 = prWifiVar->ucNewChannelS2;
+	ucMaxBandwidth = rlmVhtBw2OpBw(prWifiVar->ucNewChannelWidth,
+			      prWifiVar->ucSecondaryOffset);
 
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
 	if (prWifiVar->u2NewPunctBitmap) {
-		uint8_t ucMaxBandwidth =
-			rlmVhtBw2OpBw(prWifiVar->ucNewChannelWidth,
-				      prWifiVar->ucSecondaryOffset);
-
 		rlmPunctUpdateLegacyBw(prWifiVar->eNewBand,
 				       prWifiVar->u2NewPunctBitmap,
 				       prWifiVar->ucNewChannelNumber,
@@ -12520,7 +12518,7 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	/* Keep using the original bw instead of puncturing bw for
 	 * wide band channel ie
 	 */
-	if (prWifiVar->ucNewChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
+	if (ucMaxBandwidth >= MAX_BW_40MHZ) {
 		struct IE_CHANNEL_SWITCH_WRAPPER *prWrapperIe;
 
 		prWrapperIe = (struct IE_CHANNEL_SWITCH_WRAPPER *)pos;
@@ -12528,19 +12526,18 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 
 		pos += sizeof(struct IE_CHANNEL_SWITCH_WRAPPER);
 
-		if (prWifiVar->ucNewChannelWidth == VHT_OP_CHANNEL_WIDTH_80 ||
-		    prWifiVar->ucNewChannelWidth == VHT_OP_CHANNEL_WIDTH_160 ||
-		    prWifiVar->ucNewChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80)
+		if (ucMaxBandwidth == MAX_BW_40MHZ ||
+		    ucMaxBandwidth == MAX_BW_80MHZ ||
+		    ucMaxBandwidth == MAX_BW_160MHZ ||
+		    ucMaxBandwidth == MAX_BW_80_80_MHZ)
 			pos += rlmFillWideBandChannelIE(prAdapter, pos,
 							ucChannelWidth,
 							ucSeg0,
 							ucSeg1);
 
 #if (CFG_SUPPORT_802_11BE == 1)
-		if (prWifiVar->ucNewChannelWidth ==
-			VHT_OP_CHANNEL_WIDTH_320_1 ||
-		    prWifiVar->ucNewChannelWidth ==
-			VHT_OP_CHANNEL_WIDTH_320_2
+		if (ucMaxBandwidth == MAX_BW_320_1MHZ ||
+		    ucMaxBandwidth == MAX_BW_320_2MHZ
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
 		    || prWifiVar->u2NewPunctBitmap
 #endif /* CFG_SUPPORT_SAP_CSA_PUNCTURE */

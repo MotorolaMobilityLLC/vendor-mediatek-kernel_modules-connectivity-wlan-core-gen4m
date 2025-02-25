@@ -12078,92 +12078,115 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t ch_num = 0;
-	enum ENUM_CHNL_SWITCH_MODE ucMode = MODE_DISALLOW_TX;
+	uint8_t ucMode = MODE_DISALLOW_TX;
 	uint32_t u4Ret = 0;
+	uint8_t ucBw = MAX_BW_NUM;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	enum ENUM_BAND eBand = BAND_NULL;
 	int32_t i4BytesWritten = 0;
 	enum ENUM_CSA_STATUS rStatus;
+	struct BSS_INFO *bss;
+	uint32_t u4Idx;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
+		goto error;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
-		return -1;
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
-		ucRoleIdx, &ucBssIdx) !=
-		WLAN_STATUS_SUCCESS)
-		return -1;
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0 ||
+	    p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx,
+				&ucBssIdx) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN, "Invalid interface\n");
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "Invalid interface\n");
+		goto error;
+	}
 
 	DBGLOG(REQ, DEBUG, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, DEBUG, "argc is %i\n", i4Argc);
 
-	if (i4Argc >= 3) {
-		struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(
-					prGlueInfo->prAdapter, ucBssIdx);
-
-		if (bss == NULL)
-			return -1;
-
-		u4Ret = kalkStrtou8(apcArgv[1], 0, (uint8_t *)&eBand);
-		u4Ret = kalkStrtou8(apcArgv[2], 0, (uint8_t *)&ch_num);
-
-		if (i4Argc > 3)
-			u4Ret = kalkStrtou8(apcArgv[3], 0, (uint8_t *)&ucMode);
-		if (ucMode >= MODE_NUM)
-			return WLAN_STATUS_INVALID_DATA;
-
-		if (IS_BSS_APGO(bss)) {
-#if CFG_SUPPORT_IDC_CH_SWITCH
-			rStatus = p2pFuncIsCsaAllowed(prGlueInfo->prAdapter,
-						      bss, ch_num, eBand);
-			if (rStatus == CSA_STATUS_DFS_NOT_SUP)
-				i4BytesWritten +=
-					kalSnprintf(pcCommand + i4BytesWritten,
-					    i4TotalLen - i4BytesWritten,
-					    "\nNOT support DFS CH.\n");
-			else if (rStatus == CSA_STATUS_NON_PSC_NOT_SUP)
-				i4BytesWritten +=
-					kalSnprintf(pcCommand + i4BytesWritten,
-					    i4TotalLen - i4BytesWritten,
-					    "\nNOT support 6G non-PSC CH.\n");
-			else if (rStatus == CSA_STATUS_NON_SAE_NOT_SUP)
-				i4BytesWritten +=
-					kalSnprintf(pcCommand + i4BytesWritten,
-					    i4TotalLen - i4BytesWritten,
-					    "\nNOT support 6G non SAE Authentication.\n");
-			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CSA)
-				i4BytesWritten +=
-					kalSnprintf(pcCommand + i4BytesWritten,
-					    i4TotalLen - i4BytesWritten,
-					    "\nPeer NOT support CSA.\n");
-			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CH)
-				i4BytesWritten +=
-					kalSnprintf(pcCommand + i4BytesWritten,
-					    i4TotalLen - i4BytesWritten,
-					    "\nPeer NOT support CH.\n");
-
-			if (rStatus != CSA_STATUS_SUCCESS)
-				i4BytesWritten +=
-					kalSnprintf(pcCommand + i4BytesWritten,
-					    i4TotalLen - i4BytesWritten,
-					    "Running CSA, but NOT RECOMMENDED, which may cause to disconnect.\n");
-
-			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
-				eBand, ch_num, ucMode, ucRoleIdx);
-#else
-			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
-#endif
-		} else {
-			DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
-		}
-
-		DBGLOG(REQ, DEBUG, "u4Ret is %d\n", u4Ret);
-	} else {
-		DBGLOG(REQ, DEBUG, "Input insufficient\n");
+	bss = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+	if (!IS_BSS_APGO(bss)) {
+		DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "Incorrect bss opmode\n");
+		goto error;
 	}
+
+	if (kalkStrtou8(apcArgv[1], 0, (uint8_t *)&eBand) ||
+	    kalkStrtou8(apcArgv[2], 0, &ch_num))
+		goto error;
+
+	for (u4Idx = 3; u4Idx < i4Argc; u4Idx++) {
+		if (kalStrStr(apcArgv[u4Idx], "mode=")) {
+			if (kalkStrtou8(apcArgv[u4Idx] + 5, 0, &ucMode) != 0 ||
+			    ucMode >= MODE_NUM)
+				goto error;
+		} else if (kalStrStr(apcArgv[u4Idx], "bw=")) {
+			if (kalkStrtou8(apcArgv[u4Idx] + 3, 0, &ucBw) != 0 ||
+			    ucBw >= MAX_BW_NUM)
+				goto error;
+		}
+	}
+
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	rStatus = p2pFuncIsCsaAllowed(prGlueInfo->prAdapter,
+				      bss, ch_num, eBand);
+	if (rStatus == CSA_STATUS_DFS_NOT_SUP) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nNOT support DFS CH.\n");
+	} else if (rStatus == CSA_STATUS_NON_PSC_NOT_SUP) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nNOT support 6G non-PSC CH.\n");
+	} else if (rStatus == CSA_STATUS_NON_SAE_NOT_SUP) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nNOT support 6G non SAE Authentication.\n");
+	} else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CSA) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nPeer NOT support CSA.\n");
+	} else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CH) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nPeer NOT support CH.\n");
+	}
+
+	if (rStatus != CSA_STATUS_SUCCESS)
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nRunning CSA, but NOT RECOMMENDED\n"
+		       "which may cause to disconnect or violate regulations.\n");
+
+#if CFG_SUPPORT_P2P_ECSA
+	if (ucBw < MAX_BW_NUM) {
+		prGlueInfo->prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[ucRoleIdx]
+			->ucEcsaBw = ucBw;
+		prGlueInfo->prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[ucRoleIdx]
+			->fgEcsa = TRUE;
+	}
+#endif
+	u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
+		eBand, ch_num, ucMode, ucBw, ucRoleIdx);
+#else
+	DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
+#endif
+
+	DBGLOG(REQ, DEBUG, "u4Ret is %d\n", u4Ret);
+
+	return i4BytesWritten;
+
+error:
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "FAILED\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "Command template:\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "iwpriv <interface> driver 'csa_ex <band> <channel> [mode=<mode>] [bw=<bandwidth>]'\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "    <band> - 1: 2.4G, 2: 5G, 3: 6G\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "    <mode> - 0: non-blocking TX mode, 1: blocking TX mode\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "    <bandwidth> - 0: BW20, 1: BW40, 2: BW80, 3: BW160, 4: BW80+80, 5: BW320-1, 6: BW320-2\n");
 
 	return i4BytesWritten;
 }
@@ -25935,7 +25958,7 @@ error:
 				      "Command template\n");
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				      i4TotalLen - i4BytesWritten,
-				      "iwpriv <interface> band=<band> channel=<channel> [bw=<bandwidth>] [link=<link>]\n");
+				      "iwpriv <interface> driver 'p2p2_gc_csa band=<band> channel=<channel> [bw=<bandwidth>] [link=<link>]'\n");
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				      i4TotalLen - i4BytesWritten,
 				      "    <band> - 1: 2.4G, 2: 5G, 3: 6G\n");

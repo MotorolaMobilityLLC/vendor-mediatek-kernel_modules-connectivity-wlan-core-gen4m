@@ -142,7 +142,6 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	 */
 	prBssInfo->fg40mBwAllowed = FALSE;
 	prBssInfo->fgAssoc40mBwAllowed = FALSE;
-	prBssInfo->eBssSCO = CHNL_EXT_SCN;
 	prBssInfo->ucHtOpInfo1 = 0;
 
 	/* Check if AP can set its bw to 40MHz
@@ -151,13 +150,13 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	 * in order to remain in SCC case
 	 */
 	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
-
+		/* GO/SAP decides bss params by itself, including SCO.
+		 * GC follows GO's SCO and assuming SCO under BssInfo
+		 * has been updated elsewhere.
+		 */
 		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 			prBssInfo->eBssSCO =
 				rlmGetScoForAP(prAdapter, prBssInfo);
-		else
-			prBssInfo->eBssSCO =
-				rlmGetSco(prAdapter, prBssInfo);
 
 		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
 			prBssInfo->fg40mBwAllowed = TRUE;
@@ -167,6 +166,8 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 				(((uint32_t) prBssInfo->eBssSCO)
 				| HT_OP_INFO1_STA_CHNL_WIDTH);
 		}
+	} else {
+		prBssInfo->eBssSCO = CHNL_EXT_SCN;
 	}
 
 	/* Filled the VHT BW/S1/S2 and MCS rate set */
@@ -260,6 +261,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 			"Wrong AP S1 parameter setting, back to BW20!!!\n");
 
 		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+		prBssInfo->eBssSCO = 0;
 		prBssInfo->ucVhtChannelFrequencyS1 = 0;
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	}
@@ -663,6 +665,10 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 	eSCO = CHNL_EXT_SCN;
 	eTempSCO = CHNL_EXT_SCN;
 
+	if (rlmVhtBw2OpBw(prBssInfo->ucVhtChannelWidth,
+			  prBssInfo->eBssSCO) == MAX_BW_20MHZ)
+		return CHNL_EXT_SCN;
+
 	if (prBssInfo->eBand == BAND_2G4) {
 		if (prBssInfo->ucPrimaryChannel != 14)
 			eSCO = (prBssInfo->ucPrimaryChannel > 7)
@@ -855,7 +861,7 @@ static enum ENUM_CHNL_EXT rlmGetSco(struct ADAPTER *prAdapter,
 		} else if (cnmGetBssMaxBw(prAdapter,
 			prBssInfo->ucBssIndex) > MAX_BW_40MHZ) {
 			/* P: PriChnlFreq,
-			 * A:CHNL_EXT_SCA,
+			 * A: CHNL_EXT_SCA,
 			 * B: CHNL_EXT_SCB, -:BW SPAN 5M
 			 */
 			/* --|----|--CenterFreq1--|----|-- */
@@ -967,6 +973,7 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
 	uint8_t ucCh,
+	uint8_t ucBw,
 	uint8_t ucBssIdx,
 	struct RF_CHANNEL_INFO *prRfChnlInfo)
 {
@@ -987,24 +994,24 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	prBssInfo->eBand = eBandCsa;
 	prRfChnlInfo->ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
 	prRfChnlInfo->eSco = eScoCsa;
+	if (ucBw < MAX_BW_NUM && ucBw < prRfChnlInfo->ucChnlBw)
+		prRfChnlInfo->ucChnlBw = ucBw;
 #if (CFG_SUPPORT_802_11BE == 1)
-	if ((!(prBssInfo->ucPhyTypeSet &
-		PHY_TYPE_BIT_EHT)) &&
-		(prRfChnlInfo->ucChnlBw >=
-		MAX_BW_320_1MHZ))
+	if (!(prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT) &&
+	    prRfChnlInfo->ucChnlBw >= MAX_BW_320_1MHZ)
 		prRfChnlInfo->ucChnlBw = MAX_BW_160MHZ;
 #endif
+	nicReviseBwByCh(prAdapter, eBand, ucCh, eScoCsa,
+			&prRfChnlInfo->ucChnlBw);
 	prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
 
-	prRfChnlInfo->u2PriChnlFreq =
-		nicChannelNum2Freq(ucCh, eBandCsa) / 1000;
+	prRfChnlInfo->u2PriChnlFreq = nicChannelNum2Freq(ucCh, eBandCsa) / 1000;
 	prRfChnlInfo->u4CenterFreq1 = nicGetS1Freq(eBandCsa, ucCh, eScoCsa,
 		prRfChnlInfo->ucChnlBw);
 	prRfChnlInfo->u4CenterFreq2 = nicGetS2Freq(eBandCsa, ucCh,
 		prRfChnlInfo->ucChnlBw);
 
-	if ((eBand == BAND_5G) &&
-		(ucCh >= 52 && ucCh <= 144))
+	if (eBand == BAND_5G && ucCh >= 52 && ucCh <= 144)
 		prRfChnlInfo->fgDFS = TRUE;
 	else
 		prRfChnlInfo->fgDFS = FALSE;
@@ -1718,9 +1725,10 @@ static void p2pRlmHandleChanUsageReqFrame(struct ADAPTER *prAdapter,
 
 		if (fgReqAcceptable == TRUE)
 			cnmIdcCsaReq(prAdapter, rChnlInfo.eBand,
-				     prIeChanUsageEntry->ucChannel,
-				     MODE_DISALLOW_TX,
-				     prBssInfo->u4PrivateData);
+			     prIeChanUsageEntry->ucChannel,
+			     MODE_DISALLOW_TX,
+			     rlmOpClassToBandwidth(rParam.ucTargetOpClass),
+			     prBssInfo->u4PrivateData);
 	}
 		break;
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */

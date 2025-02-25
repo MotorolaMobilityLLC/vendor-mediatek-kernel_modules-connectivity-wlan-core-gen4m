@@ -1508,6 +1508,8 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				    prBssInfo->fgIsSwitchingChnl)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to CSA\n");
+				fgDrop = TRUE;
+				break;
 			}
 
 			prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
@@ -2948,7 +2950,6 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
 	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
 	uint8_t ucRoleIdx;
-	u_int8_t fgIsCrossBand = FALSE;
 	u_int8_t fgIsPureAp;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucUnsolProbeResp = prAdapter->rWifiVar.ucUnsolProbeResp;
@@ -2971,9 +2972,6 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	prFilsInfo = &prP2pSpecBssInfo->rFilsInfo;
 	prUnsolProbeInfo = &prP2pSpecBssInfo->rUnsolProbeInfo;
 
-	if (prBssInfo->eBand != prP2pChnlReqInfo->eBand)
-		fgIsCrossBand = TRUE;
-
 #if (CFG_NAN_CONCURRENCY == 1)
 	if (prP2pChnlReqInfo->ucReqChnlNum !=
 		prBssInfo->ucPrimaryChannel)
@@ -2984,6 +2982,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	prBssInfo->ucPrimaryChannel = prP2pChnlReqInfo->ucReqChnlNum;
 	prBssInfo->eBand = prP2pChnlReqInfo->eBand;
 	prBssInfo->eBssSCO = prP2pChnlReqInfo->eChnlSco;
+	prBssInfo->ucVhtChannelWidth = prP2pChnlReqInfo->eChannelWidth;
+	prBssInfo->ucVhtChannelFrequencyS1 = prP2pChnlReqInfo->ucCenterFreqS1;
+	prBssInfo->ucVhtChannelFrequencyS2 = prP2pChnlReqInfo->ucCenterFreqS2;
 
 #if (CFG_SUPPORT_SAP_CSA_PUNCTURE == 1)
 	if (prP2pChnlReqInfo->u2PunctBitmap != prBssInfo->u2EhtDisSubChanBitmap)
@@ -7620,7 +7621,7 @@ static u_int8_t p2pFuncSwitchSapChannelToDbdc(
 			return FALSE;
 
 		rlmGetChnlInfoForCSA(prAdapter,
-			BAND_2G4, 6,
+			BAND_2G4, 6, MAX_BW_NUM,
 			ucBssIdx, &rRfChnlInfo);
 
 		cnmSapChannelSwitchReq(prAdapter,
@@ -9747,7 +9748,7 @@ bool p2pFuncSwitchSapChannel(
 	rlmGetChnlInfoForCSA(prAdapter,
 		rSapSwitchCand[0].eRfBand,
 		rSapSwitchCand[0].ucChUpperBound,
-		ucBssIdx, &rRfChnlInfo);
+		MAX_BW_NUM, ucBssIdx, &rRfChnlInfo);
 
 #if CFG_SUPPORT_CCM
 	if (prAdapter->fgIsCcmPending) {

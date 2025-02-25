@@ -578,7 +578,7 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
-	uint8_t ch_num, uint8_t ucMode, uint8_t ucRoleIdx);
+	uint8_t ch_num, uint8_t ucMode, uint8_t ucBw, uint8_t ucRoleIdx);
 
 /*----------------------------------------------------------------------------*/
 /*!
