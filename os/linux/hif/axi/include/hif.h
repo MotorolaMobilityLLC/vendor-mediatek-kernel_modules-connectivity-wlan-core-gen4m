@@ -238,6 +238,10 @@ struct GL_HIF_INFO {
 #endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	u_int8_t fgIsTriggerRxTimeout;
+
+	uint64_t u8MsduRptNowTime;
+	uint64_t u8MsduRptTime;
+	uint32_t u8MsduRptCnt;
 };
 
 struct BUS_INFO {

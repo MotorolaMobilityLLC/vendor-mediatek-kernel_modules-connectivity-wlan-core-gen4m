@@ -3573,6 +3573,7 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo;
 	u_int8_t enableL1ss = FALSE;
 	u_int8_t isL0Status = FALSE;
+	uint64_t u8Now;
 
 	if (pcie_vir_addr == NULL) {
 		DBGLOG(HAL, ERROR, "get pcie_vir_addr null\n");
@@ -3635,6 +3636,12 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 #endif
 			writel(0xf, (pcie_vir_addr + 0x194));
 
+			u8Now = kalGetBootTime();
+			if (prHifInfo->u8TsL1) {
+				prHifInfo->u8TsDiffL1 += TIME_ABS_DIFF64(
+					u8Now, prHifInfo->u8TsL1);
+			}
+			prHifInfo->u8TsL1_2 = u8Now;
 
 			DBGLOG(HAL, LOUD, "Enable aspm L1.1/L1.2..\n");
 		} else {
@@ -3687,6 +3694,13 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			    0x74030194, &value);
 #endif
 		writel(value1, (pcie_vir_addr + 0x194));
+
+		u8Now = kalGetBootTime();
+		if (prHifInfo->u8TsL1_2) {
+			prHifInfo->u8TsDiffL1_2 += TIME_ABS_DIFF64(
+				u8Now, prHifInfo->u8TsL1_2);
+		}
+		prHifInfo->u8TsL1 = u8Now;
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
 			DBGLOG(HAL, LOUD, "Disable aspm L1..\n");

@@ -358,6 +358,10 @@ struct GL_HIF_INFO {
 	uint32_t u4PcieASPM;
 	enum pcie_aspm_state eCurPcieState;
 	enum pcie_aspm_state eNextPcieState;
+	uint64_t u8TsL1;
+	uint64_t u8TsL1_2;
+	uint64_t u8TsDiffL1;
+	uint64_t u8TsDiffL1_2;
 #endif
 
 	unsigned long ulHifIntEnBits;
@@ -385,6 +389,10 @@ struct GL_HIF_INFO {
 	u_int8_t fgIsDebugSopOnGoing;
 
 	u_int8_t fgIsTriggerRxTimeout;
+
+	uint64_t u8MsduRptNowTime;
+	uint64_t u8MsduRptTime;
+	uint32_t u8MsduRptCnt;
 };
 
 struct BUS_INFO {

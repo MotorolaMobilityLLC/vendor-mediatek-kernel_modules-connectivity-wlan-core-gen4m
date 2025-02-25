@@ -1903,6 +1903,10 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 #endif
 
+	prHifInfo->u8MsduRptTime += TIME_ABS_DIFF64(
+		prHifInfo->u8MsduRptNowTime, prToken->u8Tm);
+	prHifInfo->u8MsduRptCnt++;
+
 	if (prToken->ucBssIndex < MAX_BSSID_NUM) {
 		if (GLUE_GET_REF_CNT(prTokenInfo->u4TxBssCnt[
 					     prToken->ucBssIndex]) == 0)
@@ -2698,12 +2702,15 @@ static void halDefaultProcessMsduReport(struct ADAPTER *prAdapter,
 void halRxProcessMsduReport(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
+	struct GL_HIF_INFO *prHifInfo;
 	struct RX_DESC_OPS_T *prRxDescOps;
 	struct QUE rFreeQueue;
 
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	QUEUE_INITIALIZE(&rFreeQueue);
 
+	prHifInfo->u8MsduRptNowTime = kalGetBootTime();
 	if (prRxDescOps->nic_rxd_handle_host_rpt)
 		prRxDescOps->nic_rxd_handle_host_rpt(
 			prAdapter, prSwRfb, &rFreeQueue);
@@ -7560,10 +7567,21 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_PCIE_ASPM
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" ASPM[%d/%d]",
+		" ASPM[%d/%d][%llu%%]",
 		prHifInfo->eCurPcieState,
-		prHifInfo->eNextPcieState);
+		prHifInfo->eNextPcieState,
+		prHifInfo->u8TsDiffL1_2 * 100 /
+		(prHifInfo->u8TsDiffL1 + prHifInfo->u8TsDiffL1_2));
+	prHifInfo->u8TsDiffL1 = 0;
+	prHifInfo->u8TsDiffL1_2 = 0;
 #endif
+	pos += kalSnprintf(
+		buf + pos, u4BufferSize - pos,
+		" MsduRpt[%llu]",
+		prHifInfo->u8MsduRptCnt ?
+		prHifInfo->u8MsduRptTime / prHifInfo->u8MsduRptCnt : 0);
+	prHifInfo->u8MsduRptTime = 0;
+	prHifInfo->u8MsduRptCnt = 0;
 
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
