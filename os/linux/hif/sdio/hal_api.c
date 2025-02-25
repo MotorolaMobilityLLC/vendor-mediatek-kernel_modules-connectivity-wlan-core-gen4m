@@ -2560,7 +2560,8 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 		nicTxRelease(prAdapter, 0x0);
 	}
 
-	if (u4IntrBits & SDIO_MAILBOX_FUNC_READ_REG_IDX)
+	if (u4IntrBits & (SDIO_MAILBOX_FUNC_READ_REG_IDX |
+		SDIO_MAILBOX_FUNC_WRITE_REG_IDX))
 		prAdapter->fgGetMailBoxRWAck = TRUE;
 
 	if ((u4IntrBits & ~WHISR_D2H_WKUP_BY_RX_PACKET) != 0)
