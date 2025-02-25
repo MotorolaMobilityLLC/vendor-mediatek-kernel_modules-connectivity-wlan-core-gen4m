@@ -13358,6 +13358,11 @@ uint32_t __weak kalGetTxBigCpuMask(void)
 	return 0xFF;
 }
 
+uint32_t __weak kalGetCurCpuMask(void)
+{
+	return 0xFF;
+}
+
 /* mimic store_rps_map as net-sysfs.c does */
 int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 {

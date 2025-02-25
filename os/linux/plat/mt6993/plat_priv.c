@@ -67,6 +67,8 @@
 #include "dvfsrc-exp.h"
 #include <linux/interconnect.h>
 
+extern uint32_t (*wlan_cur_cpumask_req_hook)(void);
+
 static uint32_t u4EmiMetOffset = 0x18000;
 static uint32_t u4ProjectId = 6993;
 
@@ -162,6 +164,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
+		.u4CurCpuMask = 0,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV1 */
@@ -207,6 +210,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_LITTLE,
+		.u4CurCpuMask = 0x0f,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV2 */
@@ -252,6 +256,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_LITTLE,
+		.u4CurCpuMask = 0x0f,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV3 */
@@ -297,6 +302,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
+		.u4CurCpuMask = 0xff,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV4 */
@@ -342,6 +348,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4DramBoostLv = 3,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
+		.u4CurCpuMask = 0xff,
 	}
 };
 
@@ -841,6 +848,7 @@ static void __kalBoostCpuInit(struct ADAPTER *prAdapter)
 		eCurrBoost = ENUM_CPU_BOOST_STATUS_LV0;
 		kalUpdateBoostInfo(prAdapter);
 		kalSetCpuBoost(prAdapter, &rBoostInfo[eCurrBoost]);
+		wlan_cur_cpumask_req_hook = kalGetCurCpuMask;
 	}
 }
 
@@ -1352,3 +1360,11 @@ uint32_t kalVnfGetVoltLowBnd(void)
 	return VOLT_INFO_LOW_BOUND;
 }
 #endif /* #if (CFG_VOLT_INFO == 1) */
+
+uint32_t kalGetCurCpuMask(void)
+{
+	if (eCurrBoost >= ENUM_CPU_BOOST_STATUS_NUM)
+		return 0;
+
+	return rBoostInfo[eCurrBoost].u4CurCpuMask;
+}

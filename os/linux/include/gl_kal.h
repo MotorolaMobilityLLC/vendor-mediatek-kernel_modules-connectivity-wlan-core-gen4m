@@ -319,6 +319,7 @@ struct BOOST_INFO {
 	u_int8_t fgWifiNappingForceDis;
 	enum CPU_CORE_TYPE eSkbAllocWorkCoreType;
 	enum CPU_CORE_TYPE eTxFreeSkbWorkCoreType;
+	uint32_t u4CurCpuMask;
 };
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
@@ -2905,6 +2906,8 @@ u_int8_t kalIsSupportRro(void);
 uint32_t kalGetMawdVer(void);
 uint32_t kalGetConnInfraId(void);
 #endif
+
+uint32_t kalGetCurCpuMask(void);
 
 #if CFG_SUPPORT_CPU_STAT
 #define CPU_STAT_INC_CNT(pr, idx) \
