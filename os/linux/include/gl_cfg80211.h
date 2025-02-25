@@ -892,6 +892,8 @@ int testmode_get_ml_link_state(struct wiphy *wiphy,
 int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+int testmode_set_keep_alive_interval(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #if (CFG_TC10_FEATURE == 1)
 int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);

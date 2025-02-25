@@ -2912,6 +2912,14 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.policy    = NULL
 	},
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
+	{
+		.pcCmdStr  = CMD_SET_KEEP_ALIVE_INTERVAL,
+		.pfHandler = testmode_set_keep_alive_interval,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
 #if (CFG_TC10_FEATURE == 1)
 	{
 		.pcCmdStr  = CMD_SET_CUSTOM_TX_POWER_CALLING,

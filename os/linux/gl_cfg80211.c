@@ -6467,6 +6467,31 @@ int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
 #endif  /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+int testmode_set_keep_alive_interval(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	uint8_t aucCmd[30] = {0};
+	uint8_t strLen = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -EINVAL;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, TRACE, "command is %s\n", pcCommand);
+
+	strLen = kalSnprintf(aucCmd, sizeof(aucCmd),
+			"%s %s", "AgingPeriod", apcArgv[1]);
+
+	return aisSendChipConfigCmd(prAdapter, aucCmd, TRUE);
+}
+
 #if (CFG_TC10_FEATURE == 1)
 int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)

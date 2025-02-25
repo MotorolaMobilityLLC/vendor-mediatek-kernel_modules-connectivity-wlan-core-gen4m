@@ -1316,4 +1316,7 @@ void aisFsmIcsLogControl(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif /* CFG_SUPPORT_ICS_STA */
 
+uint32_t aisSendChipConfigCmd(struct ADAPTER *prAdapter,
+	uint8_t *aucCmd, uint8_t fgIsOid);
+
 #endif /* _AIS_FSM_H */

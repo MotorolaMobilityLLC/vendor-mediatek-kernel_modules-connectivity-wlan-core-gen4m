@@ -61,6 +61,8 @@
  */
 #define RCPI_THRESHOLD_ROAM_TO_5G_6G  90 /* rssi -65 */
 
+#define AIS_DEFAULT_AGING_PERIOD	30 /* second */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2887,29 +2889,47 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 	}
 }
 
-#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
-void aisSendChipConfigCmd(struct ADAPTER *prAdapter, char *aucCmd)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This routine handles set chip from different thread context.
+ *
+ * @param[in] aucCmd         String command to set chip.
+ * @param[in] fgIsOid        If caller is from main_thread context, set FALSE.
+ *                           Otherwise, set TRUE.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t aisSendChipConfigCmd(struct ADAPTER *prAdapter,
+	uint8_t *aucCmd, uint8_t fgIsOid)
 {
-	struct CMD_CHIP_CONFIG rCmdChipConfig;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
 
-	kalMemZero(&rCmdChipConfig, sizeof(rCmdChipConfig));
-	rCmdChipConfig.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
-	rCmdChipConfig.u2MsgSize = kalStrnLen(aucCmd, WLAN_CFG_VALUE_LEN_MAX);
-	kalStrnCpy(rCmdChipConfig.aucCmd, aucCmd, WLAN_CFG_VALUE_LEN_MAX);
+	kalMemZero(&rChipConfigInfo, sizeof(rChipConfigInfo));
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rChipConfigInfo.u2MsgSize = kalStrnLen(aucCmd, WLAN_CFG_VALUE_LEN_MAX);
+	kalStrnCpy(rChipConfigInfo.aucCmd, aucCmd, WLAN_CFG_VALUE_LEN_MAX);
 
-	wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-			CMD_ID_CHIP_CONFIG,	/* ucCID */
-			TRUE,	/* fgSetQuery */
-			FALSE,	/* fgNeedResp */
-			FALSE,	/* fgIsOid */
-			NULL,	/* pfCmdDoneHandler */
-			NULL,	/* pfCmdTimeoutHandler */
-			sizeof(struct CMD_CHIP_CONFIG),
-			(uint8_t *) &rCmdChipConfig,
-			NULL,
-			0);
+	DBGLOG(REQ, TRACE, "Notify FW %s, strlen=%d",
+		aucCmd, rChipConfigInfo.u2MsgSize);
+
+	if (fgIsOid) {
+		rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidSetChipConfig,
+			&rChipConfigInfo,
+			sizeof(struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT),
+			&u4BufLen);
+	} else {
+		rStatus = wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT),
+			&u4BufLen, fgIsOid);
+	}
+
+	return rStatus;
 }
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 void aisMultiStaSetQuoteTime(struct ADAPTER *prAdapter, uint8_t fgSetQuoteTime)
 {
 	uint8_t aucEnableCnmDualSTA[20];
@@ -2917,7 +2937,7 @@ void aisMultiStaSetQuoteTime(struct ADAPTER *prAdapter, uint8_t fgSetQuoteTime)
 	kalMemZero(aucEnableCnmDualSTA, sizeof(aucEnableCnmDualSTA));
 	kalSnprintf(aucEnableCnmDualSTA, sizeof(aucEnableCnmDualSTA),
 		"EnableCnmDualSTA %d", fgSetQuoteTime ? 1 : 0);
-	aisSendChipConfigCmd(prAdapter, aucEnableCnmDualSTA);
+	aisSendChipConfigCmd(prAdapter, aucEnableCnmDualSTA, FALSE);
 
 	if (fgSetQuoteTime) {
 		uint8_t aucWlanQuoteTime[40];
@@ -2927,14 +2947,14 @@ void aisMultiStaSetQuoteTime(struct ADAPTER *prAdapter, uint8_t fgSetQuoteTime)
 			"MccDualStaAIS0QuotaTimeInUs %d",
 			prAdapter->u4MultiStaPrimaryInterface ==
 			AIS_DEFAULT_INDEX ? 300000 : 120000);
-		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime);
+		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime, FALSE);
 
 		kalMemZero(aucWlanQuoteTime, sizeof(aucWlanQuoteTime));
 		kalSnprintf(aucWlanQuoteTime, sizeof(aucWlanQuoteTime),
 			"MccDualStaAIS1QuotaTimeInUs %d",
 			prAdapter->u4MultiStaPrimaryInterface ==
 			AIS_SECONDARY_INDEX ? 300000 : 120000);
-		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime);
+		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime, FALSE);
 	}
 }
 
@@ -5717,6 +5737,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 	struct BSS_INFO *prAisBssInfo;
 	struct PARAM_BSSID_EX *prCurrBssid;
+	uint8_t aucCmd[30] = {0};
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5833,6 +5854,11 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 
 	prAisFsmInfo->ucIsSapCsaPending = FALSE;
+
+	/* Reset AgingPeriod */
+	kalSnprintf(aucCmd, sizeof(aucCmd),
+		"%s %d", "AgingPeriod", AIS_DEFAULT_AGING_PERIOD);
+	aisSendChipConfigCmd(prAdapter, aucCmd, FALSE);
 }
 
 /*----------------------------------------------------------------------------*/
