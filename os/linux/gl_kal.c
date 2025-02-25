@@ -175,13 +175,6 @@ static void *pvIoBuffer;
 static uint32_t pvIoBufferSize;
 static uint32_t pvIoBufferUsage;
 
-static struct KAL_HALT_CTRL_T rHaltCtrl = {
-	.lock = __SEMAPHORE_INITIALIZER(rHaltCtrl.lock, 1),
-	.owner = NULL,
-	.fgHalt = TRUE,
-	.fgHeldByKalIoctl = FALSE,
-	.u4HoldStart = 0,
-};
 /* framebuffer callback related variable and status flag */
 u_int8_t wlan_fb_power_down = FALSE;
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -1119,7 +1112,7 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb = NULL;
 	uint32_t u4TxHeadRoomSize = 0;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
 
 	if (fgIsTx) {
 		if (prChipInfo) {
@@ -5197,15 +5190,15 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	/* return WLAN_STATUS_ADAPTER_NOT_READY; */
 	/* } */
 
-	r = down_killable(&g_halt_sem);
+	r = down_killable(&prGlueInfo->halt_sem);
 	if (r) {
-		DBGLOG(OID, WARN, "down_killable(g_halt_sem) = %d\n", r);
+		DBGLOG(OID, WARN, "down_killable(halt_sem) = %d\n", r);
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (g_u4HaltFlag) {
-		up(&g_halt_sem);
-		DBGLOG(OID, WARN, "g_u4HaltFlag = %u\n", g_u4HaltFlag);
+	if (prGlueInfo->u4HaltFlag) {
+		up(&prGlueInfo->halt_sem);
+		DBGLOG(OID, WARN, "u4HaltFlag = %u\n", prGlueInfo->u4HaltFlag);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
@@ -5214,20 +5207,20 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	r = down_killable(&prGlueInfo->ioctl_sem);
 	if (r) {
 		DBGLOG(OID, WARN, "down_killable(ioctl_sem) = %d\n", r);
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 		return WLAN_STATUS_FAILURE;
 	}
 
 	if (kalIsResetting()) {
 		up(&prGlueInfo->ioctl_sem);
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 		DBGLOG(OID, WARN, "Driver is resetting.\n");
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
 	if (wlanIsChipAssert(prGlueInfo->prAdapter)) {
 		up(&prGlueInfo->ioctl_sem);
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 		DBGLOG(OID, WARN, "wlanIsChipAssert.\n");
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
@@ -5236,7 +5229,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 		dump_stack();
 		DBGLOG(OID, WARN, "skip executing request.\n");
 		up(&prGlueInfo->ioctl_sem);
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -5360,7 +5353,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	clear_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag);
 
 	up(&prGlueInfo->ioctl_sem);
-	up(&g_halt_sem);
+	up(&prGlueInfo->halt_sem);
 
 	KAL_BOOT_TIME_END();
 	if (ret != WLAN_STATUS_SUCCESS)
@@ -9027,6 +9020,9 @@ void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo)
 {
 	struct miscdevice *prMiscDev = NULL;
 	int ret = 0;
+#if CFG_SUPPORT_MULTI_CARD
+	uint32_t u4DevIdx = 0;
+#endif
 
 	if (!prGlueInfo || prGlueInfo->fgWlanUevent)
 		return;
@@ -9039,6 +9035,17 @@ void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo)
 #else
 	prMiscDev->name = "wlan";
 #endif
+#if CFG_SUPPORT_MULTI_CARD
+	u4DevIdx = wlanSearchDevIdx(prGlueInfo->prDev);
+	u4DevIdx = (u4DevIdx == 0xFF) ? u4WlanDevNum : u4DevIdx;
+
+	kalSnprintf(
+		prGlueInfo->aucMiscName,
+		sizeof(prGlueInfo->aucMiscName),
+		"%s%d", prMiscDev->name, u4DevIdx);
+
+	prMiscDev->name = prGlueInfo->aucMiscName;
+#endif /* CFG_SUPPORT_MULTI_CARD */
 	prMiscDev->minor = MISC_DYNAMIC_MINOR;
 	ret = misc_register(prMiscDev);
 	if (ret) {
@@ -10968,12 +10975,12 @@ void kalFreeTxMsduWorker(struct work_struct *work)
 	struct QUE *prTmpQue = &rTmpQue;
 	struct MSDU_INFO *prMsduInfo;
 
-	if (g_u4HaltFlag)
-		return;
-
 	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO,
 				  rTxMsduFreeWork);
 	prAdapter = prGlueInfo->prAdapter;
+
+	if (prGlueInfo->u4HaltFlag)
+		return;
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
@@ -11002,77 +11009,106 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 	schedule_work(&prAdapter->prGlueInfo->rTxMsduFreeWork);
 }
 #endif
-int32_t kalHaltLock(uint32_t waitMs)
+int32_t kalHaltLock(struct ADAPTER *prAdapter, uint32_t waitMs)
 {
 	int32_t i4Ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct KAL_HALT_CTRL_T *prHaltCtrl = NULL;
+
+	prGlueInfo = (prAdapter) ? prAdapter->prGlueInfo : NULL;
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
+		return -EINVAL;
+	}
+	prHaltCtrl = &prGlueInfo->rHaltCtrl;
 
 	if (waitMs) {
-		i4Ret = down_timeout(&rHaltCtrl.lock,
+		i4Ret = down_timeout(&prHaltCtrl->lock,
 				     MSEC_TO_JIFFIES(waitMs));
 		if (!i4Ret)
 			goto success;
 		if (i4Ret != -ETIME)
 			return i4Ret;
 
-		prGlueInfo = wlanGetGlueInfo();
-		if (rHaltCtrl.fgHeldByKalIoctl) {
+		if (prHaltCtrl->fgHeldByKalIoctl) {
 			DBGLOG(INIT, ERROR,
 			       "kalIoctl was executed longer than %u ms, show backtrace of tx_thread!\n",
-			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
+			       kalGetTimeTick() - prHaltCtrl->u4HoldStart);
 			if (prGlueInfo)
 				kal_show_stack(prGlueInfo->prAdapter,
 					prGlueInfo->main_thread, NULL);
 		} else {
 			DBGLOG(INIT, ERROR,
 			       "halt lock held by %s pid %d longer than %u ms!\n",
-			       rHaltCtrl.owner->comm, rHaltCtrl.owner->pid,
-			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
+			       prHaltCtrl->owner->comm, prHaltCtrl->owner->pid,
+			       kalGetTimeTick() - prHaltCtrl->u4HoldStart);
 			if (prGlueInfo)
 				kal_show_stack(prGlueInfo->prAdapter,
-					rHaltCtrl.owner, NULL);
+					prHaltCtrl->owner, NULL);
 		}
 		return i4Ret;
 	}
-	down(&rHaltCtrl.lock);
+	down(&prHaltCtrl->lock);
 success:
-	rHaltCtrl.owner = current;
-	rHaltCtrl.u4HoldStart = kalGetTimeTick();
+	prHaltCtrl->owner = current;
+	prHaltCtrl->u4HoldStart = kalGetTimeTick();
 	return 0;
 }
 
-int32_t kalHaltTryLock(void)
+int32_t kalHaltTryLock(struct GLUE_INFO *prGlueInfo)
 {
 	int32_t i4Ret = 0;
 
-	i4Ret = down_trylock(&rHaltCtrl.lock);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
+		return 0;
+	}
+
+	i4Ret = down_trylock(&prGlueInfo->rHaltCtrl.lock);
 	if (i4Ret)
 		return i4Ret;
-	rHaltCtrl.owner = current;
-	rHaltCtrl.u4HoldStart = kalGetTimeTick();
+	prGlueInfo->rHaltCtrl.owner = current;
+	prGlueInfo->rHaltCtrl.u4HoldStart = kalGetTimeTick();
 	return 0;
 }
 
-void kalHaltUnlock(void)
+void kalHaltUnlock(struct GLUE_INFO *prGlueInfo)
 {
-	if (kalGetTimeTick() - rHaltCtrl.u4HoldStart >
+	struct KAL_HALT_CTRL_T *prHaltCtrl = NULL;
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
+		return;
+	}
+	prHaltCtrl = &prGlueInfo->rHaltCtrl;
+
+	if (kalGetTimeTick() - prHaltCtrl->u4HoldStart >
 	    WLAN_OID_TIMEOUT_THRESHOLD * 2 &&
-	    rHaltCtrl.owner)
+	    prHaltCtrl->owner)
 		DBGLOG(INIT, ERROR,
 		       "process %s pid %d hold halt lock longer than 4s!\n",
-		       rHaltCtrl.owner->comm, rHaltCtrl.owner->pid);
-	rHaltCtrl.owner = NULL;
-	up(&rHaltCtrl.lock);
+		       prHaltCtrl->owner->comm, prHaltCtrl->owner->pid);
+	prHaltCtrl->owner = NULL;
+	up(&prHaltCtrl->lock);
 }
 
-void kalSetHalted(u_int8_t fgHalt)
+void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt)
 {
-	rHaltCtrl.fgHalt = fgHalt;
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
+		return;
+	}
+	prGlueInfo->rHaltCtrl.fgHalt = fgHalt;
 }
 
-u_int8_t kalIsHalted(void)
+u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo)
 {
-	return rHaltCtrl.fgHalt;
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
+		return FALSE;
+	}
+	return prGlueInfo->rHaltCtrl.fgHalt;
 }
 
 
@@ -13176,6 +13212,41 @@ int32_t __weak kalGetFwFlavorByPlat(uint8_t *flavor)
 	return 0;
 }
 
+int32_t kalGetFwFlavorByGlue(struct GLUE_INFO *prGlueInfo, uint8_t *flavor)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+	uint32_t u4StrLen = 0;
+
+#if defined(_HIF_PCIE) && (CFG_SUPPORT_MULTI_CARD == 1)
+	if (!prGlueInfo) {
+		DBGLOG(SW4, ERROR, "prGlueInfo is NULL\n");
+		return -1;
+	}
+
+	prDriverData = get_platform_driver_data_by_dev(
+		(void *) prGlueInfo->rHifInfo.pdev);
+#else
+	prDriverData = get_platform_driver_data();
+#endif
+
+	if (prDriverData && prDriverData->fw_flavor) {
+		u4StrLen = kalStrLen(prDriverData->fw_flavor);
+		if (u4StrLen >= CFG_FW_FLAVOR_MAX_LEN) {
+			DBGLOG(SW4, WARN,
+				"get flavor length=%u over %u\n",
+				u4StrLen, CFG_FW_FLAVOR_MAX_LEN);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		kalMemCopy(flavor, prDriverData->fw_flavor, u4StrLen);
+		DBGLOG(SW4, TRACE, "kalGetFwFlavor:%s (%u)\n",
+			flavor, u4StrLen);
+		return 1;
+	}
+
+	return kalGetFwFlavorByPlat(flavor);
+}
+
 int32_t kalGetFwFlavor(uint8_t *flavor)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
@@ -13478,7 +13549,7 @@ int32_t kalPerMonSetForceEnableFlag(struct GLUE_INFO *prGlueInfo, uint8_t uFlag)
 	       "uFlag:%d, wlan_perf_monitor_ctrl_flag:%d\n", uFlag,
 	       *prPerfEnable);
 
-	if (*prPerfEnable && !kalIsHalted())
+	if (*prPerfEnable && !kalIsHalted(prGlueInfo))
 		kalPerMonEnable(prGlueInfo);
 
 	return 0;
@@ -13556,11 +13627,11 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	if (eEvent == WLAN_FB_EVENT_IGNORE)
 		goto end;
 
-	if (kalHaltTryLock())
+	if (kalHaltTryLock(prGlueInfo))
 		goto end;
 
-	if (kalIsHalted()) {
-		kalHaltUnlock();
+	if (kalIsHalted(prGlueInfo)) {
+		kalHaltUnlock(prGlueInfo);
 		goto end;
 	}
 
@@ -13584,7 +13655,7 @@ static int wlan_fb_notifier_callback(struct notifier_block
 		break;
 	}
 
-	kalHaltUnlock();
+	kalHaltUnlock(prGlueInfo);
 	TRACE_FUNC(SW4, DEBUG, "%s: end\n");
 end:
 	return 0;
@@ -13762,7 +13833,6 @@ void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
 		CONTAINER_OF(work, struct GL_CH_SWITCH_WORK,
 			rChSwitchNotifyWork);
-	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 
@@ -13779,7 +13849,6 @@ void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
-	prGlueInfo = prAdapter->prGlueInfo;
 
 	__kalIndicateChannelSwitch(prAdapter->prGlueInfo,
 				prBssInfo->eBssSCO,
@@ -18066,7 +18135,7 @@ int thermal_cbs_register(struct platform_device *pdev)
 		goto exit;
 	}
 
-	data = get_platform_driver_data();
+	data = get_platform_driver_data_by_dev((void *) pdev);
 	chip_info = data->chip_info;
 	thermal_info = &chip_info->thermal_info;
 
@@ -18109,7 +18178,7 @@ void thermal_cbs_unregister(struct platform_device *pdev)
 	if (!pdev)
 		return;
 
-	data = get_platform_driver_data();
+	data = get_platform_driver_data_by_dev((void *) pdev);
 	chip_info = data->chip_info;
 	thermal_info = &chip_info->thermal_info;
 

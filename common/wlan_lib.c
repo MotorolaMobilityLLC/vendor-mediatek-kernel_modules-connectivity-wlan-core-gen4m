@@ -14046,7 +14046,7 @@ uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo)
 		u8FeatureSet |= WIFI_FEATURE_INFRA_5G;
 
 #if CFG_SUPPORT_LLS
-	if (!kalIsHalted() && prGlueInfo->prAdapter &&
+	if (!kalIsHalted(prGlueInfo) && prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->pucLinkStatsSrcBufAddr)
 		u8FeatureSet |= WIFI_FEATURE_LINK_LAYER_STATS;
 #endif

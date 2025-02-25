@@ -2023,7 +2023,8 @@ exit:
 	fgIsDrvTriggerWholeChipReset = FALSE;
 
 	if (reset_type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
-		glGetChipInfo((void **)&chip);
+		glGetChipInfoByGlue(prGlueInfo, (void **)&chip);
+
 		if (!chip)
 			DBGLOG(HAL, ERROR, "NULL chip info pwr on.\n");
 		else

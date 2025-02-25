@@ -473,18 +473,31 @@ static int wlan_netdev_notifier_call(struct notifier_block *nb,
 	return NOTIFY_DONE;
 }
 
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 static struct notifier_block wlan_netdev_notifier = {
 	.notifier_call = wlan_netdev_notifier_call,
 };
+#endif
 
-void wlanRegisterNetdevNotifier(void)
+void wlanRegisterNetdevNotifier(struct GLUE_INFO *prGlueInfo)
 {
-	register_netdevice_notifier(&wlan_netdev_notifier);
+	struct notifier_block *prNotifier = NULL;
+
+	prNotifier = &(WLAN_GET_DATA(wlan_netdev_notifier));
+#if CFG_SUPPORT_MULTI_CARD
+	prNotifier->notifier_call = wlan_netdev_notifier_call;
+#endif
+
+	register_netdevice_notifier(prNotifier);
 }
 
-void wlanUnregisterNetdevNotifier(void)
+void wlanUnregisterNetdevNotifier(struct GLUE_INFO *prGlueInfo)
 {
-	unregister_netdevice_notifier(&wlan_netdev_notifier);
+	struct notifier_block *prNotifier = NULL;
+
+	prNotifier = &(WLAN_GET_DATA(wlan_netdev_notifier));
+
+	unregister_netdevice_notifier(prNotifier);
 }
 
 static int wlan_netevent_notifier_call(struct notifier_block *nb,

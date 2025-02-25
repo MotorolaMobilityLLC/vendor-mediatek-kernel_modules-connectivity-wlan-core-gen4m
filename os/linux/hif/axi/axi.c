@@ -139,6 +139,11 @@ static u_int8_t g_fgDriverProbed = FALSE;
  *******************************************************************************
  */
 
+struct mt66xx_hif_driver_data *get_platform_driver_data_by_dev(void *ctx)
+{
+	return get_platform_driver_data();
+}
+
 struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
 	return (struct mt66xx_hif_driver_data *) mtk_axi_ids[0].driver_data;
@@ -845,6 +850,11 @@ void glGetChipInfo(void **prChipInfo)
 		*prChipInfo = NULL;
 	else
 		*prChipInfo = (void *)prDriverData->chip_info;
+}
+
+void glGetChipInfoByGlue(struct GLUE_INFO *prGlueInfo, void **prChipInfo)
+{
+	glGetChipInfo(prChipInfo);
 }
 
 int32_t glBusFuncOn(void)

@@ -437,6 +437,30 @@ static uint16_t pcieGetUserCount(void);
  *******************************************************************************
  */
 
+struct mt66xx_hif_driver_data *get_platform_driver_data_by_dev(void *ctx)
+{
+#if CFG_SUPPORT_MULTI_CARD
+	struct mt66xx_hif_driver_data *prDriverData = NULL;
+
+	if (!ctx) {
+		DBGLOG(HAL, WARN, "NULL ctx.\n");
+		return NULL;
+	}
+
+#if (CFG_MTK_ANDROID_WMT == 1)
+	prDriverData =
+		platform_get_drvdata((struct platform_device *) ctx);
+#else
+	prDriverData =
+		pci_get_drvdata((struct pci_dev *) ctx);
+#endif /* (CFG_MTK_ANDROID_WMT == 1) */
+
+	return prDriverData;
+#else
+	return get_platform_driver_data();
+#endif /* CFG_SUPPORT_MULTI_CARD */
+}
+
 struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
 	return (struct mt66xx_hif_driver_data *) mtk_pci_ids[0].driver_data;
@@ -528,12 +552,14 @@ static void mtk_pci_msi_unmask_irq(uint32_t u4IrqNum)
 		pci_msi_unmask_irq(data);
 }
 
-void mtk_pci_msi_enable_irq(uint32_t u4Irq, uint32_t u4Bit)
+void mtk_pci_msi_enable_irq(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Irq, uint32_t u4Bit)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	prBusInfo = prChipInfo->bus_info;
 
 	if (prBusInfo->pcieMsiUnmaskIrq)
@@ -544,12 +570,14 @@ void mtk_pci_msi_enable_irq(uint32_t u4Irq, uint32_t u4Bit)
 		enable_irq(u4Irq);
 }
 
-void mtk_pci_msi_disable_irq(uint32_t u4Irq, uint32_t u4Bit)
+void mtk_pci_msi_disable_irq(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Irq, uint32_t u4Bit)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	prBusInfo = prChipInfo->bus_info;
 
 	if (prBusInfo->pcieMsiMaskIrq)
@@ -565,7 +593,8 @@ u_int8_t mtk_pci_is_wfdma_ready(struct GLUE_INFO *prGlueInfo)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct HIF_STATS *prHifStats = &prGlueInfo->prAdapter->rHifStats;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (prChipInfo->isWfdmaRxReady &&
 	    !prChipInfo->isWfdmaRxReady(prGlueInfo->prAdapter)) {
 		GLUE_INC_REF_CNT(prHifStats->u4EmptyIntCount);
@@ -641,7 +670,7 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 				goto exit;
 			}
 
-			mtk_pci_msi_disable_irq(irq, i);
+			mtk_pci_msi_disable_irq(prGlueInfo, irq, i);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 			goto exit;
 		}
@@ -716,7 +745,7 @@ void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo)
 		    prMsiLayout->type != AP_INT)
 			continue;
 
-		mtk_pci_msi_enable_irq(prMsiLayout->irq_num, i);
+		mtk_pci_msi_enable_irq(prGlueInfo, prMsiLayout->irq_num, i);
 	}
 }
 
@@ -763,7 +792,8 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_enable_irq(prMsiLayout->irq_num, i);
+			mtk_pci_msi_enable_irq(prGlueInfo,
+				prMsiLayout->irq_num, i);
 			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
 		}
 	}
@@ -814,7 +844,8 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (!KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_disable_irq(prMsiLayout->irq_num, i);
+			mtk_pci_msi_disable_irq(
+				prGlueInfo, prMsiLayout->irq_num, i);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 		}
 	}
@@ -1303,7 +1334,7 @@ static bool wifiCsrIoremap(struct platform_device *pdev)
 	g_u4CsrSize = wifi_resource_len(pdev, 0);
 #endif
 
-	prDriverData = get_platform_driver_data();
+	prDriverData = get_platform_driver_data_by_dev((void *) pdev);
 	if (!prDriverData) {
 		DBGLOG(INIT, ERROR, "driver data is NULL\n");
 		return false;
@@ -1346,8 +1377,18 @@ static bool wifiCsrIoremap(struct platform_device *pdev)
 static void wifiCsrIounmap(struct platform_device *pdev)
 {
 	struct mt66xx_chip_info *prChipInfo;
+#if CFG_SUPPORT_MULTI_CARD
+	struct mt66xx_hif_driver_data *prDriverData;
+#endif
 
+#if CFG_SUPPORT_MULTI_CARD
+	prDriverData = get_platform_driver_data_by_dev((void *) pdev);
+
+	if (prDriverData)
+		prChipInfo = prDriverData->chip_info;
+#else
 	glGetChipInfo((void **)&prChipInfo);
+#endif /* CFG_SUPPORT_MULTI_CARD */
 
 	if (!prChipInfo || !prChipInfo->HostCSRBaseAddress)
 		return;
@@ -1870,14 +1911,14 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	       pci_name(pdev), i, (unsigned long) pci_resource_len(pdev, i),
 	       (unsigned long) pci_resource_start(pdev, i));
 
-	pci_set_drvdata(pdev, (void *)id->driver_data);
+	pci_set_drvdata(pdev, (void *)prDriverData);
 
 #if (CFG_MTK_ANDROID_WMT == 0)
 	emi_mem_init(prChipInfo, pdev);
 #endif
 
 	if (pfWlanProbe((void *) pdev,
-		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
+		(void *) prDriverData) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
 		goto err_free_irq_vectors;
@@ -2397,12 +2438,14 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	struct platform_device *pdev;
 
 	prHif = &prGlueInfo->rHifInfo;
-	glGetChipInfo((void **)&prChipInfo);
-	prBusInfo = prChipInfo->bus_info;
 	prMemOps = &prHif->rMemOps;
 
 	prHif->pdev = (struct pci_dev *)ulCookie;
 	prHif->prDmaDev = prHif->pdev;
+
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
+	prBusInfo = prChipInfo->bus_info;
 
 	pdev = prChipInfo->platform_device;
 	if (pdev)
@@ -2989,9 +3032,32 @@ void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 
 void glGetChipInfo(void **prChipInfo)
 {
-	struct mt66xx_hif_driver_data *prDriverData;
+	struct mt66xx_hif_driver_data *prDriverData = NULL;
 
 	prDriverData = get_platform_driver_data();
+
+	if (!prDriverData)
+		*prChipInfo = NULL;
+	else
+		*prChipInfo = (void *)prDriverData->chip_info;
+}
+
+void glGetChipInfoByGlue(struct GLUE_INFO *prGlueInfo, void **prChipInfo)
+{
+	struct mt66xx_hif_driver_data *prDriverData = NULL;
+
+#if CFG_SUPPORT_MULTI_CARD
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		*prChipInfo = NULL;
+		return;
+	}
+	prDriverData = get_platform_driver_data_by_dev(
+		(void *) prGlueInfo->rHifInfo.pdev);
+#else
+	prDriverData = get_platform_driver_data();
+#endif
+
 	if (!prDriverData)
 		*prChipInfo = NULL;
 	else

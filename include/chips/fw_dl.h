@@ -214,7 +214,8 @@ struct FWDL_OPS_T {
 		uint32_t u4DataMode,
 		uint8_t *pucStartPtr,
 		uint32_t u4Len);
-	uint32_t (*getFwVerInfo)(uint8_t *pucManifestBuffer,
+	uint32_t (*getFwVerInfo)(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize,
 		uint32_t u4BufferMaxSize);
 	void (*setup_date_info)(struct ADAPTER *prAdapter,
@@ -536,10 +537,12 @@ void fwDlGetReleaseManifest(struct WIFI_VER_INFO *prVerInfo,
 			    struct HEADER_RELEASE_INFO *prRelInfo,
 			    uint8_t *pucStartPtr);
 
-uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanReadRamCodeReleaseManifest(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize);
 
-uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanParseRamCodeReleaseManifest(struct GLUE_INFO *prGlueInfo,
+	uint8_t *pucManifestBuffer,
 	uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize);
 
 #if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)

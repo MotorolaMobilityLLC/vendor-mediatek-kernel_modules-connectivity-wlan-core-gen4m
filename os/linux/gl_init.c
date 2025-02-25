@@ -97,8 +97,6 @@
  *******************************************************************************
  */
 /* #define MAX_IOREQ_NUM   10 */
-struct semaphore g_halt_sem;
-int g_u4HaltFlag;
 int g_u4WlanInitFlag;
 atomic_t g_wlanProbing;
 atomic_t g_wlanRemoving;
@@ -2629,7 +2627,7 @@ static bool need_manipulate_priority_for_udp(
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(skb->dev));
 
-	if (unlikely(!prGlueInfo || kalIsHalted()))
+	if (unlikely(!prGlueInfo || kalIsHalted(prGlueInfo)))
 		return FALSE;
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -2695,7 +2693,7 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 		if (unlikely(!prGlueInfo))
 			break;
 
-		if (unlikely(kalIsHalted())) {
+		if (unlikely(kalIsHalted(prGlueInfo))) {
 			DBGLOG(TX, WARN, "Driver is not ready\n");
 			break;
 		}
@@ -3561,17 +3559,22 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	down(&g_halt_sem);
-	if (g_u4HaltFlag) {
-		up(&g_halt_sem);
+	prGlueInfo = ifp->prGlueInfo;
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
 		return;
 	}
 
-	prGlueInfo = ifp->prGlueInfo;
+	down(&prGlueInfo->halt_sem);
+	if (prGlueInfo->u4HaltFlag) {
+		up(&prGlueInfo->halt_sem);
+		return;
+	}
 
-	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+	if (!prGlueInfo->u4ReadyFlag) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 		return;
 	}
 
@@ -3580,7 +3583,7 @@ static void wlanSetMulticastListWorkQueue(
 	if (!prDev) {
 		DBGLOG(INIT, WARN,
 			"prDev for Bss%d not exist.\n", ucBssIndex);
-			up(&g_halt_sem);
+			up(&prGlueInfo->halt_sem);
 		return;
 	}
 
@@ -3602,7 +3605,7 @@ static void wlanSetMulticastListWorkQueue(
 			u4PacketFilter |= PARAM_PACKET_FILTER_MULTICAST;
 	}
 
-	up(&g_halt_sem);
+	up(&prGlueInfo->halt_sem);
 
 	if (kalIoctl(prGlueInfo, wlanoidSetCurrentPacketFilter,
 		     &u4PacketFilter, sizeof(u4PacketFilter),
@@ -3619,9 +3622,9 @@ static void wlanSetMulticastListWorkQueue(
 		kalMemZero(&rMcAddrList,
 				sizeof(struct PARAM_MULTICAST_LIST));
 
-		down(&g_halt_sem);
-		if (g_u4HaltFlag) {
-			up(&g_halt_sem);
+		down(&prGlueInfo->halt_sem);
+		if (prGlueInfo->u4HaltFlag) {
+			up(&prGlueInfo->halt_sem);
 			return;
 		}
 
@@ -3641,7 +3644,7 @@ static void wlanSetMulticastListWorkQueue(
 
 		netif_addr_unlock_bh(prDev);
 
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 
 		rMcAddrList.ucBssIdx = ucBssIndex;
 		rMcAddrList.ucAddrNum = i;
@@ -4106,7 +4109,11 @@ static int wlanStop(struct net_device *prDev)
 
 	netif_tx_stop_all_queues(prDev);
 #if CFG_SUPPORT_WED_PROXY
-	if (kalIsHalted() == FALSE)
+	if (!prGlueInfo) {
+		DBGLOG(INIT, WARN, "driver is not ready, prGlueInfo is NULL\n");
+		return 0;
+	}
+	if (kalIsHalted(prGlueInfo) == FALSE)
 		kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
 			sizeof(struct net_device *), &u4SetInfoLen,
 			wlanGetBssIdx(prDev));
@@ -4546,12 +4553,6 @@ static void wlanNvramUpdateOnTestMode(void)
 	struct ADAPTER *prAdapter = NULL;
 
 	/* <1> Sanity Check */
-
-	if (kalIsHalted()) {
-		DBGLOG(INIT, WARN, "device not ready return");
-		return;
-	}
-
 	if (u4WlanDevNum == 0) {
 		DBGLOG(INIT, ERROR,
 			   "wlanNvramUpdateOnTestMode invalid!!\n");
@@ -4562,6 +4563,10 @@ static void wlanNvramUpdateOnTestMode(void)
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, WARN,
 			   "prGlueInfo invalid!!\n");
+		return;
+	}
+	if (kalIsHalted(prGlueInfo)) {
+		DBGLOG(INIT, WARN, "device not ready return");
 		return;
 	}
 	if (!wlanIsDriverReady(prGlueInfo,
@@ -4723,6 +4728,13 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo, uint8_t fgNeedRsvd)
 		u4WlanFbLen = sizeof(prGlueInfo->aucFbName) - 1;
 
 	kalStrnCpy(prGlueInfo->aucFbName, "wlan_fb_notifier", u4WlanFbLen);
+
+	prGlueInfo->rHaltCtrl.lock = (struct semaphore)
+		__SEMAPHORE_INITIALIZER(prGlueInfo->rHaltCtrl.lock, 1);
+	prGlueInfo->rHaltCtrl.owner = NULL;
+	prGlueInfo->rHaltCtrl.fgHalt = TRUE;
+	prGlueInfo->rHaltCtrl.fgHeldByKalIoctl = FALSE;
+	prGlueInfo->rHaltCtrl.u4HoldStart = 0;
 }
 
 static struct wireless_dev *wlanCreateWirelessDevice(void)
@@ -4777,13 +4789,8 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 		goto free_glue_info;
 	}
 
-	prHaltCtrl = &prGlueInfo->rHaltCtrl;
-	prHaltCtrl->lock =
-		(struct semaphore) __SEMAPHORE_INITIALIZER(prHaltCtrl->lock, 1);
-	prHaltCtrl->owner = NULL;
-	prHaltCtrl->fgHalt = TRUE;
-	prHaltCtrl->fgHeldByKalIoctl = FALSE;
-	prHaltCtrl->u4HoldStart = 0;
+	kalSnprintf(prGlueInfo->aucFbName, sizeof(prGlueInfo->aucFbName),
+		"wlan_fb_notifier%d", prGlueInfo->u4DevNum);
 #endif /* CFG_SUPPORT_MULTI_CARD */
 
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
@@ -4961,7 +4968,7 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	prWiphy->wext = NULL;
 #endif
 	/* initialize semaphore for halt control */
-	sema_init(&g_halt_sem, 1);
+	sema_init(&prGlueInfo->halt_sem, 1);
 
 #if CFG_ENABLE_WIFI_DIRECT
 	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
@@ -5138,12 +5145,10 @@ static void wlanDestroyAllWdev(struct GLUE_INFO *prGlueInfo)
 		wiphy_free(wiphy);
 	}
 
-#if CFG_SUPPORT_MULTI_CARD
 	for (i = 0; i < CFG_MAX_WLAN_DEVICES; i++) {
 		if (aprGlueInfo[i] == prGlueInfo)
 			aprGlueInfo[i] = NULL;
 	}
-#endif
 
 	kalMemFree(prGlueInfo, VIR_MEM_TYPE, sizeof(struct GLUE_INFO));
 }
@@ -5315,9 +5320,6 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 	 * so we don't need to initialize it here.
 	 */
 	wlanResetGlueInfo(prGlueInfo, TRUE);
-#else
-	kalSnprintf(prGlueInfo->aucFbName, sizeof(prGlueInfo->aucFbName),
-		"wlan_fb_notifier%d", u4WlanDevNum);
 #endif
 
 	/* 4 <2.1> Create Adapter structure */
@@ -5672,9 +5674,9 @@ void wlanSetMcGroupList(struct GLUE_INFO *prGlueInfo,
 
 	if (fgEnable) {
 
-		down(&g_halt_sem);
-		if (g_u4HaltFlag) {
-			up(&g_halt_sem);
+		down(&prGlueInfo->halt_sem);
+		if (prGlueInfo->u4HaltFlag) {
+			up(&prGlueInfo->halt_sem);
 			return;
 		}
 
@@ -5751,7 +5753,7 @@ void wlanSetMcGroupList(struct GLUE_INFO *prGlueInfo,
 			u2GroupAddrCount++;
 		}
 
-		up(&g_halt_sem);
+		up(&prGlueInfo->halt_sem);
 		if (u2GroupAddrCount > 0) {
 			if (prNum) {
 				kalMemCopy(
@@ -5873,9 +5875,9 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			struct PARAM_MULTICAST_LIST rMcAddrList;
 			uint32_t i = 0;
 
-			down(&g_halt_sem);
-			if (g_u4HaltFlag) {
-				up(&g_halt_sem);
+			down(&prGlueInfo->halt_sem);
+			if (prGlueInfo->u4HaltFlag) {
+				up(&prGlueInfo->halt_sem);
 				return;
 			}
 
@@ -5896,7 +5898,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 
 			netif_addr_unlock_bh(prDev);
 
-			up(&g_halt_sem);
+			up(&prGlueInfo->halt_sem);
 
 			rMcAddrList.ucBssIdx = u4Idx;
 			rMcAddrList.ucAddrNum = i;
@@ -7383,17 +7385,16 @@ static void consys_log_event_notification(int cmd, int value)
 		break;
 	}
 
-	if (kalIsHalted()) { /* power-off */
-		DBGLOG(INIT, DEBUG,
-			"Power off return, u4LogOnOffCache=%d\n",
-				u4LogOnOffCache);
-		return;
-	}
-
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, DEBUG,
 			"prGlueInfo == NULL return, u4LogOnOffCache=%d\n",
+				u4LogOnOffCache);
+		return;
+	}
+	if (kalIsHalted(prGlueInfo)) { /* power-off */
+		DBGLOG(INIT, DEBUG,
+			"Power off return, u4LogOnOffCache=%d\n",
 				u4LogOnOffCache);
 		return;
 	}
@@ -7672,7 +7673,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		kalRxTaskSchedule(prGlueInfo);
 
 	if (!bAtResetFlow)
-		g_u4HaltFlag = 0;
+		prGlueInfo->u4HaltFlag = 0;
 
 #if CFG_SUPPORT_BUFFER_MODE && (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 
@@ -7878,7 +7879,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #if CFG_MTK_ANDROID_WMT
 	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 #endif
-	kalSetHalted(FALSE);
+	kalSetHalted(prGlueInfo, FALSE);
 
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -8543,7 +8544,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 	struct BUS_INFO *prBusInfo;
 #endif
-#if CFG_SUPPORT_MULTI_CARD
+#if CFG_CHIP_RESET_SUPPORT
 	struct device *prDev;
 	u_int32_t u4Idx;
 #endif
@@ -8561,7 +8562,11 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (fgSimplifyResetFlow) {
-		i4Status = wlanOnAtReset(arWlanDevInfo[0].prDev);
+		glGetDev(pvData, (void *) &prDev);
+		u4Idx = wlanSearchDevIdx(prDev);
+
+		if (u4Idx < CFG_MAX_WLAN_DEVICES)
+			i4Status = wlanOnAtReset(arWlanDevInfo[u4Idx].prDev);
 #if CFG_MTK_MDDP_SUPPORT
 		if (i4Status == WLAN_STATUS_SUCCESS)
 			mddpNotifyWifiOnEnd(FALSE);
@@ -8998,7 +9003,7 @@ void wlanRemove(void)
 	}
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 
-	kalSetHalted(TRUE);
+	kalSetHalted(prGlueInfo, TRUE);
 
 	/*reset NVRAM State to ready for the next wifi-no*/
 	if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
@@ -9164,9 +9169,9 @@ void wlanRemove(void)
 	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
 #endif
 
-	down(&g_halt_sem);
-	g_u4HaltFlag = 1;
-	up(&g_halt_sem);
+	down(&prGlueInfo->halt_sem);
+	prGlueInfo->u4HaltFlag = 1;
+	up(&prGlueInfo->halt_sem);
 
 	/* 4 <2> Mark HALT, notify main thread to stop, and clean up queued
 	 *       requests
@@ -9599,7 +9604,9 @@ static int initWlan(void)
 	kalInitIOBuffer(FALSE);
 #endif
 
-	wlanRegisterNetdevNotifier();
+#if (CFG_SUPPORT_MULTI_CARD == 0)
+	wlanRegisterNetdevNotifier(prGlueInfo);
+#endif
 
 	wlanCreateWirelessDevice();
 	if (gprWdev[0] == NULL) {
@@ -9900,7 +9907,7 @@ static void exitWlan(void)
 		} while (0);
 #endif
 
-	wlanUnregisterNetdevNotifier();
+	wlanUnregisterNetdevNotifier(prGlueInfo);
 	wlanUnregisterNeteventNotifier(prGlueInfo);
 
 	/* free pre-allocated memory */
@@ -9928,7 +9935,6 @@ static void exitWlan(void)
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 	FwLogDevUninit();
 #endif
-	g_u4WlanInitFlag = 0;
 
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanUnregisterRebootNotifier(prGlueInfo);
@@ -9943,6 +9949,8 @@ static void exitWlan(void)
 	 */
 	wlanDestroyAllWdev(prGlueInfo);
 	prGlueInfo = NULL;
+
+	g_u4WlanInitFlag = 0;
 
 	TRACE_FUNC(INIT, DEBUG, "%s::End\n");
 }				/* end of exitWlan() */
@@ -9966,7 +9974,7 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 	if (event == SYS_RESTART) {
 		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
 
-		wlanUnregisterNetdevNotifier();
+		wlanUnregisterNetdevNotifier(prGlueInfo);
 		wlanUnregisterNeteventNotifier(prGlueInfo);
 		kalFbNotifierUnReg(prGlueInfo);
 
@@ -10018,14 +10026,6 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 		/* free pre-allocated memory */
 		kalUninitIOBuffer();
 
-		/* For single wiphy case, it's hardly to
-		* free wdev & wiphy in 2 func.
-		* So that, use wlanDestroyAllWdev
-		* to replace wlanDestroyWirelessDevice
-		* and glP2pDestroyWirelessDevice.
-		*/
-		wlanDestroyAllWdev(prGlueInfo);
-
 #if WLAN_INCLUDE_SYS
 		sysUninitSysFs();
 #endif
@@ -10037,6 +10037,14 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 		IcsDeInit(prGlueInfo);
 #endif /* CFG_SUPPORT_ICS */
+
+		/* For single wiphy case, it's hardly to
+		 * free wdev & wiphy in 2 func.
+		 * So that, use wlanDestroyAllWdev
+		 * to replace wlanDestroyWirelessDevice
+		 * and glP2pDestroyWirelessDevice.
+		 */
+		wlanDestroyAllWdev(prGlueInfo);
 
 		g_u4WlanInitFlag = 0;
 

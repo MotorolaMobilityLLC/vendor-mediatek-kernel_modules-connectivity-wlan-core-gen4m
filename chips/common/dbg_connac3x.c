@@ -2148,7 +2148,11 @@ static void connac3x_show_wfdma_axi_debug_log(
 	uint32_t pdma_base_cr;
 	uint32_t i = 0;
 
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	glGetChipInfoByGlue(prAdapter->prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return;
 
@@ -2182,7 +2186,11 @@ void connac3x_show_wfdma_interrupt_info(
 	uint32_t u4DmaCfgCrAddr = 0;
 	uint32_t u4RegValue = 0;
 
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	glGetChipInfoByGlue(prAdapter->prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return;
 
@@ -2271,7 +2279,11 @@ void connac3x_show_wfdma_glo_info(
 	uint32_t u4DmaCfgCrAddr = 0;
 	union WPDMA_GLO_CFG_STRUCT GloCfgValue = {0};
 
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	glGetChipInfoByGlue(prAdapter->prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return;
 
@@ -2317,7 +2329,11 @@ void connac3x_show_wfdma_ring_info(
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	glGetChipInfoByGlue(prAdapter->prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return;
 
@@ -2534,7 +2550,11 @@ static void connac3x_dump_wfdma_dbg_value(
 	uint32_t pos = 0;
 	uint32_t set_debug_cr, get_debug_cr, get_debug_value = 0;
 
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	glGetChipInfoByGlue(prAdapter->prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return;
 

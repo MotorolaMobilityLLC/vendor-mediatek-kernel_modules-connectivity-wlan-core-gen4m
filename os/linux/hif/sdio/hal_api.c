@@ -2903,11 +2903,14 @@ void halDeAggRxPktWorker(struct work_struct *work)
 	struct SDIO_RX_COALESCING_BUF *prRxBuf;
 	struct RX_CTRL *prRxCtrl;
 
-	if (g_u4HaltFlag)
+	if (!work)
 		return;
 
 	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO, rRxPktDeAggWork.work);
 	prAdapter = prGlueInfo->prAdapter;
+
+	if (prGlueInfo->u4HaltFlag)
+		return;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 		return;

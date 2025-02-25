@@ -1807,7 +1807,7 @@ static int p2pStop(struct net_device *prDev)
 #endif
 
 #if CFG_SUPPORT_WED_PROXY
-	if (kalIsHalted() == FALSE)
+	if (kalIsHalted(prGlueInfo) == FALSE)
 		kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
 			sizeof(struct net_device *), &u4BufLen,
 			wlanGetBssIdx(prDev));

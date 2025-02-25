@@ -166,10 +166,13 @@ static void fw_log_get_version_workQ(struct work_struct *work)
 {
 	struct fw_log_wifi_interface *prInf = &fw_log_wifi_inf;
 	struct mt66xx_chip_info *prChipInfo;
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 
 	glGetChipInfo((void **)&prChipInfo);
+
 	if (prChipInfo && prChipInfo->fw_dl_ops->getFwVerInfo)
-		prChipInfo->fw_dl_ops->getFwVerInfo(prInf->ver_name,
+		prChipInfo->fw_dl_ops->getFwVerInfo(prGlueInfo,
+			prInf->ver_name,
 			&prInf->ver_length, MANIFEST_BUFFER_SIZE);
 }
 

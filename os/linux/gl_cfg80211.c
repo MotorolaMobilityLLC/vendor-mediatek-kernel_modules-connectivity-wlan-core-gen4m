@@ -385,7 +385,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	if (g_u4HaltFlag) {
+	if (prGlueInfo->u4HaltFlag) {
 		DBGLOG_LIMITED(RSN, WARN, "wlan is halt, skip key deletion\n");
 		return WLAN_STATUS_FAILURE;
 	}
@@ -5251,7 +5251,7 @@ mtk_reg_notify(struct wiphy *pWiphy,
 	struct ADAPTER *prAdapter;
 	uint32_t u4CountryCode = 0;
 
-	if (g_u4HaltFlag) {
+	if (!prGlueInfo || prGlueInfo->u4HaltFlag) {
 		DBGLOG(RLM, ERROR, "wlan is halt, skip reg callback\n");
 		return;
 	}
@@ -6761,13 +6761,16 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_suspend\n");
 
-	if (kalHaltTryLock())
+	if (!wiphy)
 		return 0;
 
-	if (kalIsHalted() || !wiphy)
-		goto end;
-
 	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo || kalHaltTryLock(prGlueInfo))
+		return 0;
+
+	if (kalIsHalted(prGlueInfo))
+		goto end;
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	wlanWakeDumpRes(prGlueInfo);
@@ -6809,7 +6812,7 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 #endif
 	}
 end:
-	kalHaltUnlock();
+	kalHaltUnlock(prGlueInfo);
 
 	return 0;
 }
@@ -6832,15 +6835,18 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_resume\n");
 
-	if (kalHaltTryLock())
+	if (!wiphy)
 		return 0;
 
-	if (kalIsHalted() || !wiphy)
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo || kalHaltTryLock(prGlueInfo))
+		return 0;
+
+	if (kalIsHalted(prGlueInfo))
 		goto end;
 
-	WIPHY_PRIV(wiphy, prGlueInfo);
-	if (prGlueInfo)
-		prAdapter = prGlueInfo->prAdapter;
+	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL)
 		goto end;
 
@@ -6864,7 +6870,7 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 	cnmDbdcPreResumeFlow(prAdapter);
 #endif
 end:
-	kalHaltUnlock();
+	kalHaltUnlock(prGlueInfo);
 
 	return 0;
 }

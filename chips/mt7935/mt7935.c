@@ -1095,7 +1095,8 @@ static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (prChipInfo == NULL) {
 		DBGLOG(INIT, ERROR, "NULL prChipInfo\n");
 		u4Ret = WLAN_STATUS_INVALID_DATA;

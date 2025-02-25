@@ -489,8 +489,10 @@ void glGetDev(void *ctx, void **dev);
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
 struct mt66xx_hif_driver_data *get_platform_driver_data(void);
+struct mt66xx_hif_driver_data *get_platform_driver_data_by_dev(void *ctx);
 
 void glGetChipInfo(void **prChipInfo);
+void glGetChipInfoByGlue(struct GLUE_INFO *prGlueInfo, void **prChipInfo);
 
 void halGetCompleteStatus(struct ADAPTER *prAdapter, uint32_t *pu4IntStatus);
 

@@ -443,10 +443,11 @@ static ssize_t procCSIDataRead(struct file *filp,
 
 		wait_event_interruptible(prGlueInfo->waitq_csi,
 			prCSIInfo->u4CSIBufferUsed != 0);
-		if (kalIsHalted() || kalIsResetting()) {
+		if (kalIsHalted(prGlueInfo) || kalIsResetting()) {
 			DBGLOG(INIT, WARN,
 				"[CSI] kalIsHalted=%u kalIsResetting=%u\n",
-				kalIsHalted(), kalIsResetting());
+				kalIsHalted(prGlueInfo),
+				kalIsResetting());
 			return -EFAULT;
 		}
 
@@ -2222,7 +2223,15 @@ int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo)
 #endif /* (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG) */
 	struct proc_dir_entry *prProcRoot = NULL;
 
+#if CFG_SUPPORT_MULTI_CARD
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return 0;
+	}
+	prProcRoot = prGlueInfo->prProcRoot;
+#else
 	prProcRoot = gprProcRoot;
+#endif /* CFG_SUPPORT_MULTI_CARD */
 
 #if (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG)
 #if CFG_SUPPORT_CSI
@@ -2258,6 +2267,14 @@ int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo)
 	remove_proc_entry(PROC_TEST_MODE, prProcRoot);
 #endif
 
+#if CFG_SUPPORT_MULTI_CARD
+	/*
+	 * move wlan0/wlan1 dir to last since it's root directory of the others
+	 * incorrect sequence would cause use-after-free error
+	 */
+	remove_proc_entry(prGlueInfo->prDevHandler->name, init_net.proc_net);
+#endif
+
 	DBGLOG(INIT, DEBUG, "remove proc fs done\n");
 	return 0;
 } /* end of procRemoveProcfs() */
@@ -2269,10 +2286,33 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 
 	struct proc_dir_entry *prEntry;
 	struct proc_dir_entry *prProcRoot;
+#if CFG_SUPPORT_MULTI_CARD
+	uint8_t *root_name = prGlueInfo->prDevHandler->name;
+#endif
 
 	DBGLOG(INIT, TRACE, "[%s]\n", __func__);
 
+#if CFG_SUPPORT_MULTI_CARD
+	if (init_net.proc_net == (struct proc_dir_entry *) NULL) {
+		DBGLOG(INIT, ERROR, "proc_net == NULL\n");
+		return -ENOENT;
+	}
+	/*
+	 * Directory: Root (/proc/net/wlan0) or (/proc/net/wlan1) or ...
+	 */
+	prGlueInfo->prProcRoot = proc_mkdir(root_name, init_net.proc_net);
+	prProcRoot = prGlueInfo->prProcRoot;
+
+	if (!prProcRoot) {
+		DBGLOG(INIT, ERROR, "prProcRoot == NULL\n");
+		return -ENOENT;
+	}
+	proc_set_user(prProcRoot, KUIDT_INIT(PROC_UID_SHELL),
+		      KGIDT_INIT(PROC_GID_WIFI));
+#else
 	prProcRoot = gprProcRoot;
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 	prEntry = NULL;
 
 #if (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG)

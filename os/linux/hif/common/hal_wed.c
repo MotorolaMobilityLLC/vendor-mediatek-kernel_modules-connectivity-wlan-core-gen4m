@@ -305,7 +305,8 @@ void wedProxyIoRead(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct WED_CR_ACCESS rWedCr;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo) {
 		DBGLOG(HAL, WARN, "Chip info get fail\n");
 		return;
@@ -328,7 +329,8 @@ void wedProxyIoWrite(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct WED_CR_ACCESS rWedCr;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo) {
 		DBGLOG(HAL, WARN, "Chip info get fail\n");
 		return;
@@ -403,7 +405,8 @@ int wedInfoSetup(struct ADAPTER *prAdapter)
 	struct pcie_msi_info *prMsiInfo = NULL;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prAdapter->prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo) {
 		DBGLOG(HAL, WARN, "Chip info get fail\n");
 		return -1;

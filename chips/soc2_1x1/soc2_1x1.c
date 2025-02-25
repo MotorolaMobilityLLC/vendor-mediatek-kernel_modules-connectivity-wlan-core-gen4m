@@ -124,7 +124,7 @@ void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
 	int ret = 0;
 
-	kalGetFwFlavor(&aucFlavor[0]);
+	kalGetFwFlavorByGlue(prGlueInfo, &aucFlavor[0]);
 	for (ucIdx = 0; apucSoc2_1x1FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */

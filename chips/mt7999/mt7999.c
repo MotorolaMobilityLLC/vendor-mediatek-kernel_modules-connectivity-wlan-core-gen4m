@@ -98,7 +98,8 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt7999GetFlavorVer(uint8_t *flavor);
+static uint32_t mt7999GetFlavorVer(struct GLUE_INFO *prGlueInfo,
+	uint8_t *flavor);
 
 static void mt7999_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
@@ -1364,7 +1365,7 @@ static void mt7999_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucTestmode[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7999GetFlavorVer(&aucFlavor[0]);
+	mt7999GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	/* Type 0. mt7999_wifi.bin */
@@ -1441,7 +1442,7 @@ static void mt7999_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7999GetFlavorVer(&aucFlavor[0]);
+	mt7999GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	/* Type 0. mt7999_wifi.bin */
@@ -1500,7 +1501,7 @@ static void mt7999_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7999GetFlavorVer(&aucFlavor[0]);
+	mt7999GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 	/* Type 1. WIFI_MT7999_PHY_RAM_CODE_1_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
@@ -1525,7 +1526,7 @@ static void mt7999_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
-	mt7999GetFlavorVer(&aucFlavor[0]);
+	mt7999GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 	/* ex: WIFI_RAM_CODE_MT7999_2_1_idxlog.bin */
 	ret = kalSnprintf(apucName[0],
@@ -4142,12 +4143,13 @@ static uint32_t mt7999_wlanDownloadPatch(struct ADAPTER *prAdapter)
 }
 #endif /* _HIF_PCIE */
 
-static uint32_t mt7999GetFlavorVer(uint8_t *flavor)
+static uint32_t mt7999GetFlavorVer(struct GLUE_INFO *prGlueInfo,
+	uint8_t *flavor)
 {
 	uint32_t ret = WLAN_STATUS_FAILURE;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
-	if (kalGetFwFlavor(&aucFlavor[0]) == 1) {
+	if (kalGetFwFlavorByGlue(prGlueInfo, &aucFlavor[0]) == 1) {
 		kalScnprintf(flavor,
 					CFG_FW_FLAVOR_MAX_LEN,
 					"%s", aucFlavor);

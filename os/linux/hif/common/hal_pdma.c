@@ -6111,8 +6111,15 @@ uint32_t halGetHifTxCmdPageSize(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 u_int8_t halIsHifStateReady(struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
-	struct mt66xx_hif_driver_data *data = get_platform_driver_data();
-	struct mt66xx_chip_info *chip = data->chip_info;
+	struct mt66xx_hif_driver_data *data = NULL;
+	struct mt66xx_chip_info *chip = NULL;
+
+	if (prGlueInfo && prGlueInfo->prAdapter)
+		chip = prGlueInfo->prAdapter->chip_info;
+	else {
+		data = get_platform_driver_data();
+		chip = data->chip_info;
+	}
 
 	return chip->CSRBaseAddress != NULL;
 }

@@ -685,7 +685,8 @@ u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -817,7 +818,8 @@ u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -943,7 +945,8 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -1009,7 +1012,8 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 #endif
 
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -1100,7 +1104,8 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -1185,7 +1190,8 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	pcie_check_gen_switch_timeout(prAdapter, u4Register);
 #endif
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -1283,7 +1289,7 @@ static u_int8_t _kalDevRegReadRange(struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
-	glGetChipInfo((void **)&chip_info);
+	glGetChipInfoByGlue(glue, (void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
 		return FALSE;
@@ -1344,7 +1350,7 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
-	glGetChipInfo((void **)&chip_info);
+	glGetChipInfoByGlue(glue, (void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
 		return FALSE;
@@ -1433,7 +1439,8 @@ static u_int8_t kalIsValidRead(enum HIF_DEV_REG_REASON eReason,
 	prHifInfo->u4MmioReadHistoryIdx = u4Idx;
 
 check:
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (prChipInfo && prChipInfo->isValidMmioReadReason &&
 	    !prChipInfo->isValidMmioReadReason(prChipInfo, eReason)) {
 		DBGLOG(HAL, ERROR,
@@ -1533,7 +1540,8 @@ u_int8_t kalDevRegReadDirectly(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 	DBGLOG(NIC, TRACE, "enter\n");
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 
@@ -1604,7 +1612,8 @@ u_int8_t kalDevRegWriteDirectly(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (!prChipInfo)
 		return FALSE;
 

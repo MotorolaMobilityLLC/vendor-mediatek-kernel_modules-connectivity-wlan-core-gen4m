@@ -1897,7 +1897,8 @@ uint32_t wlanFwImageDownload(struct ADAPTER
 	if (!pucManifestBuffer) {
 		DBGLOG(INIT, ERROR, "vmalloc(%u) failed\n", FW_VERSION_MAX_LEN);
 	} else {
-		wlanReadRamCodeReleaseManifest(pucManifestBuffer,
+		wlanReadRamCodeReleaseManifest(prAdapter->prGlueInfo,
+			pucManifestBuffer,
 			&u4ManifestSize, FW_VERSION_MAX_LEN);
 
 		kalMemZero(prAdapter->rVerInfo.aucReleaseManifest,
@@ -2330,7 +2331,8 @@ void fwDlGetReleaseManifest(struct WIFI_VER_INFO *prVerInfo,
 }
 
 
-uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanReadRamCodeReleaseManifest(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -2342,7 +2344,14 @@ uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	kalMemZero(pucManifestBuffer, u4BufferMaxSize);
 
 	u4FwVerOffset = kalGetFwVerOffset();
+#if CFG_SUPPORT_MULTI_CARD
+	if (!prGlueInfo)
+		return WLAN_STATUS_FAILURE;
+
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+#else
 	glGetChipInfo((void **)&prChipInfo);
+#endif
 
 	if (u4FwVerOffset) {
 		u4CopySize = (u4BufferMaxSize < FW_VERSION_MAX_LEN) ?
@@ -2372,7 +2381,8 @@ uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
  *        u4BufferMaxSize    The max length of Manifest Buffer.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanParseRamCodeReleaseManifest(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize)
 {
 #define FW_FILE_NAME_TOTAL 8
@@ -2394,7 +2404,17 @@ uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	kalMemZero(pucManifestBuffer, u4BufferMaxSize);
 	*pu4ManifestSize = 0;
 
+#if CFG_SUPPORT_MULTI_CARD
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, WARN, "prGlueInfo is NULL\n");
+		goto exit;
+	}
+
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+#else
 	glGetChipInfo((void **)&prChipInfo);
+#endif
+
 	if (prChipInfo == NULL) {
 		DBGLOG(INIT, WARN, "glGetChipInfo failed\n");
 		goto exit;

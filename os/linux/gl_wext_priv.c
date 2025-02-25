@@ -23813,7 +23813,7 @@ int32_t priv_driver_cmds(struct GLUE_INFO *prGlueInfo,
 		return -1;
 	}
 
-	if (g_u4HaltFlag) {
+	if (prGlueInfo->u4HaltFlag) {
 		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
 		return -1;
 	}

@@ -510,7 +510,7 @@ void aisFreeBssInfo(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIdx)
 {
 	struct BSS_INFO *bss = NULL;
-	uint8_t fgHalted = kalIsHalted();
+	uint8_t fgHalted = kalIsHalted(prAdapter->prGlueInfo);
 	uint8_t ucBssIndex;
 
 	bss = aisGetLinkBssInfo(prAisFsmInfo, ucLinkIdx);
@@ -1116,7 +1116,7 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		aisFsmGetInstance(prAdapter, ucAisIndex);
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
-	u_int8_t fgHalted = kalIsHalted();
+	u_int8_t fgHalted = kalIsHalted(prAdapter->prGlueInfo);
 	uint8_t ucBssIndex;
 
 	GLUE_SPIN_LOCK_DECLARATION();

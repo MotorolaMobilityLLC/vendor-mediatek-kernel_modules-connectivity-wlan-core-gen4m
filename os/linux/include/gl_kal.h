@@ -77,8 +77,6 @@
 extern int allocatedMemSize;
 #endif
 
-extern struct semaphore g_halt_sem;
-extern int g_u4HaltFlag;
 extern int g_u4WlanInitFlag;
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -2483,11 +2481,11 @@ uint8_t kalGetEapolKeyType(void *prPacket);
 u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter);
 #endif
 
-int32_t kalHaltLock(uint32_t waitMs);
-int32_t kalHaltTryLock(void);
-void kalHaltUnlock(void);
-void kalSetHalted(u_int8_t fgHalt);
-u_int8_t kalIsHalted(void);
+int32_t kalHaltLock(struct ADAPTER *prAdapter, uint32_t waitMs);
+int32_t kalHaltTryLock(struct GLUE_INFO *prGlueInfo);
+void kalHaltUnlock(struct GLUE_INFO *prGlueInfo);
+void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt);
+u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_MULTITHREAD
 void kalFreeTxMsduWorker(struct work_struct *work);
 void kalFreeTxMsdu(struct ADAPTER *prAdapter,
@@ -2559,6 +2557,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 int32_t kalSetCpuNumFreq(uint32_t u4CoreNum,
 			 uint32_t u4Freq);
 int32_t kalGetFwFlavor(uint8_t *flavor);
+int32_t kalGetFwFlavorByGlue(struct GLUE_INFO *prGlueInfo, uint8_t *flavor);
 int32_t kalGetFwFlavorByPlat(uint8_t *flavor);
 int32_t kalGetConnsysVerId(void);
 int32_t kalPerMonSetForceEnableFlag(

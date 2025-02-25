@@ -2040,6 +2040,15 @@ struct ECO_INFO {
  */
 #define FEATURE_OPT_IN_COMMAND(_ucFeature) ((_ucFeature) + 1)
 
+/* This macro is used to get data from either a global variable or a private
+ * variable in struct GLUE_INFO
+ */
+#if CFG_SUPPORT_MULTI_CARD
+#define WLAN_GET_DATA(_variable) ((prGlueInfo->_variable))
+#else
+#define WLAN_GET_DATA(_variable) (_variable)
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

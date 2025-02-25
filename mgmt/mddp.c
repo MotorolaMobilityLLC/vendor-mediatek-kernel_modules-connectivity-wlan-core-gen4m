@@ -2543,7 +2543,7 @@ void mddpNotifyWifiReset(void)
 
 u_int8_t mddpMdNotifyInfoSanityCheck(struct GLUE_INFO *prGlueInfo)
 {
-	u_int8_t fgHalted = kalIsHalted();
+	u_int8_t fgHalted = FALSE;
 
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
@@ -2554,6 +2554,8 @@ u_int8_t mddpMdNotifyInfoSanityCheck(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
 		return FALSE;
 	}
+
+	fgHalted = kalIsHalted(prGlueInfo);
 
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, INFO,
@@ -2869,7 +2871,7 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	u_int8_t fgHalted = kalIsHalted();
+	u_int8_t fgHalted = FALSE;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
@@ -2877,6 +2879,7 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 		return 0;
 	}
 
+	fgHalted = kalIsHalted(prGlueInfo);
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, ERROR, "fgHalted: %d, u4ReadyFlag: %d\n",
 				fgHalted, prGlueInfo->u4ReadyFlag);

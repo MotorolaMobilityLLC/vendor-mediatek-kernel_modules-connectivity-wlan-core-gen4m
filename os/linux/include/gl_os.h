@@ -1329,6 +1329,8 @@ struct GLUE_INFO {
 
 	struct ECO_INFO eco_info;
 
+	struct KAL_HALT_CTRL_T rHaltCtrl;
+
 	u_int8_t reserved_end;
 	/* GLUE_INFO reserved END area for each wlanProbe */
 
@@ -1350,8 +1352,6 @@ struct GLUE_INFO {
 #endif
 
 	uint8_t aucMiscName[10];
-
-	struct KAL_HALT_CTRL_T rHaltCtrl;
 
 	/* format: "wlanInterfaceName wiphyName" */
 	uint8_t aucWlanLog[25];
@@ -2032,8 +2032,8 @@ extern char *gprifnamesta;
 
 void wlanRegisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo);
 void wlanUnregisterInetAddrNotifier(struct GLUE_INFO *prGlueInfo);
-void wlanRegisterNetdevNotifier(void);
-void wlanUnregisterNetdevNotifier(void);
+void wlanRegisterNetdevNotifier(struct GLUE_INFO *prGlueInfo);
+void wlanUnregisterNetdevNotifier(struct GLUE_INFO *prGlueInfo);
 void wlanRegisterNeteventNotifier(struct GLUE_INFO *prGlueInfo);
 void wlanUnregisterNeteventNotifier(struct GLUE_INFO *prGlueInfo);
 #if CFG_POWER_OFF_CTRL_SUPPORT

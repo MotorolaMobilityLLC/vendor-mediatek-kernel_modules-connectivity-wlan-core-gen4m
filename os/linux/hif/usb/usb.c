@@ -174,6 +174,11 @@ static int mtk_usb_bulk_out_msg(struct GL_HIF_INFO *prHifInfo, uint32_t len,
 ********************************************************************************
 */
 
+struct mt66xx_hif_driver_data *get_platform_driver_data_by_dev(void *ctx)
+{
+	return get_platform_driver_data();
+}
+
 struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
 	return (struct mt66xx_hif_driver_data *) mtk_usb_ids[0].driver_info;
@@ -2088,6 +2093,11 @@ void glGetChipInfo(void **prChipInfo)
 		return;
 
 	*prChipInfo = (void *)prDriverData->chip_info;
+}
+
+void glGetChipInfoByGlue(struct GLUE_INFO *prGlueInfo, void **prChipInfo)
+{
+	glGetChipInfo(prChipInfo);
 }
 
 #if CFG_CHIP_RESET_SUPPORT

@@ -49,7 +49,13 @@ uint8_t wlanIPCAccessConnVonSysRam(struct GLUE_INFO *prGlueInfo,
 	struct WLAN_IPC_INFO *prIPCInfo = NULL;
 	uint8_t u1Status = 0, fgResult = FALSE;
 
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "NULL prGlueInfo.\n");
+		return FALSE;
+	}
+
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (prChipInfo == NULL) {
 		DBGLOG(INIT, ERROR, "NULL prChipInfo.\n");
 		return FALSE;
@@ -188,7 +194,8 @@ uint32_t wlanIPCCheckStatus(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo == NULL)
 		return WLAN_STATUS_FAILURE;
 
-	glGetChipInfo((void **)&prChipInfo);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
+
 	if (prChipInfo == NULL)
 		return WLAN_STATUS_FAILURE;
 

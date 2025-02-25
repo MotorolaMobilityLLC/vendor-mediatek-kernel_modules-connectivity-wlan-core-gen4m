@@ -694,8 +694,9 @@ void glGetDev(void *ctx, void **dev);
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
 struct mt66xx_hif_driver_data *get_platform_driver_data(void);
-
+struct mt66xx_hif_driver_data *get_platform_driver_data_by_dev(void *ctx);
 void glGetChipInfo(void **prChipInfo);
+void glGetChipInfoByGlue(struct GLUE_INFO *prGlueInfo, void **prChipInfo);
 void halPciePreSuspendDone(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
@@ -714,8 +715,10 @@ uint32_t glWritePcieCfgSpace(int offset, uint32_t value);
 void glNotifyPciePowerDown(void);
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
-void mtk_pci_msi_enable_irq(uint32_t u4Irq, uint32_t u4Bit);
-void mtk_pci_msi_disable_irq(uint32_t u4Irq, uint32_t u4Bit);
+void mtk_pci_msi_enable_irq(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Irq, uint32_t u4Bit);
+void mtk_pci_msi_disable_irq(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Irq, uint32_t u4Bit);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);

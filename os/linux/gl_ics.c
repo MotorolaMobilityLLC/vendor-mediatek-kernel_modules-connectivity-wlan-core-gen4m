@@ -86,7 +86,7 @@ void ics_log_event_notification(struct GLUE_INFO *prGlueInfo,
 	if (!prGlueInfo || !ics_set_onoff(prGlueInfo, cmd, value))
 		return;
 
-	if (kalIsHalted()) {
+	if (kalIsHalted(prGlueInfo)) {
 		DBGLOG(ICS, DEBUG, "device not ready return");
 		return;
 	}

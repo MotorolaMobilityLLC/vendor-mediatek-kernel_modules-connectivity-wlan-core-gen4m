@@ -2135,7 +2135,7 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 #define kalAisCsaNotifyWorkInit(_prAdapter, _ucBssIdx) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-#define kalIsHalted() \
+#define kalIsHalted(_prGlueInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #if CFG_SUPPORT_DBDC
 #define kalIndicateOpModeChange(_prAdapter, _ucBssIdx, _ucChannelBw, _ucTxNss, \
@@ -2371,8 +2371,7 @@ uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
 			 void *prBuf, uint32_t u4Offset,
 			 uint32_t *pu4Size);
 
-int32_t kalGetFwFlavor(struct GLUE_INFO *prGlueInfo,
-			 uint8_t *flavor);
+int32_t kalGetFwFlavor(uint8_t *flavor);
 
 void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,

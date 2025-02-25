@@ -196,9 +196,9 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	struct mt66xx_chip_info *chip_info;
 	uint8_t *tmp_buf = NULL;
 	ssize_t ret = 0;
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 	struct GLUE_INFO *prGlueInfo = ctx->priv;
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
 	struct HIF_MEM *prMem = NULL;
@@ -207,7 +207,8 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	uint8_t uIdx = 0;
 #endif
 
-	glGetChipInfo((void **)&chip_info);
+	glGetChipInfoByGlue(prGlueInfo, (void **)&chip_info);
+
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
 		ret = -EINVAL;
@@ -1680,7 +1681,8 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 
 	if (glue->u4ReadyFlag == 0) {
 		if (chip_info->fw_dl_ops->getFwVerInfo)
-			chip_info->fw_dl_ops->getFwVerInfo(fw_version,
+			chip_info->fw_dl_ops->getFwVerInfo(glue,
+				fw_version,
 				&u4Len,
 				FW_VER_LEN);
 		else

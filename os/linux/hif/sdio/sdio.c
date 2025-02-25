@@ -201,6 +201,11 @@ static struct sdio_driver mtk_sdio_driver = {
 ********************************************************************************
 */
 
+struct mt66xx_hif_driver_data *get_platform_driver_data_by_dev(void *ctx)
+{
+	return get_platform_driver_data();
+}
+
 struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
 	return (struct mt66xx_hif_driver_data *) mtk_sdio_ids[0].driver_data;
@@ -2116,6 +2121,11 @@ void glGetChipInfo(void **prChipInfo)
 		return;
 
 	*prChipInfo = (void *)prDriverData->chip_info;
+}
+
+void glGetChipInfoByGlue(struct GLUE_INFO *prGlueInfo, void **prChipInfo)
+{
+	glGetChipInfo(prChipInfo);
 }
 
 u_int8_t glWakeupSdio(struct GLUE_INFO *prGlueInfo)

@@ -81,7 +81,8 @@ irqreturn_t mtk_pci_isr_tx_free_done_thread(int irq, void *dev_instance)
 	if (!mtk_is_wfdma_ready(prGlueInfo, RX_RING_TXDONE0)) {
 		if (KAL_TEST_AND_CLEAR_BIT(
 			    PCIE_MSI_TX_FREE_DONE, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_enable_irq(irq, PCIE_MSI_TX_FREE_DONE);
+			mtk_pci_msi_enable_irq(
+				prGlueInfo, irq, PCIE_MSI_TX_FREE_DONE);
 			GLUE_INC_REF_CNT(
 				prGlueInfo->prAdapter->rHifStats.u4EnIrqCount);
 		}
@@ -110,7 +111,8 @@ irqreturn_t mtk_pci_isr_rx_data0_thread(int irq, void *dev_instance)
 	if (!mtk_is_wfdma_ready(prGlueInfo, RX_RING_DATA0)) {
 		if (KAL_TEST_AND_CLEAR_BIT(
 			    PCIE_MSI_RX_DATA_BAND0, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_enable_irq(irq, PCIE_MSI_RX_DATA_BAND0);
+			mtk_pci_msi_enable_irq(
+				prGlueInfo, irq, PCIE_MSI_RX_DATA_BAND0);
 			GLUE_INC_REF_CNT(
 				prGlueInfo->prAdapter->rHifStats.u4EnIrqCount);
 		}
@@ -139,7 +141,8 @@ irqreturn_t mtk_pci_isr_rx_data1_thread(int irq, void *dev_instance)
 	if (!mtk_is_wfdma_ready(prGlueInfo, RX_RING_DATA1)) {
 		if (KAL_TEST_AND_CLEAR_BIT(
 			    PCIE_MSI_RX_DATA_BAND1, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_enable_irq(irq, PCIE_MSI_RX_DATA_BAND1);
+			mtk_pci_msi_enable_irq(
+				prGlueInfo, irq, PCIE_MSI_RX_DATA_BAND1);
 			GLUE_INC_REF_CNT(
 				prGlueInfo->prAdapter->rHifStats.u4EnIrqCount);
 		}
@@ -167,7 +170,8 @@ irqreturn_t mtk_pci_isr_rx_event_thread(int irq, void *dev_instance)
 	if (!mtk_is_wfdma_ready(prGlueInfo, RX_RING_EVT)) {
 		if (KAL_TEST_AND_CLEAR_BIT(
 			    PCIE_MSI_EVENT, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_enable_irq(irq, PCIE_MSI_EVENT);
+			mtk_pci_msi_enable_irq(
+				prGlueInfo, irq, PCIE_MSI_EVENT);
 			GLUE_INC_REF_CNT(
 				prGlueInfo->prAdapter->rHifStats.u4EnIrqCount);
 		}

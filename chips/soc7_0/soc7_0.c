@@ -854,7 +854,7 @@ static void soc7_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIdx = 0;
 	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(&aucFlavor[0]);
+	kalGetFwFlavorByGlue(prGlueInfo, &aucFlavor[0]);
 
 	for (ucIdx = 0; apucsoc7_0FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
@@ -887,7 +887,7 @@ static void soc7_0_ConstructRomName(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(&aucFlavor[0]);
+	kalGetFwFlavorByGlue(prGlueInfo, &aucFlavor[0]);
 
 	if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
 		/* construct the file name for MCU ROM EMI */
