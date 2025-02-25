@@ -3865,6 +3865,27 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	return TRUE;
 }
 #endif /* CFG_SUPPORT_PCIE_ASPM */
+
+#if defined(_HIF_PCIE) && (CFG_MTK_WIFI_PCIE_SUPPORT == 1) && \
+	(CFG_PCIE_TAG_ID_SUPPORT == 1)
+static int32_t mt6653_pcie_enable_tag_ctrl(struct ADAPTER *ad)
+{
+	struct handshake_info rParam;
+	uint32_t u4Value;
+
+	/* Enable EP setting */
+	u4Value = 0x2040004; /* HW's default value */
+	u4Value |= PCIE_MAC_IREG_AXI_PCIE_IF_CTRL_axitag_en_MASK;
+	HAL_MCR_WR(ad, PCIE_MAC_IREG_AXI_PCIE_IF_CTRL_ADDR, u4Value);
+
+	/* Enable RC setting */
+	kalMemZero(&rParam, sizeof(rParam));
+	rParam.feature_id = PCIE_TAG_CTRL;
+
+	return mtk_pcie_ep_set_info(0, &rParam);
+}
+#endif
+
 static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
 #define SETUP_MCU_EMI2_BASE_ADDRESS (0x7C05B2EC)
@@ -3884,6 +3905,15 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		return;
 
 	DBGLOG(HAL, DEBUG, "base: 0x%llx, size: 0x%x\n", base, size);
+
+#if defined(_HIF_PCIE) && (CFG_MTK_WIFI_PCIE_SUPPORT == 1) && \
+	(CFG_PCIE_TAG_ID_SUPPORT == 1)
+	if (mt6653_pcie_enable_tag_ctrl(prAdapter)) {
+		DBGLOG(HAL, ERROR,
+			"Enable tag ID function failed.\n");
+		return;
+	}
+#endif
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
@@ -4709,6 +4739,18 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 			status = mt6653_ExitL2(prAdapter);
 			if (status != WLAN_STATUS_SUCCESS)
 				DBGLOG(INIT, ERROR, "Exit L2 failed\n");
+
+#if defined(_HIF_PCIE) && (CFG_MTK_WIFI_PCIE_SUPPORT == 1) && \
+	(CFG_PCIE_TAG_ID_SUPPORT == 1)
+			/*
+			 * Re-enable tag ctrl function again after L2 flow
+			 * due to settings reset
+			 */
+			if (mt6653_pcie_enable_tag_ctrl(prAdapter))
+				DBGLOG(HAL, ERROR,
+					"Enable tag ID function failed.\n");
+#endif
+
 			HAL_MCR_WR(prAdapter,
 				CB_INFRA_SLP_CTRL_CB_INFRA_SLP_PROT_SW_CTRL_ADDR,
 				0x0);

@@ -923,6 +923,9 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_P2P2_SUPPORT_GC_REQ_CSA=y
         CONFIG_P2P2_SUPPORT_CAP_NOTIFICATION=y
         CONFIG_SUPPORT_6G_CROSS_BAND_CSA=y
+        ifeq ($(call kver_ge,6,12),1)
+            CONFIG_PCIE_TAG_ID_SUPPORT=y
+        endif
     endif
 
     ifeq ($(CONFIG_WIFI_DX5), y)
@@ -2545,6 +2548,11 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     endif
     ifeq ($(CONFIG_MTK_WIFI_PCIE_SUPPORT), y)
         ccflags-y += -DCFG_MTK_WIFI_PCIE_SUPPORT=1
+        ifeq ($(CONFIG_PCIE_TAG_ID_SUPPORT), y)
+            ccflags-y += -DCFG_PCIE_TAG_ID_SUPPORT=1
+        else
+            ccflags-y += -DCFG_PCIE_TAG_ID_SUPPORT=0
+        endif
     endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -D_HIF_USB=1
