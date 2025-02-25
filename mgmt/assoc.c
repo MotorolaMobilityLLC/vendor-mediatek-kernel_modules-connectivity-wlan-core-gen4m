@@ -1307,7 +1307,8 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 static __KAL_INLINE__ void
 assocComposeDisassocFrame(struct STA_RECORD *prStaRec,
-			  uint8_t *pucBuffer, uint8_t aucMACAddress[],
+			  uint8_t *pucBuffer, uint8_t aucDestAddr[],
+			  uint8_t aucSrcAddr[], uint8_t aucBssid[],
 			  uint16_t u2ReasonCode)
 {
 	struct WLAN_DISASSOC_FRAME *prDisAssocFrame;
@@ -1321,14 +1322,9 @@ assocComposeDisassocFrame(struct STA_RECORD *prStaRec,
 
 	WLAN_SET_FIELD_16(&prDisAssocFrame->u2FrameCtrl, u2FrameCtrl);
 
-	/* Fill the DA field with Target BSSID. */
-	COPY_MAC_ADDR(prDisAssocFrame->aucDestAddr, prStaRec->aucMacAddr);
-
-	/* Fill the SA field with our MAC Address. */
-	COPY_MAC_ADDR(prDisAssocFrame->aucSrcAddr, aucMACAddress);
-
-	/* Fill the BSSID field with Target BSSID. */
-	COPY_MAC_ADDR(prDisAssocFrame->aucBSSID, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prDisAssocFrame->aucDestAddr, aucDestAddr);
+	COPY_MAC_ADDR(prDisAssocFrame->aucSrcAddr, aucSrcAddr);
+	COPY_MAC_ADDR(prDisAssocFrame->aucBSSID, aucBssid);
 
 	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
 	 * so we need to clear it).
@@ -1363,6 +1359,9 @@ uint32_t assocSendDisAssocFrame(struct ADAPTER *prAdapter,
 	struct WLAN_DISASSOC_FRAME *prDisassocFrame;
 	uint16_t u2PayloadLen, u2EstimatedFrameLen;
 
+	if (!prBssInfo)
+		return WLAN_STATUS_INVALID_DATA;
+
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
 			      WLAN_MAC_MGMT_HEADER_LEN +
 			      REASON_CODE_FIELD_LEN;
@@ -1379,7 +1378,11 @@ uint32_t assocSendDisAssocFrame(struct ADAPTER *prAdapter,
 		 MAC_TX_RESERVED_FIELD);
 	assocComposeDisassocFrame(prStaRec,
 				  (uint8_t *)prDisassocFrame,
+				  prStaRec->aucMacAddr,
 				  prBssInfo->aucOwnMacAddr,
+				  IS_BSS_APGO(prBssInfo) ?
+					prBssInfo->aucOwnMacAddr :
+					prStaRec->aucMacAddr,
 				  u2ReasonCode);
 
 #if CFG_SUPPORT_802_11W
@@ -1420,7 +1423,6 @@ uint32_t assocSendDisAssocFrame(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex,
 		prStaRec->ucIndex, prStaRec->ucWlanIndex,
 		prMsduInfo->ucTxSeqNum,
-		prMsduInfo->ucStaRecIndex,
 		MAC2STR(prDisassocFrame->aucDestAddr),
 		MAC2STR(prDisassocFrame->aucSrcAddr),
 		MAC2STR(prDisassocFrame->aucBSSID),
