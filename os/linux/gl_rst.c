@@ -735,7 +735,11 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	if (glIsFwAsserted() && eResetReason != RST_FW_ASSERT) {
+	/* FW assert may due to L0 reset triggered
+	 * L0 reset should continue even if fw asserted
+	 */
+	if (glIsFwAsserted() && !(eResetReason == RST_FW_ASSERT ||
+	    eResetReason == RST_WHOLE_CHIP_TRIGGER)) {
 		DBGLOG(INIT, DEBUG,
 			"FW already asserted. Not trigger again.\n");
 		goto exit;
