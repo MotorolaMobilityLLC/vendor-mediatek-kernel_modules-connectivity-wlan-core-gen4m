@@ -9650,6 +9650,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_CCM
 	INIT_UINT(prWifiVar->eP2pCcmMode, "P2pCcmMode", P2P_CCM_MODE_SCC,
 		  FEATURE_DEBUG_ONLY);
+	/* 1: Disable FW aliasing limitation */
+	INIT_UINT(prWifiVar->fgEnMspBw320, "EnMspBw320",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 #endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,

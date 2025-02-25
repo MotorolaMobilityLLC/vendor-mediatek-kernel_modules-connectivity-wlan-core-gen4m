@@ -1994,6 +1994,7 @@ struct WIFI_VAR {
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_CCM
 	enum ENUM_P2P_CCM_MODE eP2pCcmMode;
+	u_int8_t fgEnMspBw320;
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
