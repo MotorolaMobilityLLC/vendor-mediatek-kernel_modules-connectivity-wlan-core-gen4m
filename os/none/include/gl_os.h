@@ -1083,20 +1083,6 @@ void kalMetInit(struct GLUE_INFO *prGlueInfo);
 void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
 #endif
 
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-#ifdef CFG_REMIND_IMPLEMENT
-#define wlanUpdateDfsChannelTable(_prGlueInfo, \
-		_ucRoleIdx, _ucChannel, _ucBandWidth, \
-		_eBssSCO, _u4CenterFreq, _eBand) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#else
-void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
-		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
-		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
-		enum ENUM_BAND eBand);
-#endif
-#endif
-
 const struct net_device_ops *wlanGetNdevOps(void);
 
 #if CFG_MTK_ANDROID_WMT
@@ -1117,5 +1103,42 @@ extern void connectivity_arch_setup_dma_ops(
 
 #define wlanNvramSetState(_state) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#ifdef CFG_REMIND_IMPLEMENT
+#define wlanDfsChannelsReqInit(_prAdapter) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsReqDeInit(_prAdapter) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsReqDump(_prAdapter) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsReqAdd(_prAdapter, _eSource, _ucChannel, \
+		_ucBandWidth, _eBssSCO, _u4CenterFreq, _eBand) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsReqDel(_prAdapter, _eSource) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsNotifyStaConnected(_prAdapter, _ucAisIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsNotifyStaDisconnected(_prAdapter, _ucAisIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define wlanDfsChannelsAllowdBySta(_prAdapter, _prRfChnlInfo) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
+uint32_t wlanDfsChannelsReqInit(struct ADAPTER *prAdapter);
+void wlanDfsChannelsReqDeInit(struct ADAPTER *prAdapter);
+void wlanDfsChannelsReqDump(struct ADAPTER *prAdapter);
+uint32_t wlanDfsChannelsReqAdd(struct ADAPTER *prAdapter,
+	enum DFS_CHANNEL_CTRL_SOURCE eSource,
+	uint8_t ucChannel, uint8_t ucBandWidth,
+	enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
+	enum ENUM_BAND eBand);
+void wlanDfsChannelsReqDel(struct ADAPTER *prAdapter,
+	enum DFS_CHANNEL_CTRL_SOURCE eSource);
+uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex);
+void wlanDfsChannelsNotifyStaDisconnected(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex);
+u_int8_t wlanDfsChannelsAllowdBySta(struct ADAPTER *prAdapter,
+	struct RF_CHANNEL_INFO *prRfChnlInfo);
+#endif
 
 #endif /* _GL_OS_H */

@@ -2628,14 +2628,13 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 					ucPrimaryCh) ||
 	     (eChnlBw >= MAX_BW_160MHZ))) {
 		DBGLOG(P2P, INFO, "Do pre CAC.\n");
-		wlanUpdateDfsChannelTable(prGlueInfo,
-					  ucRoleIndex,
-					  ucPrimaryCh,
-					  rlmGetVhtOpBwByBssOpBw(eChnlBw),
-					  0,
-					  nicGetCenterChFreq(eBand, ucPrimaryCh,
-							     eSco, eChnlBw),
-					  eBand);
+		wlanDfsChannelsReqAdd(prGlueInfo->prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_SAP,
+			ucPrimaryCh,
+			rlmGetVhtOpBwByBssOpBw(eChnlBw),
+			0,
+			nicChannelNum2Freq(ucSeg0Ch, eBand) / 1000,
+			eBand);
 	}
 #endif
 

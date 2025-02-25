@@ -13762,14 +13762,13 @@ wlanoidSetCountryCode(struct ADAPTER *prAdapter,
 		}
 
 		/* restore DFS channels table */
-		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			-1, /* p2p role index */
+		wlanDfsChannelsReqAdd(prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_SAP,
 			prAisBssInfo->ucPrimaryChannel, /* primary channel */
 			0, /* bandwidth */
 			0, /* sco */
 			0, /* center frequency */
-			prAisBssInfo->eBand /* eBand */
-			);
+			prAisBssInfo->eBand /* eBand */);
 	}
 #endif
 

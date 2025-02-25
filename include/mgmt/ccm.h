@@ -47,6 +47,9 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,
 			      const char *pucSrcFunc);
 
+void ccmChannelSwitchProducerDfs(struct ADAPTER *prAdapter,
+				 struct BSS_INFO *prTargetBss);
+
 void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter);
 
 void ccmRemoveBssPendingEntry(struct ADAPTER *prAdapter,
@@ -92,6 +95,11 @@ static inline void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_WIFI_DIRECT
 	p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
 #endif
+}
+
+static inline void ccmChannelSwitchProducerDfs(struct ADAPTER *prAdapter,
+					       struct BSS_INFO *prTargetBss)
+{
 }
 
 static inline void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter) {}

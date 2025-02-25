@@ -485,7 +485,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 	{
 		.pcCmdStr  = CMD_SET_DFS_CHN_AVAILABLE,
 		.pfHandler = priv_driver_set_dfs_channel_available,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)

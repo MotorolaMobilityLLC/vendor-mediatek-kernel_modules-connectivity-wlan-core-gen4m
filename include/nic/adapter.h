@@ -3452,6 +3452,10 @@ struct ADAPTER {
 	uint8_t ucForceLinkSort;
 	uint8_t ucForceLinkSortType;
 #endif
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY
+		aucDfsAisChnlReqEntries[KAL_AIS_NUM];
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY
+		aucDfsChnlReqEntries[DFS_CHANNEL_CTRL_SOURCE_NUM];
 
 #if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
 	struct DRV_OWN_INFO rDrvOwnTable[DRV_OWN_INFO_TABLE_SIZE];

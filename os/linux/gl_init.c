@@ -4242,116 +4242,35 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 		wlanUpdateChannelFlagByBand(prGlueInfo, ucBandIdx);
 }
 
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
-		uint32_t u4CenterFreq, uint8_t ucBandWidth,
-		enum ENUM_CHNL_EXT eBssSCO, uint8_t ucAdjacentChannel,
-		enum ENUM_BAND eBand)
+static void wlanUpdateDfsChannelTable(struct ADAPTER *prAdapter,
+	uint8_t aucDfsList[], uint32_t u4DfsListNum)
 {
-	uint32_t u4AdjacentFreq = 0;
-	uint32_t u4BandWidth;
-	uint32_t u4StartFreq, u4EndFreq;
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-	struct ieee80211_channel *chnl = NULL;
-#endif
-
-	u4AdjacentFreq = nicChannelNum2Freq(ucAdjacentChannel, eBand) / 1000;
-
-	DBGLOG(INIT, TRACE,
-		"p2p: %p, center_freq: %d, bw: %d, sco: %d, ad_freq: %d",
-		prGlueP2pInfo, u4CenterFreq, ucBandWidth, eBssSCO,
-		u4AdjacentFreq);
-
-	if (!prGlueP2pInfo)
-		return FALSE;
-
-	if (ucBandWidth == VHT_OP_CHANNEL_WIDTH_20_40 &&
-			eBssSCO == CHNL_EXT_SCN)
-		return FALSE;
-
-	if (!u4CenterFreq)
-		return FALSE;
-
-	if (!u4AdjacentFreq)
-		return FALSE;
-
-	switch (ucBandWidth) {
-	case VHT_OP_CHANNEL_WIDTH_20_40:
-		u4BandWidth = 40;
-		break;
-	case VHT_OP_CHANNEL_WIDTH_80:
-		u4BandWidth = 80;
-		break;
-	case VHT_OP_CHANNEL_WIDTH_160:
-		u4BandWidth = 160;
-		break;
-	case VHT_OP_CHANNEL_WIDTH_320_1:
-	case VHT_OP_CHANNEL_WIDTH_320_2:
-		u4BandWidth = 320;
-		break;
-	default:
-		DBGLOG(INIT, WARN, "unsupported bandwidth: %d", ucBandWidth);
-		return FALSE;
-	}
-	u4StartFreq = u4CenterFreq - u4BandWidth / 2 + 10;
-	u4EndFreq = u4CenterFreq + u4BandWidth / 2 - 10;
-	DBGLOG(INIT, TRACE, "bw: %d, s_freq: %d, e_freq: %d",
-			u4BandWidth, u4StartFreq, u4EndFreq);
-	if (u4AdjacentFreq < u4StartFreq || u4AdjacentFreq > u4EndFreq)
-		return FALSE;
-
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-	/* check valid channel */
-	chnl = ieee80211_get_channel(prGlueP2pInfo->prWdev->wiphy,
-			u4AdjacentFreq);
-	if (!chnl) {
-		DBGLOG(INIT, WARN, "invalid channel for freq: %d",
-				u4AdjacentFreq);
-		return FALSE;
-	}
-#endif
-	return TRUE;
-}
-
-void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
-		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
-		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
-		enum ENUM_BAND eBand)
-{
-	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
-	uint8_t i, j;
-	uint8_t ucNumOfChannel;
+	uint8_t i, j, k, ucNumOfChannel;
 	struct RF_CHANNEL_INFO aucChannelList[
 			ARRAY_SIZE(mtk_5ghz_channels)] = {};
 
-	DBGLOG(INIT, DEBUG, "r: %d, chnl %u, b: %d, s: %d, freq: %d\n",
-			ucRoleIdx, ucChannel, ucBandWidth, eBssSCO,
-			u4CenterFreq);
-
 	/* 1. Get current domain DFS channel list */
-	rlmDomainGetDfsChnls(prGlueInfo->prAdapter,
-		ARRAY_SIZE(mtk_5ghz_channels),
-		&ucNumOfChannel, aucChannelList);
-
-	if (ucRoleIdx < KAL_P2P_NUM)
-		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
-	else
-		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
+	rlmDomainGetDfsChnls(prAdapter, ARRAY_SIZE(mtk_5ghz_channels),
+			     &ucNumOfChannel, aucChannelList);
 
 	/* 2. Enable specific channel based on domain channel list */
 	for (i = 0; i < ucNumOfChannel; i++) {
 		for (j = 0; j < ARRAY_SIZE(mtk_5ghz_channels); j++) {
+			u_int8_t fgEnableDfsChnl = FALSE;
+
 			if (aucChannelList[i].ucChannelNum !=
 				mtk_5ghz_channels[j].hw_value)
 				continue;
 
-			if ((aucChannelList[i].ucChannelNum == ucChannel) ||
-				wlanIsAdjacentChnl(prGlueP2pInfo,
-					u4CenterFreq,
-					ucBandWidth,
-					eBssSCO,
-					aucChannelList[i].ucChannelNum,
-					eBand)) {
+			for (k = 0; k < u4DfsListNum; k++) {
+				if (aucChannelList[i].ucChannelNum ==
+				    aucDfsList[k]) {
+					fgEnableDfsChnl = TRUE;
+					break;
+				}
+			}
+
+			if (fgEnableDfsChnl) {
 				mtk_5ghz_channels[j].dfs_state
 					= NL80211_DFS_AVAILABLE;
 				mtk_5ghz_channels[j].flags &=
@@ -4375,7 +4294,591 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 }
+
+static void __wlanDfsChannelsReqMerge(struct ADAPTER *prAdapter,
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntries, uint32_t u4EntriesNum,
+	uint8_t aucChannels[], uint32_t u4MaxSize, uint32_t *pu4Size)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+	uint8_t i = 0;
+	struct wiphy *wiphy = NULL;
+
+#if (CFG_MTK_ANDROID_WMT || CFG_MTK_MDDP_SUPPORT) && \
+	(CFG_SUPPORT_MULTI_CARD == 0)
+	wiphy = wlanGetWiphy();
+#else
+	struct wireless_dev **pprOrigWdev = NULL;
+
+	pprOrigWdev = wlanGetWirelessDevice(prAdapter->prGlueInfo);
+	wiphy = wlanGetWiphyByWdev(*pprOrigWdev);
 #endif
+
+	if (wiphy == NULL) {
+		DBGLOG(INIT, INFO, "failed to get wiphy\n");
+		return;
+	}
+
+	for (i = 0; i < u4EntriesNum; i++) {
+		uint32_t u4Freq, u4StartFreq = 0, u4EndFreq = 0,
+			u4BandWidth = 0;
+
+		prEntry = &prEntries[i];
+
+		if (!prEntry->fgValid)
+			continue;
+
+		switch (prEntry->rRfChnlInfo.ucChnlBw) {
+		case MAX_BW_20MHZ:
+			u4BandWidth = 20;
+			break;
+		case MAX_BW_40MHZ:
+			u4BandWidth = 40;
+			break;
+		case MAX_BW_80MHZ:
+		case MAX_BW_80_80_MHZ:
+			u4BandWidth = 80;
+			break;
+		case MAX_BW_160MHZ:
+			u4BandWidth = 160;
+			break;
+		case MAX_BW_320_1MHZ:
+		case MAX_BW_320_2MHZ:
+			u4BandWidth = 320;
+			break;
+		default:
+			DBGLOG(INIT, WARN, "unsupported bandwidth: %d",
+				prEntry->rRfChnlInfo.ucChnlBw);
+			u4BandWidth = 20;
+			break;
+		}
+
+		if (prEntry->rRfChnlInfo.ucChnlBw <= MAX_BW_20MHZ) {
+			u4StartFreq = prEntry->rRfChnlInfo.u4CenterFreq1;
+			u4EndFreq = prEntry->rRfChnlInfo.u4CenterFreq1;
+		} else {
+			u4StartFreq = prEntry->rRfChnlInfo.u4CenterFreq1 -
+				u4BandWidth / 2 + 10;
+			u4EndFreq = prEntry->rRfChnlInfo.u4CenterFreq1 +
+				u4BandWidth / 2 - 10;
+		}
+
+		for (u4Freq = u4StartFreq; u4Freq <= u4EndFreq; u4Freq += 20) {
+			struct ieee80211_channel *channel;
+
+			channel = ieee80211_get_channel(wiphy, u4Freq);
+			if (!channel)
+				continue;
+
+			aucChannels[*pu4Size] = channel->hw_value;
+			(*pu4Size)++;
+
+			if (*pu4Size >= u4MaxSize) {
+				DBGLOG(INIT, WARN, "exceed max size(%u %u)\n",
+					*pu4Size, u4MaxSize);
+				return;
+			}
+		}
+	}
+}
+
+static void wlanDfsChannelsReqMerge(struct ADAPTER *prAdapter,
+	uint8_t aucChannels[], uint32_t u4MaxSize, uint32_t *pu4Size)
+{
+	__wlanDfsChannelsReqMerge(prAdapter,
+		prAdapter->aucDfsAisChnlReqEntries,
+		ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries),
+		aucChannels,
+		u4MaxSize,
+		pu4Size);
+
+	__wlanDfsChannelsReqMerge(prAdapter,
+		prAdapter->aucDfsChnlReqEntries,
+		ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries),
+		aucChannels,
+		u4MaxSize,
+		pu4Size);
+}
+
+uint32_t wlanDfsChannelsReqInit(struct ADAPTER *prAdapter)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+	uint8_t i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries);
+		i++){
+		prEntry = &prAdapter->aucDfsAisChnlReqEntries[i];
+
+		prEntry->fgValid = FALSE;
+		prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
+		kalMemZero(&prEntry->rRfChnlInfo,
+			   sizeof(prEntry->rRfChnlInfo));
+	}
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries); i++) {
+		prEntry = &prAdapter->aucDfsChnlReqEntries[i];
+
+		prEntry->fgValid = FALSE;
+		prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_NUM;
+		kalMemZero(&prEntry->rRfChnlInfo,
+			   sizeof(prEntry->rRfChnlInfo));
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void wlanDfsChannelsReqDeInit(struct ADAPTER *prAdapter)
+{
+	DBGLOG(INIT, INFO, "\n");
+
+	kalMemZero(prAdapter->aucDfsAisChnlReqEntries,
+		sizeof(prAdapter->aucDfsAisChnlReqEntries));
+	kalMemZero(prAdapter->aucDfsChnlReqEntries,
+		sizeof(prAdapter->aucDfsChnlReqEntries));
+}
+
+void wlanDfsChannelsReqDump(struct ADAPTER *prAdapter)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+	uint8_t i = 0;
+
+	DBGLOG(INIT, TRACE, "Dump for ais entries\n");
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries); i++) {
+		prEntry = &prAdapter->aucDfsAisChnlReqEntries[i];
+
+		DBGLOG(INIT, TRACE,
+			"\t[%u] valid=%d, source=%d, channel=[%u %u %u %u %u %u]\n",
+			i, prEntry->fgValid, prEntry->eSource,
+			prEntry->rRfChnlInfo.eBand,
+			prEntry->rRfChnlInfo.ucChannelNum,
+			prEntry->rRfChnlInfo.u2PriChnlFreq,
+			prEntry->rRfChnlInfo.u4CenterFreq1,
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
+	}
+
+	DBGLOG(INIT, TRACE, "Dump for other entries\n");
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries); i++) {
+		prEntry = &prAdapter->aucDfsChnlReqEntries[i];
+
+		DBGLOG(INIT, TRACE,
+			"\t[%u] valid=%d, source=%d, channel=[%u %u %u %u %u %u]\n",
+			i, prEntry->fgValid, prEntry->eSource,
+			prEntry->rRfChnlInfo.eBand,
+			prEntry->rRfChnlInfo.ucChannelNum,
+			prEntry->rRfChnlInfo.u2PriChnlFreq,
+			prEntry->rRfChnlInfo.u4CenterFreq1,
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
+	}
+}
+
+static u_int8_t wlanIsChannelInDfsRange(struct ADAPTER *prAdapter,
+	uint8_t ucChannel, uint8_t ucBandWidth,
+	enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
+	enum ENUM_BAND eBand)
+{
+	uint32_t u4StartFreq, u4EndFreq, u4Freq;
+	uint32_t u4Bw;
+	u_int8_t fgInDfsRange = FALSE;
+	enum ENUM_MAX_BANDWIDTH_SETTING eBw;
+
+	eBw = rlmVhtBw2OpBw(ucBandWidth, eBssSCO);
+	switch (eBw) {
+	case MAX_BW_20MHZ:
+		u4Bw = 20;
+		break;
+	case MAX_BW_40MHZ:
+		u4Bw = 40;
+		break;
+	case MAX_BW_80MHZ:
+	case MAX_BW_80_80_MHZ:
+		u4Bw = 80;
+		break;
+	case MAX_BW_160MHZ:
+		u4Bw = 160;
+		break;
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
+		u4Bw = 320;
+		break;
+	default:
+		DBGLOG(INIT, WARN, "unsupported bandwidth: %d",
+			ucBandWidth);
+		u4Bw = 20;
+		break;
+	}
+
+	if (eBw <= MAX_BW_20MHZ) {
+		u4StartFreq = u4CenterFreq;
+		u4EndFreq = u4CenterFreq;
+	} else {
+		u4StartFreq = u4CenterFreq - u4Bw / 2 + 10;
+		u4EndFreq = u4CenterFreq + u4Bw / 2 - 10;
+	}
+
+	for (u4Freq = u4StartFreq; u4Freq <= u4EndFreq; u4Freq += 20) {
+		uint32_t u4ChannelNum = nicFreq2ChannelNum(u4Freq * 1000);
+
+		if (u4ChannelNum == 0)
+			continue;
+
+		if (rlmDomainIsDfsChnls(prAdapter, u4ChannelNum)) {
+			fgInDfsRange = TRUE;
+			break;
+		}
+	}
+
+	return fgInDfsRange;
+}
+
+static void wlanDfsChannelsReqMergeNUpdate(struct ADAPTER *prAdapter)
+{
+	uint8_t aucChannels[MAX_5G_BAND_CHN_NUM] = { 0 };
+	uint32_t u4Channels = 0;
+
+	wlanDfsChannelsReqMerge(prAdapter, aucChannels,
+				ARRAY_SIZE(aucChannels),
+				&u4Channels);
+
+	wlanDfsChannelsReqDump(prAdapter);
+
+	wlanUpdateDfsChannelTable(prAdapter, aucChannels, u4Channels);
+}
+
+uint32_t wlanDfsChannelsReqAdd(struct ADAPTER *prAdapter,
+	enum DFS_CHANNEL_CTRL_SOURCE eSource,
+	uint8_t ucChannel, uint8_t ucBandWidth,
+	enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
+	enum ENUM_BAND eBand)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+
+	if (!prAdapter)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (eSource >= DFS_CHANNEL_CTRL_SOURCE_NUM)
+		return WLAN_STATUS_INVALID_DATA;
+
+	DBGLOG(INIT, INFO, "source=%d, channel=[%d %u %u %u %u]\n",
+		eSource,
+		eBand,
+		ucChannel,
+		u4CenterFreq,
+		ucBandWidth,
+		eBssSCO);
+
+	prEntry = &prAdapter->aucDfsChnlReqEntries[eSource];
+
+	if (prEntry->fgValid) {
+		DBGLOG(INIT, WARN,
+			"Remove previous req.\n");
+		wlanDfsChannelsReqDel(prAdapter, eSource);
+	}
+
+	if (wlanIsChannelInDfsRange(prAdapter, ucChannel, ucBandWidth,
+				    eBssSCO, u4CenterFreq, eBand) == FALSE)
+		return WLAN_STATUS_SUCCESS;
+
+	prEntry->eSource = eSource;
+	prEntry->rRfChnlInfo.eBand = eBand;
+	prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
+	prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
+	prEntry->rRfChnlInfo.u2PriChnlFreq =
+		nicChannelNum2Freq(ucChannel, eBand) / 1000;
+	prEntry->rRfChnlInfo.ucChnlBw = rlmVhtBw2OpBw(ucBandWidth,
+						    eBssSCO);
+	prEntry->rRfChnlInfo.ucChannelNum = ucChannel;
+	prEntry->fgValid = TRUE;
+
+	wlanDfsChannelsReqMergeNUpdate(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void wlanDfsChannelsReqDel(struct ADAPTER *prAdapter,
+	enum DFS_CHANNEL_CTRL_SOURCE eSource)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+
+	if (!prAdapter)
+		return;
+
+	if (eSource >= DFS_CHANNEL_CTRL_SOURCE_NUM)
+		return;
+
+	DBGLOG(INIT, INFO, "source=%d\n", eSource);
+
+	prEntry = &prAdapter->aucDfsChnlReqEntries[eSource];
+
+	prEntry->fgValid = FALSE;
+	prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_NUM;
+	kalMemZero(&prEntry->rRfChnlInfo,
+		   sizeof(prEntry->rRfChnlInfo));
+
+	wlanDfsChannelsReqMergeNUpdate(prAdapter);
+}
+
+u_int8_t wlanDfsChannelsAllowdBySta(struct ADAPTER *prAdapter,
+	struct RF_CHANNEL_INFO *prRfChnlInfo)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+	uint32_t u4StartFreq, u4EndFreq, u4Bw;
+	uint8_t i = 0;
+	u_int8_t fgValid = FALSE;
+
+	if (IS_STA_DFS_CHANNEL_ENABLED(prAdapter) == FALSE &&
+	    IS_STA_INDOOR_CHANNEL_ENABLED(prAdapter) == FALSE)
+		return FALSE;
+
+	if (prRfChnlInfo->eBand != BAND_5G)
+		return TRUE;
+
+	switch (prRfChnlInfo->ucChnlBw) {
+	case MAX_BW_20MHZ:
+		u4Bw = 20;
+		break;
+	case MAX_BW_40MHZ:
+		u4Bw = 40;
+		break;
+	case MAX_BW_80MHZ:
+	case MAX_BW_80_80_MHZ:
+		u4Bw = 80;
+		break;
+	case MAX_BW_160MHZ:
+		u4Bw = 160;
+		break;
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
+		u4Bw = 320;
+		break;
+	default:
+		DBGLOG(INIT, WARN, "unsupported bandwidth: %d",
+			prRfChnlInfo->ucChnlBw);
+		u4Bw = 20;
+		break;
+	}
+
+	if (prRfChnlInfo->ucChnlBw <= MAX_BW_20MHZ) {
+		u4StartFreq = prRfChnlInfo->u4CenterFreq1;
+		u4EndFreq = prRfChnlInfo->u4CenterFreq1;
+	} else {
+		u4StartFreq = prRfChnlInfo->u4CenterFreq1 - u4Bw / 2 + 10;
+		u4EndFreq = prRfChnlInfo->u4CenterFreq1 + u4Bw / 2 - 10;
+	}
+
+	for (i = 0;
+	     i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries);
+	     i++) {
+		uint32_t u4StaStartFreq, u4StaEndFreq, u4StaBw;
+
+		prEntry = &prAdapter->aucDfsAisChnlReqEntries[i];
+
+		if (!prEntry->fgValid)
+			continue;
+
+		switch (prEntry->rRfChnlInfo.ucChnlBw) {
+		case MAX_BW_20MHZ:
+			u4StaBw = 20;
+			break;
+		case MAX_BW_40MHZ:
+			u4StaBw = 40;
+			break;
+		case MAX_BW_80MHZ:
+		case MAX_BW_80_80_MHZ:
+			u4StaBw = 80;
+			break;
+		case MAX_BW_160MHZ:
+			u4StaBw = 160;
+			break;
+		case MAX_BW_320_1MHZ:
+		case MAX_BW_320_2MHZ:
+			u4StaBw = 320;
+			break;
+		default:
+			DBGLOG(INIT, WARN, "unsupported bandwidth: %d",
+				prEntry->rRfChnlInfo.ucChnlBw);
+			u4StaBw = 20;
+			break;
+		}
+
+		if (prEntry->rRfChnlInfo.ucChnlBw <= MAX_BW_20MHZ) {
+			u4StaStartFreq = prEntry->rRfChnlInfo.u4CenterFreq1;
+			u4StaEndFreq = prEntry->rRfChnlInfo.u4CenterFreq1;
+		} else {
+			u4StaStartFreq = prEntry->rRfChnlInfo.u4CenterFreq1 -
+				u4StaBw / 2 + 10;
+			u4StaEndFreq = prEntry->rRfChnlInfo.u4CenterFreq1 +
+				u4StaBw / 2 - 10;
+		}
+
+		if (u4StaStartFreq <= u4StartFreq &&
+		    u4StaEndFreq >= u4EndFreq) {
+			fgValid = TRUE;
+			break;
+		}
+	}
+
+	return fgValid;
+}
+
+uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+	uint8_t ucVhtChannelWidth;
+#endif
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4CenterFreq;
+	uint8_t ucS1;
+
+	if (!prAdapter)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (ucAisIndex >= KAL_AIS_NUM)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (IS_STA_DFS_CHANNEL_ENABLED(prAdapter) == FALSE &&
+	    IS_STA_INDOOR_CHANNEL_ENABLED(prAdapter) == FALSE)
+		return FALSE;
+
+	DBGLOG(INIT, INFO, "ucAisIndex=%d\n", ucAisIndex);
+
+	prEntry = &prAdapter->aucDfsAisChnlReqEntries[ucAisIndex];
+	prBssInfo = AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prMldBss) {
+		LINK_FOR_EACH_ENTRY(prBssInfo, &prMldBss->rBssList,
+				    rLinkEntryMld, struct BSS_INFO) {
+			u4CenterFreq = nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000;
+			if (u4CenterFreq == 0) {
+				ucS1 = nicGetS1(prBssInfo->eBand,
+					prBssInfo->ucPrimaryChannel,
+					prBssInfo->eBssSCO,
+					prBssInfo->ucVhtChannelWidth);
+				u4CenterFreq = nicChannelNum2Freq(ucS1,
+					prBssInfo->eBand) / 1000;
+				DBGLOG(INIT, WARN,
+					"u4CenterFreq == 0, calculate to %d\n",
+					u4CenterFreq);
+			}
+			ucVhtChannelWidth = prBssInfo->ucVhtChannelWidth;
+			if (wlanIsChannelInDfsRange(prAdapter,
+						    prBssInfo->ucPrimaryChannel,
+						    ucVhtChannelWidth,
+						    prBssInfo->eBssSCO,
+						    u4CenterFreq,
+						    prBssInfo->eBand) ==
+			    FALSE)
+				continue;
+
+			prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
+			prEntry->rRfChnlInfo.eBand = prBssInfo->eBand;
+			prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
+			prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
+			prEntry->rRfChnlInfo.u2PriChnlFreq =
+				nicChannelNum2Freq(prBssInfo->ucPrimaryChannel,
+						   prBssInfo->eBand) / 1000;
+			prEntry->rRfChnlInfo.ucChnlBw =
+				rlmVhtBw2OpBw(prBssInfo->ucVhtChannelWidth,
+					    prBssInfo->eBssSCO);
+			prEntry->rRfChnlInfo.ucChannelNum =
+				prBssInfo->ucPrimaryChannel;
+			prEntry->fgValid = TRUE;
+
+			DBGLOG(INIT, TRACE,
+				"[%u] channel=[%u %u %u %u %u %u]\n",
+				prBssInfo->ucBssIndex,
+				prEntry->rRfChnlInfo.eBand,
+				prEntry->rRfChnlInfo.ucChannelNum,
+				prEntry->rRfChnlInfo.u2PriChnlFreq,
+				prEntry->rRfChnlInfo.u4CenterFreq1,
+				prEntry->rRfChnlInfo.u4CenterFreq2,
+				prEntry->rRfChnlInfo.ucChnlBw);
+
+			break;
+		}
+	}
+#else
+	u4CenterFreq = nicChannelNum2Freq(
+		prBssInfo->ucVhtChannelFrequencyS1,
+		prBssInfo->eBand) / 1000;
+	if (u4CenterFreq == 0) {
+		ucS1 = nicGetS1(prBssInfo->eBand,
+			prBssInfo->ucPrimaryChannel,
+			prBssInfo->eBssSCO,
+			prBssInfo->ucVhtChannelWidth);
+		u4CenterFreq = nicChannelNum2Freq(ucS1,
+			prBssInfo->eBand) / 1000;
+		DBGLOG(INIT, WARN, "u4CenterFreq == 0, calculate to %d\n",
+			u4CenterFreq);
+	}
+	if (wlanIsChannelInDfsRange(prAdapter,
+				    prBssInfo->ucPrimaryChannel,
+				    prBssInfo->ucVhtChannelWidth,
+				    prBssInfo->eBssSCO,
+				    u4CenterFreq,
+				    prBssInfo->eBand) ==
+	    TRUE) {
+		prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
+		prEntry->rRfChnlInfo.eBand = prBssInfo->eBand;
+		prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
+		prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
+		prEntry->rRfChnlInfo.u2PriChnlFreq =
+			nicChannelNum2Freq(prBssInfo->ucPrimaryChannel,
+					   prBssInfo->eBand) / 1000;
+		prEntry->rRfChnlInfo.ucChnlBw =
+			rlmVhtBw2OpBw(prBssInfo->ucVhtChannelWidth,
+				    prBssInfo->eBssSCO);
+		prEntry->rRfChnlInfo.ucChannelNum =
+			prBssInfo->ucPrimaryChannel;
+		prEntry->fgValid = TRUE;
+
+		DBGLOG(INIT, TRACE,
+			"[%u] channel=[%u %u %u %u %u %u]\n",
+			prBssInfo->ucBssIndex,
+			prEntry->rRfChnlInfo.eBand,
+			prEntry->rRfChnlInfo.ucChannelNum,
+			prEntry->rRfChnlInfo.u2PriChnlFreq,
+			prEntry->rRfChnlInfo.u4CenterFreq1,
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
+	}
+#endif
+
+	wlanDfsChannelsReqMergeNUpdate(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void wlanDfsChannelsNotifyStaDisconnected(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex)
+{
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
+
+	if (!prAdapter)
+		return;
+
+	if (ucAisIndex >= KAL_AIS_NUM)
+		return;
+
+	if (IS_STA_DFS_CHANNEL_ENABLED(prAdapter) == FALSE &&
+	    IS_STA_INDOOR_CHANNEL_ENABLED(prAdapter) == FALSE)
+		return;
+
+	DBGLOG(INIT, INFO, "ucAisIndex=%d\n", ucAisIndex);
+
+	prEntry = &prAdapter->aucDfsAisChnlReqEntries[ucAisIndex];
+	prEntry->fgValid = FALSE;
+	prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
+	kalMemZero(prEntry, sizeof(*prEntry));
+
+	wlanDfsChannelsReqMergeNUpdate(prAdapter);
+}
 
 static void mtk_vif_destructor(struct net_device *dev)
 {

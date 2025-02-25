@@ -519,6 +519,90 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		__ccmChannelSwitchProducer(prAdapter, prTargetBss, pucSrcFunc);
 }
 
+void ccmChannelSwitchProducerDfs(struct ADAPTER *prAdapter,
+				 struct BSS_INFO *prTargetBss)
+{
+	struct LINK *list = &prAdapter->rCcmCheckCsList;
+	struct BSS_INFO *bss;
+	struct P2P_CCM_CSA_ENTRY *entry;
+	uint8_t i;
+	u_int8_t fgNewReqs = FALSE;
+
+	if (prAdapter->prGlueInfo->u4ReadyFlag == 0)
+		return;
+
+	if (IS_STA_DFS_CHANNEL_ENABLED(prAdapter) == FALSE &&
+	    IS_STA_INDOOR_CHANNEL_ENABLED(prAdapter) == FALSE)
+		return;
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		struct RF_CHANNEL_INFO rRfChnlInfo;
+		uint32_t au4FreqList[MAX_5G_BAND_CHN_NUM];
+		uint32_t u4FreqListNum;
+
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (bss == NULL || !IS_BSS_ALIVE(prAdapter, bss) ||
+		    !IS_BSS_APGO(bss))
+			continue;
+
+		/* Only GO use STA's DFS channel */
+		if (p2pFuncIsAPMode(prAdapter,
+				    bss->u4PrivateData))
+			continue;
+
+		kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
+		rRfChnlInfo.eBand = bss->eBand;
+		rRfChnlInfo.u4CenterFreq1 = bss->ucVhtChannelFrequencyS1;
+		rRfChnlInfo.u4CenterFreq2 = bss->ucVhtChannelFrequencyS2;
+		rRfChnlInfo.u2PriChnlFreq =
+			nicChannelNum2Freq(bss->ucPrimaryChannel,
+					   bss->eBand) / 1000;
+		rRfChnlInfo.ucChnlBw =
+			rlmVhtBw2OpBw(bss->ucVhtChannelWidth,
+				    bss->eBssSCO);
+		rRfChnlInfo.ucChannelNum = bss->ucPrimaryChannel;
+
+		/* check bss is using DFS channel, and DFS is allowed by STA */
+		if (bss->eBand != BAND_5G ||
+		    rlmDomainIsDfsChnls(prAdapter,
+					bss->ucPrimaryChannel) == FALSE ||
+		    wlanDfsChannelsAllowdBySta(prAdapter, &rRfChnlInfo))
+			continue;
+
+		u4FreqListNum =
+			p2pFunGetTopPreferFreqByBand(prAdapter,
+						     BAND_5G,
+						     MAX_5G_BAND_CHN_NUM,
+						     au4FreqList,
+						     TRUE);
+		if (u4FreqListNum == 0)
+			continue;
+
+		entry = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(*entry));
+		if (!entry) {
+			DBGLOG(CCM, ERROR, "Alloc mem fail\n");
+			return;
+		}
+
+		entry->prBssInfo = bss;
+		entry->u4TargetCh = nicFreq2ChannelNum(au4FreqList[0] * 1000);
+		entry->eTargetHwBandIdx = bss->eHwBandIdx;
+		entry->eTargetBand = bss->eBand;
+
+		LINK_INSERT_TAIL(list, &entry->rLinkEntry);
+
+		fgNewReqs = TRUE;
+
+		DBGLOG(CCM, INFO,
+			"insert GO bss=%u waiting to check\n",
+			bss->ucBssIndex);
+	}
+
+	if (fgNewReqs)
+		ccmChannelSwitchConsumer(prAdapter);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Each time consume one entry in queue to check whether it needs to CS.

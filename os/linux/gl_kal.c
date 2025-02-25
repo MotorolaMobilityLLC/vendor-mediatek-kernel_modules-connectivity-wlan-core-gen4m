@@ -3180,6 +3180,9 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		/* switch netif on */
 		netif_carrier_on(prDevHandler);
 
+		wlanDfsChannelsNotifyStaConnected(prAdapter,
+			AIS_INDEX(prAdapter, prBssInfo->ucBssIndex));
+
 		do {
 			uint8_t aucSsid[PARAM_MAX_LEN_SSID + 1] = {0};
 
@@ -3288,6 +3291,10 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 
 		netif_carrier_off(prDevHandler);
+
+		wlanDfsChannelsNotifyStaDisconnected(prAdapter,
+			AIS_INDEX(prAdapter, prBssInfo->ucBssIndex));
+		ccmChannelSwitchProducerDfs(prAdapter, prBssInfo);
 
 		/* Full2Partial: reset */
 		if (prGlueInfo->prAdapter) {

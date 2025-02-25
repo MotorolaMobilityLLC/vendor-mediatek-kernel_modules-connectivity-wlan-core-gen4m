@@ -5896,6 +5896,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		if (IS_BSS_AIS(prBssInfo)) {
 			cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaDoneTimer);
+			wlanDfsChannelsNotifyStaConnected(prAdapter,
+				AIS_INDEX(prAdapter, prBssInfo->ucBssIndex));
 		}
 		nicRefillPendingPktTxdForCsa(prAdapter, prStaRec);
 
