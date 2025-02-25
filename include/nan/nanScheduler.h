@@ -259,13 +259,16 @@
 
 #define NAN_CHNL_IN_COMMON_BAND(_prAdapter, _prNegoCtrl, _rChnl) \
 ({ \
-	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord; \
-	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc; \
-	uint32_t u4CommonBand; \
-	prPeerSchRecord = nanSchedGetPeerSchRecord(_prAdapter, \
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord = NULL; \
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL; \
+	uint32_t u4CommonBand = 0; \
+	if (_prNegoCtrl) \
+		prPeerSchRecord = nanSchedGetPeerSchRecord(_prAdapter, \
 					     (_prNegoCtrl)->u4SchIdx); \
-	prPeerSchDesc = prPeerSchRecord->prPeerSchDesc; \
-	u4CommonBand = prPeerSchDesc->u4CommonSupportedBand; \
+	if (prPeerSchRecord) \
+		prPeerSchDesc = prPeerSchRecord->prPeerSchDesc; \
+	if (prPeerSchDesc)	\
+		u4CommonBand = prPeerSchDesc->u4CommonSupportedBand; \
 	(u4CommonBand & BIT(ENUM_SUPPORTED_BN_6G) && \
 	 NAN_IS_CHANNEL_6G(_rChnl) || \
 	 u4CommonBand & BIT(ENUM_SUPPORTED_BN_5G_HIGH) && \
