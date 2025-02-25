@@ -180,6 +180,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 int wifi_coredump_post_start(void);
 #endif
+void coredump_get_dump_buff(uint8_t *pucDumpBuf, uint32_t u4MaxLen);
 void coredump_register_busNoAck_chk_cb(busNoAck_chk_func_cb cb);
 #if CFG_SUPPORT_CONNINFRA || (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src);
@@ -204,6 +205,8 @@ static inline void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 	char *reason,
 	enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T type,
 	u_int8_t force_dump) {}
+static inline void coredump_get_dump_buff(uint8_t *pucDumpBuf,
+	uint32_t u4MaxLen) {}
 static inline void coredump_register_busNoAck_chk_cb(busNoAck_chk_func_cb cb) {}
 static inline void wifi_coredump_set_enable(u_int8_t enable) {}
 static inline u_int8_t is_wifi_coredump_processing(void) { return FALSE; }

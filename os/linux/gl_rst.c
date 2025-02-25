@@ -773,7 +773,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 #endif /* CFG_MTK_MDDP_SUPPORT */
 
 #if WLAN_INCLUDE_SYS
-	sysResetTrigger();
+	sysResetRecordDetail();
 #endif
 #if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
 

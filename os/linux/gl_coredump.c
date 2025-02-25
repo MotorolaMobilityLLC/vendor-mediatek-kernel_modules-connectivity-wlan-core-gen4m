@@ -1008,6 +1008,16 @@ exit:
 	return ret;
 }
 
+void coredump_get_dump_buff(uint8_t *pucDumpBuf, uint32_t u4MaxLen)
+{
+	struct coredump_mem *mem = &g_coredump_ctx.mem;
+
+	if (u4MaxLen > mem->dump_buff_len)
+		u4MaxLen = mem->dump_buff_len;
+
+	kalScnprintf(pucDumpBuf, u4MaxLen, mem->dump_buff);
+}
+
 static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info)
 {
@@ -1028,6 +1038,11 @@ static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 	DBGLOG(INIT, DEBUG, "++ Coredump message ++\n");
 	PRINT_LONG_STR_MSG(mem->dump_buff, mem->dump_buff_len);
 	DBGLOG(INIT, DEBUG, "-- Coredump message --\n");
+
+#if WLAN_INCLUDE_SYS
+	if (glGetRstReason() == RST_FW_ASSERT)
+		sysResetRecordDetail();
+#endif
 
 exit:
 	return ret;

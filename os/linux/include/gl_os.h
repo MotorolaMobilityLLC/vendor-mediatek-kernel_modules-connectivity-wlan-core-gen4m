@@ -1930,7 +1930,7 @@ int32_t sysRemoveSysfs(void);
 int32_t sysInitFs(void);
 int32_t sysUninitSysFs(void);
 void sysMacAddrOverride(uint8_t *prMacAddr);
-void sysResetTrigger(void);
+void sysResetRecordDetail(void);
 void sysResetRecoveryReport(void);
 void sysResetTriggerCollectLogs(void);
 void sysInitWifiVer(void);
