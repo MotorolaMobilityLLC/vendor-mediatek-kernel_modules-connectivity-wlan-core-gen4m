@@ -2719,6 +2719,46 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	}
 }
 
+void rlmParseP2pNOA(struct NOA_DESCRIPTOR **prNoaDesc, const uint8_t *pucIE)
+{
+	struct IE_P2P *prIeP2P = (struct IE_P2P *) pucIE;
+	struct P2P_ATTRI_NOA *prNoaAttr;
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	uint8_t *pucAttriList;
+	uint16_t u2AttrLen;
+	uint16_t u2Offset;
+	uint16_t u2NoaDescLen;
+
+	if (prIeP2P->ucId != ELEM_ID_P2P ||
+	    prIeP2P->ucLength < VENDOR_OUI_TYPE_P2P)
+		return;
+
+	if (kalMemCmp(prIeP2P->aucOui, aucWfaOui, sizeof(aucWfaOui)) != 0 ||
+	    prIeP2P->ucOuiType != VENDOR_OUI_TYPE_P2P)
+		return;
+
+	pucAttriList = &prIeP2P->aucP2PAttributes[0];
+	u2AttrLen = prIeP2P->ucLength - P2P_OUI_TYPE_LEN;
+
+	P2P_ATTRI_FOR_EACH(pucAttriList, u2AttrLen, u2Offset) {
+		prNoaAttr = (struct P2P_ATTRI_NOA *) pucAttriList;
+
+		if (prNoaAttr->ucId != P2P_ATTRI_ID_NOTICE_OF_ABSENCE)
+			continue;
+
+		/* include "index" + "OppPs Params" + "NOA descriptors" */
+		u2NoaDescLen = prNoaAttr->u2Length - 2;
+		if (u2NoaDescLen >= sizeof(struct NOA_DESCRIPTOR))
+			*prNoaDesc = (struct NOA_DESCRIPTOR *)
+				&prNoaAttr->aucNoADesc[0];
+		else 
+			continue;
+
+		DBGLOG(RLM, INFO, "prNoaDesc ucCountType[%u], u4Duration[%u], u4Interval[%u], u4StartTime[%u]",
+			(*prNoaDesc)->ucCountType, (*prNoaDesc)->u4Duration, (*prNoaDesc)->u4Interval, (*prNoaDesc)->u4StartTime);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function should be invoked to update parameters of associated AP.
@@ -2778,6 +2818,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t ucCurrentCsaCount;
 	struct IE_SECONDARY_OFFSET *prSecondaryOffsetIE;
 #endif
+	struct NOA_DESCRIPTOR *prNoaDesc = NULL;
 	const uint8_t *pucDumpIE;
 	uint8_t fgDomainValid = FALSE;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = CW_20_40MHZ;
@@ -3366,6 +3407,29 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		case ELEM_ID_VENDOR:
 			rlmParseMtkOui(prAdapter, prStaRec, prBssInfo, pucIE);
+
+			rlmParseP2pNOA(&prNoaDesc, pucIE);
+			if (prNoaDesc) {
+				if (prNoaDesc->ucCountType != 255) {
+				    	cnmTimerStopTimer(prAdapter,
+					    &prBssInfo->rDisconnectNoaTimer);
+					prBssInfo->rNoaDesc.ucCountType = 0;
+				} else if (prBssInfo->rNoaDesc.u4StartTime !=
+				    prNoaDesc->u4StartTime) {
+					if (wlan_fb_power_down)
+						cnmTimerStartTimer(prAdapter,
+						    &prBssInfo->
+						    rDisconnectNoaTimer,
+						    30000);
+					prBssInfo->rNoaDesc.u4StartTime =
+						prNoaDesc->u4StartTime;
+					prBssInfo->rNoaDesc.ucCountType =
+						prNoaDesc->ucCountType;
+				}
+				DBGLOG(RLM, INFO, "[Chris Debug] ucCountType[%u] u4StartTime[%u]",
+					prNoaDesc->ucCountType, prBssInfo->rNoaDesc.u4StartTime);
+			}
+
 #if CFG_SUPPORT_RXSMM_WHITELIST
 			if (rlmParseCheckRxsmmOuiIE(prAdapter,
 				pucIE, &fgRxsmmEnable))
@@ -3780,6 +3844,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prBssInfo->ucHtOpInfo1 &=
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
+	}
+
+	if (prNoaDesc == NULL) {
+		cnmTimerStopTimer(prAdapter, &prBssInfo->rDisconnectNoaTimer);
+		prBssInfo->rNoaDesc.ucCountType = 0;
 	}
 
 #if CFG_SUPPORT_QUIET && 0
@@ -6999,6 +7068,48 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_DFS */
 
+void rlmDisconnectNoaTimeout(struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
+{
+	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
+	struct BSS_INFO *prBssInfo;
+	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg = NULL;
+
+	if (!wlan_fb_power_down)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo || !IS_BSS_GC(prBssInfo)) {
+		DBGLOG(P2P, WARN, "Not GC Bss\n");
+		return;
+	}
+
+	/* Customized requirement:
+	 * disconnect GC when periodic NOA to save power
+	 */
+	DBGLOG(P2P, WARN, "Disconnect GC due to periodic NOA\n");
+	prDisconnectMsg =
+		(struct MSG_P2P_CONNECTION_ABORT *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(struct MSG_P2P_CONNECTION_ABORT));
+	if (prDisconnectMsg == NULL) {
+		DBGLOG(P2P, WARN, "Allocate fail\n");
+		if (wlan_fb_power_down)
+			cnmTimerStartTimer(prAdapter,
+				&prBssInfo->rDisconnectNoaTimer,
+				30000);
+		return;
+	}
+
+	prDisconnectMsg->rMsgHdr.eMsgId = MID_MNY_P2P_CONNECTION_ABORT;
+	prDisconnectMsg->ucRoleIdx = prBssInfo->u4PrivateData;
+	COPY_MAC_ADDR(prDisconnectMsg->aucTargetID,
+		prBssInfo->prStaRecOfAP->aucMacAddr);
+	prDisconnectMsg->u2ReasonCode = REASON_CODE_UNSPECIFIED;
+	prDisconnectMsg->fgSendDeauth = TRUE;
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prDisconnectMsg,
+		MSG_SEND_METHOD_BUF);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
