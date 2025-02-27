@@ -11504,6 +11504,9 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
 				       wlan_fb_notifier_priv_data;
 	enum ENUM_WLAN_FB_EVENT eEvent = WLAN_FB_EVENT_IGNORE;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct BSS_INFO *prP2pBssInfo;
+	uint8_t ucIdx;
 
 	if (!prGlueInfo)
 		goto end;
@@ -11530,11 +11533,34 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	case WLAN_FB_EVENT_UNBLANK:
 		kalSetPerMonEnable(prGlueInfo);
 		wlan_fb_power_down = FALSE;
+		DBGLOG(P2P, WARN, "[Chris Debug] screen on\n");
 		break;
 	case WLAN_FB_EVENT_POWERDOWN:
 		wlan_fb_power_down = TRUE;
+		DBGLOG(P2P, WARN, "[Chris Debug] screen off\n");
 		if (!wlan_perf_monitor_force_enable)
 			kalSetPerMonDisable(prGlueInfo);
+
+		for (ucIdx = 0; ucIdx < KAL_P2P_NUM; ucIdx++) {
+			prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+				prGlueInfo->prAdapter, ucIdx);
+			if (!prP2pRoleFsmInfo)
+				continue;
+
+			prP2pBssInfo = prGlueInfo->prAdapter->aprBssInfo[
+				prP2pRoleFsmInfo->ucBssIndex];
+
+			if (!prP2pBssInfo || !IS_BSS_GC(prP2pBssInfo) ||
+			    !prP2pBssInfo->fgIsInUse) {
+				DBGLOG(P2P, WARN, "Not GC Bss\n");
+				continue;
+			}
+
+			if (prP2pBssInfo->rNoaDesc.ucCountType == 255)
+				cnmTimerStartTimer(prGlueInfo->prAdapter,
+					&prP2pBssInfo->rDisconnectNoaTimer,
+					30000);
+		}
 		break;
 	default:
 		break;
