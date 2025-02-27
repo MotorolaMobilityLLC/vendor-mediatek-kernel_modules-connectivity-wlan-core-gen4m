@@ -577,6 +577,8 @@ struct BSS_INFO {
 	uint8_t ucVhtChannelWidthBeforeCsa;
 	uint8_t fgIsAisSwitchingChnl;
 #endif
+	struct TIMER rDisconnectNoaTimer;
+	struct NOA_DESCRIPTOR rNoaDesc;
 
 	u_int8_t fgEnableH2E;
 
