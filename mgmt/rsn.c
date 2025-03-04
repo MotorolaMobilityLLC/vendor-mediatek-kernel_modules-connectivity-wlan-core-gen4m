@@ -2565,7 +2565,9 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			return;
 		}
 
-		if (rsnParserCheckForPmkid(prAdapter, prBssInfo, prStaRec,
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+		    [prBssInfo->u4PrivateData]) &&
+		    rsnParserCheckForPmkid(prAdapter, prBssInfo, prStaRec,
 					   &rRsnIe) == FALSE) {
 			*pu2StatusCode = STATUS_INVALID_PMKID;
 			return;
@@ -3148,6 +3150,8 @@ uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 		if (prStaRec->rPmfCfg.fgApplyPmf)
 			DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
 		return prStaRec->rPmfCfg.fgApplyPmf;
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		return prBssInfo->fgBipKeyInstalled;
 	} else
 		return FALSE;
 }
