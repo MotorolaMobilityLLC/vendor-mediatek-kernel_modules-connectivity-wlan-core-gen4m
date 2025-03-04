@@ -61,6 +61,7 @@ enum ENUM_P2P_CH_FILTER_TYPE {
 	P2P_DUAL_A_BAND_FILTER,
 	P2P_USER_PREF_CH_FILTER,
 	P2P_SET_DEFAULT_CH_FILTER,
+	P2P_REMOVE_INDOOR_CH_FILTER,
 	P2P_MAX_CH_FILTER_NUM
 };
 
@@ -526,6 +527,12 @@ void p2pCrossBandStaSccFilter(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
 
 void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pRemoveDfsIndoorChFilter(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwithCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
 		struct BSS_INFO *prP2pBssInfo,

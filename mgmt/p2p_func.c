@@ -83,7 +83,10 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 
 struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSccOnlyChCandFilterTable[] = {
 	{P2P_CROSS_BAND_STA_SCC_FILTER, p2pCrossBandStaSccFilter},
-	{P2P_REMOVE_DFS_CH_FILTER, p2pRemoveDfsChFilter}
+	{P2P_REMOVE_DFS_CH_FILTER, p2pRemoveDfsIndoorChFilter},
+	{P2P_USER_PREF_CH_FILTER, p2pUserPrefChFilter},
+	{P2P_ALIVE_BSS_SYNC_FILTER, p2pMccAliveBssSyncFilter},
+	{P2P_SET_DEFAULT_CH_FILTER, p2pSetDefaultFilter}
 };
 
 struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSingleApMccFilterTable[] = {
@@ -8183,12 +8186,28 @@ void p2pCrossBandStaSccFilter(struct ADAPTER *prAdapter,
 		*ucChSwithCandNum = 0;
 		return;
 	}
-	*ucChSwithCandNum = 1;
-	prSapSwitchCand[0].eRfBand = aliveBss[0]->eBand;
-	prSapSwitchCand[0].ucBssIndex = aliveBss[0]->ucBssIndex;
-	prSapSwitchCand[0].ucChLowerBound = aliveBss[0]->ucPrimaryChannel;
-	prSapSwitchCand[0].ucChUpperBound = aliveBss[0]->ucPrimaryChannel;
 
+	if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SCC ||
+		((!rlmDomainIsIndoorChannel(prAdapter,
+				aliveBss[0]->eBand,
+				aliveBss[0]->ucPrimaryChannel)) &&
+		(prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER)) ||
+		((!rlmDomainIsLegalDfsChannel(prAdapter,
+				aliveBss[0]->eBand,
+				aliveBss[0]->ucPrimaryChannel)) &&
+		(prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS))) {
+		prSapSwitchCand[0].eRfBand = aliveBss[0]->eBand;
+		prSapSwitchCand[0].ucBssIndex = aliveBss[0]->ucBssIndex;
+		prSapSwitchCand[0].ucChLowerBound =
+				aliveBss[0]->ucPrimaryChannel;
+		prSapSwitchCand[0].ucChUpperBound =
+				aliveBss[0]->ucPrimaryChannel;
+		*ucChSwithCandNum = 1;
+		return;
+	}
 }
 
 void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
@@ -8234,6 +8253,60 @@ void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
 			prSapSwitchCand[i].eHwBand,
 			prSapSwitchCand[i].ucChLowerBound,
 			prSapSwitchCand[i].ucChUpperBound);
+}
+
+
+void p2pSapSwitchCandidateRemove(
+		uint8_t *ucChSwitchCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		uint8_t ucRemoveIdx)
+{
+	uint8_t j;
+
+	if (ucRemoveIdx <= *ucChSwitchCandNum) {
+		(*ucChSwitchCandNum)--;
+		for (j = ucRemoveIdx; j < *ucChSwitchCandNum; j++)
+			prSapSwitchCand[j] = prSapSwitchCand[j+1];
+	}
+	DBGLOG(P2P, INFO, "[CSA] cand remove: %d\n",
+		ucRemoveIdx);
+}
+
+void p2pRemoveDfsIndoorChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario)
+{
+	struct BSS_INFO *aliveNonSapBss[MAX_BSSID_NUM] = { 0 };
+	uint8_t ucNumAliveNonSapBss;
+
+	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
+					prAdapter, aliveNonSapBss);
+
+	if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SCC ||
+		ucNumAliveNonSapBss == 0)
+		return;
+
+	if ((rlmDomainIsLegalDfsChannel(prAdapter,
+		aliveNonSapBss[0]->eBand,
+		aliveNonSapBss[0]->ucPrimaryChannel)) ||
+		(rlmDomainIsIndoorChannel(prAdapter,
+		aliveNonSapBss[0]->eBand,
+		aliveNonSapBss[0]->ucPrimaryChannel) &&
+		(prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER))) {
+		prSapSwitchCand[0].eRfBand = prP2pBssInfo->eBand;
+		prSapSwitchCand[0].ucBssIndex =
+				prP2pBssInfo->ucBssIndex;
+		prSapSwitchCand[0].ucChLowerBound =
+				prP2pBssInfo->ucPrimaryChannel;
+		prSapSwitchCand[0].ucChUpperBound =
+				prP2pBssInfo->ucPrimaryChannel;
+		*ucChSwithCandNum = 1;
+		return;
+	}
 }
 
 void p2pBtDesenseChFilter(struct ADAPTER *prAdapter,
@@ -8302,22 +8375,6 @@ void p2pDualApChFilter(struct ADAPTER *prAdapter,
 	} else
 		*ucChSwithCandNum = 0;
 #endif
-}
-
-void p2pSapSwitchCandidateRemove(
-		uint8_t *ucChSwitchCandNum,
-		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
-		uint8_t ucRemoveIdx)
-{
-	uint8_t j;
-
-	if (ucRemoveIdx <= *ucChSwitchCandNum) {
-		(*ucChSwitchCandNum)--;
-		for (j = ucRemoveIdx; j < *ucChSwitchCandNum; j++)
-			prSapSwitchCand[j] = prSapSwitchCand[j+1];
-	}
-	DBGLOG(P2P, INFO, "[CSA] cand remove: %d\n",
-		ucRemoveIdx);
 }
 
 void p2pUserPrefChFilter(struct ADAPTER *prAdapter,
