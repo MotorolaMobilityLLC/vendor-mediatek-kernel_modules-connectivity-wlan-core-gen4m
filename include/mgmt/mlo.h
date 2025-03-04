@@ -219,7 +219,7 @@ struct STA_PROFILE {
 	uint8_t ucLinkId;
 	uint8_t aucLinkAddr[MAC_ADDR_LEN];
 	uint16_t u2BcnIntv;
-	uint64_t u8TsfOffset;
+	int64_t i8TsfOffset;
 	uint16_t u2DtimInfo;
 	uint16_t u2NstrBmp;
 	uint16_t ucBssParaChangeCount;

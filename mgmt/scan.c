@@ -857,6 +857,39 @@ scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
 
 	return prDstBssDesc;
 }
+
+uint8_t
+scanSearchBssDescCountByMldAddrSsid(struct ADAPTER *prAdapter,
+				  uint8_t aucMldAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid)
+{
+	struct SCAN_INFO *prScanInfo;
+	struct LINK *prBSSDescList;
+	struct BSS_DESC *prBssDesc;
+	uint8_t count = 0;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+
+	prBSSDescList = &prScanInfo->rBSSDescList;
+
+	/* Search BSS Desc from current SCAN result list. */
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
+		rLinkEntry, struct BSS_DESC) {
+		if (!prBssDesc->rMlInfo.fgValid)
+			continue;
+
+		if (EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucMldAddr)) {
+			if (fgCheckSsid == FALSE || prSsid == NULL ||
+			    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+				       prSsid->aucSsid, prSsid->u4SsidLen))
+				count++;
+		}
+	}
+
+	return count;
+}
+
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -1562,6 +1595,29 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 					aucBSSID, fgIsValidSsid, &rSsid);
 		if (prBssDesc) {
+			uint8_t i;
+			struct BSS_INFO *prBssInfo;
+
+			if ((prBssDesc->ucMaxBSSIDIndicator !=
+				prMbssidIe->ucMaxBSSIDIndicator) ||
+				(prBssDesc->ucMBSSIDIndex !=
+				prMbssidIdxIe->ucBSSIDIndex)) {
+
+				for (i = 0; i < MAX_BSSID_NUM; i++) {
+					prBssInfo =
+					    GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+					if (IS_BSS_ALIVE(prAdapter, prBssInfo)
+					    && (kalMemCmp(prBssInfo->aucBSSID,
+						aucBSSID, MAC_ADDR_LEN) == 0)) {
+						prBssInfo->ucMaxBSSIDIndicator =
+						prMbssidIe->ucMaxBSSIDIndicator;
+						prBssInfo->ucMBSSIDIndex =
+						prMbssidIdxIe->ucBSSIDIndex;
+						nicUpdateBss(prAdapter, i);
+					}
+				}
+			}
 			prBssDesc->ucMaxBSSIDIndicator =
 				prMbssidIe->ucMaxBSSIDIndicator;
 			prBssDesc->ucMBSSIDIndex =
@@ -3011,15 +3067,24 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			uint32_t u4AkmSuite = 0;
 			uint8_t u4MgmtProtection = 0;
 			enum ENUM_PARAM_AUTH_MODE eAuthMode;
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			uint8_t ucMaxBSSIDIndicator = 0, ucMBSSIDIndex = 0;
+#endif
+			int8_t cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			uint8_t fgIsTxPwrEnvPresent;
+			uint8_t ucTxPwrEnvPwrLmtNum;
+			int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
+#endif
 
 			DBGLOG_LIMITED(SCN, INFO, "Reset BssDesc "MACSTR
 				"AP Timestamp: %llu BssDesc Timestamp: %llu\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				u8Timestamp,
 				prBssDesc->u8TimeStamp.QuadPart);
-
-			/* set flag for indicating this is a new BSS-DESC */
-			fgIsNewBssDesc = TRUE;
 
 			/* backup for APs which reset timestamp unexpectedly */
 			fgIsConnected = prBssDesc->fgIsConnected;
@@ -3034,6 +3099,22 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			eAuthMode = prBssDesc->eRsnSelectedAuthMode;
 			u4MgmtProtection = prBssDesc->u4RsnSelectedPmf;
 
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			ucMaxBSSIDIndicator = prBssDesc->ucMaxBSSIDIndicator;
+			ucMBSSIDIndex = prBssDesc->ucMBSSIDIndex;
+#endif
+
+			cPowerLimit = prBssDesc->cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			fgIsTxPwrEnvPresent = prBssDesc->fgIsTxPwrEnvPresent;
+			ucTxPwrEnvPwrLmtNum = prBssDesc->ucTxPwrEnvPwrLmtNum;
+			kalMemCopy(aicTxPwrEnvMaxTxPwr,
+				prBssDesc->aicTxPwrEnvMaxTxPwr,
+				sizeof(aicTxPwrEnvMaxTxPwr));
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			e6GPwrMode = prBssDesc->e6GPwrMode;
+#endif
 			/* Connected BSS descriptor still be used by other
 			 * functions. Thus, we should re-initialize the BSS_DESC
 			 * structure instead of re-allocating the BSS_DESC
@@ -3053,6 +3134,23 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedAKMSuite = u4AkmSuite;
 			prBssDesc->eRsnSelectedAuthMode = eAuthMode;
 			prBssDesc->u4RsnSelectedPmf = u4MgmtProtection;
+
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			prBssDesc->ucMaxBSSIDIndicator = ucMaxBSSIDIndicator;
+			prBssDesc->ucMBSSIDIndex = ucMBSSIDIndex;
+#endif
+
+			prBssDesc->cPowerLimit = cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			prBssDesc->fgIsTxPwrEnvPresent = fgIsTxPwrEnvPresent;
+			prBssDesc->ucTxPwrEnvPwrLmtNum = ucTxPwrEnvPwrLmtNum;
+			kalMemCopy(prBssDesc->aicTxPwrEnvMaxTxPwr,
+				aicTxPwrEnvMaxTxPwr,
+				sizeof(aicTxPwrEnvMaxTxPwr));
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			prBssDesc->e6GPwrMode = e6GPwrMode;
+#endif
 		}
 	}
 

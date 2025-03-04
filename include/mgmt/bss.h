@@ -49,7 +49,8 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 #define BSS_PROBE_RESP_INCLUDE_P2P_IE               BIT(1)
 
 #define IS_BSS_ALIVE(_prAdapter, _prBssInfo) \
-	(_prBssInfo->fgIsInUse && \
+	(_prBssInfo && \
+	_prBssInfo->fgIsInUse && \
 	_prBssInfo->fgIsNetActive && \
 	(_prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED || \
 	(_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT && \
