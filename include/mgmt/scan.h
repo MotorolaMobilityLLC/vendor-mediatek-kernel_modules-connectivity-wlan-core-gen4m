@@ -981,6 +981,12 @@ scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
 				  uint8_t aucMldAddr[],
 				  u_int8_t fgCheckSsid,
 				  struct PARAM_SSID *prSsid);
+
+uint8_t
+scanSearchBssDescCountByMldAddrSsid(struct ADAPTER *prAdapter,
+				  uint8_t aucMldAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid);
 #endif
 
 /* BSS-DESC Search - Alternative */
