@@ -23,6 +23,8 @@ static moto_product products_list[] = {
 		{"nice",   "LATAM",    "wifi",   "txpowerctrl_LATAM"},
 		{"nice",   "APEM",    "wifi",   "txpowerctrl_APEM"},
 		{"nice",   "all",    "wifi",   "txpowerctrl"},
+		{"cybert",   "ROW",    "wifi",   "txpowerctrl_ROW"},
+		{"cybert",   "all",    "wifi",   "txpowerctrl"},
 		{{0},        {0},   {0},	{0}},
 };
 
