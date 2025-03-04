@@ -1048,6 +1048,7 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_RX_NAPI
 	struct napi_struct *prRxDirectNapi;
 	struct kfifo rRxKfifoQ;
+	u_int8_t fgNapiReady;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
 	u_int8_t fgNapiScheduled;
