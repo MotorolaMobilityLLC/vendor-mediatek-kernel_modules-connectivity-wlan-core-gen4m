@@ -3027,7 +3027,14 @@ int32_t glBusFuncOn(void)
 	}
 #endif
 
+#if (CFG_PCIE_MT6989_6653 == 1)
+	/* Notify RC to intercept CmpltTO during wlan probe */
+	mtk_pcie_set_aer_detect(0, TRUE);
+#endif
 	ret = pci_register_driver(&mtk_pci_driver);
+#if (CFG_PCIE_MT6989_6653 == 1)
+	mtk_pcie_set_aer_detect(0, FALSE);
+#endif
 	if (ret == -EBUSY) {
 		if (g_fgDriverProbed) {
 			WARN_ON_ONCE(TRUE);
