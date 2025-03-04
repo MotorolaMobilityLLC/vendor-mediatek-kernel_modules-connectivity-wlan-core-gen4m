@@ -1128,7 +1128,8 @@ void p2pRoleFsmRunEventRxDeauthentication(struct ADAPTER *prAdapter,
 	case OP_MODE_ACCESS_POINT:
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
-		if (!prSwRfb->fgDriverGen) {
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+		    [prP2pBssInfo->u4PrivateData]) && !prSwRfb->fgDriverGen) {
 			if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 				if (prSwRfb->fgIsCipherMS ||
 				    prSwRfb->fgIsCipherLenMS) {
@@ -1251,7 +1252,8 @@ void p2pRoleFsmRunEventRxDisassociation(struct ADAPTER *prAdapter,
 	case OP_MODE_ACCESS_POINT:
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
-		if (!prSwRfb->fgDriverGen) {
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+		    [prP2pBssInfo->u4PrivateData]) && !prSwRfb->fgDriverGen) {
 			if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 				if (prSwRfb->fgIsCipherMS ||
 				    prSwRfb->fgIsCipherLenMS) {

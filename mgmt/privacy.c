@@ -568,26 +568,28 @@ u_int8_t secIsProtectedFrame(struct ADAPTER *prAdapter,
 			     struct MSDU_INFO *prMsdu,
 			     struct STA_RECORD *prStaRec)
 {
-#if CFG_SUPPORT_NAN
 	struct BSS_INFO *prBssInfo;
-#endif
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsdu->ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(BSS, ERROR, "prBssInfo[%d] is null\n",
+			prMsdu->ucBssIndex);
+		return FALSE;
+	}
 
 #if CFG_SUPPORT_802_11W
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec) &&
-	    (secIsRobustActionFrame(prAdapter, prMsdu->prPacket)
-	    || (IS_BSS_INDEX_AIS(prAdapter, prMsdu->ucBssIndex) &&
+	    (secIsRobustActionFrame(prAdapter, prMsdu->prPacket) ||
+	    ((IS_BSS_INDEX_AIS(prAdapter, prMsdu->ucBssIndex) ||
+	    (IS_BSS_P2P(prBssInfo) && !p2pFuncIsAPMode(prAdapter
+	    ->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData]))) &&
 	    secIsRobustMgmtFrame(prAdapter, prMsdu->prPacket))))
 		return TRUE;
 #endif
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
 		return FALSE;
 #if CFG_SUPPORT_NAN
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		prMsdu->ucBssIndex);
-	if (prBssInfo == NULL) {
-		DBGLOG(NAN, ERROR, "prBssInfo is null\n");
-		return FALSE;
-	}
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
 		if (prStaRec && (prStaRec->fgTransmitKeyExist == TRUE))
 			return TRUE;

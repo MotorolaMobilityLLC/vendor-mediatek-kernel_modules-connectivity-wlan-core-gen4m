@@ -2583,8 +2583,9 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
 				prCmdKey->ucAlgorithmId ==
 						CIPHER_SUITE_BIP_GMAC_256)) {
-				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
-				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
+				DBGLOG_LIMITED(RSN, INFO, "BSS[%u] set BIP\n",
+					prBssInfo->ucBssIndex);
+				prBssInfo->fgBipKeyInstalled = TRUE;
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 				DBGLOG(RSN, INFO,
 					"Change BIP BC keyId from %d to 3\n",

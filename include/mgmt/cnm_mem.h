@@ -187,7 +187,6 @@ struct AP_PMF_CFG {
 	u_int8_t fgMfpr;
 	u_int8_t fgSha256;
 	u_int8_t fgAPApplyPmfReq;
-	u_int8_t fgBipKeyInstalled;
 };
 
 struct STA_PMF_CFG {
