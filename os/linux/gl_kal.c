@@ -2316,11 +2316,17 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 		} else {
 			skb_queue_tail(&prGlueInfo->rRxNapiSkbQ, prSkb);
 			if (prGlueInfo->fgNapiReady) {
-				RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
-					RX_NAPI_SCHEDULE_COUNT);
-				GLUE_SET_REF_CNT(1,
-					prGlueInfo->fgNapiScheduled);
-				kal_napi_schedule(&prGlueInfo->napi);
+				if (kal_napi_schedule(&prGlueInfo->napi)) {
+					RX_INC_CNT(
+						&prGlueInfo->prAdapter->rRxCtrl,
+						RX_NAPI_SCHEDULE_COUNT);
+					GLUE_SET_REF_CNT(1,
+						prGlueInfo->fgNapiScheduled);
+				}
+			} else {
+				DBGLOG(RX, WARN,
+					"Skip napi schedule, NapiReady:%u\n",
+					prGlueInfo->fgNapiReady);
 			}
 		}
 #else /* CFG_SUPPORT_RX_NAPI */
@@ -14969,16 +14975,24 @@ void kal_napi_complete_done(struct napi_struct *n, int work_done)
 #endif /* KERNEL_VERSION(3, 19, 0) */
 }
 
-void kal_napi_schedule(struct napi_struct *n)
+uint8_t kal_napi_schedule(struct napi_struct *n)
 {
 	if (!n)
-		return;
+		return FALSE;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-	if (in_interrupt())
+	if (in_interrupt()) {
 		napi_schedule_irqoff(n);
+		return TRUE;
+	}
 	else
 #endif /* KERNEL_VERSION(4, 0, 0) */
+#if (KERNEL_VERSION(6, 12, 0) <= CFG80211_VERSION_CODE)
+		return napi_schedule(n);
+#else
 		napi_schedule(n);
+
+	return TRUE;
+#endif /* KERNEL_VERSION(6, 12, 0) */
 }
 
 #if CFG_SUPPORT_RX_GRO
@@ -15098,9 +15112,10 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 
-	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-	GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
-	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+	if (kal_napi_schedule(prGlueInfo->prRxDirectNapi)) {
+		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+		GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
+	}
 }
 
 static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
@@ -15115,39 +15130,46 @@ static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
 }
 
-static void kalNapiScheduleCheck(struct GLUE_INFO *pr)
+static void kalNapiScheduleCheck(struct GLUE_INFO *prGlueInfo)
 {
 	static OS_SYSTIME now, last;
 	uint32_t u4ScheduleTimeout;
 	uint32_t u4ScheduleCnt, u4NapiPollCnt;
 
-	GET_BOOT_SYSTIME(&now);
+	GET_CURRENT_SYSTIME(&now);
 
-	u4ScheduleCnt =
-		RX_GET_CNT(&pr->prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-	u4NapiPollCnt =
-		RX_GET_CNT(&pr->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
+	u4ScheduleCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_SCHEDULE_COUNT);
+	u4NapiPollCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_POLL_COUNT);
 
-	if (!pr->fgNapiScheduled) {
-		pr->u4LastScheduleCnt = u4ScheduleCnt;
-		pr->u4LastNapiPollCnt = u4NapiPollCnt;
+	if (!prGlueInfo->fgNapiScheduled) {
+		prGlueInfo->u4LastScheduleCnt = u4ScheduleCnt;
+		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
 		last = now;
 		return;
 	}
 
-	if (pr->u4LastNapiPollCnt != 0 &&
-	    u4ScheduleCnt > pr->u4LastScheduleCnt &&
-	    u4NapiPollCnt == pr->u4LastNapiPollCnt) {
+	if (prGlueInfo->u4LastNapiPollCnt != 0 &&
+	    u4ScheduleCnt > prGlueInfo->u4LastScheduleCnt &&
+	    u4NapiPollCnt == prGlueInfo->u4LastNapiPollCnt) {
 		u4ScheduleTimeout =
-			pr->prAdapter->rWifiVar.u4NapiScheduleTimeout
+			prGlueInfo->prAdapter->rWifiVar.u4NapiScheduleTimeout
 				* MSEC_PER_SEC;
+
+		DBGLOG(INIT, INFO,
+			"NapiScheduled[%u] ScheduleCnt[%u/%u] NapiPollCnt[%u/%u]\n",
+			prGlueInfo->fgNapiScheduled,
+			u4ScheduleCnt, prGlueInfo->u4LastScheduleCnt,
+			u4NapiPollCnt, prGlueInfo->u4LastNapiPollCnt);
+
 		if (CHECK_FOR_TIMEOUT(now, last,
 			MSEC_TO_SYSTIME(u4ScheduleTimeout)))
 			kalSendAeeWarning("Napi Schedule Timeout",
 				"Napi Schedule Timeout\n");
 	} else {
-		pr->u4LastScheduleCnt = u4ScheduleCnt;
-		pr->u4LastNapiPollCnt = u4NapiPollCnt;
+		prGlueInfo->u4LastScheduleCnt = u4ScheduleCnt;
+		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
 		last = now;
 	}
 }
