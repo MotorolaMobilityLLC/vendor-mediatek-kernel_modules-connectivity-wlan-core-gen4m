@@ -1759,9 +1759,13 @@ void nicRxDequeuePendingQueue(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(prSrcQ);
 	QUEUE_INITIALIZE(prDstQ);
 
-	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
-	QUEUE_MOVE_ALL(prSrcQ, &prAdapter->rRxPendingQueue);
-	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+#if CFG_RFB_TRACK
+	nicRxQueueMoveAll(prAdapter, prSrcQ, &prAdapter->rRxPendingQueue,
+		SPIN_LOCK_RX_PENDING, RFB_TRACK_RX_PENDING);
+#else /* CFG_RFB_TRACK */
+	nicRxQueueMoveAll(prAdapter, prSrcQ, &prAdapter->rRxPendingQueue,
+		SPIN_LOCK_RX_PENDING);
+#endif /* CFG_RFB_TRACK */
 
 	while (QUEUE_IS_NOT_EMPTY(prSrcQ)) {
 		QUEUE_REMOVE_HEAD(prSrcQ, prSwRfb, struct SW_RFB *);
@@ -1953,9 +1957,13 @@ void nicRxIndicateRfbMainToNapi(struct ADAPTER *ad)
 		return;
 
 	QUEUE_INITIALIZE(prQue);
-	KAL_ACQUIRE_SPIN_LOCK_BH(ad, SPIN_LOCK_RX_TO_NAPI);
-	QUEUE_MOVE_ALL(prQue, &ad->rRxMainToNapiQue);
-	KAL_RELEASE_SPIN_LOCK_BH(ad, SPIN_LOCK_RX_TO_NAPI);
+#if CFG_RFB_TRACK
+	nicRxQueueMoveAll(ad, prQue, &ad->rRxMainToNapiQue,
+		SPIN_LOCK_RX_TO_NAPI, RFB_TRACK_MAIN_TO_NAPI);
+#else /* CFG_RFB_TRACK */
+	nicRxQueueMoveAll(ad, prQue, &ad->rRxMainToNapiQue,
+		SPIN_LOCK_RX_TO_NAPI);
+#endif /* CFG_RFB_TRACK */
 
 	if (QUEUE_IS_EMPTY(prQue))
 		return;
@@ -3044,6 +3052,37 @@ void nicRxDequeueFreeQue(struct ADAPTER *prAdapter, uint32_t u4Num,
 		QUEUE_INSERT_TAIL(prQue, &prSwRfb->rQueEntry);
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+}
+
+#if CFG_RFB_TRACK
+void nicRxTrackQueueMoveAll(struct ADAPTER *prAdapter,
+	struct QUE *prDstQue, struct QUE *prSrcQue,
+	enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+	uint8_t ucTrackState, uint8_t *fileAndLine)
+#else /* CFG_RFB_TRACK */
+void nicRxQueueMoveAll(struct ADAPTER *prAdapter,
+	struct QUE *prDstQue, struct QUE *prSrcQue,
+	enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory)
+#endif /* CFG_RFB_TRACK */
+{
+	struct SW_RFB *prSwRfb = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, rLockCategory);
+#if CFG_RFB_TRACK
+	while (QUEUE_IS_NOT_EMPTY(prSrcQue)) {
+		QUEUE_REMOVE_HEAD(prSrcQue, prSwRfb, struct SW_RFB *);
+		if (!prSwRfb)
+			break;
+		__RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+			ucTrackState, fileAndLine);
+		QUEUE_INSERT_TAIL(prDstQue, &prSwRfb->rQueEntry);
+	}
+#else
+	QUEUE_MOVE_ALL(prDstQue, prSrcQue);
+#endif /* CFG_RFB_TRACK */
+	KAL_RELEASE_SPIN_LOCK(prAdapter, rLockCategory);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4320,17 +4359,25 @@ static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 #if CFG_RFB_TRACK
 static uint8_t *apucRfbTrackStatusStr[RFB_TRACK_STATUS_NUM] = {
 	(uint8_t *) DISP_STRING("INIT"),
+	(uint8_t *) DISP_STRING("UNUSE"),
 	(uint8_t *) DISP_STRING("FREE"),
 	(uint8_t *) DISP_STRING("HIF"),
 	(uint8_t *) DISP_STRING("RX"),
 	(uint8_t *) DISP_STRING("MAIN"),
 	(uint8_t *) DISP_STRING("FIFO"),
 	(uint8_t *) DISP_STRING("NAPI"),
+	(uint8_t *) DISP_STRING("MAIN_TO_NAPI"),
+	(uint8_t *) DISP_STRING("DATA"),
 	(uint8_t *) DISP_STRING("REORDERING_IN"),
 	(uint8_t *) DISP_STRING("REORDERING_OUT"),
 	(uint8_t *) DISP_STRING("INDICATED"),
 	(uint8_t *) DISP_STRING("PACKET_SETUP"),
+	(uint8_t *) DISP_STRING("ADJUST_UNUSE"),
 	(uint8_t *) DISP_STRING("MLO"),
+	(uint8_t *) DISP_STRING("FW_DROP_SSN"),
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	(uint8_t *) DISP_STRING("RX_PENDING"),
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 	(uint8_t *) DISP_STRING("FAIL"),
 };
 
@@ -4702,3 +4749,15 @@ void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	updateLinkStatsMpduAc(prAdapter, prRetSwRfb);
 #endif
 }
+
+uint32_t nicRxGetReorderCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Cnt = 0;
+	uint32_t i = 0;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++)
+		u4Cnt += REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i);
+
+	return u4Cnt;
+}
+
