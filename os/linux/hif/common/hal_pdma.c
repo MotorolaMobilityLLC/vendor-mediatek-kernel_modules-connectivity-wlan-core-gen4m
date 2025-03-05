@@ -2338,6 +2338,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 #else /* CFG_RFB_TRACK */
 	nicRxDequeueFreeQue(prAdapter, u4RxCnt, prFreeSwRfbList);
 #endif /* CFG_RFB_TRACK */
+	RX_ADD_CNT(prRxCtrl, RX_PDMA_RECEIVE_RFB_COUNT,
+		prFreeSwRfbList->u4NumElem);
 	if (prFreeSwRfbList->u4NumElem < u4RxCnt) {
 		DBGLOG_LIMITED(RX, WARN,
 			"No More RFB for P[%u], RxCnt:%u, RfbCnt:%u, Ind:%u\n",
@@ -2432,6 +2434,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
 	nicRxConcatRxQue(prAdapter, prReceivedRfbList);
+
+	RX_RESET_CNT(prRxCtrl, RX_PDMA_RECEIVE_RFB_COUNT);
 
 	prRxRing->u4PendingCnt = u4RxCnt - u4RxSuccessCnt;
 
@@ -6233,9 +6237,12 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			prHifInfo->rTokenInfo.u4UsedCnt,
 			prTokenInfo->u4TokenNum);
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" Rfb[%u/%u/%u/%u/%u/%u]",
+			" Rfb[%u/%u/%u/%u/%u/%u/%u/%u/%u]",
 			RX_GET_FREE_RFB_CNT(prRxCtrl),
+			RX_GET_HIF_RECEIVED_RFB_CNT(prRxCtrl),
 			RX_GET_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_REORDERING_TOTAL_CNT(prAdapter),
+			RX_GET_PENDING_RFB_CNT(prAdapter),
 			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
 			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
 			KAL_GET_FIFO_CNT(prGlueInfo),
