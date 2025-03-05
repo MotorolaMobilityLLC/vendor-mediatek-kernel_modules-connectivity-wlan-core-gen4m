@@ -2144,32 +2144,29 @@ void kalRxRFBFailRecoveryCheck(struct GLUE_INFO *prGlueInfo)
 
 	prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
 
-	if (RX_GET_TOTAL_RFB_CNT(prGlueInfo) < CFG_RX_RFB_MEM_LEAK_THRESHOLD) {
-		DBGLOG(RX, WARN,
-			"Monitor RFB memory leak, Rfb[%u/%u/%u/%u/%u/%u/%u/%u]\n",
-			RX_GET_FREE_RFB_CNT(prRxCtrl),
-			RX_GET_HIF_RECEIVED_RFB_CNT(prRxCtrl),
-			RX_GET_RECEIVED_RFB_CNT(prRxCtrl),
-			RX_GET_REORDERING_TOTAL_CNT(prGlueInfo->prAdapter),
-			RX_GET_PENDING_RFB_CNT(prGlueInfo->prAdapter),
-			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
-			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
-			KAL_GET_FIFO_CNT(prGlueInfo),
-			CFG_RX_MAX_PKT_NUM);
+	if (RX_GET_TOTAL_RFB_CNT(prGlueInfo) >= CFG_RX_RFB_MEM_LEAK_THRESHOLD) {
+		prRxCtrl->u4CheckRFBFailTime = 0;
+		return;
+	}
 
-		if (prRxCtrl->u4CheckRFBFailTime
-			&& TIME_AFTER(kalGetTimeTick(),
-				prRxCtrl->u4CheckRFBFailTime)) {
-			DBGLOG(RX, ERROR,
-				"Trigger chip reset due to RFB memory leak\n");
-			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
-				RST_RFB_FAIL);
-		}
-
+	/* If CheckRFBFailTime is 0 that indicates the first detection of a
+	  * small amount of SWRFB, and set the next detection time to double
+	  * confirm SWRFB leaks is not false alarm.
+	  */
+	if (prRxCtrl->u4CheckRFBFailTime == 0) {
 		prRxCtrl->u4CheckRFBFailTime = kalGetTimeTick()
 			+ CFG_RX_RFB_MEM_LEAK_INTERVAL;
-	} else {
-		prRxCtrl->u4CheckRFBFailTime = 0;
+		DBGLOG_LIMITED(RX, INFO,
+			"Monitor RFB memory leak, check RFB fail time : %u\n",
+			prRxCtrl->u4CheckRFBFailTime);
+		return;
+	}
+
+	if (TIME_AFTER(kalGetTimeTick(), prRxCtrl->u4CheckRFBFailTime)) {
+		DBGLOG(RX, ERROR,
+			"Trigger chip reset due to RFB memory leak\n");
+		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+			RST_RFB_FAIL);
 	}
 }
 
