@@ -2137,11 +2137,39 @@ skip_gro:
 /*----------------------------------------------------------------------------*/
 void kalRxRFBFailRecoveryCheck(struct GLUE_INFO *prGlueInfo)
 {
+	struct RX_CTRL *prRxCtrl;
+
+	if (!prGlueInfo)
+		return;
+
+	prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
+
 	if (RX_GET_TOTAL_RFB_CNT(prGlueInfo) < CFG_RX_RFB_MEM_LEAK_THRESHOLD) {
-		DBGLOG_LIMITED(RX, ERROR,
-			"Trigger chip reset due to RFB memory leak, RFB List[%d]\n",
-			RX_GET_TOTAL_RFB_CNT(prGlueInfo));
-		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter, RST_RFB_FAIL);
+		DBGLOG(RX, WARN,
+			"Monitor RFB memory leak, Rfb[%u/%u/%u/%u/%u/%u/%u/%u]\n",
+			RX_GET_FREE_RFB_CNT(prRxCtrl),
+			RX_GET_HIF_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_REORDERING_TOTAL_CNT(prGlueInfo->prAdapter),
+			RX_GET_PENDING_RFB_CNT(prGlueInfo->prAdapter),
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
+			KAL_GET_FIFO_CNT(prGlueInfo),
+			CFG_RX_MAX_PKT_NUM);
+
+		if (prRxCtrl->u4CheckRFBFailTime
+			&& TIME_AFTER(kalGetTimeTick(),
+				prRxCtrl->u4CheckRFBFailTime)) {
+			DBGLOG(RX, ERROR,
+				"Trigger chip reset due to RFB memory leak\n");
+			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+				RST_RFB_FAIL);
+		}
+
+		prRxCtrl->u4CheckRFBFailTime = kalGetTimeTick()
+			+ CFG_RX_RFB_MEM_LEAK_INTERVAL;
+	} else {
+		prRxCtrl->u4CheckRFBFailTime = 0;
 	}
 }
 
