@@ -23,6 +23,9 @@
 #include "gl_kal.h"
 #include "mot_config.h"
 
+#define MAX_PARTS 16
+#define MAX_LENGTH 64
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #include "he_ie.h"
 #endif
@@ -9192,6 +9195,189 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 		       "no txpowerctrl.cfg or file is empty\n");
 }
 
+int moto_atoi(const char *str) {
+    int result = 0;
+    int sign = 1;
+    const char *p = str;
+
+    while (isspace(*p)) p++;
+
+    if (*p == '-' || *p == '+') {
+        sign = (*p == '-') ? -1 : 1;
+        p++;
+    }
+
+    while (isdigit(*p)) {
+        result = result * 10 + (*p - '0');
+        p++;
+    }
+
+    return sign * result;
+}
+
+void parseLPI_VLP(char *line, struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *array) {
+    char *parts[MAX_PARTS];
+    int part_count = 0;
+	char *temp = NULL;
+
+    char *token = strtok_r(line, ";", &temp);
+    while (token != NULL && part_count < MAX_PARTS) {
+        parts[part_count++] = token;
+        token = strtok_r(NULL, ";", &temp);
+    }
+
+    for (int i = 0; i < part_count; i++) {
+        char *section = parts[i];
+        char *subparts[MAX_PARTS];
+        int sub_count = 0;
+        int sub_sub_count = 0;
+
+        char *sub_token = strtok_r(section, "-", &temp);
+        while (sub_token != NULL && sub_count < MAX_PARTS) {
+            subparts[sub_count++] = sub_token;
+            sub_token = strtok_r(NULL, "-", &temp);
+        }
+
+        sub_sub_count = 0;
+        char *letter_token = strtok_r(subparts[0], ",", &temp);
+        DBGLOG(RLM, TRACE, "array[%d].aucCountryCode[%d] = ", i);
+        while (letter_token != NULL) {
+            char *letter = letter_token + 1;
+            array[i].aucCountryCode[sub_sub_count] = (uint8_t)letter[0];;
+            DBGLOG(RLM, TRACE, "'%c',", array[i].aucCountryCode[sub_sub_count]);
+            letter_token = strtok_r(NULL, ",", &temp);
+            sub_sub_count++;
+        }
+
+        char *num_token = strtok_r(subparts[1], ",", &temp);
+        sub_sub_count = 0;
+        DBGLOG(RLM, TRACE, "\narray[%d].aucPwrLimitSubBand[%d] = ", i, sub_sub_count);
+        while (num_token != NULL) {
+            array[i].aucPwrLimitSubBand[sub_sub_count] = moto_atoi(num_token);
+            DBGLOG(RLM, TRACE, "%d,", array[i].aucPwrLimitSubBand[sub_sub_count]);
+            num_token = strtok_r(NULL, ",", &temp);
+            sub_sub_count++;
+        }
+
+        array[i].ucPwrUnit = moto_atoi(subparts[2]);
+        DBGLOG(RLM, TRACE, "\narray[%d].ucPwrUnit: %d\n\n", i, array[i].ucPwrUnit);
+    }
+}
+
+void parsePwrMode6GSupport(char *line, struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *array)
+{
+    char *parts[MAX_PARTS];
+    int part_count = 0;
+	char *temp = NULL;
+
+    char *token = strtok_r(line, ";", &temp);
+    while (token != NULL && part_count < MAX_PARTS) {
+        parts[part_count] = token;
+        token = strtok_r(NULL, ";", &temp);
+        part_count++;
+    }
+
+    for (int i = 0; i < part_count; i++) {
+        char *section = parts[i];
+        char *subparts[MAX_PARTS];
+        int sub_count = 0;
+        int group_count = 0;
+        int sub_sub_count = 0;
+
+        char *sub_token = strtok_r(section, "-", &temp);
+        while (sub_token != NULL && sub_count < MAX_PARTS) {
+            subparts[sub_count] = sub_token;
+            sub_token = strtok_r(NULL, "-", &temp);
+            sub_count++;
+        }
+
+        sub_sub_count = 0;
+        char *letter_token = strtok_r(subparts[0], ",", &temp);
+        DBGLOG(RLM, TRACE, "array[%d].aucCountryCode = ", i);
+        while (letter_token != NULL) {
+            char *letter = letter_token + 1;
+            array[i].aucCountryCode[sub_sub_count] = (uint8_t)letter[0];;
+            DBGLOG(RLM, TRACE, "'%c',", array[i].aucCountryCode[sub_sub_count]);
+            letter_token = strtok_r(NULL, ",", &temp);
+            sub_sub_count++;
+        }
+
+        group_count= 0;
+        char *num_segments[MAX_PARTS];
+        char* num_seg_token = strtok_r(subparts[1], "*", &temp);
+        while (num_seg_token != NULL) {
+            num_segments[group_count++] = num_seg_token;
+            num_seg_token = strtok_r(NULL, "*", &temp);
+        }
+
+        DBGLOG(RLM, TRACE, "\narray[i].rSubBand[group_count].fgPwrMode6GSupport: \n", i);
+        for (int j = 0; j < group_count; j++) {
+            DBGLOG(RLM, TRACE, "Sub-sequence %d: ", j);
+            sub_sub_count = 0;
+            char* num_token = strtok_r(num_segments[j], ",", &temp);
+            while (num_token != NULL) {
+                array[i].rSubBand[j].fgPwrMode6GSupport[sub_sub_count] = moto_atoi(num_token);
+                DBGLOG(RLM, TRACE, "[%d][%d][%d]:%d\n", i, j, sub_sub_count, array[i].rSubBand[j].fgPwrMode6GSupport[sub_sub_count]);
+                num_token = strtok_r(NULL, ",", &temp);
+                sub_sub_count++;
+            }
+            DBGLOG(RLM, TRACE, "\n");
+        }
+    }
+}
+
+void vlpFileBufToList(struct ADAPTER *prAdapter, uint8_t *pucFileBuf)
+{
+	char *oneLine;
+	if (pucFileBuf == NULL)
+		return;
+
+	while ((oneLine = kalStrSep((char **)(&pucFileBuf), "\r\n")) != NULL) {
+		/* skip comment line and empty line */
+		if ((oneLine[0] == '#') || (oneLine[0] == 0))
+			continue;
+
+        if (strstr(oneLine, "LPI=") != NULL) {
+            parseLPI_VLP(&oneLine[4], g_rRlmPowerLimitDefault);
+        } else if (strstr(oneLine, "VLP=") != NULL) {
+            parseLPI_VLP(&oneLine[4], g_rRlmPowerLimitDefault_VLP);
+        } else if (strstr(oneLine, "PwrMode6GSupport=") != NULL) {
+            parsePwrMode6GSupport(&oneLine[17], g_rCountryPwrMode6GSupport);
+        }
+	}
+}
+
+void vlpCfgFileToList(struct ADAPTER *prAdapter)
+{
+	uint8_t *pucConfigBuf = NULL;
+	uint32_t u4ConfigReadLen = 0;
+	char motoConfigName[ARRAY_VALUE_MAX] = {0};
+	int motoRet = 1;
+
+	get_moto_config_file_name(motoConfigName, VLP_CFG_INDEX);
+	if (strlen(motoConfigName)) {
+		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			prAdapter->prGlueInfo->prDev);
+	}
+
+	if (motoRet == 0) {
+		/* ToDo:: Nothing */
+	} else
+		if (kalRequestFirmware("vlp.cfg", &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+			/* ToDo:: Nothing */
+		}
+
+	if (pucConfigBuf) {
+		vlpFileBufToList(prAdapter, pucConfigBuf);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
+	} else {
+		DBGLOG(RLM, INFO, "no vlp.cfg or file is empty\n");
+	}
+}
+
 void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)
 {
 	/* 1. add records from global tx power ctrl setting into cfg list */
@@ -9200,8 +9386,11 @@ void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)
 	/* 2. update cfg list by txpowerctrl.cfg */
 	txPwrCtrlCfgFileToList(prAdapter);
 
+	/* 3. update cfg list by vlp.cfg */
+	vlpCfgFileToList(prAdapter);
+
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-	/* 3. send setting to firmware */
+	/* 4. send setting to firmware */
 	rlmDomainSendPwrLimitCmd(prAdapter);
 #endif
 }
