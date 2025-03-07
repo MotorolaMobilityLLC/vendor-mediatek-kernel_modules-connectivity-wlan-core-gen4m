@@ -5,7 +5,8 @@
 
 typedef enum  {
     WIFI_CFG_INDEX,
-    TXPOWERCTRL_CFG_INDEX
+    TXPOWERCTRL_CFG_INDEX,
+    VLP_CFG_INDEX
 } WIFI_CFG_ENUM;
 
 /**
