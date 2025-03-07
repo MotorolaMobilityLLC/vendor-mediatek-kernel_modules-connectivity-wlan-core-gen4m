@@ -468,7 +468,6 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll);
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);
 #endif
-void rlmDisconnectNoaTimeout(struct ADAPTER *prAdapter, uintptr_t ulParamPtr);
 
 uint32_t rlmUpdateStbcSetting(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t enable, uint8_t notify);
