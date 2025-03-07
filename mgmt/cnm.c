@@ -2368,10 +2368,6 @@ omac_choosed:
 			prBssInfo->fgIsAisSwitchingChnl = FALSE;
 #endif
 			cnmTimerInitTimer(prAdapter,
-				&prBssInfo->rDisconnectNoaTimer,
-				(PFN_MGMT_TIMEOUT_FUNC) rlmDisconnectNoaTimeout,
-				(uintptr_t)ucBssIndex);
-			cnmTimerInitTimer(prAdapter,
 				&prBssInfo->rObssScanTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) rlmObssScanTimeout,
 				(uintptr_t) prBssInfo);
