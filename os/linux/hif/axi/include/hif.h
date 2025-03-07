@@ -241,7 +241,7 @@ struct BUS_INFO {
 	const uint32_t tx_ring_wa_cmd_idx;
 	const uint32_t tx_ring_fwdl_idx;
 	const uint32_t tx_ring0_data_idx;
-	const uint32_t tx_ring1_data_idx;
+	uint32_t tx_ring1_data_idx;
 	const uint32_t tx_ring2_data_idx;
 	const uint32_t tx_ring3_data_idx;
 	const uint32_t tx_prio_data_idx;

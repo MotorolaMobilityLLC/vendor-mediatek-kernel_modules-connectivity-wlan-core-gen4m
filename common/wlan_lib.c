@@ -9316,6 +9316,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,
 		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
+	INIT_UINT(prWifiVar->fgUseOneTxRing,
+		  "UseOneTxRing", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
