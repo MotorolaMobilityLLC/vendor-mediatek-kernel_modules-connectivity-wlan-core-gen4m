@@ -9,6 +9,7 @@ typedef struct moto_product {
 	char hw_radio[ARRAY_VALUE_MAX];
 	char wifi_cfg_name[ARRAY_VALUE_MAX];
 	char txpowerctrl_name[ARRAY_VALUE_MAX];
+	char vlp_cfg_name[ARRAY_VALUE_MAX];
 } moto_product;
 
 static moto_product products_list[] = {
@@ -30,7 +31,7 @@ static moto_product products_list[] = {
 		{"cybert",   "ROW",    "wifi",   "txpowerctrl_ROW"},
 		{"cybert",   "JAPAN",    "wifi",   "txpowerctrl_JAPAN"},
 		{"cybert",   "all",    "wifi",   "txpowerctrl"},
-		{"fuji",   "all",    "wifi",   "txpowerctrl"},
+		{"fuji",   "all",    "wifi",   "txpowerctrl", "vlp"},
 		{{0},        {0},   {0},	{0}},
 };
 
@@ -63,6 +64,8 @@ void get_moto_config_file_name(char* name, WIFI_CFG_ENUM index)
                 strncmp((products_list + i)->hw_radio, "all", ARRAY_VALUE_MAX) == 0) {
                 if (index == WIFI_CFG_INDEX) {
                     snprintf(name, ARRAY_VALUE_MAX, "%s.cfg", (products_list + i)->wifi_cfg_name);
+                } else if (index == VLP_CFG_INDEX) {
+                    snprintf(name, ARRAY_VALUE_MAX, "%s.cfg", (products_list + i)->vlp_cfg_name);
                 }
                 else {
                     snprintf(name, ARRAY_VALUE_MAX, "%s.cfg", (products_list + i)->txpowerctrl_name);
