@@ -461,7 +461,6 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo);
 void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
 				unsigned long ulParamPtr);
 #endif
-void rlmDisconnectNoaTimeout(struct ADAPTER *prAdapter, uintptr_t ulParamPtr);
 
 uint32_t
 rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,

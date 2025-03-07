@@ -650,8 +650,6 @@ struct BSS_INFO {
 	uint8_t fgHasStopTx;
 	uint8_t ucVhtChannelWidthBeforeCsa;
 #endif
-	struct TIMER rDisconnectNoaTimer;
-	struct NOA_DESCRIPTOR rNoaDesc;
 
 #ifdef CFG_MSCS_SUPPORT
 	struct FAST_PATH_INFO rFastPathInfo;
@@ -2166,10 +2164,6 @@ struct ADAPTER {
 #define IS_BSS_APGO(_prBssInfo) \
 	(IS_BSS_P2P(_prBssInfo) && \
 	(_prBssInfo)->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-
-#define IS_BSS_GC(_prBssInfo) \
-	(IS_BSS_P2P(_prBssInfo) && \
-	(_prBssInfo)->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 
 #define SET_NET_ACTIVE(_prAdapter, _BssIndex) \
 	{(_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive = TRUE; }

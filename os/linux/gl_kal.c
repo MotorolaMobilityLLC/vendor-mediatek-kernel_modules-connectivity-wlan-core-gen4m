@@ -8752,9 +8752,6 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	int32_t blank = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
 				       wlan_fb_notifier_priv_data;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
-	struct BSS_INFO *prP2pBssInfo;
-	uint8_t ucIdx;
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	blank = *pData;
@@ -8800,27 +8797,6 @@ static int wlan_fb_notifier_callback(struct notifier_block
 		wlan_fb_power_down = TRUE;
 		if (!wlan_perf_monitor_force_enable)
 			kalPerMonDisable(prGlueInfo);
-		for (ucIdx = 0; ucIdx < KAL_P2P_NUM; ucIdx++) {
-			prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
-				prGlueInfo->prAdapter, ucIdx);
-			if (!prP2pRoleFsmInfo)
-				continue;
-
-			prP2pBssInfo = prGlueInfo->prAdapter->aprBssInfo[
-				prP2pRoleFsmInfo->ucBssIndex];
-
-			if (!prP2pBssInfo || !prP2pBssInfo->fgIsInUse ||
-			    !IS_BSS_ACTIVE(prP2pBssInfo) ||
-			    !IS_BSS_GC(prP2pBssInfo)) {
-				DBGLOG(P2P, WARN, "Not GC Bss\n");
-				continue;
-			}
-
-			if (prP2pBssInfo->rNoaDesc.ucCountType == 255)
-				cnmTimerStartTimer(prGlueInfo->prAdapter,
-					&prP2pBssInfo->rDisconnectNoaTimer,
-					30000);
-		}
 		break;
 	default:
 		break;

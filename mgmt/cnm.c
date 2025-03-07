@@ -2206,10 +2206,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;
 #endif
-			cnmTimerInitTimer(prAdapter,
-				&prBssInfo->rDisconnectNoaTimer,
-				(PFN_MGMT_TIMEOUT_FUNC) rlmDisconnectNoaTimeout,
-				(uintptr_t)ucBssIndex);
 			break;
 		}
 	}
