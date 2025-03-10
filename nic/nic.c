@@ -2000,10 +2000,12 @@ void nicReviseBwByCh(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 		goto valid;
 
 	if (!nicIsChBwValid(prAdapter, eBand, ucCh, eSco, *bw)) {
-		/* half BW */
+		/* half BW ; for 320, try 320-2 then 320-1 */
 		if (*bw <= MAX_BW_160MHZ)
 			*bw = *bw - 1;
-		else if (*bw == MAX_BW_320_1MHZ || *bw == MAX_BW_320_2MHZ)
+		else if (*bw == MAX_BW_320_2MHZ)
+			*bw = MAX_BW_320_1MHZ;
+		else if (*bw == MAX_BW_320_1MHZ)
 			*bw = MAX_BW_160MHZ;
 		else if (*bw == MAX_BW_80_80_MHZ)
 			*bw = MAX_BW_80MHZ;
@@ -2017,7 +2019,7 @@ void nicReviseBwByCh(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 	}
 
 valid:
-	DBGLOG(NIC, TRACE, "final band:%u, ch:%u, sco:%u, bw:%s",
+	DBGLOG(NIC, INFO, "final band:%u, ch:%u, sco:%u, bw:%s",
 	       eBand, ucCh, eSco, apucOpBw[*bw]);
 }
 

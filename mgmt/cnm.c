@@ -2156,13 +2156,35 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			ucMaxBandwidth = ucChannelBw;
 	}
 #endif
+
 	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
-		DBGLOG(CNM, TRACE, "Idx=%u, pCH=%d, BW=%d\n",
-			ucBssIndex, prBssDesc->ucChannelNum, ucMaxBandwidth);
+		uint8_t ucMaxBandwidthOld = ucMaxBandwidth;
+
+		nicReviseBwByCh(prAdapter, prBssDesc->eBand,
+			prBssDesc->ucChannelNum, prBssDesc->eSco,
+			&ucMaxBandwidthOld);
+
+		if (ucMaxBandwidth > ucMaxBandwidthOld) {
+			DBGLOG(CNM, TRACE,
+				"Idx=%u, pCH=%d, BW:%d %s -> %d %s adjusted for country%c%c supported CH\n",
+			ucBssIndex, prBssDesc->ucChannelNum,
+			ucMaxBandwidth, apucOpBw[ucMaxBandwidth],
+			ucMaxBandwidthOld, apucOpBw[ucMaxBandwidthOld],
+			((prAdapter->rWifiVar.u2CountryCode & 0xff00) >> 8),
+			(prAdapter->rWifiVar.u2CountryCode & 0x00ff));
+
+			ucMaxBandwidth = ucMaxBandwidthOld;
+		}
+	}
+
+	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
+		DBGLOG(CNM, TRACE, "Idx=%u, pCH=%d, BW=%d %s\n",
+			ucBssIndex, prBssDesc->ucChannelNum,
+			ucMaxBandwidth, apucOpBw[ucMaxBandwidth]);
 	} else {
-		DBGLOG(CNM, TRACE, "Idx=%u, pCH=%d, BW=%d\n",
+		DBGLOG(CNM, TRACE, "Idx=%u, pCH=%d, BW=%d %s\n",
 			ucBssIndex, prBssInfo->ucPrimaryChannel,
-			ucMaxBandwidth);
+			ucMaxBandwidth, apucOpBw[ucMaxBandwidth]);
 	}
 
 	return ucMaxBandwidth;
