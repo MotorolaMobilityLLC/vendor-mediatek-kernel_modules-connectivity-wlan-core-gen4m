@@ -552,7 +552,9 @@ int wifi_coredump_init(void *priv)
 		"%s%s", "/dev/", COREDUMP_WIFI_INF_NAME);
 	cb.emi_size = chip_info->rEmiInfo.coredump_size;
 	cb.mcif_emi_size = 0;
+#ifndef MT6639
 	cb.emi2_size = chip_info->rEmiInfo.coredump2_size;
+#endif
 #if (CFG_TC10_FEATURE == 1)
 	cb.get_save_emi = wifi_coredump_get_save_emi;
 	connv3_coredump_set_memdump_mode(g_u4Memdump);

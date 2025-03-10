@@ -6430,6 +6430,7 @@ int testmode_get_ml_link_state(struct wiphy *wiphy,
 	return mtk_cfg80211_process_str_cmd_reply(wiphy,
 		buf, i4BytesWritten + 1);
 }
+#endif /* CFG_SUPPORT_MLC */
 
 #if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
 int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
@@ -6477,7 +6478,6 @@ int testmode_get_ml_chnl_condition(struct wiphy *wiphy,
 	return rStatus;
 }
 #endif  /* CFG_SUPPORT_ML_CHNL_CONDITION */
-#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 int testmode_set_keep_alive_interval(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)

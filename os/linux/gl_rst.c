@@ -1907,13 +1907,20 @@ int glRstwlanPostWholeChipReset(void)
 #endif
 
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if (CFG_WIFI_DX3_TC10SP == 0)
 int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	char *reason, unsigned int reset_type)
+#else
+int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
+	char *reason)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
+#if (CFG_MTK_WIFI_DFD_DUMP_SUPPORT == 1)
 	struct mt66xx_chip_info *chip = NULL;
+#endif
 	struct CHIP_DBG_OPS *dbg_ops = NULL;
 
 #if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
@@ -1924,9 +1931,15 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 #endif
 #endif
 
+#if (CFG_WIFI_DX3_TC10SP == 0)
 	DBGLOG(INIT, DEBUG,
 		"drv:%d, reason:%s, reset_type:%d\n",
 		drv, reason, reset_type);
+#else
+	DBGLOG(INIT, DEBUG,
+		"drv:%d, reason:%s\n",
+		drv, reason);
+#endif
 
 #if CFG_MTK_ANDROID_WMT
 	while (get_wifi_process_status()) {
@@ -1980,7 +1993,9 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 
 	g_Coredump_source = coredump_connv3_type_to_src(drv);
 	g_WholeChipRstReason = reason;
+#if (CFG_WIFI_DX3_TC10SP == 0)
 	g_Coredump_type = reset_type;
+#endif
 
 	if (glRstCheckRstCriteria()) {
 		while (kalIsResetOnEnd()) {
@@ -2022,6 +2037,7 @@ exit:
 	DBGLOG(INIT, DEBUG, "Wi-Fi is off successfully\n");
 	fgIsDrvTriggerWholeChipReset = FALSE;
 
+#if (CFG_MTK_WIFI_DFD_DUMP_SUPPORT == 1)
 	if (reset_type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
 		glGetChipInfoByGlue(prGlueInfo, (void **)&chip);
 
@@ -2030,6 +2046,7 @@ exit:
 		else
 			wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_ON);
 	}
+#endif
 	return 0;
 }
 

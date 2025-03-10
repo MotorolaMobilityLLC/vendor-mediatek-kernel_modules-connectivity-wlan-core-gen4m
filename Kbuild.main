@@ -2315,6 +2315,12 @@ else
     ccflags-y += -DCFG_SUPPORT_XONVRAM=0
 endif
 
+ifeq ($(CONFIG_WIFI_DX3_TC10SP), y)
+    ccflags-y += -DCFG_WIFI_DX3_TC10SP=1
+else
+    ccflags-y += -DCFG_WIFI_DX3_TC10SP=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_PLCAL), y)
     ccflags-y += -DCFG_SUPPORT_PLCAL=1
 else

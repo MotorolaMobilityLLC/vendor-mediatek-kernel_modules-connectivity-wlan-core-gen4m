@@ -3598,9 +3598,11 @@ uint32_t glWritePcieCfgSpace(int offset, uint32_t value)
 
 void glNotifyPciePowerDown(void)
 {
+#if (CFG_WIFI_DX3_TC10SP == 0)
 #if defined(CFG_MTK_WIFI_PCIE_SUPPORT) && CFG_MTK_ANDROID_WMT
 	DBGLOG(HAL, DEBUG, "notify PCIE PD\n");
 	mtk_pcie_pinmux_select(0, PCIE_PINMUX_PD);
+#endif
 #endif
 }
 

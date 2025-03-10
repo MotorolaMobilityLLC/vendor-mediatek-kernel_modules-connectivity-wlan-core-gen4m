@@ -319,8 +319,13 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
 #endif /* CFG_SUPPORT_CONNINFRA */
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+#if (CFG_WIFI_DX3_TC10SP == 0)
 int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	char *reason, unsigned int reset_type);
+#else
+int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
+	char *reason);
+#endif
 int wlan_post_whole_chip_rst_v3(void);
 int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	char *reason);
