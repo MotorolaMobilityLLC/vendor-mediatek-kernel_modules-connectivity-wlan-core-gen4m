@@ -6121,7 +6121,9 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 	prGlueInfo->i4TxPendingCmdNum = 0;
 	QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
 	glSetHifInfo(prGlueInfo, (unsigned long) pvData);
-
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	QUEUE_INITIALIZE(&prAdapter->rMbrWiFiWkUpRsnQueue);
+#endif
 	/* Init wakelock */
 	wlanWakeLockInit(prGlueInfo);
 

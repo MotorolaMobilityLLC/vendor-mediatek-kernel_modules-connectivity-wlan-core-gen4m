@@ -34,6 +34,9 @@
 #include "wlan_lib.h"
 #include "gl_cmd_validate.h"
 
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+#include "gl_mbrain.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -6875,6 +6878,13 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 		halSetSuspendFlagToFw(prGlueInfo->prAdapter, TRUE);
 #endif
 	}
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	mbr_wifi_wkup_rsn_action(
+		prGlueInfo->prAdapter,
+		MBR_WKUP_RSN_UPDATE_SUSPEND_TIME,
+		MBR_WIFI_NO_WKUP,
+		0);
+#endif
 end:
 	kalHaltUnlock(prGlueInfo);
 
@@ -6932,6 +6942,13 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 #endif
 #if (CFG_SUPPORT_DBDC_SUSPEND_FLOW == 1)
 	cnmDbdcPreResumeFlow(prAdapter);
+#endif
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	mbr_wifi_wkup_rsn_action(
+		prGlueInfo->prAdapter,
+		MBR_WKUP_RSN_UPDATE_RESUME_TIME,
+		MBR_WIFI_NO_WKUP,
+		0);
 #endif
 end:
 	kalHaltUnlock(prGlueInfo);

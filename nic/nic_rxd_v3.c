@@ -24,6 +24,9 @@
 #include "precomp.h"
 #include "radiotap.h"
 #include "coda/WF_TX_FREE_DONE_EVENT_BESRA_c_header.h"
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+#include "gl_mbrain.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -578,6 +581,13 @@ void nic_rxd_v3_check_wakeup_reason(
 			nicUpdateWakeupStatistics(prAdapter, RX_EVENT_INT);
 			prAdapter->wake_event_count[prEvent->ucEID]++;
 #endif
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+			mbr_wifi_wkup_rsn_action(
+				prAdapter,
+				MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME,
+				MBR_WIFI_RX_EVENT_WKUP,
+				prEvent->ucEID);
+#endif
 			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
 				prEvent->ucEID);
 			break;
@@ -622,6 +632,13 @@ void nic_rxd_v3_check_wakeup_reason(
 			(struct WLAN_MAC_MGMT_HEADER *)pvHeader;
 			ucSubtype = (prWlanMgmtHeader->u2FrameCtrl &
 				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+			mbr_wifi_wkup_rsn_action(
+				prAdapter,
+				MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME,
+				MBR_WIFI_RX_MGMT_WKUP,
+				ucSubtype);
+#endif
 			DBGLOG(RX, INFO,
 				"frame subtype: %d",
 				ucSubtype);
@@ -683,6 +700,14 @@ void nic_rxd_v3_check_wakeup_reason(
 		}
 		u2Temp = (pvHeader[ETH_TYPE_LEN_OFFSET] << 8) |
 			 (pvHeader[ETH_TYPE_LEN_OFFSET + 1]);
+
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+			mbr_wifi_wkup_rsn_action(
+				prAdapter,
+				MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME,
+				MBR_WIFI_RX_DATA_WKUP,
+				u2Temp);
+#endif
 
 		switch (u2Temp) {
 		case ETH_P_IPV4:
@@ -761,6 +786,13 @@ void nic_rxd_v3_check_wakeup_reason(
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
 		nicUpdateWakeupStatistics(prAdapter, RX_OTHERS_INT);
+#endif
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+			mbr_wifi_wkup_rsn_action(
+				prAdapter,
+				MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME,
+				MBR_WIFI_RX_OTHERS_WKUP,
+				prSwRfb->ucPacketType);
 #endif
 		DBGLOG(RX, WARN, "Unknown Packet %d wakeup host\n",
 			prSwRfb->ucPacketType);

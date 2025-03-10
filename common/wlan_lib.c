@@ -30,7 +30,7 @@
 #include "gl_coredump.h"
 #endif
 
-#if CFG_SUPPORT_MBRAIN_BIGDATA
+#if CFG_SUPPORT_MBRAIN
 #include "gl_mbrain.h"
 #endif
 /*******************************************************************************
@@ -1761,6 +1761,10 @@ void wlanOffClearAllQueues(struct ADAPTER *prAdapter)
 
 	wlanClearRxToOsQueue(prAdapter);
 
+#endif
+
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	mbr_wifi_wkup_rsn_clear_queue(prAdapter);
 #endif
 }
 

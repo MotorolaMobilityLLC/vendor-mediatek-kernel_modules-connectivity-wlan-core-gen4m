@@ -205,7 +205,18 @@ struct MBRAIN_TRXPERF_ENTRY {
 };
 #endif /* CFG_SUPPORT_MBRAIN_TRX_PERF */
 
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+struct MBR_WIFI_WKUPRSN_ENTRY {
+	struct QUE_ENTRY rQueEntry;
+	struct wifi2mbr_WiFiWkUpRsnInfo rWiFiWkUpRsnInfo;
+};
 
+enum MBR_WIFI_WKUPRSN_ACTION {
+	MBR_WKUP_RSN_UPDATE_RESUME_TIME,
+	MBR_WKUP_RSN_UPDATE_SUSPEND_TIME,
+	MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME,
+};
+#endif
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -250,6 +261,19 @@ uint16_t mbr_wifi_lp_get_total_data_num(
 
 uint16_t mbr_wifi_txpwr_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
+
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+enum wifi2mbr_status mbr_wifi_wkup_rsn_handler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len);
+uint16_t mbr_wifi_wkup_rsn_total_data_num(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
+void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
+			      enum MBR_WIFI_WKUPRSN_ACTION eAction,
+			      enum enum_mbr_wifi_wkup_reason eReason,
+			      uint32_t u4WkUpInfo);
+void mbr_wifi_wkup_rsn_clear_queue(struct ADAPTER *prAdapter);
+#endif
 
 uint16_t mbrWifiPcieGetTotalDataNum(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);

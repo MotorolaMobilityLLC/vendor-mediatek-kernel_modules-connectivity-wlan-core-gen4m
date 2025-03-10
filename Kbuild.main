@@ -803,6 +803,9 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
             ifeq ($(CONFIG_WIFI_DX5), y)
                 CONFIG_SUPPORT_MBRAIN_BIGDATA=y
             endif
+            ifeq ($(call kver_ge,6,12),1)
+                CONFIG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=y
+            endif
         endif
         ifeq ($(call kver_ge,6,6),1)
             CONFIG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG=y
@@ -3599,6 +3602,12 @@ else
     ccflags-y += -DCFG_SUPPORT_MBRAIN_TXPWR_RPT=0
 endif
 
+
+ifeq ($(CONFIG_SUPPORT_MBRAIN_WIFI_WKUP_HOST), y)
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=1
+else
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=0
+endif
 
 ifeq ($(CONFIG_SUPPORT_MBRAIN_TRX_PERF), y)
     ifeq ($(CONFIG_WIFI_DX5), y)

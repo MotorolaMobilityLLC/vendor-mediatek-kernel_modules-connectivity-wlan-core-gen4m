@@ -48,15 +48,22 @@
 #else
 #define WIFI_ICCM_LIMIT (0)
 #endif /* CFG_SUPPORT_WIFI_ICCM */
-
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+#define MBR_WIFI_WKUP_RSN_WKUP_PERIOD_MS_THRESHOLD	1000
+#define MBR_WIFI_WKUP_RSN_TPUT_BPS_THRESHOLD		BIT(14)
+#define MBR_WIFI_WAKEUP_INFO_MAX_QUE_CNT		32
+#endif
 #if CFG_SUPPORT_PCIE_MBRAIN
 #define PCIE_MBRAIN_DATA_NUM (1)
 #endif /* CFG_SUPPORT_PCIE_MBRAIN */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+static struct wifi2mbr_WiFiWkUpRsnInfo mbr_wifi_wkuprsn_info;
+#endif
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -80,6 +87,12 @@ struct wifi2mbr_handler g_arMbrHdlr[] = {
 	{WIFI2MBR_TAG_PCIE, sizeof(struct wifi2mbr_PcieInfo),
 		mbrWifiPcieHandler, mbrWifiPcieGetTotalDataNum},
 #endif /* CFG_SUPPORT_PCIE_MBRAIN */
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	{WIFI2MBR_TAG_WIFI_WKUP_REASON,
+		sizeof(struct wifi2mbr_WiFiWkUpRsnInfo),
+		mbr_wifi_wkup_rsn_handler,
+		mbr_wifi_wkup_rsn_total_data_num},
+#endif
 #if CFG_SUPPORT_MBRAIN_TRX_PERF
 	{WIFI2MBR_TAG_TRX_PERF, sizeof(struct wifi2mbr_TRxPerfInfo),
 		mbrWifiTRxPerfHandler, mbrWifiTRxPerfGetTotalDataNum},
@@ -764,6 +777,183 @@ uint16_t mbrWifiPcieGetTotalDataNum(
 	return num;
 }
 #endif /* CFG_SUPPORT_PCIE_MBRAIN */
+
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
+			      enum MBR_WIFI_WKUPRSN_ACTION eAction,
+			      enum enum_mbr_wifi_wkup_reason eReason,
+			      uint32_t u4WkUpInfo)
+{
+	uint64_t u8NowMs, u8Temp = 0;
+	struct PERF_MONITOR *prPerMonitor = NULL;
+	struct MBR_WIFI_WKUPRSN_ENTRY *prWkUpRsnEntry = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, WARN, "NULL adapter\n");
+		return;
+	}
+	if (!wlanIsDriverReady(prAdapter->prGlueInfo,
+		WLAN_DRV_READY_CHECK_WLAN_ON | WLAN_DRV_READY_CHECK_RESET)) {
+		DBGLOG(REQ, WARN, "driver state not ready\n");
+		return;
+	}
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	prPerMonitor = &prAdapter->rPerMonitor;
+	u8NowMs = ktime_to_ms(KAL_GET_SYS_BOOTTIME());
+	DBGLOG(REQ, TRACE,
+		"eAction:%d, eReason:%d, u4WkUpInfo:%u\n",
+		eAction, eReason, u4WkUpInfo);
+	switch (eAction) {
+	case MBR_WKUP_RSN_UPDATE_RESUME_TIME: {
+		mbr_wifi_wkuprsn_info.resume_time = u8NowMs;
+		if (u8NowMs > mbr_wifi_wkuprsn_info.suspend_time)
+			u8Temp = u8NowMs - mbr_wifi_wkuprsn_info.suspend_time;
+		/* Increase total suspend period when wakeup time < 1s
+		 * and Tput < 2^14 bps
+		 */
+		if (u8Temp < MBR_WIFI_WKUP_RSN_WKUP_PERIOD_MS_THRESHOLD &&
+		    prPerMonitor->ulThroughput <
+		    MBR_WIFI_WKUP_RSN_TPUT_BPS_THRESHOLD) {
+			mbr_wifi_wkuprsn_info.total_suspend_period += u8Temp;
+		}
+		break;
+	}
+	case MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME: {
+		mbr_wifi_wkuprsn_info.wifi_wkup_time = u8NowMs;
+		mbr_wifi_wkuprsn_info.wkup_reason = eReason;
+		mbr_wifi_wkuprsn_info.wkup_info = u4WkUpInfo;
+		break;
+	}
+
+	case MBR_WKUP_RSN_UPDATE_SUSPEND_TIME: {
+		mbr_wifi_wkuprsn_info.suspend_time = u8NowMs;
+		if (mbr_wifi_wkuprsn_info.wkup_reason == MBR_WIFI_NO_WKUP)
+			break;
+		mbr_wifi_wkuprsn_info.wifi_suspend_time = u8NowMs;
+		if (u8NowMs > mbr_wifi_wkuprsn_info.wifi_wkup_time)
+			u8Temp = u8NowMs -
+				mbr_wifi_wkuprsn_info.wifi_wkup_time;
+		if (u8Temp < MBR_WIFI_WKUP_RSN_WKUP_PERIOD_MS_THRESHOLD &&
+		    prPerMonitor->ulThroughput <
+		    MBR_WIFI_WKUP_RSN_TPUT_BPS_THRESHOLD) {
+			/* Check if the queue is full first */
+			if (prAdapter->rMbrWiFiWkUpRsnQueue.u4NumElem >=
+				MBR_WIFI_WAKEUP_INFO_MAX_QUE_CNT) {
+				DBGLOG(REQ, TRACE,
+					"Wakeup reason queue is full.\n");
+				break;
+			}
+			mbr_wifi_wkuprsn_info.wkup_reason = eReason;
+			mbr_wifi_wkuprsn_info.wifi_wkup_period = u8Temp;
+			/* Enqueue the result */
+			prWkUpRsnEntry = kalMemZAlloc(
+					sizeof(struct MBR_WIFI_WKUPRSN_ENTRY),
+					VIR_MEM_TYPE);
+			if (prWkUpRsnEntry == NULL) {
+				DBGLOG(REQ, ERROR,
+					"Alloc mem for wakeup rsn failed.\n");
+				mbr_wifi_wkuprsn_info.wkup_reason =
+							MBR_WIFI_NO_WKUP;
+				break;
+			}
+			kalMemCopy(&prWkUpRsnEntry->rWiFiWkUpRsnInfo,
+				   &mbr_wifi_wkuprsn_info,
+				   sizeof(struct wifi2mbr_WiFiWkUpRsnInfo));
+			prWkUpRsnEntry->rWiFiWkUpRsnInfo.hdr.tag =
+					WIFI2MBR_TAG_WIFI_WKUP_REASON;
+			prWkUpRsnEntry->rWiFiWkUpRsnInfo.hdr.ver = 1;
+			prWkUpRsnEntry->rWiFiWkUpRsnInfo.timestamp = u8NowMs;
+			QUEUE_INSERT_TAIL(&prAdapter->rMbrWiFiWkUpRsnQueue,
+					&prWkUpRsnEntry->rQueEntry);
+			/* Reset Wi-Fi wakeup status */
+			mbr_wifi_wkuprsn_info.wkup_reason = MBR_WIFI_NO_WKUP;
+		}
+		break;
+	}
+	default: {
+		DBGLOG(REQ, WARN, "Unsupport action: %d\n", eAction);
+		break;
+	}
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+}
+
+enum wifi2mbr_status mbr_wifi_wkup_rsn_handler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len)
+{
+	struct MBR_WIFI_WKUPRSN_ENTRY *prWkUpRsnEntry = NULL;
+	enum wifi2mbr_status eRet = WIFI2MBR_END;
+	struct wifi2mbr_WiFiWkUpRsnInfo *prDst =
+		(struct wifi2mbr_WiFiWkUpRsnInfo *)buf;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL ||
+	    !wlanIsDriverReady(prAdapter->prGlueInfo,
+	    WLAN_DRV_READY_CHECK_WLAN_ON | WLAN_DRV_READY_CHECK_RESET))
+		return eRet;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rMbrWiFiWkUpRsnQueue)) {
+		QUEUE_REMOVE_HEAD(&prAdapter->rMbrWiFiWkUpRsnQueue,
+			prWkUpRsnEntry, struct MBR_WIFI_WKUPRSN_ENTRY *);
+		if (prWkUpRsnEntry == NULL) {
+			DBGLOG(REQ, ERROR, "NULL wakeup reason entry\n");
+		} else {
+			kalMemCopy(prDst, &prWkUpRsnEntry->rWiFiWkUpRsnInfo,
+				sizeof(struct wifi2mbr_WiFiWkUpRsnInfo));
+			*pu2Len = sizeof(*prDst);
+			kalMemFree(prWkUpRsnEntry, VIR_MEM_TYPE,
+				sizeof(MBR_WIFI_WKUPRSN_ENTRY));
+			eRet = WIFI2MBR_SUCCESS;
+		}
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	return eRet;
+}
+
+uint16_t mbr_wifi_wkup_rsn_total_data_num(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag)
+{
+	uint16_t u2Ret = 0;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL ||
+	    !wlanIsDriverReady(prAdapter->prGlueInfo,
+	    WLAN_DRV_READY_CHECK_WLAN_ON | WLAN_DRV_READY_CHECK_RESET))
+		return u2Ret;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	u2Ret = (uint16_t)prAdapter->rMbrWiFiWkUpRsnQueue.u4NumElem;
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	return u2Ret;
+}
+
+void mbr_wifi_wkup_rsn_clear_queue(struct ADAPTER *prAdapter)
+{
+	struct MBR_WIFI_WKUPRSN_ENTRY *prWkUpRsnEntry = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, WARN,
+			"NULL prAdapter, do nothing.\n");
+		return;
+	}
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	while (QUEUE_IS_NOT_EMPTY(&prAdapter->rMbrWiFiWkUpRsnQueue)) {
+		QUEUE_REMOVE_HEAD(&prAdapter->rMbrWiFiWkUpRsnQueue,
+			prWkUpRsnEntry, struct MBR_WIFI_WKUPRSN_ENTRY *);
+		if (prWkUpRsnEntry != NULL)
+			kalMemFree(prWkUpRsnEntry, VIR_MEM_TYPE,
+				sizeof(struct MBR_WIFI_WKUP_RSN_ENTRY));
+	}
+}
+#endif /* (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1) */
 
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 enum wifi2mbr_status mbr_wifi_txpwr_info_fill_hanler(struct ADAPTER *prAdapter,
