@@ -5993,7 +5993,8 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_CONN_LOG == 1)
 		connLogDisconnect(prAdapter,
-			prAisBssInfo->ucBssIndex);
+			prAisBssInfo->ucBssIndex,
+			prAisFsmInfo->ucReasonOfDisconnect);
 #endif
 
 		/* 4 <2> Indication */

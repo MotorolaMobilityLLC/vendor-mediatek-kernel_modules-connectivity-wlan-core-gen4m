@@ -162,6 +162,22 @@ void rrmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
 #endif
 }
 
+uint32_t rrmTxNeighborReportRequestTxdone(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo,
+				enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+
+	DBGLOG(WNM, DEBUG, "NR TX DONE:Status[%u] PktType[%u] SeqNo[%d]\n",
+		rTxDoneStatus,
+		prMsduInfo->ucPktType,
+		prMsduInfo->ucTxSeqNum);
+
+#if (CFG_SUPPORT_REPORT_LOG && CFG_SUPPORT_CONN_LOG)
+	connLogMgmtPkt(prAdapter, prMsduInfo, rTxDoneStatus);
+#endif
+	return WLAN_STATUS_SUCCESS;
+}
+
 void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec,
 				struct SUB_ELEMENT_LIST *prSubIEs)
@@ -208,15 +224,19 @@ void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 		u2FrameLen += prSubIEs->rSubIE.ucLength + 2;
 		prSubIEs = prSubIEs->prNext;
 	}
+
 	nicTxSetMngPacket(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
 			  prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
-			  u2FrameLen, NULL, MSDU_RATE_MODE_AUTO);
+			  u2FrameLen, rrmTxNeighborReportRequestTxdone,
+			  MSDU_RATE_MODE_AUTO);
+
 #if (CFG_SUPPORT_REPORT_LOG == 1)
 	rrmReqNeighborReportLog(prAdapter,
 		prStaRec->ucBssIndex,
 		prTxFrame->ucDialogToken,
 		prBssInfo->aucSSID,
-		prBssInfo->ucSSIDLen);
+		prBssInfo->ucSSIDLen,
+		prMsduInfo->ucTxSeqNum);
 #endif
 
 	/* 5 Enqueue the frame to send this action frame. */
