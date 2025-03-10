@@ -830,7 +830,11 @@ struct WIFI_VAR {
 
 	/* Common connection settings start */
 	/* Used for AP mode for desired channel and bandwidth */
-	uint16_t u2CountryCode;
+	union {
+		uint16_t u2CountryCode;
+		char CountryCode[2];
+
+	};
 	uint8_t uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	uint8_t uc6GBandwidthMode;	/* 20/40M or 20M only *//* Not used */

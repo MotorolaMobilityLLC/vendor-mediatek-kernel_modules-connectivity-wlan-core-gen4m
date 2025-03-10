@@ -344,8 +344,7 @@ struct NAN_EVT_NDL_FLOW_CTRL {
 };
 
 struct NAN_FLOW_CTRL {
-	u_int8_t fgAllow;
-	uint32_t u4Time;
+	uint32_t u4ExpiryTime;
 };
 
 union _NAN_BAND_CHNL_CTRL {

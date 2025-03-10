@@ -6119,7 +6119,7 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 			}
 		}
 		DBGLOG(NAN, INFO,
-		       "Update FAW idx=%u, finished [%u] prTimeline->au4AvailMap=%02x-%02x-%02x-%02x\n",
+		       "Update FAW idx=%u, timeline=%u prTimeline->au4AvailMap=%02x-%02x-%02x-%02x\n",
 		       u4SchIdx, ucTimeLineIdx,
 		       ((uint8_t *)prTimeline->au4AvailMap)[0],
 		       ((uint8_t *)prTimeline->au4AvailMap)[1],
@@ -7501,10 +7501,11 @@ static uint32_t nanSchedNegoRemoveCustChnlList(struct ADAPTER *prAdapter)
 						u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 						TRUE, szTimeLineIdx);
-					DBGLOG(NAN, TRACE,
-					       "Delete u4Idx=%u, u4SlotIdx=%u, rCustChnl.u4RawData=0x%08x\n",
-					       u4Idx, u4SlotIdx,
-					       rCustChnl.u4RawData);
+					NAN_DW_DBGLOG(NAN, TRACE,
+						      TRUE, u4SlotIdx,
+						      "Delete u4Idx=%u, u4SlotIdx=%u, rCustChnl.u4RawData=0x%08x\n",
+						      u4Idx, u4SlotIdx,
+						      rCustChnl.u4RawData);
 				}
 			}
 		}
@@ -13186,6 +13187,7 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
 	struct _NAN_FAW_NDC_TIMELINE_T *prNanFawNdcTimeline = NULL;
 	uint8_t ucIdx = 0;
+	size_t i;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
@@ -13226,6 +13228,21 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		return WLAN_STATUS_FAILURE;
 	}
 
+	for (i = 0; i < ARRAY_SIZE(prPeerSchRecord->arCommFawTimeline); i++) {
+		struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
+
+		prTimeline = &prPeerSchRecord->arCommFawTimeline[i];
+		if (prTimeline->ucMapId == NAN_INVALID_MAP_ID)
+			continue;
+
+		DBGLOG(NAN, INFO,
+		       "sch:%u, %u, MapId=%u, avail=%02x-%02x-%02x-%02x\n",
+		       u4SchIdx, i, prTimeline->ucMapId,
+		       ((uint8_t *)(prTimeline->au4AvailMap))[0],
+		       ((uint8_t *)(prTimeline->au4AvailMap))[1],
+		       ((uint8_t *)(prTimeline->au4AvailMap))[2],
+		       ((uint8_t *)(prTimeline->au4AvailMap))[3]);
+	}
 	DBGLOG(NAN, TRACE, "element tag=%u, body_len=%u, copy %zu, sch=%u\n",
 	       prTlvElement->tag_type, prTlvElement->body_len,
 	       sizeof(struct _NAN_SCHED_CMD_UPDATE_CRB_T), u4SchIdx);
@@ -16236,7 +16253,10 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 		    nanChnlInfoEqual(rP2pChnlInfo, rAisChnlInfo))
 			prP2pAisMcc->ucNumOfChannel--;
 
-		DBGLOG(NAN, DEBUG, "Tidx=%u p2p=%u, ais=%u, MCC=%u, Num=%u\n",
+		DBGLOG(NAN, INFO,
+		       "Country=%c%c, Tidx=%u p2p=%u, ais=%u, MCC=%u, Num=%u\n",
+		       prAdapter->rWifiVar.CountryCode[1],
+		       prAdapter->rWifiVar.CountryCode[0],
 		       szTimeline,
 		       rP2pChnlInfo.u4PrimaryChnl, rAisChnlInfo.u4PrimaryChnl,
 		       prP2pAisMcc->fgIsP2pAisMCC, prP2pAisMcc->ucNumOfChannel);
@@ -16356,7 +16376,8 @@ void nanSetConcurrentCustomFAW(struct ADAPTER *prAdapter)
 				.eBand = eBand,
 				.u4Bitmap = bitmap.u4Bitmap,
 		};
-		DBGLOG(NAN, INFO, "SCC or P2P only, set B=%uG ch=%u, 0x%08x",
+		DBGLOG(NAN, INFO,
+		       "AIS only, set B=%uG ch=%u, %02x-%02x-%02x-%02x",
 		       eBand == BAND_5G ? 5 : 6, rAisChnlInfo.u4PrimaryChnl,
 		       bitmap.ucBlock[0], bitmap.ucBlock[1],
 		       bitmap.ucBlock[2], bitmap.ucBlock[3]);

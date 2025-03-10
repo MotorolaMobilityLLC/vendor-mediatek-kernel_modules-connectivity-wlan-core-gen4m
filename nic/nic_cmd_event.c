@@ -7060,29 +7060,14 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		u2RemainingTime = prFlowCtrlEvt->au2RemainingTime[u2SchId];
 		rExpiryTime = rCurrentTime + u2RemainingTime;
 
-		if (prNanFlowCtrlRecord[u2SchId].fgAllow == !!u2RemainingTime ||
-		    rCurrentTime > prNanFlowCtrlRecord[u2SchId].u4Time +
-				   NAN_DW_INTERVAL) {
-			DBGLOG(NAN, WARN,
-			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u, ch=%u\n",
-			       u2SeqNum, u2SchId, u2RemainingTime,
-			       prNanFlowCtrlRecord[u2SchId].fgAllow,
-			       prNanFlowCtrlRecord[u2SchId].u4Time ?
-				       rCurrentTime -
-				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
-				       u4OpClass, u4PrimaryChnl);
-		} else {
-			DBGLOG(NAN, DEBUG,
-			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u, ch=%u\n",
-			       u2SeqNum, u2SchId, u2RemainingTime,
-			       prNanFlowCtrlRecord[u2SchId].fgAllow,
-			       prNanFlowCtrlRecord[u2SchId].u4Time ?
-				       rCurrentTime -
-				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
-			       u4OpClass, u4PrimaryChnl);
-		}
-		prNanFlowCtrlRecord[u2SchId].fgAllow = !!u2RemainingTime;
-		prNanFlowCtrlRecord[u2SchId].u4Time = rCurrentTime;
+		DBGLOG(NAN, DEBUG,
+		       "Seq:%u, Sch:%u, Stop=%3u, Rm:%u, Op=%u, ch=%u",
+		       u2SeqNum, u2SchId,
+		       rCurrentTime - prNanFlowCtrlRecord[u2SchId].u4ExpiryTime,
+		       u2RemainingTime,
+		       u4OpClass, u4PrimaryChnl);
+
+		prNanFlowCtrlRecord[u2SchId].u4ExpiryTime = rExpiryTime;
 
 		if (u2RemainingTime == 0)
 			continue;
