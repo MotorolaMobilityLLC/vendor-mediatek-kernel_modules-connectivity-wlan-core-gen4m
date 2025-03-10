@@ -4289,21 +4289,34 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
-		/* fill HE Capabilities */
-		if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_HE)) {
-			DBGLOG(NAN, DEBUG, "NAN peer supports HE\n");
-			prHeCap = prNDL->aucIeHeCap;
-			heRlmRecHeCapInfo(prAdapter, prStaRec, prHeCap);
+	/* fill HE Capabilities */
+	if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_HE)) {
+		uint8_t fgSet =
+			HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
+			prStaRec->ucHePhyCapInfo);
+
+		DBGLOG(NAN, INFO,
+			"NAN peer supports HE, 40/80: %d\n",
+			fgSet);
+
+		prHeCap = prNDL->aucIeHeCap;
+		heRlmRecHeCapInfo(prAdapter, prStaRec, prHeCap);
+		if (fgSet && (ucPeerBW == 20)) {
+			HE_UNSET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
+			prStaRec->ucHePhyCapInfo);
+			DBGLOG(NAN, INFO,
+				"NAN peer HE20, Unset 40/80\n");
 		}
+	}
 #endif
 #if (CFG_SUPPORT_NAN_11BE == 1)
-		/* fill EHT Capabilities */
-		if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_EHT)) {
-			DBGLOG(NAN, DEBUG, "NAN peer supports EHT\n");
-			prEhtCap = prNDL->aucIeEhtCap;
-			ehtRlmRecCapInfo(prAdapter, prStaRec,
-				prEhtCap);
-		}
+	/* fill EHT Capabilities */
+	if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_EHT)) {
+		DBGLOG(NAN, DEBUG, "NAN peer supports EHT\n");
+		prEhtCap = prNDL->aucIeEhtCap;
+		ehtRlmRecCapInfo(prAdapter, prStaRec,
+			prEhtCap);
+	}
 #endif
 
 	return WLAN_STATUS_SUCCESS;
