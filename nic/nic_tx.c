@@ -3774,8 +3774,8 @@ uint32_t nicTxInitResetResource(struct ADAPTER
 
 #endif
 
-static void nicDumpTxMgmtPacketHex(struct ADAPTER *prAdapter,
-				   struct MSDU_INFO *prMsduInfo)
+void nicDumpTxMgmtPacketHex(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo)
 {
 	struct WLAN_MAC_HEADER *pHeader = NULL;
 	uint16_t u2MgmtHexDump;

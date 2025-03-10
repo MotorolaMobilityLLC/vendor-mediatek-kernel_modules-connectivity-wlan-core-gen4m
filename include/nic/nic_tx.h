@@ -2081,6 +2081,9 @@ void nicTxPrintMetRTP(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, void *prPacket,
 	uint32_t u4PacketLen, u_int8_t bFreeSkb);
 
+void nicDumpTxMgmtPacketHex(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo);
+
 void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 

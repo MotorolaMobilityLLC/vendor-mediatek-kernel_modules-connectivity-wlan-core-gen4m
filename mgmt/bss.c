@@ -1322,6 +1322,8 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 	rsnGenerateMMIE(prAdapter, prMsduInfo);
 #endif
 
+	nicDumpTxMgmtPacketHex(prAdapter, prMsduInfo);
+
 	return prMsduInfo;
 }
 
