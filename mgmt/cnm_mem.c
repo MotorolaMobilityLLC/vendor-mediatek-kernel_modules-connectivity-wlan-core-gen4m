@@ -1306,7 +1306,6 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	prCmdContent->u2HtCapInfo = prStaRec->u2HtCapInfo;
 	prCmdContent->ucNeedResp = (uint8_t) fgNeedResp;
 
-#if !CFG_SLT_SUPPORT
 	if (prAdapter->rWifiVar.eRateSetting != FIXED_RATE_NONE) {
 		/* override rate configuration */
 		nicUpdateRateParams(prAdapter,
@@ -1318,7 +1317,6 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			&(prCmdContent->ucSupMcs32),
 			&(prCmdContent->u2HtCapInfo));
 	}
-#endif
 
 	prCmdContent->ucIsQoS = prStaRec->fgIsQoS;
 	prCmdContent->ucIsUapsdSupported = prStaRec->fgIsUapsdSupported;

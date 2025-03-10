@@ -1784,36 +1784,6 @@ void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter)
  *         FALSE: Not permitted
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t cnmAisIbssIsPermitted(struct ADAPTER
-			       *prAdapter)
-{
-	struct BSS_INFO *prBssInfo;
-	uint8_t i;
-
-	ASSERT(prAdapter);
-
-	/* P2P device network shall be included */
-	for (i = 0; i <= prAdapter->ucSwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
-
-		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)
-		    && !IS_BSS_AIS(prBssInfo))
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param (none)
- *
- * @return TRUE: permitted
- *         FALSE: Not permitted
- */
-/*----------------------------------------------------------------------------*/
 u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1828,9 +1798,7 @@ u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter)
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
-			if (prBssInfo->eCurrentOPMode == OP_MODE_IBSS)
-				return FALSE;
-			else if (IS_BSS_BOW(prBssInfo))
+			if (IS_BSS_BOW(prBssInfo))
 				fgBowIsActive = TRUE;
 		}
 	}
@@ -1867,8 +1835,7 @@ u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter)
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo) &&
-		    (IS_BSS_P2P(prBssInfo)
-		     || prBssInfo->eCurrentOPMode == OP_MODE_IBSS)) {
+		    IS_BSS_P2P(prBssInfo)) {
 			return FALSE;
 		}
 	}

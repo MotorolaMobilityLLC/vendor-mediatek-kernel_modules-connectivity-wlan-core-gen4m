@@ -6772,7 +6772,7 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	prBssInfo->fgIsEhtDscbPresent = prEvtStaticPPDscb->fgIsDscbEnable;
 	prBssInfo->u2EhtDisSubChanBitmap = prEvtStaticPPDscb->u2DscbBitmap;
 
-#if (CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT)
+#if (CFG_ENABLE_WIFI_DIRECT)
 	bssUpdateBeaconContentEx(prAdapter,
 		prEvtStaticPPDscb->ucBssIndex,
 			IE_UPD_METHOD_UPDATE_ALL);

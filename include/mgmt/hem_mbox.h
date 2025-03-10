@@ -164,13 +164,6 @@ enum ENUM_MSG_ID {
 #endif
 #endif
 
-#if CFG_SUPPORT_ADHOC
-	/* SCN notify AIS that an IBSS Peer has been found
-	 * and can merge into
-	 */
-	MID_SCN_AIS_FOUND_IBSS,
-#endif				/* CFG_SUPPORT_ADHOC */
-
 	/* SAA notify AIS for indicating deauthentication/disassociation */
 	MID_SAA_AIS_FSM_ABORT,
 

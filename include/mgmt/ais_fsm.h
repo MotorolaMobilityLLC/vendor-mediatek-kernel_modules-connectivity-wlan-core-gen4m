@@ -35,8 +35,6 @@
 
 #define AIS_DELAY_TIME_OF_DISCONNECT_SEC    5	/* 10 */
 
-#define AIS_IBSS_ALONE_TIMEOUT_SEC          20	/* seconds */
-
 #define AIS_BEACON_TIMEOUT_COUNT_ADHOC      30
 #define AIS_BEACON_TIMEOUT_COUNT_INFRA      10
 #define AIS_BEACON_TIMEOUT_GUARD_TIME_SEC   1	/* Second */
@@ -151,8 +149,6 @@ enum ENUM_AIS_STATE {
 	AIS_STATE_REQ_CHANNEL_JOIN,
 	AIS_STATE_JOIN,
 	AIS_STATE_JOIN_FAILURE,
-	AIS_STATE_IBSS_ALONE,
-	AIS_STATE_IBSS_MERGE,
 	AIS_STATE_NORMAL_TR,
 	AIS_STATE_DISCONNECTING,
 	AIS_STATE_REQ_REMAIN_ON_CHANNEL,
@@ -204,13 +200,6 @@ struct MSG_AIS_ABORT {
 	 * DISCONNECT_REASON_CODE_DISASSOCIATED
 	 */
 	uint16_t u2DeauthReason;
-};
-
-struct MSG_AIS_IBSS_PEER_FOUND {
-	struct MSG_HDR rMsgHdr;	/* Must be the first member */
-	uint8_t ucBssIndex;
-	u_int8_t fgIsMergeIn;	/* TRUE: Merge In, FALSE: Merge Out */
-	struct STA_RECORD *prStaRec;
 };
 
 enum ENUM_AIS_REQUEST_TYPE {
@@ -270,8 +259,6 @@ struct AIS_SPECIFIC_BSS_INFO {
 
 	/* current ap field for reassociation */
 	uint8_t aucCurrentApAddr[MAC_ADDR_LEN];
-
-	u_int8_t fgIsIBSSActive;
 
 	/*! \brief Global flag to let arbiter stay at standby
 	 *  and not connect to any network
@@ -398,8 +385,6 @@ struct CONNECTION_SETTINGS {
 
 	/* ATIM windows using for IBSS power saving function */
 	uint16_t u2AtimWindow;
-
-	u_int8_t fgIsAdHocQoSEnable;
 
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
 
@@ -611,8 +596,6 @@ struct AIS_FSM_INFO {
 
 	struct TIMER rBGScanTimer;
 
-	struct TIMER rIbssAloneTimer;
-
 	uint32_t u4PostponeIndStartTime;
 
 	struct TIMER rJoinTimeoutTimer;
@@ -799,12 +782,6 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER
 				   *prAdapter, struct STA_RECORD *prStaRec,
 				   uint8_t ucBssIndex);
 
-void aisFsmStateInit_IBSS_ALONE(struct ADAPTER
-				*prAdapter, uint8_t ucBssIndex);
-
-void aisFsmStateInit_IBSS_MERGE(struct ADAPTER
-	*prAdapter, struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
-
 void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		      uint8_t ucReasonOfDisconnect, u_int8_t fgDelayIndication,
 		      uint8_t ucBssIndex);
@@ -817,8 +794,6 @@ void aisFsmStateAbort_SCAN(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmStateAbort_NORMAL_TR(struct ADAPTER
 				*prAdapter, uint8_t ucBssIndex);
-
-void aisFsmStateAbort_IBSS(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmSteps(struct ADAPTER *prAdapter,
 		 enum ENUM_AIS_STATE eNextState, uint8_t ucBssIndex);
@@ -851,14 +826,6 @@ void aisFsmRunEventRemainOnChannel(struct ADAPTER
 
 void aisFsmRunEventCancelRemainOnChannel(struct ADAPTER
 		*prAdapter, struct MSG_HDR *prMsgHdr);
-
-/*----------------------------------------------------------------------------*/
-/* Handling for Ad-Hoc Network                                                */
-/*----------------------------------------------------------------------------*/
-void aisFsmCreateIBSS(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-
-void aisFsmMergeIBSS(struct ADAPTER *prAdapter,
-		     struct STA_RECORD *prStaRec);
 
 /*----------------------------------------------------------------------------*/
 /* Handling of Incoming Mailbox Message from CNM                              */
@@ -963,9 +930,6 @@ void aisUpdateBssInfoForRoamingAP(struct ADAPTER
 /*----------------------------------------------------------------------------*/
 void aisFsmRunEventBGSleepTimeOut(struct ADAPTER
 				  *prAdapter, uintptr_t ulParamPtr);
-
-void aisFsmRunEventIbssAloneTimeOut(struct ADAPTER
-				    *prAdapter, uintptr_t ulParamPtr);
 
 void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 			       uintptr_t ulParamPtr);

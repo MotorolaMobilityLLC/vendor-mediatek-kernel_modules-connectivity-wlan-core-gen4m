@@ -263,19 +263,10 @@ struct BSS_INFO {
 	 */
 	uint8_t ucBeaconTimeoutCount;
 
-	/* For IBSS Mode, to keep use same BSSID
-	 * to extend the life cycle of an IBSS
-	 */
-	u_int8_t fgHoldSameBssidForIBSS;
 	/* For AP/IBSS Mode, it is used to indicate that Beacon is sending */
 	u_int8_t fgIsBeaconActivated;
 
 	struct MSDU_INFO *prBeacon;	/* For AP/IBSS Mode - Beacon Frame */
-
-	/* For IBSS Mode - To indicate that we can reply ProbeResp Frame.
-	 * In current TBTT interval
-	 */
-	u_int8_t fgIsIBSSMaster;
 
 	u_int8_t fgFirstArp;
 
@@ -795,20 +786,6 @@ struct BUFFERED_LOG_ENTRY {
 };
 #endif
 
-#if CFG_SLT_SUPPORT
-struct SLT_INFO {
-
-	struct BSS_DESC *prPseudoBssDesc;
-	uint16_t u2SiteID;
-	uint8_t ucChannel2G4;
-	uint8_t ucChannel5G;
-	u_int8_t fgIsDUT;
-	uint32_t u4BeaconReceiveCnt;
-	/* ///////Deprecated///////// */
-	struct STA_RECORD *prPseudoStaRec;
-};
-#endif
-
 struct WLAN_TABLE {
 	uint8_t ucUsed;
 	uint8_t ucBssIndex;
@@ -928,10 +905,6 @@ struct WIFI_VAR {
 
 #if CFG_SUPPORT_WFD
 	struct WFD_CFG_SETTINGS rWfdConfigureSettings;
-#endif
-
-#if CFG_SLT_SUPPORT
-	struct SLT_INFO rSltInfo;
 #endif
 
 	uint8_t aucMediatekOuiIE[64];

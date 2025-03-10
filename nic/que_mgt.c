@@ -1334,7 +1334,6 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 		prBssInfo->prStaRecOfAP ? TRUE : FALSE);
 
 	switch (prBssInfo->eCurrentOPMode) {
-	case OP_MODE_IBSS:
 	case OP_MODE_ACCESS_POINT:
 	case OP_MODE_NAN:
 		/* 4 <1> DA = BMCAST */

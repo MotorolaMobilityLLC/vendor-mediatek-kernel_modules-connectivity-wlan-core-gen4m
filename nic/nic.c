@@ -6405,7 +6405,7 @@ u_int8_t nicSerIsRxStop(struct ADAPTER *prAdapter)
 	}
 }
 
-#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
+#if (CFG_ENABLE_WIFI_DIRECT)
 
 void nicSerReInitBeaconFrame(struct ADAPTER *prAdapter)
 {

@@ -5489,7 +5489,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 		if (u4Status & ERROR_DETECT_MCU_NORMAL_STATE) {
 			del_timer_sync(&prHifInfo->rSerTimer);
 			prHifInfo->fgIsTimerStart = FALSE;
-#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
+#if (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);

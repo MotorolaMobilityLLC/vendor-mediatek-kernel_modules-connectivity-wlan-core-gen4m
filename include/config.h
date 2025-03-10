@@ -431,12 +431,6 @@
  */
 #define CFG_SUPPORT_BUFFER_MODE                 1
 
-/*------------------------------------------------------------------------------
- * SLT Option
- *------------------------------------------------------------------------------
- */
-#define CFG_SLT_SUPPORT				0
-
 #ifdef NDIS60_MINIPORT
 #define CFG_NATIVE_802_11                       1
 
@@ -792,11 +786,7 @@
  */
 
 /*! Max. descriptor number - sync. with firmware */
-#if CFG_SLT_SUPPORT
-#define CFG_NUM_OF_RX0_HIF_DESC                 42
-#else
 #define CFG_NUM_OF_RX0_HIF_DESC                 16
-#endif
 #define CFG_NUM_OF_RX1_HIF_DESC                 2
 
 /*! Max. buffer hold by QM */
@@ -1162,7 +1152,6 @@
  * Migration Option
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_ADHOC                       0
 #ifndef CFG_SUPPORT_AAA
 #define CFG_SUPPORT_AAA                         1
 #endif

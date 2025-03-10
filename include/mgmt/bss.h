@@ -155,9 +155,6 @@ const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_WIFI_DIRECT
 void bssGetAliveBssHwBitmap(struct ADAPTER *prAdapter, uint32_t *pau4Bitmap);
-#endif
-
-#if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
 
 /*----------------------------------------------------------------------------*/
 /* Routines for both IBSS(AdHoc) and BSS(AP)                                  */
@@ -217,24 +214,7 @@ void bssDumpClientList(struct ADAPTER *prAdapter,
 
 void bssCheckClientList(struct ADAPTER *prAdapter,
 				struct BSS_INFO *prBssInfo);
-#endif /* CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT */
-/*----------------------------------------------------------------------------*/
-/* Routines for IBSS(AdHoc) only                                              */
-/*----------------------------------------------------------------------------*/
-void
-ibssProcessMatchedBeacon(struct ADAPTER *prAdapter,
-			 struct BSS_INFO *prBssInfo,
-			 struct BSS_DESC *prBssDesc, uint8_t ucRCPI);
 
-uint32_t ibssCheckCapabilityForAdHocMode(
-		struct ADAPTER *prAdapter,
-		struct BSS_DESC *prBssDesc,
-		uint8_t uBssIndex);
-
-void ibssInitForAdHoc(struct ADAPTER *prAdapter,
-		      struct BSS_INFO *prBssInfo);
-
-#if (CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT)
 uint32_t bssUpdateBeaconContent(struct ADAPTER
 				*prAdapter, uint8_t uBssIndex);
 
@@ -246,7 +226,8 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER
 /*----------------------------------------------------------------------------*/
 void bssInitForAP(struct ADAPTER *prAdapter,
 		  struct BSS_INFO *prBssInfo, u_int8_t fgIsRateUpdate);
-#endif
+#endif /* CFG_ENABLE_WIFI_DIRECT */
+
 void bssUpdateDTIMCount(struct ADAPTER *prAdapter,
 			uint8_t uBssIndex);
 

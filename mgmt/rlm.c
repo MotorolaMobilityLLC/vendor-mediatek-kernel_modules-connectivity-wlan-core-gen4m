@@ -6975,10 +6975,6 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					u2IELength);
 			}
 #endif
-			else if (prBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
-				/* To do: Nothing */
-				/* To do: Ad-hoc */
-			}
 
 			/* Appy new parameters if necessary */
 			if (fgNewParameter) {

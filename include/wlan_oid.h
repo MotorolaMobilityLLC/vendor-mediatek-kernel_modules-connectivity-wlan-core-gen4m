@@ -75,18 +75,10 @@
 #define PARAM_PACKET_FILTER_ACTION_FRAME	0x40000000
 #define PARAM_PACKET_FILTER_AUTH		0x20000000
 #define PARAM_PACKET_FILTER_ASSOC_REQ		0x10000000
-
-#if CFG_SLT_SUPPORT
 #define PARAM_PACKET_FILTER_SUPPORTED   (PARAM_PACKET_FILTER_DIRECTED | \
 					 PARAM_PACKET_FILTER_MULTICAST | \
 					 PARAM_PACKET_FILTER_BROADCAST | \
 					 PARAM_PACKET_FILTER_ALL_MULTICAST)
-#else
-#define PARAM_PACKET_FILTER_SUPPORTED   (PARAM_PACKET_FILTER_DIRECTED | \
-					 PARAM_PACKET_FILTER_MULTICAST | \
-					 PARAM_PACKET_FILTER_BROADCAST | \
-					 PARAM_PACKET_FILTER_ALL_MULTICAST)
-#endif
 
 #define PARAM_MEM_DUMP_MAX_SIZE         1536
 
@@ -2850,62 +2842,6 @@ struct PARAM_NETWORK_ADDRESS_LIST {
 	 */
 };
 
-#if CFG_SLT_SUPPORT
-
-#define FIXED_BW_LG20       0x0000
-#define FIXED_BW_UL20       0x2000
-#define FIXED_BW_DL40       0x3000
-
-#define FIXED_EXT_CHNL_U20  0x4000	/* For AGG register. */
-#define FIXED_EXT_CHNL_L20  0xC000	/* For AGG regsiter. */
-
-enum ENUM_MTK_LP_TEST_MODE {
-	ENUM_MTK_LP_TEST_NORMAL,
-	ENUM_MTK_LP_TEST_GOLDEN_SAMPLE,
-	ENUM_MTK_LP_TEST_DUT,
-	ENUM_MTK_LP_TEST_MODE_NUM
-};
-
-enum ENUM_MTK_SLT_FUNC_IDX {
-	ENUM_MTK_SLT_FUNC_DO_NOTHING,
-	ENUM_MTK_SLT_FUNC_INITIAL,
-	ENUM_MTK_SLT_FUNC_RATE_SET,
-	ENUM_MTK_SLT_FUNC_LP_SET,
-	ENUM_MTK_SLT_FUNC_NUM
-};
-
-struct PARAM_MTK_SLT_LP_TEST_STRUCT {
-	enum ENUM_MTK_LP_TEST_MODE rLpTestMode;
-	uint32_t u4BcnRcvNum;
-};
-
-struct PARAM_MTK_SLT_TR_TEST_STRUCT {
-	enum ENUM_PARAM_NETWORK_TYPE
-	rNetworkType;	/* Network Type OFDM5G or OFDM2.4G */
-	uint32_t u4FixedRate;	/* Fixed Rate including BW */
-};
-
-struct PARAM_MTK_SLT_INITIAL_STRUCT {
-	uint8_t aucTargetMacAddr[PARAM_MAC_ADDR_LEN];
-	uint16_t u2SiteID;
-};
-
-struct PARAM_MTK_SLT_TEST_STRUCT {
-	enum ENUM_MTK_SLT_FUNC_IDX rSltFuncIdx;
-	uint32_t u4Length;	/* Length of structure, */
-	/* including myself */
-	uint32_t u4FuncInfoLen;	/* Include following content */
-	/* field and myself */
-	union {
-		struct PARAM_MTK_SLT_INITIAL_STRUCT rMtkInitTest;
-		struct PARAM_MTK_SLT_LP_TEST_STRUCT rMtkLpTest;
-		struct PARAM_MTK_SLT_TR_TEST_STRUCT rMtkTRTest;
-	} unFuncInfoContent;
-
-};
-
-#endif
-
 #if CFG_SUPPORT_MSP
 /* Should by chip */
 struct PARAM_SEC_CONFIG {
@@ -5212,22 +5148,6 @@ wlanoidSetScanMacOui(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
-
-#if CFG_SLT_SUPPORT
-
-uint32_t
-wlanoidQuerySLTStatus(struct ADAPTER *prAdapter,
-		      void *pvQueryBuffer,
-		      uint32_t u4QueryBufferLen,
-		      uint32_t *pu4QueryInfoLen);
-
-uint32_t
-wlanoidUpdateSLTMode(struct ADAPTER *prAdapter,
-		     void *pvSetBuffer,
-		     uint32_t u4SetBufferLen,
-		     uint32_t *pu4SetInfoLen);
-
-#endif
 
 uint32_t
 wlanoidQueryWlanInfo(struct ADAPTER *prAdapter,

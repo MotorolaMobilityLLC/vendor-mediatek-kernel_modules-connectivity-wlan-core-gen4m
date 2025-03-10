@@ -123,8 +123,6 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 
 	if (type == NL80211_IFTYPE_STATION)
 		rOpMode.eOpMode = NET_TYPE_INFRA;
-	else if (type == NL80211_IFTYPE_ADHOC)
-		rOpMode.eOpMode = NET_TYPE_IBSS;
 	else
 		return -EINVAL;
 	rOpMode.ucBssIdx = ucBssIndex;
@@ -2278,50 +2276,8 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy,
 			   struct net_device *ndev,
 			   struct cfg80211_ibss_params *params)
 {
-	struct PARAM_SSID rNewSsid;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t u4ChnlFreq;	/* Store channel or frequency information */
-	uint32_t u4BufLen = 0, u4SsidLen = 0;
-	uint32_t rStatus;
-	uint8_t ucBssIndex = 0;
-
-	WIPHY_PRIV(wiphy, prGlueInfo);
-	ASSERT(prGlueInfo);
-
-	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
-		return -EINVAL;
-
-	/* set channel */
-	if (params->channel_fixed) {
-		u4ChnlFreq = params->chandef.center_freq1;
-
-		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetFrequency,
-				&u4ChnlFreq, sizeof(u4ChnlFreq),
-				&u4BufLen, ucBssIndex);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-	}
-
-	/* set SSID */
-	if (params->ssid_len > PARAM_MAX_LEN_SSID)
-		u4SsidLen = PARAM_MAX_LEN_SSID;
-	else
-		u4SsidLen = params->ssid_len;
-
-	kalMemCopy(rNewSsid.aucSsid, params->ssid,
-		   u4SsidLen);
-	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidSetSsid, (void *)&rNewSsid,
-				sizeof(struct PARAM_SSID),
-				&u4BufLen, ucBssIndex);
-
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "set SSID:%x\n", rStatus);
-		return -EFAULT;
-	}
-
-	return 0;
+	DBGLOG(REQ, WARN, "not support now\n");
+	/* not implemented yet */
 
 	return -EINVAL;
 }
@@ -2339,27 +2295,10 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy,
 int mtk_cfg80211_leave_ibss(struct wiphy *wiphy,
 			    struct net_device *ndev)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus;
-	uint32_t u4BufLen;
-	uint8_t ucBssIndex = 0;
+	DBGLOG(REQ, WARN, "not support now\n");
+	/* not implemented yet */
 
-	WIPHY_PRIV(wiphy, prGlueInfo);
-	ASSERT(prGlueInfo);
-
-	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
-		return -EINVAL;
-
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate, NULL,
-			   0, &u4BufLen, ucBssIndex);
-
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
-		return -EFAULT;
-	}
-
-	return 0;
+	return -EINVAL;
 }
 
 /*----------------------------------------------------------------------------*/

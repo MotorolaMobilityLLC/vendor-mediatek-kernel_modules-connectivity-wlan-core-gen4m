@@ -1061,34 +1061,6 @@ enum ENUM_PWR_LIMIT_DEFINE {
 	PWR_LIMIT_DEFINE_NUM,
 };
 
-#if 0
-/* If channel width is CHNL_BW_20_40, the first channel will be SCA and
- * the second channel is SCB, then iteratively.
- * Note the final channel will not be SCA.
- */
-struct DOMAIN_SUBBAND_INFO {
-	uint8_t ucRegClass;
-	enum ENUM_BAND eBand;
-	enum ENUM_CHNL_SPAN eChannelSpan;
-	uint8_t ucFirstChannelNum;
-	uint8_t ucNumChannels;
-	enum ENUM_CHNL_BW eChannelBw;
-	u_int8_t fgDfsNeeded;
-	u_int8_t fgIbssProhibited;
-};
-
-/* Use it as all available channel list for STA */
-struct DOMAIN_INFO_ENTRY {
-	uint16_t u2CountryCode;
-	uint16_t u2MibRegDomainValue;
-	/* If different attributes, put them into different rSubBands.
-	 * For example, DFS shall be used or not.
-	 */
-	struct DOMAIN_SUBBAND_INFO rSubBand[MAX_SUBBAND_NUM];
-};
-
-#else /* New definition 20110830 */
-
 /* In all bands, the first channel will be SCA and the second channel is SCB,
  * then iteratively.
  * Note the final channel will not be SCA.
@@ -1127,7 +1099,6 @@ struct DOMAIN_INFO_CFG_ENTRY {
 	uint16_t u2CountryGroup;
 	struct DOMAIN_SUBBAND_INFO rSubBand[8];
 };
-#endif
 #endif
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY

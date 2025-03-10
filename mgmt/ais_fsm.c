@@ -87,8 +87,6 @@ static const char * const apucDebugAisState[AIS_STATE_NUM] = {
 	"REQ_CHANNEL_JOIN",
 	"JOIN",
 	"JOIN_FAILURE",
-	"IBSS_ALONE",
-	"IBSS_MERGE",
 	"NORMAL_TR",
 	"DISCONNECTING",
 	"REQ_REMAIN_ON_CHANNEL",
@@ -354,7 +352,6 @@ void aisInitializeConnectionSettings(struct ADAPTER *prAdapter,
 	prConnSettings->fgSecModeChangeStartTimer = FALSE;
 #endif
 
-	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 	aisInitializeConnectionRsnInfo(prAdapter, ucBssIndex);
 
 	kalMemZero(&prConnSettings->rFtIeR0,
@@ -478,23 +475,12 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 		prAisBssInfo->aucOwnMacAddr, ucLinkIdx);
 
 	/* 4 <3> Initiate BSS_INFO_T - private part */
-	/* TODO */
 	prAisBssInfo->eBand = BAND_2G4;
 	prAisBssInfo->ucPrimaryChannel = 1;
 	prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
 	prAisBssInfo->ucOpRxNss = prAisBssInfo->ucOpTxNss =
 		wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
-	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
-	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
-		OFFSET_OF(struct WLAN_BEACON_FRAME,
-		aucInfoElem[0]) + MAX_IE_LENGTH);
-
-	if (prAisBssInfo->prBeacon) {
-		prAisBssInfo->prBeacon->eSrc = TX_PACKET_MGMT;
-		/* NULL STA_REC */
-		prAisBssInfo->prBeacon->ucStaRecIndex = 0xFF;
-	}
-
+	prAisBssInfo->prBeacon = NULL;
 	prAisBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 
 	for (i = 0; i < MAX_KEY_NUM; i++) {
@@ -578,11 +564,6 @@ void aisFreeBssInfo(struct ADAPTER *prAdapter,
 	if (!fgHalted)
 		nicDeactivateNetwork(prAdapter,
 		       NETWORK_ID(ucBssIndex, ucLinkIdx));
-
-	if (bss->prBeacon) {
-		cnmMgtPktFree(prAdapter, bss->prBeacon);
-		bss->prBeacon = NULL;
-	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUnregister(prAdapter, prAisFsmInfo->prMldBssInfo, bss);
@@ -1066,12 +1047,6 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 			  (uintptr_t)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
-			  &prAisFsmInfo->rIbssAloneTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC)
-			  aisFsmRunEventIbssAloneTimeOut,
-			  (uintptr_t)ucBssIndex);
-
-	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rScanDoneTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventScanDoneTimeOut,
 			  (uintptr_t)ucBssIndex);
@@ -1199,7 +1174,6 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 
 	/* 4 <1> Stop all timers */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBGScanTimer);
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer);
 	aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 	if (kalGetGlueScanReq(prAdapter->prGlueInfo) != NULL) {
 		/* call aisFsmRunEventScanDoneTimeOut()
@@ -1980,90 +1954,6 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 
 }				/* end of aisFsmRetryJOIN() */
 
-#if CFG_SUPPORT_ADHOC
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief State Initialization of AIS_STATE_IBSS_ALONE
- *
- * @param (none)
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmStateInit_IBSS_ALONE(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	struct BSS_INFO *prAisBssInfo;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-	/* 4 <1> Check if IBSS was created before ? */
-	if (prAisBssInfo->fgIsBeaconActivated) {
-
-	/* 4 <2> Start IBSS Alone Timer for periodic SCAN and then SEARCH */
-#if !CFG_SLT_SUPPORT
-		cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer,
-				   SEC_TO_MSEC(AIS_IBSS_ALONE_TIMEOUT_SEC));
-#endif
-	}
-
-	aisFsmCreateIBSS(prAdapter, ucBssIndex);
-}				/* end of aisFsmStateInit_IBSS_ALONE() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief State Initialization of AIS_STATE_IBSS_MERGE
- *
- * @param[in] prBssDesc  The pointer of BSS_DESC_T which is the IBSS we will
- *                       try to merge with.
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmStateInit_IBSS_MERGE(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	struct BSS_INFO *prAisBssInfo;
-	struct STA_RECORD *prStaRec = (struct STA_RECORD *)NULL;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-	/* 4 <1> We will merge with to this BSS immediately. */
-	prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
-	prBssDesc->fgIsConnected |= BIT(ucBssIndex);
-
-	/* 4 <2> Setup corresponding STA_RECORD_T */
-	prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
-					      STA_TYPE_ADHOC_PEER,
-					      prAisBssInfo->ucBssIndex,
-					      prBssDesc);
-
-	if (!prStaRec) {
-		DBGLOG(AIS, ERROR,
-			"aisFsmStateInit_IBSS_MERGE failed because prStaRec is NULL, return.\n");
-		return;
-	}
-
-	prStaRec->fgIsMerging = TRUE;
-
-	prAisFsmInfo->prTargetStaRec = prStaRec;
-
-	/* 4 <2.1> sync. to firmware domain */
-	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-
-	/* 4 <3> IBSS-Merge */
-	aisFsmMergeIBSS(prAdapter, prStaRec);
-}				/* end of aisFsmStateInit_IBSS_MERGE() */
-
-#endif /* CFG_SUPPORT_ADHOC */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process of JOIN Abort
@@ -2185,41 +2075,6 @@ void aisFsmStateAbort_NORMAL_TR(struct ADAPTER *prAdapter,
 	/* stop join timeout timer */
 	aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 } /* end of aisFsmAbortNORMAL_TR() */
-
-#if CFG_SUPPORT_ADHOC
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Process of NORMAL_TR Abort
- *
- * @param (none)
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmStateAbort_IBSS(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_DESC *prBssDesc;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-
-	/* reset BSS-DESC */
-	if (prAisFsmInfo->prTargetStaRec) {
-		prBssDesc =
-		    scanSearchBssDescByTA(prAdapter,
-					  prAisFsmInfo->
-					  prTargetStaRec->aucMacAddr);
-
-		if (prBssDesc) {
-			prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
-			prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
-		}
-	}
-	/* release channel privilege */
-	aisFsmReleaseCh(prAdapter, ucBssIndex);
-}
-#endif /* CFG_SUPPORT_ADHOC */
 
 static u_int8_t
 aisState_OFF_CHNL_TX(struct ADAPTER *prAdapter,
@@ -3979,19 +3834,6 @@ send_msg:
 
 			break;
 
-#if CFG_SUPPORT_ADHOC
-		case AIS_STATE_IBSS_ALONE:
-			aisFsmStateInit_IBSS_ALONE(prAdapter,
-				ucBssIndex);
-			break;
-
-		case AIS_STATE_IBSS_MERGE:
-			aisFsmStateInit_IBSS_MERGE(prAdapter,
-				prAisFsmInfo->prTargetBssDesc,
-				ucBssIndex);
-			break;
-#endif /* CFG_SUPPORT_ADHOC */
-
 		case AIS_STATE_NORMAL_TR:
 			/* recycle unused bssinfo */
 			aisFreeAllBssInfo(prAdapter, prAisFsmInfo, FALSE);
@@ -4955,12 +4797,6 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		fgIsCheckConnected = TRUE;
 		break;
 
-#if CFG_SUPPORT_ADHOC
-	case AIS_STATE_IBSS_ALONE:
-	case AIS_STATE_IBSS_MERGE:
-		aisFsmStateAbort_IBSS(prAdapter, ucBssIndex);
-		break;
-#endif /* CFG_SUPPORT_ADHOC */
 	case AIS_STATE_NORMAL_TR:
 		fgIsCheckConnected = TRUE;
 		break;
@@ -5850,329 +5686,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 	return eNextState;
 }
 
-#if CFG_SUPPORT_ADHOC
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will handle the Grant Msg of IBSS Create which was
- *        sent by CNM to indicate that channel was changed for creating IBSS.
- *
- * @param[in] prAdapter  Pointer of ADAPTER_T
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmCreateIBSS(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-
-	do {
-		/* Check State */
-		if (prAisFsmInfo->eCurrentState == AIS_STATE_IBSS_ALONE)
-			aisUpdateBssInfoForCreateIBSS(prAdapter, ucBssIndex);
-
-	} while (FALSE);
-}				/* end of aisFsmCreateIBSS() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will handle the Grant Msg of IBSS Merge which was
- *        sent by CNM to indicate that channel was changed for merging IBSS.
- *
- * @param[in] prAdapter  Pointer of ADAPTER_T
- * @param[in] prStaRec   Pointer of STA_RECORD_T for merge
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmMergeIBSS(struct ADAPTER *prAdapter,
-		     struct STA_RECORD *prStaRec)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	enum ENUM_AIS_STATE eNextState;
-	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucBssIndex = 0;
-
-	ucBssIndex = prStaRec->ucBssIndex;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-	do {
-
-		eNextState = prAisFsmInfo->eCurrentState;
-
-		switch (prAisFsmInfo->eCurrentState) {
-		case AIS_STATE_IBSS_MERGE:
-			{
-				struct BSS_DESC *prBssDesc;
-
-				/* 4 <1.1> Change FW's Media State
-				 * immediately.
-				 */
-				aisChangeMediaState(prAisBssInfo,
-					MEDIA_STATE_CONNECTED);
-
-				/* 4 <1.2> Deactivate previous Peers'
-				 * STA_RECORD_T in Driver if have.
-				 */
-				bssInitializeClientList(prAdapter,
-							prAisBssInfo);
-
-				/* 4 <1.3> Unmark connection flag of previous
-				 * BSS_DESC_T.
-				 */
-				prBssDesc =
-				    scanSearchBssDescByBssid(prAdapter,
-					prAisBssInfo->aucBSSID);
-				if (prBssDesc != NULL) {
-					prBssDesc->fgIsConnecting &=
-						~BIT(ucBssIndex);
-					prBssDesc->fgIsConnected &=
-						~BIT(ucBssIndex);
-				}
-				/* 4 <1.4> Add Peers' STA_RECORD_T to
-				 * Client List
-				 */
-				bssAddClient(prAdapter, prAisBssInfo, prStaRec);
-
-				/* 4 <1.5> Activate current Peer's STA_RECORD_T
-				 * in Driver.
-				 */
-				cnmStaRecChangeState(prAdapter, prStaRec,
-						     STA_STATE_3);
-				prStaRec->fgIsMerging = FALSE;
-
-				/* 4 <1.6> Update BSS_INFO_T */
-				aisUpdateBssInfoForMergeIBSS(prAdapter,
-							     prStaRec);
-
-				/* 4 <1.7> Enable other features */
-
-				/* 4 <1.8> Indicate Connected Event to Host
-				 * immediately.
-				 */
-				aisIndicationOfMediaStateToHost(prAdapter,
-					MEDIA_STATE_CONNECTED,
-					FALSE,
-					ucBssIndex);
-
-				/* 4 <1.9> Set the Next State of AIS FSM */
-				eNextState = AIS_STATE_NORMAL_TR;
-
-				/* 4 <1.10> Release channel privilege */
-				aisFsmReleaseCh(prAdapter, ucBssIndex);
-
-#if CFG_SLT_SUPPORT
-				prAdapter->rWifiVar.rSltInfo.prPseudoStaRec =
-				    prStaRec;
-#endif
-			}
-			break;
-
-		default:
-			break;
-		}
-
-		if (eNextState != prAisFsmInfo->eCurrentState)
-			aisFsmSteps(prAdapter, eNextState, ucBssIndex);
-
-	} while (FALSE);
-}				/* end of aisFsmMergeIBSS() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will handle the Notification of existing IBSS was found
- *        from SCN.
- *
- * @param[in] prMsgHdr   Message of Notification of an IBSS was present.
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmRunEventFoundIBSSPeer(struct ADAPTER *prAdapter,
-				 struct MSG_HDR *prMsgHdr)
-{
-	struct MSG_AIS_IBSS_PEER_FOUND *prAisIbssPeerFoundMsg;
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	enum ENUM_AIS_STATE eNextState;
-	struct STA_RECORD *prStaRec;
-	struct BSS_INFO *prAisBssInfo;
-	struct BSS_DESC *prBssDesc;
-	u_int8_t fgIsMergeIn;
-	uint8_t ucBssIndex = 0;
-
-	prAisIbssPeerFoundMsg = (struct MSG_AIS_IBSS_PEER_FOUND *)prMsgHdr;
-	ucBssIndex = prAisIbssPeerFoundMsg->ucBssIndex;
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-	prStaRec = prAisIbssPeerFoundMsg->prStaRec;
-
-	fgIsMergeIn = prAisIbssPeerFoundMsg->fgIsMergeIn;
-
-	cnmMemFree(prAdapter, prMsgHdr);
-
-	eNextState = prAisFsmInfo->eCurrentState;
-	switch (prAisFsmInfo->eCurrentState) {
-	case AIS_STATE_IBSS_ALONE:
-		{
-			/* 4 <1> An IBSS Peer 'merged in'. */
-			if (fgIsMergeIn) {
-
-				/* 4 <1.1> Change FW's Media State
-				 * immediately.
-				 */
-				aisChangeMediaState(prAisBssInfo,
-					MEDIA_STATE_CONNECTED);
-
-				/* 4 <1.2> Add Peers' STA_RECORD_T to
-				 * Client List
-				 */
-				bssAddClient(prAdapter, prAisBssInfo, prStaRec);
-
-#if CFG_SLT_SUPPORT
-				/* 4 <1.3> Mark connection flag of
-				 * BSS_DESC_T.
-				 */
-				prBssDesc =
-				    scanSearchBssDescByTA(prAdapter,
-							  prStaRec->aucMacAddr);
-
-				if (prBssDesc != NULL) {
-					prBssDesc->fgIsConnecting &=
-						~BIT(ucBssIndex);
-					prBssDesc->fgIsConnected |=
-						BIT(ucBssIndex);
-				}
-
-				/* 4 <1.4> Activate current Peer's
-				 * STA_RECORD_T in Driver.
-				 */
-				/* TODO(Kevin): TBD */
-				prStaRec->fgIsQoS = TRUE;
-#else
-				/* 4 <1.3> Mark connection flag
-				 * of BSS_DESC_T.
-				 */
-				prBssDesc =
-				    scanSearchBssDescByBssid(prAdapter,
-					prAisBssInfo->aucBSSID);
-
-				if (prBssDesc != NULL) {
-					prBssDesc->fgIsConnecting &=
-						~BIT(ucBssIndex);
-					prBssDesc->fgIsConnected |=
-						BIT(ucBssIndex);
-				}
-
-				/* 4 <1.4> Activate current Peer's STA_RECORD_T
-				 * in Driver.
-				 */
-				/* TODO(Kevin): TBD */
-				prStaRec->fgIsQoS = FALSE;
-
-#endif
-
-				cnmStaRecChangeState(prAdapter, prStaRec,
-						     STA_STATE_3);
-				prStaRec->fgIsMerging = FALSE;
-
-				/* 4 <1.6> sync. to firmware */
-				nicUpdateBss(prAdapter,
-					     prAisBssInfo->ucBssIndex);
-
-				/* 4 <1.7> Indicate Connected Event to Host
-				 * immediately.
-				 */
-				aisIndicationOfMediaStateToHost(prAdapter,
-					MEDIA_STATE_CONNECTED,
-					FALSE,
-					ucBssIndex);
-
-				/* 4 <1.8> indicate PM for connected */
-				nicPmIndicateBssConnected(prAdapter,
-					prAisBssInfo->ucBssIndex);
-
-				/* 4 <1.9> Set the Next State of AIS FSM */
-				eNextState = AIS_STATE_NORMAL_TR;
-
-				/* 4 <1.10> Release channel privilege */
-				aisFsmReleaseCh(prAdapter, ucBssIndex);
-			}
-			/* 4 <2> We need 'merge out' to this IBSS */
-			else {
-
-				/* 4 <2.1> Get corresponding BSS_DESC_T */
-				prBssDesc =
-				    scanSearchBssDescByTA(prAdapter,
-							  prStaRec->aucMacAddr);
-
-				prAisFsmInfo->prTargetBssDesc = prBssDesc;
-
-				/* 4 <2.2> Set the Next State of AIS FSM */
-				eNextState = AIS_STATE_IBSS_MERGE;
-			}
-		}
-		break;
-
-	case AIS_STATE_NORMAL_TR:
-		{
-
-			/* 4 <3> An IBSS Peer 'merged in'. */
-			if (fgIsMergeIn) {
-
-				/* 4 <3.1> Add Peers' STA_RECORD_T to
-				 * Client List
-				 */
-				bssAddClient(prAdapter, prAisBssInfo, prStaRec);
-
-#if CFG_SLT_SUPPORT
-				/* 4 <3.2> Activate current Peer's STA_RECORD_T
-				 * in Driver.
-				 */
-				/* TODO(Kevin): TBD */
-				prStaRec->fgIsQoS = TRUE;
-#else
-				/* 4 <3.2> Activate current Peer's STA_RECORD_T
-				 * in Driver.
-				 */
-				/* TODO(Kevin): TBD */
-				prStaRec->fgIsQoS = FALSE;
-#endif
-
-				cnmStaRecChangeState(prAdapter, prStaRec,
-						     STA_STATE_3);
-				prStaRec->fgIsMerging = FALSE;
-
-			}
-			/* 4 <4> We need 'merge out' to this IBSS */
-			else {
-
-				/* 4 <4.1> Get corresponding BSS_DESC_T */
-				prBssDesc =
-				    scanSearchBssDescByTA(prAdapter,
-							  prStaRec->aucMacAddr);
-
-				prAisFsmInfo->prTargetBssDesc = prBssDesc;
-
-				/* 4 <4.2> Set the Next State of AIS FSM */
-				eNextState = AIS_STATE_IBSS_MERGE;
-
-			}
-		}
-		break;
-
-	default:
-		break;
-	}
-
-	if (eNextState != prAisFsmInfo->eCurrentState)
-		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
-}				/* end of aisFsmRunEventFoundIBSSPeer() */
-#endif /* CFG_SUPPORT_ADHOC */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will do necessary procedures when connected
@@ -6428,13 +5941,6 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 				rEventConnStatus.u2AID =
 				    prAisBssInfo->u2AssocId;
 				rEventConnStatus.u2ATIMWindow = 0;
-			} else if (prAisBssInfo->eCurrentOPMode ==
-				OP_MODE_IBSS) {
-				rEventConnStatus.ucInfraMode =
-				    (uint8_t) NET_TYPE_IBSS;
-				rEventConnStatus.u2AID = 0;
-				rEventConnStatus.u2ATIMWindow =
-				    prAisBssInfo->u2ATIMWindow;
 			} else {
 				DBGLOG(AIS, WARN,
 					"Invalid operation mode: %d",
@@ -6871,303 +6377,6 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 #endif
 }
 
-#if CFG_SUPPORT_ADHOC
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will create an Ad-Hoc network and start sending
- *        Beacon Frames.
- * @param (none)
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisUpdateBssInfoForCreateIBSS(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-
-	if (prAisBssInfo->fgIsBeaconActivated)
-		return;
-
-	/* 3 <1> Update BSS_INFO_T per Network Basis */
-	/* 4 <1.1> Setup Operation Mode */
-	prAisBssInfo->eCurrentOPMode = OP_MODE_IBSS;
-
-	/* 4 <1.2> Setup SSID */
-	COPY_SSID(prAisBssInfo->aucSSID, prAisBssInfo->ucSSIDLen,
-		  prConnSettings->aucSSID, prConnSettings->ucSSIDLen);
-
-	/* 4 <1.3> Clear current AP's STA_RECORD_T and current AID */
-	prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
-	prAisBssInfo->u2AssocId = 0;
-
-	/* 4 <1.4> Setup Channel, Band and Phy Attributes */
-	prAisBssInfo->ucPrimaryChannel = prConnSettings->ucAdHocChannelNum;
-	prAisBssInfo->eBand = prConnSettings->eAdHocBand;
-
-	if (prAisBssInfo->eBand == BAND_2G4) {
-		/* Depend on eBand */
-		prAisBssInfo->ucPhyTypeSet =
-		    prAdapter->
-		    rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11BGN;
-		/* Depend on eCurrentOPMode and ucPhyTypeSet */
-		prAisBssInfo->ucConfigAdHocAPMode = AD_HOC_MODE_MIXED_11BG;
-	} else {
-		/* Depend on eBand */
-		prAisBssInfo->ucPhyTypeSet =
-		    prAdapter->
-		    rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11ANAC;
-		/* Depend on eCurrentOPMode and ucPhyTypeSet */
-		prAisBssInfo->ucConfigAdHocAPMode = AD_HOC_MODE_11A;
-	}
-
-	/* 4 <1.5> Setup MIB for current BSS */
-	prAisBssInfo->u2BeaconInterval = prConnSettings->u2BeaconPeriod;
-	prAisBssInfo->ucDTIMPeriod = 0;
-	prAisBssInfo->u2ATIMWindow = prConnSettings->u2AtimWindow;
-
-	prAisBssInfo->ucBeaconTimeoutCount = AIS_BEACON_TIMEOUT_COUNT_ADHOC;
-
-	if (prConnSettings->eEncStatus == ENUM_ENCRYPTION1_ENABLED ||
-	    prConnSettings->eEncStatus == ENUM_ENCRYPTION2_ENABLED ||
-	    prConnSettings->eEncStatus == ENUM_ENCRYPTION3_ENABLED ||
-	    prConnSettings->eEncStatus == ENUM_ENCRYPTION4_ENABLED) {
-		prAisBssInfo->fgIsProtection = TRUE;
-	} else {
-		prAisBssInfo->fgIsProtection = FALSE;
-	}
-
-	/* 3 <2> Update BSS_INFO_T common part */
-	ibssInitForAdHoc(prAdapter, prAisBssInfo);
-	/* 4 <2.1> Initialize client list */
-	bssInitializeClientList(prAdapter, prAisBssInfo);
-
-	/* 3 <3> Set MAC HW */
-	/* 4 <3.1> Setup channel and bandwidth */
-	rlmBssInitForAPandIbss(prAdapter, prAisBssInfo);
-
-	/* 4 <3.2> use command packets to inform firmware */
-	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
-
-	/* 4 <3.3> enable beaconing */
-	bssUpdateBeaconContent(prAdapter, prAisBssInfo->ucBssIndex);
-
-	/* 4 <3.4> Update AdHoc PM parameter */
-	nicPmIndicateBssCreated(prAdapter, prAisBssInfo->ucBssIndex);
-
-	/* 3 <4> Set ACTIVE flag. */
-	prAisBssInfo->fgIsBeaconActivated = TRUE;
-	prAisBssInfo->fgHoldSameBssidForIBSS = TRUE;
-
-	/* 3 <5> Start IBSS Alone Timer */
-	cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer,
-			   SEC_TO_MSEC(AIS_IBSS_ALONE_TIMEOUT_SEC));
-}				/* end of aisCreateIBSS() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will update the contain of BSS_INFO_T for
- *        AIS network once the existing IBSS was found.
- *
- * @param[in] prStaRec               Pointer to the STA_RECORD_T
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisUpdateBssInfoForMergeIBSS(struct ADAPTER *prAdapter,
-				  struct STA_RECORD *prStaRec)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	struct BSS_DESC *prBssDesc;
-	uint8_t ucBssIndex = 0;
-
-	ucBssIndex = prStaRec->ucBssIndex;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer);
-
-	if (!prAisBssInfo->fgIsBeaconActivated) {
-
-		/* 3 <1> Update BSS_INFO_T per Network Basis */
-		/* 4 <1.1> Setup Operation Mode */
-		prAisBssInfo->eCurrentOPMode = OP_MODE_IBSS;
-
-		/* 4 <1.2> Setup SSID */
-		COPY_SSID(prAisBssInfo->aucSSID,
-			  prAisBssInfo->ucSSIDLen, prConnSettings->aucSSID,
-			  prConnSettings->ucSSIDLen);
-
-		/* 4 <1.3> Clear current AP's STA_RECORD_T and current AID */
-		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
-		prAisBssInfo->u2AssocId = 0;
-	}
-	/* 3 <2> Update BSS_INFO_T from STA_RECORD_T */
-	/* 4 <2.1> Setup Capability */
-	/* Use Peer's Cap Info as IBSS Cap Info */
-	prAisBssInfo->u2CapInfo = prStaRec->u2CapInfo;
-
-	if (prAisBssInfo->u2CapInfo & CAP_INFO_SHORT_PREAMBLE) {
-		prAisBssInfo->fgIsShortPreambleAllowed = TRUE;
-		prAisBssInfo->fgUseShortPreamble = TRUE;
-	} else {
-		prAisBssInfo->fgIsShortPreambleAllowed = FALSE;
-		prAisBssInfo->fgUseShortPreamble = FALSE;
-	}
-
-	/* 7.3.1.4 For IBSS, the Short Slot Time subfield shall be set to 0. */
-	/* Set to FALSE for AdHoc */
-	prAisBssInfo->fgUseShortSlotTime = FALSE;
-	prAisBssInfo->u2CapInfo &= ~CAP_INFO_SHORT_SLOT_TIME;
-
-	if (prAisBssInfo->u2CapInfo & CAP_INFO_PRIVACY)
-		prAisBssInfo->fgIsProtection = TRUE;
-	else
-		prAisBssInfo->fgIsProtection = FALSE;
-
-	/* 4 <2.2> Setup PHY Attributes and Basic Rate Set/Operational
-	 * Rate Set
-	 */
-	prAisBssInfo->ucPhyTypeSet = prStaRec->ucDesiredPhyTypeSet;
-
-	prAisBssInfo->ucNonHTBasicPhyType = prStaRec->ucNonHTBasicPhyType;
-
-	prAisBssInfo->u2OperationalRateSet = prStaRec->u2OperationalRateSet;
-	prAisBssInfo->u2BSSBasicRateSet = prStaRec->u2BSSBasicRateSet;
-
-	rateGetDataRatesFromRateSet(prAisBssInfo->u2OperationalRateSet,
-				    prAisBssInfo->u2BSSBasicRateSet,
-				    prAisBssInfo->aucAllSupportedRates,
-				    &prAisBssInfo->ucAllSupportedRatesLen);
-
-	/* 3 <3> X Update BSS_INFO_T from SW_RFB_T (Association Resp Frame) */
-
-	/* 3 <4> Update BSS_INFO_T from BSS_DESC_T */
-	prBssDesc = scanSearchBssDescByTA(prAdapter, prStaRec->aucMacAddr);
-	if (prBssDesc) {
-		prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
-		prBssDesc->fgIsConnected |= BIT(ucBssIndex);
-
-		/* Support AP Selection */
-		aisRemoveBlockList(prAdapter, prBssDesc);
-
-		/* 4 <4.1> Setup BSSID */
-		COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prBssDesc->aucBSSID);
-
-		/* 4 <4.2> Setup Channel, Band */
-		prAisBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
-		prAisBssInfo->eBand = prBssDesc->eBand;
-
-		/* 4 <4.3> Setup MIB for current BSS */
-		prAisBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
-		prAisBssInfo->ucDTIMPeriod = 0;
-		prAisBssInfo->u2ATIMWindow = 0;	/* TBD(Kevin) */
-
-		prAisBssInfo->ucBeaconTimeoutCount =
-		    AIS_BEACON_TIMEOUT_COUNT_ADHOC;
-	}
-
-	/* 3 <5> Set MAC HW */
-	/* 4 <5.1> Find Lowest Basic Rate Index for default TX Rate of MMPDU */
-	nicTxUpdateBssDefaultRate(prAisBssInfo);
-
-	/* 4 <5.2> Setup channel and bandwidth */
-	rlmBssInitForAPandIbss(prAdapter, prAisBssInfo);
-
-	/* 4 <5.3> use command packets to inform firmware */
-	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
-
-	/* 4 <5.4> enable beaconing */
-	bssUpdateBeaconContent(prAdapter, prAisBssInfo->ucBssIndex);
-
-	/* 4 <5.5> Update AdHoc PM parameter */
-	nicPmIndicateBssConnected(prAdapter,
-				  prAisBssInfo->ucBssIndex);
-
-	/* 3 <6> Set ACTIVE flag. */
-	prAisBssInfo->fgIsBeaconActivated = TRUE;
-	prAisBssInfo->fgHoldSameBssidForIBSS = TRUE;
-}				/* end of aisUpdateBssInfoForMergeIBSS() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will validate the Rx Probe Request Frame and then return
- *        result to BSS to indicate if need to send the corresponding
- *         Probe Response Frame if the specified conditions were matched.
- *
- * @param[in] prAdapter          Pointer to the Adapter structure.
- * @param[in] prSwRfb            Pointer to SW RFB data structure.
- * @param[out] pu4ControlFlags   Control flags for replying the Probe Response
- *
- * @retval TRUE      Reply the Probe Response
- * @retval FALSE     Don't reply the Probe Response
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t aisValidateProbeReq(struct ADAPTER *prAdapter,
-			     struct SW_RFB *prSwRfb,
-			     uint8_t ucBssIndex,
-			     uint32_t *pu4ControlFlags)
-{
-	struct WLAN_MAC_MGMT_HEADER *prMgtHdr;
-	struct BSS_INFO *prBssInfo;
-	struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
-	uint8_t *pucIE;
-	uint16_t u2IELength;
-	uint16_t u2Offset = 0;
-	u_int8_t fgReplyProbeResp = FALSE;
-
-	prBssInfo = aisGetAisBssInfo(prAdapter,
-		ucBssIndex);
-
-	/* 4 <1> Parse Probe Req IE and Get IE ptr
-	 * (SSID, Supported Rate IE, ...)
-	 */
-	prMgtHdr = (struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
-
-	u2IELength = prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen;
-	pucIE =
-	    (uint8_t *) ((uintptr_t)prSwRfb->pvHeader +
-			 prSwRfb->u2HeaderLen);
-
-	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
-		if (IE_ID(pucIE) == ELEM_ID_SSID) {
-			if ((!prIeSsid) && (IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID))
-				prIeSsid = (struct IE_SSID *)pucIE;
-
-			break;
-		}
-	}			/* end of IE_FOR_EACH */
-
-	/* 4 <2> Check network conditions */
-
-	if (prBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
-
-		if ((prIeSsid) && ((prIeSsid->ucLength ==
-			BC_SSID_LEN) ||	/* WILDCARD SSID */
-			EQUAL_SSID(prBssInfo->aucSSID,
-			prBssInfo->ucSSIDLen,	/* CURRENT SSID */
-			prIeSsid->aucSSID,
-			prIeSsid->ucLength))) {
-			fgReplyProbeResp = TRUE;
-		}
-	}
-
-	return fgReplyProbeResp;
-
-}				/* end of aisValidateProbeReq() */
-
-#endif /* CFG_SUPPORT_ADHOC */
-
 void aisFsmDisconnectAllBss(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo)
 {
@@ -7246,17 +6455,6 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prAisBssInfo->rObssScanTimer);
 
 	nicPmIndicateBssAbort(prAdapter, prAisBssInfo->ucBssIndex);
-
-#if CFG_SUPPORT_ADHOC
-	if (prAisBssInfo->fgIsBeaconActivated) {
-		nicUpdateBeaconIETemplate(prAdapter,
-					  IE_UPD_METHOD_DELETE_ALL,
-					  prAisBssInfo->ucBssIndex,
-					  0, NULL, 0);
-
-		prAisBssInfo->fgIsBeaconActivated = FALSE;
-	}
-#endif
 
 	rlmBssAborted(prAdapter, prAisBssInfo);
 
@@ -7344,14 +6542,9 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 					prAisFsmInfo->ucReasonOfDisconnect);
 			}
 
-			if (prAisBssInfo->eCurrentOPMode != OP_MODE_IBSS)
-				prAisBssInfo->fgHoldSameBssidForIBSS = FALSE;
+
 #endif
-		} else {
-			prAisBssInfo->fgHoldSameBssidForIBSS = FALSE;
 		}
-	} else {
-		prAisBssInfo->fgHoldSameBssidForIBSS = FALSE;
 	}
 
 	/* 4 <4> Change Media State immediately. */
@@ -7502,54 +6695,6 @@ void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 	if (eNextState != prAisFsmInfo->eCurrentState)
 		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
 }				/* end of aisFsmBGSleepTimeout() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will indicate an Event of "IBSS ALONE Time-Out" to
- *        AIS FSM.
- * @param[in] u4Param  Unused timer parameter
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void aisFsmRunEventIbssAloneTimeOut(struct ADAPTER *prAdapter,
-				    uintptr_t ulParamPtr)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	enum ENUM_AIS_STATE eNextState;
-	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	eNextState = prAisFsmInfo->eCurrentState;
-
-	switch (prAisFsmInfo->eCurrentState) {
-	case AIS_STATE_IBSS_ALONE:
-
-		/* There is no one participate in our AdHoc during this
-		 * TIMEOUT Interval so go back to search for a valid
-		 * IBSS again.
-		 */
-
-		DBGLOG(AIS, LOUD,
-			"[%d] EVENT-IBSS ALONE TIMER: Start pairing\n",
-			ucBssIndex);
-
-		/* abort timer */
-		aisFsmReleaseCh(prAdapter, ucBssIndex);
-
-		/* Pull back to SEARCH to find candidate again */
-		eNextState = AIS_STATE_SEARCH;
-
-		break;
-
-	default:
-		break;
-	}
-
-	/* Call aisFsmSteps() when we are going to change AIS STATE */
-	if (eNextState != prAisFsmInfo->eCurrentState)
-		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
-}				/* end of aisIbssAloneTimeOut() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -8045,8 +7190,6 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 				"Skip BTO roam for BP ERROR");
 		}
 #endif
-	} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
-		fgDoAbortIndication = TRUE;
 	}
 
 	/* 4 <2> invoke abort handler */
@@ -8225,9 +7368,6 @@ void aisBssLinkDown(struct ADAPTER *prAdapter,
 
 			if (prStaRec)
 				fgDoAbortIndication = TRUE;
-
-		} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
-			fgDoAbortIndication = TRUE;
 		}
 	}
 	/* 4 <2> invoke abort handler */

@@ -583,7 +583,6 @@ struct SWITCH_CH_AND_BAND_PARAMS {
 	(IS_BSS_ACTIVE(_prBssInfo) && \
 	 ((_prBssInfo)->eConnectionState == MEDIA_STATE_CONNECTED || \
 	  (_prBssInfo)->eCurrentOPMode == OP_MODE_ACCESS_POINT || \
-	  (_prBssInfo)->eCurrentOPMode == OP_MODE_IBSS || \
 	  IS_BSS_BOW(_prBssInfo)) \
 	)
 

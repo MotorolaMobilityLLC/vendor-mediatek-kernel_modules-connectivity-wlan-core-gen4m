@@ -1015,7 +1015,7 @@ void testPsCmdCategory0(struct ADAPTER *prAdapter,
 		break;
 		case TEST_PS_BUFFER_BMC:
 			break;
-#if CFG_ENABLE_WIFI_DIRECT || CFG_SUPPORT_ADHOC
+#if CFG_ENABLE_WIFI_DIRECT
 		case TEST_PS_UPDATE_BEACON:
 			bssUpdateBeaconContent(prAdapter,
 				ucOpt0 /*networktype */);

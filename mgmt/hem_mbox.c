@@ -124,10 +124,6 @@ static const char * const apucDebugMsg[] = {
 #endif
 #endif
 
-#if CFG_SUPPORT_ADHOC
-	"MID_SCN_AIS_FOUND_IBSS",
-#endif /* CFG_SUPPORT_ADHOC */
-
 	"MID_SAA_AIS_FSM_ABORT",
 	"MID_MNY_AIS_REMAIN_ON_CHANNEL",
 	"MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL",

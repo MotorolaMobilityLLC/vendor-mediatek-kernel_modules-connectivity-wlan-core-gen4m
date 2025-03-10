@@ -246,13 +246,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 int mtk_cfg80211_disconnect(struct wiphy *wiphy,
 			    struct net_device *ndev, u16 reason_code);
 
-int mtk_cfg80211_join_ibss(struct wiphy *wiphy,
-			   struct net_device *ndev,
-			   struct cfg80211_ibss_params *params);
-
-int mtk_cfg80211_leave_ibss(struct wiphy *wiphy,
-			    struct net_device *ndev);
-
 int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 			struct net_device *ndev, bool enabled, int timeout);
 

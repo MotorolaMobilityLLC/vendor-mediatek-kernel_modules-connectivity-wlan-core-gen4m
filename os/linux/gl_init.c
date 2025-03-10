@@ -5396,12 +5396,9 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 		WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
 #endif
 #endif /* CFG_SUPPORT_SCHED_SCAN */
-#if CFG_SUPPORT_ADHOC
-	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
-				   BIT(NL80211_IFTYPE_ADHOC);
-#else
+
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
-#endif
+
 	prWiphy->bands[KAL_BAND_2GHZ] = &(WLAN_GET_DATA(mtk_band_2ghz));
 	/* always assign 5Ghz bands here, if the chip is not support 5Ghz,
 	 *  bands[KAL_BAND_5GHZ] will be assign to NULL

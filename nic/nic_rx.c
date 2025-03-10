@@ -73,11 +73,11 @@ apfnProcessRxMgtFrame[MAX_NUM_OF_FC_SUBTYPES] = {
 	NULL,			/* subtype 0010: Reassociation request */
 #endif /* CFG_SUPPORT_AAA */
 	saaFsmRunEventRxAssoc,	/* subtype 0011: Reassociation response */
-#if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
+#if CFG_ENABLE_WIFI_DIRECT
 	bssProcessProbeRequest,	/* subtype 0100: Probe request */
 #else
 	NULL,			/* subtype 0100: Probe request */
-#endif /* CFG_SUPPORT_ADHOC */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	scanProcessBeaconAndProbeResp,	/* subtype 0101: Probe response */
 	NULL,			/* subtype 0110: reserved */
 	NULL,			/* subtype 0111: reserved */

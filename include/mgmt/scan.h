@@ -460,21 +460,7 @@ struct BSS_DESC {
 	u_int8_t fgIsP2PPresent;
 	u_int8_t fgIsP2PReport;	/* TRUE: report to upper layer */
 	struct P2P_DEVICE_DESC *prP2pDesc;
-
-	/* For IBSS, the SrcAddr is different from BSSID */
-	uint8_t aucIntendIfAddr[MAC_ADDR_LEN];
-
-#if 0 /* TODO: Remove this */
-	/* Device Capability Attribute. (P2P_DEV_CAPABILITY_XXXX) */
-	uint8_t ucDevCapabilityBitmap;
-
-	/* Group Capability Attribute. (P2P_GROUP_CAPABILITY_XXXX) */
-	uint8_t ucGroupCapabilityBitmap;
-#endif
-
 	struct LINK rP2pDeviceList;
-
-/* P_LINK_T prP2pDeviceList; */
 
 	/* For
 	 *    1. P2P Capability.

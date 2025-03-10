@@ -60,13 +60,6 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  ******************************************************************************
  */
-#if DBG && 0
-static void SetRCID(u_int8_t fgOneTb3, u_int8_t *fgRCID);
-#endif
-
-#if CFG_SLT_SUPPORT
-static void SetTestChannel(uint8_t *pucPrimaryChannel);
-#endif
 
 /******************************************************************************
  *                              F U N C T I O N S
@@ -138,16 +131,6 @@ static void SetRCID(u_int8_t fgOneTb3, u_int8_t *fgRCID)
 		*fgRCID = 0;
 	else
 		*fgRCID = 1;
-}
-#endif
-
-#if CFG_SLT_SUPPORT
-static void SetTestChannel(uint8_t *pucPrimaryChannel)
-{
-	if (*pucPrimaryChannel < 5)
-		*pucPrimaryChannel = 8;
-	else if (*pucPrimaryChannel > 10)
-		*pucPrimaryChannel = 3;
 }
 #endif
 
@@ -417,14 +400,7 @@ wlanoidQueryBssid(struct ADAPTER *prAdapter,
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
 	    MEDIA_STATE_CONNECTED)
 		COPY_MAC_ADDR(pvQueryBuffer, prCurrBssid->arMacAddress);
-	else if (aisGetOPMode(prAdapter, ucBssIndex) == NET_TYPE_IBSS) {
-		uint8_t aucTemp[PARAM_MAC_ADDR_LEN];	/*!< BSSID */
-
-		COPY_MAC_ADDR(aucTemp, prCurrBssid->arMacAddress);
-		aucTemp[0] &= ~BIT(0);
-		aucTemp[1] |= BIT(1);
-		COPY_MAC_ADDR(pvQueryBuffer, aucTemp);
-	} else
+	else
 		rStatus = WLAN_STATUS_ADAPTER_NOT_READY;
 
 	*pu4QueryInfoLen = MAC_ADDR_LEN;
@@ -888,14 +864,6 @@ wlanoidSetBssid(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* prepare message to AIS */
-	if (prConnSettings->eOPMode == NET_TYPE_IBSS ||
-	    prConnSettings->eOPMode == NET_TYPE_DEDICATED_IBSS) {
-		/* IBSS *//* beacon period */
-		prConnSettings->u2BeaconPeriod = prWlanInfo->u2BeaconPeriod;
-		prConnSettings->u2AtimWindow = prWlanInfo->u2AtimWindow;
-	}
-
 	/* Set Connection Request Issued Flag */
 	prConnSettings->eConnectionPolicy =
 		CONNECT_BY_BSSID;
@@ -1029,14 +997,6 @@ wlanoidSetSsid(struct ADAPTER *prAdapter,
 			i4Idx = (int32_t) i;
 			i4MaxRSSI = i4RSSI;
 		}
-	}
-
-	/* prepare message to AIS */
-	if (prConnSettings->eOPMode == NET_TYPE_IBSS ||
-	    prConnSettings->eOPMode == NET_TYPE_DEDICATED_IBSS) {
-		/* IBSS *//* beacon period */
-		prConnSettings->u2BeaconPeriod = prWlanInfo->u2BeaconPeriod;
-		prConnSettings->u2AtimWindow = prWlanInfo->u2AtimWindow;
 	}
 
 	if (prAdapter->rWifiVar.fgSupportWZCDisassociation) {
@@ -1342,13 +1302,6 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
-	/* prepare message to AIS */
-	if (prConnSettings->eOPMode == NET_TYPE_IBSS ||
-	    prConnSettings->eOPMode == NET_TYPE_DEDICATED_IBSS) {
-		/* IBSS *//* beacon period */
-		prConnSettings->u2BeaconPeriod = prWlanInfo->u2BeaconPeriod;
-		prConnSettings->u2AtimWindow = prWlanInfo->u2AtimWindow;
-	}
 
 	if (prAdapter->rWifiVar.fgSupportWZCDisassociation) {
 		if (pParamConn->u4SsidLen == ELEM_MAX_LEN_SSID) {
@@ -1668,16 +1621,6 @@ wlanoidSetInfrastructureMode(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	/* check if possible to switch to AdHoc mode */
-	if (eOpMode == NET_TYPE_IBSS
-	    || eOpMode == NET_TYPE_DEDICATED_IBSS) {
-		if (cnmAisIbssIsPermitted(prAdapter) == FALSE) {
-			DBGLOG(REQ, TRACE, "Mode value %d unallowed\n",
-			       eOpMode);
-			return WLAN_STATUS_FAILURE;
-		}
-	}
-
 	/* Save the new infrastructure mode setting. */
 	prConnSettings->eOPMode = eOpMode;
 
@@ -1864,9 +1807,7 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 
 	case AUTH_MODE_WPA_NONE:
 		/* ad hoc mode only */
-		if (prConnSettings->eOPMode !=
-		    NET_TYPE_IBSS)
-			return WLAN_STATUS_NOT_ACCEPTED;
+		return WLAN_STATUS_NOT_ACCEPTED;
 		break;
 
 	default:
@@ -13007,404 +12948,6 @@ wlanoidSetAddbaReject(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetAddbaReject */
-
-#if CFG_SLT_SUPPORT
-
-uint32_t
-wlanoidQuerySLTStatus(struct ADAPTER *prAdapter,
-		      void *pvQueryBuffer, uint32_t u4QueryBufferLen,
-		      uint32_t *pu4QueryInfoLen) {
-	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-	struct PARAM_MTK_SLT_TEST_STRUCT *prMtkSltInfo =
-		(struct PARAM_MTK_SLT_TEST_STRUCT *) NULL;
-	struct SLT_INFO *prSltInfo = (struct SLT_INFO *) NULL;
-
-	DBGLOG(REQ, LOUD, "\r\n");
-
-	ASSERT(prAdapter);
-	ASSERT(pu4QueryInfoLen);
-
-	*pu4QueryInfoLen = sizeof(struct PARAM_MTK_SLT_TEST_STRUCT);
-
-	if (u4QueryBufferLen < sizeof(struct
-				      PARAM_MTK_SLT_TEST_STRUCT))
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	ASSERT(pvQueryBuffer);
-
-	prMtkSltInfo = (struct PARAM_MTK_SLT_TEST_STRUCT *)
-		       pvQueryBuffer;
-
-	prSltInfo = &(prAdapter->rWifiVar.rSltInfo);
-
-	switch (prMtkSltInfo->rSltFuncIdx) {
-	case ENUM_MTK_SLT_FUNC_LP_SET: {
-		struct PARAM_MTK_SLT_LP_TEST_STRUCT *prLpSetting =
-			(struct PARAM_MTK_SLT_LP_TEST_STRUCT *) NULL;
-
-		ASSERT(prMtkSltInfo->u4FuncInfoLen == sizeof(
-			       struct PARAM_MTK_SLT_LP_TEST_STRUCT));
-
-		prLpSetting = (struct PARAM_MTK_SLT_LP_TEST_STRUCT *)
-			      &prMtkSltInfo->unFuncInfoContent;
-
-		prLpSetting->u4BcnRcvNum = prSltInfo->u4BeaconReceiveCnt;
-	}
-	break;
-	default:
-		/* TBD... */
-		break;
-	}
-
-	return rWlanStatus;
-}				/* wlanoidQuerySLTStatus */
-
-uint32_t
-wlanoidUpdateSLTMode(struct ADAPTER *prAdapter,
-		     void *pvSetBuffer, uint32_t u4SetBufferLen,
-		     uint32_t *pu4SetInfoLen) {
-	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-	struct PARAM_MTK_SLT_TEST_STRUCT *prMtkSltInfo =
-		(struct PARAM_MTK_SLT_TEST_STRUCT *) NULL;
-	struct SLT_INFO *prSltInfo = (struct SLT_INFO *) NULL;
-	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
-	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
-	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-
-	/* 1. Action: Update or Initial Set
-	 * 2. Role.
-	 * 3. Target MAC address.
-	 * 4. RF BW & Rate Settings
-	 */
-
-	DBGLOG(REQ, LOUD, "\r\n");
-
-	ASSERT(prAdapter);
-	ASSERT(pu4SetInfoLen);
-
-	*pu4SetInfoLen = sizeof(struct PARAM_MTK_SLT_TEST_STRUCT);
-
-	if (u4SetBufferLen < sizeof(struct
-				    PARAM_MTK_SLT_TEST_STRUCT))
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	ASSERT(pvSetBuffer);
-
-	prMtkSltInfo = (struct PARAM_MTK_SLT_TEST_STRUCT *)
-		       pvSetBuffer;
-
-	prSltInfo = &(prAdapter->rWifiVar.rSltInfo);
-	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-	switch (prMtkSltInfo->rSltFuncIdx) {
-	case ENUM_MTK_SLT_FUNC_INITIAL: {	/* Initialize */
-		struct PARAM_MTK_SLT_INITIAL_STRUCT *prMtkSltInit =
-			(struct PARAM_MTK_SLT_INITIAL_STRUCT *) NULL;
-
-		ASSERT(prMtkSltInfo->u4FuncInfoLen == sizeof(
-			       struct PARAM_MTK_SLT_INITIAL_STRUCT));
-
-		prMtkSltInit = (struct PARAM_MTK_SLT_INITIAL_STRUCT *)
-			       &prMtkSltInfo->unFuncInfoContent;
-
-		if (prSltInfo->prPseudoStaRec != NULL) {
-			/* The driver has been initialized. */
-			prSltInfo->prPseudoStaRec = NULL;
-		}
-
-		prSltInfo->prPseudoBssDesc = scanSearchExistingBssDesc(
-						prAdapter, BSS_TYPE_IBSS,
-						prMtkSltInit->aucTargetMacAddr,
-						prMtkSltInit->aucTargetMacAddr);
-
-		prSltInfo->u2SiteID = prMtkSltInit->u2SiteID;
-
-		/* Bandwidth 2.4G: Channel 1~14
-		 * Bandwidth 5G: *36, 40, 44, 48, 52, 56, 60, 64,
-		 *       *100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140,
-		 *       149, 153, *157, 161,
-		 *       184, 188, 192, 196, 200, 204, 208, 212, *216
-		 */
-		prSltInfo->ucChannel2G4 = 1 + (prSltInfo->u2SiteID % 4) * 5;
-
-		switch (prSltInfo->ucChannel2G4) {
-		case 1:
-			prSltInfo->ucChannel5G = 36;
-			break;
-		case 6:
-			prSltInfo->ucChannel5G = 52;
-			break;
-		case 11:
-			prSltInfo->ucChannel5G = 104;
-			break;
-		case 16:
-			prSltInfo->ucChannel2G4 = 14;
-			prSltInfo->ucChannel5G = 161;
-			break;
-		default:
-			ASSERT(FALSE);
-		}
-
-		if (prSltInfo->prPseudoBssDesc == NULL) {
-			do {
-				prSltInfo->prPseudoBssDesc =
-						scanAllocateBssDesc(prAdapter);
-
-				if (prSltInfo->prPseudoBssDesc == NULL) {
-					rWlanStatus = WLAN_STATUS_FAILURE;
-					break;
-				}
-				prBssDesc = prSltInfo->prPseudoBssDesc;
-
-			} while (FALSE);
-		} else {
-			prBssDesc = prSltInfo->prPseudoBssDesc;
-		}
-
-		if (prBssDesc) {
-			prBssDesc->eBSSType = BSS_TYPE_IBSS;
-
-			COPY_MAC_ADDR(prBssDesc->aucSrcAddr,
-				      prMtkSltInit->aucTargetMacAddr);
-			COPY_MAC_ADDR(prBssDesc->aucBSSID,
-				      prBssInfo->aucOwnMacAddr);
-
-			prBssDesc->u2BeaconInterval = 100;
-			prBssDesc->u2ATIMWindow = 0;
-			prBssDesc->ucDTIMPeriod = 1;
-
-			prBssDesc->u2IELength = 0;
-
-			prBssDesc->fgIsERPPresent = TRUE;
-			prBssDesc->fgIsHTPresent = TRUE;
-
-			prBssDesc->u2OperationalRateSet = BIT(RATE_36M_INDEX);
-			prBssDesc->u2BSSBasicRateSet = BIT(RATE_36M_INDEX);
-			prBssDesc->fgIsUnknownBssBasicRate = FALSE;
-
-			prBssDesc->fgIsLargerTSF = TRUE;
-
-			prBssDesc->eBand = BAND_2G4;
-
-			prBssDesc->ucChannelNum = prSltInfo->ucChannel2G4;
-
-			prBssDesc->ucPhyTypeSet = PHY_TYPE_SET_802_11ABGN;
-
-			GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
-		}
-	}
-	break;
-	case ENUM_MTK_SLT_FUNC_RATE_SET:	/* Update RF Settings. */
-		if (prSltInfo->prPseudoStaRec == NULL) {
-			rWlanStatus = WLAN_STATUS_FAILURE;
-		} else {
-			struct PARAM_MTK_SLT_TR_TEST_STRUCT *prTRSetting =
-				(struct PARAM_MTK_SLT_TR_TEST_STRUCT *) NULL;
-
-			ASSERT(prMtkSltInfo->u4FuncInfoLen == sizeof(
-				       struct PARAM_MTK_SLT_TR_TEST_STRUCT));
-
-			prStaRec = prSltInfo->prPseudoStaRec;
-			prTRSetting = (struct PARAM_MTK_SLT_TR_TEST_STRUCT *)
-				      &prMtkSltInfo->unFuncInfoContent;
-
-			if (prTRSetting->rNetworkType ==
-			    PARAM_NETWORK_TYPE_OFDM5) {
-				prBssInfo->eBand = BAND_5G;
-				prBssInfo->ucPrimaryChannel =
-							prSltInfo->ucChannel5G;
-			}
-			if (prTRSetting->rNetworkType ==
-			    PARAM_NETWORK_TYPE_OFDM24) {
-				prBssInfo->eBand = BAND_2G4;
-				prBssInfo->ucPrimaryChannel =
-							prSltInfo->ucChannel2G4;
-			}
-
-			if ((prTRSetting->u4FixedRate & FIXED_BW_DL40) != 0) {
-				/* RF 40 */
-				/* It would controls RFBW capability in WTBL. */
-				prStaRec->u2HtCapInfo |=
-						HT_CAP_INFO_SUP_CHNL_WIDTH;
-				/* This controls RF BW, RF BW would be 40
-				 * only if
-				 * 1. PHY_TYPE_BIT_HT is TRUE.
-				 * 2. SCO is SCA/SCB.
-				 */
-				prStaRec->ucDesiredPhyTypeSet = PHY_TYPE_BIT_HT;
-
-				/* U20/L20 Control. */
-				switch (prTRSetting->u4FixedRate & 0xC000) {
-				case FIXED_EXT_CHNL_U20:
-					prBssInfo->eBssSCO =
-							CHNL_EXT_SCB; /* +2 */
-					if (prTRSetting->rNetworkType ==
-					    PARAM_NETWORK_TYPE_OFDM5) {
-						prBssInfo->ucPrimaryChannel
-									+= 2;
-					} else {
-						/* For channel 1, testing L20 at
-						 * channel 8. AOSP
-						 */
-						SetTestChannel(
-						&prBssInfo->ucPrimaryChannel);
-					}
-					break;
-				case FIXED_EXT_CHNL_L20:
-				default:	/* 40M */
-					prBssInfo->eBssSCO =
-							CHNL_EXT_SCA; /* -2 */
-					if (prTRSetting->rNetworkType ==
-					    PARAM_NETWORK_TYPE_OFDM5) {
-						prBssInfo->ucPrimaryChannel
-									-= 2;
-					} else {
-						/* For channel 11 / 14. testing
-						 * U20 at channel 3. AOSP
-						 */
-						SetTestChannel(
-						&prBssInfo->ucPrimaryChannel);
-					}
-					break;
-				}
-			} else {
-				/* RF 20 */
-				prStaRec->u2HtCapInfo &=
-						~HT_CAP_INFO_SUP_CHNL_WIDTH;
-				prBssInfo->eBssSCO = CHNL_EXT_SCN;
-			}
-
-			prBssInfo->fgErpProtectMode = FALSE;
-			prBssInfo->eHtProtectMode = HT_PROTECT_MODE_NONE;
-			prBssInfo->eGfOperationMode = GF_MODE_NORMAL;
-
-			nicUpdateBss(prAdapter, prBssInfo->ucNetTypeIndex);
-
-			prStaRec->u2HtCapInfo &= ~(HT_CAP_INFO_SHORT_GI_20M |
-						   HT_CAP_INFO_SHORT_GI_40M);
-
-			switch (prTRSetting->u4FixedRate & 0xFF) {
-			case RATE_OFDM_54M:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_54M_SW_INDEX);
-				break;
-			case RATE_OFDM_48M:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_48M_SW_INDEX);
-				break;
-			case RATE_OFDM_36M:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_36M_SW_INDEX);
-				break;
-			case RATE_OFDM_24M:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_24M_SW_INDEX);
-				break;
-			case RATE_OFDM_6M:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_6M_SW_INDEX);
-				break;
-			case RATE_CCK_11M_LONG:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_11M_SW_INDEX);
-				break;
-			case RATE_CCK_1M_LONG:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_1M_SW_INDEX);
-				break;
-			case RATE_GF_MCS_0:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_HT_PHY_SW_INDEX);
-				prStaRec->u2HtCapInfo |= HT_CAP_INFO_HT_GF;
-				break;
-			case RATE_MM_MCS_7:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_HT_PHY_SW_INDEX);
-				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_HT_GF;
-#if 0				/* Only for Current Measurement Mode. */
-				prStaRec->u2HtCapInfo |=
-						(HT_CAP_INFO_SHORT_GI_20M |
-						HT_CAP_INFO_SHORT_GI_40M);
-#endif
-				break;
-			case RATE_GF_MCS_7:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_HT_PHY_SW_INDEX);
-				prStaRec->u2HtCapInfo |= HT_CAP_INFO_HT_GF;
-				break;
-			default:
-				prStaRec->u2DesiredNonHTRateSet =
-						BIT(RATE_36M_SW_INDEX);
-				break;
-			}
-
-			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-
-			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
-
-		}
-		break;
-	case ENUM_MTK_SLT_FUNC_LP_SET: {	/* Reset LP Test Result. */
-		struct PARAM_MTK_SLT_LP_TEST_STRUCT *prLpSetting =
-			(struct PARAM_MTK_SLT_LP_TEST_STRUCT *) NULL;
-
-		ASSERT(prMtkSltInfo->u4FuncInfoLen == sizeof(
-			       struct PARAM_MTK_SLT_LP_TEST_STRUCT));
-
-		prLpSetting = (struct PARAM_MTK_SLT_LP_TEST_STRUCT *)
-			      &prMtkSltInfo->unFuncInfoContent;
-
-		if (prSltInfo->prPseudoBssDesc == NULL) {
-			/* Please initial SLT Mode first. */
-			break;
-		}
-		prBssDesc = prSltInfo->prPseudoBssDesc;
-
-		switch (prLpSetting->rLpTestMode) {
-		case ENUM_MTK_LP_TEST_NORMAL:
-			/* In normal mode, we would use target MAC address to be
-			 * the BSSID.
-			 */
-			COPY_MAC_ADDR(prBssDesc->aucBSSID,
-				      prBssInfo->aucOwnMacAddr);
-			prSltInfo->fgIsDUT = FALSE;
-			break;
-		case ENUM_MTK_LP_TEST_GOLDEN_SAMPLE:
-			/* 1. Lower AIFS of BCN queue.
-			 * 2. Fixed Random Number tobe 0.
-			 */
-			prSltInfo->fgIsDUT = FALSE;
-			/* In LP test mode, we would use MAC address of Golden
-			 * Sample to be the BSSID.
-			 */
-			COPY_MAC_ADDR(prBssDesc->aucBSSID,
-				      prBssInfo->aucOwnMacAddr);
-			break;
-		case ENUM_MTK_LP_TEST_DUT:
-			/* 1. Enter Sleep Mode.
-			 * 2. Fix random number a large value & enlarge AIFN of
-			 *    BCN queue.
-			 */
-			COPY_MAC_ADDR(prBssDesc->aucBSSID,
-				      prBssDesc->aucSrcAddr);
-			prSltInfo->u4BeaconReceiveCnt = 0;
-			prSltInfo->fgIsDUT = TRUE;
-			break;
-		}
-
-	}
-
-	break;
-	default:
-		break;
-	}
-
-	return WLAN_STATUS_FAILURE;
-
-	return rWlanStatus;
-}				/* wlanoidUpdateSLTMode */
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

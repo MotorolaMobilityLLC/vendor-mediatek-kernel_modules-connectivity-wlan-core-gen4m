@@ -697,17 +697,6 @@ void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief  Checks if IBSS (Independent BSS) is permitted for the given adapter.
- *
- * @param[in] prAdapter	Pointer to the ADAPTER structure
- *
- * @return TRUE if IBSS is permitted, FALSE otherwise
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t cnmAisIbssIsPermitted(struct ADAPTER *prAdapter);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief  Checks if P2P operation is permitted for the given adapter.
  *
  * @param[in] prAdapter	Pointer to the ADAPTER structure

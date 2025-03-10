@@ -1021,7 +1021,7 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
 				  struct PARAM_SSID *prSsid)
 {
 	struct SCAN_INFO *prScanInfo;
-	struct BSS_DESC *prBssDesc, *prIBSSBssDesc;
+	struct BSS_DESC *prBssDesc;
 
 	ASSERT(prAdapter);
 	ASSERT(aucSrcAddr);
@@ -1041,51 +1041,6 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
 		/* if (eBSSType == prBssDesc->eBSSType) */
 
 		return prBssDesc;
-	case BSS_TYPE_IBSS:
-		prIBSSBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
-			aucBSSID, fgCheckSsid, prSsid);
-		prBssDesc = scanSearchBssDescByTAAndSsid(prAdapter,
-			aucSrcAddr, fgCheckSsid, prSsid);
-
-		/* NOTE(Kevin):
-		 * Rules to maintain the SCAN Result:
-		 * For AdHoc -
-		 *    CASE I    We have TA1(BSSID1), but it change its
-		 *              BSSID to BSSID2
-		 *              -> Update TA1 entry's BSSID.
-		 *    CASE II   We have TA1(BSSID1), and get TA1(BSSID1) again
-		 *              -> Update TA1 entry's contain.
-		 *    CASE III  We have a SCAN result TA1(BSSID1), and
-		 *              TA2(BSSID2). Sooner or later, TA2 merge into
-		 *              TA1, we get TA2(BSSID1)
-		 *              -> Remove TA2 first and then replace TA1 entry's
-		 *                 TA with TA2, Still have only one entry
-		 *                 of BSSID.
-		 *    CASE IV   We have a SCAN result TA1(BSSID1), and another
-		 *              TA2 also merge into BSSID1.
-		 *              -> Replace TA1 entry's TA with TA2, Still have
-		 *                 only one entry.
-		 *    CASE V    New IBSS
-		 *              -> Add this one to SCAN result.
-		 */
-		if (prBssDesc) {
-			if ((!prIBSSBssDesc) ||	/* CASE I */
-			    (prBssDesc == prIBSSBssDesc)) {	/* CASE II */
-
-				return prBssDesc;
-			}
-
-			scanFreeBssDesc(prAdapter, prBssDesc, "IBSS");
-
-			return prIBSSBssDesc;
-		}
-
-		if (prIBSSBssDesc) {	/* CASE IV */
-
-			return prIBSSBssDesc;
-		}
-		/* CASE V */
-		break;	/* Return NULL; */
 	default:
 		break;
 	}
@@ -1511,11 +1466,9 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 		if (prBssDesc->eBand == eBand) {
 			switch (prBssInfo->eNetworkType) {
 			case NETWORK_TYPE_AIS:
-				if ((prBssDesc->eBSSType
-				    == BSS_TYPE_INFRASTRUCTURE)
-				    || (prBssDesc->eBSSType == BSS_TYPE_IBSS)) {
+				if (prBssDesc->eBSSType ==
+				    BSS_TYPE_INFRASTRUCTURE)
 					fgToRemove = TRUE;
-				}
 				break;
 
 			case NETWORK_TYPE_P2P:
@@ -2808,9 +2761,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		eBSSType = BSS_TYPE_INFRASTRUCTURE;
 		break;
 
-	case CAP_INFO_IBSS:
-		eBSSType = BSS_TYPE_IBSS;
-		break;
 	case 0:
 		/* The P2P Device shall set the ESS bit of
 		 * the Capabilities field in the Probe Response fame to 0
@@ -4361,10 +4311,6 @@ uint32_t scanAddScanResult(struct ADAPTER *prAdapter,
 		aucRatesEx[i] = 0;
 
 	switch (prBssDesc->eBSSType) {
-	case BSS_TYPE_IBSS:
-		eOpMode = NET_TYPE_IBSS;
-		break;
-
 	case BSS_TYPE_INFRASTRUCTURE:
 	case BSS_TYPE_P2P_DEVICE:
 	case BSS_TYPE_BOW_DEVICE:
@@ -4470,9 +4416,6 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	uint32_t *pau4ChBitMap;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Idx = 0;
 	uint8_t fgHasMLElement = FALSE;
-#if CFG_SLT_SUPPORT
-	struct SLT_INFO *prSltInfo = NULL;
-#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4503,18 +4446,6 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	}
 
 	scanResultLog(prAdapter, prSwRfb);
-
-#if CFG_SLT_SUPPORT
-	prSltInfo = &prAdapter->rWifiVar.rSltInfo;
-
-	if (prSltInfo->fgIsDUT) {
-		log_dbg(P2P, INFO, "\n\rBCN: RX\n");
-		prSltInfo->u4BeaconReceiveCnt++;
-		return WLAN_STATUS_SUCCESS;
-	} else {
-		return WLAN_STATUS_SUCCESS;
-	}
-#endif
 
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
 	/* Ignore MC probe resp which is unexpected.
@@ -4563,12 +4494,8 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			aisGetConnSettings(prAdapter, prAisBssInfo->ucBssIndex);
 
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
-		if ((prAisBssInfo->eConnectionState ==
-		     MEDIA_STATE_CONNECTED) &&
-		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
-		    && prConnSettings->eOPMode != NET_TYPE_IBSS)
-		    || (prBssDesc->eBSSType == BSS_TYPE_IBSS
-		    && prConnSettings->eOPMode != NET_TYPE_INFRA))
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+		    prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 		    && EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 		    prAisBssInfo->aucBSSID)
 		    && EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
@@ -4617,10 +4544,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		prAisBssInfo->He6gRegInfo = prBssDesc->He6gRegInfo;
 #endif
-		if ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE &&
-		      prConnSettings->eOPMode != NET_TYPE_IBSS)
-		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS
-		     && prConnSettings->eOPMode != NET_TYPE_INFRA)) {
+		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) {
 			if (prAisBssInfo->eConnectionState
 				== MEDIA_STATE_CONNECTED) {
 
@@ -4678,26 +4602,6 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 						prAisBssInfo->ucBssIndex);
 				}
 			}
-#if CFG_SUPPORT_ADHOC
-			if (EQUAL_SSID(prBssDesc->aucSSID,
-				prBssDesc->ucSSIDLen,
-				prConnSettings->aucSSID,
-				prConnSettings->ucSSIDLen) &&
-				(prBssDesc->eBSSType == BSS_TYPE_IBSS)
-				&& (prAisBssInfo->eCurrentOPMode
-				== OP_MODE_IBSS)) {
-
-				ASSERT(prSwRfb->prRxStatusGroup3);
-
-				ibssProcessMatchedBeacon(prAdapter,
-					prAisBssInfo,
-					prBssDesc,
-					nicRxGetRcpiValueFromRxv(
-						prAdapter,
-						RCPI_MODE_MAX,
-						prSwRfb));
-			}
-#endif /* CFG_SUPPORT_ADHOC */
 		}
 #if CFG_SUPPORT_SCAN_LOG
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
@@ -4732,8 +4636,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		prWlanInfo->u4ScanDbgTimes2++;
 
 		/* 4 <3> Send SW_RFB_T to HIF when we perform SCAN for HOST */
-		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
-			|| prBssDesc->eBSSType == BSS_TYPE_IBSS) {
+		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) {
 			/* for AIS, send to host */
 			prWlanInfo->u4ScanDbgTimes3++;
 			if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING

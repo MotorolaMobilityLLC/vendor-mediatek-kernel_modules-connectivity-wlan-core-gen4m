@@ -239,13 +239,6 @@ struct STA_RECORD {
 	uint8_t ucIndex;	/* Not modify it except initializing */
 	uint8_t ucWlanIndex;	/* WLAN table index */
 
-#if 0 /* TODO: Remove this */
-	/* The BSS STA Rx WLAN index, IBSS Rx BC WLAN table
-	 * index, work at IBSS Open and WEP
-	 */
-	uint8_t ucBMCWlanIndex;
-#endif
-
 	u_int8_t fgIsInUse;	/* Indicate if this entry is in use or not */
 	uint8_t aucMacAddr[MAC_ADDR_LEN];	/* MAC address */
 
@@ -321,9 +314,6 @@ struct STA_RECORD {
 
 	uint16_t u2OperationalRateSet;	/* Operational Rate Set of peer BSS */
 	uint16_t u2BSSBasicRateSet;	/* Basic Rate Set of peer BSS */
-
-	/* For IBSS Mode, to indicate that Merge is ongoing */
-	u_int8_t fgIsMerging;
 
 	/* For Infra/AP Mode, to diagnose the Connection with this peer
 	 * by sending ProbeReq/Null frame
@@ -543,16 +533,6 @@ struct STA_RECORD {
 
 #if 0 /* TODO: Remove this */
 	struct SEC_INFO rSecInfo; /* The security state machine */
-#endif
-
-#if CFG_SUPPORT_ADHOC
-	/* Ad-hoc RSN Rx BC key exist flag, only reserved two
-	 * entry for each peer
-	 */
-	u_int8_t fgAdhocRsnBcKeyExist[2];
-
-	/* Ad-hoc RSN Rx BC wlan index */
-	uint8_t ucAdhocRsnBcWlanIndex[2];
 #endif
 
 	u_int8_t fgPortBlock;	/* The 802.1x Port Control flag */

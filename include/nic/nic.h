@@ -678,7 +678,7 @@ void nicSerStartTxRx(struct ADAPTER *prAdapter);
 u_int8_t nicSerIsWaitingReset(struct ADAPTER *prAdapter);
 u_int8_t nicSerIsTxStop(struct ADAPTER *prAdapter);
 u_int8_t nicSerIsRxStop(struct ADAPTER *prAdapter);
-#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
+#if (CFG_ENABLE_WIFI_DIRECT)
 void nicSerReInitBeaconFrame(struct ADAPTER *prAdapter);
 #endif
 void nicSerInit(struct ADAPTER *prAdapter, const u_int8_t bAtResetFlow);

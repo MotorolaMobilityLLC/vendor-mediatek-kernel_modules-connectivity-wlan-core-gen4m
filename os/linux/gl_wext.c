@@ -1218,7 +1218,6 @@ wext_get_freq(struct net_device *prNetDev,
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	/* GeorgeKuo: TODO skip checking in IBSS mode */
 	if (!netif_carrier_ok(prNetDev))
 		return -ENOTCONN;
 
@@ -1268,10 +1267,6 @@ wext_set_mode(struct net_device *prNetDev,
 	switch (*pu4Mode) {
 	case IW_MODE_AUTO:
 		rOpMode.eOpMode = NET_TYPE_AUTO_SWITCH;
-		break;
-
-	case IW_MODE_ADHOC:
-		rOpMode.eOpMode = NET_TYPE_IBSS;
 		break;
 
 	case IW_MODE_INFRA:
@@ -1344,10 +1339,6 @@ wext_get_mode(struct net_device *prNetDev,
 			   sizeof(eOpMode), &u4BufLen);
 
 	switch (eOpMode) {
-	case NET_TYPE_IBSS:
-		*pu4Mode = IW_MODE_ADHOC;
-		break;
-
 	case NET_TYPE_INFRA:
 		*pu4Mode = IW_MODE_INFRA;
 		break;
@@ -1924,9 +1915,7 @@ wext_get_scan(struct net_device *prNetDev,
 		iwEvent.len = IW_EV_UINT_LEN;
 		if ((pcCur + iwEvent.len) > pcEnd)
 			break;
-		if (prBss->eOpMode == NET_TYPE_IBSS)
-			iwEvent.u.mode = IW_MODE_ADHOC;
-		else if (prBss->eOpMode == NET_TYPE_INFRA)
+		if (prBss->eOpMode == NET_TYPE_INFRA)
 			iwEvent.u.mode = IW_MODE_INFRA;
 		else
 			iwEvent.u.mode = IW_MODE_AUTO;

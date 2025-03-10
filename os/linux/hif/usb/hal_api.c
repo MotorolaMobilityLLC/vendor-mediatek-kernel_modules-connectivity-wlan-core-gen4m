@@ -2433,7 +2433,7 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_WAIT_MCU_NORMAL:
 		if (u4SerAction == ERROR_DETECT_MCU_NORMAL_STATE) {
-#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
+#if (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, DEBUG, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
