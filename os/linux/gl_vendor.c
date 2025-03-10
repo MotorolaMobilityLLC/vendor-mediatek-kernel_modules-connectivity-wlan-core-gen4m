@@ -1320,6 +1320,7 @@ int mtk_cfg80211_vendor_set_rtt_config(
 	uint8_t i = 0;
 	struct PARAM_RTT_REQUEST *request;
 	int ret = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = 0;
 
 	DBGLOG(REQ, DEBUG, "vendor command\r\n");
 
@@ -1461,6 +1462,17 @@ int mtk_cfg80211_vendor_set_rtt_config(
 			config->ucNumRetriesPerFtmr, config->ucLciRequest,
 			config->ucLcrRequest, config->ucBurstDuration,
 			config->ePreamble, config->eBw);
+
+#if (CFG_SUPPORT_NAN == 1)
+		if (nanIsOn(prGlueInfo->prAdapter) &&
+			(config->ePeer == RTT_PEER_NAN_RSTA))
+			ucBssIndex = nanGetBssIdxbyBand(
+				prGlueInfo->prAdapter,
+				(config->rChannel.center_freq
+				<= 2484)
+				? BAND_2G4
+				: BAND_5G);
+#endif
 	}
 
 	if (i != request->ucConfigNum) {
@@ -1470,10 +1482,12 @@ int mtk_cfg80211_vendor_set_rtt_config(
 		goto RETURN;
 	}
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+			   wlanoidHandleRttRequest,
 			   request,
 			   sizeof(struct PARAM_RTT_REQUEST),
-			   &u4BufLen);
+			   &u4BufLen,
+			   ucBssIndex);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RTT, ERROR, "RTT request error:%x\n", rStatus);

@@ -15446,6 +15446,7 @@ static const char *nan_unisubevent_str(uint32_t u4SubEvent)
 		[UNI_EVENT_NAN_TAG_REPORT_BEACON] = "Report Beacon",
 		[UNI_EVENT_NAN_TAG_SLOT_STATISTICS] = "Slot Statistics",
 		[UNI_EVENT_NAN_TAG_LOWPOWER_CTRL] = "Low Power Ctrl",
+		[UNI_EVENT_NAN_TAG_RANGING_CTRL] = "Ranging Ctrl",
 	};
 
 	if (u4SubEvent < UNI_EVENT_NAN_TAG_NUM)
@@ -15606,6 +15607,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
 			prAdapter, prTlvElement->aucbody);
 		break;
+	case UNI_EVENT_NAN_TAG_RANGING_CTRL:
+		nanRangingCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");
 		break;
@@ -15655,6 +15659,7 @@ static const char *nan_subevent_str(uint32_t u4SubEvent)
 	[NAN_EVENT_SLOT_STATISTICS] = "Slot Statistics",
 	[NAN_EVENT_MATCH_EXPIRE] = "Match Expire",
 	[NAN_EVENT_LOWPOWER_CTRL] =  "Low Power Ctrl",
+	[NAN_EVENT_RANGING_CTRL] =  "Ranging Ctrl",
 	[NAN_EVENT_VENDOR_DISCOVERY_RESULT] = "Vendor Discovery Result",
 	[NAN_EVENT_VENDOR_PUBLISH_REPLIED_EVENT] = "Vendor Publish Replied",
 	[NAN_EVENT_VENDOR_FOLLOW_UP_RX_EVENT] = "Vendor Follow up RX",
@@ -15822,6 +15827,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	case NAN_EVENT_LOWPOWER_CTRL:
 		mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
 			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_RANGING_CTRL:
+		nanRangingCtrlEvt(prAdapter, prTlvElement->aucbody);
 		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");

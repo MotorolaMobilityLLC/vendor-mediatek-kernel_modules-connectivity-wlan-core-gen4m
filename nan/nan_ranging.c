@@ -1734,6 +1734,121 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 	return u4IndStatus;
 }
 
+#if CFG_SUPPORT_RTT
+/* TODO */
+static int32_t g_run = 1;
+#endif
+
+void
+nanRangingCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
+{
+#if CFG_SUPPORT_RTT
+	struct _NAN_RANGING_INSTANCE_T *prRanging;
+	struct _NAN_RANGING_CTRL_EVENT *prCtrlEvt;
+	struct PARAM_RTT_REQUEST rttReq;
+	uint32_t u4OpClass = 0;
+	uint32_t u4PrimaryChnl = 0;
+	uint8_t ucBssIndex = 0;
+	/* mc */
+	uint8_t ucType = 1;
+	/* Peer frequency */
+	uint32_t u4Freq = 0;
+	/* Channel width */
+	uint8_t ucWidth = WIFI_CHAN_WIDTH_80;
+	/* 11az: I2R LMR feedback */
+	uint8_t ucI2rLmrFeedback = 0;
+	/* 11az: Immeidate R2I feedback */
+	uint8_t ucImmeR2iFeedback = 0;
+	/* 11az: Immediate I2R feedback */
+	uint8_t ucImmeI2rFeedback = 0;
+	/* 11az: Force reply I2R LMR */
+	uint8_t ucForceReplyI2rLmr = 0;
+
+	prCtrlEvt = (struct _NAN_RANGING_CTRL_EVENT *)pcuEvtBuf;
+
+	kalMemZero(&rttReq, sizeof(struct PARAM_RTT_REQUEST));
+
+	rttReq.fgEnable = prCtrlEvt->ucIsEnabled;
+
+	u4OpClass =
+		prCtrlEvt->arChnlInfo.u4OperatingClass;
+	u4PrimaryChnl =
+		prCtrlEvt->arChnlInfo.u4PrimaryChnl;
+
+	if (IS_2G_OP_CLASS(u4OpClass)) {
+		ucBssIndex = nanGetBssIdxbyBand(prAdapter, BAND_2G4);
+		u4Freq = nicChannelNum2Freq(
+			u4PrimaryChnl,
+			BAND_2G4) / 1000;
+		ucWidth = WIFI_CHAN_WIDTH_20;
+	} else {
+		ucBssIndex = nanGetBssIdxbyBand(prAdapter, BAND_5G);
+		u4Freq = nicChannelNum2Freq(
+			u4PrimaryChnl,
+			BAND_5G) / 1000;
+		ucWidth = WIFI_CHAN_WIDTH_80;
+	}
+
+	/* TODO */
+	if (prCtrlEvt->ucIsEnabled && (g_run-- > 0)) {
+		prRanging = nanRangingInstanceSearchByMac(prAdapter,
+			prCtrlEvt->aucNanAddress);
+		if (prRanging == NULL) {
+			DBGLOG(NAN, ERROR, "prRanging is NULL\n");
+			return;
+		}
+
+		if (prRanging->ranging_ctrl.ucRole ==
+			NAN_PROTOCOL_RESPONDER) {
+			DBGLOG(NAN, ERROR, "Skip Responder\n");
+			return;
+		}
+
+		rttReq.ucConfigNum = 1;
+
+		COPY_MAC_ADDR(rttReq.arRttConfigs[0].aucAddr,
+			prCtrlEvt->aucNanAddress);
+		rttReq.arRttConfigs[0].eType = (ucType == 1)
+			? RTT_TYPE_2_SIDED
+			: RTT_TYPE_2_SIDED_11AZ_NTB;
+		rttReq.arRttConfigs[0].ePeer = RTT_PEER_NAN_RSTA;
+		rttReq.arRttConfigs[0].rChannel.width =
+			(enum WIFI_CHANNEL_WIDTH) ucWidth;
+		rttReq.arRttConfigs[0].rChannel.center_freq =
+			u4Freq;
+		rttReq.arRttConfigs[0].rChannel.center_freq0 = 0;
+		rttReq.arRttConfigs[0].rChannel.center_freq1 = 0;
+		rttReq.arRttConfigs[0].u2BurstPeriod = 0;
+		rttReq.arRttConfigs[0].u2NumBurstExponent = 0;
+		rttReq.arRttConfigs[0].u2PreferencePartialTsfTimer = 0;
+		rttReq.arRttConfigs[0].ucNumFramesPerBurst = 14;
+		rttReq.arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
+		rttReq.arRttConfigs[0].ucNumRetriesPerFtmr = 0;
+		rttReq.arRttConfigs[0].ucLciRequest = 0;
+		rttReq.arRttConfigs[0].ucLcrRequest = 0;
+		rttReq.arRttConfigs[0].ucBurstDuration = 11;
+		rttReq.arRttConfigs[0].ePreamble =
+			WIFI_RTT_PREAMBLE_VHT;
+		rttReq.arRttConfigs[0].eBw =
+			rttBssBwToRttBw(ucWidth);
+		rttReq.arRttConfigs[0].ucASAP = 1;
+		rttReq.arRttConfigs[0].ucFtmMinDeltaTime = 40;
+
+		/* 11az configruation */
+		rttReq.arRttConfigs[0].ucI2rLmrFeedback =
+			ucI2rLmrFeedback;
+		rttReq.arRttConfigs[0].ucImmeR2iFeedback =
+			ucImmeR2iFeedback;
+		rttReq.arRttConfigs[0].ucImmeI2rFeedback =
+			ucImmeI2rFeedback;
+		rttReq.arRttConfigs[0].ucForceReplyI2rLmr =
+			ucForceReplyI2rLmr;
+
+		rttHandleRttRequest(prAdapter, &rttReq, ucBssIndex);
+	}
+#endif
+}
+
 void
 nanRangingFtmDoneEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;

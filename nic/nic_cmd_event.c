@@ -7222,6 +7222,9 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 		mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
 			prAdapter, prTlvElement->aucbody);
 		break;
+	case UNI_EVENT_NAN_TAG_RANGING_CTRL:
+		nanRangingCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
 	}
 }
 
@@ -7314,6 +7317,9 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 	case NAN_EVENT_LOWPOWER_CTRL:
 		mtk_cfg80211_vendor_event_nan_lowpower_ctrl(
 			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_RANGING_CTRL:
+		nanRangingCtrlEvt(prAdapter, prTlvElement->aucbody);
 		break;
 	}
 }

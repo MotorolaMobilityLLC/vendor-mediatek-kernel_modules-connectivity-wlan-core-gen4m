@@ -158,6 +158,12 @@ struct _NAN_RANGING_INFO_T {
 	struct NanRangeResponseCtl response_ctl_def;
 };
 
+struct _NAN_RANGING_CTRL_EVENT {
+	uint8_t ucIsEnabled;
+	uint8_t aucNanAddress[MAC_ADDR_LEN];
+	union _NAN_BAND_CHNL_CTRL arChnlInfo;
+};
+
 __KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_FTM_PARAM_CMD {
 	uint8_t ucRole;
@@ -353,6 +359,8 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 			  struct _NAN_RANGING_INSTANCE_T *prRanging);
 
 void nanRangingFtmDoneEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
+
+void nanRangingCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
 
 /************************************************
  *   Interface for NAN Discovery Engine

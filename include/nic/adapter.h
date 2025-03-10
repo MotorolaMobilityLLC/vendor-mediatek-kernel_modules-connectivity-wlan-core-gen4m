@@ -3556,6 +3556,10 @@ struct ADAPTER {
 	(_prBssInfo && \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_NAN))
 
+#define IS_BSS_INDEX_NAN(_prAdapter, _BssIndex) \
+	(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex) && \
+	IS_BSS_NAN(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex)))
+
 #define SET_NET_ACTIVE(_prAdapter, _BssIndex) \
 	{(_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive = TRUE; }
 

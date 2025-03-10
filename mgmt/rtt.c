@@ -474,6 +474,12 @@ uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
 			uint8_t *pucClientMacAddr)
 {
 	struct STA_RECORD *prStaRec;
+	enum ENUM_STA_TYPE eStaType = STA_TYPE_LEGACY_CLIENT;
+
+#if CFG_SUPPORT_NAN
+	if (IS_BSS_INDEX_NAN(prAdapter, ucBssIndex))
+		eStaType = STA_TYPE_NAN;
+#endif
 
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
 			ucBssIndex,
@@ -481,7 +487,7 @@ uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
 
 	if (!prStaRec) { /* RTT with new client */
 		prStaRec = cnmStaRecAlloc(prAdapter,
-			STA_TYPE_LEGACY_CLIENT,
+			eStaType,
 			ucBssIndex,
 			pucClientMacAddr);
 
@@ -540,7 +546,7 @@ uint32_t rttRemoveClientStaRec(struct ADAPTER *prAdapter)
 				"Free StaRec for un-assoc client " MACSTR "\n",
 				MAC2STR(entry->rResult.aucMacAddr));
 
-				cnmStaRecFree(prAdapter, prStaRec);
+			cnmStaRecFree(prAdapter, prStaRec);
 		}
 	}
 
@@ -1212,7 +1218,9 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 				status =  WLAN_STATUS_FAILURE;
 				goto fail;
 			}
-		} else if (rc->ePeer == RTT_PEER_STA) {
+		} else if ((rc->ePeer == RTT_PEER_STA) ||
+			(rc->ePeer == RTT_PEER_NAN_RSTA) ||
+			(rc->ePeer == RTT_PEER_NAN_ISTA)) {
 			rttAddClientStaRec(prAdapter, ucBssIndex, rc->aucAddr);
 		}
 
@@ -1483,6 +1491,8 @@ uint32_t rttRemoveStaRec(struct ADAPTER *prAdapter)
 		rttRemovePeerStaRec(prAdapter);
 		break;
 	case RTT_PEER_STA:
+	case RTT_PEER_NAN_RSTA:
+	case RTT_PEER_NAN_ISTA:
 		rttRemoveClientStaRec(prAdapter);
 		break;
 	default:
@@ -1523,11 +1533,13 @@ void rttEventDone(struct ADAPTER *prAdapter,
 	}
 
 	switch (rttInfo->eRttPeerType) {
+	case RTT_PEER_NAN_RSTA:
 	case RTT_PEER_AP:
 		rttReportDone(prAdapter);
 		rttInfo->ucState = RTT_STATE_RTT_DONE;
 		break;
 	case RTT_PEER_STA:
+	case RTT_PEER_NAN_ISTA:
 	default:
 		/* Do nothing */
 		break;
@@ -1570,7 +1582,7 @@ void rttEventResult(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_RTT_RSTA
-u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter,
+u_int8_t rttGetRSTABssIndex(struct ADAPTER *prAdapter,
 	uint8_t *pucDestAddr)
 {
 	uint8_t ucBssIndex = 0;
@@ -1584,9 +1596,11 @@ u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter,
 		ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 		if (prBssInfo &&
-			IS_BSS_APGO(prBssInfo) &&
+			(IS_BSS_APGO(prBssInfo) ||
+			IS_BSS_NAN(prBssInfo)) &&
 			IS_BSS_ACTIVE(prBssInfo) &&
-			EQUAL_MAC_ADDR(pucDestAddr, prBssInfo->aucOwnMacAddr)) {
+			EQUAL_MAC_ADDR(pucDestAddr,
+			prBssInfo->aucOwnMacAddr)) {
 			break;
 		}
 	}
@@ -1594,7 +1608,7 @@ u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter,
 	return ucBssIndex;
 }
 
-u_int8_t rttIsAPActive(struct ADAPTER *prAdapter)
+u_int8_t rttIsRSTAActive(struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIndex = 0;
 	uint8_t fgIsAPActive = FALSE;
@@ -1608,7 +1622,8 @@ u_int8_t rttIsAPActive(struct ADAPTER *prAdapter)
 		ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 		if (prBssInfo &&
-			IS_BSS_APGO(prBssInfo) &&
+			(IS_BSS_APGO(prBssInfo) ||
+			IS_BSS_NAN(prBssInfo)) &&
 			IS_BSS_ACTIVE(prBssInfo)) {
 			fgIsAPActive = TRUE;
 			break;
@@ -1671,12 +1686,16 @@ uint32_t rttProcessFTM(struct ADAPTER *prAdapter,
 {
 	struct PARAM_RTT_REQUEST *rttReq = NULL;
 	enum WIFI_CHANNEL_WIDTH channelWidth;
+	uint8_t ucBssIndex = 0;
 
 	rttReq = kalMemAlloc(sizeof(struct PARAM_RTT_REQUEST), VIR_MEM_TYPE);
 	if (!rttReq) {
 		DBGLOG(RTT, ERROR, "fail to alloc memory for rttReq.\n");
 		return -1;
 	}
+
+	ucBssIndex = rttGetRSTABssIndex(prAdapter,
+		prActFrame->aucDestAddr);
 
 	kalMemZero(rttReq, sizeof(struct PARAM_RTT_REQUEST));
 	rttReq->fgEnable = true;
@@ -1685,7 +1704,10 @@ uint32_t rttProcessFTM(struct ADAPTER *prAdapter,
 
 	COPY_MAC_ADDR(rttReq->arRttConfigs[0].aucAddr, prActFrame->aucSrcAddr);
 	rttReq->arRttConfigs[0].eType = RTT_TYPE_2_SIDED_11MC;
-	rttReq->arRttConfigs[0].ePeer = RTT_PEER_STA;
+	if (IS_BSS_INDEX_NAN(prAdapter, ucBssIndex))
+		rttReq->arRttConfigs[0].ePeer = RTT_PEER_NAN_ISTA;
+	else
+		rttReq->arRttConfigs[0].ePeer = RTT_PEER_STA;
 	rttReq->arRttConfigs[0].rChannel.width = channelWidth;
 	rttReq->arRttConfigs[0].rChannel.center_freq =
 		nicChannelNum2Freq(prSwRfb->ucChnlNum, prSwRfb->eRfBand) / 1000;
@@ -1711,7 +1733,7 @@ uint32_t rttProcessFTM(struct ADAPTER *prAdapter,
 		prFtmInfoElem->ucMinDeltaFtm;
 
 	rttHandleRttRequest(prAdapter, rttReq,
-		rttGetAPBssIndex(prAdapter, prActFrame->aucDestAddr));
+		ucBssIndex);
 
 	kalMemFree(rttReq, VIR_MEM_TYPE, sizeof(struct PARAM_RTT_REQUEST));
 
@@ -1767,7 +1789,7 @@ void rttProcessPublicAction(struct ADAPTER *prAdapter,
 
 	switch (prActFrame->ucAction) {
 	case ACTION_PUBLIC_FINE_TIMING_MEASUREMENT_REQUEST:
-		if (rttIsAPActive(prAdapter)) {
+		if (rttIsRSTAActive(prAdapter)) {
 			DBGLOG(RTT, DEBUG, "Receive IFTMR\n");
 			rttProcessFTMR(prAdapter, prSwRfb);
 		}

@@ -81,7 +81,8 @@ enum ENUM_RTT_PEER_TYPE {
 	RTT_PEER_STA        = 0x2,
 	RTT_PEER_P2P_GO     = 0x3,
 	RTT_PEER_P2P_CLIENT = 0x4,
-	RTT_PEER_NAN        = 0x5
+	RTT_PEER_NAN_RSTA     = 0x5,
+	RTT_PEER_NAN_ISTA    = 0x6
 };
 
 /* RTT Measurement Bandwidth */

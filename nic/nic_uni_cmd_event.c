@@ -7869,10 +7869,12 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 	max_cmd_len = sizeof(struct UNI_CMD_RTT);
 
 	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC) {
-		if (cmd->arRttConfigs[0].ePeer == RTT_PEER_AP)
+		if (cmd->arRttConfigs[0].ePeer == RTT_PEER_AP ||
+			cmd->arRttConfigs[0].ePeer == RTT_PEER_NAN_RSTA)
 			max_cmd_len +=
 				sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
-		else if (cmd->arRttConfigs[0].ePeer == RTT_PEER_STA)
+		else if (cmd->arRttConfigs[0].ePeer == RTT_PEER_STA ||
+			cmd->arRttConfigs[0].ePeer == RTT_PEER_NAN_ISTA)
 			max_cmd_len +=
 				sizeof(struct UNI_CMD_RTT_RANGE_RSP_MC_T);
 		else
@@ -7897,11 +7899,13 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 
 		switch (cmd->arRttConfigs[0].ePeer) {
 		case RTT_PEER_AP:
+		case RTT_PEER_NAN_RSTA:
 			tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ_MC;
 			tag->u2Length =
 				sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
 			break;
 		case RTT_PEER_STA:
+		case RTT_PEER_NAN_ISTA:
 			tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_RSP_MC;
 			tag->u2Length =
 				sizeof(struct UNI_CMD_RTT_RANGE_RSP_MC_T);
