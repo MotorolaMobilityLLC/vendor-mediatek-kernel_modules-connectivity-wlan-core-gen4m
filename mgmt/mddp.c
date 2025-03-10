@@ -1703,26 +1703,26 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
-			   ERR_RECOV_STOP_IDLE) {
+	if (prHifInfo->u4GenSwitchState != MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+		/* start-ack maybe received after start-ack timeout */
 		DBGLOG(HAL, INFO,
-			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
+			"mddp gen switch state [%d]->[%d] ignore dup start-ack\n",
 			prHifInfo->u4GenSwitchState,
-			MDDP_GEN_SWITCH_NORMAL_STATE,
-			u2genSwitchSeq, u2GenSwitchRsp);
-		DBGLOG(INIT, ERROR, "SER on-going\n");
-		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
-		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+			prHifInfo->u4GenSwitchState);
 		goto end;
 	}
 
-	if (prHifInfo->u4GenSwitchState != MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+			   ERR_RECOV_STOP_IDLE) {
+		/* reject gen switch to fw and wait fw to send gen switch end */
 		DBGLOG(HAL, INFO,
-			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
+			"mddp gen switch state [%d]->[%d] SER on-going\n",
 			prHifInfo->u4GenSwitchState,
-			MDDP_GEN_SWITCH_NORMAL_STATE,
-			u2genSwitchSeq, u2GenSwitchRsp);
-		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE;
+		mddpNotifyMDGenSwitchEnd(prAdapter);
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 		goto end;
 	}
 
@@ -1963,6 +1963,7 @@ void mddpGenSwitchMsgTimeout(unsigned long arg)
 		prHifInfo->u4GenSwitchState =
 			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE;
 		mddpNotifyMDGenSwitchEnd(prAdapter);
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	} else if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_END_STATE) {
 		DBGLOG(HAL, INFO,
 			"mddp gen switch state [%d]->[%d], msg timeout\n",
