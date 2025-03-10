@@ -152,7 +152,8 @@ struct UNI_FWDL_CTX {
 	void *prHifCtx;
 };
 
-uint32_t uniFwdlGetReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t uniFwdlGetReleaseManifest(struct GLUE_INFO *prGlueInfo,
+				   uint8_t *pucManifestBuffer,
 				   uint32_t *pu4ManifestSize,
 				   uint32_t u4BufferMaxSize);
 

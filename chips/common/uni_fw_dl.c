@@ -470,11 +470,11 @@ exit:
 	return u4Status;
 }
 
-uint32_t uniFwdlGetReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t uniFwdlGetReleaseManifest(struct GLUE_INFO *prGlueInfo,
+				   uint8_t *pucManifestBuffer,
 				   uint32_t *pu4ManifestSize,
 				   uint32_t u4BufferMaxSize)
 {
-	struct GLUE_INFO *prGlueInfo;
 	struct UNI_FWDL_BINARY_INFO *prInfo = NULL;
 	uint8_t *prFwBuffer = NULL;
 	uint32_t u4FwSize = 0, u4Status = WLAN_STATUS_FAILURE;
@@ -489,12 +489,6 @@ uint32_t uniFwdlGetReleaseManifest(uint8_t *pucManifestBuffer,
 
 	kalMemZero(pucManifestBuffer, u4BufferMaxSize);
 	*pu4ManifestSize = 0;
-
-	prGlueInfo = wlanGetGlueInfo();
-	if (!prGlueInfo) {
-		DBGLOG(UNI_FWDL, ERROR, "Null glue info.\n");
-		goto exit;
-	}
 
 	u4Status = uniFwdlOpenFwBinary(prGlueInfo, &prFwBuffer, &u4FwSize);
 	if (u4Status != WLAN_STATUS_SUCCESS)
