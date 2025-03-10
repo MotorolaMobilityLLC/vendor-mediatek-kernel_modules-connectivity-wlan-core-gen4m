@@ -4702,11 +4702,8 @@ uint32_t
 p2pFuncValidateP2pDevRxActionFrame(struct ADAPTER *prAdapter,
 	u_int8_t fgIsDevInterface, uint8_t ucSwRfbChannel, uint8_t ucCategory)
 {
-	uint8_t i;
 	uint32_t u4Ret = WLAN_STATUS_SUCCESS;
-	struct BSS_INFO *prP2pBssInfo = NULL;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 	enum ENUM_P2P_DEV_STATE eCurrentState;
 
 	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
@@ -4714,29 +4711,6 @@ p2pFuncValidateP2pDevRxActionFrame(struct ADAPTER *prAdapter,
 	/* not P2P Device's frame, keep it valid */
 	if (!fgIsDevInterface || !prP2pDevFsmInfo)
 		goto exit;
-
-	/* P2P Device should receive provision discovery on role channel */
-	for (i = 0; i < KAL_P2P_NUM; i++) {
-		prP2pRoleFsmInfo =
-			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, i);
-		if (!prP2pRoleFsmInfo)
-			continue;
-
-		prP2pBssInfo = prAdapter->aprBssInfo[
-			prP2pRoleFsmInfo->ucBssIndex];
-		if (!prP2pBssInfo || IS_BSS_AP(prAdapter, prP2pBssInfo))
-			continue;
-
-		if (prP2pBssInfo->ucPrimaryChannel == ucSwRfbChannel) {
-			DBGLOG(P2P, INFO,
-				"rx action frame %d on state:%d, Bss:%d, Chnl:%d\n",
-				ucCategory,
-				prP2pDevFsmInfo->eCurrentState,
-				prP2pRoleFsmInfo->ucBssIndex,
-				prP2pBssInfo->ucPrimaryChannel);
-			goto exit;
-		}
-	}
 
 	/* Ignore frames received from wrong state */
 	eCurrentState = prP2pDevFsmInfo->eCurrentState;
@@ -4749,11 +4723,6 @@ p2pFuncValidateP2pDevRxActionFrame(struct ADAPTER *prAdapter,
 
 	if (eCurrentState == P2P_DEV_STATE_REQING_CHANNEL &&
 	    prP2pDevFsmInfo->rChnlReqInfo.eChnlReqType != CH_REQ_TYPE_ROC) {
-		u4Ret = WLAN_STATUS_FAILURE;
-		goto exit;
-	}
-
-	if (prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum != ucSwRfbChannel) {
 		u4Ret = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
