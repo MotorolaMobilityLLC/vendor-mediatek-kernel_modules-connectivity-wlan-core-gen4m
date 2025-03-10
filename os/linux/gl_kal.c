@@ -5907,7 +5907,7 @@ int hif_thread(void *data)
 		/* HIF thread trigger whole chip reset */
 		if (test_and_clear_bit(HIF_FLAG_AER_RESET_BIT,
 				       &prGlueInfo->ulHifFlag))
-			mtk_trigger_aer_slot_reset();
+			mtk_trigger_aer_slot_reset(prGlueInfo);
 
 		if (test_and_clear_bit(HIF_FLAG_MSI_RECOVERY_BIT,
 				       &prGlueInfo->ulHifFlag)) {

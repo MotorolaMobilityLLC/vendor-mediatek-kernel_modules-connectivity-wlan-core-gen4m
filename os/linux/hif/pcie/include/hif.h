@@ -777,7 +777,7 @@ extern int mtk_pcie_disable_cfg_dump(int port);
 uint8_t halPcieIsPcieProbed(void);
 u_int8_t pcie_check_status_is_linked(void);
 u_int8_t mtk_get_aer_triggered(void);
-void mtk_trigger_aer_slot_reset(void);
+void mtk_trigger_aer_slot_reset(struct GLUE_INFO *prGlueInfo);
 void glUpdateRxCopyMemOps(
 	struct HIF_MEM_OPS *prMemOps);
 int halSetMemOps(

@@ -1075,8 +1075,8 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	struct device *prDev = &pdev->dev;
 
 	DBGLOG(HAL, INFO,
-		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
-		state, g_AERRstTriggered, kalIsResetting());
+		"pci dev(%p) detected, state: %d, resetting: %u %u\n",
+		pdev, state, g_AERRstTriggered, kalIsResetting());
 
 	kalDumpPlatGPIOStat();
 
@@ -1184,8 +1184,8 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 	enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason;
 	struct device *prDev = &pdev->dev;
 
-	DBGLOG(HAL, INFO, "mtk pci error slot reset, L05_rst: %d\n",
-		g_AERL05Rst);
+	DBGLOG(HAL, INFO, "pci dev(%p) reset, L05_rst: %u\n",
+		pdev, g_AERL05Rst);
 
 	prGlueInfo = wlanDevGetGlueInfo(prDev);
 
@@ -1231,7 +1231,7 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct device *prDev = &pdev->dev;
 
-	DBGLOG(HAL, INFO, "mtk pci error resume\n");
+	DBGLOG(HAL, INFO, "pci dev(%p) resume\n", pdev);
 
 	prGlueInfo = wlanDevGetGlueInfo(prDev);
 
@@ -1244,10 +1244,10 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 }
 #endif
 
-void mtk_trigger_aer_slot_reset(void)
+void mtk_trigger_aer_slot_reset(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_MTK_WIFI_AER_RESET
-	mtk_pci_error_slot_reset(NULL);
+	mtk_pci_error_slot_reset(prGlueInfo->rHifInfo.pdev);
 #endif /* CFG_MTK_WIFI_AER_RESET */
 }
 
