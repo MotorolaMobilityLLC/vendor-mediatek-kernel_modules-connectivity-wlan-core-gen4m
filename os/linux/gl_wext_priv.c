@@ -44,6 +44,7 @@
 #include "nan_data_engine.h"
 #include "nan_sec.h"
 #include "nanScheduler.h"
+#include "nanRescheduler.h"
 #include "nanReg.h"
 #endif
 
@@ -11883,6 +11884,10 @@ static int nan_set_mocked_channels(struct ADAPTER *prAdapter,
 
 	set_mocked_nan_concurrent_channel(prAdapter, eNetworkType,
 					  eBand, ucPrimaryChannel);
+
+	nanSchedUpdateP2pAisMcc(prAdapter);
+	if (eNetworkType == NETWORK_TYPE_P2P && ucPrimaryChannel)
+		nanRescheduleNdlIfNeeded(prAdapter, P2P_CONNECTED, NULL);
 
 	return 0;
 }

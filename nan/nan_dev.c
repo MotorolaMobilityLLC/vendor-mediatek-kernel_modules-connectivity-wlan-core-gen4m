@@ -1740,7 +1740,6 @@ void nanRestoreSapChannel(
 void nanConcurrencyHandler(struct ADAPTER *prAdapter)
 {
 	nanBackToNormal(prAdapter);
-	nanSetFlashCommunication(prAdapter, FALSE);
 
 #if (CFG_NAN_CONCURRENCY == 1)
 	if (!nanIsConcurrency(prAdapter))

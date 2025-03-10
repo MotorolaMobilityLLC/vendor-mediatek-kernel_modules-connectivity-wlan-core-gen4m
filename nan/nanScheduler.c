@@ -16159,6 +16159,13 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 		prP2pAisMcc->rP2pChnlInfo = rP2pChnlInfo;
 		prP2pAisMcc->rAisChnlInfo = rAisChnlInfo;
 
+		if (NAN_IS_5G_TIMELINE(prAdapter, szTimeline)) {
+			if (rP2pChnlInfo.u4PrimaryChnl)
+				nanSetFlashCommunication(prAdapter, FALSE);
+			else
+				nanSetFlashCommunication(prAdapter, TRUE);
+		}
+
 		if (NAN_IS_2G_TIMELINE(prAdapter, szTimeline))
 			rSocialChnlInfo = g_r2gDwChnl;
 		else
@@ -18404,8 +18411,16 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					szTimeLineIdx) == ENUM_NAN_DW)
 					continue;
 
-				if ((BIT(szSlotOffset) & u4NegoSlot) == 0)
+				if ((BIT(szSlotOffset) & u4NegoSlot) == 0) {
+					/* log not rescheduled channel info */
+					ucSlotChannel[szSlotOffset] =
+						nanQueryPrimaryChnlBySlot(
+								prAdapter,
+								szSlotIdx,
+								TRUE,
+								szTimeLineIdx);
 					continue;
+				}
 
 				fgNotChoose6G = FALSE;
 
