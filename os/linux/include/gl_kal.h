@@ -1279,6 +1279,9 @@ char *strtok_r(char *s, const char *delim, char **last);
 
 #define kal_clamp_t(_type, _val, _lo, _hi)	clamp_t(_type, _val, _lo, _hi)
 
+#define kal_clamp_t(_type, _val, _lo, _hi) \
+	clamp_t(_type, _val, _lo, _hi)
+
 #define kal_tasklet_schedule(_rTasklet) \
 	tasklet_schedule(_rTasklet)
 

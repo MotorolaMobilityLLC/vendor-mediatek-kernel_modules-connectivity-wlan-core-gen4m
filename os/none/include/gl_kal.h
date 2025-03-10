@@ -750,13 +750,21 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kal_max_t(_type, _v1, _v2) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _type, _v1, _v2)
+({						\
+	_type _max_1 = _v1;			\
+	_type _max_2 = _v2;			\
+	_max_1 > _max_2 ? _max_1 : _max_2;	\
+})
 
 #define kal_min_t(_type, _v1, _v2) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _type, _v1, _v2)
+({						\
+	_type _min_1 = _v1;			\
+	_type _min_2 = _v2;			\
+	_min_1 < _min_2 ? _min_1 : _min_2;	\
+})
 
 #define kal_clamp_t(_type, _val, _lo, _hi) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _type, _val, _lo, _hi)
+	kal_min(_type, kal_max_t(_type, _val, _lo), _hi)
 
 #define kal_tasklet_schedule(_rTasklet) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)

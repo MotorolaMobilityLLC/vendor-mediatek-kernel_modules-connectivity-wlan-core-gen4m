@@ -31,14 +31,6 @@
 #define NAN_MAX_DEFAULT_TIMELINE_NUM 2
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-/* 6G chnl info */
-#define NAN_6G_CERT_DEFAULT_CHANNEL	37
-#define NAN_6G_BW20_DEFAULT_CHANNEL	5
-#define NAN_6G_BW40_DEFAULT_CHANNEL	3
-#define NAN_6G_BW80_DEFAULT_CHANNEL	7
-#define NAN_6G_BW160_DEFAULT_CHANNEL	15
-#define NAN_6G_BW320_DEFAULT_CHANNEL	31
-
 #define NAN_6G_BW20_OP_CLASS	131
 #define NAN_6G_BW40_OP_CLASS	132
 #define NAN_6G_BW80_OP_CLASS	133
@@ -76,6 +68,23 @@ do {								\
 #define NAN_TIMELINE_UNSET(pu4AvailMap, u2SlotIdx)		\
 	(pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)] &=		\
 	 (~BIT(NAN_SLOT_INDEX(u2SlotIdx))))
+
+
+#define NAN_IS_U8_BIT_SET(pucBitmap, u2SlotIdx)		\
+	((pucBitmap[(u2SlotIdx) / CHAR_BIT] & \
+	  BIT((u2SlotIdx) % CHAR_BIT)) != 0)
+
+#define NAN_U8_BIT_SET(pucBitmap, u2SlotIdx)		\
+do {								\
+	pucBitmap[(u2SlotIdx) / CHAR_BIT] |= BIT((u2SlotIdx) % CHAR_BIT); \
+	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",	\
+	       __func__, pucBitmap, u2SlotIdx,		\
+	       pucBitmap[(u2SlotIdx) / CHAR_BIT]);		\
+} while (0)
+
+#define NAN_U8_BIT_UNSET(pucBitmap, u2SlotIdx)		\
+	(pucBitmap[(u2SlotIdx) / CHAR_BIT] &= (~BIT((u2SlotIdx) % CHAR_BIT)))
+
 
 #define NAN_MAX_NONNAN_TIMELINE_NUM		NAN_TIMELINE_MGMT_SIZE
 	/* Non-Nan timeline number */
@@ -445,20 +454,28 @@ struct _NAN_POTENTIAL_CHNL_MAP_T g_arPotentialChnlMap[] = {
 };
 
 #if (CFG_SUPPORT_NAN_6G == 1)
+/**
+ * Update ucPriChnlBitmap in nanSchedConfigAllowedBand() according to
+ * the primary channel in wifi.cfg.
+ */
 struct _NAN_POTENTIAL_CHNL_T g_ar6gPotentialChnlMap[NAN_CHNL_BW_NUM+1] = {
 	{NAN_6G_BW20_OP_CLASS, 0,
 		((NAN_6G_BW20_START_CHNL & 0xFF) |
 		(NAN_6G_BW20_TOTAL_CHNL_NUM << 8))},
-	{NAN_6G_BW40_OP_CLASS, BIT(1),
+	{NAN_6G_BW40_OP_CLASS,
+		BIT((NAN_6G_BW20_DEFAULT_CHANNEL - 1) / 4),
 		((NAN_6G_BW40_START_CHNL & 0xFF) |
 		(NAN_6G_BW40_TOTAL_CHNL_NUM << 8))},
-	{NAN_6G_BW80_OP_CLASS, BIT(1),
+	{NAN_6G_BW80_OP_CLASS,
+		BIT((NAN_6G_BW20_DEFAULT_CHANNEL - 1) / 4),
 		((NAN_6G_BW80_START_CHNL & 0xFF) |
 		(NAN_6G_BW80_TOTAL_CHNL_NUM << 8))},
-	{NAN_6G_BW160_OP_CLASS, BIT(1),
+	{NAN_6G_BW160_OP_CLASS,
+		BIT((NAN_6G_BW20_DEFAULT_CHANNEL - 1) / 4),
 		((NAN_6G_BW160_START_CHNL & 0xFF) |
 		(NAN_6G_BW160_TOTAL_CHNL_NUM << 8))},
-	{NAN_6G_BW320_OP_CLASS, BIT(1),
+	{NAN_6G_BW320_OP_CLASS,
+		BIT((NAN_6G_BW20_DEFAULT_CHANNEL - 1) / 4),
 		((NAN_6G_BW320_START_CHNL & 0xFF) |
 		(NAN_6G_BW320_TOTAL_CHNL_NUM << 8))},
 	{0, 0, 0},
@@ -1925,15 +1942,21 @@ nanParserGenTimeBitmapField(struct ADAPTER *prAdapter, uint32_t *pu4AvailMap,
 
 	pucBitmap = (uint8_t *)&pu4AvailMap[0];
 
-	for (u4StartOffset = 0; u4StartOffset < NAN_TIME_BITMAP_MAX_SIZE * 8;
+	for (u4StartOffset = 0;
+	     u4StartOffset < NAN_TIME_BITMAP_MAX_SIZE * CHAR_BIT;
 	     u4StartOffset++) {
-		if (pucBitmap[u4StartOffset / 8] & BIT(u4StartOffset % 8))
+		if (NAN_IS_U8_BIT_SET(pucBitmap, u4StartOffset))
 			break;
 	}
 #if CFG_NAN_SIGMA_TEST
 	u4StartOffset = 0;
 #endif
 
+	/**
+	 * Find proper u4RepeatInterval
+	 * 8192TU =  512 bits (16 TU / bit) => 64 bytes
+	 * e.g., 8192TU: 0, check 2nd part from 32 byte, length = 32 bytes
+	 */
 	u4RepeatInterval = ENUM_TIME_BITMAP_CTRL_PERIOD_8192;
 	u4BitmapLength = NAN_TIME_BITMAP_MAX_SIZE;
 	fgCheckDone = FALSE;
@@ -1956,22 +1979,22 @@ nanParserGenTimeBitmapField(struct ADAPTER *prAdapter, uint32_t *pu4AvailMap,
 
 		if (!fgCheckDone)
 			u4RepeatInterval--;
+
+#if CFG_NAN_SIGMA_TEST /* To prevent IOT issue for bitmap length less than 4 */
+		if (u4RepeatInterval == ENUM_TIME_BITMAP_CTRL_PERIOD_512)
+			fgCheckDone = 1;
+#endif
+
 	} while (u4RepeatInterval > ENUM_TIME_BITMAP_CTRL_PERIOD_128 &&
 		 !fgCheckDone);
 
-#if CFG_NAN_SIGMA_TEST
-	/* To prevent IOT issue for bitmap length less than 4 */
-	if (u4RepeatInterval < ENUM_TIME_BITMAP_CTRL_PERIOD_512)
-		u4RepeatInterval = ENUM_TIME_BITMAP_CTRL_PERIOD_512;
-#endif
 
+	/* Find proper u4BitDuration */
 	u4BitDuration = ENUM_TIME_BITMAP_CTRL_DURATION_128;
 	u4CheckPos = u4StartOffset;
 	while ((u4CheckPos < (1 << (u4RepeatInterval + 2))) &&
 	       (u4BitDuration > ENUM_TIME_BITMAP_CTRL_DURATION_16)) {
-		fgBitSet = (pucBitmap[u4CheckPos / 8] & (BIT(u4CheckPos % 8)))
-				   ? TRUE
-				   : FALSE;
+		fgBitSet = NAN_IS_U8_BIT_SET(pucBitmap, u4CheckPos);
 
 		u4BitmapPos1 = u4CheckPos + 1;
 		for (u4BitDurationChecked = (1 << u4BitDuration) - 1;
@@ -1981,10 +2004,8 @@ nanParserGenTimeBitmapField(struct ADAPTER *prAdapter, uint32_t *pu4AvailMap,
 				break;
 			}
 
-			fgBitSetCheck = (pucBitmap[u4BitmapPos1 / 8] &
-					 (BIT(u4BitmapPos1 % 8)))
-						? TRUE
-						: FALSE;
+			fgBitSetCheck =
+				NAN_IS_U8_BIT_SET(pucBitmap, u4BitmapPos1);
 			if (fgBitSet != fgBitSetCheck)
 				break;
 
@@ -2013,12 +2034,10 @@ nanParserGenTimeBitmapField(struct ADAPTER *prAdapter, uint32_t *pu4AvailMap,
 	u4CheckPos = u4StartOffset;
 	u4BitmapPos1 = 0;
 	while (u4CheckPos < (1 << (u4RepeatInterval + 2))) {
-		fgBitSet = (pucBitmap[u4CheckPos / 8] & (BIT(u4CheckPos % 8)))
-				   ? TRUE
-				   : FALSE;
-		if (fgBitSet) {
-			pucTimeBitmapValue[u4BitmapPos1 / 8] |=
-				(BIT(u4BitmapPos1 % 8));
+		/* NAN_IS_AVAIL_MAP_SET */
+		if (NAN_IS_U8_BIT_SET(pucBitmap, u4CheckPos)) {
+			/* NAN_TIMELINE_SET  */
+			NAN_U8_BIT_SET(pucTimeBitmapValue, u4BitmapPos1);
 			u4BitmapPos2 = u4BitmapPos1;
 		}
 
@@ -6223,11 +6242,31 @@ void nanSet6GModeCtrl(struct ADAPTER *prAdapter, uint8_t mode)
 #endif
 }
 
+/* Update the primary channel bitmap (default set by) */
+static void nanUpdate6gPotentialPrimary(union _NAN_BAND_CHNL_CTRL g_r6gDefChnl)
+{
+	size_t i;
+	struct _NAN_POTENTIAL_CHNL_T *pr6gPotentialChnlMap;
+	uint8_t ucPriChnlBitmap;
+
+	ucPriChnlBitmap = BIT((g_r6gDefChnl.u4PrimaryChnl - 1) / 4);
+
+	for (i = 0; i < ARRAY_SIZE(g_ar6gPotentialChnlMap); i++) {
+		pr6gPotentialChnlMap = &g_ar6gPotentialChnlMap[i];
+		if (pr6gPotentialChnlMap->ucOpClass == 0)
+			break;
+
+		if (pr6gPotentialChnlMap->ucPriChnlBitmap)
+			pr6gPotentialChnlMap->ucPriChnlBitmap = ucPriChnlBitmap;
+	}
+}
+
 uint32_t
 nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 			  unsigned char fgEn5gH, unsigned char fgEn5gL,
 			  unsigned char fgEn6g)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 	/* whsu */
 	/* UINT_8 ucDiscChnlBw = BW_20; */
@@ -6240,11 +6279,11 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 #if (CFG_SUPPORT_NAN_6G == 1)
 	uint8_t fgIsNAN6GChnlAllowed =
 			rlmDomainIsLegalChannel(prAdapter, BAND_6G,
-						NAN_6G_BW20_DEFAULT_CHANNEL);
+					prWifiVar->ucNan6gDefaultChannel);
 
 	/* If NAN 6G chnl not legal, close NAN 6G to prevent nego issue. */
 	if (!fgIsNAN6GChnlAllowed) {
-		prAdapter->rWifiVar.ucNanEnable6g = 0;
+		prWifiVar->ucNanEnable6g = 0;
 		wlanCfgSetUint32(prAdapter, "NanEnable6g", 0);
 	}
 #endif
@@ -6256,9 +6295,9 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	prNanScheduler->fgEn5gL = fgEn5gL;
 #if (CFG_SUPPORT_NAN_6G == 1)
 	prNanScheduler->fgEn6g = fgEn6g &&
-				 prAdapter->rWifiVar.ucNanEnable6g &&
+				 prWifiVar->ucNanEnable6g &&
 				 fgIsNAN6GChnlAllowed;
-	nanRegForce_R3_6GChMap(prAdapter->rWifiVar.ucNanEnableSS6g);
+	nanRegForce_R3_6GChMap(prWifiVar->ucNanEnableSS6g);
 
 	nanSet6GModeCtrl(prAdapter, prNanScheduler->fgEn6g);
 #endif
@@ -6267,14 +6306,14 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	       "Allowed Band: %d, %d, %d, %d, %d\n", fgEn2g, fgEn5gH,
 	       fgEn5gL, fgEn6g, prNanScheduler->fgEn6g);
 
-	ucDisc2GChnlBw = prAdapter->rWifiVar.ucNan2gBandwidth;
-	ucDisc5GChnlBw = prAdapter->rWifiVar.ucNan5gBandwidth;
+	ucDisc2GChnlBw = prWifiVar->ucNan2gBandwidth;
+	ucDisc5GChnlBw = prWifiVar->ucNan5gBandwidth;
 #if (CFG_SUPPORT_NAN_6G == 1)
 	ucDisc6GChnlBw = nanSchedGet6gNanBw(prAdapter);
 #endif
 
 	/* NAN 2G BW check */
-	if ((!prAdapter->rWifiVar.fgEnNanVHT) &&
+	if ((!prWifiVar->fgEnNanVHT) &&
 	    (ucDisc2GChnlBw > NAN_CHNL_BW_40))
 		ucDisc2GChnlBw = NAN_CHNL_BW_40;
 
@@ -6332,10 +6371,12 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 
 		if (nanGetFeatureIsSigma(prAdapter))
 			g_r6gDefChnl.u4PrimaryChnl =
-				NAN_6G_CERT_DEFAULT_CHANNEL;
+				NAN_6G_BW20_CERT_DEFAULT_CHANNEL;
 		else
 			g_r6gDefChnl.u4PrimaryChnl =
-				NAN_6G_BW20_DEFAULT_CHANNEL;
+				prWifiVar->ucNan6gDefaultChannel;
+
+		nanUpdate6gPotentialPrimary(g_r6gDefChnl);
 
 		if (ucDisc6GChnlBw == NAN_CHNL_BW_20)
 			g_r6gDefChnl.u4OperatingClass =
@@ -8520,32 +8561,24 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 	       prNegoCtrl->u4QosMinSlots, prNegoCtrl->u4QosMaxLatency);
 
 	/* negotiate min slots */
-	if (prNegoCtrl->u4QosMinSlots > prPeerSchDesc->u4QosMinSlots)
-		u4QosMinSlots = prNegoCtrl->u4QosMinSlots;
-	else
-		u4QosMinSlots = prPeerSchDesc->u4QosMinSlots;
+	u4QosMinSlots = kal_min_t(uint32_t,
+				  prNegoCtrl->u4QosMinSlots,
+				  prPeerSchDesc->u4QosMinSlots);
 	if (u4QosMinSlots > NAN_INVALID_QOS_MIN_SLOTS) {
-		if (u4QosMinSlots < NAN_QOS_MIN_SLOTS_LOW_BOUND)
-			u4QosMinSlots = NAN_QOS_MIN_SLOTS_LOW_BOUND;
-		else if (u4QosMinSlots > NAN_QOS_MIN_SLOTS_UP_BOUND)
-			u4QosMinSlots = NAN_QOS_MIN_SLOTS_UP_BOUND;
-
+		u4QosMinSlots = kal_clamp_t(uint32_t, u4QosMinSlots,
+					    NAN_QOS_MIN_SLOTS_LOW_BOUND,
+					    NAN_QOS_MIN_SLOTS_UP_BOUND);
 		prNegoCtrl->u4NegoQosMinSlots = u4QosMinSlots;
 	}
 
 	/* negotiate max latency */
-	if (prNegoCtrl->u4QosMaxLatency > prPeerSchDesc->u4QosMaxLatency)
-		u4QosMaxLatency = prPeerSchDesc->u4QosMaxLatency;
-	else
-		u4QosMaxLatency = prNegoCtrl->u4QosMaxLatency;
+	u4QosMaxLatency = kal_min_t(uint32_t,
+				    prNegoCtrl->u4QosMaxLatency,
+				    prPeerSchDesc->u4QosMaxLatency);
 	if (u4QosMaxLatency < NAN_INVALID_QOS_MAX_LATENCY) {
-		if (u4QosMaxLatency < NAN_QOS_MAX_LATENCY_LOW_BOUND)
-			u4QosMaxLatency =
-				NAN_QOS_MAX_LATENCY_LOW_BOUND;
-			/* reserve 1 slot for DW window */
-		else if (u4QosMaxLatency > NAN_QOS_MAX_LATENCY_UP_BOUND)
-			u4QosMaxLatency = NAN_QOS_MAX_LATENCY_UP_BOUND;
-
+		u4QosMaxLatency = kal_clamp_t(uint32_t, u4QosMaxLatency,
+					      NAN_QOS_MAX_LATENCY_LOW_BOUND,
+					      NAN_QOS_MAX_LATENCY_UP_BOUND);
 		prNegoCtrl->u4NegoQosMaxLatency = u4QosMaxLatency;
 	}
 
@@ -8565,7 +8598,7 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 			 * are unavailable.
 			 */
 			u4UnavailSlotsAll &=
-			prNegoCtrl->aau4UnavailSlots[szTimeLineIdx][u4Idx];
+			     prNegoCtrl->aau4UnavailSlots[szTimeLineIdx][u4Idx];
 		}
 
 		/* step1. check QoS min slots */
@@ -8603,13 +8636,11 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 				continue;
 			}
 
-			if (i4Latency == 0) {
-				i4Latency++;
+			i4Latency++;
+			if (i4Latency == 0)
 				i4LatencyStart = i4LatencyEnd = u4Idx1;
-			} else {
-				i4Latency++;
+			else
 				i4LatencyEnd = u4Idx1;
-			}
 
 			for (; (i4Latency > u4QosMaxLatency) &&
 				(i4LatencyStart <= i4LatencyEnd);
@@ -11955,9 +11986,19 @@ uint32_t
 nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 	size_t szTimeLineIdx)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if (CFG_SUPPORT_NAN_6G == 1)
-#define NAN_POTENTIAL_BAND 1
-#define NAN_POTENTIAL_CHANNEL 1
+	u_int8_t fgNanPotentialBand =
+			prWifiVar->ucNanBandChnlType ==
+			NAN_BAND_CH_ENTRY_LIST_TYPE_BAND;
+	u_int8_t fgNanPotentialChannel =
+			prWifiVar->ucNanBandChnlType ==
+			NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
+#else /* CFG_SUPPORT_NAN_6G != 1 */
+	u_int8_t fgNanPotentialBand = FALSE;
+	u_int8_t fgNanPotentialChannel = TRUE;
+#endif
+
 	uint8_t *pucPos;
 	uint8_t *pucTmp;
 	uint32_t u4EntryIdx;
@@ -11967,28 +12008,21 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 	uint32_t au4PotentialAvailMap[NAN_TOTAL_DW];
 	struct _NAN_SCHEDULER_T *prScheduler;
 	uint32_t u4Idx;
-#if NAN_POTENTIAL_BAND
 	union _NAN_BAND_CHNL_CTRL rPotentialBandInfo;
-#endif
-#if NAN_POTENTIAL_CHANNEL
+
 	uint8_t *pucPotentialChnls;
 	uint32_t u4PotentialChnlSize;
-#endif
+
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucOpRxNss = 1;
-#if NAN_POTENTIAL_BAND
-	const size_t szIndex2G = nanGetTimelineMgmtIndexByBand(prAdapter,
-								     BAND_2G4);
-	const size_t szIndex5G = nanGetTimelineMgmtIndexByBand(prAdapter,
-								     BAND_5G);
-#endif
+
 	union _NAN_BAND_CHNL_CTRL rAisChnlInfo = g_rNullChnl;
 	uint32_t u4SlotBitmap = 0;
 	uint8_t ucPhyTypeSet = 0;
 	uint8_t ucAisPrimaryChnl = 0;
 	size_t szSlotIdx = 0;
-	size_t szIdx = 0;
+
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNanSpecificBssInfo =
@@ -11998,29 +12032,26 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 
 	if (prBssInfo == NULL)
 		DBGLOG(NAN, ERROR, "NULL prBssInfo, idx=%d\n",
-			prNanSpecificBssInfo->ucBssIndex);
+		       prNanSpecificBssInfo->ucBssIndex);
 	else
 		ucOpRxNss = prBssInfo->ucOpRxNss;
 
 	pucPos = pucBuf;
 
 	kalMemSet(au4PotentialAvailMap, 0xFF, sizeof(au4PotentialAvailMap));
-
-	if (prScheduler->fgEn2g
-#if NAN_POTENTIAL_BAND
-	    && (szIndex2G == szTimeLineIdx)
-#endif
-		) {
+	if (prScheduler->fgEn2g &&
+	    (!fgNanPotentialBand ||
+	      fgNanPotentialBand &&
+	      NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx))) {
 		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
 			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
 				NAN_FULL_SLOT_INDEX(u4EntryIdx,
 						    NAN_2G_DW_INDEX));
 	}
-	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL)
-#if NAN_POTENTIAL_BAND
-		&& (szIndex5G == szTimeLineIdx)
-#endif
-		) {
+	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
+	    (!fgNanPotentialBand ||
+	      fgNanPotentialBand &&
+	      NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx))) {
 		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
 			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
 				NAN_FULL_SLOT_INDEX(u4EntryIdx,
@@ -12038,197 +12069,18 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		for (szSlotIdx = 0;
 		     szSlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 		     szSlotIdx++) {
-			if (NAN_SLOT_IS_AIS(prAdapter, szTimeLineIdx,
+			if (!NAN_SLOT_IS_AIS(prAdapter, szTimeLineIdx,
 					    NAN_SLOT_INDEX(szSlotIdx)))
-				NAN_TIMELINE_UNSET(au4PotentialAvailMap,
-						   szSlotIdx);
+				continue;
+
+			NAN_TIMELINE_UNSET(au4PotentialAvailMap, szSlotIdx);
 		}
 	}
 
-/* potential channel */
-#if NAN_POTENTIAL_CHANNEL
-	if (prAdapter->rWifiVar.ucNanBandChnlType ==
-		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
-		pucTmp = pucPos;
-		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)pucTmp;
+	/* process_potential_channel */
+	if (!fgNanPotentialChannel)
+		goto process_potential_band;
 
-		/* whsu */
-		prAvailEntry->u2EntryControl =
-			setEntryControl(NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN,
-					3, 0,
-					prBssInfo ? prBssInfo->ucOpRxNss : 2,
-					1);
-
-		pucPos += 4 /* length(2) + entry control(2) */;
-
-		nanParserGenTimeBitmapField(
-			prAdapter, au4PotentialAvailMap,
-			pucPos, &u4RetLength);
-		pucPos += u4RetLength;
-
-		*pucPos =
-			((prScheduler->au4NumOfPotentialChnlList[szTimeLineIdx]
-			<< NAN_BAND_CH_ENTRY_LIST_NUM_ENTRY_OFFSET) |
-			(NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL));
-		pucPos++;
-		for (u4Idx = 0;
-		     u4Idx <
-		     prScheduler->au4NumOfPotentialChnlList[szTimeLineIdx];
-		     u4Idx++) {
-			szIdx = szTimeLineIdx;
-			pucPotentialChnls = (uint8_t *)
-			&prScheduler->aarPotentialChnlList[szIdx][u4Idx];
-			u4PotentialChnlSize = 4;
-
-			kalMemCopy(pucPos,
-				pucPotentialChnls,
-				u4PotentialChnlSize);
-
-			pucPos += u4PotentialChnlSize;
-		}
-
-		prAvailEntry->u2Length = (pucPos - pucTmp) - 2 /* length(2) */;
-	}
-#endif
-
-/* potential band */
-#if NAN_POTENTIAL_BAND
-	if (prAdapter->rWifiVar.ucNanBandChnlType ==
-		NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
-
-		rPotentialBandInfo.u4BandIdMask = 0;
-		rPotentialBandInfo.u4Type =
-			NAN_BAND_CH_ENTRY_LIST_TYPE_BAND;
-		if (prScheduler->fgEn2g && (szIndex2G == szTimeLineIdx))
-			rPotentialBandInfo.u4BandIdMask |=
-				BIT(NAN_SUPPORTED_BAND_ID_2P4G);
-		if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
-			(szIndex5G == szTimeLineIdx))
-			rPotentialBandInfo.u4BandIdMask |=
-				BIT(NAN_SUPPORTED_BAND_ID_5G);
-		if (prScheduler->fgEn6g)
-			rPotentialBandInfo.u4BandIdMask |=
-				BIT(NAN_SUPPORTED_BAND_ID_6G);
-
-		if (rPotentialBandInfo.u4BandIdMask != 0) {
-			pucTmp = pucPos;
-			prAvailEntry =
-				(struct _NAN_AVAILABILITY_ENTRY_T *)pucTmp;
-
-			prAvailEntry->u2EntryControl =
-				setEntryControl(
-					NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN,
-					3, 0, prBssInfo ? prBssInfo->ucOpRxNss :
-					2, 1);
-
-			/* length(2 + entry control(2) */
-			pucPos += 4;
-
-			nanParserGenTimeBitmapField(
-				prAdapter, au4PotentialAvailMap,
-				pucPos, &u4RetLength);
-			pucPos += u4RetLength;
-
-			nanParserGenBandChnlEntryListField(prAdapter,
-				&rPotentialBandInfo, 1,
-				pucPos, &u4RetLength);
-			pucPos += u4RetLength;
-
-			/* length(2) */
-			prAvailEntry->u2Length = (pucPos - pucTmp) - 2;
-		}
-
-	}
-#endif
-#else
-#define NAN_POTENTIAL_BAND 0
-#define NAN_POTENTIAL_CHANNEL 1
-	uint8_t *pucPos;
-	uint8_t *pucTmp;
-	uint32_t u4EntryIdx;
-	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
-	uint32_t u4RetLength;
-	uint32_t au4PotentialAvailMap[NAN_TOTAL_DW];
-	struct _NAN_SCHEDULER_T *prScheduler;
-	uint32_t u4Idx;
-#if NAN_POTENTIAL_BAND
-	union _NAN_BAND_CHNL_CTRL rPotentialBandInfo;
-#endif
-#if NAN_POTENTIAL_CHANNEL
-	uint8_t *pucPotentialChnls;
-	uint32_t u4PotentialChnlSize;
-#endif
-	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
-	struct BSS_INFO *prBssInfo;
-	uint8_t ucOpRxNss = 1;
-#if NAN_POTENTIAL_BAND
-	const size_t szIndex2G = nanGetTimelineMgmtIndexByBand(prAdapter,
-								     BAND_2G4);
-	const size_t szIndex5G = nanGetTimelineMgmtIndexByBand(prAdapter,
-								     BAND_5G);
-#endif
-	union _NAN_BAND_CHNL_CTRL rAisChnlInfo = g_rNullChnl;
-	uint32_t u4SlotBitmap = 0;
-	uint8_t ucPhyTypeSet = 0;
-	uint8_t ucAisPrimaryChnl = 0;
-	size_t szSlotIdx = 0;
-
-	prScheduler = nanGetScheduler(prAdapter);
-	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					  prNanSpecificBssInfo->ucBssIndex);
-
-	if (prBssInfo == NULL)
-		DBGLOG(NAN, ERROR, "NULL prBssInfo, idx=%d\n",
-			prNanSpecificBssInfo->ucBssIndex);
-	else
-		ucOpRxNss = prBssInfo->ucOpRxNss;
-
-	pucPos = pucBuf;
-
-	kalMemSet(au4PotentialAvailMap, 0xFF, sizeof(au4PotentialAvailMap));
-	if (prScheduler->fgEn2g
-#if NAN_POTENTIAL_BAND
-		&& (szIndex2G == szTimeLineIdx)
-#endif
-		) {
-		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
-			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
-				NAN_FULL_SLOT_INDEX(u4EntryIdx,
-						    NAN_2G_DW_INDEX));
-	}
-	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL)
-#if NAN_POTENTIAL_BAND
-		&& (szIndex5G == szTimeLineIdx)
-#endif
-		) {
-		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
-			NAN_TIMELINE_UNSET(au4PotentialAvailMap,
-				NAN_FULL_SLOT_INDEX(u4EntryIdx,
-						    NAN_5G_DW_INDEX));
-	}
-
-	/* Remove AIS slot in potential when infra channel is DFS(5G) */
-	nanSchedGetConnChnlUsage(prAdapter, NETWORK_TYPE_AIS, BAND_5G,
-				 &rAisChnlInfo, &u4SlotBitmap, &ucPhyTypeSet);
-
-	ucAisPrimaryChnl = (uint8_t) rAisChnlInfo.u4PrimaryChnl;
-
-	if (ucAisPrimaryChnl != 0 &&
-	    rlmDomainIsDfsChnls(prAdapter, ucAisPrimaryChnl)) {
-		for (szSlotIdx = 0;
-		     szSlotIdx < NAN_TOTAL_SLOT_WINDOWS;
-		     szSlotIdx++) {
-			if (NAN_SLOT_IS_AIS(prAdapter, szTimeLineIdx,
-					    NAN_SLOT_INDEX(szSlotIdx)))
-				NAN_TIMELINE_UNSET(au4PotentialAvailMap,
-						   szSlotIdx);
-		}
-	}
-
-/* potential channel */
-#if NAN_POTENTIAL_CHANNEL
 	pucTmp = pucPos;
 
 	prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)pucTmp;
@@ -12242,35 +12094,42 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 				    &u4RetLength);
 	pucPos += u4RetLength;
 
-	*pucPos = ((prScheduler->au4NumOfPotentialChnlList[szTimeLineIdx]
-		    << NAN_BAND_CH_ENTRY_LIST_NUM_ENTRY_OFFSET) |
+	*pucPos = ((prScheduler->au4NumOfPotentialChnlList[szTimeLineIdx] <<
+			    NAN_BAND_CH_ENTRY_LIST_NUM_ENTRY_OFFSET) |
 		   (NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL));
 	pucPos++;
 	for (u4Idx = 0;
 	     u4Idx < prScheduler->au4NumOfPotentialChnlList[szTimeLineIdx];
 	     u4Idx++) {
 		pucPotentialChnls = (uint8_t *)
-		&prScheduler->aarPotentialChnlList[szTimeLineIdx][u4Idx];
+		       &prScheduler->aarPotentialChnlList[szTimeLineIdx][u4Idx];
 		u4PotentialChnlSize = 4;
+		/* struct _NAN_CHNL_ENTRY_T excluding u2AuxChannelBitmap */
 
 		kalMemCopy(pucPos, pucPotentialChnls, u4PotentialChnlSize);
 		pucPos += u4PotentialChnlSize;
 	}
 
 	prAvailEntry->u2Length = (pucPos - pucTmp) - 2 /* length(2) */;
-#endif
 
-/* potential band */
-#if NAN_POTENTIAL_BAND
+process_potential_band:
+	if (!fgNanPotentialBand)
+		goto process_potential_finished;
+
 	rPotentialBandInfo.u4BandIdMask = 0;
 	rPotentialBandInfo.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_BAND;
-	if (prScheduler->fgEn2g && (szIndex2G == szTimeLineIdx))
+	if (prScheduler->fgEn2g &&
+	    NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx))
 		rPotentialBandInfo.u4BandIdMask |=
 			BIT(NAN_SUPPORTED_BAND_ID_2P4G);
 	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL) &&
-		(szIndex5G == szTimeLineIdx))
+	    NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx))
 		rPotentialBandInfo.u4BandIdMask |=
 			BIT(NAN_SUPPORTED_BAND_ID_5G);
+	if (prScheduler->fgEn6g &&
+	    NAN_IS_6G_TIMELINE(prAdapter, szTimeLineIdx))
+		rPotentialBandInfo.u4BandIdMask |=
+			BIT(NAN_SUPPORTED_BAND_ID_6G);
 
 	if (rPotentialBandInfo.u4BandIdMask != 0) {
 		pucTmp = pucPos;
@@ -12292,8 +12151,8 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 
 		prAvailEntry->u2Length = (pucPos - pucTmp) - 2 /* length(2) */;
 	}
-#endif
-#endif /* CFG_SUPPORT_NAN_6G */
+
+process_potential_finished:
 
 	nanUtilDump(prAdapter, "Potential Windows", pucBuf, (pucPos - pucBuf));
 	return (pucPos - pucBuf);
@@ -12663,7 +12522,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 				 * slot is included
 				 */
 				prAvailAttr->u2AttributeControl |=
-				NAN_AVAIL_CTRL_COMMIT_CHANGED;
+					NAN_AVAIL_CTRL_COMMIT_CHANGED;
 			}
 		}
 

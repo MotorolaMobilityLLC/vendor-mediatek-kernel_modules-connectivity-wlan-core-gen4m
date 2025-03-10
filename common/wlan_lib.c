@@ -9070,6 +9070,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanSkipAnqp, "NanSkipAnqp", 0,
 		FEATURE_TO_CUSTOMER);
+
+	/* NAN_6G_CERT_DEFAULT_CHANNEL */
+	INIT_UINT(prWifiVar->ucNan6gDefaultChannel, "Nan6gDefaultChannel",
+		  NAN_6G_BW20_DEFAULT_CHANNEL, FEATURE_TO_CUSTOMER);
+
 	/* Flash Communication
 	 * 0: disabled; 1: 5G only; 2: 5G+2G (not completed yet)
 	 */

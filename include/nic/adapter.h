@@ -1675,6 +1675,7 @@ struct WIFI_VAR {
 	uint8_t ucNanEht;
 	uint8_t ucNanEhtCHSwitchMode;
 #endif
+	uint8_t ucNan6gDefaultChannel;
 	uint8_t ucNanReportChInfo;
 	uint8_t ucNanFtmBw;
 	uint8_t ucNanDiscBcnInterval;
