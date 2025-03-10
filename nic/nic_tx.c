@@ -1354,7 +1354,10 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 		} else
 			ASSERT(0);
 
-		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
+		GLUE_ADD_REF_CNT(GET_TX_PKT_CNT(prMsduInfo),
+				prAdapter->rHifStats.u4DataInCount);
+		GLUE_ADD_REF_CNT(GET_TX_PKT_CNT(prMsduInfo),
+				prAdapter->rHifStats.u4DataPendingTxCount);
 
 		prMsduInfo = prNextMsduInfo;
 	}
@@ -6025,11 +6028,13 @@ uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
 		ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
 		ucBssIndex = prMsduInfo->ucBssIndex;
 		prHifQueue = &(prAdapter->rTxPQueue[ucBssIndex][ucHifTc]);
+		GLUE_ADD_REF_CNT(GET_TX_PKT_CNT(prMsduInfo),
+				prAdapter->rHifStats.u4DataInCount);
+		GLUE_ADD_REF_CNT(GET_TX_PKT_CNT(prMsduInfo),
+				prAdapter->rHifStats.u4DataPendingTxCount);
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 		QUEUE_INSERT_TAIL(prHifQueue, prMsduInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
-
 	}
 
 	kalSetTxEvent2Hif(prGlueInfo);
@@ -6420,7 +6425,10 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			prMsduInfo->pfHifTxMsduDoneCb(prAdapter,
 					prMsduInfo);
 
-		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
+		GLUE_ADD_REF_CNT(GET_TX_PKT_CNT(prMsduInfo),
+				prAdapter->rHifStats.u4DataInCount);
+		GLUE_ADD_REF_CNT(GET_TX_PKT_CNT(prMsduInfo),
+				prAdapter->rHifStats.u4DataPendingTxCount);
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 
 		if (QUEUE_IS_NOT_EMPTY(

@@ -8879,6 +8879,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->u4MTU, "MTU", 0, FEATURE_DEBUG_ONLY);
 
+#if CFG_SUPPORT_HIF_TX_NAPI
+	INIT_UINT(prWifiVar->u4HifTxNapiWeight, "HifTxNapiWeight",
+		  NAPI_POLL_WEIGHT, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+
 #if CFG_SUPPORT_RX_GRO
 	INIT_UINT(prWifiVar->ucGROFlushTimeout, "GROFlushTimeout", 1,
 		  FEATURE_DEBUG_ONLY);

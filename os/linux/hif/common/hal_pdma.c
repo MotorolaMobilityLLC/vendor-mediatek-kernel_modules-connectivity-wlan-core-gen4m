@@ -2145,6 +2145,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 #if CFG_SUPPORT_HIF_TX_NAPI
 	struct HIF_NAPI_DEVICE *prTxNapiDev;
+	uint32_t u4HifTxNapiWeight;
 #endif /* CFG_SUPPORT_HIF_TX_NAPI */
 	uint32_t u4Idx;
 
@@ -2335,12 +2336,19 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prTxNapiDev->ulFlag = 0;
 	prTxNapiDev->u4DrvOwnCnt = 0;
 	init_dummy_netdev(&prTxNapiDev->dev);
+	u4HifTxNapiWeight = prAdapter->rWifiVar.u4HifTxNapiWeight;
+	if (u4HifTxNapiWeight <= 1) {
+		DBGLOG(HAL, WARN, "Invalid TxNapiWeight %u\n",
+				u4HifTxNapiWeight);
+		u4HifTxNapiWeight = NAPI_POLL_WEIGHT;
+		prAdapter->rWifiVar.u4HifTxNapiWeight = u4HifTxNapiWeight;
+	}
 #if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
-	netif_napi_add(&prTxNapiDev->dev, &prTxNapiDev->napi,
-		       halHifTxNapiPoll);
+	netif_napi_add_weight(&prTxNapiDev->dev, &prTxNapiDev->napi,
+		       halHifTxNapiPoll, u4HifTxNapiWeight);
 #else
 	netif_napi_add(&prTxNapiDev->dev, &prTxNapiDev->napi,
-		       halHifTxNapiPoll, NAPI_POLL_WEIGHT);
+		       halHifTxNapiPoll, u4HifTxNapiWeight);
 #endif
 
 #if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
@@ -4508,6 +4516,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 		u2Port, prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataTxCount);
+	GLUE_DEC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataPendingTxCount);
 #if CFG_SUPPORT_HIF_TX_NAPI
 	prHifInfo->rTxNapiDev.u4DataCnt++;
 #endif /* CFG_SUPPORT_HIF_TX_NAPI */
@@ -5629,21 +5638,7 @@ exit:
 #if CFG_SUPPORT_HIF_TX_NAPI
 uint32_t halGetTxMsduCnt(struct ADAPTER *prAdapter)
 {
-	struct BSS_INFO *prBssInfo;
-	uint32_t i, j, u4Cnt = 0;
-
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		for (j = 0; j < TC_NUM; j++) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-			if (!prBssInfo || isNetAbsent(prAdapter, prBssInfo))
-				continue;
-
-			u4Cnt += QUEUE_LENGTH(&prAdapter->rTxHifPQueue[i][j]);
-			u4Cnt += QUEUE_LENGTH(&prAdapter->rTxPQueue[i][j]);
-		}
-	}
-
-	return u4Cnt;
+	return GLUE_GET_REF_CNT(prAdapter->rHifStats.u4DataPendingTxCount);
 }
 
 uint32_t halIsTxMsduWithTxDoneCb(struct ADAPTER *prAdapter)
@@ -7416,14 +7411,15 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt),
 			prGlueInfo->TaskIsrCnt);
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" T[%u %u %u / %u %u %u %u]",
+			" T[%u %u %u / %u %u %u %u] PT[%u]",
 			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
 			GLUE_GET_REF_CNT(prHifStats->u4CmdTxCount),
 			GLUE_GET_REF_CNT(prHifStats->u4CmdTxdoneCount),
 			GLUE_GET_REF_CNT(prHifStats->u4DataInCount),
 			GLUE_GET_REF_CNT(prHifStats->u4DataTxCount),
 			GLUE_GET_REF_CNT(prHifStats->u4DataTxdoneCount),
-			GLUE_GET_REF_CNT(prHifStats->u4DataMsduRptCount));
+			GLUE_GET_REF_CNT(prHifStats->u4DataMsduRptCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataPendingTxCount));
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" R[%u / %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4DataRxCount),
@@ -7627,12 +7623,13 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_TX_NAPI
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" TxNapi[%u/%u/%u/0x%lx/%u]",
+		" TxNapi[%u/%u/%u/0x%lx/%u/%u]",
 		GLUE_GET_REF_CNT(prHifStats->u4HifTxNapiCount),
 		GLUE_GET_REF_CNT(prHifStats->u4HifTxNapiRunCount),
 		prHifInfo->rTxNapiDev.fgIsRun,
 		prHifInfo->rTxNapiDev.ulFlag,
-		GLUE_GET_REF_CNT(prHifInfo->rTxNapiDev.u4DrvOwnCnt));
+		GLUE_GET_REF_CNT(prHifInfo->rTxNapiDev.u4DrvOwnCnt),
+		prWifiVar->u4HifTxNapiWeight);
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 #if CFG_SUPPORT_PCIE_ASPM
 	pos += kalSnprintf(

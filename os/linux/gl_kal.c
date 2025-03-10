@@ -11965,6 +11965,49 @@ static size_t composeNdevDrp(struct ADAPTER *prAdapter, char *pos, char *end)
 	return pos - orig;
 }
 
+#if CFG_SW_TSO
+static size_t composeTsoSupport(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
+	char *orig = pos;
+	uint32_t i;
+	struct BSS_INFO *bss;
+	struct net_device *ndev = NULL;
+	uint8_t fgIsValidNetDevice = FALSE;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	pos += kalSnprintf(pos, end - pos, "tso:");
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		ndev = wlanGetNetDev(glue, i);
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+		fgIsValidNetDevice = FALSE;
+
+		if (ndev) {
+			if (!IS_BSS_P2P(bss)) /* non-p2p */
+				fgIsValidNetDevice = TRUE;
+#if CFG_ENABLE_WIFI_DIRECT
+			else if (prAdapter->rP2PNetRegState ==
+					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
+				fgIsValidNetDevice = TRUE;
+#endif
+		}
+
+		if (fgIsValidNetDevice) {
+			pos += kalSnprintf(pos, end - pos,
+				"[%u]", !!(ndev->features & NETIF_F_TSO));
+		}
+		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+	}
+
+	pos += kalSnprintf(pos, end - pos, " ");
+
+	return pos - orig;
+}
+#endif /* CFG_SW_TSO */
+
 /* RxReorder */
 static size_t composeRxReorder(struct ADAPTER *prAdapter, char *pos, char *end)
 {
@@ -12356,6 +12399,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	/**
 	 * Sentence 2.
 	 * ndevdrp:%s (composeNdevDrp)
+	 * tso:%s (composeTsoSupport)
 	 * NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u],
 	 * #if CFG_SUPPORT_RX_GRO
 	 *     add 1 additional field
@@ -12378,6 +12422,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	/* Sentence 2 */
 	pos = buf;
 	pos += composeNdevDrp(prAdapter, pos, end);
+
+#if CFG_SW_TSO
+	pos += composeTsoSupport(prAdapter, pos, end);
+#endif /* CFG_SW_TSO */
 
 	pos += kalSnprintf(pos, end - pos,
 		"NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",

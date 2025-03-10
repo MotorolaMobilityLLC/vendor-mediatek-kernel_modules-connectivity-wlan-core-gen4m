@@ -1533,6 +1533,9 @@ struct WIFI_VAR {
 	uint32_t u4TxHifRes;
 
 	uint32_t u4MTU; /* net device maximum transmission unit */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	uint32_t u4HifTxNapiWeight;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 #if CFG_SUPPORT_RX_GRO
 	uint32_t ucGROFlushTimeout; /* Flush packet timeout (ms) */
 	uint32_t ucGROEnableTput; /* Threshold of enable GRO Tput */
@@ -2308,6 +2311,7 @@ struct HIF_STATS {
 	uint32_t u4DataTxCount; /* data from hif_thread to DMA */
 	uint32_t u4DataTxdoneCount; /* data from DMA to consys */
 	uint32_t u4DataMsduRptCount; /* data from consys to air */
+	uint32_t u4DataPendingTxCount; /* data not yet to DMA from nic to hif */
 	uint32_t u4EventRxCount; /* event from DMA to hif_thread */
 	uint32_t u4DataRxCount; /* data from DMA to hif_thread */
 	uint32_t u4TxDataRegCnt;
