@@ -201,12 +201,25 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 		.iface_limits = sta_p2p,
 	},
 #if (CFG_SUPPORT_NAN == 1)
+#if (CFG_NAN_CONCURRENCY == 1) && (CFG_EXT_FEATURE == 1)
+	{
+		.max_ifaces = 3,
+		.num_iface_limits = ARRAY_SIZE(sta_ap_nan),
+		.iface_limits = sta_ap_nan,
+	},
+	{
+		.max_ifaces = 3,
+		.num_iface_limits = ARRAY_SIZE(sta_p2p_nan),
+		.iface_limits = sta_p2p_nan,
+	},
+#else
 	{
 		.max_ifaces = 2,
 		.num_iface_limits = ARRAY_SIZE(sta_nan),
 		.iface_limits = sta_nan,
 	},
-#endif
+#endif /* (CFG_NAN_CONCURRENCY == 1) */
+#endif /* (CFG_SUPPORT_NAN == 1) */
 };
 #elif defined(MT6653) && (CFG_WIFI_DX4 == 1) && \
 	(CONFIG_BAND_NUM == 3) /* DX4 triband */
