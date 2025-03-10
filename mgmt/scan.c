@@ -2325,7 +2325,7 @@ parse_tbttinfo:
 			prScanInfo-> \
 			rNeighborAPInfoList.u4NumElem); \
 			for (i = 0; i < NbrSize; i++) { \
-				if (strbuf) { \
+				if (strbuf && prNbrScanParam->var[i]) { \
 					u2Written += \
 					kalSnprintf(strbuf + u2Written, \
 					u2TotalLen-u2Written, MACSTR " ", \
