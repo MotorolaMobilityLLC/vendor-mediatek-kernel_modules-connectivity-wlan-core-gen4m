@@ -69,7 +69,8 @@ enum ENUM_TIMER_WAKELOCK_TYPE_T {
 
 enum ENUM_TIMER_TYPE {
 	TIMER_TIMER_LIST,
-	TIMER_HRTIMER
+	TIMER_HRTIMER,
+	TIMER_ALARMTIMER
 };
 
 /*******************************************************************************
@@ -101,6 +102,19 @@ struct TIMER {
 			struct ADAPTER *prHrAdapter;
 			PFN_MGMT_TIMEOUT_FUNC pfHrtimeoutFunc;
 			uintptr_t prHrFuncPara;
+		};
+#endif
+#if CFG_SUPPORT_ALARMTIMER
+		/* Alarm Timer, should only be used
+		 * to wake up from kernel suspend.
+		 */
+		struct {
+			/* QueEntry MUST at the beginning of struct */
+			struct QUE_ENTRY rAlarmTimeoutQueEntry;
+			struct alarm rAlarmTimer;
+			struct ADAPTER *prAlarmAdapter;
+			PFN_MGMT_TIMEOUT_FUNC pfAlarmTimeoutFunc;
+			uintptr_t prAlarmFuncPara;
 		};
 #endif
 	};
@@ -253,7 +267,13 @@ void cnmTimerInitHrtimerImpl(struct ADAPTER *prAdapter,
 			     PFN_MGMT_TIMEOUT_FUNC pfFunc,
 			     uintptr_t ulDataPtr);
 #endif
-
+#if CFG_SUPPORT_ALARMTIMER
+void
+cnmTimerInitAlarmTimerImpl(struct ADAPTER *prAdapter,
+			struct TIMER *prTimer,
+			PFN_MGMT_TIMEOUT_FUNC pfFunc,
+			uintptr_t ulDataPtr);
+#endif
 void cnmTimerStopTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer);
 
 void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
@@ -274,6 +294,11 @@ static __KAL_INLINE__ int32_t timerPendingTimer(struct TIMER *prTimer)
 	/* Hrtimer */
 	case TIMER_HRTIMER:
 		return kalHrtimerIsRunning(&prTimer->rHrtimer);
+#endif
+#if CFG_SUPPORT_ALARMTIMER
+	/* AlarmTimer */
+	case TIMER_ALARMTIMER:
+		return kalAlarmTimerIsRunning(&prTimer->rAlarmTimer);
 #endif
 	/* Legacy Timer List */
 	default:
@@ -300,6 +325,20 @@ static __KAL_INLINE__ void cnmTimerInitHrtimer(struct ADAPTER *prAdapter,
 	/* Hrtimer */
 	prTimer->eTimerType = TIMER_HRTIMER;
 	cnmTimerInitHrtimerImpl(prAdapter, prTimer, pfFunc, ulDataPtr);
+#else
+	/* Legacy Timer List */
+	cnmTimerInitTimer(prAdapter, prTimer, pfFunc, ulDataPtr);
+#endif
+}
+static __KAL_INLINE__ void cnmTimerInitAlarmTimer(struct ADAPTER *prAdapter,
+					       struct TIMER *prTimer,
+					       PFN_MGMT_TIMEOUT_FUNC pfFunc,
+					       uintptr_t ulDataPtr)
+{
+#if CFG_SUPPORT_ALARMTIMER
+	/* AlarmTimer */
+	prTimer->eTimerType = TIMER_ALARMTIMER;
+	cnmTimerInitAlarmTimerImpl(prAdapter, prTimer, pfFunc, ulDataPtr);
 #else
 	/* Legacy Timer List */
 	cnmTimerInitTimer(prAdapter, prTimer, pfFunc, ulDataPtr);

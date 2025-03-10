@@ -6419,7 +6419,18 @@ int main_thread(void *data)
 						prGlueInfo->prHrtimerWakeLock);
 			}
 			TRACE(wlanHrtimerTimeout(prGlueInfo->prAdapter),
-			      "HRTIMER_TIMEOUT");
+				"HRTIMER_TIMEOUT");
+#endif
+#if CFG_SUPPORT_ALARMTIMER
+		if (test_and_clear_bit(GLUE_FLAG_ALARMTIMER_BIT,
+				       &prGlueInfo->ulFlag))
+			if (KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+					 prGlueInfo->prAlarmTimerWakeLock)) {
+				KAL_WAKE_UNLOCK(prGlueInfo->prAdapter,
+					prGlueInfo->prAlarmTimerWakeLock);
+			}
+			TRACE(wlanAlarmTimerTimeout(prGlueInfo->prAdapter),
+				"ALARMTIMER_TIMEOUT");
 #endif
 
 		if (test_and_clear_bit(GLUE_FLAG_TIMEOUT_BIT,
@@ -7132,6 +7143,138 @@ void kalHrtimerCancel(struct hrtimer *prTimer)
 	prTimer->function = NULL;
 
 	DBGLOG(INIT, TRACE, "hrtimer %p stopped\n", prTimer);
+}
+#endif /* CFG_SUPPORT_HRTIMER */
+
+#if CFG_SUPPORT_ALARMTIMER
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief   Check if hrtimer is initiated or not.
+ *          hrtimer cannot be canceled if still not initiated.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalAlarmTimerIsInit(struct alarm *prTimer)
+{
+	return !!prTimer->timer.base;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief   Check if hrtimer is running or not.
+ *          Running means timer has started, and still not timeout.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalAlarmTimerIsRunning(struct alarm *prTimer)
+{
+	u_int8_t ucIsTimerRunning = FALSE;
+
+	if (prTimer->state & ALARMTIMER_STATE_ENQUEUED)
+		ucIsTimerRunning = TRUE;
+	return ucIsTimerRunning;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Handler the kernel timeout event.
+ */
+/*----------------------------------------------------------------------------*/
+enum alarmtimer_restart kalAlarmTimerTimeout(
+		struct alarm *prAlarmTimer, ktime_t now)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct TIMER *prTimer;
+	struct ADAPTER *prAdapter;
+	struct QUE *prQue;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prTimer = CONTAINER_OF(prAlarmTimer, struct TIMER, rAlarmTimer);
+	prAdapter = prTimer->prAlarmAdapter;
+	prGlueInfo = prAdapter->prGlueInfo;
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_T * prTxWakeLock =
+		prGlueInfo->prAlarmTimerWakeLock;
+#endif
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_ALARMTIMER_LIST);
+	LINK_REMOVE_KNOWN_ENTRY(
+		&prAdapter->rAlarmTimerList, &prTimer->rLinkEntry);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_ALARMTIMER_LIST);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_ALARMTIMER_TIMEOUT);
+	prQue = &prAdapter->rTimeoutedAlarmTimerInfoQue;
+	QUEUE_INSERT_TAIL(prQue, &prTimer->rAlarmTimeoutQueEntry);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_ALARMTIMER_TIMEOUT);
+
+	DBGLOG(INIT, TRACE, "alarmtimer timeout %p\n", prAlarmTimer);
+
+	set_bit(GLUE_FLAG_ALARMTIMER_BIT, &prGlueInfo->ulFlag);
+#if CFG_ENABLE_WAKE_LOCK
+	if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, prTxWakeLock))
+		KAL_WAKE_LOCK(prAdapter, prTxWakeLock);
+#endif
+	wake_up_interruptible(&prGlueInfo->waitq);
+
+	return ALARMTIMER_NORESTART;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Initialize hrtimer.
+ */
+/*----------------------------------------------------------------------------*/
+void kalAlarmTimerInit(struct alarm *prTimer)
+{
+	alarm_init(prTimer, ALARM_BOOTTIME, kalAlarmTimerTimeout);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Start hrtimer.
+ */
+/*----------------------------------------------------------------------------*/
+void kalAlarmTimerStart(struct alarm *prTimer, uint32_t delayMs)
+{
+	ktime_t kTargetTime;
+	uint8_t ret = 0;
+
+	kTargetTime = ktime_get_boottime();
+	kTargetTime = ktime_add(kTargetTime, ms_to_ktime(delayMs));
+
+	if (kalAlarmTimerIsRunning(prTimer))
+		kalAlarmTimerCancel(prTimer);
+	/* If the timer was already set, cancel it */
+	ret = alarm_try_to_cancel(prTimer);
+	if (ret < 0) {
+		DBGLOG(INIT, WARN, "alarmtimer has not init\n");
+		return;
+	}
+
+	alarm_start(prTimer, kTargetTime);
+	kalAlarmTimerIsRunning(prTimer);
+
+	DBGLOG(INIT, TRACE,
+		"alarmtimer %p %lldms started\n", prTimer, delayMs);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief  Stop hrtimer.
+ */
+/*----------------------------------------------------------------------------*/
+void kalAlarmTimerCancel(struct alarm *prTimer)
+{
+	// for boot up, p2p dev may not do cnmGetBssInfoAndInit to init timer
+	if (!kalAlarmTimerIsInit(prTimer)) {
+		DBGLOG(INIT, WARN, "alarmtimer has not init\n");
+		return;
+	}
+
+	alarm_cancel(prTimer);
+	prTimer->function = NULL;
+
+	DBGLOG(INIT, TRACE, "alarmtimer %p stopped\n", prTimer);
 }
 #endif /* CFG_SUPPORT_HRTIMER */
 

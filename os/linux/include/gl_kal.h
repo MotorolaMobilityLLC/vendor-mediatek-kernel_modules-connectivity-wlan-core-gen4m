@@ -416,6 +416,10 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_HRTIMER_LIST,
 	SPIN_LOCK_HRTIMER_TIMEOUT,
 #endif
+#if CFG_SUPPORT_ALARMTIMER
+	SPIN_LOCK_ALARMTIMER_LIST,
+	SPIN_LOCK_ALARMTIMER_TIMEOUT,
+#endif
 #if (CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE == 1)
 	SPIN_LOCK_DRV_OWN,
 #endif /* CFG_MTK_WIFI_DRV_OWN_DEBUG_MODE */
@@ -2189,6 +2193,15 @@ enum hrtimer_restart kalHrtimerTimeout(struct hrtimer *prTimer);
 void kalHrtimerInit(struct hrtimer *prTimer);
 void kalHrtimerStart(struct hrtimer *prTimer, uint32_t delayMs);
 void kalHrtimerCancel(struct hrtimer *prTimer);
+#endif /* CFG_SUPPORT_HRTIMER */
+#if CFG_SUPPORT_HRTIMER
+u_int8_t kalAlarmTimerIsInit(struct alarm *prTimer);
+u_int8_t kalAlarmTimerIsRunning(struct alarm *prTimer);
+enum alarmtimer_restart kalAlarmTimerTimeout(
+			struct alarm *prAlarmTimer, ktime_t now);
+void kalAlarmTimerInit(struct alarm *prTimer);
+void kalAlarmTimerStart(struct alarm *prTimer, uint32_t delayMs);
+void kalAlarmTimerCancel(struct alarm *prTimer);
 #endif /* CFG_SUPPORT_HRTIMER */
 
 void kalScanDone(struct GLUE_INFO *prGlueInfo,

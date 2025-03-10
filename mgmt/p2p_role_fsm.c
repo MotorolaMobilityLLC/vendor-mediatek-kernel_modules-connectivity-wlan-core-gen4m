@@ -154,6 +154,11 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout,
 			(uintptr_t) prP2pRoleFsmInfo);
 
+		cnmTimerInitAlarmTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmCacTimer),
+			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout,
+			(uintptr_t) prP2pRoleFsmInfo);
+
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
@@ -259,6 +264,9 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 		/* ensure the timer be stopped */
 		cnmTimerStopTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+		/* ensure the timer be stopped */
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmCacTimer));
 
 #if CFG_SAP_RPS_SUPPORT
 		cnmTimerStopTimer(prAdapter,
@@ -4084,7 +4092,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 						.u4MaxInterval;
 
 			cnmTimerStartTimer(prAdapter,
-				&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
+				&(prP2pRoleFsmInfo->rP2pRoleFsmCacTimer),
 				u4CacTimeMs);
 
 			p2pFuncRecordCacStartBootTime();
@@ -4092,8 +4100,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 			p2pFuncSetDfsState(DFS_STATE_CHECKING);
 
 			DBGLOG(P2P, INFO,
-				"p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
-				u4CacTimeMs/1000);
+				"CAC time = %dms\n",
+				u4CacTimeMs);
 			break;
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
 			prBssInfo->fgIsSwitchingChnl = FALSE;

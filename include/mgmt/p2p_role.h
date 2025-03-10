@@ -361,6 +361,7 @@ struct P2P_ROLE_FSM_INFO {
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	enum ENUM_MAX_BANDWIDTH_SETTING eDfsChnlBw;
+	struct TIMER rP2pRoleFsmCacTimer;
 #endif
 #if (CFG_SAP_RPS_SUPPORT == 1)
 	struct TIMER rP2pRpsEnterTimer;

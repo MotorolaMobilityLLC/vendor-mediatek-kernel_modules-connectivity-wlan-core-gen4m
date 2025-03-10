@@ -2200,6 +2200,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_MTK_AEE_FEATURE=y
     endif
     CONFIG_SUPPORT_HRTIMER=y
+    CONFIG_SUPPORT_ALARMTIMER=y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
@@ -2224,6 +2225,12 @@ ifeq ($(CONFIG_SUPPORT_HRTIMER), y)
     ccflags-y += -DCFG_SUPPORT_HRTIMER=1
 else
     ccflags-y += -DCFG_SUPPORT_HRTIMER=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_ALARMTIMER), y)
+    ccflags-y += -DCFG_SUPPORT_ALARMTIMER=1
+else
+    ccflags-y += -DCFG_SUPPORT_ALARMTIMER=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
