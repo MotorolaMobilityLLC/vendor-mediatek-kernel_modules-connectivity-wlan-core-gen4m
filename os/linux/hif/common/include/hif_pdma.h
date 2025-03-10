@@ -56,6 +56,16 @@
 
 #define RX_RING_MAX_SIZE			4095
 
+#ifdef CFG_NUM_OF_TX_CMD_RING_SIZE
+#define TX_RING_CMD_SIZE			(CFG_NUM_OF_TX_CMD_RING_SIZE)
+#else
+#if defined(CONFIG_MTK_WIFI_BW320)
+#define TX_RING_CMD_SIZE			320
+#else
+#define TX_RING_CMD_SIZE			256
+#endif
+#endif /* CFG_NUM_OF_TX_CMD_RING_SIZE */
+
 #if defined(CONFIG_MTK_WIFI_BW320)
 #ifdef BELLWETHER
 #define TX_RING_SIZE				1024
@@ -65,12 +75,6 @@
 #define TX_RING_DATA_SIZE			TX_RING_SIZE
 
 #define CMA_MEM_MAX_SIZE			128
-
-#ifdef CFG_NUM_OF_TX_CMD_RING_SIZE
-#define TX_RING_CMD_SIZE			(CFG_NUM_OF_TX_CMD_RING_SIZE)
-#else
-#define TX_RING_CMD_SIZE			320
-#endif /* CFG_NUM_OF_TX_CMD_RING_SIZE */
 
 #define HIF_NUM_OF_QM_RX_PKT_NUM		10240
 #define HIF_PLE_PAGE_SIZE			0xBC0
@@ -87,10 +91,8 @@
 #define TX_RING_SIZE				1024
 #define TX_RING_DATA_SIZE			1024
 #if defined(MT7925)
-#define TX_RING_CMD_SIZE			512
 #define HIF_TX_MSDU_TOKEN_NUM			8064
 #else
-#define TX_RING_CMD_SIZE			256
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 4)
 #endif
 #define HIF_NUM_OF_QM_RX_PKT_NUM		4096
@@ -100,33 +102,18 @@
 #elif defined(CONFIG_MTK_WIFI_HE80)
 #define TX_RING_SIZE				1024
 #define TX_RING_DATA_SIZE			1024
-#if defined(MT7925)
-#define TX_RING_CMD_SIZE			512
-#else
-#define TX_RING_CMD_SIZE			256
-#endif
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 2)
 
 #elif defined(CONFIG_MTK_WIFI_VHT80)
 #define TX_RING_SIZE				512
 #define TX_RING_DATA_SIZE			512
-#if defined(MT7925)
-#define TX_RING_CMD_SIZE			512
-#else
-#define TX_RING_CMD_SIZE			256
-#endif
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 3)
 
 #else
 #define TX_RING_SIZE				256
 #define TX_RING_DATA_SIZE			256
-#if defined(MT7925)
-#define TX_RING_CMD_SIZE			512
-#else
-#define TX_RING_CMD_SIZE			256
-#endif
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 3)
 #endif
