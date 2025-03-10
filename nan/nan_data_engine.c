@@ -2883,8 +2883,14 @@ nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
 	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNaf->aucSrcAddr);
 	if (prNDL != NULL) {
 		if (prNDL->ucDialogToken == prAttrNDL->ucDialogToken) {
-			DBGLOG(NAN, DEBUG, "Ignore same dialog token\n");
-			return WLAN_STATUS_FAILURE;
+			if (prNDL->eCurrentNDLMgmtState ==
+			    NDL_SCHEDULE_ESTABLISHED) {
+				DBGLOG(NAN, DEBUG,
+				       "RX Request in same dialog token");
+			} else {
+				DBGLOG(NAN, DEBUG, "Ignore same dialog token");
+				return WLAN_STATUS_FAILURE;
+			}
 		}
 		COPY_MAC_ADDR(prNDL->aucTxRespAddr, prNaf->aucSrcAddr);
 		prNDL->eNDLRole = NAN_PROTOCOL_RESPONDER;

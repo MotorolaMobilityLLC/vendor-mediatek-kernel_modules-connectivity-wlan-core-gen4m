@@ -5115,10 +5115,12 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 				   uint8_t *pucAvailabilityAttr,
 				   struct _NAN_NDP_INSTANCE_T *prNDP)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility;
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prCondAttrNanAvailibility = NULL;
 	struct _NAN_AVAILABILITY_DB_T *prNanAvailDB;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 	uint16_t u2AttributeControl;
 	uint8_t ucMapId;
 	uint32_t u4EntryListPos;
@@ -5126,6 +5128,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 	uint32_t u4Token;
 	u_int8_t fgFillByPotential = FALSE;
+	uint8_t ucBackupNanMergePotentialThreshold = 0xFF;
 	uint8_t *p2 = NULL;
 	uint8_t *p6 = NULL;
 	size_t new_size;
@@ -5242,6 +5245,19 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		fgFillByPotential = TRUE;
 	}
 
+	prDataPathInfo = &prAdapter->rDataPathInfo;
+	/* In Rescheduling, call from nanNdlParseAttributes w/o NDP */
+	if (!prNDP && prDataPathInfo->ucNDLNum == 1) {
+		DBGLOG(NAN, INFO, "Force fgFillByPotential = TRUE");
+		fgFillByPotential = TRUE;
+
+		ucBackupNanMergePotentialThreshold =
+			prWifiVar->ucNanMergePotentialThreshold;
+		prWifiVar->ucNanMergePotentialThreshold = 17;
+		DBGLOG(NAN, INFO, "Set Merge Potential Threshold = %u",
+		       prWifiVar->ucNanMergePotentialThreshold);
+	}
+
 	if (fgFillByPotential) {
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 1)
 		if (getPeerSchDescMaxCap(prPeerSchDesc) == BAND_6G) {
@@ -5282,10 +5298,16 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, DEBUG, "<------\n");
 
 	/* NAN_CHK_PNT log message */
-	nanSchedDbgDumpPeerCommittedSlotAndChannel(
-					prAdapter,
-					pucNmiAddr,
-					"peer_availability_attr_changed");
+	nanSchedDbgDumpPeerCommittedSlotAndChannel(prAdapter,
+						   pucNmiAddr,
+						   "peer_availability_attr_changed");
+
+	if (ucBackupNanMergePotentialThreshold != 0xFF) {
+		prWifiVar->ucNanMergePotentialThreshold =
+			ucBackupNanMergePotentialThreshold;
+		DBGLOG(NAN, INFO, "Restore Merge Potential Threshold = %u",
+		       prWifiVar->ucNanMergePotentialThreshold);
+	}
 done:
 	return rRetStatus;
 }
