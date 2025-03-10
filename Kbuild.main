@@ -3195,6 +3195,10 @@ else
     ccflags-y += -DCFG_TX_HIF_PORT_QUEUE=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_P2P_GO_KEEP_RATE_SETTING), y)
+    ccflags-y += -DCFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING=1
+endif
+
 ifeq ($(CONFIG_SUPPORT_FW_DROP_SSN), y)
     ccflags-y += -DCFG_SUPPORT_FW_DROP_SSN=1
 else
