@@ -2705,7 +2705,7 @@ skip:
 		kalMemCopy(&rCountryCode.fwHeader, &nanMsgHdr,
 			sizeof(struct _NanMsgHeader));
 
-		u4CountryCode = rlmDomainGetCountryCode();
+		u4CountryCode = rlmDomainGetCountryCode(prAdapter);
 		rlmDomainU32ToAlpha(u4CountryCode, acCountryStr);
 
 		rCountryCode.countryCode[0] = acCountryStr[0];
@@ -5704,7 +5704,7 @@ mtk_cfg80211_vendor_event_nan_country_chng_ind(struct ADAPTER *prAdapter)
 	prCountryCodeChangedIndMsg->fwHeader.transactionId = 0;
 
 	prCountryCodeChangedIndMsg->channel_num = u4Ch_count;
-	rlmDomainU32ToAlpha(rlmDomainGetCountryCode()
+	rlmDomainU32ToAlpha(rlmDomainGetCountryCode(prAdapter)
 		, prCountryCodeChangedIndMsg->countryCode);
 	DBGLOG(NAN, INFO,
 			"Set country code [%c%c], Total CH[%d]\n"

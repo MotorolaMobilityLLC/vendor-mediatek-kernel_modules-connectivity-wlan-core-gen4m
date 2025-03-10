@@ -518,11 +518,6 @@ static const uint16_t g_u2CountryGroup30[] = {
 
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-struct mtk_regd_control g_mtk_regd_control = {
-	.en = FALSE,
-	.state = REGD_STATE_UNDEFINED
-};
-
 struct TX_PWR_LIMIT_SECTION {
 	uint8_t ucSectionNum;
 	const char *arSectionNames[TX_PWR_LIMIT_SECTION_NUM];
@@ -738,8 +733,6 @@ static const int8_t gTx_Pwr_Limit_6g_Ch[] = {
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
 #define TX_PWR_LIMIT_6G_CH_NUM (ARRAY_SIZE(gTx_Pwr_Limit_6g_Ch))
 #endif
-
-u_int8_t g_bTxBfBackoffExists = FALSE;
 
 #endif
 
@@ -2079,7 +2072,7 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 void
-rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
+rlmDomainGetChnlList_V2(struct ADAPTER *prAd,
 			enum ENUM_BAND eSpecificBand, u_int8_t fgNoDfs,
 			uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
 			struct RF_CHANNEL_INFO *paucChannelList)
@@ -2091,42 +2084,45 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 
 	if (eSpecificBand == BAND_2G4) {
 		i = 0;
-		max_count = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+		max_count =
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
 	} else if (eSpecificBand == BAND_5G) {
-		i = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-		max_count = rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+		i = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
+		max_count =
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eSpecificBand == BAND_6G) {
-		i = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
-		max_count = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
-			+rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ);
+		i = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ);
+		max_count = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ)
+			+rlmDomainGetActiveChannelCount(prAd, KAL_BAND_6GHZ);
 	}
 #endif
 	else {
 		i = 0;
 		max_count =
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_6GHZ) +
 #endif
-			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
 	}
 
 	ucNum = 0;
 	for (; i < max_count; i++) {
-		prCh = rlmDomainGetActiveChannels() + i;
+		prCh = rlmDomainGetActiveChannels(prAd) + i;
 		if (fgNoDfs && kalIsChFlagMatch(prCh->eFlags, CHAN_RADAR))
 			continue; /*not match*/
 
-		if (i < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
+		if (i < rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ))
 			band = BAND_2G4;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (i < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ))
+		else if (i <
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ))
 			band = BAND_5G;
 		else
 			band = BAND_6G;
@@ -2177,7 +2173,7 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 	ASSERT(paucChannelList);
 	ASSERT(pucNumOfChannel);
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		rlmDomainGetChnlList_V2(prAdapter, eSpecificBand,
 					       fgNoDfs, ucMaxChannelNum,
 					       pucNumOfChannel,
@@ -2312,13 +2308,13 @@ void rlmDomainGetDfsChnls_V2(struct ADAPTER *prAdapter,
 	struct CMD_DOMAIN_CHANNEL *prCh;
 
 	/* 5G band */
-	start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+	start_idx = rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_2GHZ);
+	end_idx = rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_2GHZ) +
+		rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_5GHZ);
 
 	ucNum = 0;
 	for (idx = start_idx; idx < end_idx; idx++) {
-		prCh = rlmDomainGetActiveChannels() + idx;
+		prCh = rlmDomainGetActiveChannels(prAdapter) + idx;
 		if (!kalIsChFlagMatch(prCh->eFlags, CHAN_RADAR))
 			continue;
 
@@ -2359,7 +2355,7 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 	ASSERT(paucChannelList);
 	ASSERT(pucNumOfChannel);
 
-	if (regd_is_single_sku_en())
+	if (regd_is_single_sku_en(prAdapter))
 		return rlmDomainGetDfsChnls_V2(prAdapter, ucMaxChannelNum,
 				pucNumOfChannel, paucChannelList);
 
@@ -2440,7 +2436,7 @@ u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter, uint8_t ucChannel)
 void rlmDomainSendCmd(struct ADAPTER *prAdapter, bool fgPwrLmtSend)
 {
 
-	if (!regd_is_single_sku_en())
+	if (!regd_is_single_sku_en(prAdapter))
 		rlmDomainSendPassiveScanInfoCmd(prAdapter);
 	rlmDomainSendDomainInfoCmd(prAdapter);
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
@@ -2534,9 +2530,9 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 	/*
 	 * Fill in the active channels
 	 */
-	rlmExtractChannelInfo(max_channel_count, prChs);
+	rlmExtractChannelInfo(prAdapter, max_channel_count, prChs);
 
-	prCmd->u4CountryCode = rlmDomainGetCountryCode();
+	prCmd->u4CountryCode = rlmDomainGetCountryCode(prAdapter);
 	prCmd->uc2G4Bandwidth = prAdapter->rWifiVar.uc2G4BandwidthMode;
 	prCmd->uc5GBandwidth = prAdapter->rWifiVar.uc5GBandwidthMode;
 	prCmd->uc6GBandwidth = prAdapter->rWifiVar.uc6GBandwidthMode;
@@ -2589,7 +2585,7 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 	struct DOMAIN_SUBBAND_INFO *prSubBand;
 	uint8_t i;
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		rlmDomainSendDomainInfoCmd_V2(prAdapter);
 		return;
 	}
@@ -2793,7 +2789,7 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
  *         FALSE Illegal channel for current regulatory domain
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAdapter,
+u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAd,
 				    enum ENUM_BAND eBand,
 				    uint8_t ucChannel)
 {
@@ -2803,24 +2799,24 @@ u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G) {
-		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ);
+		start_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_6GHZ);
 	} else
 #endif
 	if (eBand == BAND_2G4) {
 		start_idx = 0;
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
 	} else {
-		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
-				rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+		start_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ);
 	}
 
 	for (idx = start_idx; idx < end_idx; idx++) {
-		prCh = rlmDomainGetActiveChannels() + idx;
+		prCh = rlmDomainGetActiveChannels(prAd) + idx;
 
 		if (prCh->u2ChNum == ucChannel)
 			return TRUE;
@@ -2916,7 +2912,7 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 	struct DOMAIN_SUBBAND_INFO *prSubband;
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
-	if (regd_is_single_sku_en())
+	if (regd_is_single_sku_en(prAdapter))
 		return rlmDomainIsLegalChannel_V2(prAdapter, eBand, ucChannel);
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
@@ -2965,12 +2961,12 @@ u_int8_t rlmDomainIsLegalDfsChannel_V2(struct ADAPTER *prAdapter,
 	if (eBand != BAND_5G)
 		return FALSE;
 
-	start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
-			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+	start_idx = rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_2GHZ);
+	end_idx = rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_2GHZ) +
+		rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_5GHZ);
 
 	for (idx = start_idx; idx < end_idx; idx++) {
-		prCh = rlmDomainGetActiveChannels() + idx;
+		prCh = rlmDomainGetActiveChannels(prAdapter) + idx;
 		if (prCh->u2ChNum == ucChannel &&
 			kalIsChFlagMatch(prCh->eFlags, CHAN_RADAR)) {
 			return TRUE;
@@ -2990,7 +2986,7 @@ u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
 	struct DOMAIN_SUBBAND_INFO *prSubband;
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
-	if (regd_is_single_sku_en())
+	if (regd_is_single_sku_en(prAdapter))
 		return rlmDomainIsLegalDfsChannel_V2(
 				prAdapter, eBand, ucChannel);
 
@@ -3479,6 +3475,7 @@ uint16_t rlmDomainReverseAlpha2(uint16_t Alpha2)
 
 uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	struct GLUE_INFO *prGlueInfo,
 	uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock)
 {
 	const void *pRegdom = NULL;
@@ -3496,13 +3493,14 @@ rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 		u4FinalCountryCode = COUNTRY_CODE_WW;
 	}
 
-	kalApplyCustomRegulatory(pRegdom, fgNeedHoldRtnlLock);
+	kalApplyCustomRegulatory(prGlueInfo, pRegdom, fgNeedHoldRtnlLock);
 
 	return u4FinalCountryCode;
 }
 #else
 uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	struct GLUE_INFO *prGlueInfo,
 	uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock)
 {
 	return 0;
@@ -3514,7 +3512,7 @@ rlmDomainCountryCodeUpdateSanity(
 	struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER **prAdapter)
 {
-	enum regd_state eCurrentState = rlmDomainGetCtrlState();
+	enum regd_state eCurrentState = rlmDomainGetCtrlState(prGlueInfo);
 
 	/* Always use the wlan GlueInfo as parameter. */
 	if (!prGlueInfo) {
@@ -3555,16 +3553,18 @@ void rlmDomainCountryCodeUpdate(
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 		u4FinalCountryCode =
 			rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+				prAdapter->prGlueInfo,
 				u4CountryCode, fgNeedHoldRtnlLock);
 	}
 
 	rlmDomainU32ToAlpha(u4FinalCountryCode, acCountryCodeStr);
 
 	if (u4FinalCountryCode != u4CountryCode)
-		rlmDomainSetCountryCode(acCountryCodeStr,
+		rlmDomainSetCountryCode(prAdapter,
+			acCountryCodeStr,
 			MAX_COUNTRY_CODE_LEN);
 
-	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = %s\n", acCountryCodeStr);
+	DBGLOG(RLM, INFO, "prRegdControl->alpha2 = %s\n", acCountryCodeStr);
 #ifdef CFG_SUPPORT_BT_SKU
 #if (CFG_ENABLE_GKI_SUPPORT != 1)
 	func_addr = GLUE_SYMBOL_GET(bt_func_name);
@@ -3584,10 +3584,10 @@ void rlmDomainCountryCodeUpdate(
 
 	rlmDomainParsingChannel(prAdapter);
 
-	if (!regd_is_single_sku_en())
+	if (!regd_is_single_sku_en(prAdapter))
 		return;
 
-	u2CountryCode = (uint16_t)rlmDomainGetCountryCode();
+	u2CountryCode = (uint16_t)rlmDomainGetCountryCode(prAdapter);
 	prAdapter->rWifiVar.u2CountryCode = u2CountryCode;
 
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
@@ -3615,7 +3615,7 @@ void rlmDomainCountryCodeUpdate(
 void
 rlmDomainSetCountry(struct ADAPTER *prAdapter, uint8_t fgNeedHoldRtnlLock)
 {
-	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
+	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo(prAdapter);
 	struct ADAPTER *prBaseAdapter;
 
 	if (!rlmDomainCountryCodeUpdateSanity(
@@ -3626,7 +3626,7 @@ rlmDomainSetCountry(struct ADAPTER *prAdapter, uint8_t fgNeedHoldRtnlLock)
 
 	rlmDomainCountryCodeUpdate(
 		prBaseAdapter,
-		rlmDomainGetCountryCode(),
+		rlmDomainGetCountryCode(prAdapter),
 		fgNeedHoldRtnlLock);
 }
 
@@ -4004,6 +4004,7 @@ u_int8_t rlmDomainTxPwrLimitLoad(
 	uint32_t u4CountryStart = 0, u4CountryEnd = 0, u4Pos = 0;
 	struct TX_PWR_LIMIT_SECTION *prSection =
 		&gTx_Pwr_Limit_Section[ucVersion];
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	if (!rlmDomainTxPwrLimitGetCountryRange(u4CountryCode, pucBuf,
 		u4BufLen, &u4CountryStart, &u4CountryEnd)) {
@@ -4049,7 +4050,7 @@ u_int8_t rlmDomainTxPwrLimitLoad(
 				return FALSE;
 			if (rlmDomainTxPwrLimitIsTxBfBackoffSection(
 				ucVersion, uSecIdx))
-				g_bTxBfBackoffExists = TRUE;
+				prGlueInfo->bTxBfBackoffExists = TRUE;
 		}
 	}
 
@@ -6304,7 +6305,8 @@ rlmDomainSendTxPwrLimitCmd(struct ADAPTER *prAdapter,
 		prCmd[band_idx]->eband =
 			(band_idx == KAL_BAND_2GHZ) ?
 				BAND_2G4 : BAND_5G;
-		prCmd[band_idx]->countryCode = rlmDomainGetCountryCode();
+		prCmd[band_idx]->countryCode =
+			rlmDomainGetCountryCode(prAdapter);
 
 		DBGLOG(RLM, INFO,
 			"%s, active n_channels=%d, band=%d\n",
@@ -6361,7 +6363,8 @@ rlmDomainSendTxPwrLimitCmd(struct ADAPTER *prAdapter,
 			/*copy partial tx pwr limit*/
 			prTempCmd->ucNum = ucTempChNum;
 			prTempCmd->eband = eBand;
-			prTempCmd->countryCode = rlmDomainGetCountryCode();
+			prTempCmd->countryCode =
+				rlmDomainGetCountryCode(prAdapter);
 			u2ChIdx = i * ucCmdBatchSize;
 			kalMemCopy(&prTempCmd->rChannelPowerLimit[0],
 				&prCmd[band_idx]->rChannelPowerLimit[u2ChIdx],
@@ -6452,7 +6455,7 @@ void rlmDomainTxPwrLimitSendPerRateCmd_6G(
 		prTempCmd->ucNum = ucTempChNum;
 		prTempCmd->eBand = eBand;
 		prTempCmd->u4CountryCode =
-			rlmDomainGetCountryCode();
+			rlmDomainGetCountryCode(prAdapter);
 
 		prTempCmd->eLimitType = prCmd->eLimitType;
 
@@ -6533,7 +6536,8 @@ u_int32_t rlmDomainInitTxPwrLimitPerRateCmd(
 		prCmd[band_idx]->eBand =
 			(band_idx == KAL_BAND_2GHZ) ?
 				BAND_2G4 : BAND_5G;
-		prCmd[band_idx]->u4CountryCode = rlmDomainGetCountryCode();
+		prCmd[band_idx]->u4CountryCode =
+			rlmDomainGetCountryCode(prAdapter);
 
 		DBGLOG(RLM, INFO,
 			"%s, active n_channels=%d, band=%d\n",
@@ -6613,7 +6617,7 @@ void rlmDomainTxPwrLimitSendPerRateCmd(
 			prTempCmd->ucNum = ucTempChNum;
 			prTempCmd->eBand = eBand;
 			prTempCmd->u4CountryCode =
-				rlmDomainGetCountryCode();
+				rlmDomainGetCountryCode(prAdapter);
 			prTempCmd->eLimitType = prCmd[band_idx]->eLimitType;
 			prTempCmd->bCmdFinished = bCmdFinished;
 			u2ChIdx = i * ucCmdBatchSize;
@@ -6807,7 +6811,8 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 
 	prTxPwrLimitPerRateCmd_6G->ucNum = ch_cnt;
 	prTxPwrLimitPerRateCmd_6G->eBand = 0x3;  /* replace 0x3 with macro */
-	prTxPwrLimitPerRateCmd_6G->u4CountryCode = rlmDomainGetCountryCode();
+	prTxPwrLimitPerRateCmd_6G->u4CountryCode =
+		rlmDomainGetCountryCode(prAdapter);
 	prTxPwrLimitPerRateCmd_6G->eLimitType = eLimitType;
 
 	for (ch_idx = 0; ch_idx < ch_cnt; ch_idx++) {
@@ -6947,7 +6952,7 @@ void rlmDomainTxPwrLimitSendVlpCmd(
 		prTempCmd->ucNum = ucTempChNum;
 		prTempCmd->eBand = eBand;
 		prTempCmd->u4CountryCode =
-			rlmDomainGetCountryCode();
+			rlmDomainGetCountryCode(prAdapter);
 
 		prTempCmd->eLimitType = prCmd->eLimitType;
 
@@ -7017,7 +7022,7 @@ rlmDomainSendTxPwrLimitVlpCmd(struct ADAPTER *prAdapter,
 
 	prTxPwrLimitVlpCmd->ucNum = ch_cnt;
 	prTxPwrLimitVlpCmd->eBand = 0x3;  /* replace 0x3 with macro */
-	prTxPwrLimitVlpCmd->u4CountryCode = rlmDomainGetCountryCode();
+	prTxPwrLimitVlpCmd->u4CountryCode = rlmDomainGetCountryCode(prAdapter);
 	prTxPwrLimitVlpCmd->eLimitType = eLimitType;
 
 	for (ch_idx = 0; ch_idx < ch_cnt; ch_idx++) {
@@ -7075,7 +7080,7 @@ uint32_t rlmDomainUpdatePwrLimit_6G_By_PowerMode(struct ADAPTER *prAdapter,
 
 	if (!rlmDomainGetTxPwrLimit(
 		prTxPwrLimit6GFile,
-		rlmDomainGetCountryCode(),
+		rlmDomainGetCountryCode(prAdapter),
 		&ucVersion,
 		prAdapter->prGlueInfo,
 		pTxPwrLimitData)) {
@@ -7643,6 +7648,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint8_t ucVersion = 0;
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData = NULL;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	DBGLOG(RLM, INFO, "rlmDomainSendPwrLimitCmd()\n");
 
@@ -7662,9 +7668,9 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	/* Get Max Tx Power from MT_TxPwrLimit.dat */
 	if (!rlmDomainGetTxPwrLimit(
 		prAdapter->chip_info->prTxPwrLimitFile,
-		rlmDomainGetCountryCode(),
+		rlmDomainGetCountryCode(prAdapter),
 		&ucVersion,
-		prAdapter->prGlueInfo,
+		prGlueInfo,
 		pTxPwrLimitData)) {
 		DBGLOG(RLM, ERROR,
 			"Load TxPwrLimitData failed\n");
@@ -7681,7 +7687,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 			ucVersion, pTxPwrLimitData,
 			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU);
 
-		if (g_bTxBfBackoffExists)
+		if (prGlueInfo->bTxBfBackoffExists)
 			rlmDomainSendTxBfBackoffCmd(prAdapter,
 				ucVersion, pTxPwrLimitData);
 
@@ -7698,7 +7704,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	if (prAdapter->chip_info->prTxPwrLimit1ss1tFile) {
 		if (!rlmDomainGetTxPwrLimit(
 			prAdapter->chip_info->prTxPwrLimit1ss1tFile,
-			rlmDomainGetCountryCode(),
+			rlmDomainGetCountryCode(prAdapter),
 			&ucVersion,
 			prAdapter->prGlueInfo,
 			pTxPwrLimitData)) {
@@ -7759,7 +7765,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 
 		if (!rlmDomainGetTxPwrLimit(
 			prAdapter->chip_info->prTxPwrLimit6GFile,
-			rlmDomainGetCountryCode(),
+			rlmDomainGetCountryCode(prAdapter),
 			&ucVersion,
 			prAdapter->prGlueInfo,
 			pTxPwrLimitData)) {
@@ -7788,7 +7794,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	if (prAdapter->chip_info->prTxPwrLimit6G1ss1tFile) {
 		if (!rlmDomainGetTxPwrLimit(
 			prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
-			rlmDomainGetCountryCode(),
+			rlmDomainGetCountryCode(prAdapter),
 			&ucVersion,
 			prAdapter->prGlueInfo,
 			pTxPwrLimitData)) {
@@ -7815,7 +7821,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	if (prAdapter->chip_info->prTxPwrLimit6GSpFile) {
 		if (!rlmDomainGetTxPwrLimit(
 			prAdapter->chip_info->prTxPwrLimit6GSpFile,
-			rlmDomainGetCountryCode(),
+			rlmDomainGetCountryCode(prAdapter),
 			&ucVersion,
 			prAdapter->prGlueInfo,
 			pTxPwrLimitData)) {
@@ -7834,7 +7840,7 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	if (prAdapter->chip_info->prTxPwrLimit6GVlpFile) {
 		if (!rlmDomainGetTxPwrLimit(
 			prAdapter->chip_info->prTxPwrLimit6GVlpFile,
-			rlmDomainGetCountryCode(),
+			rlmDomainGetCountryCode(prAdapter),
 			&ucVersion,
 			prAdapter->prGlueInfo,
 			pTxPwrLimitData)) {
@@ -11781,7 +11787,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 	/* TODO : 5G band edge */
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		rlmDomainSendPwrLimitCmd_V2(prAdapter);
 		return;
 	}
@@ -13326,75 +13332,129 @@ u_int8_t rlmDomain6GPwrModeSupportChk(
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #endif
-u_int8_t regd_is_single_sku_en(void)
+
+static struct mtk_regd_control *rlmGetRegdControl(struct GLUE_INFO *prGlueInfo)
+{
+	if (!prGlueInfo)
+		return NULL;
+
+	return &prGlueInfo->rMtkRegdControl;
+}
+
+u_int8_t regd_is_single_sku_en(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	return g_mtk_regd_control.en;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	if (!prAdapter)
+		return FALSE;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	return prRegdControl->en;
 #else
 	return FALSE;
 #endif
 }
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-enum regd_state rlmDomainGetCtrlState(void)
+enum regd_state rlmDomainGetCtrlState(struct GLUE_INFO *prGlueInfo)
 {
-	return g_mtk_regd_control.state;
+	struct mtk_regd_control *prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	return prRegdControl->state;
 }
 
 
-void rlmDomainResetActiveChannel(void)
+void rlmDomainResetActiveChannel(struct GLUE_INFO *prGlueInfo)
 {
-	g_mtk_regd_control.n_channel_active_2g = 0;
-	g_mtk_regd_control.n_channel_active_5g = 0;
-	g_mtk_regd_control.n_channel_active_6g = 0;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	prRegdControl->n_channel_active_2g = 0;
+	prRegdControl->n_channel_active_5g = 0;
+	prRegdControl->n_channel_active_6g = 0;
 }
 
-void rlmDomainAddActiveChannel(u8 band)
-
+void rlmDomainAddActiveChannel(struct ADAPTER *prAdapter, u8 band)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	if (!prAdapter)
+		return;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
 	if (band == KAL_BAND_2GHZ)
-		g_mtk_regd_control.n_channel_active_2g += 1;
+		prRegdControl->n_channel_active_2g += 1;
 	else if (band == KAL_BAND_5GHZ)
-		g_mtk_regd_control.n_channel_active_5g += 1;
+		prRegdControl->n_channel_active_5g += 1;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (band == KAL_BAND_6GHZ)
-		g_mtk_regd_control.n_channel_active_6g += 1;
+		prRegdControl->n_channel_active_6g += 1;
 #endif
 }
 
-u8 rlmDomainGetActiveChannelCount(u8 band)
+u8 rlmDomainGetActiveChannelCount(struct ADAPTER *prAdapter, u8 band)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	if (!prAdapter)
+		return 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
 	if (band == KAL_BAND_2GHZ)
-		return g_mtk_regd_control.n_channel_active_2g;
+		return prRegdControl->n_channel_active_2g;
 	else if (band == KAL_BAND_5GHZ)
-		return g_mtk_regd_control.n_channel_active_5g;
+		return prRegdControl->n_channel_active_5g;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (band == KAL_BAND_6GHZ)
-		return g_mtk_regd_control.n_channel_active_6g;
+		return prRegdControl->n_channel_active_6g;
 #endif
 	else
 		return 0;
 }
 
-struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(void)
+struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(struct ADAPTER *prAdapter)
 {
-	return g_mtk_regd_control.channels;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	if (!prAdapter)
+		return NULL;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	return prRegdControl->channels;
 }
 
-void rlmDomainSetDefaultCountryCode(void)
+void rlmDomainSetDefaultCountryCode(struct GLUE_INFO *prGlueInfo)
 {
-	g_mtk_regd_control.alpha2 = COUNTRY_CODE_WW;
+	struct mtk_regd_control *prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	prRegdControl->alpha2 = COUNTRY_CODE_WW;
 }
 
-void rlmDomainResetCtrlInfo(u_int8_t force)
+void rlmDomainResetCtrlInfo(struct GLUE_INFO *prGlueInfo, u_int8_t force)
 {
-	if ((g_mtk_regd_control.state == REGD_STATE_UNDEFINED) ||
+	struct mtk_regd_control *prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	if ((prRegdControl->state == REGD_STATE_UNDEFINED) ||
 	    (force == TRUE)) {
-		memset(&g_mtk_regd_control, 0, sizeof(struct mtk_regd_control));
+		memset(prRegdControl, 0, sizeof(struct mtk_regd_control));
 
-		g_mtk_regd_control.state = REGD_STATE_INIT;
+		prRegdControl->state = REGD_STATE_INIT;
 
-		rlmDomainSetDefaultCountryCode();
+		rlmDomainSetDefaultCountryCode(prGlueInfo);
 	}
 }
 
@@ -13407,7 +13467,8 @@ u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void)
 #endif
 }
 
-bool rlmDomainIsSameCountryCode(char *alpha2, u8 size_of_alpha2)
+bool rlmDomainIsSameCountryCode(
+	struct ADAPTER *prAdapter, char *alpha2, u8 size_of_alpha2)
 {
 	u8 idx;
 	u32 alpha2_hex = 0;
@@ -13415,62 +13476,93 @@ bool rlmDomainIsSameCountryCode(char *alpha2, u8 size_of_alpha2)
 	for (idx = 0; idx < size_of_alpha2; idx++)
 		alpha2_hex |= (alpha2[idx] << (idx * 8));
 
-	return (rlmDomainGetCountryCode() == alpha2_hex) ? TRUE : FALSE;
+	if (rlmDomainGetCountryCode(prAdapter) == alpha2_hex)
+		return TRUE;
+	else
+		return FALSE;
 }
 
-void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2)
+void rlmDomainSetCountryCode(
+		struct ADAPTER *prAdapter, char *alpha2, u8 size_of_alpha2)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
 	u8 max;
 	u8 buf_size;
 
-	buf_size = sizeof(g_mtk_regd_control.alpha2);
+	if (!prAdapter)
+		return;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	buf_size = sizeof(prRegdControl->alpha2);
 	max = (buf_size < size_of_alpha2) ? buf_size : size_of_alpha2;
 
-	g_mtk_regd_control.alpha2 = rlmDomainAlpha2ToU32(alpha2, max);
+	prRegdControl->alpha2 = rlmDomainAlpha2ToU32(alpha2, max);
 }
 
-void rlmDomainSetDfsRegion(u8 dfs_region)
+void rlmDomainSetDfsRegion(struct ADAPTER *prAdapter, u8 dfs_region)
 {
-	g_mtk_regd_control.dfs_region = dfs_region;
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	prRegdControl->dfs_region = dfs_region;
 }
 
-u8 rlmDomainGetDfsRegion(void)
+u8 rlmDomainGetDfsRegion(struct ADAPTER *prAdapter)
 {
-	return g_mtk_regd_control.dfs_region;
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	return prRegdControl->dfs_region;
 }
 
-void rlmDomainSetDfsDbdcBand(enum ENUM_MBMC_BN eDBDCBand)
+void rlmDomainSetDfsDbdcBand(
+		struct ADAPTER *prAdapter, enum ENUM_MBMC_BN eDBDCBand)
 {
-	g_mtk_regd_control.eDBDCBand = eDBDCBand;
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	prRegdControl->eDBDCBand = eDBDCBand;
 }
 
-enum ENUM_MBMC_BN rlmDomainGetDfsDbdcBand(void)
+enum ENUM_MBMC_BN rlmDomainGetDfsDbdcBand(struct ADAPTER *prAdapter)
 {
-	return g_mtk_regd_control.eDBDCBand;
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	return prRegdControl->eDBDCBand;
 }
 
-void rlmDomainSetTempCountryCode(char *alpha2, u8 size_of_alpha2)
+void rlmDomainSetTempCountryCode(
+		struct ADAPTER *prAdapter, char *alpha2, u8 size_of_alpha2)
 {
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
 	u8 idx, max;
 	u8 buf_size;
 
-	buf_size = sizeof(g_mtk_regd_control.tmp_alpha2);
+	buf_size = sizeof(prRegdControl->tmp_alpha2);
 	max = (buf_size < size_of_alpha2) ? buf_size : size_of_alpha2;
 
-	g_mtk_regd_control.tmp_alpha2 = 0;
+	prRegdControl->tmp_alpha2 = 0;
 
 	for (idx = 0; idx < max; idx++)
-		g_mtk_regd_control.tmp_alpha2 |= (alpha2[idx] << (idx * 8));
+		prRegdControl->tmp_alpha2 |= (alpha2[idx] << (idx * 8));
 
 }
 
 enum regd_state rlmDomainStateTransition(
-				enum regd_state request_state)
+		struct ADAPTER *prAdapter, enum regd_state request_state)
 {
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
 	enum regd_state next_state, old_state;
 	bool the_same = 0;
 
-	old_state = g_mtk_regd_control.state;
+	old_state = prRegdControl->state;
 	next_state = REGD_STATE_INVALID;
 
 	if (old_state == REGD_STATE_INVALID)
@@ -13522,11 +13614,11 @@ enum regd_state rlmDomainStateTransition(
 		       __func__, old_state, request_state, the_same);
 	} else
 		DBGLOG(RLM, INFO, "%s():  trasntion to state = %x (old = %x)\n",
-		__func__, next_state, g_mtk_regd_control.state);
+		__func__, next_state, prRegdControl->state);
 
-	g_mtk_regd_control.state = next_state;
+	prRegdControl->state = next_state;
 
-	return g_mtk_regd_control.state;
+	return prRegdControl->state;
 }
 
 void rlmDomainParsingChannel(struct ADAPTER *prAdapter)
@@ -13559,9 +13651,9 @@ void rlmDomainParsingChannel(struct ADAPTER *prAdapter)
 	 * Ready to parse the channel for bands
 	 */
 
-	rlmDomainResetActiveChannel();
+	rlmDomainResetActiveChannel(prGlueInfo);
 
-	pCh = rlmDomainGetActiveChannels();
+	pCh = rlmDomainGetActiveChannels(prAdapter);
 
 	fgDisconnection = kalFillChannels(prGlueInfo,
 			pCh,
@@ -13588,16 +13680,20 @@ void rlmDomainParsingChannel(struct ADAPTER *prAdapter)
 #endif
 }
 
-void rlmExtractChannelInfo(u32 max_ch_count,
+void rlmExtractChannelInfo(struct ADAPTER *prAdapter,
+			   u32 max_ch_count,
 			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff)
 {
 	u32 ch_count, idx;
 	struct CMD_DOMAIN_CHANNEL *pCh;
 
-	prBuff->u1ActiveChNum2g = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-	prBuff->u1ActiveChNum5g = rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+	prBuff->u1ActiveChNum2g =
+		rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_2GHZ);
+	prBuff->u1ActiveChNum5g =
+		rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_5GHZ);
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	prBuff->u1ActiveChNum6g = rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ);
+	prBuff->u1ActiveChNum6g =
+		rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_6GHZ);
 #else
 	prBuff->u1ActiveChNum6g = 0;
 #endif
@@ -13615,8 +13711,10 @@ void rlmExtractChannelInfo(u32 max_ch_count,
 	for (idx = 0; idx < ch_count; idx++) {
 		pCh = &(prBuff->arChannels[idx]);
 
-		pCh->u2ChNum = (rlmDomainGetActiveChannels() + idx)->u2ChNum;
-		pCh->eFlags = (rlmDomainGetActiveChannels() + idx)->eFlags;
+		pCh->u2ChNum =
+			(rlmDomainGetActiveChannels(prAdapter) + idx)->u2ChNum;
+		pCh->eFlags =
+			(rlmDomainGetActiveChannels(prAdapter) + idx)->eFlags;
 	}
 
 }
@@ -13656,17 +13754,30 @@ const void *rlmDomainGetLocalDefaultRegd(void)
 	return NULL;
 #endif
 }
-struct GLUE_INFO *rlmDomainGetGlueInfo(void)
+struct GLUE_INFO *rlmDomainGetGlueInfo(struct ADAPTER *prAdapter)
 {
-	return g_mtk_regd_control.pGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	if (!prAdapter)
+		return 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	return prRegdControl->pGlueInfo;
 }
 
-bool rlmDomainIsEfuseUsed(void)
+bool rlmDomainIsEfuseUsed(struct ADAPTER *prAdapter)
 {
-	return g_mtk_regd_control.isEfuseCountryCodeUsed;
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	return prRegdControl->isEfuseCountryCodeUsed;
 }
 
-uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
+uint8_t rlmDomainGetChannelBw(
+	struct ADAPTER *prAd, enum ENUM_BAND eBand, uint8_t channelNum)
 {
 	uint32_t ch_idx = 0, start_idx = 0, end_idx = 0;
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -13680,21 +13791,23 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 	//TODO: remove this
 	channelBw = MAX_BW_320_2MHZ;
 
-	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
+	end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_6GHZ)
 #endif
 		;
 
 	for (ch_idx = start_idx; ch_idx < end_idx; ch_idx++) {
-		pCh = (rlmDomainGetActiveChannels() + ch_idx);
+		pCh = (rlmDomainGetActiveChannels(prAd) + ch_idx);
 
-		if (ch_idx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
+		if (ch_idx <
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ))
 			eChBand = BAND_2G4;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (ch_idx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ))
+		else if (ch_idx < rlmDomainGetActiveChannelCount(
+							prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ))
 			eChBand = BAND_5G;
 		else
 			eChBand = BAND_6G;
@@ -13732,7 +13845,8 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 		 * flag only has IEEE80211_CHAN_NO_HT40PLUS not
 		 * IEEE80211_CHAN_NO_HT40
 		 */
-		if (ch_idx >= rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)) {
+		if (ch_idx >=
+			rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)) {
 			uint32_t u4ChnlSeq;
 			int32_t i4StartIdx;
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -13746,15 +13860,18 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			if (eChBand == BAND_6G) {
 				u4ChnlSeq = ((pCh->u2ChNum >> 2) + 1) & 0x3;
 				i4StartIdx =
-				rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
-				rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+					rlmDomainGetActiveChannelCount(
+						prAd, KAL_BAND_2GHZ) +
+					rlmDomainGetActiveChannelCount(
+						prAd, KAL_BAND_5GHZ);
 			}
 			else
 #endif
 			{
 				u4ChnlSeq = (pCh->u2ChNum >> 2) & 0x3;
 				i4StartIdx =
-				rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+					rlmDomainGetActiveChannelCount(
+						prAd, KAL_BAND_2GHZ);
 			}
 
 			/* Limit MAX_BW_40MHz and above to MAX_BW_20MHZ */
@@ -13785,7 +13902,8 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 					offset = 1;
 					if ((i4ChIdx + offset) < i4EndIdx)
 						pAdj20Chnl = (
-						rlmDomainGetActiveChannels() +
+						rlmDomainGetActiveChannels(
+							prAd) +
 						(i4ChIdx + offset));
 					kal_fallthrough;
 				case 2:
@@ -13799,7 +13917,8 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 					offset = -1;
 					if ((i4ChIdx + offset) >= i4StartIdx)
 						pAdj20Chnl = (
-						rlmDomainGetActiveChannels() +
+						rlmDomainGetActiveChannels(
+							prAd) +
 						(i4ChIdx + offset));
 					kal_fallthrough;
 				case 3:
@@ -13815,7 +13934,8 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 				if (((i4ChIdx + offset) >= i4StartIdx) &&
 					((i4ChIdx + offset) < i4EndIdx))
 					pAdj40Chnl = (
-						rlmDomainGetActiveChannels() +
+						rlmDomainGetActiveChannels(
+							prAd) +
 						(i4ChIdx + offset));
 
 				if ((pAdj20Chnl) &&
@@ -13844,10 +13964,12 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(struct ADAPTER *prAdapter,
 						   uint8_t *pucEventBuf)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
 	struct SINGLE_SKU_INFO *prSkuInfo =
 			(struct SINGLE_SKU_INFO *) pucEventBuf;
 
-	g_mtk_regd_control.en = TRUE;
+	prRegdControl->en = TRUE;
 
 	if (prSkuInfo->isEfuseValid) {
 		if (!rlmDomainIsUsingLocalRegDomainDataBase()) {
@@ -13862,11 +13984,11 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(struct ADAPTER *prAdapter,
 			return WLAN_STATUS_NOT_SUPPORTED;
 		}
 
-		rlmDomainSetCountryCode(
+		rlmDomainSetCountryCode(prAdapter,
 			(char *) &prSkuInfo->u4EfuseCountryCode,
 			sizeof(prSkuInfo->u4EfuseCountryCode));
 
-		g_mtk_regd_control.isEfuseCountryCodeUsed = TRUE;
+		prRegdControl->isEfuseCountryCodeUsed = TRUE;
 	}
 #endif
 
@@ -13876,10 +13998,13 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(struct ADAPTER *prAdapter,
 void rlmDomainSendInfoToFirmware(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (!regd_is_single_sku_en())
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	if (!regd_is_single_sku_en(prAdapter))
 		return; /*not support single sku*/
 
-	g_mtk_regd_control.pGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl->pGlueInfo = prAdapter->prGlueInfo;
 	rlmDomainSetCountry(prAdapter, 1);
 #endif
 }
@@ -13956,47 +14081,58 @@ void rlmDomainOidSetCountry(struct ADAPTER *prAdapter,
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 
-	if (!regd_is_single_sku_en()) {
+	if (!regd_is_single_sku_en(prAdapter)) {
 		DBGLOG(RLM, ERROR, "regd control is not enabled\n");
 		return;
 	}
 
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 
-		if (rlmDomainIsSameCountryCode(country, size_of_country)) {
+		if (rlmDomainIsSameCountryCode(
+				prAdapter, country, size_of_country)) {
 			char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 
 			rlmDomainU32ToAlpha(
-				rlmDomainGetCountryCode(), acCountryCodeStr);
+				rlmDomainGetCountryCode(prAdapter),
+				acCountryCodeStr);
 			DBGLOG(RLM, WARN,
 				"Same as current country %s, skip!\n",
 				acCountryCodeStr);
 			return;
 		}
-		rlmDomainSetCountryCode(country, size_of_country);
+		rlmDomainSetCountryCode(prAdapter, country, size_of_country);
 		rlmDomainSetCountry(prAdapter, fgNeedHoldRtnlLock);
 	} else {
 		DBGLOG(RLM, INFO,
 		       "%s(): Using driver hint to query CRDA getting regd.\n",
 		       __func__);
-		kalRegulatoryHint(country);
+		kalRegulatoryHint(prAdapter->prGlueInfo, country);
 	}
 #endif
 }
 
-u32 rlmDomainGetCountryCode(void)
+u32 rlmDomainGetCountryCode(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	return g_mtk_regd_control.alpha2;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mtk_regd_control *prRegdControl = NULL;
+
+	if (!prAdapter)
+		return 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRegdControl = rlmGetRegdControl(prGlueInfo);
+
+	return prRegdControl->alpha2;
 #else
 	return 0;
-#endif
+#endif /* CFG_SUPPORT_SINGLE_SKU */
 }
 
-void rlmDomainAssert(u_int8_t cond)
+void rlmDomainAssert(struct ADAPTER *prAdapter, u_int8_t cond)
 {
 	/* bypass this check because single sku is not enable */
-	if (!regd_is_single_sku_en())
+	if (!regd_is_single_sku_en(prAdapter))
 		return;
 
 	if (!cond) {
@@ -14015,9 +14151,12 @@ void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha)
 }
 #if 0
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-void rlm_get_alpha2(char *alpha2)
+void rlm_get_alpha2(struct ADAPTER *prAdapter, char *alpha2)
 {
-	rlmDomainU32ToAlpha(g_mtk_regd_control.alpha2, alpha2);
+	struct mtk_regd_control *prRegdControl =
+			rlmGetRegdControl(prAdapter->prGlueInfo);
+
+	rlmDomainU32ToAlpha(prRegdControl->alpha2, alpha2);
 }
 EXPORT_SYMBOL(rlm_get_alpha2);
 #endif

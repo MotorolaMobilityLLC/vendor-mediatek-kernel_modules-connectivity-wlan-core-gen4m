@@ -12020,6 +12020,7 @@ int priv_driver_set_country(struct net_device *prNetDev,
 {
 
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	int32_t i4Argc = 0;
@@ -12030,12 +12031,13 @@ int priv_driver_set_country(struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		uint8_t i, count;
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
 
@@ -12201,6 +12203,7 @@ int priv_driver_get_country(struct net_device *prNetDev,
 			    char *pcCommand, int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t i4BytesWritten = 0;
 	uint32_t country = 0;
 	char acCountryStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
@@ -12209,15 +12212,16 @@ int priv_driver_get_country(struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 
-	if (!regd_is_single_sku_en()) {
+	if (!regd_is_single_sku_en(prAdapter)) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Not Supported.");
 		return i4BytesWritten;
 	}
 
-	country = rlmDomainGetCountryCode();
+	country = rlmDomainGetCountryCode(prAdapter);
 	rlmDomainU32ToAlpha(country, acCountryStr);
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
@@ -12229,6 +12233,8 @@ int priv_driver_get_country(struct net_device *prNetDev,
 int priv_driver_get_channels(struct net_device *prNetDev,
 			     char *pcCommand, int i4TotalLen)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAd = NULL;
 	uint32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
@@ -12248,7 +12254,15 @@ int priv_driver_get_channels(struct net_device *prNetDev,
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	if (!regd_is_single_sku_en()) {
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "NULL prGlueInfo\n");
+		return -1;
+	}
+	prAd = prGlueInfo->prAdapter;
+
+	if (!regd_is_single_sku_en(prAd)) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Not Supported.");
 		return i4BytesWritten;
 	}
@@ -12259,42 +12273,42 @@ int priv_driver_get_channels(struct net_device *prNetDev,
 	 **/
 	if (i4Argc >= 2 && (apcArgv[1][0] == '2') && (apcArgv[1][1] == 'g')) {
 		start_idx = 0;
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
 	} else if (i4Argc >= 2 && (apcArgv[1][0] == '5') &&
 	    (apcArgv[1][1] == 'g')) {
-		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+		start_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ);
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (i4Argc >= 2 && (apcArgv[1][0] == '6') &&
 	    (apcArgv[1][1] == 'g')) {
-		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ);
+		start_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_6GHZ);
 	}
 #endif
 	else {
 		start_idx = 0;
-		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
+		end_idx = rlmDomainGetActiveChannelCount(prAd, KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_5GHZ)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ)
+			+ rlmDomainGetActiveChannelCount(prAd, KAL_BAND_6GHZ)
 #endif
-				;
+			;
 		if (i4Argc >= 2)
 			/* Dump only specified channel */
 			u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
 	}
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAd)) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
 
 		for (ch_idx = start_idx; ch_idx < end_idx; ch_idx++) {
 
-			pCh = (rlmDomainGetActiveChannels() + ch_idx);
+			pCh = (rlmDomainGetActiveChannels(prAd) + ch_idx);
 			maxbw = 160;
 
 			if (ch_num && (ch_num != pCh->u2ChNum))
@@ -19354,12 +19368,12 @@ int priv_driver_get_survey_dump(struct net_device *prNetDev,
 
 	ucChannelNum = 0;
 	u4StartIdx = 0;
-	u4EndIdx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+	u4EndIdx = rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_2GHZ)
+		+ rlmDomainGetActiveChannelCount(prAdapter, KAL_BAND_5GHZ);
 
 	u4StartIdx = 0;
 	for (u4ChIdx = u4StartIdx; u4ChIdx < u4EndIdx; u4ChIdx++) {
-		pCh = (rlmDomainGetActiveChannels() + u4ChIdx);
+		pCh = (rlmDomainGetActiveChannels(prAdapter) + u4ChIdx);
 		ucChannelNum = pCh->u2ChNum;
 
 		if (ucChannelNum <= 14) {

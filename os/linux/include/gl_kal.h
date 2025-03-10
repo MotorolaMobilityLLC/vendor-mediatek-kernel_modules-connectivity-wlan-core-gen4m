@@ -2745,14 +2745,15 @@ uint32_t kalDumpPwrLevel(struct ADAPTER *prAdapter);
 #endif
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-void kalApplyCustomRegulatory(const void *pRegdom, uint8_t fgNeedHoldRtnlLock);
+void kalApplyCustomRegulatory(struct GLUE_INFO *prGlueInfo,
+	const void *pRegdom, uint8_t fgNeedHoldRtnlLock);
 void
 kalUpdateCustomRegulatoryByWiphy(struct wiphy *pWiphy, const void *pRegdom,
 	uint8_t fgNeedHoldRtnlLock);
 const void *kalGetDefaultRegWW(void);
 #endif
-uint8_t kalGetRdmVal(uint8_t dfs_region);
-u_int8_t kalIsETSIDfsRegin(void);
+uint8_t kalGetRdmVal(struct ADAPTER *prAdapter, uint8_t dfs_region);
+u_int8_t kalIsETSIDfsRegin(struct ADAPTER *prAdapter);
 #endif
 u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 void kal_sched_set(struct task_struct *p, int policy,
@@ -2809,7 +2810,7 @@ void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
 void kalGetFtIeParam(void *pvftie,
 	uint16_t *pu2MDID, uint32_t *pu4IeLength,
 	const uint8_t **pucIe);
-int kalRegulatoryHint(char *country);
+int kalRegulatoryHint(struct GLUE_INFO *prGlueInfo, char *country);
 
 uint32_t kalGetSKBSharedInfoSize(void);
 

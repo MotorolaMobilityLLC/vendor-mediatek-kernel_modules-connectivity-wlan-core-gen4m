@@ -244,6 +244,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
+		struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
 int32_t p2pFuncSetDriverCacTime(uint32_t u4CacTime);

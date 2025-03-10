@@ -1339,6 +1339,16 @@ struct GLUE_INFO {
 
 	struct KAL_HALT_CTRL_T rHaltCtrl;
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/* for kalDevKickData() in kal_pdma.c */
+	int32_t i4RingLock[NUM_OF_TX_RING];
+#endif
+
+#if CFG_SUPPORT_SINGLE_SKU
+	struct mtk_regd_control rMtkRegdControl;
+	u_int8_t bTxBfBackoffExists;
+#endif
+
 	u_int8_t reserved_end;
 	/* GLUE_INFO reserved END area for each wlanProbe */
 
@@ -1346,11 +1356,6 @@ struct GLUE_INFO {
 	struct wireless_dev *prWdev[KAL_AIS_NUM];
 
 	struct proc_dir_entry *prProcRoot;
-
-#if CFG_SUPPORT_SINGLE_SKU
-	struct mtk_regd_control rMtkRegdControl;
-	u_int8_t bTxBfBackoffExists;
-#endif
 
 	/* public for both Legacy Wi-Fi / P2P access */
 	struct ieee80211_supported_band mtk_band_2ghz;

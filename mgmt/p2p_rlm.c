@@ -674,7 +674,7 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 			eSCO = (prBssInfo->ucPrimaryChannel > 7)
 				? CHNL_EXT_SCB : CHNL_EXT_SCA;
 	} else {
-		if (regd_is_single_sku_en()) {
+		if (regd_is_single_sku_en(prAdapter)) {
 			if (rlmDomainIsLegalChannel(prAdapter,
 					prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel))

@@ -553,7 +553,7 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	}
 	prAdapter = prGlueInfo->prAdapter;
 
-	country = rlmDomainGetCountryCode();
+	country = rlmDomainGetCountryCode(prAdapter);
 	rlmDomainU32ToAlpha(country, acCountryStr);
 
 	if (country)
@@ -613,7 +613,7 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	pucProcBuf[u4CopySize] = '\0';
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
 
 		prCountrySetting.aucCountryCode[0] = pucProcBuf[0];

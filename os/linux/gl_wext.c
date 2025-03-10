@@ -3453,6 +3453,7 @@ static int wext_set_country(struct net_device *prNetDev,
 			    struct iw_point *prData)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	uint8_t aucCountry[COUNTRY_CODE_LEN];
@@ -3467,12 +3468,13 @@ static int wext_set_country(struct net_device *prNetDev,
 		return -EINVAL;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	if (copy_from_user(aucCountry, prData->pointer,
 			   COUNTRY_CODE_LEN))
 		return -EFAULT;
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
 
 		prCountrySetting.aucCountryCode[0]

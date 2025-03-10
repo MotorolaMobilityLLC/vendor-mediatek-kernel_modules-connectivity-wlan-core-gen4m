@@ -614,7 +614,7 @@
 #define MAX_SUPPORTED_CH_COUNT (MAX_CHN_NUM)
 #define REG_RULE_LIGHT(start, end, bw, reg_flags)	\
 		REG_RULE(start, end, bw, 0, 0, reg_flags)
-#endif
+#endif /* CFG_SUPPORT_SINGLE_SKU */
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #define SUBBAND_6G_NUM                4/* UNII-5/6/7/8 */
@@ -1413,7 +1413,7 @@ u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter,
 
 void rlmDomainSendCmd(struct ADAPTER *prAdapter, bool fgPwrLmtSend);
 
-void rlmDomainResetActiveChannel(void);
+void rlmDomainResetActiveChannel(struct GLUE_INFO *prGlueInfo);
 
 void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter);
 
@@ -1458,28 +1458,34 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void);
-void rlmDomainSetCountryCode(char *alpha2,
+void rlmDomainSetCountryCode(struct ADAPTER *prAdapter,
+			     char *alpha2,
 			     u8 size_of_alpha2);
-void rlmDomainSetDfsRegion(u8 dfs_region);
-u8 rlmDomainGetDfsRegion(void);
-void rlmDomainSetDfsDbdcBand(enum ENUM_MBMC_BN eDBDCBand);
-enum ENUM_MBMC_BN rlmDomainGetDfsDbdcBand(void);
-void rlmDomainResetCtrlInfo(u_int8_t force);
-void rlmDomainAddActiveChannel(u8 band);
-u8 rlmDomainGetActiveChannelCount(u8 band);
+void rlmDomainSetDfsRegion(struct ADAPTER *prAdapter, u8 dfs_region);
+u8 rlmDomainGetDfsRegion(struct ADAPTER *prAdapter);
+void rlmDomainSetDfsDbdcBand(
+	struct ADAPTER *prAdapter, enum ENUM_MBMC_BN eDBDCBand);
+enum ENUM_MBMC_BN rlmDomainGetDfsDbdcBand(struct ADAPTER *prAdapter);
+void rlmDomainResetCtrlInfo(struct GLUE_INFO *prGlueInfo, u_int8_t force);
+void rlmDomainAddActiveChannel(struct ADAPTER *prAdapter, u8 band);
+u8 rlmDomainGetActiveChannelCount(struct ADAPTER *prAdapter, u8 band);
 void rlmDomainParsingChannel(struct ADAPTER *prAdapter);
-struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(void);
-void rlmExtractChannelInfo(u32 max_ch_count,
+struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(
+			   struct ADAPTER *prAdapter);
+void rlmExtractChannelInfo(struct ADAPTER *prAdapter,
+			   u32 max_ch_count,
 			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff);
 void regd_set_using_local_regdomain_db(void);
-void rlmDomainSetDefaultCountryCode(void);
-enum regd_state rlmDomainGetCtrlState(void);
-bool rlmDomainIsSameCountryCode(char *alpha2,
+void rlmDomainSetDefaultCountryCode(struct GLUE_INFO *prGlueInfo);
+enum regd_state rlmDomainGetCtrlState(struct GLUE_INFO *prGlueInfo);
+bool rlmDomainIsSameCountryCode(struct ADAPTER *prAdapter,
+				char *alpha2,
 				u8 size_of_alpha2);
+struct GLUE_INFO *rlmDomainGetGlueInfo(struct ADAPTER *prAdapter);
 const void *rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2);
-struct GLUE_INFO *rlmDomainGetGlueInfo(void);
-bool rlmDomainIsEfuseUsed(void);
-uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum);
+bool rlmDomainIsEfuseUsed(struct ADAPTER *prAdapter);
+uint8_t rlmDomainGetChannelBw(
+	struct ADAPTER *prAd, enum ENUM_BAND eBand, uint8_t channelNum);
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 extern const struct mtk_regdomain *g_prRegRuleTable[];
@@ -1492,7 +1498,7 @@ void rlmDomainSendInfoToFirmware(struct ADAPTER
 				 *prAdapter);
 uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(
 	struct ADAPTER *prAdapter, uint8_t *pucEventBuf);
-u_int8_t regd_is_single_sku_en(void);
+u_int8_t regd_is_single_sku_en(struct ADAPTER *prAdapter);
 u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 				 enum ENUM_BAND eBand, uint8_t ucChannel);
 
@@ -1508,8 +1514,8 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
 	u8 primary_ch);
 void rlmDomainOidSetCountry(struct ADAPTER *prAdapter,
 	char *country, uint8_t size_of_country, uint8_t fgNeedHoldRtnlLock);
-u32 rlmDomainGetCountryCode(void);
-void rlmDomainAssert(u_int8_t cond);
+u32 rlmDomainGetCountryCode(struct ADAPTER *prAdapter);
+void rlmDomainAssert(struct ADAPTER *prAdapter, u_int8_t cond);
 void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha);
 uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size);
 uint16_t rlmDomainReverseAlpha2(uint16_t Alpha2);
@@ -1524,6 +1530,7 @@ void rlmDomainSetCountry(struct ADAPTER *prAdapter,
 
 uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	struct GLUE_INFO *prGlueInfo,
 	uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock);
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT

@@ -2140,13 +2140,15 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
 			ucChannelBw = rlmDomainGetChannelBw(
+				prAdapter,
 				prBssDesc->eBand,
 				prBssDesc->ucChannelNum);
 		} else {
 			ucChannelBw = rlmDomainGetChannelBw(
+				prAdapter,
 				prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel);
 		}

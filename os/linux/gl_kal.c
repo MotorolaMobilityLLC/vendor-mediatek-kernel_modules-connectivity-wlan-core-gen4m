@@ -15910,14 +15910,16 @@ void kalNanPrivWork(struct work_struct *work)
 #endif /* CFG_SUPPORT_NAN */
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-void kalApplyCustomRegulatory(const void *pRegdom,
+void kalApplyCustomRegulatory(struct GLUE_INFO *prGlueInfo,
+	const void *pRegdom,
 	uint8_t fgNeedHoldRtnlLock)
 {
 	struct wiphy *pWiphy;
 	u32 band_idx, ch_idx;
 	struct ieee80211_supported_band *sband;
 	struct ieee80211_channel *chan;
-	pWiphy = wlanGetWiphyByWdev(gprWdev[0]);
+
+	pWiphy = GLUE_GET_WIPHY(prGlueInfo);
 
 	DBGLOG(RLM, INFO, "%s()\n", __func__);
 
@@ -18015,7 +18017,7 @@ u_int8_t kalFillChannels(
 				break;
 			}
 
-			rlmDomainAddActiveChannel(band_idx);
+			rlmDomainAddActiveChannel(prAdapter, band_idx);
 
 			DBGLOG(RLM, INFO,
 			       "channels[%d][%d]: ch%d (freq = %d) flgs=0x%x [%s]\n",
@@ -18623,11 +18625,11 @@ void kalGetFtIeParam(void *pvftie,
 	*pucIe = ftie->ie;
 }
 
-int kalRegulatoryHint(char *country)
+int kalRegulatoryHint(struct GLUE_INFO *prGlueInfo, char *country)
 {
 	struct wiphy *pWiphy;
 
-	pWiphy = wlanGetWiphyByWdev(gprWdev[0]);
+	pWiphy = GLUE_GET_WIPHY(prGlueInfo);
 	return regulatory_hint(pWiphy, country);
 }
 
@@ -19404,7 +19406,7 @@ const void *kalGetDefaultRegWW(void)
 }
 #endif
 
-uint8_t kalGetRdmVal(uint8_t dfs_region)
+uint8_t kalGetRdmVal(struct ADAPTER *prAdapter, uint8_t dfs_region)
 {
 	uint8_t retVal = 0;
 
@@ -19423,21 +19425,24 @@ uint8_t kalGetRdmVal(uint8_t dfs_region)
 			"rlmDomainGetDfsRegion is NL80211_DFS_UNSET!\n");
 		break;
 	default:
-		retVal = rlmDomainGetDfsRegion();
+		retVal = rlmDomainGetDfsRegion(prAdapter);
 		DBGLOG(P2P, INFO,
 			"ucSetVal: %d\n", retVal);
 		break;
 	}
 
-	if (rlmDomainIsSameCountryCode("KR", 2))
+	if (rlmDomainIsSameCountryCode(prAdapter, "KR", 2))
 		retVal = ENUM_RDM_KR;
 
 	return retVal;
 }
 
-u_int8_t kalIsETSIDfsRegin(void)
+u_int8_t kalIsETSIDfsRegin(struct ADAPTER *prAdapter)
 {
-	return rlmDomainGetDfsRegion() == NL80211_DFS_ETSI ? TRUE : FALSE;
+	if (rlmDomainGetDfsRegion(prAdapter) == NL80211_DFS_ETSI)
+		return TRUE;
+	else
+		return FALSE;
 }
 
 #endif

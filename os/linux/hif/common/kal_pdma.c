@@ -2551,7 +2551,7 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_TX_RING *prTxRing;
 	struct list_head rTempList;
-	static int32_t ai4RingLock[NUM_OF_TX_RING];
+	int32_t *prRingLock;
 	uint32_t u4Idx;
 
 	KAL_HIF_TXDATAQ_LOCK_DECLARATION();
@@ -2564,6 +2564,7 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+	prRingLock = prGlueInfo->i4RingLock;
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
 	if (halCheckAndStartTxDelayTimer(prGlueInfo->prAdapter))
@@ -2579,11 +2580,11 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 		if (!halIsDataRing(TX_RING, u4Idx))
 			continue;
 
-		if (unlikely(GLUE_INC_REF_CNT(ai4RingLock[u4Idx]) > 1)) {
+		if (unlikely(GLUE_INC_REF_CNT(prRingLock[u4Idx]) > 1)) {
 			/* Single user allowed per port read */
 			DBGLOG(TX, WARN, "Single user only R[%u] [%d]\n",
 				u4Idx,
-				GLUE_GET_REF_CNT(ai4RingLock[u4Idx]));
+				GLUE_GET_REF_CNT(prRingLock[u4Idx]));
 			goto end;
 		}
 
@@ -2623,7 +2624,7 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 		list_replace(&rTempList, &prHifInfo->rTxDataQ[u4Idx]);
 		KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Idx);
 end:
-		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
+		GLUE_DEC_REF_CNT(prRingLock[u4Idx]);
 	}
 
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK

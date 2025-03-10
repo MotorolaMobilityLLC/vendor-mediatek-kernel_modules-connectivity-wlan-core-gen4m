@@ -9243,7 +9243,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->ucDfsRegion, "DfsRegion", 0, FEATURE_TO_CUSTOMER);
 	if (prWifiVar->ucDfsRegion)
-		rlmDomainSetDfsRegion(prWifiVar->ucDfsRegion);
+		rlmDomainSetDfsRegion(prAdapter, prWifiVar->ucDfsRegion);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	INIT_UINT(prWifiVar->u4ByPassCacTime, "ByPassCacTime", 0,
@@ -9939,7 +9939,7 @@ void wlanCfgSetCountryCode(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, TRACE, "u2CountryCode=0x%04x\n",
 		       prAdapter->rWifiVar.u2CountryCode);
 
-		if (regd_is_single_sku_en()) {
+		if (regd_is_single_sku_en(prAdapter)) {
 			rlmDomainOidSetCountry(prAdapter, aucValue, 2, 1);
 			return;
 		}

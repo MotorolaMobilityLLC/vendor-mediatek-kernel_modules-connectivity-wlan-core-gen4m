@@ -705,7 +705,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 	}
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
 
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE

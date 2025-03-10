@@ -94,7 +94,8 @@ void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(const void *pRegdom,
+kalApplyCustomRegulatory(struct GLUE_INFO *prGlueInfo,
+	const void *pRegdom,
 	uint8_t fgNeedHoldRtnlLock) { }
 
 const void *kalGetDefaultRegWW(void)
@@ -103,12 +104,12 @@ const void *kalGetDefaultRegWW(void)
 	return NULL;
 }
 #endif
-uint8_t kalGetRdmVal(uint8_t dfs_region)
+uint8_t kalGetRdmVal(struct ADAPTER *prAdapter, uint8_t dfs_region)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-u_int8_t kalIsETSIDfsRegin(void)
+u_int8_t kalIsETSIDfsRegin(struct ADAPTER *prAdapter)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
@@ -750,7 +751,7 @@ int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
 	return 0;
 }
 
-int kalRegulatoryHint(char *country)
+int kalRegulatoryHint(struct GLUE_INFO *prGlueInfo, char *country)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return 0;

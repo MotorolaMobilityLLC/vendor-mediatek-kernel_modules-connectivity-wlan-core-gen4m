@@ -5277,9 +5277,15 @@ void
 mtk_reg_notify(struct wiphy *pWiphy,
 	       struct regulatory_request *pRequest)
 {
-	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
-	struct ADAPTER *prAdapter;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t u4CountryCode = 0;
+
+	if (!pWiphy) {
+		DBGLOG(RLM, ERROR, "pWiphy = NULL\n");
+		return;
+	}
+	WIPHY_PRIV(pWiphy, prGlueInfo);
 
 	if (!prGlueInfo || prGlueInfo->u4HaltFlag) {
 		DBGLOG(RLM, ERROR, "wlan is halt, skip reg callback\n");
@@ -5296,29 +5302,31 @@ mtk_reg_notify(struct wiphy *pWiphy,
 		"request->alpha2=%s, initiator=%x, intersect=%d\n",
 		pRequest->alpha2, pRequest->initiator, pRequest->intersect);
 
-	if (rlmDomainIsSameCountryCode(pRequest->alpha2, 2)) {
+	if (rlmDomainIsSameCountryCode(prAdapter, pRequest->alpha2, 2)) {
 		char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 
 		rlmDomainU32ToAlpha(
-			rlmDomainGetCountryCode(), acCountryCodeStr);
+			rlmDomainGetCountryCode(prAdapter), acCountryCodeStr);
 		DBGLOG(RLM, WARN,
 			"Same as current country %s, skip!\n",
 			acCountryCodeStr);
 		return;
 	}
 
-	rlmDomainSetCountryCode(pRequest->alpha2, 2);
+	rlmDomainSetCountryCode(prAdapter, pRequest->alpha2, 2);
 
 	u4CountryCode = rlmDomainAlpha2ToU32(pRequest->alpha2, 2);
 
 	rlmDomainCountryCodeUpdate(prAdapter, u4CountryCode, 0);
 
-	rlmDomainSetDfsRegion((u8)pRequest->dfs_region);
+	rlmDomainSetDfsRegion(prAdapter, (u8)pRequest->dfs_region);
 }
 
 void
 cfg80211_regd_set_wiphy(struct wiphy *prWiphy)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+
 	/*
 	 * register callback
 	 */
@@ -5379,7 +5387,8 @@ cfg80211_regd_set_wiphy(struct wiphy *prWiphy)
 	/*
 	 * Initialize regd control information
 	 */
-	rlmDomainResetCtrlInfo(FALSE);
+	WIPHY_PRIV(prWiphy, prGlueInfo);
+	rlmDomainResetCtrlInfo(prGlueInfo, FALSE);
 }
 #else
 void

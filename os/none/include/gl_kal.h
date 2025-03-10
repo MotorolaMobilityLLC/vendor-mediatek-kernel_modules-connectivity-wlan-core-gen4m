@@ -2355,7 +2355,7 @@ int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
 	bool ascii);
 bool kal_warn_on(uint8_t condition);
 
-int kalRegulatoryHint(char *country);
+int kalRegulatoryHint(struct GLUE_INFO *prGlueInfo, char *country);
 
 bool kal_is_err(void *ptr);
 

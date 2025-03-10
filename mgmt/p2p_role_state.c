@@ -673,7 +673,7 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 				->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]
 				->cac_time_ms;
 
-		if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
+		if (p2pFuncCheckWeatherRadarBand(prAdapter, prChnlReqInfo))
 			u4CacTimeMs = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
 
 		if (p2pFuncIsManualCac())

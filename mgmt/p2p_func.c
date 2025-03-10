@@ -1980,7 +1980,8 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 		 * Remember to fix it when driver could get
 		 * the correct band from firmware.
 		 */
-		prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
+		prCmdRddOnOffCtrl->ucRddIdx =
+					rlmDomainGetDfsDbdcBand(prAdapter);
 		prCmdRddOnOffCtrl->ucBssIdx = prBssInfo->ucBssIndex;
 
 		DBGLOG(P2P, INFO,
@@ -2824,12 +2825,13 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	 * Remember to fix it when driver could get
 	 * the correct band from firmware.
 	 */
-	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
+	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand(prAdapter);
 	prCmdRddOnOffCtrl->ucBssIdx = ucBssIdx;
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	prCmdRddOnOffCtrl->ucSetVal = kalGetRdmVal(rlmDomainGetDfsRegion());
-	if (rlmDomainIsSameCountryCode("KR", 2))
+	prCmdRddOnOffCtrl->ucSetVal =
+		kalGetRdmVal(prAdapter, rlmDomainGetDfsRegion(prAdapter));
+	if (rlmDomainIsSameCountryCode(prAdapter, "KR", 2))
 		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_KR;
 #endif
 
@@ -2890,7 +2892,7 @@ void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	 * Remember to fix it when driver could get
 	 * the correct band from firmware.
 	 */
-	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
+	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand(prAdapter);
 	prCmdRddOnOffCtrl->ucBssIdx = ucBssIdx;
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
@@ -3272,6 +3274,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
+		struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	uint8_t ucReqChnlNum;
@@ -3286,7 +3289,7 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 	eChnlSco = prChnlReqInfo->eChnlSco;
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (kalIsETSIDfsRegin()) {
+	if (kalIsETSIDfsRegin(prAdapter)) {
 		if (eChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
 			if (ucCenterFreqS1 >= 114 && ucCenterFreqS1 <= 128)
 				return TRUE;

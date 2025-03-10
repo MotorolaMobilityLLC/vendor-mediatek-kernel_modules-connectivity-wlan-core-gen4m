@@ -5224,6 +5224,11 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo, uint8_t fgNeedRsvd)
 #endif
 	kalMemSet(&prGlueInfo->eco_info, 0xFF, sizeof(struct ECO_INFO));
 
+#if CFG_SUPPORT_SINGLE_SKU
+	prGlueInfo->rMtkRegdControl.en = FALSE;
+	prGlueInfo->rMtkRegdControl.state = REGD_STATE_UNDEFINED;
+#endif
+
 	if ((kalStrLen("wlan_fb_notifier") + 1) <
 			(sizeof(prGlueInfo->aucFbName) - 1))
 		u4WlanFbLen = kalStrLen("wlan_fb_notifier") + 1;
@@ -5240,6 +5245,55 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo, uint8_t fgNeedRsvd)
 	prGlueInfo->rHaltCtrl.u4HoldStart = 0;
 }
 
+#if CFG_SUPPORT_MULTI_CARD
+static uint8_t wlanResetSupportedBand(
+			struct ieee80211_supported_band *prBand,
+			uint8_t eBand)
+{
+	struct ieee80211_supported_band *prSrcBand = NULL;
+	struct ieee80211_channel *prSrcChannel = NULL;
+	uint16_t channelSize = 0;
+
+	switch (eBand) {
+	case KAL_BAND_2GHZ:
+		prSrcBand = &mtk_band_2ghz;
+		prSrcChannel = mtk_2ghz_channels;
+		channelSize = sizeof(mtk_2ghz_channels);
+		break;
+
+	case KAL_BAND_5GHZ:
+		prSrcBand = &mtk_band_5ghz;
+		prSrcChannel = mtk_5ghz_channels;
+		channelSize = sizeof(mtk_5ghz_channels);
+		break;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case KAL_BAND_6GHZ:
+		prSrcBand = &mtk_band_6ghz;
+		prSrcChannel = mtk_6ghz_channels;
+		channelSize = sizeof(mtk_6ghz_channels);
+		break;
+#endif
+
+	default:
+		break;
+	}
+
+	if (prSrcBand && prSrcChannel) {
+		kalMemCopy(prBand, prSrcBand, sizeof(*prSrcBand));
+
+		prBand->channels = kalMemAlloc(channelSize, VIR_MEM_TYPE);
+		if (!prBand->channels)
+			return -EINVAL;
+
+		kalMemCopy(prBand->channels, prSrcChannel, channelSize);
+	} else
+		return -EINVAL;
+
+	return 0;
+}
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 static struct wireless_dev *wlanCreateWirelessDevice(void)
 {
 	struct wiphy *prWiphy = NULL;
@@ -5248,6 +5302,9 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	uint32_t u4Idx = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4GlueIdx = 0;
+#if CFG_SUPPORT_MULTI_CARD
+	struct ieee80211_supported_band *prBand = NULL;
+#endif
 
 	/* 4 <1.1> Create wireless_dev for wlan0 only */
 	prWdev[u4Idx] = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
@@ -5294,6 +5351,26 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 
 	kalSnprintf(prGlueInfo->aucFbName, sizeof(prGlueInfo->aucFbName),
 		"wlan_fb_notifier%d", prGlueInfo->u4DevNum);
+
+	if (wlanResetSupportedBand(&prGlueInfo->mtk_band_2ghz, KAL_BAND_2GHZ)) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to 2G channel failed\n");
+		goto free_glue_info;
+	}
+
+	if (wlanResetSupportedBand(&prGlueInfo->mtk_band_5ghz, KAL_BAND_5GHZ)) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to 5G channel failed\n");
+		goto free_band_2ghz;
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (wlanResetSupportedBand(&prGlueInfo->mtk_band_6ghz, KAL_BAND_6GHZ)) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to 6G channel failed\n");
+		goto free_band_5ghz;
+	}
+#endif
 #endif /* CFG_SUPPORT_MULTI_CARD */
 
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
@@ -5324,13 +5401,13 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 #else
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
 #endif
-	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
+	prWiphy->bands[KAL_BAND_2GHZ] = &(WLAN_GET_DATA(mtk_band_2ghz));
 	/* always assign 5Ghz bands here, if the chip is not support 5Ghz,
 	 *  bands[KAL_BAND_5GHZ] will be assign to NULL
 	 */
-	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
+	prWiphy->bands[KAL_BAND_5GHZ] = &(WLAN_GET_DATA(mtk_band_5ghz));
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	prWiphy->bands[KAL_BAND_6GHZ] = &mtk_band_6ghz;
+	prWiphy->bands[KAL_BAND_6GHZ] = &(WLAN_GET_DATA(mtk_band_6ghz));
 	DBGLOG(INIT, DEBUG, "Support 6G\n");
 #endif
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
@@ -5470,8 +5547,6 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	/* 4 <1.5> Use wireless extension to replace IOCTL */
 	prWiphy->wext = NULL;
 #endif
-	/* initialize semaphore for halt control */
-	sema_init(&prGlueInfo->halt_sem, 1);
 
 #if CFG_ENABLE_WIFI_DIRECT
 	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
@@ -5524,7 +5599,7 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
-		goto free_glue_info;
+		goto free_all;
 	}
 	prWdev[u4Idx]->wiphy = prWiphy;
 #if CFG_SUPPORT_MULTI_CARD
@@ -5547,7 +5622,23 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	DBGLOG(INIT, DEBUG, "Create wireless device success\n");
 	return prWdev[u4Idx];
 
+free_all:
+#if CFG_SUPPORT_MULTI_CARD
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prBand = &(WLAN_GET_DATA(mtk_band_6ghz));
+	kalMemFree(prBand->channels, VIR_MEM_TYPE,
+			prBand->n_channels * sizeof(struct ieee80211_channel));
+free_band_5ghz:
+#endif /* CFG_SUPPORT_WIFI_6G */
+	prBand = &(WLAN_GET_DATA(mtk_band_5ghz));
+	kalMemFree(prBand->channels, VIR_MEM_TYPE,
+			prBand->n_channels * sizeof(struct ieee80211_channel));
+free_band_2ghz:
+	prBand = &(WLAN_GET_DATA(mtk_band_2ghz));
+	kalMemFree(prBand->channels, VIR_MEM_TYPE,
+			prBand->n_channels * sizeof(struct ieee80211_channel));
 free_glue_info:
+#endif /* CFG_SUPPORT_MULTI_CARD */
 	kalMemFree(prGlueInfo, VIR_MEM_TYPE, sizeof(struct GLUE_INFO));
 free_wiphy:
 	wiphy_free(prWiphy);
@@ -5584,6 +5675,22 @@ static void wlanDestroyAllWdev(struct GLUE_INFO *prGlueInfo)
 	pprWdev = wlanGetWirelessDevice(prGlueInfo);
 	pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
 	pprP2pWdev = prGlueInfo->prP2pWdev;
+
+#if CFG_SUPPORT_MULTI_CARD
+	prBand = &(WLAN_GET_DATA(mtk_band_2ghz));
+	kalMemFree(prBand->channels, VIR_MEM_TYPE,
+			prBand->n_channels * sizeof(struct ieee80211_channel));
+
+	prBand = &(WLAN_GET_DATA(mtk_band_5ghz));
+	kalMemFree(prBand->channels, VIR_MEM_TYPE,
+			prBand->n_channels * sizeof(struct ieee80211_channel));
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prBand = &(WLAN_GET_DATA(mtk_band_6ghz));
+	kalMemFree(prBand->channels, VIR_MEM_TYPE,
+			prBand->n_channels * sizeof(struct ieee80211_channel));
+#endif
+#endif /* CFG_SUPPORT_MULTI_CARD */
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/* free P2P wdev */
@@ -5801,8 +5908,8 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 	 * scan correctly (FW doesn't do scan). The usb_probe message:
 	 * "mtk_reg_notify:(RLM ERROR) Invalid REG state happened. state = 0x6".
 	 */
-	if (rlmDomainGetCtrlState() == REGD_STATE_INVALID)
-		rlmDomainResetCtrlInfo(TRUE);
+	if (rlmDomainGetCtrlState(prGlueInfo) == REGD_STATE_INVALID)
+		rlmDomainResetCtrlInfo(prGlueInfo, TRUE);
 #endif
 
 	/* 4 <1.3> co-relate wiphy & prDev */
@@ -9298,7 +9405,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 
 		/* Configure 5G band for registered wiphy */
-		prGHzBand = &mtk_band_5ghz;
+		prGHzBand = &(WLAN_GET_DATA(mtk_band_5ghz));
 		if (prAdapter->fgEnable5GBand)
 			prWdev->wiphy->bands[KAL_BAND_5GHZ] = prGHzBand;
 		else
@@ -9306,7 +9413,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		/* Configure 6G band for registered wiphy */
-		prGHzBand = &mtk_band_6ghz;
+		prGHzBand = &(WLAN_GET_DATA(mtk_band_6ghz));
 		if (prAdapter->fgIsHwSupport6G)
 			prWdev->wiphy->bands[KAL_BAND_6GHZ] = prGHzBand;
 		else

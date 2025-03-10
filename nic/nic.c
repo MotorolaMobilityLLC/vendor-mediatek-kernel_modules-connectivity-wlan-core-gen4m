@@ -1864,7 +1864,7 @@ enum ENUM_CHNL_EXT nicGetSco(struct ADAPTER *prAdapter,
 		if (ucPrimaryCh != 14)
 			eSCO = (ucPrimaryCh > 7) ? CHNL_EXT_SCB : CHNL_EXT_SCA;
 	} else {
-		if (regd_is_single_sku_en()) {
+		if (regd_is_single_sku_en(prAdapter)) {
 			if (rlmDomainIsLegalChannel(prAdapter,
 					eBand,
 					ucPrimaryCh))

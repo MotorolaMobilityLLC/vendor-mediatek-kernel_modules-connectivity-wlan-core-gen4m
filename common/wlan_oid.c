@@ -13710,7 +13710,7 @@ wlanoidSetCountryCode(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 
-	if (regd_is_single_sku_en()) {
+	if (regd_is_single_sku_en(prAdapter)) {
 		struct COUNTRY_CODE_SETTING *prCountrySetting = NULL;
 
 		if (sizeof(struct COUNTRY_CODE_SETTING) != u4SetBufferLen) {

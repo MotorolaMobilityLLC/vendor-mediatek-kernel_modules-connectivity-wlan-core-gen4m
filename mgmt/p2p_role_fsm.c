@@ -4082,7 +4082,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
-			rlmDomainSetDfsDbdcBand(prMsgChGrant->eDBDCBand);
+			rlmDomainSetDfsDbdcBand(
+				prAdapter, prMsgChGrant->eDBDCBand);
 
 			if (prMsgChGrant->ucBssIndex < (MAX_BSSID_NUM + 1))
 				p2pFuncStartRdd(prAdapter,
