@@ -1035,6 +1035,8 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 #endif
 #if (CFG_PRE_P2P2_SUPPORT == 1)
 	if (IS_BSS_GO(prAdapter, prBssInfo)) {
+		MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+			MTK_SYNERGY_CAP_SUPPORT_TLV;
 		len = p2pRlmGenP2p2Ie(prAdapter, prMsduInfo);
 		MTK_OUI_IE(pucBuffer)->ucLength += len;
 		prMsduInfo->u2FrameLength += len;
@@ -1702,6 +1704,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	const uint8_t *extCapConn = NULL;
 	uint32_t extCapIeLen = 0;
+	u_int8_t fgChannelUsageCapSupp = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -1874,12 +1877,25 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
-		if (IS_BSS_GO(prAdapter, prBssInfo) &&
-		    IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pCapNotif))
-			SET_EXT_CAP(prExtCap->aucCapabilities,
-				    ELEM_MAX_LEN_EXT_CAP,
-				    ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT);
+	if (IS_BSS_GO(prAdapter, prBssInfo) &&
+	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pCapNotif)) {
+		SET_EXT_CAP(prExtCap->aucCapabilities,
+			    ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT);
+		fgChannelUsageCapSupp = TRUE;
+	}
 #endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+
+#if (CFG_P2P2_SUPPORT_GC_REQ_CSA == 1)
+	if ((IS_BSS_GO(prAdapter, prBssInfo) || IS_BSS_GC(prBssInfo)) &&
+	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pGcCsaReq))
+		fgChannelUsageCapSupp = TRUE;
+#endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
+	if (fgChannelUsageCapSupp)
+		SET_EXT_CAP(prExtCap->aucCapabilities,
+			    ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_CHANNEL_USAGE);
 
 	while ((prExtCap->ucLength > 0 &&
 		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0)
@@ -6172,9 +6188,15 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			    (EXT_CAP_IE(pucIE)->aucCapabilities[0] &
 			     BIT(ELEM_EXT_CAP_ECSA_CAP % 8)))
 				prStaRec->fgEcsaCapable = TRUE;
-			else if (EXT_CAP_IE(pucIE)->ucLength >= 14 &&
-				 (EXT_CAP_IE(pucIE)->aucCapabilities[13] &
-				  BIT(ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT % 8)))
+
+			if (EXT_CAP_IE(pucIE)->ucLength >= 4 &&
+			    (EXT_CAP_IE(pucIE)->aucCapabilities[3] &
+			     BIT(ELEM_EXT_CAP_CHANNEL_USAGE % 8)))
+				prStaRec->fgCapChnlUsageSupp = TRUE;
+
+			if (EXT_CAP_IE(pucIE)->ucLength >= 14 &&
+			    (EXT_CAP_IE(pucIE)->aucCapabilities[13] &
+			     BIT(ELEM_EXT_CAP_CAP_NOTIF_SUPP_BIT % 8)))
 				prStaRec->fgCapNotifSupp = TRUE;
 			break;
 		case ELEM_ID_VENDOR:

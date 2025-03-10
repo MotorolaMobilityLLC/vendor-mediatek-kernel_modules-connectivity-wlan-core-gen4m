@@ -1647,6 +1647,9 @@ static void p2pRlmHandleChanUsageReqFrame(struct ADAPTER *prAdapter,
 		uint16_t u2Bw, u2CountryCode;
 		u_int8_t fgReqAcceptable;
 
+		if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgP2pGcCsaReq))
+			break;
+
 		u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
 
 		DBGLOG(RLM, INFO,
@@ -1738,6 +1741,9 @@ static void p2pRlmHandleChanUsageReqFrame(struct ADAPTER *prAdapter,
 	{
 		uint8_t *pucIE;
 		uint16_t u2IELength;
+
+		if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgP2pCapNotif))
+			break;
 
 		pucIE = (uint8_t *)(prSwRfb->pvHeader +
 			(prSwRfb->u2PacketLen - u4RemainLen));

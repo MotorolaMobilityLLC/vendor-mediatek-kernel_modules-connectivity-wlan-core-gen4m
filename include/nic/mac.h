@@ -1683,6 +1683,7 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_EXT_CAP_ECSA_CAP_BIT                   2
 #define ELEM_EXT_CAP_BSS_TRANSITION_BIT             19
 #define ELEM_EXT_CAP_MBSSID_BIT                     22
+#define ELEM_EXT_CAP_CHANNEL_USAGE                  24
 #if CFG_STAINFO_FEATURE
 #define ELEM_EXT_CAP_PROXY_ARP_BIT                  12
 #define ELEM_EXT_CAP_TFS_BIT                        16

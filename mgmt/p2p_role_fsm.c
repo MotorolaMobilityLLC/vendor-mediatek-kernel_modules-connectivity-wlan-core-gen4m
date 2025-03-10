@@ -6709,8 +6709,11 @@ void p2pRoleFsmRunEventGcCsaReq(struct ADAPTER *prAdapter,
 				       prRfChnlInfo->eBand) !=
 		   CSA_STATUS_SUCCESS) {
 		goto exit;
-	} else if (!prBssInfo->prStaRecOfAP->fgCapGcCsaSupp) {
-		DBGLOG(P2P, TRACE, "Peer not support.\n");
+	} else if (!prBssInfo->prStaRecOfAP->fgCapGcCsaSupp ||
+		   !prBssInfo->prStaRecOfAP->fgCapChnlUsageSupp) {
+		DBGLOG(P2P, TRACE, "Peer not support %d %d.\n",
+			prBssInfo->prStaRecOfAP->fgCapGcCsaSupp,
+			prBssInfo->prStaRecOfAP->fgCapChnlUsageSupp);
 		goto exit;
 	} else if (prRfChnlInfo->eBand == prBssInfo->eBand &&
 		   prRfChnlInfo->ucChannelNum ==

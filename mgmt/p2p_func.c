@@ -7772,7 +7772,9 @@ void p2pFuncSwitchGcChannel(
 #endif
 
 #if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
-	if (prStaRecOfAP->fgCapNotifSupp && fgCrossBand == TRUE)
+	if (fgCrossBand == TRUE &&
+	    prStaRecOfAP->fgCapNotifSupp == TRUE &&
+	    prStaRecOfAP->fgCapChnlUsageSupp == TRUE)
 		prP2pBssInfo->fgReSyncCap = TRUE;
 #endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
 
