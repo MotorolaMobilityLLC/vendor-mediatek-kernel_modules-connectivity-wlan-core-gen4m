@@ -16344,10 +16344,9 @@ void kalTxProcessTsoSwForTxFrag(struct ADAPTER *ad,
 		prNskb = kalPacketAlloc(pr, u4SegSizeMax, TRUE, &pucRecvBuff);
 		if (!prNskb) {
 			DBGLOG_LIMITED(INIT, ERROR,
-				"prNskb NULL PktIdx[%u/%u] PktLen[%u/%u/%u/%u]\n",
+				"prNskb NULL PktIdx[%u/%u] PktLen[%u/%u/%u]\n",
 				rTso.u4CurrPktIdx, rTso.u4PktCnt,
-				u4CopyLen, rTso.u4HdrLen, rTso.u4TotLen,
-				u4TotLen);
+				rTso.u4HdrLen, rTso.u4TotLen, u4TotLen);
 			break;
 		}
 
@@ -17796,7 +17795,8 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen)
 	/* Not need send skb shared info to peers, so not add
 	 * kalGetSKBSharedInfoSize() here.
 	 */
-	pkt->len = u4TotLen;
+	if (pkt)
+		pkt->len = u4TotLen;
 
 	return (void *)pkt;
 }
