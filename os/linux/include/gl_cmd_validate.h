@@ -503,6 +503,10 @@
 #define CMD_GET_WIFI6E_CHANNELS                 "GET_WIFI6E_CHANNELS"
 #endif /* CFG_TC10_FEATURE */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+#if CFG_SUPPORT_FIPS
+#define CMD_DBG_FIPS_TEST			"fips_test"
+#endif
+
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

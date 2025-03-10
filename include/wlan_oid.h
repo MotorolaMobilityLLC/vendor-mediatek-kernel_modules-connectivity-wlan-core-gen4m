@@ -6109,4 +6109,16 @@ wlanoidGetNanDeviceInfo(struct ADAPTER *prAdapter,
 	uint32_t *pu4QueryInfoLen);
 #endif
 
+#if CFG_SUPPORT_FIPS
+uint32_t
+wlanoidFipsTc(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
+uint32_t
+wlanoidFipsGetStatus(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
+uint32_t
+wlanoidFipsGetResult(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
+#endif
+
 #endif /* _WLAN_OID_H */

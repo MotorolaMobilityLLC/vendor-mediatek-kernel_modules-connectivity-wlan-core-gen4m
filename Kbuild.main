@@ -3809,6 +3809,12 @@ else
     ccflags-y += -DCFG_SUPPORT_UNI_FWDL_PCIE_INTX=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_FIPS), y)
+    ccflags-y += -DCFG_SUPPORT_FIPS=1
+else
+    ccflags-y += -DCFG_SUPPORT_FIPS=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------

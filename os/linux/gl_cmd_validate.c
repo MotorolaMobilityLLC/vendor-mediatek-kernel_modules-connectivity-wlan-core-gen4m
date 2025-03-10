@@ -2784,6 +2784,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 	},
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+#if CFG_SUPPORT_FIPS
+	{
+		.pcCmdStr  = CMD_DBG_FIPS_TEST,
+		.pfHandler = priv_driver_fips_test,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 /*
  *	{
  *		.pcCmdStr  = <command string>,

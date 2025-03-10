@@ -291,6 +291,9 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_PHY_LIST_DUMP	= 0x7F, /* Get Phy CR */
 	UNI_CMD_ID_MLC			= 0x81, /* Multi-link Control */
 	UNI_CMD_ID_UPDATE_LP	= 0x84, /*Update LP Parameter*/
+#if CFG_SUPPORT_FIPS
+	UNI_CMD_ID_FIPS		= 0x85, /* FIPS test */
+#endif
 	UNI_CMD_ID_COEX	= 0x87, /*notify FW coex cmd*/
 	UNI_CMD_ID_UPDATE_PCIE	= 0x89, /*Update PCIE Parameter*/
 	UNI_CMD_ID_PHY_ICS = 0x8A, /*PHY ICS*/
@@ -9539,7 +9542,6 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MBRAIN {
 	/* fixed field */
 	uint8_t aucPadding[4];
-
 	/* tlv */
 	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
@@ -9588,6 +9590,92 @@ struct UNI_EVENT_COEX_ICER_DUMP_T {
 	uint32_t u4DataLen;
 	uint32_t au4Reserved2[2];
 } __KAL_ATTRIB_PACKED__;
+
+#if CFG_SUPPORT_FIPS
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FIPS {
+	/* fixed field */
+	uint8_t ucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+} __KAL_ATTRIB_PACKED__;
+
+/* tag struct */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FIPS_TC_TAG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucFragNum;
+	uint8_t ucFragTotal;
+	uint16_t u2TCTotalLen;
+	uint16_t u2TCBufferLen;
+	uint8_t aucReserved[2];
+	uint8_t aucTCBuffer[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FIPS_GET_STATUS_TAG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FIPS_GET_RESULT_TAG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucFragNum;
+	uint8_t aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* tag enum */
+enum ENUM_UNI_CMD_FIPS_TAG {
+	UNI_CMD_FIPS_TC = 0,
+	UNI_CMD_FIPS_GET_STATUS,
+	UNI_CMD_FIPS_GET_RESULT
+};
+
+struct UNI_EVENT_ID_FIPS {
+	/* fixed field */
+	uint8_t aucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+};
+
+struct UNI_EVENT_FIPS_STATUS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucStatus;
+	uint8_t ucFragTotal;
+	uint8_t aucReserved[2];
+};
+
+enum ENUM_FIPS_STATUS {
+	FIPS_STATUS_WAITING = 0,
+	FIPS_STATUS_RECEIVING,
+	FIPS_STATUS_RECEIVED,
+	FIPS_STATUS_SEC_START,
+	FIPS_STATUS_SEC_FINISH,
+	FIPS_STATUS_MISSING,
+	FIPS_STATUS_FAIL,
+};
+
+struct UNI_EVENT_FIPS_RESULT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucFragNum;
+	uint8_t ucFragTotal;
+	uint16_t u2TRTotalLen;
+	uint16_t u2TRBufferLen;
+	uint8_t aucReserved[2];
+	uint8_t aucTRBuffer[];
+};
+
+enum UNI_EVENT_ID_FIPS_TAG {
+	UNI_EVENT_FIPS_STATUS = 0,
+	UNI_EVENT_FIPS_RESULT,
+	UNI_EVENT_FIPS_MAX_NUM
+};
+#endif /* CFG_SUPPORT_FIPS */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -10110,6 +10198,14 @@ uint32_t nicUniCmdUpdateMldRecfgState(struct ADAPTER *ad,
 		struct MLD_STA_RECORD *prMldStaRec);
 #endif /* CFG_SUPPORT_ML_RECONFIG */
 
+#if CFG_SUPPORT_FIPS
+uint32_t nicUniCmdFipsTc(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdFipsGetStatus(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdFipsGetResult(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -10396,6 +10492,11 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 	#endif
 void nicUniEventOmi(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+
+#if CFG_SUPPORT_FIPS
+void nicUniEventFips(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
+		     uint8_t *pucEventBuf);
+#endif
 
 #if (CFG_SUPPORT_WF_DUMP_BT_COREDUMP == 1)
 void nicUniCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,

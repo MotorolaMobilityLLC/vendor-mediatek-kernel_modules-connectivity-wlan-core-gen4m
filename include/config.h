@@ -37,6 +37,7 @@
  */
 #ifndef BUILD_QA_DBG
 #define BUILD_QA_DBG	0
+#define CFG_SUPPORT_FIPS 0
 #endif
 
 #ifndef CFG_MTK_ANDROID_WMT

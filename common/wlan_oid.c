@@ -20646,3 +20646,111 @@ wlanoidGetNanDeviceInfo(struct ADAPTER *prAdapter,
 			pu4QueryInfoLen);
 }
 #endif
+
+#if CFG_SUPPORT_FIPS
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send FIPS test case data to FW.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidFipsTc(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	uint8_t *pucTestCaseBuf = (uint8_t *)pvQueryBuffer;
+
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "no adapter found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pucTestCaseBuf) {
+		DBGLOG(P2P, ERROR, "no pucTestCaseBuf found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_FIPS_TC,
+				TRUE,
+				FALSE,
+				TRUE,
+				nicCmdEventSetCommon,
+				nicOidCmdTimeoutCommon,
+				u4QueryBufferLen,
+				pucTestCaseBuf,
+				(uint8_t *)pucTestCaseBuf,
+				u4QueryBufferLen);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Trigger FW do fips test and get status event.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidFipsGetStatus(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "no adapter found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pvQueryBuffer) {
+		DBGLOG(P2P, ERROR, "no pvQueryBuffer found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	*pu4QueryInfoLen = sizeof(struct FIPS_PARAM);
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_FIPS_GET_STATUS,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventSetCommon,
+				nicOidCmdTimeoutCommon,
+				u4QueryBufferLen,
+				pvQueryBuffer,
+				(uint8_t *)pvQueryBuffer,
+				u4QueryBufferLen);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get FIPS result event.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidFipsGetResult(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "no adapter found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pvQueryBuffer) {
+		DBGLOG(P2P, ERROR, "no pvQueryBuffer found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	*pu4QueryInfoLen = sizeof(struct FIPS_PARAM);
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_FIPS_GET_RESULT,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventSetCommon,
+				nicOidCmdTimeoutCommon,
+				u4QueryBufferLen,
+				pvQueryBuffer,
+				(uint8_t *)pvQueryBuffer,
+				u4QueryBufferLen);
+}
+#endif /* CFG_SUPPORT_FIPS */

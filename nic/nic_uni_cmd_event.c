@@ -258,6 +258,11 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	[CMD_ID_BEACON_TSF_SYNC] = nicUniCmdUpdateTsfSyncParam,
 #endif
+#if CFG_SUPPORT_FIPS
+	[CMD_ID_FIPS_TC] = nicUniCmdFipsTc,
+	[CMD_ID_FIPS_GET_STATUS] = nicUniCmdFipsGetStatus,
+	[CMD_ID_FIPS_GET_RESULT] = nicUniCmdFipsGetResult,
+#endif
 
 };
 
@@ -16061,6 +16066,76 @@ void nicUniEventOmi(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 }
 #endif
 
+#if CFG_SUPPORT_FIPS
+void nicUniEventFips(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
+		     uint8_t *pucEventBuf)
+{
+	uint16_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_ID_FIPS);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
+	struct FIPS_PARAM *prFipsParam =
+		(struct FIPS_PARAM *)prCmdInfo->pvInformationBuffer;
+
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		return;
+	}
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(CNM, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_FIPS_STATUS: {
+			struct UNI_EVENT_FIPS_STATUS *status =
+				(struct UNI_EVENT_FIPS_STATUS *) tag;
+
+			DBGLOG(NIC, INFO, "status:%u, fragTotal:%u\n",
+			       status->ucStatus, status->ucFragTotal);
+			prFipsParam->ucStatus = status->ucStatus;
+			prFipsParam->ucFragTotal = status->ucFragTotal;
+		}
+			break;
+		case UNI_EVENT_FIPS_RESULT: {
+			struct UNI_EVENT_FIPS_RESULT *res =
+				(struct UNI_EVENT_FIPS_RESULT *) tag;
+
+			DBGLOG(NIC, INFO,
+			       "fragTotal:%u, u2TRTotalLen:%u, u2TRBufferLen:%u\n",
+			       res->ucFragTotal, res->u2TRTotalLen,
+			       res->u2TRBufferLen);
+			prFipsParam->ucFragTotal = res->ucFragTotal;
+			prFipsParam->u2TRTotalLen = res->u2TRTotalLen;
+			prFipsParam->u2TRBufferLen = res->u2TRBufferLen;
+			kalMemCopy(prFipsParam->aucTRBuffer, res->aucTRBuffer,
+				   res->u2TRBufferLen);
+			DBGLOG(NIC, INFO, "dump result\n");
+			DBGLOG_MEM8(NIC, INFO, res->aucTRBuffer,
+				    res->u2TRBufferLen);
+		}
+			break;
+		default:
+			DBGLOG(CNM, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
+	if (tags_len != offset)
+		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+	if (prCmdInfo->fgIsOid) {
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       sizeof(struct FIPS_PARAM), WLAN_STATUS_SUCCESS);
+	}
+}
+#endif /* CFG_SUPPORT_FIPS */
+
 #if (CFG_PCIE_GEN_SWITCH == 1)
 uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -16285,3 +16360,142 @@ void nicUniCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
 }
 
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
+#if CFG_SUPPORT_FIPS
+uint32_t nicUniCmdFipsTc(struct ADAPTER *prAdapter,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	uint8_t *pucPayload;
+	uint16_t u2TotalPayloadSize;
+	struct UNI_CMD_FIPS *uni_cmd;
+	struct UNI_CMD_FIPS_TC_TAG *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	uint16_t max_cmd_len = CFG_TX_MAX_PKT_SIZE -
+			prChipInfo->u2UniCmdTxHdrSize; /* whole entry size */
+	uint16_t u2CmdHeaderLen = sizeof(struct WIFI_UNI_CMD_ENTRY) +
+		sizeof(struct UNI_CMD_FIPS) +
+		sizeof(struct UNI_CMD_FIPS_TC_TAG); /* non-payload size */
+	uint16_t u2MaxPayloadSize = max_cmd_len - u2CmdHeaderLen;
+	uint16_t ucFragNum, ucFragTotal;
+	uint16_t offset = 0;
+
+	if (info == NULL || info->ucCID != CMD_ID_FIPS_TC)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	pucPayload = (uint8_t *) info->pucInfoBuffer;
+	u2TotalPayloadSize = info->u4SetQueryInfoLen;
+	ucFragTotal = (u2TotalPayloadSize / u2MaxPayloadSize) + 1;
+	DBGLOG(NIC, INFO,
+	       "total payload size:%u, total fragment num:%u, max_cmd_len:%u, buf size:%u\n",
+	       u2TotalPayloadSize, ucFragTotal, max_cmd_len,
+	       CFG_TX_MAX_PKT_SIZE);
+
+	for (ucFragNum = 1; ucFragNum <= ucFragTotal; ++ucFragNum) {
+		uint16_t u2CmdSize, u2PayloadSize;
+		uint16_t u2RemainPayloadSize = u2TotalPayloadSize - offset;
+
+		if (u2RemainPayloadSize > u2MaxPayloadSize)
+			u2CmdSize = max_cmd_len;
+		else
+			u2CmdSize = u2RemainPayloadSize + u2CmdHeaderLen;
+		u2PayloadSize = u2CmdSize - u2CmdHeaderLen;
+
+		entry = nicUniCmdAllocEntry(prAdapter, UNI_CMD_ID_FIPS,
+				u2CmdSize, nicUniCmdEventSetCommon,
+				nicUniCmdTimeoutCommon);
+		if (!entry)
+			return WLAN_STATUS_RESOURCES;
+
+		uni_cmd = (struct UNI_CMD_FIPS *) entry->pucInfoBuffer;
+		tag = (struct UNI_CMD_FIPS_TC_TAG *) uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_FIPS_TC;
+		tag->u2Length = sizeof(*tag) + u2PayloadSize;
+		tag->ucFragNum = ucFragNum;
+		tag->ucFragTotal = ucFragTotal;
+		tag->u2TCTotalLen = u2TotalPayloadSize;
+		tag->u2TCBufferLen = u2PayloadSize;
+		kalMemCopy(tag->aucTCBuffer, pucPayload + offset,
+			   u2PayloadSize);
+
+		offset += u2PayloadSize;
+		LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+		DBGLOG(NIC, INFO, "[%u/%u] dump uni tag header\n",
+		       ucFragNum, ucFragTotal);
+		DBGLOG_MEM8(NIC, INFO, tag, sizeof(*tag));
+		DBGLOG(NIC, INFO, "[%u/%u] dump uni tag buf\n",
+		       ucFragNum, ucFragTotal);
+		DBGLOG_MEM8(NIC, INFO, tag->aucTCBuffer, tag->u2TCBufferLen);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdFipsGetStatus(struct ADAPTER *prAdapter,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct UNI_CMD_FIPS *uni_cmd;
+	struct UNI_CMD_FIPS_GET_STATUS_TAG *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint16_t u2CmdSize = sizeof(struct WIFI_UNI_CMD_ENTRY) +
+		sizeof(struct UNI_CMD_FIPS) +
+		sizeof(struct UNI_CMD_FIPS_GET_STATUS_TAG);
+
+	if (info == NULL || info->ucCID != CMD_ID_FIPS_GET_STATUS)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	entry = nicUniCmdAllocEntry(prAdapter, UNI_CMD_ID_FIPS,
+			u2CmdSize, nicUniEventFips,
+			nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_FIPS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_FIPS_GET_STATUS_TAG *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_FIPS_GET_STATUS;
+	tag->u2Length = sizeof(*tag);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	DBGLOG(NIC, INFO, "dump uni tag\n");
+	DBGLOG_MEM8(NIC, INFO, tag, tag->u2Length);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdFipsGetResult(struct ADAPTER *prAdapter,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct UNI_CMD_FIPS *uni_cmd;
+	struct UNI_CMD_FIPS_GET_RESULT_TAG *tag;
+	struct FIPS_PARAM *prFipsParam = NULL;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint16_t u2CmdSize = sizeof(struct WIFI_UNI_CMD_ENTRY) +
+		sizeof(struct UNI_CMD_FIPS) +
+		sizeof(struct UNI_CMD_FIPS_GET_RESULT_TAG);
+
+	if (info == NULL || info->ucCID != CMD_ID_FIPS_GET_RESULT)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	entry = nicUniCmdAllocEntry(prAdapter, UNI_CMD_ID_FIPS,
+			u2CmdSize, nicUniEventFips,
+			nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	prFipsParam = (struct FIPS_PARAM *)info->pucInfoBuffer;
+	uni_cmd = (struct UNI_CMD_FIPS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_FIPS_GET_RESULT_TAG *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_FIPS_GET_RESULT;
+	tag->u2Length = sizeof(*tag);
+	tag->ucFragNum = prFipsParam->ucFragNum;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	DBGLOG(NIC, INFO, "dump uni tag\n");
+	DBGLOG_MEM8(NIC, INFO, tag, tag->u2Length);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_FIPS */

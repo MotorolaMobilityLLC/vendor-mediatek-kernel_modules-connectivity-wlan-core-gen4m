@@ -2002,6 +2002,18 @@ struct ECO_INFO {
 	uint8_t ucEcoVer;
 };
 
+#if CFG_SUPPORT_FIPS
+#define FIPS_DATA_MAX_FRAG_LEN	1300 /* FW define */
+struct FIPS_PARAM {
+	uint8_t ucStatus;
+	uint8_t ucFragNum;
+	uint8_t ucFragTotal;
+	uint16_t u2TRTotalLen;
+	uint16_t u2TRBufferLen;
+	uint8_t aucTRBuffer[FIPS_DATA_MAX_FRAG_LEN];
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

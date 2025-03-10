@@ -26383,3 +26383,102 @@ int priv_driver_get_bf_cn(struct net_device *prNetDev,
 	return -EOPNOTSUPP;
 #endif /* CFG_SUPPORT_BF_CN_PRIV_CMD && CFG_SUPPORT_TX_BF */
 }
+
+#if CFG_SUPPORT_FIPS
+int priv_driver_fips_test(struct net_device *prNetDev,
+			  char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4BytesWritten = 0;
+	uint8_t *pucTestCaseBuf = NULL;
+	uint32_t u4TestCaseBufLen;
+	struct FIPS_PARAM rFipsParam;
+	struct FIPS_PARAM *prFipsParam = &rFipsParam;
+	uint32_t u4BufLen = 0;
+	struct file *fp;
+	char pucOutPath[256] = { 0 };
+	uint8_t ucOutFileLen;
+	loff_t offset = 0;
+	uint8_t ucRetryCount = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc != 2)
+		return -1;
+
+	/* 1. Read TC input file */
+	DBGLOG(REQ, INFO, "Read %s", apcArgv[1]);
+	if (kalRequestFirmware(apcArgv[1], &pucTestCaseBuf,
+		   &u4TestCaseBufLen, TRUE,
+		   prAdapter->prGlueInfo->prDev) != 0)
+		return -1;
+
+	/* 2. Send TC data */
+	kalIoctl(prGlueInfo, wlanoidFipsTc,
+		 pucTestCaseBuf, u4TestCaseBufLen, &u4BufLen);
+
+	/* 3. Get status */
+	kalMemZero(prFipsParam, sizeof(*prFipsParam));
+	do {
+		kalIoctl(prGlueInfo, wlanoidFipsGetStatus,
+			 prFipsParam, u4TestCaseBufLen, &u4BufLen);
+		DBGLOG(REQ, INFO, "status:%u, totalFragNum:%u",
+		       prFipsParam->ucStatus, prFipsParam->ucFragTotal);
+		if (prFipsParam->ucStatus != FIPS_STATUS_SEC_FINISH) {
+			ucRetryCount++;
+			kalMsleep(500);
+		}
+	} while (prFipsParam->ucStatus != FIPS_STATUS_SEC_FINISH &&
+		 ucRetryCount < 100);
+
+	/* 4. Get and save result to output file */
+	*(apcArgv[1] + kalStrLen(apcArgv[1]) - 3) = '\0'; /* skip .in */
+	ucOutFileLen = kalSnprintf(pucOutPath, 256,
+				   "/vendor/firmware/%s.out", apcArgv[1]);
+	pucOutPath[ucOutFileLen] = '\0';
+	DBGLOG(REQ, INFO, "outPath:%s\n", pucOutPath);
+
+	fp = filp_open(pucOutPath, O_CREAT | O_WRONLY, 0666);
+	if (!fp)
+		return -1;
+
+	prFipsParam->ucFragNum = 0;
+	do {
+		uint8_t *pucResBuf;
+
+		prFipsParam->ucFragNum++;
+		kalIoctl(prGlueInfo, wlanoidFipsGetResult,
+			 prFipsParam, u4BufLen, &u4BufLen);
+		pucResBuf = prFipsParam->aucTRBuffer;
+		DBGLOG(NIC, INFO, "dump result\n");
+		DBGLOG_MEM8(NIC, INFO, pucResBuf, prFipsParam->u2TRBufferLen);
+
+		kernel_write(fp, pucResBuf, prFipsParam->u2TRBufferLen,
+			     &offset);
+		DBGLOG(REQ, INFO, "[%u/%u] buf len:%u, offset:%u, totalLen:%u",
+		       prFipsParam->ucFragNum, prFipsParam->ucFragTotal,
+		       prFipsParam->u2TRBufferLen, offset,
+		       prFipsParam->u2TRTotalLen);
+	} while (prFipsParam->ucFragNum < prFipsParam->ucFragTotal);
+
+	filp_close(fp, NULL);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "\nWrite result to %s done\n", pucOutPath);
+
+	return i4BytesWritten;
+}
+#endif /* CFG_SUPPORT_FIPS */
