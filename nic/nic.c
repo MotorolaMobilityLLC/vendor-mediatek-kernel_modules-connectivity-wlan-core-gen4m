@@ -2287,23 +2287,6 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);
 
-#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
-	/* Since SAP will repeatly activate & deactivate netowork,
-	 * we need to update 6G power mode here
-	 */
-	if ((ucBssIndex < MAX_BSSID_NUM)
-		&& IS_BSS_APGO(prBssInfo)) {
-		if (prBssInfo->eBand == BAND_6G)
-			rlmDomain6GPwrModeUpdate(
-				prAdapter, ucBssIndex,
-				PWR_MODE_6G_VLP);
-		else
-			rlmDomain6GPwrModeUpdate(
-				prAdapter, ucBssIndex,
-				PWR_MODE_6G_LPI);
-	}
-#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
-
 #if CFG_SAP_RPS_SUPPORT
 	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
 		p2pFuncRpsAisCheck(prAdapter,
@@ -2390,11 +2373,7 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
 		return WLAN_STATUS_FAILURE;
 	}
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (ucBssIndex < MAX_BSSID_NUM)
-		rlmDomain6GPwrModeUpdate(prAdapter, ucBssIndex,
-			PWR_MODE_6G_LPI);
-#endif
+
 	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 #if CFG_SAP_RPS_SUPPORT
 	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
@@ -2701,9 +2680,6 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	uint32_t u4Status;
 	struct BSS_INFO *prBssInfo;
 	struct CMD_SET_BSS_INFO rCmdSetBssInfo;
-#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
-	struct BSS_DESC *prBssDesc = NULL;
-#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
@@ -2941,6 +2917,8 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	else
 		rCmdSetBssInfo.ucStaRecIdxOfAP = STA_REC_INDEX_NOT_FOUND;
 
+	rlmDomainBssUpdateNotify(prAdapter, ucBssIndex);
+
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		memcpy(rCmdSetBssInfo.ucHeOpParams, prBssInfo->ucHeOpParams,
@@ -2949,19 +2927,8 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 		rCmdSetBssInfo.u2HeBasicMcsSet =
 			prBssInfo->u2HeBasicMcsSet;
 	}
+
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
-	if ((prBssInfo->eBand == BAND_6G) && IS_BSS_AIS(prBssInfo))
-		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-	else if ((prBssInfo->eBand == BAND_6G) && IS_BSS_P2P(prBssInfo))
-		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIndex);
-	else
-		prBssDesc = NULL;
-
-	if ((prBssDesc && prBssDesc->e6GPwrMode == PWR_MODE_6G_VLP) ||
-		((prBssInfo->eBand == BAND_6G) && IS_BSS_APGO(prBssInfo)))
-		rlmDomain6GPwrModeUpdate(prAdapter,
-			ucBssIndex, PWR_MODE_6G_VLP);
-
 	if (prAdapter->fgTpcEn)
 		rCmdSetBssInfo.uc6GPwrRegBitMap |= BIT(PWR_REG_6G_TPC);
 	if (prAdapter->e6GPwrMode[ucBssIndex] == PWR_MODE_6G_VLP)

@@ -2034,6 +2034,7 @@ struct WIFI_VAR {
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t fgSpPwrLmtBackoff;
+	uint8_t fgVlpExtChk;
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
 	u_int8_t fgLpiSup6G;
 	u_int8_t fgSpSup6G;

@@ -5529,11 +5529,6 @@ static u_int8_t isIfaceTypeSupportChannel(struct ADAPTER *prAdapter,
 {
 	uint16_t u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
 	u_int8_t result = TRUE;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	u_int8_t vlp = FALSE;
-#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
-#endif /* CFG_SUPPORT_WIFI_6G */
 
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
 	u2CountryCode = rlmDomainReverseAlpha2(u2CountryCode);
@@ -5575,12 +5570,13 @@ static u_int8_t isIfaceTypeSupportChannel(struct ADAPTER *prAdapter,
 				result = FALSE;
 			}
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			else if (rlmDomain6GPwrModeCountrySupportChk(
+			else if (rlmDomainIsLegalChlByNetType(
+					prAdapter,
 					eBand,
 					ucChannelNum,
-					u2CountryCode,
-					PWR_MODE_6G_VLP,
-					&vlp) != WLAN_STATUS_SUCCESS || !vlp) {
+					MAX_BW_20MHZ, /* NOT SUER */
+					NETWORK_TYPE_P2P)
+					!= WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, TRACE,
 					"skip freq %d, not vlp\n",
 					u4channel_freq);

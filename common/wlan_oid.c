@@ -19944,6 +19944,8 @@ wlanoidSet6GPwrMode(struct ADAPTER *prAdapter,
 
 	ucMode = *(uint8_t *)pvSetBuffer;
 
+	prAdapter->fg6GPwrModeForce = TRUE;
+
 	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
 		rStatus = rlmDomain6GPwrModeUpdate(prAdapter,
 						ucBssIdx,
@@ -19953,8 +19955,6 @@ wlanoidSet6GPwrMode(struct ADAPTER *prAdapter,
 			return WLAN_STATUS_FAILURE;
 
 	}
-
-	prAdapter->fg6GPwrModeForce = TRUE;
 
 	return rStatus;
 }	/* wlanoidSet6GPwrMode */

@@ -127,80 +127,40 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 {
 	u_int8_t fgIsStartGO = FALSE;
 	uint8_t ucRoleIdx;
+	uint8_t ucBssIdx;
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL)
-			&& (prP2pRoleBssInfo != NULL)
-			&& (prP2pRoleFsmInfo != NULL));
+	if (!prAdapter || !prP2pRoleBssInfo || !prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR, "Null ptr\n");
+		return;
+	}
 
-		ucRoleIdx = prP2pRoleFsmInfo->ucRoleIndex;
+	ucRoleIdx = prP2pRoleFsmInfo->ucRoleIndex;
+	ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
+	prP2pChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
 
-		if (eNextState == P2P_ROLE_STATE_IDLE) {
-			if (prP2pRoleBssInfo->eIntendOPMode
-				== OP_MODE_ACCESS_POINT) {
-				struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
-					&(prP2pRoleFsmInfo->rChnlReqInfo);
-#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
-				u_int8_t fgIsAbort;
-
-				if (prP2pChnlReqInfo->eBand == BAND_6G) {
-					if (rlmDomain6GPwrModeSupportChk(
-					prAdapter, PWR_MODE_6G_VLP, NULL,
-					prP2pChnlReqInfo->eBand,
-					prP2pChnlReqInfo->ucReqChnlNum)) {
-						fgIsAbort = FALSE;
-						rlmDomain6GPwrModeUpdate(
-						prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						PWR_MODE_6G_VLP);
-					} else {
-						fgIsAbort = TRUE;
-						DBGLOG(P2P, ERROR,
-						"GO can't support VLP in 6GHz\n");
-					}
-				} else {
-					fgIsAbort = FALSE;
-					rlmDomain6GPwrModeUpdate(
-						prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						PWR_MODE_6G_LPI);
-				}
-#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
-
-				if (IS_NET_PWR_STATE_ACTIVE(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex)
-#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
-					&& (fgIsAbort == FALSE)
-#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
-					) {
-					p2pFuncStartGO(prAdapter,
-						prP2pRoleBssInfo,
-					&(prP2pRoleFsmInfo->rConnReqInfo),
-					&(prP2pRoleFsmInfo->rChnlReqInfo));
-					fgIsStartGO = TRUE;
-				} else if (prP2pChnlReqInfo->
-						fgIsChannelRequested)
-					p2pFuncReleaseCh(prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						prP2pChnlReqInfo);
-			} else {
-				p2pFuncReleaseCh(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex,
-					&(prP2pRoleFsmInfo->rChnlReqInfo));
+	if (eNextState == P2P_ROLE_STATE_IDLE) {
+		if (prP2pRoleBssInfo->eIntendOPMode == OP_MODE_ACCESS_POINT) {
+			if (IS_NET_PWR_STATE_ACTIVE(prAdapter, ucBssIdx)) {
+				p2pFuncStartGO(prAdapter, prP2pRoleBssInfo,
+					       &prP2pRoleFsmInfo->rConnReqInfo,
+					       prP2pChnlReqInfo);
+				fgIsStartGO = TRUE;
+			} else if (prP2pChnlReqInfo->fgIsChannelRequested) {
+				p2pFuncReleaseCh(prAdapter, ucBssIdx,
+						 prP2pChnlReqInfo);
 			}
-		} else if (eNextState == P2P_ROLE_STATE_SCAN) {
-			/* Abort channel anyway */
-			p2pFuncReleaseCh(prAdapter,
-				prP2pRoleFsmInfo->ucBssIndex,
-				&(prP2pRoleFsmInfo->rChnlReqInfo));
+		} else {
+			p2pFuncReleaseCh(prAdapter, ucBssIdx, prP2pChnlReqInfo);
 		}
-	} while (FALSE);
+	} else if (eNextState == P2P_ROLE_STATE_SCAN) {
+		/* Abort channel anyway */
+		p2pFuncReleaseCh(prAdapter, ucBssIdx, prP2pChnlReqInfo);
+	}
 
 #ifndef CFG_AP_GO_DELAY_CARRIER_ON
-	if (fgIsStartGO && IS_BSS_AP(prAdapter, prP2pRoleBssInfo)) {
-		p2pFuncNotifySapStarted(prAdapter,
-			prP2pRoleBssInfo->ucBssIndex);
-	}
+	if (fgIsStartGO && IS_BSS_AP(prAdapter, prP2pRoleBssInfo))
+		p2pFuncNotifySapStarted(prAdapter, ucBssIdx);
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 }				/* p2pRoleStateAbort_REQING_CHANNEL */
 

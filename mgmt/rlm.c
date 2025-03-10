@@ -5874,24 +5874,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) &&
 	    prCSAParams->ucCsaMode < MODE_NUM &&
 	    !IS_AIS_CH_SWITCH(prBssInfo)) {
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-		struct BSS_DESC *prBssDesc = NULL;
-
-		if (IS_BSS_INDEX_AIS(prAdapter,
-			prBssInfo->ucBssIndex)) {
-			prBssDesc = aisGetTargetBssDesc(prAdapter,
-				prBssInfo->ucBssIndex);
-		} else if (IS_BSS_INDEX_P2P(prAdapter,
-			prBssInfo->ucBssIndex)) {
-			prBssDesc = p2pGetTargetBssDesc(prAdapter,
-				prBssInfo->ucBssIndex);
-		}
-
-		if (prBssDesc)
-			rlmDomain6GPwrModeUpdate(prAdapter,
-				prBssInfo->ucBssIndex,
-				prBssDesc->e6GPwrMode);
-#endif
 
 		rlmUpdateParamsForCSA(prAdapter, prBssInfo);
 		rlmChangeOperationModeAfterCSA(prAdapter, prBssInfo);
@@ -14918,9 +14900,10 @@ static void rlmFillRegConnectivityIE(struct ADAPTER *prAdapter,
 		fgSupport = FALSE;
 
 		rlmDomain6GPwrModeCountrySupportChk(
+				u2CountryCode,
 				BAND_6G,
 				37,
-				u2CountryCode,
+				MAX_BW_20MHZ,
 				e6GPwrMode,
 				&fgSupport);
 

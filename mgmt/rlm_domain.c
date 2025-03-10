@@ -34,7 +34,9 @@
 #else
 #include "rlm_txpwr_limit.h"
 #endif
-
+#if CFG_SUPPORT_NAN
+#include "nanScheduler.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -320,6 +322,10 @@ struct TX_PWR_TAG_TABLE {
 		((_i2CurrCh) == g_rCountryLmtChGrpTbl[(_i)].i2Key) && \
 		((_ucTarCh) >= g_rCountryLmtChGrpTbl[(_i)].ucStartCh && \
 		 (_ucTarCh) <= g_rCountryLmtChGrpTbl[(_i)].ucEndCh))
+
+#define IS_FREQ_RANGE_OVERLAP_6G_UNII_BAND(_unii_idx, _start_freq, _end_freq) \
+		((_start_freq) < _ar6GUniiFreqRange[_unii_idx][1] && \
+		(_end_freq) > _ar6GUniiFreqRange[_unii_idx][0])
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1760,6 +1766,16 @@ struct TX_PWR_BAND_MASK_TBL g_rBandMaskTbl[] = {
 #endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
 #endif /*#if ((CFG_SUPPORT_PWR_LMT_EMI == 1)*/
+
+static const uint32_t _ar6GUniiFreqRange[SUBBAND_6G_NUM][2] = {
+	{BAND_6G_UPPER_FREQ_UNII_5, BAND_6G_LOWER_FREQ_UNII_5},
+	{BAND_6G_UPPER_FREQ_UNII_6, BAND_6G_LOWER_FREQ_UNII_6},
+	{BAND_6G_UPPER_FREQ_UNII_7, BAND_6G_LOWER_FREQ_UNII_7},
+	{BAND_6G_UPPER_FREQ_UNII_8, BAND_6G_LOWER_FREQ_UNII_8},
+};
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+struct PWR_MODE_6G_BSS_INFO g_r6GPwrModeBssInfo[MAX_BSSID_NUM];
+#endif
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -1778,13 +1794,30 @@ struct TX_PWR_BAND_MASK_TBL g_rBandMaskTbl[] = {
 static enum ENUM_PWR_LIMIT_DEFINE rlmDomainPwrLmtGetChannelDefine(void);
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-
 static uint8_t rlmDomainPwrLmt6GPwrModeGet(struct ADAPTER *prAdapter);
 
 static uint32_t rlmDomainGetSubBandIdx(
 	enum ENUM_BAND eBand,
 	uint8_t ucCenterCh,
 	uint8_t *pu1SubBandIdx);
+
+static uint8_t rlmDomain6GPwrModeSupportStatusGet(
+	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *prSupportTbl,
+	uint8_t u1Band,
+	uint8_t fgIsCh2,
+	enum ENUM_PWR_MODE_6G_TYPE eMode);
+
+static uint8_t rlmDomainGet6GBssChnl(struct ADAPTER *prAdapter,
+						uint8_t ucBssIdx);
+
+static uint8_t rlmDomainPwrLmt6GPwrModeGetByChnl(
+	struct ADAPTER *prAdapter,
+	uint8_t ucCurrChnl);
+
+static uint8_t rlmDomainIsBssUse6g(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t *pucBw);
 #endif
 
 static uint8_t rlmDomainGetSubBandPwrLimit(
@@ -3103,6 +3136,90 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 	}
 
 	return FALSE;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is used to check whether the current channel for current
+ *        network type is legal or not
+ *
+ * \param[in] prAdapter
+ * \param[in] eBand : RF Band index
+ * \param[in] ucPriCh : Primary
+ * \param[in] ucBw : Bandwidth
+ * \param[in] eNetType : Network type
+ *
+ * \return ucIsLegal : is legal or not.
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmDomainIsLegalChlByNetType(struct ADAPTER *prAdapter,
+				 enum ENUM_BAND eBand,
+				 uint8_t ucPriCh,
+				 uint8_t ucBw,
+				 enum ENUM_NETWORK_TYPE eNetType)
+{
+	uint8_t ucIsLegal = FALSE;
+
+	if (!prAdapter || (ucBw >= MAX_BW_UNKNOWN) ||
+		(eNetType >= NETWORK_TYPE_NUM)) {
+		DBGLOG(RLM, INFO,
+			"Invalid param. prAdapter[%s]BW[%d]NetType[%d]\n",
+				!prAdapter ? "NULL" : "Valid",
+				ucBw,
+				eNetType);
+		return FALSE;
+	}
+
+	ucIsLegal = rlmDomainIsLegalChannel(prAdapter, eBand, ucPriCh);
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	if (eBand != BAND_6G)
+		return ucIsLegal;
+
+	/* For STA, it will check whether the AP 6G power mode is support or not
+	 * for current country & channe while scan, if not support, the AP will
+	 * not show on scan list.
+	 */
+	if (eNetType == NETWORK_TYPE_AIS)
+		return ucIsLegal;
+
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	/* Currently only consider P2P & NAN, since both NetType must use VLP */
+	ucIsLegal = rlmDomain6GPwrModeSupportChk(
+			prAdapter,
+			PWR_MODE_6G_VLP,
+			NULL,
+			eBand,
+			ucPriCh,
+			ucBw);
+#else
+	uint8_t ucIsSupport = 0;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	/* Currently only consider P2P & NAN, since both NetType must use VLP */
+	u4Status = rlmDomain6GPwrModeCountrySupportChk(
+			prAdapter->rWifiVar.u2CountryCode,
+			eBand,
+			ucPriCh,
+			ucBw,
+			PWR_MODE_6G_VLP,
+			&ucIsSupport);
+
+	if (u4Status == WLAN_STATUS_SUCCESS)
+		ucIsLegal = ucIsSupport;
+#endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
+
+	DBGLOG(RLM, INFO,
+		"band[%d]PriCh[%d]Bw[%d]Net_Type[%d]mode[%d]Legal[%d]\n",
+		eBand,
+		ucPriCh,
+		ucBw,
+		eNetType,
+		PWR_MODE_6G_VLP,
+		ucIsLegal);
+
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+
+	return ucIsLegal;
 }
 
 u_int8_t rlmDomainIsLegalDfsChannel_V2(struct ADAPTER *prAdapter,
@@ -13071,7 +13188,296 @@ err:
 #endif /* CFG_SUPPORT_WIFI_6G */
 }
 #endif /*CFG_SUPPORT_PWR_LMT_EMI*/
+#if (CFG_SUPPORT_NAN == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is update for NAN timeline update
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ *
+ * \return value : bool
+ *                 FALSE : not prefer
+ *                 TRUE : Prefer
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainNanTimeLineUpdateNotify(
+	struct ADAPTER *prAdapter
+)
+{
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo;
+
+	if (!prAdapter)
+		return WLAN_STATUS_INVALID_DATA;
+
+	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+		if (IS_BSS_NAN(prBssInfo) == FALSE)
+			continue;
+
+		if (prBssInfo->eBand != BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			&& prBssInfo->eBand != BAND_6G
+#endif
+			) {
+			/* NAN may use 6G but record prBssInfo->eBand = 5G */
+			continue;
+		}
+
+		rlmDomainBssUpdateNotify(prAdapter, ucBssIdx);
+	}
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	rlmDomainConnectionNotifiey(prAdapter, NAN_TIMELINE_UPDATE);
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use for rlm_domain handle bss update
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ * \param[in] ucBssIdx : Bss index
+ *
+ * \return value : WLAN_STATUS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainBssUpdateNotify(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx)
+{
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	struct BSS_INFO *prBssInfo = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+	enum ENUM_PWR_MODE_6G_TYPE ePwrMode = PWR_MODE_6G_LPI;
+	uint8_t ucBw = 0;
+
+	/* Parameter check */
+	if ((!prAdapter) || (ucBssIdx >= MAX_BSSID_NUM)) {
+		DBGLOG(RLM, ERROR,
+			"invalid param, prAdapter[%s]BssIdx[%d]\n",
+			!prAdapter ? "NULL" : "Valid",
+			ucBssIdx);
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	DBGLOG(RLM, TRACE,
+		"BssIdx[%d]OpMode[%d]NetType[%d]Act[%d]use[%d]Connect[%d]PWR_STATE[%d]Alive[%d]\n",
+		ucBssIdx,
+		prBssInfo->eCurrentOPMode,
+		prBssInfo->eNetworkType,
+		prBssInfo->fgIsNetActive,
+		prBssInfo->fgIsInUse,
+		prBssInfo->eConnectionState,
+		IS_NET_PWR_STATE_ACTIVE(prAdapter, prBssInfo->ucBssIndex),
+		IS_BSS_ALIVE(prAdapter, prBssInfo));
+
+	/* If not alive, reset to default LPI */
+	if (IS_BSS_ALIVE(prAdapter, prBssInfo) != TRUE ||
+		rlmDomainIsBssUse6g(prAdapter, prBssInfo, &ucBw) == FALSE) {
+		rlmDomain6GPwrModeUpdate(prAdapter,
+			ucBssIdx, PWR_MODE_6G_LPI);
+
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		/* For STA, get 6G power mode from Bss descripter */
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIdx);
+
+		if (!prBssDesc)
+			return WLAN_STATUS_INVALID_DATA;
+
+		ePwrMode = prBssDesc->e6GPwrMode;
+	}
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	else if (IS_BSS_P2P(prBssInfo)) {
+		/* For CE segment, P2P GC will align GO claim device type */
+		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIdx);
+
+		if (!prBssDesc)
+			return WLAN_STATUS_INVALID_DATA;
+
+		ePwrMode = prBssDesc->e6GPwrMode;
+	}
+#endif
+	else {
+		/* 1. For NAN, always set to VLP
+		 * 2. For Mobile segment, P2P GC/GO always set to VLP
+		 */
+		ePwrMode = PWR_MODE_6G_VLP;
+	}
+
+	rlmDomain6GPwrModeUpdate(prAdapter, ucBssIdx, ePwrMode);
+#endif
+	return WLAN_STATUS_SUCCESS;
+}
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use check bss is use 6G or not
+ *
+ * \param[in] prAdapter
+ * \param[in] prBssInfo
+ * \param[in] pucBw
+ *
+ * \return fgUse6g
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomainIsBssUse6g(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t *pucBw)
+{
+	uint8_t fgUse6g = FALSE;
+
+	if (!prAdapter || !prBssInfo || !pucBw)
+		return FALSE;
+
+#if (CFG_SUPPORT_NAN == 1)
+	if (IS_BSS_NAN(prBssInfo))
+		fgUse6g =
+		nanIs6gInUse(prAdapter, (enum _NAN_CHNL_BW_MAP *)(pucBw));
+	else
+		fgUse6g = (prBssInfo->eBand == BAND_6G) ? TRUE : FALSE;
+#else
+	fgUse6g = (prBssInfo->eBand == BAND_6G) ? TRUE : FALSE;
+#endif
+
+	return fgUse6g;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use get Bandwidth frequcy range
+ *
+ * \param[in] ucBw : Bandwidth
+ * \param[in] pu2FreqRange : frequcy range
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainGetBwFreqRang(
+	uint8_t ucBw,
+	uint16_t *pu2FreqRange
+)
+{
+	switch (ucBw) {
+	case MAX_BW_20MHZ:
+		*pu2FreqRange = 20;
+		break;
+	case MAX_BW_40MHZ:
+		*pu2FreqRange = 40;
+		break;
+	case MAX_BW_80MHZ:
+		*pu2FreqRange = 80;
+		break;
+	case MAX_BW_160MHZ:
+		*pu2FreqRange = 160;
+		break;
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
+		*pu2FreqRange = 320;
+		break;
+	default:
+		DBGLOG(RLM, WARN, "unexpected channel width: %d\n", ucBw);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use check current channel & BW is prefer use or not
+ *        by 6G power mode
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ * \param[in] eBand : RF band
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] ucBw : Channel BW
+ * \param[in] ePwrMode : 6G Power mode
+ *
+ * \return value : bool
+ *                 FALSE : not prefer
+ *                 TRUE : Prefer
+ */
+/*----------------------------------------------------------------------------*/
+bool rlmDomain6GPwrModeIsChnlPrefer(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t ucBw,
+	enum ENUM_PWR_MODE_6G_TYPE eMode)
+{
+	uint32_t u4CenterFreq = 0;
+	uint32_t u4StartFreq = 0;
+	uint16_t u2FreqRange = 0;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	uint8_t ucIsPrefer = TRUE;
+	uint16_t u2CntryCode = 0;
+	uint8_t fgCcNull = 0;
+
+	if ((!prAdapter) || (ucBw >= MAX_BW_UNKNOWN) ||
+		(eMode >= PWR_MODE_6G_NUM)) {
+		DBGLOG(RLM, ERROR,
+			"invalid param, prAdapter[%s]Bw[%d]mode[%d]\n",
+			!prAdapter ? "NULL" : "Valid",
+			ucBw,
+			eMode);
+
+		return FALSE;
+	}
+
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	u2CntryCode = prAdapter->rWifiVar.u2CountryCode;
+	fgCcNull = (u2CntryCode == COUNTRY_CODE_NULL) ? TRUE : FALSE;
+
+	/* Currently only 6G VLP FCC need */
+	if ((eBand == BAND_6G) && (eMode == PWR_MODE_6G_VLP) &&
+		(prDomainInfo->eRegCat == REG_CAT_FCC)) {
+
+		if (rlmDomainGetBwFreqRang(ucBw, &u2FreqRange) !=
+						WLAN_STATUS_SUCCESS)
+			return FALSE;
+
+		u4CenterFreq =
+			nicGetCenterChFreq(eBand, ucPriCh, CHNL_EXT_SCN, ucBw);
+
+		if (u4CenterFreq == 0)
+			return FALSE;
+
+		u4StartFreq = u4CenterFreq - (u2FreqRange / 2);
+
+		/* For FCC VLP prefer use freqency above 6105MHz */
+		if (u4StartFreq < FCC_VLP_CHNL_FREQ_ABOVE_PREFER)
+			ucIsPrefer =  FALSE;
+	} else {
+		ucIsPrefer = TRUE;
+	}
+
+	DBGLOG(RLM, TRACE,
+		"(%c%c)reg[%d]band[%d]pri_ch[%d]bw[%d]mode[%d]center_f[%d]f_range[%d]start_f[%d]above_f[%d]prefer[%d]\n",
+			fgCcNull ? '0' : ((u2CntryCode & 0xff00) >> 8),
+			fgCcNull ? '0' : ((u2CntryCode & 0xff00) >> 8),
+			prDomainInfo->eRegCat,
+			eBand,
+			ucPriCh,
+			ucBw,
+			eMode,
+			u4CenterFreq,
+			u2FreqRange,
+			u4StartFreq,
+			FCC_VLP_CHNL_FREQ_ABOVE_PREFER,
+			ucIsPrefer);
+
+	return ucIsPrefer;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This func is use to update 6G power mode, when the power mode have
@@ -13089,7 +13495,12 @@ uint32_t rlmDomain6GPwrModeUpdate(
 	uint8_t ucBssIndex,
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeBss)
 {
+	uint8_t ucCurrChnl = 0;
+	uint8_t ucPreChnl = 0;
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr = PWR_MODE_6G_LPI;
+	uint8_t ucBw = 0;
+	struct BSS_INFO *prBssInfo;
+	uint8_t fgUpdate = FALSE;
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeFinal = PWR_MODE_6G_LPI;
 #endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
@@ -13103,6 +13514,10 @@ uint32_t rlmDomain6GPwrModeUpdate(
 			e6GPwrModeBss);
 		return WLAN_STATUS_INVALID_DATA;
 	}
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	ucCurrChnl = rlmDomainGet6GBssChnl(prAdapter, ucBssIndex);
+	ucPreChnl = g_r6GPwrModeBssInfo[ucBssIndex].ucChnl;
 
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
 	e6GPwrModeCurr = rlmDomainGetCurr6GPwrMode(prAdapter);
@@ -13120,22 +13535,207 @@ uint32_t rlmDomain6GPwrModeUpdate(
 				prAdapter, e6GPwrModeFinal);
 	}
 #else
-	e6GPwrModeCurr = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
-	prAdapter->e6GPwrMode[ucBssIndex] = e6GPwrModeBss;
 
-	if (e6GPwrModeCurr != rlmDomainPwrLmt6GPwrModeGet(prAdapter)) {
+	e6GPwrModeCurr = prAdapter->e6GPwrMode[ucBssIndex];
+
+	if (e6GPwrModeCurr != e6GPwrModeBss) {
+		/* Power mode change */
+		fgUpdate = TRUE;
+	} else if (ucCurrChnl != ucPreChnl) {
+		if (e6GPwrModeCurr == PWR_MODE_6G_LPI &&
+			e6GPwrModeBss == PWR_MODE_6G_LPI) {
+			/* Do nothing due to default is use LPI
+			 * even channel is different, default setting is use LPI
+			 * which is correct.
+			 */
+		} else {
+			fgUpdate = TRUE;
+		}
+	}
+
+	if (fgUpdate) {
+		prAdapter->e6GPwrMode[ucBssIndex] = e6GPwrModeBss;
+		g_r6GPwrModeBssInfo[ucBssIndex].ucChnl = ucCurrChnl;
 		/* Resend power limit  */
 		rlmDomainSendPwrLimitCmd(prAdapter);
 	}
 #endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
-	DBGLOG(RLM, INFO, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]\n",
-			ucBssIndex,
-			e6GPwrModeBss,
-			e6GPwrModeCurr,
-			rlmDomainPwrLmt6GPwrModeGet(prAdapter));
+	DBGLOG(RLM, INFO,
+		"BSS[%d]Use_6G[%d]Net[%d]Update[%d]PreCh[%d]CurrCh[%d]PreMode[%d]CurrMode[%d]force[%d]\n",
+		ucBssIndex,
+		rlmDomainIsBssUse6g(prAdapter, prBssInfo, &ucBw),
+		prBssInfo->eNetworkType,
+		fgUpdate,
+		ucPreChnl,
+		ucCurrChnl,
+		e6GPwrModeCurr, /* Previous */
+		prAdapter->e6GPwrMode[ucBssIndex], /* Current */
+		prAdapter->fg6GPwrModeForce);
 
 	return WLAN_STATUS_SUCCESS;
+}
+#if (CFG_SUPPORT_NAN == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get Bss op BW by Nan Chnl
+ *
+ * \param[in] prAdapter
+ * \param[in] e6gBandwidth : NAN BW
+ *
+ * \return value : Bss Op BW
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomainGetBssOpBwByNanChnl(enum _NAN_CHNL_BW_MAP eBw)
+{
+	switch (eBw) {
+	case NAN_CHNL_BW_20:
+		return MAX_BW_20MHZ;
+	case NAN_CHNL_BW_40:
+		return MAX_BW_40MHZ;
+	case NAN_CHNL_BW_80:
+		return MAX_BW_80MHZ;
+	case NAN_CHNL_BW_160:
+		return MAX_BW_160MHZ;
+	case NAN_CHNL_BW_320:
+		return MAX_BW_320_1MHZ;
+	default:
+		DBGLOG(RLM, WARN, "unexpected channel width: %d\n", eBw);
+		return 0;
+	}
+}
+#endif
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get bss channel
+ *
+ * \param[in] prAdapter
+ * \param[in] ucBssIdx
+ *
+ * \return value : Bss channel
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomainGet6GBssChnl(struct ADAPTER *prAdapter,
+						uint8_t ucBssIdx)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssChnl;
+	uint8_t ucBw;
+
+	if (!prAdapter)
+		return 0;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	if (rlmDomainIsBssUse6g(prAdapter, prBssInfo, &ucBw) == FALSE)
+		return 0;
+
+#if (CFG_SUPPORT_NAN == 1)
+	if (IS_BSS_NAN(prBssInfo)) {
+		if (rlmDomainPwrLmtGetChannelDefine()
+				== PWR_LIMIT_DEFINE_PRIMARY_CHANNEL) {
+			/* return NAN primary channel*/
+			ucBssChnl =  prAdapter->rWifiVar.ucNan6gDefaultChannel;
+		} else {
+			ucBssChnl = nicGetCenterCh(BAND_6G,
+				prAdapter->rWifiVar.ucNan6gDefaultChannel,
+				CHNL_EXT_SCN,
+				rlmDomainGetBssOpBwByNanChnl((
+					enum _NAN_CHNL_BW_MAP)ucBw));
+
+		}
+	} else
+#endif
+	{
+		if (rlmDomainPwrLmtGetChannelDefine()
+			== PWR_LIMIT_DEFINE_PRIMARY_CHANNEL) {
+			ucBssChnl = prBssInfo->ucPrimaryChannel;
+		} else {
+			ucBw = rlmGetBssOpBwByChannelWidth(
+				prBssInfo->eBssSCO,
+				prBssInfo->ucVhtChannelWidth);
+
+			ucBssChnl = nicGetCenterCh(BAND_6G,
+				prBssInfo->ucPrimaryChannel,
+				CHNL_EXT_SCN,
+				ucBw);
+		}
+	}
+
+	DBGLOG(RLM, INFO, "Bss[%d]Net[%d]define_pri[%d]BssCh[%d]\n",
+		ucBssIdx,
+		prBssInfo->eNetworkType,
+		rlmDomainPwrLmtGetChannelDefine(),
+		ucBssChnl);
+
+	return ucBssChnl;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get 6G power mode, default use LPI
+ *
+ * \param[in] prAdapter
+ *
+ * \return value : 6G power mode
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomainPwrLmt6GPwrModeGetByChnl(
+	struct ADAPTER *prAdapter,
+	uint8_t ucCurrChnl)
+{
+	uint8_t ucBssIdx = 0;
+	uint8_t fgUseDefault = TRUE;
+	struct BSS_INFO *prBssInfo;
+	enum ENUM_BAND eBand;
+	enum ENUM_PWR_MODE_6G_TYPE eFinalMode, eCurrBssMode;
+	uint8_t ucBw = 0;
+
+	eFinalMode = PWR_MODE_6G_SP;
+	eCurrBssMode = PWR_MODE_6G_SP;
+
+	if (prAdapter->fg6GPwrModeForce == TRUE)
+		return prAdapter->e6GPwrMode[0];
+
+	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+		eCurrBssMode = prAdapter->e6GPwrMode[ucBssIdx];
+		eBand = prBssInfo->eBand;
+
+		/* 1. For normal mode will check whether the net is active or
+		 *    current mode is test mode.
+		 */
+		if (ALLOW_6G_PWR_MODE_CHECK(prAdapter, prBssInfo) == FALSE)
+			continue;
+
+		/* 2. STA/P2P or SAP will set usage band in prBssInfo->eBand,
+		 *    but, NAN may use 6G, even if prBssInfo->eBand != BAND_6G
+		 */
+		if (rlmDomainIsBssUse6g(prAdapter, prBssInfo, &ucBw) == FALSE)
+			continue;
+
+		/* 3. 6G Power limit will be set by channel */
+		if (rlmDomainGet6GBssChnl(prAdapter, ucBssIdx) != ucCurrChnl)
+			continue;
+
+		/* 4. 6G power mode priority :
+		 *              VLP(H) > LPI(M) > SP(L) = LPI_SP(L)
+		 */
+		if (eCurrBssMode >= eFinalMode) {
+			eFinalMode = eCurrBssMode;
+			fgUseDefault = FALSE;
+
+			DBGLOG(RLM, LOUD, "Valid BSS[%u]Curr[%u]Final[%u]",
+				ucBssIdx,
+				eCurrBssMode,
+				eFinalMode);
+		}
+	}
+
+	if (fgUseDefault)
+		return PWR_MODE_6G_LPI; /* default mode */
+	else
+		return eFinalMode;
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -13149,30 +13749,54 @@ uint32_t rlmDomain6GPwrModeUpdate(
 static uint8_t rlmDomainPwrLmt6GPwrModeGet(struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIdx = 0;
-	struct BSS_INFO *prBssInfo;
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_SP;
 	uint8_t fgUseDefault = TRUE;
+	struct BSS_INFO *prBssInfo;
+	enum ENUM_BAND eBand;
+	enum ENUM_PWR_MODE_6G_TYPE eFinalMode, eCurrBssMode;
+	uint8_t ucBw = 0;
+
+	eFinalMode = PWR_MODE_6G_SP;
+	eCurrBssMode = PWR_MODE_6G_SP;
+
+	if (prAdapter->fg6GPwrModeForce == TRUE)
+		return prAdapter->e6GPwrMode[0];
 
 	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+		eCurrBssMode = prAdapter->e6GPwrMode[ucBssIdx];
+		eBand = prBssInfo->eBand;
+
 		/* 1. For normal mode will check whether the net is active or
-		 *    not but test mode will not check
-		 * 2. 6G power mode priority VLP(H)->LPI(M)->SP(L) = LPI_VLP(L)
+		 *    current mode is test mode.
 		 */
-		if ((((prAdapter->fgTestMode != TRUE) &&
-			(prBssInfo->fgIsNetActive)) ||
-			(prAdapter->fgTestMode == TRUE)) &&
-		    (prAdapter->e6GPwrMode[ucBssIdx] >= e6GPwrMode)) {
-			e6GPwrMode = prAdapter->e6GPwrMode[ucBssIdx];
+		if (ALLOW_6G_PWR_MODE_CHECK(prAdapter, prBssInfo) == FALSE)
+			continue;
+
+		/* 2. STA/P2P or SAP will set usage band in prBssInfo->eBand,
+		 *    but, NAN may use 6G, even if prBssInfo->eBand != BAND_6G
+		 */
+		if (rlmDomainIsBssUse6g(prAdapter, prBssInfo, &ucBw) == FALSE)
+			continue;
+
+		/* 3. 6G power mode priority :
+		 *              VLP(H) > LPI(M) > SP(L) = LPI_SP(L)
+		 */
+		if (eCurrBssMode >= eFinalMode) {
+			eFinalMode = eCurrBssMode;
 			fgUseDefault = FALSE;
+
+			DBGLOG(RLM, LOUD, "Valid BSS[%u]Curr[%u]Final[%u]",
+				ucBssIdx,
+				eCurrBssMode,
+				eFinalMode);
 		}
 	}
 
 	if (fgUseDefault)
 		return PWR_MODE_6G_LPI; /* default mode */
 	else
-		return e6GPwrMode;
+		return eFinalMode;
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -13267,13 +13891,14 @@ uint8_t rlmDomain6GPwrModeDecision(
 }
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This func is use check whether the country record from STA
- *       support the current 6G power mode or not.
+ * \brief This func is use check whether the country/channel is support the
+ *        current 6G power mode or not.
  *
- * \param[in] eBand : RF Band index
- * \param[in] ucCenterCh : Center Channel
  * \param[in] u2CountryCode : Country code
- * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] eBand : RF Band index
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] ucBw : Channel bandwidth
+ * \param[in] eMode : Enum of 6G Power mode
  * \param[in] pfgSupport : Pointer of flag to indicate the support or not for
  *                         STA country
  *
@@ -13282,82 +13907,179 @@ uint8_t rlmDomain6GPwrModeDecision(
  */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmDomain6GPwrModeCountrySupportChk(
+	uint16_t u2CntryCode,
 	enum ENUM_BAND eBand,
-	uint8_t ucCenterCh,
-	uint16_t u2CountryCode,
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t ucPriCh,
+	uint8_t ucBw,
+	enum ENUM_PWR_MODE_6G_TYPE eMode,
 	uint8_t *pfgSupport)
 {
-	uint8_t u1SubBandIdx = 0;
-	uint32_t u4Stauts = WLAN_STATUS_SUCCESS;
+	uint8_t fgNull = (u2CntryCode == COUNTRY_CODE_NULL) ? TRUE : FALSE;
+	uint8_t ucCenterCh;
+	uint16_t u2FreqRange, u2TblCntryCode, i;
+	uint32_t u4CenterFreq, u4StartFreq, u4EndFreq;
+	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *pCntryTbl = NULL;
+	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *pDefault = NULL;
 
-	if ((eBand != BAND_6G) ||
-		(e6GPwrMode > PWR_MODE_6G_NUM)) {
+	if ((eBand != BAND_6G) || (ucBw >= MAX_BW_UNKNOWN) ||
+		(eMode >= PWR_MODE_6G_NUM) || (!pfgSupport)) {
 		DBGLOG(RLM, ERROR,
-			"Invalid Data BAND[%d]6GPwrMode[%d]",
+			"Invalid band[%d]bw[%d]mode[%d]pfgSupport[%s]",
 			eBand,
-			e6GPwrMode);
+			eMode,
+			ucBw,
+			!pfgSupport ? "NULL" : "Valid");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	if (rlmDomainGetSubBandIdx(eBand, ucCenterCh, &u1SubBandIdx)
-		!= WLAN_STATUS_SUCCESS) {
+	if (rlmDomainGetBwFreqRang(ucBw, &u2FreqRange) != WLAN_STATUS_SUCCESS) {
+		*pfgSupport = FALSE;
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	u4Stauts = rlmDomain6GPwrModeSubbandChk(
-			eBand,
-			u1SubBandIdx,
-			u2CountryCode,
-			e6GPwrMode,
-			pfgSupport);
+	ucCenterCh = nicGetCenterCh(BAND_6G, ucPriCh, CHNL_EXT_SCN, ucBw);
+	u4CenterFreq = nicGetCenterChFreq(BAND_6G, ucPriCh, CHNL_EXT_SCN, ucBw);
 
-	return u4Stauts;
+	if (ucCenterCh == 0 || u4CenterFreq == 0) {
+		*pfgSupport = FALSE;
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	u4StartFreq = u4CenterFreq - (u2FreqRange / 2);
+	u4EndFreq = u4CenterFreq + (u2FreqRange / 2);
+
+	for (i = 0; i < COUNTRY_PWR_MODE_6G_SUPPORT_TABLE_SIZE; i++) {
+		WLAN_GET_FIELD_BE16(
+			&g_rCountryPwrMode6GSupport[i].aucCountryCode[0],
+			&u2TblCntryCode);
+
+		if (u2TblCntryCode == u2CntryCode) {
+			/* Found */
+			pCntryTbl = &g_rCountryPwrMode6GSupport[i];
+			break;
+		}
+
+		if (u2TblCntryCode == COUNTRY_CODE_NULL)
+			pDefault = &g_rCountryPwrMode6GSupport[i];
+	}
+
+	if (pCntryTbl == NULL) {
+		if (pDefault != NULL) {
+			pCntryTbl = pDefault;
+			DBGLOG(RLM, TRACE, "(%c%c)use default\n",
+				fgNull ? '0' : ((u2CntryCode & 0xff00) >> 8),
+				fgNull ? '0' : ((u2CntryCode & 0xff00)));
+		} else {
+			*pfgSupport = FALSE;
+			DBGLOG(RLM, ERROR,
+				"(%c%c) no found & no default,return[%d]\n",
+				fgNull ? '0' : ((u2CntryCode & 0xff00) >> 8),
+				fgNull ? '0' : ((u2CntryCode & 0xff00)),
+				*pfgSupport);
+			return WLAN_STATUS_FAILURE;
+		}
+	}
+
+	*pfgSupport = TRUE;
+
+	if (ucCenterCh == 2) {
+		if (rlmDomain6GPwrModeSupportStatusGet(
+				pCntryTbl, 0, TRUE, eMode) == FALSE)
+			*pfgSupport = FALSE;
+	} else {
+		for (i = 0; i < SUBBAND_6G_NUM; i++) {
+			if (IS_FREQ_RANGE_OVERLAP_6G_UNII_BAND(
+				i, u4StartFreq, u4EndFreq)) {
+				if (rlmDomain6GPwrModeSupportStatusGet(
+					pCntryTbl, i, FALSE, eMode) == FALSE) {
+					*pfgSupport = FALSE;
+					break;
+				}
+			}
+		}
+	}
+
+	DBGLOG(RLM, TRACE,
+		"(%c%c)Band[%d]PriCh[%d]Bw[%d]CenterCh[%d]CernterFreq[%d]StartFreq[%d]EndFreq[%d]Mode[%d]Support[%d]\n",
+		fgNull ? '0' : ((u2CntryCode & 0xff00) >> 8),
+		fgNull ? '0' : (u2CntryCode & 0x00ff),
+		eBand,
+		ucPriCh,
+		ucBw,
+		ucCenterCh,
+		u4CenterFreq,
+		u4StartFreq,
+		u4EndFreq,
+		eMode,
+		*pfgSupport);
+
+	return WLAN_STATUS_SUCCESS;
 }
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This func is use to get 6G power mode support status
  *
- * \param[in] u1CountryIdx : country index
+ * \param[in] prSupportTbl : 6G power mode support table
  * \param[in] u1BandIdx : 6G Subband index
+ * \param[in] fgIsCh2 : Is channel 6G 2 or not
  * \param[in] eMode : Enum of 6G Power mode
  *
  * \return 6G power mode support status
  */
 /*----------------------------------------------------------------------------*/
 static uint8_t rlmDomain6GPwrModeSupportStatusGet(
-	uint8_t u1CountryIdx,
+	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *prSupportTbl,
 	uint8_t u1Band,
+	uint8_t fgIsCh2,
 	enum ENUM_PWR_MODE_6G_TYPE eMode
 )
 {
 	uint8_t fgSupport = FALSE;
-	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *prSupportTbl =
-			&g_rCountryPwrMode6GSupport[u1CountryIdx];
 
 	if (eMode == PWR_MODE_6G_SP) {
 		/* [0]:SP */
-		fgSupport =
+		if (fgIsCh2) {
+			fgSupport =
+			prSupportTbl->rCh2Support.fgPwrMode6GSupport[0];
+		} else {
+			fgSupport =
 			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[0];
+		}
 	} else if (eMode == PWR_MODE_6G_VLP) {
 		/* [2]:VLP */
-		fgSupport =
+		if (fgIsCh2) {
+			fgSupport =
+			prSupportTbl->rCh2Support.fgPwrMode6GSupport[2];
+		} else {
+			fgSupport =
 			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[2];
+		}
 	} else if (eMode == PWR_MODE_6G_LPI_SP) {
 		/* [0]:SP | [1]:LPI */
-		fgSupport =
+		if (fgIsCh2) {
+			fgSupport =
+			(prSupportTbl->rCh2Support.fgPwrMode6GSupport[0] |
+			prSupportTbl->rCh2Support.fgPwrMode6GSupport[1]);
+		} else {
+			fgSupport =
 			(prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[0] |
 			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[1]);
+		}
 	} else {
 		/* [1]:LPI */
-		fgSupport =
+		if (fgIsCh2) {
+			fgSupport =
+			prSupportTbl->rCh2Support.fgPwrMode6GSupport[1];
+		} else {
+			fgSupport =
 			prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[1];
+		}
 	}
 
 	DBGLOG(RLM, TRACE,
-		"Country_idx(%d)Band[%d]PwrMode[%d]Support[%d]LPI_SP[%d]SP[%d]LPI[%d]VLP[%d]",
-		u1CountryIdx,
+		"Band[%d]IsCh2[%d]PwrMode[%d]Support[%d]LPI_SP[%d]SP[%d]LPI[%d]VLP[%d]",
 		u1Band,
+		fgIsCh2,
 		eMode,
 		fgSupport,
 		PWR_MODE_6G_LPI_SP,
@@ -13367,118 +14089,6 @@ static uint8_t rlmDomain6GPwrModeSupportStatusGet(
 
 	return fgSupport;
 }
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This func is use check whether the subband of the country
- *       support the current 6G power mode or not.
- *
- * \param[in] eBand : RF Band index
- * \param[in] u1SubBand : Subband index
- * \param[in] u2CountryCode : Country code
- * \param[in] e6GPwrMode : Enum of 6G Power mode
- * \param[in] pfgSupport : Pointer of flag to indicate the support or not for
- *                         STA country
- *
- * \return value : Success : WLAN_STATUS_SUCCESS
- *                 Fail    : WLAN_STATUS_INVALID_DATA
- */
-/*----------------------------------------------------------------------------*/
-uint32_t rlmDomain6GPwrModeSubbandChk(
-	enum ENUM_BAND eBand,
-	uint8_t u1SubBand,
-	uint16_t u2CountryCode,
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
-	uint8_t *pfgSupport
-)
-{
-	uint8_t u16GSubBandIdx = 0;
-	uint8_t u1DefaultIdx = 0;
-	uint8_t u1CountryIdx = 0;
-	uint16_t u2CountryCodeCheck = 0;
-	bool fgDefaultExist = FALSE;
-	bool fgCcNull = FALSE;
-
-	if ((eBand != BAND_6G) ||
-		(e6GPwrMode > PWR_MODE_6G_NUM)) {
-		DBGLOG(RLM, ERROR,
-			"Invalid data band[%d]PwrMode[%d]\n",
-			eBand,
-			e6GPwrMode);
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	/* 6G suband start from UNII-5 to UNII-8 */
-	if ((u1SubBand < PWR_LMT_SUBBAND_PWR_UNII5) ||
-	      (u1SubBand > PWR_LMT_SUBBAND_PWR_UNII8)) {
-		DBGLOG(RLM, ERROR,
-			"Invalid 6G subband idx[%d]\n",
-			u1SubBand);
-		return WLAN_STATUS_INVALID_DATA;
-	}
-	u16GSubBandIdx = u1SubBand - PWR_LMT_SUBBAND_PWR_UNII5;
-
-	for (u1CountryIdx = 0;
-		u1CountryIdx < COUNTRY_PWR_MODE_6G_SUPPORT_TABLE_SIZE;
-		u1CountryIdx++) {
-
-		WLAN_GET_FIELD_BE16(
-		&g_rCountryPwrMode6GSupport[u1CountryIdx].aucCountryCode[0],
-		&u2CountryCodeCheck);
-
-		if (u2CountryCode == u2CountryCodeCheck) {
-			/* Found */
-			*pfgSupport = rlmDomain6GPwrModeSupportStatusGet(
-					u1CountryIdx,
-					u16GSubBandIdx,
-					e6GPwrMode);
-			break;
-		}
-
-		if (u2CountryCodeCheck == COUNTRY_CODE_NULL) {
-			u1DefaultIdx = u1CountryIdx;
-			fgDefaultExist = TRUE;
-		}
-	}
-
-	/* Use default value when not found the corresponding country */
-	if (u1CountryIdx >= COUNTRY_PWR_MODE_6G_SUPPORT_TABLE_SIZE) {
-
-		if (fgDefaultExist) {
-			DBGLOG(RLM, TRACE,
-			"6GPwrMode use default[%d] setting for Country(%c%c)\n",
-			u1DefaultIdx,
-			((u2CountryCode & 0xff00) >> 8),
-			(u2CountryCode & 0x00ff));
-			/* Follow default setting */
-			*pfgSupport = rlmDomain6GPwrModeSupportStatusGet(
-					u1DefaultIdx,
-					u16GSubBandIdx,
-					e6GPwrMode);
-		} else {
-			DBGLOG(RLM, TRACE,
-			"6GPwrMode no default setting for Country(%c%c)\n",
-			((u2CountryCode & 0xff00) >> 8),
-			(u2CountryCode & 0x00ff));
-
-			*pfgSupport = TRUE;
-		}
-	}
-
-	if (u2CountryCode == COUNTRY_CODE_NULL)
-		fgCcNull = TRUE;
-
-	DBGLOG(RLM, TRACE,
-		"Country(%c%c)Band[%d]6GSubBand[%d]PwrMode[%d]Support[%d]\n",
-		fgCcNull ? '0' : ((u2CountryCode & 0xff00) >> 8),
-		fgCcNull ? '0' : (u2CountryCode & 0x00ff),
-		eBand,
-		u16GSubBandIdx,
-		e6GPwrMode,
-		*pfgSupport);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
 #if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -13608,6 +14218,7 @@ uint8_t rlmDomain6GPwrModeCfgSupportChk(
  * \param[in] pe6GPwrModeFinal : Enum of 6G Power mode
  * \param[in] eBand : RF Band index
  * \param[in] ucChnlNum : Center Channel
+ * \param[in] ucBw : Bandwidth
  *
  * \return 6G power mode support status
  */
@@ -13617,7 +14228,8 @@ u_int8_t rlmDomain6GPwrModeSupportChk(
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
 	enum ENUM_PWR_MODE_6G_TYPE *pe6GPwrModeFinal,
 	enum ENUM_BAND eBand,
-	uint8_t ucChnlNum)
+	uint8_t ucChnlNum,
+	uint8_t ucBw)
 {
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeFinal;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -13648,9 +14260,10 @@ u_int8_t rlmDomain6GPwrModeSupportChk(
 	u2CountryCode = rlmDomainReverseAlpha2(
 		prAdapter->rWifiVar.u2CountryCode);
 	u4Status = rlmDomain6GPwrModeCountrySupportChk(
+			u2CountryCode,
 			eBand,
 			ucChnlNum,
-			u2CountryCode,
+			ucBw,
 			e6GPwrModeFinal,
 			&fgPwrMode6GSupport);
 

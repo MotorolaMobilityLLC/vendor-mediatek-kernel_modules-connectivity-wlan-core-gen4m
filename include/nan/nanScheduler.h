@@ -660,6 +660,7 @@ struct _NAN_SCHEDULER_T {
 	unsigned char fgEn5gL;
 	unsigned char fgEn6g;
 	unsigned char fgIs6gInUse;
+	enum _NAN_CHNL_BW_MAP e6gBandwidth;
 
 	uint8_t ucNanAvailAttrSeqId; /* shared by all availability attr */
 	uint16_t u2NanAvailAttrControlField;     /* tracking changed flags */
@@ -893,7 +894,8 @@ uint32_t nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter);
 uint32_t nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter);
 uint32_t nanSchedCmdUpdateAvailabilityCtrl(struct ADAPTER *prAdapter);
 
-u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter);
+u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter,
+		      enum _NAN_CHNL_BW_MAP *e6gBandwidth);
 
 uint32_t
 nanSchedConfigAllowedBand(struct ADAPTER *prAdapter,

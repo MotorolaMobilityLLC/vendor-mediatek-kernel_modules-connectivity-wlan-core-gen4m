@@ -12327,6 +12327,9 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 	} else if (rStatus == CSA_STATUS_NON_SAE_NOT_SUP) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		       "\nNOT support 6G non SAE Authentication.\n");
+	} else if (rStatus == CSA_STATUS_CHNL_ILLEGAL) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "\nIllegal channel.\n");
 	} else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CSA) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		       "\nPeer NOT support CSA.\n");

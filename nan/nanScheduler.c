@@ -8,9 +8,7 @@
 #include "precomp.h"
 #include "typedef.h"
 #include "nanRescheduler.h"
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-#include "rlm_txpwr_limit_emi.h"
-#endif
+#include "rlm_domain.h"
 
 
 #define NDC_NEXT_SLOT_CHANNEL 149
@@ -6408,6 +6406,27 @@ static void nanUpdate6gPotentialPrimary(union _NAN_BAND_CHNL_CTRL g_r6gDefChnl)
 	}
 }
 
+enum ENUM_MAX_BANDWIDTH_SETTING nanBwTransmitMaxBw(
+	enum _NAN_CHNL_BW_MAP eNanBw)
+{
+	switch (eNanBw) {
+	case NAN_CHNL_BW_20:
+		return MAX_BW_20MHZ;
+	case NAN_CHNL_BW_40:
+		return MAX_BW_40MHZ;
+	case NAN_CHNL_BW_80:
+		return MAX_BW_80MHZ;
+	case NAN_CHNL_BW_160:
+		return MAX_BW_160MHZ;
+	case NAN_CHNL_BW_320:
+		return MAX_BW_320_1MHZ;
+	default:
+		return MAX_BW_UNKNOWN;
+	}
+
+	return MAX_BW_UNKNOWN;
+}
+
 uint32_t
 nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 			  unsigned char fgEn5gH, unsigned char fgEn5gL,
@@ -6424,9 +6443,13 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 #endif
 	size_t szTimeLineIdx = 0;
 #if (CFG_SUPPORT_NAN_6G == 1)
+	enum ENUM_MAX_BANDWIDTH_SETTING eBw =
+		nanBwTransmitMaxBw(nanSchedGet6gNanBw(prAdapter));
 	uint8_t fgIsNAN6GChnlAllowed =
-			rlmDomainIsLegalChannel(prAdapter, BAND_6G,
-					prWifiVar->ucNan6gDefaultChannel);
+			rlmDomainIsLegalChlByNetType(prAdapter, BAND_6G,
+						NAN_6G_BW20_DEFAULT_CHANNEL,
+						eBw,
+						NETWORK_TYPE_NAN);
 
 	/* If NAN 6G chnl not legal, close NAN 6G to prevent nego issue. */
 	if (!fgIsNAN6GChnlAllowed) {
@@ -13880,11 +13903,15 @@ nanSchedCmdUpdateAvailabilityCtrl(struct ADAPTER *prAdapter)
 }
 
 /* Public function to query whether NAN is using 6G channels */
-u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter)
+u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter,
+		      enum _NAN_CHNL_BW_MAP *e6gBandwidth)
 {
 	struct _NAN_SCHEDULER_T *prScheduler;
 
 	prScheduler = nanGetScheduler(prAdapter);
+	if (prScheduler->fgIs6gInUse && e6gBandwidth)
+		*e6gBandwidth = prScheduler->e6gBandwidth;
+
 	return prScheduler->fgIs6gInUse;
 }
 
@@ -13910,6 +13937,24 @@ static void nanUpdate6gUsage(struct ADAPTER *prAdapter,
 			prScheduler->fgIs6gInUse = TRUE;
 			DBGLOG(NAN, TRACE, "NAN scheduler 6G %u in use",
 			       prChnlInfo->u4PrimaryChnl);
+
+			switch (prChnlInfo->u4OperatingClass) {
+			case NAN_6G_BW20_OP_CLASS:
+				prScheduler->e6gBandwidth = NAN_CHNL_BW_20;
+				break;
+			case NAN_6G_BW40_OP_CLASS:
+				prScheduler->e6gBandwidth = NAN_CHNL_BW_40;
+				break;
+			case NAN_6G_BW80_OP_CLASS:
+				prScheduler->e6gBandwidth = NAN_CHNL_BW_80;
+				break;
+			case NAN_6G_BW160_OP_CLASS:
+				prScheduler->e6gBandwidth = NAN_CHNL_BW_160;
+				break;
+			case NAN_6G_BW320_OP_CLASS:
+				prScheduler->e6gBandwidth = NAN_CHNL_BW_320;
+				break;
+			}
 		}
 	}
 
@@ -13983,9 +14028,7 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 		}
 	} while (FALSE);
 
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	rlmDomainConnectionNotifiey(prAdapter, NAN_TIMELINE_UPDATE);
-#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+	rlmDomainNanTimeLineUpdateNotify(prAdapter);
 
 	return rStatus;
 }

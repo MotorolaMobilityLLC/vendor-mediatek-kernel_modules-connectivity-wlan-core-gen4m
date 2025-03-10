@@ -3074,29 +3074,6 @@ mld_formed_end:
 
 	kalMemFree(buf, VIR_MEM_TYPE, len);
 }
-
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-void kalUpdate6GPwrMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
-	struct BSS_INFO *prBssInfo = NULL;
-	struct BSS_DESC *prBssDesc = NULL;
-	uint8_t i = 0;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		prBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
-		prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
-		if (!prBssInfo || !prBssDesc)
-			continue;
-
-		rlmDomain6GPwrModeUpdate(prAdapter,
-			prBssInfo->ucBssIndex,
-			prBssDesc->e6GPwrMode);
-	}
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Called by driver to indicate event to upper layer, for example, the
@@ -3255,9 +3232,6 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 		}
 
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-		kalUpdate6GPwrMode(prAdapter, ucBssIndex);
-#endif
 #if CFG_SUPPORT_NAN
 		mtk_cfg80211_vendor_event_nan_infra_changed_indication(
 			prGlueInfo->prAdapter);

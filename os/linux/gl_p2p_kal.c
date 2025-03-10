@@ -1613,10 +1613,6 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 		return;
 
 	if (prP2pConnInfo) {
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-		struct BSS_DESC *prBssDesc = NULL;
-#endif
-
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
 (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
 (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -1650,18 +1646,6 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 					prP2pLinkBssInfo->aucOwnMacAddr;
 				params.links[id].bssid =
 					prStaRec->aucMacAddr;
-
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-				if (u2StatusReason == STATUS_CODE_SUCCESSFUL) {
-					prBssDesc = p2pGetLinkBssDesc(
-						prP2pRoleFsmInfo, i);
-					if (prBssDesc)
-						rlmDomain6GPwrModeUpdate(
-						 prAdapter,
-						 prP2pLinkBssInfo->ucBssIndex,
-						 prBssDesc->e6GPwrMode);
-				}
-#endif
 			}
 
 			cfg80211_connect_done(
@@ -1674,18 +1658,6 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 
 			COPY_MAC_ADDR(aucBssid, prP2pConnInfo->aucBssid);
 
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			if (u2StatusReason == STATUS_CODE_SUCCESSFUL) {
-				prBssDesc = p2pGetTargetBssDesc(
-					prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex);
-				if (prBssDesc)
-					rlmDomain6GPwrModeUpdate(
-					  prAdapter,
-					  prP2pRoleFsmInfo->ucBssIndex,
-					  prBssDesc->e6GPwrMode);
-			}
-#endif
 			cfg80211_connect_result(
 				prGlueP2pInfo->aprRoleHandler,
 				/* struct net_device * dev, */

@@ -6714,6 +6714,7 @@ int testmode_get_wifi6e_channels(struct wiphy *wiphy,
 			aucChannelList[i].eBand,
 			aucChannelList[i].ucChannelNum,
 			prAdapter->rWifiVar.u2CountryCode,
+			MAX_BW_20MHZ,
 			e6GPwrMode,
 			&fgSupport);
 

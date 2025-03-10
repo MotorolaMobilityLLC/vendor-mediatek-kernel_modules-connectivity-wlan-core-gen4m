@@ -28,6 +28,7 @@ enum ENUM_CSA_STATUS {
 	CSA_STATUS_DFS_NOT_SUP,
 	CSA_STATUS_NON_PSC_NOT_SUP,
 	CSA_STATUS_NON_SAE_NOT_SUP,
+	CSA_STATUS_CHNL_ILLEGAL,
 	CSA_STATUS_PEER_NOT_SUP_CSA,
 	CSA_STATUS_PEER_NOT_SUP_CH
 };
@@ -62,6 +63,8 @@ enum ENUM_P2P_CH_FILTER_TYPE {
 	P2P_USER_PREF_CH_FILTER,
 	P2P_SET_DEFAULT_CH_FILTER,
 	P2P_ACS_CAND_FILTER,
+	P2P_6G_VLP_CAND_FILTER,
+	P2P_INDOOR_CH_CAND_FILTER,
 	P2P_MAX_CH_FILTER_NUM
 };
 
@@ -571,6 +574,18 @@ void p2pAcsCandFilter(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
 
+void p2p6GVlpCandFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pIndoorChCandFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
 void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwithCandNum,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
@@ -678,6 +693,11 @@ void
 p2pFunClearAllTxReq(struct ADAPTER *prAdapter,
 		struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo);
 
+uint8_t p2pFunGetAcsBestChByList(struct ADAPTER *prAdapter,
+			   enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+			   struct RF_CHANNEL_INFO arChnlList[],
+			   uint8_t ucChnlNum);
+
 uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
@@ -685,8 +705,8 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 		uint32_t u4LteSafeChnMask_5G_1,
 		uint32_t u4LteSafeChnMask_5G_2,
 		uint32_t u4LteSafeChnMask_6G);
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
 
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
 void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		uint8_t eBand,
 		uint32_t u4LteSafeChnMask_2G,
@@ -697,9 +717,11 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO *paucSortChannelList,
 		u_int8_t fgNoDfs);
 #endif
+
 void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
-		uint8_t ucRoleIndex,
-		struct P2P_ACS_REQ_INFO *prAcsReqInfo);
+			    struct P2P_ACS_REQ_INFO *prAcsReqInfo,
+			    struct RF_CHANNEL_INFO arChnlList[],
+			    uint8_t ucChnlNum);
 
 void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo);

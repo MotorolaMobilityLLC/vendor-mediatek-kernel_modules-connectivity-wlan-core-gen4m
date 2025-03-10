@@ -2488,6 +2488,7 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
 	{
 		{'U', 'S'},
+		{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}}, /* Ch2 */
 		{
 			/* UNII-5 */
 			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
@@ -2501,6 +2502,7 @@ struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
 	},
 	{
 		{'C', 'A'},
+		{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}}, /* Ch2 */
 		{
 			/* UNII-5 */
 			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
@@ -2515,6 +2517,7 @@ struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
 	{
 		/* Default */
 		{0, 0},
+		{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}}, /* Ch2 */
 		{
 			/* UNII-5 */
 			{{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}},
@@ -2532,6 +2535,7 @@ struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
 	{
 		/* Default */
 		{0, 0},
+		{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* Ch2 */
 		{
 			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-5 */
 			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-6 */
