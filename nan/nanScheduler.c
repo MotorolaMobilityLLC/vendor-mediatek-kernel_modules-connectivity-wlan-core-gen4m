@@ -1886,6 +1886,7 @@ nanUtilCalAttributeToken(struct _NAN_ATTR_HDR_T *prNanAttr)
 	return u4Token;
 }
 
+/* coverity[-taint_source:arg-1] */
 uint32_t nanUtilCheckBitOneCnt(void *pBuffer, uint32_t u4Size)
 {
 	uint32_t u4Num;
