@@ -2778,6 +2778,9 @@ struct ADAPTER {
 #if CFG_SUPPORT_NAN
 	enum ENUM_NET_REG_STATE rNanNetRegState;
 	enum NanDiscType rNanDiscType;
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+	u_int8_t fgIsNANStartWaiting;
+#endif
 	unsigned char fgIsNANRegistered;
 	unsigned char fgIsNANfromHAL;
 	bool fgIsNanSendRequestToCnm;

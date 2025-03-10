@@ -2507,7 +2507,11 @@
 #endif
 
 #ifndef CFG_SUPPORT_MLO_STA_NAN_FALLBACK
+#if (MAX_BSSID_NUM <= 4) && (CFG_SUPPORT_NAN == 1)
+#define CFG_SUPPORT_MLO_STA_NAN_FALLBACK (1)
+#else
 #define CFG_SUPPORT_MLO_STA_NAN_FALLBACK (0)
+#endif
 #endif
 
 #ifdef SOC7_0

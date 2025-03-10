@@ -1231,8 +1231,15 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 #if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
 		kal_reinit_completion(
 			&prAdapter->prGlueInfo->rNanHaltComp);
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+		kal_reinit_completion(
+			&prAdapter->prGlueInfo->rNanAisComp);
+#endif
 #else
 		prAdapter->prGlueInfo->rNanHaltComp.done = 0;
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+		prAdapter->prGlueInfo->rNanAisComp.done = 0;
+#endif
 #endif
 
 		for (u4DelayIdx = 0; u4DelayIdx < 5; u4DelayIdx++) {
@@ -1254,6 +1261,24 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			rtnl_unlock();
 		}
 #endif
+
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+		if (aisGetLinkNum(
+			aisGetDefaultAisInfo(prAdapter)) > 1 &&
+			nanIsSapOrP2pActive(prAdapter)) {
+			prAdapter->fgIsNANStartWaiting = TRUE;
+			aisBssBeaconTimeout_impl(prAdapter,
+			BEACON_TIMEOUT_REASON_NUM,
+			DISCONNECT_REASON_CODE_RADIO_LOST,
+			TRUE,
+			aisGetDefaultLinkBssIndex(prAdapter));
+			waitRet = wait_for_completion_timeout(
+				&prAdapter->prGlueInfo->rNanAisComp,
+				MSEC_TO_JIFFIES(2*1000));
+			prAdapter->fgIsNANStartWaiting = FALSE;
+		}
+#endif
+
 		DBGLOG(NAN, TRACE,
 			"[DBG] NAN enable enter set_nan_handler, lock(%d)\n",
 			rtnl_is_locked());

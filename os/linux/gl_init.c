@@ -6068,7 +6068,9 @@ struct wireless_dev *wlanNetCreate(struct wireless_dev *prWdev,
 	init_completion(&prGlueInfo->rNanHaltComp);
 	init_completion(&prGlueInfo->rNanDissolveComp);
 #endif
-
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+	init_completion(&prGlueInfo->rNanAisComp);
+#endif
 #if CFG_SUPPORT_NCHO
 	init_completion(&prGlueInfo->rAisChGrntComp);
 #endif

@@ -3209,8 +3209,18 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				&prAisFsmInfo->rJoinTimeoutTimer))
 				prAisFsmInfo->ucIsSapCsaPending = TRUE;
 			else
-				ccmChannelSwitchProducer(prAdapter, prBssInfo,
-							 __func__);
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+				/* Check SAP channel */
+				if (nanNeedComplete(prAdapter)) {
+					DBGLOG(NAN, INFO,
+						"Concurrency: Complete1 NAN\n");
+					complete(
+					&prAdapter->prGlueInfo->rNanAisComp);
+				} else
+#endif
+					ccmChannelSwitchProducer(
+						prAdapter, prBssInfo,
+						__func__);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -3454,8 +3464,16 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prAdapter,
-			P2P_DEFAULT_SCENARIO);
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+		if (nanNeedComplete(prAdapter)) {
+			DBGLOG(NAN, INFO,
+				"Concurrency: Complete2 NAN\n");
+			complete(
+				&prAdapter->prGlueInfo->rNanAisComp);
+		} else
+#endif
+			p2pFuncSwitchSapChannel(prAdapter,
+				P2P_DEFAULT_SCENARIO);
 #endif
 
 		if (prBssDesc) {

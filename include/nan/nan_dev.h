@@ -88,6 +88,12 @@ uint8_t nanIsEhtSupport(struct ADAPTER *prAdapter);
 uint8_t nanIsEhtEnable(struct ADAPTER *prAdapter);
 
 void nanConcurrencyHandler(struct ADAPTER *prAdapter);
+u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter);
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+u_int8_t nanNeedFallback(struct ADAPTER *prAdapter);
+u_int8_t nanNeedComplete(struct ADAPTER *prAdapter);
+#endif
+u_int8_t nanIsSapOrP2pActive(struct ADAPTER *prAdapter);
 void nanBackToNormal(struct ADAPTER *prAdapter);
 
 void nanBackupSapChannel(

@@ -912,6 +912,10 @@ struct GLUE_INFO {
 		rNanDissolveComp;
 	struct completion
 		rNanHaltComp;	/* indicate halt complete in NAN initial flow */
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+	struct completion
+		rNanAisComp;
+#endif
 #endif
 
 #if CFG_SUPPORT_NCHO

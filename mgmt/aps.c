@@ -472,8 +472,11 @@ uint8_t apsCanFormMld(struct ADAPTER *ad,
 	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
 
 #if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
-	if (nanIsConcurrency(ad))
+	if (nanNeedFallback(ad)) {
+		DBGLOG(NAN, INFO,
+			"Concurrency: Need Fallback\n");
 		return FALSE;
+	}
 #endif
 
 	if (!mldIsMultiLinkEnabled(ad, NETWORK_TYPE_AIS, bidx) ||
