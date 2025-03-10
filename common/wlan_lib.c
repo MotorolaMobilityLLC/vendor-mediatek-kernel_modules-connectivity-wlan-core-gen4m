@@ -9095,6 +9095,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgNanAutoFC, "NanAutoFC", 0,
 		FEATURE_TO_CUSTOMER);
 
+	/* 5: 5G default High or Low by region
+	 * 6: default 6G channel
+	 */
+	INIT_UINT(prWifiVar->u2NanRangingBand, "NanRangingBand", 5,
+		FEATURE_TO_CUSTOMER);
+
 	INIT_UINT(prWifiVar->fgNanConcurrency, "NanConcurrency",
 		CFG_NAN_CONCURRENCY, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanInstantCommMode,

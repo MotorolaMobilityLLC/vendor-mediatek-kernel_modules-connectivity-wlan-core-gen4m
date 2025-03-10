@@ -131,6 +131,10 @@
 #define NAN_PREFER_BAND_MASK_6G_BAND	0x6
 #define NAN_PREFER_BAND_MASK_DFT		0xF
 
+/* Predefined Ranging slots */
+#define NAN_2G_DEFAULT_RANGING 0x000000FE /* slot 1~7 */
+#define NAN_5G_DEFAULT_RANGING 0x0000FE00 /* slot 9~15 */
+
 /* Predefined AIS slots for NAN-AIS concurrent */
 #define NAN_DEFAULT_2G_AIS 0xFF00FF00
 #define NAN_DEFAULT_5G_AIS 0x00FF00FF
@@ -221,6 +225,13 @@
 	 NAN_SLOT_INDEX(_szSlotIdx) ==					\
 		 (_band == BAND_2G4 ? NAN_2G_DEFAULT_NDC_INDEX :	\
 				      NAN_5G_DEFAULT_NDC_INDEX))
+
+#define NAN_SLOT_IS_RANGING_BY_BAND(_szTimeLineIdx, _szSlotIdx, _band)	\
+	(_szTimeLineIdx ==						\
+		 nanGetTimelineMgmtIndexByBand(prAdapter, _band) &&	\
+	 BIT(NAN_SLOT_INDEX(_szSlotIdx)) &				\
+		 (_band == BAND_2G4 ? NAN_2G_DEFAULT_RANGING :	\
+				      NAN_5G_DEFAULT_RANGING))
 
 /**
  * NAN 4.0 Figure 72. Availability Schedule for Instant Communication
@@ -353,14 +364,14 @@ union _NAN_BAND_CHNL_CTRL {
 		uint32_t u4Rsvd : 31;
 	}; /* u4Type to distinguish band or channel */
 
-	struct /* _NanBandCtrl */ {
+	struct /* _NanBandCtrl */ { /* NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL:0 */
 		uint32_t u4BandType : 1;
 		uint32_t u4BandRsvd : 23;
 		/* Table 99, same to enum NAN_SUPPORTED_BANDS */
 		uint32_t u4BandIdMask : 8;
 	} /* rBand */;
 
-	struct /* _NanChannelCtrl */ {
+	struct /* _NanChannelCtrl */ { /* NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL:1 */
 		uint32_t u4ChnlType : 1;
 		uint32_t u4ChnlRsvd : 7;
 		uint32_t u4OperatingClass : 8;

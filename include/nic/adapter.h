@@ -1707,6 +1707,7 @@ struct WIFI_VAR {
 	uint32_t u4NanConfirmTimeout;
 	uint32_t u4NanSendPacketGuardTime;
 	u_int8_t fgNanAutoFC; /* Flash Communication */
+	uint16_t u2NanRangingBand;
 	u_int8_t fgNanInstantCommMode;
 	u_int8_t fgNanSkipAnqp;
 	u_int8_t fgNanConcurrency;

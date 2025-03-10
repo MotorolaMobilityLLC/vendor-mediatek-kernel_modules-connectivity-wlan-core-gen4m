@@ -366,21 +366,21 @@ struct _NAN_FAW_NDC_TIMELINE_T g_arNanFawNdcTimeline[NAN_TIMELINE_MGMT_SIZE];
 const union _NAN_BAND_CHNL_CTRL g_rNullChnl = {.u4RawData = 0 };
 
 union _NAN_BAND_CHNL_CTRL g_r2gDwChnl = {
-	.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+	.u4ChnlType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 	.u4OperatingClass = NAN_2P4G_DISC_CH_OP_CLASS,
 	.u4PrimaryChnl = NAN_2P4G_DISC_CHANNEL,
 	.u4AuxCenterChnl = 0
 };
 
 union _NAN_BAND_CHNL_CTRL g_r5gDwChnl = {
-	.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+	.u4ChnlType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 	.u4OperatingClass = NAN_5G_HIGH_DISC_CH_OP_CLASS,
 	.u4PrimaryChnl = NAN_5G_HIGH_DISC_CHANNEL,
 	.u4AuxCenterChnl = 0
 };
 
 union _NAN_BAND_CHNL_CTRL g_r5g160Chnl = {
-	.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+	.u4ChnlType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 	.u4OperatingClass = NAN_5G_LOW_BW160_DISC_CH_OP_CLASS,
 	.u4PrimaryChnl = NAN_5G_BW160_DEF_CHANNEL,
 	.u4AuxCenterChnl = 0
@@ -388,7 +388,7 @@ union _NAN_BAND_CHNL_CTRL g_r5g160Chnl = {
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 union _NAN_BAND_CHNL_CTRL g_r6gDefChnl = {
-	.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+	.u4ChnlType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 	.u4OperatingClass = NAN_6G_BW20_OP_CLASS,
 	.u4PrimaryChnl = NAN_6G_BW20_DEFAULT_CHANNEL,
 	.u4AuxCenterChnl = 0
@@ -398,7 +398,7 @@ union _NAN_BAND_CHNL_CTRL g_r6gDefChnl = {
 /* Set in nanSchedConfigAllowedBand */
 union _NAN_BAND_CHNL_CTRL g_rPreferredChnl[NAN_TIMELINE_MGMT_SIZE] = {
 	{
-		.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+		.u4ChnlType = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
 		.u4OperatingClass = NAN_2P4G_DISC_CH_OP_CLASS,
 		.u4PrimaryChnl = NAN_2P4G_DISC_CHANNEL,
 		.u4AuxCenterChnl = 0
@@ -2286,9 +2286,9 @@ uint32_t nanParserGenBandChnlEntryListField(struct ADAPTER *prAdapter,
 				"Local generated Channel Bitmap 0x%04x , Primary Channel bitmap 0x%02x ,\n",
 				prChnlEntry->u2ChannelBitmap,
 				prChnlEntry->ucPrimaryChnlBitmap);
-			}
-			else
+			} else {
 				pucPos += sizeof(struct _NAN_CHNL_ENTRY_T);
+			}
 		}
 
 		*pu4BandChnlEntryListFieldLength =
@@ -3738,6 +3738,66 @@ uint32_t nanSchedAddCrbToChnlList(struct ADAPTER *prAdapter,
 }
 
 /**
+ * Filling Channel info for Ranging by
+ * nanSchedNegoGenDefCrbV2()->nanSchedNegoFindSlotCrb()
+ */
+uint32_t nanSchedAddCrbToRangingChnlList(struct ADAPTER *prAdapter,
+			 union _NAN_BAND_CHNL_CTRL *prChnlInfo,
+			 uint32_t u4StartOffset, uint32_t u4NumSlots,
+			 enum _ENUM_TIME_BITMAP_CTRL_PERIOD_T eRepeatPeriod,
+			 unsigned char fgCommitOrCond,
+			 uint32_t au4RetMap[NAN_TOTAL_DW])
+{
+	struct _NAN_CRB_NEGO_CTRL_T * const prNegoCtrl =
+			nanGetNegoControlBlock(prAdapter);
+	uint32_t u4Run = 0, u4Idx = 0, u4SlotIdx = 0;
+	unsigned char fgChanged = FALSE;
+	size_t szTimeLineIdx =
+			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
+	struct _NAN_SCHEDULER_T *prNanScheduler = nanGetScheduler(prAdapter);
+	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
+	struct _NAN_SCHEDULE_TIMELINE_T *prSchedTimeline;
+
+	if (IS_2G_OP_CLASS(prChnlInfo->u4OperatingClass)) {
+		szTimeLineIdx =
+			nanGetTimelineMgmtIndexByBand(prAdapter, BAND_2G4);
+	}
+
+	prSchedTimeline = &prNegoCtrl->arRangingTimeline[szTimeLineIdx];
+	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter, szTimeLineIdx);
+
+	if (prSchedTimeline->ucMapId == NAN_INVALID_MAP_ID) {
+		prSchedTimeline->ucMapId = prNanTimelineMgmt->ucMapId;
+		kalMemZero(prSchedTimeline->au4AvailMap,
+			   sizeof(prSchedTimeline->au4AvailMap));
+	}
+
+	for (u4Run = 0; u4Run < (128 >> eRepeatPeriod); u4Run++) {
+		for (u4Idx = 0; u4Idx < u4NumSlots; u4Idx++) {
+			u4SlotIdx = (u4Run << (eRepeatPeriod + 2)) +
+				    u4StartOffset + u4Idx;
+
+			if (NAN_IS_AVAIL_MAP_SET(prSchedTimeline->au4AvailMap,
+						 u4SlotIdx) == FALSE) {
+				NAN_TIMELINE_SET(prSchedTimeline->au4AvailMap,
+						 u4SlotIdx);
+				fgChanged = TRUE;
+			}
+
+			if (au4RetMap)
+				NAN_TIMELINE_SET(au4RetMap, u4SlotIdx);
+		}
+	}
+
+	if (fgChanged || !fgCommitOrCond) {
+		prNanScheduler->u2NanAvailAttrControlField |=
+			NAN_AVAIL_CTRL_COMMIT_CHANGED;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/**
  * nanSchedDeleteCrbFromChnlList() - Remove specified time slots in all valid
  *				   channel timelines
  * @prAdapter: pointer to adapter
@@ -3816,11 +3876,14 @@ nanSchedPeerPurgeOldCrb(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 {
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord = NULL;
 	uint32_t u4Idx = 0;
-	uint8_t ucIdx = 0;
+	uint8_t ucTimeLineIdx = 0;
+	struct _NAN_SCHEDULE_TIMELINE_T *prCommonFawTimeline;
+	struct _NAN_SCHEDULE_TIMELINE_T *prCommonImmuNdlTimeline;
+	struct _NAN_SCHEDULE_TIMELINE_T *prCommRangingTimeline;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	struct _NAN_SCHEDULE_TIMELINE_T *prFawTL = NULL;
-	struct _NAN_SCHEDULE_TIMELINE_T *prImmuTL = NULL;
-	struct _NAN_SCHEDULE_TIMELINE_T *prRngTL = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prFawTimeline = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prImmuTimeline = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prRangingTimeline = NULL;
 
 	do {
 		prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
@@ -3828,27 +3891,30 @@ nanSchedPeerPurgeOldCrb(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 			break;
 
 		/* reserve necessary CRB */
-		for (ucIdx = 0; ucIdx < szNanActiveTimelineNum;
-		     ucIdx++) {
-			prFawTL =
-				&prPeerSchRecord->arCommFawTimeline[ucIdx];
-			prImmuTL =
-				&prPeerSchRecord->arCommImmuNdlTimeline[ucIdx];
-			prRngTL =
-				&prPeerSchRecord->arCommRangingTimeline[ucIdx];
+		prCommonFawTimeline = prPeerSchRecord->arCommFawTimeline;
+		prCommonImmuNdlTimeline =
+			prPeerSchRecord->arCommImmuNdlTimeline;
+		prCommRangingTimeline = prPeerSchRecord->arCommRangingTimeline;
+		for (ucTimeLineIdx = 0; ucTimeLineIdx < szNanActiveTimelineNum;
+		     ucTimeLineIdx++) {
+			prFawTimeline = &prCommonFawTimeline[ucTimeLineIdx];
+			prImmuTimeline =
+				&prCommonImmuNdlTimeline[ucTimeLineIdx];
+			prRangingTimeline =
+				&prCommRangingTimeline[ucTimeLineIdx];
 
-			kalMemZero((uint8_t *)prFawTL->au4AvailMap,
-				   sizeof(prFawTL->au4AvailMap));
+			kalMemZero((uint8_t *)prFawTimeline->au4AvailMap,
+				   sizeof(prFawTimeline->au4AvailMap));
 			if (prPeerSchRecord->fgUseDataPath == TRUE) {
 				for (u4Idx = 0; u4Idx < NAN_TOTAL_DW; u4Idx++)
-					prFawTL->au4AvailMap[u4Idx] |=
-					prImmuTL->au4AvailMap[u4Idx];
+					prFawTimeline->au4AvailMap[u4Idx] |=
+					prImmuTimeline->au4AvailMap[u4Idx];
 				prPeerSchRecord->prCommNdcCtrl = NULL;
 			}
 			if (prPeerSchRecord->fgUseRanging == TRUE) {
 				for (u4Idx = 0; u4Idx < NAN_TOTAL_DW; u4Idx++)
-					prFawTL->au4AvailMap[u4Idx] |=
-					prRngTL->au4AvailMap[u4Idx];
+					prFawTimeline->au4AvailMap[u4Idx] |=
+					prRangingTimeline->au4AvailMap[u4Idx];
 			}
 		}
 	} while (FALSE);
@@ -3867,11 +3933,11 @@ nanSchedPeerRangingConflict(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 }
 
 uint32_t
-nanSchedPeerInterpretScheduleEntryList(
-	struct ADAPTER *prAdapter, struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
-	struct _NAN_SCHEDULE_TIMELINE_T arTimeline[NAN_NUM_AVAIL_DB],
-	struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntryList,
-	uint32_t u4ScheduleEntryListLength)
+nanSchedPeerInterpretScheduleEntryList(struct ADAPTER *prAdapter,
+		struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
+		struct _NAN_SCHEDULE_TIMELINE_T arTimeline[NAN_NUM_AVAIL_DB],
+		struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntryList,
+		uint32_t u4ScheduleEntryListLength)
 {
 	uint32_t rRetStatus = WLAN_STATUS_FAILURE;
 	uint8_t *pucScheduleEntry;
@@ -3888,12 +3954,11 @@ nanSchedPeerInterpretScheduleEntryList(
 
 	pucScheduleEntry = (uint8_t *)prScheduleEntryList;
 	pucScheduleEntryListEnd = pucScheduleEntry + u4ScheduleEntryListLength;
-	for ((prScheduleEntry =
-		      (struct _NAN_SCHEDULE_ENTRY_T *)pucScheduleEntry);
-	     (pucScheduleEntry < pucScheduleEntryListEnd);
-	     (pucScheduleEntry +=
-	      (prScheduleEntry->ucTimeBitmapLength + 4
-	       /* MapID(1)+TimeBitmapControl(2)+TimeBitmapLength(1) */))) {
+	for (prScheduleEntry =
+		      (struct _NAN_SCHEDULE_ENTRY_T *)pucScheduleEntry;
+	     pucScheduleEntry < pucScheduleEntryListEnd;
+	     pucScheduleEntry += (prScheduleEntry->ucTimeBitmapLength + 4
+	       /* MapID(1)+TimeBitmapControl(2)+TimeBitmapLength(1) */)) {
 
 		prScheduleEntry =
 			(struct _NAN_SCHEDULE_ENTRY_T *)pucScheduleEntry;
@@ -3904,9 +3969,9 @@ nanSchedPeerInterpretScheduleEntryList(
 			    prScheduleEntry->ucMapID) {
 				u4TargetIdx = u4Idx;
 				break;
-			} else if ((u4TargetIdx == NAN_NUM_AVAIL_DB) &&
-				   arTimeline[u4Idx].ucMapId ==
-					   NAN_INVALID_MAP_ID)
+			}
+			if (u4TargetIdx == NAN_NUM_AVAIL_DB &&
+			    arTimeline[u4Idx].ucMapId == NAN_INVALID_MAP_ID)
 				u4TargetIdx = u4Idx;
 		}
 
@@ -3915,11 +3980,11 @@ nanSchedPeerInterpretScheduleEntryList(
 
 		arTimeline[u4TargetIdx].ucMapId = prScheduleEntry->ucMapID;
 
-		nanParserInterpretTimeBitmapField(
-			prAdapter, prScheduleEntry->u2TimeBitmapControl,
-			prScheduleEntry->ucTimeBitmapLength,
-			prScheduleEntry->aucTimeBitmap,
-			arTimeline[u4TargetIdx].au4AvailMap);
+		nanParserInterpretTimeBitmapField(prAdapter,
+					prScheduleEntry->u2TimeBitmapControl,
+					prScheduleEntry->ucTimeBitmapLength,
+					prScheduleEntry->aucTimeBitmap,
+					arTimeline[u4TargetIdx].au4AvailMap);
 
 		rRetStatus = WLAN_STATUS_SUCCESS;
 	}
@@ -5897,10 +5962,10 @@ nanSchedPeerUpdateImmuNdlScheduleList(
  *   Only allowed when it acquires the token to nego CRB.
  */
 uint32_t
-nanSchedPeerUpdateRangingScheduleList(
-	struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
-	struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntryList,
-	uint32_t u4ScheduleEntryListLength)
+nanSchedPeerUpdateRangingScheduleList(struct ADAPTER *prAdapter,
+			uint8_t *pucNmiAddr,
+			struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntryList,
+			uint32_t u4ScheduleEntryListLength)
 {
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
@@ -5918,12 +5983,18 @@ nanSchedPeerUpdateRangingScheduleList(
 		 *	    u4ScheduleEntryListLength);
 		 */
 		prPeerSchDesc->fgRangingTimelineValid = FALSE;
-		rRetStatus = nanSchedPeerInterpretScheduleEntryList(
-			prAdapter, prPeerSchDesc,
-			prPeerSchDesc->arRangingTimeline, prScheduleEntryList,
-			u4ScheduleEntryListLength);
-		if (rRetStatus == WLAN_STATUS_SUCCESS)
+		rRetStatus = nanSchedPeerInterpretScheduleEntryList(prAdapter,
+					prPeerSchDesc,
+					prPeerSchDesc->arRangingTimeline,
+					prScheduleEntryList,
+					u4ScheduleEntryListLength);
+		if (rRetStatus == WLAN_STATUS_SUCCESS) {
 			prPeerSchDesc->fgRangingTimelineValid = TRUE;
+		} else {
+			DBGLOG(NAN, WARN,
+			       "nanSchedPeerInterpretScheduleEntryList=0x%08x",
+			       rRetStatus);
+		}
 	} while (FALSE);
 
 	return rRetStatus;
@@ -8975,18 +9046,16 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter)
 	uint32_t u4AvailDbIdx;
 	uint32_t u4AvailEntryIdx;
 	uint16_t u2Ctrl;
-	uint32_t u4SchIdx;
-	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
+	struct _NAN_CRB_NEGO_CTRL_T * const prNegoCtrl =
+		nanGetNegoControlBlock(prAdapter);
+	const uint32_t u4SchIdx = prNegoCtrl->u4SchIdx;
+	struct _NAN_PEER_SCH_DESC_T * const prPeerSchDesc =
+		nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
 	struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
-	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 	struct _NAN_AVAILABILITY_DB_T *prAvailDb;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
 	union _NAN_BAND_CHNL_CTRL *prChnlCur;
 	union _NAN_BAND_CHNL_CTRL *prChnlTmp;
-
-	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
-	u4SchIdx = prNegoCtrl->u4SchIdx;
-	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
 
 	if (prPeerSchDesc == NULL) {
 		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
@@ -9094,25 +9163,27 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter)
 	}
 
 	/* Check Immutable or Ranging timeline */
-	prTimeline = NULL;
-	if (prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK) {
-		if (prPeerSchDesc->fgImmuNdlTimelineValid == TRUE)
-			prTimeline = prPeerSchDesc->arImmuNdlTimeline;
-	} else {
-		if (prPeerSchDesc->fgRangingTimelineValid == TRUE)
-			prTimeline = prPeerSchDesc->arRangingTimeline;
-	}
-
-	if (!prTimeline)
+	if (!(prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK &&
+	      prPeerSchDesc->fgImmuNdlTimelineValid ||
+	      prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING &&
+	      prPeerSchDesc->fgRangingTimelineValid)) {
 		goto CHK_RMT_AVAIL_DONE;
+	}
 
 	/* Immutable or Ranging timeline is set */
 	for (u4Idx = 0; u4Idx < NAN_NUM_AVAIL_DB; u4Idx++) {
+		prTimeline = NULL;
+		if (prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK)
+			prTimeline = &prPeerSchDesc->arImmuNdlTimeline[u4Idx];
+		else
+			prTimeline = &prPeerSchDesc->arRangingTimeline[u4Idx];
+
 		if (prTimeline->ucMapId == NAN_INVALID_MAP_ID)
 			continue;
 
 		u4AvailDbIdx = nanSchedPeerGetAvailabilityDbIdx(prAdapter,
 					prPeerSchDesc, prTimeline->ucMapId);
+
 		if (u4AvailDbIdx == NAN_INVALID_AVAIL_DB_INDEX) {
 			u4RetCode = -20;
 			goto CHK_RMT_AVAIL_DONE;
@@ -9134,11 +9205,16 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter)
 						u4SlotIdx, FALSE) != 0)
 				continue;
 
+			DBGLOG(NAN, INFO,
+			       "db=%u map=%u, slot=%u, timeline=%02x-%02x-%02x-%02x",
+			       u4Idx, prTimeline->ucMapId, u4SlotIdx,
+			       ((uint8_t *)(prTimeline->au4AvailMap))[0],
+			       ((uint8_t *)(prTimeline->au4AvailMap))[1],
+			       ((uint8_t *)(prTimeline->au4AvailMap))[2],
+			       ((uint8_t *)(prTimeline->au4AvailMap))[3]);
 			u4RetCode = -25;
 			goto CHK_RMT_AVAIL_DONE;
 		}
-
-		prTimeline++;
 	}
 
 CHK_RMT_AVAIL_DONE:
@@ -9271,7 +9347,18 @@ nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 				       u4SlotIdx,
 				       rRmtChnlInfo.u4PrimaryChnl,
 				       g_r5gDwChnl.u4PrimaryChnl);
-				return TRUE;
+				/**
+				 * Except the case ranging set to 6G channel 5
+				 * in #9 in nanSchedNegoGenDefCrb:
+				 * NDC slot 9 rmt channel 5 != local 149
+				 * Force to use 5G social chanenl 149 there,
+				 * or skip this conflict check.
+				 * But need to consider required channel switch
+				 * time cutting the end of DW if setting #9 to
+				 * channel != 149
+				 */
+				if (prNegoCtrl->eType != ENUM_NAN_NEGO_RANGING)
+					return TRUE;
 			}
 
 			eRmtBand = nanRegGetNanChnlBand(rRmtChnlInfo);
@@ -9284,9 +9371,11 @@ nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 
 			/* Skip 2G NDC to avoid 2G NDC bitmask unequal to local
 			 * and NDP response reject peer.
+			 * Only apply this rule to NDP negotiation.
 			 */
 			prNegoTrans = &prNegoCtrl->rNegoTrans[u4NegoTransIdx];
-			if (!nanGetFeatureIsSigma(prAdapter) &&
+			if (prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK &&
+			    !nanGetFeatureIsSigma(prAdapter) &&
 			    eRmtBand == BAND_2G4 &&
 			    prNegoCtrl->eState ==
 				ENUM_NAN_CRB_NEGO_STATE_RESPONDER &&
@@ -9300,7 +9389,9 @@ nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 
 				if (NAN_SLOT_INDEX(u4SlotIdx) !=
 					    NAN_5G_DEFAULT_NDC_INDEX &&
-				    !prPeerSchRecord->fgDef5GNDCConflict) {
+				    !prPeerSchRecord->fgDef5GNDCConflict &&
+				    prNegoCtrl->eType !=
+					    ENUM_NAN_NEGO_RANGING) {
 					fgNotNormalNDCTimeline = TRUE;
 					u4NotNormalSlotIdx = u4SlotIdx;
 					break;
@@ -9916,6 +10007,21 @@ static uint32_t updateDWIntervalTimeline(struct ADAPTER *prAdapter,
 	return rRetStatus;
 }
 
+static union _NAN_BAND_CHNL_CTRL nanGetRangingChannel(uint16_t u2NanRangingBand)
+{
+	union _NAN_BAND_CHNL_CTRL rSelChnlInfo = g_rNullChnl;
+
+	if (u2NanRangingBand == 2)
+		rSelChnlInfo = g_r2gDwChnl;
+	else if (u2NanRangingBand == 5)
+		rSelChnlInfo = g_r5gDwChnl;
+	else if (u2NanRangingBand == 6)
+		rSelChnlInfo = g_r6gDefChnl;
+
+	return rSelChnlInfo;
+}
+
+
 unsigned char nanSchedNegoTryToFindCrb(struct ADAPTER *prAdapter,
 		struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl,
 		uint32_t u4SuppBandIdMask,
@@ -9926,6 +10032,8 @@ unsigned char nanSchedNegoTryToFindCrb(struct ADAPTER *prAdapter,
 		uint32_t *u4DefCrbNum,
 		size_t szTimeLineIdx)
 {
+	struct WIFI_VAR  *prWifiVar = &prAdapter->rWifiVar;
+	const uint16_t u2NanRangingBand = prWifiVar->u2NanRangingBand;
 	uint32_t u4PrefBandMaskTmp;
 	uint32_t u4NanPreferBandMask;
 	enum ENUM_BAND eBand = BAND_2G4;
@@ -10015,6 +10123,17 @@ unsigned char nanSchedNegoTryToFindCrb(struct ADAPTER *prAdapter,
 							prAdapter, szSlotIdx,
 							szTimeLineIdx,
 							u4NanPreferBandMask);
+
+					/* Prefer 5G default channel at #9
+					 * if not force 5G, follow 6G setting
+					 */
+					if (prNegoCtrl->eType ==
+					    ENUM_NAN_NEGO_RANGING) {
+						rSelChnlInfo =
+							nanGetRangingChannel(
+							     u2NanRangingBand);
+					}
+
 					nanSchedAddCrbToChnlList(prAdapter,
 					      &rSelChnlInfo, szSlotIdx, 1,
 					      ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
@@ -10024,7 +10143,9 @@ unsigned char nanSchedNegoTryToFindCrb(struct ADAPTER *prAdapter,
 				fgFound = TRUE;
 				(*u4DefCrbNum)--;
 				break;
-			} else if (rRmtChnlInfo.u4PrimaryChnl != 0) {
+			}
+
+			if (rRmtChnlInfo.u4PrimaryChnl != 0) {
 				if (!nanIsAllowedChannel(prAdapter,
 					rRmtChnlInfo))
 					continue;
@@ -10096,7 +10217,6 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 		u4DefCrbNum = prNegoCtrl->u4DefNdlNumSlots;
 	} else if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING) {
 		u4DefCrbNum = prNegoCtrl->u4DefRangingNumSlots;
-		prSchedTimeline = &prNegoCtrl->arRangingTimeline[0];
 	} else {
 		rRetStatus = WLAN_STATUS_FAILURE;
 		goto GEN_DFT_CRB_DONE;
@@ -10125,6 +10245,10 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 	/* have a preference for 5G band */
 	for (szTimeLineIdx = szNanActiveTimelineNum; szTimeLineIdx--; ) {
 
+		if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING &&
+		    NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx)) /* 5G only */
+			continue;
+
 		prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter,
 				szTimeLineIdx);
 		u4SuppBandIdMask = nanGetTimelineSupportedBand(prAdapter,
@@ -10139,11 +10263,17 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 		if (u4SuppBandIdMask == 0)
 			continue;
 
-		if ((prSchedTimeline != NULL) &&
-			(prSchedTimeline->ucMapId == NAN_INVALID_MAP_ID)) {
+		if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING)
+			prSchedTimeline =
+				&prNegoCtrl->arRangingTimeline[szTimeLineIdx];
+		if (prSchedTimeline &&
+		    prSchedTimeline->ucMapId == NAN_INVALID_MAP_ID) {
 			prSchedTimeline->ucMapId = prNanTimelineMgmt->ucMapId;
 			kalMemZero(prSchedTimeline->au4AvailMap,
 				sizeof(prSchedTimeline->au4AvailMap));
+
+			DBGLOG(NAN, TRACE, "Set Ranging MapId=%u",
+			       prSchedTimeline->ucMapId);
 		}
 
 		/* try to allocate basic CRBs for every DW interval */
@@ -10170,32 +10300,31 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 					szTimeLineIdx) == ENUM_NAN_DW)
 					continue;
 
-				rLocalChnlInfo =
-					nanGetChnlInfoBySlot(prAdapter,
-					szSlotIdx, szTimeLineIdx);
+				rLocalChnlInfo = nanGetChnlInfoBySlot(prAdapter,
+						      szSlotIdx, szTimeLineIdx);
 
 				if (!fgPeerAvailMapValid) {
-					if (rLocalChnlInfo.u4PrimaryChnl == 0) {
-						rSelChnlInfo =
-						nanSchedNegoSelectChnlInfo(
-							prAdapter, szSlotIdx,
-							szTimeLineIdx,
-							prAdapter->rWifiVar
-							.u4NanPreferBandMask);
-						nanSchedAddCrbToChnlList(
-							prAdapter,
-							&rSelChnlInfo,
-							szSlotIdx, 1,
-					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
-							FALSE, NULL);
-					}
-
 					u4DefCrbNum--;
 
 					if (prSchedTimeline)
 						NAN_TIMELINE_SET(
 						prSchedTimeline->au4AvailMap,
 						szSlotIdx);
+
+					if (rLocalChnlInfo.u4PrimaryChnl)
+						continue;
+
+					/* rLocalChnlInfo.u4PrimaryChnl == 0 */
+					rSelChnlInfo =
+						nanSchedNegoSelectChnlInfo(
+							prAdapter, szSlotIdx,
+							szTimeLineIdx,
+							prAdapter->rWifiVar
+							.u4NanPreferBandMask);
+					nanSchedAddCrbToChnlList(prAdapter,
+					      &rSelChnlInfo, szSlotIdx, 1,
+					      ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					      FALSE, NULL);
 
 					continue;
 				}
@@ -10210,7 +10339,7 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 						&u4DefCrbNum,
 						szTimeLineIdx);
 
-				if ((fgFound == TRUE) && prSchedTimeline)
+				if (fgFound && prSchedTimeline)
 					NAN_TIMELINE_SET(
 						prSchedTimeline->au4AvailMap,
 						szSlotIdx);
@@ -10220,15 +10349,10 @@ uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 				rRetStatus = WLAN_STATUS_RESOURCES;
 		}
 
-		if ((rRetStatus == WLAN_STATUS_SUCCESS) ||
-			(fgGenCrbSuccess == TRUE)) {
+		if (rRetStatus == WLAN_STATUS_SUCCESS || fgGenCrbSuccess) {
 			fgGenCrbSuccess = TRUE;
 			rRetStatus = WLAN_STATUS_SUCCESS;
 		}
-
-		if (prSchedTimeline)
-			prSchedTimeline++;
-
 	}
 
 
@@ -10910,8 +11034,8 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 	size_t szTimeLineIdx = 0;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	struct _NAN_SCHEDULE_TIMELINE_T *prImmuTL = NULL;
-	struct _NAN_SCHEDULE_TIMELINE_T *prRngTL = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prImmuTimeline = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prRangingTimeline = NULL;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
@@ -10926,8 +11050,9 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 		/* honor peer's NDC proposal in WAIT-RSP-STATE */
 		prNegoCtrl->rSelectedNdcCtrl.fgValid = FALSE;
 
+		prImmuTimeline = prNegoCtrl->arImmuNdlTimeline;
 		for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
-		     szTimeLineIdx++) {
+		     szTimeLineIdx++, prImmuTimeline++) {
 
 			for (u4SlotIdx = 0; u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS;
 			     u4SlotIdx++) {
@@ -10937,11 +11062,11 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 				if (u4LocalChnl == 0)
 					continue;
 
-				prImmuTL =
-				&prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx];
-				if ((prImmuTL->ucMapId != NAN_INVALID_MAP_ID) &&
-				    (NAN_IS_AVAIL_MAP_SET(prImmuTL->au4AvailMap,
-				    u4SlotIdx)))
+				if (prImmuTimeline->ucMapId !=
+					    NAN_INVALID_MAP_ID &&
+				    NAN_IS_AVAIL_MAP_SET(
+					    prImmuTimeline->au4AvailMap,
+					    u4SlotIdx))
 					continue;
 
 				nanSchedDeleteCrbFromChnlList(prAdapter,
@@ -10958,21 +11083,22 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 		if ((prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK) &&
 		    (prPeerSchDesc->fgImmuNdlTimelineValid == TRUE)) {
 
+			prImmuTimeline = prNegoCtrl->arImmuNdlTimeline;
 			for (szTimeLineIdx = 0;
 			     szTimeLineIdx < szNanActiveTimelineNum;
-			     szTimeLineIdx++) {
+			     szTimeLineIdx++, prImmuTimeline++) {
 				prNanTimelineMgmt =
 					nanGetTimelineMgmt(prAdapter,
 					szTimeLineIdx);
 
-				prImmuTL =
-				&prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx];
-				if (prImmuTL->ucMapId == NAN_INVALID_MAP_ID) {
-					kalMemZero(&prImmuTL->au4AvailMap,
-						sizeof(prImmuTL->au4AvailMap));
-					prImmuTL->ucMapId =
+				if (prImmuTimeline->ucMapId !=
+				    NAN_INVALID_MAP_ID)
+					continue;
+
+				kalMemZero(prImmuTimeline->au4AvailMap,
+					sizeof(prImmuTimeline->au4AvailMap));
+				prImmuTimeline->ucMapId =
 						prNanTimelineMgmt->ucMapId;
-				}
 			}
 			nanSchedNegoMergeCrbByBand(prAdapter,
 					     prNegoCtrl->arImmuNdlTimeline,
@@ -10981,24 +11107,26 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 			prPeerSchDesc->fgImmuNdlTimelineValid = FALSE;
 		}
 
-		if ((prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING) &&
-		    (prPeerSchDesc->fgRangingTimelineValid == TRUE)) {
+		if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING &&
+		    prPeerSchDesc->fgRangingTimelineValid) {
+
+			prRangingTimeline = prNegoCtrl->arRangingTimeline;
 			for (szTimeLineIdx = 0;
 			     szTimeLineIdx < szNanActiveTimelineNum;
-			     szTimeLineIdx++) {
+			     szTimeLineIdx++, prRangingTimeline++) {
 
 				prNanTimelineMgmt =
 					nanGetTimelineMgmt(prAdapter,
 					szTimeLineIdx);
 
-				prRngTL =
-				&prNegoCtrl->arRangingTimeline[szTimeLineIdx];
-				if (prRngTL->ucMapId == NAN_INVALID_MAP_ID) {
-					kalMemZero(&prRngTL->au4AvailMap,
-						sizeof(prRngTL->au4AvailMap));
-					prRngTL->ucMapId =
-						prNanTimelineMgmt->ucMapId;
-				}
+				if (prRangingTimeline->ucMapId !=
+				    NAN_INVALID_MAP_ID)
+					continue;
+
+				kalMemZero(&prRangingTimeline->au4AvailMap,
+					sizeof(prRangingTimeline->au4AvailMap));
+				prRangingTimeline->ucMapId =
+					prNanTimelineMgmt->ucMapId;
 			}
 			nanSchedNegoMergeCrbByBand(prAdapter,
 					     prNegoCtrl->arRangingTimeline,
@@ -11024,14 +11152,17 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 	return rRetStatus;
 }
 
+#define USE_GEN_DEF_CRB_V2 1 /* Use nanSchedNegoGenDefCrbV2() for Ranging */
 uint32_t
 nanSchedNegoGenLocalCrbProposal(struct ADAPTER *prAdapter)
 {
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+#if (USE_GEN_DEF_CRB_V2 != 1)
+	struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
 	size_t szTimeLineIdx = 0;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	struct _NAN_SCHEDULE_TIMELINE_T *prRngTL = NULL;
+#endif
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
@@ -11065,16 +11196,21 @@ nanSchedNegoGenLocalCrbProposal(struct ADAPTER *prAdapter)
 			if (rRetStatus != WLAN_STATUS_SUCCESS)
 				break;
 		} else if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING) {
+#if (USE_GEN_DEF_CRB_V2 == 1)
+			nanSchedNegoGenDefCrbV2(prAdapter, FALSE);
+#else
 			/* check default CRB quota */
+			prTimeline = prNegoCtrl->arRangingTimeline;
 			for (szTimeLineIdx = 0;
 			     szTimeLineIdx < szNanActiveTimelineNum;
-			     szTimeLineIdx++) {
-				prRngTL =
-				&prNegoCtrl->arRangingTimeline[szTimeLineIdx];
-				if (prRngTL->ucMapId == NAN_INVALID_MAP_ID)
-					rRetStatus =
-					nanSchedNegoGenDefCrb(prAdapter, FALSE);
+			     szTimeLineIdx++, prTimeline++) {
+				if (prTimeline->ucMapId != NAN_INVALID_MAP_ID)
+					continue;
+
+				rRetStatus = nanSchedNegoGenDefCrb(prAdapter,
+								   FALSE);
 			}
+#endif
 		}
 		break;
 
@@ -11385,6 +11521,7 @@ nanSchedNegoRangingChkRmtCrbProposalForRspState(struct ADAPTER *prAdapter,
 	unsigned char fgEmptyMapSet = FALSE;
 	uint32_t aau4EmptyMap[NAN_TIMELINE_MGMT_SIZE][NAN_TOTAL_DW] = {0};
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
+	size_t i;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
@@ -11398,11 +11535,15 @@ nanSchedNegoRangingChkRmtCrbProposalForRspState(struct ADAPTER *prAdapter,
 
 	/* Step1. check initial ranging proposal */
 	if (prPeerSchDesc->fgRangingTimelineValid == TRUE) {
-		nanUtilDump(prAdapter, "Ranging Map",
-			    (uint8_t *)prPeerSchDesc->arRangingTimeline[0]
-				    .au4AvailMap,
-			    sizeof(prPeerSchDesc->arRangingTimeline[0]
-					   .au4AvailMap));
+		for (i = 0; i < ARRAY_SIZE(prPeerSchDesc->arRangingTimeline);
+		     i++) {
+			struct _NAN_SCHEDULE_TIMELINE_T *prTimeline =
+				&prPeerSchDesc->arRangingTimeline[i];
+
+			nanUtilDump(prAdapter, "Ranging Map",
+				    (uint8_t *)prTimeline->au4AvailMap,
+				    sizeof(prTimeline->au4AvailMap));
+		}
 		if (nanSchedNegoIsRmtCrbConflict(
 			    prAdapter, prPeerSchDesc->arRangingTimeline,
 			    &fgEmptyMapSet, aau4EmptyMap) == TRUE) {
@@ -11594,6 +11735,7 @@ nanSchedNegoRangingChkRmtCrbProposalForWaitRspState(struct ADAPTER *prAdapter,
 	unsigned char fgEmptyMapSet = FALSE;
 	uint32_t aau4EmptyMap[NAN_TIMELINE_MGMT_SIZE][NAN_TOTAL_DW] = {0};
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
+	size_t i;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
@@ -11606,11 +11748,15 @@ nanSchedNegoRangingChkRmtCrbProposalForWaitRspState(struct ADAPTER *prAdapter,
 	}
 
 	if (prPeerSchDesc->fgRangingTimelineValid == TRUE) {
-		nanUtilDump(prAdapter, "Ranging Map",
-			    (uint8_t *)prPeerSchDesc->arRangingTimeline[0]
-				    .au4AvailMap,
-			    sizeof(prPeerSchDesc->arRangingTimeline[0]
-					   .au4AvailMap));
+		for (i = 0; i < ARRAY_SIZE(prPeerSchDesc->arRangingTimeline);
+		     i++) {
+			struct _NAN_SCHEDULE_TIMELINE_T *prTimeline =
+				&prPeerSchDesc->arRangingTimeline[i];
+
+			nanUtilDump(prAdapter, "Ranging Map",
+				    (uint8_t *)prTimeline->au4AvailMap,
+				    sizeof(prTimeline->au4AvailMap));
+		}
 		if (nanSchedNegoIsRmtCrbConflict(
 			    prAdapter, prPeerSchDesc->arRangingTimeline,
 			    &fgEmptyMapSet, aau4EmptyMap) == TRUE) {
@@ -11806,6 +11952,7 @@ nanSchedNegoGetImmuNdlScheduleList(struct ADAPTER *prAdapter,
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
+	kalMemZero(g_aucNanIEBuffer, sizeof(g_aucNanIEBuffer));
 	do {
 		if ((prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR) &&
 		    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_RESPONDER) &&
@@ -11860,19 +12007,19 @@ nanSchedNegoGetRangingScheduleList(struct ADAPTER *prAdapter,
 	uint32_t u4RetLength = 0;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
 	struct _NAN_SCHEDULE_ENTRY_T *prScheduleEntry = NULL;
-	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt = NULL;
 	size_t szTimeLineIdx = 0;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	struct _NAN_SCHEDULE_TIMELINE_T *prRngTL = NULL;
+	struct _NAN_SCHEDULE_TIMELINE_T *prRangngTimeline = NULL;
 
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
+	kalMemZero(g_aucNanIEBuffer, sizeof(g_aucNanIEBuffer));
 	do {
-		if ((prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR) &&
-		    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_RESPONDER) &&
-		    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_WAIT_RESP) &&
-		    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_CONFIRM)) {
+		if (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR &&
+		    prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_RESPONDER &&
+		    prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_WAIT_RESP &&
+		    prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_CONFIRM) {
 			rRetStatus = WLAN_STATUS_FAILURE;
 			break;
 		}
@@ -11886,22 +12033,27 @@ nanSchedNegoGetRangingScheduleList(struct ADAPTER *prAdapter,
 		for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 		     szTimeLineIdx++) {
 
-			prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter,
-				szTimeLineIdx);
+			prRangngTimeline =
+				&prNegoCtrl->arRangingTimeline[szTimeLineIdx];
+			DBGLOG(NAN, INFO,
+			       "timeline=%u, MapId=%u, avail=%02x-%02x-%02x-%02x",
+			       szTimeLineIdx, prRangngTimeline->ucMapId,
+			       ((uint8_t *)(prRangngTimeline->au4AvailMap))[0],
+			       ((uint8_t *)(prRangngTimeline->au4AvailMap))[1],
+			       ((uint8_t *)(prRangngTimeline->au4AvailMap))[2],
+			       ((uint8_t *)(prRangngTimeline->au4AvailMap))[3]);
 
-			prRngTL = &prNegoCtrl->arRangingTimeline[szTimeLineIdx];
-			if (prRngTL->ucMapId != NAN_INVALID_MAP_ID) {
-				prScheduleEntry =
-					(struct _NAN_SCHEDULE_ENTRY_T *)pucPos;
-				prScheduleEntry->ucMapID =
-					prNanTimelineMgmt->ucMapId;
-				pucPos += 1 /* MapID(1) */;
-				nanParserGenTimeBitmapField(
-					prAdapter,
-					prRngTL->au4AvailMap,
-					pucPos, &u4RetLength);
-				pucPos += u4RetLength;
-			}
+			if (prRangngTimeline->ucMapId == NAN_INVALID_MAP_ID)
+				continue;
+
+			prScheduleEntry =
+				(struct _NAN_SCHEDULE_ENTRY_T *)pucPos;
+			prScheduleEntry->ucMapID = prRangngTimeline->ucMapId;
+			pucPos += 1 /* MapID(1) */;
+			nanParserGenTimeBitmapField(prAdapter,
+						prRangngTimeline->au4AvailMap,
+						pucPos, &u4RetLength);
+			pucPos += u4RetLength;
 		}
 	} while (FALSE);
 
@@ -11925,6 +12077,7 @@ nanSchedNegoGetQosAttr(struct ADAPTER *prAdapter, uint8_t **ppucQosAttr,
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
+	kalMemZero(g_aucNanIEBuffer, sizeof(g_aucNanIEBuffer));
 	do {
 		if ((prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR) &&
 		    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_RESPONDER) &&
@@ -11984,7 +12137,7 @@ nanSchedNegoGetSelectedNdcAttr(struct ADAPTER *prAdapter, uint8_t **ppucNdcAttr,
 			break;
 		}
 
-		kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
+		kalMemZero(g_aucNanIEBuffer, sizeof(g_aucNanIEBuffer));
 
 		prNdcAttr = (struct _NAN_ATTR_NDC_T *)pucPos;
 		prNdcAttr->ucAttrId = NAN_ATTR_ID_NDC;
@@ -12310,7 +12463,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 		*ppucAvailabilityAttr = NULL;
 
 	prAvailAttr = (struct _NAN_ATTR_NAN_AVAILABILITY_T *)g_aucNanIEBuffer;
-	kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
+	kalMemZero(g_aucNanIEBuffer, sizeof(g_aucNanIEBuffer));
 	pucPos = (uint8_t *)prAvailAttr;
 	pucPosEnd = pucPos + sizeof(g_aucNanIEBuffer);
 
@@ -12501,7 +12654,6 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 					   prPeerSchDesc->aucPotMergedBitmap[i];
 			}
 #endif
-
 			u2EntryLength += u4RetLength;
 			pucPos += u4RetLength;
 
@@ -12737,7 +12889,7 @@ nanSchedGetDevCapabilityExtAttr(struct ADAPTER *prAdapter,
 	prAttrDevCapExt =
 		(struct _NAN_ATTR_DEVICE_CAPABILITY_EXT_T *)
 		g_aucNanIEBuffer;
-	kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
+	kalMemZero(g_aucNanIEBuffer, sizeof(g_aucNanIEBuffer));
 
 	prAttrDevCapExt->ucAttrId = NAN_ATTR_ID_DEVICE_CAPABILITY_EXT;
 	prAttrDevCapExt->u2Length = 0;
@@ -18122,6 +18274,54 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 				szTimeLineIdx, szSlotIdx))
 		return g_rNullChnl;
 
+	if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING) {
+		const uint16_t u2NanRangingBand =
+					prAdapter->rWifiVar.u2NanRangingBand;
+
+		if (NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx)) {
+			if (u2NanRangingBand == 2 &&
+			    NAN_SLOT_IS_RANGING_BY_BAND(szTimeLineIdx,
+							szSlotIdx,
+							BAND_2G4)) {
+				rSelChnlInfo = g_r2gDwChnl;
+				nanSchedAddCrbToRangingChnlList(prAdapter,
+					&rSelChnlInfo, szSlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+				nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, szSlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+				return rSelChnlInfo;
+			} else {
+				return g_rNullChnl;
+			}
+		}
+
+		/* 5G/6G timeline */
+		if (NAN_SLOT_IS_RANGING_BY_BAND(szTimeLineIdx, szSlotIdx,
+						BAND_5G)) {
+			if (u2NanRangingBand == 2)
+				return g_rNullChnl;
+
+			rSelChnlInfo = g_r5gDwChnl;
+			if (u2NanRangingBand == 6)
+				rSelChnlInfo = g_r6gDefChnl;
+
+			nanSchedAddCrbToRangingChnlList(prAdapter,
+					&rSelChnlInfo, szSlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+			nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, szSlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+			return rSelChnlInfo;
+		}
+
+		return g_rNullChnl;
+	}
+
 	/* Special case for 2G NDC, all channel 6 or 6-6-6 followed by P2P */
 	if (NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx)) {
 		union _NAN_BAND_CHNL_CTRL rP2pChnlInfo = {0};
@@ -18435,10 +18635,12 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 		 * is ready
 		 *
 		 * Cases to skip 2G channel:
+		 * 0. In NDP negotiation
 		 * 1. highest common band is not 2G, and
 		 * 2. P2P & AIS is NOT MCC in 5G (New)
 		 */
-		else if ((eHighestCommonBand != ENUM_SUPPORTED_BN_2G &&
+		else if (prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK &&
+			 (eHighestCommonBand != ENUM_SUPPORTED_BN_2G &&
 			  nanPeerHas5G6GAvailability(prAdapter,
 						     prNegoCtrl->u4SchIdx)) &&
 			 NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx) &&
