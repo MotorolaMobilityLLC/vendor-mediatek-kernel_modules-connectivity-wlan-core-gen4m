@@ -17688,7 +17688,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 			}
 			/* rSelChnlInfo u4PrimaryChnl == 0 */
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) AIS slot(%zu): Peer infra CH = 0!\n",
+				      "Tidx(%zu) AIS slot(%zu): Peer infra CH = 0!\n",
 				      szTimeLineIdx, szSlotIdx);
 			return g_rNullChnl;
 		}
@@ -18144,7 +18144,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-					    "Tidx(%u) NDL slot(%zu): Peer ch=%u not allowed, counter with %u!\n",
+					    "Tidx(%zu) NDL slot(%zu): Peer ch=%u not allowed, counter with %u!\n",
 					    szTimeLineIdx, szSlotIdx,
 					    u4RmtPrimaryChnl,
 					    g_r5gDwChnl.u4PrimaryChnl);
@@ -18377,7 +18377,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 				return rSelChnlInfo;
 			} else {
 				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) FC slot(%zu): Peer commit/cond ch:%u converge fail!\n",
+					      "Tidx(%zu) FC slot(%zu): Peer commit/cond ch:%u converge fail!\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4RmtPrimaryChnl);
 			}

@@ -11436,7 +11436,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 			if (prNDP->fgNDPValid == FALSE)
 				continue;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"*****************************[NDP #%d]*******************************\n",
+				"*****************************[NDP #%zu]*******************************\n",
 				j);
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 				"[" MACSTR "], %s %s - NdpID:%u, PubID:%u\n",
@@ -11628,7 +11628,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 				prChnlInfo = prNanAvailEntry->arBandChnlCtrl;
 				u4OpClass = prChnlInfo->u4OperatingClass;
 				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-					"[%u][%u] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
+					"[%zu][%u] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
 					i, j, prAvailAttr->ucMapId,
 					prNanAvailEntry->rEntryCtrl.u2RawData,
 					prChnlInfo->u4RawData,
@@ -11640,7 +11640,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 					k++, prChnlInfo++) {
 					LOGBUF(pcCommand, i4TotalLen,
 						i4BytesWritten,
-						"[%u] PriChnl:%u\n",
+						"[%zu] PriChnl:%u\n",
 						k, prChnlInfo->u4PrimaryChnl);
 				}
 
