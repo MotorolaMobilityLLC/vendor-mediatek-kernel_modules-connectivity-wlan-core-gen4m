@@ -159,6 +159,7 @@ static void mt7999WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 static u_int8_t mt7999IsWfdmaRxReady(struct ADAPTER *prAdapter);
 static void mt7999ProcessTxInterruptByEmi(struct ADAPTER *prAdapter);
 static void mt7999ProcessRxInterruptByEmi(struct ADAPTER *prAdapter);
+static void mt7999ProcessSoftwareInterruptByEmi(struct ADAPTER *prAdapter);
 static void mt7999ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus);
 static void mt7999ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
@@ -737,9 +738,11 @@ struct BUS_INFO mt7999_bus_info = {
 #if CFG_MTK_WIFI_WFDMA_WB
 	.processTxInterrupt = mt7999ProcessTxInterruptByEmi,
 	.processRxInterrupt = mt7999ProcessRxInterruptByEmi,
+	.processSoftwareInterrupt = mt7999ProcessSoftwareInterruptByEmi,
 #else
 	.processTxInterrupt = mt7999ProcessTxInterrupt,
 	.processRxInterrupt = mt7999ProcessRxInterrupt,
+	.processSoftwareInterrupt = asicConnac5xProcessSoftwareInterrupt,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 	.tx_ring_ext_ctrl = mt7999WfdmaTxRingExtCtrl,
 	.rx_ring_ext_ctrl = mt7999WfdmaRxRingExtCtrl,
@@ -750,7 +753,6 @@ struct BUS_INFO mt7999_bus_info = {
 	.lowPowerOwnSet = mt7999LowPowerOwnSet,
 	.lowPowerOwnClear = mt7999LowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
-	.processSoftwareInterrupt = asicConnac5xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac5xSoftwareInterruptMcu,
 	.hifRst = asicConnac5xHifRst,
 #if CFG_MTK_WIFI_WFDMA_WB
@@ -2048,9 +2050,6 @@ static void mt7999ProcessSoftwareInterruptByEmi(struct ADAPTER *prAdapter)
 	prSwDoneFlag = (struct WFDMA_EMI_DONE_FLAG *)prSwDoneFlagBuf->AllocVa;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 	u4Sta = prHwDoneFlag->sw_int ^ prSwDoneFlag->sw_int;
-	u4Sta = ((u4Sta & BITS(2, 17)) >> 2) |
-		((u4Sta & BIT(0)) << 31) |
-		((u4Sta & BIT(1)) << 29);
 
 	DBGLOG(HAL, TRACE, "sw_int[0x%x]hwdone[0x%x]swdone[0x%x]\n",
 	       u4Sta, prHwDoneFlag->sw_int, prSwDoneFlag->sw_int);
