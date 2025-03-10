@@ -996,6 +996,10 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 void wlanGetConfig(struct ADAPTER *prAdapter);
 #endif
 
+#if CFG_SUPPORT_MULTI_CARD
+uint32_t wlanGetDevConfig(struct ADAPTER *prAdapter);
+#endif
+
 uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter);
 
 uint32_t wlanConnacDownloadBufferBin(struct ADAPTER

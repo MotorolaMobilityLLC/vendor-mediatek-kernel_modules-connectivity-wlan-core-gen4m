@@ -1356,6 +1356,8 @@ struct GLUE_INFO {
 	u_int8_t reserved_end;
 	/* GLUE_INFO reserved END area for each wlanProbe */
 
+	uint8_t aucDevCfgPath[20];
+
 #if CFG_SUPPORT_MULTI_CARD
 	struct wireless_dev *prWdev[KAL_AIS_NUM];
 
@@ -1597,6 +1599,16 @@ struct WLAN_DFS_CHANNEL_REQ_ENTRY {
 
 struct WLANDEV_INFO {
 	struct net_device *prDev;
+};
+
+/*
+ * case 0: Read ./wlanXXX/configFile
+ * case 1: Read ./configFile
+ */
+enum {
+	READ_DEV_CFG = 0,
+	READ_DEFAULT_CFG,
+	READ_CFG_TOTAL_NUM
 };
 
 /*******************************************************************************
@@ -2010,6 +2022,10 @@ uint32_t wlanGetDriverDbgLevel(uint32_t u4DbgIdx,
 
 void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			u_int8_t fgEnable);
+
+#if CFG_SUPPORT_MULTI_CARD
+uint32_t wlanGetDevConfig(struct ADAPTER *prAdapter);
+#endif
 
 void wlanGetConfig(struct ADAPTER *prAdapter);
 

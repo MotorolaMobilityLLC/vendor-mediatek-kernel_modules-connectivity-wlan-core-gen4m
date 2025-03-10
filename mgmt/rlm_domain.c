@@ -4522,6 +4522,10 @@ u_int8_t rlmDomainTxPwrLimitLoadFromFile(
 #define TXPWRLIMIT_FILE_LEN 64
 	u_int8_t bRet = TRUE;
 	uint8_t aucPath[TXPWRLIMIT_FILE_LEN];
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+#if CFG_SUPPORT_MULTI_CARD
+	uint32_t u4Idx;
+#endif
 
 	if (!prFileName || kalStrLen(prFileName) == 0) {
 		bRet = FALSE;
@@ -4530,19 +4534,46 @@ u_int8_t rlmDomainTxPwrLimitLoadFromFile(
 	}
 
 	kalMemZero(aucPath, sizeof(aucPath));
-	kalSnprintf(aucPath, TXPWRLIMIT_FILE_LEN, "%s", prFileName);
 
-	if (kalRequestFirmware(
-			aucPath,
-			pucConfigBuf,
-			pu4ConfigReadLen,
-			FALSE,
-			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
-		/* ToDo:: Nothing */
-	} else {
-		bRet = FALSE;
-		goto error;
+	/*
+	 * case 0: Read ./wlanXXX/TxPwrLimit.dat
+	 * case 1: Read ./TxPwrLimit.dat
+	 */
+#if CFG_SUPPORT_MULTI_CARD
+	for (u4Idx = READ_DEV_CFG; u4Idx < READ_CFG_TOTAL_NUM; u4Idx++) {
+		if (u4Idx == READ_DEV_CFG &&
+			prGlueInfo->aucDevCfgPath[0] == '\0')
+			continue;
+
+		kalMemZero(aucPath, sizeof(aucPath));
+
+		if (u4Idx == READ_DEV_CFG)
+			kalSnprintf(aucPath, TXPWRLIMIT_FILE_LEN, "%s/%s",
+				prGlueInfo->aucDevCfgPath, prFileName);
+		else
+#endif /* CFG_SUPPORT_MULTI_CARD */
+			kalSnprintf(aucPath, TXPWRLIMIT_FILE_LEN,
+				"%s", prFileName);
+
+		if (kalRequestFirmware(
+				aucPath,
+				pucConfigBuf,
+				pu4ConfigReadLen,
+				FALSE,
+				kalGetGlueDevHdl(prGlueInfo)) == 0) {
+			/* ToDo:: Nothing */
+#if CFG_SUPPORT_MULTI_CARD
+			break;
+		} else if (u4Idx < READ_CFG_TOTAL_NUM - 1) {
+			continue;
+#endif
+		} else {
+			bRet = FALSE;
+			goto error;
+		}
+#if CFG_SUPPORT_MULTI_CARD
 	}
+#endif
 
 	if (*pu4ConfigReadLen == 0) {
 		bRet = FALSE;

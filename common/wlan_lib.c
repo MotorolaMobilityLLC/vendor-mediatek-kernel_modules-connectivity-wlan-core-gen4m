@@ -11780,6 +11780,73 @@ int32_t wlanHexToNum(char c)
 	return -1;
 }
 
+#if CFG_SUPPORT_MULTI_CARD
+uint32_t wlanDevCfgParse(struct ADAPTER *prAdapter,
+		      uint8_t *pucConfigBuf, uint32_t u4ConfigBufLen)
+{
+	struct WLAN_CFG_PARSE_STATE_S state;
+	int8_t *apcArgv[DEV_CFG_ARGS_NUM];
+	int8_t **ppcArgs;
+	int32_t i4Nargs;
+	int8_t  arcArgv_size[DEV_CFG_ARGS_NUM];
+	uint32_t u4Ret = 0;
+
+	ppcArgs = apcArgv;
+	i4Nargs = 0;
+	state.ptr = pucConfigBuf;
+	state.nexttoken = 0;
+#if CFG_SUPPORT_EASY_DEBUG
+	state.textsize = 0;
+#endif
+	state.maxSize = u4ConfigBufLen;
+
+	for (;;) {
+		switch (wlanCfgFindNextToken(&state)) {
+		case STATE_EOF:
+			if (i4Nargs < DEV_CFG_ARGS_NUM)
+				return WLAN_STATUS_FAILURE;
+
+			DBGLOG(INIT, INFO, "STATE_EOF\n");
+
+			u4Ret = wlanDevCfgParseEntry(prAdapter, ppcArgs,
+						arcArgv_size, i4Nargs);
+			return u4Ret;
+
+		case STATE_NEWLINE:
+			if (i4Nargs < DEV_CFG_ARGS_NUM)
+				break;
+
+			DBGLOG(INIT, INFO, "STATE_NEWLINE\n");
+
+			u4Ret = wlanDevCfgParseEntry(prAdapter, ppcArgs,
+						arcArgv_size, i4Nargs);
+			if (!u4Ret)
+				return WLAN_STATUS_SUCCESS;
+
+			kalMemSet(arcArgv_size, 0, DEV_CFG_ARGS_NUM);
+			kalMemSet(apcArgv, 0,
+				DEV_CFG_ARGS_NUM * sizeof(int8_t *));
+			i4Nargs = 0;
+			break;
+
+		case STATE_TEXT:
+			if (i4Nargs >= 0 && i4Nargs < DEV_CFG_ARGS_NUM) {
+				ppcArgs[i4Nargs++] = state.text;
+				arcArgv_size[i4Nargs - 1] = state.textsize;
+				state.textsize = 0;
+				DBGLOG(INIT, INFO,
+				       " nargs= %d STATE_TEXT = %s, SIZE = %d\n",
+				       i4Nargs - 1, ppcArgs[i4Nargs - 1],
+				       arcArgv_size[i4Nargs - 1]);
+			}
+			break;
+		} /* switch (wlanCfgFindNextToken(&state)) */
+	} /* for (;;) */
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 /**
  * wlanHexStrToByteArray() - Convert string in hex format to byte array
  * @hexString: input buffer of converted string in hexadecimal format with '\0'

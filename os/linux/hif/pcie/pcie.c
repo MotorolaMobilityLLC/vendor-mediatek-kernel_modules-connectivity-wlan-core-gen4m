@@ -3974,3 +3974,55 @@ error_return:
 	return -1;
 }
 #endif /* CFG_MTK_WIFI_PCIE_SR */
+
+#if CFG_SUPPORT_MULTI_CARD
+uint32_t wlanDevCfgParseEntry(struct ADAPTER *prAdapter,
+		      int8_t **pprArgs, int8_t *prArgv_size, int32_t i4Nargs)
+{
+	uint32_t u4Ret = 0;
+	uint32_t u4Bus = 0, u4Dev = 0, u4Func = 0;
+	uint32_t u4WlanNameLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct pci_dev *pdev = NULL;
+
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (i4Nargs < DEV_CFG_ARGS_NUM) {
+		DBGLOG(INIT, ERROR, "i4Nargs Fail\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	pdev = prGlueInfo->rHifInfo.pdev;
+
+	u4Ret = kalkStrtou32(pprArgs[DEV_CFG_BUS_NUM], 0, &u4Bus);
+	if (u4Ret)
+		return WLAN_STATUS_FAILURE;
+
+	u4Ret = kalkStrtou32(pprArgs[DEV_CFG_DEV_NUM], 0, &u4Dev);
+	if (u4Ret)
+		return WLAN_STATUS_FAILURE;
+
+	u4Ret = kalkStrtou32(pprArgs[DEV_CFG_FUNC_NUM], 0, &u4Func);
+	if (u4Ret)
+		return WLAN_STATUS_FAILURE;
+
+	if (u4Bus  != pdev->bus->number ||
+		u4Dev  != PCI_SLOT(pdev->devfn) ||
+		u4Func != PCI_FUNC(pdev->devfn)) {
+		return WLAN_STATUS_FAILURE;
+	}
+
+	u4WlanNameLen = kalStrLen(pprArgs[DEV_CFG_WLAN_NAME]) + 1;
+
+	kalMemCopy(
+		prGlueInfo->aucDevCfgPath,
+		pprArgs[DEV_CFG_WLAN_NAME], u4WlanNameLen);
+
+	DBGLOG(INIT, INFO, "Wlan Config Dir Name=%s\n",
+			pprArgs[DEV_CFG_WLAN_NAME]);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_MULTI_CARD */

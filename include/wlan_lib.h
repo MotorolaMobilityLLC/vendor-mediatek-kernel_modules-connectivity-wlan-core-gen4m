@@ -2473,6 +2473,11 @@ void wlanCfgDumpIotApRule(struct ADAPTER *prAdapter);
 u_int8_t wlanIsHexChar(char c);
 int32_t wlanHexToNum(char c);
 
+#if CFG_SUPPORT_MULTI_CARD
+uint32_t wlanDevCfgParse(struct ADAPTER *prAdapter,
+		      uint8_t *pucConfigBuf, uint32_t u4ConfigBufLen);
+#endif
+
 int32_t wlanHexStrToByteArray(const char *hexString,
 				 uint8_t *byte, size_t szBufSize);
 int32_t wlanByteArrayToHexStr(char *str, size_t u4StrBufSize,

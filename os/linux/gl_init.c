@@ -5369,6 +5369,9 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 		goto free_all;
 	}
 #endif
+
+	kalMemSet(prGlueInfo->aucDevCfgPath, 0x00,
+					sizeof(prGlueInfo->aucDevCfgPath));
 #endif /* CFG_SUPPORT_MULTI_CARD */
 
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
@@ -6815,6 +6818,42 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 }
 #endif
 
+#if CFG_SUPPORT_MULTI_CARD
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief get hif info config from specified device hw path
+ *
+ * \param[in] prAdapter
+ *
+ * \retval VOID
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanGetDevConfig(struct ADAPTER *prAdapter)
+{
+#define WIFI_DEVCFG_FN       "wifidev.cfg"
+
+	uint8_t *pucConfigBuf = NULL;
+	uint32_t u4ConfigReadLen = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	if (kalRequestFirmware(WIFI_DEVCFG_FN, &pucConfigBuf,
+		   &u4ConfigReadLen, TRUE,
+		   prAdapter->prGlueInfo->prDev) == 0) {
+		/* Nothing */
+	}
+
+	if (pucConfigBuf) {
+		wlanDevCfgParse(prAdapter, pucConfigBuf, u4ConfigReadLen);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
+	} else {
+		/* wifidev.cfg not found, will use default config file */
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief get config from wifi.cfg
@@ -6831,6 +6870,9 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 #else
 #define WIFI_CFG_FN	CFG_WIFI_CFG_FN
 #endif
+#define WIFI_CFG_FILE_LEN 64
+
+	const uint8_t *aStrCfgName[] = { "wifi_sigma.cfg",  WIFI_CFG_FN };
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen;
 #if WLAN_INCLUDE_SYS
@@ -6839,18 +6881,54 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 	uint8_t *pucMergedBuf = NULL;
 	uint32_t u4ConfigMergedLen;
 #endif
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t aucFileName[WIFI_CFG_FILE_LEN];
+	uint32_t i, j;
+
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
 
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	u4ConfigReadLen = 0;
 
-	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
-		   &u4ConfigReadLen, TRUE,
-		   prAdapter->prGlueInfo->prDev) == 0) {
-		/* ToDo:: Nothing */
-	} else if (kalRequestFirmware(WIFI_CFG_FN, &pucConfigBuf,
-		   &u4ConfigReadLen, TRUE,
-		   prAdapter->prGlueInfo->prDev) == 0) {
-		/* ToDo:: Nothing */
+	prGlueInfo = prAdapter->prGlueInfo;
+	/*
+	 * case 0: Read wifi_sigma.cfg
+	 * case 1: Read wifi.cfg
+	 */
+	for (i = 0; i < ARRAY_SIZE(aStrCfgName); i++) {
+#if (CFG_SUPPORT_MULTI_CARD == 0)
+		for (j = READ_DEFAULT_CFG; j < READ_CFG_TOTAL_NUM; j++) {
+#else
+		/*
+		 * case 0: Read ./wlanXXX/wifi_sigma.cfg -> ./wifi_sigma.cfg
+		 * case 1: Read ./wlanXXX/wifi.cfg -> ./wifi.cfg
+		 */
+		for (j = READ_DEV_CFG; j < READ_CFG_TOTAL_NUM; j++) {
+			if (j == READ_DEV_CFG &&
+				prGlueInfo->aucDevCfgPath[0] == '\0')
+				continue;
+#endif
+			kalMemZero(aucFileName, sizeof(aucFileName));
+
+			if (j == READ_DEV_CFG)
+				kalSnprintf(aucFileName, WIFI_CFG_FILE_LEN,
+					"%s/%s", prGlueInfo->aucDevCfgPath,
+					aStrCfgName[i]);
+			else
+				kalSnprintf(aucFileName, WIFI_CFG_FILE_LEN,
+					"%s", aStrCfgName[i]);
+
+			if (kalRequestFirmware(aucFileName, &pucConfigBuf,
+				&u4ConfigReadLen, TRUE,
+				prAdapter->prGlueInfo->prDev) == 0) {
+				/* ToDo:: Nothing */
+				break;
+			}
+		}
+
+		if (pucConfigBuf)
+			break;
 	}
 
 #if WLAN_INCLUDE_SYS
@@ -7472,6 +7550,9 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	uint32_t retWlanStat = WLAN_STATUS_FAILURE;
+#if CFG_SUPPORT_MULTI_CARD
+	uint8_t aucDevEeprom[52];
+#endif
 
 	if (prAdapter->fgIsSupportPowerOnSendBufferModeCMD == FALSE
 #if defined(UEFI_WORKAROUND)
@@ -7529,14 +7610,31 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 			goto label_exit;
 		}
 
+#if CFG_SUPPORT_MULTI_CARD
+		kalMemZero(aucDevEeprom, sizeof(aucDevEeprom));
+
+		if (prAdapter->prGlueInfo->aucDevCfgPath[0])
+			kalSnprintf(aucDevEeprom, sizeof(aucDevEeprom),
+				"%s/%s",
+				prGlueInfo->aucDevCfgPath, aucEeprom);
+
 		/* 1 <3> Request buffer bin */
-		if (kalRequestFirmware(aucEeprom, &pucConfigBuf,
+		if (aucDevEeprom[0] &&
+			kalRequestFirmware(aucDevEeprom, &pucConfigBuf,
 				&u4ReadLen, FALSE,
 				prGlueInfo->prDev) == 0) {
 			DBGLOG(INIT, DEBUG, "request file done\n");
-		} else {
-			DBGLOG(INIT, DEBUG, "can't find file\n");
-			goto label_exit;
+		} else
+#endif
+		{
+			if (kalRequestFirmware(aucEeprom, &pucConfigBuf,
+				&u4ReadLen, FALSE,
+				prGlueInfo->prDev) == 0) {
+				DBGLOG(INIT, DEBUG, "request file done\n");
+			} else {
+				DBGLOG(INIT, DEBUG, "can't find file\n");
+				goto label_exit;
+			}
 		}
 
 		DBGLOG(INIT, DEBUG,
@@ -8166,6 +8264,10 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prAdapter->fgIsSupportCsumOffload = FALSE;
 	prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
+#endif
+
+#if CFG_SUPPORT_MULTI_CARD
+	wlanGetDevConfig(prAdapter);
 #endif
 
 #if CFG_SUPPORT_CFG_FILE

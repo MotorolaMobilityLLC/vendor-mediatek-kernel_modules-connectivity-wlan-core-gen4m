@@ -109,6 +109,17 @@
  *******************************************************************************
  */
 
+#if CFG_SUPPORT_MULTI_CARD
+/* Format: "wlanName BusNumber DevNumer FuncNumber */
+enum ENUM_DEV_CFG_ARGS_TYPE {
+	DEV_CFG_WLAN_NAME = 0,
+	DEV_CFG_BUS_NUM,
+	DEV_CFG_DEV_NUM,
+	DEV_CFG_FUNC_NUM,
+	DEV_CFG_ARGS_NUM
+};
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 struct GL_HIF_INFO;
 
 struct HIF_MEM_OPS {
@@ -798,6 +809,11 @@ void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
 void pcie_gen_switch_get_pcie_mode(struct pci_dev *pci_dev,
 	uint8_t *ucGen, uint8_t *ucLane);
 #endif
+
+#if CFG_SUPPORT_MULTI_CARD
+uint32_t wlanDevCfgParseEntry(struct ADAPTER *prAdapter,
+		      int8_t **pprArgs, int8_t *prArgv_size, int32_t i4Nargs);
+#endif /* CFG_SUPPORT_MULTI_CARD */
 
 /*******************************************************************************
  *                              F U N C T I O N S
