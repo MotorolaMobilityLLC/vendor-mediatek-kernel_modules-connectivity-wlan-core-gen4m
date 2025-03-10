@@ -511,6 +511,9 @@ static int wlan_netevent_notifier_call(struct notifier_block *nb,
 	if (!neighbour || !neighbour->dev)
 		return NOTIFY_DONE;
 
+	if (!prGlueInfo->prAdapter)
+		return NOTIFY_DONE;
+
 	ucBssIndex = wlanGetBssIdxByNetInterface(prGlueInfo, neighbour->dev);
 	if (ucBssIndex >= MAX_BSSID_NUM)
 		return NOTIFY_DONE;
