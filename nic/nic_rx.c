@@ -4324,6 +4324,35 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 	return i4BytesWritten;
 }
 
+int32_t nicRxGetDataLastRxRssi(struct ADAPTER *prAdapter,
+				int32_t *ai4RSSI, uint8_t ucWlanIdx)
+{
+	uint32_t u4RxV3 = 0;
+	uint8_t ucStaIdx = 0;
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+	    WLAN_STATUS_SUCCESS) {
+		u4RxV3 = prAdapter->arStaRec[ucStaIdx].au4RxV[3];
+		DBGLOG(REQ, LOUD, "****** RX Vector3 = 0x%08x ******\n",
+		       u4RxV3);
+	} else {
+		return -1;
+	}
+
+	ai4RSSI[0] = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI0_MASK) >>
+			      RX_VT_RCPI0_OFFSET);
+	ai4RSSI[1] = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI1_MASK) >>
+			      RX_VT_RCPI1_OFFSET);
+
+	if (prAdapter->rWifiVar.ucNSS > 2) {
+		ai4RSSI[2] = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI2_MASK) >>
+				      RX_VT_RCPI2_OFFSET);
+		ai4RSSI[3] = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI3_MASK) >>
+				      RX_VT_RCPI3_OFFSET);
+	}
+	return 0;
+}
+
 int32_t nicRxGetDataLastRxAntRcpi(struct ADAPTER *prAdapter,
 				uint8_t ucWlanIdx, uint8_t ucBssIndex)
 {

@@ -11217,6 +11217,40 @@ void rlmSyncAntCtrl(struct ADAPTER *prAdapter, uint8_t txNss, uint8_t rxNss)
 #endif
 }
 
+void rlmSyncSapAntCtrl(struct ADAPTER *prAdapter,
+			uint8_t ucNss, uint8_t ucBssIndex)
+{
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint8_t cmd[30] = {0};
+	uint8_t strLen = 0;
+	uint32_t strOutLen = 0;
+	uint8_t ucNssConfig = 3;
+
+	if (ucNss == 1)
+		ucNssConfig = 1;
+	else if (ucNss == 2)
+		ucNssConfig = 3;
+	else
+		return;
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+			"AntControl 6 %d %d",
+			ucNssConfig, BIT(ucBssIndex));
+	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = strLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
+	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+
+	/* clean up */
+	prAdapter->fgANTCtrl = false;
+	prAdapter->ucANTCtrlPendingCount = 0;
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief

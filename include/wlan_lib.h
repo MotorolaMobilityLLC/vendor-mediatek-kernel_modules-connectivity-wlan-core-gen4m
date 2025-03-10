@@ -2336,6 +2336,10 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			   uint8_t ucBssIndex);
 #endif
 
+int wlanQueryStaLastRxRssi(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
+
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
@@ -2633,6 +2637,10 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 		 void *prBssPtr, struct STA_RECORD *prStaRec,
 		 uint32_t *pu4CurRate, uint32_t *pu4MaxRate);
 #endif /* CFG_REPORT_MAX_TX_RATE */
+
+int wlanGetRxRateByStaRec(struct GLUE_INFO *prGlueInfo,
+		struct STA_RECORD *prStaRec, uint32_t *pu4CurRate,
+		uint32_t *pu4MaxRate, struct RxRateInfo *prRxRateInfo);
 
 int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 		uint32_t *pu4CurRate, uint32_t *pu4MaxRate,

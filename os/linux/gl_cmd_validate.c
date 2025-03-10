@@ -145,6 +145,12 @@ struct CMD_VALIDATE_POLICY set_acl_policy[COMMON_CMD_GET_ARG_NUM(2)] = {
 struct CMD_VALIDATE_POLICY add_acl_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 17}
 };
+struct CMD_VALIDATE_POLICY get_sta_info_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 17}
+};
+struct CMD_VALIDATE_POLICY set_sap_ant_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
+};
 #if CFG_SUPPORT_NAN
 struct CMD_VALIDATE_POLICY set_faw_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
@@ -946,6 +952,22 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.u4PolicySize = 0
 	},
 #endif
+	{
+		.pcCmdStr  = CMD_AP_GET_STA_LINKSPEED,
+		.pfHandler = priv_driver_ap_get_sta_linkspeed,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = get_sta_info_policy,
+		.u4PolicySize = ARRAY_SIZE(get_sta_info_policy)
+	},
+	{
+		.pcCmdStr  = CMD_AP_DYN_ANT_CTRL,
+		.pfHandler = priv_driver_ap_set_ant_nss,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = set_sap_ant_policy,
+		.u4PolicySize = ARRAY_SIZE(set_sap_ant_policy)
+	},
 	{
 		.pcCmdStr  = CMD_GET_BW160_CAPA,
 		.pfHandler = priv_driver_get_bw160_capa,

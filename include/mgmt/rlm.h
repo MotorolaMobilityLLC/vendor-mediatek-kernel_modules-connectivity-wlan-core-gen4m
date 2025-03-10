@@ -712,6 +712,9 @@ void rlmSyncOperationParams(struct ADAPTER *prAdapter,
 
 void rlmSyncAntCtrl(struct ADAPTER *prAdapter, uint8_t txNss, uint8_t rxNss);
 
+void rlmSyncSapAntCtrl(struct ADAPTER *prAdapter,
+			    uint8_t ucNss, uint8_t ucBssIndex);
+
 void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo);
 

@@ -4865,6 +4865,27 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 }
 #endif
 
+uint32_t
+wlanoidQueryStaLastRxRssi(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rResult = WLAN_STATUS_FAILURE;
+
+	if (!prAdapter || !pvQueryBuffer || !pu4QueryInfoLen)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_QUERY_STA_RX_INFO))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	rResult = wlanQueryStaLastRxRssi(prAdapter,
+				pvQueryBuffer,
+				u4QueryBufferLen,
+				pu4QueryInfoLen,
+				TRUE);
+	return rResult;
+}
+
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 uint32_t
 wlanoidQueryStaBigDataByWidx(struct ADAPTER *prAdapter,

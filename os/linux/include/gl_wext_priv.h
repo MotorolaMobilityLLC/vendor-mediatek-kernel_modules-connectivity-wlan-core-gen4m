@@ -513,6 +513,10 @@ int priv_driver_proc_set_ap_start(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_linkspeed(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_ap_get_sta_linkspeed(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_ap_set_ant_nss(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_disablepartial(struct net_device *prNetDev,

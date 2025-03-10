@@ -2482,6 +2482,14 @@ struct STATS_LLS_TX_BIT_RATE {
 };
 #endif /* CFG_SUPPORT_LLS */
 
+struct PARAM_QUERY_STA_RX_INFO {
+	struct STA_RECORD *prStaRec;
+	uint32_t *pu4CurRate;
+	uint32_t *pu4MaxRate;
+	struct RxRateInfo *prRxRateInfo;
+	int32_t *pu4Rssi;
+};
+
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 #define IPI_HIST_LEVEL_NUM 11
 
@@ -5719,6 +5727,11 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen);
 #endif
+
+uint32_t
+wlanoidQueryStaLastRxRssi(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
 
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 uint32_t

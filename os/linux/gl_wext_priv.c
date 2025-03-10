@@ -11963,6 +11963,180 @@ int priv_driver_get_linkspeed(struct net_device *prNetDev,
 
 }				/* priv_driver_get_linkspeed */
 
+int priv_driver_ap_get_sta_linkspeed(struct net_device *prNetDev,
+			      char *pcCommand, int i4TotalLen)
+{
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_QUERY_STA_BIG_DATA rTxBigData;
+	struct PARAM_QUERY_STA_RX_INFO rRxBigData;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint32_t u4Rate = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucBssIndex;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
+	int32_t i4Argc = 0, i4Ret = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	uint32_t u4CurRxRate, u4MaxRxRate;
+	struct RxRateInfo rRxRateInfo = {0};
+	int32_t ai4Rssi[4] = {0};
+
+	if (!prNetDev)
+		return -1;
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!netif_carrier_ok(prNetDev))
+		return -1;
+
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return -EFAULT;
+
+	DBGLOG(REQ, LOUD, "ucBssIdx %u\n",
+	       ucBssIndex);
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 2)
+		return -1;
+
+	i4Ret = priv_driver_inspect_mac_addr(apcArgv[1]);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "inspect mac format error u4Ret=%d\n",
+		       i4Ret);
+		return -1;
+	}
+
+	i4Ret = sscanf(apcArgv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		&aucMacAddr[0], &aucMacAddr[1], &aucMacAddr[2],
+		&aucMacAddr[3], &aucMacAddr[4], &aucMacAddr[5]);
+
+	if (i4Ret < 0) {
+		DBGLOG(INIT, ERROR,
+				"incorrect mac\n");
+		return -1;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+		ucBssIndex);
+
+	/* get Station Record */
+	prStaRec = bssGetClientByMac(prGlueInfo->prAdapter,
+		prBssInfo, aucMacAddr);
+	if (prStaRec == NULL) {
+		DBGLOG(REQ, WARN, "can't find station\n");
+		i4BytesWritten = -1;
+		return -1;
+	}
+
+	kalMemSet(&rTxBigData, 0, sizeof(rTxBigData));
+	kalMemSet(&rRxBigData, 0, sizeof(rRxBigData));
+
+	rTxBigData.ucWlanIdx = prStaRec->ucWlanIndex;
+	COPY_MAC_ADDR(rTxBigData.aucMacAddr, aucMacAddr);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryStaBigDataByWidx,
+			   &rTxBigData, sizeof(rTxBigData), &u4BufLen,
+			   ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
+		rStatus, prGlueInfo, u4BufLen);
+	DBGLOG(REQ, TRACE,
+		"snr:%u/%u and TxLinkSpeed:%u\n",
+		rTxBigData.aucSnr[0],
+		rTxBigData.aucSnr[1],
+		rTxBigData.u2TxLinkSpeed);
+	rRxBigData.prStaRec = prStaRec;
+	rRxBigData.pu4CurRate = &u4CurRxRate;
+	rRxBigData.pu4MaxRate = &u4MaxRxRate;
+	rRxBigData.prRxRateInfo = &rRxRateInfo;
+	rRxBigData.pu4Rssi = ai4Rssi;
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryStaLastRxRssi,
+			   &rRxBigData, sizeof(rRxBigData), &u4BufLen,
+			   ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(SW4, INFO,
+		"Sta_idx[%u] Rx_rate[%u] Rssi[%d, %d, %d, %d]\n",
+		prStaRec->ucIndex,
+		u4CurRxRate,
+		ai4Rssi[0], ai4Rssi[1],
+		ai4Rssi[2], ai4Rssi[3]);
+
+	u4Rate = rTxBigData.u2TxLinkSpeed;
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "TxLinkSpeed:%u",
+				  (unsigned int)u4Rate);
+	i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				",RxLinkSpeed=%u,Rssi:%d,%d\n",
+				u4CurRxRate,
+				ai4Rssi[0], ai4Rssi[1]);
+	return i4BytesWritten;
+#else
+	return -1;
+#endif
+}				/* priv_driver_ap_get_sta_linkspeed */
+
+int priv_driver_ap_set_ant_nss(struct net_device *prNetDev,
+			      char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4Parse;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucNSS;
+	int32_t i4Argc = 0, i4Ret = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!netif_carrier_ok(prNetDev))
+		return -1;
+
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return -EFAULT;
+
+	DBGLOG(REQ, LOUD, "ucBssIdx %hhu\n",
+	       ucBssIndex);
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 2)
+		return -1;
+
+	i4Ret = kalkStrtou32(apcArgv[i4Argc - 1], 0, &u4Parse);
+	if (i4Ret) {
+		DBGLOG(REQ, WARN, "parse apcArgv error u4Ret=%d\n",
+			i4Ret);
+		return -1;
+	}
+	ucNSS = (uint8_t) u4Parse;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+		ucBssIndex);
+
+	rlmSyncSapAntCtrl(prGlueInfo->prAdapter, ucNSS, ucBssIndex);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+	return i4BytesWritten;
+
+}				/* priv_driver_ap_get_sta_linkspeed */
+
 int priv_driver_set_band(struct net_device *prNetDev, char *pcCommand,
 			 int i4TotalLen)
 {

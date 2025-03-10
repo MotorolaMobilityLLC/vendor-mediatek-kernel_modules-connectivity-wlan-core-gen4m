@@ -15114,6 +15114,32 @@ int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 
 }
 
+int wlanQueryStaLastRxRssi(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
+{
+	uint32_t u4Status = WLAN_STATUS_NOT_SUPPORTED;
+	struct PARAM_QUERY_STA_RX_INFO *prBigDataParam;
+
+	if (!pvQueryBuffer || !prAdapter || !pu4QueryInfoLen)
+		return WLAN_STATUS_FAILURE;
+
+	prBigDataParam = (struct PARAM_QUERY_STA_RX_INFO *)pvQueryBuffer;
+	wlanGetRxRateByStaRec(prAdapter->prGlueInfo,
+				  prBigDataParam->prStaRec,
+				  prBigDataParam->pu4CurRate,
+				  prBigDataParam->pu4MaxRate,
+				  prBigDataParam->prRxRateInfo);
+	nicRxGetDataLastRxRssi(prAdapter,
+				  prBigDataParam->pu4Rssi,
+				  prBigDataParam->prStaRec->ucWlanIndex);
+
+	u4Status = WLAN_STATUS_SUCCESS;
+
+
+	return u4Status;
+}
+
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
@@ -15360,6 +15386,44 @@ int wlanQueryTrxLatBigDataByBssIdx(struct ADAPTER *prAdapter,
 	return u4Status;
 }
 #endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
+
+int wlanGetRxRateByStaRec(struct GLUE_INFO *prGlueInfo,
+		struct STA_RECORD *prStaRec, uint32_t *pu4CurRate,
+		uint32_t *pu4MaxRate, struct RxRateInfo *prRxRateInfo)
+{
+	struct ADAPTER *prAdapter;
+	uint32_t *prRxV = NULL; /* pointer to stored RxV */
+	uint8_t ucWlanIdx;
+	uint8_t ucStaIdx;
+
+	if (!prGlueInfo) {
+		DBGLOG(SW4, ERROR, "prGlueInfo is null\n");
+		return -1;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prStaRec) {
+		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		return -1;
+	}
+
+	ucWlanIdx = prStaRec->ucWlanIndex;
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+		WLAN_STATUS_SUCCESS) {
+		if (prAdapter->rWifiVar.ucGetRxRateMode) {
+			return wlanGetRxRatev2(prGlueInfo, ucStaIdx,
+					pu4CurRate, pu4MaxRate, prRxRateInfo);
+		} else {
+			prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+			return wlanGetRxRate(prGlueInfo, prRxV,
+					pu4CurRate, pu4MaxRate, prRxRateInfo);
+		}
+	} else {
+		DBGLOG_LIMITED(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+		return -1;
+	}
+}
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
