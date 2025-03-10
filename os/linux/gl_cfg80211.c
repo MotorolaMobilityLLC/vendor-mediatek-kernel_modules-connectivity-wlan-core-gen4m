@@ -6833,7 +6833,7 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if (!prGlueInfo || kalHaltTryLock(prGlueInfo))
+	if (!prGlueInfo)
 		return 0;
 
 	if (kalIsHalted(prGlueInfo))
@@ -6886,8 +6886,6 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 		0);
 #endif
 end:
-	kalHaltUnlock(prGlueInfo);
-
 	return 0;
 }
 
@@ -6914,7 +6912,7 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if (!prGlueInfo || kalHaltTryLock(prGlueInfo))
+	if (!prGlueInfo)
 		return 0;
 
 	if (kalIsHalted(prGlueInfo))
@@ -6951,8 +6949,6 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 		0);
 #endif
 end:
-	kalHaltUnlock(prGlueInfo);
-
 	return 0;
 }
 

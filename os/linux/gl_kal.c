@@ -11181,89 +11181,6 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 	schedule_work(&prAdapter->prGlueInfo->rTxMsduFreeWork);
 }
 #endif
-int32_t kalHaltLock(struct ADAPTER *prAdapter, uint32_t waitMs)
-{
-	int32_t i4Ret = 0;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct KAL_HALT_CTRL_T *prHaltCtrl = NULL;
-
-	prGlueInfo = (prAdapter) ? prAdapter->prGlueInfo : NULL;
-
-	if (!prGlueInfo) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
-		return -EINVAL;
-	}
-	prHaltCtrl = &prGlueInfo->rHaltCtrl;
-
-	if (waitMs) {
-		i4Ret = down_timeout(&prHaltCtrl->lock,
-				     MSEC_TO_JIFFIES(waitMs));
-		if (!i4Ret)
-			goto success;
-		if (i4Ret != -ETIME)
-			return i4Ret;
-
-		if (prHaltCtrl->fgHeldByKalIoctl) {
-			DBGLOG(INIT, ERROR,
-			       "kalIoctl was executed longer than %u ms, show backtrace of tx_thread!\n",
-			       kalGetTimeTick() - prHaltCtrl->u4HoldStart);
-			if (prGlueInfo)
-				kal_show_stack(prGlueInfo->prAdapter,
-					prGlueInfo->main_thread, NULL);
-		} else {
-			DBGLOG(INIT, ERROR,
-			       "halt lock held by %s pid %d longer than %u ms!\n",
-			       prHaltCtrl->owner->comm, prHaltCtrl->owner->pid,
-			       kalGetTimeTick() - prHaltCtrl->u4HoldStart);
-			if (prGlueInfo)
-				kal_show_stack(prGlueInfo->prAdapter,
-					prHaltCtrl->owner, NULL);
-		}
-		return i4Ret;
-	}
-	down(&prHaltCtrl->lock);
-success:
-	prHaltCtrl->owner = current;
-	prHaltCtrl->u4HoldStart = kalGetTimeTick();
-	return 0;
-}
-
-int32_t kalHaltTryLock(struct GLUE_INFO *prGlueInfo)
-{
-	int32_t i4Ret = 0;
-
-	if (!prGlueInfo) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
-		return 0;
-	}
-
-	i4Ret = down_trylock(&prGlueInfo->rHaltCtrl.lock);
-	if (i4Ret)
-		return i4Ret;
-	prGlueInfo->rHaltCtrl.owner = current;
-	prGlueInfo->rHaltCtrl.u4HoldStart = kalGetTimeTick();
-	return 0;
-}
-
-void kalHaltUnlock(struct GLUE_INFO *prGlueInfo)
-{
-	struct KAL_HALT_CTRL_T *prHaltCtrl = NULL;
-
-	if (!prGlueInfo) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
-		return;
-	}
-	prHaltCtrl = &prGlueInfo->rHaltCtrl;
-
-	if (kalGetTimeTick() - prHaltCtrl->u4HoldStart >
-	    WLAN_OID_TIMEOUT_THRESHOLD * 2 &&
-	    prHaltCtrl->owner)
-		DBGLOG(INIT, ERROR,
-		       "process %s pid %d hold halt lock longer than 4s!\n",
-		       prHaltCtrl->owner->comm, prHaltCtrl->owner->pid);
-	prHaltCtrl->owner = NULL;
-	up(&prHaltCtrl->lock);
-}
 
 void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt)
 {
@@ -11271,7 +11188,7 @@ void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt)
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
 		return;
 	}
-	prGlueInfo->rHaltCtrl.fgHalt = fgHalt;
+	prGlueInfo->fgDriverHalt = fgHalt;
 }
 
 u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo)
@@ -11280,7 +11197,7 @@ u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL");
 		return FALSE;
 	}
-	return prGlueInfo->rHaltCtrl.fgHalt;
+	return prGlueInfo->fgDriverHalt;
 }
 
 
@@ -13869,11 +13786,7 @@ static int wlan_fb_notifier_callback(struct notifier_block
 		goto end;
 	}
 
-	if (kalHaltTryLock(prGlueInfo))
-		goto end;
-
 	if (kalIsHalted(prGlueInfo)) {
-		kalHaltUnlock(prGlueInfo);
 		goto end;
 	}
 
@@ -13883,7 +13796,6 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	} else
 		kalSetPerMonEnable(prGlueInfo);
 
-	kalHaltUnlock(prGlueInfo);
 	TRACE_FUNC(SW4, DEBUG, "%s: end\n");
 end:
 	return 0;

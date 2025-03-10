@@ -275,18 +275,6 @@ u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
 			       uint8_t *data, uint16_t dataLen);
 #endif /* CFG_SUPPORT_AGPS_ASSIST */
 
-/* driver halt */
-struct KAL_HALT_CTRL_T {
-/* TODO: os-related */
-#if 0
-	struct semaphore lock;
-	struct task_struct *owner;
-#endif
-	u_int8_t fgHalt;
-	u_int8_t fgHeldByKalIoctl;
-	OS_SYSTIME u4HoldStart;
-};
-
 struct KAL_THREAD_SCHEDSTATS {
 	/* when marked: the profiling start time(ms),
 	 * when unmarked: total duration(ms)
@@ -1947,9 +1935,6 @@ u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter);
 #endif
 #endif
 
-int32_t kalHaltLock(struct ADAPTER *prAdapter, uint32_t waitMs);
-int32_t kalHaltTryLock(struct GLUE_INFO *prGlueInfo);
-void kalHaltUnlock(struct GLUE_INFO *prGlueInfo);
 void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt);
 u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo);
 

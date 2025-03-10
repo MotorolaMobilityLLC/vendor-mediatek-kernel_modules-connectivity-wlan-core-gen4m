@@ -1341,7 +1341,7 @@ struct GLUE_INFO {
 
 	struct ECO_INFO eco_info;
 
-	struct KAL_HALT_CTRL_T rHaltCtrl;
+	u_int8_t fgDriverHalt;
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* for kalDevKickData() in kal_pdma.c */

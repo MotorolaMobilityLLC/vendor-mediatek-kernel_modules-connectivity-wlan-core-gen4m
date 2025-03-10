@@ -5236,12 +5236,7 @@ static void wlanResetGlueInfo(struct GLUE_INFO *prGlueInfo, uint8_t fgNeedRsvd)
 
 	kalStrnCpy(prGlueInfo->aucFbName, "wlan_fb_notifier", u4WlanFbLen);
 
-	prGlueInfo->rHaltCtrl.lock = (struct semaphore)
-		__SEMAPHORE_INITIALIZER(prGlueInfo->rHaltCtrl.lock, 1);
-	prGlueInfo->rHaltCtrl.owner = NULL;
-	prGlueInfo->rHaltCtrl.fgHalt = TRUE;
-	prGlueInfo->rHaltCtrl.fgHeldByKalIoctl = FALSE;
-	prGlueInfo->rHaltCtrl.u4HoldStart = 0;
+	prGlueInfo->fgDriverHalt = TRUE;
 }
 
 #if CFG_SUPPORT_MULTI_CARD

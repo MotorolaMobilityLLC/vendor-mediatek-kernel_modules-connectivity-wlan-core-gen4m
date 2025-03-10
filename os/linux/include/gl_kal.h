@@ -485,14 +485,6 @@ enum ENUM_KAL_MEM_ALLOCATION_TYPE_E {
 #define KAL_WAKE_LOCK_T uint32_t
 #endif
 
-struct KAL_HALT_CTRL_T {
-	struct semaphore lock;
-	struct task_struct *owner;
-	u_int8_t fgHalt;
-	u_int8_t fgHeldByKalIoctl;
-	OS_SYSTIME u4HoldStart;
-};
-
 struct KAL_THREAD_SCHEDSTATS {
 	/* when marked: the profiling start time(ms),
 	 * when unmarked: total duration(ms)
@@ -2504,9 +2496,6 @@ uint8_t kalGetEapolKeyType(void *prPacket);
 u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter);
 #endif
 
-int32_t kalHaltLock(struct ADAPTER *prAdapter, uint32_t waitMs);
-int32_t kalHaltTryLock(struct GLUE_INFO *prGlueInfo);
-void kalHaltUnlock(struct GLUE_INFO *prGlueInfo);
 void kalSetHalted(struct GLUE_INFO *prGlueInfo, u_int8_t fgHalt);
 u_int8_t kalIsHalted(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_MULTITHREAD
