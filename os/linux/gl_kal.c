@@ -11824,54 +11824,60 @@ static size_t composeNdevDrp(struct ADAPTER *prAdapter, char *pos, char *end)
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
 	char *orig = pos;
 	uint32_t i;
-	struct BSS_INFO *bss;
-	struct net_device *ndev = NULL;
-	uint8_t fgIsValidNetDevice = FALSE;
+	struct net_device *dev, *ndev;
 #if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
 	struct rtnl_link_stats64 rtnls;
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
+	struct BSS_INFO *bss;
+	uint8_t fgIsValidNetDevice;
 
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 	pos += kalSnprintf(pos, end - pos, "ndevdrp:");
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		ndev = wlanGetNetDev(glue, i);
-		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		dev = wlanGetNetDev(glue, i);
+		if (!dev)
+			continue;
 
-		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
-		fgIsValidNetDevice = FALSE;
-
-		if (ndev) {
-			if (!IS_BSS_P2P(bss)) /* non-p2p */
-				fgIsValidNetDevice = TRUE;
 #if CFG_ENABLE_WIFI_DIRECT
-			else if (prAdapter->rP2PNetRegState ==
-					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
-				fgIsValidNetDevice = TRUE;
-#endif
-		}
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (IS_BSS_P2P(bss)) {
+			fgIsValidNetDevice = TRUE;
+			/* Make sure p2p netdevice is in registered state */
+			GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+			if (prAdapter->rP2PNetRegState !=
+					ENUM_NET_REG_STATE_REGISTERED)
+				fgIsValidNetDevice = FALSE;
+			GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 
-		if (fgIsValidNetDevice) {
-#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
-			dev_get_stats(ndev, &rtnls);
-			pos += kalSnprintf(pos, end - pos,
-				"[%llu:%llu:%llu:%llu]",
-				(unsigned long long) ndev->stats.tx_dropped,
-				(unsigned long long) rtnls.tx_dropped,
-				(unsigned long long) ndev->stats.rx_dropped,
-				(unsigned long long) rtnls.rx_dropped);
-#else
-			pos += kalSnprintf(pos, end - pos,
-				"[%llu:%llu:%llu:%llu]",
-				(unsigned long long) ndev->stats.tx_dropped,
-				(unsigned long long)
-					atomic_long_read(&ndev->tx_dropped),
-				(unsigned long long) ndev->stats.rx_dropped,
-				(unsigned long long)
-					atomic_long_read(&ndev->rx_dropped));
-#endif
+			if (!fgIsValidNetDevice)
+				continue;
 		}
-		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+#endif
+
+		rcu_read_lock();
+		ndev = rcu_dereference(dev);
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+		dev_get_stats(ndev, &rtnls);
+		pos += kalSnprintf(pos, end - pos,
+			"[%llu:%llu:%llu:%llu]",
+			(unsigned long long) ndev->stats.tx_dropped,
+			(unsigned long long) rtnls.tx_dropped,
+			(unsigned long long) ndev->stats.rx_dropped,
+			(unsigned long long) rtnls.rx_dropped);
+#else
+		pos += kalSnprintf(pos, end - pos,
+			"[%llu:%llu:%llu:%llu]",
+			(unsigned long long) ndev->stats.tx_dropped,
+			(unsigned long long)
+				atomic_long_read(&ndev->tx_dropped),
+			(unsigned long long) ndev->stats.rx_dropped,
+			(unsigned long long)
+				atomic_long_read(&ndev->rx_dropped));
+#endif
+		rcu_read_unlock();
 	}
 
 	pos += kalSnprintf(pos, end - pos, " ");
@@ -11885,35 +11891,41 @@ static size_t composeTsoSupport(struct ADAPTER *prAdapter, char *pos, char *end)
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
 	char *orig = pos;
 	uint32_t i;
+	struct net_device *dev, *ndev;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct BSS_INFO *bss;
-	struct net_device *ndev = NULL;
-	uint8_t fgIsValidNetDevice = FALSE;
+	uint8_t fgIsValidNetDevice;
 
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 	pos += kalSnprintf(pos, end - pos, "tso:");
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		ndev = wlanGetNetDev(glue, i);
-		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		dev = wlanGetNetDev(glue, i);
+		if (!dev)
+			continue;
 
-		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
-		fgIsValidNetDevice = FALSE;
-
-		if (ndev) {
-			if (!IS_BSS_P2P(bss)) /* non-p2p */
-				fgIsValidNetDevice = TRUE;
 #if CFG_ENABLE_WIFI_DIRECT
-			else if (prAdapter->rP2PNetRegState ==
-					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
-				fgIsValidNetDevice = TRUE;
-#endif
-		}
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (IS_BSS_P2P(bss)) {
+			fgIsValidNetDevice = TRUE;
+			/* Make sure p2p netdevice is in registered state */
+			GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+			if (prAdapter->rP2PNetRegState !=
+					ENUM_NET_REG_STATE_REGISTERED)
+				fgIsValidNetDevice = FALSE;
+			GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 
-		if (fgIsValidNetDevice) {
-			pos += kalSnprintf(pos, end - pos,
-				"[%u]", !!(ndev->features & NETIF_F_TSO));
+			if (!fgIsValidNetDevice)
+				continue;
 		}
-		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+#endif
+
+		rcu_read_lock();
+		ndev = rcu_dereference(dev);
+		pos += kalSnprintf(pos, end - pos,
+			"[%u]", !!(ndev->features & NETIF_F_TSO));
+		rcu_read_unlock();
 	}
 
 	pos += kalSnprintf(pos, end - pos, " ");
