@@ -637,6 +637,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+	{
+		.pcCmdStr  = CMD_RUN_HQA,
+		.pfHandler = priv_driver_run_hqa,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 	{
 		.pcCmdStr  = CMD_SET_PWR_CTRL,
@@ -647,6 +655,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
+	{
+		.pcCmdStr  = CMD_SET_TASAR,
+		.pfHandler = priv_driver_set_tasar,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 	{
 		.pcCmdStr  = CMD_SUPPORT_NVRAM,
 		.pfHandler = priv_driver_support_nvram,
@@ -1915,14 +1933,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
-	{
-		.pcCmdStr  = CMD_RUN_HQA,
-		.pfHandler = priv_driver_run_hqa,
-		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
 #if CFG_SUPPORT_DBDC
 	{
 		.pcCmdStr  = CMD_SET_STA1NSS,
@@ -2574,16 +2584,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 #endif
-#if (CFG_SUPPORT_TAS_HOST_CONTROL == 1)
-	{
-		.pcCmdStr  = CMD_SET_TASAR,
-		.pfHandler = priv_driver_set_tasar,
-		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-#endif /* CFG_SUPPORT_TAS_HOST_CONTROL == 1 */
 	{
 		.pcCmdStr  = CMD_SET_ATXOP_SHARING,
 		.pfHandler = priv_driver_set_atxop,

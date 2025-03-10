@@ -708,6 +708,9 @@
 #define COUNTRY_LMT_CH_GRP_KEY_6G_UNII_7    -10 /* 6G 117~185 */
 #define COUNTRY_LMT_CH_GRP_KEY_6G_UNII_8    -11 /* 6G 187~233 */
 
+/* dynamic tx power common interface with fw*/
+#define ANT_EXT_BIT_ANTSWAP_AUX 7
+
 enum ENUM_TX_POWER_CTRL_LIST_TYPE {
 	PWR_CTRL_TYPE_DEFAULT_LIST = 0,
 	PWR_CTRL_TYPE_DYNAMIC_LIST,
@@ -768,6 +771,14 @@ enum ENUM_POWER_TAG_CATEGORY {
 
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+
+/*  Migrate ENUM_POWER_ANT_TAG to driver cache dimensions
+ */
+enum ENUM_POWER_CACHE_ANT_TAG {
+	POWER_ANT_CACHE_CHAIN_COMP,
+	POWER_ANT_CACHE_CHAIN_ABS,
+	POWER_ANT_CACHE_TAG_NUM
+};
 
 /* Revise channel power limit by scenario with parameter
  * (WF05G, WF02G4, WF15G, WF12G4)
@@ -830,6 +841,13 @@ enum ENUM_PWR_LMT_CHAIN_ANT {
 	PWR_LMT_CHAIN_ANT_WF2,
 	PWR_LMT_CHAIN_ANT_NUM
 };
+
+/* For CHAIN_COMP/CHAIN_ABS */
+enum ENUM_PWR_LMT_ANT_EXT {
+	PWR_LMT_ANT_EXT_MAIN = 0,
+	PWR_LMT_ANT_EXT_AUX,
+	PWR_LMT_ANT_EXT_NUM,
+};
 #endif
 
 enum ENUM_PWR_LMT_CHAIN_CFG_TYPE {
@@ -872,15 +890,15 @@ struct TX_PWR_CTRL_CHANNEL_SETTING {
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 struct TX_PWR_CTRL_ANT_SETTING {
-	int8_t aiPwrAnt2G4[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt5GB1[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt5GB2[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt5GB3[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt5GB4[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt6GB1[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt6GB2[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt6GB3[PWR_LMT_CHAIN_ANT_NUM];
-	int8_t aiPwrAnt6GB4[PWR_LMT_CHAIN_ANT_NUM];
+	int8_t aiPwrAnt2G4[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt5GB1[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt5GB2[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt5GB3[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt5GB4[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt6GB1[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt6GB2[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt6GB3[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
+	int8_t aiPwrAnt6GB4[PWR_LMT_CHAIN_ANT_NUM][PWR_LMT_ANT_EXT_NUM];
 };
 #endif
 
@@ -1346,6 +1364,12 @@ enum ENUM_PWR_REG_6G_BIT {
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+struct TX_PWR_ANT_EXT_OPTION {
+	const char arKeywords[32];
+	enum ENUM_PWR_LMT_ANT_EXT eAntExt;
+	uint8_t u4OptionBit;
+};
+
 struct TX_PWR_ANT_CFG_PARA_TABLE {
 	const char arKeywords[32];
 	uint8_t ucSettingNum;
@@ -1661,20 +1685,6 @@ void txPwrCtrlAddElement(struct ADAPTER *prAdapter,
 				struct TX_PWR_CTRL_ELEMENT *prElement);
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
-int32_t txPwrParseTagMimo1T(
-	char *pStart, char *pEnd, uint8_t cTagParaNum,
-	struct TX_PWR_CTRL_ELEMENT *pRecord);
-int32_t txPwrParseTagMimo2T(
-	char *pStart, char *pEnd, uint8_t cTagParaNum,
-	struct TX_PWR_CTRL_ELEMENT *pRecord);
-int32_t txPwrParseTagAllT(
-	char *pStart, char *pEnd, uint8_t cTagParaNum,
-	struct TX_PWR_CTRL_ELEMENT *pRecord);
-
-int32_t txPwrParseTagAllT6G(
-	char *pStart, char *pEnd, uint8_t cTagParaNum,
-	struct TX_PWR_CTRL_ELEMENT *pRecord);
-
 int32_t txPwrParseTagChainComp(
 	char *pStart, char *pEnd, uint8_t cTagParaNum,
 	struct TX_PWR_CTRL_ELEMENT *pRecord);

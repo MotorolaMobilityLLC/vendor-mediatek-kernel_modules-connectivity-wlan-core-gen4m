@@ -28,6 +28,12 @@
  *******************************************************************************
  */
 
+/*------------------------------------------------------------------------------
+ * It will auto enable g_rTasarCountryTbl[0].tbl[0]/eci:0 setting
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_TASAR_DEFAULT_ON		1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -39,10 +45,10 @@
  */
 
 struct tasar_country g_rTasarCountryTbl_reg0[] = {
-	{{'T', 'W'}}, {{'J', 'P'}}
+	{{'U', 'S'}},
 };
 struct tasar_country g_rTasarCountryTbl_reg1[] = {
-	{{'A', 'D'}}
+	{{'C', 'A'}}
 };
 struct tasar_country g_rTasarCountryTbl_reg2[] = {
 	{{'A', 'E'}}
@@ -291,7 +297,7 @@ static uint32_t tasarSendSetChipCmd(struct ADAPTER *prAdapter, char *pcCommand)
 
 static uint32_t tasarSendPowerLimit(
 	struct ADAPTER *prAdapter,
-	uint32_t u4ChannelGroup,
+	uint32_t u4ChGrp,
 	uint32_t u4Eci)
 {
 	char pcTasCommand[CHIP_CONFIG_RESP_SIZE];
@@ -307,26 +313,36 @@ static uint32_t tasarSendPowerLimit(
 		DBGLOG(RLM, INFO, "[TAS] u4Eci invalid\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	if (u4ChannelGroup >= TASAR_WIFI_CHANNEL_GRP_NUM) {
-		DBGLOG(RLM, INFO, "[TAS] u4ChannelGroup invalid\n");
+	if (u4ChGrp >= TASAR_WIFI_CHANNEL_GRP_NUM) {
+		DBGLOG(RLM, INFO, "[TAS] u4ChGrp invalid\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
 	prTasarCfg = &prAdapter->rTasarCfg;
 
+	if ((WIFI_CHANNEL_GRP_BAND(prTasarCfg, u4ChGrp) == 0xFF) ||
+		(WIFI_CHANNEL_GRP_LOW_CH(prTasarCfg, u4ChGrp) == 0xFF) ||
+		(WIFI_CHANNEL_GRP_UP_CH(prTasarCfg, u4ChGrp) == 0xFF) ||
+		(WIFI_CHANNEL_GRP_SISO_MIMO_DELTA(prTasarCfg, u4ChGrp)
+			== 0xFF)) {
+		DBGLOG(RLM, INFO, "[TAS] Channel Group %d defined invalid\n",
+			u4ChGrp);
+		return rWlanStatus;
+	}
+
 	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
 		"coex tasar_set 20 %d %d %d %d %d %d %d %d %d %d %d\n",
-		u4ChannelGroup,
-		WIFI_CHANNEL_GRP_BAND(prTasarCfg, u4ChannelGroup),
-		WIFI_CHANNEL_GRP_LOW_CH(prTasarCfg, u4ChannelGroup),
-		WIFI_CHANNEL_GRP_UP_CH(prTasarCfg, u4ChannelGroup),
-		WIFI_CHANNEL_GRP_SISO_MIMO_DELTA(prTasarCfg, u4ChannelGroup),
-		WIFI_PLIMIT_WF0_ANT0(prTasarCfg, u4ChannelGroup, u4Eci),
-		WIFI_PLIMIT_WF0_ANT1(prTasarCfg, u4ChannelGroup, u4Eci),
-		WIFI_PLIMIT_WF1_ANT0(prTasarCfg, u4ChannelGroup, u4Eci),
-		WIFI_PLIMIT_WF1_ANT1(prTasarCfg, u4ChannelGroup, u4Eci),
-		WIFI_PLIMIT_WF2_ANT0(prTasarCfg, u4ChannelGroup, u4Eci),
-		WIFI_PLIMIT_WF2_ANT1(prTasarCfg, u4ChannelGroup, u4Eci)
+		u4ChGrp,
+		WIFI_CHANNEL_GRP_BAND(prTasarCfg, u4ChGrp),
+		WIFI_CHANNEL_GRP_LOW_CH(prTasarCfg, u4ChGrp),
+		WIFI_CHANNEL_GRP_UP_CH(prTasarCfg, u4ChGrp),
+		WIFI_CHANNEL_GRP_SISO_MIMO_DELTA(prTasarCfg, u4ChGrp),
+		WIFI_PLIMIT_WF0_ANT0(prTasarCfg, u4ChGrp, u4Eci),
+		WIFI_PLIMIT_WF0_ANT1(prTasarCfg, u4ChGrp, u4Eci),
+		WIFI_PLIMIT_WF1_ANT0(prTasarCfg, u4ChGrp, u4Eci),
+		WIFI_PLIMIT_WF1_ANT1(prTasarCfg, u4ChGrp, u4Eci),
+		WIFI_PLIMIT_WF2_ANT0(prTasarCfg, u4ChGrp, u4Eci),
+		WIFI_PLIMIT_WF2_ANT1(prTasarCfg, u4ChGrp, u4Eci)
 	);
 	rWlanStatus = tasarSendSetChipCmd(prAdapter, pcTasCommand);
 
@@ -534,6 +550,18 @@ void tasarInit(struct ADAPTER *prAdapter)
 		prAdapter->rTasarScenrio.u4RegTblIndex,
 		prAdapter->rTasarScenrio.u2CountryCode,
 		prAdapter->rTasarScenrio.u4Eci);
+
+#if (CFG_SUPPORT_TASAR_DEFAULT_ON == 1)
+	struct tasar_scenrio_ctrl rScenrio;
+
+	rScenrio.u2CountryCode +=
+		(uint16_t) g_rTasarCountryTbl[0].tbl[0].aucCountryCode[0] << 8;
+	rScenrio.u2CountryCode +=
+		(uint16_t) g_rTasarCountryTbl[0].tbl[0].aucCountryCode[1];
+	rScenrio.u4Eci = 0;
+	tasarUpdateScenrio(prAdapter, rScenrio);
+#endif
+
 }
 
 void tasarUpdateScenrio(
