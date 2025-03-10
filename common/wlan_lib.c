@@ -9070,6 +9070,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	wlanCfgSetUint32(prAdapter, "NanBandChnlType",
 		prWifiVar->ucNanBandChnlType);
+	INIT_UINT(prWifiVar->ucNanMergePotentialThreshold, "NanMergePotential",
+		INSUFFICIENT_COMMITTED_SLOTS, FEATURE_TO_CUSTOMER);
+
 	INIT_UINT(prWifiVar->ucNan6gBandwidth, "Nan6gBw", MAX_BW_160MHZ,
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanSkipAnqp, "NanSkipAnqp", 0,

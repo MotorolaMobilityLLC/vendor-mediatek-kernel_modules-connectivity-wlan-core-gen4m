@@ -1665,6 +1665,7 @@ struct WIFI_VAR {
 	/* Initiate NDL reschedule from this device */
 	uint8_t ucNanEnable6gReschedInit;
 	uint8_t ucNanBandChnlType;
+	uint8_t ucNanMergePotentialThreshold;
 	uint8_t ucNan6gBandwidth;
 
 	unsigned char fgEnableNDPE;

@@ -4278,7 +4278,8 @@ static void setBandChnlByPref(union _NAN_BAND_CHNL_CTRL dw2gChnl,
 
 #if MERGE_POTENTIAL
 /* Matching a specific Availability Entry Pattern with limited Time Bitmap */
-static u_int8_t isCommittedInsufficient(uint16_t u2EntryControl,
+static u_int8_t isCommittedInsufficient(struct ADAPTER *prAdapter,
+			uint16_t u2EntryControl,
 			uint8_t *pucTimeBitmap,
 			uint8_t ucTimeBitmapLength,
 			struct _NAN_BAND_CHNL_LIST_T *prAttrBandChnlList)
@@ -4310,7 +4311,7 @@ static u_int8_t isCommittedInsufficient(uint16_t u2EntryControl,
 		return FALSE;
 
 	u4BitCount = nanUtilCheckBitOneCnt(pucTimeBitmap, ucTimeBitmapLength);
-	if (u4BitCount >= INSUFFICIENT_COMMITTED_SLOTS)
+	if (u4BitCount >= prAdapter->rWifiVar.ucNanMergePotentialThreshold)
 		return FALSE;
 
 	DBGLOG(NAN, INFO,
@@ -4434,6 +4435,19 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *prTimeBitmap;
 	struct _NAN_BAND_CHNL_LIST_T *prChnlList;
 	struct _NAN_SIMPLE_CHNL_ENTRY_T *pChosen = NULL;
+	struct _NAN_SIMPLE_CHNL_ENTRY_T rPrefer2gChannel = {
+		.ucOperatingClass = g_r2gDwChnl.u4OperatingClass,
+		.u2ChannelBitmap = BITS(0, 10), /* ff 07 (little endian dump) */
+		.ucPrimaryChnlBitmap = 0,
+	};
+#if (CFG_SUPPORT_NAN_6G == 1)
+	struct _NAN_SIMPLE_CHNL_ENTRY_T rPrefer6gChannel = {
+		.ucOperatingClass = g_r6gDefChnl.u4OperatingClass,
+		.u2ChannelBitmap = BIT(0), /* 01 00 (little endian dump) */
+		.ucPrimaryChnlBitmap =
+			BIT((g_r6gDefChnl.u4PrimaryChnl - 1) / 4),
+	};
+#endif
 	uint8_t *pucTimeBitmap = NULL;
 	struct _NAN_SIMPLE_CHNL_ENTRY_T *prBandChnlList;
 	uint8_t *p;
@@ -4441,9 +4455,9 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	uint32_t idx;
 	uint32_t i;
 	uint32_t u4CommittedBitmap = 0;
-	u_int8_t fgCommitted6G = FALSE;
 	u_int8_t fgConditional = FALSE;
 	u_int8_t fgCommitted2G = FALSE;
+	u_int8_t fgCommitted6G = FALSE;
 	uint8_t *pConditionalPtr = NULL;
 	uint32_t ucCheckOpClass;
 
@@ -4483,6 +4497,39 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 			if (prChnlList->ucNonContiguous)
 				continue;
 
+			if (prChnlList->ucType ==
+			    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
+				uint8_t *pucBand = prChnlList->aucEntry;
+
+				for (i = 0; i < prChnlList->ucNumberOfEntry;
+				     i++) {
+					DBGLOG(NAN, INFO, "potential band: %u",
+					       pucBand[i]);
+					if (IS_2G_OP_CLASS(ucCheckOpClass) &&
+					    pucBand[i] ==
+						NAN_SUPPORTED_BAND_ID_2P4G &&
+					    !pChosen &&
+					    !fgCommitted2G && !fgConditional) {
+						pChosen = &rPrefer2gChannel;
+						pucTimeBitmap = pTimeBitmapTmp;
+						continue;
+					}
+#if (CFG_SUPPORT_NAN_6G == 1)
+					if (IS_6G_OP_CLASS(ucCheckOpClass) &&
+					    pucBand[i] ==
+						NAN_PROPRIETY_BAND_ID_6G &&
+					    !pChosen &&
+					    !fgCommitted6G && !fgConditional) {
+						pChosen = &rPrefer6gChannel;
+						pucTimeBitmap = pTimeBitmapTmp;
+						continue;
+					}
+#endif
+				}
+				continue;
+			}
+
+			/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
 			prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
 				prChnlList->aucEntry;
 			for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
@@ -4829,7 +4876,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 	uint32_t u4Token;
-	u_int8_t fgFill6gByPotential = FALSE;
+	u_int8_t fgFillByPotential = FALSE;
 	uint8_t *p2 = NULL;
 	uint8_t *p6 = NULL;
 	size_t new_size;
@@ -4941,12 +4988,17 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 #endif
 	if (!nanGetFeatureIsSigma(prAdapter) &&
 	    prNDP && prNDP->eCurrentNDPProtocolState == NDP_IDLE) {
-		DBGLOG(NAN, STATE, "Attempt to add 6G conditional");
-		fgFill6gByPotential = TRUE;
+		fgFillByPotential = TRUE;
 	}
-	if (fgFill6gByPotential) {
-		p6 = scanAvailabilityAttr(prAttrNanAvailibility,
-			&r6gConditional);
+
+	if (fgFillByPotential) {
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 1)
+		if (getPeerSchDescMaxCap(prPeerSchDesc) == BAND_6G) {
+			DBGLOG(NAN, STATE, "Attempt to add 6G conditional");
+			p6 = scanAvailabilityAttr(prAttrNanAvailibility,
+				&r6gConditional);
+		}
+#endif
 	}
 	if (p6) {
 		if (p2)
@@ -4962,7 +5014,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	}
 
 	if (updateAvailability(prAdapter, prPeerSchDesc, prAttrNanAvailibility,
-			       prNanAvailDB, fgFill6gByPotential)) {
+			       prNanAvailDB, fgFillByPotential)) {
 		rRetStatus = WLAN_STATUS_PENDING;
 	}
 	if (prCondAttrNanAvailibility)
@@ -4993,6 +5045,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 		    struct _NAN_AVAILABILITY_DB_T *prNanAvailDB,
 		    u_int8_t fgFillByPotential)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucNeedCounter = 0;
 	uint8_t *pucAvailEntry;
 	uint8_t *pucAvailEntryEndPos;
@@ -5113,7 +5166,8 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 
 			/* Committed, too few bits, mark prDstAvailEntry */
 			if (fgFillByPotential &&
-			    isCommittedInsufficient(u2EntryControl,
+			    isCommittedInsufficient(prAdapter,
+					u2EntryControl,
 					&prTimeBitmapAndBandChnlEntry[3],
 					ucTimeBitmapLength,
 					prAttrBandChnlList)) {
@@ -5329,7 +5383,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 
 			if (nanUtilCheckBitOneCnt(aucCommitConditionalBitmap,
 						  TYPICAL_BITMAP_LENGTH) <
-				    INSUFFICIENT_COMMITTED_SLOTS &&
+				prWifiVar->ucNanMergePotentialThreshold &&
 			    prDstAvailEntry && ucPotentPriChnl) {
 				/* multiple potential availability attributes */
 				if (pucCommitCondTimeBitmap)
@@ -5372,7 +5426,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 #if MERGE_POTENTIAL
 			if (nanUtilCheckBitOneCnt(aucCommitConditionalBitmap,
 						  TYPICAL_BITMAP_LENGTH) <
-				    INSUFFICIENT_COMMITTED_SLOTS &&
+				prWifiVar->ucNanMergePotentialThreshold &&
 			    prDstAvailEntry &&
 			    prBandCtrl->u4BandIdMask &
 				    BIT(NAN_SUPPORTED_BAND_ID_5G) &&

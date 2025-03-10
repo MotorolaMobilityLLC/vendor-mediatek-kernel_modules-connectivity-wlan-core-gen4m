@@ -113,7 +113,7 @@
 /**
  * Merge potential to committed if the conditions holds:
  * 1. The bitmap length must be 4 (to be modified)
- * 2. The committed slots is less than INSUFFICIENT_COMMITTED_SLOTS
+ * 2. The committed slots is less than ucNanMergePotentialThreshold
  * 3. The potential slots is equal or more than SUFFICIENT_POTENTIAL_SLOTS
  */
 #define TYPICAL_BITMAP_LENGTH 4
@@ -747,6 +747,9 @@ uint32_t nanSchedNegoGetSelectedNdcAttr(struct ADAPTER *prAdapter,
 					uint32_t *pu4NdcAttrLength);
 uint32_t nanSchedNegoAddQos(struct ADAPTER *prAdapter, uint32_t u4MinSlots,
 			    uint32_t u4MaxLatency);
+
+enum ENUM_BAND
+getPeerSchDescMaxCap(struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc);
 
 uint32_t nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 				     struct _NAN_NDL_INSTANCE_T *prNDL,
