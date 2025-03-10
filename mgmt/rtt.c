@@ -1601,11 +1601,11 @@ u_int8_t rttGetRSTABssIndex(struct ADAPTER *prAdapter,
 			IS_BSS_ACTIVE(prBssInfo) &&
 			EQUAL_MAC_ADDR(pucDestAddr,
 			prBssInfo->aucOwnMacAddr)) {
-			break;
+			return ucBssIndex;
 		}
 	}
 
-	return ucBssIndex;
+	return 0;
 }
 
 u_int8_t rttIsRSTAActive(struct ADAPTER *prAdapter)
