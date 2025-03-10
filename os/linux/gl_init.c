@@ -5406,6 +5406,21 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	 */
 	prWiphy->bands[KAL_BAND_5GHZ] = &(WLAN_GET_DATA(mtk_band_5ghz));
 #if (CFG_SUPPORT_WIFI_6G == 1)
+#if CFG_EXT_FEATURE
+#if (CFG_SUPPORT_802_11BE == 1)
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
+	/* Customized request: if not support WiFi7, do not fill in EHT cap */
+	if (glIsWiFi7CfgFile() == FALSE) {
+		kalMemZero(&mtk_cap_6g[0].eht_cap,
+			sizeof(mtk_cap_6g[0].eht_cap));
+		kalMemZero(&mtk_cap_6g[1].eht_cap,
+			sizeof(mtk_cap_6g[1].eht_cap));
+		DBGLOG(INIT, INFO, "Not support WF7.\n");
+	}
+#endif
+#endif
+#endif
 	prWiphy->bands[KAL_BAND_6GHZ] = &(WLAN_GET_DATA(mtk_band_6ghz));
 	DBGLOG(INIT, DEBUG, "Support 6G\n");
 #endif
