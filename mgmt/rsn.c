@@ -4104,26 +4104,32 @@ uint8_t rsnCheckCombackBssDesc(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
-	uint8_t i;
+	uint8_t i, fgTargetExist = FALSE;
 
 	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-
 	if (!prAisSpecBssInfo)
 		return FALSE;
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
-		if (!prAisSpecBssInfo->aprTargetComebackBssDesc[i])
-			continue;
+		if (prAisSpecBssInfo->aprTargetComebackBssDesc[i]) {
+			fgTargetExist = TRUE;
+			break;
+		}
+	}
 
-		if (!prStaRec)
-			return TRUE;
+	/* for temp reject comback */
+	if (!prStaRec)
+		return fgTargetExist;
 
-		if (EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
+	/* for ap triggered sa query to response */
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		if (prAisSpecBssInfo->aprTargetComebackBssDesc[i] &&
+		    EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
 		    prAisSpecBssInfo->aprTargetComebackBssDesc[i]->aucBSSID))
 			return TRUE;
 	}
 
-	return FALSE;
+	return !fgTargetExist;
 }
 
 void rsnResetCombackBssDesc(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
