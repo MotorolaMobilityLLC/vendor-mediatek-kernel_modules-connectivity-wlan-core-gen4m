@@ -74,6 +74,10 @@
 #include <linux/of_gpio.h>
 #include <linux/irqreturn.h>
 #endif
+
+#if (CFG_HW_DETECT_REPORT == 1)
+#include "conn_dbg.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3408,12 +3412,17 @@ int32_t glBusFuncOn(void)
 	mtk_pcie_remove_port(0);
 	ret = mtk_pcie_probe_port(0);
 	if (ret) {
+#if (CFG_HW_DETECT_REPORT == 1)
+		if (ret == 0x1 || ret == 0x1000001)
+			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+				"wifi chip error");
+#endif
 		DBGLOG(HAL, ERROR, "mtk_pcie_probe_port failed, ret=%d\n",
 			ret);
 #if CFG_HDM_WIFI_SUPPORT
 		HdmWifi_SysfsInit();
 #endif
-		return ret;
+		return -ENODEV;
 	}
 #endif
 
