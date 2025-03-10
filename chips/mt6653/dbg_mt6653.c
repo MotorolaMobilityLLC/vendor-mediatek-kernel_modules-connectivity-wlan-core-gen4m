@@ -2117,6 +2117,14 @@ void mt6653_dumpCbInfraReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 	/* SectionJ - pcie phy */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_j,
 		fgIsDumpViaBt);
+
+	/* SectionK - cb_infra_bus (cb_infra_off_bcrm) */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_k,
+		fgIsDumpViaBt);
+
+	/* SectionL - cb_infra_bus (cb_infra_ao_bcrm) */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_l,
+		fgIsDumpViaBt);
 }
 
 void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad)
@@ -2216,6 +2224,10 @@ void mt6653_dumpWfTopReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
 
 	/* SectionD - Dump wf_top_rgu_on debug CR */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d,
+		fgIsDumpViaBt);
+
+	/* SectionE - Dump wf_top_rgu_von monflg CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e,
 		fgIsDumpViaBt);
 
 	/* SectionF - Dump wf_top_slpprot_on debug CR */
