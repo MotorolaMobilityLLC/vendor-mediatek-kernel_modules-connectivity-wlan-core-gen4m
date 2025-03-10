@@ -1732,16 +1732,14 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 	DBGLOG(AIS, INFO,
 		"<CONN> INIT_JOIN bidx=%d om=%d,"MACSTR
-		" widx=%d linkid=%d bssid="MACSTR
-		" freq=%d rssi=%d auth_type=0x%x\n",
+		" widx=%d linkid=%d bssid="MACSTR" freq=%d rssi=%d\n",
 		ucBssIndex, prBssInfo->ucOwnMacIndex,
 		MAC2STR(prBssInfo->aucOwnMacAddr),
 		prStaRec->ucWlanIndex, prBssInfo->ucLinkId,
 		MAC2STR(prStaRec->aucMacAddr),
 		nicChannelNum2Freq(prBssDesc->ucChannelNum,
 				   prBssDesc->eBand) / 1000,
-		RCPI_TO_dBm(prBssDesc->ucRCPI),
-		prAisFsmInfo->ucAvailableAuthTypes);
+		RCPI_TO_dBm(prBssDesc->ucRCPI));
 
 	/* 4 <4> Use an appropriate Authentication Algorithm
 	 * Number among the ucAvailableAuthTypes
@@ -4250,10 +4248,10 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 
 	DBGLOG(AIS, STATE,
-	       "[%d] EVENT-ABORT: Current State %s, ucReasonOfDisconnect:%d\n",
+	       "[%d] EVENT-ABORT: Current State %s, ucReasonOfDisconnect:%s\n",
 	       ucBssIndex,
 	       aisGetFsmState(prAisFsmInfo->eCurrentState),
-	       ucReasonOfDisconnect);
+	       aisGetDiscReason(ucReasonOfDisconnect));
 
 	/* record join request time */
 	GET_CURRENT_SYSTIME(&(prAisFsmInfo->rJoinReqTime));
@@ -4380,9 +4378,10 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	fgIsCheckConnected = FALSE;
 
 	DBGLOG(AIS, STATE,
-		"[%d] aisFsmStateAbort DiscReason[%d], CurState[%d], delayIndi[%d]\n",
-		ucBssIndex, ucReasonOfDisconnect,
-		prAisFsmInfo->eCurrentState, fgDelayIndication);
+		"[%d] DiscReason[%s], CurState[%s], delayIndi[%d]\n",
+		ucBssIndex, aisGetDiscReason(ucReasonOfDisconnect),
+		aisGetFsmState(prAisFsmInfo->eCurrentState),
+		fgDelayIndication);
 
 #if CFG_SUPPORT_DFS
 	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, FALSE);
@@ -5697,7 +5696,7 @@ void aisFsmAuthorizedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	DBGLOG(AIS, INFO,
-		"<CONN> CONN_AUTHORIZRED bidx=%d ssid=%s bssid="
+		"<CONN> CONN_AUTHORIZED bidx=%d ssid=%s bssid="
 		MACSTR"\n", ucBssIndex,
 		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prAisBssInfo->aucBSSID));
@@ -7635,17 +7634,22 @@ void aisHandleBeaconTimeout(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_BTO_INFO *prAisBtoInfo;
+	struct BSS_DESC *prBssDesc;
 	uint8_t i;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBtoInfo = &(prAisFsmInfo->rBtoInfo);
+	prBssDesc = prAisBtoInfo->prBtoBssDesc;
 
-	if (!prAisBtoInfo->prBtoBssDesc)
+	if (!prBssDesc)
 		return;
 
-	DBGLOG(AIS, EVENT, ""MACSTR" set BTO flag, reason=%d\n",
-		MAC2STR(prAisBtoInfo->prBtoBssDesc->aucBSSID),
+	DBGLOG(AIS, EVENT, "<CONN> BTO_START bssid="MACSTR" reason=%d\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+		RCPI_TO_dBm(prBssDesc->ucRCPI),
 		prAisBtoInfo->ucBcnTimeoutReason);
 
 	prAisBssInfo->u2DeauthReason =
@@ -9274,7 +9278,7 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				(prMgmtTxMsdu->prPacket);
 
 			DBGLOG(AIS, INFO,
-			       "<CONN> TX_AUTH algo=%d asn=%d sn=%d status=%d msdu_sn=%d SA="
+			       "<CONN> TX_AUTH algo=%d auth_seq=%d sn=%d status=%d msdu_seq=%d SA="
 			       MACSTR " DA=" MACSTR "\n",
 			       prAuthFrame->u2AuthAlgNum,
 			       prAuthFrame->u2AuthTransSeqNo,
@@ -10475,8 +10479,6 @@ void aisClearAllLink(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
 
-	DBGLOG(AIS, INFO, "Clear BssDesc and StaRec\n");
-
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prAisFsmInfo->aprLinkInfo[i].prTargetBssDesc = NULL;
 		prAisFsmInfo->aprLinkInfo[i].prTargetStaRec = NULL;
@@ -10861,8 +10863,7 @@ const char *aisGetFsmState(enum ENUM_AIS_STATE eCurrentState)
 	if (u4State < AIS_STATE_NUM)
 		return apucDebugAisState[u4State];
 
-	ASSERT(0);
-	return (uint8_t *) NULL;
+	return "UNKNOWN";
 }
 
 const char *aisGetFsmReqType(enum ENUM_AIS_REQUEST_TYPE eCurrentType)
@@ -10872,7 +10873,15 @@ const char *aisGetFsmReqType(enum ENUM_AIS_REQUEST_TYPE eCurrentType)
 	if (u4Type < AIS_REQUEST_NUM)
 		return apucDebugReqType[u4Type];
 
-	return (char *) NULL;
+	return "UNKNOWN";
+}
+
+const char *aisGetDiscReason(enum ENUM_DISCONNECT_REASON_CODE eReason)
+{
+	if (eReason < DISCONNECT_REASON_CODE_NUM)
+		return apucDiscReasonStr[eReason];
+
+	return "UNKNOWN";
 }
 
 u_int8_t addAxBlocklist(struct ADAPTER *prAdapter,

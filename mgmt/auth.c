@@ -384,7 +384,7 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)
 		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 	DBGLOG(SAA, INFO,
-	       "%sTX_AUTH algo=%d asn=%d status=%d seq=%d SA=" MACSTR
+	       "%sTX_AUTH algo=%d auth_seq=%d status=%d msdu_seq=%d SA=" MACSTR
 	       " DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN> " : "",

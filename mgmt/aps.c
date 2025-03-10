@@ -1150,7 +1150,7 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_MCC_DOWNGRADE / 100);
 
 	APSLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d tput[%d] bw[%d] rssi[%d] CU[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
+		"] EST:%d tput[%dkbps] bw[%d] rssi[%d] CU[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
 		MAC2STR(bss->aucBSSID), est, tput,
 		rlmGetBssOpBwByChannelWidth(bss->eSco, bss->eChannelWidth),
 		RCPI_TO_dBm(bss->ucRCPI), ucChannelCuInfo, airTime, slot,
@@ -1231,10 +1231,9 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 	}
 
 	APSLOG(APS, INFO,
-		"<CONN> Find %s in %d BSSes, result %d, Using %s estimated tput, policy %d\n",
+		"<CONN> Find %s in %d BSSes, result %d, Using %s estimated tput\n",
 		conn->aucSSID, scan_result->u4NumElem, count,
-		aps->ucConsiderEsp ? "ESP" : "LEGACY",
-		conn->eConnectionPolicy);
+		aps->ucConsiderEsp ? "ESP" : "LEGACY");
 	return count;
 }
 
@@ -2449,7 +2448,6 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	return FALSE;
 }
 
-static uint8_t g_ApCnt;
 void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint16_t min_score, uint8_t min_rfband_bmap,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
@@ -2681,7 +2679,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			ap->fgIsMatchBssidHint = score_info.fgIsMatchBssidHint;
 
 			APSLOG(APS, TRACE,
-				"CAND[%d] num[%d,%s] score[%d] tput[%d] mode[%d] simu[%d]\n",
+				"CAND[%d] num[%d,%s] score[%d] tput[%dkbps] mode[%d] simu[%d]\n",
 				ap->u4Index, ap->ucLinkNum,
 				apsGetLinkPlanStr(ap->eLinkPlan),
 				ap->u4TotalScore, ap->u4TotalTput,
@@ -2713,7 +2711,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 		APSLOG(APS, INFO,
 			"CAND[%d] BSS[" MACSTR "] band[%s] RSSI[%d] mld[" MACSTR
-			"] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] deauth[%d] mode[%d] simu[%d]\n",
+			"] score[%d] tput[%dkbps] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] deauth[%d] mode[%d] simu[%d]\n",
 			ap->u4Index,
 			MAC2STR(cand->aucBSSID),
 			apucBandStr[cand->eBand],
@@ -2739,7 +2737,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 #endif
 
 	APSLOG(APS, INFO,
-		"<CONN> CAND[%d] num[%d,%s] score[%d] tput[%d] mode[%d] simu[%d] mld_blk[0x%x] %s%s%s%s\n",
+		"<CONN> CAND[%d] num[%d,%s] score[%d] tput[%dkbps] mode[%d] simu[%d] mld_blk[0x%x] %s%s%s%s\n",
 		ap->u4Index, ap->ucLinkNum,
 		apsGetLinkPlanStr(ap->eLinkPlan),
 		ap->u4TotalScore, ap->u4TotalTput,
@@ -2776,8 +2774,10 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		min_rfband_bmap |= BIT(bss->eBand);
 
 		APSLOG(APS, INFO,
-			"<CONN> CURR[" MACSTR "] score[%d] tput[%d]\n",
-			MAC2STR(bss->aucBSSID), bss->u2Score, bss->u4Tput);
+			"<CONN> CURR[" MACSTR
+			"] band[%s] RSSI[%d] score[%d] tput[%dkbps]\n",
+			MAC2STR(bss->aucBSSID), apucBandStr[bss->eBand],
+			RCPI_TO_dBm(bss->ucRCPI), bss->u2Score, bss->u4Tput);
 
 		/* highest band: 6G > 5G > 2.4G */
 		if (cnmStaRecIsActive(ad, sta) &&
@@ -2796,7 +2796,6 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	if (currBss && !apsSanityCheckBssDesc(ad, currBss, reason, bidx))
 		min_score = 0;
 
-	g_ApCnt = 0;
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
 		/* select best link plan for each ap collection */
@@ -3177,7 +3176,7 @@ done:
 
 				APSLOG(APS, INFO,
 					"<CONN> SEARCH_RESULT BSS[" MACSTR
-					"] linkid[%d] band[%s] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] sync_om[%d]\n",
+					"] linkid[%d] band[%s] score[%d] tput[%dkbps] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] sync_om[%d]\n",
 					MAC2STR(bss->aucBSSID),
 					bss->rMlInfo.ucLinkId,
 					apucBandStr[bss->eBand],

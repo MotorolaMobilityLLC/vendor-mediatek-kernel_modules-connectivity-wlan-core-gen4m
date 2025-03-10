@@ -791,7 +791,7 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 
 	u2RxFrameCtrl = prAssocFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 	DBGLOG(SAA, INFO,
-		"%sSEND_%sASSOC Req SA=" MACSTR " DA=" MACSTR "\n",
+		"%sTX_%sASSOC SA=" MACSTR " DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN> " : "",
 		u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "RE" : "",

@@ -26,19 +26,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* disconnect reason */
-#define DISCONNECT_REASON_CODE_RESERVED           0
-#define DISCONNECT_REASON_CODE_RADIO_LOST         1
-#define DISCONNECT_REASON_CODE_DEAUTHENTICATED    2
-#define DISCONNECT_REASON_CODE_DISASSOCIATED      3
-#define DISCONNECT_REASON_CODE_NEW_CONNECTION     4
-#define DISCONNECT_REASON_CODE_REASSOCIATION      5
-#define DISCONNECT_REASON_CODE_ROAMING            6
-#define DISCONNECT_REASON_CODE_CHIPRESET          7
-#define DISCONNECT_REASON_CODE_LOCALLY            8
-#define DISCONNECT_REASON_CODE_DEL_IFACE          10
-#define DISCONNECT_REASON_CODE_TEST_MODE	  11
-
 
 /* The rate definitions */
 #define TX_MODE_CCK             0x00

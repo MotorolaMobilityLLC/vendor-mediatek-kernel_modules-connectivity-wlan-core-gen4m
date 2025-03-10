@@ -63,13 +63,6 @@
 
 #define BKSCAN_CHANNEL_NUM_MAX                  64
 
-#define DISCONNECT_REASON_CODE_RESERVED         0
-#define DISCONNECT_REASON_CODE_RADIO_LOST       1
-#define DISCONNECT_REASON_CODE_DEAUTHENTICATED  2
-#define DISCONNECT_REASON_CODE_DISASSOCIATED    3
-#define DISCONNECT_REASON_CODE_NEW_CONNECTION   4
-
-
 /* Define bandwidth, band, channel and SCO configurations from host command,
  * whose CMD ID is 0x13.
  */
