@@ -922,11 +922,15 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 	{
 		uint8_t *pucEapol = pucEthBody;
 		uint8_t ucEapolType = pucEapol[1];
-		uint16_t u2KeyInfo = 0;
-		uint8_t m = 0;
+		uint16_t u2Length, u2KeyInfo = 0;
+		u_int8_t isPairwise = FALSE;
+		uint8_t m = 0, seqNum = 0;
 #if (CFG_SUPPORT_CONN_LOG == 1)
 		uint16_t u2EapLen = 0;
 #endif
+		uint8_t ucBssIndex = GLUE_GET_PKT_BSS_IDX(pvPacket);
+		uint8_t mic_len = 16;
+		struct BSS_INFO *prBssInfo = NULL;
 
 		if (eventType == EVENT_RX)
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_1X);
@@ -947,7 +951,7 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 #if (CFG_SUPPORT_CONN_LOG == 1)
 				connLogEapRx(
 					g_prAdapter,
-					GLUE_GET_PKT_BSS_IDX(pvPacket),
+					ucBssIndex,
 					u2EapLen,
 					pucEapol[8],
 					pucEapol[4]);
@@ -963,7 +967,7 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 #if (CFG_SUPPORT_CONN_LOG == 1)
 				connLogEapTx(
 					g_prAdapter,
-					GLUE_GET_PKT_BSS_IDX(pvPacket),
+					ucBssIndex,
 					u2EapLen,
 					pucEapol[8],
 					pucEapol[4],
@@ -986,10 +990,31 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 			}
 			break;
 		case ETH_EAPOL_KEY: /* key */
+			WLAN_GET_FIELD_BE16(&pucEapol[2], &u2Length);
+			if (u2Length < WPA_EAPOL_KEY_FIELD_SIZE) {
+				DBGLOG(RX, WARN,
+					"<RX> EAPOL: Invalid length: %d\n",
+					u2Length);
+				return;
+			}
+
 			WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
+
+			if (u2KeyInfo & WPA_KEY_INFO_KEY_TYPE)
+				isPairwise = TRUE;
+			else
+				isPairwise = FALSE;
+
+			prBssInfo =
+				GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+			if (prBssInfo)
+				mic_len = rsnGetEapolMicLen(
+					prBssInfo->u4RsnSelectedAKMSuite);
+
+			seqNum = GLUE_GET_PKT_SEQ_NO(pvPacket);
 #if (CFG_SUPPORT_CONN_LOG == 1)
 			connLogEapKey(g_prAdapter,
-				GLUE_GET_PKT_BSS_IDX(pvPacket),
+				ucBssIndex,
 				eventType,
 				pucEapol,
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
@@ -997,24 +1022,54 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 			switch (eventType) {
 			case EVENT_RX:
 			case EVENT_TX:
-				if ((u2KeyInfo & 0x1100) == 0x0000 ||
-					(u2KeyInfo & 0x0008) == 0x0000)
-					m = 1;
-				else if ((u2KeyInfo & 0xfff0) == 0x0100)
-					m = 2;
-				else if ((u2KeyInfo & 0xfff0) == 0x13c0)
-					m = 3;
-				else if ((u2KeyInfo & 0xfff0) == 0x0300)
-					m = 4;
-				if (eventType == EVENT_RX)
-					DBGLOG(RX, INFO,
-						"<RX> EAPOL: key, M%d, KeyInfo 0x%04x, SSN:%u\n",
-						m, u2KeyInfo, u2SSN);
-				else
-					DBGLOG(TX, INFO,
-					       "<TX> EAPOL: key, M%d, KeyInfo 0x%04x SeqNo: %d\n",
-					       m, u2KeyInfo,
-						GLUE_GET_PKT_SEQ_NO(pvPacket));
+				if (isPairwise) {
+					if ((u2KeyInfo &
+						WPA_KEY_INFO_INSTALL) &&
+					    (u2KeyInfo & WPA_KEY_INFO_ACK))
+						m = 3;
+					else if (u2KeyInfo & WPA_KEY_INFO_ACK)
+						m = 1;
+					else if (rsnIsEapolM2(prAdapter,
+							ucBssIndex, pucEapol))
+						m = 2;
+					else
+						m = 4;
+
+					if (eventType == EVENT_RX)
+						DBGLOG(RX, INFO,
+						       "<RX> EAPOL: key, M%d, KeyInfo 0x%04x, DataLen %d, SSN:%u\n",
+						       m, u2KeyInfo,
+						       rsnGetEapolDataLen
+							    (pucEapol, mic_len),
+						       u2SSN);
+					else
+						DBGLOG(TX, INFO,
+						       "<TX> EAPOL: key, M%d, KeyInfo 0x%04x, DataLen %d, SeqNo: %d\n",
+						       m, u2KeyInfo,
+						       rsnGetEapolDataLen
+							    (pucEapol, mic_len),
+						       seqNum);
+				} else {
+					if (u2KeyInfo & WPA_KEY_INFO_ACK)
+						m = 1;
+					else
+						m = 2;
+
+					if (eventType == EVENT_RX)
+						DBGLOG(RX, INFO,
+						       "<RX> EAPOL: GTK, M%d, KeyInfo 0x%04x, DataLen %d, SSN:%u\n",
+						       m, u2KeyInfo,
+						       rsnGetEapolDataLen
+							    (pucEapol, mic_len),
+						       u2SSN);
+					else
+						DBGLOG(TX, INFO,
+						       "<TX> EAPOL: GTK, M%d, KeyInfo 0x%04x, DataLen %d, SeqNo: %d\n",
+						       m, u2KeyInfo,
+						       rsnGetEapolDataLen
+							    (pucEapol, mic_len),
+						       seqNum);
+				}
 				break;
 			}
 			break;

@@ -289,6 +289,9 @@ u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 void roamingFsmBTMTimeout(struct ADAPTER *prAdapter,
 	uintptr_t ulParamPtr);
 
+void roamingResetRoamParameters(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 void roamingRecordCurrentStatus(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 

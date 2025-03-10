@@ -203,6 +203,21 @@ void aisResetBssTranstionMgtParam(struct ADAPTER *prAdapter,
 #endif
 }
 
+void aisResetConnectionParam(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+	prAisFsmInfo->ucConnTrialCount = 0;
+	prAisFsmInfo->ucScanTrialCount = 0;
+	prAisFsmInfo->rJoinReqTime = 0;
+	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
+}
+
 #if (CFG_SUPPORT_HE_ER == 1)
 uint8_t aisCheckPowerMatchERCondition(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc)
@@ -2636,9 +2651,9 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 	roamingFsmRunEventFail(prAdapter,
 		ROAMING_FAIL_REASON_NOCANDIDATE, ucBssIndex);
 
-	/* reset retry count */
-	ais->ucConnTrialCount = 0;
-	ais->ucScanTrialCount = 0;
+	/* reset connection parameters */
+	aisResetConnectionParam(prAdapter, ucBssIndex);
+
 	/* DISCONNECT_REASON_CODE_ROAMING is triggered by
 	 * supplicant, must indicate the connection status,
 	 */
@@ -4274,22 +4289,6 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 			aisGetRoamingInfo(prAdapter, ucBssIndex);
 		struct CMD_ROAMING_TRANSIT rRoamingData = {0};
 
-		if (!roamingFsmInDecision(prAdapter, TRUE, ucBssIndex)) {
-			DBGLOG(AIS, STATE,
-				"Ignore roaming request if unable to roam\n");
-
-			/* DISCONNECT_REASON_CODE_ROAMING is triggered by
-			 * supplicant, must indicate the connection status,
-			 */
-			if (ucReasonOfDisconnect ==
-			    DISCONNECT_REASON_CODE_ROAMING)
-				aisIndicationOfMediaStateToHost(prAdapter,
-					MEDIA_STATE_CONNECTED,
-					FALSE,
-					ucBssIndex);
-			return;
-		}
-
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 		cnmTimerStopTimer(prAdapter,
 				  &prAisFsmInfo->rSecModeChangeTimer);
@@ -4668,6 +4667,8 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 		ad,
 		&rDbdcDecisionInfo);
 #endif /*CFG_SUPPORT_DBDC*/
+
+	qmSetStaRecTxAllowed(ad, prBssInfo->prStaRecOfAP, TRUE);
 }
 
 void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
@@ -4902,14 +4903,9 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		} else {
 			eNextState = AIS_STATE_SEARCH;
 		}
-#endif /* CFG_SUPPORT_ROAMING */
 
-		if (prAisBssInfo->prStaRecOfAP)
-			qmSetStaRecTxAllowed(prAdapter,
-					prAisBssInfo->prStaRecOfAP, TRUE);
-#if CFG_SUPPORT_ROAMING
 		prAisFsmInfo->ucIsStaRoaming = FALSE;
-#endif
+#endif /* CFG_SUPPORT_ROAMING */
 	} else if (aisJoinFailureOverLimit(prAdapter, ucBssIndex)) {
 #if CFG_SUPPORT_WPA3_LOG
 		wpa3LogJoinFail(prAdapter,
@@ -6973,11 +6969,9 @@ void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 					ROAMING_FAIL_REASON_NOCANDIDATE,
 					ucBssIndex);
 
-				/* reset retry count */
-				prAisFsmInfo->ucConnTrialCount = 0;
-				prAisFsmInfo->ucScanTrialCount = 0;
+				/* reset connection parameters */
+				aisResetConnectionParam(prAdapter, ucBssIndex);
 				eNextState = AIS_STATE_NORMAL_TR;
-
 			}
 #endif
 		}
@@ -7916,6 +7910,9 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 			roamingFsmRunEventFail(prAdapter,
 					       ROAMING_FAIL_REASON_NOCANDIDATE,
 					       ucBssIndex);
+
+			/* reset connection parameters */
+			aisResetConnectionParam(prAdapter, ucBssIndex);
 			return;
 		}
 	}

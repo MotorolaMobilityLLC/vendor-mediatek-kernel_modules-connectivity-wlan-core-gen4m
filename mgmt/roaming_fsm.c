@@ -812,7 +812,6 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *ais;
 	struct ROAMING_INFO *prRoam;
-	struct ROAMING_REPORT_INFO *prReportInfo;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
 	u_int32_t u4ScnResultsTimeout = prAdapter->rWifiVar.u4DiscoverTimeout;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
@@ -829,7 +828,6 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	prFtParam = aisGetFtEventParam(prAdapter, ucBssIndex);
-	prReportInfo = &prRoam->rReportInfo;
 
 	do {
 		if (prRoam->eCurrentState < 0 ||
@@ -856,33 +854,15 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 		/* Do tasks of the State that we just entered */
 		switch (prRoam->eCurrentState) {
 		case ROAMING_STATE_IDLE:
-			prRoam->prRoamTarget = NULL;
-			prRoam->rRoamScanParam.ucScanType =
-					ROAMING_SCAN_TYPE_NORMAL;
-			prRoam->rRoamScanParam.ucScanCount = 0;
-			prRoam->rRoamScanParam.ucScanMode =
-					ROAMING_SCAN_MODE_NORMAL;
-			prRoam->rRoamScanParam.fgSpecifyBssid = FALSE;
-			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
-			prReportInfo->eFailReason =
-					ROAMING_FAIL_REASON_NOCANDIDATE;
+			roamingResetRoamParameters(prAdapter, ucBssIndex);
 			break;
 		case ROAMING_STATE_DECISION:
 #if CFG_SUPPORT_DRIVER_ROAMING
 			GET_CURRENT_SYSTIME(
 				&prRoam->rRoamingLastDecisionTime);
 #endif
+			roamingResetRoamParameters(prAdapter, ucBssIndex);
 			prRoam->eReason = ROAMING_REASON_POOR_RCPI;
-			prRoam->prRoamTarget = NULL;
-			prRoam->rRoamScanParam.ucScanType =
-					ROAMING_SCAN_TYPE_NORMAL;
-			prRoam->rRoamScanParam.ucScanCount = 0;
-			prRoam->rRoamScanParam.ucScanMode =
-					ROAMING_SCAN_MODE_NORMAL;
-			prRoam->rRoamScanParam.fgSpecifyBssid = FALSE;
-			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
-			prReportInfo->eFailReason =
-					ROAMING_FAIL_REASON_NOCANDIDATE;
 			break;
 
 		case ROAMING_STATE_DISCOVERY: {
@@ -1521,6 +1501,30 @@ u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 		return TRUE;
 
 	return FALSE;
+}
+
+void roamingResetRoamParameters(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct FT_EVENT_PARAMS *prFtParam;
+
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) == FALSE)
+		return;
+
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prFtParam = aisGetFtEventParam(prAdapter, ucBssIndex);
+
+	prRoamingFsmInfo->prRoamTarget = NULL;
+	prRoamingFsmInfo->rRoamScanParam.ucScanType =
+			ROAMING_SCAN_TYPE_NORMAL;
+	prRoamingFsmInfo->rRoamScanParam.ucScanCount = 0;
+	prRoamingFsmInfo->rRoamScanParam.ucScanMode =
+			ROAMING_SCAN_MODE_NORMAL;
+	prRoamingFsmInfo->rRoamScanParam.fgSpecifyBssid = FALSE;
+	prFtParam->eFtDsState = FT_DS_STATE_IDLE;
+	prRoamingFsmInfo->rReportInfo.eFailReason =
+			ROAMING_FAIL_REASON_NOCANDIDATE;
 }
 
 void roamingRecordCurrentStatus(struct ADAPTER *prAdapter,

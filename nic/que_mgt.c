@@ -8982,20 +8982,21 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 		uint8_t *pucEapol = pucEthBody;
 		uint8_t ucEapolType = pucEapol[1];
 		uint16_t u2KeyInfo = 0;
-		uint8_t m;
+		uint8_t m = 1;
 
 		if (ucEapolType == ETH_EAPOL_KEY) {
 			WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
-			m = ((u2KeyInfo & 0x1100) == 0x0000 ||
-				(u2KeyInfo & 0x0008) == 0x0000) ? 1 : 3;
 
-			if (prAdapter->rWifiVar.u4SwTestMode ==
-					ENUM_SW_TEST_MODE_SIGMA_HS20_R2 &&
-					m == 3 &&
-					!prSwRfb->prStaRec->fgIsTxKeyReady) {
+			if ((u2KeyInfo & WPA_KEY_INFO_INSTALL) &&
+			    (u2KeyInfo & WPA_KEY_INFO_ACK))
+				m = 3;
+			else if (u2KeyInfo & WPA_KEY_INFO_ACK)
+				m = 1;
+
+			if (m == 3 && !prSwRfb->prStaRec->fgIsTxKeyReady) {
 				prAdapter->fgIsPostponeTxEAPOLM3 = TRUE;
 				DBGLOG(QM, DEBUG,
-					"[Passpoint] Postpone sending EAPOL M4 until PTK installed!");
+					"[Passpoint] Postpone sending EAPOL M4 until PTK installed!\n");
 			}
 		}
 	}

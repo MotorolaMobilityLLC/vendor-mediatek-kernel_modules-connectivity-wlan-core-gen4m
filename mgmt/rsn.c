@@ -5210,3 +5210,74 @@ void rsnGenerateMMIE(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_SAP_BCN_PROT */
 
+u_int8_t rsnHasNonce(const uint8_t *pucNonceAddr)
+{
+	uint8_t i;
+
+	for (i = 0; i < WPA_NONCE_LEN; i++)
+		if (pucNonceAddr[i] != 0)
+			return TRUE;
+
+	return FALSE;
+}
+
+uint8_t rsnGetEapolMicLen(uint32_t akmp)
+{
+	switch (akmp) {
+	case WLAN_AKM_SUITE_8021X_SUITE_B_192:
+		return 24;
+	case WLAN_AKM_SUITE_FILS_SHA256:
+	case WLAN_AKM_SUITE_FILS_SHA384:
+	case WLAN_AKM_SUITE_FT_FILS_SHA256:
+	case WLAN_AKM_SUITE_FT_FILS_SHA384:
+		return 0;
+	default:
+		return 16;
+	}
+}
+
+uint16_t rsnGetEapolDataLen(uint8_t *pucEapol, uint8_t mic_len)
+{
+	uint16_t u2KeyDataLen = 0;
+	uint8_t key_data_len_offset; /* fixed field len + mic len*/
+
+	key_data_len_offset =
+		ieee802_1x_hdr_size
+		+ wpa_eapol_key_fixed_field_size
+		+ mic_len;
+	WLAN_GET_FIELD_BE16(&pucEapol[key_data_len_offset],
+		&u2KeyDataLen);
+
+	return u2KeyDataLen;
+}
+
+u_int8_t rsnIsEapolM2(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t *pucEapol)
+{
+	uint16_t u2KeyInfo = 0;
+	uint8_t mic_len = 16;
+	uint16_t u2KeyDataLen = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prBssInfo)
+		mic_len = rsnGetEapolMicLen(prBssInfo->u4RsnSelectedAKMSuite);
+
+	u2KeyDataLen = rsnGetEapolDataLen(pucEapol, mic_len);
+
+	WLAN_GET_FIELD_BE16(&pucEapol[
+			ieee802_1x_hdr_size
+			+ wpa_eapol_key_key_info_offset],
+			&u2KeyInfo);
+
+	if ((mic_len == 0 && u2KeyDataLen > 16) ||
+	    (mic_len > 0 && u2KeyDataLen == 0 &&
+	     !(u2KeyInfo & WPA_KEY_INFO_SECURE) &&
+	     rsnHasNonce(&pucEapol[ieee802_1x_hdr_size +
+				   wpa_eapol_key_nonce_info_offset])) ||
+	    (mic_len > 0 && u2KeyDataLen != 0 && u2KeyDataLen != 12))
+		return TRUE;
+
+	return FALSE;
+}
+

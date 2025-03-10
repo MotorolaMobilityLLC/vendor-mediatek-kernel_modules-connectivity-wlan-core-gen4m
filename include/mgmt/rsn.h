@@ -242,6 +242,40 @@
 
 #define PMK_REFRESH_THRESHOLD_SEC	600
 
+#ifndef WPA_NONCE_LEN
+#define WPA_NONCE_LEN   32
+#endif
+#ifndef WPA_EAPOL_KEY_FIELD_SIZE
+#define WPA_EAPOL_KEY_FIELD_SIZE  95  /* struct wpa_eapol_key */
+#endif
+#ifndef WPA_KEY_INFO_KEY_TYPE
+#define WPA_KEY_INFO_KEY_TYPE  BIT(3) /* 1 = Pairwise, 0 = Group key */
+#endif
+#ifndef WPA_KEY_INFO_INSTALL
+#define WPA_KEY_INFO_INSTALL   BIT(6)
+#endif
+#ifndef WPA_KEY_INFO_ACK
+#define WPA_KEY_INFO_ACK       BIT(7)
+#endif
+#ifndef WPA_KEY_INFO_SECURE
+#define WPA_KEY_INFO_SECURE    BIT(9)
+#endif
+#ifndef ieee802_1x_hdr_size
+/* struct ieee802_1x_hdr in wpa_supplicant */
+#define ieee802_1x_hdr_size 4
+#endif
+#ifndef wpa_eapol_key_key_info_offset
+/* struct wpa_eapol_key in wpa_supplicant */
+#define wpa_eapol_key_key_info_offset 1
+#endif
+#ifndef wpa_eapol_key_nonce_info_offset
+/* struct wpa_eapol_key in wpa_supplicant */
+#define wpa_eapol_key_nonce_info_offset 13
+#endif /* wpa_eapol_key_nonce_info_offset */
+#ifndef wpa_eapol_key_fixed_field_size
+#define wpa_eapol_key_fixed_field_size 77
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -520,6 +554,13 @@ void rsnGenerateMMIE(struct ADAPTER *prAdapter,
 void rsnApStartSaQueryTimer(struct ADAPTER *prAdapter,
 			    uintptr_t ulParamPtr);
 #endif /* CFG_SUPPORT_802_11W */
+
+u_int8_t rsnHasNonce(const uint8_t *pucNonceAddr);
+uint8_t rsnGetEapolMicLen(uint32_t akmp);
+uint16_t rsnGetEapolDataLen(uint8_t *pucEapol, uint8_t mic_len);
+u_int8_t rsnIsEapolM2(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t *pucEapol);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

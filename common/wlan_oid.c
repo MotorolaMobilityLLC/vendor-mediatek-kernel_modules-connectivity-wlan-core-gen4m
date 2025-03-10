@@ -1180,8 +1180,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 	ucBssIndex = pParamConn->ucBssIdx;
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	prCurrBssid = aisGetCurrBssId(prAdapter,
-		ucBssIndex);
+	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_ROAMING
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 #endif
@@ -1195,6 +1194,31 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		DBGLOG(OID, WARN, "Bssid or ssid is invalid!\n");
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
+
+	if (pParamConn->pucSsid &&
+	    EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
+		       prCurrBssid->rSsid.u4SsidLen,
+		       pParamConn->pucSsid,
+		       pParamConn->u4SsidLen))
+		fgEqualSsid = TRUE;
+
+#if CFG_SUPPORT_ROAMING
+	if (fgEqualSsid &&
+	    kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
+						MEDIA_STATE_CONNECTED &&
+	    !roamingFsmInDecision(prAdapter, TRUE, ucBssIndex)) {
+		DBGLOG(AIS, STATE,
+			"Ignore roaming request if unable to roam\n");
+
+		/* Triggered by supplicant, must indicate status */
+		if (pParamConn->fgTestMode == FALSE)
+			aisIndicationOfMediaStateToHost(prAdapter,
+				MEDIA_STATE_CONNECTED,
+				FALSE,
+				ucBssIndex);
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prWlanInfo = &prAdapter->rWlanInfo;
@@ -1215,10 +1239,6 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		COPY_SSID(prConnSettings->aucSSID,
 			  prConnSettings->ucSSIDLen, pParamConn->pucSsid,
 			  (uint8_t) pParamConn->u4SsidLen);
-		if (EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
-			       prCurrBssid->rSsid.u4SsidLen,
-			       pParamConn->pucSsid, pParamConn->u4SsidLen))
-			fgEqualSsid = TRUE;
 	}
 	if (pParamConn->pucBssid) {
 		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, pParamConn->pucBssid)

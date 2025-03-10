@@ -4012,37 +4012,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_EHT;
 #endif
 
-#if WLAN_INCLUDE_SYS
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eHwBand == BAND_6G &&
-		prAdapter->fg6eOffSpecNotShow) {
-		u_int8_t fgIsOffSpec6G = TRUE;
-
-		if (!prBssDesc->fgIERSN)
-			fgIsOffSpec6G = TRUE;
-		else {
-			/* SAE H2E AP */
-			if (prBssDesc->fgIERSNX &&
-				prBssDesc->rRSNXInfo.u2Cap &
-				BIT(WLAN_RSNX_CAPAB_SAE_H2E))
-				fgIsOffSpec6G = FALSE;
-
-			if (prBssDesc->rRSNInfo.au4AuthKeyMgtSuite[0]
-				== RSN_AKM_SUITE_OWE)
-				fgIsOffSpec6G = FALSE;
-		}
-
-		if (fgIsOffSpec6G) {
-			DBGLOG(SCN, INFO,
-				"filter out-of-spec 6G AP: SSID %s" MACSTR "\n",
-				prBssDesc->aucSSID,
-				MAC2STR(prBssDesc->aucBSSID));
-			return NULL;
-		}
-	}
-#endif
-#endif
-
 	/* if not 11n only */
 	if (!(prBssDesc->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
 		if (prBssDesc->eBand == BAND_2G4) {
