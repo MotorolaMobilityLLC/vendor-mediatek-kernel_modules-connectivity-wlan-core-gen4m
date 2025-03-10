@@ -3052,9 +3052,6 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 			DBGLOG(REQ, ERROR, "invalid attr(%d)\n", ucIdx);
 			return ret;
 		}
-		DBGLOG(REQ, LOUD, "(%d) type[%d] len[%u] min[%u] max[%u]\n",
-			ucIdx, prAttr->type, prAttr->len, prAttr->min,
-			prAttr->max);
 		switch (prAttr->type) {
 		case NLA_U8:
 		case NLA_U16:
@@ -3062,6 +3059,8 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 		{
 			uint32_t tmp;
 
+			DBGLOG(REQ, LOUD, "(%d) type[%d] min[%u] max[%u]\n",
+				ucIdx, prAttr->type, prAttr->min, prAttr->max);
 			if (kalkStrtou32(pcArgv[ucIdx], 0, &tmp) != 0) {
 				DBGLOG(REQ, ERROR,
 				       "%s to u32 fail\n", pcArgv[ucIdx]);
@@ -3084,7 +3083,11 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 		case NLA_S32:
 		{
 			int tmp;
+			int32_t min = (int32_t)prAttr->min;
+			int32_t max = (int32_t)prAttr->max;
 
+			DBGLOG(REQ, LOUD, "(%d) type[%d] min[%d] max[%d]\n",
+				ucIdx, prAttr->type, min, max);
 			if (kalStrtoint(pcArgv[ucIdx], 0, &tmp) != 0) {
 				DBGLOG(REQ, ERROR,
 				       "%s to int fail\n", pcArgv[ucIdx]);
@@ -3092,12 +3095,12 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 			}
 			DBGLOG(REQ, LOUD, ">> value[%d]\n", tmp);
 
-			if (tmp >= prAttr->min && tmp <= prAttr->max) {
+			if (tmp >= min && tmp <= max) {
 				continue;
 			} else {
 				DBGLOG(REQ, ERROR,
 				       "Invalid arg%u=%d, range[%d, %d]\n",
-				       ucIdx, tmp, prAttr->min, prAttr->max);
+				       ucIdx, tmp, min, max);
 				return ret;
 			}
 			break;
@@ -3106,6 +3109,10 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 		{
 			uint8_t len = kalStrLen(pcArgv[ucIdx]);
 
+			DBGLOG(REQ, LOUD,
+			       "(%d) type[%d] len[%u] min[%u] max[%u]\n",
+				ucIdx, prAttr->type, prAttr->len, prAttr->min,
+				prAttr->max);
 			DBGLOG(REQ, LOUD, ">> len[%d]\n", len);
 
 			if (prAttr->len != 0) {
