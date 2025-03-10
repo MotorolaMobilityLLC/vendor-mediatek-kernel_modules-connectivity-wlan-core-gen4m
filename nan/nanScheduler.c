@@ -836,6 +836,8 @@ u_int8_t nanOverConcurrentChannelLimit(struct ADAPTER *prAdapter,
 	uint8_t ucChannelNum = 1; /* the passed-in rNanChnlInfo */
 	struct NAN_P2P_AIS_MCC_RECORD *prP2pAisMcc;
 	union _NAN_BAND_CHNL_CTRL rSocialChnlInfo;
+	union _NAN_BAND_CHNL_CTRL rAisChnlInfo[NAN_TIMELINE_MGMT_SIZE] = {0};
+	uint8_t fgP2pAisSameChannel = FALSE;
 
 	for (i = 0; i < ARRAY_SIZE(prNanScheduler->arP2pAisMcc); i++) {
 		prP2pAisMcc = &prNanScheduler->arP2pAisMcc[i];
@@ -845,6 +847,8 @@ u_int8_t nanOverConcurrentChannelLimit(struct ADAPTER *prAdapter,
 		else
 			rSocialChnlInfo = g_r5gDwChnl;
 
+		rAisChnlInfo[i] = prP2pAisMcc->rAisChnlInfo;
+		/* AIS == new || P2P == new || new == NAN social */
 		if (prP2pAisMcc->rAisChnlInfo.u4PrimaryChnl &&
 		    nanChnlInfoEqual(prP2pAisMcc->rAisChnlInfo, rNanChnlInfo) ||
 		    prP2pAisMcc->rP2pChnlInfo.u4PrimaryChnl &&
@@ -853,7 +857,25 @@ u_int8_t nanOverConcurrentChannelLimit(struct ADAPTER *prAdapter,
 			ucChannelNum--;
 		}
 
+		if (prP2pAisMcc->rAisChnlInfo.u4PrimaryChnl &&
+		    prP2pAisMcc->rP2pChnlInfo.u4PrimaryChnl &&
+		    nanChnlInfoEqual(prP2pAisMcc->rAisChnlInfo, rNanChnlInfo))
+			fgP2pAisSameChannel = TRUE;
 	}
+
+	/* MLO use only single link, if STA counts two channels in two bands,
+	 * both channels are different from NAN and P2P, decrease one.
+	 */
+	if (rAisChnlInfo[0].u4PrimaryChnl && rAisChnlInfo[1].u4PrimaryChnl &&
+	    !nanChnlInfoEqual(rAisChnlInfo[0], g_r2gDwChnl) &&
+	    !nanChnlInfoEqual(rAisChnlInfo[1], g_r5gDwChnl) &&
+	    !fgP2pAisSameChannel) {
+		DBGLOG(NAN, INFO, "MLO channels %u and %u, channel--",
+		       rAisChnlInfo[0].u4PrimaryChnl,
+		       rAisChnlInfo[1].u4PrimaryChnl);
+		ucChannelNum--;
+	}
+
 	if (ucChannelNum > ucMaxConcurrentLimit)
 		DBGLOG(NAN, DEBUG,
 		       "Check OC=%u, ch=%u, ucChannelNum=%u, Limit=%u",
