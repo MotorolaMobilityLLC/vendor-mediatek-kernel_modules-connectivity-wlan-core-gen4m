@@ -356,24 +356,36 @@ struct SET_COUNTRY_CHANNEL_POWER_LIMIT {
 	} u;
 };
 
+#pragma pack(push, 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY {
 	uint8_t aucCountryCode[2];
 	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_LEGACY_NUM];
 };
+#pragma pack(pop)
+#define CFG_TBL_SIZE_LEGACY \
+	(sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY))
 
+#pragma pack(push, 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE {
 	uint8_t aucCountryCode[2];
 	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_HE_NUM];
 };
+#pragma pack(pop)
+#define CFG_TBL_SIZE_HE \
+	(sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE))
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+#pragma pack(push, 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT {
 	uint8_t aucCountryCode[2];
 	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_EHT_NUM];
 };
+#pragma pack(pop)
+#define CFG_TBL_SIZE_EHT \
+	(sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT))
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 
 struct EMI_POWER_LIMIT_INFO {
@@ -415,12 +427,6 @@ enum ENUM_TX_PWR_EMI_SCENARIO_TYPE {
 	TX_PWR_EMI_SCENARIO_TYPE_NUM,
 };
 
-enum ENUM_PWR_LIMIT_DEFINE {
-	PWR_LIMIT_DEFINE_CENTER_CHANNEL,
-	PWR_LIMIT_DEFINE_PRIMARY_CHANNEL,
-	PWR_LIMIT_DEFINE_NUM,
-};
-
 enum ENUM_PWR_LIMIT_RF_BAND {
 	PWR_LIMIT_RF_BAND_2G4,
 	PWR_LIMIT_RF_BAND_5G,
@@ -448,16 +454,6 @@ enum ENUM_PWR_LIMIT_CONFIG_BASE {
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 	PWR_LIMIT_CONFIG_BASE_NUM,
 };
-
-enum ENUM_PWR_LIMIT_DEFAULT_BASE {
-	PWR_LIMIT_DEFAULT_BASE_NORMAL,
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	PWR_LIMIT_DEFAULT_BASE_VLP,
-	PWR_LIMIT_DEFAULT_BASE_SP,
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
-	PWR_LIMIT_DEFAULT_BASE_NUM,
-};
-
 
 #if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
 struct TX_PWR_CTRL_MULTIBAND_PWR {
@@ -498,8 +494,38 @@ struct TX_PWR_BAND_MASK_TBL {
  *                                 M A C R O S
  *******************************************************************************
  */
-#define PWR_LIMIT_COUNTRY_DEF_TBL(base, tbl_idx) \
-	(&g_rlmPowerLimitDefaultTable[base].prPwrLmtDefaultTable[(tbl_idx)])
+#define PWR_LIMIT_COUNTRY_CFG_TBL_SET_LEGACY(base, pData, num) \
+{ \
+	g_rlmPowerLimitConfigTable[base].Legacy.table = \
+		(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY *) \
+		pData; \
+	g_rlmPowerLimitConfigTable[base].Legacy.table_num = num; \
+	DBGLOG(RLM, INFO, \
+		"PWR_LIMIT_COUNTRY_CFG_TBL_SET_LEGACY [base:%d]NUM:%d\n", \
+		base, g_rlmPowerLimitConfigTable[base].Legacy.table_num); \
+}
+
+#define PWR_LIMIT_COUNTRY_CFG_TBL_SET_HE(base, pData, num) \
+{ \
+	g_rlmPowerLimitConfigTable[base].HE.table = \
+		(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE *)pData; \
+	g_rlmPowerLimitConfigTable[base].HE.table_num = num; \
+	DBGLOG(RLM, INFO, \
+		"PWR_LIMIT_COUNTRY_CFG_TBL_SET_HE [base:%d]NUM:%d\n", \
+		base, g_rlmPowerLimitConfigTable[base].Legacy.table_num); \
+}
+
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+#define PWR_LIMIT_COUNTRY_CFG_TBL_SET_EHT(base, pData, num) \
+{ \
+	g_rlmPowerLimitConfigTable[base].EHT.table = \
+		(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT *)pData; \
+	g_rlmPowerLimitConfigTable[base].EHT.table_num = num; \
+	DBGLOG(RLM, INFO, \
+		"PWR_LIMIT_COUNTRY_CFG_TBL_SET_EHT [base:%d]NUM:%d\n", \
+		base, g_rlmPowerLimitConfigTable[base].Legacy.table_num); \
+}
+#endif
 
 #define PWR_LIMIT_FOR_EACH_RF_BAND(idx) \
 	for (idx = 0; idx < PWR_LIMIT_RF_BAND_NUM; idx++)
@@ -528,8 +554,6 @@ struct TX_PWR_BAND_MASK_TBL {
 	if (pwr_limit > MAX_TX_POWER) \
 		pwr_limit = MAX_TX_POWER; \
 }
-
-#define PWR_LMT_TBL_REG(table)	{(table), (ARRAY_SIZE((table)))}
 
 #if (CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1)
 #define PWR_LMT_MULTIBAND_2G_INFO_REGISTER(ver) \
@@ -625,11 +649,8 @@ struct TX_PWR_BAND_MASK_TBL {
 }
 
 /* backward compatible for txPwrCtrlStringToStruct parser use. */
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 0)
 #define PWR_LIMIT_PARSER_LEGACY_NUM (PWR_LIMIT_LEGACY_NUM - 3)
-#else
-#define PWR_LIMIT_PARSER_LEGACY_NUM (PWR_LIMIT_LEGACY_NUM)
-#endif /*CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1*/
+#define PWR_LIMIT_PARSER_LEGACY_NUM_V2 (PWR_LIMIT_LEGACY_NUM)
 #define PWR_LIMIT_PARSER_HE_NUM (PWR_LIMIT_HE_NUM - 3)
 #define PWR_LIMIT_PARSER_HE160_NUM (PWR_LIMIT_HE_NUM)
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
