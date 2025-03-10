@@ -12688,7 +12688,8 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 	     szTimeLineIdx++) {
 
-		if (NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
+		if (prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK &&
+			NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
 			union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
 
 			if (szNanActiveTimelineNum >= 2 &&
@@ -12710,8 +12711,9 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 				continue;
 			}
 
-			if (prNDL->eNDLRole == NAN_PROTOCOL_RESPONDER &&
-			    eHighestCommonBand == ENUM_SUPPORTED_BN_2G) {
+			if (prNDL &&
+				prNDL->eNDLRole == NAN_PROTOCOL_RESPONDER &&
+				eHighestCommonBand == ENUM_SUPPORTED_BN_2G) {
 				DBGLOG(NAN, INFO,
 				       "Skip 5G/6G availability to use 2G");
 				continue;

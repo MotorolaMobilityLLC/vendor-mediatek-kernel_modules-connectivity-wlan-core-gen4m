@@ -147,6 +147,10 @@ struct _NAN_RANGING_CTRL_T {
 	/* for FTM session */
 	struct _NAN_FTM_PARAM_T rNanFtmParam;
 	struct _NAN_FTM_REPORT_T rNanFtmReport;
+
+#if CFG_SUPPORT_RTT
+	struct RTT_RESULT rRangingRttResult;
+#endif /* CFG_SUPPORT_RTT */
 };
 
 struct _NAN_RANGING_INSTANCE_T {
@@ -416,6 +420,11 @@ uint32_t nanRangingScheduleViolation(struct ADAPTER *prAdapter,
 
 void nanRangingListPrint(struct ADAPTER *prAdapter);
 
+void
+nanRangingReportDiscResult(struct ADAPTER *prAdapter, uint8_t *pucPeerAddr);
+
+struct NanRangeRequest *
+nanGetRangingReq(struct ADAPTER *prAdapter, uint8_t ucSubID);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -1397,6 +1397,9 @@ struct NanSubscribeRequest {
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
 	uint8_t sdea_service_specific_info[NAN_MAX_SDEA_LEN];
+
+	/* Nan Ranging Request */
+	uint8_t ranging_enabled;
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Subscribe Cancel Structure

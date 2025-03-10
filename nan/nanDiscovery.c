@@ -819,6 +819,16 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 			prSubSpecificInfo->ucUsed = TRUE;
 			prSubSpecificInfo->ucSubscribeId =
 				prSubscribeReq->subscribe_id;
+			if (msg->ranging_enabled) {
+				prSubSpecificInfo->ucRangingEnabled = TRUE;
+				kalMemCopy(&prSubSpecificInfo->rRangeReq
+					.ranging_cfg,
+					&msg->ranging_cfg,
+					sizeof(struct NanRangingCfg));
+				prSubSpecificInfo->rRangeReq.range_id =
+					msg->range_response_cfg
+					.requestor_instance_id;
+			}
 			break;
 		}
 	}
@@ -1393,5 +1403,50 @@ nanDiscSetCustomAttribute(
 		return NAN_STATUS_INTERNAL_FAILURE;
 }
 
+uint32_t
+nanIsSubEnableRanging(struct ADAPTER *prAdapter, uint8_t ucSubID)
+{
+	struct _NAN_SUBSCRIBE_INFO_T *prSubInfo = NULL;
+	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
+	uint8_t ucIdx = 0;
+
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "Adapter NULL!\n");
+		return FALSE;
+	}
+	prSubInfo = &prAdapter->rSubscribeInfo;
+	for (ucIdx = 0; ucIdx < NAN_MAX_SUBSCRIBE_NUM; ucIdx++) {
+		prSubSpecificInfo = &prSubInfo->rSubSpecificInfo[ucIdx];
+		if (prSubSpecificInfo->ucSubscribeId == ucSubID &&
+			prSubSpecificInfo->ucRangingEnabled == TRUE)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+void
+nanSubStoreDiscEvtForRanging(
+	struct ADAPTER *prAdapter,
+	struct NAN_DISCOVERY_EVENT *prDiscEvt)
+{
+	struct _NAN_SUBSCRIBE_INFO_T *prSubInfo = NULL;
+	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
+	uint8_t ucIdx = 0, ucSubID = 0;
+
+	if (!prAdapter || !prDiscEvt) {
+		DBGLOG(NAN, ERROR, "Adapter or DiscEvt NULL!\n");
+		return;
+	}
+	prSubInfo = &prAdapter->rSubscribeInfo;
+	ucSubID = prDiscEvt->u2SubscribeID;
+	for (ucIdx = 0; ucIdx < NAN_MAX_SUBSCRIBE_NUM; ucIdx++) {
+		prSubSpecificInfo = &prSubInfo->rSubSpecificInfo[ucIdx];
+		if (prSubSpecificInfo->ucSubscribeId == ucSubID) {
+			kalMemCopy(&prSubSpecificInfo->rRangingDiscEvt,
+					prDiscEvt,
+					sizeof(struct NAN_DISCOVERY_EVENT));
+		}
+	}
+}
 
 #endif /* CFG_SUPPORT_NAN */

@@ -2182,6 +2182,7 @@ skip:
 				nanMapRangingConfigParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->ranging_cfg);
+				pNanSubscribeReq->ranging_enabled = TRUE;
 				break;
 			case NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO:
 				if (outputTlv.length >
@@ -2241,66 +2242,6 @@ skip:
 			kfree(pNanSubscribeRsp);
 			kfree_skb(skb);
 			return -EFAULT;
-		}
-		/* Ranging */
-		if (fgRangingCFG && fgRangingREQ) {
-
-			struct NanRangeRequest *rgreq = NULL;
-			uint16_t rgId = 0;
-			uint32_t rStatus;
-
-			rgreq = kmalloc(sizeof(struct NanRangeRequest),
-				GFP_ATOMIC);
-
-			if (!rgreq) {
-				DBGLOG(NAN, ERROR, "Allocate failed\n");
-				kfree(pNanSubscribeReq);
-				kfree(pNanSubscribeRsp);
-				kfree_skb(skb);
-				return -ENOMEM;
-			}
-
-			kalMemZero(rgreq, sizeof(struct NanRangeRequest));
-
-			memcpy(&rgreq->peer_addr,
-				&pNanSubscribeReq->range_response_cfg.peer_addr,
-				NAN_MAC_ADDR_LEN);
-			memcpy(&rgreq->ranging_cfg,
-				&pNanSubscribeReq->ranging_cfg,
-				sizeof(struct NanRangingCfg));
-			rgreq->range_id =
-			pNanSubscribeReq->range_response_cfg
-				.requestor_instance_id;
-			DBGLOG(NAN, DEBUG, MACSTR
-				" id %d reso %d intev %d indicat %d ING CM %d ENG CM %d\n",
-				MAC2STR(rgreq->peer_addr),
-				rgreq->range_id,
-				rgreq->ranging_cfg.ranging_resolution,
-				rgreq->ranging_cfg.ranging_interval_msec,
-				rgreq->ranging_cfg.config_ranging_indications,
-				rgreq->ranging_cfg.distance_ingress_cm,
-				rgreq->ranging_cfg.distance_egress_cm);
-			rStatus =
-			nanRangingRequest(prGlueInfo->prAdapter, &rgId, rgreq);
-
-			nanExtTerminateApNanEndLegacy(prAdapter);
-
-			pNanSubscribeRsp->fwHeader.handle = rgId;
-			i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
-				       (void *)pNanSubscribeRsp,
-				       sizeof(struct NanSubscribeServiceRspMsg),
-				       &u4BufLen);
-			if (i4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(NAN, ERROR, "kalIoctl failed\n");
-				kfree(pNanSubscribeReq);
-				kfree(rgreq);
-				kfree_skb(skb);
-				return -EFAULT;
-			}
-			kfree(rgreq);
-			kfree(pNanSubscribeReq);
-			break;
-
 		}
 
 		prAdapter->fgIsNANfromHAL = TRUE;
@@ -3799,7 +3740,13 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	struct NanFWSdeaCtrlParams nanPeerSdeaCtrlarms;
 	size_t message_len = 0;
 	uint8_t *tlvs = NULL;
-
+#if CFG_SUPPORT_RTT
+	uint16_t u2RangingId = 0;
+	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
+	struct NanRangeRequest *prRangingReq = NULL;
+	struct NanRangeInfo rNanRangeInfo;
+	struct RTT_RESULT *prRttResult = NULL;
+#endif
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
@@ -3815,6 +3762,16 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 		      (SIZEOF_TLV_HDR + prDiscEvt->u2Service_info_len) +
 		      (SIZEOF_TLV_HDR + prDiscEvt->ucSdf_match_filter_len) +
 		      (SIZEOF_TLV_HDR + sizeof(struct NanFWSdeaCtrlParams));
+#if CFG_SUPPORT_RTT
+	prRanging = nanRangingInstanceSearchByMac(prAdapter,
+						prDiscEvt->aucNanAddress);
+	if (prRanging) {
+		DBGLOG(NAN, INFO, "Ranging of DiscSubId=%u, Addr="MACSTR"\n",
+			prDiscEvt->u2SubscribeID,
+			MAC2STR(prDiscEvt->aucNanAddress));
+		message_len += (SIZEOF_TLV_HDR + sizeof(struct NanRangeInfo));
+	}
+#endif
 
 	prNanMatchInd = kmalloc(message_len, GFP_KERNEL);
 	if (!prNanMatchInd) {
@@ -3871,7 +3828,33 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	tlvs = nanAddTlv(NAN_TLV_TYPE_SDEA_CTRL_PARAMS,
 			 sizeof(struct NanFWSdeaCtrlParams),
 			 (u8 *)&nanPeerSdeaCtrlarms, tlvs);
+#if CFG_SUPPORT_RTT
+	prRangingReq = nanGetRangingReq(prAdapter, prDiscEvt->u2SubscribeID);
+	if (!prRangingReq) {
+		DBGLOG(NAN, ERROR, "RangingReq Null\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
 
+	if (prRanging) {
+		DBGLOG(NAN, INFO, "write range_info to tlv\n");
+		prRttResult = &prRanging->ranging_ctrl.rRangingRttResult;
+		rNanRangeInfo.range_measurement_cm =
+			prRttResult->i4DistanceMM / 1000;
+		rNanRangeInfo.ranging_event_type =
+			prRangingReq->ranging_cfg.config_ranging_indications;
+		tlvs = nanAddTlv(NAN_TLV_TYPE_NAN20_RANGING_RESULT,
+				sizeof(struct NanRangeInfo),
+				(u8 *)&rNanRangeInfo, tlvs);
+	} else if (nanIsSubEnableRanging(prAdapter, prDiscEvt->u2SubscribeID)) {
+		DBGLOG(NAN, INFO, "store DiscEvt and trigger ranging\n");
+		nanSubStoreDiscEvtForRanging(prAdapter, prDiscEvt);
+		kalMemCopy(prRangingReq->peer_addr,
+				prDiscEvt->aucNanAddress,
+				NAN_MAC_ADDR_LEN);
+		nanRangingRequest(prAdapter, &u2RangingId, prRangingReq);
+		return	WLAN_STATUS_PENDING;
+	}
+#endif /* CFG_SUPPORT_RTT */
 	/* Fill skb and send to kernel by nl80211 */
 	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,

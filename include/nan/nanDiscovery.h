@@ -544,6 +544,9 @@ struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T {
 	uint8_t ucUsed;
 	uint8_t ucSubscribeId;
 	uint8_t ucReportTerminate;
+	uint8_t ucRangingEnabled;
+	struct NanRangeRequest rRangeReq;
+	struct NAN_DISCOVERY_EVENT rRangingDiscEvt;
 };
 
 struct _NAN_SUBSCRIBE_INFO_T {
@@ -610,5 +613,9 @@ nanDiscSearchServiceSession(struct ADAPTER *prAdapter,
 struct _NAN_SERVICE_SESSION_T *
 nanDiscAcquireServiceSession(struct ADAPTER *prAdapter,
 			     uint8_t *pucPublishNmiAddr, uint8_t ucPubID);
+
+uint32_t nanIsSubEnableRanging(struct ADAPTER *prAdapter, uint8_t ucSubID);
+void nanSubStoreDiscEvtForRanging(struct ADAPTER *prAdapter,
+				struct NAN_DISCOVERY_EVENT *prDiscEvt);
 #endif
 #endif

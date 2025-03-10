@@ -188,6 +188,10 @@ nanRangingInstanceInit(struct ADAPTER *prAdapter,
 		prRanging->ranging_ctrl.rNanFtmParam.fgASAP_CAP = 1;
 	}
 
+#if CFG_SUPPORT_RTT
+	kalMemSet(&prRanging->ranging_ctrl.rRangingRttResult, 0,
+				sizeof(struct RTT_RESULT));
+#endif /* CFG_SUPPORT_RTT */
 	cnmTimerInitTimer(prAdapter,
 			  &(prRanging->ranging_ctrl.rRangingSessionTimer),
 			  (PFN_MGMT_TIMEOUT_FUNC)nanRangingSessionTimeout,
@@ -1924,6 +1928,8 @@ nanRangingFtmDoneEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	if (!u4IndChk)
 		return;
 
+	nanRangingReportDiscResult(prAdapter, prEvent->aucPeerAddr);
+
 	if (prRanging->ranging_ctrl.ucInvoker == NAN_RANGING_APPLICATION) {
 
 		nanRangingResult(prAdapter, prRanging, u4IndChk);
@@ -2140,7 +2146,8 @@ nanRangingRequest(struct ADAPTER *prAdapter, uint16_t *pu2Id,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, DEBUG, "\n");
+	DBGLOG(NAN, INFO, "RgId=%d "MACSTR"\n",
+			msg->range_id, MAC2STR(msg->peer_addr));
 
 	prRangingInfo = &(prAdapter->rRangingInfo);
 	if (prRangingInfo == NULL) {
@@ -2496,6 +2503,57 @@ nanRangingListPrint(struct ADAPTER *prAdapter) {
 							     .eCurrentState]);
 		}
 	}
+}
+
+void
+nanRangingReportDiscResult(struct ADAPTER *prAdapter, uint8_t *pucPeerAddr)
+{
+	struct _NAN_SUBSCRIBE_INFO_T *prSubInfo = NULL;
+	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
+	struct NAN_DISCOVERY_EVENT *prRangingDiscEvt = NULL;
+	int status;
+	uint8_t ucIdx = 0;
+
+	if (!prAdapter || !pucPeerAddr) {
+		DBGLOG(NAN, ERROR, "Adapter or Addr NULL\n");
+		return;
+	}
+	prSubInfo = &prAdapter->rSubscribeInfo;
+	for (ucIdx = 0; ucIdx < NAN_MAX_SUBSCRIBE_NUM; ucIdx++) {
+		prSubSpecificInfo = &prSubInfo->rSubSpecificInfo[ucIdx];
+		if (kalMemCmp(prSubSpecificInfo->rRangingDiscEvt.aucNanAddress,
+				pucPeerAddr, MAC_ADDR_LEN) == 0) {
+			prRangingDiscEvt = &prSubSpecificInfo->rRangingDiscEvt;
+			break;
+		}
+	}
+	if (!prRangingDiscEvt) {
+		DBGLOG(NAN, ERROR, "DiscEvt not found, PeerAddr="MACSTR"\n",
+					MAC2STR(pucPeerAddr));
+		return;
+	}
+	status = mtk_cfg80211_vendor_event_nan_match_indication(
+				prAdapter, (uint8_t *) prRangingDiscEvt);
+}
+
+struct NanRangeRequest *
+nanGetRangingReq(struct ADAPTER *prAdapter, uint8_t ucSubID)
+{
+	struct _NAN_SUBSCRIBE_INFO_T *prSubInfo = NULL;
+	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
+	uint8_t ucIdx = 0;
+
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "Adapter NULL!\n");
+		return NULL;
+	}
+	prSubInfo = &prAdapter->rSubscribeInfo;
+	for (ucIdx = 0; ucIdx < NAN_MAX_SUBSCRIBE_NUM; ucIdx++) {
+		prSubSpecificInfo = &prSubInfo->rSubSpecificInfo[ucIdx];
+		if (prSubSpecificInfo->ucSubscribeId == ucSubID)
+			return &prSubSpecificInfo->rRangeReq;
+	}
+	return NULL;
 }
 
 #endif /* CFG_SUPPORT_NAN */
