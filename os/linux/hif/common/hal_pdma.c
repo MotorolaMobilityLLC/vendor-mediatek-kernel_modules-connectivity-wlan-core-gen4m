@@ -1884,6 +1884,7 @@ u_int8_t halHandleAllTokensUnused(struct ADAPTER *prAdapter, u_int8_t fgIsCheck)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo;
 #endif
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -1892,6 +1893,7 @@ u_int8_t halHandleAllTokensUnused(struct ADAPTER *prAdapter, u_int8_t fgIsCheck)
 	prChipInfo = prAdapter->chip_info;
 #if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	prBusInfo = prChipInfo->bus_info;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 #endif
 
 	if (GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt) != 0)
@@ -1899,7 +1901,7 @@ u_int8_t halHandleAllTokensUnused(struct ADAPTER *prAdapter, u_int8_t fgIsCheck)
 
 #if CFG_SUPPORT_PCIE_ASPM
 	if (prBusInfo->updatePcieAspm) {
-		if (!fgIsCheck)
+		if (!fgIsCheck && !prHifInfo->fgPcieKeepL0)
 			prBusInfo->updatePcieAspm(
 				prAdapter->prGlueInfo, TRUE);
 		fgRet = TRUE;

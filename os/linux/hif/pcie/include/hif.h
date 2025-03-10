@@ -359,6 +359,7 @@ struct GL_HIF_INFO {
 	uint32_t u4PcieASPM;
 	enum pcie_aspm_state eCurPcieState;
 	enum pcie_aspm_state eNextPcieState;
+	u_int8_t fgPcieKeepL0;
 	uint64_t u8TsL1;
 	uint64_t u8TsL1_2;
 	uint64_t u8TsDiffL1;

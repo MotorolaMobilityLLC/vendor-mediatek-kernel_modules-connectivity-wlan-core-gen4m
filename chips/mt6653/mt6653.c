@@ -3726,19 +3726,22 @@ static void mt6653UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (fgEn) {
+	if (prGlueInfo->prAdapter->rWifiVar.fgPcieEnableL1ss == 0)
+		return;
+
+	if (prHifInfo->fgPcieKeepL0)
+		prHifInfo->eNextPcieState = PCIE_STATE_L0;
+	else if (fgEn)
 		prHifInfo->eNextPcieState = PCIE_STATE_L1_2;
-	} else {
-		if (prHifInfo->eNextPcieState != PCIE_STATE_L0)
-			prHifInfo->eNextPcieState = PCIE_STATE_L1;
-	}
+	else
+		prHifInfo->eNextPcieState = PCIE_STATE_L1;
 
 	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
+		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
 			mt6653ConfigPcieAspm(prGlueInfo, TRUE, 1);
 		else
 			mt6653ConfigPcieAspm(prGlueInfo, FALSE, 1);
-		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 	}
 }
 
@@ -3747,12 +3750,7 @@ static void mt6653KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (fgWakeup) {
-		prHifInfo->eNextPcieState = PCIE_STATE_L0;
-	} else {
-		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
-			prHifInfo->eNextPcieState = PCIE_STATE_L1;
-	}
+	prHifInfo->fgPcieKeepL0 = fgWakeup;
 }
 #endif //CFG_SUPPORT_PCIE_ASPM
 
