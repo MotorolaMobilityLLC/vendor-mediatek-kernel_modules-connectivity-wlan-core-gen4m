@@ -8211,6 +8211,25 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  QM_EXTRA_RESERVED_RESOURCE_WHEN_BUSY, FEATURE_DEBUG_ONLY);
 #endif
 
+	/**
+	 * Bitmap to set subtype of frames to dump hex
+	 * MAC_FRAME_ASSOC_REQ     BIT(0)
+	 * MAC_FRAME_ASSOC_RSP     BIT(1)	ASSOC Req/Resp	  0x0003
+	 * MAC_FRAME_REASSOC_REQ   BIT(2)
+	 * MAC_FRAME_REASSOC_RSP   BIT(3)	ReASSOC Req/Resp  0x000C
+	 * MAC_FRAME_PROBE_REQ     BIT(4)
+	 * MAC_FRAME_PROBE_RSP     BIT(5)	Probe Req/Resp	  0x0030
+	 * MAC_FRAME_BEACON        BIT(8)	Beacon		  0x0100
+	 * MAC_FRAME_ATIM          BIT(9)	ATIM		  0x0200
+	 * MAC_FRAME_DISASSOC      BIT(10)	DisASSOC	  0x0400
+	 * MAC_FRAME_AUTH          BIT(11)
+	 * MAC_FRAME_DEAUTH        BIT(12)	Probe Auth/Deauth 0x1800
+	 * MAC_FRAME_ACTION        BIT(13)	Action		  0x2000
+	 * MAC_FRAME_ACTION_NO_ACK BIT(14)	Action NACK	  0x4000
+	 */
+	INIT_UINT(prWifiVar->u2MgmtHexDump, "MgmtHexDump", 0x0,
+		  FEATURE_DEBUG_ONLY);
+
 	/* Stats log */
 	/**
 	 * b8'000001: b1IPv6TcpTxLog

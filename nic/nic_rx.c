@@ -2297,6 +2297,31 @@ void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
+static void nicDumpRxMgmtPacketHex(struct ADAPTER *prAdapter,
+				   struct SW_RFB *prSwRfb)
+{
+	struct WLAN_MAC_HEADER *pHeader;
+	uint16_t u2MgmtHexDump;
+	uint8_t ucSubtype;
+
+	if (!prAdapter || !prSwRfb || !prSwRfb->pvHeader)
+		return;
+
+	pHeader = prSwRfb->pvHeader;
+	ucSubtype = pHeader->b4SubType;
+
+	u2MgmtHexDump = prAdapter->rWifiVar.u2MgmtHexDump;
+
+	if ((nicNeedDumpActionFrame(pHeader, prSwRfb->u2PacketLen) ||
+	     BIT(pHeader->b4SubType) & u2MgmtHexDump) &&
+	    prSwRfb->u2PacketLen <= MSDU_MAX_LENGTH) {
+		DBGDUMP_HEX(RX, INFO, "Dump RX MGMT Frame:",
+			    pHeader, prSwRfb->u2PacketLen);
+		DBGLOG(RX, INFO, "Dump RX MGMT Frame End subtype=%u (%u)",
+		       pHeader->b4SubType, prSwRfb->u2PacketLen);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief nicRxProcessMgmtPacket is used to dispatch management frames
@@ -2312,6 +2337,7 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct WLAN_MAC_HEADER *pHeader;
 	uint8_t ucSubtype;
 #if CFG_SUPPORT_802_11W
 	/* BOOL   fgMfgDrop = FALSE; */
@@ -2330,6 +2356,7 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		return;
 	}
+	pHeader = prSwRfb->pvHeader;
 
 	if (prSwRfb->u2HeaderLen < sizeof(struct WLAN_MAC_HEADER)
 		|| prSwRfb->u2PacketLen < prSwRfb->u2HeaderLen
@@ -2345,8 +2372,7 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 #if CFG_WIFI_SW_CIPHER_MISMATCH
 	prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
 #endif
-	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
-		     MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
+	ucSubtype = pHeader->b4SubType;
 
 #if CFG_SUPPORT_802_11W
 	if (prSwRfb->fgIcvErr) {
@@ -2398,6 +2424,9 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 			DBGLOG(RX, WARN,
 			   "Bypass this mgmt frame without wlanProbe done\n");
 		} else if (apfnProcessRxMgtFrame[ucSubtype]) {
+
+			nicDumpRxMgmtPacketHex(prAdapter, prSwRfb);
+
 			switch (apfnProcessRxMgtFrame[ucSubtype] (prAdapter,
 					prSwRfb)) {
 			case WLAN_STATUS_PENDING:
@@ -3814,9 +3843,6 @@ uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 		    WLAN_STATUS_FAILURE)
 			return WLAN_STATUS_FAILURE;
 	}
-
-	DBGDUMP_HEX(NAN, INFO, "RX NAN Action Frame:",
-		   prActionFrame, prSwRfb->u2PacketLen);
 
 	if (ucOuiType == VENDOR_OUI_TYPE_NAN_NAF ||
 	    ucOuiType == VENDOR_OUI_TYPE_NAN_SDF) {

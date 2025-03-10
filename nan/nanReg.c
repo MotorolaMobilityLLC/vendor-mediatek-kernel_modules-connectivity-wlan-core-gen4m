@@ -826,4 +826,36 @@ void nanRegForce_R3_6GChMap(uint8_t ucEnable)
 }
 #endif
 
+u_int8_t nanIsNanActionFrame(struct WLAN_MAC_HEADER *pHeader,
+			     uint16_t u2FrameLength)
+{
+	struct _NAN_ACTION_FRAME_T *prNanAction;
+	const uint8_t aucWfaOui[] = NAN_OUI;
+
+	if (!DBG_IS_LEVEL_SET(NAN, DEBUG))
+		return FALSE;
+
+	if (pHeader->b4SubType != (MAC_FRAME_ACTION >> 4))
+		return FALSE;
+
+	if (u2FrameLength < sizeof(*prNanAction))
+		return FALSE;
+
+	prNanAction = (struct _NAN_ACTION_FRAME_T *)pHeader;
+
+	/* Category == 4 Public Action frame ||
+	 *	       9 Protected Dual of Public Action Frame
+	 * Action == 9 Public Action frame Vendor Specific
+	 * OUI == 0x50-6F-9A
+	 * OUI Type = 0x13 (Service Discovery) || 0x18 (Action)
+	 */
+	return (prNanAction->ucCategory == CATEGORY_PUBLIC_ACTION ||
+		prNanAction->ucCategory ==
+			CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION) &&
+		prNanAction->ucAction == ACTION_PUBLIC_VENDOR_SPECIFIC &&
+		!kalMemCmp(prNanAction->aucOUI, aucWfaOui, sizeof(aucWfaOui)) &&
+		(prNanAction->ucOUItype == VENDOR_OUI_TYPE_NAN_SDF ||
+		 prNanAction->ucOUItype == VENDOR_OUI_TYPE_NAN_NAF);
+}
+
 #endif /* CFG_SUPPORT_NAN */

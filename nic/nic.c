@@ -6316,6 +6316,16 @@ u_int8_t nicIsEcoVerEqualOrLaterTo(struct ADAPTER
 		return FALSE;
 }
 
+u_int8_t nicNeedDumpActionFrame(struct WLAN_MAC_HEADER *pHeader,
+				uint16_t u2FrameLength)
+{
+#if CFG_SUPPORT_NAN
+	if (nanIsNanActionFrame(pHeader, u2FrameLength))
+		return TRUE;
+#endif
+	return FALSE;
+}
+
 void nicSerStopTxRx(struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_USB)

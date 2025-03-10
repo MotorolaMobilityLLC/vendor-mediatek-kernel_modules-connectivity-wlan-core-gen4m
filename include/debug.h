@@ -1035,6 +1035,13 @@ struct WAKE_INFO_T {
 #define log_mem32_dbg		DBGLOG_MEM32
 #define log_tool_dbg		TOOL_PRINTLOG
 
+#define DBG_IS_LEVEL_SET(_Mod, _Cls) \
+({								\
+	uint32_t u4DebugLevel;					\
+	wlanGetDriverDbgLevel(DBG_##_Mod##_IDX, &u4DebugLevel);	\
+	(u4DebugLevel & DBG_CLASS_##_Cls);			\
+})
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

@@ -57,5 +57,9 @@ nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
 
 void nanRegForce_R3_6GChMap(uint8_t ucEnable);
 
+u_int8_t nanIsNanActionFrame(struct WLAN_MAC_HEADER *pHeader,
+			     uint16_t u2FrameLength);
+
 #endif
+
 #endif /* _NAN_REG_H_ */

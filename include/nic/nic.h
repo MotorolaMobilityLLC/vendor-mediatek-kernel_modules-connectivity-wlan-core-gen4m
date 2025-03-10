@@ -669,6 +669,9 @@ uint8_t nicSetChipHwVer(struct ADAPTER *prAdapter, uint8_t value);
 uint8_t nicSetChipSwVer(struct ADAPTER *prAdapter, uint8_t value);
 uint8_t nicSetChipFactoryVer(struct ADAPTER *prAdapter, uint8_t value);
 
+u_int8_t nicNeedDumpActionFrame(struct WLAN_MAC_HEADER *pHeader,
+				uint16_t u2FrameLength);
+
 void nicSerStopTxRx(struct ADAPTER *prAdapter);
 void nicSerStopTx(struct ADAPTER *prAdapter);
 void nicSerStartTxRx(struct ADAPTER *prAdapter);

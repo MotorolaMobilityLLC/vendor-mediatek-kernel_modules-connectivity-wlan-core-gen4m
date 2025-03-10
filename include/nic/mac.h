@@ -2891,7 +2891,22 @@ enum DHCP_OPTION {
 /* WLAN MAC Header (without Address 4 and QoS Control fields) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER {
-	uint16_t u2FrameCtrl;
+	union {
+		uint16_t u2FrameCtrl;
+		struct {
+			uint16_t b2Version: 2,
+				 b2Type: 2,
+				 b4SubType: 4,
+				 b1ToDS: 1,
+				 b1FromDS: 1,
+				 b1MoreFrag: 1,
+				 b1Retry: 1,
+				 b1PS: 1,
+				 b1MoreData: 1,
+				 b1Protected: 1,
+				 b1Order: 1;
+		};
+	};
 	uint16_t u2DurationID;
 	uint8_t aucAddr1[MAC_ADDR_LEN];
 	uint8_t aucAddr2[MAC_ADDR_LEN];

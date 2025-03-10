@@ -3772,6 +3772,31 @@ uint32_t nicTxInitResetResource(struct ADAPTER
 
 #endif
 
+static void nicDumpTxMgmtPacketHex(struct ADAPTER *prAdapter,
+				   struct MSDU_INFO *prMsduInfo)
+{
+	struct WLAN_MAC_HEADER *pHeader = NULL;
+	uint16_t u2MgmtHexDump;
+	uint8_t ucSubtype;
+
+	if (!prAdapter || !prMsduInfo || !prMsduInfo->prPacket)
+		return;
+
+	pHeader = prMsduInfo->prPacket;
+	ucSubtype = pHeader->b4SubType;
+	u2MgmtHexDump = prAdapter->rWifiVar.u2MgmtHexDump;
+
+	if ((nicNeedDumpActionFrame(pHeader, prMsduInfo->u2FrameLength) ||
+	     BIT(pHeader->b4SubType) & u2MgmtHexDump) &&
+	    prMsduInfo->u2FrameLength <= MSDU_MAX_LENGTH) {
+		DBGDUMP_HEX(TX, INFO, "Dump TX MGMT Frame:",
+			    pHeader, prMsduInfo->u2FrameLength);
+		DBGLOG(TX, INFO,
+		       "Dump TX MGMT Frame End subtype=%u (%u)",
+		       pHeader->b4SubType, prMsduInfo->u2FrameLength);
+	}
+}
+
 u_int8_t nicTxProcessMngPacket(struct ADAPTER *prAdapter,
 			       struct MSDU_INFO *prMsduInfo)
 {
@@ -3816,6 +3841,8 @@ u_int8_t nicTxProcessMngPacket(struct ADAPTER *prAdapter,
 
 	nicTxFillDesc(prAdapter, prMsduInfo,
 		      prMsduInfo->aucTxDescBuffer, NULL);
+
+	nicDumpTxMgmtPacketHex(prAdapter, prMsduInfo);
 
 	return TRUE;
 }

@@ -1270,6 +1270,8 @@ struct WIFI_VAR {
 	uint8_t ucCmdRsvResource;
 	uint32_t u4MgmtQueueDelayTimeout;
 
+	uint16_t u2MgmtHexDump;
+
 	union {
 		uint8_t ucTRxDataLog;
 		struct {

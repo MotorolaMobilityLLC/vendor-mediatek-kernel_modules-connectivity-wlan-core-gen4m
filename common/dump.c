@@ -68,6 +68,7 @@
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
+/* coverity[-taint_source:arg-0] */
 void dumpHex(uint8_t *pucStartAddr, uint16_t u2Length)
 {
 #if !DBG_DISABLE_ALL_LOG

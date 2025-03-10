@@ -6917,18 +6917,19 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		u2FrameLength, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	prMsduInfo->ucTxToNafQueFlag = TRUE;
+	prNAF = prMsduInfo->prPacket;
+	ucOuiSubtype = prNAF->ucOUISubtype;
 
 	if (!prAdapter->rWifiVar.fgNoPmf && (prSelectStaRec != NULL) &&
 	    (prSelectStaRec->rPmfCfg.fgApplyPmf == TRUE)) {
-		prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
 		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
 				     TRUE);
 		DBGLOG(NAN, DEBUG,
 		       "Tx PMF, StaIdx:%d, OUItype:%d, OUISubtype:%d(%s), MAC=>"
 		       MACSTR "\n",
 		       prSelectStaRec->ucIndex,
-		       prNAF->ucOUItype, prNAF->ucOUISubtype,
-		       nanActionFrameOuiString(prNAF->ucOUISubtype),
+		       prNAF->ucOUItype, ucOuiSubtype,
+		       nanActionFrameOuiString(ucOuiSubtype),
 		       MAC2STR(prSelectStaRec->aucMacAddr));
 	}
 
@@ -6936,12 +6937,8 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
 	nanLogTx(prNAF);
 
-	DBGDUMP_HEX(NAN, INFO, "TX NAN Action Frame:",
-		    prMsduInfo->prPacket, u2FrameLength);
-
 	if (prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_NAF ||
 	    prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_SDF) {
-		ucOuiSubtype = prNAF->ucOUISubtype;
 		DBGLOG(NAN, INFO,
 		       "Tx NAN Pub Action, StaIdx:%d, Wtbl:%d, OUISubtype:%d(%s), Src: "
 		       MACSTR " Dest: " MACSTR "\n",
