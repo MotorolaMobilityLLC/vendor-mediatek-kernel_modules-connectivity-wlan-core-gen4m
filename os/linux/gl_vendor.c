@@ -4613,8 +4613,12 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 	uint8_t ucAisIdx = 0;
 #if (CFG_SUPPORT_APF == 1)
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if (CFG_SUPPORT_APF_GET_CAPABILITY == 1)
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_APF_INFO *prInfo = NULL;
 #endif
-
+#endif
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
@@ -4627,6 +4631,7 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 	}
 
 #if (CFG_SUPPORT_APF == 1)
+
 	prGlueInfo = wlanGetGlueInfoByWiphy(wiphy);
 
 	if (!prGlueInfo) {
@@ -4644,20 +4649,47 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 		goto nla_put_failure;
 	}
 
-	ucBssIdx = wlanGetBssIdx(wdev->netdev);
-
 	if (prGlueInfo->prAdapter->rWifiVar.ucApfEnable == 0)
 		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
+	else {
 
-	ucAisIdx = AIS_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+		ucBssIdx = wlanGetBssIdx(wdev->netdev);
+		ucAisIdx = AIS_INDEX(prGlueInfo->prAdapter, ucBssIdx);
 
-#if (CFG_SUPPORT_MULTI_APF == 0)
-	if (ucAisIdx != AIS_DEFAULT_INDEX) {
-		DBGLOG(REQ, ERROR, "Not supporting APF for secondary STA.\n");
-		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
-	}
+#if (CFG_SUPPORT_APF_GET_CAPABILITY == 1)
+
+		prInfo = kalMemZAlloc(sizeof(struct PARAM_APF_INFO),
+					VIR_MEM_TYPE);
+		if (prInfo == NULL) {
+			DBGLOG(REQ, ERROR, "Failed to allocate prInfo\n");
+			goto nla_put_failure;
+		}
+
+		prInfo->ucBssIdx = ucBssIdx;
+		prInfo->ucAisIdx = ucAisIdx;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryApfInfo, prInfo,
+				sizeof(struct PARAM_APF_INFO), &u4SetInfoLen);
+
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			aucCapablilities[0] = prInfo->u4ApfVer;
+			aucCapablilities[1] = prInfo->u4ApfBufSize;
+		} else {
+			DBGLOG(REQ, ERROR, "APF query fail:0x%x\n", rStatus);
+		}
+
 #endif
+#if (CFG_SUPPORT_MULTI_APF == 0)
 
+		if (ucAisIdx != AIS_DEFAULT_INDEX) {
+			DBGLOG(REQ, ERROR,
+				"Not supporting APF for secondary STA.\n");
+			kalMemZero(&aucCapablilities[0],
+				sizeof(aucCapablilities));
+		}
+
+#endif
+	}
 #endif
 
 	if (unlikely(nla_put(skb, APF_ATTRIBUTE_VERSION,
@@ -4670,10 +4702,24 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 	DBGLOG(REQ, DEBUG, "BSS[%d] Ais[%d] capability - ver:%d, max len: %d\n",
 		ucBssIdx, ucAisIdx, aucCapablilities[0], aucCapablilities[1]);
 
+#if (CFG_SUPPORT_APF_GET_CAPABILITY == 1)
+
+	if (prInfo != NULL)
+		kalMemFree(prInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_APF_INFO));
+#endif
+
 	return cfg80211_vendor_cmd_reply(skb);
 
 nla_put_failure:
 	kfree_skb(skb);
+
+#if (CFG_SUPPORT_APF_GET_CAPABILITY == 1)
+
+	if (prInfo != NULL)
+		kalMemFree(prInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_APF_INFO));
+#endif
 	return -EFAULT;
 }
 

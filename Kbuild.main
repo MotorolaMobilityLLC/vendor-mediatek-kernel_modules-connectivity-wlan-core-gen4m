@@ -230,8 +230,19 @@ ifneq ($(filter SOC2_1X1,$(MTK_COMBO_CHIP)),)
         ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
         ccflags-y += -DCFG_SUPPORT_MDDP_SHM=1
     else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
+        CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+        CONFIG_MTK_WIFI_APF_SUPPORT=y
+        CONFIG_MTK_WIFI_APFV6_SUPPORT=y
+        CONFIG_MTK_WIFI_APF_GET_CAPABILITY=y
+        ccflags-y += -DCFG_APF_BUFF_LEN=4096
         ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
         ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+    else ifneq ($(filter 6789, $(WLAN_CHIP_ID)),)
+        CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+        CONFIG_MTK_WIFI_APF_SUPPORT=y
+        CONFIG_MTK_WIFI_APFV6_SUPPORT=y
+        CONFIG_MTK_WIFI_APF_GET_CAPABILITY=y
+        ccflags-y += -DCFG_APF_BUFF_LEN=4096
     else
         ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
         ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
@@ -3142,6 +3153,11 @@ ifeq ($(CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT), y)
     else
         ccflags-y += -DCFG_SUPPORT_APF=0
     endif
+    ifeq ($(CONFIG_MTK_WIFI_APF_GET_CAPABILITY), y)
+        ccflags-y += -DCFG_SUPPORT_APF_GET_CAPABILITY=1
+    else
+        ccflags-y += -DCFG_SUPPORT_APF_GET_CAPABILITY=0
+    endif
     ifeq ($(CONFIG_MTK_WIFI_APFV6_SUPPORT), y)
         ccflags-y += -DCFG_SUPPORT_APFV6=1
     else
@@ -3190,6 +3206,7 @@ ifeq ($(CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT), y)
 else
     ccflags-y += -DCFG_SUPPORT_PKT_OFLD=0
     ccflags-y += -DCFG_SUPPORT_APF=0
+    ccflags-y += -DCFG_SUPPORT_APF_GET_CAPABILITY=0
     ccflags-y += -DCFG_SUPPORT_APFV6=0
     ccflags-y += -DCFG_SUPPORT_MULTI_APF=0
     ccflags-y += -DCFG_SUPPORT_IGMP_OFLD=0

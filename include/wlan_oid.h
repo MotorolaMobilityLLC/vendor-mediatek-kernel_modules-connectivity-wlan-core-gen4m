@@ -3626,6 +3626,14 @@ struct PARAM_OFLD_INFO {
 	uint32_t u4BufLen;
 	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
 };
+
+struct PARAM_APF_INFO {
+	uint8_t ucBssIdx;
+	uint8_t ucAisIdx;
+	uint32_t u4ApfVer;
+	uint32_t u4ApfBufSize;
+};
+
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
 #define COEX_CTRL_BUF_LEN 460
@@ -5880,6 +5888,11 @@ uint32_t
 wlanoidQueryOffloadInfo(struct ADAPTER *prAdapter,
 			   void *pvSetBuffer, uint32_t u4SetBufferLen,
 			   uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidQueryApfInfo(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
 
 #endif /* CFG_SUPPORT_PKT_OFLD */
 

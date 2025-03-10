@@ -355,6 +355,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 	CMD_ID_PKT_OFLD = 0xA2,	            /* 0xA2 (Set) */
+	CMD_ID_APF_CAPABILITY = 0xA4,       /* 0xA4 (Set) */
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
 
@@ -600,6 +601,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_PKT_OFLD = 0xA2,
 #endif /* CFG_SUPPORT_PKT_OFLD */
 	EVENT_ID_FW_DROP_SSN = 0xA3,
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+	EVENT_ID_APF_CAPABILITY = 0xA4,
+#endif /* CFG_SUPPORT_PKT_OFLD */
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */

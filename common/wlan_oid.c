@@ -18872,6 +18872,32 @@ wlanoidQueryOffloadInfo(struct ADAPTER *prAdapter,
 
 }	/* wlanoidQueryOffloadInfo */
 
+uint32_t
+wlanoidQueryApfInfo(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	if (u4SetBufferLen < sizeof(struct PARAM_APF_INFO)) {
+		DBGLOG(REQ, ERROR, "Invalid length %u\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_APF_CAPABILITY,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventQueryApfInfo,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct CMD_OFLD_INFO),
+				(uint8_t *) pvSetBuffer,
+				pvSetBuffer, u4SetBufferLen);
+
+}       /* wlanoidQueryApfCap */
+
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
 #if (CFG_WIFI_ISO_DETECT == 1)

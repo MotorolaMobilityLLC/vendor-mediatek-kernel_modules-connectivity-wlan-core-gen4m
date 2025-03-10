@@ -1532,6 +1532,48 @@ void nicCmdEventQueryOfldInfo(struct ADAPTER
 	}
 
 }
+
+void nicCmdEventQueryApfInfo(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
+{
+	uint32_t rOidStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_APF_INFO *prApfCap;
+	struct CMD_APF_INFO *prCmdApfInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prCmdApfInfo = (struct CMD_APF_INFO *) (pucEventBuf);
+
+		u4QueryInfoLen = sizeof(struct PARAM_APF_INFO);
+
+		if (prCmdInfo->u4InformationBufferLength < sizeof(
+				struct PARAM_APF_INFO)) {
+			DBGLOG(REQ, DEBUG,
+				"APF capability length %u is not valid.\n",
+				prCmdInfo->u4InformationBufferLength);
+			rOidStatus = WLAN_STATUS_FAILURE;
+		}
+		prApfCap = (struct PARAM_APF_INFO
+				*) prCmdInfo->pvInformationBuffer;
+		prApfCap->ucBssIdx = prCmdApfInfo->ucBssIdx;
+		prApfCap->ucAisIdx = prCmdApfInfo->ucAisIdx;
+		prApfCap->u4ApfVer = prCmdApfInfo->u4ApfVer;
+		prApfCap->u4ApfBufSize = prCmdApfInfo->u4ApfBufSize;
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			u4QueryInfoLen, rOidStatus);
+	}
+
+}
+
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
 /*----------------------------------------------------------------------------*/

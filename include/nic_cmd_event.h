@@ -3520,6 +3520,13 @@ struct CMD_OFLD_INFO {
 	uint32_t u4BufLen;
 	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
 };
+
+struct CMD_APF_INFO {
+	uint8_t ucBssIdx;
+	uint8_t ucAisIdx;
+	uint32_t u4ApfVer;
+	uint32_t u4ApfBufSize;
+};
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
 struct EVENT_REPORT_U_EVENT {
@@ -4488,6 +4495,10 @@ uint32_t nicCmdEventQueryNicCsumOffload(struct ADAPTER
 
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 void nicCmdEventQueryOfldInfo(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf);
+
+void nicCmdEventQueryApfInfo(struct ADAPTER
 				*prAdapter, struct CMD_INFO *prCmdInfo,
 				uint8_t *pucEventBuf);
 #endif
