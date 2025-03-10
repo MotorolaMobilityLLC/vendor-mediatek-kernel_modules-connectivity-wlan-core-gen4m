@@ -789,8 +789,6 @@ void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
 	struct PERF_MONITOR *prPerMonitor = NULL;
 	struct MBR_WIFI_WKUPRSN_ENTRY *prWkUpRsnEntry = NULL;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	if (prAdapter == NULL) {
 		DBGLOG(REQ, WARN, "NULL adapter\n");
 		return;
@@ -800,7 +798,7 @@ void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
 		DBGLOG(REQ, WARN, "driver state not ready\n");
 		return;
 	}
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 	prPerMonitor = &prAdapter->rPerMonitor;
 	u8NowMs = ktime_to_ms(KAL_GET_SYS_BOOTTIME());
 	DBGLOG(REQ, TRACE,
@@ -870,7 +868,7 @@ void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
 		break;
 	}
 	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 }
 
 enum wifi2mbr_status mbr_wifi_wkup_rsn_handler(struct ADAPTER *prAdapter,
@@ -882,14 +880,12 @@ enum wifi2mbr_status mbr_wifi_wkup_rsn_handler(struct ADAPTER *prAdapter,
 	struct wifi2mbr_WiFiWkUpRsnInfo *prDst =
 		(struct wifi2mbr_WiFiWkUpRsnInfo *)buf;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	if (prAdapter == NULL ||
 	    !wlanIsDriverReady(prAdapter->prGlueInfo,
 	    WLAN_DRV_READY_CHECK_WLAN_ON | WLAN_DRV_READY_CHECK_RESET))
 		return eRet;
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rMbrWiFiWkUpRsnQueue)) {
 		QUEUE_REMOVE_HEAD(&prAdapter->rMbrWiFiWkUpRsnQueue,
 			prWkUpRsnEntry, struct MBR_WIFI_WKUPRSN_ENTRY *);
@@ -904,7 +900,7 @@ enum wifi2mbr_status mbr_wifi_wkup_rsn_handler(struct ADAPTER *prAdapter,
 			eRet = WIFI2MBR_SUCCESS;
 		}
 	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 	return eRet;
 }
 
@@ -913,16 +909,14 @@ uint16_t mbr_wifi_wkup_rsn_total_data_num(
 {
 	uint16_t u2Ret = 0;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	if (prAdapter == NULL ||
 	    !wlanIsDriverReady(prAdapter->prGlueInfo,
 	    WLAN_DRV_READY_CHECK_WLAN_ON | WLAN_DRV_READY_CHECK_RESET))
 		return u2Ret;
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 	u2Ret = (uint16_t)prAdapter->rMbrWiFiWkUpRsnQueue.u4NumElem;
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 	return u2Ret;
 }
 
@@ -930,14 +924,12 @@ void mbr_wifi_wkup_rsn_clear_queue(struct ADAPTER *prAdapter)
 {
 	struct MBR_WIFI_WKUPRSN_ENTRY *prWkUpRsnEntry = NULL;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	if (prAdapter == NULL) {
 		DBGLOG(REQ, WARN,
 			"NULL prAdapter, do nothing.\n");
 		return;
 	}
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 	while (QUEUE_IS_NOT_EMPTY(&prAdapter->rMbrWiFiWkUpRsnQueue)) {
 		QUEUE_REMOVE_HEAD(&prAdapter->rMbrWiFiWkUpRsnQueue,
 			prWkUpRsnEntry, struct MBR_WIFI_WKUPRSN_ENTRY *);
@@ -945,7 +937,7 @@ void mbr_wifi_wkup_rsn_clear_queue(struct ADAPTER *prAdapter)
 			kalMemFree(prWkUpRsnEntry, VIR_MEM_TYPE,
 				sizeof(struct MBR_WIFI_WKUP_RSN_ENTRY));
 	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_MBR_WKUP_RSN);
 }
 #endif /* (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1) */
 
