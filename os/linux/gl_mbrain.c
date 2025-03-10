@@ -682,9 +682,9 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
 
 	struct wifi2mbr_PcieInfo *dest = (struct wifi2mbr_PcieInfo *)buf;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
-	uint64_t u8Time;
+	uint64_t u8Time = 0;
 	uint32_t u4Ret = WLAN_STATUS_FAILURE;
 
 	if (!prAdapter) {
@@ -697,6 +697,7 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 		return WIFI2MBR_END;
 	}
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return WIFI2MBR_END;
