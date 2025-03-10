@@ -4765,10 +4765,7 @@ void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	const uint8_t *ie;
 	uint16_t ie_len, ie_offset;
-#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLRV2 == 1) \
-	|| (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	uint8_t *aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
-#endif
 
 	if (kalMemCmp(MTK_OUI_IE(pucIE)->aucOui,
 		aucMtkOui, sizeof(aucMtkOui)))
@@ -4779,14 +4776,16 @@ void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
 
 	prStaRec->fgIsPeerWithMtkOui = TRUE;
 
+	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
+
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - ELEM_MIN_LEN_MTK_OUI;
 
 	IE_FOR_EACH(ie, ie_len, ie_offset) {
 #if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLRV2 == 1) \
 	|| (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
-		if ((IE_ID(ie) == MTK_OUI_ID_MLR) &&
-			(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV)) {
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 			uint8_t ucBcnBitmap = prStaRec->ucMlrSupportBitmap;
 

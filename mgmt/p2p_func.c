@@ -4500,7 +4500,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	uint16_t ie_len, ie_offset;
 #endif
 
-	if (pucIE == NULL)
+	if (pucIE == NULL || prStaRec == NULL)
 		return;
 
 	aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
@@ -4512,13 +4512,15 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 
 	prStaRec->fgIsPeerWithMtkOui = TRUE;
 
+	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
+
 #if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - 7;
 
 	IE_FOR_EACH(ie, ie_len, ie_offset) {
-		if ((IE_ID(ie) == MTK_OUI_ID_MLR) &&
-			(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV)) {
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 			/* LR bitmap:
 			 * BIT[0]-MLR_V1,

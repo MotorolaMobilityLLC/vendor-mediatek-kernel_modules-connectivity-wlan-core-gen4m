@@ -5737,7 +5737,8 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 
 	/* only check tlv */
 	if (IE_LEN(pucIE) < ELEM_MIN_LEN_MTK_OUI ||
-	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)))
+	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)) ||
+	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
@@ -5745,8 +5746,7 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 
 	IE_FOR_EACH(ie, ie_len, ie_offset) {
 #if CFG_SUPPORT_MLR
-		if ((IE_ID(ie) == MTK_OUI_ID_MLR) &&
-			(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV)) {
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 			/* MLR Type = 0x01 */
 			prBssDesc->ucMlrType = prMLR->ucId;
@@ -5787,8 +5787,7 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 				prBssDesc->ucMlrSupportBitmap);
 		}
 #endif
-		if ((IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7)
-			&& (aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV)) {
+		if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
 			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
 				(struct IE_MTK_PRE_WIFI7 *)ie;
 
@@ -5822,8 +5821,7 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			}
 		}
 
-		if ((IE_ID(ie) == MTK_OUI_ID_CHIP_CAP && IE_LEN(ie) == 8)
-			&& (aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV)) {
+		if ((IE_ID(ie) == MTK_OUI_ID_CHIP_CAP && IE_LEN(ie) == 8)) {
 			struct IE_MTK_CHIP_CAP *prCapIe =
 				(struct IE_MTK_CHIP_CAP *)ie;
 
