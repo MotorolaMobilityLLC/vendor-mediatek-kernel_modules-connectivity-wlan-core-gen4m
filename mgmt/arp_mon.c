@@ -291,7 +291,6 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
 	uint8_t *pucData = prArpMonPktInfo->pucData;
 
-
 	prGlueInfo = ad->prGlueInfo;
 	if (!prGlueInfo)
 		return;

@@ -9197,7 +9197,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if ARP_MONITER_ENABLE
-	INIT_UINT(prWifiVar->uArpMonitorNumber, "ArpMonitorNumber", 5,
+	INIT_UINT(prWifiVar->uArpMonitorNumber, "ArpMonitorNumber", 7,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->uArpMonitorRxPktNum, "ArpMonitorRxPktNum", 0,
 		  FEATURE_TO_CUSTOMER);
