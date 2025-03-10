@@ -64,7 +64,10 @@ static const struct TX_RESOURCE_CONTROL
 	{PORT_INDEX_LMAC, MAC_TXQ_AC22_INDEX, HIF_TX_AC22_INDEX},
 	{PORT_INDEX_LMAC, MAC_TXQ_AC23_INDEX, HIF_TX_AC23_INDEX},
 
-	{PORT_INDEX_LMAC, MAC_TXQ_AC30_INDEX, HIF_TX_AC3X_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC30_INDEX, HIF_TX_AC30_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC31_INDEX, HIF_TX_AC31_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC32_INDEX, HIF_TX_AC32_INDEX},
+	{PORT_INDEX_LMAC, MAC_TXQ_AC33_INDEX, HIF_TX_AC33_INDEX},
 #endif
 
 	/* Second HW queue */
@@ -6761,12 +6764,6 @@ void nicTxResourceUpdate_v2(struct ADAPTER *prAdapter)
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
-
-	/* Hardcode sanity. TC# should be 14 */
-	if (ucMaxTcNum != 14)
-		DBGLOG(TX, ERROR,
-			"V2 TC_NUM should be 14 (%d)\n",
-			ucMaxTcNum);
 
 	/* 1. Remap default PSE/PLE enable bits */
 	prTc->au4PseCtrlEnMap = (1<<TC4_INDEX);

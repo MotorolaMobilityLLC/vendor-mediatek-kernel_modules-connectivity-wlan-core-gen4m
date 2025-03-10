@@ -1078,20 +1078,23 @@ u_int8_t halTxReleaseResource(struct ADAPTER *prAdapter, uint16_t *au2TxRlsCnt)
 			au2TxRlsCnt[HIF_TX_AC3_INDEX], au2TxRlsCnt[HIF_TX_CPU_INDEX]);
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-		DBGLOG(TX, ERROR, "Tx Done INT result BSS1, AC[%d:%d:%d:%d]\n",
+		DBGLOG(TX, ERROR, "Tx Done INT result WMM1, AC[%d:%d:%d:%d]\n",
 			au2TxRlsCnt[HIF_TX_AC10_INDEX],
 			au2TxRlsCnt[HIF_TX_AC11_INDEX],
 			au2TxRlsCnt[HIF_TX_AC12_INDEX],
 			au2TxRlsCnt[HIF_TX_AC13_INDEX]);
 
-		DBGLOG(TX, ERROR, "Tx Done INT result BSS23, AC[%d:%d:%d:%d]\n",
+		DBGLOG(TX, ERROR, "Tx Done INT result WMM2, AC[%d:%d:%d:%d]\n",
 			au2TxRlsCnt[HIF_TX_AC20_INDEX],
 			au2TxRlsCnt[HIF_TX_AC21_INDEX],
 			au2TxRlsCnt[HIF_TX_AC22_INDEX],
 			au2TxRlsCnt[HIF_TX_AC23_INDEX]);
 
-		DBGLOG(TX, ERROR, "Tx Done INT result BSS3, AC[%d]\n",
-			au2TxRlsCnt[HIF_TX_AC3X_INDEX]);
+		DBGLOG(TX, ERROR, "Tx Done INT result WMM3, AC[%d:%d:%d:%d]\n",
+			au2TxRlsCnt[HIF_TX_AC30_INDEX],
+			au2TxRlsCnt[HIF_TX_AC31_INDEX],
+			au2TxRlsCnt[HIF_TX_AC32_INDEX],
+			au2TxRlsCnt[HIF_TX_AC33_INDEX]);
 #endif
 	}
 

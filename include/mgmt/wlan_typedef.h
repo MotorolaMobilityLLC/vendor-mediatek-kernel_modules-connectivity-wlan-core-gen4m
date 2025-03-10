@@ -78,7 +78,10 @@ enum ENUM_TRAFFIC_CLASS_INDEX {
 	TC11_INDEX,		/* HIF TX: AC22 packets */
 	TC12_INDEX,		/* HIF TX: AC23 packets */
 
-	TC13_INDEX,		/* HIF TX: AC3X packets */
+	TC13_INDEX,		/* HIF TX: AC30 packets */
+	TC14_INDEX,		/* HIF TX: AC31 packets */
+	TC15_INDEX,		/* HIF TX: AC32 packets */
+	TC16_INDEX,		/* HIF TX: AC33 packets */
 #endif
 
 #if NIC_TX_ENABLE_SECOND_HW_QUEUE
