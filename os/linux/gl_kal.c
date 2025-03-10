@@ -15533,11 +15533,6 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case UNI_EVENT_NAN_TAG_REPORT_DW_START:
-		if (prAdapter->ucNanOobNum > 0) {
-			nanNdpSendOOBAction(prAdapter,
-				&prAdapter->rNanCmdOOBAction);
-			prAdapter->ucNanOobNum--;
-		}
 		mtk_cfg80211_vendor_event_nan_report_dw_start(
 			prAdapter, prTlvElement->aucbody);
 		break;
@@ -15758,11 +15753,6 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_REPORT_DW_START:
-		if (prAdapter->ucNanOobNum > 0) {
-			nanNdpSendOOBAction(prAdapter,
-				&prAdapter->rNanCmdOOBAction);
-			prAdapter->ucNanOobNum--;
-		}
 		mtk_cfg80211_vendor_event_nan_report_dw_start(
 			prAdapter, prTlvElement->aucbody);
 		break;

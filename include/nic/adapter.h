@@ -2806,9 +2806,6 @@ struct ADAPTER {
 	struct _NAN_AIS_BITMAP arNanAisSlots[NAN_BAND_NUM];
 
 	struct NanCustomAttribute rNanCustomAttr;
-	/* NDP OOB frame */
-	uint32_t ucNanOobNum;
-	struct _NAN_CMD_OOB_ACTION rNanCmdOOBAction;
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
