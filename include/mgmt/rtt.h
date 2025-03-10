@@ -130,13 +130,19 @@ struct PARAM_RTT_REQUEST {
 	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CANDIDATES];
 };
 
-
 struct RTT_RESULT_ENTRY {
 	struct LINK_ENTRY rLinkEntry;
 	struct RTT_RESULT rResult;
 	uint16_t u2IELen;
 	/* Keep it last */
 	uint8_t aucIE[];
+};
+
+struct RTT_CLIENT_ENTRY {
+	struct LINK_ENTRY rLinkEntry;
+	enum ENUM_STA_TYPE eStaType;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucSeqNum;
 };
 
 struct RTT_INFO {
@@ -147,6 +153,7 @@ struct RTT_INFO {
 	uint8_t ucState; /* ENUM_RTT_STATE */
 	enum ENUM_RTT_PEER_TYPE eRttPeerType;
 	struct LINK rResultList;
+	struct LINK rClientList;
 	struct TIMER rRttDoneTimer;
 	struct TIMER rRttContTimer; /* Continuous RTT requests */
 #if CFG_SUPPORT_PASN

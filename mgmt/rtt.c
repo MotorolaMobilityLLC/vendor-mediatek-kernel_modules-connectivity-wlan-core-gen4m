@@ -66,6 +66,7 @@ static void rttRequestDoneTimeOut(struct ADAPTER *prAdapter,
 static void rttContRequestTimeOut(struct ADAPTER *prAdapter,
 					  unsigned long ulParam);
 static void rttFreeAllResults(struct RTT_INFO *prRttInfo);
+static void rttFreeAllClients(struct RTT_INFO *prRttInfo);
 static void rttUpdateStatus(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	struct CMD_RTT_REQUEST *prCmd);
@@ -102,6 +103,7 @@ void rttInit(struct ADAPTER *prAdapter)
 		  (uintptr_t)NULL);
 
 	LINK_INITIALIZE(&rttInfo->rResultList);
+	LINK_INITIALIZE(&rttInfo->rClientList);
 }
 
 void rttUninit(struct ADAPTER *prAdapter)
@@ -111,6 +113,7 @@ void rttUninit(struct ADAPTER *prAdapter)
 	ASSERT(rttInfo);
 
 	rttFreeAllResults(rttInfo);
+	rttFreeAllClients(rttInfo);
 	rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
 }
 
@@ -132,6 +135,18 @@ void rttFreeAllResults(struct RTT_INFO *prRttInfo)
 		kalMemFree(entry, VIR_MEM_TYPE,
 			sizeof(struct RTT_RESULT_ENTRY) +
 			entry->u2IELen);
+	}
+}
+
+void rttFreeAllClients(struct RTT_INFO *prRttInfo)
+{
+	struct RTT_CLIENT_ENTRY *entry;
+
+	while (!LINK_IS_EMPTY(&prRttInfo->rClientList)) {
+		LINK_REMOVE_HEAD(&prRttInfo->rClientList,
+			entry, struct RTT_CLIENT_ENTRY*);
+		kalMemFree(entry, VIR_MEM_TYPE,
+			sizeof(struct RTT_CLIENT_ENTRY));
 	}
 }
 
@@ -475,6 +490,9 @@ uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec;
 	enum ENUM_STA_TYPE eStaType = STA_TYPE_LEGACY_CLIENT;
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+	struct RTT_CLIENT_ENTRY *entry;
+	uint32_t sz = sizeof(struct RTT_CLIENT_ENTRY);
 
 #if CFG_SUPPORT_NAN
 	if (IS_BSS_INDEX_NAN(prAdapter, ucBssIndex))
@@ -508,6 +526,16 @@ uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
 
 		/* NOTE(Kevin): Better to change state here, not at TX Done */
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+
+		/* Add to client list */
+		entry = kalMemAlloc(sz, VIR_MEM_TYPE);
+		if (entry) {
+			entry->eStaType = eStaType;
+			entry->ucSeqNum = rttInfo->ucSeqNum + 1;
+			COPY_MAC_ADDR(entry->aucMacAddr, pucClientMacAddr);
+			LINK_INSERT_TAIL(&rttInfo->rClientList,
+				&entry->rLinkEntry);
+		}
 	}
 
 	if (prStaRec) {
@@ -523,30 +551,40 @@ uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
 
 uint32_t rttRemoveClientStaRec(struct ADAPTER *prAdapter)
 {
-	struct RTT_RESULT_ENTRY *entry;
+	struct RTT_CLIENT_ENTRY *entry;
+	struct RTT_CLIENT_ENTRY *entryNext;
 	struct STA_RECORD *prStaRec;
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
 	if (!rttInfo)
 		return WLAN_STATUS_FAILURE;
 
-	LINK_FOR_EACH_ENTRY(entry, &rttInfo->rResultList, rLinkEntry,
-			    struct RTT_RESULT_ENTRY) {
-
-		if (!entry)
-			break;
+	LINK_FOR_EACH_ENTRY_SAFE(entry, entryNext, &rttInfo->rClientList,
+		rLinkEntry, struct RTT_CLIENT_ENTRY) {
 
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 				rttInfo->ucBssIndex,
-				entry->rResult.aucMacAddr);
+				entry->aucMacAddr);
 
-		if (prStaRec && prStaRec->ucStaState == STA_STATE_1) {
-			/* Free StaRec for un-assoicated Client */
+		if (prStaRec && prStaRec->ucStaState == STA_STATE_1 &&
+			entry->ucSeqNum == rttInfo->ucSeqNum) {
+			/* Free StaRec for un-associated Client */
 			DBGLOG(RTT, DEBUG,
 				"Free StaRec for un-assoc client " MACSTR "\n",
-				MAC2STR(entry->rResult.aucMacAddr));
+				MAC2STR(entry->aucMacAddr));
 
 			cnmStaRecFree(prAdapter, prStaRec);
+
+			/* Remove entry from client list */
+			LINK_REMOVE_KNOWN_ENTRY(&rttInfo->rClientList,
+				&entry->rLinkEntry);
+			kalMemFree(entry, VIR_MEM_TYPE,
+				sizeof(struct RTT_CLIENT_ENTRY));
+		} else {
+			DBGLOG(RTT, DEBUG,
+				"Unknown StaRec " MACSTR ", Seq(%u, %u)\n",
+				MAC2STR(entry->aucMacAddr),
+				entry->ucSeqNum, rttInfo->ucSeqNum);
 		}
 	}
 
