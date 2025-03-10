@@ -12691,6 +12691,13 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 		if (NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
 			union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
 
+			if (szNanActiveTimelineNum >= 2 &&
+			    !(prScheduler->fgEn5gL || prScheduler->fgEn5gH)) {
+				DBGLOG(NAN, INFO,
+				       "Skip 5G/6G availability by local capability");
+				continue;
+			}
+
 			if (getPeerSchDescMaxCap(prPeerSchDesc) == BAND_2G4) {
 				DBGLOG(NAN, INFO,
 				       "Skip 5G/6G availability by peer capability");
