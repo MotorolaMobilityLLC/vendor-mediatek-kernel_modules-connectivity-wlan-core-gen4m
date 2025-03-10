@@ -10604,6 +10604,9 @@ int priv_driver_set_cfg(struct net_device *prNetDev, char *pcCommand,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 
+#if (CFG_SUPPORT_MLR == 1)
+		mlrUpdateBySetCfg(prAdapter, prNetDev, &rKeyCfgInfo);
+#endif
 		pucItem = kalStrtokR(NULL, delim, &pucSavedPtr);
 	}
 

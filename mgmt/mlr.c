@@ -1648,5 +1648,95 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		u2TempSplitSize,
 		*prTxFragSplitSize);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to update MLR status by set_cfg
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void mlrUpdateBySetCfg(struct ADAPTER *prAdapter,
+		struct net_device *prNetDev,
+		struct PARAM_CUSTOM_KEY_CFG_STRUCT *prKeyCfgInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = 0;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo;
+#endif
+	uint32_t u4TargetCfg = 0;
+	int32_t i4Ret = 0;
+
+	/* For SAP update beacon if MLR IE exists or not */
+	if (kalStrnCmp(prKeyCfgInfo->aucKey, "MlrBcnMlrIe", 11) == 0) {
+		i4Ret = kalkStrtou32(prKeyCfgInfo->aucValue, 0, &u4TargetCfg);
+		if (!i4Ret) {
+			DBGLOG(REQ, DEBUG, "MLR SET_CFG [%s]:[0x%x]\n",
+				prKeyCfgInfo->aucKey, u4TargetCfg);
+
+			ucBssIndex = wlanGetBssIdx(prNetDev);
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				ucBssIndex);
+			if (!prBssInfo) {
+				DBGLOG(REQ, WARN,
+					"MLR SET_CFG - BSS is not active\n");
+				return;
+			}
+
+			if (!IS_BSS_APGO(prBssInfo)
+			    || prBssInfo->eIftype != IFTYPE_AP) {
+				DBGLOG(REQ, WARN,
+					"MLR SET_CFG - BSS is not AP [eIfType=%d]\n",
+					prBssInfo->eIftype);
+				return;
+			}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+			if (prMldBssInfo) {
+				struct LINK *prBssList;
+				struct BSS_INFO *prTempBss;
+
+				/* all links to re-gen beacon for MLRIE */
+				prBssList = &prMldBssInfo->rBssList;
+				LINK_FOR_EACH_ENTRY(prTempBss, prBssList,
+					rLinkEntryMld, struct BSS_INFO) {
+					DBGLOG(REQ, INFO,
+						"MLR SET_CFG - [Mld]Update Beacon ucBssIndex=%d\n",
+						prTempBss->ucBssIndex);
+					bssUpdateBeaconContent(prAdapter,
+						prTempBss->ucBssIndex);
+				}
+			} else
+#endif
+			{
+				DBGLOG(REQ, INFO,
+					"MLR SET_CFG - [Non-Mld]Update Beacon ucBssIndex=%d\n",
+					prBssInfo->ucBssIndex);
+				bssUpdateBeaconContent(prAdapter,
+					prBssInfo->ucBssIndex);
+			}
+		} else
+			DBGLOG(REQ, ERROR,
+				"MLR SET_CFG: MlrBcnMlrIe parse error i4Ret[%d]\n",
+				i4Ret);
+
+	/* For STA update MLR capability */
+	} else if (kalMemCmp(prKeyCfgInfo->aucKey, "MlrCfg", 6) == 0) {
+		i4Ret = kalkStrtou32(prKeyCfgInfo->aucValue, 0, &u4TargetCfg);
+		if (!i4Ret) {
+			DBGLOG(REQ, DEBUG, "MLR SET_CFG [%s]:[0x%x]\n",
+				prKeyCfgInfo->aucKey, u4TargetCfg);
+			prAdapter->u4MlrSupportBitmap =
+				prAdapter->u4MlrCapSupportBitmap & u4TargetCfg;
+		} else
+			DBGLOG(REQ, ERROR,
+				"MLR SET_CFG: MlrCfg parse error i4Ret[%d]\n",
+				i4Ret);
+	}
+}
 #endif /* CFG_SUPPORT_MLR */
 

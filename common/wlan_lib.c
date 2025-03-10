@@ -9465,6 +9465,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	 */
 	INIT_UINT(prWifiVar->u4MlrCfgSapP2pEn, "MlrCfgSapP2pEn", 0x1,
 		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucMlrBcnMlrIe, "MlrBcnMlrIe", 1,
+		  FEATURE_TO_CUSTOMER);
 #endif
 #endif
 

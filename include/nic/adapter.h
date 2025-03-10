@@ -1897,6 +1897,7 @@ struct WIFI_VAR {
 	uint32_t u4MlrCfg;
 #if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
 	uint32_t u4MlrCfgSapP2pEn;
+	u_int8_t ucMlrBcnMlrIe;
 #endif
 #endif
 

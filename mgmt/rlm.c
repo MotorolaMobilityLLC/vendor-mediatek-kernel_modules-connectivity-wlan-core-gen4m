@@ -981,19 +981,21 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 				prMsduInfo->ucStaRecIndex);
 			if (prBssInfo->eIftype == IFTYPE_P2P_GO
-				&& MLR_CHECK_IF_ENABLE_P2P(prAdapter))
+				&& MLR_CHECK_IF_ENABLE_P2P(prAdapter)
+				&& MLR_CHECK_IF_MLRIE_EXIST(prAdapter))
 				fgGenMlrIe = TRUE;
 			if (prBssInfo->eIftype == IFTYPE_AP
-				&& MLR_CHECK_IF_ENABLE_SAP(prAdapter))
+				&& MLR_CHECK_IF_ENABLE_SAP(prAdapter)
+				&& MLR_CHECK_IF_MLRIE_EXIST(prAdapter))
 				fgGenMlrIe = TRUE;
 
 			DBGLOG(RLM, INFO,
-				"MLR beacon/(re)assocresp/proberesp - I am %s [frame_ctrl=0x%x][MlrCfgSapP2pEn=0x%x][fgGenMlrIe=%d]",
-				(prBssInfo->eIftype == IFTYPE_P2P_GO)
-				? "P2P GO" : "SAP",
+				"MLR beacon/(re)assocresp/proberesp - I am %s [frame_ctrl=0x%x][MlrCfgSapP2pEn=0x%x][MlrBcnMlrIe=%d][fgGenMlrIe=%d]",
+				(prBssInfo->eIftype	== IFTYPE_P2P_GO) ?
+				"P2P GO" : "SAP",
 				frame_ctrl,
 				prAdapter->rWifiVar.u4MlrCfgSapP2pEn,
-				fgGenMlrIe);
+				prAdapter->rWifiVar.ucMlrBcnMlrIe, fgGenMlrIe);
 		}
 
 		if (fgGenMlrIe) {

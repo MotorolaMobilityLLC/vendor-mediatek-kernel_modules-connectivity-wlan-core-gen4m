@@ -199,6 +199,9 @@ enum ENUM_MLR_BALANCE_MODE {
 	& MLR_BALANCE_MODE_P2P) == MLR_BALANCE_MODE_P2P)
 #endif
 
+#define MLR_CHECK_IF_MLRIE_EXIST(prAdapter) \
+	prAdapter->rWifiVar.ucMlrBcnMlrIe
+
 #define MLR_DBGLOG(prAdapter, _Mod, _Clz, _Fmt, ...) \
 	do { \
 		if (!MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) \
@@ -255,5 +258,9 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		uint16_t *prTxFragSplitSize, uint16_t *prTxFragThr);
+
+void mlrUpdateBySetCfg(struct ADAPTER *prAdapter,
+		struct net_device *prNetDev,
+		struct PARAM_CUSTOM_KEY_CFG_STRUCT *prKeyCfgInfo);
 #endif
 #endif /* _MLR_H */
