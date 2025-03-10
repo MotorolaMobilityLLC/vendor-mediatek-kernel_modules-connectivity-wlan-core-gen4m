@@ -4852,6 +4852,9 @@ void nicCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
 			    struct EXT_EVENT_BT_CTRL *prEvtBtCtrl);
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 
+void nicExtEventIcerDumpEmiRawData(struct ADAPTER *prAdapter,
+				uint8_t *pucEventBuf);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

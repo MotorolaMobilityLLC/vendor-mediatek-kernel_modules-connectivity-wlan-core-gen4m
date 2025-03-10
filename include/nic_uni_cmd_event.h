@@ -5976,6 +5976,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_OMI	     = 0x84,
 	UNI_EVENT_ID_MLC	     = 0x86,
 	UNI_EVENT_ID_MBRAIN      = 0x89,
+	UNI_EVENT_ID_COEX_ICER  = 0x93,  /* ICER cmd */
 	UNI_EVENT_ID_NUM
 };
 
@@ -9555,6 +9556,38 @@ struct UNI_EVENT_TXPWR_MBRAIN_INFO {
 	struct TXPWR_MBRAIN_RPT_T rMbrRpt;
 } __KAL_ATTRIB_PACKED__;
 #endif
+
+struct UNI_EVENT_ID_COEX_ICER {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+	/**< the TLVs included in this field:
+	 *   TAG                             | ID  | structure
+	 *   -------------                   | ----| -------------
+	 *   UNI_EVENT_COEX_ICER_DUMP   | 0x0 | UNI_EVENT_COEX_ICER_DUMP_T
+	 *
+	 */
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_COEX_ICER_TAG {
+	UNI_EVENT_COEX_ICER_DUMP = 0,
+	UNI_EVENT_COEX_ICER_MAX_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_COEX_ICER_DUMP_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucVersion;
+	uint8_t aucReserved1[3];    /* 4 byte alignment */
+	uint32_t u4WifiSysTimestamp;
+	uint32_t u4BaseAddress;
+	uint32_t u4DataLen;
+	uint32_t au4Reserved2[2];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -10372,6 +10405,10 @@ void nicUniCmdEventQueryBtCtrl(struct ADAPTER *prAdapter,
 void nicUniUnsolicitMbrEvt(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif
+
+void nicUniEventIcerRawData(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -386,6 +386,8 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if CFG_SUPPORT_MBRAIN
 	[UNI_EVENT_ID_MBRAIN] = nicUniUnsolicitMbrEvt,
 #endif
+	[UNI_EVENT_ID_COEX_ICER] = nicUniEventIcerRawData,
+
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -10231,6 +10233,49 @@ void nicUniEventPhyIcsRawData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 #endif
 }
+
+void nicUniEventIcerRawData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+#if CFG_SUPPORT_PTA_ICS_V0
+	uint16_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_ID_COEX_ICER);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint16_t fail_cnt = 0;
+
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		return;
+	}
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_COEX_ICER_DUMP:{
+			nicExtEventIcerDumpEmiRawData(ad, tag);
+		}
+			break;
+
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
+	if (tags_len != offset)
+		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+#endif
+}
+
 
 void nicUniEventRfTestHandler(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)

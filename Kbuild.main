@@ -851,6 +851,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_SUPPORT_STATS_ONE_CMD=y
         CONFIG_SUPPORT_REG_STAT_FROM_EMI=y
         CONFIG_SUPPORT_WIFI_MET_CONNAC3_V2=y
+        CONFIG_SUPPORT_PTA_ICS_V0=y
         ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
         ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
         CONFIG_SUPPORT_PHY_ICS_V3=n
@@ -3738,6 +3739,12 @@ else
     ccflags-y += -DCFG_PRE_P2P2_SUPPORT=0
     ccflags-y += -DCFG_P2P2_SUPPORT_GC_REQ_CSA=0
     ccflags-y += -DCFG_P2P2_SUPPORT_CAP_NOTIFICATION=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_PTA_ICS_V0), y)
+    ccflags-y += -DCFG_SUPPORT_PTA_ICS_V0=1
+else
+    ccflags-y += -DCFG_SUPPORT_PTA_ICS_V0=0
 endif
 
 # AP KVR

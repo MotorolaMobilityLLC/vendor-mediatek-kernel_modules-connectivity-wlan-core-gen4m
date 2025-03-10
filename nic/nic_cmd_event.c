@@ -4614,6 +4614,121 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 }
 #endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */
 
+
+#if CFG_SUPPORT_PTA_ICS_V0
+void nicExtEventIcerDumpEmiRawData(struct ADAPTER *prAdapter,
+			   uint8_t *pucEventBuf)
+{
+	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t *u4IcerEventBuf = NULL;
+	uint32_t u4IcerBaseAddress = 0;
+	uint32_t u4IcerDataLen = 0;
+	uint32_t u4Size = 0;
+
+
+
+	uint8_t *pucBuf = NULL;
+	ssize_t ret;
+
+	struct UNI_EVENT_COEX_ICER_DUMP_T *prIcerEvent;
+
+	prChipInfo = prAdapter->chip_info;
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "prAdapter is null\n");
+		return;
+	}
+
+	if (pucEventBuf == NULL) {
+		DBGLOG(NIC, ERROR, "pucEventBuf is null\n");
+		return;
+	}
+
+	prIcerEvent = (struct UNI_EVENT_COEX_ICER_DUMP_T *)
+				pucEventBuf;
+	if (!prIcerEvent->u4BaseAddress) {
+		DBGLOG(NIC, ERROR, "u4BaseAddress is null\n");
+		return;
+	}
+
+	if (!prIcerEvent->u4DataLen) {
+		DBGLOG(NIC, ERROR, "u4DataLen is null\n");
+		return;
+	}
+
+	u4IcerDataLen = (prIcerEvent->u4DataLen * 4);
+	u4IcerBaseAddress = prIcerEvent->u4BaseAddress;
+
+
+	DBGLOG(NIC, TRACE,
+	"u4WifiSysTimestamp = [0x%08x]\n",
+	prIcerEvent->u4WifiSysTimestamp);
+
+	u4IcerEventBuf = kalMemAlloc(u4IcerDataLen, VIR_MEM_TYPE);
+	if (!u4IcerEventBuf) {
+		DBGLOG(RFTEST, ERROR, "u4PhyIcsEventBuf is null\n");
+		goto exit;
+	}
+
+	kalMemZero(u4IcerEventBuf, u4IcerDataLen);
+
+	if (emi_mem_read(prChipInfo, u4IcerBaseAddress,
+			u4IcerEventBuf, u4IcerDataLen)) {
+		DBGLOG(REQ, ERROR, "emi_mem_read fail.\n");
+		goto exit;
+	}
+
+	DBGLOG_MEM32(REQ, LOUD, u4IcerEventBuf, u4IcerDataLen);
+
+    /* phy ics packet + fw parser header */
+	u4Size = u4IcerDataLen + sizeof(struct ICS_BIN_LOG_HDR);
+
+	pucBuf = kalMemAlloc(u4Size, VIR_MEM_TYPE);
+	if (!pucBuf) {
+		DBGLOG_LIMITED(NIC, INFO, "pucBuf NULL\n");
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT);
+		goto exit;
+	}
+
+	kalMemZero(pucBuf, u4Size);
+
+	/* prepare ICS header */
+	prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucBuf;
+	prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+	prIcsBinLogHeader->u4Timestamp = prIcerEvent->u4WifiSysTimestamp;
+	prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_ICER;
+	prIcsBinLogHeader->u2Length = u4IcerDataLen;
+
+	/* prepare ICS frame
+	 * pucBuf = ICS Header + PHY ICS payload length
+	 * skip ICS header of pucBuf, start to next address copy
+	 */
+	kalMemCopy(pucBuf + sizeof(struct ICS_BIN_LOG_HDR),
+			u4IcerEventBuf,
+			u4IcerDataLen);
+
+	/* write to ring, ret: written */
+	ret = kalIcsWrite(prAdapter->prGlueInfo, pucBuf, u4Size);
+	if (ret != u4Size) {
+		DBGLOG_LIMITED(NIC, ERROR,
+			"dropped written:%d write\t"
+			"ICER log into file fail\n",
+			ret);
+		goto exit;
+	}
+exit:
+
+	if (u4IcerEventBuf)
+		kalMemFree(u4IcerEventBuf, VIR_MEM_TYPE, u4IcerDataLen);
+	if (pucBuf)
+		kalMemFree(pucBuf, VIR_MEM_TYPE, u4Size);
+
+	return;
+
+}
+
+#endif
+
 #if CFG_SUPPORT_QA_TOOL
 
 void nicExtEventICapIQData(struct ADAPTER *prAdapter,
