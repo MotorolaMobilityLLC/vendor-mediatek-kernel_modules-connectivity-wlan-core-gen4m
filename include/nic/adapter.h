@@ -1801,7 +1801,6 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t fgSpPwrLmtBackoff;
 #endif
-	uint8_t fgUseOneTxRing;
 };
 
 /* cnm_timer module */
