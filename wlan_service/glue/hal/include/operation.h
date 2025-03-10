@@ -88,6 +88,7 @@ struct param_custom_access_rx_stat {
 	u_int16 seq_num;
 	u_int8  band_idx;
 	/* bit[0] in event structure will tell new / old firmware format */
+	/* bit[3] in event structure will tell if precise rssi is valid */
 	u_int8  data;
 	u_int32 total_num;
 };
@@ -572,7 +573,8 @@ s_int32 mt_op_get_rx_stat_band(
 	struct test_wlan_info *winfos,
 	u_int8 band_idx,
 	u_int8 blk_idx,
-	struct test_rx_stat_band_info *rx_st_band);
+	struct test_rx_stat_band_info *rx_st_band,
+	u_int32 precise_rssi);
 s_int32 mt_op_get_rx_stat_path(
 	struct test_wlan_info *winfos,
 	u_int8 band_idx,

@@ -7511,6 +7511,7 @@ uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 #else
 	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2;
 	tag->u1DbdcIdx = cmd->ucDbdcIdx;
+	tag->u1Data = cmd->ucData;
 #endif
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);

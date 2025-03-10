@@ -1891,6 +1891,7 @@ struct CMD_ACCESS_RX_STAT {
 	uint16_t u2SeqNum;
 	uint8_t ucDbdcIdx;
 	/* bit[0] in event structure will tell new / old firmware format */
+	/* bit[4] in event structure will tell precise_rssi */
 	uint8_t ucData;
 	uint32_t u4TotalNum;
 };

@@ -1858,7 +1858,8 @@ struct test_operation {
 		struct test_wlan_info *winfos,
 		u_int8 band_idx,
 		u_int8 blk_idx,
-		struct test_rx_stat_band_info *rx_st_band);
+		struct test_rx_stat_band_info *rx_st_band,
+		u_int32 precise_rssi);
 	s_int32 (*op_get_rx_stat_path)(
 		struct test_wlan_info *winfos,
 		u_int8 band_idx,

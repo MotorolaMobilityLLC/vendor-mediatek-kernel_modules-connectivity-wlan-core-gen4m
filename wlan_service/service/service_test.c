@@ -1637,7 +1637,8 @@ s_int32 mt_serv_get_rx_stat(
 	u_int8 band_idx,
 	u_int8 blk_idx,
 	u_int8 test_rx_stat_cat,
-	struct test_rx_stat_u *st)
+	struct test_rx_stat_u *st,
+	u_int32 precise_rssi)
 {
 	s_int32 ret = SERV_STATUS_SERV_TEST_FAIL;
 	struct test_operation *ops;
@@ -1661,7 +1662,8 @@ s_int32 mt_serv_get_rx_stat(
 		serv_test->test_winfo,
 		band_idx,
 		blk_idx,
-		stat->rx_st_band + blk_idx);
+		stat->rx_st_band + blk_idx,
+		precise_rssi);
 
 		sys_ad_move_mem(st, stat->rx_st_band + blk_idx,
 				sizeof(struct test_rx_stat_band_info));

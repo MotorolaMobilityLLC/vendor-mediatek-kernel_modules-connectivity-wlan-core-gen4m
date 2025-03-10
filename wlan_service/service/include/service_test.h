@@ -315,7 +315,8 @@ s_int32 mt_serv_dbdc_continuous_tx(struct service_test *serv_test);
 s_int32 mt_serv_get_tx_info(struct service_test *serv_test);
 s_int32 mt_serv_main(struct service_test *serv_test, u_int32 test_item);
 s_int32 mt_serv_get_rx_stat(struct service_test *serv_test, u_int8 band_idx,
-	u_int8 blk_idx, u_int8 test_rx_stat_cat, struct test_rx_stat_u *st);
+	u_int8 blk_idx, u_int8 test_rx_stat_cat, struct test_rx_stat_u *st,
+	u_int32 precise_rssi);
 s_int32 mt_serv_listmode_cmd(struct service_test *serv_test,
 	u_int8 *para, u_int16 para_len, u_int32 *rsp_len, void *rsp_data);
 s_int32 mt_serv_set_efem_mode(

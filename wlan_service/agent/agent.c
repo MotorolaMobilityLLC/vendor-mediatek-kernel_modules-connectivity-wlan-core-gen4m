@@ -2625,6 +2625,7 @@ static s_int32 hqa_get_rx_statistics_all(
 	u_int32 type_mask = 0, band_idx = 0, type_num = 0, length;
 	u_int32 blk_idx = 0, type_idx = 0, buf = 0;
 	u_int32 dw_idx = 0, dw_cnt = 0;
+	u_int32 fw_accumulate_cnt = 0, precise_rssi = 0;
 	u_int32 *ptr2 = NULL;
 	struct test_rx_stat_u *rx_stat = NULL;
 	boolean dbdc_mode = FALSE;
@@ -2657,6 +2658,24 @@ static s_int32 hqa_get_rx_statistics_all(
 				&data, (u_char *)&type_mask);
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
+
+	if (hqa_frame->length == 16) {
+		get_param_and_shift_buf(TRUE, sizeof(fw_accumulate_cnt),
+				&data, (u_char *)&fw_accumulate_cnt);
+
+		get_param_and_shift_buf(TRUE, sizeof(precise_rssi),
+				&data, (u_char *)&precise_rssi);
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: fw_accumulate_cnt=%u, precise_rssi=%u\n",
+			__func__, fw_accumulate_cnt, precise_rssi));
+	} else {
+		fw_accumulate_cnt = 0;
+		precise_rssi = 0;
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: hqa_frame->length=%u, not equal to 16\n",
+			__func__, hqa_frame->length));
+	}
 
 	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
@@ -2739,7 +2758,8 @@ static s_int32 hqa_get_rx_statistics_all(
 						band_idx,
 						blk_idx,
 						type_idx,
-						rx_stat);
+						rx_stat,
+						precise_rssi);
 
 					ptr2 = (u_int32 *) rx_stat;
 					dw_cnt = st_form[type_idx].blk_size

@@ -3667,7 +3667,8 @@ s_int32 mt_op_get_rx_stat_band(
 	struct test_wlan_info *winfos,
 	u_int8 band_idx,
 	u_int8 blk_idx,
-	struct test_rx_stat_band_info *rx_st_band)
+	struct test_rx_stat_band_info *rx_st_band,
+	u_int32 precise_rssi)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct param_custom_access_rx_stat rx_stat_test;
@@ -3681,7 +3682,11 @@ s_int32 mt_op_get_rx_stat_band(
 	rx_stat_test.seq_num = 0;
 	rx_stat_test.total_num = sizeof(test_hqa_rx_stat);
 	rx_stat_test.band_idx = band_idx;
-	rx_stat_test.data = 2;	/* connac3 version */
+	/* connac3 version(2) */
+	/*BIT(4) = precise_rssi*/
+	rx_stat_test.data = 2;
+	if (precise_rssi == 1)
+		rx_stat_test.data |= BIT(4);
 
 	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
 		 OP_WLAN_OID_QUERY_RX_STATISTICS,

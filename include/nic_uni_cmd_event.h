@@ -4495,7 +4495,8 @@ struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t u1DbdcIdx;
-	uint8_t aucReserved[3];
+	uint8_t u1Data;
+	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
