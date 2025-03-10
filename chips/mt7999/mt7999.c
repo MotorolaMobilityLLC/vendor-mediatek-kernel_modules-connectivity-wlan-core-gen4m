@@ -33,6 +33,7 @@
 #include "coda/mt7999/wf_hif_dmashdl_top.h"
 #include "coda/mt7999/wf_pse_top.h"
 #include "coda/mt7999/pcie_mac_ireg.h"
+#include "coda/mt7999/pcie_mac_conf_common.h"
 #include "coda/mt7999/conn_mcu_bus_cr.h"
 #include "coda/mt7999/conn_bus_cr_von.h"
 #include "coda/mt7999/conn_host_csr_top.h"
@@ -78,6 +79,11 @@
 #include "coda/mt7999/wf_top_cfg_vlp.h"
 #include "coda/mt7999/wf_top_cfg_von.h"
 #include "coda/mt7999/wf_top_mcu_cfg.h"
+
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+#include "uni_fw_dl_pcie.h"
+#include "uni_fw_dl_shm_mt7999.h"
+#endif /* CFG_SUPPORT_UNI_FWDL */
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -272,6 +278,10 @@ static void mt7999CheckMdRxStall(struct ADAPTER *prAdapter);
 u_int8_t mt7999_is_AA_DBDC_enable(void);
 #endif
 
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+static void mt7999_trigger_wf_fwdl_doorbell(struct ADAPTER *ad);
+#endif /* CFG_SUPPORT_UNI_FWDL */
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -361,6 +371,9 @@ struct PCIE_CHIP_CR_MAPPING mt7999_bus2chip_cr_mapping[] = {
 	{0x88000000, 0x140000, 0x10000}, /* WF_MCU_CFG_LS */
 	{0x20020000, 0xd0000, 0x10000}, /* CONN_INFRA WFDMA */
 	{0x20060000, 0xe0000, 0x10000}, /* CONN_INFRA conn_host_csr_top */
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+	{0x200b0000, 0x1b0000, 0x10000}, /* CONN_INFRA sysram */
+#endif /* CFG_SUPPORT_UNI_FWDL */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA (io_top bus_cr rgu_on cfg_on) */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA (gpio  clkgen cfg) */
 	{0x20090000, 0x150000, 0x10000}, /* CONN_INFRA VON (RO) */
@@ -544,7 +557,12 @@ struct pcie_msi_layout mt7999_pcie_msi_layout[] = {
 	{"ccif_bgf2ap_irq_1", NULL, NULL, NONE_INT, 0},
 #endif
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+	{"uni_fwdl_int", pcie_uni_fwdl_top_handler,
+	 pcie_uni_fwdl_thread_handler, AP_MISC_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif /* CFG_SUPPORT_UNI_FWDL */
 	{"reserved", NULL, NULL, NONE_INT, 0},
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
@@ -799,6 +817,7 @@ struct BUS_INFO mt7999_bus_info = {
 #if CFG_ENABLE_FW_DOWNLOAD
 struct FWDL_OPS_T mt7999_fw_dl_ops = {
 	.constructFirmwarePrio = mt7999_ConstructFirmwarePrio,
+#if (CFG_SUPPORT_UNI_FWDL == 0)
 	.constructPatchName = mt7999_ConstructPatchName,
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	.parseSingleBinaryFile = wlanParseSingleBinaryFile,
@@ -814,6 +833,14 @@ struct FWDL_OPS_T mt7999_fw_dl_ops = {
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 	.downloadEMI = wlanDownloadEMISectionViaDma,
+#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
+	.constructPhyName = mt7999_ConstructPhyName,
+	.downloadPhyFw = wlanDownloadPhyFw,
+#endif
+	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
+#else
+	.getFwVerInfo = uniFwdlGetReleaseManifest,
+#endif /* CFG_SUPPORT_UNI_FWDL */
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.phyAction = wlanPhyAction,
 #else
@@ -830,12 +857,82 @@ struct FWDL_OPS_T mt7999_fw_dl_ops = {
 	.configBtImageSection = asicConnac5xConfigBtImageSection,
 #endif
 #endif
-	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
-#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
-	.constructPhyName = mt7999_ConstructPhyName,
-	.downloadPhyFw = wlanDownloadPhyFw,
-#endif
 };
+
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+struct UNI_FWDL_INFO mt7999_uni_fwdl_info = {
+	.u4SyncInfo = (0
+#if (CFG_SUPPORT_UNI_FWDL_MSG_NOTIF == 1)
+	| BIT(UNI_FWDL_SYNC_INFO_SUPPORT_MSG_NOTIF)
+#endif /* CFG_SUPPORT_UNI_FWDL_MSG_NOTIF */
+#if (CFG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM == 1)
+	| BIT(UNI_FWDL_SYNC_INFO_SHM_EMI)
+#endif /* CFG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM */
+#if (CFG_SUPPORT_UNI_FWDL_SLOT_DL == 1)
+	| BIT(UNI_FWDL_SYNC_INFO_SUPPORT_SLOT_DL)
+#endif /* CFG_SUPPORT_UNI_FWDL_SLOT_DL */
+	),
+#if defined(_HIF_PCIE)
+	.rHifOps = {
+		.init = uniFwdlPcieInit,
+		.deinit = uniFwdlPcieDeInit,
+		.dump = uniFwdlPcieDump,
+		.query_hw_info = uniFwdlPcieQueryHwInfo,
+		.start_dl = uniFwdlPcieStartDl,
+		.dl_block = uniFwdlPcieDlBlock,
+		.send_msg = uniFwdlPcieSendMsg,
+		.rcv_irq = uniFwdlPcieRcvInterrupt,
+	},
+	.rShmOps = {
+		.init = mt7999_shm_init,
+		.deinit = mt7999_shm_deinit,
+		.dump = mt7999_shm_dump,
+		.write_sync_info = mt7999_write_sync_info,
+		.write_timeout_duration = mt7999_write_timeout_duration,
+		.write_msg_idx = mt7999_write_msg_idx,
+		.write_msg_id = mt7999_write_msg_id,
+		.write_calibration_action = mt7999_write_calibration_action,
+		.write_radio_type = mt7999_write_radio_type,
+		.write_dl_addr = mt7999_write_dl_addr,
+		.write_dl_size = mt7999_write_dl_size,
+		.write_slot_tbl_addr = mt7999_write_slot_tbl_addr,
+		.write_slot_tbl_size = mt7999_write_slot_tbl_size,
+		.write_slot_num = mt7999_write_slot_num,
+		.write_slot_size = mt7999_write_slot_size,
+		.write_slot_rdy_idx = mt7999_write_slot_rdy_idx,
+		.write_notif_done_idx = mt7999_write_notif_done_idx,
+		.write_ctx_info_A_addr = mt7999_write_ctx_info_A_addr,
+		.write_ctx_info_A_size = mt7999_write_ctx_info_A_size,
+		.write_ctx_info_B_addr = mt7999_write_ctx_info_B_addr,
+		.write_ctx_info_B_size = mt7999_write_ctx_info_B_size,
+		.write_co_dl_radio = mt7999_write_co_dl_radio,
+		.write_co_dl_sec_map_size_wf =
+			mt7999_write_co_dl_sec_map_size_wf,
+		.write_co_dl_sec_map_size_bt =
+			mt7999_write_co_dl_sec_map_size_bt,
+		.write_co_dl_sec_map_size_zb =
+			mt7999_write_co_dl_sec_map_size_zb,
+		.read_chip_info = mt7999_read_chip_info,
+		.read_chip_id = mt7999_read_chip_id,
+		.read_hw_ver = mt7999_read_hw_ver,
+		.read_fw_ver = mt7999_read_fw_ver,
+		.read_efuse_info = mt7999_read_efuse_info,
+		.read_boot_stage = mt7999_read_boot_stage,
+		.read_slot_done_idx = mt7999_read_slot_done_idx,
+		.read_msg_done_idx = mt7999_read_msg_done_idx,
+		.read_notif_idx = mt7999_read_notif_idx,
+		.read_notif_id = mt7999_read_notif_id,
+		.read_dl_resp = mt7999_read_dl_resp,
+		.read_block_radio = mt7999_read_block_radio,
+		.read_block_id = mt7999_read_block_id,
+		.read_failed_code = mt7999_read_fail_code,
+		.read_radio_type = mt7999_read_radio_type,
+		.read_comm_state = mt7999_read_comm_state,
+	},
+#endif
+	.trigger_wf_fwdl_doorbell = mt7999_trigger_wf_fwdl_doorbell,
+};
+#endif /* CFG_SUPPORT_UNI_FWDL */
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
 struct TX_DESC_OPS_T mt7999_TxDescOps = {
@@ -1132,6 +1229,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7999 = {
 	.bus_info = &mt7999_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.fw_dl_ops = &mt7999_fw_dl_ops,
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+	.uni_fwdl_info = &mt7999_uni_fwdl_info,
+#endif /* CFG_SUPPORT_UNI_FWDL */
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt7999_AteOps,
@@ -1226,9 +1326,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7999 = {
 	.apsLinkPlanDecision = mt7999_apsLinkPlanDecision,
 	.apsUpdateTotalScore = mt7999_apsUpdateTotalScore,
 	.apsFillBssDescSet = mt7999_apsFillBssDescSet,
-#endif
-#if defined(CFG_MTK_WIFI_PMIC_QUERY)
-	.queryPmicInfo = asicConnac5xQueryPmicInfo,
 #endif
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 	.queryDFDInfo = asicConnac5xQueryDFDInfo,
@@ -1361,6 +1458,7 @@ static void mt7999_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
+#if (CFG_SUPPORT_UNI_FWDL == 0)
 	int ret = 0;
 	uint8_t ucIdx = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
@@ -1435,6 +1533,21 @@ static void mt7999_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 				"[%u] kalSnprintf failed, ret: %d\n",
 				__LINE__, ret);
 	}
+#else
+	int ret = 0;
+
+	if (apucName && pucNameIdx && ((*pucNameIdx) < ucMaxNameIdx)) {
+		ret = kalSnprintf(apucName[(*pucNameIdx)],
+				  CFG_FW_NAME_MAX_LEN,
+				  "WIFI_UNI_CODE_MT7999_1_1.bin");
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+				"[%u] kalSnprintf failed, ret: %d\n",
+				__LINE__, ret);
+	}
+#endif
 }
 
 static void mt7999_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
@@ -3054,6 +3167,17 @@ static void mt7999InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	uint32_t u4Val = 0;
 #endif /* CFG_SUPPORT_PCIE_ASPM */
 
+#if CFG_SUPPORT_PCIE_ASPM
+	if (pcie_vir_addr == NULL) {
+#if CFG_PCIE_MT6989
+		pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+#else
+		pcie_vir_addr = ioremap(0x16910000, 0x2000);
+#endif
+		spin_lock_init(&rPCIELock);
+	}
+#endif /* CFG_SUPPORT_PCIE_ASPM */
+
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
 
 #if CFG_SUPPORT_PCIE_ASPM
@@ -3892,14 +4016,14 @@ static uint32_t mt7999_mcu_init(struct ADAPTER *ad)
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
 
-#if CFG_SUPPORT_PCIE_ASPM
-#if CFG_PCIE_MT6989
-	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
-#else
-	pcie_vir_addr = ioremap(0x16910000, 0x2000);
-#endif
-	spin_lock_init(&rPCIELock);
-#endif /* CFG_SUPPORT_PCIE_ASPM */
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+	HAL_MCR_WR(ad,
+		   CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
+		   0x180b1805);
+	rStatus = uniFwdlDownloadFW(ad);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto dump;
+#endif /* CFG_SUPPORT_UNI_FWDL */
 
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -3983,8 +4107,10 @@ static void mt7999_mcu_deinit(struct ADAPTER *ad)
 		ad->chip_info->coexpccifoff(ad);
 
 #if CFG_SUPPORT_PCIE_ASPM
-	if (pcie_vir_addr)
+	if (pcie_vir_addr) {
 		iounmap(pcie_vir_addr);
+		pcie_vir_addr = NULL;
+	}
 #endif
 }
 
@@ -4794,4 +4920,18 @@ static void mt7999CheckMdRxStall(struct ADAPTER *prAdapter)
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 }
 #endif
+
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+static void mt7999_trigger_wf_fwdl_doorbell(struct ADAPTER *ad)
+{
+#if defined(_HIF_PCIE)
+#define IMAGE_DOORBELL_BIT		(24)
+
+	glWritePcieCfgSpace((PCIE_MAC_CONF_COMMON_PCIE_VENDOR_EINT_SET_0_ADDR -
+			    PCIE_MAC_CONF_COMMON_BASE),
+			    BIT(IMAGE_DOORBELL_BIT));
+#endif
+}
+#endif /* CFG_SUPPORT_UNI_FWDL */
+
 #endif  /* MT7999 */

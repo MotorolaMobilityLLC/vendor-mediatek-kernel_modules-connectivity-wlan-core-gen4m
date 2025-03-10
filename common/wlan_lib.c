@@ -1437,7 +1437,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* 4 <6> Enable HIF cut-through to N9 mode, not visiting CR4 */
 		HAL_ENABLE_FWDL(prAdapter, TRUE);
 
-#if (CFG_MTK_WIFI_SUPPORT_IPC == 0)
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 0) && (CFG_SUPPORT_UNI_FWDL == 0)
 		/* 4 <7> Get ECO Version */
 		if (wlanSetChipEcoInfo(prAdapter) != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "wlanSetChipEcoInfo failed!\n");

@@ -3480,6 +3480,9 @@ struct ADAPTER {
 	struct QUE rTimeoutedAlarmTimerInfoQue; /* already timeout */
 	struct LINK rAlarmTimerList; /* still not timeout */
 	struct CAP_P2P rP2pChipCap;
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+	struct UNI_FWDL_CTX rUniFwdlCtx;
+#endif /* CFG_SUPPORT_UNI_FWDL */
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

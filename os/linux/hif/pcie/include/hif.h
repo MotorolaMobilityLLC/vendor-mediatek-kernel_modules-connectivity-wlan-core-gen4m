@@ -733,6 +733,10 @@ uint8_t pcie_restore_config_space_settings(
 	struct ADAPTER *prAdapter);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+irqreturn_t pcie_uni_fwdl_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_uni_fwdl_thread_handler(int irq, void *dev_instance);
+#endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
 irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance);

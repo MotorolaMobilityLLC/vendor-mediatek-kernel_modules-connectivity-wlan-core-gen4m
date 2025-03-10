@@ -3516,6 +3516,17 @@ static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4WrVal = 0x08021000, u4Val = 0;
 
+#if CFG_SUPPORT_PCIE_ASPM
+	if (pcie_vir_addr == NULL) {
+#if CFG_PCIE_MT6989
+		pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+#else
+		pcie_vir_addr = ioremap(0x16910000, 0x2000);
+#endif
+		spin_lock_init(&rPCIELock);
+	}
+#endif
+
 #if CFG_SUPPORT_PCIE_ASPM_EP
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
 #endif
@@ -4426,15 +4437,6 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
 
-#if CFG_SUPPORT_PCIE_ASPM
-#if CFG_PCIE_MT6989
-	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
-#else
-	pcie_vir_addr = ioremap(0x16910000, 0x2000);
-#endif
-	spin_lock_init(&rPCIELock);
-#endif
-
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		WARN_ON_ONCE(TRUE);
@@ -4516,8 +4518,10 @@ static void mt6653_mcu_deinit(struct ADAPTER *ad)
 		ad->chip_info->coexpccifoff(ad);
 
 #if CFG_SUPPORT_PCIE_ASPM
-	if (pcie_vir_addr)
+	if (pcie_vir_addr) {
 		iounmap(pcie_vir_addr);
+		pcie_vir_addr = NULL;
+	}
 #endif
 }
 

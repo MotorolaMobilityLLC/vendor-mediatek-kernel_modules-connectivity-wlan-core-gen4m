@@ -644,6 +644,15 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
 
+#if (CFG_SUPPORT_UNI_FWDL_PCIE_INTX == 1)
+	if (prMsiInfo && !prMsiInfo->fgMsiEnabled &&
+	    prGlueInfo->prAdapter->fgIsFwDownloaded == FALSE) {
+		disable_irq_nosync(irq);
+		irqret = IRQ_WAKE_THREAD;
+		goto exit;
+	}
+#endif
+
 	GLUE_INC_REF_CNT(prHifInfo->u4IntBitSetCnt);
 	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled) {
 		if (KAL_TEST_BIT(HIF_WFDMA_INT_BIT,
@@ -696,13 +705,28 @@ exit:
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct pcie_msi_info *prMsiInfo;
 
 	prGlueInfo = get_glue_info_isr(dev_instance, irq, 0);
 	if (!prGlueInfo)
 		return IRQ_NONE;
 
+	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
+
+#if (CFG_SUPPORT_UNI_FWDL_PCIE_INTX == 1)
+	if (prMsiInfo && !prMsiInfo->fgMsiEnabled &&
+	    prGlueInfo->prAdapter->fgIsFwDownloaded == FALSE) {
+		uniFwdlHifRcvInterrupt(prGlueInfo->prAdapter);
+		enable_irq(irq);
+		goto exit;
+	}
+#endif
+
 	kalSetIntEvent(prGlueInfo);
 
+#if (CFG_SUPPORT_UNI_FWDL_PCIE_INTX == 1)
+exit:
+#endif
 	return IRQ_HANDLED;
 }
 
@@ -934,6 +958,35 @@ exit:
 
 	return IRQ_HANDLED;
 }
+
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+irqreturn_t pcie_uni_fwdl_top_handler(int irq, void *dev_instance)
+{
+	disable_irq_nosync(irq);
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t pcie_uni_fwdl_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(HAL, WARN, "NULL prAdapter.\n");
+		goto exit;
+	}
+
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
+
+	uniFwdlHifRcvInterrupt(prAdapter);
+
+exit:
+	enable_irq(irq);
+	return IRQ_HANDLED;
+}
+#endif /* CFG_SUPPORT_UNI_FWDL */
 
 #if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
 irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance)

@@ -1962,6 +1962,7 @@
  */
 #define CFG_FW_NAME_MAX_LEN	(64)
 #define CFG_FW_FLAVOR_MAX_LEN	(16)
+#define CFG_FW_FILE_NAME_TOTAL	(8)
 
 /*------------------------------------------------------------------------------
  * Support WMT WIFI Path Config

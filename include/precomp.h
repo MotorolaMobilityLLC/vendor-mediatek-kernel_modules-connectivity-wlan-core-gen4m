@@ -152,6 +152,9 @@
 #include "wlan_bow.h"
 
 #include "fw_dl.h"
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+#include "uni_fw_dl.h"
+#endif /* CFG_SUPPORT_UNI_FWDL */
 
 #if CFG_ENABLE_WIFI_DIRECT
 #include "wlan_p2p.h"
@@ -306,6 +309,10 @@
 
 #include "adapter.h"
 #include "ccif.h"
+
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+#include "uni_fw_dl_hif_ops.h"
+#endif /* CFG_SUPPORT_UNI_FWDL */
 
 #if (CFG_SUPPORT_802_11BE == 1)
 #include "eht_ie.h"

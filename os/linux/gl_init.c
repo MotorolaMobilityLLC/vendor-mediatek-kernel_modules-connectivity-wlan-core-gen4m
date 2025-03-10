@@ -229,7 +229,6 @@ static enum ENUM_SHUTDOWN_STATE uShutdownState;
 #endif
 
 #define CFG_EEPRM_FILENAME    "EEPROM"
-#define FILE_NAME_MAX     64
 
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 static uint8_t *apucEepromName[] = {
@@ -9120,8 +9119,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	enum ENUM_PROBE_FAIL_REASON {
 		BUS_INIT_FAIL,
 		NET_CREATE_FAIL,
-		ROM_DL_FAIL,
 		BUS_SET_IRQ_FAIL,
+		ROM_DL_FAIL,
 		ADAPTER_START_FAIL,
 		NET_REGISTER_FAIL,
 		PROC_INIT_FAIL,
@@ -9237,6 +9236,13 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prWifiVar = &prAdapter->rWifiVar;
 		prChipInfo = prAdapter->chip_info;
 
+		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
+		if (i4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "Set IRQ error\n");
+			eFailReason = BUS_SET_IRQ_FAIL;
+			break;
+		}
+
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 		if (prAdapter->chip_info->coexpccifon)
 			prAdapter->chip_info->coexpccifon(prAdapter);
@@ -9258,14 +9264,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		 * we need to make sure that rx is ready before it
 		 */
 		glTxRxInit(prGlueInfo);
-
-		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
-
-		if (i4Status != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "wlanProbe: Set IRQ error\n");
-			eFailReason = BUS_SET_IRQ_FAIL;
-			break;
-		}
 
 		prGlueInfo->i4DevIdx = i4DevIdx;
 
@@ -9472,16 +9470,16 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			/*reset NVRAM State to ready for the next wifi-on*/
 			if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
 				g_NvramFsm = NVRAM_STATE_READY;
-			glBusFreeIrq(prWdev->netdev,
-				*((struct GLUE_INFO **)
-						netdev_priv(prWdev->netdev)));
-		kal_fallthrough;
-		case BUS_SET_IRQ_FAIL:
 			glTxRxUninit(prGlueInfo);
 			if (prChipInfo && prChipInfo->fw_dl_ops->mcu_deinit)
 				prChipInfo->fw_dl_ops->mcu_deinit(prAdapter);
 		kal_fallthrough;
 		case ROM_DL_FAIL:
+			glBusFreeIrq(prWdev->netdev,
+				*((struct GLUE_INFO **)
+						netdev_priv(prWdev->netdev)));
+		kal_fallthrough;
+		case BUS_SET_IRQ_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prWdev);
 			/* prGlueInfo->prAdapter is released in

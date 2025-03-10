@@ -117,9 +117,6 @@ extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
 /* the maximum length of a file name */
 #define FILE_NAME_MAX CFG_FW_NAME_MAX_LEN
 
-/* the maximum number of all possible file name */
-#define FILE_NAME_TOTAL 8
-
 #if CFG_SUPPORT_NAN
 /* Protocol family, consistent in both kernel prog and user prog. */
 #define MTKPROTO 25
@@ -553,12 +550,12 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	uint8_t **apucNameTable = NULL;
-	uint8_t *apucName[FILE_NAME_TOTAL +
+	uint8_t *apucName[CFG_FW_FILE_NAME_TOTAL +
 					  1]; /* extra +1, for the purpose of
 					       * detecting the end of the array
 					       */
 	uint8_t idx = 0, max_idx, ucRomVer = 0,
-		aucNameBody[FILE_NAME_TOTAL][FILE_NAME_MAX], sub_idx = 0;
+		aucNameBody[CFG_FW_FILE_NAME_TOTAL][FILE_NAME_MAX], sub_idx = 0;
 	struct mt66xx_chip_info *prChipInfo =
 			prGlueInfo->prAdapter->chip_info;
 	uint32_t chip_id = prChipInfo->chip_id;

@@ -1506,6 +1506,9 @@ struct platcfg_infra_sysram {
 struct mt66xx_chip_info {
 	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
+#if (CFG_SUPPORT_UNI_FWDL == 1)
+	struct UNI_FWDL_INFO *uni_fwdl_info;
+#endif /* CFG_SUPPORT_UNI_FWDL */
 	struct TX_DESC_OPS_T *prTxDescOps;
 	struct RX_DESC_OPS_T *prRxDescOps;
 #if CFG_SUPPORT_QA_TOOL

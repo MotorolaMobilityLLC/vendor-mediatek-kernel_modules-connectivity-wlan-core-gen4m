@@ -3737,6 +3737,35 @@ ifeq ($(CONFIG_MTK_AP_80211KVR_INTERFACE), y)
     ccflags-y += -DCFG_WIFI_SUPPORT_NOISE_HISTOGRAM=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL=1
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL_MSG_NOTIF), y)
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_MSG_NOTIF=1
+    else
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_MSG_NOTIF=0
+    endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM), y)
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM=1
+    else
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM=0
+    endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL_SLOT_DL), y)
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SLOT_DL=1
+    else
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SLOT_DL=0
+    endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL_PCIE_INTX), y)
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_PCIE_INTX=1
+    else
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_PCIE_INTX=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL=0
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM=0
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SLOT_DL=0
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL_PCIE_INTX=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
@@ -3996,6 +4025,10 @@ ifeq ($(CONFIG_MTK_WIFI_SUPPORT_IPC), y)
     CHIPS_OBJS += $(CHIPS_CMM)wlan_ipc.o
 endif
 
+ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
+CHIPS_OBJS += $(CHIPS_CMM)uni_fw_dl.o
+endif
+
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     CHIPS_OBJS += $(CHIPS)mt6632/mt6632.o
 endif
@@ -4103,6 +4136,9 @@ ifneq ($(filter MT7999,$(MTK_COMBO_CHIP)),)
     CHIPS_OBJS += $(CHIPS)mt7999/hal_dmashdl_mt7999.o
     ifeq ($(CONFIG_MTK_WIFI_CONNFEM_DEFAULT), y)
         CHIPS_OBJS += $(CHIPS)mt7999/connfem_mt7999.o
+    endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
+        CHIPS_OBJS += $(CHIPS)mt7999/uni_fw_dl_shm_mt7999.o
     endif
 endif
 
@@ -4237,6 +4273,9 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     endif
     ifeq ($(CONFIG_SUPPORT_MTK_WIFI_MBU), y)
         HIF_OBJS +=  $(HIF_COMMON_DIR)hal_mbu.o
+    endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
+        HIF_OBJS +=  $(HIF_DIR)uni_fw_dl_pcie.o
     endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
     HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
