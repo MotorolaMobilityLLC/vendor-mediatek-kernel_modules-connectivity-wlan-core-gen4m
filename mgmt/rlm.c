@@ -5397,7 +5397,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					&prMaxCSATimeIE->ucChannelSwitchTime[0],
 					&u4MaxSwitchTime);
 				if (IS_BSS_INDEX_AIS(prAdapter,
-						     prBssInfo->ucBssIndex))
+						     prBssInfo->ucBssIndex) &&
+				    HAS_CH_SWITCH_PARAMS(prCSAParams))
 					prCSAParams->u4MaxSwitchTime =
 						TU_TO_MSEC(u4MaxSwitchTime);
 				DBGLOG(RLM, INFO,
