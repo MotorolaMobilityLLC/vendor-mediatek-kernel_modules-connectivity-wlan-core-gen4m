@@ -87,7 +87,8 @@
 
 #define WTBL_ALLOC_FAIL                 WTBL_RESERVED_ENTRY
 #define WTBL_DEFAULT_ENTRY              0
-#define DUMP_WTBL_BUF_SIZE              1024
+#define DUMP_WTBL_BUF_SIZE              900
+#define ROW_OF_WTBL_SIZE                50
 /*******************************************************************************
  *                         D A T A   T Y P E S
  *******************************************************************************

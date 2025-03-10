@@ -1320,23 +1320,31 @@ void secPrivacyDumpWTBL(struct ADAPTER *prAdapter)
 			kalMemAlloc(DUMP_WTBL_BUF_SIZE, VIR_MEM_TYPE);
 	if (!prLogBuf)
 		return;
-	kalMemZero(prLogBuf, DUMP_WTBL_BUF_SIZE);
-	i4Written += kalSnprintf(prLogBuf + i4Written,
-		DUMP_WTBL_BUF_SIZE - i4Written,
-		"(bssIdx,keyid,pairwise,staIdx,Addr) ");
-
 
 	for (i = 0; i < WTBL_SIZE; i++) {
 		if (prWtbl[i].ucUsed) {
+			if (i4Written == 0) {
+				kalMemZero(prLogBuf, DUMP_WTBL_BUF_SIZE);
+				i4Written += kalSnprintf(prLogBuf + i4Written,
+					DUMP_WTBL_BUF_SIZE - i4Written,
+					"(bssIdx,keyid,pairwise,staIdx,Addr) ");
+			}
+
 			i4Written += kalSnprintf(prLogBuf + i4Written,
 				DUMP_WTBL_BUF_SIZE - i4Written,
 				"#%d (%d,%d,%d,%d, " MACSTR ") ",
 				i, prWtbl[i].ucBssIndex, prWtbl[i].ucKeyId,
 				prWtbl[i].ucPairwise, prWtbl[i].ucStaIndex,
 				MAC2STR(prWtbl[i].aucMacAddr));
+
+			if (DUMP_WTBL_BUF_SIZE - i4Written < ROW_OF_WTBL_SIZE) {
+				DBGLOG(RSN, INFO, "%s", prLogBuf);
+				i4Written = 0;
+			}
 		}
 	}
-	DBGLOG(RSN, INFO, "%s", prLogBuf);
+	if (i4Written > 0)
+		DBGLOG(RSN, INFO, "%s", prLogBuf);
 	kalMemFree(prLogBuf, DUMP_WTBL_BUF_SIZE, VIR_MEM_TYPE);
 }
 
