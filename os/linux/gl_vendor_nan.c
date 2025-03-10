@@ -5613,7 +5613,7 @@ mtk_cfg80211_vendor_event_nan_country_chng_ind(struct ADAPTER *prAdapter)
 		return WLAN_STATUS_FAILURE;
 	}
 
-	DBGLOG(NAN, INFO, "IN\n");
+	DBGLOG(NAN, LOUD, "IN\n");
 
 	szMsgLen = sizeof(struct NanCountryCodeChangedIndMsg);
 
@@ -5636,7 +5636,7 @@ mtk_cfg80211_vendor_event_nan_country_chng_ind(struct ADAPTER *prAdapter)
 			prChan = &prSband->channels[u4Ch_idx];
 
 			if (prChan->flags & IEEE80211_CHAN_DISABLED) {
-				DBGLOG(NAN, INFO,
+				DBGLOG(NAN, LOUD,
 				       "Disabled channels[%d][%d]: ch%d (freq = %d) flags=0x%x\n",
 				    u4Band_idx, u4Ch_idx, prChan->hw_value,
 				    prChan->center_freq, prChan->flags);
@@ -5646,12 +5646,11 @@ mtk_cfg80211_vendor_event_nan_country_chng_ind(struct ADAPTER *prAdapter)
 			/* Allowable channel */
 			if (u4Ch_count == NAN_CHANNEL_REPORT_MAX_SIZE) {
 				DBGLOG(NAN, ERROR,
-				       "%s(): no buffer to store channel information.\n",
-				       __func__);
+				       "no buffer to store channel information.\n");
 				break;
 			}
 
-			DBGLOG(NAN, INFO,
+			DBGLOG(NAN, LOUD,
 			       "channels[%d][%d]: ch%d (freq = %d) flgs=0x%x\n",
 				u4Band_idx, u4Ch_idx, prChan->hw_value,
 				prChan->center_freq, prChan->flags);
@@ -5714,7 +5713,7 @@ mtk_cfg80211_vendor_event_nan_country_chng_ind(struct ADAPTER *prAdapter)
 	prCountryCodeChangedIndMsg->channel_num = u4Ch_count;
 	rlmDomainU32ToAlpha(rlmDomainGetCountryCode(prAdapter)
 		, prCountryCodeChangedIndMsg->countryCode);
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, LOUD,
 			"Set country code [%c%c], Total CH[%d]\n"
 			, prCountryCodeChangedIndMsg->countryCode[0]
 			, prCountryCodeChangedIndMsg->countryCode[1]
