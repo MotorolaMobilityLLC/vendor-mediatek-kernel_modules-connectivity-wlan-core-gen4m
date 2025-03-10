@@ -13664,6 +13664,7 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			struct UNI_EVENT_STAREC_MLO_LINK_STATE *state =
 			    (struct UNI_EVENT_STAREC_MLO_LINK_STATE *)tag;
+			struct BSS_INFO *prBssInfo;
 			struct STA_RECORD *prStaRec;
 			struct MLD_STA_RECORD *prMldStaRec;
 
@@ -13711,6 +13712,10 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				twtmldCheckTeardown(ad,
 					prMldStaRec->u8ActiveStaBitmap);
 #endif
+				prBssInfo = GET_BSS_INFO_BY_INDEX(ad,
+					prStaRec->ucBssIndex);
+				ccmChannelSwitchProducer(ad, prBssInfo,
+							 __func__);
 			}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 		}

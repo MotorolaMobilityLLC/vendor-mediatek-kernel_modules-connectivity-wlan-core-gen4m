@@ -10247,14 +10247,20 @@ uint32_t p2pFuncGetPreferAliveBssByBand(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!bss || !IS_BSS_ALIVE(prAdapter, bss))
+		if (!bss || !IS_BSS_ALIVE(prAdapter, bss)) {
 			continue;
-		else if (bss->eBand != eBand)
+		} else if (bss->eBand != eBand) {
 			continue;
-		else if (fgIsSkipDfs && rlmDomainIsDfsChnls(prAdapter,
+		} else if (fgIsSkipDfs && rlmDomainIsDfsChnls(prAdapter,
 						bss->ucPrimaryChannel)) {
 			DBGLOG(P2P, WARN, "skip Bss%u in dfs ch:%u\n",
 			       i, bss->ucPrimaryChannel);
+			continue;
+		} else if (IS_BSS_AIS(bss) &&
+			   !IS_BSS_ACTIVE_LINK(prAdapter, bss)) {
+			DBGLOG(P2P, TRACE,
+				"skip Bss%u due to link inactive\n",
+				i);
 			continue;
 		}
 

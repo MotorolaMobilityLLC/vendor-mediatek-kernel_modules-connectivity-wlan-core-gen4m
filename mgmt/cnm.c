@@ -5275,12 +5275,10 @@ cnmGetAliveSapBssInfo(
 }
 
 uint8_t
-cnmGetAliveNonSapBssInfo(
-	struct ADAPTER *prAdapter,
-	struct BSS_INFO **prNonSapBssInfo)
+cnmGetAliveNonSapBssInfo(struct ADAPTER *prAdapter,
+			 struct BSS_INFO **prNonSapBssInfo)
 {
 	struct BSS_INFO *prBssInfo;
-
 	uint8_t i, j = 0;
 
 	if (!prAdapter)
@@ -5288,17 +5286,24 @@ cnmGetAliveNonSapBssInfo(
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
-		if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
-		    !(IS_BSS_AP(prAdapter, prBssInfo) &&
-		      IS_NET_PWR_STATE_ACTIVE(prAdapter,
-					      prBssInfo->ucBssIndex))) {
-			prNonSapBssInfo[j] = prBssInfo;
-			j++;
+
+		if (!IS_BSS_ALIVE(prAdapter, prBssInfo))
+			continue;
+		else if (IS_BSS_AP(prAdapter, prBssInfo) &&
+			 IS_NET_PWR_STATE_ACTIVE(prAdapter,
+						 prBssInfo->ucBssIndex))
+			continue;
+		else if (IS_BSS_AIS(prBssInfo) &&
+			 !IS_BSS_ACTIVE_LINK(prAdapter, prBssInfo)) {
+			DBGLOG(P2P, INFO, "skip Bss%u due to inactive\n",
+				i);
+			continue;
 		}
+
+		prNonSapBssInfo[j++] = prBssInfo;
 	}
 
 	return j;
-
 }
 
 uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,

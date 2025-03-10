@@ -508,9 +508,13 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		if (prMldBss) {
 			/* MLO GC/STA only ch abort once */
 			LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
-					    rLinkEntryMld, struct BSS_INFO)
+					    rLinkEntryMld, struct BSS_INFO) {
+				if (!IS_BSS_ACTIVE_LINK(prAdapter, bss))
+					continue;
+
 				__ccmChannelSwitchProducer(prAdapter, bss,
 							   pucSrcFunc);
+			}
 		} else
 			__ccmChannelSwitchProducer(prAdapter, prTargetBss,
 						   pucSrcFunc);

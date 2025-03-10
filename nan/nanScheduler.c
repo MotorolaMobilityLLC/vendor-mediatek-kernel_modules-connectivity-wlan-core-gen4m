@@ -15552,7 +15552,7 @@ uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
 	for (i = 0; i < ucBssCount; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if ((eNetworkType == NETWORK_TYPE_AIS &&
-		     IS_BSS_AIS_ACTIVE_LINK(prAdapter, prBssInfo) &&
+		     IS_BSS_ACTIVE_LINK(prAdapter, prBssInfo) &&
 		     prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
 		     eNetworkType == NETWORK_TYPE_P2P &&
 		     IS_BSS_P2P(prBssInfo)) &&
@@ -15660,7 +15660,7 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 	for (i = 0; i < ucBssCount; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if ((eNetworkType == NETWORK_TYPE_AIS &&
-		     IS_BSS_AIS_ACTIVE_LINK(prAdapter, prBssInfo) &&
+		     IS_BSS_ACTIVE_LINK(prAdapter, prBssInfo) &&
 		     prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
 		     eNetworkType == NETWORK_TYPE_P2P &&
 		     IS_BSS_P2P(prBssInfo)) &&
