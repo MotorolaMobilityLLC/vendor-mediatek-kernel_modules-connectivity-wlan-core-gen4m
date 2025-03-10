@@ -2535,7 +2535,11 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_SUPPORT_PCIE_ASPM
 	if (pcie_vir_addr == NULL) {
+#if (CFG_PCIE_MT6991 == 1)
+		pcie_vir_addr = ioremap(0x16910000, 0x2000);
+#else
 		pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+#endif
 		spin_lock_init(&rPCIELock);
 	}
 
@@ -2904,13 +2908,22 @@ static void mt6639_set_crypto(struct ADAPTER *prAdapter)
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Addr, u4Val = 0;
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	uint32_t u4PcieBaseAddr;
+#endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	if (!in_interrupt()) {
-		u4Addr = 0x112F0184;
+#if (CFG_PCIE_MT6991 == 1)
+		u4PcieBaseAddr = 0x16910000;
+#else
+		u4PcieBaseAddr = 0x112f0000;
+#endif
+		u4Addr = u4PcieBaseAddr + 0x184;
 		wf_ioremap_read(u4Addr, &u4Val);
 		DBGLOG(HAL, DEBUG, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
+		for (u4Addr = u4PcieBaseAddr + 0xC04;
+		    u4Addr <= u4PcieBaseAddr + 0xC1C; u4Addr += 4) {
 			wf_ioremap_read(u4Addr, &u4Val);
 			DBGLOG(HAL, DEBUG, "PCIE CR [0x%08x]=[0x%08x]",
 			       u4Addr, u4Val);

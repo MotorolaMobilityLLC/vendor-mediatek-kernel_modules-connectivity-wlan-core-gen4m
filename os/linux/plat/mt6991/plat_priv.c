@@ -1148,13 +1148,19 @@ int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter,
 #if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 int32_t kalPlatOpsInit(void)
 {
-#if defined(MT6653)
-	struct mt66xx_hif_driver_data *driver_data =
-		&mt66xx_driver_data_mt6653;
-	struct mt66xx_chip_info *chip = driver_data->chip_info;
+	struct mt66xx_hif_driver_data *driver_data = NULL;
+	struct mt66xx_chip_info *chip = NULL;
 
-	chip->pinctrl_ops = &mt6991_pinctrl_ops;
+#if defined(MT6653)
+	driver_data = &mt66xx_driver_data_mt6653;
+#elif defined(MT6639)
+	driver_data = &mt66xx_driver_data_mt6639;
 #endif
+
+	if (driver_data && driver_data->chip_info) {
+		chip = driver_data->chip_info;
+		chip->pinctrl_ops = &mt6991_pinctrl_ops;
+	}
 
 	return 0;
 }
