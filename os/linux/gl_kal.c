@@ -11998,15 +11998,23 @@ static size_t composeTxFreeSkbQ(struct ADAPTER *prAdapter, char *pos, char *end)
 	struct TX_FREE_INFO *prTxFreeInfo;
 	char *orig = pos;
 	uint32_t i;
+	struct TX_FREE_QUEUE_INFO *prQueInfo;
+	uint32_t u4QueueCnt, u4TotalCnt;
 
 	prTxFreeInfo = &glue->rTxFreeInfo;
 
 	pos += kalSnprintf(pos, end - pos, "TxFreeSkbQ[");
 	for (i = 0; i < CON_WORK_MAX; i++) {
+		prQueInfo = &(prTxFreeInfo->rQueInfo[i]);
+
+		spin_lock_bh(&prQueInfo->lock);
+		u4QueueCnt = QUEUE_LENGTH(&prQueInfo->rQue);
+		u4TotalCnt = prQueInfo->u4TotalCnt;
+		spin_unlock_bh(&prQueInfo->lock);
+
 		pos += kalSnprintf(pos, end - pos,
 			(i == CON_WORK_MAX - 1) ? "%u/%u" : "%u/%u ",
-			QUEUE_LENGTH(&prTxFreeInfo->rQueInfo[i].rQue),
-			prTxFreeInfo->rQueInfo[i].u4TotalCnt);
+			u4QueueCnt, u4TotalCnt);
 	}
 	pos += kalSnprintf(pos, end - pos, "] ");
 
@@ -19864,9 +19872,7 @@ void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr)
 	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
 		prQueInfo = &prTxFreeInfo->rQueInfo[ucIdx];
 		spin_lock_init(&prQueInfo->lock);
-		spin_lock_bh(&prQueInfo->lock);
 		prQueInfo->u4TotalCnt = 0;
-		spin_unlock_bh(&prQueInfo->lock);
 		QUEUE_INITIALIZE(&prQueInfo->rQue);
 
 		prConWork = &prTxFreeInfo->rConWork[ucIdx];
