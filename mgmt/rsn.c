@@ -1218,19 +1218,15 @@ uint8_t rsnAuthModeRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode)
 
 uint8_t rsnIsKeyMgmtForWpa3(struct ADAPTER *ad,
 	uint32_t u4AkmSuite,
-	uint8_t bssidx,
 	struct BSS_DESC *prBss,
 	uint8_t fgCheckH2E)
 {
-	struct GL_WPA_INFO *prWpaInfo;
 	u_int8_t fgIsOWE, fgIsSAE, fgIsSAEH2E;
 
-	prWpaInfo = aisGetWpaInfo(ad, bssidx);
 	fgIsOWE = u4AkmSuite == RSN_AKM_SUITE_OWE;
 	fgIsSAE = rsnKeyMgmtSae(u4AkmSuite);
 
 	fgIsSAEH2E = fgIsSAE &&
-		(prWpaInfo->u2RSNXCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) &&
 		((prBss->fgIERSNX &&
 			prBss->u2RsnxCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E))
 #if (CFG_SUPPORT_RSNO == 1)
@@ -1246,9 +1242,7 @@ uint8_t rsnIsKeyMgmtForWpa3(struct ADAPTER *ad,
 }
 
 uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
-	uint32_t u4AkmSuite,
-	uint8_t bssidx,
-	struct BSS_DESC *prBss)
+	uint32_t u4AkmSuite, struct BSS_DESC *prBss)
 {
 	if (rsnIsKeyMgmtIeee8021x(u4AkmSuite)) {
 		DBGLOG(RSN, INFO,
@@ -1273,14 +1267,14 @@ uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
 #endif
 #endif
 
-	if (rsnIsKeyMgmtForWpa3(ad, u4AkmSuite, bssidx, prBss, TRUE))
+	if (rsnIsKeyMgmtForWpa3(ad, u4AkmSuite, prBss, TRUE))
 		return TRUE;
 
 	return FALSE;
 }
 
 uint8_t rsnIsKeyMgmtForEht(struct ADAPTER *ad,
-	struct BSS_DESC *prBss, uint8_t bssidx)
+	struct BSS_DESC *prBss)
 {
 	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
 
@@ -1297,9 +1291,9 @@ uint8_t rsnIsKeyMgmtForEht(struct ADAPTER *ad,
 		if (rsnKeyMgmtEhtSae(prBss->u4RsnSelectedAKMSuite) &&
 			rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
 #if (CFG_WIFI_EHT_H2E_CHK == 1)
-				bssidx, prBss, TRUE))
+				prBss, TRUE))
 #else
-				bssidx, prBss, FALSE))
+				prBss, FALSE))
 #endif
 			return TRUE;
 	} else {
@@ -1308,9 +1302,9 @@ uint8_t rsnIsKeyMgmtForEht(struct ADAPTER *ad,
 			return TRUE;
 		if (rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
 #if (CFG_WIFI_EHT_H2E_CHK == 1)
-				bssidx, prBss, TRUE))
+				prBss, TRUE))
 #else
-				bssidx, prBss, FALSE))
+				prBss, FALSE))
 #endif
 			return TRUE;
 	}
@@ -1936,7 +1930,7 @@ selected:
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBss->eBand == BAND_6G) {
 		if (!rsnIsKeyMgmtFor6g(prAdapter,
-				u4AkmSuite, ucBssIndex, prBss)) {
+				u4AkmSuite, prBss)) {
 #if CFG_SUPPORT_WPA3_LOG
 			wpa3Log6gPolicyFail(prAdapter,
 				ucBssIndex,

@@ -2622,6 +2622,61 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	}
 }
 
+#if WLAN_INCLUDE_SYS
+#if (CFG_SUPPORT_WIFI_6G == 1)
+u_int8_t scanCheckOffSpec6GAP(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc)
+{
+	u_int8_t fgIsOffSpec6G = FALSE;
+	uint32_t akm, i = 0, c = 0;
+
+	/* feature option not enabled by 6e safe mode cmd */
+	if (prAdapter->fg6eOffSpecNotShow == FALSE)
+		return FALSE;
+
+	if (!prBssDesc->fgIERSN) {
+		fgIsOffSpec6G = TRUE;
+		DBGLOG(SCN, INFO,
+			"filter out-of-spec 6G AP, no RSN IE: SSID %s"
+			MACSTR "\n",
+			prBssDesc->aucSSID,
+			MAC2STR(prBssDesc->aucBSSID));
+	} else {
+		c = prBssDesc->rRSNInfo.u4AuthKeyMgtSuiteCount;
+		if (c == 0) {
+			DBGLOG(SCN, INFO,
+				"filter out-of-spec 6G AP, no valid AKM: SSID %s"
+				MACSTR "\n",
+				prBssDesc->aucSSID,
+				MAC2STR(prBssDesc->aucBSSID));
+			fgIsOffSpec6G = TRUE;
+		} else {
+			for (i = 0; i < c; i++) {
+				akm = prBssDesc->rRSNInfo.au4AuthKeyMgtSuite[i];
+				if (!rsnIsKeyMgmtFor6g(prAdapter,
+						akm, prBssDesc)) {
+					fgIsOffSpec6G = TRUE;
+					DBGLOG(SCN, INFO,
+						"filter out-of-spec 6G AP, akm[%d]=0x%04x: SSID %s "
+						MACSTR "\n",
+						i, akm, prBssDesc->aucSSID,
+						MAC2STR(prBssDesc->aucBSSID));
+					break;
+				}
+			}
+		}
+	}
+
+	if (fgIsOffSpec6G)
+		scanFreeBssDesc(prAdapter, prBssDesc,
+			"6G_SAFE_MODE");
+
+	return fgIsOffSpec6G;
+
+}
+#endif
+#endif
+
 void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 {
 	struct IE_EXT_CAP *prExtCap = NULL;
@@ -4021,6 +4076,14 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			eHwBand,
 			prTxPwrEnvIE);
 	}
+#endif
+
+#if WLAN_INCLUDE_SYS
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eHwBand == BAND_6G)
+		if (scanCheckOffSpec6GAP(prAdapter, prBssDesc))
+			return NULL;
+#endif
 #endif
 
 	/* 4 <6> PHY type setting */

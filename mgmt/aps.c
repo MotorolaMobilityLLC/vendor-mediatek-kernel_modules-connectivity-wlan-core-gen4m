@@ -485,7 +485,7 @@ uint8_t apsCanFormMld(struct ADAPTER *ad,
 
 	if (bss->fgIsEHTPresent == FALSE ||
 	    (!prWifiVar->fgDisSecurityCheck &&
-	     !rsnIsKeyMgmtForEht(ad, bss, bidx)))
+	     !rsnIsKeyMgmtForEht(ad, bss)))
 		return FALSE;
 
 	if (bss->rMlInfo.fgValid) {
@@ -699,7 +699,7 @@ uint16_t apsGetAmsduByte(struct ADAPTER *ad,
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (bss->fgIsEHTPresent == TRUE &&
 	    (ad->rWifiVar.fgDisSecurityCheck ||
-	     rsnIsKeyMgmtForEht(ad, bss, bidx))) {
+	     rsnIsKeyMgmtForEht(ad, bss))) {
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
 
@@ -824,7 +824,7 @@ uint32_t apsGetMaxRate(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 		sta_gen = 7;
 	if (bss->fgIsEHTPresent == TRUE &&
 	    (prWifiVar->fgDisSecurityCheck ||
-	     rsnIsKeyMgmtForEht(ad, bss, bidx)))
+	     rsnIsKeyMgmtForEht(ad, bss)))
 		ap_gen = 7;
 #endif
 

@@ -325,8 +325,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 		if ((prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_EHT) &&
 		    !prWifiVar->fgDisSecurityCheck &&
-		    !rsnIsKeyMgmtForEht(prAdapter, prBssDesc,
-					prStaRec->ucBssIndex)) {
+		    !rsnIsKeyMgmtForEht(prAdapter, prBssDesc)) {
 			DBGLOG(BSS, STATE,
 			       "Ignore the EHT Bit for AKM suite (0x%x) configed!\n",
 			       SWAP32(prBssDesc->u4RsnSelectedAKMSuite));
