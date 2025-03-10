@@ -364,8 +364,8 @@ void epcsProcessRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	/* (MU)EDCA backup */
 	epcsMldMUnEdcaBackupRestore(prMldBssInfo, TRUE);
 
-	MLD_PARSE_ML_CTRL_PRIORITY_ACCESS_MLIE(prAdapter, prMlInfo, prSwRfb, ml,
-			u2IELength);
+	mldParsePriorityAccessMlIE(prAdapter, prMlInfo, prSwRfb, ml,
+			u2IELength, __func__);
 	prMldStaRec->fgEPCS = 1;
 
 	/* (MU)EDCA update */
@@ -405,8 +405,8 @@ uint32_t epcsProcessReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	/* (MU)EDCA backup */
 	epcsMldMUnEdcaBackupRestore(prMldBssInfo, TRUE);
 
-	MLD_PARSE_ML_CTRL_PRIORITY_ACCESS_MLIE(prAdapter, prMlInfo, prSwRfb, ml,
-			u2IELength);
+	mldParsePriorityAccessMlIE(prAdapter, prMlInfo, prSwRfb, ml,
+			u2IELength, __func__);
 	prMldStaRec->fgEPCS = 1;
 
 	return WLAN_STATUS_SUCCESS;

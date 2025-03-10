@@ -1304,6 +1304,8 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 					MEDIA_STATE_TO_BE_INDICATED,
 					ucBssIndex);
 				prAisAbortMsg->ucReasonOfDisconnect =
+					pParamConn->fgTestMode ?
+					DISCONNECT_REASON_CODE_TEST_MODE :
 					DISCONNECT_REASON_CODE_REASSOCIATION;
 			}
 		} else {
@@ -2510,7 +2512,8 @@ wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	if (prMlcReq->eMlcMode == MLC_MODE_USER_CONFIG) {
 		uint32_t valid_links = prMlcReq->u4Data1;
 
-		if (valid_links != prMldStaRec->u2ValidLinks)
+		if (valid_links !=
+		    mldStarecGetValidLinks(prAdapter, prMldStaRec))
 			return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -2848,6 +2851,9 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			if (prCmdKey->ucKeyId >= 6 && prCmdKey->ucKeyId <= 7) {
 				prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId]
 					= TRUE;
+				prBssInfo->u4RsnSelectedBeaconProtCipher =
+					rsnCipherToCipherSuiteSelector(
+						prNewKey->ucCipher);
 			}
 		} else {
 #if CFG_SUPPORT_802_11W
@@ -17360,6 +17366,86 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		}
 
 		return WLAN_STATUS_SUCCESS;
+	}  else if (!kalStrniCmp(pucSavedPtr, "MLRC-IT", 7)) {
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+		struct AIS_FSM_INFO *prAisFsmInfo;
+		struct PARAM_CONNECT rNewSsid;
+		struct CONNECTION_SETTINGS *prConnSettings;
+		struct MLD_STA_RECORD *prMldStaRec;
+		struct BSS_DESC *prBssDesc;
+		int32_t i4Argc = 0;
+		uint8_t bssid[MAC_ADDR_LEN];
+		uint8_t ucSSIDLen;
+		uint8_t aucSSID[ELEM_MAX_LEN_SSID] = {0};
+		uint32_t u4FreqInfo = 0, u4SetInfoLen = 0;
+		uint16_t u2LinkIdBitmap, u2ValidLinks;
+		uint16_t u2DelLinkIdBitmap = 0, u2AddLinkIdBitmap = 0;
+
+		DBGLOG(REQ, INFO, "LR: command is %s\n", pucSavedPtr);
+		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+
+		if (i4Argc > 1)
+			kalkStrtou16(apcArgv[1], 0, &u2DelLinkIdBitmap);
+		if (i4Argc > 2)
+			kalkStrtou16(apcArgv[2], 0, &u2AddLinkIdBitmap);
+
+		prMldStaRec = aisGetMldStaRec(prAdapter, ucBssIndex);
+		if (!prMldStaRec || !prMldStaRec->fgMlrcOp) {
+			DBGLOG(INIT, INFO,
+				"LR: AP doesn't support ml reconfiguration\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		u2ValidLinks = mldStarecGetValidLinks(prAdapter, prMldStaRec);
+
+		DBGLOG(REQ, INFO,
+			"LR: BssIndex=%d DelLinkidBmap=0x%x AddLinkidBmap=0x%x ValidLinks=0x%x\n",
+			ucBssIndex, u2DelLinkIdBitmap, u2AddLinkIdBitmap,
+			u2ValidLinks);
+
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prBssDesc = aisGetMainLinkBssDesc(prAisFsmInfo);
+		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+		if (prAisFsmInfo->eCurrentState != AIS_STATE_NORMAL_TR) {
+			DBGLOG(INIT, INFO,
+				"LR: STA not in NORMAL_TR\n");
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
+
+		COPY_SSID(aucSSID, ucSSIDLen,
+			prConnSettings->aucSSID, prConnSettings->ucSSIDLen);
+
+		COPY_MAC_ADDR(bssid, prBssDesc->aucBSSID);
+
+		u4FreqInfo = nicChannelNum2Freq(
+			prBssDesc->ucChannelNum, prBssDesc->eBand);
+
+		u2LinkIdBitmap = u2ValidLinks;
+		u2LinkIdBitmap &= ~u2DelLinkIdBitmap;
+		u2LinkIdBitmap |= u2AddLinkIdBitmap;
+
+		kalMemZero(&rNewSsid, sizeof(rNewSsid));
+		rNewSsid.u4CenterFreq = u4FreqInfo;
+		rNewSsid.pucBssid = NULL;
+		rNewSsid.pucBssidHint = bssid;
+		rNewSsid.pucSsid = aucSSID;
+		rNewSsid.u4SsidLen = ucSSIDLen;
+		rNewSsid.ucBssIdx = ucBssIndex;
+		rNewSsid.fgTestMode = TRUE;
+		rNewSsid.u2LinkIdBitmap = u2LinkIdBitmap;
+
+		DBGLOG(INIT, INFO,
+			"LR: Request ssid=%s(%d) bssid= " MACSTR
+			" freq=%d LinkIdBitmap=%d\n",
+			rNewSsid.pucSsid, rNewSsid.u4SsidLen,
+			MAC2STR(bssid), u4FreqInfo, u2LinkIdBitmap);
+
+		wlanoidSetConnect(prAdapter, &rNewSsid,
+			sizeof(rNewSsid), &u4SetInfoLen);
+
+#endif
 	} else {
 		pucSavedPtr[10] = 0;
 		DBGLOG(OID, ERROR, "IT type %s is not supported\n",

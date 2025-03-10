@@ -1520,6 +1520,10 @@
 #define CFG_SUPPORT_ML_RECONFIG                  0
 #endif
 
+#ifndef CFG_DEFAULT_ENABLE_MLRC_OP
+#define CFG_DEFAULT_ENABLE_MLRC_OP		 0
+#endif
+
 #ifndef CFG_MLO_LINK_PLAN_MODE
 #define CFG_MLO_LINK_PLAN_MODE			 0
 #endif

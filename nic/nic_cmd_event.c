@@ -3713,6 +3713,11 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 {
 	struct CAP_MLO_CAP *cap = (struct CAP_MLO_CAP *)pucEventBuf;
 
+	prAdapter->rWifiVar.ucMaxSimuLinksCap = cap->ucMaxSimuLinks;
+	if (cap->ucNonApMldEMLSupport)
+		prAdapter->rWifiVar.u2NonApMldEMLCap = cap->u2NonApMldEMLCap;
+	prAdapter->rWifiVar.ucMlrcOpCap = cap->ucMlrcOpCap;
+
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
 	prAdapter->rWifiVar.ucNonApHyMloSupportCap =
 			cap->ucNonApHyMloSupport;
@@ -3720,24 +3725,19 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 			cap->ucLink3BandLimitBitmap;
 #endif
 
-	prAdapter->rWifiVar.ucMaxSimuLinksCap = cap->ucMaxSimuLinks;
-	if (cap->ucNonApMldEMLSupport)
-		prAdapter->rWifiVar.u2NonApMldEMLCap = cap->u2NonApMldEMLCap;
-	if (cap->ucApMldEMLSupport)
-		prAdapter->rWifiVar.u2ApMldEMLCap = cap->u2ApMldEMLCap;
-
 #if (CFG_SUPPORT_MLC == 1)
 	prAdapter->rWifiVar.ucMlcSupportCap = cap->ucMlcSupportCap;
 #endif
 
 	DBGLOG(INIT, DEBUG,
-		"EML cap - Non-AP=(%d,0x%x,%d), AP=(%d, 0x%x), MaxSimuLinks=%d\n",
-		prAdapter->rWifiVar.ucNonApMldEMLSupport,
-		prAdapter->rWifiVar.u2NonApMldEMLCap,
-		prAdapter->rWifiVar.ucNonApHyMloSupportCap,
-		prAdapter->rWifiVar.ucApMldEMLSupport,
-		prAdapter->rWifiVar.u2ApMldEMLCap,
-		prAdapter->rWifiVar.ucMaxSimuLinksCap);
+		"EmlCap=0x%x, MaxSimuLinks=%d, MlcSupportCap=%d, MlrcOpCap=%d, HyMlo=%d, Link3Bmap=%d\n",
+		cap->u2NonApMldEMLCap,
+		cap->ucMaxSimuLinks,
+		cap->ucMlcSupportCap,
+		cap->ucMlrcOpCap,
+		cap->ucNonApHyMloSupport,
+		cap->ucLink3BandLimitBitmap);
+
 	return WLAN_STATUS_SUCCESS;
 }
 #endif

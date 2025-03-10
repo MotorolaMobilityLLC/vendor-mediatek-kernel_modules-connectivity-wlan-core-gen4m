@@ -1559,7 +1559,6 @@ uint32_t apsGetMloLinkNum(struct ADAPTER *prAdapter,
 		APSLOG(APS, WARN, "prMldBssInfo doesn't exist!\n");
 		return ucMloLinkNum;
 	}
-
 	ucMloLinkNum = prMldBssInfo->rBssList.u4NumElem;
 
 	APSLOG(APS, LOUD, "AP MLD link counter = %d\n", ucMloLinkNum);
@@ -1567,6 +1566,30 @@ uint32_t apsGetMloLinkNum(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif
+
+uint8_t apsCheckBssidAllowList(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
+	uint8_t i = 0;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgEnBssidAllowList))
+		return TRUE;
+
+	for (i = 0; i * 18 + 17 < WLAN_CFG_VALUE_LEN_MAX; i++) {
+		if (wlanHwAddrToBin(prWifiVar->aucBssidAllowList + i * 18,
+			aucMacAddr)) {
+			if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,	aucMacAddr))
+				return TRUE;
+		} else {
+			break;
+		}
+	}
+
+	return FALSE;
+}
+
 uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex)
@@ -1575,6 +1598,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct CONNECTION_SETTINGS *conn;
 	struct APS_INFO *prApsInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
@@ -1604,26 +1628,17 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnBssidAllowList)) {
-		uint8_t aucMacAddr[MAC_ADDR_LEN];
-		uint8_t found = FALSE;
-		uint8_t i = 0;
-
-		for (i = 0; i * 18 + 17 < WLAN_CFG_VALUE_LEN_MAX; i++) {
-			if (wlanHwAddrToBin(prAdapter->rWifiVar
-				.aucBssidAllowList + i * 18, aucMacAddr)) {
-				if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-						aucMacAddr)) {
-					found = TRUE;
-					break;
-				}
-			} else {
-				break;
-			}
-		}
-
-		if (!found) {
-			DBGLOG(APS, WARN, MACSTR " is not in allowed list\n",
+	if (!apsCheckBssidAllowList(prAdapter, prBssDesc)) {
+		if (0) {
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		} else if (prWifiVar->ucMlrcOpCap &&
+		    IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnMlrcOp) &&
+		    prBssDesc->rMlInfo.fgValid &&
+		    prBssDesc->rMlInfo.fgMlrcOp) {
+#endif /* CFG_SUPPORT_ML_RECONFIG */
+		} else {
+			DBGLOG(APS, WARN,
+				MACSTR " is not in allowed list\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
@@ -1639,13 +1654,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	if ((prBssDesc->eBand == BAND_2G4 &&
-		prAdapter->rWifiVar.ucDisallowBand2G) ||
-	    (prBssDesc->eBand == BAND_5G &&
-		prAdapter->rWifiVar.ucDisallowBand5G)
+	if ((prBssDesc->eBand == BAND_2G4 && prWifiVar->ucDisallowBand2G) ||
+	    (prBssDesc->eBand == BAND_5G && prWifiVar->ucDisallowBand5G)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	 || (prBssDesc->eBand == BAND_6G &&
-		prAdapter->rWifiVar.ucDisallowBand6G)
+	 || (prBssDesc->eBand == BAND_6G && prWifiVar->ucDisallowBand6G)
 #endif
 	) {
 		APSLOG(APS, WARN, MACSTR" Band[%s] is not allowed\n",
@@ -1699,7 +1711,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 #if (CFG_EXT_ROAMING == 0)
 		    && (prApsInfo->u4EssApNum <= 1 ||
 			prBssDesc->prBlock->ucDeauthCount >= 2 ||
-			prAdapter->rWifiVar.u4SwTestMode !=
+			prWifiVar->u4SwTestMode !=
 						ENUM_SW_TEST_MODE_NONE)
 #endif
 		    ) {
@@ -1710,13 +1722,13 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		}
 
 		if (prBssDesc->prBlock->ucCount >=
-		    prAdapter->rWifiVar.ucAisBssTrialLimit) {
+		    prWifiVar->ucAisBssTrialLimit) {
 			APSLOG(APS, WARN,
 				MACSTR
 				" Skip AP that add to blocklist count %d >= %d\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				prBssDesc->prBlock->ucCount,
-				prAdapter->rWifiVar.ucAisBssTrialLimit);
+				prWifiVar->ucAisBssTrialLimit);
 #if (CFG_SUPPORT_CONN_LOG == 1)
 			connLogConnectFail(prAdapter, ucBssIndex,
 				CONN_FAIL_BLACLIST_LIMIT);
@@ -1838,7 +1850,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			if (apsCanFormMld(prAdapter, prBssDesc, ucBssIndex)) {
 				struct BSS_DESC *bss = NULL;
 				struct LINK *scan_result =
-				    &prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+				    &prWifiVar->rScanInfo.rBSSDescList;
 				uint8_t highestband = BAND_NULL;
 
 				/*  3. get the highest band of
@@ -1928,8 +1940,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	if (!(prBssDesc->ucPhyTypeSet &
-		(prAdapter->rWifiVar.ucAvailablePhyTypeSet))) {
+	if (!(prBssDesc->ucPhyTypeSet & prWifiVar->ucAvailablePhyTypeSet)) {
 		APSLOG(APS, WARN,
 			MACSTR" ignore unsupported ucPhyTypeSet = %x\n",
 			MAC2STR(prBssDesc->aucBSSID),
@@ -1982,7 +1993,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_MBO
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
-	disallow = &prAdapter->rWifiVar.rBssDisallowedList;
+	disallow = &prWifiVar->rBssDisallowedList;
 	for (i = 0; i < disallow->u4NumBssDisallowed; ++i) {
 		uint32_t index = i * MAC_ADDR_LEN;
 
@@ -2033,7 +2044,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			}
 
 			/* force to accept btm request */
-			if (prAdapter->rWifiVar.fgRoamByBTM) {
+			if (prWifiVar->fgRoamByBTM) {
 				if (!prBssDesc->prNeighbor) {
 					DBGLOG(APS, INFO, MACSTR
 					     " not in candidate list, skip it (RoamByBTM)\n",
@@ -2159,7 +2170,8 @@ try_again:
 				continue;
 			}
 
-			if (!apsIsBssQualify(ad, bss, reason, min_score,
+			if (conn->u2LinkIdBitmap == 0xFFFF &&
+			    !apsIsBssQualify(ad, bss, reason, min_score,
 				bss->u2Score, bidx))
 				continue;
 		}
@@ -3095,18 +3107,28 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	set->ucMaxSimuLinks = ap->ucMaxSimuLinks;
 
 	for (i = 0; i < ap->ucLinkNum && set->ucLinkNum < MLD_LINK_MAX; i++) {
-		if (!ap->aprTarget[i])
-			continue;
+		struct BSS_DESC_W *w;
 
-		set->aprBssDesc[set->ucLinkNum] = ap->aprTarget[i];
+		if (!ap->aprTarget[i])
+			break;
+
+		w = set->aprBssDescW[i] = &set->arBssDescWPool[i];
+		scanFillBssDescW(w, ap->aprTarget[i]);
 
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
 		if (set->eMloMode == MLO_MODE_SB_MLSR)
-			set->afgSyncOm[set->ucLinkNum] = FALSE;
-		else
+			w->fgUnSyncOm = TRUE;
 #endif
-			set->afgSyncOm[set->ucLinkNum] = TRUE;
-		set->ucRfBandBmap |= BIT(ap->aprTarget[i]->eBand);
+
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		if (!apsCheckBssidAllowList(ad, ap->aprTarget[i]))
+			w->fgApRemoval = TRUE;
+#endif
+
+		if (w && !w->fgApRemoval)
+			set->u2ValidLinks |= BIT(w->ucLinkId);
+
+		set->ucRfBandBmap |= BIT(w->eBand);
 		set->ucLinkNum++;
 	}
 
@@ -3119,28 +3141,29 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	 */
 	for (i = 1; i < set->ucLinkNum; i++) {
 		uint8_t *found = NULL;
-		struct BSS_DESC *bss = set->aprBssDesc[i];
+		struct BSS_DESC_W *w = set->aprBssDescW[i];
+		struct BSS_DESC *bss = w->prBssDesc;
 
-		if (IS_AIS_CONN_BSSDESC(ais, set->aprBssDesc[0]) &&
+		if (IS_AIS_CONN_BSSDESC(ais, set->aprBssDescW[0]->prBssDesc) &&
 		    !(IS_AIS_CONN_BSSDESC(ais, bss))) {
-			set->aprBssDesc[i] = set->aprBssDesc[0];
-			set->aprBssDesc[0] = bss;
+			set->aprBssDescW[i] = set->aprBssDescW[0];
+			set->aprBssDescW[0] = w;
 			found = "connected_link";
 		} else if (!IS_AIS_CONN_BSSDESC(ais, bss) &&
 		    bss->ucJoinFailureCount <
-		    set->aprBssDesc[0]->ucJoinFailureCount) {
-			set->aprBssDesc[i] = set->aprBssDesc[0];
-			set->aprBssDesc[0] = bss;
+		    set->aprBssDescW[0]->prBssDesc->ucJoinFailureCount) {
+			set->aprBssDescW[i] = set->aprBssDescW[0];
+			set->aprBssDescW[0] = w;
 			found = "bad_main_link";
 		} else if (IS_FEATURE_ENABLED(ad->rWifiVar.ucStaPreferMldAddr)
 			   && EQUAL_MAC_ADDR(bss->aucBSSID, ap->aucAddr)) {
-			set->aprBssDesc[i] = set->aprBssDesc[0];
-			set->aprBssDesc[0] = bss;
+			set->aprBssDescW[i] = set->aprBssDescW[0];
+			set->aprBssDescW[0] = w;
 			found = "mld_addr";
 		} else if (bss->rMlInfo.ucLinkId ==
 			   ad->rWifiVar.ucStaMldMainLinkIdx) {
-			set->aprBssDesc[i] = set->aprBssDesc[0];
-			set->aprBssDesc[0] = bss;
+			set->aprBssDescW[i] = set->aprBssDescW[0];
+			set->aprBssDescW[0] = w;
 			found = "link_id";
 		}
 
@@ -3160,7 +3183,8 @@ done:
 		prChipInfo->apsFillBssDescSet(ad, set, bidx);
 
 	/* first bss desc is main bss */
-	set->prMainBssDesc = set->aprBssDesc[0];
+	set->prMainBssDesc = set->aprBssDescW[0] ?
+		set->aprBssDescW[0]->prBssDesc : NULL;
 
 	if (ap) {
 		APSLOG(APS, INFO,
@@ -3175,7 +3199,9 @@ done:
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (ap->fgIsMld) {
 			for (i = 0; i < set->ucLinkNum ; i++) {
-				struct BSS_DESC *bss = set->aprBssDesc[i];
+				struct BSS_DESC_W *w =
+					set->aprBssDescW[i];
+				struct BSS_DESC *bss = w->prBssDesc;
 
 				APSLOG(APS, INFO,
 					"<CONN> SEARCH_RESULT BSS[" MACSTR
@@ -3188,7 +3214,7 @@ done:
 					bss->fgIsMatchBssid,
 					bss->fgIsMatchBssidHint,
 					bss->prBlock != NULL,
-					set->afgSyncOm[i]);
+					!w->fgUnSyncOm);
 			}
 		}
 #endif

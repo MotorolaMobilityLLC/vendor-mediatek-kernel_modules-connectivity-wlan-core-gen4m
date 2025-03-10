@@ -134,6 +134,9 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 enum ENUM_MLO_LINK_PLAN apsLinksToLinkPlan(
 	struct BSS_DESC *aprLink[], uint8_t ucLinkNum);
 
+enum ENUM_MLO_LINK_PLAN apsRfBandBmapToLinkPlan(
+	uint8_t ucRfBandBmap, uint8_t ucLinkNum);
+
 const char *apsGetLinkPlanStr(enum ENUM_MLO_LINK_PLAN eLinkPlan);
 
 #endif

@@ -5400,10 +5400,11 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 						     VIR_MEM_TYPE);
 
 				if (prMlInfo) {
-					MLD_PARSE_BASIC_MLIE(prMlInfo, pucIE,
-							     IE_SIZE(pucIE),
-							     aucBSSID,
-							     MAC_FRAME_BEACON);
+					mldParseBasicMlIE(prMlInfo, pucIE,
+						IE_SIZE(pucIE),	aucBSSID,
+						MAC_FRAME_BEACON,
+						__func__);
+
 					kalMemFree(prMlInfo, VIR_MEM_TYPE,
 						   sizeof(*prMlInfo));
 				}

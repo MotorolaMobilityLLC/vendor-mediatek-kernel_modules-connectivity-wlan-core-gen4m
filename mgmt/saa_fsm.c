@@ -1538,6 +1538,14 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 			goto exit;
 		}
 
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		if (prStaRec->fgApRemoval) {
+			DBGLOG(SAA, WARN,
+			       "Received a Deauth from deleted staRec\n",
+			       ucWlanIdx);
+			goto exit;
+		}
+#endif
 		/* if state != CONNECTED, don't do disconnect again */
 		if (prStaRec->ucStaState != STA_STATE_2 &&
 		    kalGetMediaStateIndicated(prAdapter->prGlueInfo,

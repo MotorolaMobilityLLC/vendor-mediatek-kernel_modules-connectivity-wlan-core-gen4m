@@ -249,10 +249,11 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	if (!ml)
 		goto exit;
 
-	MLD_PARSE_BASIC_MLIE(prMlInfo, ml,
-		IE_SIZE(ml), /* no need fragment */
-		prAuthFrame->aucBSSID,
-		u2RxFrameCtrl);
+	mldParseBasicMlIE(prMlInfo, ml,
+			IE_SIZE(ml), /* no need fragment */
+			prAuthFrame->aucBSSID,
+			u2RxFrameCtrl,
+			__func__);
 	if (!prMlInfo->ucValid) {
 		DBGLOG(AAA, ERROR, "Invalid mld_info, reject!\n");
 		u4Status = WLAN_STATUS_NOT_SUPPORTED;
@@ -264,9 +265,14 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	prMldStarec = mldStarecGetByMldAddr(prAdapter,
 		prMldBssInfo, prMlInfo->aucMldAddr);
 	if (!prMldStarec) {
-		prMldStarec = mldStarecAlloc(prAdapter, prMldBssInfo,
-			prMlInfo->aucMldAddr, fgMldType,
-			prMlInfo->u2EmlCap, prMlInfo->u2MldCap);
+		struct ML_INFO rMlInfo = {0};
+
+		COPY_MAC_ADDR(rMlInfo.aucMldAddr, prMlInfo->aucMldAddr);
+		rMlInfo.u2EmlCap = prMlInfo->u2EmlCap;
+		rMlInfo.u2MldCap = prMlInfo->u2MldCap;
+		rMlInfo.fgMldType = fgMldType;
+
+		prMldStarec = mldStarecAlloc(prAdapter, prMldBssInfo, &rMlInfo);
 		if (!prMldStarec) {
 			DBGLOG(AAA, ERROR, "Can't alloc mldstarec!\n");
 			u4Status = WLAN_STATUS_FAILURE;
@@ -334,8 +340,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
-		MLD_PARSE_BASIC_MLIE(prMlInfo, ml, pucIE + u2IELength - ml,
-			prFrame->aucBSSID, u2RxFrameCtrl);
+		mldParseBasicMlIE(prMlInfo, ml, pucIE + u2IELength - ml,
+			prFrame->aucBSSID, u2RxFrameCtrl, __func__);
 	} else {
 		DBGLOG(AAA, INFO, "no ml ie\n");
 		return WLAN_STATUS_SUCCESS;
@@ -863,7 +869,9 @@ struct BSS_DESC *p2pGetLinkBssDesc(
 
 	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
-	return prJoinInfo->rBssDescSet.aprBssDesc[ucLinkIdx];
+	return prJoinInfo->rBssDescSet.aprBssDescW[ucLinkIdx] ?
+	       prJoinInfo->rBssDescSet.aprBssDescW[ucLinkIdx]->prBssDesc :
+	       NULL;
 }
 
 uint8_t p2pGetLinkNum(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
@@ -1184,7 +1192,8 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMlsBss = mldBssGetByBss(prAdapter, prBssInfo);
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
-	struct BSS_DESC *prBssDesc = NULL;
+	struct BSS_DESC_W *prBssDescW;
+	struct BSS_DESC *prBssDesc;
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
 	uint8_t i, j, ucMaxLinkNum;
 
@@ -1227,28 +1236,30 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
 			prBssDesc->rMlInfo.ucLinkId);
 
+		prBssDescSet->aprBssDescW[prBssDescSet->ucLinkNum] =
+			&prBssDescSet->arBssDescWPool[prBssDescSet->ucLinkNum];
 		/* Record same Mld list */
-		prBssDescSet->aprBssDesc[prBssDescSet->ucLinkNum] = prBssDesc;
+		scanFillBssDescW(
+			prBssDescSet->aprBssDescW[prBssDescSet->ucLinkNum],
+			prBssDesc);
 		prBssDescSet->ucLinkNum++;
 	}
 
 	for (i = 0; i < prBssDescSet->ucLinkNum - 1; i++) {
 		for (j = i + 1; j < prBssDescSet->ucLinkNum; j++) {
-			if (prBssDescSet->aprBssDesc[j]
-				->rMlInfo.ucLinkId <
-				prBssDescSet->aprBssDesc[i]
-				->rMlInfo.ucLinkId) {
-				prBssDesc = prBssDescSet->aprBssDesc[j];
-				prBssDescSet->aprBssDesc[j] =
-					prBssDescSet->aprBssDesc[i];
-				prBssDescSet->aprBssDesc[i] =
-					prBssDesc;
+			if (prBssDescSet->aprBssDescW[j]->ucLinkId <
+				prBssDescSet->aprBssDescW[i]->ucLinkId) {
+				prBssDescW = prBssDescSet->aprBssDescW[j];
+				prBssDescSet->aprBssDescW[j] =
+					prBssDescSet->aprBssDescW[i];
+				prBssDescSet->aprBssDescW[i] =
+					prBssDescW;
 			}
 		}
 	}
 
 	/* first bss desc is main bss */
-	prBssDescSet->prMainBssDesc = prBssDescSet->aprBssDesc[0];
+	prBssDescSet->prMainBssDesc = prBssDescSet->aprBssDescW[0]->prBssDesc;
 	prMainBssDesc = prBssDescSet->prMainBssDesc;
 	DBGLOG(P2P, INFO,
 		"Total %d link(s), Main=" MACSTR

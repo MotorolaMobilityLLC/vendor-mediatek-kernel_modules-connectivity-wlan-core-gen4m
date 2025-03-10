@@ -119,6 +119,10 @@ extern u_int8_t g_ucReceiveGenSwitch;
 extern u_int8_t g_ucBypassException;
 #endif
 
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+struct MLD_STA_RECORD;
+#endif
+
 /*******************************************************************************
  *                                 COMMAND
  *******************************************************************************
@@ -879,7 +883,9 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_MLR_INFO		= 0x2D,
 	UNI_CMD_STAREC_TAG_NAN			= 0x2E,
 	UNI_CMD_STAREC_TAG_T2LM			= 0x3E,
+	UNI_CMD_STAREC_TAG_MLD_RECFG_STATE	= 0x3F,
 	UNI_CMD_STAREC_TAG_INSTALL_LTF_KEYSEED	= 0x40,
+	UNI_CMD_STAREC_TAG_EHT_MLD_V2		= 0x49,
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
 
@@ -1242,6 +1248,23 @@ struct UNI_CMD_STAREC_T2LM {
 	uint8_t   aucLinkInfo[];
 } __KAL_ATTRIB_PACKED__;
 
+/* MLD STAREC ml reconfig state (Tag 0x3F) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_MLD_RECFG_STATE {
+	uint16_t u2Tag;                 /* Tag = 0x3F */
+	uint16_t u2Length;
+	uint8_t ucLinkNumber;
+	uint8_t audPaddings[3];
+	uint8_t aucLinkInfo[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_RECFG_LINK_INFO {
+	uint16_t  u2WlanIdx;
+	uint8_t   ucBssIdx;
+	uint8_t   fgApRemoval;
+} __KAL_ATTRIB_PACKED__;
+
 /* LTF keyseed (Tag 0x40) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_INSTALL_LTE_KEYSEED {
@@ -1251,6 +1274,15 @@ struct UNI_CMD_STAREC_INSTALL_LTE_KEYSEED {
 	uint8_t   ucLtfKeyseedLen;
 	uint16_t  u2WlanIdx;
 	uint8_t   aucLtfKeyseed[48];
+} __KAL_ATTRIB_PACKED__;
+
+/* starec MLD level information v2 (Tag 0x49) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_EHT_MLD_V2 {
+	uint16_t u2Tag;		/* Tag = 0x49 */
+	uint16_t u2Length;
+	uint16_t u2ExtMldCap;
+	uint8_t aucReserved[14];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
@@ -6504,6 +6536,7 @@ enum ENUM_MLO_LINK_STATE_CHANGE_REASON {
 	MLO_LINK_STATE_CHANGE_REASON_CONCURRENT,
 	MLO_LINK_STATE_CHANGE_REASON_TPUT_HIGH,
 	MLO_LINK_STATE_CHANGE_REASON_TPUT_LOW,
+	MLO_LINK_STATE_CHANGE_REASON_AP_REMOVAL,
 	MLO_LINK_STATE_CHANGE_REASON_MAX_NUM
 };
 
@@ -10037,6 +10070,11 @@ uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
 uint32_t nicUniCmdBtCtrl(struct ADAPTER *prAdapter,
 			    struct WIFI_UNI_SETQUERY_INFO *prInfo);
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
+
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+uint32_t nicUniCmdUpdateMldRecfgState(struct ADAPTER *ad,
+		struct MLD_STA_RECORD *prMldStaRec);
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 /*******************************************************************************
  *                   Event

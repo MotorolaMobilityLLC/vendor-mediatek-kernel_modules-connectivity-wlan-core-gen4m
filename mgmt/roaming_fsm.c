@@ -52,6 +52,8 @@ static const char * const apucDebugRoamingState[ROAMING_STATE_NUM] = {
 	"SEND_WNM_RESP",
 	"SEND_FT_REQUEST",
 	"WAIT_FT_RESPONSE",
+	"SEND_LR_REQUEST",
+	"WAIT_LR_RESPONSE",
 };
 
 static const char * const apucEvent[ROAMING_EVENT_NUM + 1] = {
@@ -338,8 +340,8 @@ uint32_t roamingFsmCheckRxFtActionFrameStatus(struct ADAPTER *prAdapter,
 			sizeof(struct ACTION_FT_RESP_ACTION_FRAME),
 			ML_CTRL_TYPE_BASIC);
 		if (ml)
-			MLD_PARSE_BASIC_MLIE(info, ml, IE_SIZE(ml),
-				prBssDesc->aucBSSID, MAC_FRAME_AUTH);
+			mldParseBasicMlIE(info, ml, IE_SIZE(ml),
+				prBssDesc->aucBSSID, MAC_FRAME_AUTH, __func__);
 
 		if (!info->ucValid ||
 		    UNEQUAL_MAC_ADDR(info->aucMldAddr, aucTargetApAddr)) {
@@ -415,6 +417,13 @@ void roamingFsmTxReqDoneOrRxRespTimeout(
 		roamingFsmSteps(prAdapter, ROAMING_STATE_SEND_FT_REQUEST,
 			ucBssIndex);
 		break;
+
+	case ROAMING_STATE_SEND_LR_REQUEST:
+	case ROAMING_STATE_WAIT_LR_RESPONSE:
+		roamingFsmSteps(prAdapter, ROAMING_STATE_SEND_LR_REQUEST,
+			ucBssIndex);
+		break;
+
 	default:
 		break;
 	}
@@ -476,6 +485,280 @@ void roamingFsmRunEventRxFtAction(struct ADAPTER *prAdapter,
 		break;
 	}
 }
+
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+uint32_t roamingFsmCheckTxLRActionFrame(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo)
+{
+	struct ACTION_LR_REQ_ACTION_FRAME *prTxFrame;
+	struct STA_RECORD *prStaRec;
+	uint16_t u2TxFrameCtrl;
+
+	prTxFrame = (struct ACTION_LR_REQ_ACTION_FRAME *)(prMsduInfo->prPacket);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (!prStaRec)
+		return WLAN_STATUS_INVALID_PACKET;
+
+	u2TxFrameCtrl = prTxFrame->u2FrameCtrl;
+	u2TxFrameCtrl &= MASK_FRAME_TYPE;
+	if (u2TxFrameCtrl != MAC_FRAME_ACTION ||
+	    prTxFrame->ucCategory != CATEGORY_PROTECTED_EHT_ACTION ||
+	    prTxFrame->ucAction != ACTION_LR_REQUEST) {
+		DBGLOG(ROAMING, INFO,
+			"LR: Check fail ctrl=0x%x category=%d action=%d\n",
+			u2TxFrameCtrl, prTxFrame->ucCategory,
+			prTxFrame->ucAction);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+static uint32_t roamingLRActionTxDone(struct ADAPTER *prAdapter,
+				     struct MSDU_INFO *prMsduInfo,
+				     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct ROAMING_INFO *prRoam;
+	uint8_t ucBssIndex;
+	enum ENUM_ROAMING_STATE eNextState;
+
+	DBGLOG(ROAMING, INFO, "LR: action Tx Done Status %d\n", rTxDoneStatus);
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	eNextState = prRoam->eCurrentState;
+
+	switch (prRoam->eCurrentState) {
+	case ROAMING_STATE_SEND_LR_REQUEST:
+		if (roamingFsmCheckTxLRActionFrame(prAdapter, prMsduInfo) !=
+					 WLAN_STATUS_SUCCESS)
+			break;
+
+		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
+			eNextState = ROAMING_STATE_WAIT_LR_RESPONSE;
+			cnmTimerStopTimer(prAdapter,
+				&prRoam->rTxReqDoneRxRespTimer);
+			cnmTimerStartTimer(prAdapter,
+			    &prRoam->rTxReqDoneRxRespTimer,
+			    TU_TO_MSEC(
+			    TX_ACTION_RESPONSE_TIMEOUT_TU));
+		}
+
+		/* if TX was successful, change to next state.
+		 * if TX was failed, do retry if possible.
+		 */
+		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
+		break;
+	default:
+		break;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t roamingFsmSendLRActionFrame(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+	struct MLRC_INFO *prMlrc;
+	struct MSDU_INFO *prMsduInfo;
+	struct BSS_INFO *prBssInfo;
+	struct ACTION_LR_REQ_ACTION_FRAME *prTxFrame;
+
+	if (!prStaRec) {
+		DBGLOG(ROAMING, INFO, "LR: No station record found\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(ROAMING, INFO,
+			"LR: invalid BSS_INFO %d\n", prStaRec->ucBssIndex);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prMlrc = aisGetMlrcInfo(prAdapter, prStaRec->ucBssIndex);
+
+	/* 1 Allocate MSDU Info, reserved for ML IE */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
+		MAC_TX_RESERVED_FIELD + 1500);
+	if (!prMsduInfo)
+		return WLAN_STATUS_RESOURCES;
+
+	prTxFrame = (struct ACTION_LR_REQ_ACTION_FRAME *)
+		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+
+	/* 2 Compose The Mac Header. */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	prTxFrame->ucCategory = CATEGORY_PROTECTED_EHT_ACTION;
+	prTxFrame->ucAction = ACTION_LR_REQUEST;
+	prTxFrame->ucDialogToken = ++prMlrc->ucDialogToken;
+
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
+	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
+	nicTxSetForceRts(prMsduInfo, TRUE);
+
+	/* 4 Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     sizeof(struct ACTION_LR_REQ_ACTION_FRAME),
+		     roamingLRActionTxDone, MSDU_RATE_MODE_AUTO);
+
+	mldGenerateReconfigMlIE(prAdapter, prStaRec, prMsduInfo,
+			assocComposeReAssocReqFrame);
+
+	DBGLOG(ROAMING, INFO,
+		"LR: send LR request dialogToken=%d\n",
+		prTxFrame->ucDialogToken);
+	DBGDUMP_MEM8(ROAMING, INFO, "LR request\n",
+		prMsduInfo->prPacket, prMsduInfo->u2FrameLength);
+
+	/* use HW MAT so don't set force_tx/force_link */
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t roamingFsmCheckRxLRActionFrameStatus(struct ADAPTER *prAdapter,
+			   struct SW_RFB *prSwRfb)
+{
+	struct MLRC_INFO *prMlrc;
+	struct ACTION_LR_RESP_ACTION_FRAME *prRxFrame;
+	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
+
+
+	prMlrc = aisGetMlrcInfo(prAdapter, ucBssIndex);
+	prRxFrame = (struct ACTION_LR_RESP_ACTION_FRAME *)prSwRfb->pvHeader;
+
+	if (prSwRfb->u2PacketLen < sizeof(struct ACTION_LR_RESP_ACTION_FRAME) +
+		prRxFrame->ucCount * sizeof(struct RECONFIG_STATUS) ||
+	    prRxFrame->ucCategory != CATEGORY_PROTECTED_EHT_ACTION ||
+	    prRxFrame->ucAction != ACTION_LR_RESPONSE ||
+	    prRxFrame->ucDialogToken != prMlrc->ucDialogToken) {
+		DBGLOG(ROAMING, WARN,
+		       "LR: Discard frame(cat=%d, action=%d)\n",
+		       prRxFrame->ucCategory, prRxFrame->ucAction);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t roamingFsmProcessRxLRResponse(struct ADAPTER *prAdapter,
+				       struct SW_RFB *prSwRfb)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct MLRC_INFO *prMlrc;
+	struct LR_RESP_INFO *prInfo = NULL;
+	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
+	uint8_t i;
+	uint32_t u4Status = WLAN_STATUS_NOT_ACCEPTED;
+
+	ucBssIndex =  secGetBssIdxByRfb(prAdapter, prSwRfb);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prMlrc = aisGetMlrcInfo(prAdapter, ucBssIndex);
+	prInfo = kalMemAlloc(sizeof(struct LR_RESP_INFO), VIR_MEM_TYPE);
+	if (!prInfo)
+		goto done;
+
+	u4Status = mldParseLRRespActionFrame(prAdapter,
+		prSwRfb, prInfo, ucBssIndex);
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
+		struct STA_RECORD *prStaRec =
+			aisGetLinkStaRec(prAisFsmInfo, i);
+
+		if (!prBssInfo ||
+		    !(prInfo->u2ValidReconfigStatus &
+			BIT(prBssInfo->ucLinkId)) ||
+		    prInfo->u2Status[prBssInfo->ucLinkId] ==
+		    STATUS_CODE_SUCCESSFUL)
+			continue;
+
+		DBGLOG(AIS, INFO,
+			"LR: #%d ACTION=%s LinkID=%d rejected status=%d\n",
+			i, apucMlrcActionStr[prMlrc->aeMlrcAction[i]],
+			prBssInfo->ucLinkId,
+			prInfo->u2Status[prBssInfo->ucLinkId]);
+
+		if (prMlrc->aeMlrcAction[i] ==
+			MLRC_ACTION_ADD_DEPAUSE) {
+			prStaRec->fgApRemoval = TRUE;
+			prMlrc->aeMlrcAction[i] = MLRC_ACTION_NONE;
+		} else if (prMlrc->aeMlrcAction[i] ==
+			MLRC_ACTION_DELETE_PAUSE) {
+			prStaRec->fgApRemoval = FALSE;
+			prMlrc->aeMlrcAction[i] = MLRC_ACTION_NONE;
+		}
+	}
+
+done:
+	if (u4Status == WLAN_STATUS_SUCCESS) {
+		prMlrc->prLRResponseSwRfb = prSwRfb;
+		aisSetMlrcState(prAdapter, MLRC_STATE_RECONFIG, ucBssIndex);
+	} else {
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		aisSetMlrcState(prAdapter, MLRC_STATE_NEGO_FAIL, ucBssIndex);
+	}
+
+	if (prInfo)
+		kalMemFree(prInfo, VIR_MEM_TYPE, sizeof(struct LR_RESP_INFO));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void roamingFsmRunEventRxLRAction(struct ADAPTER *prAdapter,
+			  struct SW_RFB *prSwRfb)
+{
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct ACTION_LR_RESP_ACTION_FRAME *prRxFrame;
+	uint8_t ucBssIndex;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	prRxFrame = (struct ACTION_LR_RESP_ACTION_FRAME *)prSwRfb->pvHeader;
+	ucBssIndex =  secGetBssIdxByRfb(prAdapter, prSwRfb);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	DBGLOG(ROAMING, INFO, "LR: receive LR response dialogToken=%d\n",
+		prRxFrame->ucDialogToken);
+
+	switch (prRoamingFsmInfo->eCurrentState) {
+	case ROAMING_STATE_SEND_LR_REQUEST:
+	case ROAMING_STATE_WAIT_LR_RESPONSE:
+		/* Check if the incoming frame is what we are waiting for */
+		if (roamingFsmCheckRxLRActionFrameStatus(prAdapter, prSwRfb) !=
+			WLAN_STATUS_SUCCESS)
+			break;
+
+		roamingFsmProcessRxLRResponse(prAdapter, prSwRfb);
+
+		cnmTimerStopTimer(prAdapter,
+				&prRoamingFsmInfo->rTxReqDoneRxRespTimer);
+
+		/* Reset Send Auth/(Re)Assoc Frame Count */
+		prRoamingFsmInfo->ucTxActionRetryCount = 0;
+
+		roamingFsmSteps(prAdapter,
+			ROAMING_STATE_HANDLE_NEW_CANDIDATE,
+			ucBssIndex);
+		break;
+	default:
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		break;
+	}
+}
+
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -898,6 +1181,15 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			}
 #endif /* CFG_SUPPORT_802_11V_BTM_OFFLOAD */
 
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+			if (aisGetMlrcState(prAdapter, ucBssIndex) ==
+			    MLRC_STATE_NEGO) {
+				eNextState = ROAMING_STATE_SEND_LR_REQUEST;
+				fgIsTransition = TRUE;
+				break;
+			}
+#endif /* CFG_SUPPORT_ML_RECONFIG */
+
 			if (prRoam->prRoamTarget &&
 			    prRoam->prRoamTarget->prMainBssDesc->fgIsFtOverDS &&
 			    prFtParam->eFtDsState == FT_DS_STATE_IDLE) {
@@ -1013,6 +1305,43 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 		case ROAMING_STATE_WAIT_FT_RESPONSE: {
 		}
 			break;
+
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		case ROAMING_STATE_SEND_LR_REQUEST: {
+			/* Do tasks in INIT STATE */
+			if (prRoam->ucTxActionRetryCount >=
+					TX_ACTION_RETRY_LIMIT) {
+				aisSetMlrcState(prAdapter,
+					MLRC_STATE_NEGO_FAIL, ucBssIndex);
+				eNextState = ROAMING_STATE_HANDLE_NEW_CANDIDATE;
+				fgIsTransition = TRUE;
+			} else {
+				prRoam->ucTxActionRetryCount++;
+
+				rStatus = roamingFsmSendLRActionFrame(
+					prAdapter, prBssInfo->prStaRecOfAP);
+
+				if (rStatus == WLAN_STATUS_SUCCESS) {
+					cnmTimerStopTimer(prAdapter,
+					   &prRoam->rTxReqDoneRxRespTimer);
+					cnmTimerStartTimer(prAdapter,
+					   &prRoam->rTxReqDoneRxRespTimer,
+					   TU_TO_MSEC(
+					   TX_ACTION_RETRY_TIMEOUT_TU));
+				} else {
+					aisSetMlrcState(prAdapter,
+					      MLRC_STATE_NEGO_FAIL, ucBssIndex);
+					eNextState =
+					     ROAMING_STATE_HANDLE_NEW_CANDIDATE;
+					fgIsTransition = TRUE;
+				}
+			}
+		}
+			break;
+		case ROAMING_STATE_WAIT_LR_RESPONSE: {
+		}
+			break;
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 		default:
 			ASSERT(0); /* Make sure we have handle all STATEs */

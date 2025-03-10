@@ -4307,6 +4307,86 @@ uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 	return status;
 }
 
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+uint32_t nicUniCmdUpdateMldRecfgState(struct ADAPTER *ad,
+	struct MLD_STA_RECORD *mld_starec)
+{
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_MLD_RECFG_STATE *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+			       sizeof(struct UNI_CMD_STAREC_MLD_RECFG_STATE);
+	struct UNI_CMD_STAREC_RECFG_LINK_INFO *link;
+	struct LINK *sta_list;
+	struct STA_RECORD *sta, *cur;
+	uint16_t widx = 0;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	if (!mld_starec)
+		return WLAN_STATUS_FAILURE;
+
+	sta_list = &mld_starec->rStarecList;
+	sta = LINK_PEEK_HEAD(sta_list, struct STA_RECORD, rLinkEntryMld);
+	if (!sta)
+		return WLAN_STATUS_FAILURE;
+
+	max_cmd_len += sta_list->u4NumElem *
+		sizeof(struct UNI_CMD_STAREC_RECFG_LINK_INFO);
+	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(ad,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd->ucBssInfoIdx = sta->ucBssIndex;
+	widx = (uint16_t) sta->ucWlanIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
+	tag = (struct UNI_CMD_STAREC_MLD_RECFG_STATE *)uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_MLD_RECFG_STATE;
+	tag->u2Length = sizeof(*tag) + sta_list->u4NumElem *
+		sizeof(struct UNI_CMD_STAREC_RECFG_LINK_INFO);
+	tag->ucLinkNumber = sta_list->u4NumElem;
+
+	DBGLOG(INIT, INFO,
+		"[%d] bss=%d,pri=%d,sec=%d,setup=%d,num=%d,mac=" MACSTR "\n",
+		sta->ucIndex,
+		sta->ucBssIndex,
+		mld_starec->u2PrimaryMldId,
+		mld_starec->u2SecondMldId,
+		mld_starec->u2SetupWlanId,
+		sta_list->u4NumElem,
+		MAC2STR(mld_starec->aucPeerMldAddr));
+
+	link = (struct UNI_CMD_STAREC_RECFG_LINK_INFO *)tag->aucLinkInfo;
+	LINK_FOR_EACH_ENTRY(cur, sta_list, rLinkEntryMld, struct STA_RECORD) {
+		link->ucBssIdx = cur->ucBssIndex;
+		link->u2WlanIdx = cur->ucWlanIndex;
+		link->fgApRemoval = cur->fgApRemoval;
+
+		DBGLOG(INIT, INFO,
+			"\tbss=%d,wlan_idx=%d,del=%d\n",
+			link->ucBssIdx,
+			link->u2WlanIdx,
+			link->fgApRemoval);
+		link++;
+	}
+
+	status = wlanSendSetQueryUniCmd(ad,
+			     UNI_CMD_ID_STAREC_INFO,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+#endif /* CFG_SUPPORT_ML_RECONFIG */
+
 uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
@@ -4342,6 +4422,33 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 		tag->afgStrCapBitmap[1],
 		tag->afgStrCapBitmap[2],
 		tag->fgMldType);
+
+	return tag->u2Length;
+}
+
+uint32_t nicUniCmdStaRecTagEhtMldV2(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
+{
+	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
+	struct UNI_CMD_STAREC_EHT_MLD_V2 *tag =
+			(struct UNI_CMD_STAREC_EHT_MLD_V2 *)buf;
+	struct MLD_STA_RECORD *prMldStarec = mldStarecGetByStarec(ad, prStaRec);
+
+	if (!prStaRec || prStaRec->ucStaState != STA_STATE_3)
+		return 0;
+
+	if (!prMldStarec)
+		return 0;
+
+	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_MLD_V2;
+	tag->u2Length = sizeof(struct UNI_CMD_STAREC_EHT_MLD_V2);
+	tag->u2ExtMldCap = prMldStarec->u2ExtMldCap;
+
+	DBGLOG(INIT, INFO,
+		"[%d] bss=%d,extmldcap=0x%x\n",
+		prStaRec->ucIndex,
+		cmd->ucBssIndex,
+		tag->u2ExtMldCap);
 
 	return tag->u2Length;
 }
@@ -4611,6 +4718,7 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_MLD), nicUniCmdStaRecTagEhtMld},
+	{sizeof(struct UNI_CMD_STAREC_EHT_MLD_V2), nicUniCmdStaRecTagEhtMldV2},
 	{sizeof(struct UNI_CMD_STAREC_MLD_SETUP) +
 	 sizeof(struct UNI_CMD_STAREC_LINK_INFO) * UNI_MLD_LINK_MAX,
 	 nicUniCmdStaRecTagMldSetup},

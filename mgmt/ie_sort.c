@@ -1286,3 +1286,43 @@ int sortGetPayloadOffset(struct ADAPTER *prAdapter,
 	return -1;
 }
 
+uint8_t *sortBuildFragmentIE(uint8_t *dest_ie, uint8_t frag_eid,
+	uint8_t *src, uint16_t src_size)
+{
+	uint8_t *pos = IE_TAIL(dest_ie), *cp = src;
+	uint16_t left = src_size, len;
+
+	DBGLOG(TX, LOUD, "dest=%p pos=%p src=%p src_size=%d\n",
+		dest_ie, pos, src, src_size);
+
+	while (left > 0) {
+		DBGLOG(TX, LOUD, "left=%d\n", left);
+
+		if (IE_LEN(dest_ie) + left > 255) {
+			len = 255 - IE_LEN(dest_ie);
+
+			kalMemCopy(pos, cp, len);
+			cp += len;
+			pos += len;
+			left -= len;
+			IE_LEN(dest_ie) += len;
+
+			dest_ie = pos;
+			dest_ie[0] = frag_eid;
+			dest_ie[1] = 0;
+
+			pos += 2;
+		} else {
+			len = left;
+
+			kalMemCopy(pos, cp, len);
+			cp += len;
+			pos += len;
+			left -= len;
+			IE_LEN(dest_ie) += len;
+		}
+	}
+
+	return dest_ie;
+}
+

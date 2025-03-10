@@ -355,7 +355,10 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 		if (prCandidateBssDesc) {
 			/* setup primary link */
 			prBssDescSet->ucLinkNum = 1;
-			prBssDescSet->aprBssDesc[0] = prCandidateBssDesc;
+			prBssDescSet->aprBssDescW[0] =
+				&prBssDescSet->arBssDescWPool[0];
+			scanFillBssDescW(prBssDescSet->aprBssDescW[0],
+				prCandidateBssDesc);
 			prBssDescSet->prMainBssDesc = prCandidateBssDesc;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

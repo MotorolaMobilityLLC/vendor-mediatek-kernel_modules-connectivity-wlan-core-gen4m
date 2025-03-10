@@ -1657,11 +1657,12 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tHW_BAND/OMAC_IDX/WMM/BMC: %u/%u/%u/%u\n",
+		 "\tHW_BAND/OMAC_IDX/WMM/BMC/NAF: %u/%u/%u/%u/%s\n",
 		prBssInfo->eHwBandIdx,
 		prBssInfo->ucOwnMacIndex,
 		prBssInfo->ucWmmQueSet,
-		prBssInfo->ucBMCWlanIndex);
+		prBssInfo->ucBMCWlanIndex,
+		prBssInfo->fgIsNetAbsent ? "ABSENT" : "PRESENT");
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -1918,11 +1919,12 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfoExt)));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	log_dbg(SW4, DEBUG,
-		"[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [MldAddr]["
+		"[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [ApRm][%u], [MldAddr]["
 		MACSTR "]\n",
 		prStaRec->ucMldStaIndex,
 		prStaRec->ucLinkId,
 		prStaRec->ucULTidBitmap,
+		prStaRec->fgApRemoval,
 		MAC2STR(prStaRec->aucMldAddr));
 #endif
 #endif

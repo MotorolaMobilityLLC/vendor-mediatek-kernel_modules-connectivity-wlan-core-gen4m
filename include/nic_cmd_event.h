@@ -1420,11 +1420,11 @@ struct CAP_6G_CAP {
 #if CFG_SUPPORT_802_11BE_MLO
 struct CAP_MLO_CAP {
 	uint8_t ucNonApMldEMLSupport; /* Non-AP Mld EML 1:support, 0:not*/
-	uint8_t ucApMldEMLSupport; /* AP Mld EML 1:support, 0:not*/
+	uint8_t ucMlrcOpCap; /* Non-AP Ml reconfig op 1:support, 0:not */
 	uint8_t ucMaxSimuLinks; /* num of max simultaneous links */
 	uint8_t  ucLink3BandLimitBitmap;
 	uint16_t u2NonApMldEMLCap; /* Non-AP Mld EML cap */
-	uint16_t u2ApMldEMLCap; /* AP Mld EML cap */
+	uint16_t u2Reserved;
 	uint8_t ucNonApHyMloSupport; /* Hybrid MLo 1:support, 0 :not */
 	uint8_t ucMlcSupportCap; /* MLC BIT(0): 1:support, 0 :not */
 	uint8_t ucReserved[2];

@@ -467,12 +467,14 @@ void nanMldStaRecRegister(
 		prMldBssInfo,
 		prStaRec->aucMacAddr);
 	if (!prMldStarec) {
-		prMldStarec = mldStarecAlloc(prAdapter,
-			prMldBssInfo,
-			prStaRec->aucMacAddr,
-			MLD_TYPE_ICV_METHOD_V2,
-			0,
-			0);
+		struct ML_INFO rMlInfo = {0};
+
+		COPY_MAC_ADDR(rMlInfo.aucMldAddr, prStaRec->aucMacAddr);
+		rMlInfo.u2EmlCap = 0;
+		rMlInfo.u2MldCap = 0;
+		rMlInfo.fgMldType = MLD_TYPE_ICV_METHOD_V2;
+
+		prMldStarec = mldStarecAlloc(prAdapter, prMldBssInfo, &rMlInfo);
 		if (!prMldStarec) {
 			DBGLOG(NAN, ERROR, "Can't alloc mldstarec!\n");
 			return;

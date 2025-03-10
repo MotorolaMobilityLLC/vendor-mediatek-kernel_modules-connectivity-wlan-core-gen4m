@@ -7602,8 +7602,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"ApRemovalMarginMs", 250, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNonApMldEMLSupport,
 		"NonApMldEML", CFG_DEFAULT_ENABLE_EMLSR, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucApMldEMLSupport,
-		"ApMldEML", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->fgEnMlrcOp, "EnableMlrcOp",
+		CFG_DEFAULT_ENABLE_MLRC_OP, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgMlrcOpMode, "MlrcOpMode",
+		MLRC_MODE_DEL_AND_ADD, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgEnBtmMldRecomm, "BtmMldRecomm",
 		FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEnTuao, "EnableTuao", FEATURE_ENABLED,

@@ -3981,7 +3981,12 @@ struct PARAM_QUERY_ML_CHNL_COND {
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
-
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+struct PARAM_LR_REQUEST {
+	uint16_t u2DelLinkIdBitmap;
+	uint16_t u2AddLinkIdBitmap;
+};
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 /* This structure is a replication of struct EXT_EVENT_SER_T.
  * Thus, we are able to simply do memory copy from EXT_EVENT_SER_T to

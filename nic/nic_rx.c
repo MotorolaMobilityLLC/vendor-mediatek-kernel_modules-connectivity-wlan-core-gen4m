@@ -3924,6 +3924,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 {
 	struct WLAN_ACTION_FRAME *prActFrame;
 	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4116,7 +4117,16 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 			epcsProcessAction(prAdapter, prSwRfb);
 #endif
 			break;
+		case ACTION_LR_RESPONSE:
+#if CFG_SUPPORT_ML_RECONFIG
+			roamingFsmRunEventRxLRAction(prAdapter, prSwRfb);
+			u4Status = WLAN_STATUS_PENDING;
+#endif /* CFG_SUPPORT_ML_RECONFIG */
+			break;
+		default:
+			break;
 		}
+
 		break;
 #endif
 
@@ -4174,7 +4184,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		break;
 	}			/* end of switch case */
 
-	return WLAN_STATUS_SUCCESS;
+	return u4Status;
 }
 
 /*----------------------------------------------------------------------------*/

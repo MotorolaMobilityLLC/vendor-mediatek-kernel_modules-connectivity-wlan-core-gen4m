@@ -2710,6 +2710,11 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 				return WLAN_STATUS_NOT_ACCEPTED;
 			}
 
+			if (sta->fgApRemoval) {
+				DBGLOG(INIT, DEBUG, "skip extra link!!!\n");
+				continue;
+			}
+
 			status = kalCollectLinkInfo(prAdapter,
 				&links[count], sta->ucBssIndex);
 			if (status != WLAN_STATUS_SUCCESS)

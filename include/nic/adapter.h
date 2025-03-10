@@ -323,6 +323,7 @@ struct BSS_INFO {
 	uint32_t u4RsnSelectedGroupCipher;
 	uint32_t u4RsnSelectedPairwiseCipher;
 	uint32_t u4RsnSelectedGroupMgmtCipher;
+	uint32_t u4RsnSelectedBeaconProtCipher;
 	uint32_t u4RsnSelectedAKMSuite;
 	uint16_t u2RsnSelectedCapInfo;
 
@@ -1017,15 +1018,16 @@ struct WIFI_VAR {
 	uint8_t fgApRemovalByT2LM;
 	uint32_t u4ApRemovalMarginMs;
 	uint8_t ucNonApMldEMLSupport;
-	uint8_t ucApMldEMLSupport;
 	uint16_t u2NonApMldEMLCap;
-	uint16_t u2ApMldEMLCap;
 	uint8_t ucDisableFwkMlc;
 	uint8_t fgMlcSupport;
 	uint8_t ucMlcSupportCap;
 	uint8_t ucLink3BandLimitBitmap;
 	uint8_t ucNonApHyMloSupport;
 	uint8_t ucNonApHyMloSupportCap;
+	u_int8_t fgEnMlrcOp;
+	uint8_t ucMlrcOpCap;
+	u_int8_t fgMlrcOpMode;
 	uint32_t u4AisEHTNumber;
 	uint8_t fgForceRrmMloScan;
 	u_int8_t fgEnBtmMldRecomm;

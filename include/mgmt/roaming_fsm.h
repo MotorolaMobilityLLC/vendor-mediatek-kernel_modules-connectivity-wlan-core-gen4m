@@ -108,6 +108,8 @@ enum ENUM_ROAMING_STATE {
 	ROAMING_STATE_SEND_WNM_RESP,
 	ROAMING_STATE_SEND_FT_REQUEST,
 	ROAMING_STATE_WAIT_FT_RESPONSE,
+	ROAMING_STATE_SEND_LR_REQUEST,
+	ROAMING_STATE_WAIT_LR_RESPONSE,
 	ROAMING_STATE_NUM
 };
 
@@ -300,5 +302,10 @@ void roamingRecordCandiStatus(struct ADAPTER *prAdapter,
 
 void roamingUpdateSaaFailReason(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, enum ENUM_AA_STATE eAuthAssocState);
+
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+void roamingFsmRunEventRxLRAction(struct ADAPTER *prAdapter,
+			  struct SW_RFB *prSwRfb);
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 #endif /* _ROAMING_FSM_H */

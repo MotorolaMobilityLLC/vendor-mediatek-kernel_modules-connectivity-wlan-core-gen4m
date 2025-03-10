@@ -159,6 +159,7 @@ enum ENUM_AIS_STATE {
 	AIS_STATE_REMAIN_ON_CHANNEL,
 	AIS_STATE_OFF_CHNL_TX,
 	AIS_STATE_ROAMING,
+	AIS_STATE_LINK_RECONFIG,
 	AIS_STATE_NUM
 };
 
@@ -221,6 +222,7 @@ enum ENUM_AIS_REQUEST_TYPE {
 	AIS_REQUEST_BTO,
 	AIS_REQUEST_CSA,
 	AIS_REQUEST_LOOKING_FOR,
+	AIS_REQUEST_LINK_RECONFIG,
 	AIS_REQUEST_NUM
 };
 
@@ -496,9 +498,52 @@ struct MLD_BLOCKLIST_ITEM {
 	uint32_t u4BlockBmap; /* bmap for blocked link plan */
 	OS_SYSTIME rAddTime;
 };
-#endif
 
-/* end Support AP Selection */
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+enum ENUM_MLRC_ACTION {
+	MLRC_ACTION_EMPTY,		/* no bssdesc */
+	MLRC_ACTION_NONE,		/* has bssdesc but none to do */
+	MLRC_ACTION_ADD_DEPAUSE,	/* add by depause */
+	MLRC_ACTION_DELETE_PAUSE,	/* delete by pause */
+	MLRC_ACTION_NUM,
+};
+
+extern const uint8_t *apucMlrcActionStr[MLRC_ACTION_NUM + 1];
+
+enum ENUM_MLRC_STATE {
+	MLRC_STATE_IDLE,
+	MLRC_STATE_NEGO,
+	MLRC_STATE_NEGO_FAIL,
+	MLRC_STATE_RECONFIG,
+	MLRC_STATE_NUM,
+};
+
+extern const uint8_t *apucMlrcStateStr[MLRC_STATE_NUM + 1];
+
+enum ENUM_MLRC_MODE {
+	MLRC_MODE_DEL_AND_ADD,
+	MLRC_MODE_ADD_ONLY,
+	MLRC_MODE_DEL_ONLY,
+	MLRC_MODE_ADD_THEN_DEL,
+	MLRC_MODE_DEL_THEN_ADD,
+	MLRC_MODE_NUM,
+};
+
+#define MLRC_OP_PENDING_DELAY		5000
+
+struct MLRC_INFO {
+	struct TIMER rApRemovalTimer;
+	struct TIMER rPendingMlrcOpTimer;
+	enum ENUM_MLRC_STATE eMlrcState;
+	enum ENUM_MLRC_ACTION aeMlrcAction[MLD_LINK_MAX];
+	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
+	struct SW_RFB *prLRResponseSwRfb;
+	uint8_t ucDialogToken;
+	uint8_t fgHasPendingAction;
+};
+
+#endif /* CFG_SUPPORT_ML_RECONFIG */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 struct AX_BLOCKLIST_ITEM {
 	struct LINK_ENTRY rLinkEntry;
@@ -668,7 +713,7 @@ struct AIS_FSM_INFO {
 	uint8_t ucMlProbeEnable;
 	struct BSS_DESC *prMlProbeBssDesc;
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
-	struct TIMER rApRemovalTimer;
+	struct MLRC_INFO rMlrcInfo;
 #endif /* CFG_SUPPORT_ML_RECONFIG */
 #endif
 
@@ -746,7 +791,7 @@ bool aisFsmIsInProcessPostpone(struct ADAPTER *prAdapter,
 bool aisFsmIsInBeaconTimeout(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
-void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
+uint32_t aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo, struct STA_RECORD **prMainStaRec,
 	uint8_t ucLinkIndex);
 
@@ -847,6 +892,10 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec,
 			     struct SW_RFB *prAssocRspSwRfb);
+
+enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex);
+
 uint32_t
 aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 			      struct MSDU_INFO *prMsduInfo,
@@ -931,10 +980,6 @@ void aisFsmRunEventDeauthTimeout(struct ADAPTER
 void aisFsmRunEventSecModeChangeTimeout(struct ADAPTER
 					*prAdapter, uintptr_t ulParamPtr);
 #endif
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-void aisFsmRunApRemovalTimeout(struct ADAPTER *prAdapter, uintptr_t ulParamPtr);
-#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
@@ -1098,6 +1143,29 @@ struct AIS_SPECIFIC_BSS_INFO *aisGetAisSpecBssInfo(
 struct BSS_TRANSITION_MGT_PARAM *aisGetBTMParam(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
+
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+void aisResetMlrcInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+struct MLRC_INFO *aisGetMlrcInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+enum ENUM_MLRC_STATE aisGetMlrcState(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+void aisSetMlrcState(
+	struct ADAPTER *prAdapter,
+	enum ENUM_MLRC_STATE eMlrcState,
+	uint8_t ucBssIndex);
+
+void aisFsmMlReconfigUpdateState(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+#endif
 
 struct BSS_INFO *aisGetConnectedBssInfo(
 	struct ADAPTER *prAdapter);

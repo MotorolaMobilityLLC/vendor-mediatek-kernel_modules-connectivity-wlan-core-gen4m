@@ -1740,10 +1740,11 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 
 	if (BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC)) {
-		MLD_PARSE_BASIC_MLIE(prMlInfo, pucIE,
+		mldParseBasicMlIE(prMlInfo, pucIE,
 				IE_SIZE(pucIE), /* no need fragment */
 				prBssDesc->aucBSSID,
-				u2FrameCtrl);
+				u2FrameCtrl,
+				__func__);
 
 		prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
 
@@ -1767,7 +1768,12 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 			prBssDesc->rMlInfo.u2MldCap = rMlInfo.u2MldCap;
 			prBssDesc->rMlInfo.ucMaxSimuLinks =
 				(rMlInfo.u2MldCap & BITS(0, 3));
+			prBssDesc->rMlInfo.fgMlrcOp =
+			!!(rMlInfo.u2MldCap & MLD_CAP_LINK_RECFG_OP_SUPPORT);
 		}
+
+		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_EXT_MLD_CAP_OP_PRESENT)
+			prBssDesc->rMlInfo.u2ExtMldCap = rMlInfo.u2ExtMldCap;
 
 		prBssDesc->rMlInfo.u2ValidLinks = rMlInfo.u2ValidLinks;
 
@@ -1785,7 +1791,8 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
 		uint8_t i;
 
-		MLD_PARSE_RECONFIG_MLIE(prMlInfo, pucIE, prBssDesc->aucBSSID);
+		mldParseReconfigMlIE(prMlInfo, pucIE,
+			prBssDesc->aucBSSID, __func__);
 
 		if (!prMlInfo->ucValid)
 			return;
@@ -3699,7 +3706,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			if (IE_LEN(pucIE) >= ELEM_MIN_LEN_VENDOR_OUI &&
 				!prBssDesc->rMlInfo.fgIsEmlsrPermittedAP) {
 				prBssDesc->rMlInfo.fgIsEmlsrPermittedAP =
-					isEmlsrPermittedAP(pucIE + 2);
+					mldIsEmlsrPermittedAP(pucIE + 2);
 			}
 #endif
 			break;
@@ -6082,4 +6089,21 @@ const char *SSID2STR(const uint8_t *ssid, uint8_t ssid_len)
 	kalMemCopy(ssid_txt, ssid, ucMinLen);
 	ssid_txt[ucMinLen] = '\0';
 	return ssid_txt;
+}
+
+void scanFillBssDescW(struct BSS_DESC_W *prBssDescW, struct BSS_DESC *prBssDesc)
+{
+	if (!prBssDescW || !prBssDesc)
+		return;
+
+	prBssDescW->prBssDesc = prBssDesc;
+	prBssDescW->eBand = prBssDesc->eBand;
+	prBssDescW->eChannelWidth = prBssDesc->eChannelWidth;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prBssDesc->rMlInfo.fgValid)
+		prBssDescW->ucLinkId = prBssDesc->rMlInfo.ucLinkId;
+	else
+#endif
+		prBssDescW->ucLinkId = 0;
 }

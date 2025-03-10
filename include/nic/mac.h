@@ -935,9 +935,13 @@
 /* Link not accepted because the link on which the (Re)Association
  * Request frame is transmitted is not accepted.
  */
-#define STATUS_CODE_DENIED_LINK_NOT_ACCEPTED        136
+#define STATUS_CODE_DENIED_LINK_NOT_ACCEPTED        139
 /* Temporarily denied because unable to verify if STA is authorized */
 #define STATUS_CODE_EPCS_DENIED_VERIFICATION_FAILURE 140
+/* Denied because the operation parameters or capabilities are not acceptable */
+#define STATUS_CODE_DENIED_OP_PARAMETER_UPDATER	    141
+/* The non-AP STA MAC addr is used by an existing associated non-AP STA */
+#define STATUS_CODE_NON_AP_STA_MAC_ADDR_IN_USE	    142
 
 /* proprietary definition of reserved field of Status Code */
 /* Join failure */
@@ -1455,7 +1459,7 @@ enum MBO_TRANSITION_REJECT_REASON {
 };
 
 /* 802.11be, Protested EHT */
-/* D3.0 Table 9-623c Protected EHT Action Field Values */
+/* D6.0 Table 9-658c Protected EHT Action Field Values */
 enum PROTECTED_EHT_ACTION {
 	TID2LINK_REQUEST,
 	TID2LINK_RESPONSE,
@@ -1463,6 +1467,13 @@ enum PROTECTED_EHT_ACTION {
 	EPCS_ENABLE_REQUEST,
 	EPCS_ENABLE_RESPONSE,
 	EPCS_TEARDOWN,
+	EML_OMN,
+	LINK_RECOMMENDATION,
+	MLO_UPDATE_REQUEST,
+	MLO_UPDATE_RESPONSE,
+	ACTION_LR_NOTIFY,
+	ACTION_LR_REQUEST,
+	ACTION_LR_RESPONSE,
 	PROTECTED_EHT_ACTION_NUM,
 };
 
@@ -2573,7 +2584,7 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define MLD_CAP_FREQ_SEPARATION_MASK			BITS(7, 11)
 #define MLD_CAP_FREQ_SEPARATION_SHIFT			7
 #define MLD_CAP_AAR					BIT(12)
-#define MLD_CAP_LINK_RECONFIG_OP_SUPPORT		BIT(13)
+#define MLD_CAP_LINK_RECFG_OP_SUPPORT			BIT(13)
 
 /* BE D6.0 9.4.2.312.2.3 Common info field of the Basic Multi-Link Element */
 /* Figure 9-1072I - Extended MLD Capabilities and Operations subfield format */
@@ -2591,21 +2602,27 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_RECFG_MLD_ADDR_PRESENT			BIT(0)
 #define ML_RECFG_EML_CAP_PRESENT			BIT(1)
 #define ML_RECFG_MLD_CAP_OP_PRESENT			BIT(2)
+#define ML_RECFG_EXT_MLD_CAP_OP_PRESENT			BIT(3)
 
 #define ML_RECFG_STA_CTRL_LINK_ID_MASK			BITS(0, 3)
 #define ML_RECFG_STA_CTRL_LINK_ID_SHIFT			0
 #define ML_RECFG_STA_CTRL_COMPLETE_PROFILE		BIT(4)
 #define ML_RECFG_STA_CTRL_MAC_ADDR_PRESENT		BIT(5)
-#define ML_RECFG_STA_CTRL_DELETE_TIMER_PRESENT		BIT(6)
+#define ML_RECFG_STA_CTRL_AP_REMOVAL_TIMER_PRESENT	BIT(6)
 #define ML_RECFG_STA_CTRL_OP_TYPE_MASK			BITS(7, 10)
 #define ML_RECFG_STA_CTRL_OP_TYPE_SHIFT			7
 #define ML_RECFG_STA_CTRL_OP_PARAM_PRESENT		BIT(11)
 #define ML_RECFG_STA_CTRL_NSTR_BMAP_SIZE		BIT(12)
+#define ML_RECFG_STA_CTRL_NSTR_INDI_BMAP_SIZE_PRESENT	BIT(13)
 
-#define ML_RECFG_STA_CTRL_OP_TYPE_AP_REMOVAL		0
-#define ML_RECFG_STA_CTRL_OP_TYPE_UPDATE		1
-#define ML_RECFG_STA_CTRL_OP_TYPE_ADD_LINK		2
-#define ML_RECFG_STA_CTRL_OP_TYPE_DEL_LINK		3
+enum ML_RECFG_OP_TYPE {
+	ML_RECFG_OP_TYPE_AP_REMOVAL,
+	ML_RECFG_OP_TYPE_UPDATE,
+	ML_RECFG_OP_TYPE_ADD_LINK,
+	ML_RECFG_OP_TYPE_DEL_LINK,
+	ML_RECFG_OP_TYPE_NSTR_STATUS_UPDATE,
+	ML_RECFG_OP_TYPE_NUM,
+};
 
 /* BE D3.0 9.4.312.6 Priority Access Multi-Link element */
 /* BE D3.0 Figure 9-1002af - STA Control field format for the Priority Access

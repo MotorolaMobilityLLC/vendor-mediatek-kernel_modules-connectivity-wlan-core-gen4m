@@ -893,6 +893,8 @@ struct MLD_STA_RECORD {
 	uint16_t u2MldCap;
 	uint8_t ucEmlEnabled;
 	uint8_t ucMaxSimuLinks;
+	uint16_t u2ExtMldCap;
+	uint8_t fgMlrcOp;
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
 	unsigned long long u8StaBitmap;
@@ -900,7 +902,6 @@ struct MLD_STA_RECORD {
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
 	uint8_t fgIsSbMlsr; /* single band MLSR 5+6 */
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
-	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
 	struct TIMER rEpcsTimer;
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	enum ENUM_T2LM_STATE eT2LMState;

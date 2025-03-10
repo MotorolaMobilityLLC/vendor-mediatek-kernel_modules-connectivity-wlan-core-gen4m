@@ -5970,6 +5970,7 @@ int priv_driver_t2lm_request(struct net_device *prNetDev, char *pcCommand,
 	struct T2LM_INFO *prT2LMParams = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	struct MLD_STA_RECORD *prMldStaRec = NULL;
+	uint16_t u2ValidLinks;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
 		i4Ret = -1;
@@ -6018,6 +6019,8 @@ int priv_driver_t2lm_request(struct net_device *prNetDev, char *pcCommand,
 
 	}
 
+	u2ValidLinks = mldStarecGetValidLinks(prAdapter, prMldStaRec);
+
 	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
 
 	prT2LMParams = (struct T2LM_INFO *)
@@ -6057,8 +6060,7 @@ int priv_driver_t2lm_request(struct net_device *prNetDev, char *pcCommand,
 
 	for (ucIdx = 0; ucIdx < MAX_NUM_T2LM_TIDS; ucIdx++) {
 		for (ucBand = 0; ucBand < 3; ucBand++) {
-			if (!(prMldStaRec->u2ValidLinks &
-				BIT(au2BandLinkIdx[ucBand])))
+			if (!(u2ValidLinks & BIT(au2BandLinkIdx[ucBand])))
 				continue;
 
 			if (au4ULTidBitmap[ucBand] & BIT(ucIdx))
@@ -6070,7 +6072,7 @@ int priv_driver_t2lm_request(struct net_device *prNetDev, char *pcCommand,
 				ucIdx, ucBand,
 				au4ULTidBitmap[ucBand],
 				prT2LMParams->au2LMTid[ucIdx],
-				prMldStaRec->u2ValidLinks,
+				u2ValidLinks,
 				au2BandLinkIdx[ucBand]);
 		}
 	}
@@ -18395,10 +18397,11 @@ int priv_driver_get_ais(struct net_device *prNetDev,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tLINK_ID=%u TID_BMAP=UL:0x%x/DL:0x%x LINK_STATE=%s\n",
+			"\tLINK_ID=%u TID_BMAP=UL:0x%x/DL:0x%x AP_RM:%d LINK_STATE=%s\n",
 			prStaRec->ucLinkId,
 			prStaRec->ucULTidBitmap,
 			prStaRec->ucDLTidBitmap,
+			prStaRec->fgApRemoval,
 			cnmStaRecIsActive(prAdapter, prStaRec) ?
 			"ACTIVE" : "INACTIVE");
 #endif
@@ -18451,7 +18454,7 @@ int priv_driver_get_ais(struct net_device *prNetDev,
 		"\tSTA_BMAP=0x%llx ACT_BMP=0x%llx VALID_LINKS=0x%x EML_CAP=0x%04x STR=0x%02x%04x EML_EN=%u MAX_SIMU=%u\n",
 		prMldStarec->u8StaBitmap,
 		prMldStarec->u8ActiveStaBitmap,
-		prMldStarec->u2ValidLinks,
+		mldStarecGetValidLinks(prAdapter, prMldStarec),
 		prMldStarec->u2EmlCap,
 		*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
 		*(uint16_t *)(prMldStarec->aucStrBitmap),

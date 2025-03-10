@@ -1770,29 +1770,29 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApHyMloSupport) &&
 	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApHyMloSupportCap) &&
 		set && set->ucLinkNum == MLD_HYBRID_MLO_LINK_NUM) {
-		struct BSS_DESC *bss;
+		struct BSS_DESC_W *w;
 
 		if ((ucL3BnlimitBmap & BAND_5G) &&
-		     set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+		     set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
 				BAND_5G) {
-			bss = set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1];
-			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1] =
-				set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2];
-			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2] = bss;
+			w = set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2] = w;
 		} else if ((ucL3BnlimitBmap & BAND_2G4) &&
-		     set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+		     set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
 				BAND_2G4) {
-			bss = set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1];
-			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1] =
-				set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2];
-			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2] = bss;
+			w = set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2] = w;
 		}
 	}
 
 	if (set->eMloMode == MLO_MODE_HYMLO ||
 	    set->eMloMode == MLO_MODE_HYEMLSR) {
 		for (i = 0; i < set->ucLinkNum; i++)
-			set->afgSyncOm[i] = FALSE;
+			set->aprBssDescW[i]->fgUnSyncOm = TRUE;
 	}
 
 	if (policy == CONNECT_BY_BSSID)
@@ -1800,7 +1800,7 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
 	if (prAdapter->ucForceLinkSort) {
-		struct BSS_DESC *sorted[MLD_LINK_MAX] = {0};
+		struct BSS_DESC_W *sorted[MLD_LINK_MAX] = {0};
 		enum ENUM_BAND order[3] = {0};
 		uint8_t j;
 
@@ -1839,16 +1839,16 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 
 		for (i = 0; i < MLD_LINK_MAX; i++) {
 			for (j = 0; j < MLD_LINK_MAX; j++) {
-				if (set->aprBssDesc[j] &&
-					set->aprBssDesc[j]->eBand == order[i]) {
-					sorted[i] = set->aprBssDesc[j];
+				if (set->aprBssDescW[j] &&
+				    set->aprBssDescW[j]->eBand == order[i]) {
+					sorted[i] = set->aprBssDescW[j];
 					break;
 				}
 			}
 		}
 
 		for (i = 0; i < MLD_LINK_MAX; i++)
-			set->aprBssDesc[i] = sorted[i];
+			set->aprBssDescW[i] = sorted[i];
 	}
 #endif
 #endif

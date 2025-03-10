@@ -246,6 +246,58 @@ do { \
 	}
 }
 
+uint8_t rsnCipherSuiteSelectorToCipher(uint32_t selector)
+{
+	switch (selector) {
+	case RSN_CIPHER_SUITE_WEP40:
+		return CIPHER_SUITE_WEP40;
+	case RSN_CIPHER_SUITE_WEP104:
+		return CIPHER_SUITE_WEP104;
+	case RSN_CIPHER_SUITE_TKIP:
+		return CIPHER_SUITE_TKIP;
+	case RSN_CIPHER_SUITE_CCMP:
+		return CIPHER_SUITE_CCMP;
+	case RSN_CIPHER_SUITE_GCMP:
+		return CIPHER_SUITE_GCMP_128;
+	case RSN_CIPHER_SUITE_GCMP_256:
+		return CIPHER_SUITE_GCMP_256;
+	case RSN_CIPHER_SUITE_AES_128_CMAC:
+		return CIPHER_SUITE_BIP_CMAC_128;
+	case RSN_CIPHER_SUITE_BIP_GMAC_256:
+		return CIPHER_SUITE_BIP_GMAC_256;
+	default:
+		DBGLOG(RSN, WARN,
+			"invalid cipher suite selector(0x%x)\n", selector);
+		return 0;
+	}
+}
+
+uint32_t rsnCipherToCipherSuiteSelector(uint8_t cipher)
+{
+	switch (cipher) {
+	case CIPHER_SUITE_WEP40:
+		return RSN_CIPHER_SUITE_WEP40;
+	case CIPHER_SUITE_WEP104:
+		return RSN_CIPHER_SUITE_WEP104;
+	case CIPHER_SUITE_TKIP:
+		return RSN_CIPHER_SUITE_TKIP;
+	case CIPHER_SUITE_CCMP:
+		return RSN_CIPHER_SUITE_CCMP;
+	case CIPHER_SUITE_GCMP_128:
+		return RSN_CIPHER_SUITE_GCMP;
+	case CIPHER_SUITE_GCMP_256:
+		return RSN_CIPHER_SUITE_GCMP_256;
+	case CIPHER_SUITE_BIP_CMAC_128:
+		return RSN_CIPHER_SUITE_AES_128_CMAC;
+	case CIPHER_SUITE_BIP_GMAC_256:
+		return RSN_CIPHER_SUITE_BIP_GMAC_256;
+	default:
+		DBGLOG(RSN, WARN,
+			"invalid cipher (0x%x)\n", cipher);
+		return 0;
+	}
+}
+
 uint8_t rsnApOverload(uint16_t status, uint16_t reason)
 {
 	switch (status) {

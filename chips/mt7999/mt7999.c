@@ -4409,31 +4409,33 @@ uint8_t mt7999_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 #endif
 	;
 	uint32_t u4LinkPlanAABmap =
-		BIT(MLO_LINK_PLAN_2_5)
-		| BIT(MLO_LINK_PLAN_5_5)
+		u4LinkPlanAGBmap |
+		BIT(MLO_LINK_PLAN_5_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		| BIT(MLO_LINK_PLAN_2_6)
+
 		| BIT(MLO_LINK_PLAN_5_6)
 #endif
 	;
+
+#if (CFG_SUPPORT_MLC == 1)
 	uint32_t u4LinkPlan3Bmap =
 		BIT(MLO_LINK_PLAN_2_5_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		| BIT(MLO_LINK_PLAN_2_5_6)
 #endif
 	;
+#endif /* CFG_SUPPORT_MLC */
 
-	/* Eable A+A when support TBTC and EMLSR */
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
-	    BE_IS_EML_CAP_SUPPORT_EMLSR(prAdapter->rWifiVar.u2NonApMldEMLCap)) {
-		if (prAdapter->rWifiVar.ucStaMldLinkMax == 3 &&
-		    ENUM_BAND_NUM == 3)
-			u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
-		else
-			u4TmpLinkPlanBmap = u4LinkPlanAABmap;
-	} else {
+	/* Eable A+A when support EMLSR */
+	if (IS_NON_AP_EML_ENABLED(prAdapter))
+		u4TmpLinkPlanBmap = u4LinkPlanAABmap;
+	else
 		u4TmpLinkPlanBmap = u4LinkPlanAGBmap;
-	}
+
+#if (CFG_SUPPORT_MLC == 1)
+	if (IS_MLC_ENABLED(prAdapter))
+		u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
+#endif
 
 	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
 }
@@ -4442,57 +4444,104 @@ static void mt7999_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
 	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx)
 {
-	uint32_t u4TotalScore = 0;
-	uint32_t u4TotalTput = 0;
+	uint8_t ucAbandCount = 0;
+	uint32_t u4TotalScore = 0, u4TotalTput = 0;
 	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
 	uint8_t ucEmlsrLinkWeight = prAdapter->rWifiVar.ucEmlsrLinkWeight;
-	uint8_t i;
-	uint8_t ucRfBandBmap = 0;
-	enum ENUM_MLO_MODE eMloMode;
+	enum ENUM_MLO_MODE eMloMode = MLO_MODE_SLSR;
+	enum ENUM_MLO_LINK_PLAN eLinkPlan;
 	uint8_t ucMaxSimuLinks = 0;
+	uint8_t i;
 
 	for (i = 0; i < ucLinkNum; i++) {
-		u4TotalScore += arLinks[i]->u2Score;
-		u4TotalTput += arLinks[i]->u4Tput;
-		ucRfBandBmap |= BIT(arLinks[i]->eBand);
+		if (arLinks[i]->eBand == BAND_2G4) {
+			u4TotalScore += arLinks[i]->u2Score;
+			u4TotalTput += arLinks[i]->u4Tput;
+		} else {
+			if (ucAbandCount == 0) {
+				u4TotalScore += arLinks[i]->u2Score;
+				u4TotalTput += arLinks[i]->u4Tput;
+			} else {
+				u4TotalScore += arLinks[i]->u2Score *
+					 ucEmlsrLinkWeight / 100;
+				u4TotalTput += arLinks[i]->u4Tput *
+					 ucEmlsrLinkWeight / 100;
+			}
+
+			ucAbandCount++;
+		}
 	}
 
-	switch (ucLinkNum) {
-	case 2:
-		/* STR: 2+5, 2+6
-		 * EMLSR: 5+5, 5+6
-		 */
-		if (ucRfBandBmap & BIT(BAND_2G4)) {
-			ucMaxSimuLinks = 1;
-			eMloMode = MLO_MODE_STR;
-		} else {
-			if (BE_IS_EML_CAP_SUPPORT_EMLSR(
-				best_bss->rMlInfo.u2EmlCap)) {
-				u4TotalScore = best_bss->u2Score +
-					(u4TotalScore - best_bss->u2Score) *
-					 ucEmlsrLinkWeight / 100;
-				u4TotalTput = best_bss->u4Tput +
-					(u4TotalTput - best_bss->u4Tput) *
-					 ucEmlsrLinkWeight / 100;
-				ucMaxSimuLinks = 0;
-				eMloMode = MLO_MODE_EMLSR;
-			} else {
-				/* fallback to single link if ap no emlsr */
-				u4TotalScore = best_bss->u2Score;
-				u4TotalTput = best_bss->u4Tput;
-				ucMaxSimuLinks = 0;
-				eMloMode = MLO_MODE_SLSR;
-				ucLinkNum = 1;
-			}
-		}
+	eLinkPlan = apsLinksToLinkPlan(arLinks, ucLinkNum);
+
+	switch (eLinkPlan) {
+	/* A/G */
+	case MLO_LINK_PLAN_2:
+	case MLO_LINK_PLAN_5:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case MLO_LINK_PLAN_6:
+#endif
+		ucMaxSimuLinks = 0;
+		eMloMode = MLO_MODE_SLSR;
 		break;
-	case 3:
-		/* TODO: HYEMLSR: 2+5+5, 2+5+6 */
-		DBGLOG(APS, WARN, "not full support 3 links yet\n");
-		kal_fallthrough;
-	default:
+
+	/* A+G */
+	case MLO_LINK_PLAN_2_5:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case MLO_LINK_PLAN_2_6:
+#endif
+		ucMaxSimuLinks = 1;
 		eMloMode = MLO_MODE_STR;
-		ucMaxSimuLinks = ucLinkNum - 1;
+		break;
+
+	/* A+A */
+	case MLO_LINK_PLAN_5_5:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case MLO_LINK_PLAN_5_6:
+#endif
+		if (IS_NON_AP_EML_ENABLED(prAdapter) &&
+		    BE_IS_EML_CAP_SUPPORT_EMLSR(best_bss->rMlInfo.u2EmlCap)) {
+			ucMaxSimuLinks = 0;
+			eMloMode = MLO_MODE_EMLSR;
+#if (CFG_SUPPORT_MLC == 1)
+		} else if (IS_MLC_ENABLED(prAdapter)) {
+			ucMaxSimuLinks = 0;
+			eMloMode = MLO_MODE_MLSR;
+#endif
+		} else {
+			/* fallback to single link if ap no emlsr */
+			u4TotalScore = best_bss->u2Score;
+			u4TotalTput = best_bss->u4Tput;
+			ucLinkNum = 1;
+			ucMaxSimuLinks = 0;
+			eMloMode = MLO_MODE_SLSR;
+		}
+
+		break;
+
+	/* G+A+A */
+	case MLO_LINK_PLAN_2_5_5:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case MLO_LINK_PLAN_2_5_6:
+#endif
+
+#if (CFG_SUPPORT_MLC == 1)
+		if (IS_MLC_ENABLED(prAdapter)) {
+			ucMaxSimuLinks = 1;
+			eMloMode = MLO_MODE_HYMLSR;
+			break;
+		}
+#endif
+
+		DBGLOG(APS, INFO, "unsupported link plan=%d\n", eLinkPlan);
+		kal_fallthrough;
+
+	default:
+		u4TotalScore = best_bss->u2Score;
+		u4TotalTput = best_bss->u4Tput;
+		ucMaxSimuLinks = 0;
+		ucLinkNum = 1;
+		eMloMode = MLO_MODE_SLSR;
 		break;
 	}
 
@@ -4509,30 +4558,23 @@ static void mt7999_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *prSet,
 		uint8_t ucBssidx)
 {
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t i, bss5G = MLD_LINK_MAX, bss6G = MLD_LINK_MAX;
+#if (CFG_SUPPORT_MLC == 1)
+	if (!IS_MLC_ENABLED(prAdapter))
+		return;
 
-	for (i = 0; i < prSet->ucLinkNum; i++) {
-		if (prSet->aprBssDesc[i]->eBand == BAND_5G)
-			bss5G = i;
-		if (prSet->aprBssDesc[i]->eBand == BAND_6G &&
-		    prSet->aprBssDesc[i]->eChannelWidth >= CW_320_1MHZ)
-			bss6G = i;
+	/* A + G + A -> A + A + G */
+	if (prSet->ucLinkNum == 3 &&
+	    prSet->aprBssDescW[0]->eBand != BAND_2G4 &&
+	    prSet->aprBssDescW[1]->eBand == BAND_2G4) {
+		struct BSS_DESC_W *w = prSet->aprBssDescW[1];
+
+		prSet->aprBssDescW[1] = prSet->aprBssDescW[2];
+		prSet->aprBssDescW[2] = w;
 	}
 
-	if (bss5G != MLD_LINK_MAX && bss6G != MLD_LINK_MAX) {
-		struct BSS_DESC *prBssDesc;
-
-		prBssDesc = prSet->aprBssDesc[bss6G];
-		prSet->aprBssDesc[bss6G] = prSet->aprBssDesc[0];
-		prSet->aprBssDesc[0] = prBssDesc;
-
-		DBGLOG(APS, INFO, MACSTR
-			" link_id=%d max_links=%d Setup for 6G BW320\n",
-			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->rMlInfo.ucLinkId,
-			prBssDesc->rMlInfo.ucMaxSimuLinks);
-	}
+	/* 2 or 3 link: om = 0 + 1 + 0 */
+	if (prSet->ucLinkNum > 1)
+		prSet->aprBssDescW[1]->fgUnSyncOm = TRUE;
 #endif
 }
 

@@ -4903,11 +4903,10 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_MLC */
 
 	/* Eable A+A when support EMLSR */
-	if (IS_NON_AP_EML_ENABLED(prAdapter)) {
+	if (IS_NON_AP_EML_ENABLED(prAdapter))
 		u4TmpLinkPlanBmap = u4LinkPlanAABmap;
-	} else {
+	else
 		u4TmpLinkPlanBmap = u4LinkPlanAGBmap;
-	}
 
 #if (CFG_SUPPORT_MLC == 1)
 	if (IS_MLC_ENABLED(prAdapter))
@@ -5054,44 +5053,45 @@ static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		return;
 
 	for (i = 0; i < prSet->ucLinkNum; i++) {
-		if (prSet->aprBssDesc[i]->eBand == BAND_5G)
+		if (prSet->aprBssDescW[i]->eBand == BAND_5G)
 			bss5G = i;
-		if (prSet->aprBssDesc[i]->eBand == BAND_6G &&
-		    prSet->aprBssDesc[i]->eChannelWidth >= CW_320_1MHZ)
+		if (prSet->aprBssDescW[i]->eBand == BAND_6G &&
+		    prSet->aprBssDescW[i]->eChannelWidth >= CW_320_1MHZ)
 			bss6G = i;
 	}
 
 	if (bss5G != MLD_LINK_MAX && bss6G != MLD_LINK_MAX) {
-		struct BSS_DESC *prBssDesc;
+		struct BSS_DESC_W *w = prSet->aprBssDescW[bss6G];
+		struct BSS_DESC *bss = w->prBssDesc;
 
-		prBssDesc = prSet->aprBssDesc[bss6G];
-		prSet->aprBssDesc[bss6G] = prSet->aprBssDesc[0];
-		prSet->aprBssDesc[0] = prBssDesc;
+		w = prSet->aprBssDescW[bss6G];
+		prSet->aprBssDescW[bss6G] = prSet->aprBssDescW[0];
+		prSet->aprBssDescW[0] = w;
 
 		DBGLOG(APS, INFO, MACSTR
 			" link_id=%d max_links=%d Setup for 6G BW320\n",
-			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->rMlInfo.ucLinkId,
-			prBssDesc->rMlInfo.ucMaxSimuLinks);
+			MAC2STR(bss->aucBSSID),
+			bss->rMlInfo.ucLinkId,
+			bss->rMlInfo.ucMaxSimuLinks);
 	}
 #endif /* CFG_SUPPORT_WIFI_6G */
 #else /* CFG_SUPPORT_MLC */
 	if (!IS_MLC_ENABLED(prAdapter))
 		return;
 
-	/* 2 or 3 link: om = 0 + 1 + 0 */
-	if (prSet->ucLinkNum > 1)
-		prSet->afgSyncOm[1] = FALSE;
-
 	/* A + G + A -> A + A + G */
 	if (prSet->ucLinkNum == 3 &&
-	    prSet->aprBssDesc[0]->eBand != BAND_2G4 &&
-	    prSet->aprBssDesc[1]->eBand == BAND_2G4) {
-		struct BSS_DESC *prBssDesc = prSet->aprBssDesc[1];
+	    prSet->aprBssDescW[0]->eBand != BAND_2G4 &&
+	    prSet->aprBssDescW[1]->eBand == BAND_2G4) {
+		struct BSS_DESC_W *w = prSet->aprBssDescW[1];
 
-		prSet->aprBssDesc[1] = prSet->aprBssDesc[2];
-		prSet->aprBssDesc[2] = prBssDesc;
+		prSet->aprBssDescW[1] = prSet->aprBssDescW[2];
+		prSet->aprBssDescW[2] = w;
 	}
+
+	/* 2 or 3 link: om = 0 + 1 + 0 */
+	if (prSet->ucLinkNum > 1)
+		prSet->aprBssDescW[1]->fgUnSyncOm = TRUE;
 #endif /* CFG_SUPPORT_MLC */
 }
 

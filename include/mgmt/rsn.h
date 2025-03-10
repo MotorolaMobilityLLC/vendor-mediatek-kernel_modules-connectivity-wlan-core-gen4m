@@ -524,6 +524,8 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 void rsnAllowCrossAkm(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint32_t rsnCipherToBit(uint32_t cipher);
 uint32_t rsnKeyMgmtToBit(uint32_t akm);
+uint8_t rsnCipherSuiteSelectorToCipher(uint32_t selector);
+uint32_t rsnCipherToCipherSuiteSelector(uint8_t cipher);
 uint8_t rsnApOverload(uint16_t status, uint16_t reason);
 uint8_t rsnApInvalidPMK(uint16_t status, uint16_t reason,
 	enum ENUM_PARAM_AUTH_MODE AuthMode);

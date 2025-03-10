@@ -18,5 +18,8 @@ int sortGetPayloadOffset(struct ADAPTER *prAdapter,
 void sortMgmtFrameIE(struct ADAPTER *prAdapter,
 		    struct MSDU_INFO *prMsduInfo);
 
+uint8_t *sortBuildFragmentIE(uint8_t *dest_ie, uint8_t frag_eid,
+	uint8_t *src, uint16_t src_size);
+
 #endif /* !_IE_SORT_H */
 

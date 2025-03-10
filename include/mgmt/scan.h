@@ -277,8 +277,10 @@ struct ML_INFO {
 	uint8_t ucMldId;
 	uint16_t u2ValidLinks;
 	uint8_t ucMaxSimuLinks;
+	uint8_t fgMlrcOp;
 	uint16_t u2EmlCap;
 	uint16_t u2MldCap;
+	uint16_t u2ExtMldCap;
 	uint16_t u2DisabledLinks;
 	uint16_t u2ApRemovalTimer;
 	uint8_t fgMldType;
@@ -941,18 +943,29 @@ struct MLD_AP_INFO {
 };
 #endif
 
+/* BSS_DESC_WRAPPER */
+struct BSS_DESC_W {
+	struct BSS_DESC *prBssDesc;
+	enum ENUM_BAND eBand;
+	enum ENUM_CHANNEL_WIDTH eChannelWidth;
+	uint8_t ucLinkId;
+	uint8_t fgUnSyncOm;
+	uint8_t fgApRemoval;
+};
+
 struct BSS_DESC_SET {
 	struct BSS_DESC *prMainBssDesc;
 	uint8_t ucLinkNum; /* must smaller than MLD_LINK_MAX */
 	uint8_t ucRfBandBmap;
+	uint16_t u2ValidLinks;
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlockList;
 	uint8_t fgIsAllLinkConnected;
 	enum ENUM_MLO_MODE eMloMode;
 	uint8_t ucMaxSimuLinks;
-	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
-	uint8_t afgSyncOm[MLD_LINK_MAX];
+	struct BSS_DESC_W *aprBssDescW[MLD_LINK_MAX];
+	struct BSS_DESC_W arBssDescWPool[MLD_LINK_MAX];
 };
 
 /*******************************************************************************
@@ -1267,6 +1280,9 @@ void scanInsertBssDescToList(struct LINK *prBSSDescList,
 			     u_int8_t init);
 void scanResetBssDesc(struct ADAPTER *prAdapter,
 		      struct BSS_DESC *prBssDesc);
+
+void scanFillBssDescW(struct BSS_DESC_W *prBssDescW,
+	struct BSS_DESC *prBssDesc);
 
 /* Check if VHT IE filled in Epigram IE */
 void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);

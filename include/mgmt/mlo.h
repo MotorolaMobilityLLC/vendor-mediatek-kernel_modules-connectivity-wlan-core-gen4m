@@ -104,17 +104,14 @@
 	& (MLD_CAP_TID_TO_LINK_NEGO_MASK)); \
 }
 
+#define BE_SET_MLD_CAP_LINK_RECFG_OP(_u2Cap) \
+	((_u2Cap) |= MLD_CAP_LINK_RECFG_OP_SUPPORT)
+
 #define BE_SET_EXT_MLD_CAP_BTM_MLD_RECOMM(_u2Cap) \
 	((_u2Cap) |= EXT_MLD_CAP_BTM_MLD_RECOMM_MULTI_AP)
 
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
-#define MLD_PARSE_BASIC_MLIE(__a, __b, __c, __d, __e) \
-	mldParseBasicMlIE(__a, __b, __c, __d, __e, __func__)
-#define MLD_PARSE_RECONFIG_MLIE(__a, __b, __c) \
-	mldParseReconfigMlIE(__a, __b, __c, __func__)
-#define MLD_PARSE_ML_CTRL_PRIORITY_ACCESS_MLIE(__a, __b, __c, __d, __e) \
-	mldParsePriorityAccessMlIE(__a, __b, __c, __d, __e, __func__)
 /* BE D3.0 Figure 9-1002f - Multi-Link Control field */
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_MULTI_LINK_CONTROL {
@@ -138,6 +135,9 @@ struct SUB_IE_MULTI_LINK_CONTROL {
 	u_int16_t u2Ctrl;
 	u_int8_t aucCommonInfo[];
 } __KAL_ATTRIB_PACKED__;
+
+
+/* Basic Multi-Link element */
 
 #define BE_SET_ML_STA_CTRL_LINK_ID(_u2ctrl, _val) \
 {\
@@ -188,6 +188,24 @@ struct SUB_IE_MULTI_LINK_CONTROL {
 
 #define BE_IS_ML_STA_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(_u2ctrl) \
 	(_u2ctrl & ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT)
+
+/* Reconfiguration Multi-Link element */
+#define BE_SET_ML_RECFG_STA_CTRL_LINK_ID(_u2ctrl, _val) \
+{\
+	(_u2ctrl) &= ~(ML_RECFG_STA_CTRL_LINK_ID_MASK); \
+	(_u2ctrl) |= (((_val) << (ML_RECFG_STA_CTRL_LINK_ID_SHIFT)) \
+	& (ML_RECFG_STA_CTRL_LINK_ID_MASK)); \
+}
+
+#define BE_SET_ML_RECFG_STA_CTRL_OP_TYPE(_u2ctrl, _val) \
+{\
+	(_u2ctrl) &= ~(ML_RECFG_STA_CTRL_OP_TYPE_MASK); \
+	(_u2ctrl) |= (((_val) << (ML_RECFG_STA_CTRL_OP_TYPE_SHIFT)) \
+	& (ML_RECFG_STA_CTRL_OP_TYPE_MASK)); \
+}
+
+#define BE_SET_M_RECFGL_STA_CTRL_FIELD(_u2ctrl, _ctrl_type) \
+	(_u2ctrl = _ctrl_type)
 
 /* BE D3.0 Figure 9-1002n - STA Control field format of the Basic Multi-Link
  * Element
@@ -245,6 +263,93 @@ struct IE_MULTI_LINK_TRAFFIC_INDICATION {
 	uint8_t aucList[1];
 } __KAL_ATTRIB_PACKED__;
 
+/* 802.11be D6.0 9.6.38.13 Link Reconfiguration Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_LR_REQ_ACTION_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	uint8_t ucAction;	/* Action: 11 Link Reconfiguration Request */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t aucMultiLink[]; /* Reconfiguration Multi-Link Element */
+} __KAL_ATTRIB_PACKED__;
+
+/* 802.11be D6.0 9.6.38.14 Link Reconfiguration Response frame format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_LR_RESP_ACTION_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	uint8_t ucAction;	/* Action: 12 Link Reconfiguration Response */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t ucCount;	/* Number of reconfiguration status duple */
+	uint8_t aucReconfigStatus[]; /* Reconfiguration Status List */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct RECONFIG_STATUS {
+	uint8_t ucLinkId;
+	uint16_t u2Status;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct GROUP_KEY_DATA {
+	uint8_t ucLength;
+	uint8_t aucKeyData[];
+} __KAL_ATTRIB_PACKED__;
+
+#define MLO_GTK_MAX_LEN 32
+#define MLO_IGTK_MAX_LEN 32
+#define MLO_BIGTK_MAX_LEN 32
+
+
+#ifndef RSN_SELECTOR
+#define RSN_SELECTOR(a, b, c, d)                                               \
+	((((u32)(a)) << 24) | (((u32)(b)) << 16) | (((u32)(c)) << 8) | (u32)(d))
+#endif
+
+#define RSN_KEY_DATA_MLO_GTK RSN_SELECTOR(0x00, 0x0f, 0xac, 16)
+#define RSN_KEY_DATA_MLO_IGTK RSN_SELECTOR(0x00, 0x0f, 0xac, 17)
+#define RSN_KEY_DATA_MLO_BIGTK RSN_SELECTOR(0x00, 0x0f, 0xac, 18)
+
+#define MLO_GTK_KDE_PREFIX_LEN (1 + 6)
+__KAL_ATTRIB_PACKED_FRONT__
+struct MLO_GTK_KDE {
+	uint8_t info; /* KeyId 2 | Tx 1 | Reserved 1 | LinkId 4 */
+	uint8_t pn[6];
+	uint8_t gtk[MLO_GTK_MAX_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+#define MLO_IGTK_KDE_PREFIX_LEN (2 + 6 + 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct MLO_IGTK_KDE {
+	uint8_t keyid[2];
+	uint8_t pn[6];
+	uint8_t info; /* Reserved 4 | LinkId 4 */
+	uint8_t igtk[MLO_IGTK_MAX_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+#define MLO_BIGTK_KDE_PREFIX_LEN (2 + 6 + 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct MLO_BIGTK_KDE {
+	uint8_t keyid[2];
+	uint8_t pn[6];
+	uint8_t info; /* Reserved 4 | LinkId 4 */
+	uint8_t bigtk[MLO_BIGTK_MAX_LEN];
+} __KAL_ATTRIB_PACKED__;
+
 struct STA_PROFILE {
 	uint16_t u2StaCtrl;
 	uint8_t ucComplete;
@@ -282,6 +387,22 @@ struct MULTI_LINK_INFO {
 	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
 	uint8_t ucProfNum;
 	struct STA_PROFILE rStaProfiles[MLD_LINK_MAX];
+};
+
+struct LR_RESP_INFO {
+	struct MULTI_LINK_INFO rMlInfo;
+
+	uint16_t u2ValidReconfigStatus; /* bitmap of valid reconfig status */
+	uint16_t u2Status[MAX_NUM_MLO_LINKS];
+
+	uint16_t u2ValidMloGTK; /* bitmap of valid link GTK KDEs */
+	struct PARAM_KEY rMloGTK[MAX_NUM_MLO_LINKS];
+
+	uint16_t u2ValidMloIGTK; /* bitmap of valid link IGTK KDEs */
+	struct PARAM_KEY rMloIGTK[MAX_NUM_MLO_LINKS];
+
+	uint16_t u2ValidMloBIGTK; /* bitmap of valid link BIGTK KDEs */
+	struct PARAM_KEY rMloBIGTK[MAX_NUM_MLO_LINKS];
 };
 
 typedef struct MSDU_INFO* (*PFN_COMPOSE_ASSOC_IE_FUNC) (struct ADAPTER *,
@@ -346,10 +467,26 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *paucBssId, uint16_t u2FrameCtrl,
 	const char *pucDesc);
 
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
 void mldParseReconfigMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *pucIE, const uint8_t *paucBssId,
 	const char *pucDesc);
 
+uint8_t *mldGenerateReconfigMlIE(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct MSDU_INFO *prMsduInfo,
+	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE);
+
+uint32_t mldParseLRRespActionFrame(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSrc, struct LR_RESP_INFO *prLrInfo,
+	uint8_t ucBssIndex);
+
+struct SW_RFB *mldReconfigBuildAssocSwRfb(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSrc, struct LR_RESP_INFO *prLrInfo,
+	struct BSS_DESC *prBssDesc, struct STA_RECORD *prStaRec);
+#endif /* CFG_SUPPORT_ML_RECONFIG */
+
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
 void mldParsePriorityAccessMlIE(struct ADAPTER *prAdapter,
 		struct MULTI_LINK_INFO *prMlInfo, struct SW_RFB *prSwRfb,
 		const uint8_t *pucIE, uint16_t u2IELength, const char *pucDesc);
@@ -358,6 +495,7 @@ void mldParseStaProfilePriorityAccess(struct ADAPTER *prAdapter,
 		struct MULTI_LINK_INFO *prMlInfo, struct SW_RFB *prSwRfb,
 		uint8_t ucLinkId, uint16_t u2StaControl, const uint8_t *pos,
 		uint16_t u2IELength);
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type);
 
@@ -394,6 +532,9 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 	void *pvParam);
 
 void mldBssRestoreCap(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
+void mldBssSyncCap(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo);
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
@@ -446,12 +587,16 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec);
 
 struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo,
-	uint8_t *aucMacAddr, uint8_t fgMldType,
-	uint16_t u2EmlCap, uint16_t u2MldCap);
+	struct MLD_BSS_INFO *prMldBssInfo, struct ML_INFO *prMlInfo);
 
 void mldStarecFree(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStarec);
+
+uint8_t mldStarecGetValidLinkNum(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStaRec);
+
+uint16_t mldStarecGetValidLinks(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStaRec);
 
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
@@ -491,6 +636,9 @@ void mldStarecUninit(struct ADAPTER *prAdapter);
 struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo, uint8_t ucLinkIndex,
 	uint8_t fgPeerSta);
+
+struct STA_RECORD *mldGetStaRecByLinkId(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStaRec, uint8_t ucLinkId);
 
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
@@ -540,6 +688,12 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 
 uint32_t mldSetRemainMLSRBssIndex(struct ADAPTER *prAdapter,
 	uint8_t ucRemainBssIndex);
+
+uint8_t mldNeedSTRAsMLSR(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType);
+
+uint8_t mldNeedEMLSRAsMLSR(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType);
 #endif
 
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
@@ -558,9 +712,7 @@ void mldTriggerCriticalUpdate(struct ADAPTER *prAdapter,
 uint32_t mldSendMlcRequest(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo, struct PARAM_MLC_REQ *prMlcReq);
 #endif /* CFG_SUPPORT_MLC */
-uint8_t isEmlsrPermittedAP(uint8_t *aucOui);
-uint8_t mldNeedSTRAsMLSR(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType);
-uint8_t mldNeedEMLSRAsMLSR(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *mld_bssinfo, uint8_t ucMloType);
+
+uint8_t mldIsEmlsrPermittedAP(uint8_t *aucOui);
+
 #endif /* !_MLO_H */
