@@ -12094,6 +12094,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		p2pFuncRpsKalCheck(prAdapter, period, rxDiffPkts);
 #endif
 
+#if (CFG_SUPPORT_MBRAIN_TRX_PERF == 1)
+	mbrTRxPerfEnqueue(prAdapter);
+#endif /* CFG_SUPPORT_MBRAIN_TRX_PERF*/
+
 	/* A very large buffer to hold concatenated logs */
 	slen = 1024;
 	pos = buf = kalMemZAlloc(slen, VIR_MEM_TYPE);
@@ -12821,9 +12825,6 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #if (CFG_TC10_FEATURE == 1)
 	u_int8_t fgIsAIS = TRUE;
 #endif
-#if (CFG_SUPPORT_MBRAIN == 1) && (CFG_SUPPORT_MBRAIN_TRX_PERF == 1)
-	static uint32_t u4LastTRxPerfEnQTime;
-#endif
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
@@ -13081,18 +13082,6 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			wlanLinkQualityMonitor(prGlueInfo, FALSE);
 	}
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
-
-#if (CFG_SUPPORT_MBRAIN == 1) && (CFG_SUPPORT_MBRAIN_TRX_PERF == 1)
-	/* The time interval to record trx performance must be greater
-	 * than interval time. If (last time + interval) < current time
-	 * will not record trx performance index.
-	 */
-	if (TIME_BEFORE(u4LastTRxPerfEnQTime, kalGetTimeTick())) {
-		u4LastTRxPerfEnQTime = kalGetTimeTick() +
-			MBR_TRX_PERF_TIMEOUT_INTERVAL;
-		mbrTRxPerfEnqueue(prAdapter);
-	}
-#endif /* CFG_SUPPORT_MBRAIN &&  CFG_SUPPORT_MBRAIN_TRX_PERF*/
 
 	/* check tx hang */
 	if (!fgIsStopPerfMon) {

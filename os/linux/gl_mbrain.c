@@ -1300,6 +1300,7 @@ void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
 	static uint32_t u4LastRxDropTotal, u4LastRxDropReorder;
 	static uint32_t u4LastRxDropSanity, u4LastRxNapiFull;
+	static uint32_t u4LastTRxPerfEnQTime;
 	uint64_t u8NowTs;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -1333,6 +1334,16 @@ void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
 			sizeof(struct MBRAIN_TRXPERF_ENTRY));
 		return;
 	}
+
+	/* The time interval to record trx performance must be greater
+	 * than interval time. If current time < (last time + interval)
+	 * will not record trx performance index.
+	 */
+	if (TIME_BEFORE(kalGetTimeTick(),
+		(u4LastTRxPerfEnQTime + MBR_TRX_PERF_TIMEOUT_INTERVAL)))
+		return;
+
+	u4LastTRxPerfEnQTime = kalGetTimeTick();
 
 	kalMemZero(prTRxPerfEntry, sizeof(struct MBRAIN_TRXPERF_ENTRY));
 

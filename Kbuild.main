@@ -946,6 +946,11 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
                 CONFIG_SUPPORT_MBRAIN_TXPWR_RPT=y
             endif
         endif
+        ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
+            ifeq ($(call kver_ge,6,12),1)
+                CONFIG_SUPPORT_MBRAIN_TRX_PERF=y
+            endif
+        endif
         ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
             ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
                 ifeq ($(call kver_ge,6,12),1)
@@ -3631,15 +3636,7 @@ else
 endif
 
 ifeq ($(CONFIG_SUPPORT_MBRAIN_TRX_PERF), y)
-    ifeq ($(CONFIG_WIFI_DX5), y)
-        ifeq ($(call kver_ge,6,12),1)
-            ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=1
-        else
-            ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=0
-        endif
-    else
-        ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=0
-    endif
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=1
 else
     ccflags-y += -DCFG_SUPPORT_MBRAIN_TRX_PERF=0
 endif
