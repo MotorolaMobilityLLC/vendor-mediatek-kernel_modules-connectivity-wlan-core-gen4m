@@ -4549,8 +4549,8 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	prChnlEntry = &prConditional->channelEntry.rChnlEntry;
 	ucCheckOpClass = prChnlEntry->ucOperatingClass;
 
-	end = (uint8_t *)prAttrNanAvailibility + 3 +
-		prAttrNanAvailibility->u2Length;
+	end = (uint8_t *)prAttrNanAvailibility +
+		NAN_ATTR_SIZE(prAttrNanAvailibility);
 
 	p = prAttrNanAvailibility->aucAvailabilityEntryList;
 
@@ -4707,7 +4707,6 @@ nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 	uint32_t u4OperatingClass;
 	uint32_t u4PrimaryChnl;
 	struct _NAN_SCHEDULER_T *prNanScheduler = nanGetScheduler(prAdapter);
-	uint8_t ucLocalSupportedBand = 0; /* bitmap of NAN_SUPPORTED_BANDS */
 	uint8_t ucPeerSupportedBand = 0; /* bitmap of NAN_SUPPORTED_BANDS */
 
 	prPeerSchDesc = nanSchedSearchPeerSchDescByNmi(prAdapter, pucNmiAddr);
@@ -4762,17 +4761,8 @@ nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (prNanScheduler->fgEn2g)
-		ucLocalSupportedBand |= BIT(ENUM_SUPPORTED_BN_2G);
-	if (prNanScheduler->fgEn5gL)
-		ucLocalSupportedBand |= BIT(ENUM_SUPPORTED_BN_5G_LOW);
-	if (prNanScheduler->fgEn5gH)
-		ucLocalSupportedBand |= BIT(ENUM_SUPPORTED_BN_5G_HIGH);
-	if (prNanScheduler->fgEn6g)
-		ucLocalSupportedBand |= BIT(ENUM_SUPPORTED_BN_6G);
-
 	prPeerSchDesc->u4CommonSupportedBand =
-		(ucLocalSupportedBand & ucPeerSupportedBand);
+		(prNanScheduler->ucLocalSupportedBand & ucPeerSupportedBand);
 
 	DBGLOG(NAN, DEBUG,
 	       "Peer %02x:%02x:%02x:%02x:%02x:%02x, CommonBn[6G/5GH/5GL/2G]:[%u/%u/%u/%u]\n",
@@ -4791,19 +4781,15 @@ nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-static
 uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
-				     struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
-				     u_int8_t fgPrint)
+					u_int8_t fgPrint,
+					uint32_t u4CommonSupportedBand)
 {
 	const size_t sz5gTimeLineIdx = nanGetTimelineMgmtIndexByBand(prAdapter,
 								     BAND_5G);
 	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rAisChnlInfo;
 	u_int8_t fgMcc;
-	uint32_t u4CommonSupportedBand;
-
-	u4CommonSupportedBand = prPeerSchDesc->u4CommonSupportedBand;
 
 	fgMcc = nanIsP2pAisMCC(prAdapter, sz5gTimeLineIdx,
 			       &rP2pChnlInfo, &rAisChnlInfo);
@@ -4864,11 +4850,20 @@ uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
 	return u4CommonSupportedBand;
 }
 
-enum _NAN_SUPPORTED_BAND_BIT
-nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
-			     u_int8_t fgPrint)
+static
+uint32_t nanGetConcurrentCommonBand(struct ADAPTER *prAdapter,
+				    struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
+				    u_int8_t fgPrint)
 {
-	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
+	return nanGetCommonBandWithConcurrent(prAdapter, fgPrint,
+					prPeerSchDesc->u4CommonSupportedBand);
+}
+
+enum _NAN_SUPPORTED_BAND_BIT
+nanGetHighestCommonBand(struct ADAPTER *prAdapter,
+			struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
+			u_int8_t fgPrint)
+{
 	uint32_t u4CommonSupportedBand;
 	enum _NAN_SUPPORTED_BAND_BIT eReturnBand = ENUM_SUPPORTED_BN_2G;
 	static const char * const pcaBandString[] = {
@@ -4879,13 +4874,8 @@ nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 		[ENUM_SUPPORTED_BN_NUM] = "Unknown",
 	};
 
-	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
-
-	if (prPeerSchDesc == NULL)
-		return ENUM_SUPPORTED_BN_NUM;
-
 	u4CommonSupportedBand =
-		nanGetCommonBandWithConcurrent(prAdapter, prPeerSchDesc,
+		nanGetConcurrentCommonBand(prAdapter, prPeerSchDesc,
 					    fgPrint);
 
 	if (u4CommonSupportedBand & BIT(ENUM_SUPPORTED_BN_6G))
@@ -4902,6 +4892,23 @@ nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 		      eReturnBand, pcaBandString[eReturnBand]);
 
 	return eReturnBand;
+}
+
+enum _NAN_SUPPORTED_BAND_BIT
+nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
+			     u_int8_t fgPrint)
+{
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
+
+	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
+
+	if (prPeerSchDesc == NULL) {
+		NAN_DW_DBGLOG(NAN, WARN, fgPrint, 0,
+			      "peer schedule desc not found %u", u4SchIdx);
+		return ENUM_SUPPORTED_BN_NUM;
+	}
+
+	return nanGetHighestCommonBand(prAdapter, prPeerSchDesc, fgPrint);
 }
 
 struct _NAN_ATTR_NAN_AVAILABILITY_T*
@@ -4943,6 +4950,162 @@ nanInsertConditionalAvailability(uint8_t *pucAvailabilityAttr,
 		    prAttrNanAvailibility, new_size);
 
 	return prAttrNanAvailibility;
+}
+
+static char nanChnlTypeStr(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry)
+{
+	if (prAvailEntry->rCtrl.u2TypeCommitted)
+		return 'C';
+	if (prAvailEntry->rCtrl.u2TypePotential)
+		return 'p';
+	if (prAvailEntry->rCtrl.u2TypeConditional)
+		return 'c';
+
+	return ' ';
+}
+
+static uint8_t
+nanGetSubBandByChannelEntry(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
+			    struct _NAN_BAND_CHNL_LIST_T *prChnlList,
+			    void *pEntry)
+{
+	uint8_t ucSupportedBands = 0;
+	uint8_t *pucBand;
+	struct _NAN_SIMPLE_CHNL_ENTRY_T *prChnlEntry;
+
+	if (prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
+		pucBand = pEntry;
+		if (*pucBand == NAN_SUPPORTED_BAND_ID_2P4G)
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_2G);
+		if (*pucBand == NAN_SUPPORTED_BAND_ID_5G) {
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_5G_LOW) |
+					    BIT(ENUM_SUPPORTED_BN_5G_HIGH);
+		}
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (*pucBand == NAN_SUPPORTED_BAND_ID_6G)
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_6G);
+#endif
+	} else { /* prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		prChnlEntry = pEntry;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (IS_6G_OP_CLASS(prChnlEntry->ucOperatingClass))
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_6G);
+#endif
+
+		if (IS_2G_OP_CLASS(prChnlEntry->ucOperatingClass))
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_2G);
+
+		if (IS_5G_LOW_ONLY_OP_CLASS(prChnlEntry->ucOperatingClass))
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_5G_LOW);
+
+		if (IS_5G_HIGH_ONLY_OP_CLASS(prChnlEntry->ucOperatingClass))
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_5G_HIGH);
+
+		if (IS_5G_OP_CLASS(prChnlEntry->ucOperatingClass)) {
+			if (BIT(0) & prChnlEntry->u2ChannelBitmap)
+				ucSupportedBands |=
+					BIT(ENUM_SUPPORTED_BN_5G_LOW);
+
+			if (BIT(5) & prChnlEntry->u2ChannelBitmap)
+				ucSupportedBands |=
+					BIT(ENUM_SUPPORTED_BN_5G_HIGH);
+		}
+	}
+
+	DBGLOG(NAN, INFO,
+	       "%c availability %s support 6G/5GH/5GL/2G=%u/%u/%u/%u",
+	       nanChnlTypeStr(prAvailEntry),
+	       prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND ?
+	       "Band" : "Channel",
+	       !!(ucSupportedBands & BIT(ENUM_SUPPORTED_BN_6G)),
+	       !!(ucSupportedBands & BIT(ENUM_SUPPORTED_BN_5G_HIGH)),
+	       !!(ucSupportedBands & BIT(ENUM_SUPPORTED_BN_5G_LOW)),
+	       !!(ucSupportedBands & BIT(ENUM_SUPPORTED_BN_2G)));
+
+	return ucSupportedBands;
+}
+
+/* If the current availability attributes followed by another availability,
+ * parse next and collect the common band information.
+ * This is a simple parse only version as scanAvailabilityAttr
+ */
+u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
+					uint8_t *pucAttrNanAvailibility)
+{
+	void *pNextAvailabilityAttr = pucAttrNanAvailibility +
+					NAN_ATTR_SIZE(pucAttrNanAvailibility);
+	struct _NAN_ATTR_NAN_AVAILABILITY_T *prNextAvailabilityAttr =
+					pNextAvailabilityAttr;
+	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
+	struct _NAN_SIMPLE_CHNL_ENTRY_T *prBandChnlList;
+	struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *prTimeBitmap;
+	struct _NAN_BAND_CHNL_LIST_T *prChnlList;
+	uint8_t *pTimeBitmapTmp;
+	uint8_t *p;
+	uint8_t *end;
+	uint32_t idx;
+	uint32_t i;
+	uint8_t ucSupportedBands = BIT(ENUM_SUPPORTED_BN_2G);
+
+	/* TODO: check length */
+	if (prNextAvailabilityAttr->ucAttrId != NAN_ATTR_ID_NAN_AVAILABILITY)
+		return ucSupportedBands;
+
+	p = prNextAvailabilityAttr->aucAvailabilityEntryList;
+	end = (uint8_t *)prNextAvailabilityAttr +
+		NAN_ATTR_SIZE(prNextAvailabilityAttr);
+
+	idx = 0;
+	do {
+		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)p;
+		p = (uint8_t *)prAvailEntry + 2 + prAvailEntry->u2Length;
+
+		if (prAvailEntry->rCtrl.u2TimeBitmapPresent) {
+			uint8_t ucLen;
+
+			prTimeBitmap =
+				(struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
+				prAvailEntry;
+			ucLen = prTimeBitmap->ucTimeBitmapLength;
+
+			prChnlList = (struct _NAN_BAND_CHNL_LIST_T *)
+			    &prTimeBitmap->aucTimeBitmapAndBandChnlEntry[ucLen];
+
+			pTimeBitmapTmp =
+			      prTimeBitmap->aucTimeBitmapAndBandChnlEntry;
+
+			if (prChnlList->ucNonContiguous)
+				continue;
+
+			if (prChnlList->ucType ==
+			    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
+				uint8_t *pucBand = prChnlList->aucEntry;
+
+				for (i = 0; i < prChnlList->ucNumberOfEntry;
+				     i++) {
+					ucSupportedBands |=
+						nanGetSubBandByChannelEntry(
+								prAvailEntry,
+								prChnlList,
+								&pucBand[i]);
+				}
+				continue;
+			}
+
+			/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+			prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
+				prChnlList->aucEntry;
+			for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
+				ucSupportedBands |=
+					nanGetSubBandByChannelEntry(
+							prAvailEntry,
+							prChnlList,
+							&prBandChnlList[i]);
+			}
+		}
+	} while (p < end);
+
+	return ucSupportedBands;
 }
 
 uint32_t
@@ -5052,7 +5215,9 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	}
 
 	/* Check and optionally add conditional to 2.4G availability */
-	if (NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G)) {
+	if (NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G) ||
+	    nanGetHighestCommonBand(prAdapter, prPeerSchDesc, TRUE) ==
+		    ENUM_SUPPORTED_BN_2G) {
 		DBGLOG(NAN, STATE, "Attempt to add 2G conditional");
 		p2 = scanAvailabilityAttr(prAttrNanAvailibility,
 			&r2gConditional);
@@ -5660,8 +5825,17 @@ nanSchedPeerUpdateDevCapabilityAttr(struct ADAPTER *prAdapter,
 		       prNanDevCapability->ucCapabilitySet);
 		DBGLOG(NAN, DEBUG, "Max Chnl Switch Time:%d\n",
 		       prNanDevCapability->u2MaxChnlSwitchTime);
-		DBGLOG(NAN, DEBUG, "Supported Band:0x%02x\n",
-		       prNanDevCapability->ucSupportedBand);
+		DBGLOG(NAN, DEBUG,
+		       "Supported Band:0x%02x (2G:%u, 5G:%u, 6G:%u,%u)",
+		       prNanDevCapability->ucSupportedBand,
+		       !!(prNanDevCapability->ucSupportedBand &
+				BIT(NAN_SUPPORTED_BAND_ID_2P4G)),
+		       !!(prNanDevCapability->ucSupportedBand &
+				BIT(NAN_SUPPORTED_BAND_ID_5G)),
+		       !!(prNanDevCapability->ucSupportedBand &
+				BIT(NAN_PROPRIETY_BAND_ID_6G)),
+		       !!(prNanDevCapability->ucSupportedBand &
+				BIT(NAN_SUPPORTED_BAND_ID_6G)));
 		DBGLOG(NAN, DEBUG,
 		       "Operation Mode:0x%02x (VHT=%u, HE=%u, 80+80=%u, 160=%u)\n",
 		       prNanDevCapability->ucOperationMode,
@@ -6461,8 +6635,8 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	prNanScheduler = nanGetScheduler(prAdapter);
 
 	prNanScheduler->fgEn2g = fgEn2g;
-	prNanScheduler->fgEn5gH = fgEn5gH;
 	prNanScheduler->fgEn5gL = fgEn5gL;
+	prNanScheduler->fgEn5gH = fgEn5gH;
 #if (CFG_SUPPORT_NAN_6G == 1)
 	prNanScheduler->fgEn6g = fgEn6g &&
 				 prWifiVar->ucNanEnable6g &&

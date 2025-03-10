@@ -1045,6 +1045,12 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 	struct _NAN_ATTR_HDR_T *prNanAttr;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
+	struct _NAN_SCHEDULER_T *prNanScheduler = nanGetScheduler(prAdapter);
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
+	uint8_t *pucNmiAddr = NULL;
+	uint8_t ucPeerSupportedBands;
+
+
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
 #endif
@@ -1058,6 +1064,8 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
+	pucNmiAddr = prNDL->aucPeerMacAddr;
+	prPeerSchDesc = nanSchedAcquirePeerSchDescByNmi(prAdapter, pucNmiAddr);
 
 	/* 2. process through "buffered" attributes */
 	pucOffset = pucNanAttrList;
@@ -1094,6 +1102,28 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 			break;
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
+			/* Peek next availability */
+			if ((uint8_t *)prNanAttr + NAN_ATTR_SIZE(prNanAttr) <
+			    pucEnd) {
+				uint8_t ucCommonBands = 0;
+
+				ucPeerSupportedBands =
+					nanCommonBandFromNextAttribute(
+							prAdapter,
+							(uint8_t *)prNanAttr);
+
+				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%08x",
+				       ucPeerSupportedBands);
+
+				ucCommonBands =
+					prNanScheduler->ucLocalSupportedBand &
+					       ucPeerSupportedBands;
+				prPeerSchDesc->u4CommonSupportedBand |=
+					nanGetCommonBandWithConcurrent(
+						prAdapter, TRUE,
+						ucCommonBands);
+			}
+
 			rStatus = nanAvailabilityAttrHandler(prAdapter,
 					eNanAction,
 					(struct _NAN_ATTR_NAN_AVAILABILITY_T *)

@@ -655,10 +655,22 @@ struct NAN_P2P_AIS_MCC_RECORD {
 struct _NAN_SCHEDULER_T {
 	unsigned char fgInit;
 
-	unsigned char fgEn2g;
-	unsigned char fgEn5gH;
-	unsigned char fgEn5gL;
-	unsigned char fgEn6g;
+	/**
+	 * ENUM_SUPPORTED_BN_2G = 0,
+	 * ENUM_SUPPORTED_BN_5G_LOW,
+	 * ENUM_SUPPORTED_BN_5G_HIGH,
+	 * ENUM_SUPPORTED_BN_6G,
+	 */
+	union {
+		struct {
+			uint8_t fgEn2g :1,
+				fgEn5gL :1,
+				fgEn5gH :1,
+				fgEn6g :1,
+				b4Reserved :4;
+		};
+		uint8_t ucLocalSupportedBand;
+	};
 	unsigned char fgIs6gInUse;
 	enum _NAN_CHNL_BW_MAP e6gBandwidth;
 
@@ -779,6 +791,13 @@ uint8_t nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 					 unsigned char fgNonContBw,
 					 uint8_t ucPriChnlBitmap,
 					 uint8_t *pucTimeBitmap);
+
+u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
+					uint8_t *pucAttrNanAvailibility);
+
+uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
+					u_int8_t fgPrint,
+					uint32_t u4CommonSupportedBand);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 uint32_t nanSchedGetDevCapabilityExtAttr(struct ADAPTER *prAdapter,

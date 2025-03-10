@@ -3134,7 +3134,8 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 			}
 		}
 	}
-
+	DBGLOG(RLM, TRACE, "Warning: Miss all the Subband! ch(%d) b(%d)\n",
+	       ucChannel, eBand);
 	return FALSE;
 }
 /*----------------------------------------------------------------------------*/
