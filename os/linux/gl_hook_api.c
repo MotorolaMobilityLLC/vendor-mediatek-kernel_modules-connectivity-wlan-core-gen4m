@@ -4875,6 +4875,9 @@ uint32_t ServiceWlanOid(void *winfos,
 			uint32_t len = 0;
 			uint32_t alignByte = 0;
 
+			if (eprms->length == 0)
+				return WLAN_STATUS_INVALID_LENGTH;
+
 			if (eprms->length > EFUSE_BLOCK_SIZE)
 				return WLAN_STATUS_INVALID_LENGTH;
 
@@ -4908,14 +4911,16 @@ uint32_t ServiceWlanOid(void *winfos,
 					EFUSE_BLOCK_SIZE);
 #else
 				kalMemCopy(eprms->value,
-					&prAdapter->aucEepromVaule[alignByte],
+					prAdapter->aucEepromVaule,
 					EFUSE_BLOCK_SIZE);
 #endif
 				}
 			} else if (prTestWinfo->e2p_cur_mode ==
 					SERV_BUFFER_MODE) {
-				if ((eprms->offset + eprms->length) <=
-					MAX_EEPROM_BUFFER_SIZE) {
+
+				if (eprms->offset <=
+					(MAX_EEPROM_BUFFER_SIZE -
+						eprms->length)) {
 					memcpy(eprms->value,
 						uacEEPROMImage + eprms->offset,
 						 eprms->length);
