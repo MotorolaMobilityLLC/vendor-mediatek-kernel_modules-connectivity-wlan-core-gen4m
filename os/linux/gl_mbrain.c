@@ -810,14 +810,7 @@ void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
 		mbr_wifi_wkuprsn_info.resume_time = u8NowMs;
 		if (u8NowMs > mbr_wifi_wkuprsn_info.suspend_time)
 			u8Temp = u8NowMs - mbr_wifi_wkuprsn_info.suspend_time;
-		/* Increase total suspend period when wakeup time < 1s
-		 * and Tput < 2^14 bps
-		 */
-		if (u8Temp < MBR_WIFI_WKUP_RSN_WKUP_PERIOD_MS_THRESHOLD &&
-		    prPerMonitor->ulThroughput <
-		    MBR_WIFI_WKUP_RSN_TPUT_BPS_THRESHOLD) {
-			mbr_wifi_wkuprsn_info.total_suspend_period += u8Temp;
-		}
+		mbr_wifi_wkuprsn_info.total_suspend_period += u8Temp;
 		break;
 	}
 	case MBR_WKUP_RSN_UPDATE_WIFI_WKUP_TIME: {
@@ -845,7 +838,6 @@ void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
 					"Wakeup reason queue is full.\n");
 				break;
 			}
-			mbr_wifi_wkuprsn_info.wkup_reason = eReason;
 			mbr_wifi_wkuprsn_info.wifi_wkup_period = u8Temp;
 			/* Enqueue the result */
 			prWkUpRsnEntry = kalMemZAlloc(
@@ -952,6 +944,7 @@ void mbr_wifi_wkup_rsn_clear_queue(struct ADAPTER *prAdapter)
 			kalMemFree(prWkUpRsnEntry, VIR_MEM_TYPE,
 				sizeof(struct MBR_WIFI_WKUP_RSN_ENTRY));
 	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
 }
 #endif /* (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1) */
 
