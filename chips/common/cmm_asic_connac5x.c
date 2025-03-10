@@ -3025,8 +3025,11 @@ static int wlan_pre_fmd(void)
 			kalMsleep(100);
 			retry++;
 		}
-	} else
+	} else {
+		wfsys_lock();
 		wlanShutdown();
+		wfsys_unlock();
+	}
 
 	DBGLOG(INIT, DEBUG, "wifi off success\n");
 	return 0;

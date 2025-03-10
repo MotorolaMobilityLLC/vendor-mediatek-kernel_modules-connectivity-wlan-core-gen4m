@@ -1591,11 +1591,13 @@ static void mtk_wifi_remove(struct platform_device *pdev)
 
 static void mtk_wifi_shutdown(struct platform_device *pdev)
 {
+	wfsys_lock();
 	if (g_fgDriverProbed && pfWlanShutdown) {
 		DBGLOG(INIT, DEBUG, "do shutdown\n");
 		pfWlanShutdown();
 		g_fgDriverProbed = FALSE;
 	}
+	wfsys_unlock();
 }
 
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)

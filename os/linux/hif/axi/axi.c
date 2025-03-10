@@ -483,11 +483,13 @@ static void mtk_axi_remove(struct platform_device *pdev)
 static void mtk_axi_shutdown(struct platform_device *pdev)
 {
 	DBGLOG(INIT, INFO, "enter shutdown\n");
+	wfsys_lock();
 	if (g_fgDriverProbed && pfWlanShutdown) {
 		DBGLOG(INIT, INFO, "do shutdown\n");
 		pfWlanShutdown();
 		g_fgDriverProbed = FALSE;
 	}
+	wfsys_unlock();
 }
 
 static int mtk_axi_suspend(struct platform_device *pdev,
