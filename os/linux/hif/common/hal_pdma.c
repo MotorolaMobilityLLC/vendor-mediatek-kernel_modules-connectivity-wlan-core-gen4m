@@ -5495,8 +5495,14 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			nicSerReInitBeaconFrame(prAdapter);
 #endif
 
-			kalDevKickCmd(prAdapter->prGlueInfo);
-			kalDevKickData(prAdapter->prGlueInfo);
+			kalDevKickCmd(prGlueInfo);
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+			KAL_SET_BIT(HIF_TX_NAPI_SCHE_NAPI_BIT,
+				    prHifInfo->rTxNapiDev.ulFlag);
+			kalHifTxWorkSchedule(prGlueInfo);
+#else
+			kalDevKickData(prGlueInfo);
+#endif
 			halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 			if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
