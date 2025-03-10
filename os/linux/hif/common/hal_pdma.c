@@ -698,7 +698,7 @@ uint32_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		if (fgResult)
 			goto done;
 
-#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
+#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) && (CFG_WIFI_PCIE_L2_SUPPORT == 0)
 		if (test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prAdapter->prGlueInfo->fgIsInSuspend)) {
 			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
