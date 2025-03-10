@@ -4409,14 +4409,6 @@ int32_t nicRxGetDataLastRxAntRcpi(struct ADAPTER *prAdapter,
 	prAdapter->aucDataRcpiAnt[ucBssIndex][1] =
 		(u4RxV3 & RX_VT_RCPI1_MASK) >> RX_VT_RCPI1_OFFSET;
 
-	if (MAX_ANTENNA_NUM > 2 &&
-		prAdapter->rWifiVar.ucNSS > 2) {
-		prAdapter->aucDataRcpiAnt[ucBssIndex][2] =
-			(u4RxV3 & RX_VT_RCPI2_MASK) >> RX_VT_RCPI2_OFFSET;
-		prAdapter->aucDataRcpiAnt[ucBssIndex][3] =
-			(u4RxV3 & RX_VT_RCPI3_MASK) >> RX_VT_RCPI3_OFFSET;
-	}
-
 	return 0;
 }
 

@@ -565,6 +565,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	int32_t ai4DataRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 	int32_t ai4BSSDescRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 	int32_t ai4RespRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+	struct PARAM_QUERY_STA_BIG_DATA rStaParam;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->prAdapter)
@@ -862,18 +865,32 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 	if (prStaRec) {
+		/* Get Data RSSI */
 		nicRxGetDataLastRxAntRcpi(prAdapter,
 			prStaRec->ucWlanIndex, ucBssIndex);
 		for (i = ANTENNA_WF0; i < MAX_ANTENNA_NUM; i++)
 			ai4DataRssi[ucBssIndex][i] =
 			RCPI_TO_dBm(
 			prAdapter->aucDataRcpiAnt[ucBssIndex][i]);
-	}
 
-	for (i = ANTENNA_WF0; i < MAX_ANTENNA_NUM; i++)
-		ai4RespRssi[ucBssIndex][i] =
-			RCPI_TO_dBm(
-			prAdapter->aucRespRcpiAnt[ucBssIndex][i]);
+#if CFG_SUPPORT_MBRAIN_BIGDATA
+		/* Get Ack RSSI */
+		rStaParam.ucWlanIdx = prStaRec->ucWlanIndex;
+
+		COPY_MAC_ADDR(rStaParam.aucMacAddr, prStaRec->aucMacAddr);
+
+		rStatus = kalIoctlByBssIdx(prAdapter->prGlueInfo,
+				wlanoidQueryStaBigDataByWidx, &rStaParam,
+				sizeof(rStaParam), &u4BufLen, ucBssIndex);
+
+		for (i = ANTENNA_WF0; i < MAX_ANTENNA_NUM; i++) {
+			prAdapter->aucRespRcpiAnt[ucBssIndex][i] =
+				RCPI_TO_dBm(rStaParam.aucRespRcpi[i]);
+			ai4RespRssi[ucBssIndex][i] =
+				RCPI_TO_dBm(rStaParam.aucRespRcpi[i]);
+		}
+#endif
+	}
 
 #define TEMP_LOG_TEMPLATE \
 	"link speed=%u/%u, bw=%u/%u, BCN_rssi=%d, " \
