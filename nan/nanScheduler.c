@@ -1295,7 +1295,7 @@ void nanSchedDumpPeerSchDesc(struct ADAPTER *prAdapter,
 
 	if (prPeerSchDesc->rSelectedNdcCtrl.fgValid == TRUE) {
 		union _NAN_BAND_CHNL_CTRL rChnl;
-		u_int8_t fgIsCommitted;
+		u_int8_t fgIsCommitted = FALSE;
 
 		for (u4Idx = 0; u4Idx < NAN_NUM_AVAIL_DB; u4Idx++) {
 			prTimeline = &prPeerSchDesc->rSelectedNdcCtrl
@@ -4788,8 +4788,8 @@ uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
 {
 	const size_t sz5gTimeLineIdx = nanGetTimelineMgmtIndexByBand(prAdapter,
 								     BAND_5G);
-	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo;
-	union _NAN_BAND_CHNL_CTRL rAisChnlInfo;
+	union _NAN_BAND_CHNL_CTRL rP2pChnlInfo = {0};
+	union _NAN_BAND_CHNL_CTRL rAisChnlInfo = {0};
 	u_int8_t fgMcc;
 
 	fgMcc = nanIsP2pAisMCC(prAdapter, sz5gTimeLineIdx,
@@ -6417,7 +6417,7 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 
 	if (prPeerSchRecord->prCommNdcCtrl) {
 		union _NAN_BAND_CHNL_CTRL rChnl;
-		u_int8_t fgIsCommitted;
+		u_int8_t fgIsCommitted = FALSE;
 
 		prCommNdcCtrl = prPeerSchRecord->prCommNdcCtrl;
 
@@ -15655,7 +15655,7 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 	uint8_t band_idx;
 	uint8_t ucBssCount;
 	uint8_t ucChannel;
-	enum ENUM_BAND eBand;
+	enum ENUM_BAND eBand = BAND_NULL;
 
 	if (!prAdapter || !prChnl || !pu4SlotBitmap)
 		return WLAN_STATUS_FAILURE;
