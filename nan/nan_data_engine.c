@@ -2927,7 +2927,7 @@ nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
 					       prPeerSchDesc->fgEht);
 
 				if (fgEhtSlotExist &&
-				    !(prPeerSchDesc->fgEht) &&
+				    prPeerSchDesc && !prPeerSchDesc->fgEht &&
 				    nanIsEhtSupport(prAdapter)) {
 
 					DBGLOG(NAN, DEBUG,
