@@ -3262,17 +3262,18 @@ uint8_t mldProcessBeaconAndProbeResp(
 	QUEUE_INITIALIZE(que);
 
 	rfb = mldDupProbeRespSwRfb(prAdapter, prSrc);
-	QUEUE_INSERT_TAIL_ALL(que, rfb);
 
 	if (rfb) {
 		fgHasMLElement = TRUE;
+		QUEUE_INSERT_TAIL_ALL(que, rfb);
 	}
 
 #if CFG_SUPPORT_802_11V_MBSSID && !CFG_SUPPORT_802_11V_MBSSID_OFFLOAD
 	/* duplicate after ml probe resp. if done, skip mbss */
 	if (!rfb) {
 		rfb = mldDupMbssNonTxProfile(prAdapter, prSrc);
-		QUEUE_INSERT_TAIL_ALL(que, rfb);
+		if (rfb)
+			QUEUE_INSERT_TAIL_ALL(que, rfb);
 	}
 #endif
 
