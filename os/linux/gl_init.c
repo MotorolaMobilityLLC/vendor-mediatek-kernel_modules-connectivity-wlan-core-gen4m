@@ -2505,7 +2505,11 @@ static const struct wiphy_wowlan_support mtk_wlan_wowlan_support = {
  *******************************************************************************
  */
 
+#if defined(_HIF_PCIE)
+static void wlanRemove(void *pvData);
+#else
 static void wlanRemove(void);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -5349,20 +5353,20 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 	if (wlanResetSupportedBand(&prGlueInfo->mtk_band_2ghz, KAL_BAND_2GHZ)) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to 2G channel failed\n");
-		goto free_glue_info;
+		goto free_all;
 	}
 
 	if (wlanResetSupportedBand(&prGlueInfo->mtk_band_5ghz, KAL_BAND_5GHZ)) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to 5G channel failed\n");
-		goto free_band_2ghz;
+		goto free_all;
 	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (wlanResetSupportedBand(&prGlueInfo->mtk_band_6ghz, KAL_BAND_6GHZ)) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to 6G channel failed\n");
-		goto free_band_5ghz;
+		goto free_all;
 	}
 #endif
 #endif /* CFG_SUPPORT_MULTI_CARD */
@@ -5634,16 +5638,14 @@ static struct wireless_dev *wlanCreateWirelessDevice(void)
 free_all:
 #if CFG_SUPPORT_MULTI_CARD
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	prBand = &(WLAN_GET_DATA(mtk_band_6ghz));
+	prBand = &prGlueInfo->mtk_band_6ghz;
 	kalMemFree(prBand->channels, VIR_MEM_TYPE,
 			prBand->n_channels * sizeof(struct ieee80211_channel));
-free_band_5ghz:
 #endif /* CFG_SUPPORT_WIFI_6G */
-	prBand = &(WLAN_GET_DATA(mtk_band_5ghz));
+	prBand = &prGlueInfo->mtk_band_5ghz;
 	kalMemFree(prBand->channels, VIR_MEM_TYPE,
 			prBand->n_channels * sizeof(struct ieee80211_channel));
-free_band_2ghz:
-	prBand = &(WLAN_GET_DATA(mtk_band_2ghz));
+	prBand = &prGlueInfo->mtk_band_2ghz;
 	kalMemFree(prBand->channels, VIR_MEM_TYPE,
 			prBand->n_channels * sizeof(struct ieee80211_channel));
 free_glue_info:
@@ -5686,16 +5688,16 @@ static void wlanDestroyAllWdev(struct GLUE_INFO *prGlueInfo)
 	pprP2pWdev = prGlueInfo->prP2pWdev;
 
 #if CFG_SUPPORT_MULTI_CARD
-	prBand = &(WLAN_GET_DATA(mtk_band_2ghz));
+	prBand = &prGlueInfo->mtk_band_2ghz;
 	kalMemFree(prBand->channels, VIR_MEM_TYPE,
 			prBand->n_channels * sizeof(struct ieee80211_channel));
 
-	prBand = &(WLAN_GET_DATA(mtk_band_5ghz));
+	prBand = &prGlueInfo->mtk_band_5ghz;
 	kalMemFree(prBand->channels, VIR_MEM_TYPE,
 			prBand->n_channels * sizeof(struct ieee80211_channel));
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	prBand = &(WLAN_GET_DATA(mtk_band_6ghz));
+	prBand = &prGlueInfo->mtk_band_6ghz;
 	kalMemFree(prBand->channels, VIR_MEM_TYPE,
 			prBand->n_channels * sizeof(struct ieee80211_channel));
 #endif
@@ -9082,7 +9084,11 @@ int32_t wlanOnAtReset(struct net_device *prDev)
 		 */
 		kalSendAeeWarning("WFSYS", "wlanOnAtReset fail\n");
 #if CFG_WMT_RESET_API_SUPPORT
+#if defined(_HIF_PCIE)
+		wlanRemove((void *) prGlueInfo->prDev);
+#else
 		wlanRemove();
+#endif
 #endif
 
 #if 0
@@ -9191,6 +9197,35 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 	eFailReason = FAIL_REASON_NUM;
 	do {
+#if CFG_SUPPORT_MULTI_CARD
+		prWdev = wlanCreateWirelessDevice();
+		if (prWdev == NULL) {
+			i4Status = -ENOMEM;
+			break;
+		}
+
+		WIPHY_PRIV(wlanGetWiphyByWdev(prWdev), prGlueInfo);
+#if CFG_ENABLE_WIFI_DIRECT
+		if (prWdev)
+			glP2pCreateWirelessDevice(prGlueInfo);
+#endif
+		prGlueInfo->prNetDevice = NULL;
+
+		wlanRegisterNetdevNotifier(prGlueInfo);
+
+#if (CFG_CHIP_RESET_SUPPORT)
+		glResetInit(prGlueInfo);
+#endif
+		kalFbNotifierReg(prGlueInfo);
+
+#if CFG_POWER_OFF_CTRL_SUPPORT
+		wlanRegisterRebootNotifier(prGlueInfo);
+#endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+		kalIdcRegisterRilNotifier(prGlueInfo);
+#endif
+		wlanRegisterNeteventNotifier(prGlueInfo);
+#else /* CFG_SUPPORT_MULTI_CARD */
 		prWdev = gprWdev[0];
 		if (!prWdev || !prWdev->wiphy) {
 			DBGLOG(INIT, ERROR,
@@ -9201,6 +9236,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		/* Get GlueInfo structure */
 		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+#endif /* CFG_SUPPORT_MULTI_CARD */
 
 		/* 4 <1> Initialize the IO port of the interface */
 		/*  GeorgeKuo: pData has different meaning for _HIF_XXX:
@@ -9250,6 +9286,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 		prChipInfo = prAdapter->chip_info;
+
+#if CFG_SUPPORT_MULTI_CARD
+		if (!prChipInfo)
+			DBGLOG(HAL, ERROR, "NULL chip info.\n");
+		else
+			wlan_pinctrl_action(prChipInfo,
+				WLAN_PINCTRL_MSG_FUNC_PTA_UART_INIT);
+#endif /* CFG_SUPPORT_MULTI_CARD */
 
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
@@ -9575,7 +9619,11 @@ wlanOffNotifyCfg80211Disconnect(struct GLUE_INFO *prGlueInfo)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
+#if defined(_HIF_PCIE)
+void wlanRemove(void *pvData)
+#else
 void wlanRemove(void)
+#endif
 {
 	struct net_device *prDev = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
@@ -9585,6 +9633,10 @@ void wlanRemove(void)
 #if CFG_SUPPORT_PERSIST_NETDEV
 	uint8_t i;
 #endif
+#if CFG_SUPPORT_MULTI_CARD
+	struct device *prDevice = NULL;
+	u_int32_t u4DevIdx;
+#endif /* CFG_SUPPORT_MULTI_CARD */
 	struct wireless_dev **pprWdev = NULL;
 
 	DBGLOG(INIT, DEBUG, "Remove wlan!\n");
@@ -9596,6 +9648,9 @@ void wlanRemove(void)
 	GLUE_SET_REF_CNT(1, g_wlanRemoving);
 
 #if CFG_SUPPORT_MULTI_CARD
+#if defined(_HIF_PCIE)
+	prDevice = (struct device *) pvData;
+#endif
 	u4DevIdx = wlanSearchDevIdx(prDevice);
 
 	if (u4DevIdx >= CFG_MAX_WLAN_DEVICES) {
@@ -9930,6 +9985,17 @@ void wlanRemove(void)
 	}
 #endif
 
+#if CFG_SUPPORT_MULTI_CARD
+	wlanUnregisterNetdevNotifier(prGlueInfo);
+	wlanUnregisterNeteventNotifier(prGlueInfo);
+#if CFG_POWER_OFF_CTRL_SUPPORT
+	wlanUnregisterRebootNotifier(prGlueInfo);
+#endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+	kalIdcUnregisterRilNotifier(prGlueInfo);
+#endif
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 WLAN_REMOVE_RETURN:
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUpdateFlag(FALSE);
@@ -9939,6 +10005,9 @@ WLAN_REMOVE_RETURN:
 	mddpNotifyWifiOffEnd();
 #endif
 	glReseProbeRemoveDone(prGlueInfo, 0, FALSE);
+#if CFG_SUPPORT_MULTI_CARD && (CFG_SUPPORT_PERSIST_NETDEV == 0)
+	wlanDestroyAllWdev(prGlueInfo);
+#endif
 	GLUE_SET_REF_CNT(0, g_wlanRemoving);
 }				/* end of wlanRemove() */
 
@@ -10218,7 +10287,6 @@ static int initWlan(void)
 
 #if (CFG_SUPPORT_MULTI_CARD == 0)
 	wlanRegisterNetdevNotifier(prGlueInfo);
-#endif
 
 	wlanCreateWirelessDevice();
 	if (gprWdev[0] == NULL) {
@@ -10227,18 +10295,21 @@ static int initWlan(void)
 	}
 
 	WIPHY_PRIV(wlanGetWiphyByWdev(gprWdev[0]), prGlueInfo);
+#endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
 #if WLAN_INCLUDE_PROC
 	procInitFs(prGlueInfo);
 #endif
 #if WLAN_INCLUDE_SYS
 	sysInitFs();
 #endif
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 #if CFG_ENABLE_WIFI_DIRECT
 	if (gprWdev[0])
 		glP2pCreateWirelessDevice(prGlueInfo);
 #endif
 
 	wlanRegisterNeteventNotifier(prGlueInfo);
+#endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
 
 #if CFG_DC_USB_WOW_CALLBACK
 	/* register system DC wow enable/disable callback function */
@@ -10295,9 +10366,11 @@ static int initWlan(void)
 		goto INIT_WLAN_RETURN;
 	}
 
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 #if (CFG_CHIP_RESET_SUPPORT)
 	glResetInit(prGlueInfo);
 #endif
+#endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
 
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_INIT(NULL, prPwrWakeLock, "WLAN_Power_Ctrl");
@@ -10309,7 +10382,9 @@ static int initWlan(void)
 		DBGLOG(INIT, ERROR, "glBusFuncOn failed.\n");
 #endif /* CFG_MTK_ANDROID_WMT */
 
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 	kalFbNotifierReg(prGlueInfo);
+#endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	kalBatNotifierReg(prGlueInfo);
@@ -10346,12 +10421,15 @@ static int initWlan(void)
 #endif
 	g_u4WlanInitFlag = 1;
 
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanRegisterRebootNotifier(prGlueInfo);
 #endif
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 	kalIdcRegisterRilNotifier(prGlueInfo);
 #endif
+#endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
+
 #if CFG_AP_80211KVR_INTERFACE
 	nl_sk = netlink_kernel_create(&init_net, NETLINK_OSS_KERNEL, NULL);
 	if (!nl_sk) {
@@ -10394,10 +10472,10 @@ INIT_WLAN_RETURN:
 static void exitWlan(void)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4DevIdx = 0;
 #if CFG_SUPPORT_PERSIST_NETDEV
 	uint32_t u4Idx = 0;
 	struct wireless_dev **pprWdev = NULL;
-	uint32_t u4DevIdx = 0;
 #endif /* CFG_SUPPORT_PERSIST_NETDEV */
 
 	TRACE_FUNC(INIT, DEBUG, "%s::Start\n");
@@ -10407,7 +10485,10 @@ static void exitWlan(void)
 		netlink_kernel_release(nl_sk);
 #endif /* CFG_AP_80211KVR_INTERFACE */
 
-	kalFbNotifierUnReg(prGlueInfo);
+
+#if (CFG_SUPPORT_MULTI_CARD == 0)
+	kalFbNotifierUnReg(aprGlueInfo[0]);
+#endif
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	kalBatNotifierUnReg();
@@ -10427,14 +10508,21 @@ static void exitWlan(void)
 #endif
 
 #if defined(_HIF_USB)
-	/* for USB remove ko case, Power off Wifi CMD need to be DONE
-	 * before unregister bus, or connsys cannot enter deep sleep
-	 * after rmmod
-	 */
-	prGlueInfo = wlanGetGlueInfo();
-	if (prGlueInfo != NULL && prGlueInfo->prAdapter != NULL)
-		wlanPowerOffWifi(prGlueInfo->prAdapter);
-#endif
+	prGlueInfo = NULL;
+	for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; u4DevIdx++) {
+		if (!aprGlueInfo[u4DevIdx])
+			continue;
+
+		prGlueInfo = aprGlueInfo[u4DevIdx];
+
+		/* for USB remove ko case, Power off Wifi CMD need to be DONE
+		 * before unregister bus, or connsys cannot enter deep sleep
+		 * after rmmod
+		 */
+		if (prGlueInfo->prAdapter != NULL)
+			wlanPowerOffWifi(prGlueInfo->prAdapter);
+	} /* for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; ...) */
+#endif /* defined(_HIF_USB) */
 
 #if CFG_MTK_ANDROID_WMT
 	unregister_plat_connsys_cbs();
@@ -10455,11 +10543,8 @@ static void exitWlan(void)
 #if CFG_SUPPORT_PERSIST_NETDEV
 
 	for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; u4DevIdx++) {
-#if CFG_SUPPORT_MULTI_CARD
 		prGlueInfo = aprGlueInfo[u4DevIdx];
-#else
-		prGlueInfo = wlanGetGlueInfo();
-#endif
+
 		if (!prGlueInfo)
 			continue;
 
@@ -10485,6 +10570,8 @@ static void exitWlan(void)
 		DBGLOG(INIT, DEBUG, "Free wlan device..\n");
 		wlanFreeNetDev(prGlueInfo->prDevHandler);
 	} /* for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; ...) */
+
+	prGlueInfo = aprGlueInfo[0];
 #endif /* CFG_SUPPORT_PERSIST_NETDEV */
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -10519,8 +10606,10 @@ static void exitWlan(void)
 		} while (0);
 #endif
 
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 	wlanUnregisterNetdevNotifier(prGlueInfo);
 	wlanUnregisterNeteventNotifier(prGlueInfo);
+#endif
 
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
@@ -10548,19 +10637,31 @@ static void exitWlan(void)
 	FwLogDevUninit();
 #endif
 
+#if (CFG_SUPPORT_MULTI_CARD == 0)
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanUnregisterRebootNotifier(prGlueInfo);
 #endif
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 	kalIdcUnregisterRilNotifier(prGlueInfo);
 #endif
+#endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
 
-	/* For single wiphy case, it's hardly to free wdev & wiphy in 2 func.
-	 * So that, use wlanDestroyAllWdev to replace wlanDestroyWirelessDevice
-	 * and glP2pDestroyWirelessDevice.
-	 */
-	wlanDestroyAllWdev(prGlueInfo);
-	prGlueInfo = NULL;
+#if CFG_SUPPORT_PERSIST_NETDEV || (CFG_SUPPORT_MULTI_CARD == 0)
+	for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; u4DevIdx++) {
+		prGlueInfo = aprGlueInfo[u4DevIdx];
+
+		if (!prGlueInfo)
+			continue;
+
+		/* For single wiphy case, it's hardly to
+		 * free wdev & wiphy in 2 func.
+		 * So that, use wlanDestroyAllWdev
+		 * to replace wlanDestroyWirelessDevice
+		 * and glP2pDestroyWirelessDevice.
+		 */
+		wlanDestroyAllWdev(prGlueInfo);
+	} /* for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; ...) */
+#endif /* CFG_SUPPORT_PERSIST_NETDEV || (CFG_SUPPORT_MULTI_CARD == 0) */
 
 	g_u4WlanInitFlag = 0;
 

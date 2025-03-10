@@ -303,7 +303,7 @@ static uint16_t pcie_user_count;
  *******************************************************************************
  */
 static probe_card pfWlanProbe;
-static remove_card pfWlanRemove;
+static remove_card_by_dev pfWlanRemove;
 static remove_card pfWlanShutdown;
 #if CFG_MTK_WIFI_AER_RESET
 static u_int8_t g_AERRstTriggered;
@@ -1504,8 +1504,20 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 	struct mt66xx_chip_info *prChipInfo;
 	int ret = 0;
 
+#if CFG_SUPPORT_MULTI_CARD
+	/* Allocate each card's driver_data */
+	prDriverData = wlanCreateDriverData(
+		(struct mt66xx_hif_driver_data *) mtk_wifi_ids[0].driver_data);
+#else
 	prDriverData = (struct mt66xx_hif_driver_data *)
 			mtk_wifi_ids[0].driver_data;
+#endif
+
+	if (!prDriverData) {
+		DBGLOG(INIT, INFO, "prDriverData is NULL\n");
+		ret = -1;
+		goto exit;
+	}
 	prChipInfo = prDriverData->chip_info;
 	prChipInfo->platform_device = (void *) pdev;
 
@@ -1551,6 +1563,10 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 #endif
 
 exit:
+#if CFG_SUPPORT_MULTI_CARD
+	if (ret)
+		wlanDestroyDriverData(prDriverData);
+#endif
 	DBGLOG(INIT, INFO, "mtk wifi probe() done, ret: %d\n", ret);
 	return ret;
 }
@@ -1561,9 +1577,11 @@ static int mtk_wifi_remove(struct platform_device *pdev)
 static void mtk_wifi_remove(struct platform_device *pdev)
 #endif
 {
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if (CFG_MTK_ANDROID_WMT == 1) || (CFG_SUPPORT_MULTI_CARD == 1)
 	struct mt66xx_hif_driver_data *prDriverData =
 		platform_get_drvdata(pdev);
+#endif
+#if (CFG_MTK_ANDROID_WMT == 1)
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
 #endif
 
@@ -1581,6 +1599,9 @@ static void mtk_wifi_remove(struct platform_device *pdev)
 #endif
 #if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
 	kalReleaseHifSkbList();
+#endif
+#if (CFG_SUPPORT_MULTI_CARD == 1)
+	wlanDestroyDriverData(prDriverData);
 #endif
 	platform_set_drvdata(pdev, NULL);
 
@@ -1911,7 +1932,19 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	ASSERT(pdev);
 	ASSERT(id);
 
+#if CFG_SUPPORT_MULTI_CARD
+	/* Allocate each card's driver_data */
+	prDriverData = wlanCreateDriverData(
+		(struct mt66xx_hif_driver_data *)id->driver_data);
+#else
 	prDriverData = (struct mt66xx_hif_driver_data *)id->driver_data;
+#endif
+
+	if (!prDriverData) {
+		DBGLOG(INIT, INFO, "prDriverData is NULL\n");
+		ret = -1;
+		goto out;
+	}
 	prChipInfo = prDriverData->chip_info;
 
 	ret = pcim_enable_device(pdev);
@@ -2004,6 +2037,10 @@ err_free_iomap:
 	pcim_iounmap_regions(pdev, BIT(0));
 
 out:
+#if CFG_SUPPORT_MULTI_CARD
+	if (ret)
+		wlanDestroyDriverData(prDriverData);
+#endif
 	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
 
 	kalDumpPlatGPIOStat();
@@ -2015,11 +2052,16 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData = pci_get_drvdata(pdev);
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
+	struct device *prDev = &pdev->dev;
 
 	ASSERT(pdev);
 
+#if CFG_SUPPORT_MULTI_CARD
+	g_fgDriverProbed = (u4WlanDevNum >= 0) ? TRUE : FALSE;
+#endif
+
 	if (g_fgDriverProbed) {
-		pfWlanRemove();
+		pfWlanRemove((void *) prDev);
 		g_fgDriverProbed = FALSE;
 		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
@@ -2028,6 +2070,9 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 #endif
 	pci_set_drvdata(pdev, NULL);
 	prChipInfo->CSRBaseAddress = NULL;
+#if CFG_SUPPORT_MULTI_CARD
+	wlanDestroyDriverData(prDriverData);
+#endif
 	pcim_iounmap_regions(pdev, BIT(0));
 }
 
@@ -2387,7 +2432,7 @@ uint32_t glRegisterShutdownCB(remove_card pfShutdown)
  * \return The result of registering pci bus
  */
 /*----------------------------------------------------------------------------*/
-uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
+uint32_t glRegisterBus(probe_card pfProbe, remove_card_by_dev pfRemove)
 {
 	int ret = 0;
 
@@ -2454,12 +2499,27 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void glUnregisterBus(remove_card pfRemove)
+void glUnregisterBus(remove_card_by_dev pfRemove)
 {
-	if (g_fgDriverProbed) {
-		pfRemove();
-		g_fgDriverProbed = FALSE;
+	struct device *prDev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4DevIdx = 0;
+
+	if (!g_fgDriverProbed)
+		goto unregister_driver;
+
+	for (u4DevIdx = 0; u4DevIdx < CFG_MAX_WLAN_DEVICES; u4DevIdx++) {
+		if (!aprGlueInfo[u4DevIdx])
+			continue;
+
+		prGlueInfo = aprGlueInfo[u4DevIdx];
+
+		prDev = prGlueInfo->prDev;
+		pfRemove((void *) prDev);
 	}
+	g_fgDriverProbed = FALSE;
+
+unregister_driver:
 	platform_driver_unregister(&mtk_wifi_driver);
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 	platform_driver_unregister(&mtk_wifi_misc_driver);

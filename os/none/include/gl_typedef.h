@@ -84,6 +84,7 @@ union ULARGE_INTEGER {
 typedef int32_t(*probe_card) (void *pvData,
 			      void *pvDriverData);
 typedef void(*remove_card) (void);
+typedef void(*remove_card_by_dev) (void *pvData);
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

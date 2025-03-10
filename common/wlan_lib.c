@@ -16605,3 +16605,135 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 	return status;
 }
 #endif /* CFG_SUPPORT_PLCAL */
+
+#if CFG_SUPPORT_MULTI_CARD
+struct mt66xx_hif_driver_data *wlanCreateDriverData(
+	struct mt66xx_hif_driver_data *prDriverData)
+{
+	struct mt66xx_hif_driver_data *prData = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+
+	/* Allocate each card's driver_data */
+	prData = kalMemAlloc(sizeof(struct mt66xx_hif_driver_data),
+				VIR_MEM_TYPE);
+
+	if (!prData) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to chip_info failed\n");
+		goto err_free_driver_data;
+	}
+
+	kalMemZero(prData, sizeof(struct mt66xx_hif_driver_data));
+	kalMemCopy(prData, prDriverData,
+		sizeof(struct mt66xx_hif_driver_data));
+
+	/* Allocate each card's chip_info */
+	prChipInfo =
+		kalMemAlloc(sizeof(struct mt66xx_chip_info), VIR_MEM_TYPE);
+
+	if (!prChipInfo) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to chip_info failed\n");
+		goto err_free_chip_info;
+	}
+
+	kalMemZero(prChipInfo, sizeof(struct mt66xx_chip_info));
+	kalMemCopy(prChipInfo, prDriverData->chip_info,
+		sizeof(struct mt66xx_chip_info));
+
+	/* Allocate each card's bus_info */
+	prBusInfo =
+		kalMemAlloc(sizeof(struct BUS_INFO), VIR_MEM_TYPE);
+
+	if (!prBusInfo) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to bus_info failed\n");
+		goto err_free_bus_info;
+	}
+
+	kalMemZero(prBusInfo, sizeof(struct BUS_INFO));
+	kalMemCopy(prBusInfo, prDriverData->chip_info->bus_info,
+		sizeof(struct BUS_INFO));
+
+	prData->chip_info = prChipInfo;
+	prData->chip_info->bus_info = prBusInfo;
+
+	return prData;
+
+err_free_bus_info:
+	kalMemFree(prBusInfo, VIR_MEM_TYPE, sizeof(struct BUS_INFO));
+err_free_chip_info:
+	kalMemFree(prChipInfo, VIR_MEM_TYPE, sizeof(struct mt66xx_chip_info));
+err_free_driver_data:
+	kalMemFree(prData, VIR_MEM_TYPE, sizeof(struct mt66xx_hif_driver_data));
+
+	return NULL;
+}
+
+void wlanDestroyDriverData(struct mt66xx_hif_driver_data *prDriverData)
+{
+	if (!prDriverData)
+		return;
+
+	if (prDriverData->chip_info) {
+		kalMemFree(prDriverData->chip_info->bus_info,
+			VIR_MEM_TYPE, sizeof(struct BUS_INFO));
+		prDriverData->chip_info->bus_info = NULL;
+
+		kalMemFree(prDriverData->chip_info,
+			VIR_MEM_TYPE, sizeof(struct mt66xx_chip_info));
+		prDriverData->chip_info = NULL;
+	}
+
+	kalMemFree(prDriverData,
+		VIR_MEM_TYPE, sizeof(struct mt66xx_hif_driver_data));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output string show which wlan is currently in use.
+ *        The string format is "wlanInterfaceName wiphyName"
+ *
+ * \param[in] void
+ *
+ * \retval == ""   - Cannot find wlan is in use
+ * \retval != ""   - Find wlan is in use
+ */
+/*----------------------------------------------------------------------------*/
+const uint8_t *wlanGetWlanLog(void)
+{
+	uint32_t u4Pid = KAL_GET_CURRENT_THREAD_ID();
+	uint32_t u4Idx;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct wiphy *wiphy = NULL;
+	struct net_device *prDev = NULL;
+
+	if (!u4Pid)
+		return "";
+
+	for (u4Idx = 0; u4Idx < CFG_MAX_WLAN_DEVICES; u4Idx++) {
+		if (!aprGlueInfo[u4Idx])
+			continue;
+
+		prGlueInfo = aprGlueInfo[u4Idx];
+
+		if (prGlueInfo->u4TxThreadPid != u4Pid &&
+			prGlueInfo->u4HifThreadPid != u4Pid &&
+			prGlueInfo->u4RxThreadPid != u4Pid)
+			continue;
+
+		wiphy = GLUE_GET_WIPHY(prGlueInfo);
+		prDev = prGlueInfo->prDevHandler;
+
+		kalSnprintf(
+			prGlueInfo->aucWlanLog,
+			sizeof(prGlueInfo->aucWlanLog),
+			"%s %s", prDev->name, wiphy_name(wiphy));
+
+		return prGlueInfo->aucWlanLog;
+	}
+
+	return "";
+}
+#endif /* CFG_SUPPORT_MULTI_CARD */

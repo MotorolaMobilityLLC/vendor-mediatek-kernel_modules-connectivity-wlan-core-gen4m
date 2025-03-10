@@ -6202,7 +6202,7 @@ void nicEventDebugMsg(struct ADAPTER *prAdapter,
 	else
 #endif
 	{
-		wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
+		wlanPrintFwLog(prAdapter, pucMsg, u2MsgSize, ucMsgType, NULL);
 	}
 }
 

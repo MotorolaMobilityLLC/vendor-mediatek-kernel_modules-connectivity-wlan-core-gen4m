@@ -777,6 +777,18 @@ struct WAKE_INFO_T {
 			pr_info_ratelimited(WLAN_TAG _Fmt, ##__VA_ARGS__); \
 	} while (0)
 #else
+#if CFG_SUPPORT_MULTI_CARD
+#define DBGLOG(_Mod, _Clz, _Fmt, ...) \
+	do { \
+		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
+			 DBG_CLASS_##_Clz) == 0) \
+			break; \
+		LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ")(%s) " _Fmt, \
+			 KAL_GET_CURRENT_THREAD_ID(), \
+			 __func__, wlanGetWlanLog(), \
+			 ##__VA_ARGS__); \
+	} while (0)
+#else /* !CFG_SUPPORT_MULTI_CARD */
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
 		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
@@ -786,6 +798,7 @@ struct WAKE_INFO_T {
 			 KAL_GET_CURRENT_THREAD_ID(), \
 			 __func__, ##__VA_ARGS__); \
 	} while (0)
+#endif /* CFG_SUPPORT_MULTI_CARD */
 #define DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
 	do { \
 		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
@@ -831,12 +844,12 @@ struct WAKE_INFO_T {
 			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
-#define DBGFWLOG(_Mod, _Clz, _Fmt, ...) \
+#define DBGFWLOG(_Mod, _Clz, _PrAd, _Fmt, ...) \
 	do { \
 		if ((au2DebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
-		wlanPrintFwLog(NULL, 0, DEBUG_MSG_TYPE_DRIVER, \
+		wlanPrintFwLog(_PrAd, NULL, 0, DEBUG_MSG_TYPE_DRIVER, \
 			 "[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
 			 KAL_GET_CURRENT_THREAD_ID(), \
 			 __func__, ##__VA_ARGS__); \
@@ -1053,7 +1066,8 @@ void dumpMemory32(uint32_t *pu4StartAddr,
 		  uint32_t u4Length);
 void dumpMemory128(uint32_t *pu4StartAddr,
 		  uint32_t u4Length);
-void wlanPrintFwLog(uint8_t *pucLogContent,
+void wlanPrintFwLog(struct ADAPTER *prAdapter,
+			uint8_t *pucLogContent,
 		    uint16_t u2MsgSize, uint8_t ucMsgType,
 		    const uint8_t *pucFmt, ...);
 

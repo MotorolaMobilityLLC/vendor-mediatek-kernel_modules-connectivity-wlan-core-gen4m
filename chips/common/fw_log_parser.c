@@ -357,7 +357,8 @@ int32_t dbgCheckTransText(uint8_t ucText)
 	else
 		return -1;
 }
-uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
+uint8_t *dbgFwLogIdxToStr(struct ADAPTER *prAdapter,
+				 struct IDX_LOG_ENTRY *prLogEntry,
 				 struct IDX_LOG_V2_FORMAT *prIdxV2Header,
 				 uint8_t *pucIdxLog,
 				 uint8_t *aucLogBuf)
@@ -374,6 +375,10 @@ uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 	uint8_t aucLevel[PARAM_SIZE] = {0};
 	const char *prModule;
 	const char *prLevel;
+#if CFG_SUPPORT_MULTI_CARD
+	struct wiphy *wiphy = NULL;
+	struct net_device *prDev = NULL;
+#endif
 
 	prIdxV2Header = (struct IDX_LOG_V2_FORMAT *)pucIdxLog;
 	prArgu = (uint32_t *)(pucIdxLog + sizeof(struct IDX_LOG_V2_FORMAT));
@@ -395,8 +400,23 @@ uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 		prLevel = apucFwDbgLvl[prIdxV2Header->ucLevelId];
 	}
 
-	u4LogLen = kalSnprintf(aucLogBuf, DBG_LOG_BUF_SIZE, "<FW> %s(%s):",
-				prModule, prLevel);
+#if CFG_SUPPORT_MULTI_CARD
+	if (prAdapter && prAdapter->prGlueInfo) {
+		/*
+		 * Print FW log by wiphy name
+		 */
+		wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
+		prDev = prAdapter->prGlueInfo->prDevHandler;
+
+		u4LogLen = kalSnprintf(aucLogBuf, DBG_LOG_BUF_SIZE,
+					"<FW><%s %s> %s(%s):",
+					prDev->name, wiphy_name(wiphy),
+					prModule, prLevel);
+	} else
+#endif /* CFG_SUPPORT_MULTI_CARD */
+		u4LogLen = kalSnprintf(aucLogBuf, DBG_LOG_BUF_SIZE,
+					"<FW> %s(%s):",
+					prModule, prLevel);
 	u4HeadPos = u4LogLen;
 
 	for (i = 0; i < prLogEntry->u4StrLen; i++) {
@@ -471,6 +491,10 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 	struct IDX_LOG_ENTRY rLogEntry;
 	uint8_t *prLogStr;
 	uint8_t aucLogBuf[DBG_LOG_BUF_SIZE];
+#if CFG_SUPPORT_MULTI_CARD
+	struct wiphy *wiphy = NULL;
+	struct net_device *prDev = NULL;
+#endif
 
 	if (!prAdapter->prFwLogIdx) {
 		DBGLOG(INIT, STATE, "prFwLogIdx null\n");
@@ -491,6 +515,15 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 #if 0
 	DBGLOG(INIT, STATE, "EVT Content:\n");
 	DBGLOG_MEM8(RSN, STATE, pucIdxLog, u2MsgSize);
+#endif
+#if CFG_SUPPORT_MULTI_CARD
+	if (prAdapter && prAdapter->prGlueInfo) {
+		/*
+		 * Print FW log by wiphy name
+		 */
+		wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
+		prDev = prAdapter->prGlueInfo->prDevHandler;
+	}
 #endif
 
 	prIdxV2Header = (struct IDX_LOG_V2_FORMAT *)pucIdxLog;
@@ -513,7 +546,14 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 		pucChr = kalStrChr(pucIdxLog, '\0');
 		if (*(pucChr - 1) == '\n')
 			*(pucChr - 1) = '\0';
-		LOG_FUNC("<FW>%s\n", pucIdxLog);
+#if CFG_SUPPORT_MULTI_CARD
+		if (wiphy && prDev)
+			LOG_FUNC("<FW><%s %s>%s\n",
+					prDev->name, wiphy_name(wiphy),
+					pucIdxLog);
+		else
+#endif
+			LOG_FUNC("<FW>%s\n", pucIdxLog);
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -538,8 +578,8 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 		}
 
 		/* translate the fw log to string */
-		dbgFwLogIdxToStr(&rLogEntry, prIdxV2Header, pucIdxLog,
-				aucLogBuf);
+		dbgFwLogIdxToStr(prAdapter, &rLogEntry, prIdxV2Header,
+				pucIdxLog, aucLogBuf);
 
 		/* print the fw log  */
 		LOG_FUNC("%s", aucLogBuf);
@@ -560,7 +600,14 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 
 		/* Expect the rx text log last byte is '0x0a' */
 		prLogStr[prTextLog->ucPayloadSize_wo_padding-1] = '\0';
-		LOG_FUNC("<FW>%s", prLogStr);
+#if CFG_SUPPORT_MULTI_CARD
+		if (wiphy && prDev)
+			LOG_FUNC("<FW><%s %s>%s\n",
+					prDev->name, wiphy_name(wiphy),
+					prLogStr);
+		else
+#endif
+			LOG_FUNC("<FW>%s", prLogStr);
 	} else {
 		/* TODO: process Time Sync Message here */
 

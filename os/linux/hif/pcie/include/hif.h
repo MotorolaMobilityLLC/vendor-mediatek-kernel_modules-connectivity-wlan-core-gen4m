@@ -670,9 +670,9 @@ struct BUS_INFO {
 uint32_t glRegisterShutdownCB(remove_card pfShutdown);
 #endif
 
-uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
+uint32_t glRegisterBus(probe_card pfProbe, remove_card_by_dev pfRemove);
 
-void glUnregisterBus(remove_card pfRemove);
+void glUnregisterBus(remove_card_by_dev pfRemove);
 
 void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie);
 

@@ -2048,6 +2048,7 @@ extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 #endif
 extern enum ENUM_NVRAM_STATE g_NvramFsm;
 
+extern struct GLUE_INFO *aprGlueInfo[CFG_MAX_WLAN_DEVICES];
 extern struct WLANDEV_INFO arWlanDevInfo[CFG_MAX_WLAN_DEVICES];
 extern uint32_t u4WlanDevNum;
 

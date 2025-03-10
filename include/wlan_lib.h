@@ -2745,4 +2745,12 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 	struct TEST_MODE_PL_CAL *data);
 #endif /* CFG_SUPPORT_PLCAL */
 
+#if CFG_SUPPORT_MULTI_CARD
+struct mt66xx_hif_driver_data *wlanCreateDriverData(
+	struct mt66xx_hif_driver_data *prDriverData);
+void wlanDestroyDriverData(
+	struct mt66xx_hif_driver_data *prDriverData);
+const uint8_t *wlanGetWlanLog(void);
+#endif /* CFG_SUPPORT_MULTI_CARD */
+
 #endif /* _WLAN_LIB_H */

@@ -890,7 +890,8 @@ static void PrintSuportUpstreamTool(uint8_t *pucLogContent, uint16_t u2MsgSize)
 #undef OLD_LOG_FUNC
 }
 #endif
-void wlanPrintFwLog(uint8_t *pucLogContent,
+void wlanPrintFwLog(struct ADAPTER *prAdapter,
+			uint8_t *pucLogContent,
 		    uint16_t u2MsgSize, uint8_t ucMsgType,
 		    const uint8_t *pucFmt, ...)
 {
@@ -905,6 +906,10 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 	int8_t aucLogBuffer[DBG_LOG_BUF_SIZE];
 	int32_t err;
 	va_list args;
+#if CFG_SUPPORT_MULTI_CARD
+	struct wiphy *wiphy = NULL;
+	struct net_device *prDev = NULL;
+#endif
 
 	if (u2MsgSize > DEBUG_MSG_SIZE_MAX - 1) {
 		LOG_FUNC("Firmware Log Size(%d) is too large, type %d\n",
@@ -925,7 +930,19 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 		if (*(pucChr - 1) == '\n')
 			*(pucChr - 1) = '\0';
 
-		LOG_FUNC("<FW>%s\n", pucLogContent);
+#if CFG_SUPPORT_MULTI_CARD
+		if (prAdapter && prAdapter->prGlueInfo) {
+			/*
+			 * Print FW log by wiphy name
+			 */
+			wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
+			prDev = prAdapter->prGlueInfo->prDevHandler;
+			LOG_FUNC("<FW><%s %s>%s\n",
+					prDev->name, wiphy_name(wiphy),
+					pucLogContent);
+		} else
+#endif /* CFG_SUPPORT_MULTI_CARD */
+			LOG_FUNC("<FW>%s\n", pucLogContent);
 	}
 	break;
 	case DEBUG_MSG_TYPE_DRIVER:
