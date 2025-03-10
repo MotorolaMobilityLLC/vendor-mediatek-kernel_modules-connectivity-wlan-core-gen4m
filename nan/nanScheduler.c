@@ -13299,7 +13299,7 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 			if ((u4SuppBandIdMask & BIT(eBand)) == 0)
 				continue;
 
-			while (eBw &&
+			while (eBw > NAN_CHNL_BW_20 &&
 			       prPotentialChnl->aucOperatingClass[eBw] == 0)
 				eBw--;
 
