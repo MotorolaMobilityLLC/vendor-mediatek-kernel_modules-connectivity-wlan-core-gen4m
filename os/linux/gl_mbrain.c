@@ -694,6 +694,11 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 		return WIFI2MBR_END;
 	}
 
+	if (!dest) {
+		DBGLOG(REQ, WARN, "dest is null\n");
+		return WIFI2MBR_END;
+	}
+
 	dest->hdr.tag = WIFI2MBR_TAG_PCIE;
 	dest->hdr.ver = 1;
 	u8Time = kalGetBootTime();
@@ -719,7 +724,7 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 			g_rMbrPcie.u4L1ssTimeS,
 			g_rMbrPcie.u4L1ssTimeUs);
 	}
-#ifdef MBRAIN_READY
+
 	dest->update_time_utc_sec = g_rMbrPcie.u4UpdateTimeUtcSec;
 	dest->update_time_utc_usec = g_rMbrPcie.u4UpdateTimeUtcUsec;
 	dest->req_recovery_count = g_rMbrPcie.u4ReqRecoveryCount;
@@ -729,13 +734,7 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 	dest->l1_time_us = g_rMbrPcie.u4L1TimeUs;
 	dest->l1ss_time_s = g_rMbrPcie.u4L1ssTimeS;
 	dest->l1ss_time_us = g_rMbrPcie.u4L1ssTimeUs;
-#else
-	dest->update_time = g_rMbrPcie.u4UpdateTimeUtcUsec;
-	dest->req_recovery_count = g_rMbrPcie.u4ReqRecoveryCount;
-	dest->l0_time = g_rMbrPcie.u4L0TimeUs;
-	dest->l1_time = g_rMbrPcie.u4L1TimeUs;
-	dest->l1p2_time = g_rMbrPcie.u4L1ssTimeUs;
-#endif
+
 	*pu2Len = sizeof(*dest);
 
 	status = WIFI2MBR_SUCCESS;
