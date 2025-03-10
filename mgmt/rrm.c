@@ -154,6 +154,11 @@ void rrmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
 			aucInfoElem),
 		0,
 		ucBssIndex);
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	rrmRespNeighborReportLog(prAdapter,
+		ucBssIndex,
+		prNeighborResponse->ucDialogToken);
+#endif
 #endif
 }
 
@@ -206,6 +211,13 @@ void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 	nicTxSetMngPacket(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
 			  prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
 			  u2FrameLen, NULL, MSDU_RATE_MODE_AUTO);
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	rrmReqNeighborReportLog(prAdapter,
+		prStaRec->ucBssIndex,
+		prTxFrame->ucDialogToken,
+		prBssInfo->aucSSID,
+		prBssInfo->ucSSIDLen);
+#endif
 
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -1916,6 +1928,17 @@ static void rrmHandleBeaconReqSubelem(
 		elemsLen -= 2 + slen;
 		subelems += 2 + slen;
 	}
+
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	rrmReqBeaconReportLog(prAdapter,
+		ucBssIndex,
+		request->ucToken,
+		prBcnReq->ucMeasurementMode,
+		prBcnReq->ucRegulatoryClass,
+		prBcnReq->ucChannel,
+		prBcnReq->u2Duration,
+		request->ucRequestMode);
+#endif
 }
 
 static void rrmHandleChannelLoadReqSubelem(
