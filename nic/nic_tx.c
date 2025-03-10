@@ -3603,18 +3603,20 @@ uint32_t nicTxFlush(struct ADAPTER *prAdapter)
 		nicTxDirectClearAllStaAcmQ(prAdapter);
 		nicTxDirectClearAllStaPsQ(prAdapter);
 		nicTxDirectClearAllStaPendQ(prAdapter);
-	} else {
-		/* ask Per STA/AC queue to be fllushed
-		 * and return all queued packets
-		 */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
-		prMsduInfo = qmFlushTxQueues(prAdapter);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+	}
 
-		if (prMsduInfo != NULL) {
-			nicTxFreeMsduInfoPacket(prAdapter, prMsduInfo);
-			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-		}
+	/*
+	 * Flush Per STA/AC queue and return all packets.
+	 * Note that Rx Forward Pkt will go through legacy tx path even
+	 * tx direct is enabled.
+	 */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+	prMsduInfo = qmFlushTxQueues(prAdapter);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+
+	if (prMsduInfo != NULL) {
+		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfo);
+		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 	}
 
 	return WLAN_STATUS_SUCCESS;
