@@ -1213,6 +1213,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.coantSetMD = wlanCoAntMD,
 	.coantVFE28En = wlanCoAntVFE28En,
 	.coantVFE28Dis = wlanCoAntVFE28Dis,
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
