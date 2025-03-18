@@ -7845,11 +7845,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 	halSetSuspendFlagToFw(prAdapter, FALSE);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-	if (wlan_bat_volt == 3550) {
+	if (wlan_bat_volt == BACKOFF_VOLT) {
 		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
 		kalSetTxPwrBackoffByBattVolt(prAdapter, TRUE);
 		fgIsTxPowerDecreased = TRUE;
-	} else if (wlan_bat_volt == 3650) {
+	} else if (wlan_bat_volt == RESTORE_VOLT) {
 		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
 		kalSetTxPwrBackoffByBattVolt(prAdapter, FALSE);
 		fgIsTxPowerDecreased = FALSE;
