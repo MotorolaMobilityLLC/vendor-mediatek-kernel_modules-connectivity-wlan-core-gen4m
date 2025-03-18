@@ -8792,9 +8792,28 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 				fgIsBandMatch = FALSE;
 			else
 				continue;
+
+			DBGLOG(P2P, INFO,
+				"[CSA] AA filter1 :(%u, %u, %u, %u)\n",
+				prSapSwitchCand[i].ucChLowerBound,
+				prSapSwitchCand[i].ucChUpperBound,
+				prHwBandUnit->eRfBand,
+				prHwBandUnit->ucCh);
+			if (prSapSwitchCand[i].eRfBand ==
+				prHwBandUnit->eRfBand &&
+				prSapSwitchCand[i].ucChUpperBound >=
+				prHwBandUnit->ucCh &&
+				prSapSwitchCand[i].ucChLowerBound <=
+				prHwBandUnit->ucCh) {
+				prSapSwitchCand[i].ucChLowerBound =
+					prHwBandUnit->ucCh;
+				prSapSwitchCand[i].ucChUpperBound =
+					prHwBandUnit->ucCh;
+				fgIsBandMatch = TRUE;
+			}
 			for (j = 0; j < rChListLen ; j++) {
 				DBGLOG(P2P, INFO,
-					"[CSA] AA filter :(%u, %u, %u, %u, %u)\n",
+					"[CSA] AA filter2 :(%u, %u, %u, %u, %u)\n",
 					prSapSwitchCand[i].ucChLowerBound,
 					prSapSwitchCand[i].ucChUpperBound,
 					aliveSapBss[0]->ucPrimaryChannel,
@@ -8802,17 +8821,6 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 					aliveSapBss[0]->eBand);
 
 				if (prSapSwitchCand[i].eRfBand ==
-					prHwBandUnit->eRfBand &&
-					prSapSwitchCand[i].ucChUpperBound >=
-					prHwBandUnit->ucCh &&
-					prSapSwitchCand[i].ucChLowerBound <=
-					prHwBandUnit->ucCh) {
-					prSapSwitchCand[i].ucChLowerBound =
-						prHwBandUnit->ucCh;
-					prSapSwitchCand[i].ucChUpperBound =
-						prHwBandUnit->ucCh;
-					fgIsBandMatch = TRUE;
-				} else if (prSapSwitchCand[i].eRfBand ==
 					aliveSapBss[0]->eBand &&
 					prSapSwitchCand[i].ucChLowerBound <=
 					aliveSapBss[0]->ucPrimaryChannel &&
