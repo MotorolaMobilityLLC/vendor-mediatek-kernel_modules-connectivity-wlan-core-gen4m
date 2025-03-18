@@ -1598,13 +1598,15 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				ELEM_EXT_CAP_MSCS_BIT);
 #endif
 
-	if (extCapConn && IS_BSS_AIS(prBssInfo)) {
-		if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
-			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-		rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
-			extCapConn, extCapIeLen);
-	} else
-		DBGLOG(RLM, WARN, "extCapConn = NULL!");
+	if (IS_BSS_AIS(prBssInfo)) {
+		if (extCapConn) {
+			if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
+				prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+			rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
+				extCapConn, extCapIeLen);
+		} else
+			DBGLOG(RLM, WARN, "extCapConn = NULL!\n");
+	}
 
 	/* Disable BTM cap for WPA3 cert and sub Wi-Fi. */
 	if (IS_BSS_AIS(prBssInfo) &&
@@ -1623,7 +1625,13 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		prExtCap->ucLength--;
 	}
 
-	DBGLOG_MEM8(SAA, INFO, prExtCap->aucCapabilities, prExtCap->ucLength);
+	if (IS_BSS_P2P(prBssInfo)) {
+		DBGLOG_MEM8(SAA, TRACE, prExtCap->aucCapabilities,
+			    prExtCap->ucLength);
+	} else {
+		DBGLOG_MEM8(SAA, INFO, prExtCap->aucCapabilities,
+			    prExtCap->ucLength);
+	}
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
