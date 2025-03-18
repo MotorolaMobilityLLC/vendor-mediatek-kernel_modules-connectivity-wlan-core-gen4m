@@ -10254,10 +10254,7 @@ u_int8_t queryAxBlocklist(struct ADAPTER *prAdapter,
 		if (EQUAL_MAC_ADDR(aucBSSID, prBlocklistItem->aucBSSID))
 			return TRUE;
 	}
-		DBGLOG(AIS, INFO,
-			"BSSID " MACSTR " is not in %s blocklist!\n",
-			MAC2STR(aucBSSID),
-			ucType == 0 ? "AX" : "+HTC");
+
 	return FALSE;
 }
 
