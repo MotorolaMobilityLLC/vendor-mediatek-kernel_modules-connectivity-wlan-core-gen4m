@@ -1269,10 +1269,12 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 		return WLAN_STATUS_SUCCESS;
 	}
 
+#if CFG_SUPPORT_XONVRAM
 	if ((u4Size + prRegInfo->prXonvCfg->u2DataLen) > prPlatCfg->size) {
 		DBGLOG(INIT, TRACE, "No enough size for plat cfg\n");
 		return WLAN_STATUS_FAILURE;
 	}
+#endif /* CFG_SUPPORT_XONVRAM */
 
 	u4Addr = prPlatCfg->addr + prPlatCfg->size - u4Size;
 	if (kalDevRegWriteRange(prGlueInfo, u4Addr, pu1Cfg, u4Size) == FALSE) {
