@@ -2837,14 +2837,25 @@ static void mt6639_set_crypto(struct ADAPTER *prAdapter)
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	uint32_t u4BaseAddr;
+#endif
 	uint32_t u4Addr, u4Val = 0;
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	if (!in_interrupt()) {
-		u4Addr = 0x112F0184;
+#if (CFG_PCIE_MT6991 == 1)
+		u4BaseAddr = 0x16910000;
+#else
+		u4BaseAddr = 0x112f0000;
+#endif
+		u4Addr = u4BaseAddr + 0x184;
 		wf_ioremap_read(u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
+		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
+			u4Addr, u4Val);
+		for (u4Addr = (u4BaseAddr + 0xC04);
+		     u4Addr <= (u4BaseAddr + 0xC1C);
+		     u4Addr += 4) {
 			wf_ioremap_read(u4Addr, &u4Val);
 			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
 			       u4Addr, u4Val);
