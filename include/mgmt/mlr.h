@@ -58,6 +58,14 @@ enum ENUM_MLR_STATE {
 	MLR_STATE_NUM /* 2 */
 };
 
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+enum ENUM_MLR_BALANCE_MODE {
+	MLR_BALANCE_MODE_NOT_SUPPORT = 0,
+	MLR_BALANCE_MODE_SAP = BIT(0),
+	MLR_BALANCE_MODE_P2P = BIT(1)
+};
+#endif
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -147,7 +155,8 @@ enum ENUM_MLR_STATE {
 #define MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, ucRCPI) \
 	(ucRCPI < prAdapter->rWifiVar.ucTxMlrRateRcpiThr)
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
+/* Consider SAP and GO TX MGMT may use MLR rate */
 #define MLR_CHECK_IF_MGMT_USE_MLR_RATE(u2FrameCtrl) \
 	(u2FrameCtrl == MAC_FRAME_AUTH \
 	|| u2FrameCtrl == MAC_FRAME_ASSOC_REQ \
@@ -159,7 +168,7 @@ enum ENUM_MLR_STATE {
 	(u2FrameCtrl == MAC_FRAME_AUTH \
 	|| u2FrameCtrl == MAC_FRAME_ASSOC_REQ \
 	|| u2FrameCtrl == MAC_FRAME_REASSOC_REQ)
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 #define MLR_CHECK_IF_PKT_LEN_DO_FRAG(prAdapter, prNativePacket) \
 	(kalQueryPacketLength(prNativePacket) \
@@ -179,6 +188,16 @@ enum ENUM_MLR_STATE {
 
 #define MLR_CHECK_IF_ENABLE_DEBUG(prAdapter) \
 	prAdapter->rWifiVar.fgEnTxFragDebug
+
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+#define MLR_CHECK_IF_ENABLE_SAP(prAdapter) \
+	((prAdapter->rWifiVar.u4MlrCfgSapP2pEn \
+	& MLR_BALANCE_MODE_SAP) == MLR_BALANCE_MODE_SAP)
+
+#define MLR_CHECK_IF_ENABLE_P2P(prAdapter) \
+	((prAdapter->rWifiVar.u4MlrCfgSapP2pEn \
+	& MLR_BALANCE_MODE_P2P) == MLR_BALANCE_MODE_P2P)
+#endif
 
 #define MLR_DBGLOG(prAdapter, _Mod, _Clz, _Fmt, ...) \
 	do { \

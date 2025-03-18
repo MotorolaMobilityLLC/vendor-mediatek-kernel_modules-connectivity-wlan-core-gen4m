@@ -674,7 +674,8 @@ uint32_t rlmCalculateMTKOuiIELen(
 	len += mldCalculateMlIELen(prAdapter, ucBssIndex, prStaRec);
 #endif
 #endif
-#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLRV2 == 1) \
+	|| (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	len += sizeof(struct IE_MTK_MLR);
 #endif
 	return len;
@@ -731,10 +732,11 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
 	struct BSS_INFO *prBssInfo;
-#if (CFG_SUPPORT_MLR == 1)
+#if (CFG_SUPPORT_MLR_V2 == 1)
 	struct STA_RECORD *prStaRec;
 	u_int8_t fgMlrBandCheck = FALSE;
 	u_int8_t fgMlrCapCheck = FALSE;
+	u_int8_t fgGenMlrIe = FALSE;
 #endif
 	uint8_t *pucBuffer;
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
@@ -841,51 +843,58 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
-#if (CFG_SUPPORT_MLR == 1)
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	if (prStaRec) {
-		if (MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec)
-			&& MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) {
-			/* MLRv1 doesn't need to gen MTK OUI - MLRIE */
-			fgMlrCapCheck = FALSE;
-			fgMlrBandCheck = TRUE;
-		} else if ((MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec)
-			|| MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec))
-			&& MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) {
-			fgMlrCapCheck = TRUE;
-			fgMlrBandCheck = TRUE;
-		} else if (MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec)
-			|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) {
-			fgMlrCapCheck = TRUE;
-			fgMlrBandCheck = TRUE;
-		}
-	} else
-		DBGLOG(RLM, WARN,
-			"MLR assoc - gen MTK OUI - MLRIE but prStaRec is NULL");
-
-	if (fgMlrCapCheck && fgMlrBandCheck &&
-		(FALSE
-#if (CFG_SUPPORT_BALANCE_MLR == 1)
-		|| frame_ctrl == MAC_FRAME_BEACON
-		|| frame_ctrl == MAC_FRAME_PROBE_RSP
-		|| frame_ctrl == MAC_FRAME_ASSOC_RSP
-		|| frame_ctrl == MAC_FRAME_REASSOC_RSP
-#endif
-#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
-		|| frame_ctrl == MAC_FRAME_REASSOC_REQ
-		|| frame_ctrl == MAC_FRAME_ASSOC_REQ
-#endif
-	)) {
-		u_int8_t fgGenMlrIe = FALSE;
 #if (CFG_SUPPORT_MLR_V2 == 1)
-		if (IS_BSS_AIS(prBssInfo)
-			&& prBssInfo->eCurrentOPMode
-			== OP_MODE_INFRASTRUCTURE)
-			fgGenMlrIe = TRUE;
+	if (frame_ctrl == MAC_FRAME_ASSOC_REQ ||
+	    frame_ctrl == MAC_FRAME_REASSOC_REQ) {
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prMsduInfo->ucStaRecIndex);
+		if (prStaRec) {
+			if (MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec)
+				&& MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) {
+				/* MLRv1 doesn't need to gen MLRIE */
+				fgMlrCapCheck = FALSE;
+				fgMlrBandCheck = TRUE;
+			} else if (MLR_IS_V2_AFTER_INTERSECT(prAdapter,
+				prStaRec)
+				|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter,
+				prStaRec)) {
+				fgMlrCapCheck = TRUE;
+				fgMlrBandCheck = TRUE;
+			}
+			DBGLOG(RLM, INFO,
+				"MLR (re)assoc - gen MTK OUI - [eIftype=%d][frame_ctrl=0x%x][StaType=0x%x]",
+				prBssInfo->eIftype,
+				frame_ctrl,
+				prStaRec->eStaType);
+
+		} else
+			DBGLOG(RLM, INFO,
+				"MLR (re)assoc - gen MTK OUI - [eIftype=%d][frame_ctrl=0x%x] [prStaRec is NULL]",
+				prBssInfo->eIftype, frame_ctrl);
+
+		if (fgMlrCapCheck && fgMlrBandCheck) {
+			if (IS_BSS_AIS(prBssInfo)
+				&& prBssInfo->eCurrentOPMode
+				== OP_MODE_INFRASTRUCTURE) {
+				if (fgMlrCapCheck && fgMlrBandCheck)
+					fgGenMlrIe = TRUE;
+				DBGLOG(RLM, INFO,
+					"MLR (re)assoc - I am Legacy STA [frame_ctrl=0x%x][fgGenMlrIe=%d]",
+					frame_ctrl, fgGenMlrIe);
+			}
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+			else if (IS_BSS_GC(prBssInfo)) {
+				if (MLR_CHECK_IF_ENABLE_P2P(prAdapter))
+					fgGenMlrIe = TRUE;
+				DBGLOG(RLM, INFO,
+					"MLR (re)assoc - I am P2P GC [frame_ctrl=0x%x][MlrCfgSapP2pEn=0x%x][fgGenMlrIe=%d]",
+					frame_ctrl,
+					prAdapter->rWifiVar.u4MlrCfgSapP2pEn,
+					fgGenMlrIe);
+			}
 #endif
-#if (CFG_SUPPORT_BALANCE_MLR == 1)
-		fgGenMlrIe = TRUE;
-#endif
+		}
+
 		if (fgGenMlrIe) {
 			MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
 				MTK_SYNERGY_CAP_SUPPORT_TLV;
@@ -899,6 +908,68 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
+	if (frame_ctrl == MAC_FRAME_BEACON
+		|| frame_ctrl == MAC_FRAME_PROBE_RSP
+		|| frame_ctrl == MAC_FRAME_ASSOC_RSP
+		|| frame_ctrl == MAC_FRAME_REASSOC_RSP)	{
+		struct IE_MTK_MLR *prMLR = NULL;
+		struct STA_RECORD *prStaRec = NULL;
+
+		if (IS_BSS_APGO(prBssInfo)) {
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				prMsduInfo->ucStaRecIndex);
+			if (prBssInfo->eIftype == IFTYPE_P2P_GO
+				&& MLR_CHECK_IF_ENABLE_P2P(prAdapter))
+				fgGenMlrIe = TRUE;
+			if (prBssInfo->eIftype == IFTYPE_AP
+				&& MLR_CHECK_IF_ENABLE_SAP(prAdapter))
+				fgGenMlrIe = TRUE;
+
+			DBGLOG(RLM, INFO,
+				"MLR beacon/(re)assocresp/proberesp - I am %s [frame_ctrl=0x%x][MlrCfgSapP2pEn=0x%x][fgGenMlrIe=%d]",
+				(prBssInfo->eIftype == IFTYPE_P2P_GO)
+				? "P2P GO" : "SAP",
+				frame_ctrl,
+				prAdapter->rWifiVar.u4MlrCfgSapP2pEn,
+				fgGenMlrIe);
+		}
+
+		if (fgGenMlrIe) {
+			MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+				MTK_SYNERGY_CAP_SUPPORT_TLV;
+			prMLR = (struct IE_MTK_MLR *) (pucBuffer
+				+ IE_SIZE(pucBuffer));
+			prMLR->ucId = MTK_OUI_ID_MLR;
+			prMLR->ucLength = 1;
+			if (prStaRec) {
+				prMLR->ucLRBitMap =
+					(uint8_t) (prAdapter->u4MlrSupportBitmap
+					& prStaRec->ucMlrSupportBitmap);
+				DBGLOG(RLM, INFO,
+					"MLR beacon/(re)assocresp/proberesp - Generate MTK OUI - [frame_ctrl=0x%x] [StaType=0x%x]",
+					frame_ctrl, prStaRec->eStaType);
+			} else {
+				prMLR->ucLRBitMap =
+					(uint8_t) prAdapter->u4MlrSupportBitmap;
+				DBGLOG(RLM, INFO,
+					"MLR beacon/(re)assocresp/proberesp - Generate MTK OUI - [frame_ctrl=0x%x] [StaRec is NULL]",
+					frame_ctrl);
+			}
+			prMsduInfo->u2FrameLength += sizeof(struct IE_MTK_MLR);
+			MTK_OUI_IE(pucBuffer)->ucLength += IE_SIZE(prMLR);
+
+			DBGLOG(RLM, INFO,
+				"MLR sap - [IsAP=%d][starec=%s][frame_ctrl=0x%x] [ucLRBitMap=0x%x][u4MlrSupportBitmap=0x%x]",
+				IS_BSS_APGO(prBssInfo),
+				(prStaRec == NULL) ? "NULL" : "Not NULL",
+				frame_ctrl,
+				prMLR->ucLRBitMap,
+				prAdapter->u4MlrSupportBitmap);
+		}
+	}
+
+#endif
 } /* rlmGenerateMTKOuiIE */
 
 /*----------------------------------------------------------------------------*/
@@ -3088,7 +3159,8 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #endif
 			}
 		}
-#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLRV2 == 1) \
+	|| (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 
@@ -3129,7 +3201,8 @@ void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
 	ie_len = IE_LEN(pucIE) - ELEM_MIN_LEN_MTK_OUI;
 
 	IE_FOR_EACH(ie, ie_len, ie_offset) {
-#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLRV2 == 1) \
+	|| (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 			uint8_t ucBcnBitmap = prStaRec->ucMlrSupportBitmap;
@@ -4813,10 +4886,10 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	uint16_t u2PreDscBitmap = 0;
 #endif
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if (CFG_SUPPORT_BALANCE_MLRP_ALR == 1)
 	struct WLAN_BEACON_FRAME *prWlanBeacon = NULL;
 	u_int8_t fgIsBeaconIntervalChange = FALSE;
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo && prSwRfb);
@@ -4837,7 +4910,7 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	}
 #endif
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if (CFG_SUPPORT_BALANCE_MLRP_ALR == 1)
 	/* Handle change of Beacon Interval */
 	prWlanBeacon = (struct WLAN_BEACON_FRAME *)(prSwRfb->pvHeader);
 	if (prBssInfo->u2BeaconInterval != prWlanBeacon->u2BeaconInterval) {
@@ -4847,7 +4920,7 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->u2BeaconInterval = prWlanBeacon->u2BeaconInterval;
 		fgIsBeaconIntervalChange = TRUE;
 	}
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 	/* Handle change of slot time */
 	prBssInfo->u2CapInfo =
@@ -4952,13 +5025,13 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_802_11AX */
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if (CFG_SUPPORT_BALANCE_MLRP_ALR == 1)
 	if (fgIsBeaconIntervalChange) {
 		DBGLOG(RLM, TRACE,
 			"Update Beacon info due to Beacon interval change\n");
 		nicPmIndicateBssConnected(prAdapter, prBssInfo->ucBssIndex);
 	}
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 	return fgNewParameter;
 }

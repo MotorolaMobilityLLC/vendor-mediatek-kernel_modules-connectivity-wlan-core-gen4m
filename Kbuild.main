@@ -2907,6 +2907,30 @@ ifneq ($(CONFIG_WTBL_MAXSIZE),)
     ccflags-y += -DCFG_WTBL_MAXSIZE=$(CONFIG_WTBL_MAXSIZE)
 endif
 
+ifeq ($(CONFIG_MTK_MLR_V1), y)
+    ccflags-y += -DCFG_SUPPORT_MLR=1
+else
+    ccflags-y += -DCFG_SUPPORT_MLR=0
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V2), y)
+    ccflags-y += -DCFG_SUPPORT_MLR_V2=1
+else
+    ccflags-y += -DCFG_SUPPORT_MLR_V2=0
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V2_BALANCE), y)
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRV2=1
+else
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRV2=0
+endif
+
+ifeq ($(CONFIG_MTK_MLRP_ALR_BALANCE), y)
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=1
+else
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------

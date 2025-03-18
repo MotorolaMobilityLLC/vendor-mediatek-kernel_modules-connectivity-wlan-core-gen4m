@@ -6079,6 +6079,8 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 		}
 #endif
 
+		qmDetermineStaRecIndex(prAdapter, prMsduInfo);
+
 #if CFG_SUPPORT_MLR
 		if (mlrCheckIfDoFrag(prAdapter, prMsduInfo, (void *)pvPacket)) {
 			QUEUE_INITIALIZE(prFragmentedQue);
@@ -6100,8 +6102,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			/* Do things for each fragment MsduInfo */
 			/* ==================================== */
 #endif
-
-			qmDetermineStaRecIndex(prAdapter, prMsduInfo);
 
 			/*get per-AC Tx packets */
 			wlanUpdateTxStatistics(prAdapter, prMsduInfo,
