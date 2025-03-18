@@ -3413,7 +3413,11 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
 #if CFG_SUPPORT_PCIE_ASPM
+#if (CFG_PCIE_MT6991 == 1)
+	pcie_vir_addr = ioremap(0x16910000, 0x2000);
+#else
 	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+#endif
 	spin_lock_init(&rPCIELock);
 #endif
 dump:
