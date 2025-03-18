@@ -1621,6 +1621,8 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 
 			/* switch netif on */
 			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
+			netif_tx_start_all_queues(
+				prGlueP2pInfo->aprRoleHandler);
 
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
