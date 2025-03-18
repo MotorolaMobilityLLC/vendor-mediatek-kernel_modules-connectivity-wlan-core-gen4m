@@ -317,7 +317,7 @@ bow_proc:
 	} while (FALSE);
 
 	if (prStaRec) {
-#if CFG_SUPPORT_MLR && CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		/* update MLR/ALR/MLRP capability */
 		uint8_t ucRxMode;
 

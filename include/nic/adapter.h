@@ -1694,6 +1694,9 @@ struct WIFI_VAR {
 	u_int8_t fgEnTxFragTxDone;
 	u_int8_t ucErrPos;
 	uint32_t u4MlrCfg;
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+	uint32_t u4MlrCfgSapP2pEn;
+#endif
 #endif
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)

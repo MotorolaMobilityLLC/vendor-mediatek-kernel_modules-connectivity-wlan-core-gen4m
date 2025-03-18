@@ -548,12 +548,12 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	if (IS_BSS_APGO(prBssInfo))
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 			prMsduInfo->ucStaRecIndex);
 	else
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 	if (unlikely(!prStaRec)) {
@@ -1034,9 +1034,9 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 	}
 
 	if (!IS_BSS_AIS(prBssInfo)
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		&& !IS_BSS_APGO(prBssInfo)
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		) {
 		return FALSE;
 	} else if (IS_BSS_AIS(prBssInfo)
@@ -1045,23 +1045,25 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex) ==
 		MEDIA_STATE_CONNECTED)) {
 		return FALSE;
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	} else if (IS_BSS_APGO(prBssInfo)
 		&& !IS_BSS_ACTIVE(prBssInfo)) {
 		return FALSE;
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 	}
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	if (IS_BSS_APGO(prBssInfo))
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 				prMsduInfo->ucStaRecIndex);
 	else
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 	if (unlikely(!prStaRec)) {
-		DBGLOG(TX, INFO, "MLR check - prStaRec is NULL");
+		DBGLOG(TX, INFO,
+			"MLR check - prStaRec is NULL [idx=%d, da=" MACSTR "]",
+			prMsduInfo->ucStaRecIndex, prMsduInfo->aucEthDestAddr);
 		return FALSE;
 	}
 	if (unlikely(!prStaRec->fgIsInUse)) {
@@ -1397,13 +1399,20 @@ uint16_t mlrGenerateMlrIEforMTKOuiIE(struct ADAPTER *prAdapter,
 		prMLR->ucLRBitMap =
 			(uint8_t) prAdapter->u4MlrSupportBitmap;
 
-		/* MLRv2 tells the AP whether STA uses MLR rate to TX assoc
-		 * Because AP cannot obtain data rate through RXV
-		 * Use BIT(5)
-		 */
-		if (prStaRec && MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
-			prStaRec->ucRCPI))
-			prMLR->ucLRBitMap |= BIT(5);
+
+#if (CFG_SUPPORT_MLR_V2 == 1)
+		if (IS_BSS_AIS(prBssInfo)
+			&& prBssInfo->eCurrentOPMode ==
+			OP_MODE_INFRASTRUCTURE) {
+			/* MLRv2 STA tells the AP whether to use MLR rate
+			 * to TX assocBecause AP cannot obtain data rate
+			 * through RXV. Use BIT(5)
+			 */
+			if (prStaRec && MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
+				prStaRec->ucRCPI))
+				prMLR->ucLRBitMap |= BIT(5);
+		}
+#endif
 
 		if (prStaRec != NULL)
 			DBGLOG(TX, INFO,
@@ -1442,6 +1451,7 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucStaIdx;
 	uint8_t ucBitmapAnd;
+	u_int8_t fgIsMultiLink = FALSE;
 
 	if (unlikely(!prAdapter)) {
 		DBGLOG(TX, WARN, "MLR event - prAdapter is NULL");
@@ -1477,33 +1487,34 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) ==
 		MEDIA_STATE_CONNECTED)
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		|| IS_BSS_APGO(prBssInfo)
 #endif
 		) {
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		fgIsMultiLink = IS_MLD_STAREC_MULTI(
+			mldStarecGetByStarec(prAdapter, prStaRec));
+#endif
 		prStaRec->ucMlrMode = prEvtMlrFsmUpdate->ucMlrMode;
 		prStaRec->ucMlrState = prEvtMlrFsmUpdate->ucMlrState;
 		ucBitmapAnd = prStaRec->ucMlrMode
 			& prStaRec->ucMlrSupportBitmap;
+
+		/* Under MLR 2.0, when only the single link is left,
+		 * RA may use MLR 1.5 rate, so the driver will need
+		 * to do tx fragment. Instead, FW decides
+		 * whether to do tx fragment.
+		 */
 		if (MLR_STATE_IN_START(prStaRec)
-			/* V2 doesn't need to TxFrag due to 3M
-			 * && (ucBitmapAnd == MLR_MODE_MLR_V1
-			 * || ucBitmapAnd == MLR_MODE_MLR_PLUS
-			 * || ucBitmapAnd == MLR_MODE_ALR))
-			 */
-			/* Under MLR 2.0, when only the single link is left,
-			 * RA may use MLR 1.5 rate, so the driver will need
-			 * to do tx fragment. Instead, FW decides
-			 * whether to do tx fragment.
-			 */
-			&& prEvtMlrFsmUpdate->ucTxFragEn)
+			&& prEvtMlrFsmUpdate->ucTxFragEn
+			&& !fgIsMultiLink)
 			MLR_ENABLE_TX_FRAG(prStaRec);
 		else
 			MLR_DISABLE_TX_FRAG(prStaRec);
 
 		DBGLOG(NIC, INFO,
-		       "MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] M:S:F[0x%02x, %d, %d], Bitmap[0x%02x](0x%02x & 0x%02x), EnTxFrag=%d\n",
+		       "MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] M:S:F[0x%02x, %d, %d], Bitmap[0x%02x](0x%02x & 0x%02x), IsML=%d, EnTxFrag=%d\n",
 		       prBssInfo->ucBssIndex,
 		       prEvtMlrFsmUpdate->u2WlanIdx,
 		       ucStaIdx,
@@ -1513,16 +1524,18 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		       ucBitmapAnd,
 		       prStaRec->ucMlrMode,
 		       prStaRec->ucMlrSupportBitmap,
+		       fgIsMultiLink,
 		       prStaRec->fgEnableTxFrag);
 	}
 
 	MLR_DBGLOG(prAdapter, NIC, INFO,
-		"MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] Connected[%d] M:S:F[0x%02x, %d, %d]\n",
+		"MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] Connected[%d] IsML[%d], M:S:F[0x%02x, %d, %d]\n",
 		prBssInfo->ucBssIndex,
 		prEvtMlrFsmUpdate->u2WlanIdx,
 		ucStaIdx,
 		kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) == MEDIA_STATE_CONNECTED,
+		fgIsMultiLink,
 	    prEvtMlrFsmUpdate->ucMlrMode,
 	    prEvtMlrFsmUpdate->ucMlrState,
 	    prEvtMlrFsmUpdate->ucTxFragEn);
@@ -1565,12 +1578,12 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		return;
 	}
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	if (IS_BSS_APGO(prBssInfo))
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 			prMsduInfo->ucStaRecIndex);
 	else
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 	if (unlikely(!prStaRec)) {
