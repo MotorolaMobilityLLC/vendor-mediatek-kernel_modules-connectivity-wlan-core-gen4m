@@ -850,7 +850,7 @@ void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
 
 	switch (state) {
 	case NUD_INCOMPLETE:
-		DBGLOG(AM, TRACE,
+		DBGLOG_LIMITED(AM, TRACE,
 			"State[INCOMPLETE] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu\n",
 			ucBssIndex,
 			arpMonGetTxCnt(prAdapter, ucBssIndex),
@@ -858,7 +858,7 @@ void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
 		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
 		break;
 	case NUD_PROBE:
-		DBGLOG(AM, TRACE,
+		DBGLOG_LIMITED(AM, TRACE,
 			"State[PROBE] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu\n",
 			ucBssIndex,
 			arpMonGetTxCnt(prAdapter, ucBssIndex),
@@ -866,13 +866,13 @@ void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
 		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
 		break;
 	case NUD_REACHABLE:
-		DBGLOG(AM, TRACE,
+		DBGLOG_LIMITED(AM, TRACE,
 			"State[REACHABLE] BssIdx[%u], reset RX Cnt\n",
 			ucBssIndex);
 		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
 		break;
 	case NUD_FAILED:
-		DBGLOG(AM, INFO,
+		DBGLOG_LIMITED(AM, TRACE,
 			"State[FAILED] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu\n",
 			ucBssIndex,
 			arpMonGetTxCnt(prAdapter, ucBssIndex),
@@ -880,7 +880,11 @@ void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
 		if (arpMonGetTxCnt(prAdapter, ucBssIndex) >
 			prAdapter->rWifiVar.u4NudMonitorTxNumber &&
 			arpMonGetGatewayRxCnt(prAdapter, ucBssIndex) == 0) {
-			DBGLOG(AM, WARN, "IOT issue, arp no resp!\n");
+			DBGLOG(AM, WARN,
+				"State[FAILED] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu, IOT issue, arp no resp!\n",
+				ucBssIndex,
+				arpMonGetTxCnt(prAdapter, ucBssIndex),
+				arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
 			arpMonHandleNudBTOMsg(prAdapter, ucBssIndex);
 		}
 		break;
