@@ -7072,7 +7072,9 @@ static void nanSchedUpdateActiveNdcBands(struct ADAPTER *prAdapter)
 							prChnlList->rChnlInfo);
 
 					/* enum NAN_BAND_IDX */
-					ucNdcBandBitmap |= BIT(eBand - 1);
+					if (eBand != BAND_NULL)
+						ucNdcBandBitmap |=
+							BIT(eBand - 1);
 				}
 			}
 		}
