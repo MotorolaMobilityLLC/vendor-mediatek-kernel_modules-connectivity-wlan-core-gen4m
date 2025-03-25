@@ -2614,6 +2614,13 @@ static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	prIcsAggHeader = (struct ICS_AGG_HEADER *)prSwRfb->prRxStatus;
+	if (prIcsAggHeader->rxByteCount > ETHER_MAX_PKT_SZ) {
+		DBGLOG_LIMITED(NIC, DEBUG, "rxByteCount too large[%u]\n",
+			       prIcsAggHeader->rxByteCount);
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT);
+		return;
+	}
+
 	u4Size = prIcsAggHeader->rxByteCount + sizeof(
 			struct ICS_BIN_LOG_HDR);
 	pucBuf = kalMemAlloc(u4Size, VIR_MEM_TYPE);
