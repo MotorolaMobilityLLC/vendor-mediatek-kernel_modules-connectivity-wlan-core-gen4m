@@ -8976,6 +8976,9 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 	if (!prSwRfb->pvPacket)
 		return;
 
+	if (!prSwRfb->prStaRec)
+		return;
+
 	/* get ethernet protocol */
 	u2EtherType = (pPkt[ETH_TYPE_LEN_OFFSET] << 8)
 			| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
