@@ -3815,6 +3815,12 @@ else
     ccflags-y += -DCFG_SUPPORT_FIPS=0
 endif
 
+ifeq ($(CONFIG_RX_RESPONSE_TIMEOUT_FPGA_SETTING), y)
+    ccflags-y += -DCFG_RX_RESPONSE_TIMEOUT_FPGA_SETTING=1
+else
+    ccflags-y += -DCFG_RX_RESPONSE_TIMEOUT_FPGA_SETTING=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
