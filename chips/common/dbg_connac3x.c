@@ -98,6 +98,8 @@
 #include "coda/mt7935/bn0_wf_mib_top.h"
 #include "coda/mt7935/bn1_wf_mib_top.h"
 #include "coda/mt7935/wf_umib_top.h"
+#include "coda/mt7935/wf_ple_top.h"
+#include "coda/mt7935/wf_pse_top.h"
 #endif
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -3481,8 +3483,8 @@ static void chip_get_ple_acq_stat(struct ADAPTER *prAdapter, uint32_t *ple_stat)
 
 static void chip_get_dis_sta_map(struct ADAPTER *prAdapter, uint32_t *dis_sta_map)
 {
-#ifdef MT6653
-	/* TODO: no this CR in 6653 */
+#if (defined(MT6653) || defined(MT7935))
+	/* TODO: no this CR in 6653, 7935 */
 #else
 	HAL_RMCR_RD(HIF_DBG, prAdapter,
 		       WF_PLE_TOP_DIS_STA_MAP0_ADDR, &dis_sta_map[0]);
@@ -3579,7 +3581,11 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	uint32_t dis_sta_map[CR_NUM_OF_AC] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
+#ifdef MT7935
+	uint32_t bn0_txd = 0, bn1_txd = 0;
+#else
 	uint32_t bn0_txd = 0, bn1_txd = 0, bn2_txd = 0;
+#endif
 	uint32_t i, j;
 
 	HAL_RMCR_RD(HIF_DBG, prAdapter,
@@ -3616,8 +3622,10 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 		       WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR, &bn0_txd);
 	HAL_RMCR_RD(HIF_DBG, prAdapter,
 		       WF_PLE_TOP_BN1_TXD_QUEUE_EMPTY_ADDR, &bn1_txd);
+#ifndef MT7935
 	HAL_RMCR_RD(HIF_DBG, prAdapter,
 		       WF_PLE_TOP_BN2_TXD_QUEUE_EMPTY_ADDR, &bn2_txd);
+#endif
 
 	/* Configuration Info */
 	DBGLOG(HAL, INFO, "PLE Configuration Info:\n");
@@ -3740,11 +3748,18 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	       "\t\tThe used/reserved pages of CPU group=0x%03x/0x%03x\n",
 	       upg_cpu, rpg_cpu);
 
+#ifdef MT7935
+	DBGLOG(HAL, INFO,
+	       "\tBN_0_TXD(0x%08x): 0x%08x, BN_1_TXD(0x%08x): 0x%08x\n",
+		WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR, bn0_txd,
+		WF_PLE_TOP_BN1_TXD_QUEUE_EMPTY_ADDR, bn1_txd);
+#else
 	DBGLOG(HAL, INFO,
 	       "\tBN_0_TXD(0x%08x): 0x%08x, BN_1_TXD(0x%08x): 0x%08x, BN_2_TXD(0x%08x): 0x%08x\n",
 		WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR, bn0_txd,
 		WF_PLE_TOP_BN1_TXD_QUEUE_EMPTY_ADDR, bn1_txd,
 		WF_PLE_TOP_BN2_TXD_QUEUE_EMPTY_ADDR, bn2_txd);
+#endif
 
 	if ((ple_stat[0] & WF_PLE_TOP_QUEUE_EMPTY_ALL_AC_EMPTY_MASK) == 0) {
 		for (j = 0; j < ALL_CR_NUM_OF_ALL_AC; j++) {
@@ -4139,6 +4154,26 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 			  ((que_empty & WF_PSE_TOP_QUEUE_EMPTY_CPU_Q2_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_CPU_Q2_EMPTY_SHFT),
 			  ((que_empty & WF_PSE_TOP_QUEUE_EMPTY_CPU_Q3_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_CPU_Q3_EMPTY_SHFT),
 			  ((que_empty & WF_PSE_TOP_QUEUE_EMPTY_CPU_Q4_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_CPU_Q4_EMPTY_SHFT));
+#ifdef MT7935
+	DBGLOG(HAL, INFO,
+		"\t\tHIF Q0/1/2/3/4/5/6/7 empty=%d/%d/%d/%d/%d/%d/%d/%d\n",
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_0_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_0_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_1_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_1_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_2_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_2_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_3_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_3_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_4_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_4_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_5_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_5_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_6_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_6_EMPTY_SHFT),
+		((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_7_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_1_HIF_7_EMPTY_SHFT));
+#else
 	DBGLOG(HAL, INFO,
 	       "\t\tHIF Q0/1/2/3/4/5/6/7/8/9/10/11/12/13 empty=%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d\n",
 			  ((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_0_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_1_HIF_0_EMPTY_SHFT),
@@ -4155,6 +4190,7 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 			  ((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_11_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_1_HIF_11_EMPTY_SHFT),
 			  ((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_12_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_1_HIF_12_EMPTY_SHFT),
 			  ((que_empty1 & WF_PSE_TOP_QUEUE_EMPTY_1_HIF_13_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_1_HIF_13_EMPTY_SHFT));
+#endif
 	DBGLOG(HAL, INFO, "\t\tLMAC TX Q empty=%d\n",
 			  ((que_empty & WF_PSE_TOP_QUEUE_EMPTY_LMAC_TX_QUEUE_EMPTY_MASK) >> WF_PSE_TOP_QUEUE_EMPTY_LMAC_TX_QUEUE_EMPTY_SHFT));
 	DBGLOG(HAL, INFO, "\t\tMDP TX Q0/Q1/Q2/RX Q empty=%d/%d/%d/%d\n",
