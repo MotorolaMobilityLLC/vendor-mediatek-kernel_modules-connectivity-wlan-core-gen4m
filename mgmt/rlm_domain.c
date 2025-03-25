@@ -2058,7 +2058,7 @@ static uint8_t rlmDomainPwrLmtGetDefaultBaseByCh(
 		(e6GPwrModeType == PWR_MODE_6G_LPI_SP))
 		eDefaultPwrLmtBase = PWR_LIMIT_DEFAULT_BASE_SP;
 
-	DBGLOG(RLM, TRACE, "pri[%d]ch[%d]mode[%d]base[%d]\n",
+	DBGLOG(RLM, LOUD, "pri[%d]ch[%d]mode[%d]base[%d]\n",
 		rlmDomainPwrLmtGetChannelDefine(),
 		ucCurrChnl,
 		e6GPwrModeType,
@@ -4875,10 +4875,6 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 		WLAN_GET_FIELD_BE16(&prPwrLmtDefaultTable[i].
 						aucCountryCode[0],
 				    &u2CountryCodeTable);
-
-		DBGLOG(RLM, TRACE, "CC of Table=[%x]Compare[%x]\n",
-			u2CountryCodeTable,
-			u2CountryCode);
 
 		if (u2CountryCodeTable == u2CountryCode) {
 			u2TableIndex = i;
@@ -9441,8 +9437,7 @@ uint8_t txPwrAntTagMapping(
 	eMappingTag = tag;
 #if (CFG_SUPPORT_CHAIN_COMP_ARCH == 0)
 	if (tag == POWER_ANT_CHAIN_COMP) {
-		if (u1BandIdx >= PWR_LMT_CHAIN_2G4_BAND &&
-			u1BandIdx <= PWR_LMT_CHAIN_5G_BAND4)
+		if (u1BandIdx <= PWR_LMT_CHAIN_5G_BAND4)
 			eMappingTag = POWER_ANT_ALL_T;
 		else
 			eMappingTag = POWER_ANT_ALL_T_6G;
@@ -15396,7 +15391,7 @@ static enum ENUM_PWR_LIMIT_CONFIG_BASE rlmDomainPwrLmtGetConfigBaseByCh(
 			(e6GPwrModeType == PWR_MODE_6G_LPI_SP))
 			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_SP;
 
-		DBGLOG(RLM, TRACE, "pri[%d]band[%d]ch[%d]mode[%d]base[%d]\n",
+		DBGLOG(RLM, LOUD, "pri[%d]band[%d]ch[%d]mode[%d]base[%d]\n",
 			rlmDomainPwrLmtGetChannelDefine(),
 			eRfBandIndex,
 			ucCurrChnl,
@@ -16464,10 +16459,7 @@ static void rlmDomainDumpMultiBandPwrLimitPayload(
 		}
 
 		/*message tail*/
-		if (u4MsgOfs >= 1)
-			msgLimit[u4MsgOfs - 1] = '\0';
-		else
-			msgLimit[0] = '\0';
+		msgLimit[u4MsgOfs - 1] = '\0';
 
 		DBGLOG(RLM, LOUD, "[MulBnPwr] %s:%s\n", message, msgLimit);
 	}
