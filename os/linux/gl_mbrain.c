@@ -368,10 +368,11 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LLS
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	uint8_t ucBssIdx = AIS_DEFAULT_INDEX;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	static enum ENUM_MBMC_BN eLlsBand = ENUM_BAND_0;
 	static enum ENUM_STATS_LLS_AC eLlsAc = STATS_LLS_WIFI_AC_VO;
-	uint64_t u8Time;
 	uint8_t i;
 
 	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
@@ -416,10 +417,10 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 			if (status != WIFI2MBR_SUCCESS)
 				continue;
 
-			u8Time = kalGetBootTime();
+			KAL_GET_TS64(&rNowTs);
 			dest->hdr.tag = WIFI2MBR_TAG_LLS_RATE;
 			dest->hdr.ver = 1;
-			dest->timestamp = USEC_TO_MSEC(u8Time);
+			dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 
 			*pu2Len = sizeof(*dest);
 			break;
@@ -440,12 +441,12 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 
 		kalMemCopyFromIo(&rRadio, src + eLlsBand,
 			sizeof(struct STATS_LLS_WIFI_RADIO_STAT));
-		u8Time = kalGetBootTime();
+		KAL_GET_TS64(&rNowTs);
 
 		dest = (struct wifi2mbr_llsRadioInfo *)buf;
 		dest->hdr.tag = WIFI2MBR_TAG_LLS_RADIO;
 		dest->hdr.ver = 1;
-		dest->timestamp = USEC_TO_MSEC(u8Time);
+		dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 		dest->radio = rRadio.radio;
 		dest->on_time = rRadio.on_time;
 		dest->tx_time = rRadio.tx_time;
@@ -478,12 +479,12 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 		kalMemCopyFromIo(&rAc,
 			&prAdapter->prLinkStatsIface[ucBssIdx].ac[eLlsAc],
 			sizeof(struct STATS_LLS_WMM_AC_STAT));
-		u8Time = kalGetBootTime();
+		KAL_GET_TS64(&rNowTs);
 
 		dest = (struct wifi2mbr_llsAcInfo *)buf;
 		dest->hdr.tag = WIFI2MBR_TAG_LLS_RADIO;
 		dest->hdr.ver = 1;
-		dest->timestamp = USEC_TO_MSEC(u8Time);
+		dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 		dest->ac = conv_ac_to_mbr(eLlsAc);
 		dest->tx_mpdu = rAc.tx_mpdu;
 		dest->rx_mpdu = prBssInfo->u4RxMpduAc[eLlsAc];
@@ -558,8 +559,9 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_WIFI_ICCM
 	struct wifi2mbr_lpRatioInfo *dest = (struct wifi2mbr_lpRatioInfo *)buf;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	uint64_t u8Time;
 	uint32_t u4Ret = WLAN_STATUS_FAILURE;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
@@ -568,8 +570,8 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 
 	dest->hdr.tag = WIFI2MBR_TAG_LP_RATIO;
 	dest->hdr.ver = 1;
-	u8Time = kalGetBootTime();
-	dest->timestamp = USEC_TO_MSEC(u8Time);
+	KAL_GET_TS64(&rNowTs);
+	dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 	dest->radio = u2CurLoopIdx;
 
 	if (u2CurLoopIdx == 0) {
@@ -638,8 +640,9 @@ void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	uint64_t u8NowTs;
 	uint32_t u4AvgIdleSlot = 0;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	if (!prAdapter)
 		return;
@@ -668,8 +671,8 @@ void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 		if (!prBssInfo)
 			return;
 
-		u8NowTs = kalGetBootTime();
-		prBssInfo->u8TxTimeoutTS = USEC_TO_MSEC(u8NowTs);
+		KAL_GET_TS64(&rNowTs);
+		prBssInfo->u8TxTimeoutTS = KAL_TIME_TO_MSEC(rNowTs);
 		prBssInfo->u4TokenId = u4TokenId;
 		prBssInfo->u4TxTimeoutDuration = u4TxTimeoutDuration;
 	}
@@ -683,9 +686,9 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 
 	struct wifi2mbr_PcieInfo *dest = (struct wifi2mbr_PcieInfo *)buf;
 	struct GLUE_INFO *prGlueInfo = NULL;
-
-	uint64_t u8Time = 0;
 	uint32_t u4Ret = WLAN_STATUS_FAILURE;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	if (!prAdapter) {
 		DBGLOG(REQ, WARN, "prAdapter is null\n");
@@ -715,8 +718,8 @@ enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 
 	dest->hdr.tag = WIFI2MBR_TAG_PCIE;
 	dest->hdr.ver = 1;
-	u8Time = kalGetBootTime();
-	dest->timestamp = USEC_TO_MSEC(u8Time);
+	KAL_GET_TS64(&rNowTs);
+	dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 
 	if (u2CurLoopIdx == 0) {
 		GET_MBR_EMI_FIELD(prAdapter, u4Ret, rMbrPcieData, g_rMbrPcie);
@@ -1036,16 +1039,17 @@ enum wifi2mbr_status mbr_wifi_txpwr_mbrain_notify(struct ADAPTER *prAdapter,
 {
 	uint8_t ucBnIdx = 0;
 	uint8_t ucAntIdx = 0;
-	uint64_t u8Time = 0;
 	uint8_t ucMaxBn = ENUM_BAND_NUM;
 	uint8_t ucMaxAnt = 0;
 	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	kalMemZero(dest, sizeof(struct wifi2mbr_txpwr));
 
 	dest->hdr.tag = WIFI2MBR_TAG_TXPWR_RPT;
-	u8Time = kalGetBootTime();
-	dest->timestamp = USEC_TO_MSEC(u8Time);
+	KAL_GET_TS64(&rNowTs);
+	dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 	dest->hdr.ver = prSrc->u1Ver;
 
 	if (prSrc->ucMaxBnNum < ENUM_BAND_NUM)
@@ -1112,12 +1116,13 @@ enum wifi2mbr_status mbr_wifi_txpwr_handler(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MBRAIN_TXPWR_RPT
 	struct wifi2mbr_txpwr *dest = (struct wifi2mbr_txpwr *)buf;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	uint64_t u8Time = 0;
 	uint32_t u4Ret = WLAN_STATUS_FAILURE;
 	uint8_t ucBnIdx = 0;
 	uint8_t ucAntIdx = 0;
 	uint8_t ucMaxBn = ENUM_BAND_NUM;
 	uint8_t ucMaxAnt = 0;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
@@ -1130,8 +1135,8 @@ enum wifi2mbr_status mbr_wifi_txpwr_handler(struct ADAPTER *prAdapter,
 	}
 
 	dest->hdr.tag = WIFI2MBR_TAG_TXPWR_RPT;
-	u8Time = kalGetBootTime();
-	dest->timestamp = USEC_TO_MSEC(u8Time);
+	KAL_GET_TS64(&rNowTs);
+	dest->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 
 	if (u2CurLoopIdx == 0) {
 		GET_MBR_EMI_FIELD(prAdapter, u4Ret,
@@ -1301,7 +1306,8 @@ void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
 	static uint32_t u4LastRxDropTotal, u4LastRxDropReorder;
 	static uint32_t u4LastRxDropSanity, u4LastRxNapiFull;
 	static uint32_t u4LastTRxPerfEnQTime;
-	uint64_t u8NowTs;
+	/* timespec64 only for internal debug */
+	struct timespec64 rNowTs;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1351,10 +1357,10 @@ void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
 
 	prTRxPerfInfo = &prTRxPerfEntry->rTRxPerfInfo;
 
-	u8NowTs = kalGetBootTime();
+	KAL_GET_TS64(&rNowTs);
 	prTRxPerfInfo->hdr.tag = WIFI2MBR_TAG_TRX_PERF;
 	prTRxPerfInfo->hdr.ver = 1;
-	prTRxPerfInfo->timestamp = USEC_TO_MSEC(u8NowTs);
+	prTRxPerfInfo->timestamp = KAL_TIME_TO_MSEC(rNowTs);
 
 	prTRxPerfInfo->bss_index = prBssInfo->ucBssIndex;
 	prTRxPerfInfo->wlan_index = prBssInfo->prStaRecOfAP->ucWlanIndex;

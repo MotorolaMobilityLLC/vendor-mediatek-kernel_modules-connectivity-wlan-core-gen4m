@@ -7189,10 +7189,11 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	/* 4 <2> invoke abort handler */
 	if (fgDoAbortIndication) {
 #if CFG_SUPPORT_MBRAIN
-		uint64_t u8NowTs;
+		/* timespec64 only for internal debug */
+		struct timespec64 rNowTs;
 
-		u8NowTs = kalGetBootTime();
-		prAisBssInfo->u8BTOTS = USEC_TO_MSEC(u8NowTs);
+		KAL_GET_TS64(&rNowTs);
+		prAisBssInfo->u8BTOTS = KAL_TIME_TO_MSEC(rNowTs);
 #endif
 #if CFG_SUPPORT_ROAMING
 		roam = roamingFsmCheckIfRoaming(prAdapter, ucBssIndex);

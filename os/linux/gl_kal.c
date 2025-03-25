@@ -4129,10 +4129,11 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	if (GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue
 	    [ucBssIndex][u2QueueIdx]) >= u4StopTh) {
 #if CFG_SUPPORT_MBRAIN
-		uint64_t u8NowTs;
+		/* timespec64 only for internal debug */
+		struct timespec64 rNowTs;
 
-		u8NowTs = kalGetBootTime();
-		prBssInfo->u8TxStopTS = USEC_TO_MSEC(u8NowTs);
+		KAL_GET_TS64(&rNowTs);
+		prBssInfo->u8TxStopTS = KAL_TIME_TO_MSEC(rNowTs);
 		prBssInfo->u8TxStartTS = 0;
 #endif
 		netif_stop_subqueue(prDev, u2QueueIdx);
@@ -4321,11 +4322,15 @@ void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		    [u2QueueIdx] <= u4StartTh) {
 #if CFG_SUPPORT_MBRAIN
-			uint64_t u8NowTs;
+			if (prBssInfo) {
+				/* timespec64 only for internal debug */
+				struct timespec64 rNowTs;
 
-			u8NowTs = kalGetBootTime();
-			prBssInfo->u8TxStartTS = USEC_TO_MSEC(u8NowTs);
-			prBssInfo->u8TxStopTS = 0;
+				KAL_GET_TS64(&rNowTs);
+				prBssInfo->u8TxStartTS =
+					KAL_TIME_TO_MSEC(rNowTs);
+				prBssInfo->u8TxStopTS = 0;
+			}
 #endif
 			netif_wake_subqueue(prDev, u2QueueIdx);
 			DBGLOG_LIMITED(TX, DEBUG,
