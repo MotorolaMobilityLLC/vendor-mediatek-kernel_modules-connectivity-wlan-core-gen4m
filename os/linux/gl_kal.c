@@ -12273,7 +12273,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	pos += kalSnprintf(pos, end - pos,
-			"SkbAllocWork[%d][%d,%d,%d,%d,%d,%d,%d,%d][%u][0x%x][%u] ",
+			"SkbAllocWork[%d][%d,%d,%d,%d,%d,%d,%d,%d][%u][0x%lx][%u] ",
 			prSkbAllocInfo->eCoreType,
 			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 0),
 			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 1),
@@ -12380,7 +12380,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	pos += kalSnprintf(pos, end - pos, "] ");
 
 #if CFG_NAPI_DELAY
-	pos += kalSnprintf(pos, end - pos, "NapiDelay[%u,%u,%u,0x%x,%u] ",
+	pos += kalSnprintf(pos, end - pos, "NapiDelay[%u,%u,%u,0x%lx,%u] ",
 			prAdapter->rWifiVar.u4NapiDelayTputTh,
 			prAdapter->rWifiVar.u4NapiDelayCntTh,
 			prAdapter->rWifiVar.u4NapiDelayTimeout,
