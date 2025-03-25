@@ -1078,6 +1078,9 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	struct IE_NON_INHERITANCE *non_inh;
 	struct STA_RECORD *starec;
 	struct BSS_INFO *bss;
+#if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
+	struct BSS_INFO *rpting, *rpted;
+#endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint8_t i, link, *cp, *pucBuf, *sta, *pos, *tmp = NULL;
 	uint16_t fctrl, control = 0, cap = 0, tmp_size, u2Offset, u2IEsBufLen;
@@ -1095,6 +1098,16 @@ uint8_t *mldGenerateBasicCompleteProfile(
 		DBGLOG(ML, WARN, "Bss is NULL!");
 		goto done;
 	}
+
+#if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
+	rpting = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsduInfo->ucBssIndex);
+	rpted = bss;
+	if (!rpting) {
+		DBGLOG(ML, ERROR, "Reporting Bss is NULL!\n");
+		return NULL;
+	}
+#endif /* CFG_SUPPORT_SAP_LINK_TSF_DIFF */
 
 	starec = cnmGetStaRecByIndex(prAdapter, prMsduInfoSta->ucStaRecIndex);
 	link = starec ? starec->ucLinkId : bss->ucLinkId;
@@ -1165,9 +1178,6 @@ uint8_t *mldGenerateBasicCompleteProfile(
 
 #if (CFG_SUPPORT_SAP_LINK_TSF_DIFF == 1)
 	if (BE_IS_ML_STA_CTRL_PRESENCE_TSF_OFFSET(sta_ctrl->u2StaCtrl)) {
-		struct BSS_INFO *rpting = GET_BSS_INFO_BY_INDEX(prAdapter,
-			prMsduInfo->ucBssIndex);
-		struct BSS_INFO *rpted = bss;
 		int64_t tsf;
 
 		tsf = (rpted->i8TsfValue - rpting->i8TsfValue) >> 1;
