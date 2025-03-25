@@ -1665,9 +1665,13 @@ u_int8_t rttGetRSTABssIndex(struct ADAPTER *prAdapter,
 {
 	uint8_t ucBssIndex = 0;
 	struct BSS_INFO *prBssInfo = NULL;
+	uint16_t u2RangingBand = 0;
 
 	if (!prAdapter)
 		return FALSE;
+
+	u2RangingBand =
+		prAdapter->rWifiVar.u2NanRangingBand;
 
 	for (ucBssIndex = 0;
 		ucBssIndex < prAdapter->ucSwBssIdNum;
@@ -1679,6 +1683,12 @@ u_int8_t rttGetRSTABssIndex(struct ADAPTER *prAdapter,
 			IS_BSS_ACTIVE(prBssInfo) &&
 			EQUAL_MAC_ADDR(pucDestAddr,
 			prBssInfo->aucOwnMacAddr)) {
+			/* Select ranging band */
+			if (IS_BSS_NAN(prBssInfo) &&
+				(u2RangingBand > 2) &&
+				(prBssInfo->eBand < BAND_5G))
+				continue;
+
 			return ucBssIndex;
 		}
 	}
@@ -1782,9 +1792,11 @@ uint32_t rttProcessFTM(struct ADAPTER *prAdapter,
 
 	COPY_MAC_ADDR(rttReq->arRttConfigs[0].aucAddr, prActFrame->aucSrcAddr);
 	rttReq->arRttConfigs[0].eType = RTT_TYPE_2_SIDED_11MC;
-	if (IS_BSS_INDEX_NAN(prAdapter, ucBssIndex))
+	if (IS_BSS_INDEX_NAN(prAdapter, ucBssIndex)) {
 		rttReq->arRttConfigs[0].ePeer = RTT_PEER_NAN_ISTA;
-	else
+		if (prAdapter->rWifiVar.u2NanRangingBand > 2)
+			channelWidth = WIFI_CHAN_WIDTH_80;
+	} else
 		rttReq->arRttConfigs[0].ePeer = RTT_PEER_STA;
 	rttReq->arRttConfigs[0].rChannel.width = channelWidth;
 	rttReq->arRttConfigs[0].rChannel.center_freq =

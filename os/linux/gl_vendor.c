@@ -1451,6 +1451,40 @@ int mtk_cfg80211_vendor_set_rtt_config(
 		config->ucASAP = 1;
 		config->ucFtmMinDeltaTime = 40;
 
+#if (CFG_SUPPORT_NAN == 1)
+		if (nanIsOn(prGlueInfo->prAdapter) &&
+			(config->ePeer == RTT_PEER_NAN_RSTA)) {
+			struct ADAPTER *prAdapter =
+				prGlueInfo->prAdapter;
+			uint16_t u2Band =
+				prAdapter->rWifiVar.u2NanRangingBand;
+			enum ENUM_BAND eBand =
+				cnmGetBandByFreq(
+				config->rChannel.center_freq);
+
+			/* Workaround for NanRangingBand */
+			if ((u2Band > 2) &&
+				(eBand == BAND_2G4)) {
+				config->rChannel.center_freq =
+					nicChannelNum2Freq
+					(g_r5gDwChnl.u4PrimaryChnl,
+					BAND_5G) / 1000;
+				eBand =
+				cnmGetBandByFreq(
+				config->rChannel.center_freq);
+				config->eBw = WIFI_RTT_BW_80;
+				config->rChannel.width =
+					WIFI_CHAN_WIDTH_80;
+			}
+
+			ucBssIndex = nanGetBssIdxbyBand(
+				prGlueInfo->prAdapter,
+				(eBand == BAND_2G4)
+				? BAND_2G4
+				: BAND_5G);
+		}
+#endif
+
 		DBGLOG(RTT, DEBUG,
 			"#%d: MAC=" MACSTR
 			" TYPE=%hhu,PEER=%hhu, PRD=%hhu,CHL=(%d,%d),BRST=%hhu,NFTM=%hhu,RFTM=%hhu, RFTMR=%hhu,LCI=%hhu,LCR=%hhu,DUR=%hhu,PRB=%hhu,BW=%hhu\n",
@@ -1462,17 +1496,6 @@ int mtk_cfg80211_vendor_set_rtt_config(
 			config->ucNumRetriesPerFtmr, config->ucLciRequest,
 			config->ucLcrRequest, config->ucBurstDuration,
 			config->ePreamble, config->eBw);
-
-#if (CFG_SUPPORT_NAN == 1)
-		if (nanIsOn(prGlueInfo->prAdapter) &&
-			(config->ePeer == RTT_PEER_NAN_RSTA))
-			ucBssIndex = nanGetBssIdxbyBand(
-				prGlueInfo->prAdapter,
-				(config->rChannel.center_freq
-				<= 2484)
-				? BAND_2G4
-				: BAND_5G);
-#endif
 	}
 
 	if (i != request->ucConfigNum) {
