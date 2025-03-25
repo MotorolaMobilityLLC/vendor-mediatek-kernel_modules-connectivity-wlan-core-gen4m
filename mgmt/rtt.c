@@ -1609,6 +1609,24 @@ void rttEventResult(struct ADAPTER *prAdapter,
 	if (entry) {
 		kalMemCopy(&entry->rResult, &prEvent->rResult,
 			sizeof(struct RTT_RESULT));
+#if (CFG_SUPPORT_NAN == 1)
+		if (IS_BSS_INDEX_NAN(prAdapter, rttInfo->ucBssIndex)) {
+			struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
+
+			prRanging = nanRangingInstanceSearchByMac(
+					prAdapter,
+					entry->rResult.aucMacAddr);
+			if (prRanging) {
+				kalMemCopy(&prRanging->ranging_ctrl
+					.rRangingRttResult,
+					&entry->rResult,
+					sizeof(struct RTT_RESULT));
+				nanRangingReportDiscResult(
+					prAdapter,
+					entry->rResult.aucMacAddr);
+			}
+		}
+#endif /* CFG_SUPPOR_NAN */
 		entry->u2IELen = prEvent->u2IELen;
 		kalMemCopy(entry->aucIE, prEvent->aucIE, prEvent->u2IELen);
 		LINK_INSERT_TAIL(&rttInfo->rResultList,

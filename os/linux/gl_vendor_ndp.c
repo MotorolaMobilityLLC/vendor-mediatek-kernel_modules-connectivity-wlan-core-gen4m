@@ -205,8 +205,6 @@ nanGetChannelInfo(
 				if (i >=
 					NAN_MAX_CHANNEL_INFO_SUPPORTED)
 					return;
-
-				break;
 			}
 		}
 	}
@@ -1854,6 +1852,11 @@ int mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prGlueInfo is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "prAdapter is null\n");
 		return -EINVAL;
 	}
 

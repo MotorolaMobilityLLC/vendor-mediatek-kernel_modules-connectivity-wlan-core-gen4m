@@ -1749,8 +1749,6 @@ nanRangingCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	uint32_t u4OpClass = 0;
 	uint32_t u4PrimaryChnl = 0;
 	uint8_t ucBssIndex = 0;
-	/* mc */
-	uint8_t ucType = 1;
 	/* Peer frequency */
 	uint32_t u4Freq = 0;
 	/* Channel width */
@@ -1808,9 +1806,7 @@ nanRangingCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 		COPY_MAC_ADDR(rttReq.arRttConfigs[0].aucAddr,
 			prCtrlEvt->aucNanAddress);
-		rttReq.arRttConfigs[0].eType = (ucType == 1)
-			? RTT_TYPE_2_SIDED
-			: RTT_TYPE_2_SIDED_11AZ_NTB;
+		rttReq.arRttConfigs[0].eType = RTT_TYPE_2_SIDED;
 		rttReq.arRttConfigs[0].ePeer = RTT_PEER_NAN_RSTA;
 		rttReq.arRttConfigs[0].rChannel.width =
 			(enum WIFI_CHANNEL_WIDTH) ucWidth;
