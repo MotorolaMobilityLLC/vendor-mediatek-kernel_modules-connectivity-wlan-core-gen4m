@@ -6428,6 +6428,13 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 				ucTimeLineIdx);
 		prTimeline->ucMapId = prNanTimelineMgmt->ucMapId;
 
+		/* Skip 2G timeline, 5G/6G slots=  in nanSchedNegoGenDefCrbV2 */
+		if (prPeerSchRecord->fgSkip2gFaw &&
+		    NAN_IS_2G_TIMELINE(prAdapter, ucTimeLineIdx)) {
+			DBGLOG(NAN, INFO, "Skip 2G FAW");
+			continue;
+		}
+
 		for (u4SlotIdx = 0;
 			u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS; u4SlotIdx++) {
 			if (nanIsDiscWindow(prAdapter, u4SlotIdx,
@@ -18921,6 +18928,14 @@ done:
 		TRUE;
 }
 
+static void nanSetPeerSkip2gFaw(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
+{
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
+
+	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+	prPeerSchRecord->fgSkip2gFaw = TRUE;
+}
+
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					uint8_t fgChkRmtCondSlot)
 {
@@ -19043,6 +19058,9 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 				DBGLOG(NAN, INFO,
 				       "Skip 2G timeline, 5G/6G slots=%u",
 				       ucSlotCommitted[sz5gTimeLineIdx]);
+				/* Mark to skip 2G timeline for common FAW */
+				nanSetPeerSkip2gFaw(prAdapter,
+						    prNegoCtrl->u4SchIdx);
 				continue;
 			}
 			DBGLOG(NAN, INFO,
