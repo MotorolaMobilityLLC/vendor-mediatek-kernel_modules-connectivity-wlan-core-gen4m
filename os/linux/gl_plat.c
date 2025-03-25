@@ -102,7 +102,8 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	int cpu, ret;
 	struct cpufreq_policy *policy;
-	struct wlan_policy *wReq;
+	struct wlan_policy *wReq, *prNext;
+	u_int8_t fgFail = FALSE;
 
 	if (freq < 0)
 		freq = AUTO_CPU_FREQ;
@@ -114,8 +115,10 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 				continue;
 
 			wReq = kzalloc(sizeof(struct wlan_policy), GFP_KERNEL);
-			if (!wReq)
-				break;
+			if (!wReq) {
+				fgFail = TRUE;
+				goto end;
+			}
 			wReq->cpu = cpu;
 
 			ret = freq_qos_add_request(&policy->constraints,
@@ -125,11 +128,24 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 					"freq_qos_add_request fail cpu%d ret=%d\n",
 					wReq->cpu, ret);
 				kfree(wReq);
-				break;
+				fgFail = TRUE;
+				goto end;
 			}
 
 			list_add_tail(&wReq->list, &wlan_policy_list);
+end:
 			cpufreq_cpu_put(policy);
+			if (fgFail == TRUE)
+				break;
+		}
+
+		if (fgFail == TRUE) {
+			list_for_each_entry_safe(wReq, prNext,
+				&wlan_policy_list, list) {
+				freq_qos_remove_request(&wReq->qos_req);
+				list_del(&wReq->list);
+				kfree(wReq);
+			}
 		}
 	}
 
@@ -166,6 +182,11 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 #endif
 }
 
+uint32_t __weak kalGetDramBwMaxIdx(void)
+{
+	return 0;
+}
+
 void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 {
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
@@ -174,8 +195,13 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 	struct device_node *node;
 	static struct icc_path *bw_path;
 #endif /* CONFIG_OF */
-	static unsigned int peak_bw[OPP_BW_MAX_NUM], current_bw;
-	unsigned int prev_bw = 0, i;
+	static unsigned int peak_bw[OPP_BW_MAX_NUM] = {0}, current_bw;
+	unsigned int prev_bw = 0;
+	uint32_t u4MaxIdx, i;
+
+	u4MaxIdx = kalGetDramBwMaxIdx();
+	if (u4MaxIdx == 0 || u4MaxIdx > OPP_BW_MAX_NUM)
+		return;
 
 	kalGetPlatDev(&pdev);
 	if (!pdev) {
@@ -195,8 +221,14 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 		}
 
 #if IS_ENABLED(CONFIG_MTK_DVFSRC)
-		for (i = 0; i < OPP_BW_MAX_NUM; i++)
+		for (i = 0; i < u4MaxIdx; i++) {
 			peak_bw[i] = dvfsrc_get_required_opp_peak_bw(node, i);
+			if (peak_bw[i] == 0) {
+				DBGLOG(INIT, INFO, "i:%u bw:%u\n", i,
+					peak_bw[i]);
+				break;
+			}
+		}
 #endif /* CONFIG_MTK_DVFSRC */
 #endif /* CONFIG_OF */
 	}
@@ -204,7 +236,7 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 	if (!IS_ERR(bw_path)) {
 		prev_bw = current_bw;
 
-		if (iLv != -1 && iLv < OPP_BW_MAX_NUM)
+		if (iLv != -1 && iLv < u4MaxIdx)
 			current_bw = peak_bw[iLv];
 		else
 			current_bw = 0;

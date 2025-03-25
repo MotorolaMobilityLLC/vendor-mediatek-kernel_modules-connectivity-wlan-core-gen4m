@@ -46,6 +46,8 @@
 
 #define BOOST_CPU_TABLE_NUM (PERF_MON_TP_MAX_THRESHOLD + 1)
 
+#define OPP_BW_MAX_NUM 9
+
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
 #include <linux/regulator/consumer.h>
 #endif
@@ -394,6 +396,11 @@ u_int8_t kalCheckBoostCpuMargin(struct ADAPTER *prAdapter)
 void kalSetRunOnNonXCore(struct task_struct *task)
 {
 	kalSetCpuMask(task, CPU_HP_CORE | CPU_LITTLE_CORE);
+}
+
+uint32_t kalGetDramBwMaxIdx(void)
+{
+	return OPP_BW_MAX_NUM;
 }
 
 /**
