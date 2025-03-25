@@ -57,10 +57,11 @@
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 
 #define WF_PP_TOP_BASE             0x820CC000
-#define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x00FC)
-#define WF_PP_TOP_DBG_CS_0_ADDR    (WF_PP_TOP_BASE + 0x0104)
-#define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x0108)
-#define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x010C)
+#define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x0104)
+#define WF_PP_TOP_DBG_CS_0_ADDR    (WF_PP_TOP_BASE + 0x0108)
+#define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x010C)
+#define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x0154)
+#define WF_PP_TOP_DBG_CS_3_ADDR    (WF_PP_TOP_BASE + 0x0158)
 
 #define MT7999_PCIE2AP_REMAP_BASE_ADDR		0x60000
 #define MT7999_PCIE2AP_REMAP_CBTOP_BASE_ADDR	0x1c0000
@@ -175,6 +176,7 @@ void mt7999_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 void mt7999_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void mt7999ShowDebugInfo(struct GLUE_INFO *prGlueInfo);
 
 void mt7999_icapRiseVcoreClockRate(void);
 void mt7999_icapDownVcoreClockRate(void);

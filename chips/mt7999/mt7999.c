@@ -205,7 +205,6 @@ static void mt7999PcieHwControlVote(
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt7999DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 #endif
-static void mt7999ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt7999SetL1ssEnable(struct ADAPTER *prAdapter, u_int role,
@@ -456,16 +455,6 @@ struct wfdma_group_info mt7999_wfmda_host_rx_group[] = {
 	{"P0R8:AP ICS", WF_P0_WFDMA_WPDMA_RX_RING8_CTRL0_ADDR},
 };
 
-struct wfdma_group_info mt7999_wfmda_wm_tx_group[] = {
-	{"P0T6:LMAC TXD", WF_M0_WFDMA_WPDMA_TX_RING6_CTRL0_ADDR},
-};
-
-struct wfdma_group_info mt7999_wfmda_wm_rx_group[] = {
-	{"P0R0:FWDL", WF_M0_WFDMA_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R2:TXD0", WF_M0_WFDMA_WPDMA_RX_RING2_CTRL0_ADDR},
-	{"P0R3:TXD1", WF_M0_WFDMA_WPDMA_RX_RING3_CTRL0_ADDR},
-};
-
 struct pse_group_info mt7999_pse_group[] = {
 	{"HIF0(TX data)", WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
 		WF_PSE_TOP_HIF0_PG_INFO_ADDR},
@@ -687,10 +676,6 @@ struct BUS_INFO mt7999_bus_info = {
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt7999_wfmda_host_tx_group),
 	.wfmda_host_rx_group = mt7999_wfmda_host_rx_group,
 	.wfmda_host_rx_group_len = ARRAY_SIZE(mt7999_wfmda_host_rx_group),
-	.wfmda_wm_tx_group = mt7999_wfmda_wm_tx_group,
-	.wfmda_wm_tx_group_len = ARRAY_SIZE(mt7999_wfmda_wm_tx_group),
-	.wfmda_wm_rx_group = mt7999_wfmda_wm_rx_group,
-	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt7999_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMt7999DmashdlCfg,
 #if (DBG_DISABLE_ALL_INFO == 0)
 	.prPleTopCr = &rMt7999PleTopCr,
@@ -751,7 +736,7 @@ struct BUS_INFO mt7999_bus_info = {
 	.pcieMsiUnmaskIrq = mt7999PcieMsiUnmaskIrq,
 #endif /* CFG_MTK_ANDROID_WMT */
 #endif
-	.showDebugInfo = mt7999ShowPcieDebugInfo,
+	.showDebugInfo = mt7999ShowDebugInfo,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.processTxInterrupt = mt7999ProcessTxInterruptByEmi,
@@ -3411,39 +3396,6 @@ static void mt7999KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 	}
 }
 #endif //CFG_SUPPORT_PCIE_ASPM
-
-static void mt7999ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
-{
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	uint32_t u4Addr, u4Val = 0, u4Idx;
-	uint32_t u4BufSize = 512, pos = 0;
-	char *buf;
-	uint32_t au4PcieEpReg[] = {
-		0x74030188, 0x7403018C, 0x740310f0, 0x740310f4, 0x70025018
-	};
-
-	buf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
-	if (!buf) {
-		DBGLOG(HAL, WARN, "buffer alloc fail%s\n", buf);
-		return;
-	}
-
-#if CFG_MTK_WIFI_PCIE_SUPPORT
-	u4Val = mtk_pcie_dump_link_info(0);
-	pos += kalSnprintf(buf + pos, u4BufSize - pos,
-			   "link_info:0x%x ", u4Val);
-#endif
-
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4PcieEpReg); u4Idx++) {
-		u4Addr = au4PcieEpReg[u4Idx];
-		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
-		pos += kalSnprintf(buf + pos, u4BufSize - pos,
-				   "[0x%08x]=[0x%08x] ", u4Addr, u4Val);
-	}
-
-	DBGLOG(HAL, DEBUG, "%s\n", buf);
-	kalMemFree(buf, VIR_MEM_TYPE, u4BufSize);
-}
 
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt7999DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)

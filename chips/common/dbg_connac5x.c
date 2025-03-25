@@ -1916,38 +1916,6 @@ int32_t connac5x_show_mld_info(
 #endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-static void connac5x_show_wfdma_axi_debug_log(
-	struct ADAPTER *prAdapter,
-	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
-{
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	uint32_t pdma_base_cr;
-	uint32_t i = 0;
-
-	glGetChipInfo((void **)&prChipInfo);
-	if (!prChipInfo)
-		return;
-
-	if (enum_wfdma_type == WFDMA_TYPE_HOST)
-		pdma_base_cr = prChipInfo->u4HostWfdmaWrapBaseAddr;
-	else
-		pdma_base_cr = CONNAC5X_MCU_INT_CONN_HIF_WRAP;
-	if (pdma_base_cr == 0) {
-		DBGLOG(HAL, ERROR, "WfdmaWrapBaseAddr is not set\n");
-		return;
-	}
-
-	for (i = 0; i < 13; i++) {
-		uint32_t target_cr = pdma_base_cr + 0x500 + (i * 4);
-		uint32_t u4RegValue = 0;
-
-		HAL_RMCR_RD(HIF_DBG, prAdapter, target_cr, &u4RegValue);
-		DBGLOG(INIT, DEBUG, "get(0x%08x):0x%08x\n",
-			target_cr,
-			u4RegValue);
-	}
-}
-
 void connac5x_show_wfdma_interrupt_info(
 	struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
@@ -1973,13 +1941,6 @@ void connac5x_show_wfdma_interrupt_info(
 		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
 		return;
 	}
-
-	u4DmaCfgCrAddr = CONNAC5X_WPDMA_EXT_INT_STA(u4hostBaseCrAddr);
-
-	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCrAddr, &u4RegValue);
-
-	DBGLOG(INIT, DEBUG, "\t Global INT STA(0x%08x): 0x%08x\n",
-		u4DmaCfgCrAddr, u4RegValue);
 
 	/* Dump PDMA Status CR */
 	if (enum_wfdma_type == WFDMA_TYPE_HOST)
@@ -2010,13 +1971,6 @@ void connac5x_show_wfdma_interrupt_info(
 		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
 		return;
 	}
-
-	u4DmaCfgCrAddr = CONNAC5X_WPDMA_EXT_INT_MASK(u4hostBaseCrAddr);
-
-	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCrAddr, &u4RegValue);
-
-	DBGLOG(INIT, DEBUG, "\t Global INT ENA(0x%08x): 0x%08x\n",
-		u4DmaCfgCrAddr, u4RegValue);
 
 	/* Dump PDMA Enable CR */
 	if (enum_wfdma_type == WFDMA_TYPE_HOST)
@@ -2281,7 +2235,7 @@ static void connac5xDumpPPDebugCr(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	struct PP_TOP_CR *prCr;
-	uint32_t u4Value[4] = {0};
+	uint32_t u4Value[5] = {0};
 
 	if (!prAdapter)
 		return;
@@ -2293,13 +2247,15 @@ static void connac5xDumpPPDebugCr(struct ADAPTER *prAdapter)
 	HAL_RMCR_RD(HIF_DBG, prAdapter, prCr->rDbgCs0.u4Addr, &u4Value[1]);
 	HAL_RMCR_RD(HIF_DBG, prAdapter, prCr->rDbgCs1.u4Addr, &u4Value[2]);
 	HAL_RMCR_RD(HIF_DBG, prAdapter, prCr->rDbgCs2.u4Addr, &u4Value[3]);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, prCr->rDbgCs3.u4Addr, &u4Value[4]);
 
 	DBGLOG(HAL, DEBUG,
-	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
+	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x",
 		prCr->rDbgCtrl.u4Addr, u4Value[0],
 		prCr->rDbgCs0.u4Addr, u4Value[1],
 		prCr->rDbgCs1.u4Addr, u4Value[2],
-		prCr->rDbgCs2.u4Addr, u4Value[3]);
+		prCr->rDbgCs2.u4Addr, u4Value[3],
+		prCr->rDbgCs3.u4Addr, u4Value[4]);
 }
 
 static void connac5x_dump_wfdma_dbg_value(
@@ -2390,7 +2346,6 @@ void connac5x_show_wfdma_info_by_type(
 	if (prDbgOps && prDbgOps->show_wfdma_dbg_probe_info)
 		prDbgOps->show_wfdma_dbg_probe_info(prAdapter,
 			enum_wfdma_type);
-	connac5x_show_wfdma_axi_debug_log(prAdapter, WFDMA_TYPE_HOST);
 	if (prDbgOps && prDbgOps->show_wfdma_wrapper_info)
 		prDbgOps->show_wfdma_wrapper_info(prAdapter,
 			enum_wfdma_type);
@@ -2648,6 +2603,189 @@ void connac5x_dump_format_memory32(
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
+static void connac5x_show_wfdma_trinfo_wb_info(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0, u4Addr;
+
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_CTRL_0_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_CTRL_0[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_CTRL_1_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_CTRL_1[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_CTRL_2_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_CTRL_2[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_DMY_CTRL_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_DMY_CTRL[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_DMY_WR_WDATA_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_DMY_WR_WDATA[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_INT_TX_EN_31_00[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_RX_EN_31_00_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_INT_RX_EN_31_00[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_SET_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_INT_TX_EN_31_00_SET[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_RX_EN_31_00_SET_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_INT_RX_EN_31_00_SET[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_CLR_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_INT_TX_EN_31_00_CLR[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_RX_EN_31_00_CLR_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_INT_RX_EN_31_00_CLR[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_DLY_INT_CTRL_AP_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_DLY_INT_CTRL_AP[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_DLY_INT_CTRL_MD_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_DLY_INT_CTRL_MD[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_CTRL_AP_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_CTRL_AP[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_CTRL_MD_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_CTRL_MD[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_TX_EN_31_00_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_TX_EN_31_00[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_RX_EN_31_00_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_RX_EN_31_00[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_TX_EN_31_00_SET_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_TX_EN_31_00_SET[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_RX_EN_31_00_SET_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_RX_EN_31_00_SET[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_TX_EN_31_00_CLR_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_TX_EN_31_00_CLR[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_RX_EN_31_00_CLR_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TRINFO_WB_PER_INT_RX_EN_31_00_CLR[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+}
+
+static void connac5x_show_wfdma_cfetch_info(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	uint32_t u4Val = 0, u4Addr;
+
+	if (!prChipInfo->is_support_wfdma_cidx_fetch)
+		return;
+
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_TX_CFET_REQ_CNT_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "TX_CFET_REQ_CNT[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_DRV_CFET_REQ_CNT_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "DRV_CFET_REQ_CNT[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_REQ_CNT_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_REQ_CNT[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_AP_TRX_CIDX_ADDR_31_00_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "AP_TRX_CIDX_ADDR_31_00[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_AP_TRX_CIDX_ADDR_63_32_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "AP_TRX_CIDX_ADDR_63_32[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_MD_TRX_CIDX_ADDR_31_00_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "MD_TRX_CIDX_ADDR_31_00[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_MD_TRX_CIDX_ADDR_63_32_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "MD_TRX_CIDX_ADDR_63_32[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_0001_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_0001[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_0203_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_0203[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_0405_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_0405[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_0607_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_0607[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_0809_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_0809[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_1011_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_1011[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_1213_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_1213[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+	u4Addr = WF_P0_WFDMA_TRINFO_TOP_RX_CFET_TH_1415_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "RX_CFET_TH_1415[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+}
+
+static void connac5x_show_wfdma_range_cr(
+	struct ADAPTER *prAdapter, uint32_t u4Addr,
+	uint32_t u4Num, char *aucName)
+{
+	uint8_t *aucRangeBuff = NULL;
+	uint32_t u4Size = u4Num * sizeof(uint32_t);
+	u_int8_t fgRet = FALSE;
+
+	aucRangeBuff = kalMemAlloc(u4Size, VIR_MEM_TYPE);
+	if (!aucRangeBuff)
+		return;
+
+	kalMemZero(aucRangeBuff, u4Size);
+	HAL_RMCR_RD_RANGE(HIF_DBG, prAdapter, u4Addr,
+			  aucRangeBuff, u4Size, fgRet);
+	if (!fgRet)
+		DBGLOG(HAL, ERROR, "range read fail\n");
+	kalMemFree(aucRangeBuff, VIR_MEM_TYPE, u4Size);
+
+	DBGLOG(HAL, DEBUG, "%s[0x%08x]", aucName, u4Addr);
+	DBGLOG_MEM32(HAL, DEBUG, aucRangeBuff, u4Num);
+}
+
 static void connac5x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
@@ -2655,7 +2793,11 @@ static void connac5x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 	struct RTMP_DMABUF *prRingDidx, *prRingCidx, *prRingIntSta;
 	struct RTMP_DMABUF *prHwDoneFlag, *prSwDoneFlag;
 	struct RTMP_DMABUF *prRingMdDidx, *prRingMdIntSta;
+	struct WFDMA_EMI_RING_DIDX *prEmiRingDidx = NULL;
+	struct WFDMA_EMI_RING_CIDX *prEmiRingCidx = NULL;
 	uint32_t u4Val = 0, u4Idx;
+	char *buf;
+	uint32_t u4BuffSize = 1024, pos = 0;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prRingDmyDbg = &prHifInfo->rRingDmyDbg;
@@ -2667,19 +2809,31 @@ static void connac5x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 	prRingMdDidx = &prHifInfo->rRingMdDidx;
 	prRingMdIntSta = &prHifInfo->rRingMdIntSta;
 
-	for (u4Idx = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_CTRL_0_ADDR;
-	     u4Idx <= WF_P0_WFDMA_TRINFO_TOP_AP_TRX_DIDX_ADDR_63_32_ADDR;
-	     u4Idx += 4) {
-		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, DEBUG, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
-	}
+	buf = (char *) kalMemAlloc(u4BuffSize, VIR_MEM_TYPE);
+	if (!buf)
+		return;
+	kalMemZero(buf, u4BuffSize);
 
-	for (u4Idx = WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_INT_TX_EN_31_00_ADDR;
-	     u4Idx <= WF_P0_WFDMA_TRINFO_TOP_TRINFO_WB_PER_INT_RX_EN_63_32_ADDR;
-	     u4Idx += 4) {
-		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, DEBUG, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
-	}
+	connac5x_show_wfdma_trinfo_wb_info(prAdapter);
+	connac5x_show_wfdma_cfetch_info(prAdapter);
+
+	connac5x_show_wfdma_range_cr(
+		prAdapter,
+		WF_P0_WFDMA_TRINFO_TOP_HW_DONE_FLAG_031_000_ADDR,
+		32,
+		"HW_DONE_FLAG");
+
+	connac5x_show_wfdma_range_cr(
+		prAdapter,
+		WF_P0_WFDMA_TRINFO_TOP_SW_DONE_FLAG_031_000_ADDR,
+		32,
+		"SW_DONE_FLAG");
+
+	connac5x_show_wfdma_range_cr(
+		prAdapter,
+		WF_P0_WFDMA_TRINFO_TOP_INT_MASK_031_000_ADDR,
+		32,
+		"INT_MASK");
 
 	if (prRingDmyDbg->AllocVa) {
 		DBGLOG(HAL, DEBUG, "Dump RingDmyDbg\n");
@@ -2721,6 +2875,55 @@ static void connac5x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, DEBUG, "EmiIntSta1[0x%08x]\n", u4Val);
 	}
 #endif
+	if (prRingDidx->AllocVa && prRingCidx->AllocVa) {
+		prEmiRingDidx = (struct WFDMA_EMI_RING_DIDX *)
+			prRingDidx->AllocVa;
+		prEmiRingCidx = (struct WFDMA_EMI_RING_CIDX *)
+			prRingCidx->AllocVa;
+		for (u4Idx = 0; u4Idx < 16; u4Idx++) {
+			pos += kalSnprintf(
+				buf + pos,
+				u4BuffSize - pos,
+				"%s[%u:%u/%u]",
+				(u4Idx == 0) ? "TxRing" : "",
+				u4Idx,
+				prEmiRingCidx->tx_ring[u4Idx],
+				prEmiRingDidx->tx_ring[u4Idx]);
+		}
+		DBGLOG(HAL, DEBUG, "%s", buf);
+
+		kalMemZero(buf, u4BuffSize);
+		pos = 0;
+		for (u4Idx = 0; u4Idx < 16; u4Idx++) {
+			pos += kalSnprintf(
+				buf + pos,
+				u4BuffSize - pos,
+				"%s[%u:%u/%u]",
+				(u4Idx == 0) ? "RxRing" : "",
+				u4Idx,
+				prEmiRingCidx->rx_ring[u4Idx],
+				prEmiRingDidx->rx_ring[u4Idx]);
+		}
+		DBGLOG(HAL, DEBUG, "%s", buf);
+	}
+
+	/* TRINFO_TOP debug flag */
+	for (u4Idx = 0; u4Idx <= 6; u4Idx++) {
+		HAL_MCR_WR(
+			prAdapter,
+			WF_P0_WFDMA_TRINFO_TOP_DEBUG_FLAG_CTRL_ADDR,
+			u4Idx);
+		HAL_RMCR_RD(
+			HIF_DBG,
+			prAdapter,
+			WF_P0_WFDMA_TRINFO_TOP_DEBUG_FLAG_OUTPUT_ADDR,
+			&u4Val);
+		DBGLOG(HAL, DEBUG, "WR[0x%08x]=[0x%08x], RD[0x%08x]=[0x%08x]",
+		       WF_P0_WFDMA_TRINFO_TOP_DEBUG_FLAG_CTRL_ADDR, u4Idx,
+		       WF_P0_WFDMA_TRINFO_TOP_DEBUG_FLAG_OUTPUT_ADDR, u4Val);
+	}
+
+	kalMemFree(buf, VIR_MEM_TYPE, u4BuffSize);
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
@@ -2766,6 +2969,9 @@ void connac5x_show_wfdma_info(struct ADAPTER *prAdapter)
 
 	connac5x_show_wfdma_desc(prAdapter);
 
+	if (prBusInfo->showDebugInfo)
+		prBusInfo->showDebugInfo(prAdapter->prGlueInfo);
+
 	connac5xDumpPPDebugCr(prAdapter);
 
 #if CFG_MTK_WIFI_WFDMA_WB
@@ -2780,9 +2986,6 @@ void connac5x_show_wfdma_info(struct ADAPTER *prAdapter)
 	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md))
 		connac5x_show_rro_info(prAdapter);
 #endif
-
-	if (prBusInfo->showDebugInfo)
-		prBusInfo->showDebugInfo(prAdapter->prGlueInfo);
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 #if CFG_SUPPORT_WED_PROXY

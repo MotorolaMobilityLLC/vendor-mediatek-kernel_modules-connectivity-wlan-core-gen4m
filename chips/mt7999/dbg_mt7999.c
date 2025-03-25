@@ -1230,6 +1230,11 @@ struct PP_TOP_CR rMt7999PpTopCr = {
 		0,
 		0
 	},
+	.rDbgCs3 = {
+		WF_PP_TOP_DBG_CS_3_ADDR,
+		0,
+		0
+	},
 };
 
 /*******************************************************************************
@@ -1398,12 +1403,7 @@ static void mt7999_dump_debug_sop(struct ADAPTER *prAdapter,
 void mt7999_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
-	uint32_t dbg_cr_idx[] = {
-		0x0, 0x1, 0x2, 0x3, 0x30, 0x5, 0x7, 0xA, 0xB, 0xC,
-		0x62
-	};
-	uint32_t i = 0, u4DbgIdxAddr = 0, u4DbgProbeAddr = 0, u4DbgIdxValue = 0,
-		u4DbgProbeValue = 0;
+	uint32_t u4DbgIdxAddr, u4DbgProbeAddr, u4DbgIdxVal, u4DbgProbeVal = 0;
 
 	if (!prAdapter)
 		return;
@@ -1414,13 +1414,21 @@ void mt7999_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 	u4DbgIdxAddr = WF_P0_WFDMA_WPDMA_DBG_IDX_ADDR;
 	u4DbgProbeAddr = WF_P0_WFDMA_WPDMA_DBG_PROBE_ADDR;
 
-	for (i = 0; i < ARRAY_SIZE(dbg_cr_idx); i++) {
-		u4DbgIdxValue = 0x100 + dbg_cr_idx[i];
-		HAL_MCR_WR(prAdapter, u4DbgIdxAddr, u4DbgIdxValue);
+	for (u4DbgIdxVal = 0x100; u4DbgIdxVal < 0x120; u4DbgIdxVal++) {
+		HAL_MCR_WR(prAdapter, u4DbgIdxAddr, u4DbgIdxVal);
 		HAL_RMCR_RD(HIF_DBG, prAdapter,
-			       u4DbgProbeAddr, &u4DbgProbeValue);
+			       u4DbgProbeAddr, &u4DbgProbeVal);
 		DBGLOG(HAL, DEBUG, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
-			u4DbgIdxValue, u4DbgProbeAddr, u4DbgProbeValue);
+			u4DbgIdxVal, u4DbgProbeAddr, u4DbgProbeVal);
+	}
+
+	/* low priority debug CR */
+	for (u4DbgIdxVal = 0x120; u4DbgIdxVal <= 0x131; u4DbgIdxVal++) {
+		HAL_MCR_WR(prAdapter, u4DbgIdxAddr, u4DbgIdxVal);
+		HAL_RMCR_RD(HIF_DBG, prAdapter,
+			       u4DbgProbeAddr, &u4DbgProbeVal);
+		DBGLOG(HAL, TRACE, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
+			u4DbgIdxVal, u4DbgProbeAddr, u4DbgProbeVal);
 	}
 }
 
@@ -1436,15 +1444,15 @@ void mt7999_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	if (enum_wfdma_type != WFDMA_TYPE_HOST)
 		return;
 
-	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
-	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, DEBUG, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
-	       u4DmaCfgCr,
-	       u4RegValue);
-
 	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_0_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
 	DBGLOG(HAL, DEBUG, "WFDMA_AXI_SLPPROT_CTRL_0(0x%08x): 0x%08x\n",
+	       u4DmaCfgCr,
+	       u4RegValue);
+
+	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_1_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
+	DBGLOG(HAL, DEBUG, "WFDMA_AXI_SLPPROT_CTRL_1(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
@@ -1465,11 +1473,116 @@ void mt7999_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	DBGLOG(HAL, DEBUG, "WFDMA_SLPPROT_DBG_2(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
+}
 
-	u4DmaCfgCr = WFDMA_WRAP_CSR_WFDMA_MSI_CONFIG0_ADDR;
-	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(HAL, DEBUG, "WFDMA_MSI_CONFIG0_ADDR(0x%08x): [0x%08x]",
-	       u4DmaCfgCr, u4RegValue);
+static void mt7999ShowWfdmaLpInfo(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t u4Addr, u4Val = 0;
+
+	u4Addr = WFDMA_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "WFDMA_HIF_MISC(0x%08x): 0x%08x\n", u4Addr, u4Val);
+
+	u4Addr = 0x20024108;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, DEBUG, "WFDMA_CLK_EN_STATUS(0x%08x): 0x%08x\n",
+	       u4Addr, u4Val);
+
+}
+
+static void mt7999ShowWfdmaIntInfo(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t u4AddrEn, u4AddrSta, u4ValEn = 0, u4ValSta = 0;
+
+	u4AddrSta = WF_P0_WFDMA_WPDMA2HOST_ERR_INT_STA_ADDR;
+	u4AddrEn = WF_P0_WFDMA_WPDMA2HOST_ERR_INT_ENA_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrSta, &u4ValSta);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrEn, &u4ValEn);
+	DBGLOG(HAL, DEBUG,
+	       "WPDMA2HOST_ERR_INT_STA/ENA(0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       u4AddrSta, u4AddrEn, u4ValSta, u4ValEn);
+
+	u4AddrSta = WF_P0_WFDMA_MCU2HOST_SW_INT_STA_ADDR;
+	u4AddrEn = WF_P0_WFDMA_MCU2HOST_SW_INT_ENA_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrSta, &u4ValSta);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrEn, &u4ValEn);
+	DBGLOG(HAL, DEBUG,
+	       "MCU2HOST_SW_INT_STA/ENA(0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       u4AddrSta, u4AddrEn, u4ValSta, u4ValEn);
+
+	u4AddrSta = WF_P0_WFDMA_SUBSYS2HOST_INT_STA_ADDR;
+	u4AddrEn = WF_P0_WFDMA_SUBSYS2HOST_INT_ENA_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrSta, &u4ValSta);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrEn, &u4ValEn);
+	DBGLOG(HAL, DEBUG,
+	       "SUBSYS2HOST_INT_STA/ENA(0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       u4AddrSta, u4AddrEn, u4ValSta, u4ValEn);
+
+	u4AddrSta = WF_P0_WFDMA_WFDMA_SUBMODULE_ERR_INT_ADDR;
+	u4AddrEn = u4AddrSta + 0x4;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrSta, &u4ValSta);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrEn, &u4ValEn);
+	DBGLOG(HAL, DEBUG,
+	       "WFDMA_SUBMODULE_ERR_INT/ENA(0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       u4AddrSta, u4AddrEn, u4ValSta, u4ValEn);
+
+	u4AddrSta = WF_P0_WFDMA_HOST_INT_STA_MD_ADDR;
+	u4AddrEn = WF_P0_WFDMA_HOST_INT_ENA_MD_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrSta, &u4ValSta);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrEn, &u4ValEn);
+	DBGLOG(HAL, DEBUG,
+	       "HOST_INT_STA_MD/ENA(0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       u4AddrSta, u4AddrEn, u4ValSta, u4ValEn);
+
+	u4AddrSta = WF_P0_WFDMA_MD_INT_STA_ADDR;
+	u4AddrEn = WF_P0_WFDMA_MD_INT_ENA_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrSta, &u4ValSta);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4AddrEn, &u4ValEn);
+	DBGLOG(HAL, DEBUG,
+	       "MD_INT_STA/ENA(0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       u4AddrSta, u4AddrEn, u4ValSta, u4ValEn);
+}
+
+static void mt7999ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t u4Addr, u4Val = 0, u4Idx;
+	uint32_t u4BufSize = 512, pos = 0;
+	char *buf;
+	uint32_t au4PcieEpReg[] = {
+		0x74030188, 0x7403018C, 0x740310f0, 0x740310f4, 0x70025018
+	};
+
+	buf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (!buf) {
+		DBGLOG(HAL, WARN, "buffer alloc fail%s\n", buf);
+		return;
+	}
+
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	u4Val = mtk_pcie_dump_link_info(0);
+	pos += kalSnprintf(buf + pos, u4BufSize - pos,
+			   "link_info:0x%x ", u4Val);
+#endif
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4PcieEpReg); u4Idx++) {
+		u4Addr = au4PcieEpReg[u4Idx];
+		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+		pos += kalSnprintf(buf + pos, u4BufSize - pos,
+				   "[0x%08x]=[0x%08x] ", u4Addr, u4Val);
+	}
+
+	DBGLOG(HAL, DEBUG, "%s\n", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, u4BufSize);
+}
+
+void mt7999ShowDebugInfo(struct GLUE_INFO *prGlueInfo)
+{
+	mt7999ShowWfdmaLpInfo(prGlueInfo);
+	mt7999ShowWfdmaIntInfo(prGlueInfo);
+	mt7999ShowPcieDebugInfo(prGlueInfo);
 }
 
 #if defined(_HIF_PCIE)
