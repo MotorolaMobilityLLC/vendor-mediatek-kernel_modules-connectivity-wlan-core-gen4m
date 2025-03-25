@@ -3026,9 +3026,13 @@ endif
 # For One driver multi-card support
 # 1: enable, 0: disable
 ifeq ($(CONFIG_SUPPORT_MULTI_CARD), y)
-	ccflags-y += -DCFG_SUPPORT_MULTI_CARD=1
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_SUPPORT_MULTI_CARD=1
+    else
+        ccflags-y += -DCFG_SUPPORT_MULTI_CARD=0
+    endif
 else
-	ccflags-y += -DCFG_SUPPORT_MULTI_CARD=0
+    ccflags-y += -DCFG_SUPPORT_MULTI_CARD=0
 endif
 
 ccflags-y += -DDBG=0
