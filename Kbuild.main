@@ -939,6 +939,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
         CONFIG_MTK_MLR_V2_BALANCE=y
         ifeq ($(CONFIG_WLAN_PLATFORM),mt6993)
             CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT=y
+            CONFIG_MTK_CCCI_IDC_SUPPORT=y
         endif
         ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
             ifeq ($(call kver_ge,6,12),1)
@@ -3106,6 +3107,12 @@ ifeq ($(CONFIG_MTK_MDDP_IDC_UART_3_0_SUPPORT), y)
     ccflags-y += -DCFG_MTK_MDDP_IDC_UART_3_0_SUPPORT=1
 else
     ccflags-y += -DCFG_MTK_MDDP_IDC_UART_3_0_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_MTK_CCCI_IDC_SUPPORT), y)
+    ccflags-y += -DCFG_MTK_CCCI_IDC_SUPPORT=1
+else
+    ccflags-y += -DCFG_MTK_CCCI_IDC_SUPPORT=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_PCIE_MBRAIN), y)

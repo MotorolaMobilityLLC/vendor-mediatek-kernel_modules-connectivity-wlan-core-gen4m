@@ -2892,8 +2892,11 @@ int connsys_power_on(void)
 
 	if (!chip)
 		DBGLOG(HAL, ERROR, "NULL chip info pwr on.\n");
+
+#if (CFG_MTK_CCCI_IDC_SUPPORT == 0)
 	else
 		wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
+#endif
 
 #endif
 
@@ -2927,7 +2930,9 @@ void connsys_power_off(void)
 	}
 
 	halMawdPwrOff();
+#if (CFG_MTK_CCCI_IDC_SUPPORT == 0)
 	wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_PTA_UART_OFF);
+#endif
 	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
 #endif
 }

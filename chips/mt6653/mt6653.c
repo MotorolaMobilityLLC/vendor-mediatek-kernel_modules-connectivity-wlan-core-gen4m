@@ -4539,6 +4539,57 @@ static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter)
 	return ret;
 }
 
+#if (CFG_MTK_CCCI_IDC_SUPPORT == 1) && (CFG_MTK_CCCI_SUPPORT == 1)
+enum ccci_notify_state {
+	NOTIFY_MD_WF_OFF,
+	NOTIFY_MD_WF_ON,
+};
+
+struct ccci_ctrl_msg_t {
+	uint8_t	source_id;
+	uint8_t	msg_id;
+	uint8_t	buf_len;
+	uint8_t	Resv;
+	uint8_t	buf[4];
+};
+
+static int mt6653_ccci_notify_MD(uint8_t on_off)
+{
+
+	struct ccci_ctrl_msg_t idc_ccci_ctrl_msg = {0};
+	int port_id = -1;
+	int ret = 0;
+
+	port_id = mtk_ccci_request_port("ccci_idc_wifi");
+
+	if (port_id < 0) {
+		DBGLOG(INIT, INFO, "IDC ccci_idc_wifi not found\n");
+		return 0;
+	}
+
+	idc_ccci_ctrl_msg.source_id = 0;
+	idc_ccci_ctrl_msg.msg_id = 0;
+	idc_ccci_ctrl_msg.buf_len = 1;
+	idc_ccci_ctrl_msg.buf[0] = on_off;
+
+	DBGLOG(INIT, INFO, "IDC CCCI send %d\n", on_off);
+
+	ret = mtk_ccci_send_data(port_id, (char *)&idc_ccci_ctrl_msg, 8);
+
+	if (ret < 0)
+		DBGLOG(INIT, INFO, "IDC CCCI send fail\n");
+
+	ret = mtk_ccci_release_port(port_id);
+
+	if (ret < 0)
+		DBGLOG(INIT, INFO, "IDC CCCI close port fail\n");
+
+
+	return 0;
+}
+#endif
+
+
 #define MCIF_EMI_MEMORY_SIZE 128
 #define MCIF_EMI_COEX_SWMSG_OFFSET 0xF8518000
 #define MCIF_EMI_BASE_OFFSET 0xE4
@@ -4616,6 +4667,11 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 #else
 	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
 #endif
+
+#if (CFG_MTK_CCCI_IDC_SUPPORT == 1) && (CFG_MTK_CCCI_SUPPORT == 1)
+	mt6653_ccci_notify_MD(NOTIFY_MD_WF_ON);
+#endif
+
 	return 0;
 }
 
@@ -4648,6 +4704,11 @@ static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter)
 #else
 	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
 #endif
+
+#if (CFG_MTK_CCCI_IDC_SUPPORT == 1) && (CFG_MTK_CCCI_SUPPORT == 1)
+	mt6653_ccci_notify_MD(NOTIFY_MD_WF_OFF);
+#endif
+
 	return 0;
 }
 
