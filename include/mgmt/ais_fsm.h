@@ -135,6 +135,8 @@
 #define AIS_FT_R1		1
 
 #define AIS_MAX_QUERIED_BSSID_NUM	    5
+
+#define AIS_DEFAULT_AGING_PERIOD	30 /* second */
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -446,6 +448,7 @@ struct CONNECTION_SETTINGS {
 	size_t assocIeLen;
 	u_int8_t fgAuthOsenWithRSN;
 	uint16_t u2LinkIdBitmap;
+	u_int8_t fgDisableBTM;
 };
 
 struct AIS_LINK_INFO {
@@ -702,10 +705,8 @@ struct AIS_FSM_INFO {
 
 	struct AIS_BTO_INFO rBtoInfo;
 
-#if CFG_STAINFO_FEATURE
-	/* roaming count */
-	uint16_t u2ConnectedCount;
-	uint16_t u2ConnRejectStatus;
+#if (CFG_EXT_FEATURE == 1)
+	struct AIS_EXT_INFO rAisExtInfo;
 #endif
 	uint8_t ucIsSapCsaPending;
 };

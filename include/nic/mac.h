@@ -1444,7 +1444,8 @@ enum MBO_ATTR_ID {
 };
 
 /* MBO-OCE */
-#define OCE_ATTIBUTE_REDUCED_WAN_METRICS_MASK       BITS(0, 3)
+#define OCE_ATTIBUTE_DOWNLINK_AVAIL_CAP_MASK       BITS(0, 3)
+#define OCE_ATTIBUTE_UPLINK_AVAIL_CAP_MASK         BITS(4, 7)
 
 /* MBO v0.0_r19, 4.2.7: Transition Rejection Reason Code Attribute */
 /* Table 4-21: Transition Rejection Reason Code Field Values */
@@ -1684,13 +1685,11 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_EXT_CAP_BSS_TRANSITION_BIT             19
 #define ELEM_EXT_CAP_MBSSID_BIT                     22
 #define ELEM_EXT_CAP_CHANNEL_USAGE                  24
-#if CFG_STAINFO_FEATURE
 #define ELEM_EXT_CAP_PROXY_ARP_BIT                  12
 #define ELEM_EXT_CAP_TFS_BIT                        16
 #define ELEM_EXT_CAP_WNM_SLEEP_BIT                  17
 #define ELEM_EXT_CAP_TIM_BCAST_BIT                  18
 #define ELEM_EXT_CAP_DMS_BIT                        26
-#endif
 #define ELEM_EXT_CAP_UTC_TSF_OFFSET_BIT             27
 #define ELEM_EXT_CAP_INTERWORKING_BIT               31
 #define ELEM_EXT_CAP_QOSMAPSET_BIT                  32
@@ -1756,10 +1755,7 @@ enum BEACON_REPORT_DETAIL {
 #define RRM_CAP_INFO_STATISTICS_MEASURE_BIT         11
 #define RRM_CAP_INFO_TSM_BIT                        14
 #define RRM_CAP_INFO_RRM_BIT                        17
-#if CFG_STAINFO_FEATURE
-#define RRM_CAP_INFO_QBSS_LOAD_BIT                  9
 #define RRM_CAP_INFO_BSS_AVG_DELAY_BIT              31
-#endif
 
 /* 7.3.2.56 HT capabilities element */
 #define ELEM_MAX_LEN_HT_CAP \

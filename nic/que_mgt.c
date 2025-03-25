@@ -7122,7 +7122,7 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 			TdlsBssExtCapParse(prStaRec, pucIE);
 #endif /* CFG_SUPPORT_TDLS */
 
-#if CFG_STAINFO_FEATURE
+#if (CFG_EXT_FEATURE == 1)
 			prStaRec->fgSupportProxyARP =
 				!!((*(uint32_t *)(pucIE + 2)) &
 			BIT(ELEM_EXT_CAP_PROXY_ARP_BIT));

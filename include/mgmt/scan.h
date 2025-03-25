@@ -513,7 +513,8 @@ struct BSS_DESC {
 	uint8_t fgExistEspOutIE;
 	uint8_t ucEspOutInfo[ESP_AC_NUM];
 	uint8_t fgIsRWMValid;
-	uint16_t u2ReducedWanMetrics;
+	uint16_t u2DownlinkAvailCap;
+	uint16_t u2UplinkAvailCap;
 	u_int8_t fgExistTxPwr;
 	int8_t cTransmitPwr;
 	uint16_t u2StaCnt;

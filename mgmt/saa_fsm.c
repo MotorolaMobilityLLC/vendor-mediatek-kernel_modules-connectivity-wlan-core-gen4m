@@ -701,14 +701,14 @@ saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 #endif
 #if CFG_STAINFO_FEATURE
 			if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-				struct AIS_FSM_INFO *fsm =
-						aisGetAisFsmInfo(prAdapter,
+				struct AIS_EXT_INFO *prAisExtInfo =
+						aisGetAisExtInfo(prAdapter,
 						prStaRec->ucBssIndex);
 				if (rTxDoneStatus == TX_RESULT_MPDU_ERROR) {
-					fsm->u2ConnRejectStatus
+					prAisExtInfo->u2ConnRejectStatus
 					= AUTH_NO_ACK;
 				} else {
-					fsm->u2ConnRejectStatus
+					prAisExtInfo->u2ConnRejectStatus
 					= AUTH_SENDING_FAIL;
 				}
 			}
@@ -794,14 +794,14 @@ saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 
 #if CFG_STAINFO_FEATURE
 			if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-				struct AIS_FSM_INFO *fsm =
-						aisGetAisFsmInfo(prAdapter,
+				struct AIS_EXT_INFO *prAisExtInfo =
+						aisGetAisExtInfo(prAdapter,
 						prStaRec->ucBssIndex);
 				if (rTxDoneStatus == TX_RESULT_MPDU_ERROR) {
-					fsm->u2ConnRejectStatus
+					prAisExtInfo->u2ConnRejectStatus
 					= WPA3_ASSOC_NO_ACK;
 				} else {
-					fsm->u2ConnRejectStatus
+					prAisExtInfo->u2ConnRejectStatus
 					= WPA3_ASSOC_SENDING_FAIL;
 				}
 			}
@@ -898,9 +898,9 @@ void saaFsmRunEventRxRespTimeOut(struct ADAPTER *prAdapter,
 #endif
 #if CFG_STAINFO_FEATURE
 		if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-			struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(prAdapter,
-					prStaRec->ucBssIndex);
-			fsm->u2ConnRejectStatus = AUTH_NO_RESP;
+			struct AIS_EXT_INFO *prAisExtInfo = aisGetAisExtInfo(
+				prAdapter, prStaRec->ucBssIndex);
+			prAisExtInfo->u2ConnRejectStatus = AUTH_NO_RESP;
 		}
 #endif
 
@@ -925,9 +925,9 @@ void saaFsmRunEventRxRespTimeOut(struct ADAPTER *prAdapter,
 #endif
 #if CFG_STAINFO_FEATURE
 		if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-			struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(prAdapter,
-					prStaRec->ucBssIndex);
-			fsm->u2ConnRejectStatus = ASSOC_NO_RESP;
+			struct AIS_EXT_INFO *prAisExtInfo = aisGetAisExtInfo(
+				prAdapter, prStaRec->ucBssIndex);
+			prAisExtInfo->u2ConnRejectStatus = ASSOC_NO_RESP;
 		}
 #endif
 
@@ -1054,9 +1054,10 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			prStaRec->u2StatusCode = u2StatusCode;
 #if CFG_STAINFO_FEATURE
 			if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-				struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(
-					prAdapter, prStaRec->ucBssIndex);
-				fsm->u2ConnRejectStatus = u2StatusCode;
+				struct AIS_EXT_INFO *prAisExtInfo =
+					aisGetAisExtInfo(prAdapter,
+							 prStaRec->ucBssIndex);
+				prAisExtInfo->u2ConnRejectStatus = u2StatusCode;
 			}
 #endif
 
@@ -1136,9 +1137,10 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			prStaRec->u2StatusCode = u2StatusCode;
 #if CFG_STAINFO_FEATURE
 			if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-				struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(
-					prAdapter, prStaRec->ucBssIndex);
-				fsm->u2ConnRejectStatus = u2StatusCode;
+				struct AIS_EXT_INFO *prAisExtInfo =
+					aisGetAisExtInfo(prAdapter,
+							 prStaRec->ucBssIndex);
+				prAisExtInfo->u2ConnRejectStatus = u2StatusCode;
 			}
 #endif
 
@@ -1218,11 +1220,12 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 #if CFG_STAINFO_FEATURE
 				if (IS_BSS_INDEX_AIS(prAdapter,
 				    prStaRec->ucBssIndex)) {
-					struct AIS_FSM_INFO *fsm =
-						aisGetAisFsmInfo(
+					struct AIS_EXT_INFO *prAisExtInfo =
+						aisGetAisExtInfo(
 						prAdapter,
 						prStaRec->ucBssIndex);
-					fsm->u2ConnRejectStatus = u2StatusCode;
+					prAisExtInfo->u2ConnRejectStatus =
+								u2StatusCode;
 				}
 #endif
 
@@ -1314,9 +1317,10 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 			prStaRec->u2StatusCode = u2StatusCode;
 #if CFG_STAINFO_FEATURE
 			if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-				struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(
-					prAdapter, prStaRec->ucBssIndex);
-				fsm->u2ConnRejectStatus = u2StatusCode;
+				struct AIS_EXT_INFO *prAisExtInfo =
+					aisGetAisExtInfo(prAdapter,
+							 prStaRec->ucBssIndex);
+				prAisExtInfo->u2ConnRejectStatus = u2StatusCode;
 			}
 #endif
 			prRetainedSwRfb = prSwRfb;
@@ -1432,9 +1436,9 @@ uint32_t saaFsmStaState2HandleRxDeauth(struct ADAPTER *prAdapter,
 	prStaRec->u2StatusCode = u2StatusCode;
 #if CFG_STAINFO_FEATURE
 	if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-		struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(
+		struct AIS_EXT_INFO *prAisExtInfo = aisGetAisExtInfo(
 				prAdapter, prStaRec->ucBssIndex);
-		fsm->u2ConnRejectStatus = u2StatusCode;
+		prAisExtInfo->u2ConnRejectStatus = u2StatusCode;
 	}
 #endif
 

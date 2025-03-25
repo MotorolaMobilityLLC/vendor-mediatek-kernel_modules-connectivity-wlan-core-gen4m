@@ -563,6 +563,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	int32_t ai4DataRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 	int32_t ai4BSSDescRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 	int32_t ai4RespRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
+#if (CFG_EXT_ROAMING == 1)
+	struct AIS_EXT_INFO *prAisExtInfo;
+#endif
 #if CFG_SUPPORT_MBRAIN_BIGDATA
 	struct PARAM_QUERY_STA_BIG_DATA rStaParam;
 #endif
@@ -683,6 +686,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	} else {
 		/* convert from 100bps to 100kbps */
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate / 1000;
+#if (CFG_EXT_FEATURE == 1)
+		prAisExtInfo = aisGetAisExtInfo(prAdapter, ucBssIndex);
+		prAisExtInfo->rBssInfoBackup.datarate =
+			prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
+#endif
 	}
 
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0) ||
@@ -5615,6 +5623,29 @@ int testmode_reassoc(struct wiphy *wiphy,
 	}
 
 	return rStatus;
+}
+
+int testmode_set_disable_btm(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	uint8_t ucBssIndex = 0;
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return WLAN_STATUS_INVALID_DATA;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
+	prConnSettings->fgDisableBTM = TRUE;
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 int testmode_set_ax_blocklist(struct wiphy *wiphy,

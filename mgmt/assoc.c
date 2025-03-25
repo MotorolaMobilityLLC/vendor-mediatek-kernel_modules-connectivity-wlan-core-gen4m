@@ -1646,7 +1646,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-#if CFG_STAINFO_FEATURE
+#if (CFG_EXT_FEATURE == 1)
 	prStaRec->ucSupportedBand = 0;
 #endif
 
@@ -1756,7 +1756,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 		case ELEM_ID_SUP_OPERATING_CLASS:
 			if (IE_LEN(pucIE) < 2)
 				break;
-#if CFG_STAINFO_FEATURE
+#if (CFG_EXT_FEATURE == 1)
 			uint8_t ucIs2gSupport = 0;
 			uint8_t ucIs5gSupport = 0;
 			uint8_t ucIs6gSupport = 0;
@@ -1765,7 +1765,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 			for (ucIdx = 0; ucIdx < (IE_LEN(pucIE)-1); ucIdx++) {
 				ucOpClass = SUP_OPERATING_CLASS_IE(pucIE)->
 						ucSup[ucIdx];
-#if CFG_STAINFO_FEATURE
+#if (CFG_EXT_FEATURE == 1)
 				if (ucOpClass <= 87)
 					ucIs2gSupport = 1;
 				else if (ucOpClass <= 130)
@@ -1782,7 +1782,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 					u4OpClassBits |=
 						BIT(ucOpClass - 180 + 4 + 22);
 			}
-#if CFG_STAINFO_FEATURE
+#if (CFG_EXT_FEATURE == 1)
 			prStaRec->ucSupportedBand =
 				ucIs2gSupport + ucIs5gSupport +
 				ucIs6gSupport;

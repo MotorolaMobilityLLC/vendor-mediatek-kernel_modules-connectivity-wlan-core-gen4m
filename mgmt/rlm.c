@@ -1864,6 +1864,15 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		}
 	}
 
+	/* Dynamic set BTM capability */
+	if (IS_BSS_AIS(prBssInfo) && prConnSettings->fgDisableBTM) {
+		CLEAR_EXT_CAP(prExtCap->aucCapabilities,
+				ELEM_MAX_LEN_EXT_CAP,
+				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+		DBGLOG(RLM, INFO,
+			"Disable BTM cap by dynamic BTM setting.\n");
+	}
+
 	/* Disable BTM cap for WPA3 cert and sub Wi-Fi. */
 	if (IS_BSS_AIS(prBssInfo) &&
 	    (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucBtmCap) ||

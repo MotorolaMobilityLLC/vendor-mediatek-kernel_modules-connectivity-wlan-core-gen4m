@@ -2864,6 +2864,14 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.u4PolicySize = ARRAY_SIZE(reassoc_policy)
 	},
 	{
+		.pcCmdStr  = CMD_SET_DISABLE_BTM,
+		.pfHandler = testmode_set_disable_btm,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
 		.pcCmdStr  = CMD_SET_AX_BLOCKLIST,
 		.pfHandler = testmode_set_ax_blocklist,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
@@ -2965,7 +2973,7 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 	},
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
 	{
-		.pcCmdStr  = CMD_SET_KEEP_ALIVE_INTERVAL,
+		.pcCmdStr  = CMD_SET_AGING_PERIOD,
 		.pfHandler = testmode_set_keep_alive_interval,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),

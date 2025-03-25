@@ -1059,7 +1059,7 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint8_t fgIsGBandCoex = aps->fgIsGBandCoex, ucChannelCuInfo = 0;
 	uint16_t amsduByte = apsGetAmsduByte(ad, bss, bidx);
 	uint32_t baSize = 32, slot = 0, rcpi = 0, ppduDuration = 5;
-	uint32_t airTime = 0, ideal = 0, tput = 0, est = 0;
+	uint32_t airTime = 0, ideal = 0, tput = 0, est = 0, rwmDownlink = 0;
 	int32_t idle = 0, a = 0, b = 0, delta = 5;
 	uint8_t *pucIEs = NULL;
 	struct SCAN_INFO *prScanInfo = &(ad->rWifiVar.rScanInfo);
@@ -1108,9 +1108,6 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		tput = (uint32_t)((uint64_t)ideal *
 			(uint64_t)(a * rcpi + b) / 60000);
 		est = PERCENTAGE(airTime, 255) * tput / 100;
-
-		if (bss->fgIsRWMValid && bss->u2ReducedWanMetrics < est)
-			est = bss->u2ReducedWanMetrics;
 	} else {
 		if (bss->fgExistBssLoadIE) {
 			airTime = 255 - bss->ucChnlUtilization;
@@ -1141,6 +1138,12 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = PERCENTAGE(airTime, 255) * tput / 100;
 	}
 
+	if (bss->fgIsRWMValid) {
+		rwmDownlink = (1 << bss->u2DownlinkAvailCap) * 100;
+		if (rwmDownlink < est)
+			est = rwmDownlink;
+	}
+
 #if (CFG_EXT_ROAMING == 1)
 	if (fgIsGBandCoex && bss->eBand == BAND_2G4)
 		est = (est * ad->rWifiVar.ucRBTCETPW / 100);
@@ -1153,8 +1156,9 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_MCC_DOWNGRADE / 100);
 
 	APSLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d tput[%dkbps] bw[%d] rssi[%d] CU[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
-		MAC2STR(bss->aucBSSID), est, tput,
+		"] EST:%d tput[%dkbps] rwmDL[%d, %dkbps] bw[%d] rssi[%d] CU[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
+		MAC2STR(bss->aucBSSID), est,
+		bss->fgIsRWMValid, rwmDownlink, tput,
 		rlmGetBssOpBwByChannelWidth(bss->eSco, bss->eChannelWidth),
 		RCPI_TO_dBm(bss->ucRCPI), ucChannelCuInfo, airTime, slot,
 		fgIsGBandCoex, bss->fgIsMCC, bss->cTransmitPwr,
@@ -1737,8 +1741,9 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* Restrict STAs other than wlan0 */
-	if (ais->ucAisIndex != prAdapter->u4MultiStaPrimaryInterface) {
+	/* Restrict all STAs except the primary one, unless specified */
+	if (ais->ucAisIndex != prAdapter->u4MultiStaPrimaryInterface &&
+	    conn->eConnectionPolicy != CONNECT_BY_BSSID) {
 		struct AIS_FSM_INFO *tempAis;
 		struct BSS_DESC *tempBssDesc;
 		uint8_t i, j;
@@ -1753,10 +1758,12 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 
+		tempAis = aisFsmGetInstance(prAdapter,
+				prAdapter->u4MultiStaPrimaryInterface);
 		/* Disallow to pick a bss that already connected */
-		if (IS_AIS_CONN_BSSDESC(ais, prBssDesc)) {
+		if (IS_AIS_CONN_BSSDESC(tempAis, prBssDesc)) {
 			APSLOG(APS, INFO,
-				MACSTR " already connected by wlan0",
+				MACSTR " already connected by primary",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}

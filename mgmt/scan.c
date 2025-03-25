@@ -3210,7 +3210,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	memset(prBssDesc->u4EspInfo, 0, sizeof(prBssDesc->u4EspInfo));
 	memset(prBssDesc->ucEspOutInfo, 0, sizeof(prBssDesc->ucEspOutInfo));
 	prBssDesc->fgIsRWMValid = FALSE;
-	prBssDesc->u2ReducedWanMetrics = 0;
+	prBssDesc->u2DownlinkAvailCap = 0;
+	prBssDesc->u2UplinkAvailCap = 0;
 
 	/* Support 802.11k rrm */
 	prBssDesc->u2CurrCountryCode = COUNTRY_CODE_NULL;
@@ -3646,9 +3647,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				}
 				if (rwm && rwm[1] >= 1) {
 					prBssDesc->fgIsRWMValid = TRUE;
-					prBssDesc->u2ReducedWanMetrics =
+					prBssDesc->u2DownlinkAvailCap =
 					(rwm[2] &
-					OCE_ATTIBUTE_REDUCED_WAN_METRICS_MASK);
+					OCE_ATTIBUTE_DOWNLINK_AVAIL_CAP_MASK);
+					prBssDesc->u2UplinkAvailCap =
+					(rwm[2] &
+					OCE_ATTIBUTE_UPLINK_AVAIL_CAP_MASK);
 				}
 				if (txpwr && txpwr[1] >= 1) {
 					prBssDesc->fgExistTxPwr = TRUE;

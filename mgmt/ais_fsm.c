@@ -61,8 +61,6 @@
  */
 #define RCPI_THRESHOLD_ROAM_TO_5G_6G  90 /* rssi -65 */
 
-#define AIS_DEFAULT_AGING_PERIOD	30 /* second */
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -241,7 +239,9 @@ void aisResetConnectionParam(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucConnTrialCount = 0;
 	prAisFsmInfo->ucScanTrialCount = 0;
 	prAisFsmInfo->rJoinReqTime = 0;
-	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
+
+	if (prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID)
+		prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
 }
 
 #if (CFG_SUPPORT_HE_ER == 1)
@@ -351,6 +351,7 @@ void aisInitializeConnectionSettings(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	prConnSettings->fgSecModeChangeStartTimer = FALSE;
 #endif
+	prConnSettings->fgDisableBTM = FALSE;
 
 	aisInitializeConnectionRsnInfo(prAdapter, ucBssIndex);
 
@@ -1036,8 +1037,8 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	roamingFsmInit(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
 
-#if CFG_STAINFO_FEATURE
-	prAisFsmInfo->u2ConnRejectStatus = STATUS_CODE_UNSPECIFIED_FAILURE;
+#if (CFG_EXT_FEATURE == 1)
+	aisInitAisExtInfo(prAdapter, ucBssIndex);
 #endif
 
 	/* 4 <1.1> Initiate FSM - Timer INIT */
@@ -1542,7 +1543,8 @@ uint32_t aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	/* init to prevent returning status success due to join timeout. */
 	prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
 #if CFG_STAINFO_FEATURE
-	prAisFsmInfo->u2ConnRejectStatus = STATUS_CODE_UNSPECIFIED_FAILURE;
+	prAisFsmInfo->rAisExtInfo.u2ConnRejectStatus =
+				STATUS_CODE_UNSPECIFIED_FAILURE;
 #endif
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
@@ -4746,7 +4748,13 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		}
 
 #if CFG_ENABLE_WIFI_DIRECT && (CFG_TC10_FEATURE == 1)
-		if (cnmP2pIsActive(prAdapter)) {
+#if (CFG_SUPPORT_MLO_STA_NAN_FALLBACK == 1)
+		else if (prAdapter->fgIsNANStartWaiting) {
+			DBGLOG(AIS, INFO,
+				"delay indication due to NAN start\n");
+		}
+#endif
+		else if (cnmP2pIsActive(prAdapter)) {
 			fgDelayIndication = FALSE;
 			DBGLOG(AIS, INFO,
 				"delay indication not allowed due to p2p");
@@ -5466,9 +5474,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			prConnSettings->fgSecModeChangeStartTimer = FALSE;
 #endif
 
-			/* 1. Reset retry count */
-			prAisFsmInfo->ucConnTrialCount = 0;
-			prAisFsmInfo->ucScanTrialCount = 0;
+			/* reset connection parameters */
+			aisResetConnectionParam(prAdapter, ucBssIndex);
 
 #if ARP_MONITER_ENABLE
 			arpMonResetArpDetect(prAdapter, prStaRec->ucBssIndex);
@@ -5619,11 +5626,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_ROAMING
-			if (prConnSettings->eConnectionPolicy !=
-							CONNECT_BY_BSSID)
-				prConnSettings->eConnectionPolicy =
-						CONNECT_BY_SSID_BEST_RSSI;
-
 			/* always start roaming fsm for user space roaming */
 			roamingFsmRunEventStart(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
@@ -5746,7 +5748,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 	struct BSS_INFO *prAisBssInfo;
 	struct PARAM_BSSID_EX *prCurrBssid;
-	uint8_t aucCmd[30] = {0};
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5795,10 +5796,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	aisRemoveTimeoutMldBlocklist(prAdapter, 0);
 #endif
 
-#if CFG_SUPPORT_NCHO
-	wlanNchoInit(prAdapter, TRUE);
-#endif
-
 #if CFG_SUPPORT_802_11W
 	rsnResetCombackBssDesc(prAdapter, ucBssIndex);
 	rsnStopSaQuery(prAdapter, ucBssIndex);
@@ -5812,9 +5809,12 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucPerScanChannelCnt = 0;
 #endif /* CFG_SUPPORT_LLW_SCAN == 1 */
 
-#if CFG_SUPPORT_NCHO
-	aisFsmNotifyManageChannelList(prAdapter, ucBssIndex);
+	prConnSettings->fgDisableBTM = FALSE;
+
+#if (CFG_EXT_FEATURE == 1)
+	aisExtInfoDisconnectedAction(prAdapter, ucBssIndex);
 #endif
+
 	/* reset after notify */
 	kalMemZero(&prAisSpecificBssInfo->arCurEssChnlInfo[0],
 		CFG_MAX_NUM_OF_CHNL_INFO * sizeof(struct ESS_CHNL_INFO));
@@ -5863,11 +5863,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 
 	prAisFsmInfo->ucIsSapCsaPending = FALSE;
-
-	/* Reset AgingPeriod */
-	kalSnprintf(aucCmd, sizeof(aucCmd),
-		"%s %d", "AgingPeriod", AIS_DEFAULT_AGING_PERIOD);
-	aisSendChipConfigCmd(prAdapter, aucCmd, FALSE);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5928,8 +5923,8 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 		rEventConnStatus.ucMediaStatus = (uint8_t) eConnectionState;
 
 		if (eConnectionState == MEDIA_STATE_CONNECTED) {
-#if (CFG_STAINFO_FEATURE == 1)
-			prAisFsmInfo->u2ConnectedCount++;
+#if (CFG_EXT_FEATURE == 1)
+			prAisFsmInfo->rAisExtInfo.u2ConnectedCount++;
 #endif
 			rEventConnStatus.ucReasonOfDisconnect =
 			    DISCONNECT_REASON_CODE_RESERVED;
@@ -6006,9 +6001,6 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 		prAisBssInfo->eConnectionStateIndicated = eConnectionState;
 
 		if (eConnectionState == MEDIA_STATE_DISCONNECTED) {
-#if (CFG_STAINFO_FEATURE == 1)
-			prAisFsmInfo->u2ConnectedCount = 0;
-#endif
 			aisFsmDisconnectedAction(prAdapter, ucBssIndex);
 		}
 	} else {
@@ -6484,6 +6476,10 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 
 		if (prAisBssInfo->prStaRecOfAP)
 			u2ReasonCode = prAisBssInfo->prStaRecOfAP->u2ReasonCode;
+
+#if (CFG_EXT_FEATURE == 1)
+		aisFsmBackupBssInfo(prAdapter, ucBssIndex);
+#endif
 
 		aisFsmRemoveAllBssDesc(prAdapter, prAisFsmInfo);
 

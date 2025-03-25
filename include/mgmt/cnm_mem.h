@@ -767,7 +767,7 @@ struct STA_RECORD {
 	struct HE_A_CTRL_OM_T arHeACtrlOm;
 #endif
 
-#if CFG_STAINFO_FEATURE
+#if (CFG_EXT_FEATURE == 1)
 	u_int8_t fgSupportProxyARP;
 	u_int8_t fgSupportTFS;
 	u_int8_t fgSupportWNMSleep;

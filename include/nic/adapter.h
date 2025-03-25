@@ -3393,7 +3393,6 @@ struct ADAPTER {
 	struct QUERY_STA_INFO rQueryStaInfo;
 	struct STA_RECORD rSapLastStaRec;
 	u_int8_t fgSapLastStaRecSet;
-	uint16_t u2ConnRejectStatus;
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)

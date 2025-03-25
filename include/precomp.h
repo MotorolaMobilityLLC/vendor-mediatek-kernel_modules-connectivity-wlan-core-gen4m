@@ -290,6 +290,10 @@
 /* Support AP Selection */
 #include "aps.h"
 
+#if (CFG_EXT_FEATURE == 1)
+#include "roaming_ext.h"
+#endif
+
 #include "ais_fsm.h"
 
 #if CFG_SUPPORT_RTT
@@ -376,7 +380,6 @@
 
 #if CFG_EXT_FEATURE
 #include "log_ext.h"
-#include "roaming_ext.h"
 #include "twt_ext.h"
 #include "debug_ext.h"
 #include "gl_sys.h"
