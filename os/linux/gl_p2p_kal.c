@@ -1674,6 +1674,8 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 		if (u2StatusReason == STATUS_CODE_SUCCESSFUL) {
 			/* switch netif on */
 			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
+			netif_tx_start_all_queues(
+				prGlueP2pInfo->aprRoleHandler);
 
 #if (CFG_SUPPORT_NAN == 1)
 			/* TODO: GC connected */
