@@ -161,8 +161,12 @@ u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 
-	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
+	if (((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id) &&
+		((u4CIR & WCIR_CHIP_ID) != prChipInfo->sdio_chip_id)) {
+		DBGLOG(INIT, ERROR, "Chip ID 0x%x: verification failed\n",
+			u4CIR);
 		return FALSE;
+	}
 
 	prAdapter->ucRevID = (uint8_t) (((u4CIR & WCIR_REVISION_ID) >> 16) & 0xF);
 	prAdapter->fgIsReadRevID = TRUE;
@@ -2828,7 +2832,6 @@ void halDeAggRxPktProc(struct ADAPTER *prAdapter,
 
 		prSwRfb->ucPacketType =
 			prRxDescOps->nic_rxd_get_pkt_type(pucSrcAddr);
-
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		pu4HwAppendDW = (uint32_t *) prSwRfb->prRxStatus;
 		pu4HwAppendDW += (ALIGN_4(u2PktLength) >> 2);

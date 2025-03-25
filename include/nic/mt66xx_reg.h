@@ -1518,7 +1518,9 @@ struct mt66xx_chip_info {
 #if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
 	struct WLAN_IPC_INFO * const ipc_info;
 #endif /* CFG_MTK_WIFI_SUPPORT_IPC */
-
+#if defined(_HIF_SDIO)
+	const unsigned int sdio_chip_id;	/* chip id */
+#endif
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */
 	const unsigned int sw_sync0;	/* sw_sync0 address */

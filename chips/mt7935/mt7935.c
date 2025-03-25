@@ -924,6 +924,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 #if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
 	.ipc_info = &mt7935_ipc_info,
 #endif /* CFG_MTK_WIFI_SUPPORT_IPC */
+#if defined(_HIF_SDIO)
+	.sdio_chip_id = 0x7928,
+#endif
 	.chip_id = MT7935_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = CONNAC3X_CONN_CFG_ON_CONN_ON_MISC_ADDR,
