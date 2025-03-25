@@ -18766,7 +18766,7 @@ static u_int8_t nanPeerHas5G6GAvailability(struct ADAPTER *prAdapter,
 				fgSupport2G = TRUE;
 			if (IS_5G_OP_CLASS(prChnlCtrl->u4OperatingClass))
 				fgSupport5G = TRUE;
-			if (IS_5G_OP_CLASS(prChnlCtrl->u4OperatingClass))
+			if (IS_6G_OP_CLASS(prChnlCtrl->u4OperatingClass))
 				fgSupport6G = TRUE;
 		}
 	}
