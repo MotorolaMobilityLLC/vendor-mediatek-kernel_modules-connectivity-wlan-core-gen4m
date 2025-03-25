@@ -124,11 +124,6 @@ extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
 #define MTKGRP 22
 #endif
 
-#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-#define BACKOFF_VOLT 3550
-#define RESTORE_VOLT 3750
-#endif
-
 #if CFG_SUPPORT_TPUT_FACTOR
 #define CPU_CNT 8
 /* current max CPU count */

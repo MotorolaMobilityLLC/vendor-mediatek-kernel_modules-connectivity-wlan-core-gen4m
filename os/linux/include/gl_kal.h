@@ -273,6 +273,10 @@ extern bool fgIsTxPowerDecreased;
 #define CFG_HIF_REG_REQ_TIMEOUT_CNT	5000   /* 5s */
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+#define BACKOFF_VOLT 3550
+#define RESTORE_VOLT 3750
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
