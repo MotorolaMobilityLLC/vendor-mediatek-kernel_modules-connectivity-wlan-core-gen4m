@@ -18433,7 +18433,7 @@ wlanoidQueryApfInfo(struct ADAPTER *prAdapter,
 				TRUE,
 				nicCmdEventQueryApfInfo,
 				nicOidCmdTimeoutCommon,
-				sizeof(struct CMD_OFLD_INFO),
+				sizeof(struct CMD_APF_INFO),
 				(uint8_t *) pvSetBuffer,
 				pvSetBuffer, u4SetBufferLen);
 
