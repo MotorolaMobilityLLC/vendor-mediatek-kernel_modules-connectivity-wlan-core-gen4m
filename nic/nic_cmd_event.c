@@ -4675,12 +4675,12 @@ void nicExtEventIcerDumpEmiRawData(struct ADAPTER *prAdapter,
 
 	struct UNI_EVENT_COEX_ICER_DUMP_T *prIcerEvent;
 
-	prChipInfo = prAdapter->chip_info;
 	if (!prAdapter) {
 		DBGLOG(NIC, ERROR, "prAdapter is null\n");
 		return;
 	}
 
+	prChipInfo = prAdapter->chip_info;
 	if (pucEventBuf == NULL) {
 		DBGLOG(NIC, ERROR, "pucEventBuf is null\n");
 		return;
