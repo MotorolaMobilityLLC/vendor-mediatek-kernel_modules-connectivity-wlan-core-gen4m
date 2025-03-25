@@ -282,6 +282,10 @@ void glResetUpdateFlag(u_int8_t reset)
 #if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
 	update_driver_reset_status(fgIsResetting);
 #endif
+#if CFG_MTK_MDDP_SUPPORT
+	if (reset)
+		mddpNotifyWifiReset();
+#endif
 #endif /* CFG_CHIP_RESET_SUPPORT */
 }
 
@@ -793,10 +797,6 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		glResetCleanResetFlag();
 		goto exit;
 	}
-#endif
-
-#if CFG_MTK_MDDP_SUPPORT
-	mddpNotifyWifiReset();
 #endif
 
 	if (kalGetShutdownState()) {
