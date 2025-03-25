@@ -41,11 +41,14 @@
 #define NAN_6G_BW160_START_CHNL	15
 #define NAN_6G_BW320_START_CHNL	31
 
-#define NAN_6G_BW20_TOTAL_CHNL_NUM	59
-#define NAN_6G_BW40_TOTAL_CHNL_NUM	29
-#define NAN_6G_BW80_TOTAL_CHNL_NUM	14
-#define NAN_6G_BW160_TOTAL_CHNL_NUM	7
-#define NAN_6G_BW320_TOTAL_CHNL_NUM	3
+/* NOTE each project might have its preference,
+ * determine the result in g_ar6gPotentialChnlMap
+ */
+#define NAN_6G_BW20_TOTAL_CHNL_NUM     24 /* 59 */
+#define NAN_6G_BW40_TOTAL_CHNL_NUM     12 /* 29 */
+#define NAN_6G_BW80_TOTAL_CHNL_NUM     6 /* 14 */
+#define NAN_6G_BW160_TOTAL_CHNL_NUM    3 /* 7 */
+#define NAN_6G_BW320_TOTAL_CHNL_NUM    1 /* 3 */
 #endif
 
 #define NAN_MAX_PREFER_CHNL_SEL			4
@@ -456,7 +459,7 @@ struct _NAN_POTENTIAL_CHNL_MAP_T g_arPotentialChnlMap[] = {
  * Update ucPriChnlBitmap in nanSchedConfigAllowedBand() according to
  * the primary channel in wifi.cfg.
  */
-struct _NAN_POTENTIAL_CHNL_T g_ar6gPotentialChnlMap[NAN_CHNL_BW_NUM+1] = {
+struct _NAN_POTENTIAL_CHNL_T g_ar6gPotentialChnlMap[NAN_CHNL_BW_NUM] = {
 	{NAN_6G_BW20_OP_CLASS, 0,
 		((NAN_6G_BW20_START_CHNL & 0xFF) |
 		(NAN_6G_BW20_TOTAL_CHNL_NUM << 8))},
@@ -476,7 +479,6 @@ struct _NAN_POTENTIAL_CHNL_T g_ar6gPotentialChnlMap[NAN_CHNL_BW_NUM+1] = {
 		BIT((NAN_6G_BW20_DEFAULT_CHANNEL - 1) / 4),
 		((NAN_6G_BW320_START_CHNL & 0xFF) |
 		(NAN_6G_BW320_TOTAL_CHNL_NUM << 8))},
-	{0, 0, 0},
 };
 #endif
 
@@ -6595,8 +6597,6 @@ static void nanUpdate6gPotentialPrimary(union _NAN_BAND_CHNL_CTRL g_r6gDefChnl)
 
 	for (i = 0; i < ARRAY_SIZE(g_ar6gPotentialChnlMap); i++) {
 		pr6gPotentialChnlMap = &g_ar6gPotentialChnlMap[i];
-		if (pr6gPotentialChnlMap->ucOpClass == 0)
-			break;
 
 		if (pr6gPotentialChnlMap->ucPriChnlBitmap)
 			pr6gPotentialChnlMap->ucPriChnlBitmap = ucPriChnlBitmap;
@@ -13223,8 +13223,7 @@ nanSchedGetPublicAvailAttr(struct ADAPTER *prAdapter,
 	return rRetStatus;
 }
 
-uint32_t
-nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
+uint32_t nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -13246,9 +13245,6 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
 	uint8_t ucPrimaryChnl;
 	struct _NAN_CHNL_ENTRY_T *prSchedulerPotentialChannel;
-#if (CFG_SUPPORT_NAN_6G == 1)
-	struct _NAN_POTENTIAL_CHNL_T *pr6gPotentialChnlMap = NULL;
-#endif
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
@@ -13369,19 +13365,15 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 		if (prNanScheduler->fgEn6g &&
-		    NAN_IS_5G_TIMELINE(prAdapter, szTimeLineIdx)) {
+		    NAN_IS_6G_TIMELINE(prAdapter, szTimeLineIdx)) {
 			/* Generate 6G potential channel list */
 			eBw = nanSchedGet6gNanBw(prAdapter);
 			/* To limit channel entry num, only bring 6G BW > 40 */
 			u4Idx = NAN_CHNL_BW_80;
-			for (pr6gPotentialChnlMap =
-				     &g_ar6gPotentialChnlMap[u4Idx];
-			     pr6gPotentialChnlMap->ucOpClass != 0 &&
-				     u4Idx <= eBw;
-			     pr6gPotentialChnlMap++, u4Idx++) {
+			for (u4Idx = eBw; u4Idx >= NAN_CHNL_BW_80; u4Idx--) {
 				if (u4Num < NAN_MAX_POTENTIAL_CHNL_LIST) {
 					prPotentialChnlList[u4Num] =
-						*pr6gPotentialChnlMap;
+						g_ar6gPotentialChnlMap[u4Idx];
 					u4Num++;
 				}
 			}
@@ -13409,7 +13401,7 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 
 		for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
 			DBGLOG(NAN, DEBUG,
-			     "[%zu][%d] OpClass:%d, PriChnlBitmap:0x%x, ChnlBitmap:0x%x, Bw:%d\n",
+			     "[%zu][%d] OpClass:%d, PriChnlBitmap:0x%x, ChnlBitmap:0x%04x, Bw:%d\n",
 			     szTimeLineIdx, u4Idx,
 			     prPotentialChnlList[u4Idx].ucOpClass,
 			     prPotentialChnlList[u4Idx].ucPriChnlBitmap,
