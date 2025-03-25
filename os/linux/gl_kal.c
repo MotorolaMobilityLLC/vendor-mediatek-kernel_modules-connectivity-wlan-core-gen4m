@@ -78,9 +78,7 @@
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 #include "rlm.h"
 #endif
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #include "rlm_domain.h"
-#endif
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp.h"
@@ -20782,3 +20780,104 @@ void __weak kalPmicCtrl(u_int8_t fgIsEnabled)
 {
 	DBGLOG(SW4, WARN, "PMIC control is not defined\n");
 }
+
+#if (CFG_TC10_FEATURE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is send txpower limit by bit map
+ *
+ * @param[in] eType : SAR scenario type
+ *
+ * @return char * : SAR scenario name
+ */
+/*----------------------------------------------------------------------------*/
+int32_t kalSetSarLimitByBitMap(struct GLUE_INFO *prGlueInfo,
+				uint32_t u4ActBitMap)
+{
+
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = {0};
+	uint32_t rStatus = 0;
+	uint8_t i = 0;
+	uint16_t u2SubIdx = 0;
+	uint32_t u4SetInfoLen = 0;
+
+	if (!prGlueInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (prGlueInfo->prAdapter->rWifiVar.ucSarLmtCfgVer == 2) {
+		kalMemZero(&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL));
+
+		rStatus = rlmDomainSarGetRemapSubIdx(
+				u4ActBitMap,
+				&u2SubIdx);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return WLAN_STATUS_FAILURE;
+
+		rPwrCtrlParam.fgApplied = (u2SubIdx == 0) ? FALSE : TRUE;
+		rPwrCtrlParam.name = "SAR_LIMIT";
+		rPwrCtrlParam.index = u2SubIdx;
+		rPwrCtrlParam.newSetting = NULL;
+
+		DBGLOG(REQ, INFO,
+		"[SAR]applied=[%d], name=[%s], index=[%u], setting=[%s]\n",
+		rPwrCtrlParam.fgApplied,
+		rPwrCtrlParam.name,
+		rPwrCtrlParam.index,
+		rPwrCtrlParam.newSetting);
+
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidTxPowerControl,
+			(void *)&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			&u4SetInfoLen);
+
+		return rStatus;
+	}
+
+	/* prWifiVar->ucSarLmtCfgVer == 1 */
+	for (i = 0; i < SAR_NUM; i++) {
+		kalMemZero(&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL));
+
+		if ((BIT(i) & u4ActBitMap) == 0) {
+			/* 0 */
+			u2SubIdx = SAR_APPLY_ANT_DISABLE;
+		} else {
+			/* If SAR event concurrent, power limit will
+			 * take effect for all ant
+			 */
+			if (rlmDomainIsSarEventConcurrent()) {
+				/* 1 */
+				u2SubIdx = SAR_APPLY_ANT_ALL;
+			} else {
+				u2SubIdx = rlmDomainGetSarApplyAntStatus(i);
+			}
+		}
+
+		rPwrCtrlParam.fgApplied = (u2SubIdx == 0) ? FALSE : TRUE;
+		rPwrCtrlParam.name = rlmDomainGetSarScenarioName(i);
+		rPwrCtrlParam.index = u2SubIdx;
+		rPwrCtrlParam.newSetting = NULL;
+
+		DBGLOG(REQ, INFO,
+		"[SAR]applied=[%d], name=[%s], index=[%u], setting=[%s]\n",
+		rPwrCtrlParam.fgApplied,
+		rPwrCtrlParam.name,
+		rPwrCtrlParam.index,
+		rPwrCtrlParam.newSetting);
+
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidTxPowerControl,
+			(void *)&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			&u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			break;
+	}
+
+	return rStatus;
+}
+#endif

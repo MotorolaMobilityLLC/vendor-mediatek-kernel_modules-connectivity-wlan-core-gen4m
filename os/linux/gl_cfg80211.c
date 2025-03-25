@@ -37,6 +37,8 @@
 #if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
 #include "gl_mbrain.h"
 #endif
+#include "gl_kal.h"
+#include "rlm_domain.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -6630,6 +6632,108 @@ int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
 		(void *)&rPwrCtrlParam,
 		sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
 		&u4SetInfoLen);
+
+	return rStatus;
+}
+
+int testmode_set_tx_power_calling(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	int32_t rStatus = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4EventId = 0;
+	uint8_t ucSubIdx = 0;
+	uint8_t ucAntIdx = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo == NULL)
+		return -EINVAL;
+
+	DBGLOG(REQ, ERROR, "[SAR]command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	i4Ret = kalkStrtos32(apcArgv[1], 0, &i4EventId);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR,
+			"[SAR]Parse apcArgv[%d]:%s to i4EventId error[%d]\n",
+			1, apcArgv[1], i4Ret);
+		return -EINVAL;
+	}
+
+	if (i4Argc >= 3) {
+		i4Ret = kalkStrtou8(apcArgv[2], 0, &ucAntIdx);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR,
+			"[SAR]Parse apcArgv[%d]:%s to ucAntIdx error[%d]\n",
+			2, apcArgv[2], i4Ret);
+			return -EINVAL;
+		}
+
+		if (ucAntIdx == 0) {
+			/* ANT_1 : WF0 */
+			ucSubIdx = SAR_APPLY_ANT_WF0;
+		} else if (ucAntIdx == 1) {
+			/* ANT_2 : WF1*/
+			ucSubIdx = SAR_APPLY_ANT_WF1;
+		} else {
+			DBGLOG(REQ, ERROR,
+			"[SAR]Not support antIdx[%d]\n", ucAntIdx);
+			return -EINVAL;
+		}
+
+	} else {
+		ucSubIdx = SAR_APPLY_ANT_ALL;
+	}
+
+	rlmDomainGenSarBitMap(SAR_TX_POWER_CALLING,
+		(enum ENUM_SAR_EVENT_ID)i4EventId, ucSubIdx);
+
+	rStatus =  kalSetSarLimitByBitMap(prGlueInfo,
+					  rlmDomainGetSarActBitMap());
+
+	return rStatus;
+}
+
+int testmode_set_tx_power_sub6_band(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t rStatus = 0;
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucBandInfo = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo == NULL)
+		return -EINVAL;
+
+	DBGLOG(REQ, ERROR, "[SAR]command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 2) {
+		i4Ret = kalkStrtou8(apcArgv[1], 0, &ucBandInfo);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR,
+			"[SAR]Parse apcArgv[%d]:%s to ucBandInfo error[%d]\n",
+			1, apcArgv[1], i4Ret);
+			return -EINVAL;
+		}
+		rlmDomainGenSarBitMap(SAR_TX_POWER_SUB6_BAND,
+			SAR_EVENT_NOT_DEFINE,
+			ucBandInfo);
+	} else {
+		rlmDomainGenSarBitMap(SAR_TX_POWER_CALLING,
+			NR_SUB6_SAR_BACKOFF_ENABLED,
+			SAR_APPLY_ANT_ALL);
+	}
+
+	rStatus =  kalSetSarLimitByBitMap(prGlueInfo,
+					  rlmDomainGetSarActBitMap());
 
 	return rStatus;
 }

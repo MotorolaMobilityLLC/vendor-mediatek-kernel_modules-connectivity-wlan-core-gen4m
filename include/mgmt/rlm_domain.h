@@ -906,7 +906,7 @@ struct TX_PWR_CTRL_ELEMENT {
 	struct LINK_ENTRY node;
 	u_int8_t fgApplied;
 	char name[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE]; /* scenario name */
-	uint8_t index; /* scenario index */
+	uint16_t index; /* scenario index */
 	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
 	uint8_t settingCount;
 	/* channel setting count. [.....] means one channel setting */
@@ -925,7 +925,7 @@ struct TX_PWR_CTRL_ELEMENT {
 struct PARAM_TX_PWR_CTRL_IOCTL {
 	u_int8_t fgApplied;
 	uint8_t *name;
-	uint8_t index;
+	uint16_t index;
 	uint8_t *newSetting;
 };
 #endif
@@ -1447,6 +1447,61 @@ struct PWR_LIMIT_HANDLER_INFO {
 	PFN_PWR_LMT_WRITE_EMI_FUNC pfWriteEmi;
 };
 #endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+
+#if (CFG_TC10_FEATURE == 1)
+struct SAR_SUB_IDX_REMAP_TBL_INFO {
+	uint16_t u2SubIdx;
+	uint32_t u4BitMap;
+};
+enum ENUM_SAR_TYPE {
+	SAR_HEAD = 0,
+	SAR_BODY,   /* GRIP */
+	SAR_NR_MMWAVE,
+	SAR_NR_SUB6,
+	SAR_MHS,
+	SAR_NR_SUB6_BAND_INFO_2,
+	SAR_NR_SUB6_BAND_INFO_7,
+	SAR_NR_SUB6_BAND_INFO_25,
+	SAR_NR_SUB6_BAND_INFO_38,
+	SAR_NR_SUB6_BAND_INFO_40,
+	SAR_NR_SUB6_BAND_INFO_41,
+	SAR_NR_SUB6_BAND_INFO_48,
+	SAR_NR_SUB6_BAND_INFO_66,
+	SAR_NR_SUB6_BAND_INFO_77,
+	SAR_NR_SUB6_BAND_INFO_78,
+	SAR_NUM
+};
+
+enum ENUM_SAR_EVENT_ID {
+	HEAD_SAR_BACKOFF_DISABLED = -1,
+	HEAD_SAR_BACKOFF_ENABLED = 0,
+	BODY_SAR_BACKOFF_DISABLED = 1,
+	BODY_SAR_BACKOFF_ENABLED = 2,
+	NR_MMWAVE_SAR_BACKOFF_DISABLED = 3,
+	NR_MMWAVE_SAR_BACKOFF_ENABLED = 4,
+	NR_SUB6_SAR_BACKOFF_DISABLED = 5,
+	NR_SUB6_SAR_BACKOFF_ENABLED = 6,
+	SAR_SAR_BACKOFF_DISABLE_ALL = 7,
+	MHS_SAR_BACKOFF_DISABLED = 8,
+	MHS_SAR_BACKOFF_ENABLED = 9,
+	SAR_EVENT_NUM,
+	SAR_EVENT_NOT_DEFINE = SAR_EVENT_NUM
+};
+
+enum ENUM_SAR_CMD_TYPE {
+	SAR_TX_POWER_CALLING = 0,
+	SAR_TX_POWER_SUB6_BAND,
+	SAR_CMD_TYPE_NUM
+};
+
+enum ENUM_SAR_APPLY_ANT {
+	SAR_APPLY_ANT_DISABLE = 0,
+	SAR_APPLY_ANT_ALL = 1,
+	SAR_APPLY_ANT_WF0 = 2,
+	SAR_APPLY_ANT_WF1 = 3,
+	SAR_APPLY_ANT_NUM
+};
+#endif /* CFG_TC10_FEATURE */
 /*******************************************************************************
  * P U B L I C   D A T A
  *******************************************************************************
@@ -1849,6 +1904,77 @@ void rlmSendTpeLimit(
 	int8_t *pcTxPwrEnvMaxPwr,
 	uint8_t fgPwrLmtEnable);
 #endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
+#if (CFG_TC10_FEATURE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is gen SAR bitmap
+ *
+ * @param[in] eType : SAR cmd type
+ * @param[in] eId : Event ID
+ * @param[in] ucInfo : other info
+ *
+ * @return void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmDomainGenSarBitMap(
+	enum ENUM_SAR_CMD_TYPE eType,
+	enum ENUM_SAR_EVENT_ID eId,
+	uint8_t ucInfo);
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use get SAR action bitmap
+ *
+ * @param[in] void
+ *
+ * @return uint32_t : SAR action bitmap
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainGetSarActBitMap(void);
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use get SAR scenario name
+ *
+ * @param[in] eType : SAR scenario type
+ *
+ * @return char * : SAR scenario name
+ */
+/*----------------------------------------------------------------------------*/
+char *rlmDomainGetSarScenarioName(enum ENUM_SAR_TYPE eType);
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use get SAR remapping sub-index
+ *
+ * @param[in] u4BitMap : Bit Map
+ * @param[in] pu4SubIdx : pointer of sub-index
+ *
+ * @return WLAN_STAUS
+ */
+/*----------------------------------------------------------------------------*/
+int32_t rlmDomainSarGetRemapSubIdx(
+		uint32_t u4BitMap,
+		uint16_t *pu2SubIdx);
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use check is SAR event concurrent
+ *
+ * @param[in] void
+ *
+ * @return uint8_t : TRUE : conncurrent, FALSE : no concurrent
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmDomainIsSarEventConcurrent(void);
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is get each SAR scenario type apply antenna status
+ *
+ * @param[in] eType : SAR scenario type
+ *
+ * @return apply antenna status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainGetSarApplyAntStatus(
+	enum ENUM_SAR_TYPE eType);
+#endif /* CFG_TC10_FEATURE */
 /*******************************************************************************
  *   F U N C T I O N S
  *******************************************************************************

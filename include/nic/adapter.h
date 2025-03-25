@@ -2035,6 +2035,10 @@ struct WIFI_VAR {
 #if (CFG_P2P2_SUPPORT_CAP_NOTIFICATION == 1)
 	u_int8_t fgP2pCapNotif;
 #endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+
+#if (CFG_TC10_FEATURE == 1)
+	uint8_t ucSarLmtCfgVer;
+#endif
 };
 
 /* cnm_timer module */

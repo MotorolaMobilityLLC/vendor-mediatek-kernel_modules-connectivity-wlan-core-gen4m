@@ -3010,4 +3010,17 @@ void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);
 void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);
+#if (CFG_TC10_FEATURE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is send txpower limit by bit map
+ *
+ * @param[in] eType : SAR scenario type
+ *
+ * @return char * : SAR scenario name
+ */
+/*----------------------------------------------------------------------------*/
+int32_t kalSetSarLimitByBitMap(struct GLUE_INFO *prGlueInfo,
+				uint32_t u4ActBitMap);
+#endif
 #endif /* _GL_KAL_H */

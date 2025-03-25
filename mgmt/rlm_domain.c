@@ -331,6 +331,19 @@ struct TX_PWR_TAG_TABLE {
 #define IS_FREQ_RANGE_OVERLAP_6G_UNII_BAND(_unii_idx, _start_freq, _end_freq) \
 		((_start_freq) < _ar6GUniiFreqRange[_unii_idx][1] && \
 		(_end_freq) > _ar6GUniiFreqRange[_unii_idx][0])
+
+#if (CFG_TC10_FEATURE == 1)
+#define SAR_NR_SUB6_BAND_INFO_MASK (BIT(SAR_NR_SUB6_BAND_INFO_2) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_7) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_25) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_38) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_40) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_41) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_48) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_66) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_77) | \
+					BIT(SAR_NR_SUB6_BAND_INFO_78))
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1785,7 +1798,86 @@ struct PWR_MODE_6G_BSS_INFO g_r6GPwrModeBssInfo[MAX_BSSID_NUM];
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-
+#if (CFG_TC10_FEATURE == 1)
+static char *g_sarScenarioName[SAR_NUM] = {
+	"SAR_HEAD",
+	"SAR_BODY",
+	"SAR_NR_MMWAVE",
+	"SAR_NR_SUB6",
+	"SAR_MHS",
+	"SAR_NR_SUB6_BAND_INFO_2",
+	"SAR_NR_SUB6_BAND_INFO_7",
+	"SAR_NR_SUB6_BAND_INFO_25",
+	"SAR_NR_SUB6_BAND_INFO_38",
+	"SAR_NR_SUB6_BAND_INFO_40",
+	"SAR_NR_SUB6_BAND_INFO_41",
+	"SAR_NR_SUB6_BAND_INFO_48",
+	"SAR_NR_SUB6_BAND_INFO_66",
+	"SAR_NR_SUB6_BAND_INFO_77",
+	"SAR_NR_SUB6_BAND_INFO_78"
+};
+static struct SAR_SUB_IDX_REMAP_TBL_INFO g_SarSubIndxReMapTbl[] = {
+	{0, 0},
+	{1, BIT(SAR_HEAD)},
+	{2, BIT(SAR_BODY)},
+	{3, (BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{4, BIT(SAR_NR_MMWAVE)},
+	{5, (BIT(SAR_NR_MMWAVE) | BIT(SAR_HEAD))},
+	{6, (BIT(SAR_NR_MMWAVE) | BIT(SAR_BODY))},
+	{7, (BIT(SAR_NR_MMWAVE) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{8, BIT(SAR_NR_SUB6)},
+	{9, (BIT(SAR_NR_SUB6) | BIT(SAR_HEAD))},
+	{10, (BIT(SAR_NR_SUB6) | BIT(SAR_BODY))},
+	{11, (BIT(SAR_NR_SUB6) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{12, BIT(SAR_MHS)},
+	{13, (BIT(SAR_MHS) | BIT(SAR_HEAD))},
+	{14, (BIT(SAR_MHS) | BIT(SAR_BODY))},
+	{15, (BIT(SAR_MHS) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{16, BIT(SAR_NR_SUB6_BAND_INFO_2)},
+	{17, (BIT(SAR_NR_SUB6_BAND_INFO_2) | BIT(SAR_HEAD))},
+	{18, (BIT(SAR_NR_SUB6_BAND_INFO_2) | BIT(SAR_BODY))},
+	{19, (BIT(SAR_NR_SUB6_BAND_INFO_2) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{20, BIT(SAR_NR_SUB6_BAND_INFO_7)},
+	{21, (BIT(SAR_NR_SUB6_BAND_INFO_7) | BIT(SAR_HEAD))},
+	{22, (BIT(SAR_NR_SUB6_BAND_INFO_7) | BIT(SAR_BODY))},
+	{23, (BIT(SAR_NR_SUB6_BAND_INFO_7) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{24, BIT(SAR_NR_SUB6_BAND_INFO_25)},
+	{25, (BIT(SAR_NR_SUB6_BAND_INFO_25) | BIT(SAR_HEAD))},
+	{26, (BIT(SAR_NR_SUB6_BAND_INFO_25) | BIT(SAR_BODY))},
+	{27, (BIT(SAR_NR_SUB6_BAND_INFO_25) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{28, BIT(SAR_NR_SUB6_BAND_INFO_38)},
+	{29, (BIT(SAR_NR_SUB6_BAND_INFO_38) | BIT(SAR_HEAD))},
+	{30, (BIT(SAR_NR_SUB6_BAND_INFO_38) | BIT(SAR_BODY))},
+	{31, (BIT(SAR_NR_SUB6_BAND_INFO_38) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{32, BIT(SAR_NR_SUB6_BAND_INFO_40)},
+	{33, (BIT(SAR_NR_SUB6_BAND_INFO_40) | BIT(SAR_HEAD))},
+	{34, (BIT(SAR_NR_SUB6_BAND_INFO_40) | BIT(SAR_BODY))},
+	{35, (BIT(SAR_NR_SUB6_BAND_INFO_40) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{36, BIT(SAR_NR_SUB6_BAND_INFO_41)},
+	{37, (BIT(SAR_NR_SUB6_BAND_INFO_41) | BIT(SAR_HEAD))},
+	{38, (BIT(SAR_NR_SUB6_BAND_INFO_41) | BIT(SAR_BODY))},
+	{39, (BIT(SAR_NR_SUB6_BAND_INFO_41) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{40, BIT(SAR_NR_SUB6_BAND_INFO_48)},
+	{41, (BIT(SAR_NR_SUB6_BAND_INFO_48) | BIT(SAR_HEAD))},
+	{42, (BIT(SAR_NR_SUB6_BAND_INFO_48) | BIT(SAR_BODY))},
+	{43, (BIT(SAR_NR_SUB6_BAND_INFO_48) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{44, BIT(SAR_NR_SUB6_BAND_INFO_66)},
+	{45, (BIT(SAR_NR_SUB6_BAND_INFO_66) | BIT(SAR_HEAD))},
+	{46, (BIT(SAR_NR_SUB6_BAND_INFO_66) | BIT(SAR_BODY))},
+	{47, (BIT(SAR_NR_SUB6_BAND_INFO_66) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{48, BIT(SAR_NR_SUB6_BAND_INFO_77)},
+	{49, (BIT(SAR_NR_SUB6_BAND_INFO_77) | BIT(SAR_HEAD))},
+	{50, (BIT(SAR_NR_SUB6_BAND_INFO_77) | BIT(SAR_BODY))},
+	{51, (BIT(SAR_NR_SUB6_BAND_INFO_77) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+	{52, BIT(SAR_NR_SUB6_BAND_INFO_78)},
+	{53, (BIT(SAR_NR_SUB6_BAND_INFO_78) | BIT(SAR_HEAD))},
+	{54, (BIT(SAR_NR_SUB6_BAND_INFO_78) | BIT(SAR_BODY))},
+	{55, (BIT(SAR_NR_SUB6_BAND_INFO_78) | BIT(SAR_HEAD) | BIT(SAR_BODY))},
+};
+static uint8_t g_ucSarApplyAnt[SAR_NUM];
+static uint32_t g_u4SarActBitMap;
+static uint32_t g_u4SarBitMap;
+#endif /* CFG_TC10_FEATURE */
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -8119,7 +8211,7 @@ char *txPwrGetString(char **pcContent, char *delim)
 }
 
 uint32_t txPwrParseNumber(char **pcContent, char *delim, uint8_t *op,
-			  int8_t *value) {
+			  uint16_t *value) {
 	u_int8_t fgIsNegtive = FALSE;
 	char *pcTmp = NULL;
 	char *result = NULL;
@@ -8142,7 +8234,7 @@ uint32_t txPwrParseNumber(char **pcContent, char *delim, uint8_t *op,
 		*value = 0;
 		*op = 0;
 	} else {
-		if (kalkStrtou8(pcTmp, 0, value) != 0) {
+		if (kalkStrtou16(pcTmp, 0, value) != 0) {
 			DBGLOG(RLM, ERROR,
 			       "parse number error: invalid number [%s][%s]\n",
 			       pcTmp, delim);
@@ -8463,7 +8555,7 @@ int32_t txPwrParseAntCfgParaPwr(
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t op = 0;
-	uint8_t value = 0;
+	uint16_t value = 0;
 	uint8_t ucCnt = 0;
 	uint8_t ucBandIdx = 0;
 	uint8_t ucAntIdx = 0;
@@ -8493,7 +8585,8 @@ int32_t txPwrParseAntCfgParaPwr(
 		pcContent = txPwrGetString(&pcCurrent, ",");
 
 		if (pcContent) {
-			if (txPwrParseNumber(&pcContent, ",", &op, &value)) {
+			if (txPwrParseNumber(&pcContent, ",", &op,
+							&value)) {
 				DBGLOG(RLM, ERROR, "parse parameter error:%s\n",
 				pcContent);
 				break;
@@ -8831,7 +8924,8 @@ int32_t txPwrParseTagMultiBand(
 
 	/* Parsing MultiBandNum */
 	pcContOld = pcCurrent;
-	if (txPwrParseNumber(&pcCurrent, ",", &op, &u1MultiBandNum)) {
+	if (txPwrParseNumber(&pcCurrent, ",", &op,
+				(uint16_t *)&u1MultiBandNum)) {
 		DBGLOG(RLM, ERROR, "[MulBnPwr] parse parameter error:%s\n",
 			pcContOld);
 		return -1;
@@ -8862,7 +8956,8 @@ int32_t txPwrParseTagMultiBand(
 
 		pcContOld = pcCurrent;
 		/* Parsing BandMask */
-		if (txPwrParseNumber(&pcCurrent, ",", &op, &u1BandMask)) {
+		if (txPwrParseNumber(&pcCurrent, ",", &op,
+						(uint16_t *)&u1BandMask)) {
 			DBGLOG(RLM, ERROR,
 				"[MulBnPwr] parse parameter error:%s\n",
 				pcContOld);
@@ -8876,7 +8971,8 @@ int32_t txPwrParseTagMultiBand(
 
 		/* Parsing Channel Group Num */
 		pcContOld = pcCurrent;
-		if (txPwrParseNumber(&pcCurrent, ":", &op, &u1ChCnt)) {
+		if (txPwrParseNumber(&pcCurrent, ":", &op,
+						(uint16_t *)&u1ChCnt)) {
 			DBGLOG(RLM, ERROR,
 				"[MulBnPwr] parse parameter error:%s\n",
 				pcContOld);
@@ -8913,7 +9009,7 @@ int32_t txPwrParseTagMultiBand(
 			/* Parsing RF Band */
 			pcContOld = pcCurrent;
 			if (txPwrParseNumber(&pcCurrent, ",",
-				&op, &u1RfBand)) {
+				&op, (uint16_t *)&u1RfBand)) {
 				DBGLOG(RLM, ERROR,
 					"[MulBnPwr] parse parameter error:%s\n",
 					pcContOld);
@@ -8925,7 +9021,7 @@ int32_t txPwrParseTagMultiBand(
 			/* Parsing start ch */
 			pcContOld = pcCurrent;
 			if (txPwrParseNumber(&pcCurrent, ",",
-				&op, &u1StartCh)) {
+				&op, (uint16_t *)&u1StartCh)) {
 				DBGLOG(RLM, ERROR,
 					"[MulBnPwr] parse parameter error:%s\n",
 					pcContOld);
@@ -8935,7 +9031,7 @@ int32_t txPwrParseTagMultiBand(
 			/* Parsing end ch */
 			pcContOld = pcCurrent;
 			if (txPwrParseNumber(&pcCurrent, "(",
-				&op, &u1EndCh)) {
+				&op, (uint16_t *)&u1EndCh)) {
 				DBGLOG(RLM, ERROR,
 					"[MulBnPwr] parse parameter error:%s\n",
 					pcContOld);
@@ -8978,7 +9074,7 @@ int32_t txPwrParseTagMultiBand(
 				pcContOld = pcCurrent;
 
 				if (txPwrParseNumber(&pcCurrent, carySeperator,
-					&op, &u1Pwr)) {
+					&op, (uint16_t *)&u1Pwr)) {
 					DBGLOG(RLM, ERROR,
 						"[MulBnPwr] [%d-%s]parse parameter error:%s\n",
 						cnt, carySeperator, pcContOld);
@@ -10265,8 +10361,8 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
 	uint32_t copySize = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
-	uint8_t value, value2, count = 0;
-	uint8_t ucAppliedWay, ucOperation = 0;
+	uint16_t value, value2, count = 0;
+	uint16_t u2AppliedWay, u2Operation = 0;
 	uint32_t u4RollBackStep = 0;
 	char carySeperator[2] = { 0, 0 };
 	enum ENUM_PWR_CFG_RATE_TAG u1RateTag = 0;
@@ -10457,43 +10553,43 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 
 	/* parese scenario applied way */
 	pcContOld = pcContCur;
-	if (txPwrParseNumber(&pcContCur, ";", &op, &ucAppliedWay)) {
+	if (txPwrParseNumber(&pcContCur, ";", &op, &u2AppliedWay)) {
 		DBGLOG(RLM, ERROR, "parse applied way error: %s\n",
 		       pcContOld);
 		return NULL;
 	}
-	if ((ucAppliedWay < PWR_CTRL_TYPE_APPLIED_WAY_WIFION) ||
-	    (ucAppliedWay > PWR_CTRL_TYPE_APPLIED_WAY_IOCTL)) {
+	if ((u2AppliedWay < PWR_CTRL_TYPE_APPLIED_WAY_WIFION) ||
+	    (u2AppliedWay > PWR_CTRL_TYPE_APPLIED_WAY_IOCTL)) {
 		DBGLOG(RLM, ERROR,
 		       "parse applied way error: value=%u\n",
-		       ucAppliedWay);
+		       u2AppliedWay);
 		return NULL;
 	}
 
 	/* parese scenario applied type */
 	pcContOld = pcContCur;
-	if (txPwrParseNumber(&pcContCur, ";", &op, &ucOperation)) {
+	if (txPwrParseNumber(&pcContCur, ";", &op, &u2Operation)) {
 		DBGLOG(RLM, ERROR, "parse operation error: %s\n",
 		       pcContOld);
 		return NULL;
 	}
-	if ((ucOperation < PWR_CTRL_TYPE_OPERATION_POWER_LEVEL) ||
-	    (ucOperation > PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+	if ((u2Operation < PWR_CTRL_TYPE_OPERATION_POWER_LEVEL) ||
+	    (u2Operation > PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 		DBGLOG(RLM, ERROR,
 		       "parse operation error: value=%u\n",
-		       ucOperation);
+		       u2Operation);
 		return NULL;
 	}
 
-	switch (ucAppliedWay) {
+	switch (u2AppliedWay) {
 	case PWR_CTRL_TYPE_APPLIED_WAY_WIFION:
-		if (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_LEVEL)
+		if (u2Operation == PWR_CTRL_TYPE_OPERATION_POWER_LEVEL)
 			value2 = PWR_CTRL_TYPE_WIFION_POWER_LEVEL;
 		else
 			value2 = PWR_CTRL_TYPE_WIFION_POWER_OFFSET;
 		break;
 	case PWR_CTRL_TYPE_APPLIED_WAY_IOCTL:
-		if (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_LEVEL)
+		if (u2Operation == PWR_CTRL_TYPE_OPERATION_POWER_LEVEL)
 			value2 = PWR_CTRL_TYPE_IOCTL_POWER_LEVEL;
 		else
 			value2 = PWR_CTRL_TYPE_IOCTL_POWER_OFFSET;
@@ -10531,7 +10627,7 @@ skipLabel:
 	kalMemZero(prCurElement, u4MemSize);
 	if (fgSkipHeader == FALSE) {
 		kalMemCopy(prCurElement->name, acTmpName, copySize);
-		prCurElement->index = (uint8_t)value;
+		prCurElement->index = (uint16_t)value;
 		prCurElement->eCtrlType = (enum ENUM_TX_POWER_CTRL_TYPE)value2;
 		if (prCurElement->eCtrlType <=
 		    PWR_CTRL_TYPE_WIFION_POWER_OFFSET)
@@ -10701,7 +10797,8 @@ skipLabel:
 			}
 
 			if (pcContCur2 == NULL) { /* case: normal channel */
-				if (kalkStrtou8(pcContOld, 0, &value) != 0) {
+				if (kalkStrtou8(pcContOld, 0,
+						(uint8_t *)&value) != 0) {
 					DBGLOG(RLM, ERROR,
 					       "parse channel error: %s\n",
 					       pcContOld);
@@ -10728,13 +10825,15 @@ skipLabel:
 					prTmpSetting->eChnlType =
 						PWR_CTRL_CHNL_TYPE_NORMAL;
 			} else { /* case: channel range */
-				if (kalkStrtou8(pcContTmp, 0, &value) != 0) {
+				if (kalkStrtou8(pcContTmp, 0,
+						(uint8_t *)&value) != 0) {
 					DBGLOG(RLM, ERROR,
 					       "parse first channel error, %s\n",
 					       pcContTmp);
 					goto clearLabel;
 				}
-				if (kalkStrtou8(pcContCur2, 0, &value2) != 0) {
+				if (kalkStrtou8(pcContCur2, 0,
+						(uint8_t *)&value2) != 0) {
 					DBGLOG(RLM, ERROR,
 					       "parse second channel error, %s\n",
 					       pcContCur2);
@@ -10765,7 +10864,8 @@ skipLabel:
 		if (count == PWR_CFG_PRAM_NUM_ALL_RATE) {
 			/* parse all rate setting */
 			pcContOld = pcContCur;
-			if (txPwrParseNumber(&pcContCur, "]", &op, &value)) {
+			if (txPwrParseNumber(&pcContCur, "]", &op,
+					&value)) {
 				DBGLOG(RLM, ERROR, "parse CCK error, %s\n",
 					   pcContOld);
 				goto clearLabel;
@@ -10798,7 +10898,7 @@ skipLabel:
 
 				if ((prTmpSetting->op[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -10833,7 +10933,7 @@ skipLabel:
 
 				if ((prTmpSetting->op[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -10868,7 +10968,7 @@ skipLabel:
 
 				if ((prTmpSetting->opHE[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -10904,7 +11004,7 @@ skipLabel:
 
 				if ((prTmpSetting->opEHT[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -10942,7 +11042,7 @@ skipLabel:
 
 				if ((prTmpSetting->op6E[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -10977,7 +11077,7 @@ skipLabel:
 
 				if ((prTmpSetting->opLegacy_6G[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -11012,7 +11112,7 @@ skipLabel:
 
 				if ((prTmpSetting->opLegacy_6G[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -11049,7 +11149,7 @@ skipLabel:
 
 				if ((prTmpSetting->opEHT_6G[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -11086,7 +11186,7 @@ skipLabel:
 
 				if ((prTmpSetting->opHE[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
-					(ucOperation
+					(u2Operation
 					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
 					) {
 					DBGLOG(RLM, ERROR,
@@ -17310,3 +17410,372 @@ static void rlmDomainWriteTxPwrEmiData_EHT(
 }
 
 #endif
+
+#if (CFG_TC10_FEATURE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is get each SAR scenario type apply antenna status
+ *
+ * @param[in] eType : SAR scenario type
+ *
+ * @return apply antenna status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainGetSarApplyAntStatus(
+	enum ENUM_SAR_TYPE eType
+)
+{
+	if (eType >= SAR_NUM)
+		return SAR_APPLY_ANT_DISABLE;
+
+	DBGLOG(RLM, INFO, "[SAR]Sar Scenario Type[%d] apply_ant[%d]\n",
+		eType,
+		g_ucSarApplyAnt[eType]);
+
+	return g_ucSarApplyAnt[eType];
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is disable all sub6 band info
+ *
+ * @param[in] void
+ *
+ * @return void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmDomainSarSub6BandInfoBitMapClear(void)
+{
+	g_u4SarBitMap &= ~SAR_NR_SUB6_BAND_INFO_MASK;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is disable all sub6 band info
+ *
+ * @param[in] void
+ *
+ * @return void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmDomainSarSub6BandInfoDisableApplyAnt(void)
+{
+	uint8_t i = 0;
+
+	for (i = SAR_NR_SUB6_BAND_INFO_2; i <= SAR_NR_SUB6_BAND_INFO_78; i++)
+		g_ucSarApplyAnt[i] = SAR_APPLY_ANT_DISABLE;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is gen SAR bitmap
+ *
+ * @param[in] eType : SAR cmd type
+ * @param[in] eId : Event ID
+ * @param[in] ucInfo : other info
+ *
+ * @return void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmDomainGenSarBitMap(
+	enum ENUM_SAR_CMD_TYPE eCmdType,
+	enum ENUM_SAR_EVENT_ID eId,
+	uint8_t ucInfo)
+{
+	bool fgSub6BandInfoValid = TRUE;
+	uint8_t i = 0;
+	enum ENUM_SAR_TYPE eSarType = SAR_HEAD;
+
+	DBGLOG(RLM, INFO,
+		"[SAR]SAR bitmap start: [0x%X,0x%X] Cmd type[%d]id[%d]info[%d]\n",
+		g_u4SarBitMap,
+		g_u4SarActBitMap,
+		eCmdType,
+		eId,
+		ucInfo);
+
+	if (eCmdType == SAR_TX_POWER_CALLING) {
+		switch (eId) {
+		case HEAD_SAR_BACKOFF_DISABLED:
+			g_u4SarBitMap &= ~BIT(SAR_HEAD);
+			g_ucSarApplyAnt[SAR_HEAD] = SAR_APPLY_ANT_DISABLE;
+			break;
+		case HEAD_SAR_BACKOFF_ENABLED:
+			g_u4SarBitMap |= BIT(SAR_HEAD);
+			g_ucSarApplyAnt[SAR_HEAD] = ucInfo;
+			break;
+		case BODY_SAR_BACKOFF_DISABLED:
+			g_u4SarBitMap &= ~BIT(SAR_BODY);
+			g_ucSarApplyAnt[SAR_BODY] = SAR_APPLY_ANT_DISABLE;
+			break;
+		case BODY_SAR_BACKOFF_ENABLED:
+			g_u4SarBitMap |= BIT(SAR_BODY);
+			g_ucSarApplyAnt[SAR_BODY] = ucInfo;
+			break;
+		case NR_MMWAVE_SAR_BACKOFF_DISABLED:
+			g_u4SarBitMap &= ~BIT(SAR_NR_MMWAVE);
+			g_ucSarApplyAnt[SAR_NR_MMWAVE] = SAR_APPLY_ANT_DISABLE;
+			break;
+		case NR_MMWAVE_SAR_BACKOFF_ENABLED:
+			g_u4SarBitMap |= BIT(SAR_NR_MMWAVE);
+			g_ucSarApplyAnt[SAR_NR_MMWAVE] = ucInfo;
+			/* mmWave & Sub6/Sub6_Band_info have same priority,
+			 * If mmWave is enable, Sub6/Sub6_Band_info
+			 * should be disable
+			 */
+			g_u4SarBitMap &= ~BIT(SAR_NR_SUB6);
+			g_ucSarApplyAnt[SAR_NR_SUB6] = SAR_APPLY_ANT_DISABLE;
+			rlmDomainSarSub6BandInfoBitMapClear();
+			rlmDomainSarSub6BandInfoDisableApplyAnt();
+			break;
+		case NR_SUB6_SAR_BACKOFF_DISABLED:
+			g_u4SarBitMap &= ~BIT(SAR_NR_SUB6);
+			g_ucSarApplyAnt[SAR_NR_SUB6] = SAR_APPLY_ANT_DISABLE;
+			rlmDomainSarSub6BandInfoBitMapClear();
+			rlmDomainSarSub6BandInfoDisableApplyAnt();
+			break;
+		case NR_SUB6_SAR_BACKOFF_ENABLED:
+			g_u4SarBitMap |= BIT(SAR_NR_SUB6);
+			g_ucSarApplyAnt[SAR_NR_SUB6] = ucInfo;
+			/* Sub6 & mmWave/Sub6_Band_info have same priority,
+			 * If Sub6 is enable, mmWave/Sub6_Band_info
+			 * should be disable
+			 */
+			g_u4SarBitMap &= ~BIT(SAR_NR_MMWAVE);
+			g_ucSarApplyAnt[SAR_NR_MMWAVE] = SAR_APPLY_ANT_DISABLE;
+			rlmDomainSarSub6BandInfoBitMapClear();
+			rlmDomainSarSub6BandInfoDisableApplyAnt();
+			break;
+		case SAR_SAR_BACKOFF_DISABLE_ALL:
+			g_u4SarBitMap = 0;
+			for (i = 0; i < SAR_NUM; i++) {
+				/* disable ant apply */
+				g_ucSarApplyAnt[i] = SAR_APPLY_ANT_DISABLE;
+			}
+			break;
+		case MHS_SAR_BACKOFF_DISABLED:
+			g_u4SarBitMap &= ~BIT(SAR_MHS);
+			g_ucSarApplyAnt[SAR_MHS] = SAR_APPLY_ANT_DISABLE;
+			break;
+		case MHS_SAR_BACKOFF_ENABLED:
+			g_u4SarBitMap |= BIT(SAR_MHS);
+			g_ucSarApplyAnt[SAR_MHS] = ucInfo;
+			break;
+		default:
+			DBGLOG(RLM, ERROR, "[SAR]Event ID[%d]not define\n",
+						eId);
+			break;
+		}
+	} else if (eCmdType == SAR_TX_POWER_SUB6_BAND) {
+
+		fgSub6BandInfoValid = TRUE;
+
+		switch (ucInfo) {
+		case 2:
+			eSarType = SAR_NR_SUB6_BAND_INFO_2;
+			break;
+		case 7:
+			eSarType = SAR_NR_SUB6_BAND_INFO_7;
+			break;
+		case 25:
+			eSarType = SAR_NR_SUB6_BAND_INFO_25;
+			break;
+		case 38:
+			eSarType = SAR_NR_SUB6_BAND_INFO_38;
+			break;
+		case 40:
+			eSarType = SAR_NR_SUB6_BAND_INFO_40;
+			break;
+		case 41:
+			eSarType = SAR_NR_SUB6_BAND_INFO_41;
+			break;
+		case 48:
+			eSarType = SAR_NR_SUB6_BAND_INFO_48;
+			break;
+		case 66:
+			eSarType = SAR_NR_SUB6_BAND_INFO_66;
+			break;
+		case 77:
+			eSarType = SAR_NR_SUB6_BAND_INFO_77;
+			break;
+		case 78:
+			eSarType = SAR_NR_SUB6_BAND_INFO_78;
+			break;
+		default:
+			fgSub6BandInfoValid = FALSE;
+			DBGLOG(RLM, ERROR, "[SAR]Not support sub6_band[%d]\n",
+						ucInfo);
+			break;
+		}
+
+		if (fgSub6BandInfoValid) {
+			/* At any given time, only one sub6_band_info
+			 * secnario setting will be enabled.
+			 * Therefore, we will first disable all
+			 * sub6_band_info settings, and then re-enabled
+			 * the setting that needs to be updated.
+			 */
+			rlmDomainSarSub6BandInfoBitMapClear();
+			rlmDomainSarSub6BandInfoDisableApplyAnt();
+			g_u4SarBitMap |= BIT(eSarType);
+			g_ucSarApplyAnt[eSarType] = SAR_APPLY_ANT_ALL;
+
+			/* Sub6_Band_info & Sub6/mmWave have same priority,
+			 * If Sub6_Band_info is enable, Sub6/mmWave
+			 * should be disable.
+			 */
+			g_u4SarBitMap &= ~BIT(SAR_NR_SUB6);
+			g_ucSarApplyAnt[SAR_NR_SUB6] = SAR_APPLY_ANT_DISABLE;
+			g_u4SarBitMap &= ~BIT(SAR_NR_MMWAVE);
+			g_ucSarApplyAnt[SAR_NR_MMWAVE] = SAR_APPLY_ANT_DISABLE;
+		}
+	}
+
+	g_u4SarActBitMap = g_u4SarBitMap;
+
+	/* mmWave/Sub6/Sub6_band_info have higher priority than MHS,
+	 * MHS settinngs can be enable only when all mmWave/Sub6/Sub6_band_info
+	 * is disable.
+	 */
+	if (g_u4SarBitMap & BIT(SAR_NR_MMWAVE) ||
+		g_u4SarBitMap & BIT(SAR_NR_SUB6) ||
+		g_u4SarBitMap & SAR_NR_SUB6_BAND_INFO_MASK) {
+		g_u4SarActBitMap &= ~BIT(SAR_MHS);
+	}
+
+	DBGLOG(RLM, INFO, "[SAR]SAR bitmap end: [0x%X,0x%X]\n",
+		g_u4SarBitMap, g_u4SarActBitMap);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use get SAR action bitmap
+ *
+ * @param[in] void
+ *
+ * @return uint32_t : SAR action bitmap
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainGetSarActBitMap(void)
+{
+	return g_u4SarActBitMap;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use get SAR scenario name
+ *
+ * @param[in] eType : SAR scenario type
+ *
+ * @return char * : SAR scenario name
+ */
+/*----------------------------------------------------------------------------*/
+char *rlmDomainGetSarScenarioName(enum ENUM_SAR_TYPE eType)
+{
+	if (eType >= SAR_NUM)
+		return NULL;
+
+	return g_sarScenarioName[eType];
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use check is SAR event concurrent
+ *
+ * @param[in] void
+ *
+ * @return uint8_t : TRUE : conncurrent, FALSE : no concurrent
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmDomainIsSarEventConcurrent(void)
+{
+	uint8_t i = 0;
+	uint8_t ucCnt = 0;
+
+	if (rlmDomainGetSarActBitMap() == 0) {
+		DBGLOG(RLM, INFO, "[SAR]No Sar event occur\n");
+		return FALSE;
+	}
+
+	for (i = 0; i < SAR_NUM; i++) {
+		if ((BIT(i) & rlmDomainGetSarActBitMap())) {
+			ucCnt++;
+			DBGLOG(RLM, INFO,
+				"[SAR]Scenario Type[%d]name[%s]enable, total[%d]\n",
+				i,
+				rlmDomainGetSarScenarioName(i),
+				ucCnt);
+		}
+	}
+
+	if (ucCnt >= 2)
+		return TRUE;
+
+	return FALSE;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use get SAR sub-index by Bit Map
+ *
+ * @param[in] u4BitMap : Bit Map
+ * @param[in] pu4SubIdx : pointer of sub-index
+ *
+ * @return sub index
+ */
+/*----------------------------------------------------------------------------*/
+int32_t rlmDomainSarGetRemapSubIdx(
+		uint32_t u4BitMap,
+		uint16_t *pu2SubIdx)
+{
+
+	uint32_t i = 0;
+	uint32_t u4Size = (sizeof(g_SarSubIndxReMapTbl) /
+				sizeof(struct SAR_SUB_IDX_REMAP_TBL_INFO));
+	uint8_t ucAntAppy = SAR_APPLY_ANT_DISABLE;
+	uint16_t u2SubIdxOfst = 0;
+
+	if (rlmDomainGetSarActBitMap() == 0) {
+		ucAntAppy = SAR_APPLY_ANT_DISABLE;
+	} else if (rlmDomainIsSarEventConcurrent()) {
+		ucAntAppy = SAR_APPLY_ANT_ALL;
+	} else {
+		for (i = 0; i < SAR_NUM; i++) {
+			if ((BIT(i) & rlmDomainGetSarActBitMap())) {
+				ucAntAppy = rlmDomainGetSarApplyAntStatus(i);
+				DBGLOG(RLM, INFO,
+					"[SAR]Scenario Type[%d]Name[%s]ant_apply[%d]\n",
+					i,
+					rlmDomainGetSarScenarioName(i),
+					ucAntAppy);
+				break;
+			}
+		}
+	}
+
+	if (ucAntAppy == SAR_APPLY_ANT_ALL)
+		u2SubIdxOfst = 0;
+	else if (ucAntAppy == SAR_APPLY_ANT_WF0)
+		u2SubIdxOfst = 1000;
+	else if (ucAntAppy == SAR_APPLY_ANT_WF1)
+		u2SubIdxOfst = 2000;
+
+	for (i = 0; i < u4Size; i++) {
+		if (u4BitMap == g_SarSubIndxReMapTbl[i].u4BitMap) {
+
+			if (ucAntAppy == SAR_APPLY_ANT_DISABLE) {
+				*pu2SubIdx = 0;
+			} else {
+				*pu2SubIdx = g_SarSubIndxReMapTbl[i].u2SubIdx +
+								u2SubIdxOfst;
+			}
+
+			DBGLOG(RLM, INFO,
+			    "[SAR]BitMap[%d]ant_apply[%d]idx[%d]->final idx[%d]\n",
+			    u4BitMap,
+			    g_SarSubIndxReMapTbl[i].u2SubIdx,
+			    ucAntAppy,
+			    *pu2SubIdx);
+
+			return WLAN_STATUS_SUCCESS;
+		}
+	}
+
+	DBGLOG(RLM, ERROR, "[SAR]BitMap[%d], No match subIdx\n", u4BitMap);
+
+	return WLAN_STATUS_FAILURE;
+}
+#endif /* CFG_TC10_FEATURE */

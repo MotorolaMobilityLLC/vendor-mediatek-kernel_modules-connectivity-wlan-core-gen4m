@@ -331,6 +331,14 @@ struct CMD_VALIDATE_POLICY
 #endif /* CFG_TC10_FEATURE */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
+#if (CFG_TC10_FEATURE == 1)
+struct CMD_VALIDATE_POLICY set_tx_power_calling_policy[
+		COMMON_CMD_SET_ARG_NUM(3)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_S8, .min = -1, .max = 9},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = 1}
+};
+#endif /* CFG_TC10_FEATURE */
+
 #if CFG_SUPPORT_EASY_DEBUG
 struct CMD_VALIDATE_POLICY set_fw_param_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .min = 0, .max = 20},
@@ -2997,6 +3005,21 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(13),
 		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_SET_TX_POWER_CALLING,
+		.pfHandler = testmode_set_tx_power_calling,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = set_tx_power_calling_policy,
+		.u4PolicySize = ARRAY_SIZE(set_tx_power_calling_policy)
+	},
+	{
+		.pcCmdStr  = CMD_SET_TX_POWER_SUB6_BAND,
+		.pfHandler = testmode_set_tx_power_sub6_band,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
 	},
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	{

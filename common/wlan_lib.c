@@ -9632,6 +9632,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_INT(prWifiVar->icTxPwrEnvLmtMin, "TxPwrEnvLmtMin",
 		TX_PWR_ENV_LMT_MIN, FEATURE_TO_CUSTOMER);
 #endif
+#if (CFG_TC10_FEATURE == 1)
+	INIT_UINT(prWifiVar->ucSarLmtCfgVer, "SarLmtCfgVer", 1,
+		  FEATURE_TO_CUSTOMER);
+#endif
 #if (CFG_CH_SELECT_ENHANCEMENT == 1)
 	INIT_UINT(prWifiVar->ucStaSapIndoorConn, "StaSapIndoorConn",
 		  FEATURE_ENABLED, FEATURE_TO_CUSTOMER);

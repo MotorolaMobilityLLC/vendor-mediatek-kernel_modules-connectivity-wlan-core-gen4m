@@ -894,6 +894,10 @@ int testmode_set_keep_alive_interval(struct wiphy *wiphy,
 #if (CFG_TC10_FEATURE == 1)
 int testmode_set_custom_tx_power_calling(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_set_tx_power_calling(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_set_tx_power_sub6_band(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 int testmode_get_wifi6e_channels(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
