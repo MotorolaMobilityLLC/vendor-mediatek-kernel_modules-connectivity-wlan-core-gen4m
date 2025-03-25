@@ -104,6 +104,21 @@ void rttInit(struct ADAPTER *prAdapter)
 
 	LINK_INITIALIZE(&rttInfo->rResultList);
 	LINK_INITIALIZE(&rttInfo->rClientList);
+
+	/* Get RTT capability from FW */
+	kalMemZero(&rttInfo->rRttCapabilities,
+		sizeof(struct RTT_CAPABILITIES));
+
+	wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_RTT_GET_CAPABILITIES,
+			FALSE,
+			TRUE,
+			FALSE,
+			nicCmdEventRttCapabilities,
+			nicOidCmdTimeoutCommon,
+			0, NULL,
+			(void *)&rttInfo->rRttCapabilities,
+			sizeof(struct RTT_CAPABILITIES));
 }
 
 void rttUninit(struct ADAPTER *prAdapter)
@@ -159,6 +174,13 @@ uint8_t rttIsRunning(struct ADAPTER *prAdapter)
 		rttInfo->fgIsContRunning);
 
 	return rttInfo->fgIsContRunning;
+}
+
+uint8_t rttIsSupport(struct ADAPTER *prAdapter)
+{
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+
+	return rttInfo->rRttCapabilities.fgRttFtmSupported;
 }
 
 void rttUpdateStatus(struct ADAPTER *prAdapter,

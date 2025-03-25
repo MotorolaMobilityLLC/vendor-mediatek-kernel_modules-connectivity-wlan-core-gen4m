@@ -1842,13 +1842,13 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_RTT
-	if (IS_BSS_AIS(prBssInfo))
+	if (IS_BSS_AIS(prBssInfo) && rttIsSupport(prAdapter))
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_FTM_INITIATOR_BIT);
 #endif
 
 #if CFG_SUPPORT_RTT_RSTA
-	if (IS_BSS_APGO(prBssInfo))
+	if (IS_BSS_APGO(prBssInfo) && rttIsSupport(prAdapter))
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_FTM_RESPONDER_BIT);
 #endif

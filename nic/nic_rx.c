@@ -4005,7 +4005,8 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_RTT_RSTA
-		rttProcessPublicAction(prAdapter, prSwRfb);
+		if (rttIsSupport(prAdapter))
+			rttProcessPublicAction(prAdapter, prSwRfb);
 #endif
 		break;
 

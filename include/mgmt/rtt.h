@@ -156,6 +156,7 @@ struct RTT_INFO {
 	struct LINK rClientList;
 	struct TIMER rRttDoneTimer;
 	struct TIMER rRttContTimer; /* Continuous RTT requests */
+	struct RTT_CAPABILITIES rRttCapabilities;
 #if CFG_SUPPORT_PASN
 	struct CMD_RTT_REQUEST *prRttReq;
 	uint8_t ucNumPeers;
@@ -197,6 +198,8 @@ uint8_t rttBssBwToRttBw(uint8_t ucBssBw);
 void rttUninit(struct ADAPTER *prAdapter);
 
 uint8_t rttIsRunning(struct ADAPTER *prAdapter);
+
+uint8_t rttIsSupport(struct ADAPTER *prAdapter);
 
 uint32_t rttHandleRttRequest(struct ADAPTER *prAdapter,
 	struct PARAM_RTT_REQUEST *prRequest,
