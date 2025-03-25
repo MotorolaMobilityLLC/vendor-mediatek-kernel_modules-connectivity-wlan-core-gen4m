@@ -1331,12 +1331,24 @@ void rsnMatchCipherSuite(struct RSN_INFO *prBssRsnInfo,
 			/* TODO: WTBL cipher filed cannot
 			* 1-1 mapping to spec cipher suite number
 			*/
-			if (u4Cipher == RSN_CIPHER_SUITE_GCMP_256 ||
-			    u4Cipher == RSN_CIPHER_SUITE_GCMP)
+			if (u4Cipher == RSN_CIPHER_SUITE_GCMP_256)
 				u4PairwiseCipher = u4Cipher;
 		}
 		if (u4PairwiseCipher != 0)
 			break;
+
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			/* TODO: WTBL cipher filed cannot
+			 * 1-1 mapping to spec cipher suite number
+			 */
+			if (u4Cipher == RSN_CIPHER_SUITE_GCMP)
+				u4PairwiseCipher = u4Cipher;
+		}
+		if (u4PairwiseCipher != 0)
+			break;
+
 		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
 			i++) {
 			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
