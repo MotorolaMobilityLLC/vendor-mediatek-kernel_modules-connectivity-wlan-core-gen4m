@@ -110,4 +110,59 @@ nanExtTerminateApNanEndPs(struct ADAPTER *prAdapter);
 void
 nanExtTerminateApNanEndLegacy(struct ADAPTER *prAdapter);
 
+void
+nanExtRxAuthHandler(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+
+void
+nanExtAisConnectHandler(struct ADAPTER *prAdapter);
+
+uint32_t
+nanExtSetCountryCodeHandler(struct ADAPTER *prAdapter);
+
+uint32_t
+nanExtAisAssocDoneHandler(
+		struct ADAPTER *prAdapter,
+		uint32_t rJoinStatus,
+		struct STA_RECORD *prStaRec);
+
+uint32_t
+nanExtScanStartHandler(
+		struct ADAPTER *prAdapter,
+		struct cfg80211_scan_request *request);
+
+uint32_t
+nanExtAisChangeHandler(
+		struct ADAPTER *prAdapter);
+
+uint32_t
+nanExtScanCompleteHandler(
+		struct ADAPTER *prAdapter,
+		uint8_t ucStatus);
+
+uint32_t
+nanExtUniEventHandler(struct ADAPTER *prAdapter,
+		uint32_t u4SubEvent,
+		uint8_t *pucBuf);
+
+uint32_t
+nanExtEventHandler(struct ADAPTER *prAdapter,
+		uint32_t u4SubEvent,
+		uint8_t *pucBuf);
+
+uint32_t
+nanExtProcessRsvdFrame(struct ADAPTER *prAdapter,
+		 struct SW_RFB *prSwRfb);
+
+uint32_t
+nanExtAisAssocStartHandler(
+		struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
+		uint8_t ucChannelNum,
+		uint8_t ucChnlBw,
+		enum ENUM_CHNL_EXT eSco);
+
+uint32_t
+nanExtRxAssocHandler(
+		struct ADAPTER *prAdapter,
+		uint8_t *buf);
 #endif /* _NAN_FUNC_H */

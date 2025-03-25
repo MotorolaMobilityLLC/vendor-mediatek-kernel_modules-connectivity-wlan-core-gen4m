@@ -456,7 +456,7 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 			    (struct MSG_HDR *) prSaaFsmCompMsg,
 			    MSG_SEND_METHOD_UNBUF);
 #if CFG_SUPPORT_NAN
-		mtk_cfg80211_vendor_event_nan_infra_assoc_done_indication(
+		nanExtAisAssocDoneHandler(
 			prAdapter,
 			rJoinStatus,
 			prStaRec);
@@ -1034,7 +1034,7 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		return;
 
 #if CFG_SUPPORT_NAN
-	mtk_cfg80211_vendor_event_nan_infra_auth_rx_indication(
+	nanExtRxAuthHandler(
 		prAdapter, prSwRfb);
 #endif /* CFG_SUPPORT_NAN */
 
@@ -1302,6 +1302,10 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 
 	if (!IS_AP_STA(prStaRec))
 		return rStatus;
+
+#if (CFG_SUPPORT_NAN == 1)
+	nanExtRxAssocHandler(prAdapter, (uint8_t *)prSwRfb->pvHeader);
+#endif
 
 	switch (prStaRec->eAuthAssocState) {
 	case SAA_STATE_SEND_ASSOC1:

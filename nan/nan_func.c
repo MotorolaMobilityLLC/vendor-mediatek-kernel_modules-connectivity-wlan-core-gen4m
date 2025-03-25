@@ -263,5 +263,95 @@ nanExtTerminateApNanEndLegacy(struct ADAPTER *prAdapter)
 
 }
 
+void __weak
+nanExtRxAuthHandler(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
+
+}
+
+void __weak
+nanExtAisConnectHandler(struct ADAPTER *prAdapter)
+{
+
+}
+uint32_t __weak
+nanExtSetCountryCodeHandler(struct ADAPTER *prAdapter)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtAisAssocDoneHandler(
+		struct ADAPTER *prAdapter,
+		uint32_t rJoinStatus,
+		struct STA_RECORD *prStaRec)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtScanStartHandler(
+		struct ADAPTER *prAdapter,
+		struct cfg80211_scan_request *request)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtAisChangeHandler(
+		struct ADAPTER *prAdapter)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtScanCompleteHandler(
+		struct ADAPTER *prAdapter,
+		uint8_t ucStatus)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtUniEventHandler(struct ADAPTER *prAdapter,
+		uint32_t u4SubEvent,
+		uint8_t *pucBuf)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtEventHandler(struct ADAPTER *prAdapter,
+		uint32_t u4SubEvent,
+		uint8_t *pucBuf)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtProcessRsvdFrame(struct ADAPTER *prAdapter,
+		 struct SW_RFB *prSwRfb)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtAisAssocStartHandler(
+		struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
+		uint8_t ucChannelNum,
+		uint8_t ucChnlBw,
+		enum ENUM_CHNL_EXT eSco)
+{
+	return 0;
+}
+
+uint32_t __weak
+nanExtRxAssocHandler(
+		struct ADAPTER *prAdapter,
+		uint8_t *buf)
+{
+	return 0;
+}
 #endif /* CFG_SUPPORT_NAN == 1 */
 

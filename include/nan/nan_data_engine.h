@@ -707,9 +707,6 @@ uint32_t nanNdpSendDataPathKeyInstall(struct ADAPTER *prAdapter,
 uint32_t nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
 				       struct _NAN_NDP_INSTANCE_T *prNDP);
 
-uint32_t nanNdlProcessOob(struct ADAPTER *prAdapter,
-		 struct SW_RFB *prSwRfb);
-
 uint32_t nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
 				   struct _NAN_NDL_INSTANCE_T *prNDL);
 

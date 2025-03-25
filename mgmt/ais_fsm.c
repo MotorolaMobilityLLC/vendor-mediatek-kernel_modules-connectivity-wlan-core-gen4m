@@ -6748,7 +6748,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 		/* 1. release channel */
 		aisFsmStopJoinTimer(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_NAN
-		mtk_cfg80211_vendor_event_nan_infra_assoc_ready_indication(
+		nanExtAisConnectHandler(
 			prAdapter);
 #endif /* CFG_SUPPORT_NAN */
 #if CFG_ENABLE_WIFI_DIRECT
@@ -10919,7 +10919,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 #ifdef NAN_TODO /* T.B.D Unify NAN-Display */
 #if CFG_SUPPORT_NAN
-	mtk_cfg80211_vendor_event_nan_infra_assoc_st_ind(
+	nanExtAisAssocStartHandler(
 		prAdapter,
 		prAisFsmInfo->prTargetBssDesc->eBand,
 		prAisFsmInfo->prTargetBssDesc->ucChannelNum,

@@ -3226,8 +3226,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		}
 
 #if CFG_SUPPORT_NAN
-		mtk_cfg80211_vendor_event_nan_infra_changed_indication(
-			prGlueInfo->prAdapter);
+		nanExtAisChangeHandler(
+			prAdapter);
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1 &&
 		    nanIsOn(prAdapter)) {
@@ -3470,8 +3470,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 		}
 #if CFG_SUPPORT_NAN
-		mtk_cfg80211_vendor_event_nan_infra_changed_indication(
-			prGlueInfo->prAdapter);
+		nanExtAisChangeHandler(
+			prAdapter);
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 		if (prAdapter->rWifiVar.ucNanEnable6gReschedInit == 1 &&
 		    nanIsOn(prAdapter)) {
@@ -3510,8 +3510,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 #if CFG_SUPPORT_NAN
-		mtk_cfg80211_vendor_event_nan_infra_scan_complete_indication(
-			prGlueInfo->prAdapter, fgScanAborted);
+		nanExtScanCompleteHandler(
+			prAdapter, fgScanAborted);
 #endif
 		break;
 
@@ -15519,28 +15519,14 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 #endif
 	case UNI_EVENT_NAN_TAG_DFSP_CSA:
-		mtk_cfg80211_vendor_event_nan_dfsp_csa(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case UNI_EVENT_NAN_TAG_DFSP_CSA_COMPLETE:
-		mtk_cfg80211_vendor_event_nan_dfsp_csa_complete(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case UNI_EVENT_NAN_TAG_DFSP_SUSPEND_RESUME:
-		mtk_cfg80211_vendor_event_nan_dfsp_suspend_resume(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case UNI_EVENT_NAN_TAG_REPORT_DW_START:
-		mtk_cfg80211_vendor_event_nan_report_dw_start(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case UNI_EVENT_NAN_TAG_REPORT_DW_END:
-		mtk_cfg80211_vendor_event_nan_report_dw_end(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case UNI_EVENT_NAN_TAG_DEVICE_ROLE:
-		mtk_cfg80211_vendor_event_nan_role_changed_received(
-			prAdapter, prTlvElement->aucbody);
+		status = nanExtUniEventHandler(prAdapter,
+			u4SubEvent,
+			prTlvElement->aucbody);
 		break;
 	case UNI_EVENT_NAN_ID_MATCH_EXPIRE:
 		status = mtk_cfg80211_vendor_event_nan_match_expire(
@@ -15739,28 +15725,14 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 #endif
 	case NAN_EVENT_DFSP_CSA:
-		mtk_cfg80211_vendor_event_nan_dfsp_csa(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case NAN_EVENT_DFSP_CSA_COMPLETE:
-		mtk_cfg80211_vendor_event_nan_dfsp_csa_complete(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case NAN_EVENT_DFSP_SUSPEND_RESUME:
-		mtk_cfg80211_vendor_event_nan_dfsp_suspend_resume(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case NAN_EVENT_REPORT_DW_START:
-		mtk_cfg80211_vendor_event_nan_report_dw_start(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case NAN_EVENT_REPORT_DW_END:
-		mtk_cfg80211_vendor_event_nan_report_dw_end(
-			prAdapter, prTlvElement->aucbody);
-		break;
 	case NAN_EVENT_DEVICE_ROLE:
-		mtk_cfg80211_vendor_event_nan_role_changed_received(
-			prAdapter, prTlvElement->aucbody);
+		status = nanExtEventHandler(prAdapter,
+			u4SubEvent,
+			prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_REPORT_BEACON:
 		mtk_cfg80211_vendor_event_nan_report_beacon(

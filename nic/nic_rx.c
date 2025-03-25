@@ -3808,7 +3808,7 @@ static uint32_t (* const nanActionFrameHandler[NAN_ACTION_NUM])
 	[NAN_ACTION_SCHEDULE_CONFIRM] = nanNdlProcessScheduleConfirm,
 	[NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION] =
 		nanNdlProcessScheduleUpdateNotification,
-	[NAN_ACTION_RESERVED] = nanNdlProcessOob,
+	[NAN_ACTION_RESERVED] = nanExtProcessRsvdFrame,
 
 };
 
