@@ -8887,17 +8887,18 @@ nanSchedNegoUpdateDatabase(struct ADAPTER *prAdapter,
 			   unsigned char fgChkRmtCondSlot)
 {
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
-	uint32_t u4Idx;
-	uint32_t u4SlotIdx;
+	uint32_t i;
+	uint32_t u4Slot;
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	enum _ENUM_CHNL_CHECK_T eChkChnlResult;
-	uint32_t u4RmtChnl;
+	uint32_t u4RmtCondChnl;
 	uint32_t u4SchIdx;
-	size_t szTimeLineIdx;
+	size_t szTimeLine;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	uint32_t *pu4AvaSlt = NULL;
-	uint32_t *pu4UnavaSlt = NULL;
-	uint32_t *pu4FreeSlt = NULL;
+	uint32_t (*pau4FawSlots)[NAN_TOTAL_DW];
+	uint32_t (*pau4AvailSlots)[NAN_TOTAL_DW];
+	uint32_t (*pau4FreeSlots)[NAN_TOTAL_DW];
+	uint32_t (*pau4UnavailSlots)[NAN_TOTAL_DW];
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	u4SchIdx = prNegoCtrl->u4SchIdx;
@@ -8907,103 +8908,97 @@ nanSchedNegoUpdateDatabase(struct ADAPTER *prAdapter,
 	kalMemZero(prNegoCtrl->aau4UnavailSlots,
 		   sizeof(prNegoCtrl->aau4UnavailSlots));
 
-	for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
-	     szTimeLineIdx++) {
-		for (u4SlotIdx = 0;
-			u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS; u4SlotIdx++) {
-			if (nanWindowType(prAdapter, u4SlotIdx, szTimeLineIdx)
+	pau4FawSlots = prNegoCtrl->aau4FawSlots;
+	pau4FreeSlots = prNegoCtrl->aau4FreeSlots;
+	pau4AvailSlots = prNegoCtrl->aau4AvailSlots;
+	pau4UnavailSlots = prNegoCtrl->aau4UnavailSlots;
+
+	for (szTimeLine = 0; szTimeLine < szNanActiveTimelineNum;
+	     szTimeLine++) {
+		for (u4Slot = 0; u4Slot < NAN_TOTAL_SLOT_WINDOWS; u4Slot++) {
+			if (nanWindowType(prAdapter, u4Slot, szTimeLine)
 				== ENUM_NAN_DW) {
-				pu4UnavaSlt = (uint32_t *)
-				&(prNegoCtrl->aau4UnavailSlots[szTimeLineIdx]);
-				NAN_TIMELINE_SET(pu4UnavaSlt,
-						 u4SlotIdx);
+				NAN_TIMELINE_SET(pau4UnavailSlots[szTimeLine],
+					u4Slot);
 				continue;
 			}
 
-			eChkChnlResult = nanSchedNegoChkChnlConflict(
-				prAdapter, u4SlotIdx, fgChkRmtCondSlot,
-				szTimeLineIdx);
+			eChkChnlResult = nanSchedNegoChkChnlConflict(prAdapter,
+						u4Slot, fgChkRmtCondSlot,
+						szTimeLine);
 
 			if (eChkChnlResult == ENUM_CHNL_CHECK_NOT_FOUND)
 				continue;
-			else if (eChkChnlResult == ENUM_CHNL_CHECK_PASS) {
-				pu4AvaSlt = (uint32_t *)
-				&(prNegoCtrl->aau4AvailSlots[szTimeLineIdx]);
-				NAN_TIMELINE_SET(pu4AvaSlt,
-						 u4SlotIdx);
-			} else {
-				pu4UnavaSlt = (uint32_t *)
-				&(prNegoCtrl->aau4UnavailSlots[szTimeLineIdx]);
-				NAN_TIMELINE_SET(pu4UnavaSlt,
-						 u4SlotIdx);
-			}
+			else if (eChkChnlResult == ENUM_CHNL_CHECK_PASS)
+				NAN_TIMELINE_SET(pau4AvailSlots[szTimeLine],
+					u4Slot);
+			else
+				NAN_TIMELINE_SET(pau4UnavailSlots[szTimeLine],
+					u4Slot);
 		}
 
-		for (u4Idx = 0; u4Idx < NAN_TOTAL_DW; u4Idx++) {
-			prNegoCtrl->aau4FreeSlots[szTimeLineIdx][u4Idx] =
-			~(prNegoCtrl->aau4AvailSlots[szTimeLineIdx][u4Idx] |
-			prNegoCtrl->aau4UnavailSlots[szTimeLineIdx][u4Idx]);
-			prNegoCtrl->aau4FawSlots[szTimeLineIdx][u4Idx] =
-			(prNegoCtrl->aau4AvailSlots[szTimeLineIdx][u4Idx]);
+		for (i = 0; i < NAN_TOTAL_DW; i++) {
+			pau4FreeSlots[szTimeLine][i] =
+				~(pau4AvailSlots[szTimeLine][i] |
+				  pau4UnavailSlots[szTimeLine][i]);
+			pau4FawSlots[szTimeLine][i] =
+				pau4AvailSlots[szTimeLine][i];
 		}
 
 		DBGLOG(NAN, DEBUG, "fgChkRmtCondSlot:%d\n", fgChkRmtCondSlot);
 		nanUtilDump(prAdapter, "aau4AvailSlots",
-			(uint8_t *)prNegoCtrl->aau4AvailSlots[szTimeLineIdx],
-			sizeof(prNegoCtrl->aau4AvailSlots[szTimeLineIdx]));
+			(uint8_t *)prNegoCtrl->aau4AvailSlots[szTimeLine],
+			sizeof(prNegoCtrl->aau4AvailSlots[szTimeLine]));
 		nanUtilDump(prAdapter, "aau4UnavailSlots",
-			(uint8_t *)prNegoCtrl->aau4UnavailSlots[szTimeLineIdx],
-			sizeof(prNegoCtrl->aau4UnavailSlots[szTimeLineIdx]));
+			(uint8_t *)prNegoCtrl->aau4UnavailSlots[szTimeLine],
+			sizeof(prNegoCtrl->aau4UnavailSlots[szTimeLine]));
 		nanUtilDump(prAdapter, "aau4FawSlots",
-			(uint8_t *)prNegoCtrl->aau4FawSlots[szTimeLineIdx],
-			sizeof(prNegoCtrl->aau4FawSlots[szTimeLineIdx]));
+			(uint8_t *)prNegoCtrl->aau4FawSlots[szTimeLine],
+			sizeof(prNegoCtrl->aau4FawSlots[szTimeLine]));
 		nanUtilDump(prAdapter, "aau4FreeSlots",
-			(uint8_t *)prNegoCtrl->aau4FreeSlots[szTimeLineIdx],
-			sizeof(prNegoCtrl->aau4FreeSlots[szTimeLineIdx]));
+			(uint8_t *)prNegoCtrl->aau4FreeSlots[szTimeLine],
+			sizeof(prNegoCtrl->aau4FreeSlots[szTimeLine]));
 
-		if (fgChkRmtCondSlot) {
-			for (u4SlotIdx = 0; u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS;
-			     u4SlotIdx++) {
-				/* TODO: consider DW slot */
-				u4RmtChnl = nanGetPeerPrimaryChnlBySlot(
-					prAdapter, u4SchIdx, NAN_NUM_AVAIL_DB,
-					u4SlotIdx, TRUE);
-				if (u4RmtChnl != 0)
-					continue;
+		if (!fgChkRmtCondSlot)
+			continue;
 
-				pu4FreeSlt = (uint32_t *)
-				&(prNegoCtrl->aau4FreeSlots[szTimeLineIdx]);
-				if (NAN_IS_AVAIL_MAP_SET(
-				    prNegoCtrl->aau4FawSlots[szTimeLineIdx],
-				    u4SlotIdx))
-					NAN_TIMELINE_UNSET(
-					prNegoCtrl->aau4FawSlots[szTimeLineIdx],
-					u4SlotIdx);
-				else if (NAN_IS_AVAIL_MAP_SET(
-					 pu4FreeSlt, u4SlotIdx))
-					NAN_TIMELINE_UNSET(
-						pu4FreeSlt,
-						u4SlotIdx);
-			}
+		/* fgChkRmtCondSlot */
+		for (u4Slot = 0; u4Slot < NAN_TOTAL_SLOT_WINDOWS; u4Slot++) {
+			/* TODO: consider DW slot */
+			u4RmtCondChnl = nanGetPeerPrimaryChnlBySlot(prAdapter,
+					u4SchIdx, NAN_NUM_AVAIL_DB,
+					u4Slot, TRUE);
+			if (u4RmtCondChnl != 0)
+				continue;
 
-			nanUtilDump(prAdapter, "final aau4FawSlots",
-				    (uint8_t *)prNegoCtrl->aau4FawSlots,
-				    sizeof(prNegoCtrl->aau4FawSlots));
-			nanUtilDump(prAdapter, "final aau4FreeSlots",
-				    (uint8_t *)prNegoCtrl->aau4FreeSlots,
-				    sizeof(prNegoCtrl->aau4FreeSlots));
+			/* u4RmtCondChnl == 0 */
+			if (NAN_IS_AVAIL_MAP_SET(pau4FawSlots[szTimeLine],
+						 u4Slot))
+				NAN_TIMELINE_UNSET(pau4FawSlots[szTimeLine],
+						   u4Slot);
+			else if (NAN_IS_AVAIL_MAP_SET(pau4FreeSlots[szTimeLine],
+						      u4Slot))
+				NAN_TIMELINE_UNSET(pau4FreeSlots[szTimeLine],
+						   u4Slot);
 		}
+
+		nanUtilDump(prAdapter, "final aau4FawSlots",
+			    (uint8_t *)prNegoCtrl->aau4FawSlots,
+			    sizeof(prNegoCtrl->aau4FawSlots));
+		nanUtilDump(prAdapter, "final aau4FreeSlots",
+			    (uint8_t *)prNegoCtrl->aau4FreeSlots,
+			    sizeof(prNegoCtrl->aau4FreeSlots));
 	}
 	return rRetStatus;
 }
 
-uint32_t
-nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
+uint32_t nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 {
-	uint32_t u4Idx, u4Idx1;
+	struct WIFI_VAR  *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t i, j;
 	uint32_t u4SlotIdx;
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
-	int32_t i4Num;
+	int32_t i4Lack;
 	uint32_t u4EmptySlots;
 	uint32_t au4CondSlots[NAN_TIMELINE_MGMT_SIZE];
 	int32_t i4Latency, i4LatencyStart, i4LatencyEnd;
@@ -9013,11 +9008,11 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 	union _NAN_BAND_CHNL_CTRL rSelChnlInfo;
 	uint32_t u4UnavailSlotsAll, u4FreeSlotsAll, u4FawSlotsAll;
-	size_t szTimeLineIdx;
+	size_t szTimeLine;
 	size_t szNanActiveTimelineNum = nanGetActiveTimelineMgmtNum(prAdapter);
-	size_t Idx;
-	struct _NAN_CRB_NEGO_CTRL_T *NgCtl;
-
+	uint32_t (*pau4FawSlots)[NAN_TOTAL_DW];
+	uint32_t (*pau4FreeSlots)[NAN_TOTAL_DW];
+	uint32_t (*pau4UnavailSlots)[NAN_TOTAL_DW];
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
@@ -9035,9 +9030,8 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 	       prNegoCtrl->u4QosMinSlots, prNegoCtrl->u4QosMaxLatency);
 
 	/* negotiate min slots */
-	u4QosMinSlots = kal_min_t(uint32_t,
-				  prNegoCtrl->u4QosMinSlots,
-				  prPeerSchDesc->u4QosMinSlots);
+	u4QosMinSlots = kal_min_t(uint32_t, prNegoCtrl->u4QosMinSlots,
+					    prPeerSchDesc->u4QosMinSlots);
 	if (u4QosMinSlots > NAN_INVALID_QOS_MIN_SLOTS) {
 		u4QosMinSlots = kal_clamp_t(uint32_t, u4QosMinSlots,
 					    NAN_QOS_MIN_SLOTS_LOW_BOUND,
@@ -9046,9 +9040,8 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 	}
 
 	/* negotiate max latency */
-	u4QosMaxLatency = kal_min_t(uint32_t,
-				    prNegoCtrl->u4QosMaxLatency,
-				    prPeerSchDesc->u4QosMaxLatency);
+	u4QosMaxLatency = kal_min_t(uint32_t, prNegoCtrl->u4QosMaxLatency,
+					      prPeerSchDesc->u4QosMaxLatency);
 	if (u4QosMaxLatency < NAN_INVALID_QOS_MAX_LATENCY) {
 		u4QosMaxLatency = kal_clamp_t(uint32_t, u4QosMaxLatency,
 					      NAN_QOS_MAX_LATENCY_LOW_BOUND,
@@ -9056,95 +9049,103 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 		prNegoCtrl->u4NegoQosMaxLatency = u4QosMaxLatency;
 	}
 
-	for (u4Idx = 0; u4Idx < NAN_TOTAL_DW; u4Idx++) {
+	pau4FawSlots = prNegoCtrl->aau4FawSlots;
+	pau4FreeSlots = prNegoCtrl->aau4FreeSlots;
+	pau4UnavailSlots = prNegoCtrl->aau4UnavailSlots;
+
+	for (i = 0; i < NAN_TOTAL_DW; i++) { /* check 32 slots in DW interval */
 		kalMemZero(au4CondSlots, sizeof(au4CondSlots));
 		kalMemSet(&u4UnavailSlotsAll, 0xFF, sizeof(u4UnavailSlotsAll));
 		u4FreeSlotsAll = 0;
 		u4FawSlotsAll = 0;
 
-		for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
-		     szTimeLineIdx++) {
-			u4FawSlotsAll |=
-				prNegoCtrl->aau4FawSlots[szTimeLineIdx][u4Idx];
-			u4FreeSlotsAll |=
-				prNegoCtrl->aau4FreeSlots[szTimeLineIdx][u4Idx];
-			/* It's unvail slot when all timelines
-			 * are unavailable.
+		for (szTimeLine = 0; szTimeLine < szNanActiveTimelineNum;
+		     szTimeLine++) {
+			/* [0][0], [1][0]
+			 * [0][1], [1][1]
+			 * [0][2], [1][2]
+			 * ...
+			 * [0][15], [1][15]
 			 */
-			u4UnavailSlotsAll &=
-			     prNegoCtrl->aau4UnavailSlots[szTimeLineIdx][u4Idx];
+			u4FawSlotsAll |= pau4FawSlots[szTimeLine][i];
+			u4FreeSlotsAll |= pau4FreeSlots[szTimeLine][i];
+
+			/* set unvail slot when all timelines are unavailable */
+			u4UnavailSlotsAll &= pau4UnavailSlots[szTimeLine][i];
 		}
 
 		/* step1. check QoS min slots */
-		i4Num = 0;
-		if (u4QosMinSlots > NAN_INVALID_QOS_MIN_SLOTS &&
-		    nanUtilCheckBitOneCnt(&u4FawSlotsAll, sizeof(uint32_t)) <
-					  u4QosMinSlots) {
+		i4Lack = 0;
+		if (u4QosMinSlots <= NAN_INVALID_QOS_MIN_SLOTS ||
+		    nanUtilCheckBitOneCnt(&u4FawSlotsAll, sizeof(uint32_t)) >=
+		    u4QosMinSlots)
+			goto check_max_latency;
 
-			i4Num = u4QosMinSlots -
-				nanUtilCheckBitOneCnt(&u4FawSlotsAll,
-						      sizeof(uint32_t));
-			if (i4Num > 0 &&
-			    nanUtilCheckBitOneCnt(&u4FreeSlotsAll,
-						  sizeof(uint32_t)) < i4Num) {
-
-				DBGLOG(NAN, DEBUG, "MinSlots:%d, Lack:%d\n",
-				       u4QosMinSlots, i4Num);
-				rRetStatus = WLAN_STATUS_FAILURE;
-				goto CHK_QOS_DONE;
-			}
+		/* check min slots */
+		i4Lack = u4QosMinSlots -
+			nanUtilCheckBitOneCnt(&u4FawSlotsAll, sizeof(uint32_t));
+		if (i4Lack > 0 &&
+		    nanUtilCheckBitOneCnt(&u4FreeSlotsAll, sizeof(uint32_t)) <
+		    i4Lack) {
+			DBGLOG(NAN, INFO, "MinSlots:%d, Lack:%d, free=%u\n",
+			       u4QosMinSlots, i4Lack,
+			       nanUtilCheckBitOneCnt(&u4FawSlotsAll,
+						     sizeof(uint32_t)));
+			rRetStatus = WLAN_STATUS_FAILURE;
+			goto CHK_QOS_DONE;
 		}
 
-		/* step2. check & quarantee QoS max latency */
+check_max_latency:
+		/* step2. check & guarantee QoS max latency */
 		if (u4QosMaxLatency >= NAN_INVALID_QOS_MAX_LATENCY)
 			goto CHK_QOS_LATENCY_DONE;
 
-		u4EmptySlots = ~(u4FawSlotsAll);
+		u4EmptySlots = ~u4FawSlotsAll;
 		i4Latency = 0;
 		i4LatencyStart = i4LatencyEnd = -1;
 
-		for (u4Idx1 = 0; u4Idx1 < 32; u4Idx1++) {
-			if (!(u4EmptySlots & BIT(u4Idx1))) {
+		/* Examine by counting contiguous empty slots */
+		for (j = 0; j < NAN_SLOTS_PER_DW_INTERVAL; j++) {
+			if (!(u4EmptySlots & BIT(j))) { /* not empty, reset */
 				i4Latency = 0;
 				i4LatencyStart = i4LatencyEnd = -1;
 				continue;
 			}
 
+			if (i4Latency == 0) /* start to count the latency */
+				i4LatencyStart = i4LatencyEnd = j;
+			else /* track the end slot */
+				i4LatencyEnd = j;
 			i4Latency++;
-			if (i4Latency == 0)
-				i4LatencyStart = i4LatencyEnd = u4Idx1;
-			else
-				i4LatencyEnd = u4Idx1;
 
-			for (; (i4Latency > u4QosMaxLatency) &&
-				(i4LatencyStart <= i4LatencyEnd);
-				i4LatencyEnd--) {
+			/* Once the accumulated i4Latency > u4QosMaxLatency,
+			 * set a slot to make it meet the requirement
+			 */
+			for (;
+			     i4Latency > u4QosMaxLatency &&
+			     i4LatencyStart <= i4LatencyEnd;
+			     i4LatencyEnd--) {
 				if (u4UnavailSlotsAll & BIT(i4LatencyEnd))
 					continue;
 
 				/* Have a preference for 5G band */
-				for (szTimeLineIdx = szNanActiveTimelineNum;
-				     szTimeLineIdx--;) {
-					NgCtl = prNegoCtrl;
-					Idx = szTimeLineIdx;
-					if ((NgCtl->aau4FreeSlots[Idx][u4Idx] &
-					BIT(i4LatencyEnd)) &&
-					!(NgCtl->aau4UnavailSlots[Idx][u4Idx] &
-					BIT(i4LatencyEnd))) {
-						prNegoCtrl
-						->aau4FawSlots
-						[szTimeLineIdx][u4Idx]
-						|= BIT(i4LatencyEnd);
-						au4CondSlots
-						[szTimeLineIdx] |=
+				for (szTimeLine = szNanActiveTimelineNum;
+				     szTimeLine--;) {
+					if (!(pau4FreeSlots[szTimeLine][i] &
+					     BIT(i4LatencyEnd)))
+					    /* Unavail slots checked earlier */
+						continue;
+
+					pau4FawSlots[szTimeLine][i] |=
+						BIT(i4LatencyEnd);
+					au4CondSlots[szTimeLine] |=
 						BIT(i4LatencyEnd);
 
-						i4Num--;
-						u4Idx1 = i4LatencyEnd;
-						i4Latency = 0;
-						i4LatencyStart =
-						i4LatencyEnd = -1;
-					}
+					/* Set a slot, reset latency counting */
+					i4Lack--;
+					j = i4LatencyEnd;
+					i4Latency = 0;
+					i4LatencyStart = i4LatencyEnd = -1;
 				}
 			}
 
@@ -9153,76 +9154,68 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter)
 				goto CHK_QOS_DONE;
 			}
 		}
+
 CHK_QOS_LATENCY_DONE:
-
-		/* step3. quarantee QoS min slots */
-		for (u4Idx1 = 0; (i4Num > 0) && (u4Idx1 < 32); u4Idx1++) {
+		/* step3. guarantee QoS min slots */
+		for (j = 0; i4Lack > 0 && j < NAN_SLOTS_PER_DW_INTERVAL; j++) {
 			/* Have a preference for 5G band */
-			for (szTimeLineIdx = szNanActiveTimelineNum;
-			     szTimeLineIdx--;) {
-				NgCtl = prNegoCtrl;
-				Idx = szTimeLineIdx;
-				if (!(NgCtl->aau4FawSlots[Idx][u4Idx] &
-					BIT(u4Idx1)) &&
-					(NgCtl->aau4FreeSlots[Idx][u4Idx] &
-					BIT(u4Idx1)) &&
-					!(NgCtl->aau4UnavailSlots[Idx][u4Idx] &
-					BIT(u4Idx1))) {
+			for (szTimeLine = szNanActiveTimelineNum;
+			     szTimeLine--;) {
+				if (pau4FawSlots[szTimeLine][i] & BIT(j) ||
+				    !(pau4FreeSlots[szTimeLine][i] & BIT(j)) ||
+				    pau4UnavailSlots[szTimeLine][i] & BIT(j))
+					continue;
 
-					i4Num--;
+				/* slot j: !FAW && Free && !Unavail, set it */
+				i4Lack--;
 
-					NgCtl->aau4FawSlots[Idx][u4Idx] |=
-						BIT(u4Idx1);
-					au4CondSlots[Idx] |= BIT(u4Idx1);
-					break;
-				}
+				pau4FawSlots[szTimeLine][i] |= BIT(j);
+				au4CondSlots[szTimeLine] |= BIT(j);
+				break;
 			}
 		}
 
-		if (i4Num > 0) {
+		if (i4Lack > 0) {
 			rRetStatus = WLAN_STATUS_FAILURE;
 			goto CHK_QOS_DONE;
 		}
 
 		/* step4. assign channel to conditional slots */
-		for (u4Idx1 = 0; u4Idx1 < 32; u4Idx1++) {
+		for (j = 0; j < NAN_SLOTS_PER_DW_INTERVAL; j++) {
 			/* Have a preference for 5G band */
-			for (szTimeLineIdx = szNanActiveTimelineNum;
-			     szTimeLineIdx--;) {
-				if (au4CondSlots[szTimeLineIdx] & BIT(u4Idx1)) {
-					u4SlotIdx =
-						NAN_FULL_SLOT_INDEX(u4Idx,
-								    u4Idx1);
-					rSelChnlInfo =
-						nanSchedNegoSelectChnlInfo(
+			for (szTimeLine = szNanActiveTimelineNum;
+			     szTimeLine--;) {
+				if (!(au4CondSlots[szTimeLine] & BIT(j)))
+					continue;
+
+				u4SlotIdx = NAN_FULL_SLOT_INDEX(i, j);
+				rSelChnlInfo = nanSchedNegoSelectChnlInfo(
 						prAdapter, u4SlotIdx,
-						szTimeLineIdx,
-						prAdapter->rWifiVar
-						.u4NanPreferBandMask);
-					rRetStatus = nanSchedAddCrbToChnlList(
-					      prAdapter, &rSelChnlInfo,
+						szTimeLine,
+						prWifiVar->u4NanPreferBandMask);
+				rRetStatus = nanSchedAddCrbToChnlList(prAdapter,
+					      &rSelChnlInfo,
 					      u4SlotIdx, 1,
 					      ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					      FALSE, NULL);
-					if (rRetStatus != WLAN_STATUS_SUCCESS)
-						break;
-				}
+
+				if (rRetStatus != WLAN_STATUS_SUCCESS)
+					break;
 			}
 		}
 
-		/* step5. merge availability entry for the
-		 * same primary channel
+		/* step5. merge availability entry for the same primary channel
 		 */
 		rRetStatus = nanSchedMergeAvailabileChnlList(prAdapter, FALSE);
 	}
 
 CHK_QOS_DONE:
-	if (rRetStatus == WLAN_STATUS_SUCCESS)
+	if (rRetStatus == WLAN_STATUS_SUCCESS) {
 		nanUtilDump(prAdapter, "QoS au4FawSlots",
 			    (uint8_t *)prNegoCtrl->aau4FawSlots,
 			    sizeof(prNegoCtrl->aau4FawSlots));
-	else {
-		DBGLOG(NAN, ERROR, "can't satisfy Qos spec\n");
+	} else {
+		DBGLOG(NAN, ERROR, "can't satisfy QoS spec\n");
 		nanUtilDump(prAdapter, "QoS au4FawSlots",
 			    (uint8_t *)prNegoCtrl->aau4FawSlots,
 			    sizeof(prNegoCtrl->aau4FawSlots));
