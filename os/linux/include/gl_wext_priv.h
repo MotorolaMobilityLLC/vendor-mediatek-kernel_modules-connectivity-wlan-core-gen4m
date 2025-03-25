@@ -1217,6 +1217,11 @@ int priv_driver_set_p2p2_gc_csa(struct net_device *prNetDev,
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+int priv_driver_fact_cal(struct net_device *prNetDev,
+		char *pcCommand, int i4TotalLen);
+#endif
+
 #if CFG_SUPPORT_FIPS
 int priv_driver_fips_test(struct net_device *prNetDev,
 			  char *pcCommand, int i4TotalLen);

@@ -26400,6 +26400,218 @@ error:
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+int priv_driver_fact_cal(struct net_device *prNetDev,
+		char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t u4Offset = 0, u4Ret = 0;
+	uint8_t fgStart = TRUE;
+	uint32_t u4Action = 0, u4CalType = 0;
+	uint32_t u4CalParam = 0;
+	uint32_t u4Band = 0, u4Channel = 0;
+	uint8_t u1Band = 0, u1Channel = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	/*
+	 * argv[0] = "fact_cal"
+	 * argv[1] = "get/set/dump/load/save"
+	 *
+	 * get/set:
+	 * argv[2] = "POWERON/SETCHANNEL/SETMAPPINGTBL"
+	 *
+	 * SETCHANNEL:
+	 *     argv[3] = "ALL/BAND/CHANNEL"
+	 *     argv[4] = "band(0, 1, 2)"
+	 *     argv[5] = "channel"
+	 */
+
+	/* Parse the parameters */
+	if (i4Argc >= 2) {
+		if (!strnicmp(apcArgv[1], "set", strlen("set")))
+			u4Action = FACT_CAL_ACTION_SET;
+		else if (!strnicmp(apcArgv[1], "get", strlen("get")))
+			u4Action = FACT_CAL_ACTION_GET;
+		else if (!strnicmp(apcArgv[1], "dump", strlen("dump")))
+			u4Action = FACT_CAL_ACTION_DUMP;
+		else if (!strnicmp(apcArgv[1], "load", strlen("load")))
+			u4Action = FACT_CAL_ACTION_LOAD_FILE;
+		else if (!strnicmp(apcArgv[1], "save", strlen("save")))
+			u4Action = FACT_CAL_ACTION_SAVE_FILE;
+		else
+			fgStart = FALSE;
+
+		switch (u4Action) {
+		case FACT_CAL_ACTION_GET:
+		case FACT_CAL_ACTION_SET:
+			if (!strnicmp(apcArgv[2],
+				"SETCHANNEL", strlen("SETCHANNEL"))) {
+				if (i4Argc >= 4) {
+					if (!strnicmp(apcArgv[3],
+						"ALL", strlen("ALL")))
+						u4CalType =
+							FACT_CAL_TYPE_GET_ALL;
+
+					if ((i4Argc >= 5)
+						&& (!strnicmp(apcArgv[3],
+						"BAND", strlen("BAND")))) {
+						u4CalType = FACT_CAL_TYPE_BAND;
+						kalkStrtou32(
+							apcArgv[4],
+							0, &u4Band);
+						u1Band = u4Band;
+					}
+					if ((i4Argc >= 6)
+						&& (!strnicmp(apcArgv[3],
+						"CHANNEL",
+						strlen("CHANNEL")))) {
+						u4CalType =
+						FACT_CAL_TYPE_SETCHANNEL;
+						kalkStrtou32(apcArgv[4],
+							0, &u4Band);
+						kalkStrtou32(apcArgv[5],
+							0, &u4Channel);
+						u1Band = u4Band;
+						u1Channel = u4Channel;
+					}
+					u4CalParam =
+					(u4Band & FACT_CAL_PARAM_COMMON_MASK);
+				} else {
+					DBGLOG(REQ, ERROR,
+						"Too less argument\n");
+					LOGBUF(
+						pcCommand,
+						i4TotalLen,
+						u4Offset,
+						"Too less argument\n");
+					fgStart = FALSE;
+				}
+				break;
+			} else if (!strnicmp(apcArgv[2],
+				"POWERON", strlen("POWERON"))) {
+				u4CalType = FACT_CAL_TYPE_POWERON;
+			} else if (!strnicmp(apcArgv[2],
+				"SETMAPPINGTBL", strlen("SETMAPPINGTBL"))) {
+				rlmFactCalSetMappingTable(prAdapter);
+				LOGBUF(
+					pcCommand,
+					i4TotalLen,
+					u4Offset,
+					"Set Mapping Tbl Done\n");
+				return u4Offset;
+			}
+			break;
+		case FACT_CAL_ACTION_DUMP:
+			if (!strnicmp(apcArgv[2], "common", strlen("common")))
+				u4CalType = FACT_CAL_TYPE_COMMON;
+			else if (!strnicmp(apcArgv[2],
+				"group", strlen("group")))
+				u4CalType = FACT_CAL_TYPE_GROUP;
+			else if (!strnicmp(apcArgv[2],
+				"channel", strlen("channel")))
+				u4CalType = FACT_CAL_TYPE_CHANNEL;
+			break;
+		case FACT_CAL_ACTION_LOAD_FILE:
+			rlmFactCalFileHandler(prAdapter, u4CalType, FALSE);
+			break;
+		case FACT_CAL_ACTION_SAVE_FILE:
+			rlmFactCalFileHandler(prAdapter, u4CalType, TRUE);
+			break;
+		default:
+			DBGLOG(REQ, ERROR, "Error Type=%d\n", u4CalType);
+			LOGBUF(
+				pcCommand,
+				i4TotalLen,
+				u4Offset,
+				"Error Type=%d\n", u4CalType);
+			fgStart = FALSE;
+		}
+	} else {
+		LOGBUF(
+			pcCommand,
+			i4TotalLen,
+			u4Offset,
+			"Invalid Command\n");
+		DBGLOG(REQ, ERROR, "Invalid Command\n");
+	}
+
+	/* Start Fact cal */
+	if (fgStart) {
+		DBGLOG(REQ, INFO, "FACTORY-K iwpriv u4CalType: %d", u4CalType);
+
+		if (u4Action == FACT_CAL_ACTION_GET)
+			u4Ret =
+				rlmFactCalGet(
+					prAdapter,
+					u4CalType,
+					u1Band,
+					u1Channel);
+		else
+			u4Ret =
+				rlmFactCalSet(
+					prAdapter,
+					u4CalType,
+					u1Band,
+					u1Channel);
+
+		switch (u4Ret) {
+		case WLAN_STATUS_SUCCESS:
+			LOGBUF(pcCommand,
+				i4TotalLen,
+				u4Offset, "OK\n");
+			break;
+		case WLAN_STATUS_PENDING:
+			LOGBUF(pcCommand,
+				i4TotalLen,
+				u4Offset,
+				"Fact Cal Pending\n");
+			DBGLOG(REQ, STATE,
+			"Fact Cal Pending. There are still ongoing commands.\n");
+			break;
+		case WLAN_STATUS_INVALID_LENGTH:
+			LOGBUF(pcCommand,
+				i4TotalLen,
+				u4Offset,
+				"Invalid length\n");
+			break;
+		case WLAN_STATUS_NOT_SUPPORTED:
+			LOGBUF(pcCommand,
+				i4TotalLen,
+				u4Offset,
+				"Unsupported Cal Param\n");
+			break;
+		case WLAN_STATUS_FAILURE:
+			DBGLOG(REQ, ERROR, "rlmFactCalHandler Fail\n");
+			LOGBUF(pcCommand,
+				i4TotalLen,
+				u4Offset, "Fail\n");
+			return (int32_t)u4Offset;
+		default:
+			LOGBUF(pcCommand,
+				i4TotalLen,
+				u4Offset,
+				"Start fail\n");
+			DBGLOG(REQ, ERROR, "Start fail\n");
+			break;
+		}
+	} else {
+		LOGBUF(pcCommand,
+			i4TotalLen,
+			u4Offset,
+			"Fail to start\n");
+	}
+
+	return u4Offset;
+}
+#endif /* #if CFG_SUPPORT_FACT_CAL */
+
 int priv_driver_get_bf_cn(struct net_device *prNetDev,
 				    char *pcCommand, int i4TotalLen)
 {

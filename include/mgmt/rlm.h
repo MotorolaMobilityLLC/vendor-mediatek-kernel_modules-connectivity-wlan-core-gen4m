@@ -195,7 +195,10 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 
 /* Define for fact cal result to 4 byte-align */
 #define FACT_CAL_COM_CAL_RESULT_LEN 600
-#define FACT_CAL_GRP_CAL_RESUL_LEN  4500
+#define FACT_CAL_GRP_CAL_RESULT_LEN  4500  // Reserved more than 4384 bytes
+#define FACT_CAL_GRP_CAL_DBDC_RESULT_LEN 4000 // Reserved more than 3880 bytes
+#define FACT_CAL_GRP_BW160_CAL_RESULT_LEN 1720
+#define FACT_CAL_GRP_BW160_CAL_DBDC_RESULT_LEN 1472
 #define FACT_CAL_CH_CAL_RESULT_LEN  700
 
 #define FACT_CAL_DATA_BUF_NUM_MAX (4) /* Maximum of channel cache num */
@@ -215,7 +218,8 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 	((FACT_CAL_DATA_BUF_NUM_MAX)*(FACT_CAL_DATA_BUF_CFG_U32_LEN))
 #define FACT_CAL_DATA_BUF_LEN (1400)
 #define FACT_CAL_BUF_LEN_COM (FACT_CAL_COM_CAL_RESULT_LEN)
-#define FACT_CAL_BUF_LEN_GRP (FACT_CAL_GRP_CAL_RESUL_LEN)
+#define FACT_CAL_BUF_LEN_GRP \
+	(FACT_CAL_GRP_CAL_RESULT_LEN + FACT_CAL_GRP_CAL_DBDC_RESULT_LEN)
 #define FACT_CAL_BUF_LEN_CH \
 	((FACT_CAL_CH_CAL_RESULT_LEN)*(FACT_CAL_DATA_BUF_NUM_MAX))
 
@@ -226,11 +230,17 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 #define FACT_CAL_GROUP_NUM ((FACT_CAL_2G_GROUP_NUM) + (FACT_CAL_5G_GROUP_NUM) \
 + (FACT_CAL_6G_GROUP_NUM) + (FACT_CAL_6G_160M_GROUP_NUM))
 
-// Use common as input param
+// Follow FW to use common as input param
 #define FACT_CAL_PARAM_COMMON_MASK                        BITS(0, 7)
 
-// Use group as input param
-#define FACT_CAL_PARAM_GROUP_MASK                         BITS(0, 7)
+// Follow FW to use group as input param
+#define FACT_CAL_PARAM_GROUP_MASK                         BITS(0, 15)
+#define FACT_CAL_DBDC_BAND_MASK                           (BIT(16))
+#define FACT_CAL_DBDC_BAND_SHFT                           (16)
+#define FACT_CAL_EMLSR_MASK                               (BIT(17))
+#define FACT_CAL_EMLSR_SHFT                               (17)
+#define FACT_CAL_POWERON_GROUP_MASK                       (BIT(18))
+#define FACT_CAL_POWERON_GROUP_SHFT                       (18)
 
 // Use central channel as input param
 #define FACT_CAL_CENT_CH_PARAM_CHAN_MASK                  BITS(0, 11)
@@ -343,13 +353,15 @@ struct FACT_CAL_BUF_INFO {
 	 *	 Bit[0:7]: (2G : 0 / 5G : 1 / 6G : 2)
 	 *	 Bit[8:31]: reserved for future use
 	 * If Cal type == Group
-	 *	 Bit[0:7]: group id (0~34)
-	 *	 Bit[8:31]: reserved for future use
+	 *	 Bit[0:15]: group id (0~34)
+	 *	 Bit[16]: Dbdc band (0: Band0, 1: Band1)
+	 *	 Bit[17]: EMLSR group (0: No, 1: Yes)
+	 *	 Bit[18]: PowerOn group (0: No, 1: Yes)
 	 * If Cal type == Channel
-	 *   Bit[0:11]: central channel
-	 *     E.g. CH6 set to 6
-	 *   Bit[12:15]: Channel Band (2G : 0 / 5G : 1 / 6G : 2)
-	 *   BIT[16:31]: reserved
+	 *	 Bit[0:11]: central channel
+	 *	   E.g. CH6 set to 6
+	 *	 Bit[12:15]: Channel Band (2G : 0 / 5G : 1 / 6G : 2)
+	 *	 BIT[16:31]: reserved
 	 */
 	uint32_t u4CalParam;
 
@@ -494,7 +506,9 @@ struct FACT_CAL_MAPPING_TABLE {
 	struct FACT_CAL_CHANNEL_MAPPING_TABLE ChMap_t;
 	uint32_t u4ComLen;
 	uint32_t u4GrpALen;
+	uint32_t u4GrpADbdcLen;
 	uint32_t u4GrpABW160Len;
+	uint32_t u4GrpABW160DbdcLen;
 	uint32_t u4ChLen;
 };
 #endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
@@ -954,6 +968,7 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 
 uint32_t rlmFactCalSetCalDataForSend(struct ADAPTER *prAdapter,
 			uint32_t u4CalType, uint8_t u1Band,
+			uint32_t u4Group,
 			uint32_t u4Channel,
 			uint32_t u4CalDataIdx);
 

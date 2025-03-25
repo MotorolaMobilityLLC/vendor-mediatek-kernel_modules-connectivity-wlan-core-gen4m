@@ -2748,6 +2748,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+#if (CFG_SUPPORT_FACT_CAL == 1)
+	{
+		.pcCmdStr  = CMD_SET_FACT_CAL,
+		.pfHandler = priv_driver_fact_cal,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /*#if CFG_SUPPORT_FACT_CAL */
 	{
 		.pcCmdStr  = CMD_DBG_DUMP_WFSYS_CPUPCR,
 		.pfHandler = priv_driver_dump_wfsys_cpupcr,

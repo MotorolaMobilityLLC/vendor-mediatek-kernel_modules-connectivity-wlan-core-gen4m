@@ -3543,6 +3543,8 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 	uint32_t u4Idx = 0, u4Status = WLAN_STATUS_FAILURE;
 	uint8_t u1tmpCh = 0;
 	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
+	struct FACT_CAL_BUF_INFO *prFileBufInfo = NULL;
+	struct FACT_CAL_GRP *prFileGrp = NULL;
 	struct FACT_CAL_CH *prFileCh = NULL;
 
 	prFactCalFile = &prAdapter->rFactCalFile;
@@ -3553,6 +3555,7 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 			prAdapter,
 			FACT_CAL_TYPE_GROUP,
 			u1Band,
+			FACT_CAL_DATA_INVALID_IDX,
 			u4Channel,
 			FACT_CAL_DATA_INVALID_IDX);
 
@@ -3570,7 +3573,8 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 				u4Status = rlmFactCalSetCalDataForSend(
 					prAdapter,
 					FACT_CAL_TYPE_CHANNEL,
-					u1Band, u4Channel, u4Idx);
+					u1Band, FACT_CAL_DATA_INVALID_IDX,
+					u4Channel, u4Idx);
 				if (u4Status != WLAN_STATUS_SUCCESS)
 					DBGLOG(RLM, ERROR,
 					"Set CH%d channel fail!\n",
@@ -3578,18 +3582,38 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 			}
 		}
 	} else if (u4CalType == FACT_CAL_TYPE_POWERON) {
-		// Set correspond COMMON A/G band
+		// Set correspond A/G band
 		for (u4Idx = 0; u4Idx < FACT_CAL_COMMON_BAND_NUM; u4Idx++) {
 			u4Status = rlmFactCalSetCalDataForSend(
 				prAdapter,
 				FACT_CAL_TYPE_COMMON,
 				u4Idx,
+				FACT_CAL_DATA_INVALID_IDX,
 				u4Channel,
 				FACT_CAL_DATA_INVALID_IDX);
 			if (u4Status != WLAN_STATUS_SUCCESS) {
 				DBGLOG(RLM, ERROR,
-					"Set BAND%d COMMON fail!\n", u4Idx);
+					"Set POWERON BAND%d fail!\n", u4Idx);
 				break;
+			}
+		}
+		for (u4Idx = 0; u4Idx < FACT_CAL_GROUP_NUM; u4Idx++) {
+			prFileGrp = &prFactCalFile->group_t->rGrpCalData[u4Idx];
+			prFileBufInfo = &prFileGrp->rFactCalBufInfo;
+			if (prFileBufInfo->u4CalParam
+				& FACT_CAL_POWERON_GROUP_MASK) {
+				u4Status = rlmFactCalSetCalDataForSend(
+					prAdapter,
+					FACT_CAL_TYPE_GROUP,
+					(uint8_t)FACT_CAL_DATA_INVALID_IDX,
+					u4Idx,
+					FACT_CAL_DATA_INVALID_IDX,
+					FACT_CAL_DATA_INVALID_IDX);
+				if (u4Status != WLAN_STATUS_SUCCESS) {
+					DBGLOG(RLM, ERROR,
+					"Set POWERON GROUP%d fail!\n", u4Idx);
+					break;
+				}
 			}
 		}
 	} else {
@@ -3602,7 +3626,9 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 uint32_t rlmFactCalSetCalDataForSend(
 			struct ADAPTER *prAdapter,
 			uint32_t u4CalType,
-			uint8_t u1Band, uint32_t u4Channel,
+			uint8_t u1Band,
+			uint32_t u4Group,
+			uint32_t u4Channel,
 			uint32_t u4CalDataIdx)
 {
 	uint32_t u4Status = WLAN_STATUS_FAILURE, u4CalParam = 0;
@@ -3615,8 +3641,12 @@ uint32_t rlmFactCalSetCalDataForSend(
 
 	// Construct Cal. param by cal type and channel
 	if (u4CalType == FACT_CAL_TYPE_GROUP) {
-		rlmFactCalCh2Group(u1Band, u4Channel, &ucGroup);
-		u4CalParam = ucGroup;
+		if (u1Band != ((uint8_t)FACT_CAL_DATA_INVALID_IDX) &&
+			u4Channel != FACT_CAL_DATA_INVALID_IDX) {
+			rlmFactCalCh2Group(u1Band, u4Channel, &ucGroup);
+			u4CalParam = ucGroup;
+		} else if (u4Group != FACT_CAL_DATA_INVALID_IDX)
+			u4CalParam = u4Group;
 	} else if (u4CalType == FACT_CAL_TYPE_CHANNEL) {
 		u4CalParam = u4Channel;
 		u4CalParam |= u1Band << FACT_CAL_CENT_CH_PARAM_RF_BAND_OFFSET;
@@ -4207,21 +4237,21 @@ uint32_t rlmFactCalSetMappingTable(struct ADAPTER *prAdapter)
 	prFileBuf = &(prFactCalFile->channel_t->rChCalData[0]);
 
 	DBGLOG(RLM, INFO, "Group PA Start addr.[0x%016lx]\n",
-		((uint64_t)((struct FACT_CAL_BUF_INFO *)
-			prFactCalFile->Group_pa + 1)));
+		((uint64_t)(((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Group_pa) + 1)));
 	DBGLOG(RLM, INFO, "Channel PA Start addr.[0x%016lx]\n",
-		((uint64_t)(struct FACT_CAL_BUF_INFO *)
-			prFactCalFile->Channel_pa + 1));
+		((uint64_t)(((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Channel_pa) + 1)));
 
 	prGrpMap->u4PhyAddr_L =
-		(uint32_t)(((uint64_t)((struct FACT_CAL_BUF_INFO *)
-			prFactCalFile->Group_pa + 1)) & BITS(0, 31));
+		(uint32_t)(((uint64_t)(((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Group_pa) + 1)) & BITS(0, 31));
 	prGrpMap->u4PhyAddr_H =
 		(uint32_t)((((uint64_t)(((struct FACT_CAL_BUF_INFO *)
 			prFactCalFile->Group_pa) + 1)) & BITS(32, 63)) >> 32);
 	prChMap->u4PhyAddr_L =
-		(uint32_t)(((uint64_t)(struct FACT_CAL_BUF_INFO *)
-			prFactCalFile->Channel_pa + 1) & BITS(0, 31));
+		(uint32_t)(((uint64_t)(((struct FACT_CAL_BUF_INFO *)
+			prFactCalFile->Channel_pa) + 1)) & BITS(0, 31));
 	prChMap->u4PhyAddr_H =
 		(uint32_t)((((uint64_t)(((struct FACT_CAL_BUF_INFO *)
 			prFactCalFile->Channel_pa) + 1)) & BITS(32, 63)) >> 32);
@@ -4229,9 +4259,11 @@ uint32_t rlmFactCalSetMappingTable(struct ADAPTER *prAdapter)
 	DBGLOG(RLM, INFO,
 		"Group PA_L[0x%08x] PA_H[0x%08x]\n",
 		prGrpMap->u4PhyAddr_L, prGrpMap->u4PhyAddr_H);
+
 	DBGLOG(RLM, INFO,
 		"Channel PA_L[0x%08x] PA_H[0x%08x]\n",
 		prChMap->u4PhyAddr_L, prChMap->u4PhyAddr_H);
+
 	DBGLOG(RLM, INFO, "FACT_CAL_MAPPING_TABLE size = %d\n",
 		sizeof(struct FACT_CAL_MAPPING_TABLE));
 
@@ -4253,13 +4285,23 @@ uint32_t rlmFactCalSetMappingTable(struct ADAPTER *prAdapter)
 		prGrpMap->u1Group[u4Cnt] = u1Group;
 
 		// Get Aband group size for mapping tbl
-		if (u1Group == GROUP_1)
+		if (u1Group >= GROUP_1 && u1Group < GROUP_24
+			&& prFactCalMap->u4GrpALen == 0
+			&& prFileBufInfo->au4BufCfgInfo[1] != 0) {
 			prFactCalMap->u4GrpALen =
 				prFileBufInfo->au4BufCfgInfo[1];
+			prFactCalMap->u4GrpADbdcLen =
+				prFileBufInfo->au4BufCfgInfo[5];
+		}
 		// Get Aband BW160 group size for mapping tbl
-		else if (u1Group == GROUP_24)
+		else if (u1Group >= GROUP_24
+			&& prFactCalMap->u4GrpABW160Len == 0
+			&& prFileBufInfo->au4BufCfgInfo[1] != 0) {
 			prFactCalMap->u4GrpABW160Len =
 				prFileBufInfo->au4BufCfgInfo[1];
+			prFactCalMap->u4GrpABW160DbdcLen =
+				prFileBufInfo->au4BufCfgInfo[5];
+		}
 
 		DBGLOG(RLM, INFO, "u1Group[%d] looping\n", u1Group);
 	}
@@ -4292,9 +4334,11 @@ uint32_t rlmFactCalSetMappingTable(struct ADAPTER *prAdapter)
 		prChMap->u4TotalBufNum[u4Cnt] = u4TotalBufNum;
 
 		// Get channel size for mapping tbl
-		if (u4Cnt == 0)
+		if (prFactCalMap->u4ChLen == 0
+			&& prFileBufInfo->au4BufCfgInfo[1] != 0)
 			prFactCalMap->u4ChLen = prFileBufInfo->au4BufCfgInfo[1];
 
+		DBGLOG(RLM, INFO, "u4CenterCh[%d] looping\n", u4CenterCh);
 	}
 
 	DBGLOG(RLM, INFO,
