@@ -125,7 +125,7 @@ struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[] = {
 
 #define REG_DB_ENTRY_NOT_FOUND ARRAY_SIZE(g_rNanRegInfo)
 
-uint8_t fgForceNANr36GCH_CHBitmap = FALSE;
+u_int8_t fgNanUseR4AvailAttr;
 
 /*******************************************
  * Table E4 - Global Operating Classes
@@ -155,11 +155,11 @@ uint8_t nanRegGet20MHzPrimaryChnlIndex(uint8_t ucOperatingClass,
 	 */
 
 	if (IS_6G_OP_CLASS(ucOperatingClass)) {
-		if (fgForceNANr36GCH_CHBitmap)
-			i4Idx = 1; /* channel 5, 101 */
-		else
+		if (fgNanUseR4AvailAttr)
 			DBGLOG(NAN, WARN, "FIXME, OC=%u, PriChnlBitmap=0x%02x",
 			       ucOperatingClass, ucPriChnlBitmap);
+		else
+			i4Idx = 1; /* channel 5, 101 */
 	}
 
 	for ( ; i4Idx < 8; i4Idx++) {
@@ -184,19 +184,21 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass)
-		&& fgForceNANr36GCH_CHBitmap == FALSE) {
-		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
-		uc6gStartChnl = pucBuf[0];
-		uc6gChnlNum = pucBuf[1];
+	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		if (fgNanUseR4AvailAttr) {
+			kalMemZero(aucSupportChnlList,
+				   sizeof(aucSupportChnlList));
+			uc6gStartChnl = pucBuf[0];
+			uc6gChnlNum = pucBuf[1];
 
-		nanRegConvert6gChannelBitmap(ucOperatingClass, pu2ChnlBitmap,
-					     aucSupportChnlList);
-		pucBuf = aucSupportChnlList;
-		u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
-	} else if (IS_6G_OP_CLASS(ucOperatingClass)
-				&& fgForceNANr36GCH_CHBitmap == TRUE) {
-		u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
+			nanRegConvert6gChannelBitmap(ucOperatingClass,
+						     pu2ChnlBitmap,
+						     aucSupportChnlList);
+			pucBuf = aucSupportChnlList;
+			u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
+		} else { /* !fgNanUseR4AvailAttr */
+			u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
+		}
 	}
 #endif
 
@@ -216,8 +218,7 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 		pucBuf[j / 8] &= ~BIT(j % 8);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-		if (IS_6G_OP_CLASS(ucOperatingClass)
-			&& fgForceNANr36GCH_CHBitmap == FALSE) {
+		if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
 			uint8_t nxt = 0;
 
 			if (j < u4MaxChnlBitmap - 1)
@@ -254,8 +255,7 @@ nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
 	i = nanRegFindRecordIdx(ucOperatingClass);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass)
-		&& fgForceNANr36GCH_CHBitmap == FALSE) {
+	if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
 		pucBuf[0] = ucChannel;
 		pucBuf[1] = 1;
 		return WLAN_STATUS_SUCCESS;
@@ -365,8 +365,7 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass)
-		&& fgForceNANr36GCH_CHBitmap == FALSE) {
+	if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
 		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
 		uc6gStartChnl = pucBuf[0];
 		uc6gChnlNum = pucBuf[1];
@@ -405,8 +404,7 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 		 * here should clear bitmap once the channel has been selected
 		 * Save the updated bitmap pointed by pu2ChnlBitmap.
 		 */
-		if (IS_6G_OP_CLASS(ucOperatingClass)
-			&& fgForceNANr36GCH_CHBitmap == FALSE) {
+		if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
 			uint8_t nxt = 0;
 
 			if (j < u4MaxChnlBitmap - 1)
@@ -819,10 +817,39 @@ uint32_t nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
 
 	return WLAN_STATUS_SUCCESS;
 }
-void nanRegForce_R3_6GChMap(uint8_t ucEnable)
+
+/**
+ * Modify u2ChannelBitmap
+ * R3: Bit(i) is set if the i-th chanenl in the OC is selected
+ * R4: BITS(0,7): the start chanenl number
+ *     BITS(8,15): number of channels including the start channel
+ */
+void nanChannelBitmapR4ToR3(void *pBuf)
 {
-	fgForceNANr36GCH_CHBitmap = ucEnable;
-	/*DBGLOG(NAN, DEBUG, "R3 6G channel map (%u)\n", ucEnable);*/
+	struct _NAN_CHNL_ENTRY_T *prChannelEntry = pBuf;
+	uint16_t u2ChannelBitmap = 0;
+	uint8_t ucChannelStart = prChannelEntry->ucChannelStart;
+	uint8_t ucChannelNum = prChannelEntry->ucChannelNum;
+
+	if (prChannelEntry->ucOperatingClass < 131) /* same format */
+		return;
+
+	nanRegConvert6gChannelBitmap(prChannelEntry->ucOperatingClass,
+				     &prChannelEntry->u2ChannelBitmap,
+				     (uint8_t *)&u2ChannelBitmap);
+
+	DBGLOG(NAN, TRACE, "R4->R3, OC %u, start=%u, num=%u, 0x%04x -> 0x%04x",
+	       prChannelEntry->ucOperatingClass,
+	       ucChannelStart, ucChannelNum,
+	       prChannelEntry->u2ChannelBitmap, u2ChannelBitmap);
+
+	prChannelEntry->u2ChannelBitmap = u2ChannelBitmap;
+}
+
+void nanSetNanUseR4AvailAttr(uint8_t ucEnable)
+{
+	fgNanUseR4AvailAttr = ucEnable;
+	DBGLOG(NAN, INFO, "R4 6G channel map (%u)\n", ucEnable);
 }
 #endif
 

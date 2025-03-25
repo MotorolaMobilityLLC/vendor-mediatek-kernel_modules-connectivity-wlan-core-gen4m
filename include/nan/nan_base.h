@@ -306,13 +306,13 @@ enum NAN_SUPPORTED_BANDS {
 	NAN_SUPPORTED_BAND_ID_5G = 4,
 	/* Reserved (for 60 GHz) = 5 */
 	/* Reserved (for 45 GHz) = 6 */
-	NAN_PROPRIETY_BAND_ID_6G = 6, /* from IOT devices */
+	NAN_PROPRIETARY_BAND_ID_6G = 6, /* from IOT devices */
 	NAN_SUPPORTED_BAND_ID_6G = 7,
 };
 
 #define NAN_SUPPORTED_2G_BIT    BIT(NAN_SUPPORTED_BAND_ID_2P4G)
 #define NAN_SUPPORTED_5G_BIT    BIT(NAN_SUPPORTED_BAND_ID_5G)
-#define NAN_PROPRIETARY_6G_BIT  BIT(NAN_PROPRIETY_BAND_ID_6G)
+#define NAN_PROPRIETARY_6G_BIT  BIT(NAN_PROPRIETARY_BAND_ID_6G)
 #define NAN_SUPPORTED_6G_BIT    BIT(NAN_SUPPORTED_BAND_ID_6G)
 
 /* NAN 4.0 Table 81. Operation Mode field format
@@ -997,7 +997,13 @@ struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T {
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_CHNL_ENTRY_T {
 	uint8_t ucOperatingClass;
-	uint16_t u2ChannelBitmap;
+	union {
+		uint16_t u2ChannelBitmap;
+		struct {
+			uint8_t ucChannelStart;
+			uint8_t ucChannelNum;
+		};
+	};
 	uint8_t ucPrimaryChnlBitmap;
 	uint16_t u2AuxChannelBitmap; /* optional, present if ucNonContiguous */
 } __KAL_ATTRIB_PACKED__;

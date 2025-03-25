@@ -1635,8 +1635,8 @@ struct WIFI_VAR {
 	uint8_t ucNanFixBand;
 	uint8_t ucNanMapMask;
 	uint8_t ucNanEnable6g;
-	/* Allow NAN r3 style channel map for 6G channel map */
-	uint8_t ucNanEnableSS6g;
+	/* Use NAN R4 or R3 style channel map for 6G channel map */
+	uint8_t ucNanUseR4AvailAttr;
 	/* Initiate NDL reschedule from this device */
 	uint8_t ucNanEnable6gReschedInit;
 	uint8_t ucNanBandChnlType;

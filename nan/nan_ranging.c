@@ -879,8 +879,9 @@ nanParseRangingFrame(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			break;
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
-			rStatus = nanSchedPeerUpdateAvailabilityAttr(
-				prAdapter, prActionFrame->aucSrcAddr,
+			rStatus = nanSchedPeerUpdateAvailabilityAttr(prAdapter,
+				prActionFrame->ucOUISubtype,
+				prActionFrame->aucSrcAddr,
 				(uint8_t *)pucNanAttr, NULL);
 
 			DBGLOG(NAN, DEBUG,

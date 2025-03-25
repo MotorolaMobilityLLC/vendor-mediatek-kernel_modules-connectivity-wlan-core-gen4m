@@ -812,8 +812,8 @@ uint32_t nanDeviceCapabilityAttrHandler(
 	struct _NAN_ATTR_DEVICE_CAPABILITY_T *prDeviceCapabilityAttr,
 	struct _NAN_NDL_INSTANCE_T *prNDL);
 
-uint32_t nanAvailabilityAttrHandler(
-	struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
+uint32_t nanAvailabilityAttrHandler(struct ADAPTER *prAdapter,
+	enum _NAN_ACTION_T eNanAction,
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAvailabilityAttr,
 	struct _NAN_NDL_INSTANCE_T *prNDL,
 	struct _NAN_NDP_INSTANCE_T *prNDP);

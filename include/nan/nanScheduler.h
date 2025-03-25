@@ -530,6 +530,12 @@ struct _NAN_AVAILABILITY_DB_T {
 		arAvailEntryList[NAN_NUM_AVAIL_TIMELINE];
 };
 
+enum NAN_RX_PEER_SPECIAL_AVAIL {
+	NAN_PEER_AVAIL_FORCE_NONE = 0,
+	NAN_PEER_AVAIL_FORCE_R3 = 1,
+	NAN_PEER_AVAIL_FORCE_R4 = 2,
+};
+
 struct _NAN_PEER_SCH_DESC_T {
 	struct LINK_ENTRY rLinkEntry;
 
@@ -566,6 +572,8 @@ struct _NAN_PEER_SCH_DESC_T {
 #endif
 	/* Intersection of supported band between self and this peer */
 	uint32_t u4CommonSupportedBand;
+
+	enum NAN_RX_PEER_SPECIAL_AVAIL ePeerForceAvailAttr;
 };
 
 /** NAN Peer Schedule Record */
@@ -824,6 +832,7 @@ uint32_t nanSchedPeerUpdateQosAttr(struct ADAPTER *prAdapter,
 uint32_t nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter,
 				   uint8_t *pucNmiAddr, uint8_t *pucNdcAttr);
 uint32_t nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
+					    enum _NAN_ACTION_T eNanAction,
 					    uint8_t *pucNmiAddr,
 					    uint8_t *pucAvailabilityAttr,
 					    struct _NAN_NDP_INSTANCE_T *prNDP);

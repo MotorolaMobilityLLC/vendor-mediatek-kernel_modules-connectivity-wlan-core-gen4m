@@ -9065,10 +9065,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	wlanCfgSetUint32(prAdapter, "NanEnable6g",
 		prWifiVar->ucNanEnable6g);
-	INIT_UINT(prWifiVar->ucNanEnableSS6g, "NanEnableSS6g", 1,
+	INIT_UINT(prWifiVar->ucNanUseR4AvailAttr, "NanUseR4Avail", 0,
 		FEATURE_TO_CUSTOMER);
-	wlanCfgSetUint32(prAdapter, "NanEnableSS6g",
-		prWifiVar->ucNanEnableSS6g);
+	wlanCfgSetUint32(prAdapter, "NanUseR4Avail",
+		prWifiVar->ucNanUseR4AvailAttr);
 	INIT_UINT(prWifiVar->ucNanEnable6gReschedInit,
 		"NanEnable6gReschedInit", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanBandChnlType, "NanBandChnlType",

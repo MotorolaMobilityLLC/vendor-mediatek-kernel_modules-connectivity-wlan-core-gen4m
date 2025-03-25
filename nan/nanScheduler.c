@@ -7,9 +7,9 @@
 
 #include "precomp.h"
 #include "typedef.h"
+#include "nanReg.h"
 #include "nanRescheduler.h"
 #include "rlm_domain.h"
-
 
 #define NDC_NEXT_SLOT_CHANNEL 149
 
@@ -245,7 +245,9 @@ struct _NAN_CRB_NEGO_CTRL_T {
 __KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_CRB_T {
 	uint32_t u4SchIdx;
-	uint8_t fgUseDataPath;
+	uint8_t fgUseDataPath :1,
+		b2Avail6GFormat :2,
+		b5Reserved :5;
 	uint8_t fgUseRanging;
 	uint8_t aucRsvd[2];
 	struct _NAN_SCHEDULE_TIMELINE_T
@@ -526,6 +528,7 @@ static u_int8_t nanIsP2pAisMCC(struct ADAPTER *prAdapter, size_t szTimeLineIdx,
 })
 
 static u_int8_t updateAvailability(struct ADAPTER *prAdapter,
+		    enum _NAN_ACTION_T eNanAction,
 		    struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
 		    struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		    struct _NAN_AVAILABILITY_DB_T *prNanAvailDB,
@@ -4605,7 +4608,7 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 #if (CFG_SUPPORT_NAN_6G == 1)
 					if (IS_6G_OP_CLASS(ucCheckOpClass) &&
 					    pucBand[i] ==
-						NAN_PROPRIETY_BAND_ID_6G &&
+						NAN_PROPRIETARY_BAND_ID_6G &&
 					    !pChosen &&
 					    !fgCommitted6G && !fgConditional) {
 						pChosen = &rPrefer6gChannel;
@@ -5113,6 +5116,7 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 
 uint32_t
 nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
+				   enum _NAN_ACTION_T eNanAction,
 				   uint8_t *pucNmiAddr,
 				   uint8_t *pucAvailabilityAttr,
 				   struct _NAN_NDP_INSTANCE_T *prNDP)
@@ -5282,7 +5286,8 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 			prAttrNanAvailibility = prCondAttrNanAvailibility;
 	}
 
-	if (updateAvailability(prAdapter, prPeerSchDesc, prAttrNanAvailibility,
+	if (updateAvailability(prAdapter, eNanAction, prPeerSchDesc,
+			       prAttrNanAvailibility,
 			       prNanAvailDB, fgFillByPotential)) {
 		rRetStatus = WLAN_STATUS_PENDING;
 	}
@@ -5314,7 +5319,75 @@ done:
 	return rRetStatus;
 }
 
+static u_int8_t nanNeedUpdateAvailFormat(struct WIFI_VAR *prWifiVar,
+				 enum _NAN_ACTION_T eNanAction,
+				struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
+				uint16_t u2EntryControl,
+				u_int8_t fgNanUseR4AvailAttr)
+{
+	/* Schedule update is RX only, don't follow it */
+	if (eNanAction == NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION)
+		return FALSE;
+
+	/* Only follow Committed or Conditional */
+	if (!(NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl) ||
+	      NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl)))
+		return FALSE;
+
+	/* Only set when the peer use different from our default format */
+	if (fgNanUseR4AvailAttr && !prWifiVar->ucNanUseR4AvailAttr ||
+	    !fgNanUseR4AvailAttr && prWifiVar->ucNanUseR4AvailAttr) {
+
+		DBGLOG(NAN, INFO,
+		       "Peer %02x:%02x:%02x:%02x:%02x:%02x use special Availability, R4=%u",
+		       prPeerSchDesc->aucNmiAddr[0],
+		       prPeerSchDesc->aucNmiAddr[1],
+		       prPeerSchDesc->aucNmiAddr[2],
+		       prPeerSchDesc->aucNmiAddr[3],
+		       prPeerSchDesc->aucNmiAddr[4],
+		       prPeerSchDesc->aucNmiAddr[5],
+		       fgNanUseR4AvailAttr);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static u_int8_t nanIsR4Avail(uint16_t u2EntryControl, uint8_t ucOperatingClass,
+			     void *pChannelBitmap)
+{
+	uint8_t ucStart = ((uint8_t *)pChannelBitmap)[0];
+	uint8_t ucNum = ((uint8_t *)pChannelBitmap)[1];
+	uint16_t u2Bitmap = *(uint16_t *)pChannelBitmap;
+
+	DBGLOG(NAN, INFO,
+	       "Type:%u C:%u/p:%u/c:%u, 6G availability OC=%u, start=%u, num=%u, bitmap=0x%04x",
+	       NAN_AVAIL_ENTRY_CTRL_TYPE(u2EntryControl),
+	       NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl),
+	       NAN_AVAIL_ENTRY_CTRL_POTENTIAL(u2EntryControl),
+	       NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl),
+	       ucOperatingClass, ucStart, ucNum, u2Bitmap);
+
+	if (ucNum == 0)
+		return FALSE;
+
+	/* NAN R4 Table 9 */
+	if ((NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl) ||
+	     NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl)) && ucNum != 1)
+		return FALSE;
+
+	if (ucOperatingClass == 137 && ucStart % 64 == 31 ||
+	    ucOperatingClass == 134 && ucStart % 32 == 15 ||
+	    ucOperatingClass == 133 && ucStart % 16 == 7 ||
+	    ucOperatingClass == 132 && ucStart % 8 == 3 ||
+	    ucOperatingClass == 131 && ucStart % 4 == 1)
+		return TRUE;
+
+	return FALSE;
+}
+
 u_int8_t updateAvailability(struct ADAPTER *prAdapter,
+		    enum _NAN_ACTION_T eNanAction,
 		    struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
 		    struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		    struct _NAN_AVAILABILITY_DB_T *prNanAvailDB,
@@ -5359,6 +5432,9 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 	/* To compare with conditional */
 	uint8_t ucCommittedOpClass = 0;
 #endif
+	uint8_t fgNanUseR4AvailAttrBackup = fgNanUseR4AvailAttr;
+	enum NAN_RX_PEER_SPECIAL_AVAIL *pePeerForceAvailAttr =
+		&prPeerSchDesc->ePeerForceAvailAttr;
 
 	u4EntryListPos = 0;
 
@@ -5557,6 +5633,23 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 						      NAN_SUPPORTED_6G_BIT *
 						      prDevCap[i].fgValid;
 					}
+					if (nanIsR4Avail(u2EntryControl,
+							 ucOperatingClass,
+							 pu2ChannelBitmap))
+						fgNanUseR4AvailAttr = TRUE;
+					else
+						fgNanUseR4AvailAttr = FALSE;
+
+					/* Peer uses different Avail format */
+					if (nanNeedUpdateAvailFormat(prWifiVar,
+						eNanAction,
+						prPeerSchDesc,
+						u2EntryControl,
+						fgNanUseR4AvailAttr)) {
+						*pePeerForceAvailAttr =
+						      NAN_PEER_AVAIL_FORCE_R3 +
+						      fgNanUseR4AvailAttr;
+					}
 				}
 
 				/* only select one channel from Channel
@@ -5749,6 +5842,9 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 	}
 #endif
 
+	DBGLOG(NAN, TRACE, "Restore backed up Use R4=%u",
+	       fgNanUseR4AvailAttrBackup);
+	fgNanUseR4AvailAttr = fgNanUseR4AvailAttrBackup;
 	return !!ucNeedCounter;
 }
 
@@ -5854,13 +5950,13 @@ nanSchedPeerUpdateDevCapabilityAttr(struct ADAPTER *prAdapter,
 		       "Supported Band:0x%02x (2G:%u, 5G:%u, 6G:%u,%u)",
 		       prNanDevCapability->ucSupportedBand,
 		       !!(prNanDevCapability->ucSupportedBand &
-				BIT(NAN_SUPPORTED_BAND_ID_2P4G)),
+				NAN_SUPPORTED_2G_BIT),
 		       !!(prNanDevCapability->ucSupportedBand &
-				BIT(NAN_SUPPORTED_BAND_ID_5G)),
+				NAN_SUPPORTED_5G_BIT),
 		       !!(prNanDevCapability->ucSupportedBand &
-				BIT(NAN_PROPRIETY_BAND_ID_6G)),
+				NAN_PROPRIETARY_6G_BIT),
 		       !!(prNanDevCapability->ucSupportedBand &
-				BIT(NAN_SUPPORTED_BAND_ID_6G)));
+				NAN_SUPPORTED_6G_BIT));
 		DBGLOG(NAN, DEBUG,
 		       "Operation Mode:0x%02x (VHT=%u, HE=%u, 80+80=%u, 160=%u)\n",
 		       prNanDevCapability->ucOperationMode,
@@ -6664,7 +6760,7 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	prNanScheduler->fgEn6g = fgEn6g &&
 				 prWifiVar->ucNanEnable6g &&
 				 fgIsNAN6GChnlAllowed;
-	nanRegForce_R3_6GChMap(prWifiVar->ucNanEnableSS6g);
+	nanSetNanUseR4AvailAttr(prWifiVar->ucNanUseR4AvailAttr);
 
 	nanSet6GModeCtrl(prAdapter, prNanScheduler->fgEn6g);
 #endif
@@ -12568,6 +12664,13 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		/* struct _NAN_CHNL_ENTRY_T excluding u2AuxChannelBitmap */
 
 		kalMemCopy(pucPos, pucPotentialChnls, u4PotentialChnlSize);
+#if (CFG_SUPPORT_NAN_6G == 1)
+		/* prAdapter->rWifiVar.ucNanUseR4AvailAttr: static configuration
+		 * fgNanUseR4AvailAttr: a runtime dynamic flag
+		 */
+		if (!fgNanUseR4AvailAttr)
+			nanChannelBitmapR4ToR3(pucPos);
+#endif
 		pucPos += u4PotentialChnlSize;
 	}
 
@@ -12664,6 +12767,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 			    uint8_t **ppucAvailabilityAttr,
 			    uint32_t *pu4AvailabilityAttrLength)
 {
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t *pucPos = NULL;
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAvailAttr = NULL;
 	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry = NULL;
@@ -12687,6 +12791,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	size_t szMaxTimeBitmapFieldSize = 0, szMaxChnlEntryListSize = 0;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 	enum _NAN_SUPPORTED_BAND_BIT eHighestCommonBand;
+	uint8_t fgNanUseR4AvailAttrBackup = fgNanUseR4AvailAttr;
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
@@ -12714,6 +12819,14 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	if (prNDL) {
 		prPeerSchDesc = nanSchedAcquirePeerSchDescByNmi(prAdapter,
 							prNDL->aucPeerMacAddr);
+	}
+
+
+	if (prPeerSchDesc->ePeerForceAvailAttr != NAN_PEER_AVAIL_FORCE_NONE) {
+		fgNanUseR4AvailAttr = prPeerSchDesc->ePeerForceAvailAttr -
+					NAN_PEER_AVAIL_FORCE_R3;
+		DBGLOG(NAN, INFO, "Force Use R4 Availability=%u",
+		       fgNanUseR4AvailAttr);
 	}
 
 	eHighestCommonBand = nanSchedGetHighestCommonBand(prAdapter,
@@ -12798,7 +12911,8 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 			DBGLOG(NAN, ERROR, "[%s] fail reason: 0x%08x\n",
 				__func__, WLAN_STATUS_BUFFER_TOO_SHORT);
 			*pu4AvailabilityAttrLength = 0U;
-			return WLAN_STATUS_BUFFER_TOO_SHORT;
+			u4Status = WLAN_STATUS_BUFFER_TOO_SHORT;
+			goto end;
 		}
 		prAvailAttr->ucAttrId = NAN_ATTR_ID_NAN_AVAILABILITY;
 		prAvailAttr->u2AttributeControl =
@@ -12828,7 +12942,8 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 					__func__, __LINE__,
 					WLAN_STATUS_BUFFER_TOO_SHORT);
 				*pu4AvailabilityAttrLength = 0U;
-				return WLAN_STATUS_BUFFER_TOO_SHORT;
+				u4Status = WLAN_STATUS_BUFFER_TOO_SHORT;
+				goto end;
 			}
 
 			prChnlInfo = &prChnlTimeline->rChnlInfo;
@@ -12929,7 +13044,8 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 						__func__, __LINE__,
 						WLAN_STATUS_BUFFER_TOO_SHORT);
 					*pu4AvailabilityAttrLength = 0U;
-					return WLAN_STATUS_BUFFER_TOO_SHORT;
+					u4Status = WLAN_STATUS_BUFFER_TOO_SHORT;
+					goto end;
 				}
 
 				prChnlInfo = &prChnlTimeline->rChnlInfo;
@@ -13013,7 +13129,9 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	 *		g_aucNanIEBuffer, (pucPos-g_aucNanIEBuffer));
 	 */
 
-	return WLAN_STATUS_SUCCESS;
+end:
+	fgNanUseR4AvailAttr = fgNanUseR4AvailAttrBackup;
+	return u4Status;
 }
 
 uint32_t
@@ -13058,8 +13176,13 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 	if (prScheduler->fgEn5gL || prScheduler->fgEn5gH)
 		prAttrDevCap->ucSupportedBands |= BIT(NAN_SUPPORTED_BAND_ID_5G);
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (prScheduler->fgEn6g)
-		prAttrDevCap->ucSupportedBands |= BIT(NAN_SUPPORTED_BAND_ID_6G);
+	if (prScheduler->fgEn6g) {
+		if (prAdapter->rWifiVar.ucNanUseR4AvailAttr)
+			prAttrDevCap->ucSupportedBands |= NAN_SUPPORTED_6G_BIT;
+		else
+			prAttrDevCap->ucSupportedBands |=
+				NAN_PROPRIETARY_6G_BIT;
+	}
 #endif
 
 	/* Support VHT Mode */
@@ -13589,6 +13712,7 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct _NAN_SCHED_CMD_UPDATE_CRB_T *prCmdUpdateCRB = NULL;
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl = NULL;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
 	struct _NAN_FAW_NDC_TIMELINE_T *prNanFawNdcTimeline = NULL;
@@ -13634,6 +13758,7 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		return WLAN_STATUS_FAILURE;
 	}
 
+	prPeerSchDesc = prPeerSchRecord->prPeerSchDesc;
 	for (i = 0; i < ARRAY_SIZE(prPeerSchRecord->arCommFawTimeline); i++) {
 		struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
 
@@ -13649,6 +13774,8 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		       ((uint8_t *)(prTimeline->au4AvailMap))[2],
 		       ((uint8_t *)(prTimeline->au4AvailMap))[3]);
 	}
+	DBGLOG(NAN, TRACE, "ePeerForceAvailAttr=%u",
+	       prPeerSchDesc->ePeerForceAvailAttr);
 	DBGLOG(NAN, TRACE, "element tag=%u, body_len=%u, copy %zu, sch=%u\n",
 	       prTlvElement->tag_type, prTlvElement->body_len,
 	       sizeof(struct _NAN_SCHED_CMD_UPDATE_CRB_T), u4SchIdx);
@@ -13668,6 +13795,11 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 
 	if (prPeerSchRecord->fgUseDataPath) {
 		prCmdUpdateCRB->fgUseDataPath = TRUE;
+		if (prPeerSchDesc->ePeerForceAvailAttr !=
+		    NAN_PEER_AVAIL_FORCE_NONE)
+			prCmdUpdateCRB->b2Avail6GFormat =
+				prPeerSchDesc->ePeerForceAvailAttr & BITS(0, 1);
+
 		if (prPeerSchRecord->prCommNdcCtrl) {
 			prCmdUpdateCRB->rCommNdcCtrl =
 				*prPeerSchRecord->prCommNdcCtrl;
@@ -14479,7 +14611,7 @@ nanSchedUniEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 			DBGLOG(NAN, DEBUG, "No NDL found\n");
 		}
 
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, /* from SDF */
 						   prEventNanAttr->aucNmiAddr,
 						   prEventNanAttr->aucNanAttr,
 						   prNDP);
@@ -14565,6 +14697,7 @@ nanSchedEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 		}
 
 		nanSchedPeerUpdateAvailabilityAttr(prAdapter,
+						   0,
 						   prEventNanAttr->aucNmiAddr,
 						   prEventNanAttr->aucNanAttr,
 						   prNDP);
@@ -14980,7 +15113,7 @@ nanScheduleNegoTestFunc(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr5,
 			   sizeof(g_aucPeerAvailabilityAttr5));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 
@@ -15096,7 +15229,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 5:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr,
 			   sizeof(g_aucPeerAvailabilityAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 
@@ -15127,7 +15260,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 7:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr,
 			   sizeof(g_aucPeerAvailabilityAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		nanSchedNegoStart(prAdapter, aucNmiAddr,
@@ -15139,7 +15272,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 8:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr,
 			   sizeof(g_aucPeerAvailabilityAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		nanSchedNegoStart(prAdapter, aucNmiAddr,
@@ -15152,7 +15285,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 9:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr,
 			   sizeof(g_aucPeerAvailabilityAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		nanSchedNegoStart(prAdapter, aucNmiAddr,
@@ -15164,7 +15297,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 10:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr,
 			   sizeof(g_aucPeerAvailabilityAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 
@@ -15177,7 +15310,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 11:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr2,
 			   sizeof(g_aucPeerAvailabilityAttr2));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		nanSchedNegoStart(prAdapter, aucNmiAddr,
@@ -15197,7 +15330,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 14:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr3,
 			   sizeof(g_aucPeerAvailabilityAttr3));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 
@@ -15217,7 +15350,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr4,
 			   sizeof(g_aucPeerAvailabilityAttr4));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 
@@ -15245,7 +15378,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 
 		kalMemCopy(aucTestData, g_aucCase_5_3_3_DataReq_AvailAttr,
 			   sizeof(g_aucCase_5_3_3_DataReq_AvailAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		DBGLOG(NAN, DEBUG, "DUMP#2\n");
@@ -15292,7 +15425,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 
 		kalMemCopy(aucTestData, g_aucCase_5_3_1_Publish_AvailAttr,
 			   sizeof(g_aucCase_5_3_1_Publish_AvailAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		DBGLOG(NAN, DEBUG, "DUMP#2\n");
@@ -15313,7 +15446,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 
 		kalMemCopy(aucTestData, g_aucCase_5_3_1_DataRsp_AvailAttr,
 			   sizeof(g_aucCase_5_3_1_DataRsp_AvailAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		DBGLOG(NAN, DEBUG, "DUMP#2\n");
@@ -15330,7 +15463,7 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 23:
 		kalMemCopy(aucTestData, g_aucPeerAvailabilityAttr,
 			   sizeof(g_aucPeerAvailabilityAttr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 
@@ -15342,12 +15475,12 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	case 24:
 		kalMemCopy(aucTestData, g_aucCase_5_3_11_DataReq_Avail1Attr,
 			   sizeof(g_aucCase_5_3_11_DataReq_Avail1Attr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 
 		kalMemCopy(aucTestData, g_aucCase_5_3_11_DataReq_Avail2Attr,
 			   sizeof(g_aucCase_5_3_11_DataReq_Avail2Attr));
-		nanSchedPeerUpdateAvailabilityAttr(prAdapter, aucNmiAddr,
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter, 0, aucNmiAddr,
 						   aucTestData, NULL);
 		nanSchedDbgDumpPeerAvailability(prAdapter, aucNmiAddr);
 

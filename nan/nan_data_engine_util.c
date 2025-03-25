@@ -1478,7 +1478,7 @@ uint32_t nanAvailabilityAttrHandler(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	rStatus = nanSchedPeerUpdateAvailabilityAttr(prAdapter,
+	rStatus = nanSchedPeerUpdateAvailabilityAttr(prAdapter, eNanAction,
 		prNDL->aucPeerMacAddr, (uint8_t *)prAvailabilityAttr, prNDP);
 
 	if (rStatus == WLAN_STATUS_PENDING) {
