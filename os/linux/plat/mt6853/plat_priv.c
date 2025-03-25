@@ -3,26 +3,7 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include <cpu_ctrl.h>
-#include <topo_ctrl.h>
-#include "gl_os.h"
-
-#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
-#include <linux/soc/mediatek/mtk-pm-qos.h>
-#include <helio-dvfsrc-opp.h>
-#define pm_qos_add_request(_req, _class, _value) \
-		mtk_pm_qos_add_request(_req, _class, _value)
-#define pm_qos_update_request(_req, _value) \
-		mtk_pm_qos_update_request(_req, _value)
-#define pm_qos_remove_request(_req) \
-		mtk_pm_qos_remove_request(_req)
-#define pm_qos_request mtk_pm_qos_request
-#define PM_QOS_DDR_OPP MTK_PM_QOS_DDR_OPP
-#define ppm_limit_data cpu_ctrl_data
-#else
-#include <linux/pm_qos.h>
-#include <helio-dvfsrc-opp.h>
-#endif
+#include "gl_plat.h"
 
 #include "precomp.h"
 #include "wmt_exp.h"
@@ -41,7 +22,6 @@
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
-#define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xc0)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
@@ -77,28 +57,12 @@ int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-#else
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
 		    uint32_t u4BoostCpuTh)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
-	int32_t i = 0, i4Freq = -1;
-
-	static struct pm_qos_request wifi_qos_request;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
-
-	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	/* ACAO, we dont have to set core number */
-	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
-	for (i = 0; i < u4ClusterNum && i < MAX_CLUSTER_NUM; i++) {
-		freq_to_set[i].min = i4Freq;
-		freq_to_set[i].max = i4Freq;
-	}
 
 	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
 		/* initially enable rps working at small cores */
@@ -108,50 +72,35 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
-			pr_info("kalBoostCpu start (%d>=%d)\n",
-				u4TarPerfLevel, u4BoostCpuTh);
+			pr_info("%s start (%d>=%d)\n",
+				__func__, u4TarPerfLevel, u4BoostCpuTh);
 			fgRequested = ENUM_CPU_BOOST_STATUS_START;
 
-			set_task_util_min_pct(prGlueInfo->u4TxThreadPid, 100);
-			set_task_util_min_pct(prGlueInfo->u4RxThreadPid, 100);
-			set_task_util_min_pct(prGlueInfo->u4HifThreadPid, 100);
+			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
+			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
+			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
 			kalSetRpsMap(prGlueInfo, CPU_BIG_CORE);
-			update_userlimit_cpu_freq(CPU_KIR_WIFI,
-				u4ClusterNum, freq_to_set);
-
-			KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-			pr_info("Max Dram Freq start\n");
-			pm_qos_add_request(&wifi_qos_request,
-					   PM_QOS_DDR_OPP,
-					   DDR_OPP_0);
-			pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
-			KAL_RELEASE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
+			kalSetCpuFreq(MAX_CPU_FREQ, CPU_ALL_CORE);
+			kalSetDramBoost(prAdapter, 0);
 		}
 	} else {
 		if (fgRequested == ENUM_CPU_BOOST_STATUS_START) {
-			pr_info("kalBoostCpu stop (%d<%d)\n",
-				u4TarPerfLevel, u4BoostCpuTh);
+			pr_info("%s stop (%d<%d)\n",
+				__func__, u4TarPerfLevel, u4BoostCpuTh);
 			fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
 
-			set_task_util_min_pct(prGlueInfo->u4TxThreadPid, 0);
-			set_task_util_min_pct(prGlueInfo->u4RxThreadPid, 0);
-			set_task_util_min_pct(prGlueInfo->u4HifThreadPid, 0);
+			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
+			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
+			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
 			kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
-			update_userlimit_cpu_freq(CPU_KIR_WIFI,
-				u4ClusterNum, freq_to_set);
-
-			KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-			pr_info("Max Dram Freq end\n");
-			pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
-			pm_qos_remove_request(&wifi_qos_request);
-			KAL_RELEASE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
+			kalSetCpuFreq(AUTO_CPU_FREQ, CPU_ALL_CORE);
+			kalSetDramBoost(prAdapter, -1);
 		}
 	}
 	kalTraceInt(fgRequested == ENUM_CPU_BOOST_STATUS_START, "kalBoostCpu");
 
 	return 0;
 }
-#endif
 
 #ifdef CONFIG_WLAN_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)

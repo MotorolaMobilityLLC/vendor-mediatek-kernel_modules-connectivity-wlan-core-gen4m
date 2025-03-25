@@ -3907,9 +3907,12 @@ else
 		$(OS_DIR)gl_cmd_validate.o \
 		$(OS_DIR)gl_met_log.o \
 		$(OS_DIR)gl_concurrency_matrix.o
-	ifeq ($(WMT_SUPPORT), y)
-		OS_OBJS += $(OS_DIR)gl_sys_lock.o
-	endif
+    ifeq ($(WMT_SUPPORT), y)
+        OS_OBJS += $(OS_DIR)gl_sys_lock.o
+    endif
+    ifeq ($(MTK_ANDROID_WMT), y)
+        OS_OBJS += $(OS_DIR)gl_plat.o
+    endif
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         OS_OBJS += $(OS_DIR)gl_fw_log.o
     endif

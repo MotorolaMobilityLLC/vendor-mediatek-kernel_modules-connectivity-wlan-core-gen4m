@@ -3,14 +3,8 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include "gl_os.h"
+#include "gl_plat.h"
 
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-#include <uapi/linux/sched/types.h>
-#include <linux/sched/task.h>
-#include <linux/cpufreq.h>
-#endif
-#include <linux/pm_qos.h>
 #include "precomp.h"
 
 #ifdef CONFIG_WLAN_MTK_EMI
@@ -23,9 +17,7 @@
 #define DOMAIN_CONN	2
 #endif
 
-#define DEFAULT_CPU_FREQ (0)
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
-#define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
@@ -62,119 +54,12 @@ int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
 }
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-static LIST_HEAD(wlan_policy_list);
-struct wlan_policy {
-	struct freq_qos_request	qos_req;
-	struct list_head	list;
-	int cpu;
-};
-
-void kalSetTaskUtilMinPct(int pid, unsigned int min)
-{
-	int ret = 0;
-	unsigned int blc_1024;
-	struct task_struct *p;
-	struct sched_attr attr = {};
-
-	if (pid < 0)
-		return;
-
-	/* Fill in sched_attr */
-	attr.sched_policy = -1;
-	attr.sched_flags =
-		SCHED_FLAG_KEEP_ALL |
-		SCHED_FLAG_UTIL_CLAMP |
-		SCHED_FLAG_RESET_ON_FORK;
-
-	if (min == 0) {
-		attr.sched_util_min = -1;
-		attr.sched_util_max = -1;
-	} else {
-		blc_1024 = (min << 10) / 100U;
-		blc_1024 = clamp(blc_1024, 1U, 1024U);
-		attr.sched_util_min = (blc_1024 << 10) / 1280;
-		attr.sched_util_max = (blc_1024 << 10) / 1280;
-	}
-
-	/* get task_struct */
-	rcu_read_lock();
-	p = find_task_by_vpid(pid);
-	if (likely(p))
-		get_task_struct(p);
-	rcu_read_unlock();
-
-	/* sched_setattr_nocheck */
-	if (likely(p)) {
-		ret = sched_setattr_nocheck(p, &attr);
-		if (ret < 0) {
-			DBGLOG(INIT, ERROR,
-				"sched_setattr_nocheck pid[%u] min[%u] fail\n",
-				pid, min);
-		}
-		put_task_struct(p);
-	}
-}
-
-void kalSetCpuFreq(int32_t freq)
-{
-	int cpu, ret;
-	struct cpufreq_policy *policy;
-	struct wlan_policy *wReq;
-
-	if (freq < 0)
-		freq = DEFAULT_CPU_FREQ;
-
-	if (list_empty(&wlan_policy_list)) {
-		for_each_possible_cpu(cpu) {
-			policy = cpufreq_cpu_get(cpu);
-			if (!policy)
-				continue;
-
-			wReq = kzalloc(sizeof(struct wlan_policy), GFP_KERNEL);
-			if (!wReq)
-				break;
-			wReq->cpu = cpu;
-
-			ret = freq_qos_add_request(&policy->constraints,
-				&wReq->qos_req, FREQ_QOS_MIN, DEFAULT_CPU_FREQ);
-			if (ret < 0) {
-				DBGLOG(INIT, DEBUG,
-					"freq_qos_add_request fail cpu%d ret=%d\n",
-					wReq->cpu, ret);
-				kfree(wReq);
-				break;
-			}
-
-			list_add_tail(&wReq->list, &wlan_policy_list);
-			cpufreq_cpu_put(policy);
-		}
-	}
-
-	list_for_each_entry(wReq, &wlan_policy_list, list) {
-		ret = freq_qos_update_request(&wReq->qos_req, freq);
-		if (ret < 0) {
-			DBGLOG(INIT, DEBUG,
-				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
-				wReq->cpu, freq, ret);
-		}
-	}
-}
-
-void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
-{
-	/* TODO */
-}
-
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
 		    uint32_t u4BoostCpuTh)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4Freq = -1;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
 
 	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
 		/* initially enable rps working at small cores */
@@ -192,8 +77,7 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
 			kalSetRpsMap(prGlueInfo, CPU_BIG_CORE);
-			kalSetCpuFreq(i4Freq);
-			kalSetDramBoost(prAdapter, TRUE);
+			kalSetCpuFreq(MAX_CPU_FREQ, CPU_ALL_CORE);
 		}
 	} else {
 		if (fgRequested == ENUM_CPU_BOOST_STATUS_START) {
@@ -205,8 +89,7 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
 			kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
-			kalSetCpuFreq(i4Freq);
-			kalSetDramBoost(prAdapter, FALSE);
+			kalSetCpuFreq(AUTO_CPU_FREQ, CPU_ALL_CORE);
 		}
 	}
 	kalTraceInt(fgRequested == ENUM_CPU_BOOST_STATUS_START, "kalBoostCpu");

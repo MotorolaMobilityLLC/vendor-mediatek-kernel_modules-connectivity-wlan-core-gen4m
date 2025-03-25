@@ -3,14 +3,8 @@
  * Copyright (c) 2023 MediaTek Inc.
  */
 
-#include "gl_os.h"
+#include "gl_plat.h"
 
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-#include <uapi/linux/sched/types.h>
-#include <linux/sched/task.h>
-#include <linux/cpufreq.h>
-#endif
-#include <linux/pm_qos.h>
 #include <linux/gpio.h>
 #include "precomp.h"
 
@@ -29,13 +23,11 @@
 #define MAX_CPU_FREQ (2500 * 1000)
 #define MID_BIG_CPU_FREQ (2000 * 1000)
 #define MID_LITTLE_CPU_FREQ (1000 * 1000)
-#define AUTO_CPU_FREQ (0)
 #define BIG_CPU_FREQ_MAX (3250 * 1000)
 #define BIG_CPU_FREQ_MIN (1250 * 1000)
 #define LITTLE_CPU_FREQ_MAX (2000 * 1000)
 #define LITTLE_CPU_FREQ_MIN (600 * 1000)
 #define UNDEFINED_CPU_FREQ (-2)
-#define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
 #define CPU_MID_CORE (0x70)
 #define CPU_X_CORE (0x80)
@@ -54,18 +46,12 @@
 
 #define BOOST_CPU_TABLE_NUM (PERF_MON_TP_MAX_THRESHOLD + 1)
 
-#define OPP_BW_MAX_NUM 9
-
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
 #include <linux/regulator/consumer.h>
 #endif
 #include <linux/platform_device.h>
 #include <linux/pinctrl/consumer.h>
 #include "wlan_pinctrl.h"
-
-/* for dram boost */
-#include "dvfsrc-exp.h"
-#include <linux/interconnect.h>
 
 extern uint32_t (*wlan_cur_cpumask_req_hook)(void);
 
@@ -412,176 +398,6 @@ u_int8_t kalCheckBoostCpuMargin(struct ADAPTER *prAdapter)
 }
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-void kalSetTaskUtilMinPct(int pid, unsigned int min)
-{
-	int ret = 0;
-	unsigned int blc_1024;
-	struct task_struct *p;
-	struct sched_attr attr = {};
-
-	if (pid < 0)
-		return;
-
-	/* Fill in sched_attr */
-	attr.sched_policy = -1;
-	attr.sched_flags =
-		SCHED_FLAG_KEEP_ALL |
-		SCHED_FLAG_UTIL_CLAMP |
-		SCHED_FLAG_RESET_ON_FORK;
-
-	if (min == 0) {
-		attr.sched_util_min = -1;
-		attr.sched_util_max = -1;
-	} else {
-		blc_1024 = (min << 10) / 100U;
-		blc_1024 = clamp(blc_1024, 1U, 1024U);
-		attr.sched_util_min = (blc_1024 << 10) / 1280;
-		attr.sched_util_max = (blc_1024 << 10) / 1280;
-	}
-
-	/* get task_struct */
-	rcu_read_lock();
-	p = find_task_by_vpid(pid);
-	if (likely(p))
-		get_task_struct(p);
-	rcu_read_unlock();
-
-	/* sched_setattr_nocheck */
-	if (likely(p)) {
-		ret = sched_setattr_nocheck(p, &attr);
-		if (ret < 0) {
-			DBGLOG(INIT, ERROR,
-				"sched_setattr_nocheck pid[%u] min[%u] fail\n",
-				pid, min);
-		}
-		put_task_struct(p);
-	}
-}
-
-static LIST_HEAD(wlan_policy_list);
-struct wlan_policy {
-	struct freq_qos_request	qos_req;
-	struct list_head	list;
-	int cpu;
-};
-
-void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
-{
-	int cpu, ret;
-	struct cpufreq_policy *policy;
-	struct wlan_policy *wReq;
-
-	if (list_empty(&wlan_policy_list)) {
-		for_each_possible_cpu(cpu) {
-			policy = cpufreq_cpu_get(cpu);
-			if (!policy)
-				continue;
-
-			wReq = kzalloc(sizeof(struct wlan_policy), GFP_KERNEL);
-			if (!wReq)
-				break;
-			wReq->cpu = cpu;
-
-			ret = freq_qos_add_request(&policy->constraints,
-				&wReq->qos_req, FREQ_QOS_MIN, AUTO_CPU_FREQ);
-			if (ret < 0) {
-				DBGLOG(INIT, DEBUG,
-					"freq_qos_add_request fail cpu%d ret=%d\n",
-					wReq->cpu, ret);
-				kfree(wReq);
-				break;
-			}
-
-			list_add_tail(&wReq->list, &wlan_policy_list);
-			cpufreq_cpu_put(policy);
-		}
-	}
-
-	list_for_each_entry(wReq, &wlan_policy_list, list) {
-		if (!((0x1 << wReq->cpu) & set_mask))
-			continue;
-
-		ret = freq_qos_update_request(&wReq->qos_req, freq);
-		if (ret < 0) {
-			DBGLOG(INIT, DEBUG,
-				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
-				wReq->cpu, freq, ret);
-		}
-	}
-}
-
-void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
-{
-	struct platform_device *pdev;
-#ifdef CONFIG_OF
-	struct device_node *node;
-	static struct icc_path *bw_path;
-#endif /* CONFIG_OF */
-	static unsigned int peak_bw[OPP_BW_MAX_NUM], current_bw;
-	unsigned int prev_bw = 0, i;
-
-	kalGetPlatDev(&pdev);
-	if (!pdev) {
-		DBGLOG(INIT, ERROR, "pdev is NULL\n");
-		return;
-	}
-
-	if (!bw_path) {
-#ifdef CONFIG_OF
-		/* Update the peak bw of dram */
-		node = pdev->dev.of_node;
-		bw_path = of_icc_get(&pdev->dev, "wifi-perf-bw");
-		if (IS_ERR(bw_path)) {
-			DBGLOG(INIT, ERROR,
-				"WLAN-OF: unable to get bw path!\n");
-			return;
-		}
-
-#if IS_ENABLED(CONFIG_MTK_DVFSRC)
-		for (i = 0; i < OPP_BW_MAX_NUM; i++)
-			peak_bw[i] = dvfsrc_get_required_opp_peak_bw(node, i);
-#endif /* CONFIG_MTK_DVFSRC */
-#endif /* CONFIG_OF */
-	}
-
-	if (!IS_ERR(bw_path)) {
-		prev_bw = current_bw;
-
-		if (iLv != -1 && iLv < OPP_BW_MAX_NUM)
-			current_bw = peak_bw[iLv];
-		else
-			current_bw = 0;
-
-		icc_set_bw(bw_path, 0, current_bw);
-		DBGLOG(INIT, DEBUG, "[%d] bw %u => %u\n",
-			iLv, prev_bw, current_bw);
-	}
-}
-
-static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
-{
-	int r = -1;
-#if CFG_SUPPORT_TPUT_ON_BIG_CORE
-	struct cpumask cpu_mask;
-	int i;
-
-	if (task == NULL)
-		return r;
-
-	if (set_mask == CPU_ALL_CORE)
-		r = set_cpus_allowed_ptr(task, cpu_all_mask);
-	else {
-		cpumask_clear(&cpu_mask);
-		for (i = 0; i < num_possible_cpus(); i++)
-			if ((0x1 << i) & set_mask)
-				cpumask_or(&cpu_mask, &cpu_mask, cpumask_of(i));
-		r = set_cpus_allowed_ptr(task, &cpu_mask);
-	}
-	DBGLOG(INIT, DEBUG, "set_cpus_allowed_ptr()=%d", r);
-#endif
-	return r;
-}
-
 void kalSetRunOnNonXCore(struct task_struct *task)
 {
 	kalSetCpuMask(task, CPU_HP_CORE | CPU_LITTLE_CORE);

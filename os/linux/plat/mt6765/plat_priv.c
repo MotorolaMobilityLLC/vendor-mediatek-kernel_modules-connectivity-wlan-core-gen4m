@@ -3,9 +3,7 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include <uapi/linux/sched/types.h>
-#include <linux/sched/task.h>
-#include <linux/cpufreq.h>
+#include "gl_plat.h"
 
 #include "precomp.h"
 
@@ -15,62 +13,8 @@
 #define DOMAIN_CONN	2
 #endif
 
-#define DEFAULT_CPU_FREQ (0)
-#define CPU_ALL_CORE (0xff)
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
-
-static LIST_HEAD(wlan_policy_list);
-struct wlan_policy {
-	struct freq_qos_request	qos_req;
-	struct list_head	list;
-	int cpu;
-};
-
-void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
-{
-	int cpu, ret;
-	struct cpufreq_policy *policy;
-	struct wlan_policy *wReq;
-
-	if (list_empty(&wlan_policy_list)) {
-		for_each_possible_cpu(cpu) {
-			policy = cpufreq_cpu_get(cpu);
-			if (!policy)
-				continue;
-
-			wReq = kzalloc(sizeof(struct wlan_policy), GFP_KERNEL);
-			if (!wReq)
-				break;
-			wReq->cpu = cpu;
-
-			ret = freq_qos_add_request(&policy->constraints,
-				&wReq->qos_req, FREQ_QOS_MIN, DEFAULT_CPU_FREQ);
-			if (ret < 0) {
-				DBGLOG(INIT, DEBUG,
-					"freq_qos_add_request fail cpu%d ret=%d\n",
-					wReq->cpu, ret);
-				kfree(wReq);
-				break;
-			}
-
-			list_add_tail(&wReq->list, &wlan_policy_list);
-			cpufreq_cpu_put(policy);
-		}
-	}
-
-	list_for_each_entry(wReq, &wlan_policy_list, list) {
-		if (!((0x1 << wReq->cpu) & set_mask))
-			continue;
-
-		ret = freq_qos_update_request(&wReq->qos_req, freq);
-		if (ret < 0) {
-			DBGLOG(INIT, DEBUG,
-				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
-				wReq->cpu, freq, ret);
-		}
-	}
-}
 
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
@@ -82,8 +26,8 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 	static u_int8_t fgRequested;
 #endif
 
-	/* ACAO, we dont have to set core number */
-	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
+	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ?
+			MAX_CPU_FREQ : AUTO_CPU_FREQ;
 	kalSetCpuFreq(i4Freq, CPU_ALL_CORE);
 
 #ifdef WLAN_FORCE_DDR_OPP

@@ -3,9 +3,7 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include "gl_os.h"
-
-#include <linux/pm_qos.h>
+#include "gl_plat.h"
 
 #include "precomp.h"
 #include "wmt_exp.h"
@@ -20,7 +18,6 @@
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
-#define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xc0)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
@@ -54,6 +51,51 @@ int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
 	       i4Pending >= pendingTh &&
 	       u4Used >= usedTh ?
 	       TRUE : FALSE;
+}
+
+int32_t kalBoostCpu(struct ADAPTER *prAdapter,
+		    uint32_t u4TarPerfLevel,
+		    uint32_t u4BoostCpuTh)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
+
+	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
+		/* initially enable rps working at small cores */
+		kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
+		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
+	}
+
+	if (u4TarPerfLevel >= u4BoostCpuTh) {
+		if (fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
+			pr_info("%s start (%d>=%d)\n",
+				__func__, u4TarPerfLevel, u4BoostCpuTh);
+			fgRequested = ENUM_CPU_BOOST_STATUS_START;
+
+			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
+			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
+			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
+			kalSetRpsMap(prGlueInfo, CPU_BIG_CORE);
+			kalSetCpuFreq(MAX_CPU_FREQ, CPU_ALL_CORE);
+			kalSetDramBoost(prAdapter, 0);
+		}
+	} else {
+		if (fgRequested == ENUM_CPU_BOOST_STATUS_START) {
+			pr_info("%s stop (%d<%d)\n",
+				__func__, u4TarPerfLevel, u4BoostCpuTh);
+			fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
+
+			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
+			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
+			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
+			kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
+			kalSetCpuFreq(AUTO_CPU_FREQ, CPU_ALL_CORE);
+			kalSetDramBoost(prAdapter, -1);
+		}
+	}
+	kalTraceInt(fgRequested == ENUM_CPU_BOOST_STATUS_START, "kalBoostCpu");
+
+	return 0;
 }
 
 #ifdef CONFIG_MTK_EMI
