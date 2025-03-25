@@ -126,6 +126,9 @@ static const char * const apucBandStr[BAND_NUM] = {
  *******************************************************************************
  */
 
+uint8_t apsCanFormMld(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
+
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet,

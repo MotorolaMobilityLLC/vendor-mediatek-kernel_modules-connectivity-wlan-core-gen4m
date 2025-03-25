@@ -15938,6 +15938,11 @@ uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 				    uint32_t *pu4SetInfoLen)
 {
 	uint32_t u4PrevPrimaryInterface;
+#if CFG_SUPPORT_ROAMING
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_DESC *prBssDesc;
+	uint8_t ucBssIndex;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
@@ -15950,15 +15955,37 @@ uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 	u4PrevPrimaryInterface = prAdapter->u4MultiStaPrimaryInterface;
 	prAdapter->u4MultiStaPrimaryInterface = *(uint32_t *)pvSetBuffer;
 
-	DBGLOG(REQ, DEBUG, "Update multista primary interface:[%s]\n",
-			prAdapter->u4MultiStaPrimaryInterface ==
-			AIS_DEFAULT_INDEX ? "wlan0" : "wlan1");
+	DBGLOG(REQ, DEBUG, "Update multista primary interface:[wlan%d]\n",
+			prAdapter->u4MultiStaPrimaryInterface);
 
+	if (u4PrevPrimaryInterface != prAdapter->u4MultiStaPrimaryInterface) {
 #if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
-	if (prAdapter->ucIsMultiStaConnected && u4PrevPrimaryInterface !=
-			prAdapter->u4MultiStaPrimaryInterface)
-		aisMultiStaSetQuoteTime(prAdapter, TRUE);
+		if (prAdapter->ucIsMultiStaConnected)
+			aisMultiStaSetQuoteTime(prAdapter, TRUE);
 #endif
+
+#if CFG_SUPPORT_ROAMING
+		prAisFsmInfo = aisFsmGetInstance(prAdapter,
+				prAdapter->u4MultiStaPrimaryInterface);
+		prBssDesc = aisGetMainLinkBssDesc(prAisFsmInfo);
+		ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
+
+		if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) &&
+		    apsCanFormMld(prAdapter, prBssDesc, ucBssIndex)) {
+			struct ROAMING_INFO *prRoamingFsmInfo =
+				aisGetRoamingInfo(prAdapter, ucBssIndex);
+			struct CMD_ROAMING_TRANSIT rRoamingData = {0};
+
+			rRoamingData.u2Data = prBssDesc->ucRCPI;
+			rRoamingData.u2Event = ROAMING_EVENT_DISCOVERY;
+			rRoamingData.eReason = ROAMING_REASON_POOR_RCPI;
+			rRoamingData.u2RcpiLowThreshold =
+				prRoamingFsmInfo->ucThreshold;
+			rRoamingData.ucBssidx = ucBssIndex;
+			roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
+		}
+#endif
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }
