@@ -8372,17 +8372,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4UapsdAcBmp, "UapsdAcBmp", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4MaxSpLen, "MaxSpLen", 0, FEATURE_TO_CUSTOMER);
-#if CFG_P2P_UAPSD_SUPPORT
-	INIT_UINT(prWifiVar->u4P2pUapsdAcBmp, "P2pUapsdAcBmp", PM_UAPSD_ALL,
-		  FEATURE_DEBUG_ONLY);
-	INIT_UINT(prWifiVar->u4P2pMaxSpLen,
-		"P2pMaxSpLen", WMM_MAX_SP_LENGTH_2, FEATURE_DEBUG_ONLY);
-#else
 	INIT_UINT(prWifiVar->u4P2pUapsdAcBmp, "P2pUapsdAcBmp", PM_UAPSD_NONE,
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4P2pMaxSpLen, "P2pMaxSpLen", 0,
 		  FEATURE_DEBUG_ONLY);
-#endif
 	INIT_UINT(prWifiVar->fgDisOnlineScan, "DisOnlineScan", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisBcnLostDetection, "DisBcnLostDetection", 0,
