@@ -19834,8 +19834,10 @@ void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr)
 	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
 		prQueInfo = &prTxFreeInfo->rQueInfo[ucIdx];
 		spin_lock_init(&prQueInfo->lock);
+		spin_lock_bh(&prQueInfo->lock);
 		prQueInfo->u4TotalCnt = 0;
 		QUEUE_INITIALIZE(&prQueInfo->rQue);
+		spin_unlock_bh(&prQueInfo->lock);
 
 		prConWork = &prTxFreeInfo->rConWork[ucIdx];
 		kalConWorkInit(pr, prConWork, "wifi_tx_free_skb", ucIdx,
