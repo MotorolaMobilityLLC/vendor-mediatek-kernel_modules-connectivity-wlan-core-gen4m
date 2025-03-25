@@ -10135,13 +10135,15 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 				  VIR_MEM_TYPE);
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
+	p2pFunGetAcsBestChList(prAdapter, BIT(BAND_5G)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	p2pFunGetAcsBestChList(prAdapter, BIT(BAND_5G) | BIT(BAND_6G),
+			       | BIT(BAND_6G)
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+			       ,
 			       BITS(0, 31), BITS(0, 31),
 			       BITS(0, 31), BITS(0, 31),
 			       &ucCandidateChnlNum, paChnlList,
 			       prWifiVar->fgP2pPrefSkipDfs);
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 #else /* CFG_SUPPORT_P2PGO_ACS == 1 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE, MAX_6G_BAND_CHN_NUM,
@@ -10156,6 +10158,8 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 
 	ucChNum = 0;
 	for (ch = 0; ch < ucCandidateChnlNum; ++ch) {
+		u_int8_t fgIsChAllowAa = TRUE;
+
 		prRfChnlInfo1 = &paChnlList[ch];
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -10168,6 +10172,12 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			p2pFuncGetMaxBw(prAdapter,
 					prRfChnlInfo1->eBand,
 					FALSE);
+
+		nicReviseBwByCh(prAdapter, prRfChnlInfo1->eBand,
+				prRfChnlInfo1->ucChannelNum,
+				nicGetSco(prAdapter, prRfChnlInfo1->eBand,
+					  prRfChnlInfo1->ucChannelNum),
+				&prRfChnlInfo1->ucChnlBw);
 
 		prRfChnlInfo1->u4CenterFreq1 = nicGetCenterChFreq(
 			prRfChnlInfo1->eBand, prRfChnlInfo1->ucChannelNum,
@@ -10198,7 +10208,7 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 					bss->eBssSCO, bss->ucVhtChannelWidth);
 			rRfChnlInfo2.u4CenterFreq1 = nicGetCenterChFreq(
 				bss->eBand, bss->ucPrimaryChannel,
-				bss->eBssSCO, bss->ucVhtChannelWidth);
+				bss->eBssSCO, rRfChnlInfo2.ucChnlBw);
 			DBGLOG(P2P, LOUD,
 			       "chnlInfo2 b:%u, ch:%u, bw:%u, cf:%u\n",
 			       rRfChnlInfo2.eBand,
@@ -10206,15 +10216,19 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			       rRfChnlInfo2.ucChnlBw,
 			       rRfChnlInfo2.u4CenterFreq1);
 
-			if (ccmAAAvailableCheck(prAdapter, prRfChnlInfo1,
+			if (!ccmAAAvailableCheck(prAdapter, prRfChnlInfo1,
 						&rRfChnlInfo2)) {
-				*(apu4FreqList + ucChNum++) =
-					nicChannelNum2Freq(
-						prRfChnlInfo1->ucChannelNum,
-						prRfChnlInfo1->eBand) / 1000;
-				DBGLOG(P2P, INFO, "valid [%u]ch:%u\n",
-				       ucChNum, prRfChnlInfo1->ucChannelNum);
+				fgIsChAllowAa = FALSE;
+				break;
 			}
+		}
+
+		if (fgIsChAllowAa) {
+			*(apu4FreqList + ucChNum++) = nicChannelNum2Freq(
+					prRfChnlInfo1->ucChannelNum,
+					prRfChnlInfo1->eBand) / 1000;
+			DBGLOG(P2P, INFO, "valid [%u]ch:%u\n",
+			       ucChNum, prRfChnlInfo1->ucChannelNum);
 		}
 	}
 
