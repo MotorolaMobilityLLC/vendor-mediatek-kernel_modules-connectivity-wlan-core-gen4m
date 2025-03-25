@@ -1039,7 +1039,7 @@ static void ensure_rst_pin_min_wait_time(int8_t state)
 				retry > MAX_RST_PIN_LOOP_COUNT)
 			break;
 
-		DBGLOG_LIMITED(INIT, INFO,
+		DBGLOG_LIMITED(INIT, TRACE,
 			"retry:%d, cur_time:%u, last_time:%u\n",
 			retry, current_time, last_toggle_time);
 		retry++;

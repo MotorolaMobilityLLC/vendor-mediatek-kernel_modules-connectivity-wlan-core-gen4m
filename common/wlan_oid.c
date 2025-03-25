@@ -2531,7 +2531,7 @@ static void assignPmfFlag(struct STA_RECORD *prStaRec,
 		{
 			prCmdKey->ucMgmtProtection =
 				prAisSpecBssInfo->fgMgmtProtection;
-			DBGLOG(RSN, INFO,
+			DBGLOG(RSN, TRACE,
 				"Ais PMF flag = %d\n",
 				prAisSpecBssInfo->fgMgmtProtection);
 		}
@@ -2578,6 +2578,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgNoHandshakeSec = FALSE;
 	u_int8_t fgApRec = FALSE;
+	u_int8_t fgStaRec = FALSE;
 #if CFG_SUPPORT_TDLS
 	struct STA_RECORD *prTmpStaRec;
 #endif
@@ -2804,7 +2805,6 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
 				prCmdKey->ucAlgorithmId ==
 						CIPHER_SUITE_BIP_GMAC_256)) {
-				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
 				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 				DBGLOG(RSN, INFO,
@@ -2934,10 +2934,9 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
 		    prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP_GMAC_256) {
 			if (prCmdKey->ucIsAuthenticator) {
-				DBGLOG_LIMITED(RSN, INFO,
+				DBGLOG_LIMITED(RSN, LOUD,
 				"Authenticator BIP bssid:%d\n",
 				prBssInfo->ucBssIndex);
-
 				prCmdKey->ucWlanIndex =
 					secPrivacySeekForBcEntry(prAdapter,
 						prBssInfo->ucBssIndex,
@@ -2974,12 +2973,13 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				}
 			}
 
-			DBGLOG_LIMITED(RSN, INFO, "BIP BC wtbl index:%d\n",
+			DBGLOG(RSN, TRACE, "BIP BC wtbl index:%d\n",
 				prCmdKey->ucWlanIndex);
 		} else
 #endif
 		if (1) {
 			if (prStaRec) {
+				fgStaRec = TRUE;
 				if (prCmdKey->ucKeyType) {	/* RSN STA */
 					struct WLAN_TABLE *prWtbl;
 
@@ -3022,8 +3022,6 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 						   ->aucMacAddr,
 						   MAC_ADDR_LEN);
 				} else {
-					DBGLOG_LIMITED(RSN, INFO,
-						"!AP && !STA REC\n");
 					prCmdKey->ucWlanIndex =
 						secPrivacySeekForBcEntry(
 						prAdapter,
@@ -3088,13 +3086,13 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	DBGLOG_MEM8(RSN, TRACE, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 	if (prCmdKey->ucKeyId < MAX_KEY_NUM) {
 		DBGLOG(RSN, INFO,
-		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d,wepkeyUsed=%d,wepkeyWlanIdx=%d,fgApRec=%d\n",
+		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d,wepkeyUsed=%d,wepkeyWlanIdx=%d,fgApRec=%d,fgStaRec=%d\n",
 		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
 		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId],
 		       prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId],
 		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
 		       prBssInfo->wepkeyWlanIdx,
-		       fgApRec);
+		       fgApRec, fgStaRec);
 	}
 #endif
 	if (prAisSpecBssInfo)
@@ -9059,7 +9057,7 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 			i4Written +=
 				kalScnprintf(prDbgBuf + i4Written,
 					     DBG_BUFFER_SZ - i4Written,
-					     "\nmac[%u]="MACSTR,
+					     " mac[%u]="MACSTR,
 					     i, MAC2STR(
 					     rCmdMacMcastAddr.arAddress[i]));
 		}

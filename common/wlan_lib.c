@@ -4920,7 +4920,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
 
-	DBGLOG(INIT, DEBUG, "Enable5GBand = %d, Detail = [%d,%d,%d]\n",
+	DBGLOG(INIT, TRACE, "Enable5GBand = %d, Detail = [%d,%d,%d]\n",
 		prAdapter->fgEnable5GBand,
 		prRegInfo->ucEnable5GBand,
 		prRegInfo->ucSupport5GBand,
@@ -6837,7 +6837,7 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 	    || (prAdapter->u4FwFeatureFlag0 &
 		FEATURE_FLAG0_NIC_CAPABILITY_V2)) {
 
-		DBGLOG(INIT, DEBUG, "Support NIC_CAPABILITY_V2 feature\n");
+		DBGLOG(INIT, TRACE, "Support NIC_CAPABILITY_V2 feature\n");
 
 		wlanSendSetQueryCmdAdv(
 			prAdapter, CMD_ID_GET_NIC_CAPABILITY_V2, 0, FALSE,

@@ -283,7 +283,7 @@ int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 				cpumask_or(&cpu_mask, &cpu_mask, cpumask_of(i));
 		r = set_cpus_allowed_ptr(task, &cpu_mask);
 	}
-	DBGLOG(INIT, DEBUG, "set_cpus_allowed_ptr()=%d", r);
+	DBGLOG(INIT, TRACE, "set_cpus_allowed_ptr()=%d", r);
 #endif
 	return r;
 }

@@ -1005,10 +1005,8 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
-	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-		DBGLOG(HAL, WARN, "GLUE_FLAG_HALT skip INT\n");
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return IRQ_NONE;
-	}
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (!prAdapter) {

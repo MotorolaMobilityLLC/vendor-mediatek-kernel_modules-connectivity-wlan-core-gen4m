@@ -2396,14 +2396,14 @@ void kalCreateUserSock(struct GLUE_INFO *prGlueInfo)
 {
 	prGlueInfo->NetLinkSK =
 		netlink_kernel_create(&init_net, MTKPROTO, NULL);
-	DBGLOG(INIT, DEBUG, "Create netlink Socket\n");
+	DBGLOG(INIT, TRACE, "Create netlink Socket\n");
 	if (!prGlueInfo->NetLinkSK)
 		DBGLOG(INIT, DEBUG, "Create Socket Fail\n");
 }
 void kalReleaseUserSock(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->NetLinkSK) {
-		DBGLOG(INIT, DEBUG, "Release netlink Socket\n");
+		DBGLOG(INIT, TRACE, "Release netlink Socket\n");
 		netlink_kernel_release(prGlueInfo->NetLinkSK);
 	}
 }
@@ -16162,7 +16162,7 @@ void kalTxTsoSwInit(struct net_device *prDev)
 	 */
 	prDev->features |= NETIF_F_TSO | NETIF_F_SG;
 	prDev->hw_features |= NETIF_F_TSO | NETIF_F_SG;
-	DBGLOG(INIT, DEBUG, "Turn on TSO SW.\n");
+	DBGLOG(INIT, TRACE, "Turn on TSO SW.\n");
 }
 
 void kalTxStartTsoSw(struct MSDU_INFO *prMsduInfo)
@@ -19150,7 +19150,7 @@ void kalVnfActive(struct ADAPTER *prAdapter)
 	 */
 	if (prAdapter->rWifiVar.fgVnfEn &&
 			_rVnfInfo.eState != VOLT_INFO_STATE_IN_PROGRESS) {
-		DBGLOG(SW4, DEBUG, "VOLT_INFO Active\n");
+		DBGLOG(SW4, TRACE, "VOLT_INFO Active\n");
 		kalVnfSchedule(&_rVnfInfo);
 	} else {
 		DBGLOG(SW4, DEBUG,
@@ -19229,7 +19229,7 @@ void kalVnfInit(struct ADAPTER *prAdapter)
 	INIT_DELAYED_WORK(&_rVnfInfo.dwork, kalVnfHandler);
 	INIT_DELAYED_WORK(&_rVnfInfo.dBatWork, kalVnfBatSchedule);
 	mutex_init(&_rVnfInfo.rMutex);
-	DBGLOG(SW4, DEBUG, "VOLT_INFO init\n");
+	DBGLOG(SW4, TRACE, "VOLT_INFO init\n");
 }
 #endif /* CFG_VOLT_INFO */
 
@@ -19549,7 +19549,7 @@ static void kalWorkSetCpu(struct GLUE_INFO *pr,
 	}
 
 end:
-	DBGLOG(INIT, DEBUG, "%s => %d\n",
+	DBGLOG(INIT, TRACE, "%s => %d\n",
 		prWork->sWorkQueueName, prWork->i4WorkCpu);
 }
 

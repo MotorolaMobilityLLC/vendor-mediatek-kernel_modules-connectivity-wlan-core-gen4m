@@ -589,7 +589,7 @@ struct TX_PWR_BAND_MASK_TBL {
 	g_RlmMulitPwrLimitInfo[rf_idx].ucVersion = ver; \
 	g_RlmMulitPwrLimitInfo[rf_idx].eStartSubBand = start_band; \
 	g_RlmMulitPwrLimitInfo[rf_idx].eEndSubBand = end_band; \
-	DBGLOG(RLM, INFO, \
+	DBGLOG(RLM, TRACE, \
 		"[MulBnPwr] Patch MulitBand R[%d]V[%d]Start[%d]End[%d]\n", \
 		rf_idx, \
 		g_RlmMulitPwrLimitInfo[rf_idx].ucVersion, \

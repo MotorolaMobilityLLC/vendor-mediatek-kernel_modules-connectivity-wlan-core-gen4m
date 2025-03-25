@@ -922,14 +922,14 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 				fgMlrCapCheck = TRUE;
 				fgMlrBandCheck = TRUE;
 			}
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"MLR (re)assoc - gen MTK OUI - [eIftype=%d][frame_ctrl=0x%x][StaType=0x%x]",
 				prBssInfo->eIftype,
 				frame_ctrl,
 				prStaRec->eStaType);
 
 		} else
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"MLR (re)assoc - gen MTK OUI - [eIftype=%d][frame_ctrl=0x%x] [prStaRec is NULL]",
 				prBssInfo->eIftype, frame_ctrl);
 
@@ -1009,13 +1009,13 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 				prMLR->ucLRBitMap =
 					(uint8_t) (prAdapter->u4MlrSupportBitmap
 					& prStaRec->ucMlrSupportBitmap);
-				DBGLOG(RLM, INFO,
+				DBGLOG(RLM, TRACE,
 					"MLR beacon/(re)assocresp/proberesp - Generate MTK OUI - [frame_ctrl=0x%x] [StaType=0x%x]",
 					frame_ctrl, prStaRec->eStaType);
 			} else {
 				prMLR->ucLRBitMap =
 					(uint8_t) prAdapter->u4MlrSupportBitmap;
-				DBGLOG(RLM, INFO,
+				DBGLOG(RLM, TRACE,
 					"MLR beacon/(re)assocresp/proberesp - Generate MTK OUI - [frame_ctrl=0x%x] [StaRec is NULL]",
 					frame_ctrl);
 			}

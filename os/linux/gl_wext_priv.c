@@ -22681,7 +22681,7 @@ int32_t MulAPAgentMontorSendMsg(uint16_t msgtype,
 	struct nlmsghdr *nlh;
 	uint32_t u4Ret = 0;
 
-	DBGLOG(REQ, DEBUG, "send netlink msg start\n");
+	DBGLOG(REQ, LOUD, "send netlink msg start\n");
 	DBGLOG(INIT, TRACE, "msg len == %d", i4TotalLen);
 	skb = nlmsg_new(i4TotalLen, 0);
 	if (!skb) {
@@ -22709,7 +22709,7 @@ int32_t MulAPAgentMontorSendMsg(uint16_t msgtype,
 		return u4Ret;
 	}
 
-	DBGLOG(REQ, DEBUG, "send netlink msg success!\n");
+	DBGLOG(REQ, LOUD, "send netlink msg success!\n");
 	return u4Ret;
 }
 

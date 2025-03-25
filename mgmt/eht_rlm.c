@@ -530,7 +530,7 @@ void ehtRlmFillCapIE(
 	prEhtCap->ucLength = u4OverallLen - ELEM_HDR_LEN;
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtCap);
 
-	DBGLOG_MEM8(RLM, INFO, prEhtCap, IE_SIZE(prEhtCap));
+	DBGLOG_MEM8(RLM, TRACE, prEhtCap, IE_SIZE(prEhtCap));
 }
 
 void ehtRlmReqGenerateCapIE(

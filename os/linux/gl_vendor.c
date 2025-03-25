@@ -681,7 +681,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 	if ((data == NULL) || (data_len == 0))
 		return -EINVAL;
 
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 	       "vendor command: data_len=%d, iftype=%d\n", data_len,
 	       wdev->iftype);
 
@@ -1251,7 +1251,7 @@ int mtk_cfg80211_vendor_get_rtt_capabilities(
 	struct RTT_CAPABILITIES rRttCapabilities;
 	struct sk_buff *skb;
 
-	DBGLOG(REQ, DEBUG, "vendor command\r\n");
+	DBGLOG(REQ, TRACE, "vendor command\r\n");
 
 	ASSERT(wiphy);
 	ASSERT(wdev);

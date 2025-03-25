@@ -2330,7 +2330,7 @@ void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
 				= prEvent->rLteSafeChn.
 					au4SafeChannelBitmask[ucIdx];
 
-			DBGLOG(NIC, DEBUG,
+			DBGLOG(NIC, TRACE,
 				"[ACS]LTE safe channels[%d]=0x%08x\n",
 				ucIdx,
 				prLteSafeChnList->au4SafeChannelBitmask[ucIdx]);
@@ -3225,7 +3225,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 			"Offset FW:%u/%u/%u/%u host:%u/%u/%u/%u",
 			prCap->u4OffsetOfBasic,
 			prCap->u4OffsetOfLq,
@@ -3253,7 +3253,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		return WLAN_STATUS_FAILURE;
 	}
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 			"Tx Rate Offset FW:%u host:%u",
 			prCap->u4OffsetOfLastTxRateInfo,
 			u4HostOffsetLastTxRateInfo);
@@ -3265,7 +3265,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
 
-	DBGLOG(INIT, DEBUG, "offset:0x%08x addr:%p\n",
+	DBGLOG(INIT, TRACE, "offset:0x%08x addr:%p\n",
 	       offset,
 	       prAdapter->prStatsAllRegStat);
 
@@ -3468,7 +3468,7 @@ uint32_t nicCfgChipMbrBigDataVer(struct ADAPTER *prAdapter,
 		(struct CAP_MBRAIN_BIGDATA_VER *)pucEventBuf;
 
 	prAdapter->u4BigDataVer = prCap->u4Ver;
-	DBGLOG(INIT, INFO, "Ver=%u", prAdapter->u4BigDataVer);
+	DBGLOG(INIT, TRACE, "Ver=%u", prAdapter->u4BigDataVer);
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_MBRAIN_BIGDATA */
@@ -3520,7 +3520,7 @@ uint32_t nicCmdEventCasanLoadType(struct ADAPTER *prAdapter,
 
 	prAdapter->u4CasanLoadType = prLoadType->u4CasanLoadType;
 
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 	       "Casan load type = %x\n",
 	       prAdapter->u4CasanLoadType);
 
@@ -3727,10 +3727,10 @@ uint32_t nicCfgChipCap6GCap(struct ADAPTER *prAdapter,
 	 * prAdapter->rWifiFemCfg.u2WifiDBDCAwithA = 1;
 	 * prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval = 360;
 	 */
-	DBGLOG(INIT, DEBUG, "fgIsHwSupport6G = %d, u2WifiPath6G=%d\n",
+	DBGLOG(INIT, DEBUG,
+		"fgIsHwSupport6G = %d, u2WifiPath6G=%d u2WifiDBDCAwithA = %d minimumFre=%d\n",
 		prAdapter->fgIsHwSupport6G,
-		prAdapter->rWifiFemCfg.u2WifiPath6G);
-	DBGLOG(INIT, DEBUG, "u2WifiDBDCAwithA = %d minimumFre=%d\n",
+		prAdapter->rWifiFemCfg.u2WifiPath6G,
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval);
 

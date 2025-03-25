@@ -11606,7 +11606,7 @@ bool txPwrCtrlFreeCountryCfgFile(
 		fgFree = TRUE;
 	}
 
-	DBGLOG(RLM, INFO, "[PwrLimitCfgFile] %s %s size %d/%d en:%d\n",
+	DBGLOG(RLM, TRACE, "[PwrLimitCfgFile] %s %s size %d/%d en:%d\n",
 		(fgFree == TRUE) ? "free" : "no need to free",
 		prPwrLimitFileInfo->pcPwrLimitCfgFile,
 		prPwrLimitFileInfo->u4FileSize,
@@ -15716,7 +15716,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 			WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT);
 		if (prMem) {
 			prTxPowrEmiAddress = (uint8_t *)prMem->va;
-			DBGLOG(HAL, INFO, "[TXP-S]base: pa: %pa, va:0x%llx\n",
+			DBGLOG(HAL, TRACE, "[TXP-S]base: pa: %pa, va:0x%llx\n",
 				&prMem->pa, prMem->va);
 		} else {
 			DBGLOG(NIC, DEBUG, "Failed to obtain prMem\n");
@@ -15728,7 +15728,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 			WIFI_MISC_MEM_BLOCK_MULTIBAND_TX_POWER_LIMIT);
 		if (prMem) {
 			prTxpMulitBandEmiAdr = (uint8_t *)prMem->va;
-			DBGLOG(HAL, INFO, "[TXP-M]base: pa: %pa, va:0x%llx\n",
+			DBGLOG(HAL, TRACE, "[TXP-M]base: pa: %pa, va:0x%llx\n",
 				&prMem->pa, prMem->va);
 		} else {
 			DBGLOG(NIC, INFO, "Failed to obtain prMem\n");
@@ -15848,7 +15848,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 	rEmiFormat.u1MultiBandSize = PWR_LIMIT_MULTIBAND_NUM;
 #endif /* CFG_SUPPORT_MULTIBAND_PWR_LMT_EMI == 1 */
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"TXP CMD[RFN:%d,ProN:%d,M:%d,T:%d,MBV:%d,MBN:%d,MBS:%d]\n",
 		rEmiFormat.u1RFBandNum,
 		rEmiFormat.u1ProtocolNum,

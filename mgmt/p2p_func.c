@@ -3297,7 +3297,7 @@ int32_t p2pFuncSetDriverCacTime(uint32_t u4CacTime)
 
 	g_u4DriverCacTime = u4CacTime;
 
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
 		"p2pFuncSetDriverCacTime: g_u4ManualCacTime = %dsec\n",
 		g_u4DriverCacTime);
 
@@ -9575,14 +9575,14 @@ uint8_t p2pFuncSapSwichCandidatGen(
 				prBssInfo->eBand) {
 				prSapSwitchCand[k].eHwBand =
 					prBssInfo->eHwBandIdx;
-				DBGLOG(P2P, INFO,
+				DBGLOG(P2P, TRACE,
 					"[cand gen]alive bssindex:%d, hw band:%d\n",
 					j,
 					prBssInfo->eHwBandIdx);
 
 			}
 		}
-		DBGLOG(P2P, INFO,
+		DBGLOG(P2P, TRACE,
 			"[cand gen]hw band:%d, rf band:%d, low_ch:%d, up_ch:%d\n",
 			prSapSwitchCand[k].eHwBand,
 			prSapSwitchCand[k].eRfBand,

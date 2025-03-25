@@ -4767,13 +4767,11 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 	u_int8_t fgIsP2pListening = FALSE;
 #endif
 
-	log_dbg(CNM, INFO, "[DBDC Debug] BSS %u\n",
-	       ucChangedBssIndex);
-
 	/* Only allow runtime switch for dynamic DBDC */
 	if (prAdapter->rWifiVar.eDbdcMode !=
 	    ENUM_DBDC_MODE_DYNAMIC) {
-		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return\n",
+		log_dbg(CNM, INFO, "[DBDC Debug] BSS %u DBDC Mode %u Return\n",
+		       ucChangedBssIndex,
 		       prAdapter->rWifiVar.eDbdcMode);
 		return;
 	}
@@ -4791,7 +4789,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			ucMloType == MLO_MODE_HYMLO ||
 			mldNeedEMLSRAsMLSR(prAdapter, NULL, ucMloType))) {
 			log_dbg(CNM, INFO,
-				"mld Clear MLSR Paused Link Flag\n");
+				"BSS %u mld Clear MLSR Paused Link Flag\n",
+				ucChangedBssIndex);
 			mldClearMLSRPausedLinkFlag(prAdapter);
 		}
 #endif
@@ -4799,7 +4798,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 		if (fgIsAgConcurrent && prP2pDevFsmInfo) {
 			log_dbg(CNM, INFO,
-				"[DBDC Debug] DBDC %u EnByP2pLis %u\n",
+				"[DBDC Debug] BSS %u DBDC %u EnByP2pLis %u\n",
+				ucChangedBssIndex,
 				prAdapter->rWifiVar.fgDbDcModeEn,
 				prDbdcInfo->fgIsDBDCEnByP2pLis);
 
@@ -4826,7 +4826,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 								FALSE;
 			}
 
-			log_dbg(CNM, INFO, "[DBDC] En %u p2plis %u EnP2pLisTo %u\n",
+			log_dbg(CNM, INFO, "[DBDC] BSS %u En %u p2plis %u EnP2pLisTo %u\n",
+					ucChangedBssIndex,
 					prAdapter->rWifiVar.fgDbDcModeEn,
 					prP2pDevFsmInfo->fgIsP2pListening,
 					prDbdcInfo->fgIsDBDCEnByP2pLis
@@ -4840,7 +4841,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			if (fgIsWmmConcurrent !=
 				prAdapter->rWifiVar.fgWmmConcurrent) {
 				log_dbg(CNM, INFO,
-					"[DBDC] WMM concurrent state %d->%d\n",
+					"[DBDC] BSS %u WMM concurrent state %d->%d\n",
+					ucChangedBssIndex,
 					prAdapter->rWifiVar.fgWmmConcurrent,
 					fgIsWmmConcurrent);
 				cnmUpdateDbdcQuota(prAdapter,
@@ -4852,7 +4854,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 		/* Notify FW EMLSR is leaving and should band swap */
 		if (!fgIsAgConcurrent && fgLastBss) {
 			log_dbg(CNM, INFO,
-				"[DBDC] Force send DBDC disable cmd\n");
+				"[DBDC] BSS %u Force send DBDC disable cmd\n",
+				ucChangedBssIndex);
 			cnmUpdateDbdcSetting(prAdapter, FALSE);
 		}
 #endif
@@ -4872,7 +4875,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 		if (prDbdcInfo->eDbdcFsmCurrState ==
 		ENUM_DBDC_FSM_STATE_DISABLE_GUARD) {
 			log_dbg(CNM, INFO,
-				"[DBDC] DBDC guard time extend, state %d\n",
+				"[DBDC] BSS %u DBDC guard time extend, state %d\n",
+				ucChangedBssIndex,
 				prDbdcInfo->eDbdcFsmCurrState);
 			cnmTimerStopTimer(prAdapter,
 					  &prDbdcInfo->rDbdcGuardTimer);
@@ -4882,7 +4886,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 		} else if (prDbdcInfo->eDbdcFsmCurrState ==
 					ENUM_DBDC_FSM_STATE_ENABLE_GUARD &&
 					ucForceLeaveEnGuard) {
-			log_dbg(CNM, INFO, "[DBDC] Abort EnGuard Time, state %d, type %d\n",
+			log_dbg(CNM, INFO, "[DBDC] BSS %u Abort EnGuard Time, state %d, type %d\n",
+				ucChangedBssIndex,
 				prDbdcInfo->eDbdcFsmCurrState,
 				prDbdcInfo->eDdbcGuardTimerType);
 			/* cancel Guard Time and change DBDC mode */
@@ -4893,7 +4898,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			goto dbdc_check;
 		} else {
 			log_dbg(CNM, INFO,
-				"[DBDC] DBDC guard time, state %d\n",
+				"[DBDC] BSS %u DBDC guard time, state %d\n",
+				ucChangedBssIndex,
 				prDbdcInfo->eDbdcFsmCurrState);
 		}
 
@@ -4907,7 +4913,8 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 	    prDbdcInfo->eDdbcGuardTimerType ==
 	    ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN) {
 		log_dbg(CNM, INFO,
-		       "[DBDC Debug] Disable Countdown Return, state %d\n",
+		       "[DBDC Debug] BSS %u Disable Countdown Return, state %d\n",
+		       ucChangedBssIndex,
 		       prDbdcInfo->eDbdcFsmCurrState);
 		return;
 	}

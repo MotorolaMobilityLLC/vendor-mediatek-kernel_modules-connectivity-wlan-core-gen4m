@@ -220,7 +220,7 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 	prAdapter->p2p_scan_report_all_bss = CFG_P2P_SCAN_REPORT_ALL_BSS;
 	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_REGISTERED;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	DBGLOG(P2P, INFO, "Launch success, fgIsP2PRegistered TRUE\n");
+	DBGLOG(P2P, TRACE, "Launch success, fgIsP2PRegistered TRUE\n");
 
 	return TRUE;
 }

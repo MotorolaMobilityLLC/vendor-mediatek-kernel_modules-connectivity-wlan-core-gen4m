@@ -2177,7 +2177,7 @@ uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 		u4Status = nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
 		if (u4Status != WLAN_STATUS_SUCCESS)
-			DBGLOG_MEM8(NIC, ERROR, tag,
+			DBGLOG_MEM8(NIC, TRACE, tag,
 				TAG_HDR_LEN + TAG_LEN(tag));
 	}
 
@@ -12963,7 +12963,7 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		DBGLOG(NIC, LOUD, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_BSS_IS_ABSENCE_TAG_INFO: {
