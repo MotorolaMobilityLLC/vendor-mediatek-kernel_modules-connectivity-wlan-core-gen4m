@@ -13906,16 +13906,18 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 			kalMemCopy(pucReportElem,
 				&prMeasureReportIE->ucId,
 				prMeasureReportIE->ucLength + 2);
+			pucReportElem += (prMeasureReportIE->ucLength + 2);
 			break;
 		default:
 			DBGLOG(RLM, INFO, "[SAP_Test] not know\n");
-			DBGLOG_MEM8(RLM, WARN,
-				pucOptInfo, pucOptInfo[1] + 2);
+			if ((pucOptInfo[1] + 2) <=
+				(prSwRfb->u2PacketLen - u2TmpLen))
+				DBGLOG_MEM8(RLM, WARN,
+					pucOptInfo, pucOptInfo[1] + 2);
 			break;
 		}
 		pucOptInfo += (pucOptInfo[1] + 2);
 		u2TmpLen += (pucOptInfo[1] + 2);
-		pucReportElem += prMeasureReportIE->ucLength;
 	}
 
 	DBGLOG(RLM, INFO,
@@ -13964,7 +13966,7 @@ void rlmProcessRadioMeasurementResponse(
 	/*TODO, check it's soft ap mode or not ?*/
 
 	prRxFrame = (struct ACTION_RM_REPORT_FRAME *)prSwRfb->pvHeader;
-	if (!rlmMulAPAgentRmReportFrameIsValid(prSwRfb))
+	if (!prRxFrame || !rlmMulAPAgentRmReportFrameIsValid(prSwRfb))
 		return;
 
 	pucOptInfo = &prRxFrame->aucInfoElem[0];

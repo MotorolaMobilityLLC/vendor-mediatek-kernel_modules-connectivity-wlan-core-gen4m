@@ -931,7 +931,8 @@ static uint32_t wnmMulAPAgentBTMRequestTxDone(struct ADAPTER *prAdapter,
 
 	/* DisassocTimer */
 	u4DisassocTime = prTxFrame->u2DisassocTimer;
-	if ((prTxFrame->ucRequestMode & BIT(2)) && (u4DisassocTime != 0)) {
+	if ((prTxFrame->ucRequestMode & BIT(2)) && (u4DisassocTime != 0) &&
+		prBssInfo && prStaRec) {
 		u4DisassocTime *= prBssInfo->u2BeaconInterval;
 		if (timerPendingTimer(&prStaRec->rBTMReqDisassocTimer)) {
 			cnmTimerStopTimer(prAdapter,
@@ -980,19 +981,14 @@ void wnmMulAPAgentSendBTMRequestFrame(
 	uint8_t *prOptionInfo = NULL;
 	uint8_t ucIndex = 0;
 
+	if (!prStaRec) {
+		DBGLOG(WNM, INFO, "WNM: sta rec is NULL\n");
+		return;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(WNM, INFO, "WNM: prBssInfo rec is NULL\n");
-		return;
-	}
-
-	if (!prStaRec) {
-		DBGLOG(WNM, INFO, "WNM: sta rec is NULL\n");
-		return;
-	}
-
-	if (!prStaRec) {
-		DBGLOG(WNM, INFO, "WNM: sta rec is NULL\n");
 		return;
 	}
 
@@ -1165,7 +1161,8 @@ void wnmMulAPAgentRecvBTMResponse(struct ADAPTER *prAdapter,
 
 	/* BSS Transition Candidate List Entries */
 	while (prSwRfb->u2PacketLen > u2TmpLen) {
-		DBGLOG_MEM8(WNM, INFO, pucOptInfo, pucOptInfo[1] + 2);
+		if ((pucOptInfo[1] + 2) <= (prSwRfb->u2PacketLen - u2TmpLen))
+			DBGLOG_MEM8(WNM, INFO, pucOptInfo, pucOptInfo[1] + 2);
 		pucOptInfo += pucOptInfo[1] + 2;
 		u2TmpLen += pucOptInfo[1] + 2;
 	}
