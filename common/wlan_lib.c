@@ -15270,9 +15270,10 @@ int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
 
 	/* query all regular stats */
 	rParam.u4Period = SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY);
-	if (wlanQueryStatsOneCmd(prAdapter, &rParam, sizeof(rParam),
-		&u4QueryInfoLen, fgIsOid, ucBssIdx)
-		!= WLAN_STATUS_SUCCESS)
+
+	u4Status = wlanQueryStatsOneCmd(prAdapter, &rParam, sizeof(rParam),
+		&u4QueryInfoLen, fgIsOid, ucBssIdx);
+	if (u4Status != WLAN_STATUS_SUCCESS)
 		return u4Status;
 
 	prBigDataParam = (struct PARAM_QUERY_STA_BIG_DATA *)pvQueryBuffer;
@@ -15346,11 +15347,13 @@ int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
 	if (!prParam)
 		return WLAN_STATUS_INVALID_DATA;
 
-	if (ucBssIdx >= MAX_BSSID_NUM || !IS_NET_ACTIVE(prAdapter, ucBssIdx))
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo))
 		return WLAN_STATUS_INVALID_DATA;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	ucDbdcIdx = prBssInfo->eHwBandIdx;
+	if (ucDbdcIdx >= ENUM_BAND_NUM)
+		return WLAN_STATUS_INVALID_DATA;
 
 	GET_MBR_EMI_FIELD(prAdapter, rStatus, arBssStatCnt, tmpBssCnt);
 	GET_MBR_EMI_FIELD(prAdapter, rStatus, arAbtCnt, arAbtCnt);
@@ -15400,8 +15403,12 @@ int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
 		lastFcsOk[ucDbdcIdx];
 	u4DeltaMdrdy = (prPhyCnt->u4OfdmMdrdy +
 		prPhyCnt->u4CckMdrdy - lastMdrdy[ucDbdcIdx]);
-	prParam->ucPhyRxPer = ((u4DeltaMdrdy - u4DeltaFcsOk) *
-		100 / u4DeltaMdrdy);
+	if (u4DeltaMdrdy != 0) {
+		prParam->ucPhyRxPer = ((u4DeltaMdrdy - u4DeltaFcsOk) * 100 /
+					u4DeltaMdrdy);
+	} else {
+		prParam->ucPhyRxPer = 0;
+	}
 
 	lastFcsOk[ucDbdcIdx] = (prPhyCnt->u4CckRxOk -
 		prPhyCnt->u4CckFcsErr + prPhyCnt->u4OfdmRxOk -
