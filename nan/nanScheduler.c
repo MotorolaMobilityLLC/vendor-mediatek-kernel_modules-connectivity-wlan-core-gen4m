@@ -1580,7 +1580,7 @@ nanGetAvailabilityBand(struct _NAN_AVAILABILITY_DB_T *prAvailability)
 			prBandChannel =
 				&prAvailabilityTimeline->arBandChnlCtrl[j];
 
-			DBGLOG(NAN, INFO, "prBandChannel[%u]=%04x, type=%u",
+			DBGLOG(NAN, INFO, "prBandChannel[%zu]=%04x, type=%u",
 			       j, prBandChannel->u4RawData,
 			       prBandChannel->u4Type);
 
@@ -1588,13 +1588,13 @@ nanGetAvailabilityBand(struct _NAN_AVAILABILITY_DB_T *prAvailability)
 			    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
 				u4SupportedBands |=
 					prBandChannel->u4BandIdMask;
-				DBGLOG(NAN, INFO, "[%u] band=%02x",
+				DBGLOG(NAN, INFO, "[%zu] band=%02x",
 				       j, prBandChannel->u4BandIdMask);
 			} else if (prBandChannel->u4Type ==
 				   NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
 				u4OpClass = prBandChannel->u4OperatingClass;
 
-				DBGLOG(NAN, INFO, "[%u] OC=%u", j, u4OpClass);
+				DBGLOG(NAN, INFO, "[%zu] OC=%u", j, u4OpClass);
 
 				if (IS_2G_OP_CLASS(u4OpClass))
 					u4SupportedBands |=
@@ -4808,9 +4808,9 @@ uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
 			       "P2P in 6G ch %u, common 0x%x->0x%x",
 			       rP2pChnlInfo.u4PrimaryChnl,
 			       u4CommonSupportedBand,
-			       u4CommonSupportedBand &
+			       (uint32_t)(u4CommonSupportedBand &
 				~(BIT(ENUM_SUPPORTED_BN_5G_HIGH) |
-				  BIT(ENUM_SUPPORTED_BN_5G_LOW)));
+				  BIT(ENUM_SUPPORTED_BN_5G_LOW))));
 			u4CommonSupportedBand &=
 				~(BIT(ENUM_SUPPORTED_BN_5G_HIGH) |
 				  BIT(ENUM_SUPPORTED_BN_5G_LOW));
@@ -4834,9 +4834,9 @@ uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
 			       "P2P in 5G ch %u, common 0x%x->0x%x",
 			       rP2pChnlInfo.u4PrimaryChnl,
 			       u4CommonSupportedBand,
-			       u4CommonSupportedBand &
+			       (uint32_t)(u4CommonSupportedBand &
 				~(BIT(ENUM_SUPPORTED_BN_6G) |
-				  BIT(ENUM_SUPPORTED_BN_5G_HIGH)));
+				  BIT(ENUM_SUPPORTED_BN_5G_HIGH))));
 			u4CommonSupportedBand &=
 				~(BIT(ENUM_SUPPORTED_BN_6G) |
 				  BIT(ENUM_SUPPORTED_BN_5G_HIGH));
@@ -6433,7 +6433,7 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 						prTimeline[i].au4AvailMap[0],
 						&fgIsCommitted);
 			DBGLOG(NAN, INFO,
-			       "sch idx=%u, timeline=%u, NDC=%02x:%02x:%02x:%02x:%02x:%02x MapID=%u, Avail=%02x-%02x-%02x-%02x, ch=%u(%c)",
+			       "sch idx=%u, timeline=%zu, NDC=%02x:%02x:%02x:%02x:%02x:%02x MapID=%u, Avail=%02x-%02x-%02x-%02x, ch=%u(%c)",
 			       u4SchIdx, i,
 			       prCommNdcCtrl->aucNdcId[0],
 			       prCommNdcCtrl->aucNdcId[1],
@@ -7152,7 +7152,7 @@ void nanSchedReleaseUnusedCommitSlot(struct ADAPTER *prAdapter)
 			}
 		}
 		DBGLOG(NAN, INFO,
-		       "timeline=%u held by peer=%02x-%02x-%02x-%02x, NDC=%02x-%02x-%02x-%02x, custom=%02x-%02x-%02x-%02x",
+		       "timeline=%zu held by peer=%02x-%02x-%02x-%02x, NDC=%02x-%02x-%02x-%02x, custom=%02x-%02x-%02x-%02x",
 		       szTimeLineIdx,
 		       uTimeline[0].ucSlot[0], uTimeline[0].ucSlot[1],
 		       uTimeline[0].ucSlot[2], uTimeline[0].ucSlot[3],
@@ -10971,7 +10971,7 @@ uint32_t nanGetNdcSlotIndex(struct ADAPTER *prAdapter, size_t szTimeLineIdx)
 
 			NAN_DW_DBGLOG(NAN, INFO, TRUE,
 				      u4SlotIdx,
-				      "Tidx(%u) NDC slot(%zu): Pre-select channel = ch:%u\n",
+				      "Tidx(%zu) NDC slot(%u): Pre-select channel = ch:%u\n",
 				      szTimeLineIdx, u4SlotIdx,
 				      u4SelPrimaryChnl);
 #else
@@ -10984,7 +10984,7 @@ uint32_t nanGetNdcSlotIndex(struct ADAPTER *prAdapter, size_t szTimeLineIdx)
 			break;
 	}
 	DBGLOG(NAN, TRACE,
-	       "Checked NDC szTimeLineIdx=%u u4Num=%u, u4DwIdx=%u, u4SlotOffset=%u, fgConflict=%u",
+	       "Checked NDC szTimeLineIdx=%zu u4Num=%u, u4DwIdx=%u, u4SlotOffset=%u, fgConflict=%u",
 	       szTimeLineIdx, u4Num, u4DwIdx, u4SlotOffset, fgConflict);
 
 
@@ -11045,7 +11045,7 @@ uint32_t nanSetNdcSlotIndex(struct ADAPTER *prAdapter,
 		 * got removed at somewhere?
 		 */
 		NAN_DW_DBGLOG(NAN, ERROR, TRUE, u4SlotIdx,
-			      "Tidx(%u) NDC slot(%zu): Pre-select NDC channel = 0!\n",
+			      "Tidx(%zu) NDC slot(%u): Pre-select NDC channel = 0!\n",
 			      szTimeLineIdx, u4SlotIdx);
 		return WLAN_STATUS_FAILURE;
 #else
@@ -11100,7 +11100,7 @@ static uint32_t nanAllocateNewNdc(struct ADAPTER *prAdapter)
 
 	fgNegoCtrl2gOnly = nanIsNegoCtrl2gOnly(prAdapter);
 	for (szTimeLineIdx = szNanActiveTimelineNum; szTimeLineIdx--; ) {
-		DBGLOG(NAN, INFO, "Search NDC in szTimeLineIdx=%u",
+		DBGLOG(NAN, INFO, "Search NDC in szTimeLineIdx=%zu",
 		       szTimeLineIdx);
 
 		rRetStatus = WLAN_STATUS_SUCCESS;
@@ -11223,7 +11223,8 @@ uint32_t nanSchedNegoAllocNdcCtrl(struct ADAPTER *prAdapter,
 			if (szNum > 0)
 				continue;
 
-			DBGLOG(NAN, INFO, "Invalidate timeline %u NDC MapID:%u",
+			DBGLOG(NAN, INFO,
+			       "Invalidate timeline %zu NDC MapID:%u",
 			       szTimeLineIdx,
 			       prNdcCtrl->arTimeline[szTimeLineIdx].ucMapId);
 
@@ -12256,7 +12257,7 @@ nanSchedNegoGetRangingScheduleList(struct ADAPTER *prAdapter,
 			prRangngTimeline =
 				&prNegoCtrl->arRangingTimeline[szTimeLineIdx];
 			DBGLOG(NAN, INFO,
-			       "timeline=%u, MapId=%u, avail=%02x-%02x-%02x-%02x",
+			       "timeline=%zu, MapId=%u, avail=%02x-%02x-%02x-%02x",
 			       szTimeLineIdx, prRangngTimeline->ucMapId,
 			       ((uint8_t *)(prRangngTimeline->au4AvailMap))[0],
 			       ((uint8_t *)(prRangngTimeline->au4AvailMap))[1],
@@ -14012,7 +14013,7 @@ nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 		prCmdUpdateAvailability->fgMultipleMap = FALSE;
 
 	DBGLOG(NAN, TRACE,
-	       "element tag=%u, body_len=%u, copy %zu, mapId=%u, timeline=%u\n",
+	       "element tag=%u, body_len=%u, copy %zu, mapId=%u, timeline=%zu\n",
 	       prTlvElement->tag_type, prTlvElement->body_len,
 	       sizeof(prCmdUpdateAvailability->arChnlList),
 	       prNanTimelineMgmt->ucMapId, szTimeLineIdx);
@@ -15701,7 +15702,7 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 
 	}
 	if (i == ucBssCount) {
-		DBGLOG(NAN, DEBUG, "Timeline=%u, network %u(%s) not in use\n",
+		DBGLOG(NAN, DEBUG, "Timeline=%zu, network %u(%s) not in use\n",
 		       szTimeline, eNetworkType, apucNetworkType[eNetworkType]);
 		return WLAN_STATUS_FAILURE;
 	}
@@ -15720,7 +15721,7 @@ channel_determined:
 		*pu4SlotBitmap = 0xFFFFFFFF;
 
 	DBGLOG(NAN, DEBUG,
-	       "Timeline=%u, network=%c, eBand=%u, bw=%u, type=%c, BandIdMask=%u, OC=%u, primaryChnl=%u, auxChnl=%u, bitmap=0x%08x\n",
+	       "Timeline=%zu, network=%c, eBand=%u, bw=%u, type=%c, BandIdMask=%u, OC=%u, primaryChnl=%u, auxChnl=%u, bitmap=0x%08x\n",
 	       szTimeline,
 	       eNetworkType == NETWORK_TYPE_AIS ? 'A' :
 	       eNetworkType == NETWORK_TYPE_P2P ? 'P' :
@@ -16339,7 +16340,7 @@ static void nanGetMaxCapabilityAllPeers(struct ADAPTER *prAdapter,
 	*eAllMaxABand = getMaxBand(ucAllMaxSupportedABands);
 
 	NAN_DW_DBGLOG(NAN, DEBUG, TRUE, szSlotIdx,
-		      "slot=%u, eAllMaxBand=%u || eAnyMaxBand=%u, eAllMaxABand=%u, ucAllPeerMaxPhy=%u\n",
+		      "slot=%zu, eAllMaxBand=%u || eAnyMaxBand=%u, eAllMaxABand=%u, ucAllPeerMaxPhy=%u\n",
 		      szSlotIdx, *eAllMaxBand, *eAnyMaxBand,
 		      *eAllMaxABand, *ucAllPeerMaxPhy);
 }
@@ -16677,7 +16678,7 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 			prP2pAisMcc->ucNumOfChannel--;
 
 		DBGLOG(NAN, INFO,
-		       "Country=%c%c, Tidx=%u p2p=%u, ais=%u, MCC=%u, Num=%u\n",
+		       "Country=%c%c, Tidx=%zu p2p=%u, ais=%u, MCC=%u, Num=%u\n",
 		       prAdapter->rWifiVar.CountryCode[1],
 		       prAdapter->rWifiVar.CountryCode[0],
 		       szTimeline,
@@ -17600,7 +17601,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 			   &rP2pChnlInfo, &rAisChnlInfo)) {
 
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): MCC p2p=%u, ais=%u\n",
+			      "Tidx(%zu) AIS slot(%zu): MCC p2p=%u, ais=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rP2pChnlInfo.u4PrimaryChnl,
 			      rAisChnlInfo.u4PrimaryChnl);
@@ -17612,7 +17613,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 		if (!NAN_CHNL_IN_COMMON_BAND(prAdapter,
 					     prNegoCtrl, rP2pChnlInfo)) {
 			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) AIS slot(%zu): p2p=%u, ais=%u, skip use %u since peer not support\n",
+				      "Tidx(%zu) AIS slot(%zu): p2p=%u, ais=%u, skip use %u since peer not support\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rP2pChnlInfo.u4PrimaryChnl,
 				      rAisChnlInfo.u4PrimaryChnl,
@@ -17624,7 +17625,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 					 ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					 TRUE, NULL);
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): Use P2p channel p2p=%u, ais=%u\n",
+			      "Tidx(%zu) AIS slot(%zu): Use P2p channel p2p=%u, ais=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rP2pChnlInfo.u4PrimaryChnl,
 			      rAisChnlInfo.u4PrimaryChnl);
@@ -17646,20 +17647,20 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 		 */
 		if (rlmDomainIsDfsChnls(prAdapter, ucAisPrimaryChnl)) {
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			       "Tidx(%u) AIS slot(%zu): Infra DFS ch:%u!\n",
+			       "Tidx(%zu) AIS slot(%zu): Infra DFS ch:%u!\n",
 			       szTimeLineIdx, szSlotIdx, ucAisPrimaryChnl);
 			return g_rNullChnl;
 		}
 
 		if (!nanIsAllowedChannel(prAdapter, rAisChnlInfo)) {
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-			       "Tidx(%u) AIS slot(%zu): Not allowed infra ch:%u!\n",
+			       "Tidx(%zu) AIS slot(%zu): Not allowed infra ch:%u!\n",
 			       szTimeLineIdx, szSlotIdx, ucAisPrimaryChnl);
 			return g_rNullChnl;
 		}
 
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): Infra ch:%u\n",
+			      "Tidx(%zu) AIS slot(%zu): Infra ch:%u\n",
 			      szTimeLineIdx, szSlotIdx, ucAisPrimaryChnl);
 
 		nanSchedAddCrbToChnlList(prAdapter, &rAisChnlInfo, szSlotIdx, 1,
@@ -17675,7 +17676,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 
 	if (rLocalChnlInfo.u4PrimaryChnl != 0) {
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): Committed ch:%u\n",
+			      "Tidx(%zu) AIS slot(%zu): Committed ch:%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rLocalChnlInfo.u4PrimaryChnl);
 		return rLocalChnlInfo;
@@ -17696,7 +17697,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 			if (!nanIsAllowedChannel(prAdapter,
 						 rRmtInfraChnlInfo)) {
 				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) AIS slot(%zu): Peer not allowed infra ch:%u!\n",
+					      "Tidx(%zu) AIS slot(%zu): Peer not allowed infra ch:%u!\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4RmtPrimaryChnl);
 				return g_rNullChnl;
@@ -17707,7 +17708,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 
 			if (rSelChnlInfo.u4PrimaryChnl != 0) {
 				NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) AIS slot(%zu): Peer infra ch:%u\n",
+					      "Tidx(%zu) AIS slot(%zu): Peer infra ch:%u\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4RmtPrimaryChnl);
 
@@ -17768,7 +17769,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 		}
 
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): Min cap ch:%u\n",
+			      "Tidx(%zu) AIS slot(%zu): Min cap ch:%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rSelChnlInfo.u4PrimaryChnl);
 
@@ -17788,7 +17789,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 					      prNegoCtrl->u4SchIdx,
 					      szSlotIdx)) {
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): 5/6G has intersection, skip 2G\n",
+			      "Tidx(%zu) AIS slot(%zu): 5/6G has intersection, skip 2G\n",
 			      szTimeLineIdx, szSlotIdx);
 		return g_rNullChnl;
 	}
@@ -17838,7 +17839,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-					    "Tidx(%u) AIS slot(%zu): Peer ch=%u not allowed, counter with %u!\n",
+					    "Tidx(%zu) AIS slot(%zu): Peer ch=%u not allowed, counter with %u!\n",
 					    szTimeLineIdx, szSlotIdx,
 					    u4RmtPrimaryChnl,
 					    g_r5gDwChnl.u4PrimaryChnl);
@@ -17847,7 +17848,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 			}
 
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) AIS slot(%zu): Peer commit/cond ch:%u not allowed!\n",
+				      "Tidx(%zu) AIS slot(%zu): Peer commit/cond ch:%u not allowed!\n",
 				      szTimeLineIdx, szSlotIdx,
 				      u4RmtPrimaryChnl);
 			continue;
@@ -17859,7 +17860,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 
 		if (u4SelPrimaryChnl != 0) {
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) AIS slot(%zu): Peer commit/cond ch:%u\n",
+				      "Tidx(%zu) AIS slot(%zu): Peer commit/cond ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      u4SelPrimaryChnl);
 
@@ -17871,7 +17872,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 			return rSelChnlInfo;
 		} else {
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) AIS slot(%zu): Peer commit/cond ch:%u converge fail!\n",
+				      "Tidx(%zu) AIS slot(%zu): Peer commit/cond ch:%u converge fail!\n",
 				      szTimeLineIdx, szSlotIdx,
 				      u4RmtPrimaryChnl);
 		}
@@ -17884,7 +17885,7 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 
 	if (!fgPeerChnlExist)
 		NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) AIS slot(%zu): Peer commit/cond not found!\n",
+			      "Tidx(%zu) AIS slot(%zu): Peer commit/cond not found!\n",
 			      szTimeLineIdx, szSlotIdx);
 
 	return g_rNullChnl;
@@ -17954,7 +17955,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 	if (nanIsP2pAisMCC(prAdapter, szTimeLineIdx,
 			   &rP2pChnlInfo, &rAisChnlInfo)) {
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) NDL slot(%zu): MCC p2p=%u, ais=%u\n",
+			      "Tidx(%zu) NDL slot(%zu): MCC p2p=%u, ais=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rP2pChnlInfo.u4PrimaryChnl,
 			      rAisChnlInfo.u4PrimaryChnl);
@@ -17972,7 +17973,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					 ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					 TRUE, NULL);
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Force timeline %u slot %u (following NDC) to use channel %u\n",
+			      "Force timeline %zu slot %zu (following NDC) to use channel %u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rSelChnlInfo.u4PrimaryChnl);
 
@@ -17985,7 +17986,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 		if (!NAN_CHNL_IN_COMMON_BAND(prAdapter,
 					     prNegoCtrl, rP2pChnlInfo)) {
 			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): p2p=%u, ais=%u, skip use %u since peer not support\n",
+				      "Tidx(%zu) NDL slot(%zu): p2p=%u, ais=%u, skip use %u since peer not support\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rP2pChnlInfo.u4PrimaryChnl,
 				      rAisChnlInfo.u4PrimaryChnl,
@@ -17998,7 +17999,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					 TRUE, NULL);
 
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) NDL slot(%zu): Use P2p channel p2p=%u, ais=%u\n",
+			      "Tidx(%zu) NDL slot(%zu): Use P2p channel p2p=%u, ais=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rP2pChnlInfo.u4PrimaryChnl,
 			      rAisChnlInfo.u4PrimaryChnl);
@@ -18039,12 +18040,12 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 	if (rLocalChnlInfo.u4PrimaryChnl != 0) {
 		if (pfgNotChoose6G && *pfgNotChoose6G)
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Committed ch:%u, not choose 6G\n",
+				      "Tidx(%zu) NDL slot(%zu): Committed ch:%u, not choose 6G\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rLocalChnlInfo.u4PrimaryChnl);
 		else
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Committed ch:%u\n",
+				      "Tidx(%zu) NDL slot(%zu): Committed ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rLocalChnlInfo.u4PrimaryChnl);
 		return rLocalChnlInfo;
@@ -18099,7 +18100,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 		    kalMemCmp(&rSelChnlInfo, &g_r6gDefChnl,
 			      sizeof(union _NAN_BAND_CHNL_CTRL)) != 0)
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Force ch:%u, ChnlAllowed:%u, ReschedForce5G:%u\n",
+				      "Tidx(%zu) NDL slot(%zu): Force ch:%u, ChnlAllowed:%u, ReschedForce5G:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rSelChnlInfo.u4PrimaryChnl,
 				      fgIs6GDefChnlAllowed,
@@ -18107,7 +18108,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 		else
 #endif
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Min cap ch:%u\n",
+				      "Tidx(%zu) NDL slot(%zu): Min cap ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rSelChnlInfo.u4PrimaryChnl);
 
@@ -18126,7 +18127,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					      prNegoCtrl->u4SchIdx,
 					      szSlotIdx)) {
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) NDL slot(%zu): 5/6G has intersection, skip 2G\n",
+			      "Tidx(%zu) NDL slot(%zu): 5/6G has intersection, skip 2G\n",
 			      szTimeLineIdx, szSlotIdx);
 		return g_rNullChnl;
 	}
@@ -18197,7 +18198,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-					    "Tidx(%u) NDL slot(%zu): Peer 6G ch=%u not allowed (hit limit %u?), counter with %u!\n",
+					    "Tidx(%zu) NDL slot(%zu): Peer 6G ch=%u not allowed (hit limit %u?), counter with %u!\n",
 					    szTimeLineIdx, szSlotIdx,
 					    u4RmtPrimaryChnl,
 					    prChipInfo == NULL ? 0 :
@@ -18208,7 +18209,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 			}
 
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Peer commit/cond ch:%u not allowed!\n",
+				      "Tidx(%zu) NDL slot(%zu): Peer commit/cond ch:%u not allowed!\n",
 				      szTimeLineIdx, szSlotIdx,
 				      u4RmtPrimaryChnl);
 			continue;
@@ -18232,19 +18233,19 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 					*pfgNotChoose6G = TRUE;
 
 				NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) NDL slot(%zu): Peer commit/cond ch:%u, but force 5G\n",
+					      "Tidx(%zu) NDL slot(%zu): Peer commit/cond ch:%u, but force 5G\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4SelPrimaryChnl);
 
 				rSelChnlInfo = g_r5gDwChnl;
 			} else
 				NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) NDL slot(%zu): Peer commit/cond ch:%u\n",
+					      "Tidx(%zu) NDL slot(%zu): Peer commit/cond ch:%u\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4SelPrimaryChnl);
 #else
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Peer commit/cond ch:%u\n",
+				      "Tidx(%zu) NDL slot(%zu): Peer commit/cond ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      u4SelPrimaryChnl);
 #endif
@@ -18257,7 +18258,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 			return rSelChnlInfo;
 		} else {
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) NDL slot(%zu): Peer commit/cond ch:%u converge fail!\n",
+				      "Tidx(%zu) NDL slot(%zu): Peer commit/cond ch:%u converge fail!\n",
 				      szTimeLineIdx, szSlotIdx,
 				      u4RmtPrimaryChnl);
 		}
@@ -18270,7 +18271,7 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 
 	if (!fgPeerChnlExist)
 		NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-			      "Tidx(%u) NDL slot(%zu): Peer commit/cond not found!\n",
+			      "Tidx(%zu) NDL slot(%zu): Peer commit/cond not found!\n",
 			      szTimeLineIdx, szSlotIdx);
 
 	return g_rNullChnl;
@@ -18329,7 +18330,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 							szTimeLineIdx);
 		if (rLocalChnlInfo.u4PrimaryChnl != 0) {
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) FC slot(%zu): Committed ch:%u\n",
+				      "Tidx(%zu) FC slot(%zu): Committed ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rLocalChnlInfo.u4PrimaryChnl);
 			return rLocalChnlInfo;
@@ -18342,7 +18343,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 				rSelChnlInfo = g_r5gDwChnl;
 
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) FC slot(%zu): Conditional ch:%u\n",
+				      "Tidx(%zu) FC slot(%zu): Conditional ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rSelChnlInfo.u4PrimaryChnl);
 
@@ -18385,7 +18386,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 			if (!nanIsAllowedChannel(prAdapter,
 					rRmtChnlInfo)) {
 				NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) FC slot(%zu): Peer commit/cond ch:%u not allowed!\n",
+					      "Tidx(%zu) FC slot(%zu): Peer commit/cond ch:%u not allowed!\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4RmtPrimaryChnl);
 				continue;
@@ -18397,7 +18398,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 
 			if (u4SelPrimaryChnl != 0) {
 				NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-					      "Tidx(%u) FC slot(%zu): Peer commit/cond ch:%u\n",
+					      "Tidx(%zu) FC slot(%zu): Peer commit/cond ch:%u\n",
 					      szTimeLineIdx, szSlotIdx,
 					      u4SelPrimaryChnl);
 
@@ -18422,7 +18423,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 
 		if (!fgPeerChnlExist)
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) FC slot(%zu): Peer commit/cond not found!\n",
+				      "Tidx(%zu) FC slot(%zu): Peer commit/cond not found!\n",
 				      szTimeLineIdx, szSlotIdx);
 
 		return g_rNullChnl;
@@ -18436,7 +18437,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 		if (rLocalChnlInfo.u4PrimaryChnl ==
 				g_r5gDwChnl.u4PrimaryChnl) {
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) FC slot(%zu): Committed ch:%u\n",
+				      "Tidx(%zu) FC slot(%zu): Committed ch:%u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rLocalChnlInfo.u4PrimaryChnl);
 			return rLocalChnlInfo;
@@ -18446,7 +18447,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 		rSelChnlInfo = g_r5gDwChnl;
 
 			NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) FC slot(%zu): Change commit ch:%u to ch:%u!\n",
+				      "Tidx(%zu) FC slot(%zu): Change commit ch:%u to ch:%u!\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rLocalChnlInfo.u4PrimaryChnl,
 				      rSelChnlInfo.u4PrimaryChnl);
@@ -18471,7 +18472,7 @@ nanSchedNegoFindFCSlotCrb(struct ADAPTER *prAdapter,
 	rSelChnlInfo = g_r5gDwChnl;
 
 	NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-		      "Tidx(%u) FC slot(%zu): Choose ch:%u\n",
+		      "Tidx(%zu) FC slot(%zu): Choose ch:%u\n",
 		      szTimeLineIdx, szSlotIdx,
 		      rSelChnlInfo.u4PrimaryChnl);
 
@@ -18584,7 +18585,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
-				      "Force 2G NDC slot SchIdx=%u, timeline:%u, slot=%u, ch=%u\n",
+				      "Force 2G NDC slot SchIdx=%u, timeline:%zu, slot=%zu, ch=%u\n",
 				      prNegoCtrl->u4SchIdx, szTimeLineIdx,
 				      szSlotIdx, rSelChnlInfo.u4PrimaryChnl);
 
@@ -18609,7 +18610,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
-				      "Force timeline %u slot %u (following NDC) to use channel %u\n",
+				      "Force timeline %zu slot %zu (following NDC) to use channel %u\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rSelChnlInfo.u4PrimaryChnl);
 
@@ -18623,7 +18624,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 						eHighestCommonBand, fgPrintLog,
 						szTimeLineIdx, szSlotIdx);
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Find AIS slot timeline:%u, slot=%u, ch=%u\n",
+			      "Find AIS slot timeline:%zu, slot=%zu, ch=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rSelChnlInfo.u4PrimaryChnl);
 		return rSelChnlInfo;
@@ -18642,7 +18643,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Force NDC slot SchIdx=%u, timeline:%u, slot=%u, ch=%u",
+				      "Force NDC slot SchIdx=%u, timeline:%zu, slot=%zu, ch=%u",
 				      prNegoCtrl->u4SchIdx, szTimeLineIdx,
 				      szSlotIdx, rSelChnlInfo.u4PrimaryChnl);
 
@@ -18650,7 +18651,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 		}
 
 		NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-			      "%u, slot=%u Hghest Common Band=%u MCC=%u, decide NDC by NDL",
+			      "%u, slot=%zu Hghest Common Band=%u MCC=%u, decide NDC by NDL",
 			      prNegoCtrl->u4SchIdx, szSlotIdx,
 			      eHighestCommonBand,
 			      NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G));
@@ -18678,7 +18679,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 							NULL, TRUE,
 							szTimeLineIdx);
 			NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-				      "Check timeline:%u, slot=%u, NDC ch=%u, NDC+1 ch=%u for channel switch(%u)\n",
+				      "Check timeline:%zu, slot=%zu, NDC ch=%u, NDC+1 ch=%u for channel switch(%u)\n",
 				      szTimeLineIdx, szSlotIdx,
 				      rNdcChnlInfo.u4PrimaryChnl,
 				      rSelChnlInfo.u4PrimaryChnl,
@@ -18697,7 +18698,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 #endif
 
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Find NDL slot timeline:%u, slot=%u, ch=%u\n",
+			      "Find NDL slot timeline:%zu, slot=%zu, ch=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rSelChnlInfo.u4PrimaryChnl);
 
@@ -18708,7 +18709,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 		rSelChnlInfo = nanSchedNegoFindFCSlotCrb(prAdapter, fgPrintLog,
 						szTimeLineIdx, szSlotIdx);
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Find FC slot timeline:%u, slot=%u, ch=%u\n",
+			      "Find FC slot timeline:%zu, slot=%zu, ch=%u\n",
 			      szTimeLineIdx, szSlotIdx,
 			      rSelChnlInfo.u4PrimaryChnl);
 
@@ -19076,7 +19077,7 @@ u_int8_t nanIsFollowP2pInNonSocialChannel(struct ADAPTER *prAdapter,
 	fgIsP2pAisMCC = nanIsP2pAisMCC(prAdapter, szTimelineIdx,
 				       &rP2pChnl, &rAisChnl);
 	DBGLOG(NAN, DEBUG,
-	       "Timeline:%u(5g=%u) p2p=%u, ais=%u mcc=%u, returning=%u\n",
+	       "Timeline:%zu(5g=%zu) p2p=%u, ais=%u mcc=%u, returning=%u\n",
 	       szTimelineIdx, sz5gTimeLineIdx,
 	       rP2pChnl.u4PrimaryChnl, rAisChnl.u4PrimaryChnl,
 	       fgIsP2pAisMCC,

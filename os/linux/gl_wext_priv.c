@@ -11424,7 +11424,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 		if (prNDL->fgNDLValid == FALSE)
 			continue;
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-			"*****************************[NDL #%d]*******************************\n",
+			"*****************************[NDL #%zu]*******************************\n",
 			i);
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			"Peer[" MACSTR "], %s\n",
@@ -11470,7 +11470,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 
 			prChnlInfo = &prChnlTimeline->rChnlInfo;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"[%zu][%u] MapId:%d, Raw:0x%x, Commit Chnl:%u, Class:%u, Bw:%d\n",
+				"[%zu][%zu] MapId:%d, Raw:0x%x, Commit Chnl:%u, Class:%u, Bw:%d\n",
 				szTimeLineIdx, i,
 				prNanTimelineMgmt->ucMapId,
 				prChnlInfo->u4RawData,
@@ -11523,7 +11523,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 
 			prChnlInfo = &prChnlTimeline->rChnlInfo;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"[%zu][%u] MapId:%d, Raw:0x%x, Cond Chnl:%u, Class:%u, Bw:%d\n",
+				"[%zu][%zu] MapId:%d, Raw:0x%x, Cond Chnl:%u, Class:%u, Bw:%d\n",
 				szTimeLineIdx, i,
 				prNanTimelineMgmt->ucMapId,
 				prChnlInfo->u4RawData,
@@ -11628,7 +11628,7 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 				prChnlInfo = prNanAvailEntry->arBandChnlCtrl;
 				u4OpClass = prChnlInfo->u4OperatingClass;
 				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-					"[%zu][%u] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
+					"[%zu][%zu] MapID:%d, Ctrl:0x%x, ChnlRaw:0x%x, Class:%u, Bw:%d\n",
 					i, j, prAvailAttr->ucMapId,
 					prNanAvailEntry->rEntryCtrl.u2RawData,
 					prChnlInfo->u4RawData,
