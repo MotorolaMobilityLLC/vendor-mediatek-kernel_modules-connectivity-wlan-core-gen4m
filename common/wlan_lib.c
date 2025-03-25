@@ -8382,13 +8382,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisCrossPmf, "DisCrossPmf", 0,
 		  FEATURE_TO_CUSTOMER);
-#if (CFG_TC10_FEATURE == 1)
 	INIT_UINT(prWifiVar->fgDisGTKCipherCheck, "DisGTKCipherCheck", 1,
 		  FEATURE_TO_CUSTOMER);
-#else
-	INIT_UINT(prWifiVar->fgDisGTKCipherCheck, "DisGTKCipherCheck", 0,
-		  FEATURE_TO_CUSTOMER);
-#endif
 	INIT_UINT(prWifiVar->fgDisSecurityCheck, "DisSecurityCheck", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEhtAkmCheck, "EhtAkmCheck", 0,
