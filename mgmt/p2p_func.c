@@ -1633,6 +1633,9 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "[OWE] Dump assoc resp to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+
+			nicTxConfigPktControlFlag(prMgmtTxMsdu,
+				MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE, TRUE);
 			break;
 		case MAC_FRAME_AUTH:
 			DBGLOG(P2P, TRACE, "TX auth Frame\n");
@@ -1671,6 +1674,9 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "Dump auth to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+
+			nicTxConfigPktControlFlag(prMgmtTxMsdu,
+				MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE, TRUE);
 			break;
 		case MAC_FRAME_ACTION: {
 			struct MSDU_INFO *prNewMgmtTxMsdu;

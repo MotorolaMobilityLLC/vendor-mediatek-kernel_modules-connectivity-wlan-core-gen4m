@@ -8868,6 +8868,9 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			       prMgmtTxMsdu->ucTxSeqNum,
 			       MAC2STR(prAuthFrame->aucSrcAddr),
 			       MAC2STR(prAuthFrame->aucDestAddr));
+
+			nicTxConfigPktControlFlag(prMgmtTxMsdu,
+				MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE, TRUE);
 		}
 
 		nicTxConfigPktControlFlag(prMgmtTxMsdu,
