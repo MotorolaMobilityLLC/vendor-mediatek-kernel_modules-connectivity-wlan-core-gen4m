@@ -2412,7 +2412,7 @@ void wlanParsePmksa(struct cfg80211_pmksa *pmksa,
 	}
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
-#if KERNEL_VERSION(5, 16, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE
 	param->u4Expiration = pmksa->pmk_lifetime;
 #endif
 	param->ucBssIdx = ucBssIndex;

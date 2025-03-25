@@ -3518,7 +3518,8 @@ uint8_t rsnCheckPmkExpiration(struct ADAPTER *prAdapter,
 			u4MinExpiration = entry->rBssidInfo.u4Expiration;
 	}
 
-	if (CHECK_FOR_EXPIRATION(MSEC_TO_SEC(now) + u4RefreshThreshold,
+	if (u4MinExpiration > 0 &&
+		CHECK_FOR_EXPIRATION(MSEC_TO_SEC(now) + u4RefreshThreshold,
 				u4MinExpiration)) {
 		DBGLOG(RSN, INFO,
 			"PMK is almost expired, pmk expired time=%d, refresh threshold time=%llu!\n",
