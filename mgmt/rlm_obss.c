@@ -252,6 +252,13 @@ void rlmObssScanTimeout(struct ADAPTER *prAdapter,
 	prBssInfo = (struct BSS_INFO *) ulParamPtr;
 	ASSERT(prBssInfo);
 
+#if (CFG_MTK_FPGA_PLATFORM != 0)
+	/* Skip OBSS scan */
+	prBssInfo->u2ObssScanInterval = 0;
+	DBGLOG(RLM, INFO, "FPGA platform, no need to do OBSS scan.\n");
+	return;
+#endif
+
 #if CFG_ENABLE_WIFI_DIRECT
 	/* AP mode */
 	if (prAdapter->fgIsP2PRegistered &&
