@@ -21655,9 +21655,10 @@ int priv_driver_trigger_whole_chip_reset(
 	}
 #endif
 
-	if ((!prGlueInfo) ||
-	    (prGlueInfo->u4ReadyFlag == 0) ||
-	    kalIsResetting()) {
+	if (!wlanIsDriverReady(prGlueInfo,
+			       WLAN_DRV_READY_CHECK_WLAN_ON |
+			       WLAN_DRV_READY_CHECK_RESET) ||
+	    kalIsResetOnEnd()) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -1;
 	}
@@ -21702,9 +21703,10 @@ int priv_driver_trigger_wfsys_reset(
 	}
 #endif
 
-	if ((!prGlueInfo) ||
-	    (prGlueInfo->u4ReadyFlag == 0) ||
-	    kalIsResetting()) {
+	if (!wlanIsDriverReady(prGlueInfo,
+			       WLAN_DRV_READY_CHECK_WLAN_ON |
+			       WLAN_DRV_READY_CHECK_RESET) ||
+	    kalIsResetOnEnd()) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -1;
 	}

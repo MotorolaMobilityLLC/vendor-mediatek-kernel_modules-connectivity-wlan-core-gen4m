@@ -1832,8 +1832,6 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	triggerHifDumpIfNeed();
 
-	g_Coredump_source = coredump_conn_type_to_src(type);
-	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
 		while (kalIsResetOnEnd()) {
@@ -1844,6 +1842,12 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			DBGLOG(REQ, DEBUG, "wifi driver is off, skip reset\n");
 			goto exit;
 		}
+
+		/* In case global variable be modified,
+		 * set coredump source after loop-waiting done.
+		 */
+		g_Coredump_source = coredump_conn_type_to_src(type);
+		g_WholeChipRstReason = reason;
 		g_IsWholeChipRst = TRUE;
 		DBGLOG(INIT, DEBUG,
 				"Wi-Fi Driver processes whole chip reset start.\n");
@@ -1861,6 +1865,12 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			msleep(100);
 		}
+
+		/* In case global variable be modified,
+		 * set coredump source after loop-waiting done.
+		 */
+		g_Coredump_source = coredump_conn_type_to_src(type);
+		g_WholeChipRstReason = reason;
 		g_IsWholeChipRst = TRUE;
 
 		if (!prGlueInfo->u4ReadyFlag)
@@ -1991,12 +2001,6 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	if (!fgIsBusAccessFailed && drv != CONNV3_DRV_TYPE_WIFI)
 		triggerHifDumpIfNeed();
 
-	g_Coredump_source = coredump_connv3_type_to_src(drv);
-	g_WholeChipRstReason = reason;
-#if (CFG_WIFI_DX3_TC10SP == 0)
-	g_Coredump_type = reset_type;
-#endif
-
 	if (glRstCheckRstCriteria()) {
 		while (kalIsResetOnEnd()) {
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
@@ -2010,6 +2014,15 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			goto exit;
 		}
 
+		/* In case global variable be modified,
+		 * set coredump source after loop-waiting done.
+		 */
+		g_Coredump_source = coredump_connv3_type_to_src(drv);
+		g_WholeChipRstReason = reason;
+#if (CFG_WIFI_DX3_TC10SP == 0)
+		g_Coredump_type = reset_type;
+#endif
+
 		if (GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 				RST_WHOLE_CHIP_TRIGGER) != WLAN_STATUS_SUCCESS)
 			goto exit;
@@ -2019,6 +2032,16 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			kalMsleep(100);
 		}
+
+		/* In case global variable be modified,
+		 * set coredump source after loop-waiting done.
+		 */
+		g_Coredump_source = coredump_connv3_type_to_src(drv);
+		g_WholeChipRstReason = reason;
+#if (CFG_WIFI_DX3_TC10SP == 0)
+		g_Coredump_type = reset_type;
+#endif
+
 		fgIsDrvTriggerWholeChipReset = FALSE;
 
 		dbg_ops = prAdapter->chip_info->prDebugOps;
@@ -2117,8 +2140,6 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 #endif
 	triggerHifDumpIfNeed();
 
-	g_Coredump_source = coredump_conn_type_to_src(drv);
-	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
 		while (kalIsResetOnEnd()) {
@@ -2126,6 +2147,11 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 			kalMsleep(100);
 		}
 
+		/* In case global variable be modified,
+		 * set coredump source after loop-waiting done.
+		 */
+		g_Coredump_source = coredump_conn_type_to_src(drv);
+		g_WholeChipRstReason = reason;
 		g_IsWholeChipRst = TRUE;
 #if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
 #if !CFG_SUPPORT_CONNAC1X
@@ -2142,6 +2168,12 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			kalMsleep(100);
 		}
+
+		/* In case global variable be modified,
+		 * set coredump source after loop-waiting done.
+		 */
+		g_Coredump_source = coredump_conn_type_to_src(drv);
+		g_WholeChipRstReason = reason;
 		g_IsWholeChipRst = TRUE;
 #if CFG_CHIP_RESET_SUPPORT && CFG_MTK_ANDROID_WMT
 #if !CFG_SUPPORT_CONNAC1X
@@ -2441,7 +2473,7 @@ int wlan_reset_thread_main(void *data)
 				      prWlanRstThreadWakeLock);
 #endif
 
-		if (test_and_clear_bit(RESET_FLAG_START, &rst->ulFlag)) {
+		if (test_and_clear_bit(RESET_FLAG_START_BIT, &rst->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
@@ -2587,7 +2619,7 @@ void kalSetRstEvent(u_int8_t force_dump)
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	rst->force_dump = force_dump;
-	set_bit(RESET_FLAG_START, &rst->ulFlag);
+	set_bit(RESET_FLAG_START_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);
