@@ -214,6 +214,18 @@ static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
 #endif /* CFG_ENABLE_IPC_FW_DOWNLOAD */
 #endif /*_HIF_PCIE */
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+static uint8_t mt7935_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex);
+static void mt7935_apsFillBssDescSet(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *set, uint8_t ucBssIndex);
+static void mt7935_apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx);
+#endif
+
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -1009,6 +1021,12 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 #endif
 
 	.ucTxPwrLimitBatchSize = 3,
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	.apsLinkPlanDecision = mt7935_apsLinkPlanDecision,
+	.apsFillBssDescSet = mt7935_apsFillBssDescSet,
+	.apsUpdateTotalScore = mt7935_apsUpdateTotalScore,
+#endif
 
 #if defined(_HIF_PCIE)
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
@@ -3556,4 +3574,282 @@ static void mt7935LowPowerOwnClear(struct ADAPTER *prAdapter,
 		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0;
 }
 #endif /* _HIF_PCIE */
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t mt7935_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex)
+{
+	uint8_t ucCanSupportDBDCAA = 0;
+	uint8_t ucTmpBssIndex;
+	uint8_t ucHasActiveBss = FALSE;
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4TmpLinkPlanBmap;
+	uint32_t u4LinkPlanBmap =
+		BIT(MLO_LINK_PLAN_2_5)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		| BIT(MLO_LINK_PLAN_2_6)
+#endif
+	;
+	uint32_t u4LinkPlanAABmap =
+		BIT(MLO_LINK_PLAN_2_5)
+#if (CFG_SUPPORT_EMLSR_SAME_A_BAND == 1)
+		| BIT(MLO_LINK_PLAN_5_5)
+#endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		| BIT(MLO_LINK_PLAN_2_6)
+		| BIT(MLO_LINK_PLAN_5_6)
+#endif
+	;
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	uint32_t u4LinkPlan3Bmap =
+		BIT(MLO_LINK_PLAN_2_5)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		| BIT(MLO_LINK_PLAN_2_5_6)
+#endif
+#if (CFG_SUPPORT_EMLSR_SAME_A_BAND == 1)
+		| BIT(MLO_LINK_PLAN_2_5_5)
+#endif
+	;
+#endif
+	uint32_t u4LinkPlanNoneMLDBmap =
+		BIT(MLO_LINK_PLAN_2)
+		| BIT(MLO_LINK_PLAN_5)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		| BIT(MLO_LINK_PLAN_6)
+#endif
+	;
+
+	DBGLOG_LIMITED(HAL, DEBUG, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
+		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
+		prAdapter->rWifiVar.ucMaxSimuLinks);
+
+	for (ucTmpBssIndex = 0;
+		ucTmpBssIndex < prAdapter->ucSwBssIdNum; ucTmpBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucTmpBssIndex];
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
+			(IS_BSS_P2P(prBssInfo) ||
+			 IS_BSS_NAN(prBssInfo)))
+			ucHasActiveBss = TRUE;
+	}
+
+	if (prAdapter->rWifiFemCfg.u2WifiDBDCAwithA == TRUE)
+		ucCanSupportDBDCAA = 1;
+	else {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/*if HW not support A+A
+		 *STR mode can not support DBDC A+A
+		 *EMLSR/Hybird mode can support DBDC A+A always
+		 */
+		if (prAdapter->rWifiVar.ucEnableMlo >= 1 &&
+			prAdapter->rWifiVar.ucMaxSimuLinks >= 1)
+			ucCanSupportDBDCAA = 0;
+		else
+			ucCanSupportDBDCAA = 1;
+#else
+		ucCanSupportDBDCAA = 0;
+#endif
+	}
+
+	if (ucHasActiveBss &&
+		prAdapter->rWifiVar.ucMaxSimuLinks == 0) {
+	/*has active Bss, block MLSR connection */
+		u4TmpLinkPlanBmap = u4LinkPlanNoneMLDBmap;
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeLinkPlanNoneMLD\n");
+	}
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	else if (ucCanSupportDBDCAA && IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+		IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
+		u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeTriLinkPlan\n");
+	}
+#endif
+	else if (ucCanSupportDBDCAA) {
+		u4TmpLinkPlanBmap = u4LinkPlanAABmap;
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeLinkPlanAwithA\n");
+	} else {
+		u4TmpLinkPlanBmap = u4LinkPlanBmap;
+		DBGLOG_LIMITED(HAL, DEBUG, "use aeLinkPlan\n");
+	}
+
+	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
+}
+
+static void mt7935_apsFillBssDescSet(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *set, uint8_t ucBssIndex)
+{
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	uint8_t i;
+	uint8_t ucL3BnlimitBmap = prAdapter->rWifiVar.ucLink3BandLimitBitmap;
+	struct CONNECTION_SETTINGS *conn =
+		aisGetConnSettings(prAdapter, ucBssIndex);
+	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
+
+
+	/* swap link 3 to link 2 depend on fw capbility
+	 *(2g or 5g can't be the 3rd link)
+	 */
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApHyMloSupportCap) &&
+		set && set->ucLinkNum == MLD_HYBRID_MLO_LINK_NUM) {
+		struct BSS_DESC_W *w;
+
+		if ((ucL3BnlimitBmap & BAND_5G) &&
+		     set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+				BAND_5G) {
+			w = set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2] = w;
+		} else if ((ucL3BnlimitBmap & BAND_2G4) &&
+		     set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+				BAND_2G4) {
+			w = set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2];
+			set->aprBssDescW[MLD_HYBRID_MLO_LINK_NUM - 2] = w;
+		}
+	}
+
+	if (set->eMloMode == MLO_MODE_HYMLO ||
+	    set->eMloMode == MLO_MODE_HYEMLSR) {
+		for (i = 0; i < set->ucLinkNum; i++)
+			set->aprBssDescW[i]->fgUnSyncOm = TRUE;
+	}
+
+	if (policy == CONNECT_BY_BSSID)
+		return;
+
+#if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
+	if (prAdapter->ucForceLinkSort) {
+		struct BSS_DESC_W *sorted[MLD_LINK_MAX] = {0};
+		enum ENUM_BAND order[3] = {0};
+		uint8_t j;
+
+		switch (prAdapter->ucForceLinkSortType) {
+		case 0x00:
+			order[0] = BAND_2G4;
+			order[1] = BAND_5G;
+			order[2] = BAND_6G;
+			break;
+		case 0x01:
+			order[0] = BAND_2G4;
+			order[1] = BAND_6G;
+			order[2] = BAND_5G;
+			break;
+		case 0x10:
+			order[0] = BAND_5G;
+			order[1] = BAND_2G4;
+			order[2] = BAND_6G;
+			break;
+		case 0x11:
+			order[0] = BAND_5G;
+			order[1] = BAND_6G;
+			order[2] = BAND_2G4;
+			break;
+		case 0x20:
+			order[0] = BAND_6G;
+			order[1] = BAND_2G4;
+			order[2] = BAND_5G;
+			break;
+		case 0x21:
+			order[0] = BAND_6G;
+			order[1] = BAND_5G;
+			order[2] = BAND_2G4;
+			break;
+		}
+
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			for (j = 0; j < MLD_LINK_MAX; j++) {
+				if (set->aprBssDescW[j] &&
+				    set->aprBssDescW[j]->eBand == order[i]) {
+					sorted[i] = set->aprBssDescW[j];
+					break;
+				}
+			}
+		}
+
+		for (i = 0; i < MLD_LINK_MAX; i++)
+			set->aprBssDescW[i] = sorted[i];
+	}
+#endif
+#endif
+}
+
+static void mt7935_apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx)
+{
+	uint32_t u4TotalScore = 0;
+	uint32_t u4TotalTput = 0;
+	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
+	uint8_t i;
+	enum ENUM_MLO_MODE eMloMode = MLO_MODE_SLSR;
+	uint8_t ucMaxSimuLinks = 0;
+	uint8_t tmpIsEmlsrPermittedAP = FALSE;
+	uint8_t fgNeedCheckEmlsrAllowlist = FALSE;
+
+	for (i = 0; i < ucLinkNum; i++) {
+		u4TotalScore += arLinks[i]->u2Score;
+		u4TotalTput += arLinks[i]->u4Tput;
+		if (arLinks[i]->rMlInfo.fgIsEmlsrPermittedAP)
+			tmpIsEmlsrPermittedAP = TRUE;
+	}
+
+	if (IS_FEATURE_DISABLED(
+			prAdapter->rWifiVar.ucDisEmlsrAllowlist) &&
+			prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_NONE)
+		fgNeedCheckEmlsrAllowlist = TRUE;
+
+	if (ucLinkNum > 1) {
+		//ucMaxSimuLinks = prAdapter->rWifiVar.ucMaxSimuLinksCap;
+		ucMaxSimuLinks = 0;
+		eMloMode = MLO_MODE_MLSR;
+	}
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
+			BE_IS_EML_CAP_SUPPORT_EMLSR(
+				best_bss->rMlInfo.u2EmlCap)) {
+		/* The AP is in allow list, the connection
+		 * select EMLSR, otherwise it need select MLSR.
+		 */
+		if (tmpIsEmlsrPermittedAP == FALSE &&
+			fgNeedCheckEmlsrAllowlist == TRUE)
+			eMloMode = MLO_MODE_MLSR;
+		else
+			eMloMode = MLO_MODE_EMLSR;
+
+		ucMaxSimuLinks = 0;
+	}
+#endif
+
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	if (IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+		IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
+		if (eMloMode == MLO_MODE_EMLSR)
+			eMloMode = MLO_MODE_HYEMLSR;
+		else
+			eMloMode = MLO_MODE_HYMLO;
+		ucMaxSimuLinks = 0;
+	}
+#endif
+	DBGLOG(ML, INFO, "eMloMode: %d\n", eMloMode);
+	kalMemCopy(prScoreInfo->aprTarget, arLinks,
+		sizeof(prScoreInfo->aprTarget));
+	prScoreInfo->ucLinkNum = ucLinkNum;
+	prScoreInfo->u4TotalScore = u4TotalScore;
+	prScoreInfo->u4TotalTput = u4TotalTput;
+	prScoreInfo->eMloMode = eMloMode;
+	prScoreInfo->ucMaxSimuLinks = ucMaxSimuLinks;
+}
+
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 #endif  /* MT7935 */
