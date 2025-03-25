@@ -11155,3 +11155,9 @@ module_init(initWlan);
 module_exit(exitWlan);
 
 #endif
+
+void __weak wlanInitExtFeatureOptionImpl(struct ADAPTER *prAdapter,
+					 uint8_t *pucKey)
+{
+}
+

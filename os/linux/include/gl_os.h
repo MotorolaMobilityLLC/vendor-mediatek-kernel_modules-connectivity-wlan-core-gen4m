@@ -1944,6 +1944,8 @@ void sysInitWifiVer(void);
 void sysGetExtCfg(struct ADAPTER *prAdapter);
 #endif /* WLAN_INCLUDE_SYS */
 
+void wlanInitExtFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey);
+
 #if CFG_SUPPORT_CABLE_DETECT
 void cable_detect_gpio_parse(void);
 #endif

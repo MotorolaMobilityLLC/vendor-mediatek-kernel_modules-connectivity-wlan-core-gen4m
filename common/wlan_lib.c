@@ -7372,6 +7372,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	uint32_t u4PlatformBoostCpuTh;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
+
+	/* Extended customization takes overlay with higher priority */
+	wlanInitExtFeatureOptionImpl(prAdapter, pucKey);
+
 	/* Constant feature options */
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	prWifiVar->u4BoostLittleCpuTh = kalGetLittleCpuBoostThreshold();
