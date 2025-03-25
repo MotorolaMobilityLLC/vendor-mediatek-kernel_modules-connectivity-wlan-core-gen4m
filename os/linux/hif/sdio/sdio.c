@@ -138,7 +138,7 @@ static const struct sdio_device_id mtk_sdio_ids[] = {
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7902},
 #endif /* MT7902 */
 #ifdef MT7935
-	{	SDIO_DEVICE(0x037a, 0x7935),
+	{	SDIO_DEVICE(0x037a, 0x7928),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7935},
 #endif /* MT7935 */
 	{ /* end: all zeroes */ },

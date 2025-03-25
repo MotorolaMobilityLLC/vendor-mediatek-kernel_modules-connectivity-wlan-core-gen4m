@@ -69,8 +69,9 @@
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
 /* for sched_clock() */
+#if KERNEL_VERSION(4, 11, 0) <= LINUX_VERSION_CODE
 #include <linux/sched/clock.h>
-
+#endif
 #include <linux/platform_device.h>
 
 #if DBG

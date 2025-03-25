@@ -1353,7 +1353,9 @@ static struct cfg80211_ops mtk_cfg_ops = {
 
 	.connect = mtk_cfg_connect,
 #if (CFG_SUPPORT_ROAMING == 1)
+#if KERNEL_VERSION(4, 10, 0) <= CFG80211_VERSION_CODE
 	.update_connect_params = mtk_cfg_update_connect_params,
+#endif
 #endif /* CFG_SUPPORT_ROAMING */
 	.disconnect = mtk_cfg_disconnect,
 	.join_ibss = mtk_cfg_join_ibss,

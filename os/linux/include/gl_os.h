@@ -95,7 +95,9 @@
 #include <linux/device.h>
 #include <linux/pm_wakeup.h>
 #else
+#ifdef CONFIG_ANDROID
 #include <linux/wakelock.h>
+#endif
 #endif
 
 #if KERNEL_VERSION(2, 6, 12) < LINUX_VERSION_CODE

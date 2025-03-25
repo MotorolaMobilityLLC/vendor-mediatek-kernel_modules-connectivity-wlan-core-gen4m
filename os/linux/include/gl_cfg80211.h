@@ -652,10 +652,12 @@ int mtk_cfg_connect(struct wiphy *wiphy,
 		    struct cfg80211_connect_params *sme);
 
 #if (CFG_SUPPORT_ROAMING == 1)
+#if KERNEL_VERSION(4, 10, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 		  struct net_device *ndev,
 		  struct cfg80211_connect_params *sme,
 		  u32 changed);
+#endif
 #endif /* CFG_SUPPORT_ROAMING */
 
 int mtk_cfg_disconnect(struct wiphy *wiphy,

@@ -1077,6 +1077,13 @@ ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
     else
         CONFIG_MTK_WIFI_NAN=n
     endif
+    ifeq ($(call kver_ge,5,4,0),1)
+        CONFIG_MTK_WIFI_6G_SUPPORT=y
+        CONFIG_MTK_WIFI_DBDC_6G=y
+    else
+        CONFIG_MTK_WIFI_6G_SUPPORT=n
+        CONFIG_MTK_WIFI_DBDC_6G=n
+    endif
     CONFIG_MTK_WIFI_TRX_DIRECT=y
     CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
     CONFIG_MTK_TWT_STA_CNM=y
@@ -1098,6 +1105,7 @@ ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
         CONFIG_SDIO_MAILBOX_EXTENSION=y
         CONFIG_SUPPORT_SDIO_FORCE_DRV_OWN=y
         CONFIG_SUPPORT_SDIO_DB_DELAY=y
+        CONFIG_MTK_WIFI_TRX_DIRECT=n
     endif
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
         CONFIG_MTK_WIFI_WFDMA_WB=n

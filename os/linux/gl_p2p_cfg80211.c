@@ -1622,7 +1622,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		prMsgScanRequest->rMsgHdr.eMsgId = MID_MNY_P2P_DEVICE_DISCOVERY;
 		prMsgScanRequest->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 		prMsgScanRequest->ucBssIdx = ucBssIdx;
-
+#if KERNEL_VERSION(4, 7, 0) <= CFG80211_VERSION_CODE
 		DBGLOG(P2P, INFO,
 			"[%u] n_channels: %u, bssid: " MACSTR
 			", n_ssids: %d, ie_len: %zu.\n",
@@ -1631,7 +1631,14 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			MAC2STR(request->bssid),
 			request->n_ssids,
 			request->ie_len);
-
+#else
+		DBGLOG(P2P, INFO,
+			"[%u] n_channels: %u n_ssids: %d, ie_len: %zu.\n",
+			ucBssIdx,
+			request->n_channels,
+			request->n_ssids,
+			request->ie_len);
+#endif
 		for (u4Idx = 0; u4Idx < request->n_channels; u4Idx++) {
 			/* Translate Freq from MHz to channel number. */
 			prRfChannelInfo =
@@ -1713,9 +1720,9 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		} else {
 			prMsgScanRequest->u4IELen = 0;
 		}
-
+#if KERNEL_VERSION(4, 7, 0) <= CFG80211_VERSION_CODE
 		COPY_MAC_ADDR(prMsgScanRequest->aucBSSID, request->bssid);
-
+#endif
 		/* Abort previous scan */
 		rStatus = kalIoctl(prGlueInfo, wlanoidAbortP2pScan,
 			&ucBssIdx, sizeof(ucBssIdx), &u4SetInfoLen);
@@ -2105,14 +2112,19 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 
 		i4Written += kalSnprintf(aucLogBuf + i4Written,
 					 LOG_BUFFER_SIZE - i4Written,
-					 "name[%s] link_id[%u] inact[%d] beacon[%d] dtim[%d] ht[%d] vht[%d]",
+					 "name[%s] link_id[%u] inact[%d] beacon[%d] dtim[%d]",
 					 dev->name,
 					 link_id,
 					 settings->inactivity_timeout,
 					 settings->beacon_interval,
-					 settings->dtim_period,
+					 settings->dtim_period);
+#if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 " ht[%d] vht[%d]",
 					 settings->ht_required,
 					 settings->vht_required);
+#endif
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 		i4Written += kalSnprintf(aucLogBuf + i4Written,
 					 LOG_BUFFER_SIZE - i4Written,

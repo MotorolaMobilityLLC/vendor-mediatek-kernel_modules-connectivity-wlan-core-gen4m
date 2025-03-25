@@ -6104,11 +6104,14 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 		ucMLSRBandCount[BAND_5G] > 0)
 #endif
 	{
+#if (CFG_SUPPORT_WIFI_6G == 1)
 		if (ucLegacyBssBand == BAND_6G) {
 		/*EMLSR remain 2G Link*/
 			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
 			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
-		} else {
+		} else
+#endif
+		{
 		/*if A band Rssi > TH, select A band,otherwise select G band*/
 			prBssDesc = aisGetTargetBssDesc(prAdapter,
 						ucMLSRBssIndex[BAND_5G]);
@@ -6124,7 +6127,9 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 				DBGLOG(ML, INFO, "Remain 2G,Pause 5G\n");
 			}
 		}
-	} else if (ucMLSRBandCount[BAND_2G4] > 0 &&
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (ucMLSRBandCount[BAND_2G4] > 0 &&
 		ucMLSRBandCount[BAND_6G] > 0) {
 	/*if A band Rssi>-50, select A band,otherwise select G band*/
 		prBssDesc = aisGetTargetBssDesc(prAdapter,
@@ -6155,7 +6160,7 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 			DBGLOG(ML, INFO, "Remain 5G,Pause 6G\n");
 		}
 	}
-
+#endif /* CFG_SUPPORT_WIFI_6G */
 	DBGLOG(ML, INFO, "Remain BssIndex: %d, Pause BssIndex: %d\n",
 				ucMLSRRemainBssIndex, ucMLSRPauseBssIndex);
 	prPauseBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucMLSRPauseBssIndex);

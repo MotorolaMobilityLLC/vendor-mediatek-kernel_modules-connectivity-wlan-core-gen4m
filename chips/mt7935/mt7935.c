@@ -118,6 +118,7 @@ static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName);
 #endif
 
+static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #if defined(_HIF_PCIE)
 static uint8_t mt7935SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
@@ -196,7 +197,6 @@ static int32_t mt7935_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt7935_mcu_init(struct ADAPTER *ad);
 static void mt7935_mcu_deinit(struct ADAPTER *ad);
 static int mt7935_CheckBusNoAck(void *priv, uint8_t rst_enable);
-static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter);
 static void mt7935WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 
 static void mt7935LowPowerOwnInit(struct ADAPTER *prAdapter);
@@ -641,20 +641,15 @@ struct FWDL_OPS_T mt7935_fw_dl_ops = {
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 	.constrcutIdxLogBin = NULL,
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
-#if defined(_HIF_PCIE)
 #if CFG_MTK_WIFI_SUPPORT_IPC
 	.downloadPatch = NULL,
-#else
-	.downloadPatch = mt7935_wlanDownloadPatch,
-#endif
-#endif
-#if CFG_MTK_WIFI_SUPPORT_IPC
 	.downloadFirmware = NULL,
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = NULL,
 	.getFwDlInfo = NULL,
 	.downloadEMI = NULL,
 #else
+	.downloadPatch = mt7935_wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
@@ -1621,6 +1616,16 @@ static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 }
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
+static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter)
+{
+	uint32_t status  = wlanDownloadPatch(prAdapter);
+
+	if (status == WLAN_STATUS_SUCCESS)
+		wifi_coredump_set_enable(TRUE);
+
+	return status;
+}
 
 #if defined(_HIF_PCIE)
 static uint32_t mt7935RxRingSwIdx2HwIdx(uint32_t u4SwRingIdx)
@@ -3445,16 +3450,6 @@ static int mt7935_CheckBusNoAck(void *priv, uint8_t rst_enable)
 
 exit:
 	return readable ? 0 : 1;
-}
-
-static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter)
-{
-	uint32_t status  = wlanDownloadPatch(prAdapter);
-
-	if (status == WLAN_STATUS_SUCCESS)
-		wifi_coredump_set_enable(TRUE);
-
-	return status;
 }
 
 static void mt7935WiFiNappingCtrl(

@@ -1977,7 +1977,9 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	  struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct STA_RECORD *prStaRec;
+#endif
 	uint8_t ucStaRecIdx;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
 	static uint8_t ucIdx;

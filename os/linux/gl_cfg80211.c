@@ -2381,7 +2381,7 @@ void wlanParsePmksa(struct cfg80211_pmksa *pmksa,
 
 	if (pmksa->bssid)
 		COPY_MAC_ADDR(param->arBSSID, pmksa->bssid);
-
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 	if (pmksa->pmk && pmksa->pmk_len) {
 		if (pmksa->pmk_len > sizeof(param->arPMK)) {
 			DBGLOG(REQ, WARN, "pmk len=%d too big\n",
@@ -2392,7 +2392,7 @@ void wlanParsePmksa(struct cfg80211_pmksa *pmksa,
 			param->u2PMKLen = pmksa->pmk_len;
 		}
 	}
-
+#endif
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (pmksa->cache_id && pmksa->ssid && pmksa->ssid_len) {
 		param->fgFilsCacheIdSet = TRUE;
@@ -8682,6 +8682,7 @@ int mtk_cfg_connect(struct wiphy *wiphy,
 }
 
 #if (CFG_SUPPORT_ROAMING == 1)
+#if KERNEL_VERSION(4, 10, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 		  struct net_device *ndev,
 		  struct cfg80211_connect_params *sme,
@@ -8765,6 +8766,7 @@ int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 #endif /* CFG_SUPPORT_ROAMING */
 
 int mtk_cfg_disconnect(struct wiphy *wiphy,

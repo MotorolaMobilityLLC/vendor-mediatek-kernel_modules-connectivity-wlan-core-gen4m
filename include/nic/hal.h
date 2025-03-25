@@ -1050,47 +1050,43 @@ do { \
 
 #define HAL_LP_DB_DELAY_CLEAR(_prAdapter, _pfgResult) \
 { \
-	if (_pfgResult != NULL) { \
-		uint32_t u4RegValue = 0; \
-		*_pfgResult = TRUE; \
-		HAL_MCR_RD(_prAdapter, \
+	uint32_t u4RegValue = 0; \
+	*_pfgResult = TRUE; \
+	HAL_MCR_RD(_prAdapter, \
+		MCR_WHLPCR, \
+		&u4RegValue); \
+	if ((u4RegValue & WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+		u4RegValue &= WHLPCR_FORCE_DRV_OWN; \
+		HAL_MCR_WR(_prAdapter, \
 			MCR_WHLPCR, \
-			&u4RegValue); \
-		if ((u4RegValue & WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
-			u4RegValue &= WHLPCR_FORCE_DRV_OWN; \
-			HAL_MCR_WR(_prAdapter, \
-				MCR_WHLPCR, \
-				u4RegValue); \
-			HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
-			if ((u4RegValue \
-				& WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
-				*_pfgResult = FALSE; \
-			} \
+			u4RegValue); \
+		HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+		if ((u4RegValue \
+			& WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+			*_pfgResult = FALSE; \
 		} \
 	} \
 }
 
 #define HAL_LP_DB_DELAY_SET(_prAdapter, _pfgResult) \
 { \
-	if (_pfgResult != NULL) { \
-		uint32_t u4RegValue = 0; \
-		*_pfgResult = FALSE; \
+	uint32_t u4RegValue = 0; \
+	*_pfgResult = FALSE; \
+	HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+	if ((u4RegValue & WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+		*_pfgResult = TRUE; \
+	} else { \
+		u4RegValue &= WHLPCR_FORCE_DRV_OWN; \
+		u4RegValue |= WHLPCR_REG_DB_DELAY_CNT_ENABLE; \
+		u4RegValue |= (WHLPCR_REG_DB_DELAY_CNT_0x60 << \
+				WHLPCR_REG_DB_DELAY_CNT_SHIFT); \
+		HAL_MCR_WR(_prAdapter, \
+			MCR_WHLPCR, \
+			u4RegValue); \
 		HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
-		if ((u4RegValue & WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
+		if ((u4RegValue \
+			& WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
 			*_pfgResult = TRUE; \
-		} else { \
-			u4RegValue &= WHLPCR_FORCE_DRV_OWN; \
-			u4RegValue |= WHLPCR_REG_DB_DELAY_CNT_ENABLE; \
-			u4RegValue |= (WHLPCR_REG_DB_DELAY_CNT_0x60 << \
-					WHLPCR_REG_DB_DELAY_CNT_SHIFT); \
-			HAL_MCR_WR(_prAdapter, \
-				MCR_WHLPCR, \
-				u4RegValue); \
-			HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
-			if ((u4RegValue \
-				& WHLPCR_REG_DB_DELAY_CNT_ENABLE) != 0) { \
-				*_pfgResult = TRUE; \
-			} \
 		} \
 	} \
 }
