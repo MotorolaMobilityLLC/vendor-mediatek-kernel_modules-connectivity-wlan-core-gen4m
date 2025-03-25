@@ -11110,7 +11110,8 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 			/* Update HT OP Info*/
 			if (prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
 				prBssInfo->ucHtOpInfo1 &=
-					~HT_OP_INFO1_STA_CHNL_WIDTH;
+					~(HT_OP_INFO1_SCO |
+					  HT_OP_INFO1_STA_CHNL_WIDTH);
 				prBssInfo->eBssSCO = CHNL_EXT_SCN;
 			} else {
 				prBssInfo->ucHtOpInfo1 |=
@@ -11133,6 +11134,8 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					   OP_MODE_ACCESS_POINT) {
 					prBssInfo->eBssSCO = rlmDecideScoForAP(
 						prAdapter, prBssInfo);
+					prBssInfo->ucHtOpInfo1 |=
+						prBssInfo->eBssSCO;
 #endif
 				}
 			}
@@ -11864,7 +11867,7 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 		/* Check peer OP Channel Width */
 		switch (ucChannelWidth) {
 		case MAX_BW_80_80_MHZ:
-			if (prStaRec->ucVhtOpChannelWidth !=
+			if (prStaRec->ucVhtOpChannelWidth <
 			    VHT_OP_CHANNEL_WIDTH_80P80) {
 				DBGLOG(RLM, INFO,
 				       "Can't change BSS[%d] OP BW to:%d for peer VHT OP BW is:%d\n",
@@ -11874,7 +11877,7 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 			}
 			break;
 		case MAX_BW_160MHZ:
-			if (prStaRec->ucVhtOpChannelWidth !=
+			if (prStaRec->ucVhtOpChannelWidth <
 			    VHT_OP_CHANNEL_WIDTH_160) {
 				DBGLOG(RLM, INFO,
 				       "Can't change BSS[%d] OP BW to:%d for peer VHT OP BW is:%d\n",

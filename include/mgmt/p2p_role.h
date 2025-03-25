@@ -143,6 +143,12 @@ struct MSG_P2P_STOP_AP {
 	uint8_t ucRoleIdx;
 };
 
+struct MSG_SET_P2P_SAP_BW {
+	struct MSG_HDR rMsgHdr;
+	uint8_t ucChannelWidth;
+	uint8_t ucBssIndex;
+};
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 struct MSG_P2P_DFS_CAC {
 	struct MSG_HDR rMsgHdr;
@@ -432,6 +438,9 @@ void p2pRoleFsmRunEventDelIface(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
 void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
+
+void p2pRoleFsmRunEventChangeBw(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)

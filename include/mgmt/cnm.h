@@ -369,11 +369,16 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	/** RDD (Radar Detection and DFS) operation change request */
 	CNM_OPMODE_REQ_RDD_OPCHNG = 11,
 
+	/** User configuration request */
+	CNM_OPMODE_REQ_USER_CONFIG_BW	  = 12,
+
 	/** Total number of CNM operation mode requests */
-	CNM_OPMODE_REQ_NUM        = 12,
+	CNM_OPMODE_REQ_NUM        = 13,
 
 	/** Maximum capability of opmode request (just for coding) */
-	CNM_OPMODE_REQ_MAX_CAP    = 13
+	CNM_OPMODE_REQ_MAX_CAP    = 14
+
+
 };
 
 struct CNM_CHIP_CAP_INFO {

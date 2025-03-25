@@ -15533,6 +15533,79 @@ int priv_driver_set_nss(struct net_device *prNetDev, char *pcCommand,
 	return i4BytesWritten;
 }
 
+int priv_driver_set_p2p_ap_bw(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret;
+	uint8_t ucParse = 0;
+	uint32_t ucBw = 0;
+	uint8_t ucBssIndex = 0;
+	struct MSG_SET_P2P_SAP_BW *prP2pSetBwMsg =
+		(struct MSG_SET_P2P_SAP_BW *) NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -1;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return -EFAULT;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (!prBssInfo)
+		return -EFAULT;
+
+	if (i4Argc >= 1) {
+		u4Ret = kalkStrtou8(apcArgv[i4Argc - 1], 0, &ucParse);
+		if (u4Ret) {
+			DBGLOG(REQ, WARN, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+			goto error;
+		}
+		ucBw = ucParse;
+		prP2pSetBwMsg = (struct MSG_SET_P2P_SAP_BW *)
+			cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_SET_P2P_SAP_BW));
+		if (prP2pSetBwMsg == NULL)
+			return	i4BytesWritten;
+
+		prP2pSetBwMsg->rMsgHdr.eMsgId = MID_MNY_P2P_SAP_CHANGE_BW;
+		prP2pSetBwMsg->ucChannelWidth = ucBw;
+		prP2pSetBwMsg->ucBssIndex = ucBssIndex;
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pSetBwMsg,
+			MSG_SEND_METHOD_BUF);
+
+	} else {
+		DBGLOG(REQ, WARN, "Invalid bw=%d\n",
+			ucBw);
+	}
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
 
 int priv_driver_set_amsdu_tx(struct net_device *prNetDev, char *pcCommand,
 			 int i4TotalLen)

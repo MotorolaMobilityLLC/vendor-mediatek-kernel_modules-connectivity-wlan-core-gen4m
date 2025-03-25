@@ -305,6 +305,7 @@
 #define CMD_SET_RxCtrlToMutiBss		"SET_RX_CTRL_TO_MUTI_BSS"
 #define CMD_SET_SMPS_PARAMS		"SET_SMPS_PARAMS"
 #endif /* CFG_SUPPORT_802_11AX == 1 */
+#define CMD_SET_P2P_AP_BW			"SET_P2P_AP_BW"
 #ifdef UT_TEST_MODE
 #define CMD_RUN_UT			"UT"
 #endif /* UT_TEST_MODE */

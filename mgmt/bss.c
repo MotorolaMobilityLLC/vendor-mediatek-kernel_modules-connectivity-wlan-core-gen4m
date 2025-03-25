@@ -376,11 +376,11 @@ BYPASS_SEC_CHECK:
 	else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption))
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 	else if (prBssDesc && prBssDesc->eBand == BAND_2G4 &&
-		IS_FEATURE_DISABLED(prWifiVar->ucVhtIeIn2g)) {
+		 IS_FEATURE_DISABLED(prWifiVar->ucVhtIeIn2g))
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
-	} else {
+	else if (prBssDesc && prBssDesc->eBand == BAND_5G)
+		/* CE may need this */
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
@@ -399,7 +399,6 @@ BYPASS_SEC_CHECK:
 
 	prStaRec->ucDesiredPhyTypeSet =
 	    prStaRec->ucPhyTypeSet & prAdapter->rWifiVar.ucAvailablePhyTypeSet;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -456,8 +455,6 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_HT;
 	else if (IS_FEATURE_FORCE_ENABLED(ucHtOption))
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
-	else if (!fgIsPureAp && IS_FEATURE_ENABLED(ucHtOption))
-		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 	if (IS_FEATURE_DISABLED(ucVhtOption)) {
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
@@ -470,7 +467,8 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 				prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 			else
 				prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
-		} else {
+		} else if (prBssInfo->eBand == BAND_5G) {
+			/* CE may need this */
 			if (!fgIsPureAp)
 				prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 		}
@@ -481,15 +479,11 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_HE;
 	else if (IS_FEATURE_FORCE_ENABLED(ucHeOption))
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
-	else if (!fgIsPureAp && IS_FEATURE_ENABLED(ucHeOption))
-		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (IS_FEATURE_DISABLED(ucEhtOption))
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_EHT;
 	else if (IS_FEATURE_FORCE_ENABLED(ucEhtOption))
-		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_EHT;
-	else if (!fgIsPureAp && IS_FEATURE_ENABLED(ucEhtOption))
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_EHT;
 #endif
 
@@ -500,7 +494,6 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 		prBssInfo->ucPhyTypeSet &=
 			~(PHY_TYPE_BIT_EHT);
 #endif
-
 }
 
 uint32_t bssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo)

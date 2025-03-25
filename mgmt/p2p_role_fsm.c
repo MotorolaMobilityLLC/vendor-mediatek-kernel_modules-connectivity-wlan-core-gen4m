@@ -2213,6 +2213,49 @@ error:
 
 }				/* p2pRoleFsmRunEventStopAP */
 
+void p2pRoleFsmRunEventChangeBw(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct WIFI_EVENT *pEvent;
+	struct EVENT_OPMODE_CHANGE *prEvtOpMode =
+		(struct EVENT_OPMODE_CHANGE *) NULL;
+	struct MSG_SET_P2P_SAP_BW *prP2pSetBwMsg =
+		(struct MSG_SET_P2P_SAP_BW *) NULL;
+	uint32_t u4MsgSize = 0;
+
+
+	prP2pSetBwMsg = (struct MSG_SET_P2P_SAP_BW *) prMsgHdr;
+	u4MsgSize = sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_OPMODE_CHANGE);
+
+	pEvent = (struct WIFI_EVENT *)
+		kalMemAlloc(u4MsgSize, VIR_MEM_TYPE);
+	if (!pEvent)
+		return;
+
+	pEvent->ucEID = EVENT_ID_OPMODE_CHANGE;
+	pEvent->ucSeqNum = 0;
+
+	prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
+		&(pEvent->aucBuffer[0]);
+	prEvtOpMode->ucBssBitmap = BIT(prP2pSetBwMsg->ucBssIndex);
+	prEvtOpMode->ucEnable = TRUE;
+	prEvtOpMode->ucOpTxNss = 2;
+	prEvtOpMode->ucOpRxNss = 2;
+	prEvtOpMode->ucReason =
+		EVENT_OPMODE_CHANGE_REASON_USER_CHANGE_BW;
+	prEvtOpMode->ucBandWidth =
+		prP2pSetBwMsg->ucChannelWidth;
+
+
+	cnmOpmodeEventHandler(
+		prAdapter,
+		(struct WIFI_EVENT *) pEvent);
+
+	if (pEvent)
+		kalMemFree(pEvent, VIR_MEM_TYPE, u4MsgSize);
+}
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void p2pRoleFsmRunEventStartCac(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)

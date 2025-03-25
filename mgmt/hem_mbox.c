@@ -309,6 +309,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventPreStartAP},
 #endif
 	{MID_MNY_P2P_DEL_IFACE, p2pRoleFsmRunEventDelIface},
+	{MID_MNY_P2P_SAP_CHANGE_BW, p2pRoleFsmRunEventChangeBw},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{MID_MNY_P2P_DFS_CAC, p2pRoleFsmRunEventDfsCac},
 	{MID_MNY_P2P_START_CAC, p2pRoleFsmRunEventStartCac},

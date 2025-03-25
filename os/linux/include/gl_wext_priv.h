@@ -1015,6 +1015,8 @@ int priv_driver_set_bf(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_nss(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_p2p_ap_bw(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_amsdu_tx(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_amsdu_rx(struct net_device *prNetDev,

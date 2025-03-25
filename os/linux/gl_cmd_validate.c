@@ -239,6 +239,10 @@ struct CMD_VALIDATE_POLICY set_stanss_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = 8}
 };
 
+struct CMD_VALIDATE_POLICY set_p2papbw_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = 8}
+};
+
 #if CFG_WLAN_ASSISTANT_NVRAM
 struct CMD_VALIDATE_POLICY set_nvram_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U16, .min = 0, .max = U16_MAX},
@@ -993,6 +997,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
 		.policy    = set_flag_policy,
 		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
+	},
+	{
+		.pcCmdStr  = CMD_SET_P2P_AP_BW,
+		.pfHandler = priv_driver_set_p2p_ap_bw,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = set_p2papbw_policy,
+		.u4PolicySize = ARRAY_SIZE(set_p2papbw_policy)
 	},
 };
 

@@ -457,6 +457,7 @@ static const char * const apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP + 1] = {
 	[CNM_OPMODE_REQ_NUM] = "N/A",
 	[CNM_OPMODE_REQ_MAX_CAP] = "MAX_CAP",
 	[CNM_OPMODE_REQ_HW_CONSTRIAN_CAP] = "HW_CONSTRIAN_CAP",
+	[CNM_OPMODE_REQ_USER_CONFIG_BW] = "User BW",
 };
 
 static const char * const
@@ -5555,6 +5556,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_TX_ANT_CTRL:
 		eReqIdx = CNM_OPMODE_REQ_TX_ANT_CTRL;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_USER_CHANGE_BW:
+		eReqIdx = CNM_OPMODE_REQ_USER_CONFIG_BW;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
@@ -5909,13 +5913,21 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		return CNM_OPMODE_REQ_STATUS_DEFER;
 	} else if (eRunReq == CNM_OPMODE_REQ_MAX_CAP) {
 		ucOpRxNssFinal = ucOpTxNssFinal =
-		wlanGetSupportNss(prAdapter, ucBssIndex);
+			wlanGetSupportNss(prAdapter, ucBssIndex);
+	} else if (eRunReq == CNM_OPMODE_REQ_USER_CONFIG_BW) {
+		ucOpRxNssFinal = ucOpTxNssFinal =
+			wlanGetSupportNss(prAdapter, ucBssIndex);
+		ucOpBwFinal = prReq->ucBandWidth;
 	} else  {
 		prReq = &prBssOpCtrl->arReqPool[eRunReq];
 		ucOpRxNssFinal = prReq->ucOpRxNss;
 		ucOpTxNssFinal = prReq->ucOpTxNss;
 		ucOpBwFinal = prReq->ucBandWidth;
 	}
+
+	DBGLOG(CNM, WARN, "bss alive[%u], apgo grant[%u]\n",
+		IS_BSS_ALIVE(prAdapter, prBssInfo),
+		prBssInfo->fgIsApGoGranted);
 
 	fgIsBssAlive = IS_BSS_ALIVE(prAdapter, prBssInfo);
 #if CFG_ENABLE_WIFI_DIRECT
@@ -5962,7 +5974,11 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		 * If you want to change OpBw in the future, please
 		 * make sure you can restore to current peer's OpBw.
 		 */
-		ucOpMaxBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+		ucOpMaxBw = cnmGetDbdcBwCapability(prAdapter,
+						   prBssInfo->ucBssIndex);
+		nicReviseBwByCh(prAdapter, prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBssSCO, &ucOpMaxBw);
 		if (ucOpBwFinal > ucOpMaxBw)
 			ucOpBwFinal = ucOpMaxBw;
 
@@ -6056,6 +6072,12 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 			ucSendAct = OP_CHANGE_SEND_ACT_DISABLE;
 		}
 #endif
+		if (eNewReq == CNM_OPMODE_REQ_USER_CONFIG_BW)
+			ucSendAct = OP_CHANGE_SEND_ACT_DEFAULT;
+
+		DBGLOG(CNM, INFO,
+			"rlmChangeOperationMode on-going:%u\n",
+			ucSendAct);
 
 		eRlmStatus = rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
