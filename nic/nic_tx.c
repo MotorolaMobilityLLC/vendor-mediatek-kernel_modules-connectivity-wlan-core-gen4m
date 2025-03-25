@@ -5675,18 +5675,23 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	}
 
 	if (isNetAbsent(prAdapter, prBssInfo)) {
-		DBGLOG(TX, TRACE, "fgIsNetAbsent!\n");
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		QUEUE_INSERT_HEAD(
 			&prAdapter->rBssAbsentQueue[ucBssIndex],
 			(struct QUE_ENTRY *) prMsduInfo);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+		DBGLOG(TX, TRACE, "fgIsNetAbsent! BM:0x%02x QC:%u\n",
+			prAdapter->u4BssAbsentTxBufferBitmap,
+			QUEUE_LENGTH(&prAdapter->rBssAbsentQueue[ucBssIndex]));
 		return;
 	}
 
-	if (prAdapter->u4BssAbsentTxBufferBitmap)
-		DBGLOG(TX, TRACE, "fgIsNetAbsent END!\n");
+	if (prAdapter->u4BssAbsentTxBufferBitmap) {
+		DBGLOG(TX, TRACE, "fgIsNetAbsent END! BM:0x%02x QC:%u\n",
+			prAdapter->u4BssAbsentTxBufferBitmap,
+			QUEUE_LENGTH(&prAdapter->rBssAbsentQueue[ucBssIndex]));
+	}
 
 	if (QUEUE_IS_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex])) {
 		QUEUE_INSERT_TAIL(prQue, prMsduInfo);
@@ -5697,6 +5702,7 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	QUEUE_CONCATENATE_QUEUES(
 		prTmpQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
+	prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
 	u4Size = QUEUE_LENGTH(prTmpQue);
@@ -5726,9 +5732,8 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 		QUEUE_CONCATENATE_QUEUES(
 			&prAdapter->rBssAbsentQueue[ucBssIndex],
 			prTmpQue);
+		prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-	} else {
-		prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
 	}
 
 	if (QUEUE_IS_NOT_EMPTY(prFreeQue))
