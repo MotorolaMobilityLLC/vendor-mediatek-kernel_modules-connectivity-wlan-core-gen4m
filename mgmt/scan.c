@@ -2308,15 +2308,17 @@ parse_tbttinfo:
 			uint16_t u2Written = 0; \
 			uint16_t u2TotalLen = \
 			SCN_SCAN_OOB_PRINT_BUFFER_LENGTH; \
-			u2Written += \
-			kalSnprintf(strbuf + u2Written, \
-			u2TotalLen - u2Written, \
-			"Rnr(Chl,Bss,Elem)=(%3d,%d,%d) ", \
-			prNbrScanParam-> \
-			arChnlInfoList[0].ucChannelNum, \
-			prNbrScanParam->ucBssidNum, \
-			prScanInfo-> \
-			rNeighborAPInfoList.u4NumElem); \
+			if (strbuf) { \
+				u2Written += \
+				kalSnprintf(strbuf + u2Written, \
+				u2TotalLen - u2Written, \
+				"Rnr(Chl,Bss,Elem)=(%3d,%d,%d) ", \
+				prNbrScanParam-> \
+				arChnlInfoList[0].ucChannelNum, \
+				prNbrScanParam->ucBssidNum, \
+				prScanInfo-> \
+				rNeighborAPInfoList.u4NumElem); \
+			} \
 			for (i = 0; i < NbrSize; i++) { \
 				if (strbuf && prNbrScanParam->var[i]) { \
 					u2Written += \
