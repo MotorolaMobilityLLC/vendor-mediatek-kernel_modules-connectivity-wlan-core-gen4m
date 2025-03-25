@@ -6733,6 +6733,7 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		u2FrameLength, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	prMsduInfo->ucTxToNafQueFlag = TRUE;
+	/* coverity[TAINTED_SCALAR] */
 	prNAF = prMsduInfo->prPacket;
 	ucOuiSubtype = prNAF->ucOUISubtype;
 
@@ -6749,9 +6750,7 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		       MAC2STR(prSelectStaRec->aucMacAddr));
 	}
 
-	/* NAN_CHK_PNT log message */
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-	nanLogTx(prNAF);
+	nanLogTx(prNAF); /* NAN_CHK_PNT log message */
 
 	if (prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_NAF ||
 	    prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_SDF) {

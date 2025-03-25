@@ -4948,6 +4948,7 @@ nanInsertConditionalAvailability(uint8_t *pucAvailabilityAttr,
 	kalMemCopy(pucAvailAttrCond + (p - pucAvailabilityAttr) +
 		   sizeof(*prConditional), p, end - p);
 
+	/* coverity[TAINTED_SCALAR] */
 	prAttrNanAvailibility =
 		(struct _NAN_ATTR_NAN_AVAILABILITY_T *)pucAvailAttrCond;
 	prAttrNanAvailibility->u2Length += sizeof(*prConditional);
