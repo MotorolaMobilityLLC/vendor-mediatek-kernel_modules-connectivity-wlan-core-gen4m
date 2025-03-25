@@ -3212,7 +3212,7 @@ uint8_t rlmDomainIsLegalChlByNetType(struct ADAPTER *prAdapter,
 		ucIsLegal = ucIsSupport;
 #endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"band[%d]PriCh[%d]Bw[%d]Net_Type[%d]mode[%d]Legal[%d]\n",
 		eBand,
 		ucPriCh,
@@ -10042,7 +10042,7 @@ bool txPwrCfgCheckCfgValid(uint8_t count, char *pcContCur)
 
 	for (i = 0; i < ARRAY_SIZE(au4ValidNum); i++) {
 		if (count == au4ValidNum[i]) {
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"parse num success: count:%d content:%s\n",
 					count, pcContCur);
 			return TRUE;
@@ -11451,7 +11451,7 @@ bool txPwrCtrlParseCountryCfgFile(
 	}
 
 	if (!pucConfigBuf) {
-		DBGLOG(RLM, INFO, "[PwrLimitCfgFile] %s invalid\n",
+		DBGLOG(RLM, TRACE, "[PwrLimitCfgFile] %s invalid\n",
 			prPwrLimitFileInfo->pcPwrLimitCfgFile);
 		return FALSE;
 	}
@@ -15768,7 +15768,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 
 	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
 		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 			"TXP EMI INFO[%d][%d] [ofs:%d,type:%d,Size:%d,ChNum%d]\n",
 			eRF, eProt,
 			rEmiFormat.rTxpwrEmiInfo[eRF][eProt].u4EmiAddrOffset,

@@ -11448,32 +11448,17 @@ void p2pFunMulAPAgentBssStatusNotification(
 	kalMemZero(&prBssReport->u8HeMcs, 16);
 	kalMemZero(&prBssReport->u16HeCap, sizeof(uint16_t));
 
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uIfIndex=%d\n", prBssReport->uIfIndex);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] mBssid=" MACSTR "\n", MAC2STR(prBssReport->mBssid));
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uStatus=%d\n", prBssReport->uStatus);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8Channel=%d\n", prBssReport->u8Channel);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8OperClass=%d\n", prBssReport->u8OperClass);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8Txpower=%d\n", prBssReport->u8Txpower);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uBand=%d\n", prBssReport->uBand);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uHtCap=0x%x\n", prBssReport->uHtCap);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u16VhtTxMcs=0x%x\n", prBssReport->u16VhtTxMcs);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u16VhtRxMcs=0x%x\n", prBssReport->u16VhtRxMcs);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u16VhtCap=0x%x\n", prBssReport->u16VhtCap);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8HeMcsNum=%d\n", prBssReport->u8HeMcsNum);
-	DBGLOG_MEM8(P2P, WARN, prBssReport->u8HeMcs, 16);
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
+		"[SAP_Test] uIfIndex=%d mBssid=" MACSTR
+		" uStatus=%d u8Channel=%d u8OperClass=%d u8Txpower=%d uBand=%d uHtCap=0x%x u16VhtTxMcs=0x%x u16VhtRxMcs=0x%x u16VhtCap=0x%x u8HeMcsNum=%d\n",
+		prBssReport->uIfIndex, MAC2STR(prBssReport->mBssid),
+		prBssReport->uStatus, prBssReport->u8Channel,
+		prBssReport->u8OperClass, prBssReport->u8Txpower,
+		prBssReport->uBand, prBssReport->uHtCap,
+		prBssReport->u16VhtTxMcs, prBssReport->u16VhtRxMcs,
+		prBssReport->u16VhtCap, prBssReport->u8HeMcsNum);
+	DBGLOG_MEM8(P2P, TRACE, prBssReport->u8HeMcs, 16);
+	DBGLOG(P2P, TRACE,
 		"[SAP_Test] u16HeCap=0x%x\n", prBssReport->u16HeCap);
 
 	i4Ret = MulAPAgentMontorSendMsg(

@@ -2013,7 +2013,7 @@ void nicReviseBwByCh(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 	}
 
 valid:
-	DBGLOG(NIC, INFO, "final band:%u, ch:%u, sco:%u, bw:%s",
+	DBGLOG(NIC, TRACE, "final band:%u, ch:%u, sco:%u, bw:%s",
 	       eBand, ucCh, eSco, apucOpBw[*bw]);
 }
 

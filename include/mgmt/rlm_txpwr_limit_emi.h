@@ -500,7 +500,7 @@ struct TX_PWR_BAND_MASK_TBL {
 		(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY *) \
 		pData; \
 	g_rlmPowerLimitConfigTable[base].Legacy.table_num = num; \
-	DBGLOG(RLM, INFO, \
+	DBGLOG(RLM, TRACE, \
 		"PWR_LIMIT_COUNTRY_CFG_TBL_SET_LEGACY [base:%d]NUM:%d\n", \
 		base, g_rlmPowerLimitConfigTable[base].Legacy.table_num); \
 }
@@ -510,7 +510,7 @@ struct TX_PWR_BAND_MASK_TBL {
 	g_rlmPowerLimitConfigTable[base].HE.table = \
 		(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE *)pData; \
 	g_rlmPowerLimitConfigTable[base].HE.table_num = num; \
-	DBGLOG(RLM, INFO, \
+	DBGLOG(RLM, TRACE, \
 		"PWR_LIMIT_COUNTRY_CFG_TBL_SET_HE [base:%d]NUM:%d\n", \
 		base, g_rlmPowerLimitConfigTable[base].Legacy.table_num); \
 }
@@ -521,7 +521,7 @@ struct TX_PWR_BAND_MASK_TBL {
 	g_rlmPowerLimitConfigTable[base].EHT.table = \
 		(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT *)pData; \
 	g_rlmPowerLimitConfigTable[base].EHT.table_num = num; \
-	DBGLOG(RLM, INFO, \
+	DBGLOG(RLM, TRACE, \
 		"PWR_LIMIT_COUNTRY_CFG_TBL_SET_EHT [base:%d]NUM:%d\n", \
 		base, g_rlmPowerLimitConfigTable[base].Legacy.table_num); \
 }
@@ -638,7 +638,7 @@ struct TX_PWR_BAND_MASK_TBL {
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].ucVersion = ver; \
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].eStartSubBand = start_band; \
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].eEndSubBand = end_band; \
-	DBGLOG(RLM, INFO, \
+	DBGLOG(RLM, TRACE, \
 		"Patch R[%d]P[%d]T[%d]V[%d]Start[%d]End[%d]\n", \
 		rf_idx, \
 		protocol_idx, \
