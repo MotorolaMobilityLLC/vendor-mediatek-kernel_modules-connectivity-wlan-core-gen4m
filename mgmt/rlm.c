@@ -4437,12 +4437,13 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 		pucCenterFreqS2,
 		peSco);
 
-	/* 6G BW40, need to modify Sco to proper value */
-	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40
-		&& *pucCenterFreqS1 != 0) {
-		if (*pucCenterFreqS1 > ucChannelNum)
+	if (ucChannelWidth >= HE_OP_CHANNEL_WIDTH_40 &&
+	    *pucCenterFreqS1 != 0) {
+		/* secondary channel is above primary channel */
+		if ((ucChannelNum & 0x7) == 1)
 			*peSco = CHNL_EXT_SCA;
-		else if (*pucCenterFreqS1 < ucChannelNum)
+		/* secondary channel is below primary channel */
+		else if ((ucChannelNum & 0x7) == 5)
 			*peSco = CHNL_EXT_SCB;
 		else
 			*peSco = CHNL_EXT_SCN;
@@ -4578,87 +4579,77 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		    enum ENUM_CHANNEL_WIDTH *peChannelWidth, uint8_t *pucS1,
 		    uint8_t *pucPrimaryCh)
 {
-	uint8_t ucMaxBandwidth = MAX_BW_80MHZ;
-	uint8_t ucCurrentBandwidth = MAX_BW_20MHZ;
-	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucS1Origin = *pucS1;
-	enum ENUM_CHANNEL_WIDTH eChBwOrigin = *peChannelWidth;
-	enum ENUM_CHNL_EXT eScoOrigin = *peExtend;
-	enum ENUM_CHNL_EXT eScoModify;
+	enum ENUM_CHNL_EXT eScoOld, eScoNew;
+	enum ENUM_CHANNEL_WIDTH eChBwOld, eChBwNew;
+	uint8_t ucS1Old, ucS1New;
+	uint8_t ucMaxBandwidth, ucCurrentBandwidth;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "get bss failed by idx(%u)\n",
+			ucBssIndex);
+		return;
+	}
+
+	eScoOld = eScoNew = *peExtend;
+	eChBwOld = eChBwNew = *peChannelWidth;
+	ucS1Old = ucS1New = *pucS1;
 
 	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
-
-	if (*peChannelWidth > CW_20_40MHZ) {
-		/*case BW > 80 , 160 80P80 */
-		ucCurrentBandwidth = (uint8_t)*peChannelWidth + ucOffset;
-	} else {
-		/*case BW20 BW40 */
-		if (eScoOrigin != CHNL_EXT_SCN) {
-			/*case BW40 */
-			ucCurrentBandwidth = MAX_BW_40MHZ;
-		}
-	}
+	ucCurrentBandwidth = rlmGetBssOpBwByChannelWidth(eScoOld, eChBwOld);
 
 	if (ucCurrentBandwidth > ucMaxBandwidth) {
-		if (ucMaxBandwidth <= MAX_BW_40MHZ) { /* BW20, BW40 */
-			*peChannelWidth = CW_20_40MHZ;
-		} else { /* BW80, BW160, BW80P80, BW320 */
-			*peChannelWidth = (ucMaxBandwidth - ucOffset);
-
-			*pucS1 = nicGetS1(prBssInfo->eBand, *pucPrimaryCh,
-					  *peExtend,
-				  rlmGetBssOpBwByChannelWidth(*peExtend,
-					*peChannelWidth));
+		ucCurrentBandwidth = ucMaxBandwidth;
+		switch (ucCurrentBandwidth) {
+		case MAX_BW_20MHZ:
+		case MAX_BW_40MHZ:
+			eChBwNew = CW_20_40MHZ;
+			break;
+		case MAX_BW_80MHZ:
+			eChBwNew = CW_80MHZ;
+			break;
+		case MAX_BW_160MHZ:
+			eChBwNew = CW_160MHZ;
+			break;
+		case MAX_BW_80_80_MHZ:
+			eChBwNew = CW_80P80MHZ;
+			break;
+		case MAX_BW_320_1MHZ:
+			eChBwNew = CW_320_1MHZ;
+			break;
+		case MAX_BW_320_2MHZ:
+			eChBwNew = CW_320_2MHZ;
+			break;
+		default:
+			eChBwNew = CW_20_40MHZ;
+			break;
 		}
+
+		if (ucCurrentBandwidth == MAX_BW_20MHZ)
+			eScoNew = CHNL_EXT_SCN;
+
+		ucS1New = nicGetS1(prBssInfo->eBand, *pucPrimaryCh,
+				   eScoNew, ucCurrentBandwidth);
 	}
 
-	/* Revise SCO */
-	eScoModify = rlmReviseSco(*peChannelWidth,
-		*pucPrimaryCh, *pucS1,
-		eScoOrigin, ucMaxBandwidth);
+	if (eChBwOld != eChBwNew) {
+		DBGLOG(RLM, INFO, "Change BW[%d->%d]\n",
+			eChBwOld, eChBwNew);
+		*peChannelWidth = eChBwNew;
+	}
 
-	if (eScoOrigin != eScoModify) {
-		*peExtend = eScoModify;
-
+	if (eScoOld != eScoNew) {
 		DBGLOG(RLM, INFO, "Change SCO[%d->%d]\n",
-			eScoOrigin, eScoModify);
+			eScoOld, eScoNew);
+		*peExtend = eScoNew;
 	}
 
-	if (eChBwOrigin != *peChannelWidth ||
-	    ucS1Origin != *pucS1) {
-		DBGLOG(RLM, INFO, "Change BW[%d->%d], S1[%d->%d]\n",
-			eChBwOrigin, *peChannelWidth,
-			ucS1Origin, *pucS1);
+	if (ucS1Old != ucS1New) {
+		DBGLOG(RLM, INFO, "Change S1[%d->%d]\n",
+			ucS1Old, ucS1New);
+		*pucS1 = ucS1New;
 	}
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Revise SCO
- *
- * \param[in]
- *
- * \return Revised SCO
- */
-/*----------------------------------------------------------------------------*/
-enum ENUM_CHNL_EXT rlmReviseSco(
-	enum ENUM_CHANNEL_WIDTH eChannelWidth,
-	uint8_t ucPrimaryCh,
-	uint8_t ucS1,
-	enum ENUM_CHNL_EXT eScoOrigin,
-	uint8_t ucMaxBandwidth)
-{
-	enum ENUM_CHNL_EXT eSCO = eScoOrigin;
-
-	if (eChannelWidth == CW_20_40MHZ) {
-		if (ucMaxBandwidth == MAX_BW_20MHZ)
-			eSCO = CHNL_EXT_SCN;
-	}
-
-	return eSCO;
 }
 
 /*----------------------------------------------------------------------------*/

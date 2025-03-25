@@ -999,13 +999,6 @@ void rlmReviseMaxBw(
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
 
-enum ENUM_CHNL_EXT rlmReviseSco(
-	enum ENUM_CHANNEL_WIDTH eChannelWidth,
-	uint8_t ucPrimaryCh,
-	uint8_t ucS1,
-	enum ENUM_CHNL_EXT eScoOrigin,
-	uint8_t ucMaxBandwidth);
-
 void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 					uint8_t ucBssIndex,
 					struct STA_RECORD *prStaRec);
