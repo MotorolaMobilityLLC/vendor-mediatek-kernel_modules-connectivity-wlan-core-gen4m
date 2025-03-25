@@ -1346,7 +1346,6 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 
 	/* Infra Client/GC */
 	case OP_MODE_INFRASTRUCTURE:
-	case OP_MODE_BOW:
 		if (prBssInfo->prStaRecOfAP) {
 #if CFG_SUPPORT_TDLS
 			if (prAdapter->u4TdlsLinkCount > 0) {

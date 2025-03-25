@@ -966,10 +966,6 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		 && IS_BSS_P2P(prBssInfo))
 		prChResp->rMsgHdr.eMsgId = MID_CNM_P2P_CH_GRANT;
 #endif
-#if CFG_ENABLE_BT_OVER_WIFI
-	else if (IS_BSS_BOW(prBssInfo))
-		prChResp->rMsgHdr.eMsgId = MID_CNM_BOW_CH_GRANT;
-#endif
 #if CFG_SUPPORT_NAN
 	else if (prBssInfo && (prBssInfo->eNetworkType == NETWORK_TYPE_NAN))
 		prChResp->rMsgHdr.eMsgId = MID_CNM_NAN_CH_GRANT;
@@ -1684,16 +1680,6 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 			}
 		}
 #endif
-
-#if CFG_ENABLE_BT_OVER_WIFI && CFG_BOW_LIMIT_AIS_CHNL
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_BOW) {
-			*prBand = prBssInfo->eBand;
-			*pucPrimaryChannel = prBssInfo->ucPrimaryChannel;
-
-			return TRUE;
-		}
-#endif
-
 	}
 
 	return FALSE;
@@ -1735,115 +1721,14 @@ u_int8_t cnmAisDetectP2PChannel(struct ADAPTER
  *
  * @param (none)
  *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter)
-{
-#if CFG_ENABLE_BT_OVER_WIFI
-	struct BSS_INFO *prBssInfo, *prAisBssInfo, *prBowBssInfo;
-	uint8_t i;
-
-	ASSERT(prAdapter);
-
-	prAisBssInfo = NULL;
-	prBowBssInfo = NULL;
-
-	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
-
-		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
-			if (IS_BSS_AIS(prBssInfo))
-				prAisBssInfo = prBssInfo;
-			else if (IS_BSS_BOW(prBssInfo))
-				prBowBssInfo = prBssInfo;
-		}
-	}
-
-	if (prAisBssInfo && prBowBssInfo
-	    && RLM_NET_PARAM_VALID(prAisBssInfo)
-	    && RLM_NET_PARAM_VALID(prBowBssInfo)) {
-		if (prAisBssInfo->eBand != prBowBssInfo->eBand ||
-		    prAisBssInfo->ucPrimaryChannel !=
-		    prBowBssInfo->ucPrimaryChannel) {
-
-			/* Notify BOW to do deactivation */
-			bowNotifyAllLinkDisconnected(prAdapter);
-		}
-	}
-#endif
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param (none)
- *
  * @return TRUE: permitted
  *         FALSE: Not permitted
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter)
 {
-	struct BSS_INFO *prBssInfo;
-	uint8_t i;
-	u_int8_t fgBowIsActive;
-
-	ASSERT(prAdapter);
-
-	fgBowIsActive = FALSE;
-
-	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
-
-		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
-			if (IS_BSS_BOW(prBssInfo))
-				fgBowIsActive = TRUE;
-		}
-	}
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	if (fgBowIsActive) {
-		/* Notify BOW to do deactivation */
-		bowNotifyAllLinkDisconnected(prAdapter);
-	}
-#endif
-
 	return TRUE;
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param (none)
- *
- * @return TRUE: permitted
- *         FALSE: Not permitted
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter)
-{
-	struct BSS_INFO *prBssInfo;
-	uint8_t i;
-
-	ASSERT(prAdapter);
-
-	/* P2P device network shall be included */
-	for (i = 0; i <= prAdapter->ucSwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
-
-		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo) &&
-		    IS_BSS_P2P(prBssInfo)) {
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
 
 #if CFG_ENABLE_WIFI_DIRECT
 static uint8_t cnmGetAPBwPermitted(struct ADAPTER

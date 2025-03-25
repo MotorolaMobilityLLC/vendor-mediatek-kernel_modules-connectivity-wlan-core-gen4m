@@ -447,33 +447,7 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 #endif
 
 		return WLAN_STATUS_SUCCESS;
-	}
-#if CFG_ENABLE_BT_OVER_WIFI
-	else if (IS_STA_BOW_TYPE(prStaRec)) {
-		/* @TODO: BOW handler */
-
-		struct MSG_SAA_FSM_COMP *prSaaFsmCompMsg;
-
-		prSaaFsmCompMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					      sizeof(struct MSG_SAA_FSM_COMP));
-		if (!prSaaFsmCompMsg)
-			return WLAN_STATUS_RESOURCES;
-
-		prSaaFsmCompMsg->rMsgHdr.eMsgId = MID_SAA_BOW_JOIN_COMPLETE;
-		prSaaFsmCompMsg->ucSeqNum = prStaRec->ucAuthAssocReqSeqNum;
-		prSaaFsmCompMsg->rJoinStatus = rJoinStatus;
-		prSaaFsmCompMsg->prStaRec = prStaRec;
-		prSaaFsmCompMsg->prSwRfb = prSwRfb;
-
-		/* NOTE(Kevin): Set to UNBUF for immediately JOIN complete */
-		mboxSendMsg(prAdapter, MBOX_ID_0,
-			    (struct MSG_HDR *) prSaaFsmCompMsg,
-			    MSG_SEND_METHOD_UNBUF);
-
-		return WLAN_STATUS_SUCCESS;
-	}
-#endif
-	else {
+	} else {
 		DBGLOG(SAA, ERROR, "Invalid case in %s.\n", __func__);
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1684,10 +1658,6 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
-#if CFG_ENABLE_BT_OVER_WIFI
-	else if (IS_STA_BOW_TYPE(prStaRec))
-		bowRunEventRxDeAuth(prAdapter, prStaRec, prSwRfb);
-#endif
 #if CFG_SUPPORT_NAN
 	else if (IS_STA_NAN_TYPE(prStaRec)) {
 		DBGLOG(SAA, WARN,
@@ -2022,12 +1992,6 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 							   prStaRec,
 							   prSwRfb);
 		}
-	}
-#endif
-#if CFG_ENABLE_BT_OVER_WIFI
-	else if (IS_STA_BOW_TYPE(prStaRec)) {
-		/* ToDo:: nothing */
-		/* TODO(Kevin) */
 	}
 #endif
 	else {

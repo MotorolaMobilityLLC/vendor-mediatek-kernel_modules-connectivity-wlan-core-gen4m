@@ -756,10 +756,6 @@ struct NEIGHBOR_AP {
 #endif
 };
 
-struct BOW_SPECIFIC_BSS_INFO {
-	uint16_t u2Reserved;	/* Reserved for Data Type Check */
-};
-
 #if CFG_SUPPORT_NAN
 struct _NAN_SPECIFIC_BSS_INFO_T {
 	uint8_t ucBssIndex;
@@ -869,11 +865,6 @@ struct WIFI_VAR {
 #endif
 
 #endif				/* CFG_ENABLE_WIFI_DIRECT */
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	struct BOW_SPECIFIC_BSS_INFO rBowSpecificBssInfo;
-	struct BOW_FSM_INFO rBowFsmInfo;
-#endif				/* CFG_ENABLE_BT_OVER_WIFI */
 
 	struct WLAN_TABLE arWtbl[WTBL_SIZE];
 

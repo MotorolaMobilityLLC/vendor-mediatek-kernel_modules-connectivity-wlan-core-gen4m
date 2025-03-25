@@ -1033,8 +1033,6 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
 		fgCheckSsid = FALSE;
 		kal_fallthrough;
 	case BSS_TYPE_INFRASTRUCTURE:
-		kal_fallthrough;
-	case BSS_TYPE_BOW_DEVICE:
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 			aucBSSID, fgCheckSsid, prSsid);
 
@@ -1473,11 +1471,6 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 
 			case NETWORK_TYPE_P2P:
 				if (prBssDesc->eBSSType == BSS_TYPE_P2P_DEVICE)
-					fgToRemove = TRUE;
-				break;
-
-			case NETWORK_TYPE_BOW:
-				if (prBssDesc->eBSSType == BSS_TYPE_BOW_DEVICE)
 					fgToRemove = TRUE;
 				break;
 
@@ -2768,10 +2761,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		 */
 		eBSSType = BSS_TYPE_P2P_DEVICE;
 		break;
-
-#if CFG_ENABLE_BT_OVER_WIFI
-		/* @TODO: add rule to identify BOW beacons */
-#endif
 
 	default:
 		log_dbg(SCN, WARN, "Skip unknown bss type(%u)\n", u2CapInfo);
@@ -4317,7 +4306,6 @@ uint32_t scanAddScanResult(struct ADAPTER *prAdapter,
 	switch (prBssDesc->eBSSType) {
 	case BSS_TYPE_INFRASTRUCTURE:
 	case BSS_TYPE_P2P_DEVICE:
-	case BSS_TYPE_BOW_DEVICE:
 	default:
 		eOpMode = NET_TYPE_INFRA;
 		break;

@@ -119,7 +119,6 @@ void scnFsmSteps(struct ADAPTER *prAdapter,
 
 #define __MSG_ID__ prMsgHdr->eMsgId
 				if (__MSG_ID__ == MID_AIS_SCN_SCAN_REQ
-					|| __MSG_ID__ == MID_BOW_SCN_SCAN_REQ
 					|| __MSG_ID__ == MID_P2P_SCN_SCAN_REQ
 					|| __MSG_ID__ == MID_RLM_SCN_SCAN_REQ) {
 					scnFsmHandleScanMsg(prAdapter,
@@ -129,7 +128,6 @@ void scnFsmSteps(struct ADAPTER *prAdapter,
 					eNextState = SCAN_STATE_SCANNING;
 					fgIsTransition = TRUE;
 				} else if (__MSG_ID__ == MID_AIS_SCN_SCAN_REQ_V2
-					|| __MSG_ID__ == MID_BOW_SCN_SCAN_REQ_V2
 					|| __MSG_ID__ == MID_P2P_SCN_SCAN_REQ_V2
 					|| __MSG_ID__ == MID_RLM_SCN_SCAN_REQ_V2
 					) {
@@ -542,13 +540,11 @@ void scnFsmMsgStart(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 
 	if (prScanInfo->eCurrentState == SCAN_STATE_IDLE) {
 		if (prMsgHdr->eMsgId == MID_AIS_SCN_SCAN_REQ
-			|| prMsgHdr->eMsgId == MID_BOW_SCN_SCAN_REQ
 			|| prMsgHdr->eMsgId == MID_P2P_SCN_SCAN_REQ
 			|| prMsgHdr->eMsgId == MID_RLM_SCN_SCAN_REQ) {
 			scnFsmHandleScanMsg(prAdapter,
 				(struct MSG_SCN_SCAN_REQ *) prMsgHdr);
 		} else if (prMsgHdr->eMsgId == MID_AIS_SCN_SCAN_REQ_V2
-			|| prMsgHdr->eMsgId == MID_BOW_SCN_SCAN_REQ_V2
 			|| prMsgHdr->eMsgId == MID_P2P_SCN_SCAN_REQ_V2
 			|| prMsgHdr->eMsgId == MID_RLM_SCN_SCAN_REQ_V2) {
 			scnFsmHandleScanMsgV2(prAdapter,
@@ -978,7 +974,6 @@ void scnFsmRemovePendingMsg(struct ADAPTER *prAdapter, uint8_t ucSeqNum,
 
 #define __MSG_ID__ prPendingMsgHdr->eMsgId
 		if (__MSG_ID__ == MID_AIS_SCN_SCAN_REQ
-		    || __MSG_ID__ == MID_BOW_SCN_SCAN_REQ
 		    || __MSG_ID__ == MID_P2P_SCN_SCAN_REQ
 		    || __MSG_ID__ == MID_RLM_SCN_SCAN_REQ) {
 			struct MSG_SCN_SCAN_REQ *prScanReqMsg
@@ -993,7 +988,6 @@ void scnFsmRemovePendingMsg(struct ADAPTER *prAdapter, uint8_t ucSeqNum,
 				fgIsRemovingScan = TRUE;
 			}
 		} else if (__MSG_ID__ == MID_AIS_SCN_SCAN_REQ_V2
-			   || __MSG_ID__ == MID_BOW_SCN_SCAN_REQ_V2
 			   || __MSG_ID__ == MID_P2P_SCN_SCAN_REQ_V2
 			   || __MSG_ID__ == MID_RLM_SCN_SCAN_REQ_V2) {
 			struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsgV2
@@ -1708,10 +1702,6 @@ scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
 	case MID_P2P_SCN_SCAN_REQ:
 	case MID_P2P_SCN_SCAN_REQ_V2:
 		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_P2P_SCAN_DONE;
-		break;
-	case MID_BOW_SCN_SCAN_REQ:
-	case MID_BOW_SCN_SCAN_REQ_V2:
-		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_BOW_SCAN_DONE;
 		break;
 	case MID_RLM_SCN_SCAN_REQ:
 	case MID_RLM_SCN_SCAN_REQ_V2:

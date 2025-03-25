@@ -6890,9 +6890,6 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		if (prBssInfo == NULL)
 			continue;
 
-		if (IS_BSS_BOW(prBssInfo))
-			continue;
-
 		if (IS_BSS_ACTIVE(prBssInfo)) {
 			if (prBssInfo->eCurrentOPMode ==
 				    OP_MODE_INFRASTRUCTURE &&

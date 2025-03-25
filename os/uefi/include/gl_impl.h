@@ -33,9 +33,6 @@
 #include "wlan_lib.h"
 #include "wlan_oid.h"
 #include "debug.h"
-#if CFG_ENABLE_BT_OVER_WIFI
-#include "nic/bow.h"
-#endif
 #include <intrin.h>
 
 /*******************************************************************************

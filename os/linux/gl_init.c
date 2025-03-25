@@ -9529,12 +9529,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		glCsiSupportInit(prGlueInfo);
 #endif
 
-#if CFG_ENABLE_BT_OVER_WIFI
-		prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
-		prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
-		glRegisterAmpc(prGlueInfo);
-#endif
-
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 		/* dynamic tx power control load configuration */
 		/* note: call this API after loading NVRAM */
@@ -9909,14 +9903,6 @@ void wlanRemove(void)
 	if (kalIsResetting())
 		wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
-#if CFG_ENABLE_BT_OVER_WIFI
-	if (prGlueInfo->rBowInfo.fgIsNetRegistered) {
-		bowNotifyAllLinkDisconnected(prGlueInfo->prAdapter);
-		/* wait 300ms for BoW module to send deauth */
-		kalMsleep(300);
-	}
-#endif
-
 	wlanOffNotifyCfg80211Disconnect(prGlueInfo);
 
 	/* 20150205 work queue for sched_scan */
@@ -10009,11 +9995,6 @@ void wlanRemove(void)
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	kalPwrLevelHdlrUnregisterAll(prAdapter);
-#endif
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	if (prGlueInfo->rBowInfo.fgIsRegistered)
-		glUnregisterAmpc(prGlueInfo);
 #endif
 
 #if CFG_SUPPORT_CSI

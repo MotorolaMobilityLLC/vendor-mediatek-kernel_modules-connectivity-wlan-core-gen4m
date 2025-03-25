@@ -105,9 +105,6 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_SCHED_SCAN_DONE, nicEventSchedScanDone},
 	{EVENT_ID_TX_DONE, nicTxProcessTxDoneEvent},
 	{EVENT_ID_SLEEPY_INFO, nicEventSleepyNotify},
-#if CFG_ENABLE_BT_OVER_WIFI
-	{EVENT_ID_BT_OVER_WIFI, nicEventBtOverWifi},
-#endif
 	{EVENT_ID_STATISTICS, nicEventStatistics},
 	{EVENT_ID_TPUT_INFO, nicEventTputFactorHandler},
 	{EVENT_ID_WTBL_INFO, nicEventWlanInfo},

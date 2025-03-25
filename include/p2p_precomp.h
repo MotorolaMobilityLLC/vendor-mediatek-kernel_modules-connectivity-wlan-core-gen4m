@@ -93,7 +93,6 @@
 
 #include "wlan_lib.h"
 #include "wlan_oid.h"
-#include "wlan_bow.h"
 
 #include "wlan_p2p.h"
 
@@ -113,10 +112,6 @@
 #include "cnm_timer.h"
 #include "que_mgt.h"
 #include "wmm.h"
-#if CFG_ENABLE_BT_OVER_WIFI
-#include "bow.h"
-#include "bow_fsm.h"
-#endif
 
 #include "pwr_mgt.h"
 

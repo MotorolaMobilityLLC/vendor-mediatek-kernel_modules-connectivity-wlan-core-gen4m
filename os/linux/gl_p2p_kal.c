@@ -71,25 +71,6 @@ __kalP2pGetNl80211ChnlBw(struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief to retrieve Wi-Fi Direct state from glue layer
- *
- * \param[in]
- *           prGlueInfo
- *           rPeerAddr
- * \return
- *           ENUM_BOW_DEVICE_STATE
- */
-/*---------------------------------------------------------------------------*/
-#if 0
-enum ENUM_PARAM_MEDIA_STATE kalP2PGetState(struct GLUE_INFO *prGlueInfo)
-{
-	ASSERT(prGlueInfo);
-
-	return prGlueInfo->prP2PInfo[0]->eState;
-}				/* end of kalP2PGetState() */
-#endif
-/*---------------------------------------------------------------------------*/
-/*!
  * \brief to update the assoc req to p2p
  *
  * \param[in]

@@ -1051,23 +1051,6 @@
 #endif
 
 /*------------------------------------------------------------------------------
- * Flags of Bluetooth-over-WiFi (BT 3.0 + HS) support
- *------------------------------------------------------------------------------
- */
-
-#define CFG_ENABLE_BT_OVER_WIFI             0
-
-#define CFG_BOW_SEPARATE_DATA_PATH              1
-
-#define CFG_BOW_PHYSICAL_LINK_NUM               4
-
-#define CFG_BOW_LIMIT_AIS_CHNL                  1
-
-#define CFG_BOW_SUPPORT_11N                     1
-
-#define CFG_BOW_RATE_LIMITATION                 1
-
-/*------------------------------------------------------------------------------
  * Flags of Wi-Fi Direct support
  *------------------------------------------------------------------------------
  */

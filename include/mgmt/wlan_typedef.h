@@ -44,7 +44,6 @@ struct BSS_INFO;	/* declare P2P_DEV_INFO_T */
 
 struct AIS_SPECIFIC_BSS_INFO;	/* declare AIS_SPECIFIC_BSS_INFO_T */
 struct P2P_SPECIFIC_BSS_INFO;	/* declare P2P_SPECIFIC_BSS_INFO_T */
-struct BOW_SPECIFIC_BSS_INFO;	/* declare BOW_SPECIFIC_BSS_INFO_T */
 /* CFG_SUPPORT_WFD */
 struct WFD_CFG_SETTINGS;	/* declare WFD_CFG_SETTINGS_T */
 

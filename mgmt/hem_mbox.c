@@ -52,7 +52,6 @@ static const char * const apucDebugMsg[] = {
 	"MID_MNY_CNM_CH_ABORT",
 	"MID_CNM_AIS_CH_GRANT",
 	"MID_CNM_P2P_CH_GRANT",
-	"MID_CNM_BOW_CH_GRANT",
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	"MID_CNM_P2P_RADAR_DETECT",
@@ -64,15 +63,11 @@ static const char * const apucDebugMsg[] = {
 	"MID_P2P_SCN_SCAN_REQ",
 	"MID_P2P_SCN_SCAN_REQ_V2",
 	"MID_P2P_SCN_SCAN_CANCEL",
-	"MID_BOW_SCN_SCAN_REQ",
-	"MID_BOW_SCN_SCAN_REQ_V2",
-	"MID_BOW_SCN_SCAN_CANCEL",
 	"MID_RLM_SCN_SCAN_REQ",
 	"MID_RLM_SCN_SCAN_REQ_V2",
 	"MID_RLM_SCN_SCAN_CANCEL",
 	"MID_SCN_AIS_SCAN_DONE",
 	"MID_SCN_P2P_SCAN_DONE",
-	"MID_SCN_BOW_SCAN_DONE",
 	"MID_SCN_RLM_SCAN_DONE",
 
 	"MID_OID_AIS_FSM_JOIN_REQ",
@@ -82,12 +77,6 @@ static const char * const apucDebugMsg[] = {
 	"MID_OID_SAA_FSM_EXTERNAL_AUTH",
 	"MID_AIS_SAA_FSM_ABORT",
 	"MID_SAA_AIS_JOIN_COMPLETE",
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	"MID_BOW_SAA_FSM_START",
-	"MID_BOW_SAA_FSM_ABORT",
-	"MID_SAA_BOW_JOIN_COMPLETE",
-#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 	"MID_P2P_SAA_FSM_START",
@@ -229,11 +218,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if CFG_ENABLE_WIFI_DIRECT
 	{MID_CNM_P2P_CSA_DONE, p2pRoleFsmRunEventCsaDone},
 #endif
-#if CFG_ENABLE_BT_OVER_WIFI
-	{MID_CNM_BOW_CH_GRANT, bowRunEventChGrant},
-#else
-	{MID_CNM_BOW_CH_GRANT, mboxDummy},
-#endif
 
 	/*--------------------------------------------------*/
 	/* SCN Module Mailbox Messages                      */
@@ -244,9 +228,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_P2P_SCN_SCAN_REQ, scnFsmMsgStart},
 	{MID_P2P_SCN_SCAN_REQ_V2, scnFsmMsgStart},
 	{MID_P2P_SCN_SCAN_CANCEL, scnFsmMsgAbort},
-	{MID_BOW_SCN_SCAN_REQ, scnFsmMsgStart},
-	{MID_BOW_SCN_SCAN_REQ_V2, scnFsmMsgStart},
-	{MID_BOW_SCN_SCAN_CANCEL, scnFsmMsgAbort},
 	{MID_RLM_SCN_SCAN_REQ, scnFsmMsgStart},
 	{MID_RLM_SCN_SCAN_REQ_V2, scnFsmMsgStart},
 	{MID_RLM_SCN_SCAN_CANCEL, scnFsmMsgAbort},
@@ -258,11 +239,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_SCN_P2P_SCAN_DONE, mboxDummy},
 #endif
 
-#if CFG_ENABLE_BT_OVER_WIFI
-	{MID_SCN_BOW_SCAN_DONE, bowResponderScanDone},
-#else
-	{MID_SCN_BOW_SCAN_DONE, mboxDummy},
-#endif
 	{MID_SCN_RLM_SCAN_DONE, rlmObssScanDone},
 
 	/*--------------------------------------------------*/
@@ -275,15 +251,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_OID_SAA_FSM_EXTERNAL_AUTH, saaFsmRunEventExternalAuthDone},
 	{MID_AIS_SAA_FSM_ABORT, saaFsmRunEventAbort},
 	{MID_SAA_AIS_JOIN_COMPLETE, aisFsmRunEventJoinComplete},
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	/*--------------------------------------------------*/
-	/* BOW Module Mailbox Messages                      */
-	/*--------------------------------------------------*/
-	{MID_BOW_SAA_FSM_START, saaFsmRunEventStart},
-	{MID_BOW_SAA_FSM_ABORT, saaFsmRunEventAbort},
-	{MID_SAA_BOW_JOIN_COMPLETE, bowFsmRunEventJoinComplete},
-#endif
 
 #if CFG_ENABLE_WIFI_DIRECT	/*set in gl_p2p_init.c */
 	{MID_P2P_SAA_FSM_START, saaFsmRunEventStart},

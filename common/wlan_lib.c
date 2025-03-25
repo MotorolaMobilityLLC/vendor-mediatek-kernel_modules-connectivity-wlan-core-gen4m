@@ -5853,9 +5853,6 @@ wlanoidQueryBssStatistics(struct ADAPTER *prAdapter,
 
 			/*P2P */
 			/* TODO */
-
-			/*BOW*/
-			/* TODO */
 		}
 
 	} while (FALSE);

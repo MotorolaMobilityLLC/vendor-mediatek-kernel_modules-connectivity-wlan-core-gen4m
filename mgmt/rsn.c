@@ -1790,21 +1790,6 @@ try_again:
 	}
 #endif
 
-#if CFG_ENABLE_BT_OVER_WIFI
-	if (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex) &&
-	    GET_BSS_INFO_BY_INDEX(prAdapter,
-		ucBssIndex)->eNetworkType == NETWORK_TYPE_BOW) {
-		if (u4PairwiseCipher != RSN_CIPHER_SUITE_CCMP ||
-		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
-		    || u4AkmSuite != RSN_AKM_SUITE_PSK) {
-			DBGLOG(RSN, INFO,
-			       "Failed to select pairwise/group cipher for BT over Wi-Fi network (0x%08x/0x%08x)\n",
-			       u4PairwiseCipher, u4GroupCipher);
-			return FALSE;
-		}
-	}
-#endif
-
 	/* Verify if selected pairwisse cipher is supported */
 	fgSuiteSupported = rsnSearchSupportedCipher(prAdapter,
 		u4PairwiseCipher, ucBssIndex);
@@ -2526,11 +2511,6 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 	    IS_BSS_INDEX_P2P(prAdapter, ucBssIndex) &&
 	    kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
 			(uint8_t) prBssInfo->u4PrivateData))
-		goto add_rsne;
-#endif
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	if (IS_BSS_BOW(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)))
 		goto add_rsne;
 #endif
 

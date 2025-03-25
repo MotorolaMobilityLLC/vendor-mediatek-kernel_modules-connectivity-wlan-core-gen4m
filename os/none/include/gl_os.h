@@ -212,12 +212,6 @@ extern u_int32_t u4SdesDetectTime;
 #define HIF_FLAG_MSI_RECOVERY		BIT(1)
 #define HIF_FLAG_MSI_RECOVERY_BIT	(1)
 
-#if CFG_ENABLE_BT_OVER_WIFI
-#define GLUE_BOW_KFIFO_DEPTH        (1024)
-/* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
-#define GLUE_BOW_DEVICE_NAME        "ampc0"
-#endif
-
 /* wake lock for suspend/resume */
 #define WAKE_LOCK_RX_TIMEOUT                            300	/* ms */
 #define WAKE_LOCK_THREAD_WAKEUP_TIMEOUT                 50	/* ms */
@@ -330,35 +324,6 @@ struct GL_IO_REQ {
 	uint32_t u4Flag;
 	struct CMD_INFO *prCmdInfo;
 };
-
-#if CFG_ENABLE_BT_OVER_WIFI
-struct GL_BOW_INFO {
-/* TODO: os-related */
-#if 0
-	u_int8_t fgIsRegistered;
-	dev_t u4DeviceNumber;	/* dynamic device number */
-	struct kfifo rKfifo;	/* for buffering indicated events */
-	spinlock_t rSpinLock;	/* spin lock for kfifo */
-	struct cdev cdev;
-	uint32_t u4FreqInKHz;	/* frequency */
-
-	uint8_t aucRole[CFG_BOW_PHYSICAL_LINK_NUM];	/* 0: Responder,
-							 * 1: Initiator
-							 */
-	enum ENUM_BOW_DEVICE_STATE
-	aeState[CFG_BOW_PHYSICAL_LINK_NUM];
-	uint8_t arPeerAddr[CFG_BOW_PHYSICAL_LINK_NUM][PARAM_MAC_ADDR_LEN];
-
-	wait_queue_head_t outq;
-
-#if CFG_BOW_SEPARATE_DATA_PATH
-	/* Device handle */
-	struct net_device *prDevHandler;
-	u_int8_t fgIsNetRegistered;
-#endif
-#endif
-};
-#endif
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
 struct GL_SCAN_CACHE_INFO {
@@ -958,12 +923,6 @@ int32_t procUninitProcFs(void);
 /* TODO: os-related, API implementation, may refer to Linux */
 #define procInitProcfs(_prDev, _pucDevName)
 #endif /* WLAN_INCLUDE_PROC */
-
-#if CFG_ENABLE_BT_OVER_WIFI
-u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo);
-
-u_int8_t glUnregisterAmpc(struct GLUE_INFO *prGlueInfo);
-#endif
 
 struct GLUE_INFO *wlanGetGlueInfo(void);
 struct GLUE_INFO *wlanGetGlueInfoByWiphy(struct wiphy *wiphy);

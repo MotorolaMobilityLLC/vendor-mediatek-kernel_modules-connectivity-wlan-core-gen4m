@@ -691,17 +691,6 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief  Notifies the connection status between AIS and Bow BSSes
- *
- * @param[in] prAdapter	Pointer to the ADAPTER structure
- *
- * @return void
- */
-/*----------------------------------------------------------------------------*/
-void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief  Checks if P2P operation is permitted for the given adapter.
  *
  * @param[in] prAdapter	Pointer to the ADAPTER structure
@@ -710,17 +699,6 @@ void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter);
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief  Checks if BOW operation is permitted for the given adapter.
- *
- * @param[in] prAdapter	Pointer to the ADAPTER structure
- *
- * @return TRUE if P2P operation is permitted, FALSE otherwise
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /*!

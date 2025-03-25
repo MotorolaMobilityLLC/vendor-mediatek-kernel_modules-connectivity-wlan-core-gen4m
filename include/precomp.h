@@ -149,7 +149,6 @@
 
 #include "wlan_lib.h"
 #include "wlan_oid.h"
-#include "wlan_bow.h"
 
 #include "fw_dl.h"
 #if (CFG_SUPPORT_UNI_FWDL == 1)
@@ -207,10 +206,6 @@
 #include "arp_mon.h"
 
 #include "wmm.h"
-#if CFG_ENABLE_BT_OVER_WIFI
-#include "bow.h"
-#include "bow_fsm.h"
-#endif
 
 #include "pwr_mgt.h"
 

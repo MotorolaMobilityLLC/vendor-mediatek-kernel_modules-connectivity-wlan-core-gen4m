@@ -41,7 +41,8 @@ const uint8_t *apucNetworkType[NETWORK_TYPE_NUM] = {
 	(uint8_t *) "AIS",
 	(uint8_t *) "P2P",
 	(uint8_t *) "BOW",
-	(uint8_t *) "MBSS"
+	(uint8_t *) "MBSS",
+	(uint8_t *) "NAN"
 };
 
 const uint8_t *apucNetworkOpMode[OP_MODE_NUM] = {
@@ -950,8 +951,6 @@ const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 #endif
 	else if (IS_BSS_NAN(bss))
 		return "NAN";
-	else if (IS_BSS_BOW(bss))
-		return "BOW";
 
 	return "Unknown";
 }
@@ -1726,12 +1725,6 @@ uint32_t bssProcessProbeRequest(struct ADAPTER *prAdapter,
 			}
 #endif
 		}
-#endif
-#if CFG_ENABLE_BT_OVER_WIFI
-		else if (prBssInfo->eNetworkType == NETWORK_TYPE_BOW)
-			fgReplyProbeResp =
-			    bowValidateProbeReq(prAdapter, prSwRfb,
-						&u4CtrlFlagsForProbeResp);
 #endif
 
 		if (fgReplyProbeResp) {

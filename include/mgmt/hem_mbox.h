@@ -41,8 +41,6 @@ enum ENUM_MSG_ID {
 	MID_CNM_AIS_CH_GRANT,
 	/* CNM notify P2P for indicating channel granted */
 	MID_CNM_P2P_CH_GRANT,
-	/* CNM notify BOW for indicating channel granted */
-	MID_CNM_BOW_CH_GRANT,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	MID_CNM_P2P_RADAR_DETECT,
@@ -65,12 +63,6 @@ enum ENUM_MSG_ID {
 	MID_P2P_SCN_SCAN_REQ_V2,
 	/* P2P notify SCN for cancelling scan */
 	MID_P2P_SCN_SCAN_CANCEL,
-	/* BOW notify SCN for starting scan */
-	MID_BOW_SCN_SCAN_REQ,
-	/* BOW notify SCN for starting scan with multiple SSID support */
-	MID_BOW_SCN_SCAN_REQ_V2,
-	/* BOW notify SCN for cancelling scan */
-	MID_BOW_SCN_SCAN_CANCEL,
 	/* RLM notify SCN for starting scan (OBSS-SCAN) */
 	MID_RLM_SCN_SCAN_REQ,
 	/* RLM notify SCN for starting scan (OBSS-SCAN)
@@ -83,8 +75,6 @@ enum ENUM_MSG_ID {
 	MID_SCN_AIS_SCAN_DONE,
 	/* SCN notify P2P for scan completion */
 	MID_SCN_P2P_SCAN_DONE,
-	/* SCN notify BOW for scan completion */
-	MID_SCN_BOW_SCAN_DONE,
 	/* SCN notify RLM for scan completion (OBSS-SCAN) */
 	MID_SCN_RLM_SCAN_DONE,
 
@@ -107,18 +97,6 @@ enum ENUM_MSG_ID {
 	MID_AIS_SAA_FSM_ABORT,
 	/* SAA notify AIS for indicating join complete */
 	MID_SAA_AIS_JOIN_COMPLETE,
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	/*--------------------------------------------------*/
-	/* BOW Module Mailbox Messages                      */
-	/*--------------------------------------------------*/
-	/* BOW notify SAA for Starting authentication/association fsm */
-	MID_BOW_SAA_FSM_START,
-	/* BOW notify SAA for Aborting authentication/association fsm */
-	MID_BOW_SAA_FSM_ABORT,
-	/* SAA notify BOW for indicating join complete */
-	MID_SAA_BOW_JOIN_COMPLETE,
-#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/*--------------------------------------------------*/

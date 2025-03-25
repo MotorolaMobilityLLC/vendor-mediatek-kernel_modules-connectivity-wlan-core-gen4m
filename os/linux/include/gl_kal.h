@@ -40,10 +40,6 @@
 #include "pmic_lbat_service.h"
 #endif
 
-#if CFG_ENABLE_BT_OVER_WIFI
-#include "nic/bow.h"
-#endif
-
 #include "linux/bug.h"
 #include "linux/kmemleak.h"
 #include "linux/kallsyms.h"
@@ -381,8 +377,6 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_MAILBOX,
 	SPIN_LOCK_TIMER,
 
-	SPIN_LOCK_BOW_TABLE,
-
 	SPIN_LOCK_EHPI_BUS,	/* only for EHPI */
 	SPIN_LOCK_NET_DEV,
 
@@ -461,9 +455,6 @@ enum ENUM_KAL_NETWORK_TYPE_INDEX {
 	KAL_NETWORK_TYPE_AIS_INDEX = 0,
 #if CFG_ENABLE_WIFI_DIRECT
 	KAL_NETWORK_TYPE_P2P_INDEX,
-#endif
-#if CFG_ENABLE_BT_OVER_WIFI
-	KAL_NETWORK_TYPE_BOW_INDEX,
 #endif
 	KAL_NETWORK_TYPE_INDEX_NUM
 };
@@ -2120,50 +2111,6 @@ void kalOidClearance(struct GLUE_INFO *prGlueInfo);
 
 void kalEnqueueCommand(struct GLUE_INFO *prGlueInfo,
 		       struct QUE_ENTRY *prQueueEntry);
-
-#if CFG_ENABLE_BT_OVER_WIFI
-/*----------------------------------------------------------------------------*/
-/* Bluetooth over Wi-Fi handling                                              */
-/*----------------------------------------------------------------------------*/
-void kalIndicateBOWEvent(struct GLUE_INFO *prGlueInfo,
-			 struct BT_OVER_WIFI_EVENT *prEvent);
-
-enum ENUM_BOW_DEVICE_STATE kalGetBowState(
-	struct GLUE_INFO *prGlueInfo,
-	uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
-
-u_int8_t kalSetBowState(struct GLUE_INFO *prGlueInfo,
-			enum ENUM_BOW_DEVICE_STATE eBowState,
-			uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
-
-enum ENUM_BOW_DEVICE_STATE kalGetBowGlobalState(
-	struct GLUE_INFO
-	*prGlueInfo);
-
-uint32_t kalGetBowFreqInKHz(struct GLUE_INFO
-			    *prGlueInfo);
-
-uint8_t kalGetBowRole(struct GLUE_INFO *prGlueInfo,
-		      uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
-
-void kalSetBowRole(struct GLUE_INFO *prGlueInfo,
-		   uint8_t ucRole,
-		   uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
-
-uint8_t kalGetBowAvailablePhysicalLinkCount(
-	struct GLUE_INFO *prGlueInfo);
-
-#if CFG_BOW_SEPARATE_DATA_PATH
-/*----------------------------------------------------------------------------*/
-/* Bluetooth over Wi-Fi Net Device Init/Uninit                                */
-/*----------------------------------------------------------------------------*/
-u_int8_t kalInitBowDevice(struct GLUE_INFO *prGlueInfo,
-			  const char *prDevName);
-
-u_int8_t kalUninitBowDevice(struct GLUE_INFO
-			    *prGlueInfo);
-#endif /* CFG_BOW_SEPARATE_DATA_PATH */
-#endif /* CFG_ENABLE_BT_OVER_WIFI */
 
 /*----------------------------------------------------------------------------*/
 /* Management Frame Clearance                                                 */

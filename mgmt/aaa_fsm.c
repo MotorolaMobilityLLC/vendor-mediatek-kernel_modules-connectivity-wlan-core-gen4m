@@ -194,7 +194,7 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		/* modify coding sytle to reduce indent */
 
 		if (!prAdapter->fgIsP2PRegistered)
-			goto bow_proc;
+			return;
 
 		if (prBssInfo && prBssInfo->fgIsNetActive) {
 
@@ -251,59 +251,6 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			}
 		}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-
-bow_proc:
-
-		/* 4 <2> Check BOW network conditions */
-#if CFG_ENABLE_BT_OVER_WIFI
-		{
-			struct BOW_FSM_INFO *prBowFsmInfo =
-				(struct BOW_FSM_INFO *) NULL;
-
-			prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prBowFsmInfo->ucBssIndex);
-
-			if ((prBssInfo->fgIsNetActive)
-				&& (prBssInfo->eCurrentOPMode == OP_MODE_BOW)) {
-
-				/* 4 <2.1> Validate Auth Frame
-				 * by Auth Algorithm/Transation Seq
-				 */
-				/* Check if for this BSSID */
-				if (WLAN_STATUS_SUCCESS ==
-				    authProcessRxAuth1Frame(prAdapter,
-					    prSwRfb,
-					    prBssInfo->aucBSSID,
-					    AUTH_ALGORITHM_NUM_OPEN_SYSTEM,
-					    AUTH_TRANSACTION_SEQ_1,
-					    &u2StatusCode)) {
-
-					if (u2StatusCode
-						== STATUS_CODE_SUCCESSFUL) {
-
-						/* 4 <2.2> Validate Auth Frame
-						 * for Network Specific
-						 * Conditions
-						 */
-						fgReplyAuth =
-						    bowValidateAuth(prAdapter,
-							prSwRfb,
-							&prStaRec,
-							&u2StatusCode);
-
-					} else {
-
-						fgReplyAuth = TRUE;
-					}
-					/* TODO(Kevin): Allocate a STA_RECORD_T
-					 * for new client
-					 */
-					break;
-				}
-			}
-		}
-#endif /* CFG_ENABLE_BT_OVER_WIFI */
 
 		return;
 	} while (FALSE);
@@ -629,54 +576,6 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
-		/* 4 <3> Check BOW network conditions */
-#if CFG_ENABLE_BT_OVER_WIFI
-		if (IS_STA_BOW_TYPE(prStaRec)) {
-
-			prBssInfo =
-				GET_BSS_INFO_BY_INDEX(prAdapter,
-					prStaRec->ucBssIndex);
-
-			if (!prBssInfo)
-				break;
-			if ((prBssInfo->fgIsNetActive)
-				&& (prBssInfo->eCurrentOPMode == OP_MODE_BOW)) {
-
-				/* 4 <3.1> Validate Auth Frame
-				 * by Auth Algorithm/Transation Seq
-				 */
-				/* Check if for this BSSID */
-				if (WLAN_STATUS_SUCCESS ==
-				    assocProcessRxAssocReqFrame(prAdapter,
-					prSwRfb, &u2StatusCode)) {
-
-					if (u2StatusCode
-						== STATUS_CODE_SUCCESSFUL) {
-
-						/* 4 <3.2>
-						 * Validate Auth Frame for
-						 * Network Specific Conditions
-						 */
-						fgReplyAssocResp =
-						    bowValidateAssocReq(
-								prAdapter,
-								prSwRfb,
-								&u2StatusCode);
-					} else {
-
-						fgReplyAssocResp = TRUE;
-					}
-
-					/* TODO(Kevin):
-					 * Allocate a STA_RECORD_T
-					 * for new client
-					 */
-					break;
-				}
-			}
-		}
-#endif /* CFG_ENABLE_BT_OVER_WIFI */
-
 		return WLAN_STATUS_SUCCESS;	/* To release the SW_RFB_T */
 	} while (FALSE);
 
@@ -758,28 +657,6 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 					cnmStaRecChangeState(prAdapter,
 						prStaRec, STA_STATE_2);
 				}
-			}
-#endif
-
-#if CFG_ENABLE_BT_OVER_WIFI
-			if ((IS_STA_BOW_TYPE(prStaRec))) {
-				/* if (bowRunEventAAAComplete(prAdapter,
-				 * prStaRec) == WLAN_STATUS_SUCCESS) {
-				 */
-				prStaRec->u2AssocId =
-					prBssInfo->u2P2pAssocIdCounter;
-
-				/* NOTE(Kevin): for TX done */
-				prStaRec->eAuthAssocState =
-					AAA_STATE_SEND_ASSOC2;
-
-				/* NOTE(Kevin):
-				 * Method A: Change to STATE_3
-				 * before handle TX Done
-				 */
-				/* cnmStaRecChangeState(prAdapter,
-				 * prStaRec, STA_STATE_3);
-				 */
 			}
 #endif
 		} else {
@@ -959,12 +836,7 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 						prAdapter,
 						prStaRec, prBssInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-#if CFG_ENABLE_BT_OVER_WIFI
-				if (IS_STA_BOW_TYPE(prStaRec))
-					bowRunEventAAATxFail(prAdapter,
-						prStaRec);
 
-#endif /* CFG_ENABLE_BT_OVER_WIFI */
 #if CFG_AP_80211KVR_INTERFACE
 				aaaMulAPAgentStaEventNotify(prStaRec,
 					prBssInfo->aucBSSID,
@@ -1011,16 +883,6 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 							prBssInfo,
 							prMsduInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-
-#if CFG_ENABLE_BT_OVER_WIFI
-
-					if (IS_STA_BOW_TYPE(prStaRec))
-						bowRunEventAAAComplete(
-							prAdapter,
-							prStaRec);
-
-#endif /* CFG_ENABLE_BT_OVER_WIFI */
-
 				} else {
 
 					prStaRec->eAuthAssocState =
@@ -1038,14 +900,6 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 							prStaRec,
 							prBssInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-
-#if CFG_ENABLE_BT_OVER_WIFI
-					if (IS_STA_BOW_TYPE(prStaRec))
-						bowRunEventAAATxFail(prAdapter,
-							prStaRec);
-
-#endif /* CFG_ENABLE_BT_OVER_WIFI */
-
 				}
 			}
 			/* NOTE(Kevin): Ignore the TX Done Event of

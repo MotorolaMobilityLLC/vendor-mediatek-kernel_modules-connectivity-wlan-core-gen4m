@@ -4803,9 +4803,6 @@ kalQoSFrameClassifierAndPacketInfo(struct GLUE_INFO *prGlueInfo,
 
 	StatsTxPktInfoDisplay(prGlueInfo->prAdapter, prSkb);
 
-	/* 4 <4.1> Check for PAL (BT over Wi-Fi) */
-	/* Move to kalBowFrameClassifier */
-
 	/* 4 <5> Return the value of Priority Parameter. */
 	/* prSkb->priority is assigned by Linux wireless utility
 	 * function(cfg80211_classify8021d)

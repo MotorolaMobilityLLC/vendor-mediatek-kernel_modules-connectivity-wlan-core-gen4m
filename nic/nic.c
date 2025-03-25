@@ -1443,11 +1443,6 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 		}
 		break;
 
-#if CFG_ENABLE_BT_OVER_WIFI
-	case NETWORK_TYPE_BOW:
-		break;
-#endif
-
 #if CFG_ENABLE_WIFI_DIRECT
 	case NETWORK_TYPE_P2P:
 		break;
@@ -1489,7 +1484,6 @@ uint32_t nicMediaJoinFailure(struct ADAPTER *prAdapter,
 
 		break;
 
-	case NETWORK_TYPE_BOW:
 	case NETWORK_TYPE_P2P:
 	default:
 		break;
@@ -2783,15 +2777,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 					     prConnSettings->eEncStatus;
 		rCmdSetBssInfo.ucWapiMode = (uint8_t)
 					    prConnSettings->fgWapiMode;
-	}
-#if CFG_ENABLE_BT_OVER_WIFI
-	else if (IS_BSS_BOW(prBssInfo)) {
-		rCmdSetBssInfo.ucAuthMode = (uint8_t) AUTH_MODE_WPA2_PSK;
-		rCmdSetBssInfo.ucEncStatus = (uint8_t)
-					     ENUM_ENCRYPTION3_KEY_ABSENT;
-	}
-#endif
-	else {
+	} else {
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered) {
 			if (kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
@@ -2846,7 +2832,6 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 #endif
 		rCmdSetBssInfo.ucStaRecIdxOfAP =
 			prBssInfo->prStaRecOfAP->ucIndex;
-		cnmAisInfraConnectNotify(prAdapter);
 #if CFG_SUPPORT_SMART_GEAR
 		DBGLOG(SW4, DEBUG, "[SG]cnmAisInfraConnectNotify,%d\n",
 		       prBssInfo->eConnectionState);
@@ -2902,16 +2887,6 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 		 (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
 		 (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 		 && (prBssInfo->prStaRecOfAP != NULL)) {
-		rCmdSetBssInfo.ucStaRecIdxOfAP =
-			prBssInfo->prStaRecOfAP->ucIndex;
-	}
-#endif
-
-#if CFG_ENABLE_BT_OVER_WIFI
-/* disabled for BOW to finish ucBssIndex migration */
-	else if (prBssInfo->eNetworkType == NETWORK_TYPE_BOW &&
-		 prBssInfo->eCurrentOPMode == OP_MODE_BOW
-		 && prBssInfo->prStaRecOfAP != NULL) {
 		rCmdSetBssInfo.ucStaRecIdxOfAP =
 			prBssInfo->prStaRecOfAP->ucIndex;
 	}
@@ -6090,18 +6065,6 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER *prAdapter)
 		nicApplyP2pNetworkAddress(prAdapter);
 	else
 		nicApplyP2pNetworkFixAddress(prAdapter);
-#endif
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
-		if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType ==
-		    NETWORK_TYPE_BOW) {
-			COPY_MAC_ADDR(
-				prAdapter->rWifiVar.arBssInfoPool[i].
-				aucOwnMacAddr,
-				prAdapter->rWifiVar.aucDeviceAddress);
-		}
-	}
 #endif
 
 #if CFG_TEST_WIFI_DIRECT_GO

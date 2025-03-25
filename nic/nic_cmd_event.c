@@ -5462,59 +5462,6 @@ void nicEventSleepyNotify(struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventBtOverWifi(struct ADAPTER *prAdapter,
-			struct WIFI_EVENT *prEvent)
-{
-#if CFG_ENABLE_BT_OVER_WIFI
-	uint8_t aucTmp[sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(
-					     struct BOW_LINK_DISCONNECTED)];
-	struct EVENT_BT_OVER_WIFI *prEventBtOverWifi;
-	struct BT_OVER_WIFI_EVENT *prBowEvent;
-	struct BOW_LINK_CONNECTED *prBowLinkConnected;
-	struct BOW_LINK_DISCONNECTED *prBowLinkDisconnected;
-
-	prEventBtOverWifi = (struct EVENT_BT_OVER_WIFI *) (
-				    prEvent->aucBuffer);
-
-	/* construct event header */
-	prBowEvent = (struct BT_OVER_WIFI_EVENT *) aucTmp;
-
-	if (prEventBtOverWifi->ucLinkStatus == 0) {
-		/* Connection */
-		prBowEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_CONNECTED;
-		prBowEvent->rHeader.ucSeqNumber = 0;
-		prBowEvent->rHeader.u2PayloadLength = sizeof(
-				struct BOW_LINK_CONNECTED);
-
-		/* fill event body */
-		prBowLinkConnected = (struct BOW_LINK_CONNECTED *) (
-					     prBowEvent->aucPayload);
-		prBowLinkConnected->rChannel.ucChannelNum =
-			prEventBtOverWifi->ucSelectedChannel;
-		kalMemZero(prBowLinkConnected->aucPeerAddress,
-			   MAC_ADDR_LEN);	/* @FIXME */
-
-		kalIndicateBOWEvent(prAdapter->prGlueInfo, prBowEvent);
-	} else {
-		/* Disconnection */
-		prBowEvent->rHeader.ucEventId =
-			BOW_EVENT_ID_LINK_DISCONNECTED;
-		prBowEvent->rHeader.ucSeqNumber = 0;
-		prBowEvent->rHeader.u2PayloadLength = sizeof(
-				struct BOW_LINK_DISCONNECTED);
-
-		/* fill event body */
-		prBowLinkDisconnected = (struct BOW_LINK_DISCONNECTED *) (
-						prBowEvent->aucPayload);
-		prBowLinkDisconnected->ucReason = 0;	/* @FIXME */
-		kalMemZero(prBowLinkDisconnected->aucPeerAddress,
-			   MAC_ADDR_LEN);	/* @FIXME */
-
-		kalIndicateBOWEvent(prAdapter->prGlueInfo, prBowEvent);
-	}
-#endif
-}
-
 void nicEventStatistics(struct ADAPTER *prAdapter,
 			struct WIFI_EVENT *prEvent)
 {
@@ -5909,13 +5856,6 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 					prEventBssBeaconTimeout->ucBssIndex))
 				p2pRoleFsmRunEventBeaconTimeout(prAdapter,
 					prBssInfo);
-		}
-#endif
-#if CFG_ENABLE_BT_OVER_WIFI
-		else if (GET_BSS_INFO_BY_INDEX(prAdapter,
-			prEventBssBeaconTimeout->ucBssIndex)->eNetworkType ==
-			NETWORK_TYPE_BOW) {
-			/* ToDo:: Nothing */
 		}
 #endif
 		else {

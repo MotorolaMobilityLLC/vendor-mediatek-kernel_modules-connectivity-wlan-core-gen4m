@@ -622,8 +622,6 @@ u_int8_t secIsProtectedBss(struct ADAPTER *prAdapter,
 		return kalP2PGetCipher(prAdapter->prGlueInfo,
 				       (uint8_t) prBssInfo->u4PrivateData);
 #endif
-	else if (prBssInfo->eNetworkType == NETWORK_TYPE_BOW)
-		return TRUE;
 
 	return FALSE;
 }

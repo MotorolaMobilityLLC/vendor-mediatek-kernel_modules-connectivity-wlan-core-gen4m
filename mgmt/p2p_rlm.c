@@ -356,7 +356,6 @@ void rlmRspGenerateObssScanIE(struct ADAPTER *prAdapter,
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
 
-	/* !RLM_NET_IS_BOW(prBssInfo) &&   FIXME. */
 	if (RLM_NET_IS_11N(prBssInfo) &&
 	    prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
 	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) &&

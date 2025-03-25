@@ -13874,35 +13874,6 @@ wlanoidSetTxPower(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 
-#if 0
-	DBGLOG(INIT, DEBUG, "c2GLegacyStaPwrOffset=%d\n",
-	       pTxPwr->c2GLegacyStaPwrOffset);
-	DBGLOG(INIT, DEBUG, "c2GHotspotPwrOffset=%d\n",
-	       pTxPwr->c2GHotspotPwrOffset);
-	DBGLOG(INIT, DEBUG, "c2GP2pPwrOffset=%d\n",
-	       pTxPwr->c2GP2pPwrOffset);
-	DBGLOG(INIT, DEBUG, "c2GBowPwrOffset=%d\n",
-	       pTxPwr->c2GBowPwrOffset);
-	DBGLOG(INIT, DEBUG, "c5GLegacyStaPwrOffset=%d\n",
-	       pTxPwr->c5GLegacyStaPwrOffset);
-	DBGLOG(INIT, DEBUG, "c5GHotspotPwrOffset=%d\n",
-	       pTxPwr->c5GHotspotPwrOffset);
-	DBGLOG(INIT, DEBUG, "c5GP2pPwrOffset=%d\n",
-	       pTxPwr->c5GP2pPwrOffset);
-	DBGLOG(INIT, DEBUG, "c5GBowPwrOffset=%d\n",
-	       pTxPwr->c5GBowPwrOffset);
-	DBGLOG(INIT, DEBUG, "ucConcurrencePolicy=%d\n",
-	       pTxPwr->ucConcurrencePolicy);
-
-	for (i = 0; i < 14; i++)
-		DBGLOG(INIT, DEBUG, "acTxPwrLimit2G[%d]=%d\n", i,
-		       pTxPwr->acTxPwrLimit2G[i]);
-
-	for (i = 0; i < 4; i++)
-		DBGLOG(INIT, DEBUG, "acTxPwrLimit5G[%d]=%d\n", i,
-		       pTxPwr->acTxPwrLimit5G[i]);
-#endif
-
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 			CMD_ID_SET_TXPWR_CTRL,	/* ucCID */
 			TRUE,	/* fgSetQuery */
