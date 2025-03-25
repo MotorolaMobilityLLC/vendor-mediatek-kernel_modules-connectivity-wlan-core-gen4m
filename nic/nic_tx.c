@@ -5357,14 +5357,40 @@ void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 			       &prAdapter->rStaPendQueue[ucStaRecIdx]);
 	}
 
+	prAdapter->u4StaPendBitmap &= ~BIT(ucStaRecIdx);
+
 	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
 
 	if (QUEUE_IS_NOT_EMPTY(prNeedToFreeQue)) {
 		wlanProcessQueuedMsduInfo(prAdapter,
 				QUEUE_GET_HEAD(prNeedToFreeQue));
 	}
+}
 
-	prAdapter->u4StaPendBitmap &= ~BIT(ucStaRecIdx);
+void nicTxDirectClearStaPendEapolQ(struct ADAPTER *prAdapter,
+			    uint8_t ucStaRecIdx)
+{
+	struct QUE rNeedToFreeQue;
+	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
+
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
+	if (QUEUE_IS_NOT_EMPTY(
+		    &prAdapter->rStaPendEapolQueue[ucStaRecIdx])) {
+		QUEUE_MOVE_ALL(prNeedToFreeQue,
+			       &prAdapter->rStaPendEapolQueue[ucStaRecIdx]);
+	}
+
+	prAdapter->u4StaPendEapolBitmap &= ~BIT(ucStaRecIdx);
+
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
+
+	if (QUEUE_IS_NOT_EMPTY(prNeedToFreeQue)) {
+		wlanProcessQueuedMsduInfo(prAdapter,
+				QUEUE_GET_HEAD(prNeedToFreeQue));
+	}
 }
 
 void nicTxDirectMoveStaPendQ(struct ADAPTER *prAdapter,
@@ -5437,6 +5463,15 @@ void nicTxDirectClearAllStaPendQ(struct ADAPTER *prAdapter)
 
 		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPendQueue[ucIdx]))
 			nicTxDirectClearStaPendQ(prAdapter, ucIdx);
+	}
+
+	for (ucIdx = 0; ucIdx < CFG_STA_REC_NUM; ++ucIdx) {
+		if (prAdapter->u4StaPendEapolBitmap == 0)
+			break;
+
+		if (QUEUE_IS_NOT_EMPTY(
+			&prAdapter->rStaPendEapolQueue[ucIdx]))
+			nicTxDirectClearStaPendEapolQ(prAdapter, ucIdx);
 	}
 }
 
@@ -5752,24 +5787,78 @@ static void nicTxDirectDequeueStaPendQ(struct ADAPTER *prAdapter,
 static void nicTxDirectEnqueueStaPendQ(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
 {
+	struct STA_RECORD *prStaRec;	/* The current focused STA */
+
 	KAL_SPIN_LOCK_DECLARATION();
 
 	/* the add key isn't completed case */
 	if ((prMsduInfo == NULL) || (prAdapter == NULL))
 		return;
 
-	if (nicIsEapolFrame(prAdapter, prMsduInfo)) {
-		/* The EAPoL frame can't be blocked. */
-		DBGLOG(TX, TRACE, "Is EAPoL frame\n");
-	} else {
-		DBGLOG(TX, TRACE, "fgIsTxAllowed isn't TRUE!\n");
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		QUEUE_CONCATENATE_QUEUES(
-			&prAdapter->rStaPendQueue[ucStaIdx], prQue);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-
-		prAdapter->u4StaPendBitmap |= BIT(ucStaIdx);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
+	if (prStaRec == NULL) {
+		DBGLOG(TX, DEBUG, "prStaRec empty\n");
+		return;
 	}
+
+	DBGLOG(TX, TRACE, "fgIsTxAllowed isn't TRUE!\n");
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(
+		&prAdapter->rStaPendQueue[ucStaIdx], prQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	prAdapter->u4StaPendBitmap |= BIT(ucStaIdx);
+}
+
+static void nicTxDirectDequeueStaPendEapolQ(struct ADAPTER *prAdapter,
+				uint8_t ucStaIdx, struct QUE *prQue)
+{
+	KAL_SPIN_LOCK_DECLARATION();
+
+	/* ucStaIdx has been checked in nicTxDirectCheckStaPsPendQ */
+
+	if (prAdapter == NULL)
+		return;
+
+	/* the add key done case (include OPEN security) */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	if (QUEUE_IS_NOT_EMPTY(
+		&prAdapter->rStaPendEapolQueue[ucStaIdx])) {
+		DBGLOG(TX, TRACE, "start tx pending eapol q!\n");
+		QUEUE_CONCATENATE_QUEUES_HEAD(prQue,
+			&prAdapter->rStaPendEapolQueue[ucStaIdx]);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	prAdapter->u4StaPendEapolBitmap &= ~BIT(ucStaIdx);
+}
+
+static void nicTxDirectEnqueueStaPendEapolQ(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
+{
+	struct STA_RECORD *prStaRec;	/* The current focused STA */
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	/* the add key isn't completed case */
+	if ((prMsduInfo == NULL) || (prAdapter == NULL))
+		return;
+
+	if (!nicIsEapolFrame(prAdapter, prMsduInfo))
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
+	if (prStaRec == NULL) {
+		DBGLOG(TX, DEBUG, "prStaRec empty\n");
+		return;
+	}
+
+	DBGLOG(TX, TRACE, "Sta[%u] IsValid isn't TRUE!\n", ucStaIdx);
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	QUEUE_CONCATENATE_QUEUES(&prAdapter->rStaPendEapolQueue[ucStaIdx],
+		prQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	prAdapter->u4StaPendEapolBitmap |= BIT(ucStaIdx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5811,9 +5900,33 @@ static void nicTxDirectCheckStaPsPendQ(struct ADAPTER *prAdapter,
 		/* handle PS queue */
 		nicTxDirectCheckStaPsQ(prAdapter, prStaRec, prQue);
 	} else {
-		/* enqueue to pending queue */
-		nicTxDirectEnqueueStaPendQ(prAdapter, prMsduInfo,
-					   ucStaIdx, prQue);
+		if (prStaRec->fgIsValid == TRUE) {
+			if (nicIsEapolFrame(prAdapter, prMsduInfo)) {
+				/* The EAPoL frame can't be blocked. */
+				DBGLOG(TX, TRACE, "Is EAPoL frame\n");
+			} else {
+				nicTxDirectEnqueueStaPendQ(prAdapter,
+					prMsduInfo, ucStaIdx, prQue);
+			}
+
+			/* When fgIsValid is True, but fgIsTxAllowed is False,
+			 * it is necessary to check the Eapol pending queue.
+			 */
+			if (prAdapter->u4StaPendEapolBitmap &
+				BIT(ucStaIdx)) {
+				/* Dequeue pending EAPoL Queue */
+				nicTxDirectDequeueStaPendEapolQ(
+					prAdapter, ucStaIdx, prQue);
+			}
+		} else {
+			if (nicIsEapolFrame(prAdapter, prMsduInfo))
+				/* Enqueue to pending EAPoL queue */
+				nicTxDirectEnqueueStaPendEapolQ(prAdapter,
+					prMsduInfo, ucStaIdx, prQue);
+			else
+				nicTxDirectEnqueueStaPendQ(prAdapter,
+					prMsduInfo, ucStaIdx, prQue);
+		}
 	}
 }
 
@@ -6513,6 +6626,7 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 {
 	uint32_t u4StaPsBitmap, u4BssAbsentTxBufferBitmap, u4StaPendBitmap;
+	uint32_t u4StaPendEapolBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
 	uint8_t ucHifTc = 0;
 #if CFG_SUPPORT_SOFT_ACM
@@ -6522,6 +6636,7 @@ void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
 	u4BssAbsentTxBufferBitmap = prAdapter->u4BssAbsentTxBufferBitmap;
 	u4StaPendBitmap = prAdapter->u4StaPendBitmap;
+	u4StaPendEapolBitmap = prAdapter->u4StaPendEapolBitmap;
 #if CFG_SUPPORT_SOFT_ACM
 	u4StaAcmBitmap = prAdapter->u4StaAcmBitmap;
 
@@ -6544,6 +6659,19 @@ void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 		}
 	}
 #endif /* CFG_SUPPORT_SOFT_ACM */
+
+	if (u4StaPendEapolBitmap) {
+		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
+		     ++ucStaRecIndex) {
+			if (u4StaPendEapolBitmap & BIT(ucStaRecIndex)) {
+				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
+					0xff, ucStaRecIndex, 0xff);
+				DBGLOG_LIMITED(TX, DEBUG,
+					"Check pending Queue idx=%u\n",
+					ucStaRecIndex);
+			}
+		}
+	}
 
 	if (u4StaPendBitmap) {
 		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;

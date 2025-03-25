@@ -476,6 +476,12 @@ void qmActivateStaRec(struct ADAPTER *prAdapter,
 
 	/* Init the STA_REC */
 	prStaRec->fgIsValid = TRUE;
+	/* When Tx EAPOL frame, fgIsValid is false. EAPOL frame
+	 * will be pending until fgIsValid set true.
+	 */
+	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter))
+		nicTxDirectStartCheckQTimer(prAdapter);
+
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
 	qmSetStaRecRxAllowed(prAdapter, prStaRec, TRUE);
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
@@ -522,6 +528,7 @@ void qmActivateStaRec(struct ADAPTER *prAdapter,
 void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec)
 {
+	struct MSDU_INFO *prFlushedTxPacketList = NULL;
 	uint32_t i;
 
 	if (!prStaRec)
@@ -537,16 +544,13 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 		nicTxDirectClearStaAcmQ(prAdapter, prStaRec->ucIndex);
 		nicTxDirectClearStaPendQ(prAdapter, prStaRec->ucIndex);
 		nicTxDirectClearStaPsQ(prAdapter, prStaRec->ucIndex);
-	} else {
-		struct MSDU_INFO *prFlushedTxPacketList = NULL;
-
-		prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
-			prStaRec->ucIndex);
-
-		if (prFlushedTxPacketList)
-			wlanProcessQueuedMsduInfo(prAdapter,
-				prFlushedTxPacketList);
+		nicTxDirectClearStaPendEapolQ(prAdapter, prStaRec->ucIndex);
 	}
+
+	prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
+					prStaRec->ucIndex);
+	if (prFlushedTxPacketList)
+		wlanProcessQueuedMsduInfo(prAdapter, prFlushedTxPacketList);
 
 	/* 4 <2> Flush RX queues and delete RX BA agreements */
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++)

@@ -2114,6 +2114,8 @@ void nicTxDirectClearBssAbsentQ(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIndex);
+void nicTxDirectClearStaPendEapolQ(struct ADAPTER *prAdapter,
+	uint8_t ucStaRecIndex);
 void nicTxDirectMoveStaPendQ(struct ADAPTER *prAdapter,
 	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
 void nicTxDirectClearAllStaPsQ(struct ADAPTER *prAdapter);

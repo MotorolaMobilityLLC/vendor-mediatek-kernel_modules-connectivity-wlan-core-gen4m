@@ -11722,21 +11722,23 @@ u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
 void aisFunFlushTxQueue(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec)
 {
+	struct MSDU_INFO *prFlushedTxPacketList = NULL;
+
 	DBGLOG(AIS, TRACE, "STA[%d] Flush TX queue filled at old channel.\n",
 			prStaRec->ucIndex);
+
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		nicTxDirectClearStaAcmQ(prAdapter, prStaRec->ucIndex);
 		nicTxDirectClearStaPendQ(prAdapter, prStaRec->ucIndex);
 		nicTxDirectClearStaPsQ(prAdapter, prStaRec->ucIndex);
-	} else {
-		struct MSDU_INFO *prFlushedTxPacketList = NULL;
-
-		prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
-						prStaRec->ucIndex);
-		if (prFlushedTxPacketList)
-			wlanProcessQueuedMsduInfo(prAdapter,
-					prFlushedTxPacketList);
+		nicTxDirectClearStaPendEapolQ(prAdapter, prStaRec->ucIndex);
 	}
+
+	prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
+					prStaRec->ucIndex);
+	if (prFlushedTxPacketList)
+		wlanProcessQueuedMsduInfo(prAdapter,
+				prFlushedTxPacketList);
 }
 
 void aisFunSwitchChannel(struct ADAPTER *prAdapter,

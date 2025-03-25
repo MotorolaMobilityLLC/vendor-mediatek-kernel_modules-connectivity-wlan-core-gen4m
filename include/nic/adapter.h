@@ -2689,7 +2689,9 @@ struct ADAPTER {
 	struct QUE rBssAbsentQueue[MAX_BSSID_NUM + 1];
 	uint32_t u4BssAbsentTxBufferBitmap;
 	struct QUE rStaPendQueue[CFG_STA_REC_NUM];
+	struct QUE rStaPendEapolQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPendBitmap;
+	uint32_t u4StaPendEapolBitmap;
 #if CFG_SUPPORT_SOFT_ACM
 	struct QUE rStaAcmQueue[CFG_STA_REC_NUM][AC_NUM];
 	int32_t i4StaAcmQueueCnt[CFG_STA_REC_NUM];
