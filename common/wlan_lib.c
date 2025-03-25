@@ -2924,31 +2924,32 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 	if (HAL_IS_TX_DIRECT(prAdapter))
 		nicTxDirectClearHifQ(prAdapter);
 	else {
-		struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
-		struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
+		struct QUE (*prDataPort)[TC_NUM] = kalMemAlloc(
+			sizeof(struct QUE) * MAX_BSSID_NUM * TC_NUM,
+			VIR_MEM_TYPE);
 		struct MSDU_INFO *prMsduInfo = NULL;
 		int32_t i, j;
 
 		KAL_SPIN_LOCK_DECLARATION();
+		if (!prDataPort)
+			return;
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 		nicTxClearMgmtDirectTxQ(prAdapter);
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
-			for (j = 0; j < TC_NUM; j++) {
-				prDataPort[i][j] = &qDataPort[i][j];
-				QUEUE_INITIALIZE(prDataPort[i][j]);
-			}
+			for (j = 0; j < TC_NUM; j++)
+				QUEUE_INITIALIZE(&prDataPort[i][j]);
 		}
 
 		/* <1> Move whole list of CMD_INFO to temp queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TC_NUM; j++) {
-				QUEUE_MOVE_ALL(prDataPort[i][j],
+				QUEUE_MOVE_ALL(&prDataPort[i][j],
 					&prAdapter->rTxPQueue[i][j]);
 				kalTraceEvent("Move TxPQueue%d_%d %d", i, j,
-					prDataPort[i][j]->u4NumElem);
+					prDataPort[i][j].u4NumElem);
 			}
 		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
@@ -2956,10 +2957,10 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TC_NUM; j++) {
-				QUEUE_CONCATENATE_QUEUES_HEAD(prDataPort[i][j],
+				QUEUE_CONCATENATE_QUEUES_HEAD(&prDataPort[i][j],
 					&prAdapter->rTxHifPQueue[i][j]);
 				kalTraceEvent("Move TxHifPQueue%d_%d %d", i, j,
-					prDataPort[i][j]->u4NumElem);
+					prDataPort[i][j].u4NumElem);
 			}
 		}
 #endif
@@ -2967,14 +2968,14 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 		/* <2> Return sk buffer */
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TC_NUM; j++) {
-				if (!QUEUE_GET_HEAD(prDataPort[i][j]))
+				if (!QUEUE_GET_HEAD(&prDataPort[i][j]))
 					continue;
 				nicTxReleaseMsduResource(prAdapter,
-					QUEUE_GET_HEAD(prDataPort[i][j]));
+					QUEUE_GET_HEAD(&prDataPort[i][j]));
 				nicTxFreeMsduInfoPacket(prAdapter,
-					QUEUE_GET_HEAD(prDataPort[i][j]));
+					QUEUE_GET_HEAD(&prDataPort[i][j]));
 				nicTxReturnMsduInfo(prAdapter,
-					QUEUE_GET_HEAD(prDataPort[i][j]));
+					QUEUE_GET_HEAD(&prDataPort[i][j]));
 			}
 		}
 
@@ -2988,6 +2989,9 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
+		if (prDataPort)
+			kalMemFree(prDataPort, VIR_MEM_TYPE,
+				sizeof(struct QUE) * MAX_BSSID_NUM * TC_NUM);
 	}
 }
 

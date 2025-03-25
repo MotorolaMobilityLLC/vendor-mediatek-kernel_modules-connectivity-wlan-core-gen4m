@@ -1323,12 +1323,16 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 	*prAdapter, struct MSDU_INFO *prMsduInfoListHead)
 {
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
-	struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
-	struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
+	struct QUE (*prDataPort)[TC_NUM] = kalMemAlloc(
+			sizeof(struct QUE) * MAX_BSSID_NUM * TC_NUM,
+			VIR_MEM_TYPE);
 	int32_t i, j;
 	u_int8_t fgSetTx2Hif = FALSE;
 
 	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!prDataPort)
+		return WLAN_STATUS_FAILURE;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfoListHead);
@@ -1336,10 +1340,8 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 	prMsduInfo = prMsduInfoListHead;
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		for (j = 0; j < TC_NUM; j++) {
-			prDataPort[i][j] = &qDataPort[i][j];
-			QUEUE_INITIALIZE(prDataPort[i][j]);
-		}
+		for (j = 0; j < TC_NUM; j++)
+			QUEUE_INITIALIZE(&prDataPort[i][j]);
 	}
 
 	/* Separate MSDU_INFO_T lists into 2 categories: for Port#0 & Port#1 */
@@ -1352,8 +1354,8 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 		if (prMsduInfo->ucTC < TC_NUM) {
 			QUEUE_ENTRY_SET_NEXT(prMsduInfo, NULL);
 			QUEUE_INSERT_TAIL(
-			   prDataPort[prMsduInfo->ucBssIndex][prMsduInfo->ucTC],
-			   prMsduInfo);
+			&prDataPort[prMsduInfo->ucBssIndex][prMsduInfo->ucTC],
+			prMsduInfo);
 		} else
 			ASSERT(0);
 
@@ -1371,13 +1373,15 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 			for (j = 0; j < TC_NUM; j++) {
 				QUEUE_CONCATENATE_QUEUES(
 					(&(prAdapter->rTxPQueue[i][j])),
-					(prDataPort[i][j]));
+					(&prDataPort[i][j]));
 			}
 		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
-
+	if (prDataPort)
+		kalMemFree(prDataPort, VIR_MEM_TYPE,
+			sizeof(struct QUE) * MAX_BSSID_NUM * TC_NUM);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -1429,8 +1433,9 @@ uint32_t nicTxMsduQueueMthread(struct ADAPTER *prAdapter)
 
 void nicTxMsduQueueByPrioBackTxPortQ(struct ADAPTER *prAdapter)
 {
-	struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
-	struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
+	struct QUE (*prDataPort)[TC_NUM] = kalMemAlloc(
+			sizeof(struct QUE) * MAX_BSSID_NUM * TC_NUM,
+			VIR_MEM_TYPE);
 	int32_t i, j, k;
 	struct BSS_INFO *prBssInfo;
 #if QM_FORWARDING_FAIRNESS
@@ -1438,12 +1443,12 @@ void nicTxMsduQueueByPrioBackTxPortQ(struct ADAPTER *prAdapter)
 #endif
 
 	KAL_SPIN_LOCK_DECLARATION();
+	if (!prDataPort)
+		return;
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		for (j = 0; j < TC_NUM; j++) {
-			prDataPort[i][j] = &qDataPort[i][j];
-			QUEUE_INITIALIZE(prDataPort[i][j]);
-		}
+		for (j = 0; j < TC_NUM; j++)
+			QUEUE_INITIALIZE(&prDataPort[i][j]);
 	}
 
 	for (j = TC_NUM - 1; j >= 0; j--) {
@@ -1464,23 +1469,23 @@ void nicTxMsduQueueByPrioBackTxPortQ(struct ADAPTER *prAdapter)
 					&(prAdapter->rTxPQueue[i][j]))) {
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TX_PORT_QUE);
-				QUEUE_MOVE_ALL(prDataPort[i][j],
+				QUEUE_MOVE_ALL(&prDataPort[i][j],
 					&(prAdapter->rTxPQueue[i][j]));
 				KAL_RELEASE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TX_PORT_QUE);
 
 				TRACE(nicTxMsduQueue(prAdapter,
-					0, prDataPort[i][j]),
+					0, &prDataPort[i][j]),
 					"Move TxPQueue%d_%d %d",
-					i, j, prDataPort[i][j]->u4NumElem);
+					i, j, prDataPort[i][j].u4NumElem);
 
-				if (QUEUE_IS_NOT_EMPTY(prDataPort[i][j])) {
+				if (QUEUE_IS_NOT_EMPTY(&prDataPort[i][j])) {
 					KAL_ACQUIRE_SPIN_LOCK(
 						prAdapter,
 						SPIN_LOCK_TX_PORT_QUE);
 					QUEUE_CONCATENATE_QUEUES_HEAD(
 						&(prAdapter->rTxPQueue[i][j]),
-						prDataPort[i][j]);
+						&prDataPort[i][j]);
 					KAL_RELEASE_SPIN_LOCK(prAdapter,
 						  SPIN_LOCK_TX_PORT_QUE);
 					break;
@@ -1494,6 +1499,9 @@ void nicTxMsduQueueByPrioBackTxPortQ(struct ADAPTER *prAdapter)
 	prQM->u4HeadBssInfoIndex++;
 	prQM->u4HeadBssInfoIndex %= MAX_BSSID_NUM;
 #endif
+	if (prDataPort)
+		kalMemFree(prDataPort, VIR_MEM_TYPE,
+			sizeof(struct QUE) * MAX_BSSID_NUM * TC_NUM);
 }
 
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
