@@ -1258,7 +1258,7 @@ void asicConnac5xSoftwareInterruptMcu(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
-	uint32_t u4McuWpdamBase = 0;
+	uint32_t u4HostWpdamBase = 0;
 
 	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL) {
 		DBGLOG(HAL, ERROR, "prAdapter or prGlueInfo is NULL\n");
@@ -1267,14 +1267,14 @@ void asicConnac5xSoftwareInterruptMcu(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
-	u4McuWpdamBase = prChipInfo->u4McuWfdmaBaseAddr;
-	if (u4McuWpdamBase == 0) {
-		DBGLOG(HAL, ERROR, "McuWfdmaBaseAddr is not set\n");
+	u4HostWpdamBase = prChipInfo->u4HostWfdmaBaseAddr;
+	if (u4HostWpdamBase == 0) {
+		DBGLOG(HAL, ERROR, "HostWfdmaBaseAddr is not set\n");
 		return;
 	}
 
 	kalDevRegWrite(prGlueInfo,
-		CONNAC5X_WPDMA_HOST2MCU_SW_INT_SET(u4McuWpdamBase),
+		CONNAC5X_WPDMA_HOST2MCU_SW_INT_SET(u4HostWpdamBase),
 		intrBitMask);
 }
 
