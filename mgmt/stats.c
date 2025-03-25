@@ -318,32 +318,21 @@ static void statsParseARPInfo(void *pvPacket, uint8_t *pucArp,
 	if (eventType == EVENT_RX) {
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ARP);
-		if (u2OpCode == ARP_OPERATION_REQUEST)
-			DBGLOG(RX, DEBUG,
-			   "<RX> ARP Req DA=" MACSTR
-			   " SRC MAC/IP[" MACSTR "]/[" IPV4STR
-			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR
-			   "], SeqNo: %d\n",
-			   MAC2STR(prEth->aucDestAddr),
-			   MAC2STR(prArp->aucSenderMACaddr),
-			   IPV4TOSTR(prArp->aucSenderIPaddr),
-			   MAC2STR(prArp->aucTargetMACaddr),
-			   IPV4TOSTR(prArp->aucTargetIPaddr),
-			   u2SSN);
-		else if (u2OpCode == ARP_OPERATION_RESPONSE)
-			DBGLOG(RX, DEBUG,
-			   "<RX> ARP Rsp DA=" MACSTR
-			   " SRC MAC/IP[" MACSTR "]/[" IPV4STR
-			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR
-			   "], SeqNo: %d\n",
-			   MAC2STR(prEth->aucDestAddr),
-			   MAC2STR(prArp->aucSenderMACaddr),
-			   IPV4TOSTR(prArp->aucSenderIPaddr),
-			   MAC2STR(prArp->aucTargetMACaddr),
-			   IPV4TOSTR(prArp->aucTargetIPaddr),
-			   u2SSN);
+
+		DBGLOG_LIMITED(RX, DEBUG,
+			"<RX> ARP %s DA=" MACSTR
+			" SRC MAC/IP[" MACSTR "]/[" IPV4STR
+			"], TAR MAC/IP[" MACSTR "]/[" IPV4STR
+			"], SeqNo: %d\n",
+			u2OpCode == ARP_OPERATION_REQUEST ? "Req" : "Rsp",
+			MAC2STR(prEth->aucDestAddr),
+			MAC2STR(prArp->aucSenderMACaddr),
+			IPV4TOSTR(prArp->aucSenderIPaddr),
+			MAC2STR(prArp->aucTargetMACaddr),
+			IPV4TOSTR(prArp->aucTargetIPaddr),
+			u2SSN);
 	} else { /* EVENT_TX */
-		DBGLOG(TX, DEBUG,
+		DBGLOG_LIMITED(TX, DEBUG,
 			"<TX> ARP %s DA=" MACSTR
 			" SRC MAC/IP[" MACSTR "]/[" IPV4STR
 			"], TAR MAC/IP[" MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
