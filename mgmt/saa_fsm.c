@@ -275,9 +275,25 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_WPA3
 		case SAA_STATE_EXTERNAL_AUTH:
-			kalExternalAuthRequest(
+			rStatus = kalExternalAuthRequest(
 				prAdapter->prGlueInfo,
 				prStaRec);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(SAA, INFO,
+					"[%d] Failed to request external auth, ret(%x)\n",
+					prStaRec->ucBssIndex, rStatus);
+			else if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
+				cnmTimerInitTimer(prAdapter,
+				   &prStaRec->rTxReqDoneOrRxRespTimer,
+				   (PFN_MGMT_TIMEOUT_FUNC)
+				   saaFsmRunEventRxRespTimeOut,
+				   (uintptr_t) prStaRec);
+
+				cnmTimerStartTimer(prAdapter,
+				   &prStaRec->rTxReqDoneOrRxRespTimer,
+				   TU_TO_MSEC(
+				   EXTERNAL_AUTHENTICATION_TIMEOUT_TU));
+			}
 			break;
 #endif /* CFG_SUPPORT_WPA3 */
 
@@ -907,6 +923,16 @@ void saaFsmRunEventRxRespTimeOut(struct ADAPTER *prAdapter,
 
 		/* Pull back to earlier state to do retry */
 		eNextState = SAA_STATE_SEND_ASSOC1;
+		break;
+
+	case SAA_STATE_EXTERNAL_AUTH:
+		/* Record the Status Code of Authentication Request */
+		prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
+#if CFG_SUPPORT_WPA3_LOG
+		wpa3LogAuthTimeout(prAdapter,
+			prStaRec);
+#endif
+		eNextState = AA_STATE_IDLE;
 		break;
 
 	default:
@@ -2126,6 +2152,10 @@ void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
 	status = prSaaFsmMsg->status;
 
 	cnmMemFree(prAdapter, prMsgHdr);
+
+	if (IS_STA_IN_AIS(prAdapter, prStaRec))
+		cnmTimerStopTimer(prAdapter,
+			&prStaRec->rTxReqDoneOrRxRespTimer);
 
 #if CFG_SUPPORT_WPA3_LOG
 	wpa3LogExternalAuth(prAdapter,
