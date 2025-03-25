@@ -1567,6 +1567,22 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	rrmStartNextMeasurement(prAdapter, TRUE, prBssInfo->ucBssIndex);
 }
 
+uint32_t rrmTxRadioMeasurementReportTxdone(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo,
+				enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+
+	DBGLOG(RRM, DEBUG, "RM TX DONE:Status[%u] PktType[%u] SeqNo[%d]\n",
+		rTxDoneStatus,
+		prMsduInfo->ucPktType,
+		prMsduInfo->ucTxSeqNum);
+
+#if (CFG_SUPPORT_REPORT_LOG && CFG_SUPPORT_CONN_LOG)
+	connLogMgmtPkt(prAdapter, prMsduInfo, rTxDoneStatus);
+#endif
+	return WLAN_STATUS_SUCCESS;
+}
+
 void rrmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
@@ -1608,12 +1624,20 @@ void rrmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
 	/* 2 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
 		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
-		     prRmRepParam->u2ReportFrameLen, NULL, MSDU_RATE_MODE_AUTO);
+		     prRmRepParam->u2ReportFrameLen,
+		     rrmTxRadioMeasurementReportTxdone,
+		     MSDU_RATE_MODE_AUTO);
 
 	nicTxConfigPktControlFlag(prMsduInfo,
 			MSDU_CONTROL_FLAG_FORCE_LINK |
 			MSDU_CONTROL_FLAG_DIS_MAT,
 			TRUE);
+
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	rrmRespBeaconReportLog(prAdapter,
+		ucBssIndex,
+		prMsduInfo->ucTxSeqNum);
+#endif
 
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 

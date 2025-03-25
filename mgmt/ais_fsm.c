@@ -4471,10 +4471,7 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 		       "BCN report Active Mode, total: %d\n", count);
 #endif
 #if (CFG_SUPPORT_REPORT_LOG == 1)
-		rrmRespBeaconReportLog(prAdapter,
-			ucBssIndex,
-			prCurrReq->ucToken,
-			count);
+		rrmRespBeaconReportSave(prCurrReq->ucToken, count);
 #endif
 #endif
 		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
