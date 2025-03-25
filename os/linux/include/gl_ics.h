@@ -92,6 +92,7 @@ extern void wifi_ics_event_func_register(ics_fwlog_event_func_cb pfFwlog);
 
 int IcsInit(void);
 int IcsDeInit(struct GLUE_INFO *prGlueInfo);
+int IcsDeInitAll(void);
 #if CFG_SUPPORT_ICS_TIMER
 void IcsTimerInit(struct ADAPTER *prAdapter);
 void IcsLogStartWithTimer(struct ADAPTER *prAdapter);

@@ -585,22 +585,23 @@ static void IcsDestory(struct ics_dev *prIcsDev)
 
 int IcsDeInit(struct GLUE_INFO *prGlueInfo)
 {
-	uint8_t i = 0;
-
-#if (CFG_SUPPORT_MULTI_CARD == 0)
-	IcsDestory(gIcsDev[i]);
-#else
-	if (prGlueInfo && prGlueInfo->u4DevNum < CFG_MAX_WLAN_DEVICES) {
-		IcsDestory(gIcsDev[prGlueInfo->u4DevNum]);
-		gIcsDev[prGlueInfo->u4DevNum] = NULL;
+	if (!prGlueInfo || prGlueInfo->u4DevNum >= CFG_MAX_WLAN_DEVICES)
 		return 0;
-	}
+
+	IcsDestory(gIcsDev[prGlueInfo->u4DevNum]);
+	gIcsDev[prGlueInfo->u4DevNum] = NULL;
+
+	return 0;
+}
+
+int IcsDeInitAll(void)
+{
+	uint8_t i = 0;
 
 	for (i = 0; i < CFG_MAX_WLAN_DEVICES; i++) {
 		IcsDestory(gIcsDev[i]);
 		gIcsDev[i] = NULL;
 	}
-#endif /* CFG_SUPPORT_MULTI_CARD */
 
 	return 0;
 }

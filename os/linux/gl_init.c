@@ -10713,7 +10713,7 @@ static void exitWlan(void)
 #endif
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-	IcsDeInit(prGlueInfo);
+	IcsDeInitAll();
 #endif /* CFG_SUPPORT_ICS */
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 	FwLogDevUninit();
