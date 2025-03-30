@@ -43,8 +43,9 @@ else
 endif
 
 $(info gen4m depends on following symbols:[${EXTRA_SYMBOLS}])
-modules modules_install clean:
+modules compile_commands.json modules_install clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(MODULE_PWD) $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(EXTRA_CFLAGS)" KBUILD_EXTRA_SYMBOLS="$(EXTRA_SYMBOLS)" MODULE_NAME=$(_MODULE_NAME) SEGMENT=$(SEGMENT) $(@)
 	mkdir -p $(O)/$(M)
 	cp -f $(O)/$(MODULE_PWD)/Module.symvers $(O)/$(M)/Module.symvers
+	if [ "$(@)" = "compile_commands.json" ]; then cp -f $(O)/$(MODULE_PWD)/compile_commands.json $(O)/$(M)/compile_commands.json; fi
 	cp -f $(O)/$(MODULE_PWD)/*.ko $(O)/$(M)
