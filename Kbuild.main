@@ -1114,7 +1114,7 @@ else
     ccflags-y += -DCFG_PCIE_MT6989_6653=0
 endif
 
-ifeq ($(MODULE_NAME), wlan_drv_gen4m_6991_6639_tc10sp)
+ifneq ($(filter $(MODULE_NAME), wlan_drv_gen4m_6991_6639_tc10sp wlan_drv_gen4m_6991_6639_new9gen2),)
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
         ccflags-y += -DCFG_PCIE_MT6991=1
     else
