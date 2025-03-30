@@ -2011,6 +2011,19 @@ exit:
 
 int wlan_post_whole_chip_rst_v3(void)
 {
+#if CFG_MTK_ANDROID_WMT
+	while (get_wifi_process_status()) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
+	if (!get_wifi_powered_status()) {
+		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		glResetUpdateL0Flag(FALSE);
+		return 0;
+	}
+#endif
+
 	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v3\n");
 
 	wlanUpdateBusAccessStatus(FALSE);
