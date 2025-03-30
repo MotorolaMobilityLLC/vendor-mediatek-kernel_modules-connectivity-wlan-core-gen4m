@@ -5371,7 +5371,7 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	prEpiIE = (struct IE_VENDOR_EPIGRAM_IE *) pucBuf;
 
 	if (prEpiIE->ucLength <= 5) {
-		DBGLOG(RLM, WARN,
+		DBGLOG(RLM, TRACE,
 			"[Epigram] VHT length is invalid(%d), skip!\n",
 			prEpiIE->ucLength);
 		return;
@@ -5675,8 +5675,6 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	uint8_t aucOceOui[] = VENDOR_OUI_WFA_SPECIFIC;
 	struct IE_FILS_REQ_FRAME *prFilsReqIe;
 
-	DBGLOG(SCN, INFO, "before OCE IE, length = %d\n", u2IEsBufLen);
-	dumpMemory8(pucBuf, u2IEsBufLen);
 	/* Find MaxChannelTime in FILS request parameter,
 	 * it shall > 10 and not equal to 255 (TUs)
 	 */
@@ -5722,12 +5720,11 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 				prScanParam->u2IELen += 2;
 				IE_LEN(pucBuf) += 2;
 			}
+			DBGLOG(SCN, INFO,
+				"OCE IE, length = %d\n", prScanParam->u2IELen);
+			dumpMemory8(prScanParam->aucIE, prScanParam->u2IELen);
 		}
 	}
-
-	pucBuf = prScanParam->aucIE;
-	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
-	dumpMemory8(pucBuf, prScanParam->u2IELen);
 }
 
 uint8_t	*scanGetFilsCacheIdFromBssDesc(struct BSS_DESC *bss)
