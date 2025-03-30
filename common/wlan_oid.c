@@ -2360,6 +2360,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgNoHandshakeSec = FALSE;
+	u_int8_t fgApRec = FALSE;
 #if CFG_SUPPORT_TDLS
 	struct STA_RECORD *prTmpStaRec;
 #endif
@@ -2786,7 +2787,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				}
 			} else { /* Overwrite the old one for AP and STA WEP */
 				if (prBssInfo->prStaRecOfAP) {
-					DBGLOG_LIMITED(RSN, INFO, "AP REC\n");
+					fgApRec = TRUE;
 					prCmdKey->ucWlanIndex =
 					    secPrivacySeekForBcEntry(
 						prAdapter,
@@ -2844,7 +2845,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 						prCmdKey->ucWlanIndex;
 					prBssInfo->ucBMCWlanIndexSUsed[
 						prCmdKey->ucKeyId] = TRUE;
-					DBGLOG_LIMITED(RSN, INFO,
+					DBGLOG_LIMITED(RSN, TRACE,
 					       "BMCWlanIndex kid = %d, index = %d\n",
 					       prCmdKey->ucKeyId,
 					       prCmdKey->ucWlanIndex);
@@ -2867,15 +2868,14 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		       prCmdKey->ucKeyLen);
 	DBGLOG_MEM8(RSN, TRACE, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 	if (prCmdKey->ucKeyId < MAX_KEY_NUM) {
-		DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed=%d,wepkeyWlanIdx=%d\n",
-		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
-		       prBssInfo->wepkeyWlanIdx);
-
 		DBGLOG(RSN, INFO,
-		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d\n",
+		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d,wepkeyUsed=%d,wepkeyWlanIdx=%d,fgApRec=%d\n",
 		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
 		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId],
-		       prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId]);
+		       prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId],
+		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
+		       prBssInfo->wepkeyWlanIdx,
+		       fgApRec);
 	}
 #endif
 	if (prAisSpecBssInfo)
