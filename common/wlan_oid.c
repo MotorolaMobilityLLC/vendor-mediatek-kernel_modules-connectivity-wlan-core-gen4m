@@ -8495,7 +8495,8 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 					     i, MAC2STR(
 					     rCmdMacMcastAddr.arAddress[i]));
 		}
-		DBGLOG(OID, INFO, "%s\n", prDbgBuf);
+		if (rCmdMacMcastAddr.u4NumOfGroupAddr > 0)
+			DBGLOG(OID, INFO, "%s\n", prDbgBuf);
 		kalMemFree(prDbgBuf, VIR_MEM_TYPE, DBG_BUFFER_SZ);
 	} else {
 		DBGLOG(OID, WARN, "Alloc debug buffer(%u) failed.\n",
