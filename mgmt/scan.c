@@ -4103,9 +4103,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	if (fgIsProbeResp)
 		prBssDesc->fgSeenProbeResp = TRUE;
 	/* end Support AP Selection */
-	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
-	if (fgIsProbeResp || fgIsValidSsid)
-		GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
+
+	/* Update BSS_DESC_T's Last Update TimeStamp. */
+	GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
 
 #if CFG_SUPPORT_802_11K
 	if (prBssDesc->fgIsConnected)
