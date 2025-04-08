@@ -1116,7 +1116,7 @@ ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
         CONFIG_MTK_WIFI_TRX_DIRECT=n
     endif
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
-        CONFIG_MTK_WIFI_WFDMA_WB=n
+        CONFIG_MTK_WIFI_WFDMA_WB=y
         CONFIG_SUPPORT_WFDMA_WB_INT_MASK=n
     endif
     ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1

@@ -170,7 +170,7 @@ static void mt7935TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 				     struct RTMP_TX_RING *prTxRing);
 static void mt7935TriggerWfdmaRxCidx(struct GLUE_INFO *prGlueInfo,
 				     struct RTMP_RX_RING *prRxRing);
-static void mt79353EnableWfdmaWb(struct GLUE_INFO *prGlueInfo);
+static void mt7935EnableWfdmaWb(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter);
@@ -965,7 +965,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.wb_sw_done_flag_size = sizeof(struct WFDMA_EMI_DONE_FLAG),
 	.allocWfdmaWbBuffer = asicConnac3xAllocWfdmaWbBuffer,
 	.freeWfdmaWbBuffer = asicConnac3xFreeWfdmaWbBuffer,
-	.enableWfdmaWb = mt79353EnableWfdmaWb,
+	.enableWfdmaWb = mt7935EnableWfdmaWb,
 	.runWfdmaCidxFetch = mt7935RunWfdmaCidxFetch,
 #if defined(_HIF_PCIE)
 	.isWfdmaRxReady = mt7935IsWfdmaRxReady,
@@ -2342,6 +2342,11 @@ static void mt7935WfdmaConfigWriteBack(struct GLUE_INFO *prGlueInfo)
 	u4WrVal = (50 <<
 	WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL3_TRINFO_WB_PER_RD_TIME_SHFT) &
 	WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL3_TRINFO_WB_PER_RD_TIME_MASK;
+
+	u4WrVal |= (100 <<
+	WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL3_TRINFO_WB_PER_INT_TIME_SHFT) &
+	WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL3_TRINFO_WB_PER_INT_TIME_MASK;
+
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
 	/* set dmy read cmd start address */
@@ -2477,7 +2482,7 @@ static void mt7935WfdmaConfigCidxFetch(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_ADDR;
 	u4WrVal = WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_CFET_RX_EN_MASK |
 		WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_CFET_TX_EN_MASK;
-	u4WrVal |= 0x0 <<
+	u4WrVal |= 0x5 <<
 		WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_CFET_DLY_TIME_SHFT;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 }
@@ -2616,7 +2621,7 @@ static void mt7935TriggerWfdmaRxCidx(struct GLUE_INFO *prGlueInfo,
 {
 }
 
-static void mt79353EnableWfdmaWb(struct GLUE_INFO *prGlueInfo)
+static void mt7935EnableWfdmaWb(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -2921,7 +2926,11 @@ static void mt7935WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
 		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_TX_WB_DDONE_MASK;
 
 	/* axi v3 => 3:256 bytes, 2:128 bytes */
-	prGloCfg->word |=
+	if (prChipInfo->is_enable_wfdma_write_back)
+		prGloCfg->word |=
+		(1 << WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_BT_SIZE_SHFT);
+	else
+		prGloCfg->word |=
 		(3 << WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_BT_SIZE_SHFT);
 
 	if (prBusInfo->u4DmaMask > 32) {
