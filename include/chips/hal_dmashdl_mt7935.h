@@ -58,12 +58,12 @@
 
 /* Max/Min Quota initial value (Quota can be changed at runtime) */
 /* Group Max Quota (0-63) */
-#define MT7935_DMASHDL_GROUP_0_MAX_QUOTA               (0x300)
-#define MT7935_DMASHDL_GROUP_1_MAX_QUOTA               (0x300)
-#define MT7935_DMASHDL_GROUP_2_MAX_QUOTA               (0x300)
-#define MT7935_DMASHDL_GROUP_3_MAX_QUOTA               (0x300)
-#define MT7935_DMASHDL_GROUP_4_MAX_QUOTA               (0x300)
-#define MT7935_DMASHDL_GROUP_5_MAX_QUOTA               (0x300)
+#define MT7935_DMASHDL_GROUP_0_MAX_QUOTA               (0x3F0)
+#define MT7935_DMASHDL_GROUP_1_MAX_QUOTA               (0x3F0)
+#define MT7935_DMASHDL_GROUP_2_MAX_QUOTA               (0x3F0)
+#define MT7935_DMASHDL_GROUP_3_MAX_QUOTA               (0x3F0)
+#define MT7935_DMASHDL_GROUP_4_MAX_QUOTA               (0x3F0)
+#define MT7935_DMASHDL_GROUP_5_MAX_QUOTA               (0x3F0)
 #define MT7935_DMASHDL_GROUP_6_MAX_QUOTA               (0x0)
 #define MT7935_DMASHDL_GROUP_7_MAX_QUOTA               (0x0)
 #define MT7935_DMASHDL_GROUP_8_MAX_QUOTA               (0x0)
