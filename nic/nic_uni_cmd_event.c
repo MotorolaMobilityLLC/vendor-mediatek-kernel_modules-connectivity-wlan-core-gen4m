@@ -13111,7 +13111,7 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			prNotifyMsg->ucBssIdx = started->ucBssIdx;
 			mboxSendMsg(ad, MBOX_ID_0,
 				    (struct MSG_HDR *)prNotifyMsg,
-				    MSG_SEND_METHOD_BUF);
+				    MSG_SEND_METHOD_UNBUF);
 		}
 			break;
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
