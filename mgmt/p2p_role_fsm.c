@@ -2509,7 +2509,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 			[MAX_5G_BAND_CHN_NUM] = {0};
 		struct RF_CHANNEL_INFO aucChannelListRdd
 			[MAX_5G_BAND_CHN_NUM] = {0};
-		uint8_t ucBw;
+		uint8_t ucNewBw;
 
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC) {
 			p2pRoleFsmStateTransition(prAdapter,
@@ -2559,20 +2559,23 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
 		/* Revise BW */
-		ucBw = MAX_BW_80MHZ;
+		ucNewBw = p2pFuncGetMaxBw(prAdapter, BAND_5G,
+					  IS_BSS_AP(prAdapter, prP2pBssInfo));
+		if (ucNewBw > VHT_OP_CHANNEL_WIDTH_80)
+			ucNewBw = MAX_BW_80MHZ;
 		nicReviseBwByCh(prAdapter, BAND_5G, ucChannelNum,
 				nicGetSco(prAdapter, BAND_5G, ucChannelNum),
-				&ucBw);
+				&ucNewBw);
 		prAdapter->rWifiVar
 			.prP2pSpecificBssInfo[ucRoleIndex]
-			->ucRddBw = ucBw;
-		prP2pConnReqInfo->rChannelInfo.ucChnlBw = ucBw;
+			->ucRddBw = ucNewBw;
+		prP2pConnReqInfo->rChannelInfo.ucChnlBw = ucNewBw;
 		/* Use rConnReqInfo bw */
 
 		if (IS_NET_PWR_STATE_ACTIVE(prAdapter,
 					    prP2pBssInfo->ucBssIndex)) {
 			rlmGetChnlInfoForCSA(prAdapter,
-				BAND_5G, ucChannelNum, ucBw,
+				BAND_5G, ucChannelNum, ucNewBw,
 				prP2pBssInfo->ucBssIndex,
 				&prP2pConnReqInfo->rChannelInfo);
 			prAdapter->rWifiVar.ucCsaDeauthClient =
@@ -2586,6 +2589,11 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 			kalP2PTxCarrierOn(prAdapter->prGlueInfo,
 					prP2pBssInfo);
 		} else {
+			/* wifiVar must be modified to start ap successfully,
+			 * always use iwpriv 'set_cfg xx5gBw 3' to setup bw160
+			 * instead of wifi.cfg.
+			 */
+			prAdapter->rWifiVar.ucP2p5gBandwidth = ucNewBw;
 			p2pRoleFsmRunEventStartAP(prAdapter,
 				(struct MSG_HDR *)
 				&prP2pConnReqInfo->rMsgStartAp);
