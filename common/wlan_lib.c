@@ -9074,7 +9074,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	wlanCfgSetUint32(prAdapter, "NanEnable6g",
 		prWifiVar->ucNanEnable6g);
-	INIT_UINT(prWifiVar->ucNanUseR4AvailAttr, "NanUseR4Avail", 0,
+	INIT_UINT(prWifiVar->ucNanUseR4AvailAttr, "NanUseR4Avail", 1,
 		FEATURE_TO_CUSTOMER);
 	wlanCfgSetUint32(prAdapter, "NanUseR4Avail",
 		prWifiVar->ucNanUseR4AvailAttr);
