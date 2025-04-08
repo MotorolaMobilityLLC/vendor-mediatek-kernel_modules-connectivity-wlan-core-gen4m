@@ -2237,22 +2237,15 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 		uint16_t u2CfgCountryCode;
 		uint32_t u4CfgReadLen = 0;
 
-		pucConfigBuf = (uint8_t *)kalMemAlloc(WLAN_CFG_FILE_BUF_SIZE,
-						      VIR_MEM_TYPE);
-		kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
-
 		/* Check each cfg file to find target country. */
 		for (i = 0; i < REG_DOMAIN_CFG_NUM; i++) {
 			if (kalRequestFirmware(g_aucDomainCfgFileName[i],
 				&pucConfigBuf, &u4CfgReadLen, FALSE,
 				prAdapter->prGlueInfo->prDev) == 0) {
 				/* ToDo:: Nothing */
-			} else {
-				/* File not exist */
+			}
+			if (!pucConfigBuf) {
 				DBGLOG(RLM, INFO, "CFG file not existed!\n");
-				if (pucConfigBuf)
-					kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
-						WLAN_CFG_FILE_BUF_SIZE);
 				break;
 			}
 
@@ -2295,8 +2288,7 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 				}
 				prDomainInfoCfg++;
 			}
-			kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
-				WLAN_CFG_FILE_BUF_SIZE);
+			kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4CfgReadLen);
 			if (ucFound) {
 				prAdapter->prDomainInfo = &g_arCurRegDomain;
 				return prAdapter->prDomainInfo;
