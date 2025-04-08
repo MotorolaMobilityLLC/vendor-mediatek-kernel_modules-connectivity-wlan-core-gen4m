@@ -7093,6 +7093,30 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+uint32_t wlanUninitSta(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex, uint8_t ucAisIndex)
+{
+	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_RECONFIG_IFACE;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SetInfoLen = 0;
+
+	/* make sure netdev is disconnected */
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
+			&u4DisconnectReason, sizeof(u4DisconnectReason),
+			&u4SetInfoLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
+
+	/* uninit AIS FSM */
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm,
+			&ucAisIndex, sizeof(ucAisIndex),
+			&u4SetInfoLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "uninit ais error:%x\n", rStatus);
+
+	return rStatus;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Uninitialize the AIS related FSM and data.
@@ -7103,21 +7127,30 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
+int mtk_uninit_sta_role(struct GLUE_INFO *prGlueInfo,
 			struct net_device *ndev)
 {
+	struct ADAPTER *prAdapter = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNdevPriv = NULL;
 	uint8_t ucBssIndex = 0;
+	uint8_t ucAisIndex = 0;
 
-	if ((prAdapter == NULL) || (ndev == NULL))
-		return -1;
+	if ((prGlueInfo == NULL) || (ndev == NULL))
+		return -EINVAL;
 
+	prAdapter = prGlueInfo->prAdapter;
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
-		return -1;
+		return -EINVAL;
 
-	/* uninit AIS FSM */
-	aisFsmUninit(prAdapter, ucBssIndex);
+	ucAisIndex = AIS_INDEX(prAdapter, ucBssIndex);
+	if (!wlanGetAisNetDev(prGlueInfo, ucAisIndex)) {
+		DBGLOG(REQ, INFO, "bss = %d, ais=%d no netdev\n",
+			ucBssIndex, ucAisIndex);
+		return -EINVAL;
+	}
+
+	wlanUninitSta(prGlueInfo, ucBssIndex, ucAisIndex);
 
 	/* set the ucBssIdx to the illegal value */
 	prNdevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -7724,11 +7757,8 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct net_device *prDevHandler = NULL;
 	struct wireless_dev *prWdev = NULL;
 	struct wireless_dev **pprWdev = NULL;
-	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_DEL_IFACE;
-	uint32_t rStatus;
 	uint8_t ucBssIndex = 0, ucIdx;
 	uint8_t ucAisIndex = 0;
-	uint32_t u4SetInfoLen;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -7769,20 +7799,9 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	/* make sure netdev is disconnected */
 	DBGLOG(REQ, DEBUG, "ucBssIndex = %d\n", ucBssIndex);
-	if (!kalIsResetting()) {
-		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
-				&u4DisconnectReason, sizeof(u4DisconnectReason),
-				&u4SetInfoLen, ucBssIndex);
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
-
-		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm,
-				&ucAisIndex, 1, &u4SetInfoLen, ucBssIndex);
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(REQ, WARN, "uninit ais error:%x\n", rStatus);
-	} else {
+	if (!kalIsResetting())
+		wlanUninitSta(prAdapter->prGlueInfo, ucBssIndex, ucAisIndex);
+	else {
 		/* Invoke directly since ioctl will be invalid during reset */
 		if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 			ucBssIndex) ==
@@ -7791,7 +7810,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 				     WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY, NULL,
 				     0, ucBssIndex);
 
-		aisFsmUninit(prAdapter, AIS_INDEX(prAdapter, ucBssIndex));
+		aisFsmUninit(prAdapter, ucAisIndex);
 	}
 
 	/* prepare for removal */
@@ -7935,7 +7954,7 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		else
 #endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)
-			mtk_uninit_sta_role(prAdapter, ndev);
+			mtk_uninit_sta_role(prGlueInfo, ndev);
 
 		if (mtk_init_ap_role(prGlueInfo, ndev) != 0) {
 			DBGLOG(INIT, ERROR, "mtk_init_ap_role FAILED\n");
@@ -7948,7 +7967,7 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	} else if (type == NL80211_IFTYPE_MONITOR) {
 		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)
-			mtk_uninit_sta_role(prAdapter, ndev);
+			mtk_uninit_sta_role(prGlueInfo, ndev);
 		else if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP)
 			mtk_uninit_ap_role(prGlueInfo, ndev);
 

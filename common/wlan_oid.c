@@ -9718,14 +9718,12 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 		       uint32_t *pu4SetInfoLen) {
 	struct MSG_AIS_ABORT *prAisAbortMsg;
 	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_LOCALLY;
-	struct CONNECTION_SETTINGS *prConnSettings;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	uint8_t ucBssIndex = 0;
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
-
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	*pu4SetInfoLen = 0;
 
@@ -9736,6 +9734,7 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 		DBGLOG(REQ, WARN, "ucBssIndex %d not ais\n", ucBssIndex);
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -9743,8 +9742,8 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
-	prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
@@ -9756,13 +9755,14 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 	}
 
 	prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_JOIN_REQ;
-	if (pvSetBuffer == NULL || u4SetBufferLen == 0) {
+	if (pvSetBuffer == NULL || u4SetBufferLen < sizeof(uint32_t)) {
 		prAisAbortMsg->ucReasonOfDisconnect =
 			DISCONNECT_REASON_CODE_LOCALLY;
 	} else {
 		u4DisconnectReason = *((uint32_t *)pvSetBuffer);
 		prAisAbortMsg->ucReasonOfDisconnect =
-			u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE ?
+			u4DisconnectReason ==
+			DISCONNECT_REASON_CODE_RECONFIG_IFACE ?
 			DISCONNECT_REASON_CODE_LOCALLY :
 			u4DisconnectReason;
 	}
@@ -9771,10 +9771,10 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
 			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN)
 		prAisFsmInfo->fgIsScanOidAborted = TRUE;
-	if (u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE) {
+	if (u4DisconnectReason == DISCONNECT_REASON_CODE_RECONFIG_IFACE) {
 		/* Clear pending request (AIS). */
 		aisFsmFlushRequest(prAdapter, ucBssIndex);
-		prAisFsmInfo->fgIsDelIface = TRUE;
+		prAisFsmInfo->fgIsReconfigIface = TRUE;
 	}
 
 	prAisAbortMsg->fgDelayIndication = FALSE;
@@ -9795,13 +9795,12 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 	       aisGetDiscReason(prAisAbortMsg->ucReasonOfDisconnect));
 
 #if (CFG_SUPPORT_SUPPLICANT_SME == 1)
-	prAdapter->fgSuppSmeLinkDownPend = TRUE;
+	prAisFsmInfo->fgIsDisassocPend = TRUE;
 
 	return WLAN_STATUS_PENDING;
 #else
-	if (u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE) {
-		prAdapter->fgSuppSmeLinkDownPend = TRUE;
-
+	if (u4DisconnectReason == DISCONNECT_REASON_CODE_RECONFIG_IFACE) {
+		prAisFsmInfo->fgIsDisassocPend = TRUE;
 		return WLAN_STATUS_PENDING;
 	}
 
@@ -15279,7 +15278,7 @@ wlanoidLinkDown(struct ADAPTER *prAdapter,
 	aisBssLinkDown(prAdapter, ucBssIndex);
 
 	return WLAN_STATUS_SUCCESS;
-} /* wlanoidSetDisassociate */
+} /* wlanoidLinkDown */
 
 #if CFG_WIFI_TXPWR_TBL_DUMP
 #define WIFI_TXPWR_TBL_DUMP_VER 0x01

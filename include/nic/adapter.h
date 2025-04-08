@@ -3047,8 +3047,6 @@ struct ADAPTER {
 	u_int8_t fgIsSupportGetTxPower;
 	u_int8_t fgIsEnableLpdvt;
 
-	u_int8_t fgSuppSmeLinkDownPend;
-
 	/* SER related info */
 	uint8_t ucSerState;
 

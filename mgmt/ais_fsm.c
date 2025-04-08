@@ -1028,7 +1028,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucSeqNumOfScanReq = 0;
 	prAisFsmInfo->fgIsChannelRequested = FALSE;
 	prAisFsmInfo->fgIsChannelGranted = FALSE;
-	prAisFsmInfo->fgIsDelIface = FALSE;
+	prAisFsmInfo->fgIsReconfigIface = FALSE;
 	prAisFsmInfo->u4PostponeIndStartTime = 0;
 
 	prAisFsmInfo->ucIsSapCsaPending = FALSE;
@@ -3632,8 +3632,8 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			}
 #endif
 
-			if (prAdapter->fgSuppSmeLinkDownPend) {
-				prAdapter->fgSuppSmeLinkDownPend = FALSE;
+			if (prAisFsmInfo->fgIsDisassocPend) {
+				prAisFsmInfo->fgIsDisassocPend = FALSE;
 
 				kalOidComplete(prAdapter->prGlueInfo,
 					NULL, 0, WLAN_STATUS_SUCCESS);
@@ -4677,7 +4677,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 		prBssInfo->u2DeauthReason = REASON_CODE_DEAUTH_LEAVING_BSS;
 
 	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING ||
-	    prAisFsmInfo->fgIsDelIface) {
+	    prAisFsmInfo->fgIsReconfigIface) {
 		/* 4 <3> invoke abort handler */
 		aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
 			fgDelayIndication, ucBssIndex);
