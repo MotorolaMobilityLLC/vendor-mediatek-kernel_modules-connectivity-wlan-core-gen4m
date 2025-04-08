@@ -3799,6 +3799,15 @@ void nicDumpTxMgmtPacketHex(struct ADAPTER *prAdapter,
 	if ((nicNeedDumpActionFrame(pHeader, prMsduInfo->u2FrameLength) ||
 	     BIT(pHeader->b4SubType) & u2MgmtHexDump) &&
 	    prMsduInfo->u2FrameLength <= MSDU_MAX_LENGTH) {
+		if (!pHeader) {
+			DBGLOG(TX, ERROR, "Invalid pHeader");
+			return;
+		}
+		if (prMsduInfo->u2FrameLength == 0) {
+			DBGLOG(TX, ERROR, "Invalid u2FrameLength == 0");
+			return;
+		}
+
 		DBGDUMP_HEX(TX, INFO, "Dump TX MGMT Frame:",
 			    pHeader, prMsduInfo->u2FrameLength);
 		DBGLOG(TX, INFO,

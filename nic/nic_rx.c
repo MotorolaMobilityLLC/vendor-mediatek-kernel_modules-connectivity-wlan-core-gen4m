@@ -2312,8 +2312,12 @@ static void nicDumpRxMgmtPacketHex(struct ADAPTER *prAdapter,
 	if ((nicNeedDumpActionFrame(pHeader, prSwRfb->u2PacketLen) ||
 	     BIT(pHeader->b4SubType) & u2MgmtHexDump) &&
 	    prSwRfb->u2PacketLen <= MSDU_MAX_LENGTH) {
-		DBGDUMP_HEX(RX, INFO, "Dump RX MGMT Frame:",
-			    pHeader, prSwRfb->u2PacketLen);
+		if (prSwRfb->u2PacketLen > 0) {
+			DBGDUMP_HEX(RX, INFO, "Dump RX MGMT Frame:",
+				    pHeader, prSwRfb->u2PacketLen);
+		} else {
+			DBGLOG(RX, ERROR, "Invalid u2PacketLen");
+		}
 		DBGLOG(RX, INFO, "Dump RX MGMT Frame End subtype=%u (%u)",
 		       pHeader->b4SubType, prSwRfb->u2PacketLen);
 	}
@@ -2421,8 +2425,11 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 			DBGLOG(RX, WARN,
 			   "Bypass this mgmt frame without wlanProbe done\n");
 		} else if (apfnProcessRxMgtFrame[ucSubtype]) {
-
-			nicDumpRxMgmtPacketHex(prAdapter, prSwRfb);
+			if (prSwRfb->pvHeader) {
+				nicDumpRxMgmtPacketHex(prAdapter, prSwRfb);
+			} else {
+				DBGLOG(RX, ERROR, "Invalid pvHeader\n");
+			}
 
 			switch (apfnProcessRxMgtFrame[ucSubtype] (prAdapter,
 					prSwRfb)) {

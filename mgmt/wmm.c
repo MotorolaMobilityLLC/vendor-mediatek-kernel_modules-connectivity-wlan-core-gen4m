@@ -290,10 +290,6 @@ static void wmmTxTspecFrame(struct ADAPTER *prAdapter, uint8_t ucTid,
 
 	/******** Insert into Msdu Queue *************/
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-#if 0
-	DumpData(((uint8_t *)prMsduInfo->prPacket) + u2PayLoadLen,
-		prMsduInfo->u2FrameLength - u2PayLoadLen, "TSPEC-IE");
-#endif
 }
 
 void wmmSetupTspecTimeOut(struct ADAPTER *prAdapter, uintptr_t ulParam)
