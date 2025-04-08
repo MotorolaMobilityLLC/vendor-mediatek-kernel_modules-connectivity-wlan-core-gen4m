@@ -1868,9 +1868,6 @@ int rx_thread(void *data);
 uint64_t kalGetBootTime(void);
 #endif
 
-int kalMetInitProcfs(struct GLUE_INFO *prGlueInfo);
-int kalMetRemoveProcfs(void);
-
 uint8_t kalGetEapolKeyType(void *prPacket);
 
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG

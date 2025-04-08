@@ -863,31 +863,6 @@ enum nl80211_wpa_versions {
 #define GLUE_SET_INDEPENDENT_PKT(_p, _fgIsIndePkt) \
 	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt = _fgIsIndePkt)
 
-#if CFG_MET_TAG_SUPPORT
-#define GL_MET_TAG_START(_id, _name)	met_tag_start(_id, _name)
-#define GL_MET_TAG_END(_id, _name)	met_tag_end(_id, _name)
-#define GL_MET_TAG_ONESHOT(_id, _name, _value) \
-	met_tag_oneshot(_id, _name, _value)
-#define GL_MET_TAG_DISABLE(_id)		met_tag_disable(_id)
-#define GL_MET_TAG_ENABLE(_id)		met_tag_enable(_id)
-#define GL_MET_TAG_REC_ON()		met_tag_record_on()
-#define GL_MET_TAG_REC_OFF()		met_tag_record_off()
-#define GL_MET_TAG_INIT()		met_tag_init()
-#define GL_MET_TAG_UNINIT()		met_tag_uninit()
-#else
-#define GL_MET_TAG_START(_id, _name)
-#define GL_MET_TAG_END(_id, _name)
-#define GL_MET_TAG_ONESHOT(_id, _name, _value)
-#define GL_MET_TAG_DISABLE(_id)
-#define GL_MET_TAG_ENABLE(_id)
-#define GL_MET_TAG_REC_ON()
-#define GL_MET_TAG_REC_OFF()
-#define GL_MET_TAG_INIT()
-#define GL_MET_TAG_UNINIT()
-#endif
-
-#define MET_TAG_ID	0
-
 /*----------------------------------------------------------------------------*/
 /* Macros of Data Type Check                                                  */
 /*----------------------------------------------------------------------------*/
@@ -1026,18 +1001,6 @@ extern const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 extern const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len);
-
-#if CFG_MET_PACKET_TRACE_SUPPORT
-#ifdef CFG_REMIND_IMPLEMENT
-#define kalMetTagPacket(_prGlueInfo, _prPacket, _eTag) \
-KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#else
-void kalMetTagPacket(struct GLUE_INFO *prGlueInfo,
-		     void *prPacket, enum ENUM_TX_PROFILING_TAG eTag);
-#endif
-
-void kalMetInit(struct GLUE_INFO *prGlueInfo);
-#endif
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define wlanUpdateChannelTable(_prGlueInfo) \

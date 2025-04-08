@@ -82,14 +82,6 @@
 #define CFG_CR4_FW_FILENAME             "WIFI_RAM_CODE2"
 #endif
 
-#ifndef CFG_MET_PACKET_TRACE_SUPPORT
-#define CFG_MET_PACKET_TRACE_SUPPORT    0 /*move to wlan/MAKEFILE */
-#endif
-
-#ifndef CFG_MET_TAG_SUPPORT
-#define CFG_MET_TAG_SUPPORT             0
-#endif
-
 #ifndef CFG_SUPPORT_PERF_IND
 #define CFG_SUPPORT_PERF_IND            1
 #endif

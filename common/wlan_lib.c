@@ -12366,10 +12366,6 @@ void wlanTxProfilingTagPacket(struct ADAPTER *prAdapter,
 	if (!prPacket)
 		return;
 
-#if CFG_MET_PACKET_TRACE_SUPPORT
-	kalMetTagPacket(prAdapter->prGlueInfo, prPacket, eTag);
-#endif
-
 	switch (eTag) {
 	case TX_PROF_TAG_OS_TO_DRV:
 		kalTraceEvent("Xmit ipid=0x%04x seq=%d",

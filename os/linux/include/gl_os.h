@@ -230,9 +230,6 @@ extern struct ADAPTER *g_prAdapter;
 #include <connectivity_build_in_adapter.h>
 #endif
 
-#if CFG_MET_TAG_SUPPORT
-#include <mt-plat/met_drv.h>
-#endif
 #include <linux/time.h>
 #include <linux/fb.h>
 #if CFG_MTK_ANDROID_WMT && \
@@ -1041,11 +1038,6 @@ struct GLUE_INFO {
 	KAL_WAKE_LOCK_T * prAlarmTimerWakeLock;
 #endif
 
-#if CFG_MET_PACKET_TRACE_SUPPORT
-	u_int8_t fgMetProfilingEn;
-	uint16_t u2MetUdpPort;
-#endif
-
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 	struct kfifo rTxMsduRetFifo;
 	uint8_t *prTxMsduRetFifoBuf;
@@ -1843,31 +1835,6 @@ enum {
 #endif
 #endif
 
-#if CFG_MET_TAG_SUPPORT
-#define GL_MET_TAG_START(_id, _name)	met_tag_start(_id, _name)
-#define GL_MET_TAG_END(_id, _name)	met_tag_end(_id, _name)
-#define GL_MET_TAG_ONESHOT(_id, _name, _value) \
-	met_tag_oneshot(_id, _name, _value)
-#define GL_MET_TAG_DISABLE(_id)		met_tag_disable(_id)
-#define GL_MET_TAG_ENABLE(_id)		met_tag_enable(_id)
-#define GL_MET_TAG_REC_ON()		met_tag_record_on()
-#define GL_MET_TAG_REC_OFF()		met_tag_record_off()
-#define GL_MET_TAG_INIT()		met_tag_init()
-#define GL_MET_TAG_UNINIT()		met_tag_uninit()
-#else
-#define GL_MET_TAG_START(_id, _name)
-#define GL_MET_TAG_END(_id, _name)
-#define GL_MET_TAG_ONESHOT(_id, _name, _value)
-#define GL_MET_TAG_DISABLE(_id)
-#define GL_MET_TAG_ENABLE(_id)
-#define GL_MET_TAG_REC_ON()
-#define GL_MET_TAG_REC_OFF()
-#define GL_MET_TAG_INIT()
-#define GL_MET_TAG_UNINIT()
-#endif
-
-#define MET_TAG_ID	0
-
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 #define PCIE_GEN1    1
 #define PCIE_GEN3    3
@@ -2075,13 +2042,6 @@ extern int glRegisterEarlySuspend(struct early_suspend
 
 extern int glUnregisterEarlySuspend(struct early_suspend
 				    *prDesc);
-#endif
-
-#if CFG_MET_PACKET_TRACE_SUPPORT
-void kalMetTagPacket(struct GLUE_INFO *prGlueInfo,
-		     void *prPacket, enum ENUM_TX_PROFILING_TAG eTag);
-
-void kalMetInit(struct GLUE_INFO *prGlueInfo);
 #endif
 
 void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);

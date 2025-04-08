@@ -8615,11 +8615,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		wlanCfgSetChip(prGlueInfo->prAdapter);
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
 		kalPerMonInit(prGlueInfo);
-#if CFG_MET_TAG_SUPPORT
-		if (met_tag_init() != 0)
-			DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
-#endif
-
 #if CFG_SUPPORT_TPENHANCE_MODE
 		kalTpeInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
@@ -9549,10 +9544,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		sysCreateMonDbgFs(prGlueInfo);
 #endif
 
-#if CFG_MET_PACKET_TRACE_SUPPORT
-		kalMetInit(prGlueInfo);
-#endif
-
 #if CFG_SUPPORT_CSI
 		glCsiSupportInit(prGlueInfo);
 #endif
@@ -10027,11 +10018,6 @@ void wlanRemove(void)
 
 #if CFG_SUPPORT_CSI
 	glCsiSupportDeinit(prGlueInfo);
-#endif
-
-#if CFG_MET_TAG_SUPPORT
-	if (GL_MET_TAG_UNINIT() != 0)
-		DBGLOG(INIT, ERROR, "MET_TAG_UNINIT error!\n");
 #endif
 
 #if CFG_SUPPORT_MET_LOG

@@ -759,25 +759,6 @@ __priv_set_int(struct net_device *prNetDev,
 	break;
 #endif
 
-#if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
-	case PRIV_CMD_MET_PROFILING: {
-		/* PARAM_CUSTOM_WFD_DEBUG_STRUCT_T rWfdDebugModeInfo; */
-		/* rWfdDebugModeInfo.ucWFDDebugMode=(UINT_8)pu4IntBuf[1]; */
-		/* rWfdDebugModeInfo.u2SNPeriod=(UINT_16)pu4IntBuf[2]; */
-		/* DBGLOG(REQ, DEBUG, ("WFD Debug Mode:%d Period:%d\n",
-		 *  rWfdDebugModeInfo.ucWFDDebugMode,
-		 *  rWfdDebugModeInfo.u2SNPeriod));
-		 */
-		prGlueInfo->fgMetProfilingEn = (uint8_t) pu4IntBuf[1];
-		prGlueInfo->u2MetUdpPort = (uint16_t) pu4IntBuf[2];
-		/* DBGLOG(INIT, DEBUG, ("MET_PROF: Enable=%d UDP_PORT=%d\n",
-		 *  prGlueInfo->fgMetProfilingEn, prGlueInfo->u2MetUdpPort);
-		 */
-
-	}
-	break;
-
-#endif
 	case PRIV_CMD_SET_SER:
 		kalIoctl(prGlueInfo, wlanoidSetSer, (void *)&pu4IntBuf[1],
 			 sizeof(uint32_t), &u4BufLen);
