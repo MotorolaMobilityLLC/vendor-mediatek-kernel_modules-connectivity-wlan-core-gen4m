@@ -53,17 +53,6 @@
  */
 
 #ifdef CONFIG_NL80211_TESTMODE
-#if CFG_SUPPORT_NFC_BEAM_PLUS
-
-struct NL80211_DRIVER_SET_NFC_PARAMS {
-	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
-	uint32_t NFC_Enable;
-
-};
-
-#endif
-
-
 
 struct NL80211_DRIVER_GET_STA_STATISTICS_PARAMS {
 	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
@@ -319,10 +308,7 @@ int mtk_cfg80211_testmode_set_key_ext(struct wiphy
 				    struct wireless_dev *wdev,
 					void *data, int len);
 #endif
-#if CFG_SUPPORT_NFC_BEAM_PLUS
-int mtk_cfg80211_testmode_get_scan_done(struct wiphy *wiphy,
-		void *data, int len, struct GLUE_INFO *prGlueInfo);
-#endif
+
 #else
 /* IGNORE KERNEL DEPENCY ERRORS */
 /* #error "Please ENABLE kernel config (CONFIG_NL80211_TESTMODE) to support

@@ -4655,25 +4655,6 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 				mtk_cfg80211_testmode_get_sta_statistics(
 					wiphy, data, len, prGlueInfo);
 			break;
-#if CFG_SUPPORT_NFC_BEAM_PLUS
-		case 0x11:	/*NFC Beam + Indication */
-			if (data && len) {
-				struct NL80211_DRIVER_SET_NFC_PARAMS *prParams =
-					(struct NL80211_DRIVER_SET_NFC_PARAMS *)
-					data;
-
-				DBGLOG(P2P, INFO,
-					"NFC: BEAM[%d]\n",
-					prParams->NFC_Enable);
-			}
-			break;
-		case 0x12:	/*NFC Beam + Indication */
-			DBGLOG(P2P, INFO, "NFC: Polling\n");
-			i4Status =
-				mtk_cfg80211_testmode_get_scan_done(
-					wiphy, data, len, prGlueInfo);
-			break;
-#endif
 		case TESTMODE_CMD_ID_HS_CONFIG:
 			i4Status =
 				mtk_p2p_cfg80211_testmode_hotspot_config_cmd(
@@ -4784,25 +4765,6 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 				mtk_cfg80211_testmode_get_sta_statistics(
 					wiphy, data, len, prGlueInfo);
 			break;
-#if CFG_SUPPORT_NFC_BEAM_PLUS
-		case 0x11:	/*NFC Beam + Indication */
-			if (data && len) {
-				struct NL80211_DRIVER_SET_NFC_PARAMS *prParams =
-					(struct NL80211_DRIVER_SET_NFC_PARAMS *)
-					data;
-
-				DBGLOG(P2P, INFO,
-					"NFC: BEAM[%d]\n",
-					prParams->NFC_Enable);
-			}
-			break;
-		case 0x12:	/*NFC Beam + Indication */
-			DBGLOG(P2P, INFO, "NFC: Polling\n");
-			i4Status =
-				mtk_cfg80211_testmode_get_scan_done(
-					wiphy, data, len, prGlueInfo);
-			break;
-#endif
 		case TESTMODE_CMD_ID_HS_CONFIG:
 			i4Status =
 				mtk_p2p_cfg80211_testmode_hotspot_config_cmd(

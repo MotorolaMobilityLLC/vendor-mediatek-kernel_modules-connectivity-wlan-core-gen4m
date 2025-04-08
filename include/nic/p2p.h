@@ -311,9 +311,6 @@ struct P2P_CHNL_REQ_INFO {
 	enum ENUM_CHNL_EXT eOriChnlSco;
 	uint32_t u4MaxInterval;
 	enum ENUM_CH_REQ_TYPE eChnlReqType;
-#if CFG_SUPPORT_NFC_BEAM_PLUS
-	uint32_t NFC_BEAM;	/*NFC Beam + Indication */
-#endif
 	uint8_t ucChReqNum;
 };
 
