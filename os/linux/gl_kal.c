@@ -20279,21 +20279,19 @@ void kalRxRfbReturnWork(struct work_struct *work)
 	struct ADAPTER *prAdapter;
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	struct BUS_INFO *prBusInfo;
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	uint32_t u4TputMbps, u4Idx;
 	uint32_t u4RfbIdx = 0;
 	u_int8_t fgRet;
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
-#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
 	if (!pr)
 		return;
 
 	prAdapter = pr->prAdapter;
-#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
-	prBusInfo = prAdapter->chip_info->bus_info;
-#if CFG_DYNAMIC_RFB_ADJUSTMENT
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
 	u4TputMbps = kalGetTpMbps(prAdapter, PKT_PATH_ALL);
 	for (u4Idx = 0; u4Idx < PERF_MON_RFB_MAX_THRESHOLD; u4Idx++) {
 		if (u4TputMbps <
@@ -20314,11 +20312,17 @@ void kalRxRfbReturnWork(struct work_struct *work)
 		fgRet = nicRxDecRfbCnt(prAdapter);
 
 	if (fgRet) {
-		DBGLOG(INIT, DEBUG, "Tput:%uMbps u4Idx:%u u4RfbIdx:%u\n",
-			u4TputMbps, u4Idx, u4RfbIdx);
+		DBGLOG(INIT, DEBUG,
+			"Tput:%uMbps u4Idx:%u u4RfbIdx:%u u4RfbUnUseCntLv:%u\n",
+			u4TputMbps, u4Idx, u4RfbIdx,
+			prAdapter->u4RfbUnUseCntLv);
 	}
+
 skip:
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	prBusInfo = prAdapter->chip_info->bus_info;
 	if (prBusInfo->u4WfdmaTh)
 		kalIncPagePoolPageNum();
 	else
