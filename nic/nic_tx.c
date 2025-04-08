@@ -2704,7 +2704,8 @@ uint32_t nicTxMsduQueue(struct ADAPTER *prAdapter,
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
 #endif
 
-		if (prMsduInfo->eSrc == TX_PACKET_OS) {
+		if (prMsduInfo->eSrc == TX_PACKET_OS ||
+		    prMsduInfo->eSrc == TX_PACKET_FORWARDING) {
 			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 					       TX_PROF_TAG_DRV_TX_DONE);
 		} else if (!fgTxDoneHandler)
@@ -3487,6 +3488,10 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 		prMsduInfo->pfTxDoneHandler = nicTxDummyTxDone;
 
 	prMsduInfo->pfHifTxMsduDoneCb = nicHifTxMsduDoneCb;
+
+	/* Tx profiling */
+	wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
+			       TX_PROF_TAG_DRV_ENQUE);
 
 	return TRUE;
 }
@@ -6304,10 +6309,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 		nicTxFillMsduInfo(prAdapter, prMsduInfo, pvPacket);
 
 		TX_INC_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT);
-
-		/* Tx profiling */
-		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
-				       TX_PROF_TAG_DRV_ENQUE);
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prMsduInfo->ucBssIndex);

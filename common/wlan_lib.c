@@ -4205,6 +4205,10 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter, void *prPacket)
 		u4SysTime = (OS_SYSTIME) kalGetTimeTick();
 		GLUE_SET_PKT_ARRIVAL_TIME(prPacket, u4SysTime);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+		STATS_TX_TIME_ARRIVE(prPacket);
+#endif
+
 		return TRUE;
 	}
 
@@ -5217,10 +5221,6 @@ uint32_t wlanEnqueueTxPacket(struct ADAPTER *prAdapter,
 		TX_INC_CNT(&prAdapter->rTxCtrl, TX_MSDUINFO_COUNT);
 
 		/* prMsduInfo->eSrc = TX_PACKET_OS; */
-
-		/* Tx profiling */
-		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
-				       TX_PROF_TAG_DRV_ENQUE);
 
 #if CFG_FAST_PATH_SUPPORT
 		/* Check if need to send a MSCS request */
@@ -12295,7 +12295,8 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 					NSEC_TO_USEC((uint32_t)(
 					prPktProfile->u8EnqTime -
 					prPktProfile->u8XmitArrival)),
-					prPktProfile->u8XmitArrival,
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8XmitArrival)),
 					prMsduInfo->ucBssIndex,
 					prMsduInfo->ucWlanIndex,
 					prMsduInfo->ucPID,
