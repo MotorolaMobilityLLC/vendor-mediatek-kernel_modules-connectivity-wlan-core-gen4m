@@ -1014,6 +1014,7 @@ struct SW_RFB {
 	uint16_t u2FrameCtrl;
 	uint16_t u2SequenceControl;
 	uint16_t u2SSN;
+	uint16_t u2EthTypeLen;
 	uint8_t ucTid;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -1110,10 +1111,10 @@ struct RX_CTRL {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 	/* Store SysTime of Last Rx */
-	uint32_t u4LastRxTime[MAX_BSSID_NUM];
+	OS_SYSTIME rLastRxTime[MAX_BSSID_NUM];
 
 	/* Store SysTime of Last unicast Rx */
-	uint32_t u4LastUnicastRxTime[MAX_BSSID_NUM];
+	OS_SYSTIME rLastUnicastRxTime[MAX_BSSID_NUM];
 
 	uint64_t au8PktTypeCnt[PKT_TYPE_NUM];
 	uint64_t au8HifWakeupCnt[HIF_WAKEUP_NUM];

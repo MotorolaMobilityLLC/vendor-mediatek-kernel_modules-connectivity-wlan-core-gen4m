@@ -377,10 +377,8 @@ u_int8_t hs20IsUnsolicitedNeighborAdv(struct ADAPTER *prAdapter,
 u_int8_t hs20IsUnsecuredFrame(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo, struct SW_RFB *prCurrSwRfb)
 {
-	uint16_t *pu2PktIpVer = (uint16_t *) ((uint8_t *)
-		prCurrSwRfb->pvHeader + (ETHER_HEADER_LEN - ETHER_TYPE_LEN));
+	uint16_t u2EthTypeLen = prCurrSwRfb->u2EthTypeLen;
 
-	/* kalPrint("IPVER 0x%4X\n", htons(*pu2PktIpVer)); */
 #if CFG_HS20_DEBUG & 0
 	uint8_t i = 0;
 
@@ -393,9 +391,9 @@ u_int8_t hs20IsUnsecuredFrame(struct ADAPTER *prAdapter,
 	kalPrint("\n");
 #endif
 
-	if (*pu2PktIpVer == htons(ETH_P_ARP))
+	if (u2EthTypeLen == ETH_P_ARP)
 		return hs20IsGratuitousArp(prAdapter, prCurrSwRfb);
-	else if (*pu2PktIpVer == htons(ETH_P_IPV6))
+	else if (u2EthTypeLen == ETH_P_IPV6)
 		return hs20IsUnsolicitedNeighborAdv(prAdapter, prCurrSwRfb);
 
 	return FALSE;

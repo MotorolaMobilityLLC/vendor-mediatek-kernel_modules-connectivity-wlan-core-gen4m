@@ -1659,8 +1659,8 @@ void asicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	status = wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
-			&rRxRateInfo);
+	status = __wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate,
+			NULL, &rRxRateInfo, FALSE);
 	/* ucRate(500kbs) = u4PhyRate(100kbps) */
 	if (status < 0 || u4PhyRate == 0)
 		return;

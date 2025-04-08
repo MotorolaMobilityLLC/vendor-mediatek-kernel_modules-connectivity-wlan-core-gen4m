@@ -5702,7 +5702,7 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 {
 	struct RX_CTRL	*prRxCtrl;
 	struct TX_CTRL	*prTxCtrl;
-	OS_SYSTIME	u4CurrentTime;
+	OS_SYSTIME	rCurrentTime;
 	bool		bValid = true;
 	uint32_t	u4MonitorWindow;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
@@ -5721,14 +5721,14 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	prTxCtrl = &prAdapter->rTxCtrl;
 	ASSERT(prTxCtrl);
 
-	GET_BOOT_SYSTIME(&u4CurrentTime);
+	GET_BOOT_SYSTIME(&rCurrentTime);
 
 	DBGLOG(NIC, DEBUG,
-			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastUnicastRxTime: %d, u4LastTxTime: %d\n",
-			u4MonitorWindow, u4CurrentTime,
-			prRxCtrl->u4LastRxTime[ucBssIdx],
-			prRxCtrl->u4LastUnicastRxTime[ucBssIdx],
-			prTxCtrl->u4LastTxTime[ucBssIdx]);
+			"u4MonitorWindow: %d, rCurrentTime: %d, rLastRxTime: %d, rLastUnicastRxTime: %d, rLastTxTime: %d\n",
+			u4MonitorWindow, rCurrentTime,
+			prRxCtrl->rLastRxTime[ucBssIdx],
+			prRxCtrl->rLastUnicastRxTime[ucBssIdx],
+			prTxCtrl->rLastTxTime[ucBssIdx]);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo) {
@@ -5762,16 +5762,16 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 #endif
 
 	if (IS_BSS_AIS(prBssInfo)) {
-		if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
-			prRxCtrl->u4LastRxTime[ucBssIdx],
+		if (!CHECK_FOR_TIMEOUT(rCurrentTime,
+			prRxCtrl->rLastRxTime[ucBssIdx],
 			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
 		    aisBeaconTimeoutFilterPolicy(prAdapter, ucBssIdx))
 			bValid = FALSE;
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	else if (IS_BSS_P2P(prBssInfo)) {
-		if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
-			prRxCtrl->u4LastRxTime[ucBssIdx],
+		if (!CHECK_FOR_TIMEOUT(rCurrentTime,
+			prRxCtrl->rLastRxTime[ucBssIdx],
 			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
 			DBGLOG(NIC, DEBUG,
 				"Policy 1 hit, RX in the past duration");

@@ -345,13 +345,13 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 		/* Record the time that rx unicast when Tx 1st ARP Req */
 		if (!arpMonGetLastRxUnicastTime(ad, ucBssIdx)) {
 			arpMonSetLastRxUnicastTime(ad, ucBssIdx,
-				prRxCtrl->u4LastUnicastRxTime[ucBssIdx]);
+				prRxCtrl->rLastUnicastRxTime[ucBssIdx]);
 			arpMonSetCurrentRxUnicastTime(ad, ucBssIdx, 0);
 		}
 
 		/* Record the time that rx unicast when TX ARP Req recently */
 		arpMonSetCurrentRxUnicastTime(ad, ucBssIdx,
-			prRxCtrl->u4LastUnicastRxTime[ucBssIdx]);
+			prRxCtrl->rLastUnicastRxTime[ucBssIdx]);
 	}
 
 	if (arpMonGetTxCnt(ad, ucBssIdx) > prWifiVar->uArpMonitorNumber) {
@@ -898,7 +898,8 @@ void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
 	}
 }
 
-static void arpMonGetUnicastPktTime(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
+static void arpMonGetUnicastPktTime(struct ADAPTER *ad, struct SW_RFB *prSwRfb,
+	OS_SYSTIME rCurrentTime)
 {
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct RX_CTRL *prRxCtrl;
@@ -907,7 +908,7 @@ static void arpMonGetUnicastPktTime(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 	uint8_t rSrcMacAddr[MAC_ADDR_LEN];
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIdx;
-	uint32_t u4LastUnicastRxTime;
+	OS_SYSTIME rLastUnicastRxTime;
 
 	if (!ad)
 		return;
@@ -948,18 +949,18 @@ static void arpMonGetUnicastPktTime(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 		MAC2STR(arpMonGetGatewayMacPtr(ad, ucBssIdx)),
 		MAC2STR(rSrcMacAddr));
 
-	u4LastUnicastRxTime = prRxCtrl->u4LastUnicastRxTime[ucBssIdx];
+	rLastUnicastRxTime = prRxCtrl->rLastUnicastRxTime[ucBssIdx];
 	if (!arpMonEqualGatewayMac(ad, ucBssIdx, rSrcMacAddr))
 		return;
 
 	arpMonIncGatewayRxCnt(ad, ucBssIdx);
 
-	GET_BOOT_SYSTIME(&prRxCtrl->u4LastUnicastRxTime[ucBssIdx]);
+	prRxCtrl->rLastUnicastRxTime[ucBssIdx] = rCurrentTime;
 	DBGLOG(AM, LOUD,
 		"RX UNICAST [IPID=0x%04x] update %u/%u\n",
 		GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket),
-		u4LastUnicastRxTime,
-		prRxCtrl->u4LastUnicastRxTime[ucBssIdx]);
+		rLastUnicastRxTime,
+		prRxCtrl->rLastUnicastRxTime[ucBssIdx]);
 }
 
 /**
@@ -1054,7 +1055,7 @@ void arpMonResetArpDetect(struct ADAPTER *ad, uint8_t ucBssIdx)
 }
 
 void arpMonProcessRxPacket(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
-	struct SW_RFB *prSwRfb)
+	struct SW_RFB *prSwRfb, OS_SYSTIME rCurrentTime)
 {
 	if (!ad)
 		return;
@@ -1065,7 +1066,7 @@ void arpMonProcessRxPacket(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	/* STA or GC */
 	arpMonHandleRxDhcpPacket(ad, prSwRfb);
 
-	arpMonGetUnicastPktTime(ad, prSwRfb);
+	arpMonGetUnicastPktTime(ad, prSwRfb, rCurrentTime);
 }
 
 void arpMonProcessTxPacket(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo)

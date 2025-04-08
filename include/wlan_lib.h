@@ -2660,6 +2660,9 @@ int wlanGetRxRateByStaRec(struct GLUE_INFO *prGlueInfo,
 		struct STA_RECORD *prStaRec, uint32_t *pu4CurRate,
 		uint32_t *pu4MaxRate, struct RxRateInfo *prRxRateInfo);
 
+int __wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
+		uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
+		struct RxRateInfo *prRxRateInfo, u_int8_t fgRxRateMode);
 int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 		uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
 		struct RxRateInfo *prRxRateInfo);

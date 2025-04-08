@@ -3868,6 +3868,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		}
 
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
+			prCurrSwRfb->u2EthTypeLen == ETH_P_1X &&
 			qmDetectRxInvalidEAPOL(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 			DBGLOG(QM, DEBUG,
@@ -4097,8 +4098,7 @@ u_int8_t qmDetectRxInvalidEAPOL(struct ADAPTER *prAdapter,
 	if (prSwRfb->fgFragFrame && ucFragNo != 0)
 		return FALSE;
 
-	u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8)
-			| (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
+	u2EtherType = prSwRfb->u2EthTypeLen;
 
 	/* return FALSE if EtherType is not EAPOL */
 	if (u2EtherType != ETH_P_1X)
@@ -8669,12 +8669,9 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 #endif
 
 u_int8_t
-qmIsIPLayerPacket(uint8_t *pucPkt)
+qmIsIPLayerPacket(struct SW_RFB *prSwRfb, uint8_t *pucPkt)
 {
-	uint16_t u2EtherType =
-		(pucPkt[ETH_TYPE_LEN_OFFSET] << 8)
-			| (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
-
+	uint16_t u2EtherType = prSwRfb->u2EthTypeLen;
 	if (u2EtherType == ETH_P_IPV4 || u2EtherType == ETH_P_IPV6) {
 		uint8_t *pucEthBody = &pucPkt[ETH_HLEN];
 		uint8_t ucIpProto =
@@ -8733,7 +8730,7 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 #if ((CFG_SUPPORT_LOWLATENCY_MODE == 1) || (CFG_SUPPORT_OSHARE == 1) || \
 	(CFG_MTK_MDDP_SUPPORT == 1))
-	if (fgCheckDrop && qmIsIPLayerPacket(pucData))
+	if (fgCheckDrop && qmIsIPLayerPacket(prSwRfb, pucData))
 		return TRUE;
 #endif
 
@@ -8980,9 +8977,7 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 		return;
 
 	/* get ethernet protocol */
-	u2EtherType = (pPkt[ETH_TYPE_LEN_OFFSET] << 8)
-			| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
-
+	u2EtherType = prSwRfb->u2EthTypeLen;
 	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
 
 	if (u2EtherType == ETH_P_1X) {

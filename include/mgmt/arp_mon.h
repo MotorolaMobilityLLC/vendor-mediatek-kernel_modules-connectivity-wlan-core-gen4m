@@ -61,7 +61,7 @@ void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
 void arpMonHandleMsg(struct ADAPTER *ad, struct MSG_HDR *prMsgHdr);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 void arpMonProcessRxPacket(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
-	struct SW_RFB *prSwRfb);
+	struct SW_RFB *prSwRfb, OS_SYSTIME rCurrentTime);
 void arpMonProcessTxPacket(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo);
 #else /* ARP_MONITER_ENABLE */
 

@@ -2174,8 +2174,8 @@ void asicConnac2xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	status = wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
-				&rRxRateInfo);
+	status = __wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate,
+			NULL, &rRxRateInfo, FALSE);
 	if (status < 0 || u4PhyRate == 0)
 		return;
 

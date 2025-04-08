@@ -459,6 +459,21 @@ void nicRxFillSSN(struct ADAPTER *prAdapter,
 	}
 }
 
+void nicRxFillEthTypeLen(struct SW_RFB *prSwRfb)
+{
+	struct ETH_FRAME *prEth;
+
+	if (prSwRfb->fgDataFrame == FALSE ||
+		prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return;
+
+	prEth = prSwRfb->pvHeader;
+	if (!prEth)
+		return;
+
+	prSwRfb->u2EthTypeLen = NTOHS(prEth->u2TypeLen);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Fill RFB
@@ -483,6 +498,7 @@ void nicRxFillRFB(struct ADAPTER *prAdapter,
 			__func__);
 
 	nicRxFillSSN(prAdapter, prSwRfb);
+	nicRxFillEthTypeLen(prSwRfb);
 }
 
 /**
@@ -1889,6 +1905,7 @@ uint32_t nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	OS_SYSTIME rCurrentTime;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
@@ -1902,12 +1919,14 @@ uint32_t nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		goto end;
 
+	GET_BOOT_SYSTIME(&rCurrentTime);
+
 #if ARP_MONITER_ENABLE
-	arpMonProcessRxPacket(prAdapter, prBssInfo, prRetSwRfb);
+	arpMonProcessRxPacket(prAdapter, prBssInfo, prRetSwRfb, rCurrentTime);
 #endif /* ARP_MONITER_ENABLE */
 
 	if (ucBssIndex < MAX_BSSID_NUM)
-		GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);
+		prRxCtrl->rLastRxTime[ucBssIndex] = rCurrentTime;
 
 	secCheckRxEapolPacketEncryption(prAdapter, prRetSwRfb, prStaRec);
 
@@ -2146,9 +2165,9 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 						   prSwRfb->ucWlanIdx);
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
 
-		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
+			prSwRfb->u2EthTypeLen == ETH_P_1X)
 			qmCheckRxEAPOLM3(prAdapter, prSwRfb, ucBssIndex);
-		}
 
 #if CFG_FAST_PATH_SUPPORT
 		if (

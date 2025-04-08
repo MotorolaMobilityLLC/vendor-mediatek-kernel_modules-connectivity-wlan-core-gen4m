@@ -15174,9 +15174,9 @@ static int wlanGetRxRatev2(struct GLUE_INFO *prGlueInfo,
  *	The caller shall pass valid pointers in the arguments of interested
  *	results.
  */
-int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
+int __wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 		uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
-		struct RxRateInfo *prRxRateInfo)
+		struct RxRateInfo *prRxRateInfo, u_int8_t fgRxRateMode)
 {
 	struct ADAPTER *prAdapter;
 	struct STA_RECORD *prStaRec;
@@ -15199,7 +15199,7 @@ int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 		WLAN_STATUS_SUCCESS) {
-		if (prAdapter->rWifiVar.ucGetRxRateMode) {
+		if (fgRxRateMode && prAdapter->rWifiVar.ucGetRxRateMode) {
 			return wlanGetRxRatev2(prGlueInfo, ucStaIdx,
 					pu4CurRate, pu4MaxRate, prRxRateInfo);
 		} else {
@@ -15212,6 +15212,14 @@ int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 		return -1;
 	}
 
+}
+
+int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
+		uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
+		struct RxRateInfo *prRxRateInfo)
+{
+	return __wlanGetRxRateByBssid(prGlueInfo, ucBssIdx, pu4CurRate,
+		pu4MaxRate, prRxRateInfo, TRUE);
 }
 
 int wlanQueryStaLastRxRssi(struct ADAPTER *prAdapter,
