@@ -324,9 +324,9 @@ void mt7935DmashdlInit(struct ADAPTER *prAdapter)
 	u4Val = 0;
 	for (; idx < ENUM_DMASHDL_LITE_GROUP_NUM; idx++) {
 		if (prCfg->afgRefillEn[idx])
-			u4Val &= ~(1 << idx);
+			u4Val &= ~(1 << (idx - 32));
 		else
-			u4Val |= (1 << idx);
+			u4Val |= (1 << (idx - 32));
 	}
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
