@@ -498,8 +498,6 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 		   msg->service_specific_info,
 		   prPublishReq->service_specific_info_len);
 
-	DBGLOG(NAN, DEBUG, "nan: sdea_service_specific_info_len = %d\n",
-	       prPublishReq->sdea_service_specific_info_len);
 	prPublishReq->sdea_service_specific_info_len =
 		msg->sdea_service_specific_info_len;
 	if (prPublishReq->sdea_service_specific_info_len >
@@ -509,6 +507,10 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	kalMemCopy(prPublishReq->sdea_service_specific_info,
 		   msg->sdea_service_specific_info,
 		   prPublishReq->sdea_service_specific_info_len);
+
+	DBGLOG(NAN, INFO, "nan: service_len=(%d, %d)\n",
+		   msg->service_specific_info_len,
+	       msg->sdea_service_specific_info_len);
 
 	prPublishReq->sdea_params.config_nan_data_path =
 		msg->sdea_params.config_nan_data_path;
@@ -625,19 +627,22 @@ nanTransmitRequest(struct ADAPTER *prAdapter,
 		   msg->service_specific_info,
 		   prTransmitReq->service_specific_info_len);
 
-	/*
-	 * FIXME: cmd/event cannot support 1500 bytes len
-	 * prTransmitReq->sdea_service_specific_info_len =
-	 *     msg->sdea_service_specific_info_len;
-	 * kalMemCopy(prTransmitReq->sdea_service_specific_info,
-	 *     msg->sdea_service_specific_info,
-	 *     prTransmitReq->sdea_service_specific_info_len);
-	 */
+	prTransmitReq->sdea_service_specific_info_len =
+		msg->sdea_service_specific_info_len;
+	if (prTransmitReq->sdea_service_specific_info_len >
+	    NAN_FW_MAX_FOLLOW_UP_SDEA_LEN)
+		prTransmitReq->sdea_service_specific_info_len =
+			NAN_FW_MAX_FOLLOW_UP_SDEA_LEN;
+	kalMemCopy(prTransmitReq->sdea_service_specific_info,
+		msg->sdea_service_specific_info,
+		prTransmitReq->sdea_service_specific_info_len);
 
 	DBGLOG(NAN, INFO,
-	       "[%s]: publish_subscribe_id: %d, requestor_instance_id: %d\n",
+	       "[%s]: publish_subscribe_id: %d, requestor_instance_id: %d, len(%d, %d)\n",
 	       __func__, prTransmitReq->publish_subscribe_id,
-	       prTransmitReq->requestor_instance_id);
+	       prTransmitReq->requestor_instance_id,
+	       msg->service_specific_info_len,
+	       msg->sdea_service_specific_info_len);
 	DBGLOG(NAN, INFO,
 	       "[%s]: TransmitReq->addr=>%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       __func__, prTransmitReq->addr[0], prTransmitReq->addr[1],

@@ -3980,7 +3980,9 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 		sizeof(struct _NanMsgHeader) +
 		sizeof(struct _NanFollowupIndParams) +
 		(SIZEOF_TLV_HDR + MAC_ADDR_LEN) +
-		(SIZEOF_TLV_HDR + prFollowupEvt->service_specific_info_len);
+		(SIZEOF_TLV_HDR + prFollowupEvt->service_specific_info_len) +
+		(SIZEOF_TLV_HDR +
+		prFollowupEvt->sdea_service_specific_info_len);
 
 	prNanFollowupInd = kmalloc(message_len, GFP_KERNEL);
 	if (!prNanFollowupInd) {
