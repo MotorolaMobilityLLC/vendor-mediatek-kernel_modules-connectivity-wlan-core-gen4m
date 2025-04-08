@@ -94,6 +94,11 @@
 #define CFG_SUPPORT_PERF_IND            1
 #endif
 
+#ifndef DRIVER_BUILD_DATE
+#define DRIVER_BUILD_DATE            "00000000000000"
+#endif
+
+
 /* Support AP Selection */
 #define CFG_SUPPORT_CHNL_CONFLICT_REVISE	0
 
