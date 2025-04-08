@@ -3464,7 +3464,9 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 }
 #endif
 
-void p2pFuncParseH2E(struct BSS_INFO *prP2pBssInfo)
+void p2pFuncParseH2E(struct BSS_INFO *prP2pBssInfo,
+		     uint8_t *aucAllSupportedRates,
+		     uint8_t ucSupportedRatesLen)
 {
 	if (prP2pBssInfo) {
 		uint32_t i;
@@ -3478,8 +3480,8 @@ void p2pFuncParseH2E(struct BSS_INFO *prP2pBssInfo)
 			DBGLOG(P2P, LOUD,
 				"Rate [%d] = %d\n",
 				i,
-				prP2pBssInfo->aucAllSupportedRates[i]);
-			if (prP2pBssInfo->aucAllSupportedRates[i] ==
+				aucAllSupportedRates[i]);
+			if (aucAllSupportedRates[i] ==
 				RATE_H2E_ONLY_VAL) {
 				prP2pBssInfo->fgEnableH2E = TRUE;
 				break;
@@ -3544,8 +3546,6 @@ p2pFuncBeaconUpdate(struct ADAPTER *prAdapter,
 					  prBcnFrame->aucBSSID,
 					  prBcnFrame->aucInfoElem,
 					  u4IESize);
-
-		p2pFuncParseH2E(prP2pBssInfo);
 
 		kalMemFree(prIEBuf, VIR_MEM_TYPE, u4Size);
 	} while (FALSE);
@@ -5130,8 +5130,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 			}
 			break;
 		case ELEM_ID_SUP_RATES:	/* 1 *//* V *//* Done */
-#ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
 			{
+#ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
 				DBGLOG(P2P, TRACE, "Support Rate IE\n");
 				if ((SUP_RATES_IE(pucIE)->ucLength)
 					> ELEM_MAX_LEN_SUP_RATES)
@@ -5146,8 +5146,11 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 				DBGLOG_MEM8(P2P, TRACE,
 				SUP_RATES_IE(pucIE)->aucSupportedRates,
 				SUP_RATES_IE(pucIE)->ucLength);
-			}
 #endif
+				p2pFuncParseH2E(prP2pBssInfo,
+					SUP_RATES_IE(pucIE)->aucSupportedRates,
+					SUP_RATES_IE(pucIE)->ucLength);
+			}
 			break;
 		case ELEM_ID_DS_PARAM_SET:	/* 3 *//* V *//* Done */
 			{
@@ -5297,6 +5300,9 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 					ucIeLen;
 			}
 #endif
+			p2pFuncParseH2E(prP2pBssInfo,
+				EXT_SUP_RATES_IE(pucIE)->aucExtSupportedRates,
+				EXT_SUP_RATES_IE(pucIE)->ucLength);
 			break;
 		}
 		case ELEM_ID_HT_OP:
