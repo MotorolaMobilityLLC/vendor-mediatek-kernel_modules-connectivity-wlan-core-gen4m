@@ -3803,6 +3803,10 @@ ifeq ($(CONFIG_MTK_AP_80211KVR_INTERFACE), y)
     ccflags-y += -DCFG_WIFI_SUPPORT_NOISE_HISTOGRAM=0
 endif
 
+ifeq ($(CONFIG_MTK_AP_80211K_SUPPORT), y)
+    ccflags-y += -DCFG_AP_80211K_SUPPORT=1
+endif
+
 ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
     ccflags-y += -DCFG_SUPPORT_UNI_FWDL=1
     ifeq ($(CONFIG_SUPPORT_UNI_FWDL_MSG_NOTIF), y)

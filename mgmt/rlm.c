@@ -13716,7 +13716,7 @@ static u_int8_t rlmMulAPAgentRmReportFrameIsValid(
 	}
 	return TRUE;
 }
-
+#if CFG_AP_80211KVR_INTERFACE
 void rlmMulAPAgentProcessRMBeaconRpt(
 		struct ADAPTER *prAdapter,
 		struct IE_MEASUREMENT_REPORT *prMeasureReportIE,
@@ -13799,7 +13799,7 @@ void rlmMulAPAgentProcessRMBeaconRpt(
 		sizeof(struct T_MULTI_AP_BEACON_METRICS_RESP));
 
 }
-
+#endif
 void rlmMulAPAgentProcessRMCuRpt(
 		struct ADAPTER *prAdapter,
 		struct IE_MEASUREMENT_REPORT *prMeasureReportIE)
@@ -13835,8 +13835,9 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 	struct IE_MEASUREMENT_REPORT *prMeasureReportIE = NULL;
 	struct RM_BCN_REPORT *prBeaconReportIE = NULL;
 	struct T_MULTI_AP_BEACON_METRICS_RESP *prBcnMeasureReport = NULL;
+#if CFG_AP_80211KVR_INTERFACE
 	int32_t i4Ret = 0;
-
+#endif
 	if (!prAdapter) {
 		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
 		return;
@@ -13942,14 +13943,14 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 	DBGLOG_MEM8(RLM, INFO,
 		prBcnMeasureReport->uElem,
 		prBcnMeasureReport->uElemLen);
-
+#if CFG_AP_80211KVR_INTERFACE
 	i4Ret = MulAPAgentMontorSendMsg(
 		EV_WLAN_MULTIAP_BEACON_METRICS_RESPONSE,
 		prBcnMeasureReport, sizeof(*prBcnMeasureReport));
 	if (i4Ret < 0)
 		DBGLOG(AAA, ERROR,
 			"EV_WLAN_MULTIAP_BEACON_METRICS_RESPONSE nl send msg failed!\n");
-
+#endif
 	kalMemFree(prBcnMeasureReport, VIR_MEM_TYPE,
 		sizeof(struct T_MULTI_AP_BEACON_METRICS_RESP));
 }
