@@ -824,6 +824,340 @@ int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
 		(data_len > strlen(cmd)) ? strlen(cmd) : data_len);
 }
 
+/* Size (in bytes) of the various private data types */
+static const char iw_priv_type_size[] = {
+	0,				/* IW_PRIV_TYPE_NONE */
+	1,				/* IW_PRIV_TYPE_BYTE */
+	1,				/* IW_PRIV_TYPE_CHAR */
+	0,				/* Not defined */
+	sizeof(uint32_t),		/* IW_PRIV_TYPE_INT */
+	sizeof(struct iw_freq),		/* IW_PRIV_TYPE_FLOAT */
+	sizeof(struct sockaddr),	/* IW_PRIV_TYPE_ADDR */
+	0,				/* Not defined */
+};
+
+static int32_t get_priv_size(uint16_t args)
+{
+	int32_t	num = args & IW_PRIV_SIZE_MASK;
+	int32_t	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+
+	return num * iw_priv_type_size[type];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Port from iwpriv source code.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_iw_cmd(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	char cmd[1024] = {0};
+	char *out = cmd;
+	uint16_t cmd_size = sizeof(cmd);
+	char *cmdname = NULL;
+	uint32_t index;
+	int32_t subcmd = 0;
+	char *buffer = NULL;
+	uint16_t buffer_size = 4096 * sizeof(char);
+	int32_t i4Argc = 0, argsCount;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	char **args;
+	const struct iw_handler_def *iw_handlers;
+	const struct iw_priv_args *priv;
+	uint32_t priv_num;
+	struct iw_request_info info;
+	struct iwreq wrq;
+	int32_t i = 0, j, k;
+	int32_t offset = 0;
+	int32_t temp = 0;
+	int32_t err = -1;
+	int32_t i4BytesWritten = 0;
+
+	if (data == NULL || !data_len || !wdev || !wdev->netdev) {
+		i4BytesWritten = -EINVAL;
+		goto error;
+	}
+
+	iw_handlers = wdev->netdev->wireless_handlers;
+	if (!iw_handlers) {
+		i4BytesWritten = -EFAULT;
+		goto error;
+	}
+
+	DBGLOG(REQ, INFO, "cmd: %s", data);
+	buffer = (char *) kalMemAlloc(buffer_size, VIR_MEM_TYPE);
+	if (!buffer) {
+		i4BytesWritten = -ENOMEM;
+		goto error;
+	}
+
+	kalStrnCpy(cmd, data, sizeof(cmd) - 1);
+	wlanCfgParseArgument(cmd, &i4Argc, apcArgv);
+	if (i4Argc < 1) {
+		i4BytesWritten = -EFAULT;
+		goto error;
+	}
+
+	cmdname = apcArgv[0];
+	args = (char **)&apcArgv[1];
+	argsCount = i4Argc - 1;
+
+	priv = iw_handlers->private_args;
+	priv_num = iw_handlers->num_private_args;
+
+	/* Search the correct ioctl */
+	k = -1;
+	while ((++k < priv_num) && kalStrCmp(priv[k].name, cmdname))
+		;
+
+	/* If not found... */
+	if (k == priv_num) {
+		DBGLOG(REQ, ERROR, "Invalid command : %s\n", cmdname);
+		i4BytesWritten = -EINVAL;
+		goto error;
+	}
+
+	/* Watch out for sub-ioctls ! */
+	if (priv[k].cmd < SIOCDEVPRIVATE) {
+		j = -1;
+
+		/* Find the matching *real* ioctl */
+		while (++j < priv_num &&
+		       (priv[j].name[0] != '\0' ||
+			priv[j].set_args != priv[k].set_args ||
+			priv[j].get_args != priv[k].get_args))
+			;
+
+		/* If not found... */
+		if (j == priv_num) {
+			DBGLOG(REQ, ERROR,
+			       "Invalid private ioctl definition for : %s\n",
+			       cmdname);
+			i4BytesWritten = -EINVAL;
+			goto error;
+		}
+
+		/* Save sub-ioctl number */
+		subcmd = priv[k].cmd;
+		/* Reserve one int (simplify alignment issues) */
+		offset = sizeof(uint32_t);
+		/* Use real ioctl definition from now on */
+		k = j;
+	}
+
+	/* If we have to set some data */
+	if ((priv[k].set_args & IW_PRIV_TYPE_MASK) &&
+	    (priv[k].set_args & IW_PRIV_SIZE_MASK)) {
+		switch (priv[k].set_args & IW_PRIV_TYPE_MASK) {
+		case IW_PRIV_TYPE_BYTE:
+			/* Number of args to fetch */
+			wrq.u.data.length = argsCount;
+			if (wrq.u.data.length >
+			    (priv[k].set_args & IW_PRIV_SIZE_MASK))
+				wrq.u.data.length =
+					priv[k].set_args & IW_PRIV_SIZE_MASK;
+
+			/* Fetch args */
+			for (; i < wrq.u.data.length; i++) {
+				if (kstrtoint(args[i], 10, &temp)) {
+					i4BytesWritten = -EINVAL;
+					goto error;
+				}
+				buffer[i] = (char)temp;
+			}
+			break;
+		case IW_PRIV_TYPE_INT:
+			/* Number of args to fetch */
+			wrq.u.data.length = argsCount;
+			if (wrq.u.data.length >
+			    (priv[k].set_args & IW_PRIV_SIZE_MASK))
+				wrq.u.data.length =
+					priv[k].set_args & IW_PRIV_SIZE_MASK;
+
+			/* Fetch args */
+			for (; i < wrq.u.data.length; i++) {
+				if (kstrtoint(args[i], 10, &temp)) {
+					i4BytesWritten = -EINVAL;
+					goto error;
+				}
+				((int32_t *)buffer)[i] = (int32_t)temp;
+			}
+			break;
+		case IW_PRIV_TYPE_CHAR:
+			if (i < argsCount) {
+				/* Size of the string to fetch */
+				wrq.u.data.length = kalStrLen(args[i]) + 1;
+				if (wrq.u.data.length >
+				    (priv[k].set_args & IW_PRIV_SIZE_MASK))
+					wrq.u.data.length =
+					  priv[k].set_args & IW_PRIV_SIZE_MASK;
+
+				/* Fetch string */
+				kalMemCopy(buffer, args[i], wrq.u.data.length);
+				buffer[sizeof(buffer) - 1] = '\0';
+				i++;
+			} else {
+				wrq.u.data.length = 1;
+				buffer[0] = '\0';
+			}
+			break;
+		/* TODO: Not support in gen4m now */
+		case IW_PRIV_TYPE_FLOAT:
+		case IW_PRIV_TYPE_ADDR:
+		default:
+			DBGLOG(REQ, ERROR, "Not implemented...\n");
+			i4BytesWritten = -EINVAL;
+			goto error;
+		}
+
+		if ((priv[k].set_args & IW_PRIV_SIZE_FIXED) &&
+		    (wrq.u.data.length !=
+				(priv[k].set_args & IW_PRIV_SIZE_MASK))) {
+			DBGLOG(REQ, WARN,
+			       "The command %s needs exactly %d argument(s)...\n",
+			       cmdname, priv[k].set_args & IW_PRIV_SIZE_MASK);
+			i4BytesWritten = -EINVAL;
+			goto error;
+		}
+	} else {
+		wrq.u.data.length = 0L;
+	}
+
+	if (strscpy(wrq.ifr_name, wdev->netdev->name, IFNAMSIZ) < 0) {
+		i4BytesWritten = -EINVAL;
+		goto error;
+	}
+
+	/* Those two tests are important. They define how the driver
+	 * will have to handle the data
+	 */
+	if ((priv[k].set_args & IW_PRIV_SIZE_FIXED) &&
+	    (get_priv_size(priv[k].set_args) + offset <= IFNAMSIZ)) {
+		/* First case : all SET args fit within wrq */
+		if (offset)
+			wrq.u.mode = subcmd;
+		kalMemCopy(wrq.u.name + offset, buffer, IFNAMSIZ - offset);
+	} else {
+		if ((priv[k].set_args == 0) &&
+		    (priv[k].get_args & IW_PRIV_SIZE_FIXED) &&
+		    (get_priv_size(priv[k].get_args) <= IFNAMSIZ)) {
+			/* Second case : no SET args, GET args fit within wrq */
+			if (offset)
+				wrq.u.mode = subcmd;
+		} else {
+			/* Third case : args won't fit in wrq, or variable
+			 * number of args
+			 */
+			wrq.u.data.pointer = (caddr_t)buffer;
+			wrq.u.data.flags = subcmd;
+		}
+	}
+
+	/* Perform the private ioctl */
+	info.cmd = priv[k].cmd;
+	index = priv[k].cmd - SIOCIWFIRSTPRIV;
+	if (index < iw_handlers->num_private && iw_handlers->private[index])
+		err = iw_handlers->private[index](wdev->netdev, &info, &wrq.u,
+						  (char *)&wrq.u);
+	if (err < 0) {
+		DBGLOG(REQ, ERROR, "%s (%x) failed, err=%d\n",
+		       cmdname, priv[k].cmd, err);
+		i4BytesWritten = err;
+		goto error;
+	}
+	DBGLOG(REQ, INFO, "cmd: %s success, err=%d\n", cmdname, err);
+
+	/* If we have to get some data */
+	if ((priv[k].get_args & IW_PRIV_TYPE_MASK) &&
+	    (priv[k].get_args & IW_PRIV_SIZE_MASK)) {
+		int32_t	n = 0;		/* number of args */
+
+		DBGLOG(REQ, INFO, "get cmd, size_fixed=%u, priv_size=%d\n",
+		       priv[k].get_args & IW_PRIV_SIZE_FIXED,
+		       get_priv_size(priv[k].get_args));
+		kalMemZero(out, cmd_size);
+		LOGBUF(out, cmd_size, i4BytesWritten,
+		       "%-8.16s  %s:", wdev->netdev->name, cmdname);
+
+		/* Check where is the returned data */
+		if ((priv[k].get_args & IW_PRIV_SIZE_FIXED) &&
+		    (get_priv_size(priv[k].get_args) <= IFNAMSIZ)) {
+			kalMemCopy(buffer, wrq.u.name, IFNAMSIZ);
+			n = priv[k].get_args & IW_PRIV_SIZE_MASK;
+		} else {
+			n = wrq.u.data.length;
+		}
+		DBGLOG_MEM8(REQ, INFO, buffer, n);
+
+		switch (priv[k].get_args & IW_PRIV_TYPE_MASK) {
+		case IW_PRIV_TYPE_BYTE:
+			/* Display args */
+			for (j = 0; j < n; j++)
+				LOGBUF(out, cmd_size, i4BytesWritten,
+				       "%d  ", buffer[j]);
+			LOGBUF(out, cmd_size, i4BytesWritten, "\n");
+			break;
+		case IW_PRIV_TYPE_INT:
+			/* Display args */
+			for (j = 0; j < n; j++)
+				LOGBUF(out, cmd_size, i4BytesWritten,
+				       "%d  ", ((uint32_t *) buffer)[j]);
+			LOGBUF(out, cmd_size, i4BytesWritten, "\n");
+			break;
+		case IW_PRIV_TYPE_CHAR:
+			/* Display args */
+			out[n] = '\0';
+			LOGBUF(out, cmd_size, i4BytesWritten,
+			       "%s\n", buffer);
+			break;
+		/* TODO: Not support in gen4m now */
+		case IW_PRIV_TYPE_FLOAT:
+		case IW_PRIV_TYPE_ADDR:
+		default:
+			DBGLOG(REQ, ERROR, "Not yet implemented...\n");
+			i4BytesWritten = -EINVAL;
+			goto error;
+		}
+	}	/* if args to set */
+
+	if (i4BytesWritten > 0) {
+		DBGLOG(REQ, LOUD, "done. out:\n");
+		DBGLOG_MEM8(REQ, LOUD, out, i4BytesWritten);
+		i4BytesWritten = mtk_cfg80211_process_str_cmd_reply(wiphy, out,
+							  i4BytesWritten);
+	}
+
+error:
+	if (buffer)
+		kalMemFree(buffer, VIR_MEM_TYPE, sizeof(struct char));
+
+	return i4BytesWritten;
+}
+
+int mtk_cfg80211_vendor_iw_cmd_driver(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct net_device *prNetDev = wdev->netdev;
+	int8_t cmd[1024] = {0};
+	int32_t i4BytesWritten = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (data == NULL || !data_len || !prGlueInfo)
+		return -EINVAL;
+
+	kalStrnCpy(cmd, data, sizeof(cmd) - 1);
+	i4BytesWritten =
+		priv_driver_cmds(prGlueInfo, prNetDev, cmd, sizeof(cmd));
+
+	if (i4BytesWritten > 0)
+		return mtk_cfg80211_process_str_cmd_reply(wiphy,
+							  cmd, i4BytesWritten);
+	return i4BytesWritten;
+}
+
 #if CFG_SUPPORT_WIFI_ADJUST_DTIM
 int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
