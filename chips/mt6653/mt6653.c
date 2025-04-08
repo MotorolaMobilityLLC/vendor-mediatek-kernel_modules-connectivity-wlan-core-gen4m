@@ -3622,7 +3622,7 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				isL0Status)) {
 				writel(0xe0f, (pcie_vir_addr + 0x194));
 			} else {
-				DBGLOG(HAL, DEBUG,
+				DBGLOG(HAL, TRACE,
 					"enable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
 					isL0Status, value, value1);
 				goto exit;
@@ -3677,7 +3677,7 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			isL0Status)) {
 			writel(0x20f, (pcie_vir_addr + 0x194));
 		} else {
-			DBGLOG(HAL, DEBUG,
+			DBGLOG(HAL, TRACE,
 				"disable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
 				isL0Status, value, value1);
 			goto exit;

@@ -3238,7 +3238,7 @@ nicPowerSaveInfoMap(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(NIC, DEBUG,
+	DBGLOG(NIC, TRACE,
 		"Flag=0x%04x, Caller=%d, PM=%d, PSFlag[%d]=0x%04x\n",
 		u4Flag, ucCaller, ePowerMode, ucBssIndex,
 		prBssInfo->u4PowerSaveFlag);
@@ -3347,7 +3347,7 @@ nicConfigPowerSaveProfile(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 		"ucBssIndex:%d, ePwrMode:%d, fgEnCmdEvent:%d\n",
 		ucBssIndex, ePwrMode, fgEnCmdEvent);
 

@@ -993,7 +993,7 @@ enum wifi2mbr_status mbr_wifi_txpwr_info_fill_hanler(struct ADAPTER *prAdapter,
 	dest->info[ucBnIdx][ucAntIdx].d_die_info.fe_gain_mode =
 		prSrc->arInfo[ucBnIdx][ucAntIdx].rDdieInfo.ucFeGainMode;
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, TRACE,
 		"bn[%d]ant[%d]ver[%d]tag[%d]rpt[%d]max_bn[%d]max_ant[%d]epa[%d]cal[%d]ch[%d]rf[%d]mcc[%d]temp[%d]ant[0X%X]\n",
 		ucBnIdx,
 		ucAntIdx,
@@ -1010,7 +1010,7 @@ enum wifi2mbr_status mbr_wifi_txpwr_info_fill_hanler(struct ADAPTER *prAdapter,
 		dest->info[ucBnIdx][ucAntIdx].temp,
 		dest->info[ucBnIdx][ucAntIdx].antsel);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, TRACE,
 		"bn[%d]ant[%d]bt[%d]lte[%d]bt_pro[0X%X]pta_grant[0x%X]pta_req[0x%X]mode[%d]\n",
 		ucBnIdx,
 		ucAntIdx,
@@ -1021,7 +1021,7 @@ enum wifi2mbr_status mbr_wifi_txpwr_info_fill_hanler(struct ADAPTER *prAdapter,
 		dest->info[ucBnIdx][ucAntIdx].coex.pta_req,
 		dest->info[ucBnIdx][ucAntIdx].coex.curr_op_mode);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, TRACE,
 		"bn[%d]ant[%d]delta[%d]target[%d]CompGrp[%d]FeGainMode[%d]\n",
 		ucBnIdx,
 		ucAntIdx,

@@ -2822,7 +2822,7 @@ int32_t mddpMdNotifyInfoHandleCommunication(
 		&(prMdInfo->buf[1]);
 	if (event->u4Reason == MD_L12_DISABLE ||
 	    event->u4Reason == MD_L12_ENABLE) {
-		DBGLOG_LIMITED(INIT, WARN,
+		DBGLOG_LIMITED(INIT, TRACE,
 			       "reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
 			       event->u4Reason,
 			       event->u4RstFlag,
@@ -2830,7 +2830,7 @@ int32_t mddpMdNotifyInfoHandleCommunication(
 			       event->pucFuncName,
 			       event->dump_payload[1]);
 	} else {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, TRACE,
 		       "reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
 		       event->u4Reason,
 		       event->u4RstFlag,
