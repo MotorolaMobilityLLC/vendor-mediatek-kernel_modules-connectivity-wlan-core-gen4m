@@ -1118,6 +1118,7 @@ ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
         CONFIG_MTK_WIFI_WFDMA_WB=y
         CONFIG_SUPPORT_WFDMA_WB_INT_MASK=n
+        CONFIG_DRV_OWN_INT_MODE=y
     endif
     ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 endif # MT7935
@@ -2244,8 +2245,18 @@ else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=0
 else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
-    ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=0
     WMT_SUPPORT := n
+
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ifeq ($(CONFIG_DRV_OWN_INT_MODE),y)
+            ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=1
+        else
+            ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=0
+        endif
+    else
+        ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=0
+    endif
+
 endif
 
 ifeq ($(WMT_SUPPORT), y)
