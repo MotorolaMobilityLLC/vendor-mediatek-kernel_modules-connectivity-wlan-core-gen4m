@@ -2090,6 +2090,10 @@ uint8_t nicGetS2(enum ENUM_BAND eBand, uint8_t ucPriCh, uint8_t ucBw)
 	case MAX_BW_160MHZ:
 		if (eBand == BAND_5G && ucPriCh >= 36 && ucPriCh <= 128)
 			return 50 + 32 * ((ucPriCh - 36) / 32);
+#if (CFG_SUPPORT_UNII4 == 1)
+		else if (eBand == BAND_5G && ucPriCh >= 149 && ucPriCh <= 177)
+			return 163;
+#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (eBand == BAND_6G && ucPriCh >= 1 && ucPriCh <= 221)
 			return 15 + 32 * ((ucPriCh - 1) / 32);
