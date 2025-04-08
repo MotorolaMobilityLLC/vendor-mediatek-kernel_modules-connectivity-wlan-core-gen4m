@@ -1323,6 +1323,9 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	pucIEBuf = prAssocRspFrame->aucInfoElem;
 	u2IELength = prMgmtTxMsdu->u2FrameLength - u2RspHdrLen;
 
+	prP2pSpecBssInfo->pucDHIEBuf = NULL;
+	prP2pSpecBssInfo->ucDHIELen = 0;
+
 	IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
 		if (IE_ID(pucIEBuf) == ELEM_ID_RESERVED &&
 		    IE_ID_EXT(pucIEBuf) == ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM) {
@@ -1330,11 +1333,6 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 			prP2pSpecBssInfo->ucDHIELen = IE_SIZE(pucIEBuf);
 			break;
 		}
-	}
-
-	if (!prP2pSpecBssInfo->ucDHIELen) {
-		DBGLOG(P2P, WARN, "[OWE] No DH IE\n");
-		return prMgmtTxMsdu;
 	}
 
 	prMsduInfo = assocComposeReAssocRespFrame(prAdapter, prStaRec);
