@@ -232,6 +232,9 @@ void aisResetConnectionParam(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	struct BSS_INFO *prAisBssInfo;
+#endif
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -239,6 +242,10 @@ void aisResetConnectionParam(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucConnTrialCount = 0;
 	prAisFsmInfo->ucScanTrialCount = 0;
 	prAisFsmInfo->rJoinReqTime = 0;
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisBssInfo->fgIsOmacBackupValid = 0;
+#endif
 
 	if (prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID)
 		prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
@@ -8361,8 +8368,8 @@ static void aisSetRandomOmac(struct ADAPTER *prAdapter,
 			prMgmtMsduInfo->prPacket + MAC_TX_RESERVED_FIELD);
 
 	DBGLOG(AIS, INFO,
-	       "before - fg: %d, bss omac:" MACSTR ", bss backup:" MACSTR
-	       ", a2:" MACSTR "\n",
+	       "before - fg: %d, bss omac:[" MACSTR "], bss backup:[" MACSTR
+	       "], A2:[" MACSTR "]\n",
 	       prBssInfo->fgIsOmacBackupValid,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucOwnMacAddrBackup),
@@ -8377,10 +8384,13 @@ static void aisSetRandomOmac(struct ADAPTER *prAdapter,
 
 	/* 2. set A2 of MGMT TX frame to BSS */
 	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, prWlanHdr->aucAddr2);
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUpdateMldAddrByMainBss(prAdapter,
+		mldBssGetByBss(prAdapter, prBssInfo));
+#endif
 	DBGLOG(AIS, INFO,
-	       "after - fg: %d, bss omac:" MACSTR ", bss backup:" MACSTR
-	       ", a2:" MACSTR "\n",
+	       "after - fg: %d, bss omac:[" MACSTR "], bss backup:[" MACSTR
+	       "], A2:[" MACSTR "]\n",
 	       prBssInfo->fgIsOmacBackupValid,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucOwnMacAddrBackup),
@@ -8396,8 +8406,8 @@ static void aisRestoreOmac(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		return;
 
 	DBGLOG(AIS, INFO,
-	       "before - fg: %d, bss omac:" MACSTR
-	       ", bss backup:" MACSTR"\n",
+	       "before - fg: %d, bss omac:[" MACSTR
+	       "], bss backup:[" MACSTR"]\n",
 	       prBssInfo->fgIsOmacBackupValid,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucOwnMacAddrBackup));
@@ -8406,9 +8416,14 @@ static void aisRestoreOmac(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		      prBssInfo->aucOwnMacAddrBackup);
 	prBssInfo->fgIsOmacBackupValid = FALSE;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUpdateMldAddrByMainBss(prAdapter,
+		mldBssGetByBss(prAdapter, prBssInfo));
+#endif
+
 	DBGLOG(AIS, INFO,
-	       "after - fg: %d, bss omac:" MACSTR
-	       ", bss backup:" MACSTR"\n",
+	       "after - fg: %d, bss omac:[" MACSTR
+	       "], bss backup:[" MACSTR"]\n",
 	       prBssInfo->fgIsOmacBackupValid,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucOwnMacAddrBackup));
@@ -11691,6 +11706,7 @@ u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prAisBssInfo = NULL;
 	struct WIFI_VAR *prWifiVar;
+	uint8_t *pucOwnMacAddr;
 
 	if (!prAdapter || !prAisFsmInfo || !aucMacAddr)
 		return FALSE;
@@ -11701,6 +11717,14 @@ u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
 	if (!prWifiVar || !prAisBssInfo)
 		return FALSE;
 
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	pucOwnMacAddr = (prAisBssInfo->fgIsOmacBackupValid) ?
+		prAisBssInfo->aucOwnMacAddrBackup :
+		prAisBssInfo->aucOwnMacAddr;
+#else
+	pucOwnMacAddr = prAisBssInfo->aucOwnMacAddr;
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateMldAddr(prAdapter,
 			    mldBssGetByBss(prAdapter, prAisBssInfo),
@@ -11708,12 +11732,12 @@ u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prWifiVar->fgMldSyncLinkAddr))
 		nicApplyLinkAddress(prAdapter,
 				    aucMacAddr,
-				    prAisBssInfo->aucOwnMacAddr,
+				    pucOwnMacAddr,
 				    AIS_MAIN_LINK_INDEX);
 #else
 	nicApplyLinkAddress(prAdapter,
 			    aucMacAddr,
-			    prAisBssInfo->aucOwnMacAddr,
+			    pucOwnMacAddr,
 			    AIS_MAIN_LINK_INDEX);
 #endif
 
