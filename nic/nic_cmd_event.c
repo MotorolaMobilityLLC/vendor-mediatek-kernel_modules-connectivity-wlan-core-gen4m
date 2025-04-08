@@ -3994,7 +3994,7 @@ uint32_t nicCfgChipCnmCap(struct ADAPTER *prAdapter, uint8_t *pucEventBuf)
 		LOGBUF(pucBuf, u2MaxSize, u2Len, "Bn%u [BW ", i);
 		for (ucRfBn = BAND_2G4; ucRfBn < BAND_NUM; ucRfBn++) {
 			uint8_t *pucDstMaxBw, *pucDstValidHwBn;
-			uint8_t ucSrcMaxbw = MAX_BW_UNKNOWN;
+			uint8_t ucSrcMaxbw = ENUM_PHY_CAP_CNM_BW_NUM;
 
 			if (ucRfBn == BAND_2G4) {
 				pucDstMaxBw = &rCnmChipCap.aucMaxBw2g[i];
