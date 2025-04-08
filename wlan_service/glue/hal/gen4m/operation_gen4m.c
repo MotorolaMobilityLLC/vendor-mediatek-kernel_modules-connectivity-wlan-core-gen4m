@@ -12,6 +12,10 @@
 #define PROACTIVE_BW160 3
 #define PROACTIVE_BW320 4
 #endif
+#define HETB_PROACTIVE_BW20 0
+#define HETB_PROACTIVE_BW40 1
+#define HETB_PROACTIVE_BW80 2
+#define HETB_PROACTIVE_BW160 3
 
 extern s_int32 mt_engine_calc_phy(
 	struct test_ru_info *ru_info,
@@ -1324,6 +1328,7 @@ static void mt_op_set_manual_he_tb_value(
 	u_int8 ltf_sym_code[] = {
 		0, 0, 1, 2, 2, 3, 3, 4, 4   /* SS 1~8 */
 	};
+	u_int32 mapping_bw = 0;
 
 	/* setup MAC start */
 	/* step 1, common info of TF */
@@ -1338,7 +1343,11 @@ static void mt_op_set_manual_he_tb_value(
 	else
 		cmm.field.ltf_sym_midiam = ltf_sym_code[ru_sta->nss];
 	cmm.field.gi_ltf = configs->sgi;
-	cmm.field.ul_bw = tm_bw_hqa_mapping_at((u_int32) configs->per_pkt_bw);
+	mapping_bw = tm_bw_hqa_mapping_at((u_int32) configs->per_pkt_bw);
+	if (mapping_bw > HETB_PROACTIVE_BW160)
+		cmm.field.ul_bw = HETB_PROACTIVE_BW160;
+	else
+		cmm.field.ul_bw = mapping_bw;
 	cmm.field.stbc = configs->stbc;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
