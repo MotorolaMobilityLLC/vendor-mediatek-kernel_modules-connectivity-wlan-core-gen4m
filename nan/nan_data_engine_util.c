@@ -1118,10 +1118,11 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 				ucCommonBands =
 					prNanScheduler->ucLocalSupportedBand &
 					       ucPeerSupportedBands;
-				prPeerSchDesc->u4CommonSupportedBand |=
-					nanGetCommonBandWithConcurrent(
-						prAdapter, TRUE,
-						ucCommonBands);
+				if (prPeerSchDesc)
+					prPeerSchDesc->u4CommonSupportedBand |=
+						nanGetCommonBandWithConcurrent(
+							prAdapter, TRUE,
+							ucCommonBands);
 			}
 
 			rStatus = nanAvailabilityAttrHandler(prAdapter,
