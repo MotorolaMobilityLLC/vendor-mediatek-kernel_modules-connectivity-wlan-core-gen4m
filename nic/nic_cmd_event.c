@@ -3185,6 +3185,11 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 		emi_mem_offset_convert(offset2);
 	prAdapter->u4TxTimePerLevelsSize = size2;
 
+	if (prAdapter->pucLinkStatsSrcBufAddr == NULL) {
+		DBGLOG(INIT, WARN, "Update Offset Failed");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	prAdapter->prLinkStatsIface = (struct STATS_LLS_WIFI_IFACE_STAT *)
 		prAdapter->pucLinkStatsSrcBufAddr;
 	prAdapter->prLinkStatsPeerInfo = (struct PEER_INFO_RATE_STAT *)
