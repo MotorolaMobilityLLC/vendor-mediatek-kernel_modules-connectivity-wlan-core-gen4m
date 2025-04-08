@@ -3754,6 +3754,14 @@ else
     ccflags-y += -DCFG_PF_ARP_NS_MAX_NUM=3
 endif
 
+ifneq ($(MTK_ANDROID_WMT), y)
+    ifeq ($(CONFIG_SUPPORT_WIFI_RSV_MEM), y)
+        ccflags-y += -DCFG_SUPPORT_WIFI_RSV_MEM=1
+    else
+        ccflags-y += -DCFG_SUPPORT_WIFI_RSV_MEM=0
+    endif
+endif
+
 ifeq ($(CONFIG_SUPPORT_ELL_CSA), y)
     ccflags-y += -DCFG_SUPPORT_ELL_CSA=1
 else
