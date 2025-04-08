@@ -4835,8 +4835,8 @@ uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
 			       rP2pChnlInfo.u4PrimaryChnl,
 			       u4CommonSupportedBand,
 			       u4CommonSupportedBand &
-				~(BIT(ENUM_SUPPORTED_BN_6G) |
-				  BIT(ENUM_SUPPORTED_BN_5G_LOW)));
+			       (uint32_t)(~(BIT(ENUM_SUPPORTED_BN_6G) |
+					    BIT(ENUM_SUPPORTED_BN_5G_LOW))));
 			u4CommonSupportedBand &=
 				~(BIT(ENUM_SUPPORTED_BN_6G) |
 				  BIT(ENUM_SUPPORTED_BN_5G_LOW));
@@ -13785,7 +13785,7 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 			continue;
 
 		DBGLOG(NAN, INFO,
-		       "sch:%u, %u, MapId=%u, avail=%02x-%02x-%02x-%02x\n",
+		       "sch:%u, %zu, MapId=%u, avail=%02x-%02x-%02x-%02x\n",
 		       u4SchIdx, i, prTimeline->ucMapId,
 		       ((uint8_t *)(prTimeline->au4AvailMap))[0],
 		       ((uint8_t *)(prTimeline->au4AvailMap))[1],

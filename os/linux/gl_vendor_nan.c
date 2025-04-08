@@ -2002,10 +2002,9 @@ skip:
 				pNanSubscribeReq->service_specific_info_len =
 					outputTlv.length;
 				DBGLOG(NAN, DEBUG,
-					"SERVICE_SPECIFIC_INFO type:%u len:%u value:%u SRV_spec_info:%s\n",
+					"SERVICE_SPECIFIC_INFO type:%u len:%u SRV_spec_info:%s\n",
 					outputTlv.type,
 					outputTlv.length,
-					outputTlv.value,
 					pNanSubscribeReq
 					->service_specific_info);
 				break;
@@ -2047,10 +2046,9 @@ skip:
 				pNanSubscribeReq->tx_match_filter_len =
 					outputTlv.length;
 				DBGLOG(NAN, DEBUG,
-					"TX_MATCH_FILTERtype:%u len:%u value:%p tx_match_filter:%s\n",
+					"TX_MATCH_FILTERtype:%u len:%u tx_match_filter:%s\n",
 					outputTlv.type,
 					outputTlv.length,
-					outputTlv.value,
 					pNanSubscribeReq->tx_match_filter);
 				dumpMemory8((uint8_t *)pNanSubscribeReq
 						    ->tx_match_filter,
