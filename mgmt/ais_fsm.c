@@ -1190,14 +1190,15 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		if (!fgHalted)
 			aisFsmRunEventScanDoneTimeOut(prAdapter,
 				(uintptr_t)ucBssIndex);
-
-		GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
-				SPIN_LOCK_NET_DEV);
-		kalCfg80211ScanDone(prAdapter->prGlueInfo
-				->prScanRequest, TRUE);
-		kalClearGlueScanReq(prAdapter->prGlueInfo);
-		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
-				SPIN_LOCK_NET_DEV);
+		if (prAdapter->prGlueInfo->prScanRequest) {
+			GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
+					SPIN_LOCK_NET_DEV);
+			kalCfg80211ScanDone(prAdapter->prGlueInfo
+					->prScanRequest, TRUE);
+			kalClearGlueScanReq(prAdapter->prGlueInfo);
+			GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
+					SPIN_LOCK_NET_DEV);
+		}
 	}
 	/* For FW assert trigger reset case, stop sched scan */
 	if (kalGetGlueSchedScanReq(prAdapter->prGlueInfo) != NULL) {
