@@ -1180,6 +1180,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
 	.prTxPwrLimit6G1ss1tFile = "TxPwrLimit6G_MT66x9_1ss1t.dat",
 #endif
+#if (CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1)
+	.prTxPwrLimit6GVlpFile = "TxPwrLimit6G_MT66x9_VLP.dat",
+	.prTxPwrLimit6GSpFile = "TxPwrLimit6G_MT66x9_SP.dat",
+#endif  /*CFG_SUPPORT_CE_6G_PWR_REGULATIONS == 1*/
 #endif
 
 	.ucTxPwrLimitBatchSize = 3,
