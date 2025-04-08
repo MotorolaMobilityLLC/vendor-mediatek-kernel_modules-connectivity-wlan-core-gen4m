@@ -12825,7 +12825,8 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	}
 
 
-	if (prPeerSchDesc->ePeerForceAvailAttr != NAN_PEER_AVAIL_FORCE_NONE) {
+	if (prPeerSchDesc &&
+	    prPeerSchDesc->ePeerForceAvailAttr != NAN_PEER_AVAIL_FORCE_NONE) {
 		fgNanUseR4AvailAttr = prPeerSchDesc->ePeerForceAvailAttr -
 					NAN_PEER_AVAIL_FORCE_R3;
 		DBGLOG(NAN, INFO, "Force Use R4 Availability=%u",
