@@ -1066,6 +1066,13 @@ ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
     CONFIG_BCN_PROT=y
     CONFIG_FACTORY_CALIBRATION_SUPPORT=n
+    ifeq ($(CONFIG_FACTORY_CALIBRATION_SUPPORT), y)
+        ccflags-y += -DCFG_FACT_CAL_GROUP_NUM=35
+        ccflags-y += -DCFG_FACT_CAL_BUF_LEN_COM=600
+        ccflags-y += -DCFG_FACT_CAL_BUF_LEN_GRP=8500
+        ccflags-y += -DCFG_FACT_CAL_BUF_LEN_CH=700
+        ccflags-y += -DCFG_FACT_CAL_DATA_BUF_NUM_MAX=4
+    endif
 endif # MT7925
 
 ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)

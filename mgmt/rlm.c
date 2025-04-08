@@ -3032,98 +3032,6 @@ static uint32_t rlmFactCalGetChIdx(enum FACT_CAL_BAND eBand,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Find the corresponding group base on the channel
- *
- * \param[in] eBand
- *            ucChannel
- *       [out] pucGroup
- *
- * \return WLAN_STATUS
- */
-/*----------------------------------------------------------------------------*/
-static uint32_t rlmFactCalCh2Group(enum FACT_CAL_BAND eBand,
-				uint32_t u4Channel, uint8_t *pucGroup)
-{
-	uint8_t ucGrpDefIdx = 0, ucIndex = 0;
-	uint16_t u2Freq = 0;
-	uint8_t auc5G160Ch[] = { 50, 82, 114, 163 };
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t auc6G160Ch[] = { 15, 47, 79, 111, 143, 175, 207};
-#endif
-	uint8_t fg160MCh = FALSE;
-
-	if (eBand == FACT_CAL_BAND_2G) {
-		*pucGroup = 0;
-		return WLAN_STATUS_SUCCESS;
-	} else if (eBand == FACT_CAL_BAND_5G) {
-		u2Freq = 5000 + u4Channel * 5;
-		for (ucIndex = 0; ucIndex < ARRAY_SIZE(auc5G160Ch); ucIndex++) {
-			if (u4Channel == auc5G160Ch[ucIndex]) {
-				fg160MCh = TRUE;
-				break;
-			}
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	} else if (eBand == FACT_CAL_BAND_6G) {
-		u2Freq = 5950 + u4Channel * 5;
-		for (ucIndex = 0; ucIndex < ARRAY_SIZE(auc6G160Ch); ucIndex++) {
-			if (u4Channel == auc6G160Ch[ucIndex]) {
-				fg160MCh = TRUE;
-				break;
-			}
-		}
-#endif
-	} else {
-		DBGLOG(RLM, ERROR, "Error eBand %u ch%u\n", eBand, u4Channel);
-		return WLAN_STATUS_FAILURE;
-	}
-
-	if (fg160MCh) {
-		/* Get the 160M group by center freq of channel */
-		for (ucGrpDefIdx = 0; ucGrpDefIdx < FACT_CAL_6G_160M_GROUP_NUM;
-						ucGrpDefIdx++) {
-			if (u2Freq >=
-			GROUP_FREQ_DEF_ARR_160M[ucGrpDefIdx].ucFreqStart &&
-				u2Freq <=
-			GROUP_FREQ_DEF_ARR_160M[ucGrpDefIdx].ucFreqEnd) {
-				*pucGroup =
-			GROUP_FREQ_DEF_ARR_160M[ucGrpDefIdx].ucGroupIdx;
-				break;
-			}
-		}
-	} else {
-		/* Get the 20/40/80M Group by center freq of channel */
-		for (ucGrpDefIdx = 0;
-			ucGrpDefIdx < (FACT_CAL_2G_GROUP_NUM +
-				FACT_CAL_5G_GROUP_NUM + FACT_CAL_6G_GROUP_NUM);
-			ucGrpDefIdx++) {
-			if (u2Freq >=
-			GROUP_FREQ_DEF_ARR[ucGrpDefIdx].ucFreqStart &&
-				u2Freq <=
-			GROUP_FREQ_DEF_ARR[ucGrpDefIdx].ucFreqEnd) {
-				*pucGroup =
-			GROUP_FREQ_DEF_ARR[ucGrpDefIdx].ucGroupIdx;
-				break;
-			}
-		}
-	}
-
-	if (*pucGroup <= 0) {
-		DBGLOG(RLM, ERROR,
-			"Error: find no group for eBand %u ch%u\n",
-			eBand, u4Channel);
-		return WLAN_STATUS_FAILURE;
-	}
-
-	DBGLOG(RLM, INFO,
-		"Get group %u for eBand %u ch%u\n",
-		*pucGroup, eBand, u4Channel);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Find the center channel
  *
  * \param[in] eBand
@@ -3541,8 +3449,9 @@ GET_FAIL:
 uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 			uint32_t u4CalType, uint8_t u1Band, uint32_t u4Channel)
 {
-	uint32_t u4Idx = 0, u4Status = WLAN_STATUS_FAILURE;
+	uint32_t u4Idx = 0, u4Group = 0, u4Status = WLAN_STATUS_FAILURE;
 	uint8_t u1tmpCh = 0;
+	boolean bIsChFound = FALSE;
 	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
 	struct FACT_CAL_BUF_INFO *prFileBufInfo = NULL;
 	struct FACT_CAL_GRP *prFileGrp = NULL;
@@ -3552,18 +3461,6 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 
 	if (u4CalType == FACT_CAL_TYPE_SETCHANNEL) {
 		// Set correspond group for channel and all paths
-		u4Status = rlmFactCalSetCalDataForSend(
-			prAdapter,
-			FACT_CAL_TYPE_GROUP,
-			u1Band,
-			FACT_CAL_DATA_INVALID_IDX,
-			u4Channel,
-			FACT_CAL_DATA_INVALID_IDX);
-
-		if (u4Status != WLAN_STATUS_SUCCESS)
-			DBGLOG(RLM, ERROR,
-				"Set CH%d group fail!\n", u4Channel);
-
 		for (u4Idx = 0; u4Idx < FACT_CAL_CH_NUM_ALL; u4Idx++) {
 			prFileCh = &prFactCalFile->channel_t->rChCalData[u4Idx];
 			u1tmpCh =
@@ -3571,6 +3468,13 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 					& FACT_CAL_CENT_CH_PARAM_CHAN_MASK);
 
 			if (u1tmpCh == u4Channel) {
+				bIsChFound = TRUE;
+				// Same channel shared by same group
+				u4Group =
+				((prFileCh->rFactCalBufInfo.u4CalParam)
+				& FACT_CAL_CENT_CH_PARAM_REF_GROUP_MASK)
+				>> FACT_CAL_CENT_CH_PARAM_REF_GROUP_OFFSET;
+
 				u4Status = rlmFactCalSetCalDataForSend(
 					prAdapter,
 					FACT_CAL_TYPE_CHANNEL,
@@ -3582,6 +3486,21 @@ uint32_t rlmFactCalSet(struct ADAPTER *prAdapter,
 					u4Channel);
 			}
 		}
+
+		if (bIsChFound) {
+			u4Status = rlmFactCalSetCalDataForSend(
+				prAdapter,
+				FACT_CAL_TYPE_GROUP,
+				(uint8_t)FACT_CAL_DATA_INVALID_IDX,
+				u4Group,
+				FACT_CAL_DATA_INVALID_IDX,
+				FACT_CAL_DATA_INVALID_IDX);
+
+			if (u4Status != WLAN_STATUS_SUCCESS)
+				DBGLOG(RLM, ERROR,
+					"Set CH%d group fail!\n", u4Channel);
+		}
+
 	} else if (u4CalType == FACT_CAL_TYPE_POWERON) {
 		// Set correspond A/G band
 		for (u4Idx = 0; u4Idx < FACT_CAL_COMMON_BAND_NUM; u4Idx++) {
@@ -3634,7 +3553,7 @@ uint32_t rlmFactCalSetCalDataForSend(
 {
 	uint32_t u4Status = WLAN_STATUS_FAILURE, u4CalParam = 0;
 	struct FACT_CAL_DATA_BUF rCalData;
-	uint8_t ucGroup = 0, ucBufIdx = 0, ucBufSeq = 0;
+	uint8_t ucBufIdx = 0, ucBufSeq = 0;
 	struct UNI_CMD_FACT_CAL_DATA *prCalDataForSend = NULL;
 	uint32_t u4leaveLength = 0, u4Offset = 0, u4SeqNumPerBuf = 0;
 
@@ -3642,12 +3561,7 @@ uint32_t rlmFactCalSetCalDataForSend(
 
 	// Construct Cal. param by cal type and channel
 	if (u4CalType == FACT_CAL_TYPE_GROUP) {
-		if (u1Band != ((uint8_t)FACT_CAL_DATA_INVALID_IDX) &&
-			u4Channel != FACT_CAL_DATA_INVALID_IDX) {
-			rlmFactCalCh2Group(u1Band, u4Channel, &ucGroup);
-			u4CalParam = ucGroup;
-		} else if (u4Group != FACT_CAL_DATA_INVALID_IDX)
-			u4CalParam = u4Group;
+		u4CalParam = u4Group;
 	} else if (u4CalType == FACT_CAL_TYPE_CHANNEL) {
 		u4CalParam = u4Channel;
 		u4CalParam |= u1Band << FACT_CAL_CENT_CH_PARAM_RF_BAND_OFFSET;
@@ -4143,9 +4057,13 @@ uint32_t rlmFactCalSetMappingTblForSend(
 	prCalDataForSend->u4BufDataLength =
 		FACT_CAL_DATA_BUF_CFG_U8_LEN;
 
-	kalMemCopy(prCalDataForSend->aucBufData,
-		au4BufCfgInfo,
-		FACT_CAL_DATA_BUF_CFG_U8_LEN);
+	if (sizeof(au4BufCfgInfo) >= FACT_CAL_DATA_BUF_CFG_U8_LEN) {
+		kalMemCopy(prCalDataForSend->aucBufData,
+			au4BufCfgInfo,
+			FACT_CAL_DATA_BUF_CFG_U8_LEN);
+	} else {
+		DBGLOG(RLM, ERROR, "Not support Sending Mapping tbl!\n");
+	}
 
 	u4Status =
 		nicUniCmdFactCal(prAdapter,

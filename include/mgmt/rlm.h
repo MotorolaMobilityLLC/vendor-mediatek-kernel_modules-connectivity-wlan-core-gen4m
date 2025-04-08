@@ -201,7 +201,13 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 #define FACT_CAL_GRP_BW160_CAL_DBDC_RESULT_LEN 1472
 #define FACT_CAL_CH_CAL_RESULT_LEN  700
 
-#define FACT_CAL_DATA_BUF_NUM_MAX (4) /* Maximum of channel cache num */
+#if CFG_FACT_CAL_DATA_BUF_NUM_MAX
+ /* Maximum of channel FE path num */
+#define FACT_CAL_DATA_BUF_NUM_MAX (CFG_FACT_CAL_DATA_BUF_NUM_MAX)
+#else
+#define FACT_CAL_DATA_BUF_NUM_MAX (0)
+#endif
+
 #define FACT_CAL_CH_NUM_2G (14)	/* ARRAY_SIZE g_au1ChList2G */
 #define FACT_CAL_CH_NUM_5G (68) /* ARRAY_SIZE g_au1ChList5G */
 #define FACT_CAL_CH_NUM_6G (109) /* ARRAY_SIZE g_au1ChList6G */
@@ -217,24 +223,42 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 #define FACT_CAL_DATA_MAX_BUF_LEN \
 	((FACT_CAL_DATA_BUF_NUM_MAX)*(FACT_CAL_DATA_BUF_CFG_U32_LEN))
 #define FACT_CAL_DATA_BUF_LEN (1400)
-#define FACT_CAL_BUF_LEN_COM (FACT_CAL_COM_CAL_RESULT_LEN)
-#define FACT_CAL_BUF_LEN_GRP \
-	(FACT_CAL_GRP_CAL_RESULT_LEN + FACT_CAL_GRP_CAL_DBDC_RESULT_LEN)
-#define FACT_CAL_BUF_LEN_CH \
-	((FACT_CAL_CH_CAL_RESULT_LEN)*(FACT_CAL_DATA_BUF_NUM_MAX))
 
-#define FACT_CAL_2G_GROUP_NUM (1)
-#define FACT_CAL_5G_GROUP_NUM (8)
-#define FACT_CAL_6G_GROUP_NUM (15)
-#define FACT_CAL_6G_160M_GROUP_NUM (11)
-#define FACT_CAL_GROUP_NUM ((FACT_CAL_2G_GROUP_NUM) + (FACT_CAL_5G_GROUP_NUM) \
-+ (FACT_CAL_6G_GROUP_NUM) + (FACT_CAL_6G_160M_GROUP_NUM))
+#if CFG_FACT_CAL_BUF_LEN_COM
+#define FACT_CAL_BUF_LEN_COM (CFG_FACT_CAL_BUF_LEN_COM)
+#else
+#define FACT_CAL_BUF_LEN_COM 0
+#endif
+
+#if CFG_FACT_CAL_BUF_LEN_GRP
+/* Define Group Band0 & 1 total cal. size by project */
+#define FACT_CAL_BUF_LEN_GRP (CFG_FACT_CAL_BUF_LEN_GRP)
+#else
+#define FACT_CAL_BUF_LEN_GRP 0
+#endif
+
+#if CFG_FACT_CAL_BUF_LEN_CH
+/* Define channel total cal. size by project */
+// Equal to Each channel cal. size * total FE paths
+#define FACT_CAL_BUF_LEN_CH \
+	(CFG_FACT_CAL_BUF_LEN_CH * FACT_CAL_DATA_BUF_NUM_MAX)
+#else
+#define FACT_CAL_BUF_LEN_CH 0
+#endif
+
+#if CFG_FACT_CAL_GROUP_NUM
+
+#define FACT_CAL_GROUP_NUM (CFG_FACT_CAL_GROUP_NUM)
+#else
+#define FACT_CAL_GROUP_NUM 0
+#endif
 
 // Follow FW to use common as input param
 #define FACT_CAL_PARAM_COMMON_MASK                        BITS(0, 7)
 
 // Follow FW to use group as input param
 #define FACT_CAL_PARAM_GROUP_MASK                         BITS(0, 15)
+// Dbdc band mask used for both group & channel type
 #define FACT_CAL_DBDC_BAND_MASK                           (BIT(16))
 #define FACT_CAL_DBDC_BAND_SHFT                           (16)
 #define FACT_CAL_EMLSR_MASK                               (BIT(17))
@@ -247,6 +271,8 @@ static const char * const apucVhtOpBw[CW_NUM] = {
 #define FACT_CAL_CENT_CH_PARAM_CHAN_OFFSET                (0)
 #define FACT_CAL_CENT_CH_PARAM_RF_BAND_MASK               BITS(12, 15)
 #define FACT_CAL_CENT_CH_PARAM_RF_BAND_OFFSET             (12)
+#define FACT_CAL_CENT_CH_PARAM_REF_GROUP_MASK             BITS(17, 22)
+#define FACT_CAL_CENT_CH_PARAM_REF_GROUP_OFFSET           (17)
 
 #define BAND_TO_FACT_BAND(_ucBand) ((_ucBand) - 1)
 #define FACT_CAL_DATA_INVALID_IDX 0xFFFFFFFF
@@ -357,11 +383,14 @@ struct FACT_CAL_BUF_INFO {
 	 *	 Bit[16]: Dbdc band (0: Band0, 1: Band1)
 	 *	 Bit[17]: EMLSR group (0: No, 1: Yes)
 	 *	 Bit[18]: PowerOn group (0: No, 1: Yes)
+	 *	 Bit[18:31]: reserved for future use
 	 * If Cal type == Channel
 	 *	 Bit[0:11]: central channel
 	 *	   E.g. CH6 set to 6
 	 *	 Bit[12:15]: Channel Band (2G : 0 / 5G : 1 / 6G : 2)
-	 *	 BIT[16:31]: reserved
+	 *	 Bit[16]: Dbdc band (0: Band0, 1: Band1)
+	 *	 Bit[17:22]: Reference Group
+	 *	 Bit[23:31]: reserved for future use
 	 */
 	uint32_t u4CalParam;
 
