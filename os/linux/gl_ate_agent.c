@@ -243,35 +243,36 @@ int SetATE(struct net_device *prNetDev, uint8_t *prInBuf)
 /*----------------------------------------------------------------------------*/
 int SetATEDa(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	int32_t i4Status = 0;
+	int32_t i4Status = 0, i = 0;
 	uint32_t addr[MAC_ADDR_LEN];
 	uint8_t addr2[MAC_ADDR_LEN];
-	int32_t rv;
+	uint32_t *params[] = {
+		&addr[0], &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]
+	};
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
-	DBGLOG(RFTEST, ERROR, "ATE_AGENT iwpriv SetDa\n");
-	/* xx:xx:xx:xx:xx:xx */
-	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x", &addr[0],
-		    &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]);
-	if (rv == 6) {
-		DBGLOG(RFTEST, ERROR,
-		       "ATE_AGENT iwpriv SetATEDa Sa:%02x:%02x:%02x:%02x:%02x:%02x\n",
-		       addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-
-		addr2[0] = (uint8_t) addr[0];
-		addr2[1] = (uint8_t) addr[1];
-		addr2[2] = (uint8_t) addr[2];
-		addr2[3] = (uint8_t) addr[3];
-		addr2[4] = (uint8_t) addr[4];
-		addr2[5] = (uint8_t) addr[5];
-
-		i4Status = MT_ATESetMACAddress(prNetDev,
-				       RF_AT_FUNCID_SET_MAC_ADDRESS, addr2);
-	} else {
-		return -EINVAL;
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
 	}
+
+	addr2[0] = (uint8_t) addr[0];
+	addr2[1] = (uint8_t) addr[1];
+	addr2[2] = (uint8_t) addr[2];
+	addr2[3] = (uint8_t) addr[3];
+	addr2[4] = (uint8_t) addr[4];
+	addr2[5] = (uint8_t) addr[5];
+
+	i4Status = MT_ATESetMACAddress(prNetDev,
+		RF_AT_FUNCID_SET_MAC_ADDRESS, addr2);
+
 	return i4Status;
 }
 
@@ -289,35 +290,37 @@ int SetATEDa(struct net_device *prNetDev, uint8_t *prInBuf)
 /*----------------------------------------------------------------------------*/
 int SetATESa(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	int32_t i4Status = 0;
+	int32_t i4Status = 0, i = 0;
 	uint32_t addr[MAC_ADDR_LEN];
 	uint8_t addr2[MAC_ADDR_LEN];
-	int32_t rv;
+	uint8_t *endptr;
+	uint8_t *token;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "ATE_AGENT iwpriv SetSa\n");
-	/* xx:xx:xx:xx:xx:xx */
-	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x", &addr[0],
-		    &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]);
-	if (rv == 6) {
-		DBGLOG(RFTEST, ERROR,
-		       "ATE_AGENT iwpriv SetATESa Sa:%02x:%02x:%02x:%02x:%02x:%02x\n",
-		       addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 
-		addr2[0] = (uint8_t) addr[0];
-		addr2[1] = (uint8_t) addr[1];
-		addr2[2] = (uint8_t) addr[2];
-		addr2[3] = (uint8_t) addr[3];
-		addr2[4] = (uint8_t) addr[4];
-		addr2[5] = (uint8_t) addr[5];
+	endptr = prInBuf;
 
-		i4Status = MT_ATESetMACAddress(prNetDev,
-					       RF_AT_FUNCID_SET_TA, addr2);
-	} else {
-		return -EINVAL;
+	for (i = 0; i < MAC_ADDR_LEN; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, &addr[i]))
+			return -EINVAL;
 	}
+
+	DBGLOG(RFTEST, ERROR,
+		"SetATESa Sa:%02x:%02x:%02x:%02x:%02x:%02x\n",
+		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+
+	for (i = 0; i < MAC_ADDR_LEN; i++)
+		addr2[i] = (uint8_t) addr[i];
+
+	i4Status = MT_ATESetMACAddress(prNetDev,
+		RF_AT_FUNCID_SET_TA, addr2);
+
 	return i4Status;
 }
 
@@ -936,76 +939,75 @@ int Set_TxBfProfileTag_Mem(struct net_device *prNetDev,
 	uint32_t aucInput[8];
 	int32_t i4Status = 0;
 	uint8_t aucMemAddrColIdx[4], aucMemAddrRowIdx[4];
-	int32_t rv;
+	int32_t i;
+	uint8_t *endptr;
+	uint8_t *token;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_Mem\n");
 
-	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x",
-		    &aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
-		    &aucInput[4], &aucInput[5], &aucInput[6],
-		    &aucInput[7]);
+	endptr = prInBuf;
+
+	for (i = 0; i < 8; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, &aucInput[i]))
+			return -EINVAL;
+	}
+
 	/* mem col0:row0:col1:row1:col2:row2:col3:row3 */
-	if (rv == 8) {
-		DBGLOG(RFTEST, ERROR,
-		       "ATE_AGENT iwpriv Set_TxBfProfileTag_Mem aucInput:%d:%d:%d:%d:%d:%d:%d:%d\n",
-		       aucInput[0], aucInput[1], aucInput[2], aucInput[3],
-		       aucInput[4], aucInput[5], aucInput[6],
-		       aucInput[7]);
+	aucMemAddrColIdx[0] = (uint8_t) aucInput[0];
+	aucMemAddrRowIdx[0] = (uint8_t) aucInput[1];
+	aucMemAddrColIdx[1] = (uint8_t) aucInput[2];
+	aucMemAddrRowIdx[1] = (uint8_t) aucInput[3];
+	aucMemAddrColIdx[2] = (uint8_t) aucInput[4];
+	aucMemAddrRowIdx[2] = (uint8_t) aucInput[5];
+	aucMemAddrColIdx[3] = (uint8_t) aucInput[6];
+	aucMemAddrRowIdx[3] = (uint8_t) aucInput[7];
 
-		aucMemAddrColIdx[0] = (uint8_t) aucInput[0];
-		aucMemAddrRowIdx[0] = (uint8_t) aucInput[1];
-		aucMemAddrColIdx[1] = (uint8_t) aucInput[2];
-		aucMemAddrRowIdx[1] = (uint8_t) aucInput[3];
-		aucMemAddrColIdx[2] = (uint8_t) aucInput[4];
-		aucMemAddrRowIdx[2] = (uint8_t) aucInput[5];
-		aucMemAddrColIdx[3] = (uint8_t) aucInput[6];
-		aucMemAddrRowIdx[3] = (uint8_t) aucInput[7];
-
-		i4Status = TxBfProfileTag_Mem(prNetDev, &g_rPfmuTag1,
-				      aucMemAddrColIdx, aucMemAddrRowIdx);
-	} else
-		return -EINVAL;
+	i4Status = TxBfProfileTag_Mem(prNetDev, &g_rPfmuTag1,
+		aucMemAddrColIdx, aucMemAddrRowIdx);
 
 	return i4Status;
 }
 
 int Set_TxBfProfileTag_Matrix(struct net_device *prNetDev,
-			      uint8_t *prInBuf)
+	uint8_t *prInBuf)
 {
 	uint32_t aucInput[6];
 	uint8_t ucNrow, ucNcol, ucNgroup, ucLM, ucCodeBook,
 		ucHtcExist;
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr;
+	uint8_t *token;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_Matrix\n");
 
-	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
-		    &aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
-		    &aucInput[4], &aucInput[5]);
-	/* nrow:nol:ng:LM:CodeBook:HtcExist */
-	if (rv == 6) {
-		DBGLOG(RFTEST, ERROR,
-		       "ATE_AGENT iwpriv Set_TxBfProfileTag_Matrix aucInput:%d:%d:%d:%d:%d:%d\n",
-		       aucInput[0], aucInput[1], aucInput[2], aucInput[3],
-		       aucInput[4], aucInput[5]);
-		ucNrow = (uint8_t) aucInput[0];
-		ucNcol = (uint8_t) aucInput[1];
-		ucNgroup = (uint8_t) aucInput[2];
-		ucLM = (uint8_t) aucInput[3];
-		ucCodeBook = (uint8_t) aucInput[4];
-		ucHtcExist = (uint8_t) aucInput[5];
+	endptr = prInBuf;
 
-		i4Status = TxBfProfileTag_Matrix(prNetDev, &g_rPfmuTag1, ucNrow,
-				ucNcol, ucNgroup, ucLM, ucCodeBook, ucHtcExist);
-	} else
-		return -EINVAL;
+	for (i = 0; i < 6; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, &aucInput[i]))
+			return -EINVAL;
+	}
+
+	ucNrow = (uint8_t) aucInput[0];
+	ucNcol = (uint8_t) aucInput[1];
+	ucNgroup = (uint8_t) aucInput[2];
+	ucLM = (uint8_t) aucInput[3];
+	ucCodeBook = (uint8_t) aucInput[4];
+	ucHtcExist = (uint8_t) aucInput[5];
+
+	i4Status = TxBfProfileTag_Matrix(prNetDev, &g_rPfmuTag1, ucNrow,
+		ucNcol, ucNgroup, ucLM, ucCodeBook, ucHtcExist);
 
 	return i4Status;
 }
@@ -1015,30 +1017,33 @@ int Set_TxBfProfileTag_SNR(struct net_device *prNetDev,
 {
 	uint32_t aucInput[4];
 	uint8_t ucSNR_STS0, ucSNR_STS1, ucSNR_STS2, ucSNR_STS3;
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3]
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_SNR\n");
 
-	rv = sscanf(prInBuf, "%x:%x:%x:%x", &aucInput[0],
-		    &aucInput[1], &aucInput[2], &aucInput[3]);
-	if (rv == 4) {
-		DBGLOG(RFTEST, ERROR,
-		       "ATE_AGENT iwpriv Set_TxBfProfileTag_SNR aucInput:%d:%d:%d:%d\n",
-		       aucInput[0], aucInput[1], aucInput[2], aucInput[3]);
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		ucSNR_STS0 = (uint8_t) aucInput[0];
-		ucSNR_STS1 = (uint8_t) aucInput[1];
-		ucSNR_STS2 = (uint8_t) aucInput[2];
-		ucSNR_STS3 = (uint8_t) aucInput[3];
+	ucSNR_STS0 = (uint8_t) aucInput[0];
+	ucSNR_STS1 = (uint8_t) aucInput[1];
+	ucSNR_STS2 = (uint8_t) aucInput[2];
+	ucSNR_STS3 = (uint8_t) aucInput[3];
 
-		i4Status = TxBfProfileTag_SNR(prNetDev, &g_rPfmuTag1,
-			      ucSNR_STS0, ucSNR_STS1, ucSNR_STS2, ucSNR_STS3);
-	} else
-		return -EINVAL;
+	i4Status = TxBfProfileTag_SNR(prNetDev, &g_rPfmuTag1,
+		ucSNR_STS0, ucSNR_STS1, ucSNR_STS2, ucSNR_STS3);
 
 	return i4Status;
 }
@@ -1125,34 +1130,37 @@ int Set_TxBfProfileTag_McsThrd(struct net_device *prNetDev,
 {
 	uint32_t aucInput[6];
 	uint8_t ucMcsLss[3], ucMcsSss[3];
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
+
+	uint32_t *params[] = {
+		&aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
+		&aucInput[4], &aucInput[5]
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_McsThrd\n");
 
-	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
-		    &aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
-		    &aucInput[4], &aucInput[5]);
-	if (rv == 6) {
-		DBGLOG(RFTEST, ERROR,
-		       "ATE_AGENT iwpriv Set_TxBfProfileTag_McsThrd aucInput:%d:%d:%d:%d:%d:%d\n",
-		       aucInput[0], aucInput[1], aucInput[2], aucInput[3],
-		       aucInput[4], aucInput[5]);
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		ucMcsLss[0] = (uint8_t) aucInput[0];
-		ucMcsSss[0] = (uint8_t) aucInput[1];
-		ucMcsLss[1] = (uint8_t) aucInput[2];
-		ucMcsSss[1] = (uint8_t) aucInput[3];
-		ucMcsLss[2] = (uint8_t) aucInput[4];
-		ucMcsSss[2] = (uint8_t) aucInput[5];
+	ucMcsLss[0] = (uint8_t) aucInput[0];
+	ucMcsSss[0] = (uint8_t) aucInput[1];
+	ucMcsLss[1] = (uint8_t) aucInput[2];
+	ucMcsSss[1] = (uint8_t) aucInput[3];
+	ucMcsLss[2] = (uint8_t) aucInput[4];
+	ucMcsSss[2] = (uint8_t) aucInput[5];
 
-		i4Status = TxBfProfileTag_McsThd(prNetDev, &g_rPfmuTag2,
-						 ucMcsLss, ucMcsSss);
-	} else
-		return -EINVAL;
+	i4Status = TxBfProfileTag_McsThd(prNetDev, &g_rPfmuTag2,
+		ucMcsLss, ucMcsSss);
 
 	return i4Status;
 }
@@ -1262,25 +1270,40 @@ int Set_TxBfProfileTag_DesiredNr(struct net_device
 }
 
 
-int Set_TxBfProfileTagPartialBw(struct net_device *prNetDev,
-			    uint8_t *prInBuf)
+int Set_TxBfProfileTagPartialBw(
+	struct net_device *prNetDev,
+	uint8_t *prInBuf
+)
 {
-	uint8_t uBitmap, uResolution;
-	int32_t i4Status = 0;
-	int32_t rv;
+	uint32_t u4Bitmap, u4Resolution;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&u4Bitmap, &u4Resolution
+	};
 
 	TRACE_FUNC(RFTEST, DEBUG, "%s\n");
 
-	rv = sscanf(prInBuf, "%x:%x", &uBitmap, &uResolution);
-	if (rv == 2) {
-		DBGLOG(RFTEST, DEBUG,
-		       "Set_TxBfProfileTagPartialBw prInBuf = %s, u4Bitmap = %d, u4Resolution = %d\n",
-		       prInBuf, uBitmap, uResolution);
-		i4Status = TxBfProfileTagPartialBw(prNetDev, &g_rPfmuTag1,
-			uBitmap, uResolution);
-	} else {
+	if (prInBuf == NULL)
 		return -EINVAL;
+
+	endptr = prInBuf;
+
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
 	}
+
+	DBGLOG(RFTEST, DEBUG,
+		"%d/%d\n",
+		u4Bitmap, u4Bitmap);
+
+	i4Status = TxBfProfileTagPartialBw(prNetDev, &g_rPfmuTag1,
+		(uint8_t)u4Bitmap, (uint8_t)u4Resolution);
 
 	return i4Status;
 }
@@ -1334,25 +1357,30 @@ int Set_TxBfProfileTagWrite(struct net_device *prNetDev,
 }
 
 int Set_TxBfProfileTagRead(struct net_device *prNetDev,
-			   uint8_t *prInBuf)
+	uint8_t *prInBuf)
 {
 	uint32_t profileIdx, fgBFer;
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {&profileIdx, &fgBFer};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTagRead\n");
 
-	rv = sscanf(prInBuf, "%x:%x", &profileIdx, &fgBFer);
-	if (rv == 2) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_TxBfProfileTagRead prInBuf = %s, profileIdx = %d, fgBFer = %d\n",
-		       prInBuf, profileIdx, fgBFer);
-		i4Status = TxBfProfileTagRead(prNetDev, profileIdx, fgBFer);
-	} else
-		return -EINVAL;
+	endptr = prInBuf;
+
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	i4Status = TxBfProfileTagRead(prNetDev, profileIdx, fgBFer);
 
 	return i4Status;
 }
@@ -1362,25 +1390,28 @@ int Set_TxBfProfileDataRead(struct net_device *prNetDev,
 {
 	uint32_t profileIdx, fgBFer, subcarrierIdxMsb,
 		 subcarrierIdxLsb;
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&profileIdx, &fgBFer, &subcarrierIdxMsb, &subcarrierIdxLsb
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileDataRead\n");
 
-	rv = sscanf(prInBuf, "%x:%x:%x:%x", &profileIdx, &fgBFer,
-		    &subcarrierIdxMsb, &subcarrierIdxLsb);
-	if (rv == 4) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_TxBfProfileDataRead prInBuf = %s, profileIdx = %d, fgBFer = %d, subcarrierIdxMsb:%x, subcarrierIdxLsb:%x\n",
-		       prInBuf, profileIdx, fgBFer, subcarrierIdxMsb,
-		       subcarrierIdxLsb);
-		i4Status = TxBfProfileDataRead(prNetDev, profileIdx, fgBFer,
-				       subcarrierIdxMsb, subcarrierIdxLsb);
-	} else
-		return -EINVAL;
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	i4Status = TxBfProfileDataRead(prNetDev, profileIdx, fgBFer,
+		subcarrierIdxMsb, subcarrierIdxLsb);
 
 	return i4Status;
 }
@@ -1398,8 +1429,16 @@ int Set_TxBfProfileDataWrite(struct net_device *prNetDev,
 	uint8_t aucPsi[6];
 	uint8_t aucDSnr[4];
 	uint32_t i;
-	int32_t rv;
-
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&u4ProfileIdx, &u4SubcarrierIdx};
+	uint32_t *pu4PhiParams[] = {
+		&au4Phi[0], &au4Psi[0], &au4Phi[1], &au4Psi[1],
+		&au4Phi[2], &au4Psi[2], &au4Phi[3], &au4Psi[3],
+		&au4Phi[4], &au4Psi[4], &au4Phi[5], &au4Psi[5]};
+	uint32_t *pu4DsnrParams[] = {
+		&au4DSnr[0], &au4DSnr[1], &au4DSnr[2], &au4DSnr[3]};
 	int32_t i4Status = 0;
 
 	if (prInBuf == NULL)
@@ -1407,35 +1446,39 @@ int Set_TxBfProfileDataWrite(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite\n");
 
-	rv = sscanf(prInBuf,
-		    "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
-		    &u4ProfileIdx, &u4SubcarrierIdx, &au4Phi[0], &au4Psi[0],
-		    &au4Phi[1], &au4Psi[1],
-		    &au4Phi[2], &au4Psi[2], &au4Phi[3], &au4Psi[3], &au4Phi[4],
-		    &au4Psi[4],
-		    &au4Phi[5], &au4Psi[5],
-		    &au4DSnr[0], &au4DSnr[1], &au4DSnr[2], &au4DSnr[3]);
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-	if (rv == 18) {
-		DBGLOG(RFTEST, ERROR,
-		       "TxBfProfileDataWrite prInBuf = %s, u4ProfileIdx = %x, u4SubcarrierIdx = %x, au4Phi[0]:%x, au4Phi[1]:%x, au4Phi[2]:%x, au4Phi[3]:%x, au4Phi[4]:%x, au4Phi[5]:%x, au4Psi[0]:%x, au4Psi[1]:%x, au4Psi[2]:%x, au4Psi[3]:%x, au4Psi[4]:%x, au4Psi[5]:%x,au4DSnr[0]:%x, au4DSnr[1]:%x, au4DSnr[2]:%x, au4DSnr[3]:%x\n",
-		       prInBuf, u4ProfileIdx, u4SubcarrierIdx,
-		       au4Phi[0], au4Phi[1], au4Phi[2], au4Phi[3], au4Phi[4],
-		       au4Phi[5],
-		       au4Psi[0], au4Psi[1], au4Psi[2], au4Psi[3], au4Psi[4],
-		       au4Psi[5],
-		       au4DSnr[0], au4DSnr[1], au4DSnr[2], au4DSnr[3]);
-		for (i = 0; i < 6; i++) {
-			au2Phi[i] = au4Phi[i];
-			aucPsi[i] = au4Psi[i];
-		}
-		for (i = 0; i < 4; i++)
-			aucDSnr[i] = au4DSnr[i];
+	for (i = 0; i < ARRAY_SIZE(pu4PhiParams); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, pu4PhiParams[i]))
+			return -EINVAL;
+	}
 
-		i4Status = TxBfProfileDataWrite(prNetDev, u4ProfileIdx,
-				u4SubcarrierIdx, au2Phi, aucPsi, aucDSnr);
-	} else
-		return -EINVAL;
+	for (i = 0; i < ARRAY_SIZE(pu4DsnrParams); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, pu4DsnrParams[i]))
+			return -EINVAL;
+	}
+
+	for (i = 0; i < 6; i++) {
+		au2Phi[i] = (uint16_t)au4Phi[i];
+		aucPsi[i] = (uint8_t)au4Psi[i];
+	}
+	for (i = 0; i < 4; i++)
+		aucDSnr[i] = (uint8_t)au4DSnr[i];
+
+	i4Status = TxBfProfileDataWrite(prNetDev, u4ProfileIdx,
+		u4SubcarrierIdx, au2Phi, aucPsi, aucDSnr);
 
 	return i4Status;
 }
@@ -1470,65 +1513,81 @@ int Set_TxBfProfilePnWrite(struct net_device *prNetDev,
 	uint32_t u4ProfileIdx;
 	uint16_t u2bw;
 	uint16_t au2XSTS[12];
-	int32_t rv;
-
-	int32_t i4Status = 0;
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
+	void *params[] = {
+		&u4ProfileIdx, &u2bw, &au2XSTS[0], &au2XSTS[1],
+		&au2XSTS[2], &au2XSTS[3], &au2XSTS[4], &au2XSTS[5],
+		&au2XSTS[6], &au2XSTS[7], &au2XSTS[8],
+		&au2XSTS[9], &au2XSTS[10], &au2XSTS[11]
+	};
+	int32_t i4Status = 0, i = 0;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite\n");
 
-	rv = sscanf(prInBuf,
-		    "%x:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx",
-		    &u4ProfileIdx, &u2bw, &au2XSTS[0], &au2XSTS[1], &au2XSTS[2],
-		    &au2XSTS[3],
-		    &au2XSTS[4], &au2XSTS[5], &au2XSTS[6], &au2XSTS[7],
-		    &au2XSTS[8], &au2XSTS[9], &au2XSTS[10],
-		    &au2XSTS[11]);
-	if (rv == 14) {
-		DBGLOG(RFTEST, ERROR,
-		       "TxBfProfilePnWrite prInBuf = %s, ucProfileIdx = %d, u2bw = %dau2XSTS[0]:%d, au2XSTS[1]:%d, au2XSTS[2]:%d, au2XSTS[3]:%d, au2XSTS[4]:%d, au2XSTS[5]:%d, au2XSTS[6]:%d, au2XSTS[7]:%d, au2XSTS[8]:%d, au2XSTS[9]:%d, au2XSTS[10]:%d, au2XSTS[11]:%d\n",
-		       prInBuf, u4ProfileIdx, u2bw, au2XSTS[0],
-		       au2XSTS[1], au2XSTS[2], au2XSTS[3], au2XSTS[4],
-		       au2XSTS[5], au2XSTS[6], au2XSTS[7], au2XSTS[8],
-		       au2XSTS[9], au2XSTS[10], au2XSTS[11]);
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (i == 0) {
+			if (!token || kalkStrtou32(token, 16,
+				(uint32_t *)params[i]))
+				return -EINVAL;
+		} else {
+			if (!token || kalkStrtou16(token, 16,
+				(uint16_t *)params[i]))
+				return -EINVAL;
+		}
+	}
 
-		i4Status = TxBfProfilePnWrite(prNetDev, u4ProfileIdx, u2bw,
-					      au2XSTS);
-	} else
-		return -EINVAL;
+	i4Status = TxBfProfilePnWrite(prNetDev, u4ProfileIdx, u2bw,
+		au2XSTS);
 
 	return i4Status;
 }
 
 /* Su_Mu:NumSta:SndInterval:WLan0:WLan1:WLan2:WLan3 */
 int Set_Trigger_Sounding_Proc(struct net_device *prNetDev,
-			      uint8_t *prInBuf)
+	uint8_t *prInBuf)
 {
 	uint32_t ucSuMu, ucNumSta, ucSndInterval, ucWLan0, ucWLan1,
 		 ucWLan2, ucWLan3;
-	int32_t i4Status = 0;
-	int32_t rv;
-
+	uint32_t *params[] = {
+		&ucSuMu,
+		&ucNumSta,
+		&ucSndInterval,
+		&ucWLan0,
+		&ucWLan1,
+		&ucWLan2,
+		&ucWLan3};
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr;
+	uint8_t *token;
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_Trigger_Sounding_Proc\n");
 
-	rv = sscanf
-	     (prInBuf, "%x:%x:%x:%x:%x:%x:%x", &ucSuMu, &ucNumSta,
-	      &ucSndInterval, &ucWLan0, &ucWLan1, &ucWLan2,
-	      &ucWLan3);
-	if (rv == 7) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_Trigger_Sounding_Proc prInBuf = %s, ucSuMu = %d, ucNumSta = %d, ucSndInterval = %d, ucWLan0 = %d, ucWLan1 = %d, ucWLan2:%d, ucWLan3:%d\n",
-		       prInBuf, ucSuMu, ucNumSta, ucSndInterval, ucWLan0,
-		       ucWLan1, ucWLan2, ucWLan3);
-		i4Status = TxBfSounding(prNetDev, ucSuMu, ucNumSta,
-			(ucSndInterval << 2), ucWLan0, ucWLan1, ucWLan2, ucWLan3);
-	} else
-		return -EINVAL;
+	endptr = prInBuf;
+
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	DBGLOG(RFTEST, ERROR,
+		"%d/%d/%d/%d/%d/%d/%d\n",
+		ucSuMu, ucNumSta, ucSndInterval, ucWLan0,
+		ucWLan1, ucWLan2, ucWLan3);
+
+	i4Status = TxBfSounding(prNetDev, ucSuMu, ucNumSta,
+		(ucSndInterval << 2), ucWLan0, ucWLan1, ucWLan2, ucWLan3);
 
 	return i4Status;
 }
@@ -1545,72 +1604,91 @@ int Set_Stop_Sounding_Proc(struct net_device *prNetDev,
 	return i4Status;
 }
 
-int Set_TxBfTxApply(struct net_device *prNetDev,
-		    uint8_t *prInBuf)
+int Set_TxBfTxApply(
+	struct net_device *prNetDev,
+	uint8_t *prInBuf
+)
 {
-	uint32_t u4WlanId, u4ETxBf, u4ITxBf, u4MuTxBf;
-	uint32_t u4PhaseCali = 0;
-	int32_t i4Status = 0;
-	int32_t rv;
-
+	uint32_t u4WlanId, u4ETxBf, u4ITxBf, u4MuTxBf, u4PhaseCali = 0;
+	uint32_t *params[] = {
+		&u4WlanId,
+		&u4ETxBf,
+		&u4ITxBf,
+		&u4MuTxBf,
+		&u4PhaseCali
+	};
+	uint8_t *endptr;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *token;
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "TxBfTxApply\n");
 
-	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x", &u4WlanId, &u4ETxBf,
-		    &u4ITxBf, &u4MuTxBf, &u4PhaseCali);
-	if (rv >= 4) {
-		DBGLOG(RFTEST, ERROR,
-		       "TxBfTxApply prInBuf = %s, u4WlanId = %d, u4ETxBf = %d, u4ITxBf = %d, u4MuTxBf = %d\n",
-		       prInBuf, u4WlanId, u4ETxBf, u4ITxBf, u4MuTxBf);
-		i4Status = TxBfTxApply(prNetDev, u4WlanId, u4ETxBf, u4ITxBf,
-				       u4MuTxBf, u4PhaseCali);
-	} else
-		return -EINVAL;
+	endptr = prInBuf;
+
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	DBGLOG(RFTEST, ERROR,
+		"%d/%d/%d/%d\n",
+		u4WlanId, u4ETxBf, u4ITxBf, u4MuTxBf);
+
+	i4Status = TxBfTxApply(prNetDev, u4WlanId, u4ETxBf, u4ITxBf,
+		u4MuTxBf, u4PhaseCali);
 
 	return i4Status;
 }
 
-int Set_TxBfManualAssoc(struct net_device *prNetDev,
-			uint8_t *prInBuf)
-{
-	int32_t au4Mac[MAC_ADDR_LEN];
-	int32_t u4Type, u4Wtbl, u4Ownmac, u4Bw, u4Nss,
-		u4PfmuId, u4Mode, u4Marate, u4SpeIdx, ucaid;
-	int8_t aucMac[MAC_ADDR_LEN];
-	int32_t i4Status = 0;
-	int32_t i = 0;
-	int32_t rv;
 
+int Set_TxBfManualAssoc(
+	struct net_device *prNetDev,
+	uint8_t *prInBuf
+)
+{
+	int8_t aucMac[MAC_ADDR_LEN];
+	uint32_t u4Type, u4Wtbl, u4Ownmac, u4Bw, u4Nss,
+		u4PfmuId, u4Mode, u4Marate, u4SpeIdx, ucaid;
+	int32_t i4Status = 0, i = 0;
+	uint32_t *params[] = {
+		&u4Type, &u4Wtbl, &u4Ownmac, &u4Bw,
+		&u4Nss, &u4PfmuId, &u4Mode, &u4Marate, &u4SpeIdx,
+		&ucaid
+	};
+	uint8_t *endptr;
+	uint8_t *token;
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "TxBfManualAssoc\n");
 
-	rv = sscanf(prInBuf,
-		    "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
-		    &au4Mac[0], &au4Mac[1], &au4Mac[2], &au4Mac[3], &au4Mac[4],
-		    &au4Mac[5],
-		    &u4Type, &u4Wtbl, &u4Ownmac, &u4Bw,
-		    &u4Nss, &u4PfmuId, &u4Mode, &u4Marate, &u4SpeIdx,
-		    &ucaid);
-	if (rv == 16) {
-		DBGLOG(RFTEST, ERROR,
-		       "TxBfManualAssoc au4Mac[0] = %x, au4Mac[1] = %x, au4Mac[2] = %xau4Mac[3] = %x, au4Mac[4] = %x, au4Mac[5] = %x, u4Type = %x, u4Wtbl = %d, u4Ownmac = %x, u4Bw = %x, u4Nss = %x, u4PfmuId = %d, u4Mode = %x, u4Marate = %x, u4SpeIdx = %d, ucaid = %d",
-		       au4Mac[0], au4Mac[1], au4Mac[2], au4Mac[3], au4Mac[4],
-		       au4Mac[5], u4Type, u4Wtbl, u4Ownmac,
-		       u4Bw, u4Nss, u4PfmuId, u4Mode, u4Marate,
-		       u4SpeIdx, ucaid);
-		for (i = 0; i < MAC_ADDR_LEN; i++)
-			aucMac[i] = au4Mac[i];
+	endptr = prInBuf;
 
-		i4Status =
-			TxBfManualAssoc(prNetDev, aucMac, u4Type,
-				u4Wtbl,	u4Ownmac, u4Mode, u4Bw, u4Nss,
-				u4PfmuId, u4Marate, u4SpeIdx, ucaid);
-	} else
-		return -EINVAL;
+	for (i = 0; i < MAC_ADDR_LEN; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, (uint32_t *)&aucMac[i]))
+			return -EINVAL;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	i4Status =
+		TxBfManualAssoc(prNetDev, aucMac, u4Type,
+			u4Wtbl,	u4Ownmac, u4Mode, u4Bw, u4Nss,
+			u4PfmuId, u4Marate, u4SpeIdx, ucaid);
 
 	return i4Status;
 }
@@ -1618,24 +1696,32 @@ int Set_TxBfManualAssoc(struct net_device *prNetDev,
 int Set_TxBfPfmuMemAlloc(struct net_device *prNetDev,
 			 uint8_t *prInBuf)
 {
-	uint32_t ucSuMuMode, ucWlanIdx;
-	int32_t i4Status = 0;
-	int32_t rv;
-
+	uint32_t u4SuMuMode, u4WlanIdx;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&u4SuMuMode, &u4WlanIdx
+	};
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "TxBfPfmuMemAlloc\n");
 
-	rv = sscanf(prInBuf, "%x:%x", &ucSuMuMode, &ucWlanIdx);
-	if (rv == 2) {
-		DBGLOG(RFTEST, ERROR,
-		       "TxBfPfmuMemAlloc ucSuMuMode = %d, ucWlanIdx = %d",
-		       ucSuMuMode, ucWlanIdx);
-		i4Status = TxBfPfmuMemAlloc(prNetDev, ucSuMuMode,
-					    ucWlanIdx);
-	} else
-		return -EINVAL;
+	endptr = prInBuf;
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	DBGLOG(RFTEST, ERROR,
+		"TxBfPfmuMemAlloc u4SuMuMode = %d, u4WlanIdx = %d",
+		u4SuMuMode, u4WlanIdx);
+	i4Status = TxBfPfmuMemAlloc(prNetDev, u4SuMuMode,
+		u4WlanIdx);
 
 	return i4Status;
 }
@@ -1664,43 +1750,50 @@ int Set_TxBfPfmuMemRelease(struct net_device *prNetDev,
 }
 
 int Set_DevInfoUpdate(struct net_device *prNetDev,
-		      uint8_t *prInBuf)
+	uint8_t *prInBuf)
 {
 	uint32_t u4OwnMacIdx, fgBand;
 	uint32_t OwnMacAddr[MAC_ADDR_LEN];
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
 	int32_t i4Status = 0;
 	uint32_t i;
-	int32_t rv;
-
+	uint8_t *endptr;
+	uint8_t *token;
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "DevInfoUpdate\n");
 
-	rv = sscanf
-	     (prInBuf, "%d:%x:%x:%x:%x:%x:%x:%d", &u4OwnMacIdx,
-	      &OwnMacAddr[0], &OwnMacAddr[1], &OwnMacAddr[2],
-	      &OwnMacAddr[3], &OwnMacAddr[4], &OwnMacAddr[5], &fgBand);
-	if (rv == 8) {
-		DBGLOG(RFTEST, ERROR,
-		       "DevInfoUpdate prInBuf = %s, u4OwnMacIdx = %x, fgBand = %x,OwnMacAddr[0]:%x, OwnMacAddr[1]:%x, OwnMacAddr[2]:%x, OwnMacAddr[3]:%x, OwnMacAddr[4]:%x, OwnMacAddr[5]:%x,",
-		       prInBuf, u4OwnMacIdx, fgBand,
-		       OwnMacAddr[0], OwnMacAddr[1],
-		       OwnMacAddr[2], OwnMacAddr[3],
-		       OwnMacAddr[4], OwnMacAddr[5]);
-		for (i = 0; i < MAC_ADDR_LEN; i++)
-			aucMacAddr[i] = OwnMacAddr[i];
+	endptr = prInBuf;
 
-		g_rBandIdx = fgBand;
-
-		i4Status = DevInfoUpdate(prNetDev, u4OwnMacIdx, fgBand,
-					 aucMacAddr);
-	} else
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &u4OwnMacIdx))
 		return -EINVAL;
+
+	for (i = 0; i < MAC_ADDR_LEN; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, &OwnMacAddr[i]))
+			return -EINVAL;
+	}
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &fgBand))
+		return -EINVAL;
+
+	for (i = 0; i < MAC_ADDR_LEN; i++)
+		aucMacAddr[i] = (uint8_t)OwnMacAddr[i];
+
+	g_rBandIdx = fgBand;
+
+	i4Status = DevInfoUpdate(prNetDev, u4OwnMacIdx, fgBand, aucMacAddr);
 
 	return i4Status;
 }
+
 
 int Set_BssInfoUpdate(struct net_device *prNetDev,
 		      uint8_t *prInBuf)
@@ -1710,38 +1803,44 @@ int Set_BssInfoUpdate(struct net_device *prNetDev,
 	uint8_t aucBssId[MAC_ADDR_LEN];
 	int32_t i4Status = 0;
 	uint32_t i;
-	int32_t rv;
+	uint32_t *params[] = {
+		&u4OwnMacIdx, &u4BssIdx, &au4BssId[0], &au4BssId[1],
+		&au4BssId[2], &au4BssId[3], &au4BssId[4], &au4BssId[5]
+	};
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "BssInfoUpdate\n");
 
-	rv = sscanf
-	     (prInBuf, "%d:%d:%x:%x:%x:%x:%x:%x", &u4OwnMacIdx,
-	      &u4BssIdx, &au4BssId[0], &au4BssId[1], &au4BssId[2],
-	      &au4BssId[3], &au4BssId[4], &au4BssId[5]);
-	if (rv == 8) {
-		DBGLOG(RFTEST, ERROR,
-		       "BssInfoUpdate prInBuf = %s, u4OwnMacIdx = %x, u4BssIdx = %x,au4BssId[0]:%x, au4BssId[1]:%x, au4BssId[2]:%x, au4BssId[3]:%x, au4BssId[4]:%x, au4BssId[5]:%x,",
-		       prInBuf, u4OwnMacIdx, u4BssIdx, au4BssId[0], au4BssId[1],
-		       au4BssId[2], au4BssId[3], au4BssId[4],
-		       au4BssId[5]);
-		for (i = 0; i < MAC_ADDR_LEN; i++)
-			aucBssId[i] = au4BssId[i];
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (i < 2) {
+			if (!token || kalkStrtou32(token, 10, params[i]))
+				return -EINVAL;
+		} else {
+			if (!token || kalkStrtou32(token, 16, params[i]))
+				return -EINVAL;
+		}
+	}
+
+	for (i = 0; i < MAC_ADDR_LEN; i++)
+		aucBssId[i] = au4BssId[i];
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-		i4Status = BssInfoUpdateUnify(prNetDev, u4OwnMacIdx, u4BssIdx,
-					 g_rBandIdx, aucBssId);
+	i4Status = BssInfoUpdateUnify(prNetDev, u4OwnMacIdx, u4BssIdx,
+		g_rBandIdx, aucBssId);
 #else
-		i4Status = BssInfoConnectOwnDev(prNetDev, u4OwnMacIdx, u4BssIdx,
-					 g_rBandIdx);
+	i4Status = BssInfoConnectOwnDev(prNetDev, u4OwnMacIdx, u4BssIdx,
+		g_rBandIdx);
 
-		i4Status = BssInfoUpdate(prNetDev, u4OwnMacIdx, u4BssIdx,
-					 aucBssId);
+	i4Status = BssInfoUpdate(prNetDev, u4OwnMacIdx, u4BssIdx,
+		aucBssId);
 #endif
-	} else
-		return -EINVAL;
 
 	return i4Status;
 }
@@ -1754,31 +1853,32 @@ int Set_StaRecCmmUpdate(struct net_device *prNetDev,
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
 	int32_t i4Status = 0;
 	uint32_t i;
-	int32_t rv;
+	uint8_t *endptr = prInBuf;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&u4WlanId, &u4BssId, &u4Aid,
+		&au4MacAddr[0], &au4MacAddr[1], &au4MacAddr[2],
+		&au4MacAddr[3], &au4MacAddr[4], &au4MacAddr[5]
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_StaRecCmmUpdate\n");
 
-	rv = sscanf
-	     (prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x:%x", &u4WlanId, &u4BssId,
-	      &u4Aid, &au4MacAddr[0], &au4MacAddr[1],
-	      &au4MacAddr[2], &au4MacAddr[3], &au4MacAddr[4],
-	      &au4MacAddr[5]);
-	if (rv == 9) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_StaRecCmmUpdate prInBuf = %s, u4WlanId = %x, u4BssId = %x, u4Aid = %x,aucMacAddr[0]:%x, aucMacAddr[1]:%x, aucMacAddr[2]:%x, aucMacAddr[3]:%x, aucMacAddr[4]:%x, aucMacAddr[5]:%x,",
-		       prInBuf, u4WlanId, u4BssId, u4Aid, au4MacAddr[0],
-		       au4MacAddr[1], au4MacAddr[2], au4MacAddr[3],
-		       au4MacAddr[4], au4MacAddr[5]);
-		for (i = 0; i < MAC_ADDR_LEN; i++)
-			aucMacAddr[i] = au4MacAddr[i];
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		i4Status = StaRecCmmUpdate(prNetDev, u4WlanId, u4BssId,
-					   u4Aid, aucMacAddr);
-	} else
-		return -EINVAL;
+	for (i = 0; i < MAC_ADDR_LEN; i++)
+		aucMacAddr[i] = (uint8_t) au4MacAddr[i];
+
+	i4Status = StaRecCmmUpdate(prNetDev, u4WlanId, u4BssId,
+		u4Aid, aucMacAddr);
 
 	return i4Status;
 }
@@ -1790,111 +1890,115 @@ int Set_StaRecBfUpdate(struct net_device *prNetDev,
 	uint8_t aucMemRow[4], aucMemCol[4];
 	int32_t i4Status = 0;
 	uint32_t i;
-	int32_t rv;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&rStaRecBfUpdArg.u4WlanId,
+		&rStaRecBfUpdArg.u4BssId,
+		&rStaRecBfUpdArg.u4PfmuId,
+		&rStaRecBfUpdArg.u4SuMu,
+		&rStaRecBfUpdArg.u4eTxBfCap,
+		&rStaRecBfUpdArg.u4NdpaRate,
+		&rStaRecBfUpdArg.u4NdpRate,
+		&rStaRecBfUpdArg.u4ReptPollRate,
+		&rStaRecBfUpdArg.u4TxMode,
+		&rStaRecBfUpdArg.u4Nc,
+		&rStaRecBfUpdArg.u4Nr,
+		&rStaRecBfUpdArg.u4Bw,
+		&rStaRecBfUpdArg.u4SpeIdx,
+		&rStaRecBfUpdArg.u4TotalMemReq,
+		&rStaRecBfUpdArg.u4MemReq20M,
+		&rStaRecBfUpdArg.au4MemRow[0],
+		&rStaRecBfUpdArg.au4MemCol[0],
+		&rStaRecBfUpdArg.au4MemRow[1],
+		&rStaRecBfUpdArg.au4MemCol[1],
+		&rStaRecBfUpdArg.au4MemRow[2],
+		&rStaRecBfUpdArg.au4MemCol[2],
+		&rStaRecBfUpdArg.au4MemRow[3],
+		&rStaRecBfUpdArg.au4MemCol[3]
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_StaRecBfUpdate\n");
 
-	rv = sscanf(prInBuf,
-		    "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
-		    &rStaRecBfUpdArg.u4WlanId, &rStaRecBfUpdArg.u4BssId,
-		    &rStaRecBfUpdArg.u4PfmuId,
-		    &rStaRecBfUpdArg.u4SuMu, &rStaRecBfUpdArg.u4eTxBfCap,
-		    &rStaRecBfUpdArg.u4NdpaRate,
-		    &rStaRecBfUpdArg.u4NdpRate, &rStaRecBfUpdArg.u4ReptPollRate,
-		    &rStaRecBfUpdArg.u4TxMode,
-		    &rStaRecBfUpdArg.u4Nc, &rStaRecBfUpdArg.u4Nr,
-		    &rStaRecBfUpdArg.u4Bw, &rStaRecBfUpdArg.u4SpeIdx,
-		    &rStaRecBfUpdArg.u4TotalMemReq,
-		    &rStaRecBfUpdArg.u4MemReq20M, &rStaRecBfUpdArg.au4MemRow[0],
-		    &rStaRecBfUpdArg.au4MemCol[0],
-		    &rStaRecBfUpdArg.au4MemRow[1],
-		    &rStaRecBfUpdArg.au4MemCol[1],
-		    &rStaRecBfUpdArg.au4MemRow[2],
-		    &rStaRecBfUpdArg.au4MemCol[2],
-		    &rStaRecBfUpdArg.au4MemRow[3],
-		    &rStaRecBfUpdArg.au4MemCol[3]);
-	if (rv == 23) {
-		/*
-		 *DBGLOG(RFTEST, ERROR,
-		 *"Set_StaRecBfUpdate prInBuf = %s, u4WlanId = %x, u4BssId = %x,
-		 *   u4Aid = %x,
-		 *   aucMacAddr[0]:%x, aucMacAddr[1]:%x, aucMacAddr[2]:%x,
-		 *   aucMacAddr[3]:%x, aucMacAddr[4]:%x, aucMacAddr[5]:%x",
-		 *   prInBuf, u4OwnMacIdx, u4BssIdx, u4Aid,
-		 *   aucMacAddr[0], aucMacAddr[1], aucMacAddr[2], aucMacAddr[3],
-		 *   aucMacAddr[4], aucMacAddr[5]);
-		 */
-		for (i = 0; i < 4; i++) {
-			aucMemRow[i] = rStaRecBfUpdArg.au4MemRow[i];
-			aucMemCol[i] = rStaRecBfUpdArg.au4MemCol[i];
-		}
+	endptr = prInBuf;
 
-		/* Default setting */
-		rStaRecBfUpdArg.u4SmartAnt     = 0;
-		/* 0: legacy, 1: OFDM, 2: HT, 4: VHT */
-		rStaRecBfUpdArg.u4SoundingPhy  = 1;
-		rStaRecBfUpdArg.u4iBfTimeOut   = 0xFF;
-		rStaRecBfUpdArg.u4iBfDBW       = 0;
-		rStaRecBfUpdArg.u4iBfNcol      = 0;
-		rStaRecBfUpdArg.u4iBfNrow      = 0;
-		rStaRecBfUpdArg.u4RuStartIdx   = 0;
-		rStaRecBfUpdArg.u4RuEndIdx     = 0;
-		rStaRecBfUpdArg.u4TriggerSu    = 0;
-		rStaRecBfUpdArg.u4TriggerMu    = 0;
-		rStaRecBfUpdArg.u4Ng16Su       = 0;
-		rStaRecBfUpdArg.u4Ng16Mu       = 0;
-		rStaRecBfUpdArg.u4Codebook42Su = 0;
-		rStaRecBfUpdArg.u4Codebook75Mu = 0;
-		rStaRecBfUpdArg.u4HeLtf        = 0;
-		rStaRecBfUpdArg.u4NrBw160      = 0;
-		rStaRecBfUpdArg.u4NcBw160      = 0;
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_SU_MU))
-			rStaRecBfUpdArg.u4SuMu = g_rPfmuHeInfo.fgSU_MU;
+	for (i = 0; i < 4; i++) {
+		aucMemRow[i] = rStaRecBfUpdArg.au4MemRow[i];
+		aucMemCol[i] = rStaRecBfUpdArg.au4MemCol[i];
+	}
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_RU_RANGE)) {
-			rStaRecBfUpdArg.u4RuStartIdx =
-					g_rPfmuHeInfo.u1RuStartIdx;
-			rStaRecBfUpdArg.u4RuEndIdx = g_rPfmuHeInfo.u1RuEndIdx;
-		}
+	/* Default setting */
+	rStaRecBfUpdArg.u4SmartAnt     = 0;
+	/* 0: legacy, 1: OFDM, 2: HT, 4: VHT */
+	rStaRecBfUpdArg.u4SoundingPhy  = 1;
+	rStaRecBfUpdArg.u4iBfTimeOut   = 0xFF;
+	rStaRecBfUpdArg.u4iBfDBW       = 0;
+	rStaRecBfUpdArg.u4iBfNcol      = 0;
+	rStaRecBfUpdArg.u4iBfNrow      = 0;
+	rStaRecBfUpdArg.u4RuStartIdx   = 0;
+	rStaRecBfUpdArg.u4RuEndIdx     = 0;
+	rStaRecBfUpdArg.u4TriggerSu    = 0;
+	rStaRecBfUpdArg.u4TriggerMu    = 0;
+	rStaRecBfUpdArg.u4Ng16Su       = 0;
+	rStaRecBfUpdArg.u4Ng16Mu       = 0;
+	rStaRecBfUpdArg.u4Codebook42Su = 0;
+	rStaRecBfUpdArg.u4Codebook75Mu = 0;
+	rStaRecBfUpdArg.u4HeLtf        = 0;
+	rStaRecBfUpdArg.u4NrBw160      = 0;
+	rStaRecBfUpdArg.u4NcBw160      = 0;
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_TRIGGER)) {
-			rStaRecBfUpdArg.u4TriggerSu = g_rPfmuHeInfo.fgTriggerSu;
-			rStaRecBfUpdArg.u4TriggerMu = g_rPfmuHeInfo.fgTriggerMu;
-		}
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_SU_MU))
+		rStaRecBfUpdArg.u4SuMu = g_rPfmuHeInfo.fgSU_MU;
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_NG16)) {
-			rStaRecBfUpdArg.u4Ng16Su = g_rPfmuHeInfo.fgNg16Su;
-			rStaRecBfUpdArg.u4Ng16Mu = g_rPfmuHeInfo.fgNg16Mu;
-		}
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_RU_RANGE)) {
+		rStaRecBfUpdArg.u4RuStartIdx =
+				g_rPfmuHeInfo.u1RuStartIdx;
+		rStaRecBfUpdArg.u4RuEndIdx = g_rPfmuHeInfo.u1RuEndIdx;
+	}
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_CODEBOOK)) {
-			rStaRecBfUpdArg.u4Codebook42Su =
-					g_rPfmuHeInfo.fgCodebook42Su;
-			rStaRecBfUpdArg.u4Codebook75Mu =
-					g_rPfmuHeInfo.fgCodebook75Mu;
-		}
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_TRIGGER)) {
+		rStaRecBfUpdArg.u4TriggerSu = g_rPfmuHeInfo.fgTriggerSu;
+		rStaRecBfUpdArg.u4TriggerMu = g_rPfmuHeInfo.fgTriggerMu;
+	}
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_LTF))
-			rStaRecBfUpdArg.u4HeLtf = g_rPfmuHeInfo.u1HeLtf;
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_NG16)) {
+		rStaRecBfUpdArg.u4Ng16Su = g_rPfmuHeInfo.fgNg16Su;
+		rStaRecBfUpdArg.u4Ng16Mu = g_rPfmuHeInfo.fgNg16Mu;
+	}
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_IBF)) {
-			rStaRecBfUpdArg.u4iBfNcol = g_rPfmuHeInfo.uciBfNcol;
-			rStaRecBfUpdArg.u4iBfNrow = g_rPfmuHeInfo.uciBfNrow;
-		}
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_CODEBOOK)) {
+		rStaRecBfUpdArg.u4Codebook42Su =
+				g_rPfmuHeInfo.fgCodebook42Su;
+		rStaRecBfUpdArg.u4Codebook75Mu =
+				g_rPfmuHeInfo.fgCodebook75Mu;
+	}
 
-		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_BW160)) {
-			rStaRecBfUpdArg.u4NrBw160 = g_rPfmuHeInfo.ucNrBw160;
-			rStaRecBfUpdArg.u4NcBw160 = g_rPfmuHeInfo.ucNcBw160;
-		}
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_LTF))
+		rStaRecBfUpdArg.u4HeLtf = g_rPfmuHeInfo.u1HeLtf;
 
-		i4Status = StaRecBfUpdate(prNetDev, &rStaRecBfUpdArg,
-					  aucMemRow, aucMemCol);
-	} else
-		return -EINVAL;
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_IBF)) {
+		rStaRecBfUpdArg.u4iBfNcol = g_rPfmuHeInfo.uciBfNcol;
+		rStaRecBfUpdArg.u4iBfNrow = g_rPfmuHeInfo.uciBfNrow;
+	}
+
+	if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_BW160)) {
+		rStaRecBfUpdArg.u4NrBw160 = g_rPfmuHeInfo.ucNrBw160;
+		rStaRecBfUpdArg.u4NcBw160 = g_rPfmuHeInfo.ucNcBw160;
+	}
+
+	i4Status = StaRecBfUpdate(prNetDev, &rStaRecBfUpdArg,
+		aucMemRow, aucMemCol);
 
 	return i4Status;
 }
@@ -1904,23 +2008,28 @@ int Set_StaRecBfRead(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint16_t u2WlanId;
-	int32_t rv;
+	uint32_t u4Temp;
 	int32_t i4Status = 0;
 	uint32_t u4BufLen = 0;
+	uint8_t *endptr;
 
 	TRACE_FUNC(RFTEST, DEBUG, "%s\n");
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	rv = sscanf(prInBuf, "%x", &u2WlanId);
-
-	if (rv == 1) {
-		i4Status = kalIoctl(prGlueInfo,
-			wlanoidStaRecBFRead,
-			&u2WlanId,
-			sizeof(u2WlanId),
-			&u4BufLen);
-	} else
+	if (prInBuf == NULL || prGlueInfo == NULL)
 		return -EINVAL;
+
+	endptr = prInBuf;
+
+	if (kalkStrtou32(endptr, 16, &u4Temp))
+		return -EINVAL;
+	u2WlanId = (uint16_t)u4Temp;
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidStaRecBFRead,
+		&u2WlanId,
+		sizeof(u2WlanId),
+		&u4BufLen);
 
 	return i4Status;
 }
@@ -1933,44 +2042,50 @@ int Set_StaRecBfHeUpdate(struct net_device *prNetDev,
 	uint8_t ucSuMu, ucRuStartIdx, ucRuEndIdx, ucTriggerSu, ucTriggerMu,
 		ucNg16Su, ucNg16Mu, ucCodebook42Su, ucCodebook75Mu, ucHeLtf,
 		uciBfNcol, uciBfNrow, ucNrBw160, ucNcBw160;
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
+	uint8_t *endptr;
+	uint32_t *params[] = {
+		&au4Input[0], &au4Input[1], &au4Input[2], &au4Input[3],
+		&au4Input[4], &au4Input[5], &au4Input[6], &au4Input[7],
+		&au4Input[8], &au4Input[9], &au4Input[10],
+		&au4Input[11], &au4Input[12], &au4Input[13], &au4Input[14]
+	};
+	uint8_t *token;
 
 	DBGLOG(RFTEST, ERROR, "Set_StaRecBfHeUpdate\n");
 
-	rv = sscanf(prInBuf,
-			"%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
-			&au4Input[0], &au4Input[1], &au4Input[2], &au4Input[3],
-			&au4Input[4], &au4Input[5], &au4Input[6], &au4Input[7],
-			&au4Input[8], &au4Input[9], &au4Input[10],
-			&au4Input[11], &au4Input[12], &au4Input[13],
-			&au4Input[14]);
+	endptr = prInBuf;
 
-	if (rv == 15) {
-		u4Config = au4Input[0];
-		ucSuMu = (uint8_t) au4Input[1];
-		ucRuStartIdx = (uint8_t) au4Input[2];
-		ucRuEndIdx = (uint8_t) au4Input[3];
-		ucTriggerSu = (uint8_t) au4Input[4];
-		ucTriggerMu = (uint8_t) au4Input[5];
-		ucNg16Su = (uint8_t) au4Input[6];
-		ucNg16Mu = (uint8_t) au4Input[7];
-		ucCodebook42Su = (uint8_t) au4Input[8];
-		ucCodebook75Mu = (uint8_t) au4Input[9];
-		ucHeLtf = (uint8_t) au4Input[10];
-		uciBfNcol = (uint8_t) au4Input[11];
-		uciBfNrow = (uint8_t) au4Input[12];
-		ucNrBw160 = (uint8_t) au4Input[13];
-		ucNcBw160 = (uint8_t) au4Input[14];
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		i4Status = StaRecBfHeUpdate(prNetDev, &g_rPfmuHeInfo, u4Config,
-				ucSuMu,	ucRuStartIdx, ucRuEndIdx, ucTriggerSu,
-				ucTriggerMu, ucNg16Su, ucNg16Mu,
-				ucCodebook42Su, ucCodebook75Mu,
-				ucHeLtf, uciBfNcol, uciBfNrow,
-				ucNrBw160, ucNcBw160);
-	} else
-		return -EINVAL;
+	u4Config = au4Input[0];
+	ucSuMu = (uint8_t) au4Input[1];
+	ucRuStartIdx = (uint8_t) au4Input[2];
+	ucRuEndIdx = (uint8_t) au4Input[3];
+	ucTriggerSu = (uint8_t) au4Input[4];
+	ucTriggerMu = (uint8_t) au4Input[5];
+	ucNg16Su = (uint8_t) au4Input[6];
+	ucNg16Mu = (uint8_t) au4Input[7];
+	ucCodebook42Su = (uint8_t) au4Input[8];
+	ucCodebook75Mu = (uint8_t) au4Input[9];
+	ucHeLtf = (uint8_t) au4Input[10];
+	uciBfNcol = (uint8_t) au4Input[11];
+	uciBfNrow = (uint8_t) au4Input[12];
+	ucNrBw160 = (uint8_t) au4Input[13];
+	ucNcBw160 = (uint8_t) au4Input[14];
+
+	i4Status = StaRecBfHeUpdate(prNetDev, &g_rPfmuHeInfo, u4Config,
+		ucSuMu,	ucRuStartIdx, ucRuEndIdx, ucTriggerSu,
+		ucTriggerMu, ucNg16Su, ucNg16Mu,
+		ucCodebook42Su, ucCodebook75Mu,
+		ucHeLtf, uciBfNcol, uciBfNrow,
+		ucNrBw160, ucNcBw160);
 
 	return i4Status;
 }
@@ -2025,13 +2140,18 @@ int Set_MUCalInitMCS(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT rMuMimoActionInfo;
-	int32_t i4Status = 0;
+	int32_t i4Status = 0, i = 0;
 	uint32_t u4BufLen = 0;
-
+	uint8_t *token;
 	uint32_t u4NumOfUser, u4Bandwidth, u4NssOfUser0,
 		 u4NssOfUser1, u4PfMuIdOfUser0, u4PfMuIdOfUser1, u4NumOfTxer,
 		 u4SpeIndex, u4GroupIndex;
-	int32_t rv;
+	uint32_t *params[] = {
+		&u4NumOfUser, &u4Bandwidth, &u4NssOfUser0, &u4NssOfUser1,
+		&u4PfMuIdOfUser0, &u4PfMuIdOfUser1, &u4NumOfTxer,
+		&u4SpeIndex, &u4GroupIndex
+	};
+	uint8_t *endptr = prInBuf;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
@@ -2043,45 +2163,40 @@ int Set_MUCalInitMCS(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	rv = sscanf
-	     (prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x:%x", &u4NumOfUser,
-	      &u4Bandwidth, &u4NssOfUser0, &u4NssOfUser1,
-	      &u4PfMuIdOfUser0, &u4PfMuIdOfUser1, &u4NumOfTxer,
-	      &u4SpeIndex, &u4GroupIndex);
-	if (rv == 9) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_MUCalInitMCS prInBuf = %s, u4NumOfUser = %x, u4Bandwidth = %x, u4NssOfUser0 = %x, u4NssOfUser1 = %x, u4PfMuIdOfUser0 = %x, u4PfMuIdOfUser1 = %x, u4NumOfTxer = %x, u4SpeIndex = %x, u4GroupIndex = %x",
-		       prInBuf, u4NumOfUser, u4Bandwidth, u4NssOfUser0,
-		       u4NssOfUser1, u4PfMuIdOfUser0, u4PfMuIdOfUser1,
-		       u4NumOfTxer, u4SpeIndex, u4GroupIndex);
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		rMuMimoActionInfo.ucMuMimoCategory = MU_SET_CALC_INIT_MCS;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNumOfUser =
-			u4NumOfUser;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucBandwidth =
-			u4Bandwidth;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNssOfUser0 =
-			u4NssOfUser0;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNssOfUser1 =
-			u4NssOfUser1;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucPfMuIdOfUser0
-			= u4PfMuIdOfUser0;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucPfMuIdOfUser1
-			= u4PfMuIdOfUser1;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNumOfTxer =
-			u4NumOfTxer;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucSpeIndex =
-			u4SpeIndex;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.u4GroupIndex =
-			u4GroupIndex;
 
-		i4Status = kalIoctl(prGlueInfo,
-				    wlanoidMuMimoAction,
-				    &rMuMimoActionInfo,
-				    sizeof(rMuMimoActionInfo),
-				    &u4BufLen);
-	} else
-		return -EINVAL;
+	rMuMimoActionInfo.ucMuMimoCategory = MU_SET_CALC_INIT_MCS;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNumOfUser =
+		u4NumOfUser;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucBandwidth =
+		u4Bandwidth;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNssOfUser0 =
+		u4NssOfUser0;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNssOfUser1 =
+		u4NssOfUser1;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucPfMuIdOfUser0
+		= u4PfMuIdOfUser0;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucPfMuIdOfUser1
+		= u4PfMuIdOfUser1;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucNumOfTxer =
+		u4NumOfTxer;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.ucSpeIndex =
+		u4SpeIndex;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetInitMcs.u4GroupIndex =
+		u4GroupIndex;
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidMuMimoAction,
+		&rMuMimoActionInfo,
+		sizeof(rMuMimoActionInfo),
+		&u4BufLen);
 
 	return i4Status;
 }
@@ -2091,13 +2206,17 @@ int Set_MUCalLQ(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT rMuMimoActionInfo;
-	int32_t i4Status = 0;
+	int32_t i4Status = 0, i = 0;
 	uint32_t u4BufLen = 0;
-
 	uint32_t u4NumOfUser, u4Bandwidth, u4NssOfUser0,
 		 u4NssOfUser1, u4PfMuIdOfUser0, u4PfMuIdOfUser1,
 		 u4NumOfTxer, u4SpeIndex, u4GroupIndex;
-	int32_t rv;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&u4NumOfUser, &u4Bandwidth, &u4NssOfUser0,
+		&u4NssOfUser1, &u4PfMuIdOfUser0, &u4PfMuIdOfUser1,
+		&u4NumOfTxer, &u4SpeIndex, &u4GroupIndex};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
@@ -2109,48 +2228,44 @@ int Set_MUCalLQ(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	rv = sscanf
-	     (prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x:%x", &u4NumOfUser,
-	      &u4Bandwidth, &u4NssOfUser0, &u4NssOfUser1,
-	      &u4PfMuIdOfUser0, &u4PfMuIdOfUser1, &u4NumOfTxer,
-	      &u4SpeIndex, &u4GroupIndex);
-	if (rv == 9) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_MUCalLQ prInBuf = %s, u4NumOfUser = %x, u4Bandwidth = %x, u4NssOfUser0 = %x, u4NssOfUser1 = %x, u4PfMuIdOfUser0 = %x, u4PfMuIdOfUser1 = %x, u4NumOfTxer = %x, u4SpeIndex = %x, u4GroupIndex = %x",
-		       prInBuf, u4NumOfUser, u4Bandwidth, u4NssOfUser0,
-		       u4NssOfUser1, u4PfMuIdOfUser0, u4PfMuIdOfUser1,
-		       u4NumOfTxer, u4SpeIndex, u4GroupIndex);
+	endptr = prInBuf;
 
-		rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_SET_CALC_LQ;
-		/* rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucType =
-		 *							u4Type;
-		 */
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNumOfUser =
-			u4NumOfUser;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucBandwidth =
-			u4Bandwidth;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNssOfUser0 =
-			u4NssOfUser0;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNssOfUser1 =
-			u4NssOfUser1;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucPfMuIdOfUser0
-			= u4PfMuIdOfUser0;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucPfMuIdOfUser1
-			= u4PfMuIdOfUser1;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNumOfTxer =
-			u4NumOfTxer;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucSpeIndex =
-			u4SpeIndex;
-		rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.u4GroupIndex =
-			u4GroupIndex;
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
 
-		i4Status = kalIoctl(prGlueInfo,
-				    wlanoidMuMimoAction,
-				    &rMuMimoActionInfo,
-				    sizeof(rMuMimoActionInfo),
-				    &u4BufLen);
-	} else
-		return -EINVAL;
+	rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_SET_CALC_LQ;
+	/* rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucType =
+	 *							u4Type;
+	 */
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNumOfUser =
+		u4NumOfUser;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucBandwidth =
+		u4Bandwidth;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNssOfUser0 =
+		u4NssOfUser0;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNssOfUser1 =
+		u4NssOfUser1;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucPfMuIdOfUser0
+		= u4PfMuIdOfUser0;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucPfMuIdOfUser1
+		= u4PfMuIdOfUser1;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucNumOfTxer =
+		u4NumOfTxer;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.ucSpeIndex =
+		u4SpeIndex;
+	rMuMimoActionInfo.unMuMimoParam.rMuSetCalcLq.u4GroupIndex =
+		u4GroupIndex;
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidMuMimoAction,
+		&rMuMimoActionInfo,
+		sizeof(rMuMimoActionInfo),
+		&u4BufLen);
 
 	return i4Status;
 }
@@ -2376,10 +2491,12 @@ int Set_MUSetGroup(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT rMuMimoActionInfo;
+	struct MU_SET_GROUP *prMuSetGroup;
 	int32_t i4Status = 0;
 	uint32_t u4BufLen = 0;
 	uint32_t i = 0;
-
+	uint8_t *endptr;
+	uint8_t *token;
 	uint32_t aucUser0MacAddr[PARAM_MAC_ADDR_LEN],
 		 aucUser1MacAddr[PARAM_MAC_ADDR_LEN];
 
@@ -2393,57 +2510,113 @@ int Set_MUSetGroup(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf,
-		"%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4GroupIndex,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4NumOfUser,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0Ldpc,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1Ldpc,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4ShortGI,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4Bw,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0Nss,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1Nss,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4GroupId,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0UP,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1UP,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0MuPfId,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1MuPfId,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0InitMCS,
-		&rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1InitMCS,
-		&aucUser0MacAddr[0],
-		&aucUser0MacAddr[1], &aucUser0MacAddr[2],
-		&aucUser0MacAddr[3], &aucUser0MacAddr[4],
-		&aucUser0MacAddr[5], &aucUser1MacAddr[0],
-		&aucUser1MacAddr[1], &aucUser1MacAddr[2],
-		&aucUser1MacAddr[3], &aucUser1MacAddr[4],
-		&aucUser1MacAddr[5]) != 27) {
+	prMuSetGroup = &rMuMimoActionInfo.unMuMimoParam.rMuSetGroup;
+
+	endptr = prInBuf;
+
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4GroupIndex))
 		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4NumOfUser))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User0Ldpc))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User1Ldpc))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4ShortGI))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4Bw))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User0Nss))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User1Nss))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4GroupId))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User0UP))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User1UP))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User0MuPfId))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User1MuPfId))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User0InitMCS))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &prMuSetGroup->u4User1InitMCS))
+		return -EINVAL;
+
+	for (i = 0; i < PARAM_MAC_ADDR_LEN; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, &aucUser0MacAddr[i]))
+			return -EINVAL;
 	}
 
-	DBGLOG(RFTEST, ERROR,
-	       "Set_MUSetGroup prInBuf = %s,u4GroupIndex = %d, u4NumOfUser = %d, u4User0Ldpc = %d, u4User1Ldpc = %d, u4ShortGI = %d, u4Bw = %d, u4User0Nss = %d, u4User1Nss = %d, u4GroupId = %d, u4User0UP = %d, u4User1UP = %d,  u4User0MuPfId = %d, u4User1MuPfId = %d, u4User0InitMCS = %d,	u4User1InitMCS = %d,aucUser0MacAddr[0] = %x, aucUser0MacAddr[1] = %x, aucUser0MacAddr[2] = %x, aucUser0MacAddr[3] = %x, aucUser0MacAddr[4] = %x, aucUser0MacAddr[5] = %x,aucUser1MacAddr[0] = %x, aucUser1MacAddr[1] = %x, aucUser1MacAddr[2] = %x, aucUser1MacAddr[3] = %x, aucUser1MacAddr[4] = %x, aucUser1MacAddr[5] = %x,",
-	       prInBuf,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4GroupIndex,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4NumOfUser,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0Ldpc,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1Ldpc,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4ShortGI,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4Bw,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0Nss,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1Nss,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4GroupId,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0UP,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1UP,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0MuPfId,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1MuPfId,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User0InitMCS,
-	       rMuMimoActionInfo.unMuMimoParam.rMuSetGroup.u4User1InitMCS,
-	       aucUser0MacAddr[0], aucUser0MacAddr[1],
-	       aucUser0MacAddr[2], aucUser0MacAddr[3],
-	       aucUser0MacAddr[4], aucUser0MacAddr[5],
-	       aucUser1MacAddr[0], aucUser1MacAddr[1],
-	       aucUser1MacAddr[2], aucUser1MacAddr[3],
-	       aucUser1MacAddr[4], aucUser1MacAddr[5]);
+	for (i = 0; i < PARAM_MAC_ADDR_LEN; i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, &aucUser1MacAddr[i]))
+			return -EINVAL;
+	}
 
 	rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_SET_GROUP;
 	for (i = 0; i < PARAM_MAC_ADDR_LEN; i++) {
@@ -2460,14 +2633,15 @@ int Set_MUSetGroup(struct net_device *prNetDev,
 }
 
 int Set_MUGetQD(struct net_device *prNetDev,
-		uint8_t *prInBuf)
+	uint8_t *prInBuf)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT rMuMimoActionInfo;
 	int32_t i4Status = 0;
 	uint32_t u4BufLen = 0;
-
+	uint8_t *token;
 	uint32_t u4SubcarrierIndex, u4Length;
+	uint8_t *endptr;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
@@ -2479,31 +2653,39 @@ int Set_MUGetQD(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf, "%x:%x", &u4SubcarrierIndex,
-		   &u4Length) == 2) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_MUGetQD prInBuf = %s, u4SubcarrierIndex = %x, u4Length = %x",
-		       prInBuf,
-		       u4SubcarrierIndex, u4Length);
+	endptr = prInBuf;
 
-		rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_GET_QD;
-		rMuMimoActionInfo.unMuMimoParam.rMuGetQd.ucSubcarrierIndex =
-			u4SubcarrierIndex;
-		/* rMuMimoActionInfo.unMuMimoParam.rMuGetQd.u4Length =
-		 *						u4Length;
-		 */
-		/* rMuMimoActionInfo.unMuMimoParam.rMuGetQd.ucgroupIdx =
-		 *						ucgroupIdx;
-		 */
-
-		i4Status = kalIoctl(prGlueInfo,
-				    wlanoidMuMimoAction,
-				    &rMuMimoActionInfo,
-				    sizeof(rMuMimoActionInfo),
-				    &u4BufLen);
-	} else {
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &u4SubcarrierIndex))
 		return -EINVAL;
-	}
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &u4Length))
+		return -EINVAL;
+
+	DBGLOG(RFTEST, ERROR,
+		"%s/%x/%x",
+		prInBuf, u4SubcarrierIndex, u4Length);
+
+	rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_GET_QD;
+	rMuMimoActionInfo.unMuMimoParam.rMuGetQd.ucSubcarrierIndex =
+		u4SubcarrierIndex;
+	/*
+	 * rMuMimoActionInfo.unMuMimoParam.rMuGetQd.u4Length =
+	 *						u4Length;
+	 */
+	/*
+	 * rMuMimoActionInfo.unMuMimoParam.rMuGetQd.ucGroupIdx =
+	 *						ucGroupIdx;
+	 */
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidMuMimoAction,
+		&rMuMimoActionInfo,
+		sizeof(rMuMimoActionInfo),
+		&u4BufLen);
 
 	return i4Status;
 }
@@ -2554,8 +2736,18 @@ int Set_MUSetGID_UP(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT rMuMimoActionInfo;
-	int32_t i4Status = 0;
+	int32_t i4Status = 0, i = 0;
 	uint32_t u4BufLen = 0;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[0],
+		&rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[1],
+		&rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[0],
+		&rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[1],
+		&rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[2],
+		&rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[3]
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
@@ -2567,34 +2759,23 @@ int Set_MUSetGID_UP(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[0],
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[1],
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[0],
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[1],
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[2],
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[3]) == 6
-		) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_MUSetGID_UP prInBuf = %s, au4Gid[0] = %x, au4Gid[1] = %x, au4Up[0] = %x, au4Up[1] = %x, au4Up[2] = %x, au4Up[3] = %x",
-		       prInBuf,
-		       rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[0],
-		       rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[1],
-		       rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[0],
-		       rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[1],
-		       rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[2],
-		       rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[3]);
+	endptr = prInBuf;
 
-		rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_SET_STA_PARAM;
-
-		i4Status = kalIoctl(prGlueInfo,
-				    wlanoidMuMimoAction,
-				    &rMuMimoActionInfo,
-				    sizeof(rMuMimoActionInfo),
-				    &u4BufLen);
-	} else {
-		return -EINVAL;
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
 	}
+
+	rMuMimoActionInfo.ucMuMimoCategory = MU_HQA_SET_STA_PARAM;
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidMuMimoAction,
+		&rMuMimoActionInfo,
+		sizeof(rMuMimoActionInfo),
+		&u4BufLen);
 
 	return i4Status;
 }
@@ -2607,10 +2788,19 @@ int Set_MUTriggerTx(struct net_device *prNetDev,
 	int32_t i4Status = 0;
 	uint32_t u4BufLen = 0;
 	uint32_t i, j;
-
+	uint8_t *endptr;
+	uint8_t *token;
 	uint32_t u4IsRandomPattern, u4MsduPayloadLength0,
 		 u4MsduPayloadLength1, u4MuPacketCount, u4NumOfSTAs;
 	uint32_t au4MacAddrs[2][6];
+	uint32_t *params[] = {
+		&u4IsRandomPattern,
+		&u4MsduPayloadLength0,
+		&u4MsduPayloadLength1,
+		&u4MuPacketCount,
+		&u4MuPacketCount,
+		&u4NumOfSTAs
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
@@ -2622,55 +2812,63 @@ int Set_MUTriggerTx(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf,
-		   "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
-		   &u4IsRandomPattern, &u4MsduPayloadLength0,
-		   &u4MsduPayloadLength1, &u4MuPacketCount, &u4NumOfSTAs,
-		   &au4MacAddrs[0][0], &au4MacAddrs[0][1], &au4MacAddrs[0][2],
-		   &au4MacAddrs[0][3], &au4MacAddrs[0][4],
-		   &au4MacAddrs[0][5], &au4MacAddrs[1][0], &au4MacAddrs[1][1],
-		   &au4MacAddrs[1][2], &au4MacAddrs[1][3],
-		   &au4MacAddrs[1][4], &au4MacAddrs[1][5]) == 17) {
-		DBGLOG(RFTEST, ERROR,
-		       "Set_MUTriggerTx prInBuf = %s, u4IsRandomPattern = %x, u4MsduPayloadLength0 = %x, u4MsduPayloadLength1 = %x, u4MuPacketCount = %x, u4NumOfSTAs = %x, au4MacAddrs[0][0] = %x, au4MacAddrs[0][1] = %x, au4MacAddrs[0][2] = %x, au4MacAddrs[0][3] = %x, au4MacAddrs[0][4] = %x, au4MacAddrs[0][5] = %x,au4MacAddrs[1][0] = %x, au4MacAddrs[1][1] = %x, au4MacAddrs[1][2] = %x, au4MacAddrs[1][3] = %x, au4MacAddrs[1][4] = %x, au4MacAddrs[1][5] = %x",
-		       prInBuf, u4IsRandomPattern, u4MsduPayloadLength0,
-		       u4MsduPayloadLength1, u4MuPacketCount,
-		       u4NumOfSTAs, au4MacAddrs[0][0], au4MacAddrs[0][1],
-		       au4MacAddrs[0][2], au4MacAddrs[0][3],
-		       au4MacAddrs[0][4], au4MacAddrs[0][5], au4MacAddrs[1][0],
-		       au4MacAddrs[1][1], au4MacAddrs[1][2],
-		       au4MacAddrs[1][3], au4MacAddrs[1][4], au4MacAddrs[1][5]);
+	endptr = prInBuf;
 
-		rMuMimoActionInfo.ucMuMimoCategory = MU_SET_TRIGGER_MU_TX;
-		rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
+			return -EINVAL;
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	for (i = 0; i < 2; i++) {
+		for (j = 0; j < 6; j++) {
+			if (endptr == NULL)
+				return -EINVAL;
+			token = kalStrSep((char **)&endptr, ":");
+			if (!token || kalkStrtou32(token, 16,
+				&au4MacAddrs[i][j]))
+				return -EINVAL;
+		}
+	}
+
+	DBGLOG(RFTEST, ERROR,
+		"%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x/%x",
+		u4IsRandomPattern, u4MsduPayloadLength0,
+		u4MsduPayloadLength1, u4MuPacketCount,
+		u4NumOfSTAs, au4MacAddrs[0][0], au4MacAddrs[0][1],
+		au4MacAddrs[0][2], au4MacAddrs[0][3],
+		au4MacAddrs[0][4], au4MacAddrs[0][5], au4MacAddrs[1][0],
+		au4MacAddrs[1][1], au4MacAddrs[1][2],
+		au4MacAddrs[1][3], au4MacAddrs[1][4], au4MacAddrs[1][5]);
+
+	rMuMimoActionInfo.ucMuMimoCategory = MU_SET_TRIGGER_MU_TX;
+	rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
 		.fgIsRandomPattern
 			= u4IsRandomPattern;
-		rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
+	rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
 		.u4MsduPayloadLength0
 			= u4MsduPayloadLength0;
-		rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
+	rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
 		.u4MsduPayloadLength1
 			= u4MsduPayloadLength1;
-		rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx.u4MuPacketCount
-			= u4MuPacketCount;
-		rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx.u4NumOfSTAs =
-			u4NumOfSTAs;
+	rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx.u4MuPacketCount
+		= u4MuPacketCount;
+	rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx.u4NumOfSTAs
+		= u4NumOfSTAs;
 
-		for (i = 0 ; i < 2 ; i++) {
-			for (j = 0 ; j < PARAM_MAC_ADDR_LEN ; j++)
-				rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
-				.aucMacAddrs[i][j]
-					= au4MacAddrs[i][j];
-		}
-
-		i4Status = kalIoctl(prGlueInfo,
-				    wlanoidMuMimoAction,
-				    &rMuMimoActionInfo,
-				    sizeof(rMuMimoActionInfo),
-				    &u4BufLen);
-	} else {
-		return -EINVAL;
+	for (i = 0 ; i < 2 ; i++) {
+		for (j = 0 ; j < PARAM_MAC_ADDR_LEN ; j++)
+			rMuMimoActionInfo.unMuMimoParam.rMuTriggerMuTx
+			.aucMacAddrs[i][j]
+				= au4MacAddrs[i][j];
 	}
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidMuMimoAction,
+		&rMuMimoActionInfo,
+		sizeof(rMuMimoActionInfo),
+		&u4BufLen);
 
 	return i4Status;
 }
@@ -2678,34 +2876,48 @@ int Set_MUTriggerTx(struct net_device *prNetDev,
 
 #if CFG_SUPPORT_TX_BF_FPGA
 int Set_TxBfProfileSwTagWrite(struct net_device *prNetDev,
-			      uint8_t *prInBuf)
+	uint8_t *prInBuf)
 {
-	int32_t i4Status = 0;
-	int32_t rv;
+	int32_t i4Status = 0, i = 0;
 	uint32_t u4Lm, u4Nc, u4Nr, u4Bw, u4Codebook, u4Group;
+	uint8_t *endptr;
+	uint8_t *token;
+	uint32_t *params[] = {
+		&u4Lm,
+		&u4Nc,
+		&u4Nr,
+		&u4Bw,
+		&u4Codebook,
+		&u4Group
+	};
 
 	if (prInBuf == NULL)
 		return -EINVAL;
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileSwTagWrite\n");
 
-	rv = sscanf(prInBuf, "%x-%x-%x-%x-%x-%x", &u4Lm, &u4Nr,
-		    &u4Nc, &u4Bw, &u4Codebook, &u4Group);
+	endptr = prInBuf;
 
-	if (rv == 6) {
-		if ((u4Lm > 0) && (u4Group < 3) && (u4Nr < 4) && (u4Nc < 4)
-		    && (u4Codebook < 4)) {
-			DBGLOG(RFTEST, ERROR,
-			       "Set_TxBfProfileSwTagWrite prInBuf = %s, u4Lm = %d, u4Nr = %d, u4Nc = %d, u4BW = %d, u4CodeBook = %d, u4Group=%d\n",
-			       prInBuf, u4Lm, u4Nr, u4Nc, u4Bw, u4Codebook,
-			       u4Group);
-
-			i4Status = TxBfPseudoTagUpdate(prNetDev, u4Lm, u4Nr,
-					u4Nc, u4Bw, u4Codebook, u4Group);
-		} else
+	for (i = 0; i < ARRAY_SIZE(params); i++) {
+		if (endptr == NULL)
 			return -EINVAL;
-	} else
+		token = kalStrSep((char **)&endptr, ":");
+		if (!token || kalkStrtou32(token, 16, params[i]))
+			return -EINVAL;
+	}
+
+	if ((u4Lm > 0) && (u4Group < 3) && (u4Nr < 4) && (u4Nc < 4)
+		&& (u4Codebook < 4)) {
+		DBGLOG(RFTEST, ERROR,
+			"%d/%d/%d/%d/%d/%d\n",
+			u4Lm, u4Nr, u4Nc, u4Bw, u4Codebook,
+			u4Group);
+
+		i4Status = TxBfPseudoTagUpdate(prNetDev, u4Lm, u4Nr,
+			u4Nc, u4Bw, u4Codebook, u4Group);
+	} else {
 		return -EINVAL;
+	}
 
 	return i4Status;
 }
@@ -2729,9 +2941,10 @@ int WriteEfuse(struct net_device *prNetDev,
 	       uint8_t *prInBuf)
 {
 	int32_t i4Status;
-	int32_t rv;
 	uint32_t addr[2];
 	uint16_t addr2[2];
+	uint8_t *endptr;
+	uint8_t *token;
 
 	if (prInBuf == NULL)
 		return -EINVAL;
@@ -2739,26 +2952,25 @@ int WriteEfuse(struct net_device *prNetDev,
 	DBGLOG(REQ, DEBUG, "ATE_AGENT iwpriv %s, buf: %s\n", __func__,
 	       prInBuf);
 
-	rv = sscanf(prInBuf, "%x:%x", &addr[0], &addr[1]);
+	endptr = prInBuf;
 
-	DBGLOG(REQ, DEBUG,
-	       "ATE_AGENT iwpriv WriteEfuse, prInBuf: %s\n", prInBuf);
-	DBGLOG(INIT, ERROR,
-	       "ATE_AGENT iwpriv WriteEfuse :%02x:%02x\n", addr[0],
-	       addr[1]);
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &addr[0]))
+		return -EINVAL;
+
+	if (endptr == NULL)
+		return -EINVAL;
+	token = kalStrSep((char **)&endptr, ":");
+	if (!token || kalkStrtou32(token, 16, &addr[1]))
+		return -EINVAL;
 
 	addr2[0] = (uint16_t) addr[0];
 	addr2[1] = (uint16_t) addr[1];
 
-	if (rv == 2)
-		i4Status = MT_ATEWriteEfuse(prNetDev, addr2[0], addr2[1]);
-	else
-		return -EINVAL;
+	i4Status = MT_ATEWriteEfuse(prNetDev, addr2[0], addr2[1]);
 
 	return i4Status;
 }
-
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  This routine is called to Set Tx Power.
