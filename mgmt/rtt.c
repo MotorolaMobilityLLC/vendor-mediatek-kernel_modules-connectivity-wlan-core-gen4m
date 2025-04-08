@@ -1237,6 +1237,13 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
 
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(RTT, ERROR,
+			"Invalid BSS index = %d\n",
+			ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	cmd = (struct CMD_RTT_REQUEST *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sz);
 
