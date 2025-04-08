@@ -752,7 +752,7 @@ u_int8_t secPrivacySeekForEntry(
 #else
 	ucStartIDX = 0;
 #endif
-	if (prChipInfo->is_support_dmashdl_lite)
+	if (prChipInfo->is_support_dmashdl_lite_wlanid_dec)
 		ucStartIDX = 16;
 
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
@@ -1000,6 +1000,7 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 			 uint8_t *pucAddr, uint8_t ucStaIdx,
 			 uint8_t ucAlg, uint8_t ucKeyId)
 {
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint8_t ucEntry = WTBL_ALLOC_FAIL;
 	uint8_t ucStartIDX = 0, ucMaxIDX = 0;
 	uint8_t i;
@@ -1043,6 +1044,10 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 #else
 	ucStartIDX = 0;
 #endif
+
+	if (prChipInfo->is_support_dmashdl_lite_wlanid_dec)
+		ucStartIDX = 16;
+
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)

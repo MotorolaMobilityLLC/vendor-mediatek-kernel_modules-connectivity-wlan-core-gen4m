@@ -1544,6 +1544,7 @@ struct mt66xx_chip_info {
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int is_support_wacpu;	/* support WA-CPU */
 	const u_int8_t is_support_dmashdl_lite;
+	const u_int8_t is_support_dmashdl_lite_wlanid_dec;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	const u_int8_t is_support_mawd;		/* support MAWD */
 	const u_int8_t is_support_sdo;		/* support SDO */

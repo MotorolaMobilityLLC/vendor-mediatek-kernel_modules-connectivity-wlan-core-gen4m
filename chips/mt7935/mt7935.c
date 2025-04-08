@@ -951,6 +951,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
 	.is_support_dmashdl_lite = TRUE,
+	.is_support_dmashdl_lite_wlanid_dec = FALSE,
 	.sw_sync_emi_info = NULL,
 #if defined(_HIF_PCIE)
 	.is_en_wfdma_no_mmio_read = FALSE,

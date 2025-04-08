@@ -265,6 +265,7 @@ struct DMASHDL_CFG rMt7935DmashdlCfg = {
 
 void mt7935DmashdlInit(struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct DMASHDL_CFG *prCfg = &rMt7935DmashdlCfg;
 	uint32_t idx, u4Val = 0, u4Addr = 0;
@@ -272,8 +273,12 @@ void mt7935DmashdlInit(struct ADAPTER *prAdapter)
 	prBusInfo->prDmashdlCfg = prCfg;
 
 	u4Addr = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_ADDR;
-	u4Val = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_sw_rst_b_MASK |
+	u4Val = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_sw_rst_b_MASK;
+
+	if (prChipInfo->is_support_dmashdl_lite_wlanid_dec)
+		u4Val |=
 		WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_wlan_id_dec_en_MASK;
+
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	asicConnac3xDmashdlLiteSetTotalPlePsePageSize(
