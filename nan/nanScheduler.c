@@ -13504,7 +13504,9 @@ uint32_t nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 		if (prNanScheduler->fgEn6g &&
-		    NAN_IS_6G_TIMELINE(prAdapter, szTimeLineIdx)) {
+		    NAN_IS_6G_TIMELINE(prAdapter, szTimeLineIdx) &&
+		    !(nanSchedGetConnBands(prAdapter, NETWORK_TYPE_P2P) &
+		      BIT(BAND_5G))) {
 			/* Generate 6G potential channel list */
 			eBw = nanSchedGet6gNanBw(prAdapter);
 			/* To limit channel entry num, only bring 6G BW > 40 */
@@ -16837,6 +16839,7 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 		       prP2pAisMcc->fgIsP2pAisMCC, prP2pAisMcc->ucNumOfChannel);
 	}
 	nanSetConcurrentCustomFAW(prAdapter);
+	nanSchedCmdUpdatePotentialChnlList(prAdapter);
 }
 
 static u_int8_t nanIsP2pAisMCC(struct ADAPTER *prAdapter, size_t szTimeLineIdx,
