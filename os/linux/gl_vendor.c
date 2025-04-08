@@ -836,7 +836,6 @@ int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
 	uint8_t len;
 	uint32_t u4SetDtimPeriod = 0, rStatus, u4BufLen;
 
-
 	ASSERT(wiphy);
 	ASSERT(wdev);
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -871,7 +870,7 @@ int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
 
 	u4SetDtimPeriod = nla_get_u32(attr[WIFI_ATTR_SET_DTIM_PARAMS]);
 
-	len = kalSnprintf(str, sizeof(str), "DtimPeriod %d", u4SetDtimPeriod);
+	len = kalSnprintf(str, sizeof(str), "DtimPeriod 0 %d", u4SetDtimPeriod);
 
 	if (len <= 0 || u4SetDtimPeriod < 0) {
 		DBGLOG(REQ, ERROR,
