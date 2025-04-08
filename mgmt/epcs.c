@@ -90,9 +90,10 @@ uint32_t epcsReqTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, DEBUG,
-		"EPCS TX DONE, WIDX:PID:SN[%u:%u:%u] Status[%u], SeqNo: %d\n",
+		"EPCS TX DONE, WIDX:PID:SN[%u:%u:%d] Status[%u], SeqNo: %d\n",
 		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		prTxDone->u2SequenceNumber, rTxDoneStatus,
+		prTxDone ? prTxDone->u2SequenceNumber : -1,
+		rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 
 	if (rTxDoneStatus != TX_RESULT_SUCCESS)
@@ -126,9 +127,10 @@ uint32_t epcsRspTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, DEBUG,
-		"EPCS TX DONE, WIDX:PID:SN[%u:%u:%u] Status[%u], SeqNo: %d\n",
+		"EPCS TX DONE, WIDX:PID:SN[%u:%u:%d] Status[%u], SeqNo: %d\n",
 		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		prTxDone->u2SequenceNumber, rTxDoneStatus,
+		prTxDone ? prTxDone->u2SequenceNumber : -1,
+		rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 	cnmTimerStopTimer(prAdapter, &prMldStaRec->rEpcsTimer);
 
@@ -169,9 +171,10 @@ uint32_t epcsTeardownTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, DEBUG,
-		"EPCS TX DONE, WIDX:PID:SN[%u:%u:%u] Status[%u], SeqNo: %d\n",
+		"EPCS TX DONE, WIDX:PID:SN[%u:%u:%d] Status[%u], SeqNo: %d\n",
 		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		prTxDone->u2SequenceNumber, rTxDoneStatus,
+		prTxDone ? prTxDone->u2SequenceNumber : -1,
+		rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 
 	if (rTxDoneStatus != TX_RESULT_SUCCESS)

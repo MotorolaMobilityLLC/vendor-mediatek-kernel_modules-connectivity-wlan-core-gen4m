@@ -211,9 +211,10 @@ uint32_t t2lmReqTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, DEBUG,
-		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
+		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%d] Status[%u], SeqNo: %d\n",
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		prTxDone->u2SequenceNumber, rTxDoneStatus,
+		prTxDone ? prTxDone->u2SequenceNumber : -1,
+		rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 #if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldLogT2LMReq(prAdapter, prBssInfo, prStaRec,
@@ -269,9 +270,10 @@ uint32_t t2lmRspTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, DEBUG,
-		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
+		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%d] Status[%u], SeqNo: %d\n",
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		prTxDone->u2SequenceNumber, rTxDoneStatus,
+		prTxDone ? prTxDone->u2SequenceNumber : -1,
+		rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 #if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldLogT2LMResp(prAdapter,
@@ -319,9 +321,10 @@ uint32_t t2lmTeardownTxDoneCb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	DBGLOG(TX, DEBUG,
-		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%u] Status[%u], SeqNo: %d\n",
+		"T2LM TX DONE, BN:WIDX:PID:SN[%u:%u:%u:%d] Status[%u], SeqNo: %d\n",
 		prBssInfo->eBand, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		prTxDone->u2SequenceNumber, rTxDoneStatus,
+		prTxDone ? prTxDone->u2SequenceNumber : -1,
+		rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 #if (CFG_SUPPORT_MLD_LOG == 1) && (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldLogT2LMTeardown(prAdapter,
