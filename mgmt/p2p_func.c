@@ -10099,6 +10099,17 @@ uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 	return ucFreqNum;
 }
 
+static void p2pFuncAppendSccSafeFreq(uint32_t *pau4FreqAllowList,
+			      uint8_t *ucAllowFreqNum,
+			      uint32_t *pau4SccFreqList,
+			      uint32_t u4SccFreqNum)
+{
+	uint32_t i;
+
+	for (i = 0; i < u4SccFreqNum; ++i)
+		pau4FreqAllowList[(*ucAllowFreqNum)++] = pau4SccFreqList[i];
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief Get the prefer safe freq by intersection of prefer freq and safe freq.
@@ -10357,6 +10368,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	struct BSS_INFO *aliveBss6g[MAX_BSSID_NUM] = { 0 };
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g = 0;
+	uint32_t u4FreqNumBeforeScc;
 
 	/* prepare alive bss info for SCC */
 	ucNumAliveBss2g = p2pFuncGetPreferAliveBssByBand(
@@ -10394,6 +10406,8 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		if (ucNumAliveBss2g)
 			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss2g,
 			    ucNumAliveBss2g, &pau4FreqList[*pu4FreqListNum]);
+		p2pFuncAppendSccSafeFreq(pau4FreqAllowList, &ucAllowFreqNum,
+					 pau4FreqList, *pu4FreqListNum);
 		goto done;
 	}
 
@@ -10406,11 +10420,15 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 
 	/* Append 5G/6G channels first */
 	if (ucNumAliveBss5g + ucNumAliveBss6g > 0) {
+		u4FreqNumBeforeScc = *pu4FreqListNum;
 		if (prWifiVar->fgEnP2pPref6g)
 			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss6g,
 			    ucNumAliveBss6g, &pau4FreqList[*pu4FreqListNum]);
 		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss5g,
 		    ucNumAliveBss5g, &pau4FreqList[*pu4FreqListNum]);
+		p2pFuncAppendSccSafeFreq(pau4FreqAllowList, &ucAllowFreqNum,
+					 &pau4FreqList[u4FreqNumBeforeScc],
+					 *pu4FreqListNum - u4FreqNumBeforeScc);
 	} else {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G) &&
@@ -10431,8 +10449,12 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	/* Append 2G channels */
 	if (ucNumAliveBss2g > 0) {
 		/* Prefer SCC */
+		u4FreqNumBeforeScc = *pu4FreqListNum;
 		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss2g,
 			ucNumAliveBss2g, &pau4FreqList[*pu4FreqListNum]);
+		p2pFuncAppendSccSafeFreq(pau4FreqAllowList, &ucAllowFreqNum,
+					 &pau4FreqList[u4FreqNumBeforeScc],
+					 *pu4FreqListNum - u4FreqNumBeforeScc);
 	} else {
 		/* Band is idle, append whole 2G */
 		*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
