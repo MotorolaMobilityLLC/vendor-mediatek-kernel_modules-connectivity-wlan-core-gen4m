@@ -105,7 +105,7 @@ struct UNI_FWDL_NOTIF_FWDL_RESP {
 	enum UNI_FWDL_HIF_DL_RADIO_TYPE eDlRadio;
 	enum UNI_FWDL_RESP_STATUS eResp;
 	uint16_t u2DlBlockId;
-	uint16_t u2FailureCode;
+	uint16_t u2ErrorCode;
 	enum UNI_FWDL_COMM_STATE eCommState;
 };
 

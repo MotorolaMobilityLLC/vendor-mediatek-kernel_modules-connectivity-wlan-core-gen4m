@@ -157,17 +157,25 @@
 #define SHM_DL_BLOCK_CODE_MASK			0x0000FFFF
 #define SHM_DL_BLOCK_CODE_SHFT			0
 
-#define SHM_FAIL_CODE_ADDR			0xA4
-#define SHM_FAIL_CODE_MASK			0xFFFF0000
-#define SHM_FAIL_CODE_SHFT			16
+#define SHM_ERROR_CODE_ADDR			0xA4
+#define SHM_ERROR_CODE_MASK			0xFFFF0000
+#define SHM_ERROR_CODE_SHFT			16
 
-#define SHM_NOTIF_RADIO_TYPE_ADDR		0xA4
-#define SHM_NOTIF_RADIO_TYPE_MASK		0x0000FFFF
-#define SHM_NOTIF_RADIO_TYPE_SHFT		0
+#define SHM_SUB_ERROR_CODE_ADDR			0xA4
+#define SHM_SUB_ERROR_CODE_MASK			0x0000FFFF
+#define SHM_SUB_ERROR_CODE_SHFT			0
 
 #define SHM_COMM_STATE_ADDR			0xA8
 #define SHM_COMM_STATE_MASK			0xFFFFFFFF
 #define SHM_COMM_STATE_SHFT			0
+
+#define SHM_PREV_NOTIF_IDX_ADDR			0xAC
+#define SHM_PREV_NOTIF_IDX_MASK			0xFFFF0000
+#define SHM_PREV_NOTIF_IDX_SHFT			16
+
+#define SHM_PREV_NOTIF_ID_ADDR			0xAC
+#define SHM_PREV_NOTIF_ID_MASK			0x0000FFFF
+#define SHM_PREV_NOTIF_ID_SHFT			0
 
 uint32_t mt7999_shm_init(struct ADAPTER *ad, struct UNI_FWLD_SHM_CTX *ctx);
 void mt7999_shm_deinit(struct ADAPTER *ad, struct UNI_FWLD_SHM_CTX *ctx);
@@ -217,8 +225,8 @@ void mt7999_read_notif_id(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
 void mt7999_read_dl_resp(struct UNI_FWLD_SHM_CTX *ctx, uint32_t *value);
 void mt7999_read_block_radio(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
 void mt7999_read_block_id(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
-void mt7999_read_fail_code(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
-void mt7999_read_radio_type(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
+void mt7999_read_error_code(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
+void mt7999_read_sub_error_code(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
 void mt7999_read_comm_state(struct UNI_FWLD_SHM_CTX *ctx, uint32_t *value);
 
 #endif /* UNI_FW_DL_SHM_MT7999_H */

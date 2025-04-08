@@ -970,8 +970,8 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 		struct UNI_FWDL_NOTIF_NROM_PATCH_DONE rDone;
 		uint16_t u2RadioType;
 
-		uniFwdlShmRdRadioType(&prCtx->rShmCtx,
-				      &u2RadioType);
+		uniFwdlShmRdBlockRadio(&prCtx->rShmCtx,
+				       &u2RadioType);
 
 		kalMemZero(&rDone, sizeof(rDone));
 		rDone.eRadioType =
@@ -1006,19 +1006,19 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 	{
 		struct UNI_FWDL_NOTIF_FWDL_RESP rResp;
 		uint32_t u4CommState, u4Resp;
-		uint16_t u2BlkRadio, u2BlkId, u2FailureCode;
+		uint16_t u2BlkRadio, u2BlkId, u2ErrorCode;
 
 		uniFwdlShmRdBlockRadio(&prCtx->rShmCtx, &u2BlkRadio);
 		uniFwdlShmRdDlResp(&prCtx->rShmCtx, &u4Resp);
 		uniFwdlShmRdBlockId(&prCtx->rShmCtx, &u2BlkId);
-		uniFwdlShmRdFailedCode(&prCtx->rShmCtx, &u2FailureCode);
+		uniFwdlShmRdErrorCode(&prCtx->rShmCtx, &u2ErrorCode);
 		uniFwdlShmRdCommState(&prCtx->rShmCtx, &u4CommState);
 
 		kalMemZero(&rResp, sizeof(rResp));
 		rResp.eDlRadio = (enum UNI_FWDL_HIF_DL_RADIO_TYPE)u2BlkRadio;
 		rResp.eResp = (enum UNI_FWDL_RESP_STATUS)u4Resp;
 		rResp.u2DlBlockId = u2BlkId;
-		rResp.u2FailureCode = u2FailureCode;
+		rResp.u2ErrorCode = u2ErrorCode;
 		rResp.eCommState = (enum UNI_FWDL_COMM_STATE)u4CommState;
 
 		if (prCtx->pfnNotifCb)

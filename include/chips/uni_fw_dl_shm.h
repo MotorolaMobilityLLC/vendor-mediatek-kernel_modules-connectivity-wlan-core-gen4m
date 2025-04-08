@@ -74,8 +74,9 @@ struct UNI_FWDL_SHM_OPS {
 	void (*read_dl_resp)(struct UNI_FWLD_SHM_CTX *ctx, uint32_t *value);
 	void (*read_block_radio)(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
 	void (*read_block_id)(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
-	void (*read_failed_code)(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
-	void (*read_radio_type)(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
+	void (*read_error_code)(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value);
+	void (*read_sub_error_code)(struct UNI_FWLD_SHM_CTX *ctx,
+				    uint16_t *value);
 	void (*read_comm_state)(struct UNI_FWLD_SHM_CTX *ctx, uint32_t *value);
 };
 #endif /* _UNI_FW_DL_SHM_H */

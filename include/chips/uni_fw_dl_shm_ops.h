@@ -572,7 +572,7 @@ uniFwdlShmRdBlockId(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 }
 
 static void
-uniFwdlShmRdFailedCode(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
+uniFwdlShmRdErrorCode(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 {
 	struct UNI_FWDL_SHM_OPS *prShmOps;
 
@@ -581,14 +581,14 @@ uniFwdlShmRdFailedCode(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 		return;
 
 	prShmOps = &ctx->ad->chip_info->uni_fwdl_info->rShmOps;
-	if (!prShmOps->read_failed_code)
+	if (!prShmOps->read_error_code)
 		return;
 
-	prShmOps->read_failed_code(ctx, value);
+	prShmOps->read_error_code(ctx, value);
 }
 
 static void
-uniFwdlShmRdRadioType(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
+uniFwdlShmRdSubErrorCode(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 {
 	struct UNI_FWDL_SHM_OPS *prShmOps;
 
@@ -597,10 +597,10 @@ uniFwdlShmRdRadioType(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 		return;
 
 	prShmOps = &ctx->ad->chip_info->uni_fwdl_info->rShmOps;
-	if (!prShmOps->read_radio_type)
+	if (!prShmOps->read_sub_error_code)
 		return;
 
-	prShmOps->read_radio_type(ctx, value);
+	prShmOps->read_sub_error_code(ctx, value);
 }
 
 static void

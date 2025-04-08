@@ -591,11 +591,11 @@ static void uniFwdlHandleDlResp(struct ADAPTER *prAdapter,
 	struct UNI_FWDL_CTX *prCtx = &prAdapter->rUniFwdlCtx;
 
 	DBGLOG(UNI_FWDL, INFO,
-		"radio=%u resp=%u block_id=%u fail_code=%u state=%u\n",
+		"radio=%u resp=%u block_id=%u error_code=%u state=%u\n",
 		prResp->eDlRadio,
 		prResp->eResp,
 		prResp->u2DlBlockId,
-		prResp->u2FailureCode,
+		prResp->u2ErrorCode,
 		prResp->eCommState);
 
 	switch (prResp->eResp) {
@@ -613,7 +613,7 @@ static void uniFwdlHandleDlResp(struct ADAPTER *prAdapter,
 		break;
 
 	case UNI_FWDL_RESP_STATUS_FAIL:
-		prCtx->u2FailureCode = prResp->u2FailureCode;
+		prCtx->u2ErrorCode = prResp->u2ErrorCode;
 		uniFwdlWakeupDlThread(prAdapter,
 				      WAKEUP_SOURCE_DL_FAIL);
 		break;
@@ -888,7 +888,7 @@ uint32_t uniFwdlDownloadFW(struct ADAPTER *prAdapter)
 		if (KAL_TEST_AND_CLEAR_BIT(WAKEUP_SOURCE_DL_FAIL,
 					   prCtx->ulFlags)) {
 			DBGLOG(UNI_FWDL, WARN, "DL FAIL, reason=%u\n",
-				prCtx->u2FailureCode);
+				prCtx->u2ErrorCode);
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
 		}

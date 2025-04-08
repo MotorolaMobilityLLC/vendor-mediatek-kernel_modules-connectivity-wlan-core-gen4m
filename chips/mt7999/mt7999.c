@@ -910,8 +910,8 @@ struct UNI_FWDL_INFO mt7999_uni_fwdl_info = {
 		.read_dl_resp = mt7999_read_dl_resp,
 		.read_block_radio = mt7999_read_block_radio,
 		.read_block_id = mt7999_read_block_id,
-		.read_failed_code = mt7999_read_fail_code,
-		.read_radio_type = mt7999_read_radio_type,
+		.read_error_code = mt7999_read_error_code,
+		.read_sub_error_code = mt7999_read_sub_error_code,
 		.read_comm_state = mt7999_read_comm_state,
 	},
 #endif

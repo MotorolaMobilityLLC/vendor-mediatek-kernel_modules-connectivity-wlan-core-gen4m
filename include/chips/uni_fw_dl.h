@@ -142,7 +142,7 @@ struct UNI_FWDL_CTX {
 	wait_queue_head_t rWaitQ;
 	unsigned long ulFlags;
 
-	uint16_t u2FailureCode;
+	uint16_t u2ErrorCode;
 
 	enum UNI_FWDL_HIF_DL_RADIO_TYPE eCurrentDlRadio;
 	uint16_t u2CurrentDlBlockId;

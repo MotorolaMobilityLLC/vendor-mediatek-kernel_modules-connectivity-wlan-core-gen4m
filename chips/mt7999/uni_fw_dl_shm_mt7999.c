@@ -565,21 +565,21 @@ void mt7999_read_block_id(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 		     value);
 }
 
-void mt7999_read_fail_code(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
+void mt7999_read_error_code(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 {
 	SHM_RD_FIELD(ctx,
-		     SHM_FAIL_CODE_ADDR,
-		     SHM_FAIL_CODE_MASK,
-		     SHM_FAIL_CODE_SHFT,
+		     SHM_ERROR_CODE_ADDR,
+		     SHM_ERROR_CODE_MASK,
+		     SHM_ERROR_CODE_SHFT,
 		     value);
 }
 
-void mt7999_read_radio_type(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
+void mt7999_read_sub_error_code(struct UNI_FWLD_SHM_CTX *ctx, uint16_t *value)
 {
 	SHM_RD_FIELD(ctx,
-		     SHM_NOTIF_RADIO_TYPE_ADDR,
-		     SHM_NOTIF_RADIO_TYPE_MASK,
-		     SHM_NOTIF_RADIO_TYPE_SHFT,
+		     SHM_SUB_ERROR_CODE_ADDR,
+		     SHM_SUB_ERROR_CODE_MASK,
+		     SHM_SUB_ERROR_CODE_SHFT,
 		     value);
 }
 
