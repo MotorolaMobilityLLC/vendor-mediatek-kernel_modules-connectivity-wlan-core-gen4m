@@ -3351,6 +3351,8 @@ int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
 		i4Ret = sscanf(
 			prGlueInfo->prP2PInfo[u4Idx]->prDevHandler->name,
 			"ap%u", pu4IfIndex);
+		if (i4Ret)
+			return i4Ret;
 	}
 
 	return i4Ret;

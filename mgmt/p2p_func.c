@@ -7655,6 +7655,9 @@ void p2pFuncSwitchGcChannel(
 #endif
 #endif /* (!CFG_SUPPORT_ELL_CSA) || (!CFG_MTK_ANDROID_WMT) */
 	u_int8_t fgCrossBand;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 
 #if CFG_SUPPORT_DFS_MASTER
 	fgEnable = TRUE;
@@ -7708,7 +7711,9 @@ void p2pFuncSwitchGcChannel(
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
+	prMldBssInfo = mldBssGetByBss(
+			prAdapter, prP2pBssInfo);
+	if (!IS_MLD_BSSINFO_MULTI(prMldBssInfo))
 #endif
 	{
 #if !CFG_SUPPORT_ELL_CSA
@@ -9784,7 +9789,9 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo;
 	uint8_t ucRoleIdx;
 	u_int8_t fgIsSap = FALSE, fgIsMloSap = FALSE;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo) {
 		DBGLOG(P2P, ERROR, "Null bss by idx(%u)\n",
@@ -9799,8 +9806,9 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 	prP2pChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
 	fgIsSap = IS_BSS_AP(prAdapter, prBssInfo);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter,
-							 prBssInfo));
+	prMldBssInfo = mldBssGetByBss(prAdapter,
+					prBssInfo);
+	fgIsMloSap = IS_MLD_BSSINFO_MULTI(prMldBssInfo);
 #endif
 
 	if (!fgIsSap)

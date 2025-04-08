@@ -1279,10 +1279,14 @@ void aaaMulAPAgentStaEventNotify(
 	WLAN_SET_FIELD_16(prStaEventNotify->u8Cap + 1, prStaRec->u2CapInfo);
 	WLAN_SET_FIELD_16(prStaEventNotify->u8Cap + 3,
 		prStaRec->u2ListenInterval);
-	kalMemCopy(prStaEventNotify->u8Cap + 5,
-		prStaRec->pucAssocReqIe,
-		prStaRec->u2AssocReqIeLen);
-
+	if (prStaRec->u2AssocReqIeLen <= (STA_CAP_LEN_MAX - 5))
+		kalMemCopy(prStaEventNotify->u8Cap + 5,
+			prStaRec->pucAssocReqIe,
+			prStaRec->u2AssocReqIeLen);
+	else {
+		prStaEventNotify->uCapLen = 6;
+		prStaEventNotify->u8Cap[0] = 1;
+	}
 	DBGLOG(AAA, INFO,
 		"[SAP_Test] mStaMac=" MACSTR "\n",
 		MAC2STR(prStaEventNotify->mStaMac));

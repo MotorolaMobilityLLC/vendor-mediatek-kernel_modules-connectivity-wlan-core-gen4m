@@ -2986,7 +2986,9 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct STA_RECORD *prCurrStaRec;
 	struct LINK *prClientList;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo;
+#endif
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventCsaDone\n");
 
 	prMsgP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) prMsgHdr;
@@ -3014,17 +3016,20 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "CSA from band: %d to %d\n",
 		prP2pBssInfo->eBand,
 		prChnlReqInfo->eBand);
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByBss(prAdapter,
+						 prP2pBssInfo);
+#endif
 #if CFG_SUPPORT_ELL_CSA
 	/* MLO CSA should keep TX by other link */
-	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
+	if (!IS_MLD_BSSINFO_MULTI(prMldBssInfo))
 #endif
 		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
 				    rLinkEntry, struct STA_RECORD)
 			qmSetStaRecTxAllowed(prAdapter, prCurrStaRec, FALSE);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
+	if (!IS_MLD_BSSINFO_MULTI(prMldBssInfo))
 #endif
 	{
 		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,

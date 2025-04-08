@@ -994,7 +994,7 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	/* temp replace BSS eBand to get BW of CSA band */
 	eBandOrig = prBssInfo->eBand;
 	prBssInfo->eBand = eBandCsa;
-	prRfChnlInfo->ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
+	prRfChnlInfo->ucChnlBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
 	prRfChnlInfo->eSco = eScoCsa;
 	if (ucBw < MAX_BW_NUM && ucBw < prRfChnlInfo->ucChnlBw)
 		prRfChnlInfo->ucChnlBw = ucBw;
@@ -1310,7 +1310,7 @@ void p2pRlmReSyncCapAfterCsa(struct ADAPTER *prAdapter,
 			     rRfChnlInfo.ucChnlBw);
 	rRfChnlInfo.u2PriChnlFreq =
 		nicChannelNum2Freq(prBssInfo->ucPrimaryChannel,
-				   prBssInfo->eBand);
+				   prBssInfo->eBand) / 1000;
 	rRfChnlInfo.ucChannelNum = prBssInfo->ucPrimaryChannel;
 	rRfChnlInfo.fgDFS = prBssInfo->eBand == BAND_5G ?
 		rlmDomainIsDfsChnls(prAdapter,
