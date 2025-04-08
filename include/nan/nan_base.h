@@ -41,12 +41,14 @@
 #define NAN_ATTR_ID(fp)		(((struct _NAN_ATTR_HDR_T *)fp)->ucAttrId)
 #define NAN_ATTR_LEN(fp)	(((struct _NAN_ATTR_HDR_T *)fp)->u2Length)
 #define NAN_ATTR_SIZE(fp)	(NAN_ATTR_HDR_LEN + NAN_ATTR_LEN(fp))
+#define NAN_ATTR_END(fp)	((uint8_t *)(fp) + NAN_ATTR_SIZE(fp))
 
 #define NAN_AVAIL_ENTRY_HDR_LEN 2
 #define NAN_AVAIL_ENTRY_LEN(fp)		\
 	(((struct _NAN_AVAILABILITY_ENTRY_T *)fp)->u2Length)
 #define NAN_AVAIL_ENTRY_SIZE(fp)	\
 	(NAN_AVAIL_ENTRY_HDR_LEN + NAN_AVAIL_ENTRY_LEN(fp))
+#define NAN_AVAIL_ENTRY_END(fp)	((uint8_t *)(fp) + NAN_AVAIL_ENTRY_SIZE(fp))
 
 /* NAN 4.0 Table 58. Service Protocol Types */
 enum NAN_SERVICE_PROTOCOL_TYPES {
@@ -807,7 +809,7 @@ struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T {
 		struct _NAN_ATTR_TIME_BITMAP_CONTROL_T rTimeBitmapCtrl;
 	};
 	uint8_t ucTimeBitmapLength;
-	uint8_t aucTimeBitmapAndBandChnlEntry[];
+	uint8_t aucTimeBitmapAndBandChnl[];
 } __KAL_ATTRIB_PACKED__;
 
 /**

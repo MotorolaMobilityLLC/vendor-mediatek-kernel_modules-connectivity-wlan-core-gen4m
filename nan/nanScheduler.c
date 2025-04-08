@@ -4541,9 +4541,8 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 #endif
 	uint8_t *pucTimeBitmap = NULL;
 	struct _NAN_SIMPLE_CHNL_ENTRY_T *prBandChnlList;
-	uint8_t *p;
-	uint8_t *end;
-	uint32_t idx;
+	uint8_t *pNextAvailEntry;
+	uint8_t *pucAvailAttrEnd;
 	uint32_t i;
 	uint32_t u4CommittedBitmap = 0;
 	u_int8_t fgConditional = FALSE;
@@ -4551,19 +4550,19 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	u_int8_t fgCommitted6G = FALSE;
 	uint8_t *pConditionalPtr = NULL;
 	uint32_t ucCheckOpClass;
+	uint8_t ucTimeBitmapLength;
 
 	prChnlEntry = &prConditional->channelEntry.rChnlEntry;
 	ucCheckOpClass = prChnlEntry->ucOperatingClass;
 
-	end = (uint8_t *)prAttrNanAvailibility +
-		NAN_ATTR_SIZE(prAttrNanAvailibility);
+	pNextAvailEntry = prAttrNanAvailibility->aucAvailabilityEntryList;
+	pucAvailAttrEnd = NAN_ATTR_END(prAttrNanAvailibility);
 
-	p = prAttrNanAvailibility->aucAvailabilityEntryList;
-
-	idx = 0;
 	do {
-		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)p;
-		p = (uint8_t *)prAvailEntry + 2 + prAvailEntry->u2Length;
+		prAvailEntry =
+			(struct _NAN_AVAILABILITY_ENTRY_T *)pNextAvailEntry;
+
+		pNextAvailEntry = NAN_AVAIL_ENTRY_END(prAvailEntry);
 
 		if (prAvailEntry->rCtrl.u2TypeConditional)
 			fgConditional = TRUE;
@@ -4571,115 +4570,124 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		if (prAvailEntry->rCtrl.u2TypePotential && !pConditionalPtr)
 			pConditionalPtr = (uint8_t *)prAvailEntry;
 
-		if (prAvailEntry->rCtrl.u2TimeBitmapPresent) {
-			uint8_t ucLen;
+		if (!prAvailEntry->rCtrl.u2TimeBitmapPresent)
+			continue;
 
-			prTimeBitmap =
-				(struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
-				prAvailEntry;
-			ucLen = prTimeBitmap->ucTimeBitmapLength;
+		prTimeBitmap = (struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
+			prAvailEntry;
+		ucTimeBitmapLength  = prTimeBitmap->ucTimeBitmapLength;
+		if (prTimeBitmap->aucTimeBitmapAndBandChnl +
+		    ucTimeBitmapLength > pNextAvailEntry) {
+			DBGLOG(NAN, WARN, "TimeBitmapLength=%u too large",
+			       ucTimeBitmapLength);
+			continue;
+		}
 
-			prChnlList = (struct _NAN_BAND_CHNL_LIST_T *)
-			    &prTimeBitmap->aucTimeBitmapAndBandChnlEntry[ucLen];
+		prChnlList = (struct _NAN_BAND_CHNL_LIST_T *)
+			(prTimeBitmap->aucTimeBitmapAndBandChnl +
+			 ucTimeBitmapLength);
 
-			pTimeBitmapTmp =
-			      prTimeBitmap->aucTimeBitmapAndBandChnlEntry;
+		pTimeBitmapTmp = prTimeBitmap->aucTimeBitmapAndBandChnl;
 
-			if (prChnlList->ucNonContiguous)
-				continue;
+		if (prChnlList->ucNonContiguous)
+			continue;
 
-			if (prChnlList->ucType ==
-			    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
-				uint8_t *pucBand = prChnlList->aucEntry;
+		if (prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
+			uint8_t *pucBand = prChnlList->aucEntry;
 
-				for (i = 0; i < prChnlList->ucNumberOfEntry;
-				     i++) {
-					DBGLOG(NAN, INFO, "potential band: %u",
-					       pucBand[i]);
-					if (IS_2G_OP_CLASS(ucCheckOpClass) &&
-					    pucBand[i] ==
-						NAN_SUPPORTED_BAND_ID_2P4G &&
-					    !pChosen &&
-					    !fgCommitted2G && !fgConditional) {
-						pChosen = &rPrefer2gChannel;
-						pucTimeBitmap = pTimeBitmapTmp;
-						continue;
-					}
-#if (CFG_SUPPORT_NAN_6G == 1)
-					if (IS_6G_OP_CLASS(ucCheckOpClass) &&
-					    pucBand[i] ==
-						NAN_PROPRIETARY_BAND_ID_6G &&
-					    !pChosen &&
-					    !fgCommitted6G && !fgConditional) {
-						pChosen = &rPrefer6gChannel;
-						pucTimeBitmap = pTimeBitmapTmp;
-						continue;
-					}
-#endif
-				}
+			if (&pucBand[prChnlList->ucNumberOfEntry] >
+			    pNextAvailEntry) {
+				DBGLOG(NAN, WARN,
+				       "ucNumberOfEntry=%u too large",
+				       prChnlList->ucNumberOfEntry);
 				continue;
 			}
 
-			/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
-			prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
-				prChnlList->aucEntry;
 			for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
-				uint8_t ucOC;
+				DBGLOG(NAN, INFO, "potential band: %u",
+				       pucBand[i]);
+				if (IS_2G_OP_CLASS(ucCheckOpClass) &&
+				    pucBand[i] == NAN_SUPPORTED_BAND_ID_2P4G &&
+				    !pChosen &&
+				    !fgCommitted2G && !fgConditional) {
+					pChosen = &rPrefer2gChannel;
+					pucTimeBitmap = pTimeBitmapTmp;
+					continue;
+				}
+#if (CFG_SUPPORT_NAN_6G == 1)
+				if (IS_6G_OP_CLASS(ucCheckOpClass) &&
+				    (pucBand[i] == NAN_PROPRIETARY_BAND_ID_6G ||
+				     pucBand[i] == NAN_SUPPORTED_BAND_ID_6G) &&
+				    !pChosen &&
+				    !fgCommitted6G && !fgConditional) {
+					pChosen = &rPrefer6gChannel;
+					pucTimeBitmap = pTimeBitmapTmp;
+					continue;
+				}
+#endif
+			}
+			continue;
+		}
 
-				ucOC = prBandChnlList[i].ucOperatingClass;
-				if (prAvailEntry->rCtrl.u2TypeCommitted) {
-					u4CommittedBitmap |=
-						*(uint32_t *)pTimeBitmapTmp;
-					if (IS_6G_OP_CLASS(ucOC))
-						fgCommitted6G = TRUE;
-					if (IS_2G_OP_CLASS(ucOC))
-						fgCommitted2G = TRUE;
+		/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
+			prChnlList->aucEntry;
+		for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
+			uint8_t ucOC;
+
+			ucOC = prBandChnlList[i].ucOperatingClass;
+			if (prAvailEntry->rCtrl.u2TypeCommitted) {
+				u4CommittedBitmap |=
+					*(uint32_t *)pTimeBitmapTmp;
+				if (IS_6G_OP_CLASS(ucOC))
+					fgCommitted6G = TRUE;
+				if (IS_2G_OP_CLASS(ucOC))
+					fgCommitted2G = TRUE;
+			}
+
+			if (!prAvailEntry->rCtrl.u2TypePotential)
+				continue;
+
+			if (IS_6G_OP_CLASS(ucOC) &&
+			    IS_6G_OP_CLASS(ucCheckOpClass)) {
+				/* Reach here: 6G && Potential */
+				if (!pChosen &&
+				    !fgCommitted6G && !fgConditional) {
+					pChosen = &prBandChnlList[i];
+					pucTimeBitmap = pTimeBitmapTmp;
 				}
 
-				if (!prAvailEntry->rCtrl.u2TypePotential)
+				if (!pChosen)
 					continue;
 
-				if (IS_6G_OP_CLASS(ucOC) &&
-				    IS_6G_OP_CLASS(ucCheckOpClass)) {
-					/* Reach here: 6G && Potential */
-					if (!pChosen &&
-					    !fgCommitted6G && !fgConditional) {
-						pChosen = &prBandChnlList[i];
-						pucTimeBitmap = pTimeBitmapTmp;
-					}
-
-					if (!pChosen)
-						continue;
-
-					/* pChosen */
-					if (pChosen->ucOperatingClass < ucOC) {
-						/* better chosen */
-						pChosen = &prBandChnlList[i];
-						pucTimeBitmap = pTimeBitmapTmp;
-					}
+				/* pChosen */
+				if (pChosen->ucOperatingClass < ucOC) {
+					/* better chosen */
+					pChosen = &prBandChnlList[i];
+					pucTimeBitmap = pTimeBitmapTmp;
 				}
+			}
 
-				if (IS_2G_OP_CLASS(ucOC) &&
-				    IS_2G_OP_CLASS(ucCheckOpClass)) {
-					/* Reach here: 2G && Potential */
-					if (!pChosen &&
-					    !fgCommitted2G && !fgConditional) {
-						pChosen = &prBandChnlList[i];
-						pucTimeBitmap = pTimeBitmapTmp;
-					}
-					if (!pChosen)
-						continue;
+			if (IS_2G_OP_CLASS(ucOC) &&
+			    IS_2G_OP_CLASS(ucCheckOpClass)) {
+				/* Reach here: 2G && Potential */
+				if (!pChosen &&
+				    !fgCommitted2G && !fgConditional) {
+					pChosen = &prBandChnlList[i];
+					pucTimeBitmap = pTimeBitmapTmp;
+				}
+				if (!pChosen)
+					continue;
 
-					/* pChosen */
-					if (pChosen->ucOperatingClass < ucOC) {
-						/* better chosen */
-						pChosen = &prBandChnlList[i];
-						pucTimeBitmap = pTimeBitmapTmp;
-					}
+				/* pChosen */
+				if (pChosen->ucOperatingClass < ucOC) {
+					/* better chosen */
+					pChosen = &prBandChnlList[i];
+					pucTimeBitmap = pTimeBitmapTmp;
 				}
 			}
 		}
-	} while (p < end);
+	} while (pNextAvailEntry < pucAvailAttrEnd);
 
 	if (pChosen) {
 		prChnlEntry->ucOperatingClass = pChosen->ucOperatingClass;
@@ -5039,8 +5047,7 @@ nanGetSubBandByChannelEntry(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
 u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 					uint8_t *pucAttrNanAvailibility)
 {
-	void *pNextAvailabilityAttr = pucAttrNanAvailibility +
-					NAN_ATTR_SIZE(pucAttrNanAvailibility);
+	void *pNextAvailabilityAttr = NAN_ATTR_END(pucAttrNanAvailibility);
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prNextAvailabilityAttr =
 					pNextAvailabilityAttr;
 	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
@@ -5048,69 +5055,70 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 	struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *prTimeBitmap;
 	struct _NAN_BAND_CHNL_LIST_T *prChnlList;
 	uint8_t *pTimeBitmapTmp;
-	uint8_t *p;
-	uint8_t *end;
-	uint32_t idx;
+	uint8_t *pNextAvailEntry;
+	uint8_t *pucAvailAttrEnd;
 	uint32_t i;
 	uint8_t ucSupportedBands = BIT(ENUM_SUPPORTED_BN_2G);
+	uint8_t ucTimeBitmapLength;
 
 	/* TODO: check length */
 	if (prNextAvailabilityAttr->ucAttrId != NAN_ATTR_ID_NAN_AVAILABILITY)
 		return ucSupportedBands;
 
-	p = prNextAvailabilityAttr->aucAvailabilityEntryList;
-	end = (uint8_t *)prNextAvailabilityAttr +
-		NAN_ATTR_SIZE(prNextAvailabilityAttr);
+	pNextAvailEntry = prNextAvailabilityAttr->aucAvailabilityEntryList;
+	pucAvailAttrEnd = NAN_ATTR_END(prNextAvailabilityAttr);
 
-	idx = 0;
 	do {
-		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)p;
-		p = (uint8_t *)prAvailEntry + 2 + prAvailEntry->u2Length;
+		prAvailEntry =
+			(struct _NAN_AVAILABILITY_ENTRY_T *)pNextAvailEntry;
+		pNextAvailEntry = NAN_AVAIL_ENTRY_END(prAvailEntry);
 
-		if (prAvailEntry->rCtrl.u2TimeBitmapPresent) {
-			uint8_t ucLen;
+		if (!prAvailEntry->rCtrl.u2TimeBitmapPresent)
+			continue;
 
-			prTimeBitmap =
-				(struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
-				prAvailEntry;
-			ucLen = prTimeBitmap->ucTimeBitmapLength;
+		prTimeBitmap = (struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
+			prAvailEntry;
+		ucTimeBitmapLength = prTimeBitmap->ucTimeBitmapLength;
 
-			prChnlList = (struct _NAN_BAND_CHNL_LIST_T *)
-			    &prTimeBitmap->aucTimeBitmapAndBandChnlEntry[ucLen];
+		prChnlList = (struct _NAN_BAND_CHNL_LIST_T *)
+			(prTimeBitmap->aucTimeBitmapAndBandChnl +
+			 ucTimeBitmapLength);
 
-			pTimeBitmapTmp =
-			      prTimeBitmap->aucTimeBitmapAndBandChnlEntry;
+		pTimeBitmapTmp = prTimeBitmap->aucTimeBitmapAndBandChnl;
 
-			if (prChnlList->ucNonContiguous)
-				continue;
+		if (prChnlList->ucNonContiguous)
+			continue;
 
-			if (prChnlList->ucType ==
-			    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
-				uint8_t *pucBand = prChnlList->aucEntry;
+		if (prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
+			uint8_t *pucBand = prChnlList->aucEntry;
 
-				for (i = 0; i < prChnlList->ucNumberOfEntry;
-				     i++) {
-					ucSupportedBands |=
-						nanGetSubBandByChannelEntry(
-								prAvailEntry,
-								prChnlList,
-								&pucBand[i]);
-				}
+			if (&pucBand[prChnlList->ucNumberOfEntry] >
+			    pNextAvailEntry) {
+				DBGLOG(NAN, WARN,
+				       "ucNumberOfEntry=%u too large",
+				       prChnlList->ucNumberOfEntry);
 				continue;
 			}
 
-			/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
-			prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
-				prChnlList->aucEntry;
 			for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
-				ucSupportedBands |=
-					nanGetSubBandByChannelEntry(
+				ucSupportedBands |= nanGetSubBandByChannelEntry(
 							prAvailEntry,
 							prChnlList,
-							&prBandChnlList[i]);
+							&pucBand[i]);
 			}
+			continue;
 		}
-	} while (p < end);
+
+		/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
+			prChnlList->aucEntry;
+		for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
+			ucSupportedBands |= nanGetSubBandByChannelEntry(
+						prAvailEntry,
+						prChnlList,
+						&prBandChnlList[i]);
+		}
+	} while (pNextAvailEntry < pucAvailAttrEnd);
 
 	return ucSupportedBands;
 }
@@ -5396,13 +5404,13 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucNeedCounter = 0;
-	uint8_t *pucAvailEntry;
+	uint8_t *pNextAvailEntry;
 	uint8_t *pucAvailEntryEndPos;
-	struct _NAN_AVAILABILITY_ENTRY_T *prAttrAvailEntry;
+	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
+	struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *prTimeBitmap;
 	uint16_t u2EntryControl;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
 	uint32_t u4EntryListPos;
-	uint8_t *prTimeBitmapAndBandChnlEntry;
 	uint16_t u2TimeBitmapControl;
 	uint8_t ucTimeBitmapLength = 0;
 	struct _NAN_BAND_CHNL_LIST_T *prAttrBandChnlList;
@@ -5439,15 +5447,16 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 
 	u4EntryListPos = 0;
 
-	pucAvailEntry = prAttrNanAvailibility->aucAvailabilityEntryList;
-	pucAvailEntryEndPos = pucAvailEntry +
-			      prAttrNanAvailibility->u2Length - 3;
-			      /* Seq ID(1) + Attribute Ctrl(2) */
+	pNextAvailEntry = prAttrNanAvailibility->aucAvailabilityEntryList;
+	pucAvailEntryEndPos = NAN_ATTR_END(prAttrNanAvailibility);
 
 	do {
-		prAttrAvailEntry =
-			(struct _NAN_AVAILABILITY_ENTRY_T *)pucAvailEntry;
-		u2EntryControl = prAttrAvailEntry->u2EntryControl;
+		prAvailEntry =
+			(struct _NAN_AVAILABILITY_ENTRY_T *)pNextAvailEntry;
+
+		pNextAvailEntry = NAN_AVAIL_ENTRY_END(prAvailEntry);
+
+		u2EntryControl = prAvailEntry->u2EntryControl;
 #if MERGE_POTENTIAL
 		fgIsPoetntialCandidate = FALSE;
 #endif
@@ -5474,33 +5483,42 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 
 		prNanAvailEntry->rEntryCtrl.u2RawData = u2EntryControl;
 
-		prTimeBitmapAndBandChnlEntry =
-			prAttrAvailEntry->aucTimeBitmapAndBandChnlEntry;
 		/**
-		 * prTimeBitmapAndBandChnlEntry
+		 * prAvailEntry->aucTimeBitmapAndBandChnlEntry:
 		 * Time Bitmap Control (2):
 		 * Time Bitmap Length (1): ucTimeBitmapLength
+		 * Time Bitmap (*):
+		 * Band/Chanlel Entries (*): prAttrBandChnlList
+		 *
+		 * pucBitmap:
+		 *     (following Time Bitmap Control and Time Bitmap Length))
 		 * Time Bitmap (*):
 		 * Band/Chanlel Entries (*): prAttrBandChnlList
 		 */
 
 		if (NAN_AVAIL_ENTRY_CTRL_TBITMAP_P(u2EntryControl)) {
-			uint8_t *pucTimeBitmapAndBandChnlEntry =
-				prAttrAvailEntry->aucTimeBitmapAndBandChnlEntry;
+			prTimeBitmap =
+				(struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
+				prAvailEntry;
+			u2TimeBitmapControl = prTimeBitmap->u2TimeBitmapControl;
+			ucTimeBitmapLength = prTimeBitmap->ucTimeBitmapLength;
+			if (prTimeBitmap->aucTimeBitmapAndBandChnl +
+			    ucTimeBitmapLength > pNextAvailEntry) {
+				DBGLOG(NAN, WARN,
+				       "TimeBitmapLength=%u too large",
+				       ucTimeBitmapLength);
+				continue;
+			}
 
-			u2TimeBitmapControl =
-				*(uint16_t *)pucTimeBitmapAndBandChnlEntry;
-			ucTimeBitmapLength = pucTimeBitmapAndBandChnlEntry[2];
-			prAttrBandChnlList =
-				(struct _NAN_BAND_CHNL_LIST_T *)
-				(pucTimeBitmapAndBandChnlEntry + 3 +
+			prAttrBandChnlList = (struct _NAN_BAND_CHNL_LIST_T *)
+				(prTimeBitmap->aucTimeBitmapAndBandChnl +
 				 ucTimeBitmapLength);
 			nanParserInterpretTimeBitmapField(prAdapter,
 				u2TimeBitmapControl, ucTimeBitmapLength,
-				&pucTimeBitmapAndBandChnlEntry[3],
+				prTimeBitmap->aucTimeBitmapAndBandChnl,
 				prNanAvailEntry->au4AvailMap);
 
-			pucBitmap = &prTimeBitmapAndBandChnlEntry[3];
+			pucBitmap = prTimeBitmap->aucTimeBitmapAndBandChnl;
 #if MERGE_POTENTIAL
 			u2DstTimeBitmapControl = u2TimeBitmapControl;
 
@@ -5520,13 +5538,12 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			if (fgFillByPotential &&
 			    isCommittedInsufficient(prAdapter,
 					u2EntryControl,
-					&prTimeBitmapAndBandChnlEntry[3],
+					pucBitmap,
 					ucTimeBitmapLength,
 					prAttrBandChnlList)) {
 				u2DstTimeBitmapControl = u2TimeBitmapControl;
 				prDstAvailEntry = prNanAvailEntry->au4AvailMap;
-				pucCommitCondTimeBitmap =
-					&prTimeBitmapAndBandChnlEntry[3];
+				pucCommitCondTimeBitmap = pucBitmap;
 
 				/* reset for 2nd Committed */
 				DBGLOG(NAN, DEBUG,
@@ -5540,8 +5557,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			    ucTimeBitmapLength == TYPICAL_BITMAP_LENGTH) {
 				uint32_t i;
 
-				pucCommitTimeBitmap =
-					&prTimeBitmapAndBandChnlEntry[3];
+				pucCommitTimeBitmap = pucBitmap;
 
 				for (i = 0; i < TYPICAL_BITMAP_LENGTH; i++) {
 					aucCommitTimeBitmap[i] |=
@@ -5552,14 +5568,12 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			/* Conditional is better (i.e., C=5G, c=6G) */
 			if (!fgFillPotentialToConditional && prDstAvailEntry &&
 			    IS_5G_OP_CLASS(ucCommittedOpClass) &&
-			    isConditionalHigher(u2EntryControl,
-					&prTimeBitmapAndBandChnlEntry[3],
+			    isConditionalHigher(u2EntryControl, pucBitmap,
 					ucTimeBitmapLength,
 					prAttrBandChnlList)) {
 				u2DstTimeBitmapControl = u2TimeBitmapControl;
 				prDstAvailEntry = prNanAvailEntry->au4AvailMap;
-				pucCommitCondTimeBitmap =
-					&prTimeBitmapAndBandChnlEntry[3];
+				pucCommitCondTimeBitmap = pucBitmap;
 				fgFillPotentialToConditional = TRUE;
 				ucCommCondPriChnl = 0; /* reset, set later */
 			}
@@ -5568,15 +5582,15 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			if (prDstAvailEntry) {
 				fgIsPoetntialCandidate =
 					isPotentialCandidate(u2EntryControl,
-					       &prTimeBitmapAndBandChnlEntry[3],
-					       ucTimeBitmapLength);
+						pucBitmap,
+						ucTimeBitmapLength);
 			}
 #endif
 		} else { /* !NAN_AVAIL_ENTRY_CTRL_TBITMAP_P(u2EntryControl) */
 			/* all slots are available when timebitmap is not set */
 			prAttrBandChnlList =
 			    (struct _NAN_BAND_CHNL_LIST_T *)
-			    (prAttrAvailEntry->aucTimeBitmapAndBandChnlEntry);
+			    (prAvailEntry->aucTimeBitmapAndBandChnlEntry);
 			kalMemSet(prNanAvailEntry->au4AvailMap, 0xFF,
 				  sizeof(prNanAvailEntry->au4AvailMap));
 		}
@@ -5760,7 +5774,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 					mergeCommittedPotentialTimeBitmap(
 					       ucPotentPriChnl,
 					       pucCommitCondTimeBitmap,
-					       &prTimeBitmapAndBandChnlEntry[3],
+					       pucBitmap,
 					       /* exlclude */
 					       aucCommitTimeBitmap,
 					       aucMergedBitmap);
@@ -5810,7 +5824,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 					mergeCommittedPotentialTimeBitmap(
 					       ucCommCondPriChnl,
 					       pucCommitCondTimeBitmap,
-					       &prTimeBitmapAndBandChnlEntry[3],
+					       pucBitmap,
 					       /* exlclude */
 					       aucCommitTimeBitmap,
 					       aucMergedBitmap);
@@ -5829,10 +5843,8 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 
 		}
 
-		/* length(2) */
-		pucAvailEntry = pucAvailEntry + prAttrAvailEntry->u2Length + 2;
 		u4EntryListPos++;
-	} while (pucAvailEntry < pucAvailEntryEndPos &&
+	} while (pNextAvailEntry < pucAvailEntryEndPos &&
 		 u4EntryListPos < NAN_NUM_AVAIL_TIMELINE);
 
 #if MERGE_POTENTIAL
