@@ -948,8 +948,10 @@ void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo,
 	pRxRing->u4RingSize = prHifInfo->u4RxDataRingSize;
 	pRxRing->u4RingIdx = u4Num;
 	pRxRing->fgRxSegPkt = FALSE;
-	pRxRing->pvPacket = NULL;
-	pRxRing->u4PacketLen = 0;
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
+	pRxRing->pvSegPkt = NULL;
+	pRxRing->u4SegPktLen = 0;
+#endif
 
 	for (u4Idx = 0; u4Idx < pRxRing->u4RingSize; u4Idx++) {
 		/* Init RX Ring Size, Va, Pa variables */
