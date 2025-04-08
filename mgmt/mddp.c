@@ -1749,8 +1749,9 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	}
 
-end:
+	/* only delete timer for normal case */
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+end:
 
 	return 0;
 }
@@ -1771,6 +1772,15 @@ int32_t mddpMdNotifyInfoHandleGenSwitchEnd(
 		u2GenSwitchRsp = prAckRsp->u2Result;
 	}
 
+	if (prHifInfo->u4GenSwitchState != MDDP_GEN_SWITCH_END_STATE) {
+		/* end-ack maybe received after end-ack timeout */
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] ignore dup end-ack\n",
+			prHifInfo->u4GenSwitchState,
+			prHifInfo->u4GenSwitchState);
+		goto end;
+	}
+
 	DBGLOG(HAL, INFO,
 		"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 		prHifInfo->u4GenSwitchState,
@@ -1778,7 +1788,9 @@ int32_t mddpMdNotifyInfoHandleGenSwitchEnd(
 		u2genSwitchSeq, u2GenSwitchRsp);
 	prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
 
+	/* only delete timer for normal case */
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+end:
 
 	return 0;
 }
