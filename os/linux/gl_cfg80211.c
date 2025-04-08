@@ -4226,8 +4226,15 @@ int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
 	scanlog_dbg(LOG_SCHED_SCAN_REQ_STOP_K2D, INFO, "--> %s()\n", __func__);
 
 	/* check if there is any pending scan/sched_scan not yet finished */
-	if (prGlueInfo->prSchedScanRequest == NULL)
-		return -EPERM; /* Operation not permitted */
+	if (prGlueInfo->prSchedScanRequest == NULL) {
+		DBGLOG(REQ, WARN, "scheduled scan request is NULL!\n");
+		/* Instead of return -EPERM, we should only return 0 here.
+		 * Because if the FW resets and the request is cleared,
+		 * framework will continue to consider it dosen't stop
+		 * this scan successfully, and keep causing kernel warnings.
+		 */
+		return 0;
+	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetStopSchedScan,
 			   NULL, 0, &u4BufLen);
