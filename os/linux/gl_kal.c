@@ -2254,8 +2254,6 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 					RX_INC_CNT(
 						&prGlueInfo->prAdapter->rRxCtrl,
 						RX_NAPI_SCHEDULE_COUNT);
-					GLUE_SET_REF_CNT(1,
-						prGlueInfo->fgNapiScheduled);
 				}
 			} else {
 				DBGLOG(RX, WARN,
@@ -12373,10 +12371,6 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT));
-#if CFG_SUPPORT_RX_NAPI
-	pos += kalSnprintf(pos, end - pos, ",%u",
-			glue->fgNapiScheduled);
-#endif
 #if CFG_SUPPORT_RX_GRO
 	pos += kalSnprintf(pos, end - pos, ",%u",
 			skb_queue_len(&glue->rRxNapiSkbQ));
@@ -16421,15 +16415,14 @@ uint8_t kal_napi_schedule(struct napi_struct *n)
 		napi_schedule_irqoff(n);
 		return TRUE;
 	}
-	else
 #endif /* KERNEL_VERSION(4, 0, 0) */
-#if (KERNEL_VERSION(6, 12, 0) <= CFG80211_VERSION_CODE)
-		return napi_schedule(n);
-#else
-		napi_schedule(n);
 
-	return TRUE;
-#endif /* KERNEL_VERSION(6, 12, 0) */
+	if (napi_schedule_prep(n)) {
+		__napi_schedule(n);
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 #if CFG_SUPPORT_RX_GRO
@@ -16551,7 +16544,6 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 
 	if (kal_napi_schedule(prGlueInfo->prRxDirectNapi)) {
 		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-		GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
 	}
 }
 
@@ -16569,6 +16561,7 @@ static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
 
 static void kalNapiScheduleCheck(struct GLUE_INFO *prGlueInfo)
 {
+	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	static OS_SYSTIME now, last;
 	uint32_t u4ScheduleTimeout, u4NapiPollCnt;
 
@@ -16577,31 +16570,34 @@ static void kalNapiScheduleCheck(struct GLUE_INFO *prGlueInfo)
 	u4NapiPollCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
 				RX_NAPI_POLL_COUNT);
 
-	if (!prGlueInfo->fgNapiScheduled ||
+	if (kalGetRxFifoCount(prGlueInfo) == 0 ||
 	    prGlueInfo->u4LastNapiPollCnt != u4NapiPollCnt) {
 		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
 		last = 0;
-	} else if (prGlueInfo->fgNapiScheduled &&
+	} else if (kalGetRxFifoCount(prGlueInfo) != 0 &&
 		   u4NapiPollCnt == prGlueInfo->u4LastNapiPollCnt &&
 		   last == 0) {
 		last = now;
-	} else {
-		u4ScheduleTimeout =
-			prGlueInfo->prAdapter->rWifiVar.u4NapiScheduleTimeout
-				* MSEC_PER_SEC;
 
-		DBGLOG(INIT, INFO,
-			"NapiScheduled[%u] NapiPollCnt[%u/%u]\n",
-			prGlueInfo->fgNapiScheduled,
-			u4NapiPollCnt, prGlueInfo->u4LastNapiPollCnt);
+		DBGLOG(INIT, WARN,
+			"FIFOCnt[%u] NapiPollCnt[%u/%u] Timestamp[%lu]\n",
+			kalGetRxFifoCount(prGlueInfo),
+			u4NapiPollCnt, prGlueInfo->u4LastNapiPollCnt,
+			last);
+	} else {
+		u4ScheduleTimeout = prWifiVar->u4NapiScheduleTimeout
+					* MSEC_PER_SEC;
 
 		if (CHECK_FOR_TIMEOUT(now, last,
 			MSEC_TO_SYSTIME(u4ScheduleTimeout))) {
 			DBGLOG(INIT, WARN,
-				"Timestamp[%lu/%lu]\n",
+				"FIFOCnt[%u] NapiPollCnt[%u/%u] Timestamp[%lu/%lu]\n",
+				kalGetRxFifoCount(prGlueInfo),
+				u4NapiPollCnt, prGlueInfo->u4LastNapiPollCnt,
 				now, last);
-			kalSendAeeWarning("Napi Schedule Timeout",
-				"Napi Schedule Timeout\n");
+			if (prWifiVar->fgNapiScheduleAeeEn)
+				kalSendAeeWarning("Napi Schedule Timeout",
+					"Napi Schedule Timeout\n");
 		}
 	}
 }
@@ -16902,7 +16898,6 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
-	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
 
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
@@ -17020,7 +17015,6 @@ uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(RX, DEBUG, "RX NAPI disable ongoing\n");
 
 	prGlueInfo->fgNapiReady = FALSE;
-	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
 #if CFG_NAPI_DELAY
 	kalNapiDelayTimerUninit(prGlueInfo);
 #endif /* CFG_NAPI_DELAY */
