@@ -24,6 +24,7 @@
 
 #if (CFG_SUPPORT_FACT_CAL == 1)
 #include "rlm.h"
+#include <linux/firmware.h>
 #endif
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
@@ -4379,6 +4380,53 @@ SEND_FAIL:
 uint32_t rlmFactCalFileHandler(struct ADAPTER *prAdapter, uint32_t u4CalType,
 			uint8_t fgWrite)
 {
+	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
+	int ret;
+	const struct firmware *fw;
+
+	prFactCalFile = &prAdapter->rFactCalFile;
+
+	/* Support only read file */
+	if (!fgWrite) {
+		/* Read the file in buffer */
+		kalMemZero(prFactCalFile->common_t,
+			sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE));
+		kalMemZero(prFactCalFile->group_t,
+			sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE));
+		kalMemZero(prFactCalFile->channel_t,
+			sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
+
+		ret =
+			request_firmware(&fw,
+				"one_time_cal.bin",
+				prAdapter->prGlueInfo->prDev);
+		if (ret) {
+			DBGLOG(RLM, ERROR,
+				"Failed to load one_time_cal.bin! %d\n", ret);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		kalMemCopy(prFactCalFile->common_t,
+			fw->data,
+			sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE));
+
+		kalMemCopy(prFactCalFile->group_t,
+			fw->data + sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE),
+			sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE));
+
+		kalMemCopy(prFactCalFile->channel_t,
+			fw->data +
+			sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE) +
+			sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE),
+			sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
+
+		DBGLOG(RLM, STATE,
+		"Read calibration data from one time cal.bin, len=%d\n",
+		fw->size);
+
+		release_firmware(fw);
+	}
+
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_FACT_CAL */

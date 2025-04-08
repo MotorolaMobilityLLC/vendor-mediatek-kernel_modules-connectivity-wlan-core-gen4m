@@ -2244,6 +2244,115 @@ static s_int32 hqa_get_freq_offset_c2(
 	return ret;
 }
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+static s_int32 hqa_fact_cal_file(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufDataOffset = 0;
+	uint32_t u4BufDataLength = 0;
+	uint32_t u4FactKFileLength = 0;
+	uint32_t u4VerNum = 0;
+	uint32_t u4SeqNum = 0;
+	uint32_t u4CalType = 0;
+	struct FACT_CAL_BASE_LOOKUP_TABLE *prFactCalFile = NULL;
+	uint8_t *prFactCalLookupTbl = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prFactCalFile = &(prAdapter->rFactCalFile);
+
+	memcpy(&u4VerNum, hqa_frame->data + 2, sizeof(u4VerNum));
+
+	switch (u4VerNum) {
+	case ENUM_SDK_VERSION:
+		memcpy(&u4SeqNum,
+		hqa_frame->data + 2 + sizeof(u4VerNum),
+		sizeof(u4SeqNum));
+		memcpy(&u4CalType,
+		hqa_frame->data + 2 + sizeof(u4VerNum) + sizeof(u4SeqNum),
+		sizeof(u4CalType));
+
+		switch (u4CalType) {
+		case FACT_CAL_TYPE_COMMON:
+			u4FactKFileLength =
+				sizeof(struct FACT_CAL_COMMON_LOOKUP_TABLE);
+			prFactCalLookupTbl =
+				(uint8_t *)(prFactCalFile->common_t);
+			break;
+		case FACT_CAL_TYPE_GROUP:
+			u4FactKFileLength =
+				sizeof(struct FACT_CAL_GROUP_LOOKUP_TABLE);
+			prFactCalLookupTbl =
+				(uint8_t *)(prFactCalFile->group_t);
+			break;
+		case FACT_CAL_TYPE_CHANNEL:
+			u4FactKFileLength =
+				sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE);
+			prFactCalLookupTbl =
+				(uint8_t *)(prFactCalFile->channel_t);
+			break;
+		default:
+			return SERV_STATUS_AGENT_NOT_SUPPORTED;
+		}
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: u4SeqNum[%d] u4CalType[%d]"
+
+			"u4FactKFileLength[0x%08x]\n",
+			__func__, u4SeqNum, u4CalType, u4FactKFileLength));
+
+		if (u4SeqNum == 0) {
+			/* Send fact cal. file size first */
+			sys_ad_move_mem(hqa_frame->data + 2,
+				&u4VerNum,
+				sizeof(u4VerNum));
+			sys_ad_move_mem(
+				hqa_frame->data + 2 + sizeof(u4VerNum),
+				&u4FactKFileLength,
+				sizeof(u4FactKFileLength));
+			u4BufDataLength =
+				sizeof(u4VerNum) +
+				sizeof(u4FactKFileLength) + 2;
+		} else {
+			/* Loop the cal data to send to userspace */
+			u4SeqNum -= 1;
+
+			u4BufDataOffset =
+				u4SeqNum * (SERV_IOCTLBUFF/2 - 6);
+
+			if (u4BufDataOffset + (SERV_IOCTLBUFF/2 - 6)
+				> u4FactKFileLength)
+				u4BufDataLength =
+					u4FactKFileLength - u4BufDataOffset;
+			else
+				u4BufDataLength = SERV_IOCTLBUFF/2 - 6;
+
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: u4SeqNum[%d] u4BufDataOffset[%d] "
+
+			"u4BufDataLength[%d] prFactCalFile[0x%08x]\n",
+			__func__, u4SeqNum, u4BufDataOffset, u4BufDataLength,
+			prFactCalLookupTbl + u4BufDataOffset));
+
+			sys_ad_move_mem(hqa_frame->data + 2 + sizeof(u4VerNum),
+				prFactCalLookupTbl + u4BufDataOffset,
+				u4BufDataLength);
+
+			u4BufDataLength += 6;
+		}
+
+		update_hqa_frame(hqa_frame, u4BufDataLength, ret);
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+#endif /* CFG_SUPPORT_FACT_CAL == 1) */
+
 static struct hqa_cmd_entry CMD_SET3[] = {
 	/* cmd id start from 0x1300 */
 	{0x0,	hqa_mac_bbp_reg_read},
@@ -2274,6 +2383,9 @@ static struct hqa_cmd_entry CMD_SET3[] = {
 	{0x1b,	hqa_read_bulk_eeprom_v2},
 	{0x1c,	hqa_write_bulk_eeprom_v2},
 	{0x1f,	hqa_get_freq_offset_c2},
+#if (CFG_SUPPORT_FACT_CAL == 1)
+	{0x27,  hqa_fact_cal_file},
+#endif /* CFG_SUPPORT_FACT_CAL */
 };
 
 static s_int32 hqa_get_thermal_val(

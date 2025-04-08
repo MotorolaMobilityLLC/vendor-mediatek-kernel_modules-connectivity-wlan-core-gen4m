@@ -513,7 +513,7 @@ struct FACT_CAL_MAPPING_TABLE {
 };
 #endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
 
-#endif
+#endif /* CFG_SUPPORT_FACT_CAL */
 
 typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(
 	struct ADAPTER *, uint8_t, bool);
