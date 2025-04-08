@@ -290,6 +290,7 @@ struct TPENHANCE_PKT_MAP {
 #define WLAN_DRV_READY_CHECK_WLAN_ON       BIT(0)
 #define WLAN_DRV_READY_CHECK_HIF_SUSPEND   BIT(1)
 #define WLAN_DRV_READY_CHECK_RESET         BIT(2)
+#define WLAN_DRV_READY_CHECK_FAST_ON_OFF   BIT(3)
 
 #define MAX_CMD_ITEM_MAX		4	/* Max item per cmd. */
 #define MAX_CMD_NAME_MAX_LENGTH		32	/* Max name string length */

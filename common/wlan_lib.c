@@ -760,6 +760,14 @@ u_int8_t wlanIsDriverReady(struct GLUE_INFO *prGlueInfo,
 		if ((u4Check & WLAN_DRV_READY_CHECK_RESET) &&
 			kalIsResetting())
 			fgIsReady = FALSE;
+
+#if CFG_MTK_ANDROID_WMT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
+		if ((u4Check & WLAN_DRV_READY_CHECK_FAST_ON_OFF) &&
+		    is_pwr_on_notify_processing())
+			fgIsReady = FALSE;
+#endif
+#endif
 	}
 
 	return fgIsReady;
