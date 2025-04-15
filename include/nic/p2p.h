@@ -282,6 +282,7 @@ struct P2P_ACS_REQ_INFO {
 	u_int8_t fgIsAis;
 
 	/* output only */
+	uint8_t ucBand;  // Moto IKSWV-57959
 	enum ENUM_BAND eBand;
 	uint8_t ucPrimaryCh;
 	uint8_t ucSecondCh;

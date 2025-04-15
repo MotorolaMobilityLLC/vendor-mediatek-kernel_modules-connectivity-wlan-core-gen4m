@@ -5381,6 +5381,7 @@ static void initAcsParams(struct ADAPTER *prAdapter,
 			DBGLOG(REQ, TRACE, "[%d] band=%d, ch=%d\n", i,
 				prRfChannelInfo->eBand,
 				prRfChannelInfo->ucChannelNum);
+			prAcsReqInfo->ucBand |= BIT(prRfChannelInfo->eBand); // Moto IKSWV-57959
 			if (prRfChannelInfo->eBand == BAND_2G4 &&
 				ucChnlNum <= MAX_2G_BAND_CHN_NUM)
 				prAcsReqInfo->au4ValidChnl[0] |=
@@ -5989,27 +5990,42 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		}
 	}
 
-
+	// Begin Moto IKSWS-77084, IKSWT-58657, IKSWT-155739, IKSWV-57959
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
-		if (ucNumAliveNonSapBss &&
-		    prPreferBssInfo &&
-		    (!p2pFuncIsDualAPMode(prAdapter) ||
-		     (p2pFuncIsDualAPMode(prAdapter) &&
-		      prPreferBssInfo->eBand > BAND_2G4))) {
-			/* Force SCC, indicate channel directly */
-			indicateAcsResultByAliveCh(prAdapter, prAcsReqInfo,
-						   prPreferBssInfo);
-			goto exit;
+		struct BSS_INFO *prAisBssInfo = NULL;
+
+		prAisBssInfo = aisGetAisBssInfo(prAdapter, AIS_DEFAULT_INDEX);
+		if (prAisBssInfo &&
+			prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+			prAisBssInfo->eBand > BAND_2G4) {
+			if (prAisBssInfo->eBand == BAND_5G &&
+				rlmDomainIsDfsChnls(prAdapter, prAisBssInfo->ucPrimaryChannel)) {
+				trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, BIT(BAND_2G4), NULL);
+				prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			} else if (prAisBssInfo->eBand == BAND_6G) {
+				trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, BIT(BAND_2G4), NULL);
+				prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+#endif
+			} else {
+				/* Force SCC, indicate channel directly */
+				indicateAcsResultByAliveCh(prAdapter, prAcsReqInfo,
+					prAisBssInfo);
+				goto exit;
+			}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		} else if (prAdapter->fgIsHwSupport6G &&
-			IS_FEATURE_DISABLED(prAdapter
-			->rWifiVar.ucDisallowAcs6G)) {
+			IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucDisallowAcs6G) &&
+			prAcsReqInfo->ucBand & BIT(BAND_6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 			      prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G), NULL);
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 #endif
-		} else if (prAdapter->fgEnable5GBand) {
+		} else if (prAdapter->fgEnable5GBand &&
+			prAcsReqInfo->ucBand & BIT(BAND_5G)) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G), NULL);
@@ -6051,6 +6067,8 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 				prAcsReqInfo, BIT(BAND_2G4), NULL);
 		}
 	}
+	DBGLOG(P2P, INFO, "eHwMode set to %d\n", (int) prAcsReqInfo->eHwMode);
+	// End IKSWS-77084, IKSWT-58657, IKSWT-155739, IKSWV-57959
 
 	/* custimized mask */
 #if CFG_TC1_FEATURE
