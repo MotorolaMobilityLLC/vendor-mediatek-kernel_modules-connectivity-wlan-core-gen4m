@@ -766,7 +766,6 @@ struct BUS_INFO mt7999_bus_info = {
 	.setRxRingHwAddr = mt7999SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7999WfdmaAllocRxRing,
 	.clearEvtRingTillCmdRingEmpty = connac5xClearEvtRingTillCmdRingEmpty,
-	.setupMcuEmiAddr = mt7999SetupMcuEmiAddr,
 #if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
 	.rSwEmiRingInfo = {
 		.rOps = {
@@ -3957,6 +3956,8 @@ static uint32_t mt7999_mcu_init(struct ADAPTER *ad)
 		goto dump;
 	}
 #endif
+
+	mt7999SetupMcuEmiAddr(ad);
 
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
