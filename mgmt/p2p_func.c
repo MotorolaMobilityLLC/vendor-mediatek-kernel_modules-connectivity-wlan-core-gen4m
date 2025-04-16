@@ -12009,4 +12009,21 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	       rStatus);
 	return rStatus;
 }
+
+u_int8_t fgIsAddDelIfaceAllow(struct ADAPTER *prAdapter,
+			      enum nl80211_iftype type,
+			      u_int8_t fgIsAdd)
+{
+	uint8_t ucMode = prAdapter->rWifiVar.ucRegP2pMode;
+
+	if (ucMode == RUNNING_P2P_DEV_MODE ||
+	    (ucMode == RUNNING_P2P_NO_GROUP_MODE &&
+	     type == NL80211_IFTYPE_AP))
+		return TRUE;
+
+	DBGLOG(P2P, WARN,
+	       "type %d netDev is not allowed to %s iface in mode %d\n",
+	       type, fgIsAdd ? "add" : "del", ucMode);
+	return FALSE;
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -811,3 +811,7 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
 			    uint32_t u4TargetCh,
 			    enum ENUM_BAND eTargetBand);
+
+u_int8_t fgIsAddDelIfaceAllow(struct ADAPTER *prAdapter,
+			      enum nl80211_iftype type,
+			      u_int8_t fgIsAdd);

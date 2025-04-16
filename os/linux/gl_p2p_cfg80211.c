@@ -308,6 +308,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	if (prAdapter == NULL)
 		return ERR_PTR(-ENXIO);
 
+	if (!fgIsAddDelIfaceAllow(prAdapter, type, TRUE))
+		return ERR_PTR(-EPERM);
+
 #if (KAL_P2P_NUM < 3)
 	mtk_p2p_need_remove_iface(prAdapter,
 		wiphy, type);
@@ -678,6 +681,9 @@ int mtk_p2p_cfg80211_del_iface_impl(
 		DBGLOG(P2P, ERROR, "wdev is NULL\n");
 		return -EINVAL;
 	}
+
+	if (!fgIsAddDelIfaceAllow(prGlueInfo->prAdapter, wdev->iftype, FALSE))
+		return -EPERM;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
