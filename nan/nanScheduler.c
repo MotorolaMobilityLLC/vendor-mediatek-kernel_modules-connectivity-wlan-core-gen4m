@@ -19182,7 +19182,8 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 			 szNanActiveTimelineNum > 1 &&
 			 /* !nanLinkNeedMlo(prAdapter) && */ /* FIXME */
 			 !NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G)) {
-			if (!(fgChkRmtCondSlot && /* handling response */
+			if (!nanGetFeatureIsSigma(prAdapter) &&
+			    !(fgChkRmtCondSlot && /* handling response */
 			      ucSlotCommitted[sz5gTimeLineIdx] < 8)) {
 				DBGLOG(NAN, INFO,
 				       "Skip 2G timeline, 5G/6G slots=%u",
