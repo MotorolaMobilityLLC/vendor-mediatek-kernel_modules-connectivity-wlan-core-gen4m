@@ -5166,7 +5166,7 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 		goto exit;
 	}
 
-	DBGLOG_MEM8(REQ, TRACE, prProg, u4ProgLen);
+	DBGLOG_MEM8(REQ, LOUD, prProg, u4ProgLen);
 
 	/* Init OFLD description */
 	prInfo->ucType = PKT_OFLD_TYPE_APF;

@@ -2072,7 +2072,7 @@ uint8_t asicConnac3xRxGetRcpiValueFromRxv(
 		ucRcpi0 = RCPI_LOW_BOUND;
 	if (ucRcpi1 == RCPI_MEASUREMENT_NOT_AVAILABLE)
 		ucRcpi1 = RCPI_LOW_BOUND;
-	DBGLOG(RX, TRACE, "RCPI WF0:%d WF1:%d WF2:%d WF3:%d\n",
+	DBGLOG(RX, LOUD, "RCPI WF0:%d WF1:%d WF2:%d WF3:%d\n",
 	       ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3);
 
 	switch (ucRcpiMode) {

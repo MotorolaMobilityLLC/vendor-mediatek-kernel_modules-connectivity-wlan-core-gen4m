@@ -22805,7 +22805,7 @@ int32_t priv_driver_MulAPAgent_bss_report_info(
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
 			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
 		goto error;
-	DBGLOG(REQ, DEBUG, "ucRoleIdx = %d\n", ucRoleIdx);
+	DBGLOG(REQ, TRACE, "ucRoleIdx = %d\n", ucRoleIdx);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo) {
@@ -22831,19 +22831,19 @@ int32_t priv_driver_MulAPAgent_bss_report_info(
 	sBssMetricsResp.u8ChanUtil = prBssInfo->u4ChanUtil;
 	sBssMetricsResp.iChanNoise = prBssInfo->i4NoiseHistogram;
 
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uIfIndex = %u\n", sBssMetricsResp.uIfIndex);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] mBssid = " MACSTR "\n",
 		MAC2STR(sBssMetricsResp.mBssid));
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u8Channel = %d\n", sBssMetricsResp.u8Channel);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u16AssocStaNum = %d\n",
 		sBssMetricsResp.u16AssocStaNum);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u8ChanUtil = %d\n", sBssMetricsResp.u8ChanUtil);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] iChanNoise = %d\n", sBssMetricsResp.iChanNoise);
 
 	i4Ret = MulAPAgentMontorSendMsg(
@@ -23083,49 +23083,49 @@ int32_t priv_driver_MulAPAgent_sta_report_info(
 	sStaAssocMetricsResp->uDeltaTime = kalGetTimeTick()
 		- prStaRec->u8GetDataRateTime;
 
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uIfIndex = %u\n",
 		sStaAssocMetricsResp->uIfIndex);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] mBssid = " MACSTR "\n",
 		MAC2STR(sStaAssocMetricsResp->mBssid));
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] mStaMac = " MACSTR "\n",
 		MAC2STR(sStaAssocMetricsResp->mStaMac));
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uBytesSent = %llu\n",
 		sStaAssocMetricsResp->uBytesSent);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uBytesRecv = %llu\n",
 		sStaAssocMetricsResp->uBytesRecv);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uPktsSent = %llu\n",
 		sStaAssocMetricsResp->uPktsSent);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uPktsRecv = %llu\n",
 		sStaAssocMetricsResp->uPktsRecv);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uPktsTxError = %llu\n",
 		sStaAssocMetricsResp->uPktsTxError);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uPktsRxError = %u\n",
 		sStaAssocMetricsResp->uPktsRxError);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uRetransCnt = %u\n",
 		sStaAssocMetricsResp->uRetransCnt);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] iRssi = %d\n",
 		sStaAssocMetricsResp->iRssi);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uPhyTxRate = %u\n",
 		sStaAssocMetricsResp->uPhyTxRate);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uPhyRxRate = %u\n",
 		sStaAssocMetricsResp->uPhyRxRate);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uAssocRate = %u\n",
 		sStaAssocMetricsResp->uAssocRate);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] uDeltaTime = %u\n",
 		sStaAssocMetricsResp->uDeltaTime);
 
@@ -23570,46 +23570,46 @@ int32_t priv_driver_MulAPAgent_beacon_report_request(
 			&prSetBcnRepReqInfo->aucSsid);
 #undef TEMP_TEMPLATE
 
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] aucPeerMac = " MACSTR"\n",
 		MAC2STR(prSetBcnRepReqInfo->aucPeerMac));
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u2Repetition = %u\n",
 		prSetBcnRepReqInfo->u2Repetition);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u2MeasureDuration = %u\n",
 		prSetBcnRepReqInfo->u2MeasureDuration);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucOperClass = %u\n",
 		prSetBcnRepReqInfo->ucOperClass);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] aucBssid = " MACSTR "\n",
 		MAC2STR(prSetBcnRepReqInfo->aucBssid));
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucChannel = %u\n",
 		prSetBcnRepReqInfo->ucChannel);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u2RandomInterval = %u\n",
 		prSetBcnRepReqInfo->u2RandomInterval);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucMeasurementMode = %u\n",
 		prSetBcnRepReqInfo->ucMeasurementMode);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucReportCondition = %u\n",
 		prSetBcnRepReqInfo->ucReportCondition);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucReportReference = %u\n",
 		prSetBcnRepReqInfo->ucReportReference);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucReportingDetail = %u\n",
 		prSetBcnRepReqInfo->ucReportingDetail);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucNumberOfRequest = %u\n",
 		prSetBcnRepReqInfo->ucNumberOfRequest);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucNumberOfAPChanReport = %u\n",
 		prSetBcnRepReqInfo->ucNumberOfAPChanReport);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] aucSsid = %s\n", prSetBcnRepReqInfo->aucSsid);
 
 	if (i4Argc != prSetBcnRepReqInfo->ucNumberOfRequest +
@@ -23638,7 +23638,7 @@ int32_t priv_driver_MulAPAgent_beacon_report_request(
 				i4BytesWritten = -1;
 				goto exit;
 			}
-			DBGLOG(REQ, DEBUG,
+			DBGLOG(REQ, TRACE,
 				"[SAP_Test] ucRequestElemList[%d] = %u\n", i-1,
 				prSetBcnRepReqInfo->ucRequestElemList[i-1]);
 		}
@@ -23659,7 +23659,7 @@ int32_t priv_driver_MulAPAgent_beacon_report_request(
 				i4BytesWritten = -1;
 				goto exit;
 			}
-			DBGLOG(REQ, DEBUG,
+			DBGLOG(REQ, TRACE,
 				"[SAP_Test] ucChanList[%d] = %u\n",
 				i-(ucTmpReqElemNum + 1),
 				prSetBcnRepReqInfo
@@ -23758,7 +23758,7 @@ int32_t priv_driver_MulAPAgent_cu_report_request(
 	prSetCuRepReqInfo->u2MeasureDuration = 80;
 	prSetCuRepReqInfo->u2RandomInterval = 10;
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] aucPeerMac = " MACSTR
 		" Rep:%u, Meas:%u, Rand:%u Ch[0]:%u, Ch[1]:%u, Ch[2]:%u\n",
 		MAC2STR(prSetCuRepReqInfo->aucPeerMac),
@@ -23859,25 +23859,25 @@ int32_t priv_driver_MulAPAgent_BTM_request(
 	}
 #undef TEMP_TEMPLATE
 
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] aucPeerMac = " MACSTR "\n",
 		MAC2STR(prSetBtmReqInfo->aucPeerMac));
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u4EssImm = %u\n",
 		prSetBtmReqInfo->ucEssImm);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] u2DisassocTimer = %u\n",
 		prSetBtmReqInfo->u2DisassocTimer);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucAbridged = %u\n",
 		prSetBtmReqInfo->ucAbridged);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucValidityInterval = %u\n",
 		prSetBtmReqInfo->ucValidityInterval);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] ucTargetBSSIDCnt = %u\n",
 		prSetBtmReqInfo->ucTargetBSSIDCnt);
-	DBGLOG(REQ, DEBUG,
+	DBGLOG(REQ, TRACE,
 		"[SAP_Test] aucSessionUrl = %s\n",
 		prSetBtmReqInfo->aucSessionUrl);
 
@@ -23917,19 +23917,19 @@ int32_t priv_driver_MulAPAgent_BTM_request(
 			goto exit;
 		}
 
-		DBGLOG(REQ, DEBUG,
+		DBGLOG(REQ, TRACE,
 			"[SAP_Test] TargetBSSIDList[%u] = " MACSTR"\n",
 			i-1,
 			MAC2STR(prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac));
-		DBGLOG(REQ, DEBUG, "[SAP_Test] u4BSSIDInfo = %x\n",
+		DBGLOG(REQ, TRACE, "[SAP_Test] u4BSSIDInfo = %x\n",
 			prSetBtmReqInfo->ucTargetBSSIDList[i-1].u4BSSIDInfo);
-		DBGLOG(REQ, DEBUG, "[SAP_Test] ucOperClass = %u\n",
+		DBGLOG(REQ, TRACE, "[SAP_Test] ucOperClass = %u\n",
 			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucOperClass);
-		DBGLOG(REQ, DEBUG, "[SAP_Test] ucChannel = %u\n",
+		DBGLOG(REQ, TRACE, "[SAP_Test] ucChannel = %u\n",
 			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucChannel);
-		DBGLOG(REQ, DEBUG, "[SAP_Test] ucPhyType = %x\n",
+		DBGLOG(REQ, TRACE, "[SAP_Test] ucPhyType = %x\n",
 			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucPhyType);
-		DBGLOG(REQ, DEBUG, "[SAP_Test] ucPreference = %u\n",
+		DBGLOG(REQ, TRACE, "[SAP_Test] ucPreference = %u\n",
 			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucPreference);
 	}
 

@@ -1317,6 +1317,9 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
 		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
 			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+		DBGLOG(AIS, TRACE,
+			"BSSDesc [" MACSTR "] Cisco CCX IE present\n",
+			MAC2STR(prBssDesc->aucBSSID));
 	}
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
@@ -9814,7 +9817,7 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 	uint8_t ucBssIndex)
 {
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, TRACE,
 		       "Use default, invalid index=%d\n", ucBssIndex);
 		return aisGetDefaultAisInfo(prAdapter);
 	}

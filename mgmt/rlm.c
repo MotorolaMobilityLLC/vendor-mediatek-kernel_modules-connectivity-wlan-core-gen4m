@@ -13742,35 +13742,22 @@ void rlmMulAPAgentProcessRMBeaconRpt(
 	prBeaconReportIE =
 		(struct RM_BCN_REPORT *)
 		&prMeasureReportIE->aucReportFields[0];
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucRegulatoryClass = %d\n",
-		prBeaconReportIE->ucRegulatoryClass);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucChannel = %d\n",
-		prBeaconReportIE->ucChannel);
-	DBGLOG_MEM8(RLM, INFO,
-		prBeaconReportIE->aucStartTime, 8);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] u2Duration = %d\n",
-		prBeaconReportIE->u2Duration);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucReportInfo = 0x%x\n",
-		prBeaconReportIE->ucReportInfo);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucRCPI = 0x%x\n",
-		prBeaconReportIE->ucRCPI);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucRSNI = 0x%x\n",
-		prBeaconReportIE->ucRSNI);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] aucBSSID = " MACSTR "\n",
-		MAC2STR(prBeaconReportIE->aucBSSID));
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucAntennaID = %d\n",
+	DBGLOG(RLM, TRACE,
+		"[SAP_Test] ucRegulatoryClass = %d ucChannel = %d u2Duration = %d ucReportInfo = 0x%x ucRCPI = 0x%x ucRSNI = 0x%x aucBSSID = "
+		MACSTR " ucAntennaID = %d",
+		prBeaconReportIE->ucRegulatoryClass,
+		prBeaconReportIE->ucChannel,
+		prBeaconReportIE->u2Duration,
+		prBeaconReportIE->ucReportInfo,
+		prBeaconReportIE->ucRCPI,
+		prBeaconReportIE->ucRSNI,
+		MAC2STR(prBeaconReportIE->aucBSSID),
 		prBeaconReportIE->ucAntennaID);
-	DBGLOG_MEM8(RLM, INFO,
+	DBGLOG_MEM8(RLM, LOUD,
+		prBeaconReportIE->aucStartTime, 8);
+	DBGLOG_MEM8(RLM, LOUD,
 		prBeaconReportIE->aucParentTSF, 4);
-	DBGLOG_MEM8(RLM, INFO,
+	DBGLOG_MEM8(RLM, LOUD,
 		prBeaconReportIE->aucOptElem,
 		prMeasureReportIE->ucLength - 3 - 26);
 
@@ -13778,13 +13765,11 @@ void rlmMulAPAgentProcessRMBeaconRpt(
 	prBcnMeasureReport->uElemLen +=
 		(prMeasureReportIE->ucLength + 2);
 
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] u8ElemNum = %u\n",
-		prBcnMeasureReport->u8ElemNum);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] uElemLen = %u\n",
+	DBGLOG(RLM, TRACE,
+		"[SAP_Test] u8ElemNum = %u uElemLen = %u\n",
+		prBcnMeasureReport->u8ElemNum,
 		prBcnMeasureReport->uElemLen);
-	DBGLOG_MEM8(RLM, INFO,
+	DBGLOG_MEM8(RLM, LOUD,
 		prBcnMeasureReport->uElem,
 		prBcnMeasureReport->uElemLen);
 
@@ -13809,14 +13794,10 @@ void rlmMulAPAgentProcessRMCuRpt(
 	prCuReportIE =
 		(struct RM_CHNL_LOAD_REPORT *)
 		&prMeasureReportIE->aucReportFields[0];
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucRegulatoryClass = %d\n",
-		prCuReportIE->ucRegulatoryClass);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucChannel = %d\n",
-		prCuReportIE->ucChannel);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucChnlLoad = %d\n",
+	DBGLOG(RLM, TRACE,
+		"[SAP_Test] ucRegulatoryClass = %d ucChannel = %d ucChnlLoad = %d\n",
+		prCuReportIE->ucRegulatoryClass,
+		prCuReportIE->ucChannel,
 		prCuReportIE->ucChnlLoad);
 	kalP2pCuRptUevent(prAdapter,
 		scanOpClassToBand(prCuReportIE->ucRegulatoryClass),
@@ -13879,35 +13860,22 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 			prBeaconReportIE =
 				(struct RM_BCN_REPORT *)
 				&prMeasureReportIE->aucReportFields[0];
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucRegulatoryClass = %d\n",
-				prBeaconReportIE->ucRegulatoryClass);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucChannel = %d\n",
-				prBeaconReportIE->ucChannel);
-			DBGLOG_MEM8(RLM, INFO,
-				prBeaconReportIE->aucStartTime, 8);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] u2Duration = %d\n",
-				prBeaconReportIE->u2Duration);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucReportInfo = 0x%x\n",
-				prBeaconReportIE->ucReportInfo);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucRCPI = 0x%x\n",
-				prBeaconReportIE->ucRCPI);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucRSNI = 0x%x\n",
-				prBeaconReportIE->ucRSNI);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] aucBSSID = " MACSTR "\n",
-				MAC2STR(prBeaconReportIE->aucBSSID));
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucAntennaID = %d\n",
+			DBGLOG(RLM, TRACE,
+				"[SAP_Test] ucRegulatoryClass = %d ucChannel = %d u2Duration = %d ucReportInfo = 0x%x ucRCPI = 0x%x ucRSNI = 0x%x aucBSSID = "
+				MACSTR " ucAntennaID = %d\n",
+				prBeaconReportIE->ucRegulatoryClass,
+				prBeaconReportIE->ucChannel,
+				prBeaconReportIE->u2Duration,
+				prBeaconReportIE->ucReportInfo,
+				prBeaconReportIE->ucRCPI,
+				prBeaconReportIE->ucRSNI,
+				MAC2STR(prBeaconReportIE->aucBSSID),
 				prBeaconReportIE->ucAntennaID);
-			DBGLOG_MEM8(RLM, INFO,
+			DBGLOG_MEM8(RLM, LOUD,
+				prBeaconReportIE->aucStartTime, 8);
+			DBGLOG_MEM8(RLM, LOUD,
 				prBeaconReportIE->aucParentTSF, 4);
-			DBGLOG_MEM8(RLM, INFO,
+			DBGLOG_MEM8(RLM, LOUD,
 				prBeaconReportIE->aucOptElem,
 				prMeasureReportIE->ucLength - 3 - 26);
 
@@ -13931,16 +13899,13 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 		u2TmpLen += (pucOptInfo[1] + 2);
 	}
 
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] mStaMac = " MACSTR "\n",
-		MAC2STR(prRxFrame->aucSrcAddr));
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] u8ElemNum = %u\n",
-		prBcnMeasureReport->u8ElemNum);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] uElemLen = %u\n",
+	DBGLOG(RLM, TRACE,
+		"[SAP_Test] mStaMac = " MACSTR
+		" u8ElemNum = %u uElemLen = %u\n",
+		MAC2STR(prRxFrame->aucSrcAddr),
+		prBcnMeasureReport->u8ElemNum,
 		prBcnMeasureReport->uElemLen);
-	DBGLOG_MEM8(RLM, INFO,
+	DBGLOG_MEM8(RLM, LOUD,
 		prBcnMeasureReport->uElem,
 		prBcnMeasureReport->uElemLen);
 #if CFG_AP_80211KVR_INTERFACE
@@ -13983,27 +13948,19 @@ void rlmProcessRadioMeasurementResponse(
 	pucOptInfo = &prRxFrame->aucInfoElem[0];
 	u2TmpLen = OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
 
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] u2FrameCtrl = 0x%x\n", prRxFrame->u2FrameCtrl);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] u2Duration = %u\n", prRxFrame->u2Duration);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] aucDestAddr = " MACSTR "\n",
-		MAC2STR(prRxFrame->aucDestAddr));
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] aucSrcAddr = " MACSTR "\n",
-		MAC2STR(prRxFrame->aucSrcAddr));
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] aucBSSID = " MACSTR "\n",
-		MAC2STR(prRxFrame->aucBSSID));
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] u2SeqCtrl = %u\n", prRxFrame->u2SeqCtrl);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucCategory = %u\n", prRxFrame->ucCategory);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucAction = %u\n", prRxFrame->ucAction);
-	DBGLOG(RLM, INFO,
-		"[SAP_Test] ucDialogToken = %u\n", prRxFrame->ucDialogToken);
+	DBGLOG(RLM, TRACE,
+		"[SAP_Test] u2FrameCtrl = 0x%x u2Duration = %u aucDestAddr = "
+		MACSTR " aucSrcAddr = " MACSTR " aucBSSID = " MACSTR
+		" u2SeqCtrl = %u ucCategory = %u ucAction = %u ucDialogToken = %u\n",
+		prRxFrame->u2FrameCtrl,
+		prRxFrame->u2Duration,
+		MAC2STR(prRxFrame->aucDestAddr),
+		MAC2STR(prRxFrame->aucSrcAddr),
+		MAC2STR(prRxFrame->aucBSSID),
+		prRxFrame->u2SeqCtrl,
+		prRxFrame->ucCategory,
+		prRxFrame->ucAction,
+		prRxFrame->ucDialogToken);
 	prMeasureReportTemp =
 		(uint8_t *) &pucOptInfo[0];
 	prMeasureReportIE =
@@ -14015,20 +13972,12 @@ void rlmProcessRadioMeasurementResponse(
 		switch (prMeasureReportIE->ucId) {
 		case ELEM_ID_MEASUREMENT_REPORT:
 
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucId = %u\n",
-				prMeasureReportIE->ucId);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucLength = %u\n",
-				prMeasureReportIE->ucLength);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucToken = %u\n",
-				prMeasureReportIE->ucToken);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucReportMode = 0x%x\n",
-				prMeasureReportIE->ucReportMode);
-			DBGLOG(RLM, INFO,
-				"[SAP_Test] ucMeasurementType = 0x%x\n",
+			DBGLOG(RLM, TRACE,
+				"[SAP_Test] ucId = %u ucLength = %u ucToken = %u ucReportMode = 0x%x ucMeasurementType = 0x%x\n",
+				prMeasureReportIE->ucId,
+				prMeasureReportIE->ucLength,
+				prMeasureReportIE->ucToken,
+				prMeasureReportIE->ucReportMode,
 				prMeasureReportIE->ucMeasurementType);
 			if (prMeasureReportIE->ucMeasurementType ==
 				ELEM_RM_TYPE_BEACON_REPORT)
@@ -14049,7 +13998,7 @@ void rlmProcessRadioMeasurementResponse(
 
 			break;
 		default:
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"[SAP_Test] ucMeasurementType = 0x%x\n",
 				prMeasureReportIE->ucMeasurementType);
 			u2TmpLen = 0xffff;
@@ -14057,7 +14006,7 @@ void rlmProcessRadioMeasurementResponse(
 		}
 	}
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"[SAP_Test] mStaMac = " MACSTR "\n",
 		MAC2STR(prRxFrame->aucSrcAddr));
 

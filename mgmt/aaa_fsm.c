@@ -1113,7 +1113,7 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
 			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
 		goto error;
-	DBGLOG(REQ, DEBUG, "ucRoleIdx = %d\n", ucRoleIdx);
+	DBGLOG(REQ, TRACE, "ucRoleIdx = %d\n", ucRoleIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
 	if (!prBssInfo) {
 		DBGLOG(REQ, WARN, "bss is not active\n");
@@ -1144,10 +1144,9 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 	prBssInfo->u4ChanUtil = cmd_traffic->u4ChBusy
 		/ (u4SampleDuration / 255);
 
-	DBGLOG(AAA, INFO,
-		"[Traffic Report] u4ChBusy = %d\n", cmd_traffic->u4ChBusy);
-	DBGLOG(AAA, INFO,
-		"[Traffic Report] Duration = %d\n",
+	DBGLOG(AAA, TRACE,
+		"[Traffic Report] u4ChBusy = %d Duration = %d\n",
+		cmd_traffic->u4ChBusy,
 		cmd_traffic->u4FetchEd - cmd_traffic->u4FetchSt);
 
 	/* get noise histogram */
@@ -1184,11 +1183,9 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 		cmd_noise->u4IPI8 * (62) + cmd_noise->u4IPI9 * (57) +
 		cmd_noise->u4IPI10 * (55)) / u4NoiseTotalCnt) * (-1);
 
-	DBGLOG(AAA, INFO,
-		"[Noise Histogram] u4NoiseTotalCnt  = %d\n", u4NoiseTotalCnt);
-	DBGLOG(AAA, INFO,
-		"[Noise Histogram] i4NoiseHistogram  = %d\n",
-		prBssInfo->i4NoiseHistogram);
+	DBGLOG(AAA, TRACE,
+		"[Noise Histogram] u4NoiseTotalCnt  = %d i4NoiseHistogram  = %d\n",
+		u4NoiseTotalCnt, prBssInfo->i4NoiseHistogram);
 
 	sBssMetricsResp = (struct T_MULTI_AP_BSS_METRICS_RESP *)
 			kalMemAlloc(sizeof(struct T_MULTI_AP_BSS_METRICS_RESP),
@@ -1213,20 +1210,15 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 	sBssMetricsResp->u8ChanUtil = prBssInfo->u4ChanUtil;
 	sBssMetricsResp->iChanNoise = prBssInfo->i4NoiseHistogram;
 
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] uIfIndex = %u\n", sBssMetricsResp->uIfIndex);
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] mBssid = " MACSTR "\n",
-		MAC2STR(sBssMetricsResp->mBssid));
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] u8Channel = %d\n", sBssMetricsResp->u8Channel);
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] u16AssocStaNum = %d\n",
-		sBssMetricsResp->u16AssocStaNum);
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] u8ChanUtil = %d\n", sBssMetricsResp->u8ChanUtil);
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] iChanNoise = %d\n", sBssMetricsResp->iChanNoise);
+	DBGLOG(REQ, TRACE,
+		"[SAP_Test] uIfIndex = %u mBssid = " MACSTR
+		" u8Channel = %d u16AssocStaNum = %d u8ChanUtil = %d iChanNoise = %d",
+		sBssMetricsResp->uIfIndex,
+		MAC2STR(sBssMetricsResp->mBssid),
+		sBssMetricsResp->u8Channel,
+		sBssMetricsResp->u16AssocStaNum,
+		sBssMetricsResp->u8ChanUtil);
+		sBssMetricsResp->iChanNoise);
 
 	i4Ret = MulAPAgentMontorSendMsg(EV_WLAN_MULTIAP_BSS_METRICS_RESPONSE,
 		sBssMetricsResp, sizeof(*sBssMetricsResp));
@@ -1287,20 +1279,18 @@ void aaaMulAPAgentStaEventNotify(
 		prStaEventNotify->uCapLen = 6;
 		prStaEventNotify->u8Cap[0] = 1;
 	}
-	DBGLOG(AAA, INFO,
-		"[SAP_Test] mStaMac=" MACSTR "\n",
-		MAC2STR(prStaEventNotify->mStaMac));
-	DBGLOG(AAA, INFO,
-		"[SAP_Test] mBssid=" MACSTR "\n",
-		MAC2STR(prStaEventNotify->mBssid));
-	DBGLOG(AAA, INFO,
-		"[SAP_Test] u8Status=%d\n", prStaEventNotify->u8Status);
-	DBGLOG(AAA, INFO,
-		"[SAP_Test] uCapLen=%d\n", prStaEventNotify->uCapLen);
-	DBGLOG_MEM8(AAA, INFO,
+
+	DBGLOG(AAA, TRACE,
+		"[SAP_Test] mStaMac=" MACSTR " mBssid=" MACSTR
+		" u8Status=%d uCapLen=%d\n",
+		MAC2STR(prStaEventNotify->mStaMac),
+		MAC2STR(prStaEventNotify->mBssid),
+		prStaEventNotify->u8Status,
+		prStaEventNotify->uCapLen);
+	DBGLOG_MEM8(AAA, LOUD,
 		prStaEventNotify,
 		offsetof(struct T_MULTI_AP_STA_EVENT_NOTIFY, u8Cap) + 5);
-	DBGLOG_MEM8(AAA, INFO,
+	DBGLOG_MEM8(AAA, LOUD,
 		prStaEventNotify->u8Cap, prStaEventNotify->uCapLen);
 
 	i4Ret = MulAPAgentMontorSendMsg(EV_WLAN_MULTIAP_STA_TOPOLOGY_NOTIFY,
@@ -1367,7 +1357,7 @@ void aaaMulAPAgentUnassocStaMeasureTimeout(
 	}
 
 	for (ucIndex = 0; ucIndex < SAP_UNASSOC_METRICS_STA_MAX; ucIndex++) {
-		DBGLOG(REQ, DEBUG,
+		DBGLOG(REQ, TRACE,
 			"[SAP_Test] [Report] arUnAssocSTA[%d]="MACSTR
 			",time=%u, RSSI=%d, ch=%d\n",
 			ucIndex,
@@ -1377,14 +1367,11 @@ void aaaMulAPAgentUnassocStaMeasureTimeout(
 			sStaUnAssocMetricsResp->tMetrics[ucIndex].iRssi,
 			sStaUnAssocMetricsResp->tMetrics[ucIndex].u8Channel);
 	}
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] uIfIndex = %u\n",
-		sStaUnAssocMetricsResp->uIfIndex);
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] mBssid = " MACSTR "\n",
-		MAC2STR(sStaUnAssocMetricsResp->mBssid));
-	DBGLOG(REQ, DEBUG,
-		"[SAP_Test] u8StaNum = %u\n",
+	DBGLOG(REQ, TRACE,
+		"[SAP_Test] uIfIndex = %u mBssid =" MACSTR
+		" u8StaNum = %u",
+		sStaUnAssocMetricsResp->uIfIndex,
+		MAC2STR(sStaUnAssocMetricsResp->mBssid),
 		sStaUnAssocMetricsResp->u8StaNum);
 
 	i4Ret = MulAPAgentMontorSendMsg(

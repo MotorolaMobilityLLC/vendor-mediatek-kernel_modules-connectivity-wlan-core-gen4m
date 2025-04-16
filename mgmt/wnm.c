@@ -1124,30 +1124,30 @@ void wnmMulAPAgentRecvBTMResponse(struct ADAPTER *prAdapter,
 
 	prBtmReport->u8Status = prRxFrame->ucStatusCode;
 
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] u2FrameCtrl = 0x%x\n", prRxFrame->u2FrameCtrl);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] u2Duration = %u\n", prRxFrame->u2Duration);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] aucDestAddr = " MACSTR "\n",
 		MAC2STR(prRxFrame->aucDestAddr));
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] aucSrcAddr = " MACSTR "\n",
 		MAC2STR(prRxFrame->aucSrcAddr));
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] aucBSSID = " MACSTR "\n",
 		MAC2STR(prRxFrame->aucBSSID));
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] u2SeqCtrl = %u\n", prRxFrame->u2SeqCtrl);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] ucCategory = %u\n", prRxFrame->ucCategory);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] ucAction = %u\n", prRxFrame->ucAction);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] ucDialogToken = %u\n", prRxFrame->ucDialogToken);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] ucStatusCode = %u\n", prRxFrame->ucStatusCode);
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 		"[SAP_Test] ucBssTermDelay = %u\n", prRxFrame->ucBssTermDelay);
 	if (prSwRfb->u2PacketLen >= u2TmpLen + MAC_ADDR_LEN &&
 		prRxFrame->ucStatusCode == BSS_TRANSITION_MGT_STATUS_ACCEPT) {
@@ -1155,7 +1155,7 @@ void wnmMulAPAgentRecvBTMResponse(struct ADAPTER *prAdapter,
 		pucOptInfo += MAC_ADDR_LEN;
 		u2TmpLen += MAC_ADDR_LEN;
 	}
-	DBGLOG(WNM, INFO,
+	DBGLOG(WNM, TRACE,
 			"[SAP_Test] Target BSSID = " MACSTR "\n",
 			MAC2STR(prBtmReport->mDestBssid));
 

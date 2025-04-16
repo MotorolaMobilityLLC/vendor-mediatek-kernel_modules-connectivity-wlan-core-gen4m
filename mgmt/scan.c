@@ -5628,7 +5628,7 @@ void scanCheckCiscoCCXIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	    *(ie->aucVendorType) == VENDOR_IE_CISCO_TYPE_CCX)
 		prBssDesc->ucIsCiscoCCXIePresent = TRUE;
 
-	DBGLOG(SCN, TRACE, "BSSDesc [" MACSTR "] Cisco CCX IE present = %d\n",
+	DBGLOG(SCN, LOUD, "BSSDesc [" MACSTR "] Cisco CCX IE present = %d\n",
 		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsCiscoCCXIePresent);
 }
 
