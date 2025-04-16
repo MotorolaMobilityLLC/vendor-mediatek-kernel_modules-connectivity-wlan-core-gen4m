@@ -1171,7 +1171,8 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 			"Ignore roaming request if unable to roam\n");
 
 		/* Triggered by supplicant, must indicate status */
-		if (pParamConn->fgTestMode == FALSE)
+		if (pParamConn->fgTestMode == FALSE &&
+		    !aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))
 			aisIndicationOfMediaStateToHost(prAdapter,
 				MEDIA_STATE_CONNECTED,
 				FALSE,
