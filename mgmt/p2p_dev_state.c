@@ -260,7 +260,7 @@ p2pDevStateInit_CHNL_ON_HAND(struct ADAPTER *prAdapter,
 		else
 			u4TimeoutMs = prChnlReqInfo->u4MaxInterval;
 
-		log_dbg(P2P, INFO,
+		log_dbg(P2P, TRACE,
 			"Start channel on hand timer, Cookie: 0x%llx, Interval: %d\n",
 			prChnlReqInfo->u8Cookie, u4TimeoutMs);
 

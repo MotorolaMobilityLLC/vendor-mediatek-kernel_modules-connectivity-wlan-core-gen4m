@@ -1208,7 +1208,7 @@ void kalP2PIndicateScanDone(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		DBGLOG(INIT, DEBUG,
+		DBGLOG(INIT, TRACE,
 			"[p2p] scan complete %p abort=%d\n",
 			prP2pGlueDevInfo->prScanRequest, fgIsAbort);
 

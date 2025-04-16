@@ -6584,7 +6584,7 @@ p2pFuncProcessP2pProbeRspVendor(struct ADAPTER *prAdapter,
 		}
 #if CFG_SUPPORT_WFD
 		else if (ucOuiType == VENDOR_OUI_TYPE_WFD) {
-			DBGLOG(P2P, INFO,
+			DBGLOG(P2P, TRACE,
 			       "WFD IE is found in probe resp (supp). Len %u\n",
 			       IE_SIZE(pucIEBuf));
 			if ((sizeof(prAdapter->prGlueInfo->prP2PInfo

@@ -14238,7 +14238,7 @@ kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
 		if (channel == NULL)
 			break;
 
-		DBGLOG(P2P, INFO, "switch channel band: %d, freq: %d\n",
+		DBGLOG(P2P, TRACE, "switch channel band: %d, freq: %d\n",
 				channel->band, channel->center_freq);
 
 		if (prRfChnlInfo) {
