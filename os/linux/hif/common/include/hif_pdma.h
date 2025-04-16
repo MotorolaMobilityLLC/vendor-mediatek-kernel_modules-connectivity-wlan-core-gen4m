@@ -992,7 +992,7 @@ struct SW_EMI_RING_INFO {
 	uint32_t u4RemapRegAddr;
 	uint32_t u4RemapBusAddr;
 	uint32_t u4TimeoutCnt;
-	u_int8_t fgIsDumpDebugCr;
+	uint32_t u4DumpDbgCrCnt;
 #endif
 };
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */

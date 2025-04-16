@@ -44,6 +44,7 @@
 #define MBU_TIMEOUT_VALUE	0xffffdead
 #define MBU_REG_MASK		0xffff0000
 #define MBU_TIMEOUT_DBG_CNT	1
+#define MBU_DUMP_DBG_MAX_CNT	2
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -127,7 +128,7 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 
 	kalMemSet(prEmi, 0, sizeof(struct MBU_EMI_CTX));
 	prMbuInfo->fgIsEnable = TRUE;
-	prMbuInfo->fgIsDumpDebugCr = FALSE;
+	prMbuInfo->u4DumpDbgCrCnt = 0;
 
 	/* set remap */
 	if (prMbuInfo->u4RemapAddr) {
@@ -353,10 +354,11 @@ exit:
 
 	if (prMbuInfo->rOps.dumpDebugCr) {
 		if ((prMbuInfo->u4TimeoutCnt >= MBU_TIMEOUT_DBG_CNT &&
-		     !prMbuInfo->fgIsDumpDebugCr) ||
+		     prMbuInfo->u4DumpDbgCrCnt < MBU_DUMP_DBG_MAX_CNT) ||
 		    IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
 			prMbuInfo->rOps.dumpDebugCr(prGlueInfo);
-			prMbuInfo->fgIsDumpDebugCr = TRUE;
+			prMbuInfo->u4DumpDbgCrCnt++;
+			fgDbg = TRUE;
 		}
 	}
 
@@ -379,7 +381,7 @@ void halMbuEnableDebug(struct GLUE_INFO *prGlueInfo)
 	struct SW_EMI_RING_INFO *prMbuInfo =
 		&prGlueInfo->prAdapter->chip_info->bus_info->rSwEmiRingInfo;
 
-	prMbuInfo->fgIsDumpDebugCr = FALSE;
+	prMbuInfo->u4DumpDbgCrCnt = 0;
 }
 
 void halMbuDebug(struct GLUE_INFO *prGlueInfo)
