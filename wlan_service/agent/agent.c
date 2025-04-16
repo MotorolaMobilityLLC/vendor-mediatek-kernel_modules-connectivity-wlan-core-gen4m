@@ -337,8 +337,12 @@ static s_int32 legacy_function(
 static s_int32 todo_function(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
+	u_int16 length_host_order = 0;
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
-	sys_ad_zero_mem(hqa_frame->data, SERV_IOCTLBUFF);
+	length_host_order = SERV_OS_HTONS(hqa_frame->length);
+	if (length_host_order > SERV_IOCTLBUFF)
+		length_host_order = SERV_IOCTLBUFF;
+	sys_ad_zero_mem(hqa_frame->data, length_host_order);
 	update_hqa_frame(hqa_frame, 6, SERV_STATUS_SUCCESS);
 	return SERV_STATUS_AGENT_NOT_SUPPORTED;
 }

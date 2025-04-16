@@ -479,9 +479,12 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 #ifdef CONFIG_OF
 	struct device_node *node;
 	static struct icc_path *bw_path;
+#if IS_ENABLED(CONFIG_MTK_DVFSRC)
+	unsigned int i = 0;
+#endif /* CONFIG_MTK_DVFSRC */
 #endif /* CONFIG_OF */
 	static unsigned int peak_bw[OPP_BW_MAX_NUM], current_bw;
-	unsigned int prev_bw = 0, i;
+	unsigned int prev_bw = 0;
 
 	kalGetPlatDev(&pdev);
 	if (!pdev) {
@@ -1102,13 +1105,19 @@ int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter,
 #if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
 int32_t kalPlatOpsInit(void)
 {
-#if defined(MT6653)
-	struct mt66xx_hif_driver_data *driver_data =
-		&mt66xx_driver_data_mt6653;
-	struct mt66xx_chip_info *chip = driver_data->chip_info;
+	struct mt66xx_hif_driver_data *driver_data = NULL;
+	struct mt66xx_chip_info *chip = NULL;
 
-	chip->pinctrl_ops = &mt6991_pinctrl_ops;
+#if defined(MT6653)
+	driver_data = &mt66xx_driver_data_mt6653;
+#elif defined(MT6639)
+	driver_data = &mt66xx_driver_data_mt6639;
 #endif
+
+	if (driver_data && driver_data->chip_info) {
+		chip = driver_data->chip_info;
+		chip->pinctrl_ops = &mt6991_pinctrl_ops;
+	}
 
 	return 0;
 }

@@ -231,6 +231,8 @@ struct GL_HIF_INFO {
 #if CFG_SUPPORT_HIF_RX_NAPI
 	struct HIF_NAPI_DEVICE rNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+	u_int8_t fgIsTriggerRxTimeout;
 };
 
 struct BUS_INFO {
@@ -435,6 +437,10 @@ struct BUS_INFO {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+#if CFG_MTK_ANDROID_WMT
+uint32_t glRegisterShutdownCB(remove_card pfShutdown);
+#endif
+
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
 void glUnregisterBus(remove_card pfRemove);

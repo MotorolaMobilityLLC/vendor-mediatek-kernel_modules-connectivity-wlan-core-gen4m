@@ -551,7 +551,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 		      uint32_t *pu4QueryInfoLen)
 {
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t i, u4BssidListExLen;
+	uint32_t i, u4BssidListExLen, u4SavedApCount = 0;
 	struct PARAM_BSSID_LIST_EX *prList;
 	struct PARAM_BSSID_EX *prBssidEx;
 	uint8_t *cp;
@@ -583,8 +583,18 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 	u4BssidListExLen = 0;
 
 	if (prAdapter->fgIsRadioOff == FALSE) {
-		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++)
+		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
+			/* If scan results size bigger than buffer size,
+			 * not to add further.
+			 */
+			if ((u4BssidListExLen +
+				ALIGN_4(prScanResult[i].u4Length) + 4)
+				> u4QueryBufferLen)
+				break;
+
 			u4BssidListExLen += ALIGN_4(prScanResult[i].u4Length);
+		}
+		u4SavedApCount = i;
 	}
 
 	if (u4BssidListExLen)
@@ -606,7 +616,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsRadioOff == FALSE &&
 	    prWlanInfo->u4ScanResultNum > 0) {
 		/* fill up for each entry */
-		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
+		for (i = 0; i < u4SavedApCount; i++) {
 			prBssidEx = (struct PARAM_BSSID_EX *) cp;
 
 			/* copy structure */
@@ -2350,6 +2360,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgNoHandshakeSec = FALSE;
+	u_int8_t fgApRec = FALSE;
 #if CFG_SUPPORT_TDLS
 	struct STA_RECORD *prTmpStaRec;
 #endif
@@ -2573,8 +2584,9 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
 				prCmdKey->ucAlgorithmId ==
 						CIPHER_SUITE_BIP_GMAC_256)) {
-				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
-				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
+				DBGLOG_LIMITED(RSN, INFO, "BSS[%u] set BIP\n",
+					prBssInfo->ucBssIndex);
+				prBssInfo->fgBipKeyInstalled = TRUE;
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 				DBGLOG(RSN, INFO,
 					"Change BIP BC keyId from %d to 3\n",
@@ -2775,7 +2787,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				}
 			} else { /* Overwrite the old one for AP and STA WEP */
 				if (prBssInfo->prStaRecOfAP) {
-					DBGLOG_LIMITED(RSN, INFO, "AP REC\n");
+					fgApRec = TRUE;
 					prCmdKey->ucWlanIndex =
 					    secPrivacySeekForBcEntry(
 						prAdapter,
@@ -2833,7 +2845,7 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 						prCmdKey->ucWlanIndex;
 					prBssInfo->ucBMCWlanIndexSUsed[
 						prCmdKey->ucKeyId] = TRUE;
-					DBGLOG_LIMITED(RSN, INFO,
+					DBGLOG_LIMITED(RSN, TRACE,
 					       "BMCWlanIndex kid = %d, index = %d\n",
 					       prCmdKey->ucKeyId,
 					       prCmdKey->ucWlanIndex);
@@ -2856,15 +2868,14 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		       prCmdKey->ucKeyLen);
 	DBGLOG_MEM8(RSN, TRACE, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 	if (prCmdKey->ucKeyId < MAX_KEY_NUM) {
-		DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed=%d,wepkeyWlanIdx=%d\n",
-		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
-		       prBssInfo->wepkeyWlanIdx);
-
 		DBGLOG(RSN, INFO,
-		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d\n",
+		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d,wepkeyUsed=%d,wepkeyWlanIdx=%d,fgApRec=%d\n",
 		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
 		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId],
-		       prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId]);
+		       prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId],
+		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
+		       prBssInfo->wepkeyWlanIdx,
+		       fgApRec);
 	}
 #endif
 	if (prAisSpecBssInfo)
@@ -8147,8 +8158,10 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 	struct PARAM_CUSTOM_KEY_CFG_STRUCT *prKeyCfgInfo;
 	uint8_t *pucKey = NULL;
 	uint8_t aucKey[MAX_CMD_NAME_MAX_LENGTH] = {0};
+#if CFG_SUPPORT_MLR
 	uint32_t u4TargetCfg = 0;
 	int32_t i4Ret = 0;
+#endif
 
 	DBGLOG(INIT, LOUD, "\n");
 
@@ -8425,10 +8438,12 @@ uint32_t
 wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 			void *pvSetBuffer, uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen) {
+#define DBG_BUFFER_SZ		1024
+
 	struct PARAM_MULTICAST_LIST *prMcAddrList;
 	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
-	uint8_t aucDbgBuf[256];
 	int32_t i4Written = 0;
+	uint8_t *prDbgBuf;
 	uint8_t i;
 
 	ASSERT(prAdapter);
@@ -8458,26 +8473,35 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
-	kalMemZero(aucDbgBuf, sizeof(aucDbgBuf));
-
 	kalMemZero(&rCmdMacMcastAddr, sizeof(rCmdMacMcastAddr));
 	rCmdMacMcastAddr.u4NumOfGroupAddr = prMcAddrList->ucAddrNum;
 	rCmdMacMcastAddr.ucBssIndex = prMcAddrList->ucBssIdx;
 	kalMemCopy(rCmdMacMcastAddr.arAddress, prMcAddrList->aucMcAddrList,
 		   prMcAddrList->ucAddrNum * MAC_ADDR_LEN);
 
-	i4Written += kalSnprintf(aucDbgBuf + i4Written,
-				 sizeof(aucDbgBuf) - i4Written,
-				 "BssIdx %d allow list: total=%d",
-				 rCmdMacMcastAddr.ucBssIndex,
-				 rCmdMacMcastAddr.u4NumOfGroupAddr);
-	for (i = 0; i < rCmdMacMcastAddr.u4NumOfGroupAddr; i++)
-		i4Written += kalSnprintf(aucDbgBuf + i4Written,
-					 sizeof(aucDbgBuf) - i4Written,
-					 "\nmac[%u]="MACSTR,
-					 i, MAC2STR(
-					 rCmdMacMcastAddr.arAddress[i]));
-	DBGLOG(OID, INFO, "%s\n", aucDbgBuf);
+	prDbgBuf = kalMemZAlloc(DBG_BUFFER_SZ, VIR_MEM_TYPE);
+	if (prDbgBuf) {
+		i4Written +=
+			kalScnprintf(prDbgBuf + i4Written,
+				     DBG_BUFFER_SZ - i4Written,
+				     "BssIdx %d allow list: total=%d",
+				     rCmdMacMcastAddr.ucBssIndex,
+				     rCmdMacMcastAddr.u4NumOfGroupAddr);
+		for (i = 0; i < rCmdMacMcastAddr.u4NumOfGroupAddr; i++) {
+			i4Written +=
+				kalScnprintf(prDbgBuf + i4Written,
+					     DBG_BUFFER_SZ - i4Written,
+					     "\nmac[%u]="MACSTR,
+					     i, MAC2STR(
+					     rCmdMacMcastAddr.arAddress[i]));
+		}
+		if (rCmdMacMcastAddr.u4NumOfGroupAddr > 0)
+			DBGLOG(OID, INFO, "%s\n", prDbgBuf);
+		kalMemFree(prDbgBuf, VIR_MEM_TYPE, DBG_BUFFER_SZ);
+	} else {
+		DBGLOG(OID, WARN, "Alloc debug buffer(%u) failed.\n",
+			DBG_BUFFER_SZ);
+	}
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_MAC_MCAST_ADDR,
@@ -9181,8 +9205,11 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
 			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN)
 		prAisFsmInfo->fgIsScanOidAborted = TRUE;
-	if (u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE)
+	if (u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE) {
+		/* Clear pending request (AIS). */
+		aisFsmFlushRequest(prAdapter, ucBssIndex);
 		prAisFsmInfo->fgIsDelIface = TRUE;
+	}
 
 	prAisAbortMsg->fgDelayIndication = FALSE;
 	prAisAbortMsg->ucBssIndex = ucBssIndex;
@@ -12236,6 +12263,7 @@ wlanoidSetTxAmsduNumLimit(struct ADAPTER *prAdapter,
 	struct UNI_CMD_TX_AMSDU_NUM_LIMIT *prLimit;
 	uint32_t cmd_len;
 	struct PARAM_SET_TX_AMSDU_NUM_LIMIT_INFO *prParam;
+	struct BSS_DESC *prBssDesc = NULL;
 #endif
 
 	if (!prAdapter || !pvQueryBuffer || !pu4QueryInfoLen)
@@ -12272,7 +12300,18 @@ wlanoidSetTxAmsduNumLimit(struct ADAPTER *prAdapter,
 	prLimit->u2Tag = UNI_CMD_BA_OFFLOAD_TAG_TX_AMSDU_NUM_LIMIT;
 	prLimit->u2Length = sizeof(*prLimit);
 	prLimit->ucBssIdx = ucBssIndex;
-	prLimit->ucTxAmsduNum = prParam->ucTxAmsduNum;
+
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	else if (IS_BSS_INDEX_P2P(prAdapter, ucBssIndex))
+		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIndex);
+
+	if (prBssDesc && bssIsIotAp(prAdapter, prBssDesc,
+		WLAN_IOT_AP_DIS_TX_AMSDU)) {
+		prLimit->ucTxAmsduNum = 0;
+		DBGLOG(NIC, INFO, "IoT AP: DISABLE AMSDU\n");
+	} else
+		prLimit->ucTxAmsduNum = prParam->ucTxAmsduNum;
 	prLimit->ucSet = prParam->ucSet;
 
 	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
@@ -16479,10 +16518,11 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 	/*
 	 * Firmware roaming Integration Test case
-	 * Roaming 1 2 3 (parameter is optional)
+	 * Roaming 1 2 3 4 (parameter is optional)
 	 * Parameter 1: Scan type, 0: normal, 1: partial only, 2: full only
 	 * Parameter 2: Scan count, 0, normal, N: scan at most N times
 	 * Parameter 3: Scan mode, 0: normal, 1: low latency scan
+	 * Parameter 4: BSSID
 	 */
 	if (!kalStrniCmp(pucCmd, "Roaming", 7)) {
 #if CFG_SUPPORT_ROAMING
@@ -16499,11 +16539,13 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		DBGLOG(OID, INFO, "FW event is [%s]\n", pucCmd);
 		wlanCfgParseArgument(pucCmd, &i4Argc, apcArgv);
 
-		if (i4Argc > 1 && i4Argc != 4) {
+		if (i4Argc == 0 || i4Argc == 2 || i4Argc == 3) {
 			DBGLOG(OID, ERROR,
 				"Unexpected argument counts %d\n", i4Argc);
 			return WLAN_STATUS_SUCCESS;
-		} else if (i4Argc == 4) {
+		}
+
+		if (i4Argc >= 4) {
 			kalkStrtou8(apcArgv[1], 0,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanType);
 			kalkStrtou8(apcArgv[2], 0,
@@ -16511,6 +16553,12 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			kalkStrtou8(apcArgv[3], 0,
 				&prRoamingFsmInfo->rRoamScanParam.ucScanMode);
 			prAisFsmInfo->ucScanTrialCount = 0;
+		}
+
+		if (i4Argc >= 5) {
+			prRoamingFsmInfo->rRoamScanParam.fgSpecifyBssid = TRUE;
+			wlanHwAddrToBin(apcArgv[4], &prRoamingFsmInfo->
+					rRoamScanParam.aucBssid[0]);
 		}
 
 		/* Check roaming FSM and CSA states*/

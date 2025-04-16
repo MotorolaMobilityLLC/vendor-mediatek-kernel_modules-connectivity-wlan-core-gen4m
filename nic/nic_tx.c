@@ -2146,8 +2146,6 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 	uint8_t *pucOutputBuf = NULL;
 	int16_t i2HeadLength;
 
-	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (isEapolBeforeKeyReady(prAdapter, prMsduInfo)) {
 		struct MLD_STA_RECORD *prMldSta;
@@ -2170,6 +2168,8 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		}
 	}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
 
 	i2HeadLength = NIC_TX_DESC_AND_PADDING_LENGTH
 			+ prChipInfo->txd_append_size;
@@ -3519,18 +3519,20 @@ uint32_t nicTxFlush(struct ADAPTER *prAdapter)
 		nicTxDirectClearAllStaAcmQ(prAdapter);
 		nicTxDirectClearAllStaPsQ(prAdapter);
 		nicTxDirectClearAllStaPendQ(prAdapter);
-	} else {
-		/* ask Per STA/AC queue to be fllushed
-		 * and return all queued packets
-		 */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
-		prMsduInfo = qmFlushTxQueues(prAdapter);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+	}
 
-		if (prMsduInfo != NULL) {
-			nicTxFreeMsduInfoPacket(prAdapter, prMsduInfo);
-			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-		}
+	/*
+	 * Flush Per STA/AC queue and return all packets.
+	 * Note that Rx Forward Pkt will go through legacy tx path even
+	 * tx direct is enabled.
+	 */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+	prMsduInfo = qmFlushTxQueues(prAdapter);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
+
+	if (prMsduInfo != NULL) {
+		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfo);
+		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -4761,7 +4763,8 @@ void nicTxSetPktLowestFixedRate(struct ADAPTER *prAdapter,
 		u4CurrentPhyRate = nicRateCode2PhyRate(u2RateCode,
 			FIX_BW_NO_FIXED, MAC_GI_NORMAL, AR_SS_NULL);
 
-		if (prBssInfo->u4CoexPhyRateLimit > u4CurrentPhyRate) {
+		if (u4CurrentPhyRate &&
+		    prBssInfo->u4CoexPhyRateLimit > u4CurrentPhyRate) {
 			nicGetRateIndexFromRateSetWithLimit(
 				u2OperationalRateSet,
 				prBssInfo->u4CoexPhyRateLimit,
@@ -6076,6 +6079,8 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 		}
 #endif
 
+		qmDetermineStaRecIndex(prAdapter, prMsduInfo);
+
 #if CFG_SUPPORT_MLR
 		if (mlrCheckIfDoFrag(prAdapter, prMsduInfo, (void *)pvPacket)) {
 			QUEUE_INITIALIZE(prFragmentedQue);
@@ -6097,8 +6102,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			/* Do things for each fragment MsduInfo */
 			/* ==================================== */
 #endif
-
-			qmDetermineStaRecIndex(prAdapter, prMsduInfo);
 
 			/*get per-AC Tx packets */
 			wlanUpdateTxStatistics(prAdapter, prMsduInfo,

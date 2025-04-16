@@ -9595,6 +9595,9 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		i < MAX_BSSID_NUM && i < ARRAY_SIZE(prEmiLQ->rLq); i++) {
 		struct LINK_SPEED_EX_ *prLq;
 
+		if (!prEmiLQ->rLq[i].ucIsLQ0Rdy)
+			continue;
+
 		DBGLOG(NIC, TRACE,
 			TEMP_LOG_TEMPLATE, i,
 			prEmiLQ->rLq[i].cRssi,
@@ -9609,8 +9612,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 				prEmiLQ->rLq[i].ucIsLQ0Rdy);
 
 #undef TEMP_LOG_TEMPLATE
-		if (!prEmiLQ->rLq[i].ucIsLQ0Rdy)
-			continue;
+
 		prUlq = &prEmiLQ->rLq[i];
 		prLq = &prAdapter->rLinkQuality.rLq[i];
 
@@ -9670,7 +9672,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			prAdapter->prGlueInfo->u4TxBwCache[i] =
 				rLlsRateInfo.arTxRateInfo[i].bw;
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"ucBssIdx=%d, bw=%u\n", i,
 				prAdapter->prGlueInfo->u4TxBwCache[i]);
 		}
@@ -14014,6 +14016,8 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			DBGLOG(NIC, INFO,
 				"[Gen Switch] event status [%d]\n",
 					info->ucGenSwitchStatus);
+			g_ucReceiveGenSwitch = FALSE;
+			g_ucBypassException = FALSE;
 
 #if CFG_MTK_MDDP_SUPPORT
 			mddpNotifyMDGenSwitchStart(ad);

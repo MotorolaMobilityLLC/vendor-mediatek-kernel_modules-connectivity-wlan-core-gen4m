@@ -1212,10 +1212,13 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	/* Do not use PMKID if
 	 * 1. it is invalid
 	 * 2. auth type is SAE
+	 * 3. it's pmk is going to expire
 	 */
 	if (entry &&
 	    (rsnApInvalidPMK(entry->u2StatusCode, prConnSettings->eAuthMode) ||
-	     prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)) {
+	     prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE ||
+	     rsnCheckPmkExpiration(prAdapter, entry,
+				   prAisBssInfo->ucBssIndex))) {
 		DBGLOG(RSN, INFO,
 			"Do not apply PMKID in RSNIE if invalidPMK or auth type is SAE");
 		entry = NULL;
@@ -2541,8 +2544,13 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 {
 	struct BSS_DESC *prBssDesc = prBssDescSet->prMainBssDesc;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct PARAM_SSID rSsid = {0};
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	if (!prBssDesc->fgIsHiddenSSID)
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 
 	/* over retry limit, no need mlo scan */
 	if (prAisFsmInfo->ucMlProbeSendCount >=
@@ -2553,13 +2561,18 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 	    !aisSecondLinkAvailable(prAdapter, ucBssIndex))
 		return FALSE;
 
-	/* already found multi link, no need mlo scan */
-	if (prBssDescSet->ucLinkNum != 1)
-		return FALSE;
-
-	/* target is not mlo, no need mlo scan */
-	if (!prBssDesc->rMlInfo.fgValid ||
-	    !prBssDesc->rMlInfo.ucMaxSimuLinks)
+	/* no need mlo scan
+	 * 1. already found multi link
+	 * 2. not mlo
+	 * 3. in mld block list
+	 * 4. already found multi links
+	 */
+	if (prBssDescSet->ucLinkNum != 1 ||
+	    !prBssDesc->rMlInfo.fgValid ||
+	    prBssDesc->rMlInfo.prBlock ||
+	    scanSearchBssDescCountByMldAddrSsid(prAdapter,
+		prBssDesc->rMlInfo.aucMldAddr, !prBssDesc->fgIsHiddenSSID,
+		&rSsid) == prBssDesc->rMlInfo.ucMaxSimuLinks + 1)
 		return FALSE;
 
 	return TRUE;
@@ -3047,6 +3060,10 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			prAisFsmInfo->u4SleepInterval =
 			    AIS_BG_SCAN_INTERVAL_MSEC;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prAisFsmInfo->ucMlProbeSendCount = 0;
+#endif
+
 #if (CFG_WOW_SUPPORT == 1)
 			if (prAdapter->fgWowLinkDownPendFlag == TRUE) {
 				prAdapter->fgWowLinkDownPendFlag = FALSE;
@@ -3273,6 +3290,10 @@ send_msg:
 				DISCONNECT_REASON_CODE_RESERVED;
 
 			prConnSettings->u2LinkIdBitmap = 0xFFFF;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prAisFsmInfo->ucMlProbeSendCount = 0;
+#endif
 
 			eNewState = aisFsmHandleNextReq_NORMAL_TR(prAdapter,
 				prAisFsmInfo, ucBssIndex);
@@ -4703,6 +4724,77 @@ void aisChangeAllMediaState(struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
+void aisRunIotApAction(struct ADAPTER *prAdapter,
+			enum ENUM_PARAM_MEDIA_STATE eConnectionState)
+{
+	uint32_t u4iotApAction = WLAN_IOT_AP_VOID;
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_DESC *prBssDesc;
+	struct STA_RECORD *prStaRec;
+	uint32_t u4NewRxBaMissTimeout;
+	uint8_t ucAisIndex;
+	uint8_t ucBssIndex = 0;
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	/* Check AIS for IOT Action */
+	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
+
+		if (!AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex))
+			continue;
+
+		ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		u4iotApAction = bssGetIotApAction(prAdapter, prBssDesc);
+		if (u4iotApAction != WLAN_IOT_AP_VOID)
+			break;
+	}
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	if (!prStaRec)
+		return;
+
+	u4NewRxBaMissTimeout = prStaRec->u4QmRxBaMissTimeout;
+
+	/* Handle IOT AP Action */
+	switch (u4iotApAction) {
+	case WLAN_IOT_AP_BA_MISS_TIMEOUT:
+
+		if (eConnectionState == MEDIA_STATE_CONNECTED)
+			u4NewRxBaMissTimeout =
+					prWifiVar->u4BaIotApMissTimeoutMs;
+
+		break;
+
+
+	default:
+		/* No IOT AP conneted or STA disconnected, set to default */
+		u4NewRxBaMissTimeout = prWifiVar->u4BaMissTimeoutMs;
+
+		break;
+	}
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Always short reorder timeout for game mode */
+	if (prAdapter->fgEnLowLatencyMode)
+		u4NewRxBaMissTimeout = prWifiVar->u4BaShortMissTimeoutMs;
+#endif
+
+	if (u4NewRxBaMissTimeout != prStaRec->u4QmRxBaMissTimeout) {
+
+		DBGLOG(AIS, INFO,
+			"Change AP reorder timeout from [%d] to [%d]\n",
+			prStaRec->u4QmRxBaMissTimeout,
+			u4NewRxBaMissTimeout);
+
+		prStaRec->u4QmRxBaMissTimeout = u4NewRxBaMissTimeout;
+	}
+
+}
+#endif
+
 enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 					     struct MSG_HDR *prMsgHdr)
 {
@@ -4873,6 +4965,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 
 				rsnAllowCrossAkm(prAdapter, ucBssIndex);
 			}
+
+#if (CFG_SUPPORT_IOT_AP_BLOCKLIST == 1)
+			/* Check IOT AP action after connection */
+			aisRunIotApAction(prAdapter, MEDIA_STATE_CONNECTED);
+#endif
 
 #if CFG_SUPPORT_ROAMING
 			if (prConnSettings->eConnectionPolicy !=
@@ -5306,6 +5403,10 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 
 	/* reset BTM Params when disconnect */
 	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
+
+	/* Reset RSSI monitor when disconnection */
+	kalMemZero(&prAisFsmInfo->rRSSIMonitor,
+		sizeof(struct PARAM_RSSI_MONITOR_T));
 
 #if CFG_SUPPORT_802_11K
 	/* clear query done flag */
@@ -10153,10 +10254,7 @@ u_int8_t queryAxBlocklist(struct ADAPTER *prAdapter,
 		if (EQUAL_MAC_ADDR(aucBSSID, prBlocklistItem->aucBSSID))
 			return TRUE;
 	}
-		DBGLOG(AIS, INFO,
-			"BSSID " MACSTR " is not in %s blocklist!\n",
-			MAC2STR(aucBSSID),
-			ucType == 0 ? "AX" : "+HTC");
+
 	return FALSE;
 }
 
@@ -10565,56 +10663,218 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+void aisHandleRnrMlParam(uint8_t ucConnMldId, struct IE_RNR *rnr,
+	uint8_t *pucChannelListNum, struct RF_CHANNEL_INFO *parChnlInfoList)
+{
+	uint8_t i, j, k;
+	uint8_t *pos = NULL, eBand;
+	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
+	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	uint32_t u4MldParam = 0;
+	uint8_t ucRnrChNum;
+
+	pos = rnr->aucInfoField;
+	do {
+		struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
+			(struct NEIGHBOR_AP_INFO_FIELD *)pos;
+
+		/* get channel number for this neighborAPInfo */
+		scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &eBand);
+		ucRnrChNum = prNeighborAPInfoField->ucChannelNum;
+
+		u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_COUNT)
+					>> TBTT_INFO_HDR_COUNT_OFFSET)
+					+ 1;
+		u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_LENGTH)
+					>> TBTT_INFO_HDR_LENGTH_OFFSET;
+
+		DBGLOG(AIS, INFO, "ConnMldId=%d Band=%d Chnl=%d Num=%d\n",
+			ucConnMldId, eBand, ucRnrChNum, *pucChannelListNum);
+
+		if (*pucChannelListNum >= 3)
+			return;
+
+		for (i = 0; i < u2TbttInfoCount; i++) {
+			j = i * u2TbttInfoLength;
+
+			if (u2TbttInfoLength >= 16 &&
+			  u2TbttInfoLength <= 255) {
+			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID +
+			 * BSS parameters + 20MHz PSD + MLD Parameter
+			 */
+				ucMldParamOffset = 13;
+			} else {
+			/* only handle neighbor AP info that MLD parameter
+			 * and BSSID both exist
+			 */
+				continue;
+			}
+
+			/* Directly copy 4 bytes content, but MLD param is only
+			 * 3 bytes actually. We will only use 3 bytes content.
+			 */
+			kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
+				aucTbttInfoSet[j + ucMldParamOffset],
+				sizeof(u4MldParam));
+			ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
+			ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
+				MLD_PARAM_LINK_ID_SHIFT;
+			ucBssParamChangeCount =
+			  (u4MldParam &
+				MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
+			  MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
+
+			DBGLOG(AIS, TRACE,
+				"RnrIe[%x][" MACSTR
+				"] MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
+				i, MAC2STR(&prNeighborAPInfoField->
+				aucTbttInfoSet[j + 1]), ucMldId, ucMldLinkId,
+				ucBssParamChangeCount);
+
+			if (ucMldId == ucConnMldId) {
+				for (k = 0; k < *pucChannelListNum; k++) {
+					if (parChnlInfoList[k].eBand == eBand &&
+					    parChnlInfoList[k].ucChannelNum ==
+						ucRnrChNum)
+						goto next;
+				}
+
+				parChnlInfoList[k].eBand = eBand;
+				parChnlInfoList[k].ucChannelNum = ucRnrChNum;
+				(*pucChannelListNum)++;
+
+				goto next;
+			}
+		}
+next:
+		pos += (4 + (u2TbttInfoCount * u2TbttInfoLength));
+	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+}
+
 static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *prBssDesc;
+	struct IE_RNR *rnr;
+	struct RF_CHANNEL_INFO arChnlInfoList[3];
+	uint8_t *ie;
+	uint8_t ucRnrChannelListNum = 0;
 	uint8_t aucIe[MAX_BAND_IE_LENGTH];
+	uint16_t ie_len, u2Offset = 0;
 	uint32_t u4ScanIELen = 0;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prBssDesc = prAisFsmInfo->prMlProbeBssDesc;
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	if (!prBssDesc) {
 		DBGLOG(AIS, INFO, "no ml probe target\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	/* Generate ML probe request IE */
-	kalMemZero(aucIe, sizeof(aucIe));
-	u4ScanIELen = mldFillScanIE(prAdapter, prBssDesc,
-		aucIe, sizeof(aucIe), FALSE, prBssDesc->rMlInfo.ucMldId);
-	prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-	prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
+	ie = prBssDesc->pucIeBuf;
+	ie_len = prBssDesc->u2IELength;
+	IE_FOR_EACH(ie, ie_len, u2Offset) {
+		if (IE_ID(ie) != ELEM_ID_RNR)
+			continue;
+		rnr = (struct IE_RNR *)ie;
 
-	/* Not to handle RNR IE in this scan*/
-	prScanReqMsg->fgOobRnrParseEn = FALSE;
-
-	/* Assign channel and BSSID */
-	prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
-	prScanReqMsg->ucChannelListNum = 1;
-	prScanReqMsg->arChnlInfoList[0].eBand = prBssDesc->eBand;
-	prScanReqMsg->arChnlInfoList[0].ucChannelNum = prBssDesc->ucChannelNum;
-	prScanReqMsg->ucBssidMatchCh[0] = prBssDesc->ucChannelNum;
-	COPY_MAC_ADDR(prScanReqMsg->aucExtBssid[0], prBssDesc->aucBSSID);
-
-	/* No BssidMatchSsid, set to default value */
-	kalMemSet(prScanReqMsg->ucBssidMatchSsidInd, CFG_SCAN_OOB_MAX_NUM,
-				sizeof(prScanReqMsg->ucBssidMatchSsidInd));
-
-	/* MaskExtend set to ENUM_SCN_ML_PROBE */
-	prScanReqMsg->ucScnFuncMask |= ENUM_SCN_USE_PADDING_AS_BSSID;
-	prScanReqMsg->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
-
-	/* Copy ML probe request IE */
-	kalMemZero(prScanReqMsg->aucIEMl, MAX_BAND_IE_LENGTH);
-	if (u4ScanIELen > 0) {
-		kalMemCopy(prScanReqMsg->aucIEMl, aucIe, u4ScanIELen);
-		prScanReqMsg->u2IELenMl = (uint16_t)u4ScanIELen;
+		aisHandleRnrMlParam(prBssDesc->rMlInfo.ucMldId, rnr,
+			&ucRnrChannelListNum, arChnlInfoList);
 	}
+
+	/* try normal scan at the first time */
+	if (prAisFsmInfo->ucMlProbeSendCount == 1 && ucRnrChannelListNum) {
+		struct RF_CHANNEL_INFO *prChnlInfo =
+					&prScanReqMsg->arChnlInfoList[0];
+		uint8_t i = 0;
+
+		prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+
+		/* Not to handle RNR IE in this scan*/
+		prScanReqMsg->fgOobRnrParseEn = FALSE;
+
+		/* Scan for determined SSID */
+		prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED_ONLY;
+		prScanReqMsg->ucSSIDNum = 1;
+		COPY_SSID(prScanReqMsg->arSsid[0].aucSsid,
+			  prScanReqMsg->arSsid[0].u4SsidLen,
+			  prConnSettings->aucSSID,
+			  prConnSettings->ucSSIDLen);
+
+		/* Scan for rnr channel lists */
+		for (i = 0; i < ucRnrChannelListNum; i++) {
+			prChnlInfo[i].eBand = arChnlInfoList[i].eBand;
+			prChnlInfo[i].ucChannelNum =
+				arChnlInfoList[i].ucChannelNum;
+		}
+		prScanReqMsg->ucChannelListNum = ucRnrChannelListNum;
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+
+		DBGLOG(AIS, INFO,
+			"[ML] Rnr Scan: Total number of scan channel(s)=%d(%d,%d,%d)\n",
+			ucRnrChannelListNum,
+			arChnlInfoList[0].ucChannelNum,
+			arChnlInfoList[1].ucChannelNum,
+			arChnlInfoList[2].ucChannelNum);
+	} else {
+		/* Generate ML probe request IE */
+		kalMemZero(aucIe, sizeof(aucIe));
+		u4ScanIELen = mldFillScanIE(prAdapter, prBssDesc,
+			aucIe, sizeof(aucIe), FALSE,
+			prBssDesc->rMlInfo.ucMldId);
+		prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+
+		/* Scan for determined SSID */
+		prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED_ONLY;
+		prScanReqMsg->ucSSIDNum = 1;
+		COPY_SSID(prScanReqMsg->arSsid[0].aucSsid,
+			  prScanReqMsg->arSsid[0].u4SsidLen,
+			  prConnSettings->aucSSID,
+			  prConnSettings->ucSSIDLen);
+
+		/* Not to handle RNR IE in this scan*/
+		prScanReqMsg->fgOobRnrParseEn = FALSE;
+
+		/* Assign channel and BSSID */
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		prScanReqMsg->ucChannelListNum = 1;
+		prScanReqMsg->arChnlInfoList[0].eBand = prBssDesc->eBand;
+		prScanReqMsg->arChnlInfoList[0].ucChannelNum =
+			prBssDesc->ucChannelNum;
+		prScanReqMsg->ucBssidMatchCh[0] = prBssDesc->ucChannelNum;
+		COPY_MAC_ADDR(prScanReqMsg->aucExtBssid[0],
+			prBssDesc->aucBSSID);
+
+		/* No BssidMatchSsid, set to default value */
+		kalMemSet(prScanReqMsg->ucBssidMatchSsidInd,
+			CFG_SCAN_OOB_MAX_NUM,
+			sizeof(prScanReqMsg->ucBssidMatchSsidInd));
+
+		/* MaskExtend set to ENUM_SCN_ML_PROBE */
+		prScanReqMsg->ucScnFuncMask |= ENUM_SCN_USE_PADDING_AS_BSSID;
+		prScanReqMsg->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
+
+		/* Copy ML probe request IE */
+		kalMemZero(prScanReqMsg->aucIEMl, MAX_BAND_IE_LENGTH);
+		if (u4ScanIELen > 0) {
+			kalMemCopy(prScanReqMsg->aucIEMl, aucIe, u4ScanIELen);
+			prScanReqMsg->u2IELenMl = (uint16_t)u4ScanIELen;
+		}
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* MLO probe should only be sent once
+	 * in one scan process.
+	 */
+	prAisFsmInfo->ucMlProbeEnable = FALSE;
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }

@@ -5433,6 +5433,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	init_completion(&prGlueInfo->rAisChGrntComp);
 #endif
 
+	halInitDrvOwnWork(prGlueInfo);
 	/* initialize timer for OID timeout checker */
 	kalOsTimerInitialize(prGlueInfo, kalTimeoutHandler);
 
@@ -7844,11 +7845,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 	halSetSuspendFlagToFw(prAdapter, FALSE);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-	if (wlan_bat_volt == 3550) {
+	if (wlan_bat_volt == BACKOFF_VOLT) {
 		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
 		kalSetTxPwrBackoffByBattVolt(prAdapter, TRUE);
 		fgIsTxPowerDecreased = TRUE;
-	} else if (wlan_bat_volt == 3650) {
+	} else if (wlan_bat_volt == RESTORE_VOLT) {
 		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
 		kalSetTxPwrBackoffByBattVolt(prAdapter, FALSE);
 		fgIsTxPowerDecreased = FALSE;
@@ -7945,8 +7946,10 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 	struct timespec64 rTimeout, rTime = {0};
 	u_int8_t fgIsTimeout = FALSE;
 
-	if (!prThread)
+	if (!prThread) {
+		DBGLOG(INIT, INFO, "thread already stop");
 		return;
+	}
 
 	rTimeout.tv_sec = 10;
 	rTimeout.tv_nsec = 0;
@@ -8352,6 +8355,7 @@ int32_t wlanOnAtReset(void)
 				"%d inform disconnected\n", u4Idx);
 		}
 	} else {
+		glTxRxUninit(prGlueInfo);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
@@ -8378,6 +8382,13 @@ int32_t wlanOnAtReset(void)
 		}
 #endif
 	}
+
+	DBGLOG(INIT, INFO, "reinit thread's completion\n");
+#if CFG_SUPPORT_MULTITHREAD
+	reinit_completion(&prGlueInfo->rHifHaltComp);
+	reinit_completion(&prGlueInfo->rRxHaltComp);
+#endif
+	reinit_completion(&prGlueInfo->rHaltComp);
 	return rStatus;
 }
 #endif
@@ -9191,6 +9202,7 @@ static void wlanRemove(void)
 WLAN_REMOVE_RETURN:
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUpdateFlag(FALSE);
+	glResetUpdateFwAsserted(FALSE);
 #endif
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOffEnd();
@@ -9213,34 +9225,45 @@ uint8_t kalGetShutdownState(void)
 	return uShutdownState;
 }
 #endif
+
 #if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 void wlanShutdown(void)
 {
+	uint32_t u4RetryCount;
+
 	/* there are two shutdown entry,
 	 * one is pre_fmd and another is platform
 	 */
 	if (kalGetShutdownState()) {
 		DBGLOG(REQ, INFO, "shutdown is ongoing\n");
-		return;
+		goto exit;
 	}
 
+	u4RetryCount = 0;
 	uShutdownState = SHUTDOWN_STATE_ONGOING;
 	while (kalIsResetOnEnd()) {
 		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 		kalMsleep(100);
+
+		u4RetryCount++;
+		if (u4RetryCount > 300) {
+			DBGLOG(REQ, ERROR,
+				"Reset not finished more than 30s.\n");
+			goto exit;
+		}
 	}
 
-	wfsys_lock();
 	/* wifi is off */
 	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0)) {
 		wfsys_unlock();
-		return;
+		goto exit;
 	}
 
 	DBGLOG(INIT, INFO, "do wifi off\n");
 	wlanFuncOff();
-	wfsys_unlock();
 
+exit:
+	DBGLOG(REQ, INFO, "wifi shutdown finished\n");
 	uShutdownState = SHUTDOWN_STATE_DONE;
 }
 #endif
@@ -9957,7 +9980,8 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 struct net_device *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucAisIndex)
 {
-	if (gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
+	if (ucAisIndex < KAL_AIS_NUM &&
+	    gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
 		return gprWdev[ucAisIndex]->netdev;
 
 	return NULL;

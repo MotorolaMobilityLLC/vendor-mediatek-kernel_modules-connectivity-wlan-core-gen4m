@@ -243,6 +243,7 @@ do { \
 uint8_t rsnApOverload(uint16_t status, uint16_t reason)
 {
 	switch (status) {
+	case STATUS_CODE_UNSPECIFIED_FAILURE:
 	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
 	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
 	case STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD:
@@ -2564,7 +2565,9 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			return;
 		}
 
-		if (rsnParserCheckForPmkid(prAdapter, prBssInfo, prStaRec,
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+		    [prBssInfo->u4PrivateData]) &&
+		    rsnParserCheckForPmkid(prAdapter, prBssInfo, prStaRec,
 					   &rRsnIe) == FALSE) {
 			*pu2StatusCode = STATUS_INVALID_PMKID;
 			return;
@@ -2909,11 +2912,12 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO,
 		"[%d] Set " MACSTR
-		", cacheid(set=%d)=0x%2x%2x, total %d, PMKID " PMKSTR "\n",
+		", cacheid(set=%d)=0x%2x%2x, total %d, expiration at %d, PMKID"
+		PMKSTR "\n",
 		prPmkid->ucBssIdx,
 		MAC2STR(prPmkid->arBSSID), prPmkid->fgFilsCacheIdSet,
 		prPmkid->arFilsCacheId[0], prPmkid->arFilsCacheId[1],
-		cache->u4NumElem,
+		cache->u4NumElem, prPmkid->u4Expiration,
 		prPmkid->arPMKID[0], prPmkid->arPMKID[1], prPmkid->arPMKID[2],
 		prPmkid->arPMKID[3], prPmkid->arPMKID[4], prPmkid->arPMKID[5],
 		prPmkid->arPMKID[6], prPmkid->arPMKID[7], prPmkid->arPMKID[8],
@@ -3053,6 +3057,60 @@ void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
 				     ucBssIndex);
 } /* rsnGeneratePmkidIndication */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to chek PMK expiration. If it will expire
+ *        within PMK_REFRESH_THRESHOLD_SEC seconds, don't set PMKID in
+ *        ASSOC REQ.
+ *
+ * \retval TRUE, if pmk is going to expire
+ * \retval FALSE, otherwise
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rsnCheckPmkExpiration(struct ADAPTER *prAdapter,
+					struct PMKID_ENTRY *targetEntry,
+					uint8_t ucBssIndex)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo;
+	struct PMKID_ENTRY *entry;
+	struct LINK *cache;
+	uint32_t u4MinExpiration, u4RefreshThreshold;
+	OS_SYSTIME now;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return FALSE;
+	}
+	cache = &prBssInfo->rPmkidCache;
+
+	u4RefreshThreshold = prWifiVar->u4PmkRefreshThreshold;
+	u4MinExpiration = targetEntry->rBssidInfo.u4Expiration;
+	GET_BOOT_SYSTIME(&now);
+
+	LINK_FOR_EACH_ENTRY(entry, cache, rLinkEntry, struct PMKID_ENTRY) {
+		if ((targetEntry->rBssidInfo.u2PMKLen ==
+			entry->rBssidInfo.u2PMKLen) &&
+		    !kalMemCmp(targetEntry->rBssidInfo.arPMK,
+				entry->rBssidInfo.arPMK,
+				entry->rBssidInfo.u2PMKLen) &&
+		    (entry->rBssidInfo.u4Expiration < u4MinExpiration))
+			u4MinExpiration = entry->rBssidInfo.u4Expiration;
+	}
+
+	if (CHECK_FOR_EXPIRATION(MSEC_TO_SEC(now) + u4RefreshThreshold,
+				u4MinExpiration)) {
+		DBGLOG(RSN, INFO,
+			"PMK is almost expired, pmk expired time=%d, refresh threshold time=%llu!\n",
+			u4MinExpiration,
+			MSEC_TO_SEC(now) + u4RefreshThreshold);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 #if CFG_SUPPORT_802_11W
 
 /*----------------------------------------------------------------------------*/
@@ -3092,6 +3150,8 @@ uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 		if (prStaRec->rPmfCfg.fgApplyPmf)
 			DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
 		return prStaRec->rPmfCfg.fgApplyPmf;
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		return prBssInfo->fgBipKeyInstalled;
 	} else
 		return FALSE;
 }
@@ -4201,18 +4261,6 @@ void rsnApSaQueryRequest(struct ADAPTER *prAdapter,
 		       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 		return;
 	}
-
-	DBGLOG(RSN, INFO,
-	       "IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
-	       MAC2STR(prStaRec->aucMacAddr));
-
-	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
-							MAC_TX_RESERVED_FIELD +
-							PUBLIC_ACTION_MAX_LEN);
-
-	if (!prMsduInfo)
-		return;
-
 	/* drop cipher mismatch */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 		if (prSwRfb->fgIsCipherMS ||
@@ -4224,6 +4272,16 @@ void rsnApSaQueryRequest(struct ADAPTER *prAdapter,
 			return;
 		}
 	}
+	DBGLOG(RSN, INFO,
+	       "IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
+	       MAC2STR(prStaRec->aucMacAddr));
+
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
+							MAC_TX_RESERVED_FIELD +
+							PUBLIC_ACTION_MAX_LEN);
+
+	if (!prMsduInfo)
+		return;
 
 	prTxFrame = (struct ACTION_SA_QUERY_FRAME *)
 	    ((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);

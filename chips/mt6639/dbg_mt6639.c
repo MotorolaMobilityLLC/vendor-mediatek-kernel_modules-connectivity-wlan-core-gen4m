@@ -2581,7 +2581,9 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
 		CONNV3_DRV_TYPE_BT);
 	if (ret != 0) {
-		DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
+		DBGLOG(HAL, ERROR,
+			"connv3_hif_dbg_start failed. ret=%d\n",
+			ret);
 		goto start_dump_via_pcie;
 	} else {
 		DBGLOG(HAL, INFO,
@@ -2633,7 +2635,9 @@ start_dump_via_bt:
 	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
 		CONNV3_DRV_TYPE_BT);
 	if (ret != 0) {
-		DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
+		DBGLOG(HAL, ERROR,
+			"connv3_hif_dbg_start failed. ret=%d\n",
+			ret);
 		goto start_dump_via_scp;
 	} else
 		DBGLOG(HAL, INFO, "start BT dump.\n");

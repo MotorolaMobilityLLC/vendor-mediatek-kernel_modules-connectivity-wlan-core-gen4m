@@ -1689,6 +1689,7 @@ enum ENUM_WLAN_IOT_ACTION {
 	WLAN_IOT_AP_COEX_DIS_RX_AMPDU,
 	WLAN_IOT_AP_ADAPTIVE_BEACON_TIME = 12,
 	WLAN_IOT_AP_OWE_PMK_REMOVE = 13,
+	WLAN_IOT_AP_BA_MISS_TIMEOUT = 15,
 	WLAN_IOT_AP_DIS_TX_AMSDU = 18,
 	WLAN_IOT_AP_ACT_MAX
 };
@@ -2619,4 +2620,5 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 	struct TEST_MODE_PL_CAL *data);
 #endif /* CFG_SUPPORT_PLCAL */
 
+void wlanUpdateBusAccessStatus(u_int8_t flag);
 #endif /* _WLAN_LIB_H */

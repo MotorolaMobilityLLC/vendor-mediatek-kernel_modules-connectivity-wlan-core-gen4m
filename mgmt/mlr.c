@@ -548,12 +548,12 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	if (IS_BSS_APGO(prBssInfo))
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 			prMsduInfo->ucStaRecIndex);
 	else
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 	if (unlikely(!prStaRec)) {
@@ -1034,9 +1034,9 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 	}
 
 	if (!IS_BSS_AIS(prBssInfo)
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		&& !IS_BSS_APGO(prBssInfo)
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		) {
 		return FALSE;
 	} else if (IS_BSS_AIS(prBssInfo)
@@ -1045,23 +1045,25 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex) ==
 		MEDIA_STATE_CONNECTED)) {
 		return FALSE;
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	} else if (IS_BSS_APGO(prBssInfo)
 		&& !IS_BSS_ACTIVE(prBssInfo)) {
 		return FALSE;
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 	}
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	if (IS_BSS_APGO(prBssInfo))
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 				prMsduInfo->ucStaRecIndex);
 	else
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 	if (unlikely(!prStaRec)) {
-		DBGLOG(TX, INFO, "MLR check - prStaRec is NULL");
+		DBGLOG(TX, INFO,
+			"MLR check - prStaRec is NULL [idx=%d, da=" MACSTR "]",
+			prMsduInfo->ucStaRecIndex, prMsduInfo->aucEthDestAddr);
 		return FALSE;
 	}
 	if (unlikely(!prStaRec->fgIsInUse)) {
@@ -1092,6 +1094,142 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 		return FALSE;
 }
 
+void mlrDetermineRateCode(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		uint16_t *pu2RateCode)
+{
+
+	if (MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec))
+		*pu2RateCode = RATE_MLR_1_5M;
+	else if (MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec))
+		*pu2RateCode = RATE_MLRP_0_375M;
+	else if (MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec))
+		*pu2RateCode = RATE_ALR_0_75M;
+	else
+		*pu2RateCode = RATE_MLR_1_5M;
+}
+
+void mlrGetMlrBandConfig(struct ADAPTER *prAdapter,
+	uint8_t *uc2gTxEnValue, uint8_t *uc5gTxEnValue)
+{
+	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
+	int32_t u4Ret;
+
+	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, "MlrCfg2gTxEn",
+		WLAN_CFG_DEFAULT);
+	if (prWlanCfgEntry) {
+		MLR_DBGLOG(prAdapter, NIC, INFO, "Find key[%s]=%s\n",
+			prWlanCfgEntry->aucKey, prWlanCfgEntry->aucValue);
+		u4Ret = kalkStrtou8(prWlanCfgEntry->aucValue, 0,
+			uc2gTxEnValue);
+		if (u4Ret)
+			DBGLOG(NIC, WARN,
+				"parse aucValue error u4Ret=%d\n", u4Ret);
+	}
+
+	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, "MlrCfg5gTxEn",
+		WLAN_CFG_DEFAULT);
+	if (prWlanCfgEntry) {
+		MLR_DBGLOG(prAdapter, NIC, INFO, "Find key[%s]=%s\n",
+			prWlanCfgEntry->aucKey, prWlanCfgEntry->aucValue);
+		u4Ret = kalkStrtou8(prWlanCfgEntry->aucValue, 0,
+			uc5gTxEnValue);
+		if (u4Ret)
+			DBGLOG(NIC, WARN,
+				"parse aucValue error u4Ret=%d\n", u4Ret);
+	}
+}
+
+u_int8_t mlrCheckMlrConditions(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, enum ENUM_BAND eBand,
+	uint8_t uc2gTxEnValue, uint8_t uc5gTxEnValue)
+{
+
+	if (MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec)) {
+		return MLR_BAND_IS_SUPPORT(eBand);
+	} else if (MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) {
+		if (eBand == BAND_2G4 && uc2gTxEnValue == 1)
+			return TRUE;
+		else if (eBand == BAND_5G && uc5gTxEnValue == 1)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+u_int8_t mlrCanEnterMlrStart(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		enum ENUM_BAND eBand)
+{
+	uint8_t uc2gTxEnValue = 1;
+	uint8_t uc5gTxEnValue = 1;
+	u_int8_t fgCanEnterMlrStart = FALSE;
+
+	mlrGetMlrBandConfig(prAdapter, &uc2gTxEnValue, &uc5gTxEnValue);
+	fgCanEnterMlrStart = mlrCheckMlrConditions(prAdapter, prStaRec,
+		eBand, uc2gTxEnValue, uc5gTxEnValue);
+
+	fgCanEnterMlrStart &= MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
+		prStaRec->ucRCPI);
+	fgCanEnterMlrStart &= (prStaRec->ucStaState == STA_STATE_3);
+
+	DBGLOG(NIC, INFO,
+		"MLR rate - CanEnterMlrStart=%d Band=%d 2gEn|5gEn=[%d|%d] RCPI=%d StaState=%d\n",
+		fgCanEnterMlrStart, eBand, uc2gTxEnValue, uc5gTxEnValue,
+		prStaRec->ucRCPI, prStaRec->ucStaState);
+
+	return fgCanEnterMlrStart;
+}
+
+u_int8_t mlrCanUseMlrRate(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		enum ENUM_BAND eBand,
+		struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t uc2gTxEnValue = 1;
+	uint8_t uc5gTxEnValue = 1;
+	u_int8_t fgCanUseMlrRate = FALSE;
+	u_int8_t fgIsMultiLink = FALSE;
+	u_int8_t fgIsForceLink = FALSE;
+
+	mlrGetMlrBandConfig(prAdapter, &uc2gTxEnValue, &uc5gTxEnValue);
+
+	if (prMsduInfo->eSrc == TX_PACKET_OS) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		fgIsMultiLink = IS_MLD_STAREC_MULTI(
+			mldStarecGetByStarec(prAdapter, prStaRec));
+		if (fgIsMultiLink && (prMsduInfo->ucControlFlag
+			& MSDU_CONTROL_FLAG_FORCE_LINK))
+			fgIsForceLink = TRUE;
+
+		/* if multi-links, HW may choose 2G or 5G for TX */
+		if (fgIsMultiLink && !fgIsForceLink
+			&& (uc2gTxEnValue ^ uc5gTxEnValue))
+			fgCanUseMlrRate = FALSE;
+		else
+			fgCanUseMlrRate = mlrCheckMlrConditions(prAdapter,
+				prStaRec, eBand, uc2gTxEnValue, uc5gTxEnValue);
+
+#else
+		fgCanUseMlrRate = mlrCheckMlrConditions(prAdapter, prStaRec,
+			eBand, uc2gTxEnValue, uc5gTxEnValue);
+#endif
+	} else if (prMsduInfo->eSrc == TX_PACKET_MGMT)
+		fgCanUseMlrRate = mlrCheckMlrConditions(prAdapter, prStaRec,
+			eBand, uc2gTxEnValue, uc5gTxEnValue);
+
+	DBGLOG(NIC, INFO,
+		"MLR rate - CanUseMlrRate=%d Band=%d Src=%d IsMultiLink=%d IsForceLink=%d 2gEn|5gEn=[%d|%d]\n",
+		fgCanUseMlrRate, eBand, prMsduInfo->eSrc, fgIsMultiLink,
+		fgIsForceLink, uc2gTxEnValue, uc5gTxEnValue);
+
+	return fgCanUseMlrRate;
+}
+
 u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
 		struct STA_RECORD *prStaRec,
@@ -1100,7 +1238,6 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 {
 	u_int8_t fgIsUseMlrRate = FALSE;
 	uint32_t u4MlrBitmapAnd = 0;
-
 
 	if (unlikely(!prAdapter || !prBssInfo || !prStaRec || !prMsduInfo))
 		return fgIsUseMlrRate;
@@ -1119,11 +1256,8 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 		 */
 		u4MlrBitmapAnd = prAdapter->u4MlrSupportBitmap
 			& prStaRec->ucMlrSupportBitmap;
-		if (((MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec) &&
-		      MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) ||
-		     MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec) ||
-		     MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) &&
-		    prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
+		if (mlrCanUseMlrRate(prAdapter, prStaRec,
+			prBssInfo->eBand, prMsduInfo)) {
 			/* In case of MGMT frame: Auth and (re)Assoc */
 			/* && RSSI < -93(RCPI:34)~-90(RCPI:40) */
 			if (prMsduInfo->eSrc == TX_PACKET_MGMT
@@ -1137,7 +1271,8 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 					u2FrameCtrl)) {
 					if (MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
 						prStaRec->ucRCPI)) {
-						*pu2RateCode = RATE_MLR_1_5M;
+						mlrDetermineRateCode(prAdapter,
+							prStaRec, pu2RateCode);
 						fgIsUseMlrRate = TRUE;
 						DBGLOG(NIC, INFO,
 							"MLR rate - TX MGMT frame(FC=0x%02x) to Peer(eStaType=0x%02x) with MLR RateCode=0x%x Bitmap(D&P)=0x%02x\n",
@@ -1160,101 +1295,13 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 				/* Consider fixed rate (ARP, DHCP, EAPOL) */
 				&& prMsduInfo->ucRateMode ==
 				MSDU_RATE_MODE_MANUAL_DESC) {
-				*pu2RateCode = RATE_MLR_1_5M;
+				mlrDetermineRateCode(prAdapter, prStaRec,
+					pu2RateCode);
 				fgIsUseMlrRate = TRUE;
 				DBGLOG(NIC, INFO,
 					"MLR rate - TX Data frame to Peer(eStaType=0x%02x) with MLR RateCode=0x%x Bitmap(D&P)=0x%02x\n",
 					prStaRec->eStaType, *pu2RateCode,
 					u4MlrBitmapAnd);
-			}
-		}
-
-		/* for MLRP SAP & MLRP STA */
-		else if (MLR_IS_MLRP_AFTER_INTERSECT(
-			 prAdapter, prStaRec)) {
-			/* In case of MGMT frame: Auth and (re)Assoc */
-			/* && RSSI < -93(RCPI:34)~-90(RCPI:40) */
-			if (prMsduInfo->eSrc == TX_PACKET_MGMT
-				&& prMsduInfo->prPacket) {
-				uint16_t u2FrameCtrl =
-					((struct WLAN_MAC_HEADER *)prMsduInfo
-					->prPacket)->u2FrameCtrl;
-
-				u2FrameCtrl &= MASK_FRAME_TYPE;
-				if (MLR_CHECK_IF_MGMT_USE_MLR_RATE(
-					u2FrameCtrl)) {
-					if (MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
-						prStaRec->ucRCPI)) {
-						*pu2RateCode = RATE_MLRP_0_375M;
-						fgIsUseMlrRate = TRUE;
-						DBGLOG(NIC, INFO,
-							"MLR rate - TX MGMT frame(FC=0x%02x) to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
-							u2FrameCtrl,
-							prStaRec->eStaType,
-							*pu2RateCode);
-					} else {
-						DBGLOG(NIC, INFO,
-							"MLR rate - RCPI condition doesn't meet(Peer RCPI:%d > Threshold:%d)\n",
-							prStaRec->ucRCPI,
-							prAdapter->rWifiVar
-							.ucTxMlrRateRcpiThr);
-					}
-				}
-			/* In case of Data frame (ARP, DHCP, EAPOL) */
-			} else if (MLR_STATE_IN_START(prStaRec)
-				&& prMsduInfo->eSrc == TX_PACKET_OS
-				/* Consider fixed rate (ARP, DHCP, EAPOL) */
-				&& prMsduInfo->ucRateMode ==
-				MSDU_RATE_MODE_MANUAL_DESC) {
-				*pu2RateCode = RATE_MLRP_0_375M;
-				fgIsUseMlrRate = TRUE;
-				DBGLOG(NIC, INFO,
-					"MLR rate - TX Data frame to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
-					prStaRec->eStaType, *pu2RateCode);
-			}
-		}
-		/* for ALR SAP & ALR STA */
-		else if (MLR_IS_ALR_AFTER_INTERSECT(
-			 prAdapter, prStaRec)) {
-			/* In case of MGMT frame: Auth and (re)Assoc */
-			/* && RSSI < -93(RCPI:34)~-90(RCPI:40) */
-			if (prMsduInfo->eSrc == TX_PACKET_MGMT
-				&& prMsduInfo->prPacket) {
-				uint16_t u2FrameCtrl =
-					((struct WLAN_MAC_HEADER *)prMsduInfo
-					->prPacket)->u2FrameCtrl;
-
-				u2FrameCtrl &= MASK_FRAME_TYPE;
-				if (MLR_CHECK_IF_MGMT_USE_MLR_RATE(
-					u2FrameCtrl)) {
-					if (MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
-						prStaRec->ucRCPI)) {
-						*pu2RateCode = RATE_ALR_0_75M;
-						fgIsUseMlrRate = TRUE;
-						DBGLOG(NIC, INFO,
-							"MLR rate - TX MGMT frame(FC=0x%02x) to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
-							u2FrameCtrl,
-							prStaRec->eStaType,
-							*pu2RateCode);
-					} else {
-						DBGLOG(NIC, INFO,
-							"MLR rate - RCPI condition doesn't meet(Peer RCPI:%d > Threshold:%d)\n",
-							prStaRec->ucRCPI,
-							prAdapter->rWifiVar
-							.ucTxMlrRateRcpiThr);
-					}
-				}
-			/* In case of Data frame (ARP, DHCP, EAPOL) */
-			} else if (MLR_STATE_IN_START(prStaRec)
-				&& prMsduInfo->eSrc == TX_PACKET_OS
-				/* Consider fixed rate (ARP, DHCP, EAPOL) */
-				&& prMsduInfo->ucRateMode ==
-				MSDU_RATE_MODE_MANUAL_DESC) {
-				*pu2RateCode = RATE_ALR_0_75M;
-				fgIsUseMlrRate = TRUE;
-				DBGLOG(NIC, INFO,
-					"MLR rate - TX Data frame to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
-					prStaRec->eStaType, *pu2RateCode);
 			}
 		}
 	}
@@ -1352,13 +1399,20 @@ uint16_t mlrGenerateMlrIEforMTKOuiIE(struct ADAPTER *prAdapter,
 		prMLR->ucLRBitMap =
 			(uint8_t) prAdapter->u4MlrSupportBitmap;
 
-		/* MLRv2 tells the AP whether STA uses MLR rate to TX assoc
-		 * Because AP cannot obtain data rate through RXV
-		 * Use BIT(5)
-		 */
-		if (prStaRec && MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
-			prStaRec->ucRCPI))
-			prMLR->ucLRBitMap |= BIT(5);
+
+#if (CFG_SUPPORT_MLR_V2 == 1)
+		if (IS_BSS_AIS(prBssInfo)
+			&& prBssInfo->eCurrentOPMode ==
+			OP_MODE_INFRASTRUCTURE) {
+			/* MLRv2 STA tells the AP whether to use MLR rate
+			 * to TX assocBecause AP cannot obtain data rate
+			 * through RXV. Use BIT(5)
+			 */
+			if (prStaRec && MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
+				prStaRec->ucRCPI))
+				prMLR->ucLRBitMap |= BIT(5);
+		}
+#endif
 
 		if (prStaRec != NULL)
 			DBGLOG(TX, INFO,
@@ -1397,6 +1451,7 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucStaIdx;
 	uint8_t ucBitmapAnd;
+	u_int8_t fgIsMultiLink = FALSE;
 
 	if (unlikely(!prAdapter)) {
 		DBGLOG(TX, WARN, "MLR event - prAdapter is NULL");
@@ -1432,33 +1487,34 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) ==
 		MEDIA_STATE_CONNECTED)
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 		|| IS_BSS_APGO(prBssInfo)
 #endif
 		) {
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		fgIsMultiLink = IS_MLD_STAREC_MULTI(
+			mldStarecGetByStarec(prAdapter, prStaRec));
+#endif
 		prStaRec->ucMlrMode = prEvtMlrFsmUpdate->ucMlrMode;
 		prStaRec->ucMlrState = prEvtMlrFsmUpdate->ucMlrState;
 		ucBitmapAnd = prStaRec->ucMlrMode
 			& prStaRec->ucMlrSupportBitmap;
+
+		/* Under MLR 2.0, when only the single link is left,
+		 * RA may use MLR 1.5 rate, so the driver will need
+		 * to do tx fragment. Instead, FW decides
+		 * whether to do tx fragment.
+		 */
 		if (MLR_STATE_IN_START(prStaRec)
-			/* V2 doesn't need to TxFrag due to 3M
-			 * && (ucBitmapAnd == MLR_MODE_MLR_V1
-			 * || ucBitmapAnd == MLR_MODE_MLR_PLUS
-			 * || ucBitmapAnd == MLR_MODE_ALR))
-			 */
-			/* Under MLR 2.0, when only the single link is left,
-			 * RA may use MLR 1.5 rate, so the driver will need
-			 * to do tx fragment. Instead, FW decides
-			 * whether to do tx fragment.
-			 */
-			&& prEvtMlrFsmUpdate->ucTxFragEn)
+			&& prEvtMlrFsmUpdate->ucTxFragEn
+			&& !fgIsMultiLink)
 			MLR_ENABLE_TX_FRAG(prStaRec);
 		else
 			MLR_DISABLE_TX_FRAG(prStaRec);
 
 		DBGLOG(NIC, INFO,
-		       "MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] M:S:F[0x%02x, %d, %d], Bitmap[0x%02x](0x%02x & 0x%02x), EnTxFrag=%d\n",
+		       "MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] M:S:F[0x%02x, %d, %d], Bitmap[0x%02x](0x%02x & 0x%02x), IsML=%d, EnTxFrag=%d\n",
 		       prBssInfo->ucBssIndex,
 		       prEvtMlrFsmUpdate->u2WlanIdx,
 		       ucStaIdx,
@@ -1468,16 +1524,18 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		       ucBitmapAnd,
 		       prStaRec->ucMlrMode,
 		       prStaRec->ucMlrSupportBitmap,
+		       fgIsMultiLink,
 		       prStaRec->fgEnableTxFrag);
 	}
 
 	MLR_DBGLOG(prAdapter, NIC, INFO,
-		"MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] Connected[%d] M:S:F[0x%02x, %d, %d]\n",
+		"MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] Connected[%d] IsML[%d], M:S:F[0x%02x, %d, %d]\n",
 		prBssInfo->ucBssIndex,
 		prEvtMlrFsmUpdate->u2WlanIdx,
 		ucStaIdx,
 		kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) == MEDIA_STATE_CONNECTED,
+		fgIsMultiLink,
 	    prEvtMlrFsmUpdate->ucMlrMode,
 	    prEvtMlrFsmUpdate->ucMlrState,
 	    prEvtMlrFsmUpdate->ucTxFragEn);
@@ -1520,12 +1578,12 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		return;
 	}
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	if (IS_BSS_APGO(prBssInfo))
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 			prMsduInfo->ucStaRecIndex);
 	else
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 	if (unlikely(!prStaRec)) {
@@ -1549,6 +1607,9 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 	} else if (MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec)) {
 		u2TempSplitThreshold = 150; /* 250 */
 		u2TempSplitSize = 150; /* 250 */
+	} else {
+		u2TempSplitThreshold = 1000;
+		u2TempSplitSize = 1000;
 	}
 
 	/* MLR V1/V2/V1+V2, ALR and MLRP need to consider Tx frag */

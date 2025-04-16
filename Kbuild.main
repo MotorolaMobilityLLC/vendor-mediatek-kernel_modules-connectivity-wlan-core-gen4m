@@ -419,6 +419,7 @@ CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
 CONFIG_MTK_WIFI_SUPPORT_TXPWR_ENV=y
 CONFIG_MTK_WIFI_SUPPORT_6G_PWR_MODE=y
 CONFIG_WIFI_RAM_HW_DETECT_REPORT_SUPPORT=y
+CONFIG_WIFI_PLAT_SHUTDOWN_SUPPORT=y
 ifneq ($(filter 6983 6895 6879 6886, $(WLAN_CHIP_ID)),)
     CONFIG_RX_NAPI_THREADED=n
 else
@@ -577,6 +578,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=y
     CONFIG_SUPPORT_WIFI_DYNAMIC_PAGE_POOL=y
     CONFIG_SUPPORT_WIFI_RX_PAGE_POOL_USE_CMA=y
+    CONFIG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE=y
     CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
     CONFIG_SUPPORT_WIFI_POWER_METRICS=y
     CONFIG_MTK_WIFI_AER_L05_RESET=n
@@ -695,6 +697,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_WIFI_TX_CMA_MEM_NON_CACHE=y
     CONFIG_SUPPORT_WIFI_POWER_METRICS=y
     CONFIG_SUPPORT_WIFI_ICCM=y
+    CONFIG_SUPPORT_WIFI_ADJUST_DTIM=y
     CONFIG_PCIE_GEN_SWITCH=y
     CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
     CONFIG_SUPPORT_WIFI_MISC_RSV_MEM=y
@@ -712,6 +715,15 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_ADD_MDNS_WHITELIST=y
     CONFIG_MTK_WIFI_SUPPORT_TXPWR_ENV=y
     CONFIG_MTK_WIFI_SUPPORT_6G_PWR_MODE=y
+    ifneq ($(CONFIG_WIFI_6989_6653), y)
+        CONFIG_SUPPORT_P2P_SET_ML_BSS_NUM=y
+    else
+        CONFIG_MLD_P2P_LINK_MAX=1
+        ifneq ($(call kver_ge,6,6),1)
+            CONFIG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=y
+            CONFIG_MTK_PRE_WIFI7=y
+        endif
+    endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
@@ -1092,6 +1104,26 @@ else
     ccflags-y += -DCFG_PCIE_MT6989=0
 endif
 
+ifeq ($(CONFIG_WIFI_6989_6653), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_PCIE_MT6989_6653=1
+    else
+        ccflags-y += -DCFG_PCIE_MT6989_6653=0
+    endif
+else
+    ccflags-y += -DCFG_PCIE_MT6989_6653=0
+endif
+
+ifneq ($(filter $(MODULE_NAME), wlan_drv_gen4m_6991_6639_tc10sp wlan_drv_gen4m_6991_6639_new9gen2),)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_PCIE_MT6991=1
+    else
+        ccflags-y += -DCFG_PCIE_MT6991=0
+    endif
+else
+    ccflags-y += -DCFG_PCIE_MT6991=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_STATS_ONE_CMD), y)
     ccflags-y += -DCFG_SUPPORT_STATS_ONE_CMD=1
 else
@@ -1378,12 +1410,18 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     ifneq ($(CONFIG_AP_EHT_DEFAULT_VALUE),)
         ccflags-y += -DCFG_AP_EHT_DEFAULT_VALUE=$(CONFIG_AP_EHT_DEFAULT_VALUE)
     endif
+    ifeq ($(CONFIG_SAP_SKIP_CHECK_HOSTAPD_ML_IE), y)
+        ccflags-y += -DCFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=1
+    else
+        ccflags-y += -DCFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
     ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_EPCS=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_T2LM=0
     ccflags-y += -DCFG_SUPPORT_CONTROL_PORT_OVER_NL80211=0
+    ccflags-y += -DCFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE=0
 endif
 
 ifeq ($(CONFIG_MLO_EMLSR_CONCURRENT_ENHANCEMENT), y)
@@ -1674,7 +1712,9 @@ endif
 
 ifeq ($(CONFIG_SNIFFER_RADIOTAP), y)
     ccflags-y += -DCFG_SUPPORT_SNIFFER_RADIOTAP
-    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER
+    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER=1
+else
+    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER=0
 endif
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
@@ -1829,11 +1869,20 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -DCFG_MTK_WIFI_CONNV3_SUPPORT=1
-    ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra),)
-        CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra
-        KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+    ifeq ($(CONFIG_WIFI_6989_6653), y)
+        ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra_mt6653),)
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra_mt6653
+            KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+        else
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra_mt6653
+        endif
     else
-        CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra
+        ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra),)
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra
+            KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+        else
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra
+        endif
     endif
     $(info $$CONFIG_MTK_WIFI_CONNV3_PATH is [${CONFIG_MTK_WIFI_CONNV3_PATH}])
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/include
@@ -1841,8 +1890,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/include
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/connsyslog
-
-    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/include
 else ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
@@ -2721,10 +2769,10 @@ else
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=0
 endif
 
-ifeq ($(CONFIG_RX_SW_PROCESS_DBG), y)
-    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=1
+ifeq ($(CONFIG_ABSENCE_TIMEOUT_DETECTION), y)
+    ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=1
 else
-    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=0
+    ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=0
 endif
 
 ifeq ($(CONFIG_PERF_MON_FAST), y)
@@ -2867,6 +2915,30 @@ ifneq ($(CONFIG_P2P_MAXIMUM_CLIENT_COUNT),)
 endif
 ifneq ($(CONFIG_WTBL_MAXSIZE),)
     ccflags-y += -DCFG_WTBL_MAXSIZE=$(CONFIG_WTBL_MAXSIZE)
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V1), y)
+    ccflags-y += -DCFG_SUPPORT_MLR=1
+else
+    ccflags-y += -DCFG_SUPPORT_MLR=0
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V2), y)
+    ccflags-y += -DCFG_SUPPORT_MLR_V2=1
+else
+    ccflags-y += -DCFG_SUPPORT_MLR_V2=0
+endif
+
+ifeq ($(CONFIG_MTK_MLR_V2_BALANCE), y)
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRV2=1
+else
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRV2=0
+endif
+
+ifeq ($(CONFIG_MTK_MLRP_ALR_BALANCE), y)
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=1
+else
+    ccflags-y += -DCFG_SUPPORT_BALANCE_MLRP_ALR=0
 endif
 
 # ---------------------------------------------------

@@ -2600,6 +2600,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	wifi_coredump_set_enable(TRUE);
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
+	glResetUpdateFwAsserted(TRUE);
 
 #if CFG_MTK_MDDP_SUPPORT
 #if (CFG_PCIE_GEN_SWITCH == 1)
@@ -3032,14 +3033,21 @@ static int wlan_pwr_on_notify(void)
 
 static int wlan_chip_power_down_notify(unsigned int notify)
 {
-	while (get_wifi_process_status() == 2) {
-		DBGLOG(REQ, WARN,
+	while (get_wifi_process_status() == 3) {
+		DBGLOG_LIMITED(REQ, WARN,
 			"Wi-Fi off process is ongoing, wait here.\n");
 		msleep(50);
 	}
+
 	if ((!get_wifi_process_status() && !get_wifi_powered_status()) ||
 	    (kalGetShutdownState() == 2))
 		glNotifyPciePowerDown();
+
+#if CFG_TESTMODE_WMT_WIFI_ON_SUPPORT
+	/* prevent turn on wifi by wmt driver before precal finished */
+	/* so we register cb function after precal done */
+	register_set_wifi_test_mode_fwdl_handler(set_wifi_test_mode_fwdl);
+#endif
 
 	return 0;
 }
@@ -3061,8 +3069,11 @@ static int wlan_pre_fmd(void)
 			kalMsleep(100);
 			retry++;
 		}
-	} else
+	} else {
+		wfsys_lock();
 		wlanShutdown();
+		wfsys_unlock();
+	}
 
 	DBGLOG(INIT, INFO, "wifi off success\n");
 	return 0;

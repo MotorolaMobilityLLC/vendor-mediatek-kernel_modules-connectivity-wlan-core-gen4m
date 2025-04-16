@@ -2185,6 +2185,10 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	prBssInfo->tmAbsence = 0;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	prBssInfo->u4PresentTime = 0;
 	prBssInfo->tmLastPresent = 0;
 	prBssInfo->fgFirstArp = TRUE;
@@ -2764,7 +2768,8 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 
 			ucDutNss = wlanGetSupportNss(prAdapter, ucBssIndex);
 			DBGLOG(SW4, INFO, "[SG]SG Get Dut NSS %d\n", ucDutNss);
-			if (rCmdSetBssInfo.ucIotApAct == WLAN_IOT_AP_DIS_SG) {
+			if (bssIsIotAp(prAdapter, prBssDesc,
+				       WLAN_IOT_AP_DIS_SG)){
 				DBGLOG(SW4, INFO,
 					"[SG]Hit SG blocklist, disable SG\n");
 				ucSGEnable = FALSE;
@@ -2796,8 +2801,9 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 				}
 			}
 			/*Send Event  to Enable/Disable SG*/
-			wlandioSetSGStatus(prAdapter,
-			ucSGEnable, 0xFF, ucDutNss);
+			if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucSGCfg))
+				wlandioSetSGStatus(prAdapter,	ucSGEnable,
+						   0xFF, ucDutNss);
 		}
 #endif
 	}

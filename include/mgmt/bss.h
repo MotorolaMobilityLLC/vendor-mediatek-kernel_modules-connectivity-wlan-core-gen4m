@@ -49,7 +49,8 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 #define BSS_PROBE_RESP_INCLUDE_P2P_IE               BIT(1)
 
 #define IS_BSS_ALIVE(_prAdapter, _prBssInfo) \
-	(_prBssInfo->fgIsInUse && \
+	(_prBssInfo && \
+	_prBssInfo->fgIsInUse && \
 	_prBssInfo->fgIsNetActive && \
 	(_prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED || \
 	(_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT && \
@@ -134,6 +135,8 @@ int8_t bssGetEhtRxNss(struct BSS_DESC *prBssDesc);
 int8_t bssGetRxNss(struct BSS_DESC *prBssDesc);
 
 #if CFG_SUPPORT_IOT_AP_BLOCKLIST
+uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
 bool bssIsIotAp(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_WLAN_IOT_ACTION eAction);
 #endif

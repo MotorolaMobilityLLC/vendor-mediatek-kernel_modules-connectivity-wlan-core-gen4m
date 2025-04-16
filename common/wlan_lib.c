@@ -102,6 +102,8 @@ static uint8_t wifi_test_mode_fwdl;
 static uint8_t wifi_in_switch_mode;
 #endif
 
+static uint32_t u4ChipNoAckCnt;
+static u_int8_t fgIsWarningTriggered;
 /* data rate mapping table for CCK */
 struct cckDataRateMappingTable_t {
 	uint32_t rate[4];
@@ -909,7 +911,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsMcuOff = FALSE;
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -966,7 +968,6 @@ void wlanOnPostNicInitAdapter(struct ADAPTER *prAdapter,
 void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 		struct REG_INFO *prRegInfo)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct WLAN_INFO *prWlanInfo;
 
 	DBGLOG(INIT, TRACE, "start.\n");
@@ -1156,9 +1157,6 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 				    prRegInfo->u4ArSysParam3);
 #endif
 
-	/* Default QM RX BA timeout */
-	prAdapter->u4QmRxBaMissTimeout = prWifiVar->u4BaMissTimeoutMs;
-
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanAdapterStartForLowLatency(prAdapter);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
@@ -1271,10 +1269,12 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 		return WLAN_STATUS_SUCCESS;
 	}
 
+#if CFG_SUPPORT_XONVRAM
 	if ((u4Size + prRegInfo->prXonvCfg->u2DataLen) > prPlatCfg->size) {
 		DBGLOG(INIT, TRACE, "No enough size for plat cfg\n");
 		return WLAN_STATUS_FAILURE;
 	}
+#endif /* CFG_SUPPORT_XONVRAM */
 
 	u4Addr = prPlatCfg->addr + prPlatCfg->size - u4Size;
 	if (kalDevRegWriteRange(prGlueInfo, u4Addr, pu1Cfg, u4Size) == FALSE) {
@@ -1776,7 +1776,7 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 #endif
 
 	fgIsMcuOff = FALSE;
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -6544,16 +6544,14 @@ void updateLinkStatsApRec(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 		for (j = 0; j < MLD_LINK_MAX; j++) {
 			prBss = aisGetLinkBssDesc(prAisFsmInfo, j);
 			if (prBss == prBssDesc)
-				break;
+				goto found;
 		}
 	}
 
-	if (i == KAL_AIS_NUM || j == MLD_LINK_MAX) {
-		DBGLOG(REQ, WARN, "AP connected flag set (%u,%u) over limit",
-		       i, j);
-		return;
-	}
+	DBGLOG(REQ, WARN, "AP connected flag set (%u,%u) over limit", i, j);
+	return;
 
+found:
 	prPeerApRec = &prAdapter->rPeerApRec[i][j];
 	COPY_MAC_ADDR(prPeerApRec->mac_addr, prBssDesc->aucBSSID);
 	prPeerApRec->sta_count = prBssDesc->u2StaCnt;
@@ -7823,6 +7821,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 #endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	INIT_UINT(prWifiVar->u4AbsenceTimeout, "AbsenceTimeout",
+		  QM_ABSENCE_DETECT_TIMEOUT, FEATURE_TO_CUSTOMER);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	INIT_UINT(prWifiVar->ucTxBaSize, "TxBaSize", WLAN_LEGACY_MAX_BA_SIZE,
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucRxHtBaSize,
@@ -8125,7 +8128,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisRoaming, "DisRoaming", 0,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->fgDisGTKCipherCheck, "DisGTKCipherCheck", 0,
+	INIT_UINT(prWifiVar->fgDisGTKCipherCheck, "DisGTKCipherCheck", 1,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisSecurityCheck, "DisSecurityCheck", 0,
 		  FEATURE_TO_CUSTOMER);
@@ -8460,6 +8463,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->u4BaMissTimeoutMs, "BaMissTimeoutMs",
 		  QM_RX_BA_ENTRY_MISS_TIMEOUT_MS, FEATURE_TO_CUSTOMER);
+
+	INIT_UINT(prWifiVar->u4BaIotApMissTimeoutMs, "BaIotApMissTimeoutMs",
+		QM_RX_BA_ENTRY_IOTAP_MISS_TIMEOUT_MS, FEATURE_TO_CUSTOMER);
 
 	INIT_UINT(prWifiVar->u4PerfMonPendingTh, "PerfMonPendingTh", 80,
 		  FEATURE_DEBUG_ONLY);
@@ -9003,6 +9009,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"EnTxFragTxDone", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucErrPos, "ErrPos", 0, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4MlrCfg, "MlrCfg", 0x3, FEATURE_TO_CUSTOMER);
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+	/* 0x0: SAP and P2P GO/GC not support MLR
+	 * 0x1: Only SAP support MLR
+	 * 0x2: Only P2P GO/GC support MLR
+	 * 0x3: Both SAP and P2P GO/GC support MLR
+	 */
+	INIT_UINT(prWifiVar->u4MlrCfgSapP2pEn, "MlrCfgSapP2pEn", 0x1,
+		FEATURE_TO_CUSTOMER);
+#endif
 #endif
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
@@ -9113,6 +9128,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
 
+	INIT_UINT(prWifiVar->u4PmkRefreshThreshold, "PmkRefreshThresholdSec",
+		  PMK_REFRESH_THRESHOLD_SEC, FEATURE_TO_CUSTOMER);
+
 #if WLAN_INCLUDE_SYS
 	sysGetExtCfg(prAdapter);
 #endif
@@ -9174,23 +9192,25 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	{
 		uint8_t aucBuf[WLAN_CFG_VALUE_LEN_MAX];
 		uint32_t u4Pos = 0;
+		enum ENUM_MBMC_BN eHwBand;
+		enum ENUM_BAND eBand;
 
 		kalMemZero(aucBuf, WLAN_CFG_VALUE_LEN_MAX);
-		for (u4Idx = 0; u4Idx < ENUM_BAND_NUM; u4Idx++) {
+		for (eHwBand = 0; eHwBand < ENUM_BAND_NUM; eHwBand++) {
 			u4Pos += kalSnprintf(
 				aucBuf + u4Pos,
 				WLAN_CFG_VALUE_LEN_MAX - u4Pos,
 				"%s0x%x",
-				(u4Idx == 0) ? "" : " ",
-				prChipInfo->au4DmaMaxQuotaBand[u4Idx]);
+				(eHwBand == 0) ? "" : " ",
+				prChipInfo->au4DmaMaxQuotaBand[eHwBand]);
 		}
 
-		for (u4Idx = 0; u4Idx < BAND_NUM; u4Idx++) {
+		for (eBand = BAND_2G4; eBand < BAND_NUM; eBand++) {
 			u4Pos += kalSnprintf(
 				aucBuf + u4Pos,
 				WLAN_CFG_VALUE_LEN_MAX - u4Pos,
 				" 0x%x",
-				prChipInfo->au4DmaMaxQuotaRfBand[u4Idx]);
+				prChipInfo->au4DmaMaxQuotaRfBand[eBand - 1]);
 		}
 		INIT_STR(prWifiVar->aucDmaMaxQuota, "DmaMaxQuota", aucBuf,
 			 FEATURE_DEBUG_ONLY);
@@ -9210,6 +9230,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,
 		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+#endif
+
+#if CFG_SUPPORT_CCM
+	/* 1: Disable FW aliasing limitation */
+	INIT_UINT(prWifiVar->fgEnMspBw320, "EnMspBw320",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 #endif
 }
 
@@ -11105,6 +11131,22 @@ u_int8_t wlanIsChipNoAck(struct ADAPTER *prAdapter)
 #endif
 		    || fgIsBusAccessFailed;
 
+	if (!fgIsNoAck) {
+		u4ChipNoAckCnt = 0;
+	} else if (!kalIsResetting() &&
+		fgIsWarningTriggered == FALSE) {
+		++u4ChipNoAckCnt;
+		DBGLOG(HAL, WARN,
+			"Chip no ack: [%u:%u:%u]",
+			prAdapter->fgIsChipNoAck,
+			fgIsBusAccessFailed, u4ChipNoAckCnt);
+
+		if (u4ChipNoAckCnt == 10) {
+			kalSendAeeWarning("WLAN",
+				"Chip No Ack more than 10 times\n");
+			fgIsWarningTriggered = TRUE;
+		}
+	}
 	return fgIsNoAck;
 }
 
@@ -12905,6 +12947,7 @@ uint32_t wlanSetLowLatencyMode(
 	uint32_t u4Events, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = TRUE; /* Power management */
@@ -12918,6 +12961,12 @@ uint32_t wlanSetLowLatencyMode(
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u]\n", ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec) {
+		DBGLOG(SW4, INFO, "prStaRec is NULL\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -13014,10 +13063,10 @@ uint32_t wlanSetLowLatencyMode(
 		 * Change QM RX BA timeout if the gaming mode state changed
 		 */
 		if (fgEnMode) {
-			prAdapter->u4QmRxBaMissTimeout
+			prStaRec->u4QmRxBaMissTimeout
 				= prWifiVar->u4BaShortMissTimeoutMs;
 		} else {
-			prAdapter->u4QmRxBaMissTimeout
+			prStaRec->u4QmRxBaMissTimeout
 				= prWifiVar->u4BaMissTimeoutMs;
 		}
 	}
@@ -15323,3 +15372,12 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 	return status;
 }
 #endif /* CFG_SUPPORT_PLCAL */
+
+void wlanUpdateBusAccessStatus(u_int8_t flag)
+{
+	if (fgIsBusAccessFailed != flag)
+		DBGLOG(HAL, INFO, "%pS: %u\n", KAL_TRACE, flag);
+	else
+		DBGLOG(HAL, TRACE, "%pS: %u\n", KAL_TRACE, flag);
+	fgIsBusAccessFailed = flag;
+}

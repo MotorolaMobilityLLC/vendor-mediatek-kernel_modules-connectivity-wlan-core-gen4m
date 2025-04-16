@@ -1445,8 +1445,7 @@ static u_int8_t kalIsNoMmioReadReason(enum HIF_DEV_REG_REASON eReason,
 	    prChipInfo->bus_info->rSwEmiRingInfo.fgIsEnable &&
 	    prChipInfo->isNoMmioReadReason &&
 	    prChipInfo->isNoMmioReadReason(prChipInfo, eReason)) {
-		kalDevRegReadByEmi(prGlueInfo, u4Register, pu4Value);
-		return TRUE;
+		return kalDevRegReadByEmi(prGlueInfo, u4Register, pu4Value);
 	}
 #endif
 	return FALSE;
@@ -1725,6 +1724,7 @@ static void kalWaitRxDmaDoneDebug(
 	HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
 		       prRxRing->hw_didx_addr,
 		       &prRxRing->RxDmaIdx);
+	prRxRing->RxDmaIdx &= MT_RING_DIDX_MASK;
 	DBGLOG(HAL, INFO,
 	       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
 	       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
@@ -1757,24 +1757,52 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			     struct RXD_STRUCT *pRxD,
 			     uint16_t u2Port)
 {
+	struct CHIP_DBG_OPS *prDbgOps =
+		prGlueInfo->prAdapter->chip_info->prDebugOps;
 	uint32_t u4Count = 0;
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	if (prRxRing->fgEnEmiDidx &&
+	/* cannot skip it when monitor mode is on */
+	if (!prGlueInfo->fgIsEnableMon && prRxRing->fgEnEmiDidx &&
 	    halIsDataRing(RX_RING, u2Port))
 		return true;
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
-		if (u4Count > DMA_DONE_WAITING_COUNT) {
+		if (u4Count > DMA_DONE_WAITING_COUNT ||
+		    prGlueInfo->prAdapter->fgIsPwrOffProcIST) {
 			kalWaitRxDmaDoneDebug(
 				prGlueInfo, prRxRing, pRxD, u2Port);
+			if (prDbgOps && prDbgOps->showPdmaInfo)
+				prDbgOps->showPdmaInfo(prGlueInfo->prAdapter);
 			return false;
 		}
 
 		kalUdelay(DMA_DONE_WAITING_TIME);
 	}
 	return true;
+}
+
+static void kalWaitRxDmaDoneTimeoutDebug(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *prRxRing)
+{
+	uint32_t u4CpuIdx = 0;
+	struct RTMP_DMACB *prRxCell;
+	struct RXD_STRUCT *prRxD;
+	struct RTMP_DMABUF *prDmaBuf;
+
+	u4CpuIdx = prRxRing->RxCpuIdx;
+	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+	while (prRxRing->RxDmaIdx != u4CpuIdx) {
+		prRxCell = &prRxRing->Cell[u4CpuIdx];
+		prRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
+		DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
+		DBGLOG_MEM32(HAL, INFO, prRxD, sizeof(struct RXD_STRUCT));
+		prDmaBuf = &prRxCell->DmaBuf;
+		DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, 32);
+		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+	}
 }
 
 #if HIF_INT_TIME_DEBUG
@@ -1853,9 +1881,26 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		}
 		prRxRing->fgIsDumpLog = true;
 		prRxRing->fgIsWaitRxDmaDoneTimeout = true;
-		return FALSE;
-	} else
+		prRxRing->u4RxDmaDoneFailCnt++;
+		if (isPollMode)
+			return FALSE;
+
+		if (prRxRing->u4RxDmaDoneFailCnt == 1) {
+			DBGLOG(HAL, ERROR, "try to wait done again\n");
+			return FALSE;
+		}
+
+		if (prRxRing->u4RxDmaDoneFailCnt >=
+		    HIF_RX_DMA_DONE_MAX_FAIL_CNT) {
+			kalWaitRxDmaDoneTimeoutDebug(prGlueInfo, prRxRing);
+			prHifInfo->fgIsTriggerRxTimeout = TRUE;
+			DBGLOG(HAL, ERROR, "trigger rx timeout EE\n");
+			return FALSE;
+		}
+	} else {
 		prRxRing->fgIsWaitRxDmaDoneTimeout = false;
+		prRxRing->u4RxDmaDoneFailCnt = 0;
+	}
 
 #if HIF_INT_TIME_DEBUG
 	kalTrackRxReadyTime(prGlueInfo, u2Port);
@@ -2831,9 +2876,9 @@ static void kalDevDebugSegment(struct ADAPTER *ad, struct SW_RFB *prSwRfb,
 #endif /* CFG_DEBUG_RX_SEGMENT */
 }
 
-#ifdef CFG_SUPPORT_PDMA_SCATTER
-static void kalDevPdmaScatterAlloc(struct GLUE_INFO *pr,
-	struct RTMP_RX_RING *prRxRing, uint32_t u4StartIdx)
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
+static u_int8_t kalDevPdmaScatterAlloc(struct GLUE_INFO *pr,
+	struct RTMP_RX_RING *prRxRing, uint16_t u2Port, uint32_t u4StartIdx)
 {
 	struct ADAPTER *ad = pr->prAdapter;
 	struct RTMP_DMACB *pRxCell;
@@ -2846,6 +2891,11 @@ static void kalDevPdmaScatterAlloc(struct GLUE_INFO *pr,
 	do {
 		pRxCell = &prRxRing->Cell[u4CurrIdx];
 		pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
+
+		/* need to wait until WFDMA is ready */
+		if (!kalWaitRxDmaDone(pr, prRxRing, pRxD, u2Port))
+			return FALSE;
+
 		ucScatterCnt++;
 
 		if (pRxD->LastSec0 == 1)
@@ -2854,11 +2904,61 @@ static void kalDevPdmaScatterAlloc(struct GLUE_INFO *pr,
 		INC_RING_INDEX(u4CurrIdx, prRxRing->u4RingSize);
 	} while (TRUE);
 
-	prRxRing->pvPacket = kalPacketAlloc(pr,
-		(ucScatterCnt * CFG_RX_MAX_MPDU_SIZE), FALSE, &pucRecvBuff);
-	prRxRing->u4PacketLen = 0;
+	/* Avoid memory leakage */
+	if (prRxRing->pvSegPkt) {
+		DBGLOG(HAL, WARN,
+			"pvPacket[%p] not NULL [%u:%u:%u:%u]\n",
+			prRxRing->pvSegPkt,
+			prRxRing->u4SegPktLenMax, prRxRing->u4SegPktLen,
+			prRxRing->u4SegPktIdxMax, prRxRing->u4SegPktIdx);
+		kalPacketFree(pr, prRxRing->pvSegPkt);
+	}
+
+	prRxRing->u4SegPktIdx = 0;
+	prRxRing->u4SegPktIdxMax = ucScatterCnt;
+	prRxRing->u4SegPktLen = 0;
+	prRxRing->u4SegPktLenMax = ucScatterCnt * CFG_RX_MAX_MPDU_SIZE;
+	prRxRing->pvSegPkt = kalPacketAlloc(pr, prRxRing->u4SegPktLenMax,
+				FALSE, &pucRecvBuff);
 
 	RX_ADD_CNT(&ad->rRxCtrl, RX_PDMA_SCATTER_DATA_COUNT, ucScatterCnt);
+
+	return TRUE;
+}
+
+static u_int8_t kalDevPdmaScatterCheck(struct GLUE_INFO *pr,
+	struct RTMP_RX_RING *prRxRing)
+{
+	struct ADAPTER *ad = pr->prAdapter;
+	struct RX_DESC_OPS_T *prRxDescOps;
+	uint8_t *pucRecvBuff;
+	void *prRxStatus;
+	uint16_t u2RxByteCount;
+
+	prRxDescOps = ad->chip_info->prRxDescOps;
+	if (!prRxRing->pvSegPkt)
+		goto end;
+
+	pucRecvBuff = ((struct sk_buff *)prRxRing->pvSegPkt)->data;
+	prRxStatus = pucRecvBuff;
+
+	/* RxByteCount = sizeof(RXD) + sizeof(Payload) */
+	u2RxByteCount = prRxDescOps->nic_rxd_get_rx_byte_count(prRxStatus);
+	if (u2RxByteCount <= prRxRing->u4SegPktLenMax)
+		return TRUE;
+
+	DBGLOG(HAL, ERROR,
+		"Error Detected. PacketIdx[%u/%u] PacketLen[%u/%u] RxByteCnt[%u]\n",
+		prRxRing->u4SegPktIdx, prRxRing->u4SegPktIdxMax,
+		prRxRing->u4SegPktLen, prRxRing->u4SegPktLenMax,
+		u2RxByteCount);
+	DBGLOG(HAL, ERROR, "Dump RXD and Payload:\n");
+	DBGLOG_MEM8(HAL, ERROR, pucRecvBuff, prRxRing->u4SegPktLenMax);
+
+	kalPacketFree(pr, prRxRing->pvSegPkt);
+	prRxRing->pvSegPkt = NULL;
+end:
+	return FALSE;
 }
 
 static u_int8_t kalDevPdmaScatterCopy(struct GLUE_INFO *pr,
@@ -2868,27 +2968,40 @@ static u_int8_t kalDevPdmaScatterCopy(struct GLUE_INFO *pr,
 	struct ADAPTER *ad = pr->prAdapter;
 	uint8_t *pucRecvBuff;
 
-	if (!prRxRing->pvPacket)
+	if (!prRxRing->pvSegPkt)
 		goto end;
 
 	/* boundary protection */
 	if (u4Len >= CFG_RX_MAX_PKT_SIZE)
 		u4Len = CFG_RX_MAX_PKT_SIZE;
 
+	if ((++prRxRing->u4SegPktIdx > prRxRing->u4SegPktIdxMax)
+		|| u4Len > (prRxRing->u4SegPktLenMax - prRxRing->u4SegPktLen)) {
+		DBGLOG(HAL, ERROR,
+			"eType[%u] PacketIdx[%u/%u] PacketLen[%u/%u/%u]\n",
+			eType, u4Len,
+			prRxRing->u4SegPktIdx, prRxRing->u4SegPktIdxMax,
+			u4Len, prRxRing->u4SegPktLen, prRxRing->u4SegPktLenMax);
+		goto end;
+	}
+
 	/* copy current segment to buffer of pdma scatter */
-	pucRecvBuff = ((struct sk_buff *)prRxRing->pvPacket)->data;
-	pucRecvBuff += prRxRing->u4PacketLen;
+	pucRecvBuff = ((struct sk_buff *)prRxRing->pvSegPkt)->data;
+	pucRecvBuff += prRxRing->u4SegPktLen;
 	kalMemCopy(pucRecvBuff, prSwRfb->pucRecvBuff, u4Len);
-	prRxRing->u4PacketLen += u4Len;
+	prRxRing->u4SegPktLen += u4Len;
 
 	if (eType == RX_SEGMENT_LAST) {
+		if (!kalDevPdmaScatterCheck(pr, prRxRing))
+			goto end;
+
 		RX_INC_CNT(&ad->rRxCtrl, RX_PDMA_SCATTER_INDICATION_COUNT);
 		kalPacketFree(pr, prSwRfb->pvPacket);
-		prSwRfb->pvPacket = prRxRing->pvPacket;
+		prSwRfb->pvPacket = prRxRing->pvSegPkt;
 		prSwRfb->pucRecvBuff =
 			((struct sk_buff *)prSwRfb->pvPacket)->data;
 		prSwRfb->prRxStatus = (void *)prSwRfb->pucRecvBuff;
-		prRxRing->pvPacket = NULL;
+		prRxRing->pvSegPkt = NULL;
 		return TRUE;
 	}
 
@@ -2896,6 +3009,25 @@ end:
 	return FALSE;
 }
 #endif /* CFG_SUPPORT_PDMA_SCATTER */
+
+void kalCheckRxDmadAddr(struct RTMP_DMACB *pRxCell,
+	struct RXD_STRUCT *pRxD, struct RTMP_DMABUF *prDmaBuf)
+{
+	uint64_t u8Addr = 0;
+
+	u8Addr = pRxD->SDPtr0;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
+	u8Addr |= ((uint64_t)pRxD->SDPtr1 & DMA_HIGHER_4BITS_MASK) <<
+			DMA_BITS_OFFSET;
+#endif
+	if (u8Addr != (uint64_t)prDmaBuf->AllocPa) {
+		DBGLOG(HAL, ERROR, "Dump RXDMAD PA[0x%llx]!=[0x%llx]:\n",
+			u8Addr, (uint64_t)prDmaBuf->AllocPa);
+		DBGLOG_MEM32(RX, INFO, pRxCell->AllocVa,
+			sizeof(struct RXD_STRUCT));
+		ASSERT(0);
+	}
+}
 
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb)
@@ -2968,14 +3100,22 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		} else
 			eType = RX_SEGMENT_MIDDLE;
 
-#ifdef CFG_SUPPORT_PDMA_SCATTER
-		/* only alloc packet when it is the first segment */
-		if (prGlueInfo->fgIsEnableMon && eType == RX_SEGMENT_FIRST)
-			kalDevPdmaScatterAlloc(prGlueInfo, prRxRing, u4CpuIdx);
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
+		/*
+		 * only alloc packet when it is the first segment
+		 * Note: need to wait until all segment ready
+		 */
+		if (prGlueInfo->fgIsEnableMon && eType == RX_SEGMENT_FIRST) {
+			if (!kalDevPdmaScatterAlloc(prGlueInfo, prRxRing,
+				u2Port, u4CpuIdx))
+				return false;
+		}
 #endif
 	}
 
 	prDmaBuf = &pRxCell->DmaBuf;
+
+	kalCheckRxDmadAddr(pRxCell, pRxD, prDmaBuf);
 
 	if (prMemOps->copyRxData &&
 	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
@@ -3008,7 +3148,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		goto skip;
 	}
 
-#ifdef CFG_SUPPORT_PDMA_SCATTER
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
 	if (prGlueInfo->fgIsEnableMon && fgRet == FALSE) {
 		fgRet = kalDevPdmaScatterCopy(prGlueInfo, prRxRing, prSwRfb,
 				eType, pRxD->SDLen0);
@@ -3132,7 +3272,7 @@ exit:
 
 int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 {
-	struct ADAPTER *ad;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDebugOps;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
@@ -3143,9 +3283,8 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
-	ad = glue->prAdapter;
-	if (!ad) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
+	if (!glue->prHifRegFifoBuf) {
+		DBGLOG(HAL, ERROR, "fifo is free\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -3157,9 +3296,35 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
-	prDebugOps = ad->chip_info->prDebugOps;
+#if defined(_HIF_PCIE)
+	if (!halPcieIsPcieProbed()) {
+		DBGLOG_LIMITED(HAL, WARN, "PCIe not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (pcie_check_status_is_linked() == FALSE) {
+		ret = -EFAULT;
+		goto exit;
+	}
+#endif
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo) {
+		DBGLOG(HAL, ERROR, "chip info is NULL\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (!glue->prAdapter) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	prDebugOps = prChipInfo->prDebugOps;
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt(ad);
+		dumpViaBt = prDebugOps->checkDumpViaBt(glue->prAdapter);
 
 	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN, "PCIe AER.\n");
@@ -3258,7 +3423,8 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 		goto exit;
 	}
 
-	halSetDriverOwn(prGlueInfo->prAdapter);
+	halSetDriverOwn(prGlueInfo->prAdapter,
+		DRV_OWN_SRC_WF_REG_START_WRAPPER);
 	if (prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
 		DBGLOG_LIMITED(HAL, WARN, "Driver own fail.\n");
 		ret = -EFAULT;

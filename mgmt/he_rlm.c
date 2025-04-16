@@ -609,7 +609,7 @@ void heRlmFillHeCapIE(
 				HE_GET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(
 						prBssDesc->ucHePhyCapInfo);
 
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"he ucSupportedNss: %d, soundingDim: %d\n",
 				ucSupportedNss, soundingDim);
 			if (ucSupportedNss == soundingDim) {
@@ -687,7 +687,7 @@ void heRlmFillHeCapIE(
 				MAX_BW_160MHZ : ucMaxBw);
 		}
 
-		DBGLOG(RLM, INFO, "ER: Set ER Phy capabilities\n");
+		DBGLOG(RLM, TRACE, "ER: Set ER Phy capabilities\n");
 	}
 #endif
 
@@ -1173,8 +1173,6 @@ uint32_t heRlmFillNANHECapIE(
 		HE_SET_PHY_CAP_PARTIAL_BW_EXTENDED_RANGE(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_ER_SU_4X_HE_LTF(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(prHeCap->ucHePhyCap);
-
-		DBGLOG(RLM, INFO, "ER: Set ER Phy capabilities\n");
 	}
 #endif
 
@@ -1552,7 +1550,7 @@ void heRlmRecHeOperation(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	if (IS_FEATURE_DISABLED(prWifiVar->u4ExtendedRange)) {
 		HE_SET_OP_PARAM_ER_SU_DISABLE(prHeOp->ucHeOpParams);
 
-		DBGLOG(RLM, INFO, "ER: is ER SU: %lu\n",
+		DBGLOG(RLM, TRACE, "ER: is ER SU: %lu\n",
 			HE_IS_ER_SU_DISABLE(prHeOp->ucHeOpParams));
 	}
 #endif

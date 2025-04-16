@@ -426,8 +426,12 @@ void fillUsbHifTxDesc(uint8_t **pDest, uint16_t *pInfoBufLen,
 #if !CFG_SUPPORT_CONNAC1X
 static int wlan_func_on_by_chrdev(void)
 {
+#define WAKE_LOCK_ON_TIMEOUT	15000	/* ms */
 #define MAX_RETRY_COUNT		100
 
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_T *prWlanOnOffWakeLock;
+#endif
 	int retry = 0;
 	int ret = 0;
 
@@ -448,9 +452,21 @@ static int wlan_func_on_by_chrdev(void)
 		kalMdelay(100);
 	}
 
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(NULL,
+		prWlanOnOffWakeLock, "WIFI_on");
+	KAL_WAKE_LOCK_TIMEOUT(NULL, prWlanOnOffWakeLock,
+		MSEC_TO_JIFFIES(WAKE_LOCK_ON_TIMEOUT));
+#endif
+
 	wfsys_lock();
 	ret = wlanFuncOn();
 	wfsys_unlock();
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_UNLOCK(NULL, prWlanOnOffWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prWlanOnOffWakeLock);
+#endif
 
 exit:
 	return ret;

@@ -101,6 +101,7 @@ const struct of_device_id mtk_axi_of_ids[] = {
  */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
+static remove_card pfWlanShutdown;
 
 static struct platform_driver mtk_axi_driver = {
 	.driver = {
@@ -114,6 +115,7 @@ static struct platform_driver mtk_axi_driver = {
 	.id_table = mtk_axi_ids,
 	.probe = NULL,
 	.remove = NULL,
+	.shutdown = NULL,
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
@@ -451,7 +453,11 @@ exit:
 	return ret;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_axi_remove(struct platform_device *pdev)
+#else
+static void mtk_axi_remove(struct platform_device *pdev)
+#endif
 {
 	struct mt66xx_hif_driver_data *prDriverData =
 		platform_get_drvdata(pdev);
@@ -463,7 +469,22 @@ static int mtk_axi_remove(struct platform_device *pdev)
 #endif
 	emi_mem_uninit(prChipInfo, pdev);
 	platform_set_drvdata(pdev, NULL);
+
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
+}
+
+static void mtk_axi_shutdown(struct platform_device *pdev)
+{
+	DBGLOG(INIT, INFO, "enter shutdown\n");
+	wfsys_lock();
+	if (g_fgDriverProbed && pfWlanShutdown) {
+		DBGLOG(INIT, INFO, "do shutdown\n");
+		pfWlanShutdown();
+		g_fgDriverProbed = FALSE;
+	}
+	wfsys_unlock();
 }
 
 static int mtk_axi_suspend(struct platform_device *pdev,
@@ -474,6 +495,24 @@ static int mtk_axi_suspend(struct platform_device *pdev,
 
 int mtk_axi_resume(struct platform_device *pdev)
 {
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function will register shutdownCB
+ *
+ * \param[in] pfProbe    Function pointer to remove card when shutdown
+ *
+ * \return The result of registering pci bus
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t glRegisterShutdownCB(remove_card pfShutdown)
+{
+	ASSERT(pfShutdown);
+	pfWlanShutdown = pfShutdown;
+
+	mtk_axi_driver.shutdown = mtk_axi_shutdown;
 	return 0;
 }
 

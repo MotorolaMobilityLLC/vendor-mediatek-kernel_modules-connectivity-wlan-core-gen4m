@@ -227,6 +227,9 @@ extern const uint8_t *apucACI2Str[4];
 #define TXM_DEFAULT_FLUSH_QUEUE_GUARD_TIME  0	/* Unit: 64 us */
 
 #define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS		(200)
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
+#define QM_RX_BA_ENTRY_IOTAP_MISS_TIMEOUT_MS	(100)
+#endif /* CFG_SUPPORT_IOT_AP_BLOCKLIST */
 #if CFG_SUPPORT_LOWLATENCY_MODE
 #define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT	(50)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
@@ -242,6 +245,9 @@ extern const uint8_t *apucACI2Str[4];
 #define QM_DEQUE_PERCENT_HT40_NSS1	10
 /* BW20 NSS1 Max rate: 72.2Mbps (MCS8 86.7Mbps)*/
 #define QM_DEQUE_PERCENT_HT20_NSS1	5
+
+#define QM_ABSENCE_DETECT_INTERVAL      1000 /* Unit: ms */
+#define QM_ABSENCE_DETECT_TIMEOUT      10000 /* Unit: ms */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1180,6 +1186,10 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER
 
 void qmHandleEventBssAbsencePresence(struct ADAPTER
 				     *prAdapter, struct WIFI_EVENT *prEvent);
+
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+void qmDetectAbnormalBssAbsence(struct ADAPTER *ad);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 #if CFG_ENABLE_WIFI_DIRECT
 void qmHandleEventStaChangePsMode(struct ADAPTER

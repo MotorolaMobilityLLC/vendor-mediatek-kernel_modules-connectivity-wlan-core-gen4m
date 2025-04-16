@@ -1095,7 +1095,7 @@ uint32_t filsRxAuthWrapped(struct ADAPTER *ad,
 		while (tmp_end - tmp_pos >= 2 &&
 		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
 		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
-			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			kalMemCopy(p, IE_DATA(tmp_pos), IE_LEN(tmp_pos));
 			p += IE_LEN(tmp_pos);
 			tmp_pos += IE_SIZE(tmp_pos);
 		}
