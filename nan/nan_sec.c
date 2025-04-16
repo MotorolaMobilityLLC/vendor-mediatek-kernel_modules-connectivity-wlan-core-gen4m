@@ -1554,6 +1554,9 @@ nan_sec_wpa_receive(struct wpa_authenticator *wpa_auth, /* AP */
 	DBGLOG(NAN, DEBUG, "[%s] Received Replay Counter\n", __func__);
 	dumpMemory8(key->replay_counter, WPA_REPLAY_COUNTER_LEN);
 
+	DBGLOG(NAN, DEBUG, "key info\n");
+	dumpMemory8(key->key_info, 2);
+
 	/* FIX: verify that the EAPOL-Key frame was encrypted if pairwise keys
 	 *		are set
 	 */
@@ -1584,7 +1587,12 @@ nan_sec_wpa_receive(struct wpa_authenticator *wpa_auth, /* AP */
 		msgtxt = "2/4 Pairwise";
 	}
 #endif
-	if (os_memcmp(zero_nonce, key->key_nonce, WPA_NONCE_LEN)) {
+	DBGLOG(NAN, INFO, "Mic Len=%u, Key Data Len=%u\n",
+						mic_len, key_data_length);
+	if ((mic_len == 0 && key_data_length > 16) ||
+		(mic_len > 0 && key_data_length == 0 &&
+		!(key_info & WPA_KEY_INFO_SECURE) &&
+		os_memcmp(zero_nonce, key->key_nonce, WPA_NONCE_LEN))) {
 		msg = PAIRWISE_2;
 		msgtxt = "2/4 Pairwise";
 		DBGLOG(NAN, DEBUG, "[%s] Judge as M2\n", __func__);
