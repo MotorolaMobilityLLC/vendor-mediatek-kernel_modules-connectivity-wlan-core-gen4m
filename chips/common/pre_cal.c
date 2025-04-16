@@ -973,7 +973,7 @@ uint32_t wlanSendPhyActionV2(struct ADAPTER *prAdapter,
 
 		u4CmdSize += sizeof(struct HAL_PHY_ACTION_TLV) + u4TagSize;
 
-		DBGLOG(INIT, DEBUG, "Tag=%d, Len=%d",
+		DBGLOG(INIT, TRACE, "Tag=%d, Len=%d",
 			au1TagList[cnt1], u4TagSize);
 		DBGLOG_MEM8(INIT, TRACE, (uint8_t *)prPhyTlv, u4TagSize);
 	}
@@ -1029,7 +1029,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, DEBUG, "SendPhyAction begin, tag: %d, cmd: %d, skip: %d\n",
+	DBGLOG(INIT, TRACE, "SendPhyAction begin, tag: %d, cmd: %d, skip: %d\n",
 		u2Tag, ucCalCmd, g_fgCalDisabled);
 
 	ASSERT(prAdapter);
@@ -1370,14 +1370,14 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, DEBUG, "fgPreCal = %d\n", g_fgPreCal);
+	DBGLOG(INIT, TRACE, "fgPreCal = %d\n", g_fgPreCal);
 
 	if (g_fgPreCal == FALSE) {
 		/* Setup calibration data from backup file */
 #if (CFG_SUPPORT_CONNFEM == 1)
 #if (CONNFEM_API_VERSION >= 2)
 		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
-			DBGLOG(INIT, DEBUG, "connfem sku support");
+			DBGLOG(INIT, TRACE, "connfem sku support");
 
 			wlanSendPhyActionV2(prAdapter,
 				HAL_PHY_ACTION_TAG_COM_FEM,
@@ -1405,7 +1405,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 
 #if (CONNFEM_API_VERSION >= 2)
 		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
-			DBGLOG(INIT, DEBUG, "connfem sku support");
+			DBGLOG(INIT, TRACE, "connfem sku support");
 
 			wlanSendPhyActionV2(prAdapter,
 				HAL_PHY_ACTION_TAG_COM_FEM,

@@ -11725,7 +11725,7 @@ uint32_t wlanCfgInit(struct ADAPTER *prAdapter,
 	prWlanCfgEm->u4WlanCfgValueLenMax = WLAN_CFG_VALUE_LEN_MAX;
 
 
-	DBGLOG(INIT, DEBUG, "Init wifi config len %u max entry %u\n",
+	DBGLOG(INIT, TRACE, "Init wifi config len %u max entry %u\n",
 	       u4ConfigBufLen, prWlanCfg->u4WlanCfgEntryNumMax);
 #if DBG
 	/* self test */
@@ -15940,7 +15940,7 @@ wlanLoadDefaultCustomerSetting(struct ADAPTER *
 	/* default setting*/
 	ucItemNum = ARRAY_SIZE(g_rDefaulteSetting);
 
-	DBGLOG(INIT, STATE, "Default firmware setting %d item\n",
+	DBGLOG(INIT, TRACE, "Default firmware setting %d item\n",
 			ucItemNum);
 
 

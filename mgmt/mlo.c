@@ -4649,7 +4649,7 @@ uint16_t mldBssGetGrpFrameSn(struct ADAPTER *prAdapter,
 
 int8_t mldBssInit(struct ADAPTER *prAdapter)
 {
-	DBGLOG(ML, INFO, "Total %lu MldBssInfo\n",
+	DBGLOG(ML, TRACE, "Total %lu MldBssInfo\n",
 		ARRAY_SIZE(prAdapter->aprMldBssInfo));
 	kalMemZero(prAdapter->aprMldBssInfo, sizeof(prAdapter->aprMldBssInfo));
 	return 0;
@@ -5464,7 +5464,7 @@ void mldStarecLogRxData(struct ADAPTER *prAdapter,
 
 int8_t mldStarecInit(struct ADAPTER *prAdapter)
 {
-	DBGLOG(ML, INFO, "Total %lu MldStaRec\n",
+	DBGLOG(ML, TRACE, "Total %lu MldStaRec\n",
 		ARRAY_SIZE(prAdapter->aprMldStarec));
 	kalMemZero(prAdapter->aprMldStarec, sizeof(prAdapter->aprMldStarec));
 	return 0;

@@ -2208,7 +2208,7 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 	    || (prAdapter->u4FwFeatureFlag0 &
 		FEATURE_FLAG0_NIC_CAPABILITY_V2)) {
 
-		DBGLOG(INIT, DEBUG, "Support NIC_CAPABILITY_V2 feature\n");
+		DBGLOG(INIT, TRACE, "Support NIC_CAPABILITY_V2 feature\n");
 
 		/* get nic capability */
 		nicUniCmdNicCapability(prAdapter);

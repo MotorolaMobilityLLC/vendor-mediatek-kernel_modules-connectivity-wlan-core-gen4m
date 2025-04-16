@@ -2884,7 +2884,7 @@ static void mt6653UpdateWfdmaPrdcInt(
 #endif
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	DBGLOG(HAL, DEBUG, "prdc int: %uus", u4Time * 20);
+	DBGLOG(HAL, TRACE, "prdc int: %uus", u4Time * 20);
 }
 
 static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)

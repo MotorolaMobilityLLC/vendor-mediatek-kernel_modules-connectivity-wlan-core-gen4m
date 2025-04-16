@@ -347,7 +347,7 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 	img_ptr += sizeof(struct PATCH_FORMAT_V2_T);
 	glo_desc = (struct PATCH_GLO_DESC *)img_ptr;
 	num_of_region = be2cpu32(glo_desc->section_num);
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 			"\tPatch ver: 0x%x, Section num: 0x%x, subsys: 0x%x\n",
 			glo_desc->patch_ver,
 			num_of_region,
@@ -394,7 +394,7 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 				be2cpu32(sec_map->section_offset));
 			sec_info = be2cpu32(sec_map->bin_info_spec.sec_info);
 
-			DBGLOG(INIT, DEBUG,
+			DBGLOG(INIT, TRACE,
 				"\tSection %d: type = 0x%x, offset = 0x%x, size = 0x%x, target address: 0x%x, length: 0x%x\n",
 				i, section_type,
 				be2cpu32(sec_map->section_offset),
@@ -411,7 +411,7 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 
 	u4DataMode = wlanGetPatchDataModeV2(prAdapter, sec_info);
 
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 		"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
 		target.num_of_region, u4DataMode);
 
@@ -2125,7 +2125,7 @@ uint32_t wlanDownloadPatch(struct ADAPTER *prAdapter)
 		return WLAN_STATUS_FAILURE;
 
 
-	DBGLOG(INIT, DEBUG, "Patch download start\n");
+	DBGLOG(INIT, TRACE, "Patch download start\n");
 
 	prAdapter->rVerInfo.fgPatchIsDlByDrv = FALSE;
 
@@ -2181,7 +2181,7 @@ uint32_t wlanDownloadPatch(struct ADAPTER *prAdapter)
 	} while (0);
 
 exit:
-	DBGLOG(INIT, DEBUG, "Patch download end[%d].\n", u4Status);
+	DBGLOG(INIT, TRACE, "Patch download end[%d].\n", u4Status);
 
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
 				  prFwBuffer);
@@ -2953,7 +2953,7 @@ uint32_t wlanDownloadPhyFw(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 
-	DBGLOG(INIT, DEBUG, "PHY download start\n");
+	DBGLOG(INIT, TRACE, "PHY download start\n");
 
 	kalFirmwareImageMapping(prAdapter->prGlueInfo,
 				&prFwBuffer,
@@ -3003,7 +3003,7 @@ uint32_t wlanDownloadPhyFw(struct ADAPTER *prAdapter)
 				      PDA_PHY);
 
 exit:
-	DBGLOG(INIT, DEBUG, "PHY download end[%d].\n", u4Status);
+	DBGLOG(INIT, TRACE, "PHY download end[%d].\n", u4Status);
 
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
 				  NULL,

@@ -2683,7 +2683,7 @@ uint32_t nicCfgChipAdieHwVersion(struct ADAPTER *prAdapter,
 	ASSERT(prChipInfo);
 
 	prChipInfo->u2ADieChipVersion = prAdieHwVer->u2ProductID;
-	DBGLOG(INIT, DEBUG, "A DieID = 0x%x\n", prAdieHwVer->u2ProductID);
+	DBGLOG(INIT, TRACE, "A DieID = 0x%x\n", prAdieHwVer->u2ProductID);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -3044,7 +3044,7 @@ uint32_t nicCfgChipPseRxQuota(struct ADAPTER *prAdapter,
 		/* MAX RX MPDU len = 11K */
 		prAdapter->rWifiVar.ucRxMaxMpduLen = 2;
 	}
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 		"u4MaxQuotaBytes:%d u4MaxPktSize:%d ucRxMaxMpduLen:%d\n",
 		prPseCap->u4MaxQuotaBytes, u4MaxPktSize,
 		prAdapter->rWifiVar.ucRxMaxMpduLen);
@@ -3097,7 +3097,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
 	uint8_t ucLinkStatsBssNum = 1;
 
-	DBGLOG(INIT, DEBUG, "Offset(Host): %u/%u/%u/%u/%u power=%u,%u\n",
+	DBGLOG(INIT, TRACE, "Offset(Host): %u/%u/%u/%u/%u power=%u,%u\n",
 			u4HostOffsetInfo, u4HostOffsetAc,
 			u4HostOffsetTxTimePerLevels, u4HostOffsetRxTime,
 			u4HostOffsetChannel,
@@ -3509,7 +3509,7 @@ uint32_t nicCfgChipCapPerfIndFromEMI(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 		"[Perf_Ind_From_EMI] FWSup[%u], FWVer[%u], DrvSup[%u], DrvVer[%u]\n",
 		prAdapter->rWifiVar.fgPerfIndicatorFromEMIFWSupport,
 		prAdapter->rWifiVar.ucPerfIndicatorFromEMIFWVer,
@@ -3703,7 +3703,7 @@ uint32_t nicCfgChipCapAntSwpCap(struct ADAPTER *prAdapter,
 
 	/* FW's value combines both platform and FW capablity */
 	prAdapter->fgIsSupportAntSwp = prAntSwpCap->ucIsSupported;
-	DBGLOG(INIT, DEBUG,
+	DBGLOG(INIT, TRACE,
 		"fgIsSupportAntSwp = %d\n",
 		prAdapter->fgIsSupportAntSwp);
 

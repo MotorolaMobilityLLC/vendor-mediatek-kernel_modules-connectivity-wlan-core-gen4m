@@ -5975,7 +5975,7 @@ void nicApplyP2pNetworkAddress(struct ADAPTER *prAdapter)
 		COPY_MAC_ADDR(aucMacAddr, prAdapter->rWifiVar
 			.aucP2pDeviceAddress[i]);
 
-		DBGLOG(NIC, DEBUG,
+		DBGLOG(NIC, TRACE,
 			"P2P[%u] DEV mac:" MACSTR " INF mac:" MACSTR "\n",
 			i, MAC2STR(prAdapter->rWifiVar.aucP2pDeviceAddress[i]),
 			MAC2STR(prAdapter->rWifiVar.aucP2pInterfaceAddress[i]));
@@ -6070,7 +6070,7 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER *prAdapter)
 			prAdapter->rWifiVar.aucMacAddress);
 		/* Update wlan#i address */
 		prAdapter->rWifiVar.aucMacAddress[i][3] ^= BIT(i);
-		DBGLOG(NIC, DEBUG, "WLAN%d mac: " MACSTR "\n",
+		DBGLOG(NIC, TRACE, "WLAN%d mac: " MACSTR "\n",
 			i, MAC2STR(prAdapter->rWifiVar.aucMacAddress[i]));
 	}
 

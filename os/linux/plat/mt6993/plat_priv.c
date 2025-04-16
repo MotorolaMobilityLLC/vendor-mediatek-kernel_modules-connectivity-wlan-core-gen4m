@@ -878,11 +878,11 @@ void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 
 void kalDumpPlatGPIOStat(void)
 {
-	DBGLOG(INIT, DEBUG, "GPIO 244, val=%d\n",
+	DBGLOG(INIT, TRACE, "GPIO 244, val=%d\n",
 		gpio_get_value(512 + 244));
-	DBGLOG(INIT, DEBUG, "GPIO 248, val=%d\n",
+	DBGLOG(INIT, TRACE, "GPIO 248, val=%d\n",
 		gpio_get_value(512 + 248));
-	DBGLOG(INIT, DEBUG, "GPIO 249, val=%d\n",
+	DBGLOG(INIT, TRACE, "GPIO 249, val=%d\n",
 		gpio_get_value(512 + 249));
 }
 

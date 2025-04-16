@@ -5456,7 +5456,7 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	prEpiIE = (struct IE_VENDOR_EPIGRAM_IE *) pucBuf;
 
 	if (prEpiIE->ucLength <= 5) {
-		DBGLOG(RLM, WARN,
+		DBGLOG(RLM, TRACE,
 			"[Epigram] VHT length is invalid(%d), skip!\n",
 			prEpiIE->ucLength);
 		return;

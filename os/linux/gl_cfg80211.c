@@ -195,14 +195,16 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 #if 1
 	if (mac_addr) {
 		DBGLOG(RSN, INFO,
-		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n",
-		       key_index, pairwise, MAC2STR(mac_addr));
+			"keyIdx = %d pairwise = %d mac = " MACSTR
+			" cipher = %x\n",
+			key_index, pairwise, MAC2STR(mac_addr),
+			params->cipher);
 	} else {
-		DBGLOG(RSN, INFO, "keyIdx = %d pairwise = %d null mac\n",
-		       key_index, pairwise);
+		DBGLOG(RSN, INFO,
+			"keyIdx = %d pairwise = %d null mac cipher = %x\n",
+			 key_index, pairwise, params->cipher);
 	}
-	DBGLOG(RSN, INFO, "Cipher = %x\n", params->cipher);
-	DBGLOG_MEM8(RSN, INFO, params->key, params->key_len);
+	DBGLOG_MEM8(RSN, TRACE, params->key, params->key_len);
 #endif
 
 	kalMemZero(&rKey, sizeof(struct PARAM_KEY));
@@ -247,7 +249,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 			rKey.ucCipher = CIPHER_SUITE_GCMP_256;
 			break;
 		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
-			DBGLOG(RSN, INFO,
+			DBGLOG(RSN, LOUD,
 				"[BIP-GMAC-256] save IGTK and handle integrity check ...\n");
 			rKey.ucCipher = CIPHER_SUITE_BIP_GMAC_256;
 			break;
@@ -286,9 +288,9 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	rKey.u4Length = OFFSET_OF(struct PARAM_KEY, aucKeyMaterial)
 				+ rKey.u4KeyLength;
 
-	if (params->seq_len) {
-		DBGLOG(RSN, INFO, "Dump IPN if given\n");
-		DBGLOG_MEM8(RSN, INFO, params->seq, params->seq_len);
+	if (params->seq_len && key_index != 0) {
+		DBGLOG(RSN, TRACE, "Dump IPN if given\n");
+		DBGLOG_MEM8(RSN, TRACE, params->seq, params->seq_len);
 		if (params->seq_len == 6) /* IGTK Package Number */
 			kalMemCopy(rKey.aucKeyPn, params->seq, params->seq_len);
 	}

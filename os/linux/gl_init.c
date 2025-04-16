@@ -2935,7 +2935,7 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	DBGLOG(INIT, INFO, "g_NvramFsm = %d\n", g_NvramFsm);
+	DBGLOG(INIT, TRACE, "g_NvramFsm = %d\n", g_NvramFsm);
 	if (g_NvramFsm != NVRAM_STATE_READY) {
 		DBGLOG(INIT, WARN, "Nvram not available\n");
 		return;
@@ -3008,7 +3008,7 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 			MAX_SUBBAND_NUM*sizeof(uint8_t));
 	}
 
-	log_dbg(INIT, INFO, "NVRAM Version = [%08x,%08x], 5G = [%d,%d]\n",
+	log_dbg(INIT, TRACE, "NVRAM Version = [%08x,%08x], 5G = [%d,%d]\n",
 				 prNvramSettings->u2Part1OwnVersion,
 				 prNvramSettings->u2Part1PeerVersion,
 				 prRegInfo->ucSupport5GBand,
@@ -8013,7 +8013,7 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
 		kalMemCopy(rCmd_v1.itemValue, &onoff, 1);
 
-		DBGLOG(INIT, DEBUG,
+		DBGLOG(INIT, TRACE,
 		       "Send key word (%s) WITH (%s) to firmware\n",
 		       rCmd_v1.itemString, rCmd_v1.itemValue);
 
