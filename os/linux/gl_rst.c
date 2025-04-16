@@ -672,6 +672,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	case RST_SCAN_RECOVERY:
 	case RST_CMD_EVT_FAIL:
 	case RST_RFB_FAIL:
+	case RST_CHECK_READY_BIT_TIMEOUT:
 #if CFG_SUPPORT_CONNAC1X
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 #else
@@ -688,8 +689,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 		break;
 
 	case RST_ACCESS_REG_FAIL:
-	case RST_CHECK_READY_BIT_TIMEOUT:
-		u4RstFlag = RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF;
+		u4RstFlag = RST_FLAG_WHOLE_RESET;
 		break;
 
 	case RST_BT_TRIGGER:
@@ -697,8 +697,15 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	case RST_CMD_TRIGGER:
 	case RST_SLP_PROT_TIMEOUT:
 	case RST_REG_READ_DEADFEED:
-	default:
 		u4RstFlag = RST_FLAG_CHIP_RESET;
+		break;
+
+	default:
+#if CFG_SUPPORT_CONNAC1X
+		u4RstFlag = RST_FLAG_CHIP_RESET;
+#else
+		u4RstFlag = RST_FLAG_WF_RESET;
+#endif
 		break;
 	}
 

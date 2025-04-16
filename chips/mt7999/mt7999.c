@@ -216,12 +216,14 @@ static void mt7999KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgWakeup);
 #endif
 
+static void mt7999_clear_sw_interrupt_status(struct ADAPTER *prAdapter);
 static u_int8_t mt7999_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
 static void mt7999_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
+static void mt7999_ccif_clear_interrupt_status(struct ADAPTER *ad);
 static uint32_t mt7999_ccif_get_interrupt_status(struct ADAPTER *ad);
 static void mt7999_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type,
@@ -1116,6 +1118,7 @@ struct ATE_OPS_T mt7999_AteOps = {
 #if defined(_HIF_PCIE)
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 static struct CCIF_OPS mt7999_ccif_ops = {
+	.clear_interrupt_status = mt7999_ccif_clear_interrupt_status,
 	.get_interrupt_status = mt7999_ccif_get_interrupt_status,
 	.notify_utc_time_to_fw = mt7999_ccif_notify_utc_time_to_fw,
 	.set_fw_log_read_pointer = mt7999_ccif_set_fw_log_read_pointer,
@@ -1366,6 +1369,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7999 = {
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 	.ccif_ops = &mt7999_ccif_ops,
 #endif
+	.clear_sw_interrupt_status = mt7999_clear_sw_interrupt_status,
 	.get_sw_interrupt_status = mt7999_get_sw_interrupt_status,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
@@ -3508,11 +3512,23 @@ static void mt7999SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 #endif
 }
 
+static void mt7999_clear_sw_interrupt_status(struct ADAPTER *prAdapter)
+{
+	ccif_clear_interrupt_status(prAdapter);
+}
+
 static u_int8_t mt7999_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status)
 {
 	*pu4Status = ccif_get_interrupt_status(prAdapter);
 	return TRUE;
+}
+
+static void mt7999_ccif_clear_interrupt_status(struct ADAPTER *ad)
+{
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
+		0xff);
 }
 
 static uint32_t mt7999_ccif_get_interrupt_status(struct ADAPTER *ad)

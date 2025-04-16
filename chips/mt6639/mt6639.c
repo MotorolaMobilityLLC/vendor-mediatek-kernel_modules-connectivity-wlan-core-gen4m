@@ -210,6 +210,7 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 static void mt6639ShowDevapcDebugInfo(void);
 #endif
 
+static void mt6639_clear_sw_interrupt_status(struct ADAPTER *prAdapter);
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
@@ -217,6 +218,7 @@ static void mt6639_set_crypto(struct ADAPTER *prAdapter);
 static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
+static void mt6639_ccif_clear_interrupt_status(struct ADAPTER *ad);
 static uint32_t mt6639_ccif_get_interrupt_status(struct ADAPTER *ad);
 static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type,
@@ -1034,6 +1036,7 @@ struct ATE_OPS_T mt6639_AteOps = {
 
 #if defined(_HIF_PCIE)
 static struct CCIF_OPS mt6639_ccif_ops = {
+	.clear_interrupt_status = mt6639_ccif_clear_interrupt_status,
 	.get_interrupt_status = mt6639_ccif_get_interrupt_status,
 	.notify_utc_time_to_fw = mt6639_ccif_notify_utc_time_to_fw,
 	.set_fw_log_read_pointer = mt6639_ccif_set_fw_log_read_pointer,
@@ -1236,6 +1239,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 		BIT(CHIP_CAPA_XTAL_TRIM),
 #endif
 	.ccif_ops = &mt6639_ccif_ops,
+	.clear_sw_interrupt_status = mt6639_clear_sw_interrupt_status,
 	.get_sw_interrupt_status = mt6639_get_sw_interrupt_status,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
@@ -3026,11 +3030,23 @@ static void mt6639triggerInt(struct GLUE_INFO *prGlueInfo)
 }
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
+static void mt6639_clear_sw_interrupt_status(struct ADAPTER *prAdapter)
+{
+	ccif_clear_interrupt_status(prAdapter);
+}
+
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status)
 {
 	*pu4Status = ccif_get_interrupt_status(prAdapter);
 	return TRUE;
+}
+
+static void mt6639_ccif_clear_interrupt_status(struct ADAPTER *ad)
+{
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
+		0xff);
 }
 
 static uint32_t mt6639_ccif_get_interrupt_status(struct ADAPTER *ad)

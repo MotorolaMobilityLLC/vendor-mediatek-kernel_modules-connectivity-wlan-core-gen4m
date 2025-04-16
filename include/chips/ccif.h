@@ -17,6 +17,7 @@ enum CCIF_MSG {
 };
 
 struct CCIF_OPS {
+	void (*clear_interrupt_status)(struct ADAPTER *ad);
 	uint32_t (*get_interrupt_status)(struct ADAPTER *ad);
 	void (*notify_utc_time_to_fw)(struct ADAPTER *ad,
 		uint32_t sec,
@@ -28,6 +29,16 @@ struct CCIF_OPS {
 		enum ENUM_FW_LOG_CTRL_TYPE type);
 	int32_t (*trigger_fw_assert)(struct ADAPTER *ad);
 };
+
+static inline void ccif_clear_interrupt_status(struct ADAPTER *ad)
+{
+	if (!ad || !ad->chip_info ||
+	    !ad->chip_info->ccif_ops ||
+	    !ad->chip_info->ccif_ops->clear_interrupt_status)
+		return;
+
+	ad->chip_info->ccif_ops->clear_interrupt_status(ad);
+}
 
 static inline uint32_t ccif_get_interrupt_status(struct ADAPTER *ad)
 {

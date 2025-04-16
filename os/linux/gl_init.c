@@ -9419,6 +9419,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				WLAN_PINCTRL_MSG_FUNC_PTA_UART_INIT);
 #endif /* CFG_SUPPORT_MULTI_CARD */
 
+		if (prChipInfo && prChipInfo->clear_sw_interrupt_status)
+			prChipInfo->clear_sw_interrupt_status(prAdapter);
+
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "Set IRQ error\n");

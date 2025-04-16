@@ -1727,6 +1727,7 @@ struct mt66xx_chip_info {
 	void (*coantSetMD)(void);
 	void (*coantVFE28En)(struct ADAPTER *prAdapter);
 	void (*coantVFE28Dis)(void);
+	void (*clear_sw_interrupt_status)(struct ADAPTER *prAdapter);
 	u_int8_t (*get_sw_interrupt_status)(struct ADAPTER *prAdapter,
 		uint32_t *status);
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);
