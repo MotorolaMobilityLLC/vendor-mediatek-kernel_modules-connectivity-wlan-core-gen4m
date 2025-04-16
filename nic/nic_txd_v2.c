@@ -182,10 +182,32 @@ void nic_txd_v2_fill_by_pkt_option(
 
 	case HEADER_FORMAT_802_11_NORMAL_MODE:
 		if (fgProtected && prMsduInfo->prPacket) {
-			struct WLAN_MAC_HEADER *prWlanHeader =
-			    (struct WLAN_MAC_HEADER *)
-			    ((uintptr_t) (prMsduInfo->prPacket)
-				+ MAC_TX_RESERVED_FIELD);
+			struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+#if CFG_SUPPORT_MLR
+			if (prMsduInfo->ucPacketType ==
+				TX_PACKET_TYPE_DATA) {
+				struct mt66xx_chip_info *prChipInfo =
+					prAdapter->chip_info;
+				uint8_t *pucData = NULL;
+
+				kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+				prWlanHeader = (struct WLAN_MAC_HEADER *)
+					(pucData
+					+ NIC_TX_DESC_AND_PADDING_LENGTH
+					+ prChipInfo->txd_append_size);
+				if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
+					DBGLOG(RSN, INFO,
+						"MLR txdf - 802.11data FC=0x%04x dump...\n",
+						prWlanHeader->u2FrameCtrl);
+					dumpMemory8((uint8_t *)prWlanHeader,
+						WLAN_MAC_HEADER_QOS_LEN);
+				}
+
+			} else
+#endif
+				prWlanHeader = (struct WLAN_MAC_HEADER *)
+					((uintptr_t) (prMsduInfo->prPacket)
+					+ MAC_TX_RESERVED_FIELD);
 
 			prWlanHeader->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 		}
@@ -353,6 +375,16 @@ void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 			(prAdapter->chip_info->pse_header_length
 				+ prMsduInfo->ucMacHeaderLength
 				+ prMsduInfo->ucLlcLength) >> 1;
+
+#if CFG_SUPPORT_MLR
+		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
+			MLR_DBGLOG(prAdapter, RSN, WARN,
+				"MLR txdc - 802.11 Ether-type offset[%u] [PseHeader:%u, MacHeader:%u, HeaderPading:2 LLC:%u]\n",
+				ucEtherTypeOffsetInWord,
+				prAdapter->chip_info->pse_header_length,
+				prMsduInfo->ucMacHeaderLength,
+				prMsduInfo->ucLlcLength);
+#endif
 	} else {
 		ucEtherTypeOffsetInWord =
 			((ETHER_HEADER_LEN - ETHER_TYPE_LEN)
@@ -458,25 +490,53 @@ void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
-#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
-		if (prMsduInfo->ucPktType == ENUM_PKT_802_11_MGMT) {
-			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-			   prAdapter->chip_info->txd_append_size;
+#if CFG_SUPPORT_MLR
+		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
+			struct mt66xx_chip_info *prChipInfo =
+				prAdapter->chip_info;
+			uint8_t *pucData = NULL;
 
-			kalGetPacketBuf(prMsduInfo->prPacket, &pucBuff);
-			prWlanHeader =
-				(struct WLAN_MAC_HEADER *)((uintptr_t)
-				(pucBuff + u4TxHeadRoomSize));
-
-			if (prMsduInfo->u4Option & MSDU_OPT_PROTECTED_FRAME)
-				prWlanHeader->u2FrameCtrl |=
-					MASK_FC_PROTECTED_FRAME;
-		} else
+			kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+			prWlanHeader = (struct WLAN_MAC_HEADER *)
+				(pucData
+				+ MAC_TX_RESERVED_FIELD
+				+ u4TxDescLength
+				+ prChipInfo->txd_append_size);
+			if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
+				DBGLOG(RSN, INFO,
+					"MLR txdc - 802.11data FC=0x%04x SC=0x%04x dump...\n",
+					prWlanHeader->u2FrameCtrl,
+					prWlanHeader->u2SeqCtrl);
+				dumpMemory8((uint8_t *)prWlanHeader,
+					WLAN_MAC_HEADER_QOS_LEN);
+			}
+		} else {
 #endif
-			prWlanHeader =
-				(struct WLAN_MAC_HEADER *)
-				((uintptr_t)
-				(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+			if (prMsduInfo->ucPktType == ENUM_PKT_802_11_MGMT) {
+				u4TxHeadRoomSize =
+					NIC_TX_DESC_AND_PADDING_LENGTH +
+					prAdapter->chip_info->txd_append_size;
+
+				kalGetPacketBuf(prMsduInfo->prPacket, &pucBuff);
+				prWlanHeader =
+					(struct WLAN_MAC_HEADER *)((uintptr_t)
+					(pucBuff + u4TxHeadRoomSize));
+
+				if (prMsduInfo->u4Option
+					& MSDU_OPT_PROTECTED_FRAME)
+					prWlanHeader->u2FrameCtrl |=
+						MASK_FC_PROTECTED_FRAME;
+			} else
+#endif
+				prWlanHeader =
+					(struct WLAN_MAC_HEADER *)
+					((uintptr_t)
+					(prMsduInfo->prPacket) +
+					MAC_TX_RESERVED_FIELD);
+#if CFG_SUPPORT_MLR
+		}
+#endif
 
 		HAL_MAC_CONNAC2X_TXD_SET_TYPE(
 			prTxDesc,
@@ -606,6 +666,25 @@ void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	/* Power Offset */
 	HAL_MAC_CONNAC2X_TXD_SET_POWER_OFFSET(
 		prTxDesc, prMsduInfo->cPowerOffset);
+
+#if CFG_SUPPORT_MLR
+	if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)) {
+		uint8_t *pucData = NULL;
+
+		HAL_MAC_CONNAC2X_TXD_SET_FRAG_PACKET_POS(prTxDesc,
+			prMsduInfo->eFragPos);
+
+		kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+		MLR_DBGLOG(prAdapter, REQ, INFO,
+			"MLR txdc - PID=%d SeqNo=%d prPacket=%p prPacket->data=%p u2FrameLength=%d eFragPos=%d\n",
+			prMsduInfo->ucPID,
+			prMsduInfo->ucTxSeqNum,
+			prMsduInfo->prPacket,
+			pucData,
+			prMsduInfo->u2FrameLength,
+			prMsduInfo->eFragPos);
+	}
+#endif
 
 	/* Fix rate */
 	switch (prMsduInfo->ucRateMode) {

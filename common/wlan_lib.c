@@ -5076,8 +5076,36 @@ uint32_t wlanEnqueueTxPacket(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		/* enqueue to QM */
-		nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+#if CFG_SUPPORT_MLR
+		if (mlrCheckIfDoFrag(prAdapter, prMsduInfo, prNativePacket)) {
+			uint8_t fgDoFragSuccess = FALSE;
+			struct QUE rFragmentedQue;
+			struct QUE *prFragmentedQue = &rFragmentedQue;
+			uint16_t u2TxFragSplitSize = 0, u2TxFragThr = 0;
+
+			QUEUE_INITIALIZE(prFragmentedQue);
+
+			/* Get Tx Frag split size and threshold */
+			mlrGetTxFragParameter(prAdapter, prMsduInfo,
+				&u2TxFragSplitSize, &u2TxFragThr);
+
+			/* Do fragment */
+			fgDoFragSuccess = mlrDoFragPacket(prAdapter, prMsduInfo,
+				u2TxFragSplitSize,
+				u2TxFragThr,
+				prNativePacket, prFragmentedQue);
+			if (fgDoFragSuccess) {
+				struct MSDU_INFO *prMsduInfoListHead = NULL;
+
+				prMsduInfoListHead = (struct MSDU_INFO *)
+					QUEUE_GET_HEAD(prFragmentedQue);
+				nicTxEnqueueMsdu(prAdapter, prMsduInfoListHead);
+			} else
+				nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+		} else
+#endif
+			/* enqueue to QM */
+			nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 		return WLAN_STATUS_SUCCESS;
 	}
