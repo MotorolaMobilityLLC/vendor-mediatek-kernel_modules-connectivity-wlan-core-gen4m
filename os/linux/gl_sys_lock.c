@@ -90,6 +90,12 @@ static void wfsys_lock_release_trace(void)
 			end_time_nsec);
 }
 
+void wfsys_lock_extend(void)
+{
+	mod_timer(&wfsys_lock_timer, jiffies +
+		  MSEC_TO_JIFFIES(WFSYS_LOCK_MAX_HOLD_TIME * MSEC_PER_SEC));
+}
+
 void wfsys_lock(void)
 {
 	mutex_lock(&wfsys_mutex);

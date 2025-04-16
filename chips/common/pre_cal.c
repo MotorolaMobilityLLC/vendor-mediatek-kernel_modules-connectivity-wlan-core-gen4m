@@ -1514,6 +1514,8 @@ int wlan_precal_pwron_v2(void)
 
 	if (!wfsys_is_locked())
 		wfsys_lock();
+	else
+		wfsys_lock_extend();
 
 	update_pre_cal_status(1);
 	g_fgPreCal = TRUE;
@@ -1549,6 +1551,8 @@ exit:
 
 	if (!wfsys_is_locked())
 		wfsys_lock();
+	else
+		wfsys_lock_extend();
 
 	return 0;
 

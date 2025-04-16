@@ -5,7 +5,7 @@
 
 #define WFSYS_LOCK_MAX_TRACE		10
 #define WFSYS_LOCK_MAX_HOLD_TIME	10
-#define WFSYS_LOCK_PRINT_PERIOD		1
+#define WFSYS_LOCK_PRINT_PERIOD		5
 
 struct wfsys_lock_dbg_t {
 	struct task_struct *task;
@@ -18,11 +18,13 @@ struct wfsys_lock_dbg_t {
 };
 
 #if CFG_MTK_ANDROID_WMT
+void wfsys_lock_extend(void);
 void wfsys_lock(void);
 int wfsys_trylock(void);
 void wfsys_unlock(void);
 int wfsys_is_locked(void);
 #else
+static inline void wfsys_lock_extend(void) {}
 static inline void wfsys_lock(void) {}
 static inline int wfsys_trylock(void) { return 0; }
 static inline void wfsys_unlock(void) {}
