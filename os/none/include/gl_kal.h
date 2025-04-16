@@ -1150,7 +1150,7 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define	kalIndicateChannelSwitch(_prGlueInfo, _eSco, _ucChannelNum, \
-	_eBand, _ucBssIndex) \
+	_eBand, _ucVhtChannelWidth, _ucBssIndex)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #endif
 
@@ -1187,7 +1187,7 @@ void
 kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,
 			uint8_t ucChannelNum, enum ENUM_BAND eBand,
-			uint8_t ucBssIndex);
+			uint8_t ucVhtChannelWidth, uint8_t ucBssIndex);
 #endif
 
 void
@@ -2069,7 +2069,7 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalCsaNotifyWorkDeinit(_prAdapter, _ucBssIdx) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define kalAisCsaNotifyWorkInit(_prAdapter, _ucBssIdx) \
+#define kalCsaNotifyWorkInit(_prAdapter, _ucBssIdx) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalIsHalted(_prGlueInfo) \

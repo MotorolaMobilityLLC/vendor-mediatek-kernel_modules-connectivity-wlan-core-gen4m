@@ -1897,7 +1897,7 @@ void
 kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,
 			uint8_t ucChannelNum, enum ENUM_BAND eBand,
-			uint8_t ucBssIndex);
+			uint8_t ucVhtChannelWidth, uint8_t ucBssIndex);
 #endif
 
 void
@@ -3007,7 +3007,7 @@ void kalRoamingReport(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, u_int8_t fgSuccess);
 #endif /* CFG_SUPPORT_ROAMING == 1 */
 void kalPmicCtrl(u_int8_t fgIsEnabled);
-void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
+void kalCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);
 void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);

@@ -9490,6 +9490,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc;
 	struct STA_RECORD *prStaRec;
 	enum ENUM_BAND eNewBand;
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -9623,10 +9624,12 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	DBGLOG(RLM, INFO, "Ch : DFS has Appeared\n");
 #endif
 
+	eRfChannelWidth = (enum ENUM_CHANNEL_WIDTH)prBssInfo->ucVhtChannelWidth;
 	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex, &prBssInfo->eBssSCO,
-		       (enum ENUM_CHANNEL_WIDTH *)&prBssInfo->ucVhtChannelWidth,
+		       &eRfChannelWidth,
 		       &prBssInfo->ucVhtChannelFrequencyS1,
 		       &prBssInfo->ucPrimaryChannel);
+	prBssInfo->ucVhtChannelWidth = (uint8_t)eRfChannelWidth;
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 

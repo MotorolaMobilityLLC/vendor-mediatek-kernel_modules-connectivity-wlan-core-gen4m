@@ -2169,7 +2169,12 @@ SKIP_START_RDD:
 			prGlueInfo = prAdapter->prGlueInfo;
 			prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 			prP2PInfo->fgChannelSwitchReq = TRUE;
-			kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+			kalIndicateChannelSwitch(prGlueInfo,
+				prBssInfo->eBssSCO,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBand,
+				prBssInfo->ucVhtChannelWidth,
+				prBssInfo->ucBssIndex);
 		}
 #endif
 
@@ -3206,7 +3211,12 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 			prBssInfo->eBand);
 #endif
 
-	kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+	kalIndicateChannelSwitch(prGlueInfo,
+		prBssInfo->eBssSCO,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->eBand,
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->ucBssIndex);
 
 	/* Down the flag */
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;

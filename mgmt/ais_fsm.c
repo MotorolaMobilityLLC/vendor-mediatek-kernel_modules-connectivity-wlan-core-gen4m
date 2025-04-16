@@ -510,7 +510,7 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prAisBssInfo->ucLinkId = ucLinkIdx;
 #endif
-	kalAisCsaNotifyWorkInit(prAdapter,
+	kalCsaNotifyWorkInit(prAdapter,
 		prAisBssInfo->ucBssIndex);
 	LINK_INITIALIZE(&prAisBssInfo->rPmkidCache);
 }
@@ -6950,6 +6950,7 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			prAisBssInfo->eBssSCO,
 			prAisBssInfo->ucPrimaryChannel,
 			prAisBssInfo->eBand,
+			prAisBssInfo->ucVhtChannelWidth,
 			prAisBssInfo->ucBssIndex);
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
@@ -6974,10 +6975,6 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			prStaRec = prAisBssInfo->prStaRecOfAP;
 
 			if (prCSAParams->fgHasStopTx) {
-				kalIndicateAllQueueTxAllowed(
-					prAdapter->prGlueInfo,
-					prStaRec->ucBssIndex,
-					TRUE);
 				qmSetStaRecTxAllowed(prAdapter,
 					prStaRec, TRUE);
 				DBGLOG(RLM, EVENT,

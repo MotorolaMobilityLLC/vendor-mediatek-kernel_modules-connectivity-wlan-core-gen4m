@@ -392,6 +392,7 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 		(PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventCsaDoneTimeOut,
 		(uintptr_t)prP2pBssInfo);
 
+	kalCsaNotifyWorkInit(prAdapter, prP2pBssInfo->ucBssIndex);
 	kalP2pCsaNotifyWorkInit(prP2pBssInfo);
 
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
@@ -4189,8 +4190,12 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				prAdapter->prGlueInfo->
 					prP2PInfo[prBssInfo->u4PrivateData]->
 					fgChannelSwitchReq = TRUE;
-				kalP2pIndicateChnlSwitch(prAdapter,
-					prBssInfo);
+				kalIndicateChannelSwitch(prAdapter->prGlueInfo,
+					prBssInfo->eBssSCO,
+					prBssInfo->ucPrimaryChannel,
+					prBssInfo->eBand,
+					prBssInfo->ucVhtChannelWidth,
+					prBssInfo->ucBssIndex);
 			} else { /* GO */
 				p2pFuncDfsSwitchCh(prAdapter,
 					prBssInfo,

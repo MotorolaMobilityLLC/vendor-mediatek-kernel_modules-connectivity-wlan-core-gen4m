@@ -13671,57 +13671,102 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 				enum ENUM_CHNL_EXT eSco,
 				uint8_t ucChannelNum,
 				enum ENUM_BAND eBand,
+				uint8_t ucVhtChannelWidth,
 				uint8_t ucBssIndex)
+
 {
-	struct cfg80211_chan_def chandef;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct net_device *prDevHandler = NULL;
+	struct cfg80211_chan_def chandef = {0};
 	struct ieee80211_channel *prChannel = NULL;
-	struct net_device *prDevHandler;
-	enum nl80211_channel_type rChannelType;
-	uint8_t band = 0;
-	struct BSS_INFO *prBssInfo;
+	enum nl80211_channel_type rChannelType = 0;
+	struct GL_P2P_INFO *prP2PInfo = NULL;
+	uint8_t roleIdx = 0;
 	uint8_t linkIdx = 0;
 	uint32_t u4BufLen = 0;
+	u_int8_t fgLockHeld = FALSE;
+	enum ENUM_MAX_BANDWIDTH_SETTING eBandWidth;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
-		ucBssIndex);
-	if (prBssInfo)
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
+		return;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	if (!IS_BSS_AIS(prBssInfo)) {
+		roleIdx = prBssInfo->u4PrivateData;
+		prP2PInfo = prGlueInfo->prP2PInfo[roleIdx];
+
+		if (!prP2PInfo) {
+			DBGLOG(P2P, WARN,
+				"p2p glue info is not active\n");
+			return;
+		}
+
+		if (IS_BSS_GC(prBssInfo) || IS_BSS_AP(prAdapter, prBssInfo))
+			linkIdx = prBssInfo->ucLinkId;
+
+		if (!prP2PInfo->fgChannelSwitchReq) {
+			DBGLOG(P2P, WARN,
+				"P2P not request to switch channel\n");
+			KAL_WARN_ON(TRUE);
+			return;
+		}
+
+#if (CFG_SUPPORT_NAN == 1)
+		/* Set complete for nan init */
+		if (!kal_completion_done(&prGlueInfo->rNanHaltComp)) {
+			DBGLOG(NAN, DEBUG,
+				"Concurrency: Skip lock NAN\n");
+			fgLockHeld = TRUE;
+		}
+#endif /* CFG_SUPPORT_NAN */
+
+		prP2PInfo->fgChannelSwitchReq = false;
+
+		if ((prP2PInfo->aprRoleHandler != NULL) &&
+		    (prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler))
+			prDevHandler = prP2PInfo->aprRoleHandler;
+		else
+			prDevHandler = prP2PInfo->prDevHandler;
+	} else {
 		linkIdx = prBssInfo->ucLinkId;
+		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
 
-	if (eBand > BAND_NULL && eBand < BAND_NUM)
-		band = aucBandTranslate[eBand];
-	else {
-		DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
+		if (!prDevHandler) {
+			DBGLOG(REQ, ERROR,
+				"NetDev is null BssIndex[%d]!\n",
+				ucBssIndex);
+			return;
+		}
+	}
+
+	if (eBand >= BAND_NUM) {
+		DBGLOG(REQ, ERROR, "Invalid band: %d!\n", eBand);
 		return;
 	}
+
+	/* Compose ch info. */
 	prChannel = ieee80211_get_channel(
 			GLUE_GET_WIPHY(prGlueInfo),
-			ieee80211_channel_to_frequency(ucChannelNum, band));
+			nicChannelNum2Freq(ucChannelNum, eBand) / 1000);
 
 	if (!prChannel) {
 		DBGLOG(REQ, ERROR, "ieee80211_get_channel fail!\n");
 		return;
 	}
 
-	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
-	if (!prDevHandler) {
-		DBGLOG(REQ, ERROR,
-			"NetDev is null BssIndex[%d]!\n", ucBssIndex);
-		return;
-	}
-
 	switch (eSco) {
-	case CHNL_EXT_SCN:
-		rChannelType = NL80211_CHAN_NO_HT;
-		break;
-
 	case CHNL_EXT_SCA:
-		rChannelType = NL80211_CHAN_HT40MINUS;
-		break;
-
-	case CHNL_EXT_SCB:
 		rChannelType = NL80211_CHAN_HT40PLUS;
 		break;
-
+	case CHNL_EXT_SCB:
+		rChannelType = NL80211_CHAN_HT40MINUS;
+		break;
+	case CHNL_EXT_SCN:
 	case CHNL_EXT_RES:
 	default:
 		rChannelType = NL80211_CHAN_HT20;
@@ -13732,13 +13777,62 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
 
-#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
-	wiphy_lock(prDevHandler->ieee80211_ptr->wiphy);
-#else
-	mutex_lock(&prDevHandler->ieee80211_ptr->mtx);
+	switch (ucVhtChannelWidth) {
+#if KERNEL_VERSION(5, 18, 0) <= CFG80211_VERSION_CODE
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+	case VHT_OP_CHANNEL_WIDTH_320_2:
+		chandef.width = NL80211_CHAN_WIDTH_320;
+		break;
 #endif
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		chandef.width = NL80211_CHAN_WIDTH_80P80;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_160:
+		chandef.width = NL80211_CHAN_WIDTH_160;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+		chandef.width = NL80211_CHAN_WIDTH_80;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		/* handle in cfg80211_chandef_create above */
+		break;
+	default:
+		chandef.width = NL80211_CHAN_WIDTH_20;
+		break;
+	}
+
+	eBandWidth = rlmVhtBw2OpBw(ucVhtChannelWidth, eSco);
+	chandef.center_freq1 = nicGetCenterChFreq(eBand,
+					ucChannelNum,
+					eSco,
+					eBandWidth);
+	chandef.center_freq2 = 0;
+
+	DBGLOG(REQ, INFO,
+		"name=%s role=%u link=%u b=%d f=%d w=%d s1=%d s2=%d dfs=%d\n",
+		prDevHandler->name,
+		roleIdx,
+		linkIdx,
+		chandef.chan->band,
+		chandef.chan->center_freq,
+		chandef.width,
+		chandef.center_freq1,
+		chandef.center_freq2,
+		chandef.chan->dfs_state);
+
+	if (!fgLockHeld) {
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+		wiphy_lock(prDevHandler->ieee80211_ptr->wiphy);
+#else
+		mutex_lock(&prDevHandler->ieee80211_ptr->mtx);
+#endif
+	}
+
 
 #if (KERNEL_VERSION(6, 9, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_SUPPORT_802_11BE == 1)
+	chandef.punctured = prBssInfo->u2EhtDisSubChanBitmap;
+#endif /* CFG_SUPPORT_802_11BE */
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx);
 #elif (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
@@ -13754,18 +13848,28 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
 
+	if (!fgLockHeld) {
 #if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
-	wiphy_unlock(prDevHandler->ieee80211_ptr->wiphy);
+		wiphy_unlock(prDevHandler->ieee80211_ptr->wiphy);
 #else
-	mutex_unlock(&prDevHandler->ieee80211_ptr->mtx);
+		mutex_unlock(&prDevHandler->ieee80211_ptr->mtx);
 #endif
+	}
 
+	/* Call CCM check if any BSS want to CSA,
+	 * Should be triggered after fgChannelSwitchReq set to false.
+	 */
 	DBGLOG(CCM, TRACE, "CSA done, re-trigger CCM\n");
 	kalIoctl(prGlueInfo, wlanoidCcmRetrigger, prBssInfo,
 				sizeof(struct BSS_INFO), &u4BufLen);
+
+	if (!IS_BSS_AIS(prBssInfo))
+		netif_carrier_on(prDevHandler);
+
+	kalIndicateAllQueueTxAllowed(prGlueInfo, ucBssIndex, TRUE);
 }
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
-void kalAisChnlSwitchNotifyWork(struct work_struct *work)
+void kalChnlSwitchNotifyWork(struct work_struct *work)
 {
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
 		CONTAINER_OF(work, struct GL_CH_SWITCH_WORK,
@@ -13791,11 +13895,12 @@ void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 				prBssInfo->eBssSCO,
 				prBssInfo->ucPrimaryChannel,
 				prBssInfo->eBand,
+				prBssInfo->ucVhtChannelWidth,
 				prBssInfo->ucBssIndex);
 }
 #endif
 
-void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
+void kalCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
@@ -13806,7 +13911,7 @@ void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
-		kalAisChnlSwitchNotifyWork);
+		kalChnlSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
 #endif
 }
@@ -13840,25 +13945,24 @@ void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,
 			uint8_t ucChannelNum, enum ENUM_BAND eBand,
-			uint8_t ucBssIndex)
+			uint8_t ucVhtChannelWidth, uint8_t ucBssIndex)
 {
-
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
-	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 
-	prAdapter = prGlueInfo->prAdapter;
-	prBssInfo =
-		prAdapter->aprBssInfo[ucBssIndex];
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
 	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
 #else
 	__kalIndicateChannelSwitch(prGlueInfo,
 				eSco,
 				ucChannelNum,
 				eBand,
+				ucVhtChannelWidth,
 				ucBssIndex);
 #endif
-
 }
 
 #endif
