@@ -5817,9 +5817,9 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 					prFilsReqIe->ucMaxChannelTime =
 					    SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
 			}
-			DBGLOG(SCN, INFO,
-				"OCE IE, length = %d\n", prScanParam->u2IELen);
-			dumpMemory8(pucBuf, prScanParam->u2IELen);
+			DBGLOG(SCN, TRACE,
+				"OCE IE, length = %d\n", IE_SIZE(pucBuf));
+			dumpMemory8(pucBuf, IE_SIZE(pucBuf));
 		}
 	}
 }
