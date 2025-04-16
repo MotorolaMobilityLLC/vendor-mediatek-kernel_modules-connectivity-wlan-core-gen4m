@@ -18306,6 +18306,13 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 
 			rSelChnlInfo = g_r5gDwChnl;
 
+			/* When the highest common is 5G Low, select channel
+			 * NAN_5G_LOW_DISC_CHANNEL (44) to avoid counter
+			 */
+			if (eHighestCommonBand == ENUM_SUPPORTED_BN_5G_LOW)
+				rSelChnlInfo.u4PrimaryChnl =
+					NAN_5G_LOW_DISC_CHANNEL;
+
 			nanGetMaxCapabilityAllPeers(prAdapter,
 						    szSlotIdx,
 						    &eAllPeerMaxCap,
