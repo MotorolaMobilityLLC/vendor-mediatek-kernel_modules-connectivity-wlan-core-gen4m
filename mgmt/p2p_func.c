@@ -785,8 +785,10 @@ p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 	prPendingMgmtInfo->ucChannelNum =
 		prMgmtTxMsg->rChannelInfo.ucChannelNum;
 	prPendingMgmtInfo->fgIsOffChannel = prMgmtTxMsg->fgIsOffChannel;
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 	LINK_INSERT_TAIL(&prGlueP2pInfo->rWaitTxDoneLink,
 		&prPendingMgmtInfo->rLinkEntry);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 
 	DBGLOG(P2P, TRACE,
 		"Add pending mgmt TX cookie:0x%llx eBand:%d ucChannelNum:%u\n",
@@ -812,6 +814,10 @@ p2pFuncRemovePendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 	else
 		prGlueP2pInfo = prAdapter->prGlueInfo->prP2PInfo[0];
 
+	if (!prGlueP2pInfo)
+		return;
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 	LINK_FOR_EACH_ENTRY_SAFE(prPendingMgmtInfo,
 		prPendingMgmtInfoNext, &prGlueP2pInfo->rWaitTxDoneLink,
 		rLinkEntry, struct P2P_PENDING_MGMT_INFO) {
@@ -828,6 +834,7 @@ p2pFuncRemovePendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 }
 
 uint32_t
@@ -837,6 +844,7 @@ p2pFuncIsPendingTxMgmtNeedWait(struct ADAPTER *prAdapter, uint8_t ucRoleIndex,
 	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
 	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfoNext = NULL;
+	u_int8_t fgNeedWait = FALSE;
 
 	prGlueP2pInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIndex];
 
@@ -859,31 +867,41 @@ p2pFuncIsPendingTxMgmtNeedWait(struct ADAPTER *prAdapter, uint8_t ucRoleIndex,
 		} else
 			return FALSE;
 
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 		LINK_FOR_EACH_ENTRY_SAFE(prPendingMgmtInfo,
 			prPendingMgmtInfoNext, &prGlueP2pInfo->rWaitTxDoneLink,
 			rLinkEntry, struct P2P_PENDING_MGMT_INFO) {
 			/* The non off ch TX frame is rely on RoC channel */
-			if (prPendingMgmtInfo->fgIsOffChannel == FALSE)
-				return TRUE;
+			if (prPendingMgmtInfo->fgIsOffChannel == FALSE) {
+				fgNeedWait = TRUE;
+				break;
+			}
 
 			/* The off ch TX frame is not enqueue if RoC on the
 			 * different channel. Only need wait the off ch TX
 			 * on the same channel.
 			 */
 			if (prPendingMgmtInfo->fgIsOffChannel &&
-				prPendingMgmtInfo->eBand == eBand &&
-				prPendingMgmtInfo->ucChannelNum == ucChannelNum)
-				return TRUE;
+			      prPendingMgmtInfo->eBand == eBand &&
+			      prPendingMgmtInfo->ucChannelNum == ucChannelNum) {
+				fgNeedWait = TRUE;
+				break;
+			}
 		}
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 	} else if (eP2pMgmtTxType == P2P_MGMT_OFF_CH_TX) {
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 		LINK_FOR_EACH_ENTRY_SAFE(prPendingMgmtInfo,
 			prPendingMgmtInfoNext, &prGlueP2pInfo->rWaitTxDoneLink,
 			rLinkEntry, struct P2P_PENDING_MGMT_INFO) {
-			if (prPendingMgmtInfo->fgIsOffChannel)
-				return TRUE;
+			if (prPendingMgmtInfo->fgIsOffChannel) {
+				fgNeedWait = TRUE;
+				break;
+			}
 		}
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 	}
-	return FALSE;
+	return fgNeedWait;
 }
 
 uint32_t

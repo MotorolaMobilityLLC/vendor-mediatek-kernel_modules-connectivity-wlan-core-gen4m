@@ -592,6 +592,7 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			(void **)&prWifiVar->prP2pQueryStaStatistics[ucIdx],
 			sizeof(struct PARAM_GET_STA_STATISTICS));
 #endif
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 		while (!LINK_IS_EMPTY(&prGlP2pInfo->rWaitTxDoneLink)) {
 			LINK_REMOVE_HEAD(
 				&prGlP2pInfo->rWaitTxDoneLink,
@@ -603,6 +604,7 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 				prPendingMgmtInfo->u8PendingMgmtCookie);
 			cnmMemFree(prAdapter, prPendingMgmtInfo);
 		}
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 
 		p2pFreeMemSafe(prGlueInfo,
 			(void **)&prGlP2pInfo,
@@ -1104,7 +1106,9 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		return -1;
 	}
 
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 	LINK_INITIALIZE(&prP2PInfo->rWaitTxDoneLink);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_P2P_PENDING_MGMT_TX);
 
 	if ((fgSkipRole == SKIP_ROLE_ALL) ||
 		((fgSkipRole == SKIP_ROLE_EXCEPT_MAIN) && u4Idx))
