@@ -572,6 +572,7 @@ struct _NAN_PEER_SCH_DESC_T {
 #endif
 	/* Intersection of supported band between self and this peer */
 	uint32_t u4CommonSupportedBand;
+	uint32_t u4PeerSupportedBand;
 
 	enum NAN_RX_PEER_SPECIAL_AVAIL ePeerForceAvailAttr;
 };

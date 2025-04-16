@@ -272,7 +272,7 @@ struct _NAN_SCHED_CMD_UPDATE_PEER_CAPABILITY_T {
 	uint32_t u4SchIdx;
 	uint8_t ucSupportedBands;
 	uint16_t u2MaxChnlSwitchTime;
-	uint8_t aucRsvd[1];
+	uint8_t ucPeerSupportedBands;
 } __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 __KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
@@ -4818,9 +4818,10 @@ nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 
 	prPeerSchDesc->u4CommonSupportedBand =
 		(prNanScheduler->ucLocalSupportedBand & ucPeerSupportedBand);
+	prPeerSchDesc->u4PeerSupportedBand = ucPeerSupportedBand;
 
-	DBGLOG(NAN, DEBUG,
-	       "Peer %02x:%02x:%02x:%02x:%02x:%02x, CommonBn[6G/5GH/5GL/2G]:[%u/%u/%u/%u]\n",
+	DBGLOG(NAN, INFO,
+	       "Peer %02x:%02x:%02x:%02x:%02x:%02x, CommonBn[6G/5GH/5GL/2G]:[%u/%u/%u/%u], SupportBn[6G/5GH/5GL/2G]:[%u/%u/%u/%u]\n",
 	       prPeerSchDesc->aucNmiAddr[0], prPeerSchDesc->aucNmiAddr[1],
 	       prPeerSchDesc->aucNmiAddr[2], prPeerSchDesc->aucNmiAddr[3],
 	       prPeerSchDesc->aucNmiAddr[4], prPeerSchDesc->aucNmiAddr[5],
@@ -4831,6 +4832,14 @@ nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 	       !!(prPeerSchDesc->u4CommonSupportedBand &
 	       BIT(ENUM_SUPPORTED_BN_5G_LOW)),
 	       !!(prPeerSchDesc->u4CommonSupportedBand &
+	       BIT(ENUM_SUPPORTED_BN_2G)),
+	       !!(prPeerSchDesc->u4PeerSupportedBand &
+	       BIT(ENUM_SUPPORTED_BN_6G)),
+	       !!(prPeerSchDesc->u4PeerSupportedBand &
+	       BIT(ENUM_SUPPORTED_BN_5G_HIGH)),
+	       !!(prPeerSchDesc->u4PeerSupportedBand &
+	       BIT(ENUM_SUPPORTED_BN_5G_LOW)),
+	       !!(prPeerSchDesc->u4PeerSupportedBand &
 	       BIT(ENUM_SUPPORTED_BN_2G)));
 
 	return WLAN_STATUS_SUCCESS;
@@ -14003,7 +14012,8 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _NAN_SCHED_CMD_UPDATE_PEER_CAPABILITY_T *prCmdUpdatePeerCap =
 		NULL;
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
-	uint8_t ucSupportedBands;
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
+	uint8_t ucSupportedBands, ucPeerSupportedBands;
 	uint32_t u4Idx;
 	struct _NAN_DEVICE_CAPABILITY_T *prDevCapList;
 	uint16_t u2MaxChnlSwitchTime = 0;
@@ -14012,6 +14022,11 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	if (!prPeerSchRecord || prPeerSchRecord->fgActive != TRUE ||
 	    !prPeerSchRecord->prPeerSchDesc)
 		return WLAN_STATUS_FAILURE;
+	prPeerSchDesc = prPeerSchRecord->prPeerSchDesc;
+	if (!prPeerSchDesc) {
+		DBGLOG(NAN, ERROR, "prPeerSchDesc Null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
@@ -14044,7 +14059,6 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 
 	prCmdUpdatePeerCap = (struct _NAN_SCHED_CMD_UPDATE_PEER_CAPABILITY_T *)
 				     prTlvElement->aucbody;
-
 	ucSupportedBands = BIT(NAN_SUPPORTED_BAND_ID_2P4G);
 	prDevCapList = prPeerSchRecord->prPeerSchDesc->arDevCapability;
 	for (u4Idx = 0; u4Idx < (NAN_NUM_AVAIL_DB + 1);
@@ -14059,8 +14073,10 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		}
 	}
 
+	ucPeerSupportedBands = prPeerSchDesc->u4PeerSupportedBand;
 	prCmdUpdatePeerCap->u4SchIdx = u4SchIdx;
 	prCmdUpdatePeerCap->ucSupportedBands = ucSupportedBands;
+	prCmdUpdatePeerCap->ucPeerSupportedBands = ucPeerSupportedBands;
 	prCmdUpdatePeerCap->u2MaxChnlSwitchTime = u2MaxChnlSwitchTime;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
