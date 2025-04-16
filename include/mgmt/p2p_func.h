@@ -27,7 +27,7 @@ enum ENUM_CSA_STATUS {
 	CSA_STATUS_SUCCESS = 0,
 	CSA_STATUS_DFS_NOT_SUP,
 	CSA_STATUS_NON_PSC_NOT_SUP,
-	CSA_STATUS_NON_SAE_NOT_SUP,
+	CSA_STATUS_NON_WPA3_NOT_SUP,
 	CSA_STATUS_CHNL_ILLEGAL,
 	CSA_STATUS_PEER_NOT_SUP_CSA,
 	CSA_STATUS_PEER_NOT_SUP_CH
@@ -591,6 +591,9 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
 		struct BSS_INFO *prP2pBssInfo,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+u_int8_t p2pFuncIsKeyMgmtFor6g(struct ADAPTER *prAdapter,
+			       struct BSS_INFO *prBssInfo);
 
 void p2pDualApChFilter(struct ADAPTER *prAdapter,
 		uint8_t *ucChSwithCandNum,

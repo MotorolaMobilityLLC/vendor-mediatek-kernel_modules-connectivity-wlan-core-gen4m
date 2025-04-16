@@ -9015,50 +9015,64 @@ void p2pDualABandFilter(struct ADAPTER *prAdapter,
 	p2pHwBandMccRemove(prAdapter,
 			ucChSwitchCandNum,
 			prSapSwitchCand);
-
 }
 
-u_int8_t p2pFuncIsBssWpa3OnlyCheck(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prP2pBssInfo)
+u_int8_t p2pFuncIsKeyMgmtFor6g(struct ADAPTER *prAdapter,
+			       struct BSS_INFO *prBssInfo)
 {
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
-	uint8_t i;
+	struct WIFI_VAR *prWifiVar;
+	struct P2P_SPECIFIC_BSS_INFO *prSpecBssInfo;
+	struct RSN_INFO rRsnInfo;
+	struct RSNX_INFO rRsnxeInfo;
 	uint32_t u4PrivateData;
+	uint8_t i;
+	u_int8_t fgIsSae = FALSE, fgCheck = TRUE;
 
-	u4PrivateData =
-		prP2pBssInfo->u4PrivateData;
-	prP2pSpecBssInfo =
-		prAdapter
-		->rWifiVar.prP2pSpecificBssInfo[u4PrivateData];
+	u4PrivateData = prBssInfo->u4PrivateData;
+	prWifiVar = &prAdapter->rWifiVar;
+	prSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[u4PrivateData];
 
-	if (!(prP2pBssInfo->ucPhyTypeSet &
-		PHY_TYPE_BIT_HE))
-		return FALSE;
+	if ((prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE) == 0) {
+		fgCheck = FALSE;
+		goto exit;
+	} else if (!prSpecBssInfo->u2RsnIeLen ||
+		   !prSpecBssInfo->u2RsnxIeLen) {
+		fgCheck = FALSE;
+		goto exit;
+	}
 
-	for (i = 0;
-		i < prP2pSpecBssInfo->u4KeyMgtSuiteCount;
-		i++) {
-		if (prP2pSpecBssInfo
-			->au4KeyMgtSuite[i] ==
-			RSN_AKM_SUITE_OWE) {
-			DBGLOG(P2P, TRACE, "OWE security\n");
-			return TRUE;
-		}
-		if (rsnKeyMgmtSae(prP2pSpecBssInfo
-			->au4KeyMgtSuite[i]))
+	kalMemZero(&rRsnInfo, sizeof(rRsnInfo));
+	if (rsnParseRsnIE(prAdapter, prSpecBssInfo->aucRsnIeBuffer,
+			  &rRsnInfo) == FALSE) {
+		fgCheck = FALSE;
+		goto exit;
+	}
+	for (i = 0; i < rRsnInfo.u4AuthKeyMgtSuiteCount; i++) {
+		if (rRsnInfo.au4AuthKeyMgtSuite[i] == RSN_AKM_SUITE_OWE) {
 			continue;
-
-		DBGLOG(P2P, TRACE, "invalid suit:0x%04x\n",
-			prP2pSpecBssInfo->au4KeyMgtSuite[i]);
-		return FALSE;
-	}
-	if ((prP2pSpecBssInfo->aucRsnxIeBuffer[2] &
-		BIT(WLAN_RSNX_CAPAB_SAE_H2E)) == 0) {
-		DBGLOG(P2P, TRACE, "no H2E in RSNX IE\n");
-		return FALSE;
+		} else if (rsnKeyMgmtSae(rRsnInfo.au4AuthKeyMgtSuite[i])) {
+			fgIsSae = TRUE;
+			continue;
+		} else {
+			fgCheck = FALSE;
+			goto exit;
+		}
 	}
 
-	return TRUE;
+	kalMemZero(&rRsnxeInfo, sizeof(rRsnxeInfo));
+	if (rsnParseRsnxIE(prAdapter, prSpecBssInfo->aucRsnxIeBuffer,
+			   &rRsnxeInfo) == FALSE) {
+		fgCheck = FALSE;
+		goto exit;
+	}
+	if (fgIsSae &&
+	    (rRsnxeInfo.u2Cap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) == 0) {
+		fgCheck = FALSE;
+		goto exit;
+	}
+
+exit:
+	return fgCheck;
 }
 
 void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
@@ -9094,7 +9108,7 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 #if CFG_CH_SELECT_ENHANCEMENT
 			(prP2pBssInfo->eInitBand != BAND_6G) ||
 #endif
-			!p2pFuncIsBssWpa3OnlyCheck(prAdapter,
+			!p2pFuncIsKeyMgmtFor6g(prAdapter,
 				aliveSapBss[0]))) {
 			if (prSapSwitchCand[i-1].eHwBand !=
 				ENUM_BAND_NUM)
@@ -11973,10 +11987,10 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	else if (eTargetBand == BAND_6G) {
 		if (!IS_6G_PSC_CHANNEL(u4TargetCh))
 			rStatus = CSA_STATUS_NON_PSC_NOT_SUP;
-		else if (!rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
+		else if (!p2pFuncIsKeyMgmtFor6g(prAdapter, prBssInfo)) {
 			DBGLOG(CCM, WARN,
-			       "Skip CSA to 6G if auth type not SAE\n");
-			rStatus = CSA_STATUS_NON_SAE_NOT_SUP;
+			       "Skip CSA to 6G due to auth type\n");
+			rStatus = CSA_STATUS_NON_WPA3_NOT_SUP;
 		}
 	}
 #endif
