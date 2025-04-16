@@ -41,14 +41,15 @@
 #define NAN_ATTR_ID(fp)		(((struct _NAN_ATTR_HDR_T *)fp)->ucAttrId)
 #define NAN_ATTR_LEN(fp)	(((struct _NAN_ATTR_HDR_T *)fp)->u2Length)
 #define NAN_ATTR_SIZE(fp)	(NAN_ATTR_HDR_LEN + NAN_ATTR_LEN(fp))
-#define NAN_ATTR_END(fp)	((uint8_t *)(fp) + NAN_ATTR_SIZE(fp))
+#define NAN_ATTR_END(fp)	((void *)((uint8_t *)(fp) + NAN_ATTR_SIZE(fp)))
 
 #define NAN_AVAIL_ENTRY_HDR_LEN 2
 #define NAN_AVAIL_ENTRY_LEN(fp)		\
 	(((struct _NAN_AVAILABILITY_ENTRY_T *)fp)->u2Length)
 #define NAN_AVAIL_ENTRY_SIZE(fp)	\
 	(NAN_AVAIL_ENTRY_HDR_LEN + NAN_AVAIL_ENTRY_LEN(fp))
-#define NAN_AVAIL_ENTRY_END(fp)	((uint8_t *)(fp) + NAN_AVAIL_ENTRY_SIZE(fp))
+#define NAN_AVAIL_ENTRY_END(fp)	\
+		((void *)((uint8_t *)(fp) + NAN_AVAIL_ENTRY_SIZE(fp)))
 
 /* NAN 4.0 Table 58. Service Protocol Types */
 enum NAN_SERVICE_PROTOCOL_TYPES {
@@ -1009,6 +1010,24 @@ struct _NAN_CHNL_ENTRY_T {
 	uint8_t ucPrimaryChnlBitmap;
 	uint16_t u2AuxChannelBitmap; /* optional, present if ucNonContiguous */
 } __KAL_ATTRIB_PACKED__;
+
+/* NAN 4.0 Table 100. Channel Entry format for the NAN Availability attribute
+ * without Non-contiguous bandwidth bit set in Table 98.
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_CHNL_ENTRY_NO_AUX_T {
+	uint8_t ucOperatingClass;
+	union {
+		uint16_t u2ChannelBitmap;
+		struct {
+			uint8_t ucChannelStart;
+			uint8_t ucChannelNum;
+		};
+	};
+	uint8_t ucPrimaryChnlBitmap;
+	/* uint16_t u2AuxChannelBitmap; optional, present if ucNonContiguous */
+} __KAL_ATTRIB_PACKED__;
+
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_FTM_PARAMETERS_T {

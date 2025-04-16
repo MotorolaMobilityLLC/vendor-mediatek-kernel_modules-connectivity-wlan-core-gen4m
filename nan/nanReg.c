@@ -195,10 +195,9 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 						     pu2ChnlBitmap,
 						     aucSupportChnlList);
 			pucBuf = aucSupportChnlList;
-			u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
-		} else { /* !fgNanUseR4AvailAttr */
-			u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
 		}
+
+		u4MaxChnlBitmap = REG_6G_MAX_SUPPORT_CHANNEL;
 	}
 #endif
 

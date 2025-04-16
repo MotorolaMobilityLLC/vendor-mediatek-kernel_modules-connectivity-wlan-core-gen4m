@@ -6699,6 +6699,40 @@ nanDataEngineScheduleUpdateNotificationTxDone(
 	return WLAN_STATUS_SUCCESS;
 }
 
+static void nanLogTxNAF(struct ADAPTER *prAdapter,
+			struct STA_RECORD *prSelectStaRec,
+			uint8_t ucStaRecIndex, uint8_t ucWlanIndex,
+			void *prPacket)
+{
+	struct _NAN_ACTION_FRAME_T *prNAF = prPacket;
+	uint8_t ucOuiSubtype;
+
+	ucOuiSubtype = prNAF->ucOUISubtype;
+
+	if (!prAdapter->rWifiVar.fgNoPmf && (prSelectStaRec != NULL) &&
+	    (prSelectStaRec->rPmfCfg.fgApplyPmf == TRUE)) {
+		DBGLOG(NAN, INFO,
+		       "Tx PMF, StaIdx:%d, OUItype:%d, OUISubtype:%d(%s), MAC=>"
+		       MACSTR "\n",
+		       prSelectStaRec->ucIndex,
+		       prNAF->ucOUItype, ucOuiSubtype,
+		       nanActionFrameOuiString(ucOuiSubtype),
+		       MAC2STR(prSelectStaRec->aucMacAddr));
+	}
+
+	nanLogTx(prNAF); /* NAN_CHK_PNT log message */
+
+	if (prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_NAF ||
+	    prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_SDF) {
+		DBGLOG(NAN, INFO,
+		       "Tx NAN Pub Action, StaIdx:%d, Wtbl:%d, OUISubtype:%d(%s), Src: "
+		       MACSTR " Dest: " MACSTR "\n",
+		       ucStaRecIndex, ucWlanIndex,
+		       ucOuiSubtype, nanActionFrameOuiString(ucOuiSubtype),
+		       MAC2STR(prNAF->aucSrcAddr), MAC2STR(prNAF->aucDestAddr));
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief            NAF TX Wrapper Function
@@ -6713,9 +6747,6 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		     PFN_TX_DONE_HANDLER pfTxDoneHandler,
 		     struct STA_RECORD *prSelectStaRec)
 {
-	struct _NAN_ACTION_FRAME_T *prNAF = NULL;
-	uint8_t ucOuiSubtype;
-
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
 #endif
@@ -6733,33 +6764,15 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		u2FrameLength, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	prMsduInfo->ucTxToNafQueFlag = TRUE;
-	/* coverity[TAINTED_SCALAR] */
-	prNAF = prMsduInfo->prPacket;
-	ucOuiSubtype = prNAF->ucOUISubtype;
+
+	nanLogTxNAF(prAdapter, prSelectStaRec,
+		    prMsduInfo->ucStaRecIndex, prMsduInfo->ucWlanIndex,
+		    prMsduInfo->prPacket);
 
 	if (!prAdapter->rWifiVar.fgNoPmf && (prSelectStaRec != NULL) &&
 	    (prSelectStaRec->rPmfCfg.fgApplyPmf == TRUE)) {
 		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
 				     TRUE);
-		DBGLOG(NAN, DEBUG,
-		       "Tx PMF, StaIdx:%d, OUItype:%d, OUISubtype:%d(%s), MAC=>"
-		       MACSTR "\n",
-		       prSelectStaRec->ucIndex,
-		       prNAF->ucOUItype, ucOuiSubtype,
-		       nanActionFrameOuiString(ucOuiSubtype),
-		       MAC2STR(prSelectStaRec->aucMacAddr));
-	}
-
-	nanLogTx(prNAF); /* NAN_CHK_PNT log message */
-
-	if (prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_NAF ||
-	    prNAF->ucOUItype == VENDOR_OUI_TYPE_NAN_SDF) {
-		DBGLOG(NAN, INFO,
-		       "Tx NAN Pub Action, StaIdx:%d, Wtbl:%d, OUISubtype:%d(%s), Src: "
-		       MACSTR " Dest: " MACSTR "\n",
-		       prMsduInfo->ucStaRecIndex, prMsduInfo->ucWlanIndex,
-		       ucOuiSubtype, nanActionFrameOuiString(ucOuiSubtype),
-		       MAC2STR(prNAF->aucSrcAddr), MAC2STR(prNAF->aucDestAddr));
 	}
 
 	nicTxSetPktRetryLimit(prMsduInfo, NAF_TX_RETRY_COUNT_LIMIT);

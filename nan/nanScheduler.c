@@ -1891,7 +1891,6 @@ nanUtilCalAttributeToken(struct _NAN_ATTR_HDR_T *prNanAttr)
 	return u4Token;
 }
 
-/* coverity[-taint_source:arg-1] */
 uint32_t nanUtilCheckBitOneCnt(void *pBuffer, uint32_t u4Size)
 {
 	uint32_t u4Num;
@@ -4516,7 +4515,7 @@ static uint8_t mergeCommittedPotentialTimeBitmap(uint8_t ucPotentialPriChnl,
 }
 #endif
 
-static u_int8_t*
+static struct _NAN_AVAILABILITY_ENTRY_T *
 scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		     struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T *prConditional)
 {
@@ -4548,9 +4547,11 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	u_int8_t fgConditional = FALSE;
 	u_int8_t fgCommitted2G = FALSE;
 	u_int8_t fgCommitted6G = FALSE;
-	uint8_t *pConditionalPtr = NULL;
+	void *pConditionalPtr = NULL;
 	uint32_t ucCheckOpClass;
 	uint8_t ucTimeBitmapLength;
+	uint8_t *pucBand;
+	uint8_t *pucChnl;
 
 	prChnlEntry = &prConditional->channelEntry.rChnlEntry;
 	ucCheckOpClass = prChnlEntry->ucOperatingClass;
@@ -4568,16 +4569,16 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 			fgConditional = TRUE;
 
 		if (prAvailEntry->rCtrl.u2TypePotential && !pConditionalPtr)
-			pConditionalPtr = (uint8_t *)prAvailEntry;
+			pConditionalPtr = prAvailEntry;
 
 		if (!prAvailEntry->rCtrl.u2TimeBitmapPresent)
 			continue;
 
 		prTimeBitmap = (struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *)
 			prAvailEntry;
-		ucTimeBitmapLength  = prTimeBitmap->ucTimeBitmapLength;
-		if (prTimeBitmap->aucTimeBitmapAndBandChnl +
-		    ucTimeBitmapLength > pNextAvailEntry) {
+		ucTimeBitmapLength = prTimeBitmap->ucTimeBitmapLength;
+		if (ucTimeBitmapLength >
+		    pNextAvailEntry - prTimeBitmap->aucTimeBitmapAndBandChnl) {
 			DBGLOG(NAN, WARN, "TimeBitmapLength=%u too large",
 			       ucTimeBitmapLength);
 			continue;
@@ -4593,13 +4594,14 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 			continue;
 
 		if (prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
-			uint8_t *pucBand = prChnlList->aucEntry;
+			pucBand = prChnlList->aucEntry;
 
-			if (&pucBand[prChnlList->ucNumberOfEntry] >
-			    pNextAvailEntry) {
+			if (prChnlList->ucNumberOfEntry >
+			    pNextAvailEntry - pucBand) {
 				DBGLOG(NAN, WARN,
-				       "ucNumberOfEntry=%u too large",
-				       prChnlList->ucNumberOfEntry);
+				       "ucNumberOfEntry=%u too large (> %td)",
+				       prChnlList->ucNumberOfEntry,
+				       pNextAvailEntry - pucBand);
 				continue;
 			}
 
@@ -4629,7 +4631,18 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 			continue;
 		}
 
-		/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		/* NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		pucChnl = prChnlList->aucEntry;
+		if (prChnlList->ucNumberOfEntry *
+		    sizeof(struct _NAN_CHNL_ENTRY_NO_AUX_T) >
+		    pNextAvailEntry - pucChnl) {
+			DBGLOG(NAN, WARN,
+			       "Channel ucNumberOfEntry=%u too large (> %td)",
+			       prChnlList->ucNumberOfEntry,
+			       pNextAvailEntry - pucChnl);
+			continue;
+		}
+
 		prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
 			prChnlList->aucEntry;
 		for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
@@ -4978,8 +4991,9 @@ nanSchedGetHighestCommonBand(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 struct _NAN_ATTR_NAN_AVAILABILITY_T*
 nanInsertConditionalAvailability(uint8_t *pucAvailabilityAttr,
 			struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T *prConditional,
-			uint8_t *p)
+			struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry)
 {
+	uint8_t *p = (uint8_t *)prAvailEntry;
 	uint8_t *end;
 	size_t orig_size;
 	size_t new_size;
@@ -4989,7 +5003,7 @@ nanInsertConditionalAvailability(uint8_t *pucAvailabilityAttr,
 	prAttrNanAvailibility = (struct _NAN_ATTR_NAN_AVAILABILITY_T *)
 		pucAvailabilityAttr;
 
-	orig_size = prAttrNanAvailibility->u2Length + 3;
+	orig_size = NAN_ATTR_SIZE(prAttrNanAvailibility);
 	new_size = orig_size + sizeof(*prConditional);
 
 	DBGDUMP_HEX(NAN, INFO, "Before add conditional",
@@ -5006,7 +5020,6 @@ nanInsertConditionalAvailability(uint8_t *pucAvailabilityAttr,
 	kalMemCopy(pucAvailAttrCond + (p - pucAvailabilityAttr) +
 		   sizeof(*prConditional), p, end - p);
 
-	/* coverity[TAINTED_SCALAR] */
 	prAttrNanAvailibility =
 		(struct _NAN_ATTR_NAN_AVAILABILITY_T *)pucAvailAttrCond;
 	prAttrNanAvailibility->u2Length += sizeof(*prConditional);
@@ -5110,6 +5123,8 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 	uint32_t i;
 	uint8_t ucSupportedBands = BIT(ENUM_SUPPORTED_BN_2G);
 	uint8_t ucTimeBitmapLength;
+	uint8_t *pucBand;
+	uint8_t *pucChnl;
 
 	/* TODO: check length */
 	if (prNextAvailabilityAttr->ucAttrId != NAN_ATTR_ID_NAN_AVAILABILITY)
@@ -5140,13 +5155,14 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 			continue;
 
 		if (prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
-			uint8_t *pucBand = prChnlList->aucEntry;
+			pucBand = prChnlList->aucEntry;
 
-			if (&pucBand[prChnlList->ucNumberOfEntry] >
-			    pNextAvailEntry) {
+			if (prChnlList->ucNumberOfEntry >
+			    pNextAvailEntry - pucBand) {
 				DBGLOG(NAN, WARN,
-				       "ucNumberOfEntry=%u too large",
-				       prChnlList->ucNumberOfEntry);
+				       "ucNumberOfEntry=%u too large (> %u)",
+				       prChnlList->ucNumberOfEntry,
+				       pNextAvailEntry - pucBand);
 				continue;
 			}
 
@@ -5159,7 +5175,18 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		/*  NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		/* NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL */
+		pucChnl = prChnlList->aucEntry;
+		if (prChnlList->ucNumberOfEntry *
+		    sizeof(struct _NAN_CHNL_ENTRY_NO_AUX_T) >
+		    pNextAvailEntry - pucChnl) {
+			DBGLOG(NAN, WARN,
+			       "Channel ucNumberOfEntry=%u too large (> %td)",
+			       prChnlList->ucNumberOfEntry,
+			       pNextAvailEntry - pucChnl);
+			continue;
+		}
+
 		prBandChnlList = (struct _NAN_SIMPLE_CHNL_ENTRY_T *)
 			prChnlList->aucEntry;
 		for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
@@ -5171,6 +5198,15 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 	} while (pNextAvailEntry < pucAvailAttrEnd);
 
 	return ucSupportedBands;
+}
+
+static u_int8_t
+nanIsValidConditional(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
+		  struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility)
+{
+	return (void *)prAvailEntry > (void *)prAttrNanAvailibility &&
+	       (void *)prAvailEntry < NAN_ATTR_END(prAttrNanAvailibility) &&
+	       *(uint16_t *)prAvailEntry < NAN_ATTR_SIZE(prAttrNanAvailibility);
 }
 
 uint32_t
@@ -5194,8 +5230,8 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	uint32_t u4Token;
 	u_int8_t fgFillByPotential = FALSE;
 	uint8_t ucBackupNanMergePotentialThreshold = 0xFF;
-	uint8_t *p2 = NULL;
-	uint8_t *p6 = NULL;
+	struct _NAN_AVAILABILITY_ENTRY_T *p2 = NULL;
+	struct _NAN_AVAILABILITY_ENTRY_T *p6 = NULL;
 	size_t new_size;
 	struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T r6gConditional = {
 		.u2Length = 14,
@@ -5273,7 +5309,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, DEBUG, "\n");
 	DBGLOG(NAN, DEBUG, "------>\n");
 	nanUtilDump(prAdapter, "[Peer Avail]", pucAvailabilityAttr,
-		    prAttrNanAvailibility->u2Length + 3);
+		    NAN_ATTR_SIZE(prAttrNanAvailibility));
 
 	/* release old availability entries */
 	for (u4EntryListPos = 0; u4EntryListPos < NAN_NUM_AVAIL_TIMELINE;
@@ -5289,13 +5325,13 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		    ENUM_SUPPORTED_BN_2G) {
 		DBGLOG(NAN, STATE, "Attempt to add 2G conditional");
 		p2 = scanAvailabilityAttr(prAttrNanAvailibility,
-			&r2gConditional);
+					  &r2gConditional);
 	}
-	if (p2) {
+	if (p2 && nanIsValidConditional(p2, prAttrNanAvailibility)) {
 		prCondAttrNanAvailibility =
 			nanInsertConditionalAvailability(pucAvailabilityAttr,
 						 &r2gConditional, p2);
-		new_size = prAttrNanAvailibility->u2Length + 3 +
+		new_size = NAN_ATTR_SIZE(prAttrNanAvailibility) +
 			sizeof(r2gConditional);
 		if (prCondAttrNanAvailibility)
 			prAttrNanAvailibility = prCondAttrNanAvailibility;
@@ -5332,14 +5368,14 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		}
 #endif
 	}
-	if (p6) {
+	if (p6 && nanIsValidConditional(p6, prAttrNanAvailibility)) {
 		if (p2)
 			DBGLOG(NAN, WARN,
 			       "p2 and p6 exists in one Availability entry");
 		prCondAttrNanAvailibility =
 			nanInsertConditionalAvailability(pucAvailabilityAttr,
 						 &r6gConditional, p6);
-		new_size = prAttrNanAvailibility->u2Length + 3 +
+		new_size = NAN_ATTR_SIZE(prAttrNanAvailibility) +
 			sizeof(r6gConditional);
 		if (prCondAttrNanAvailibility)
 			prAttrNanAvailibility = prCondAttrNanAvailibility;
@@ -5552,8 +5588,8 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 				prAvailEntry;
 			u2TimeBitmapControl = prTimeBitmap->u2TimeBitmapControl;
 			ucTimeBitmapLength = prTimeBitmap->ucTimeBitmapLength;
-			if (prTimeBitmap->aucTimeBitmapAndBandChnl +
-			    ucTimeBitmapLength > pNextAvailEntry) {
+			if (ucTimeBitmapLength > pNextAvailEntry -
+			    prTimeBitmap->aucTimeBitmapAndBandChnl) {
 				DBGLOG(NAN, WARN,
 				       "TimeBitmapLength=%u too large",
 				       ucTimeBitmapLength);
@@ -5945,7 +5981,7 @@ nanSchedPeerUpdateDevCapabilityAttr(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, DEBUG, "\n\n");
 		DBGLOG(NAN, DEBUG, "------>\n");
 		nanUtilDump(prAdapter, "[Peer DevCap]", pucDevCapabilityAttr,
-			    prAttrDevCapability->u2Length + 3);
+			    NAN_ATTR_SIZE(prAttrDevCapability));
 
 		if (prAttrDevCapability->ucMapID & BIT(0)) {
 			ucMapID = (prAttrDevCapability->ucMapID & BITS(1, 4)) >>
@@ -14635,7 +14671,7 @@ nanSchedUniEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 		u4SubEvent);
 #ifdef NAN_UNUSED
 	nanUtilDump(prAdapter, "NAN Attribute",
-		(PUINT_8)prAttrHdr, (prAttrHdr->u2Length + 3));
+		(PUINT_8)prAttrHdr, NAN_ATTR_SIZE(prAttrHdr));
 #endif
 
 	switch (u4SubEvent) {
@@ -14720,7 +14756,7 @@ nanSchedEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 		u4SubEvent);
 #ifdef NAN_UNUSED
 	nanUtilDump(prAdapter, "NAN Attribute",
-		(PUINT_8)prAttrHdr, (prAttrHdr->u2Length + 3));
+		(PUINT_8)prAttrHdr, NAN_ATTR_SIZE(prAttrHdr));
 #endif
 
 	switch (u4SubEvent) {
@@ -19021,7 +19057,8 @@ static void nanSetPeerSkip2gFaw(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
 
 	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
-	prPeerSchRecord->fgSkip2gFaw = TRUE;
+	if (prPeerSchRecord)
+		prPeerSchRecord->fgSkip2gFaw = TRUE;
 }
 
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,

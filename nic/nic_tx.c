@@ -3803,7 +3803,9 @@ void nicDumpTxMgmtPacketHex(struct ADAPTER *prAdapter,
 
 	if ((nicNeedDumpActionFrame(pHeader, prMsduInfo->u2FrameLength) ||
 	     BIT(pHeader->b4SubType) & u2MgmtHexDump) &&
-	    prMsduInfo->u2FrameLength <= MSDU_MAX_LENGTH) {
+	    prMsduInfo->u2FrameLength <= MSDU_MAX_LENGTH &&
+	    /* version == 0, type == management */
+	    (((uint8_t *)pHeader)[0] & 0xF) == 0) {
 		if (!pHeader) {
 			DBGLOG(TX, ERROR, "Invalid pHeader");
 			return;

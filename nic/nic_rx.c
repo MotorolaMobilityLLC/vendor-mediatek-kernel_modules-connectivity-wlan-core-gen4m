@@ -2331,7 +2331,9 @@ static void nicDumpRxMgmtPacketHex(struct ADAPTER *prAdapter,
 	if ((nicNeedDumpActionFrame(pHeader, prSwRfb->u2PacketLen) ||
 	     BIT(pHeader->b4SubType) & u2MgmtHexDump) &&
 	    prSwRfb->u2PacketLen <= MSDU_MAX_LENGTH) {
-		if (prSwRfb->u2PacketLen > 0) {
+		if (prSwRfb->u2PacketLen > 0 &&
+		    /* version == 0, type == management */
+		    (((uint8_t *)pHeader)[0] & 0xF) == 0) {
 			DBGDUMP_HEX(RX, INFO, "Dump RX MGMT Frame:",
 				    pHeader, prSwRfb->u2PacketLen);
 		} else {
