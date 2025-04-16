@@ -5361,13 +5361,13 @@ uint32_t wlanoidSetDrvRoamingPolicy(struct ADAPTER
 				    uint32_t *pu4SetInfoLen);
 #endif
 
-#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 				    *prAdapter,
 				    void *pvSetBuffer,
 				    uint32_t u4SetBufferLen,
 				    uint32_t *pu4SetInfoLen);
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaUseCase(struct ADAPTER
 				    *prAdapter,
 				    void *pvSetBuffer,

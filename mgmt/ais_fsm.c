@@ -368,7 +368,7 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 
 	/* override config only affects default ais, which is wlan0 */
 	if (!prAdapter->rWifiVar.ucMacAddrOverride ||
-	    prAisFsmInfo->ucAisIndex != AIS_DEFAULT_INDEX) {
+	    prAisFsmInfo->ucAisIndex != prAdapter->u4MultiStaPrimaryInterface) {
 		uint8_t *source;
 
 		if (ucLinkIdx > 0 && aisGetMainLinkBssInfo(prAisFsmInfo))
@@ -819,7 +819,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	}
 
 	prAisFsmInfo->ucAisIndex = ucAisIndex;
-	if (ucAisIndex == AIS_DEFAULT_INDEX)
+	if (ucAisIndex == prAdapter->u4MultiStaPrimaryInterface)
 		prAdapter->rWifiVar.prDefaultAisFsmInfo = prAisFsmInfo;
 
 	prWifiVar = &prAdapter->rWifiVar;

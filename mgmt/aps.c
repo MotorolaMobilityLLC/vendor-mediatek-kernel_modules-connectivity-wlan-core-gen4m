@@ -347,7 +347,7 @@ uint8_t apsCanFormMultiLink(struct ADAPTER *ad,
 
 	/* Disable MLO for sub Wi-Fi. */
 	if (IS_BSS_INDEX_AIS(ad, bidx) &&
-	    AIS_INDEX(ad, bidx) != AIS_DEFAULT_INDEX)
+	    AIS_INDEX(ad, bidx) != ad->u4MultiStaPrimaryInterface)
 		return FALSE;
 
 	bss->rMlInfo.prBlock = aisQueryMldBlockList(ad, bss);
@@ -1658,7 +1658,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 skip_rcpi_check:
 	/* Restrict STAs other than wlan0 */
-	if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+	if (ais->ucAisIndex != prAdapter->u4MultiStaPrimaryInterface) {
 		struct AIS_FSM_INFO *tempAis;
 		struct BSS_DESC *tempBssDesc;
 		uint32_t bmap;

@@ -3686,7 +3686,7 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct nlattr *prAttr;
-	uint32_t u4InterfaceIdx;
+	uint32_t u4InterfaceIdx, u4BufLen = 0;
 	uint32_t u4AisIndex = AIS_DEFAULT_INDEX;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
@@ -3727,10 +3727,8 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-#if 0
 	u4Status = kalIoctl(prGlueInfo, wlanoidSetMultiStaPrimaryInterface,
 			&u4AisIndex, sizeof(uint32_t), &u4BufLen);
-#endif
 
 	return u4Status;
 

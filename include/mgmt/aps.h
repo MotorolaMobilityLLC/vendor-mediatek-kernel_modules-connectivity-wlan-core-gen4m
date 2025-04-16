@@ -116,5 +116,9 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 enum ENUM_MLO_LINK_PLAN apsSearchLinkPlan(struct ADAPTER *prAdapter,
 	uint8_t ucRfBandBmap, uint8_t ucLinkNum);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t apsCanFormMultiLink(struct ADAPTER *ad,
+	struct BSS_DESC *bss, uint8_t bidx);
+#endif
 #endif
 

@@ -15696,7 +15696,6 @@ wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 				    *prAdapter,
 				    void *pvSetBuffer,
@@ -15704,6 +15703,13 @@ uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 				    uint32_t *pu4SetInfoLen)
 {
 	uint32_t u4PrevPrimaryInterface;
+#if (CFG_SUPPORT_ROAMING == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_DESC *prBssDesc;
+	uint8_t ucBssIndex;
+#endif
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
@@ -15716,17 +15722,44 @@ uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
 	u4PrevPrimaryInterface = prAdapter->u4MultiStaPrimaryInterface;
 	prAdapter->u4MultiStaPrimaryInterface = *(uint32_t *)pvSetBuffer;
 
-	DBGLOG(REQ, INFO, "Update multista primary interface:[%s]\n",
-			prAdapter->u4MultiStaPrimaryInterface ==
-			AIS_DEFAULT_INDEX ? "wlan0" : "wlan1");
+	DBGLOG(REQ, INFO, "Update multista primary interface:[wlan%d]\n",
+			prAdapter->u4MultiStaPrimaryInterface);
 
-	if (prAdapter->ucIsMultiStaConnected && u4PrevPrimaryInterface !=
-			prAdapter->u4MultiStaPrimaryInterface)
-		aisMultiStaSetQuoteTime(prAdapter, TRUE);
+	if (u4PrevPrimaryInterface != prAdapter->u4MultiStaPrimaryInterface) {
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+		if (prAdapter->ucIsMultiStaConnected)
+			aisMultiStaSetQuoteTime(prAdapter, TRUE);
+#endif
+
+#if (CFG_SUPPORT_ROAMING == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prAisFsmInfo = aisFsmGetInstance(prAdapter,
+				prAdapter->u4MultiStaPrimaryInterface);
+		prBssDesc = aisGetMainLinkBssDesc(prAisFsmInfo);
+		ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
+
+		if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) &&
+		    apsCanFormMultiLink(prAdapter, prBssDesc, ucBssIndex)) {
+			struct ROAMING_INFO *prRoamingFsmInfo =
+				aisGetRoamingInfo(prAdapter, ucBssIndex);
+			struct CMD_ROAMING_TRANSIT rRoamingData = {0};
+
+			rRoamingData.u2Data = prBssDesc->ucRCPI;
+			rRoamingData.u2Event = ROAMING_EVENT_DISCOVERY;
+			rRoamingData.eReason = ROAMING_REASON_POOR_RCPI;
+			rRoamingData.u2RcpiLowThreshold =
+				prRoamingFsmInfo->ucThreshold;
+			rRoamingData.ucBssidx = ucBssIndex;
+			roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
+		}
+#endif
+#endif
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaUseCase(struct ADAPTER
 				    *prAdapter,
 				    void *pvSetBuffer,
