@@ -5073,13 +5073,11 @@ nanGetSubBandByChannelEntry(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
 		if (IS_2G_OP_CLASS(prChnlEntry->ucOperatingClass))
 			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_2G);
 
-		if (IS_5G_LOW_ONLY_OP_CLASS(prChnlEntry->ucOperatingClass))
-			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_5G_LOW);
-
 		if (IS_5G_HIGH_ONLY_OP_CLASS(prChnlEntry->ucOperatingClass))
 			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_5G_HIGH);
-
-		if (IS_5G_OP_CLASS(prChnlEntry->ucOperatingClass)) {
+		else if (IS_5G_LOW_ONLY_OP_CLASS(prChnlEntry->ucOperatingClass))
+			ucSupportedBands |= BIT(ENUM_SUPPORTED_BN_5G_LOW);
+		else if (IS_5G_OP_CLASS(prChnlEntry->ucOperatingClass)) {
 			if (BIT(0) & prChnlEntry->u2ChannelBitmap)
 				ucSupportedBands |=
 					BIT(ENUM_SUPPORTED_BN_5G_LOW);
@@ -11729,32 +11727,31 @@ nanSchedNegoDataPathChkRmtCrbProposalForRspState(struct ADAPTER *prAdapter,
 	for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 	     szTimeLineIdx++) {
 
-		if (prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx].ucMapId
-			!= NAN_INVALID_MAP_ID) {
-			if (nanSchedNegoIsLocalCrbConflict(
-				prAdapter,
-				&prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx],
-				FALSE, &fgEmptyMapSet, aau4EmptyMap,
-				szTimeLineIdx) == TRUE) {
-				rRetStatus = WLAN_STATUS_FAILURE;
-				u4ReasonCode =
-					NAN_REASON_CODE_IMMUTABLE_UNACCEPTABLE;
-				goto DATA_RESPONDER_STATE_DONE;
-			}
+		if (prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx].ucMapId ==
+		    NAN_INVALID_MAP_ID)
+			continue;
 
-			if (nanSchedNegoIsLocalCrbConflict(
-				prAdapter,
-				&prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx],
-				TRUE, &fgEmptyMapSet, aau4EmptyMap,
-				szTimeLineIdx) == TRUE) {
-				/* expect the initiator can change conditional
-				 * window to comply with immutable NDL
-				 */
+		if (nanSchedNegoIsLocalCrbConflict(prAdapter,
+			&prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx],
+			FALSE, &fgEmptyMapSet, aau4EmptyMap,
+			szTimeLineIdx) == TRUE) {
+			rRetStatus = WLAN_STATUS_FAILURE;
+			u4ReasonCode =
+				NAN_REASON_CODE_IMMUTABLE_UNACCEPTABLE;
+			goto DATA_RESPONDER_STATE_DONE;
+		}
+
+		if (nanSchedNegoIsLocalCrbConflict(prAdapter,
+			&prNegoCtrl->arImmuNdlTimeline[szTimeLineIdx],
+			TRUE, &fgEmptyMapSet, aau4EmptyMap,
+			szTimeLineIdx) == TRUE) {
+			/* expect the initiator can change conditional
+			 * window to comply with immutable NDL
+			 */
+			fgCounterProposal = TRUE;
+		} else {
+			if (fgEmptyMapSet)
 				fgCounterProposal = TRUE;
-			} else {
-				if (fgEmptyMapSet)
-					fgCounterProposal = TRUE;
-			}
 		}
 	}
 
