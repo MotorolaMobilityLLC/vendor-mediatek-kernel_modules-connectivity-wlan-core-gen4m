@@ -2780,13 +2780,24 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		cfg80211_roamed(netdev, &rRoamInfo, GFP_KERNEL);
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
 		if (ucAuthorized) {
+			uint8_t *peer_addr;
+
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prMldStaRec)
+				peer_addr = prMldStaRec->aucPeerMldAddr;
+			else
+#endif
+				peer_addr = links[0].bssid;
+
 #if (KERNEL_VERSION(6, 2, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 			cfg80211_port_authorized(netdev,
-				links[0].bssid, NULL, 0, GFP_KERNEL);
+				peer_addr, NULL, 0, GFP_KERNEL);
 #else
 			cfg80211_port_authorized(netdev,
-				links[0].bssid, GFP_KERNEL);
+				peer_addr, GFP_KERNEL);
 #endif
 		}
 #endif /* KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE */

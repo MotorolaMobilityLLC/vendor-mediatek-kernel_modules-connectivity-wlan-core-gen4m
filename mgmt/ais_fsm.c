@@ -5704,15 +5704,20 @@ void aisFsmAuthorizedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(AIS, INFO,
 		"<CONN> CONN_AUTHORIZED bidx=%d ssid=%s bssid="
 		MACSTR"\n", ucBssIndex,
 		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prAisBssInfo->aucBSSID));
+
+	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
+	aisTargetBssSetConnected(prAdapter, prAisFsmInfo);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	/* 5. Check if need to set low latency after connected. */
@@ -6223,8 +6228,6 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 
 	prAisBssInfo->fgIsQBSS = prStaRec->fgIsQoS;
 
-	prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
-	prBssDesc->fgIsConnected |= BIT(ucBssIndex);
 	prBssDesc->ucJoinFailureCount = 0;
 	prBssDesc->ucTempRejectCount = 0;
 
