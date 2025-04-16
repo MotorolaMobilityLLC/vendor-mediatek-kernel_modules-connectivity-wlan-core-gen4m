@@ -993,6 +993,14 @@ nanDevGenEnableRequest(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.ucConfig5gChannel;
 	rEnableReq.channel_5g_val =
 		prAdapter->rWifiVar.ucChannel5gVal;
+	if (rlmDomainIsLegalChannel(prAdapter,
+					BAND_5G,
+					NAN_5G_LOW_DISC_CHANNEL))
+		rEnableReq.channel_5g_val |= BIT(0);
+	if (rlmDomainIsLegalChannel(prAdapter,
+					BAND_5G,
+					NAN_5G_HIGH_DISC_CHANNEL))
+		rEnableReq.channel_5g_val |= BIT(1);
 	rEnableReq.enable_log_slot_statistics =
 		prAdapter->rWifiVar.ucNanLogSlotStatistics;
 	nanDevEnableRequest(prAdapter, &rEnableReq);
