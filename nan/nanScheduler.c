@@ -15760,7 +15760,9 @@ uint32_t nanSchedGetConnChnlUsage(struct ADAPTER *prAdapter,
 	uint8_t ucBssCount;
 	uint8_t ucChannel;
 
-	if (!prAdapter || !prChnl || !pu4SlotBitmap)
+	if (!prAdapter || !prChnl || !pu4SlotBitmap ||
+	    (eNetworkType != NETWORK_TYPE_AIS &&
+	     eNetworkType != NETWORK_TYPE_P2P))
 		return WLAN_STATUS_FAILURE;
 
 	prChnl->u4RawData = 0;
@@ -15868,7 +15870,9 @@ uint32_t nanSchedGetConnChnlUsageByTimeline(struct ADAPTER *prAdapter,
 	uint8_t ucChannel;
 	enum ENUM_BAND eBand = BAND_NULL;
 
-	if (!prAdapter || !prChnl || !pu4SlotBitmap)
+	if (!prAdapter || !prChnl || !pu4SlotBitmap ||
+	    (eNetworkType != NETWORK_TYPE_AIS &&
+	     eNetworkType != NETWORK_TYPE_P2P))
 		return WLAN_STATUS_FAILURE;
 
 	prChnl->u4RawData = 0;

@@ -38,20 +38,20 @@
  */
 
 const uint8_t *apucNetworkType[NETWORK_TYPE_NUM] = {
-	(uint8_t *) "AIS",
-	(uint8_t *) "P2P",
-	(uint8_t *) "BOW",
-	(uint8_t *) "MBSS",
-	(uint8_t *) "NAN"
+	[NETWORK_TYPE_AIS] = (uint8_t *)"AIS",
+	[NETWORK_TYPE_P2P] = (uint8_t *)"P2P",
+	[NETWORK_TYPE_BOW] = (uint8_t *)"BOW",
+	[NETWORK_TYPE_MBSS] = (uint8_t *)"MBSS",
+	[NETWORK_TYPE_NAN] = (uint8_t *)"NAN",
 };
 
 const uint8_t *apucNetworkOpMode[OP_MODE_NUM] = {
-	(uint8_t *) "INFRASTRUCTURE",
-	(uint8_t *) "IBSS",
-	(uint8_t *) "ACCESS_POINT",
-	(uint8_t *) "P2P_DEVICE",
-	(uint8_t *) "BOW",
-	(uint8_t *) "NAN"
+	[OP_MODE_INFRASTRUCTURE] = (uint8_t *)"INFRASTRUCTURE",
+	[OP_MODE_IBSS] = (uint8_t *)"IBSS",
+	[OP_MODE_ACCESS_POINT] = (uint8_t *)"ACCESS_POINT",
+	[OP_MODE_P2P_DEVICE] = (uint8_t *)"P2P_DEVICE",
+	[OP_MODE_BOW] = (uint8_t *)"BOW",
+	[OP_MODE_NAN] = (uint8_t *)"NAN",
 };
 
 #if (CFG_SUPPORT_AAA)
