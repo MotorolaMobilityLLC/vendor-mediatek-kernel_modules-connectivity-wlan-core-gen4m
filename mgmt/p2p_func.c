@@ -11942,15 +11942,7 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	    rlmDomainIsDfsChnls(prAdapter, u4TargetCh))
 		fgDfsChannel = TRUE;
 
-	/*
-	 * Allow dfs channel for p2p GO:
-	 *     1. sta connected on dfs channel
-	 *     2. p2p GO connected with clients
-	 */
-	if (fgDfsChannel && IS_BSS_APGO(prBssInfo) &&
-	    !p2pFuncIsAPMode(prAdapter,
-			     prBssInfo->u4PrivateData) &&
-	    prBssInfo->rStaRecOfClientList.u4NumElem > 0) {
+	if (fgDfsChannel && IS_BSS_APGO(prBssInfo)) {
 		kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
 		rRfChnlInfo.ucChannelNum = u4TargetCh;
 		rRfChnlInfo.eBand = eTargetBand;
