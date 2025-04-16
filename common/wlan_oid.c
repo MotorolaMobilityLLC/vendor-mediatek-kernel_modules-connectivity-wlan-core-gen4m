@@ -3367,8 +3367,6 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 			}
 			ASSERT(prBssInfo->wepkeyWlanIdx < WTBL_SIZE);
 			ucRemoveBCKeyAtIdx = prBssInfo->wepkeyWlanIdx;
-			secPrivacyFreeForEntry(prAdapter,
-					prBssInfo->wepkeyWlanIdx);
 			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
 		} else {
 			DBGLOG(RSN, INFO, "Remove group key id = %d\n",
@@ -3387,8 +3385,6 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 				ucRemoveBCKeyAtIdx =
 					prBssInfo->ucBMCWlanIndexS[u4KeyIndex];
 
-				secPrivacyFreeForEntry(prAdapter,
-				    prBssInfo->ucBMCWlanIndexS[u4KeyIndex]);
 				prBssInfo->ucBMCWlanIndexSUsed[u4KeyIndex]
 					= FALSE;
 				prBssInfo->ucBMCWlanIndexS[u4KeyIndex]

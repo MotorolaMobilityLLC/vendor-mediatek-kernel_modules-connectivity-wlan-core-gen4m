@@ -202,8 +202,7 @@ void secPrivacyFreeForEntry(struct ADAPTER *prAdapter,
 void secPrivacyFreeSta(struct ADAPTER *prAdapter,
 		       struct STA_RECORD *prStaRec);
 
-void secRemoveBssBcEntry(struct ADAPTER *prAdapter,
-			 struct BSS_INFO *prBssInfo, u_int8_t fgRoam);
+void secRemoveBssBcEntry(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 uint8_t
 secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,

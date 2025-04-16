@@ -942,38 +942,18 @@ void secPrivacyFreeSta(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void secRemoveBssBcEntry(struct ADAPTER *prAdapter,
-			 struct BSS_INFO *prBssInfo, u_int8_t fgRoam)
+			 struct BSS_INFO *prBssInfo)
 {
 	if (!prBssInfo)
 		return;
 
 	DBGLOG(RSN, TRACE, "remove all the key related with BSS!");
 
-	if (fgRoam) {
-		struct CONNECTION_SETTINGS *prConnSettings =
-			aisGetConnSettings(prAdapter,
-			prBssInfo->ucBssIndex);
-
-		if (IS_BSS_AIS(prBssInfo) &&
-		    prBssInfo->prStaRecOfAP
-		    && (prConnSettings->eAuthMode >= AUTH_MODE_WPA &&
-			prConnSettings->eAuthMode != AUTH_MODE_WPA_NONE)) {
-
-			prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
-			secPrivacyFreeForEntry(prAdapter,
-						prBssInfo->ucBMCWlanIndex);
-		}
-	} else {
-		/* According to discussion, it's ok to change to
-		 * reserved_entry here so that the entry is _NOT_ freed at all.
-		 * In this way, the same BSS(ucBssIndex) could reuse the same
-		 * entry next time in secPrivacySeekForBcEntry(), and we could
-		 * see the following log: "[Wlan index]: Reuse entry ...".
-		 */
-		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+	if (!secCheckWTBLwlanIdxInUseByOther(prAdapter,
+		prBssInfo->ucBMCWlanIndex, prBssInfo->ucBssIndex)) {
 		secPrivacyFreeForEntry(prAdapter, prBssInfo->ucBMCWlanIndex);
+		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 	}
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1389,6 +1369,12 @@ void secPostUpdateAddr(struct ADAPTER *prAdapter,
 		       struct BSS_INFO *prBssInfo)
 {
 	struct WLAN_TABLE *prWtbl;
+
+	if (prBssInfo->ucBMCWlanIndex < WTBL_SIZE) {
+		prWtbl = &prAdapter->rWifiVar.arWtbl[prBssInfo->ucBMCWlanIndex];
+		kalMemCopy(prWtbl->aucMacAddr,
+			prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
+	}
 
 	if (IS_BSS_AIS(prBssInfo) && prBssInfo->prStaRecOfAP) {
 		struct CONNECTION_SETTINGS *prConnSettings =

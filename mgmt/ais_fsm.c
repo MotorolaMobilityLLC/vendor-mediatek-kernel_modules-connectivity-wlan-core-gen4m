@@ -489,7 +489,6 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 	prAisBssInfo->ucOpRxNss = prAisBssInfo->ucOpTxNss =
 		wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
 	prAisBssInfo->prBeacon = NULL;
-	prAisBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 
 	for (i = 0; i < MAX_KEY_NUM; i++) {
 		prAisBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
@@ -6288,13 +6287,6 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	secPostUpdateAddr(prAdapter,
 		aisGetAisBssInfo(prAdapter, ucBssIndex));
 
-	/* 4 <4.3> Sync with firmware for BSS-INFO */
-	prAisBssInfo->ucBMCWlanIndex = secPrivacySeekForBcEntry(
-				prAdapter, prAisBssInfo->ucBssIndex,
-				prAisBssInfo->aucOwnMacAddr,
-				prStaRec->ucIndex,
-				CIPHER_SUITE_NONE, 0xFF);
-
 	nicUpdateBss(prAdapter, ucBssIndex);
 
 	nicUpdateQos(prAdapter, prStaRec);
@@ -7786,14 +7778,9 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 		COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prNewBssDesc->aucBSSID);
 	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
 
-	if (prTargetStaRec) {
-		/* if there's no target, postpone removing bc entry to
-		 * deactivate otherwise deactivate won't sync with fw because
-		 * ucBMCWlanIndex == WTBL_RESERVED_ENTRY
-		 */
-		secRemoveBssBcEntry(prAdapter, prAisBssInfo, TRUE);
+	if (prTargetStaRec)
 		prTargetStaRec->ucBssIndex = prAisBssInfo->ucBssIndex;
-	}
+
 	/* before deactivate previous AP, should move its pending MSDUs
 	 ** to the new AP
 	 */

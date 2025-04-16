@@ -2112,15 +2112,6 @@ SKIP_START_RDD:
 			prBssInfo->ucConfigAdHocAPMode,
 			prBssInfo->ucNonHTBasicPhyType);
 
-#if 0
-		if (prBssInfo->ucBMCWlanIndex >= WTBL_SIZE) {
-			prBssInfo->ucBMCWlanIndex =
-			    secPrivacySeekForBcEntry(prAdapter,
-					prBssInfo->ucBssIndex,
-					prBssInfo->aucBSSID, 0xff,
-					CIPHER_SUITE_NONE, 0xff);
-		}
-#endif
 		nicQmUpdateWmmParms(prAdapter, prBssInfo->ucBssIndex);
 #endif /* CFG_SUPPORT_AAA */
 
