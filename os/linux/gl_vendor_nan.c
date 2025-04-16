@@ -3776,8 +3776,10 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RTT
 	prRangingReq = nanGetRangingReq(prAdapter, prDiscEvt->u2SubscribeID);
 	if (!prRangingReq) {
-		DBGLOG(NAN, ERROR, "RangingReq Null\n");
-		return WLAN_STATUS_NOT_ACCEPTED;
+		DBGLOG(NAN, ERROR,
+			"RangingReq Null, id: %d\n",
+			prDiscEvt->u2SubscribeID);
+		goto SKIP_RTT;
 	}
 
 	if (prRanging) {
@@ -3799,7 +3801,11 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 		nanRangingRequest(prAdapter, &u2RangingId, prRangingReq);
 		return	WLAN_STATUS_PENDING;
 	}
+
+SKIP_RTT:
+
 #endif /* CFG_SUPPORT_RTT */
+
 	/* Fill skb and send to kernel by nl80211 */
 	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
