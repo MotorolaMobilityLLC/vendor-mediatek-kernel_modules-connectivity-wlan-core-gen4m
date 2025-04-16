@@ -1479,7 +1479,8 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter,
+		enum ENUM_DRV_OWN_SRC eDrvOwnSrc)
 {
 	return TRUE;
 }

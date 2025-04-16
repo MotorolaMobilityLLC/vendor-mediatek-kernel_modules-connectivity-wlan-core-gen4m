@@ -147,6 +147,11 @@ static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		uint8_t fgIsAmsduSubframe,
 		u_int8_t fgWinAdvanced);
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+static void __qmDetectAbnormalBssAbsence(const uint8_t *fn, struct ADAPTER *ad,
+	uint32_t ucBssIdx, OS_SYSTIME now);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 static void resetRxRetryCount(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm)
 {
@@ -3984,7 +3989,8 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				}
 
 				if (fgSwRxReordering && prReorderQueParm &&
-					prReorderQueParm->fgIsValid) {
+					prReorderQueParm->fgIsValid &&
+					!prCurrSwRfb->fgFragFrame) {
 					/* Only QoS Data frame with BA aggrement
 					 * shall enter reordering buffer
 					 */
@@ -4318,7 +4324,6 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	/* We should have STA_REC here */
 	prStaRec = prSwRfb->prStaRec;
 	ASSERT(prStaRec);
-	ASSERT(prSwRfb->ucTid < CFG_RX_MAX_BA_TID_NUM);
 
 	if (prSwRfb->ucTid >= CFG_RX_MAX_BA_TID_NUM) {
 		DBGLOG(QM, WARN, "TID from RXD = %d, out of range!!\n",
@@ -5216,6 +5221,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 	u_int8_t fgMoveWinOnMissingLast;
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
+	struct STA_RECORD *prStaRec;
 	u_int8_t fgDequeuHead, fgMissing;
 	OS_SYSTIME rCurrentTime, *prMissTimeout;
 	/* RX reorder for one MSDU in AMSDU issue */
@@ -5246,6 +5252,8 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 		/* Always examine the head packet */
 		prReorderedSwRfb = QUEUE_GET_HEAD(prReorderQue);
 		fgDequeuHead = FALSE;
+
+		prStaRec = prReorderedSwRfb->prStaRec;
 
 		/* RX reorder for one MSDU in AMSDU issue */
 		/* frameType = curr.frameType */
@@ -5314,7 +5322,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 					&prReorderQueParm->rReorderBubbleTimer,
-					prAdapter->u4QmRxBaMissTimeout);
+					prStaRec->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -5329,10 +5337,9 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			}
 
 			if (fgMissing &&
-				CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
-				MSEC_TO_SYSTIME(
-				prAdapter->u4QmRxBaMissTimeout
-				))) {
+			    CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
+				MSEC_TO_SYSTIME(prStaRec->u4QmRxBaMissTimeout))
+				) {
 
 				DBGLOG(RX, TRACE,
 					"QM:RX BA Timeout Next Tid %u SSN %u, WinStart:%u->%u\n",
@@ -5392,6 +5399,7 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 {
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
+	struct STA_RECORD *prStaRec;
 	u_int8_t fgDequeuHead;
 	uint8_t fgIsAmsduSubframe; /* RX reorder for one MSDU in AMSDU issue */
 	u_int8_t fgWinAdvanced = FALSE;
@@ -5409,6 +5417,8 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 		/* Always examine the head packet */
 		prReorderedSwRfb = QUEUE_GET_HEAD(prReorderQue);
 		fgDequeuHead = FALSE;
+
+		prStaRec = prReorderedSwRfb->prStaRec;
 
 		/* RX reorder for one MSDU in AMSDU issue */
 		fgIsAmsduSubframe = prReorderedSwRfb->ucPayloadFormat;
@@ -5467,7 +5477,7 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 					&prReorderQueParm->rReorderBubbleTimer,
-					prAdapter->u4QmRxBaMissTimeout);
+					prStaRec->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -5487,6 +5497,11 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 		if (fgDequeuHead) {
 			QUEUE_REMOVE_HEAD(prReorderQue, prReorderedSwRfb,
 					struct SW_RFB *);
+
+			if (prReorderedSwRfb == NULL) {
+				DBGLOG(RX, ERROR, "Reordered SwRfb is Null");
+				break;
+			}
 
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
 				prReorderedSwRfb, prReturnedQue,
@@ -6646,6 +6661,20 @@ u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
 	pucMUEdcaUpdateCnt = &prBssInfo->ucMUEdcaUpdateCnt;
 #endif /* CFG_SUPPORT_802_11BE_EPCS */
 
+	/* Check Set Count, only update when count change */
+	if (*pucMUEdcaUpdateCnt != (prIeMUEdcaParam->ucMUQosInfo &
+		WMM_QOS_INFO_PARAM_SET_CNT)) {
+		DBGLOG(QM, INFO, "cnt changed, %u -> %lu\n",
+			   *pucMUEdcaUpdateCnt,
+			   prIeMUEdcaParam->ucMUQosInfo &
+				   WMM_QOS_INFO_PARAM_SET_CNT);
+		*pucMUEdcaUpdateCnt = (prIeMUEdcaParam->ucMUQosInfo &
+			WMM_QOS_INFO_PARAM_SET_CNT);
+	} else {
+		DBGLOG(QM, TRACE, "cnt not changed, %u\n",
+			   *pucMUEdcaUpdateCnt);
+		return TRUE;
+	}
 
 	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
@@ -6686,15 +6715,6 @@ u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
 			       prMUAcParamInIE->ucMUEdcaTimer);
 			return FALSE;
 		}
-	}
-	/* Check Set Count */
-	if (*pucMUEdcaUpdateCnt != (prIeMUEdcaParam->ucMUQosInfo &
-		WMM_QOS_INFO_PARAM_SET_CNT)) {
-		DBGLOG(QM, INFO, "cnt changed, %d -> %d\n", *pucMUEdcaUpdateCnt,
-		       prIeMUEdcaParam->ucMUQosInfo &
-		       WMM_QOS_INFO_PARAM_SET_CNT);
-		*pucMUEdcaUpdateCnt = (prIeMUEdcaParam->ucMUQosInfo &
-			WMM_QOS_INFO_PARAM_SET_CNT);
 	}
 
 	return TRUE;
@@ -7786,6 +7806,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsNetAbsentOld;
+	OS_SYSTIME now;
 
 	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
 		prEvent->aucBuffer);
@@ -7807,17 +7828,26 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	prBssInfo->fgIsNetAbsent = prEventBssStatus->ucIsAbsent;
 	prBssInfo->ucBssFreeQuota = prEventBssStatus->ucBssFreeQuota;
 
+	now = kalGetTimeTick();
 	if (!prBssInfo->fgIsNetAbsent) {
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+		__qmDetectAbnormalBssAbsence(__func__, prAdapter,
+				prEventBssStatus->ucBssIndex, now);
+		prBssInfo->tmAbsence = 0;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 		if (!prBssInfo->tmLastPresent)
-			prBssInfo->tmLastPresent = kalGetTimeTick();
+			prBssInfo->tmLastPresent = now;
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_27);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prAdapter->ucBssAbsentBitmap &= ~BIT(prBssInfo->ucBssIndex);
 #endif
 	} else {
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+		prBssInfo->tmAbsence = now;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 		if (prBssInfo->tmLastPresent) {
-			prBssInfo->u4PresentTime = kalGetTimeTick() -
+			prBssInfo->u4PresentTime = now -
 				prBssInfo->tmLastPresent;
 			prBssInfo->tmLastPresent = 0;
 		}
@@ -7851,6 +7881,49 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 		}
 	}
 }
+
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+static void __qmDetectAbnormalBssAbsence(const uint8_t *fn, struct ADAPTER *ad,
+	uint32_t ucBssIdx, OS_SYSTIME now)
+{
+	struct BSS_INFO *prBssInfo;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+	uint32_t u4AbsenceTime;
+	char uevent[300];
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(ad, ucBssIdx);
+	if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo) || !prBssInfo->tmAbsence)
+		return;
+
+	if (now > prBssInfo->tmAbsence)
+		u4AbsenceTime = now - prBssInfo->tmAbsence;
+	else
+		u4AbsenceTime = 0;
+
+	if (u4AbsenceTime < prWifiVar->u4AbsenceTimeout)
+		return;
+
+	kalSnprintf(uevent, sizeof(uevent),
+		"abnormalabsence bss=%u absencetime:%ums timeout:%ums fn:%s",
+		ucBssIdx, u4AbsenceTime, prWifiVar->u4AbsenceTimeout, fn);
+	kalSendUevent(ad, uevent);
+}
+
+void qmDetectAbnormalBssAbsence(struct ADAPTER *ad)
+{
+	OS_SYSTIME now;
+	uint32_t ucIdx;
+
+	now = kalGetTimeTick();
+	if (!CHECK_FOR_TIMEOUT(now, ad->rAbsenceTimeoutDetectTime,
+		MSEC_TO_SYSTIME(QM_ABSENCE_DETECT_INTERVAL)))
+		return;
+
+	ad->rAbsenceTimeoutDetectTime = now;
+	for (ucIdx = 0; ucIdx < ad->ucSwBssIdNum; ucIdx++)
+		__qmDetectAbnormalBssAbsence(__func__, ad, ucIdx, now);
+}
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 #if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
@@ -8780,6 +8853,9 @@ void qmHandleRxReorderWinShift(struct ADAPTER *prAdapter,
 		/* ASSERT(prStaRec); */
 		return;
 	}
+
+	if (ucTid >= CFG_RX_MAX_BA_TID_NUM)
+		return;
 
 	/* Check whether the BA agreement exists */
 	prReorderQueParm = prStaRec->aprRxReorderParamRefTbl[ucTid];

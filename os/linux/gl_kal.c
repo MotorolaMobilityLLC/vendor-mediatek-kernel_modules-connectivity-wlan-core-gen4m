@@ -117,11 +117,6 @@ extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
 #define MTKGRP 22
 #endif
 
-#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-#define BACKOFF_VOLT 3550
-#define RESTORE_VOLT 3750
-#endif
-
 #if CFG_SUPPORT_TPUT_FACTOR
 #define CPU_CNT 8
 /* current max CPU count */
@@ -1593,14 +1588,27 @@ u_int8_t kalProcessRadiotap(void *pvPacket,
 	uint16_t u2RxByteCount)
 {
 	struct sk_buff *prSkb;
+	uint16_t total_len;
 
 	prSkb = (struct sk_buff *)pvPacket;
 	/* exceed skb headroom the kernel will panic */
 	if (skb_headroom(prSkb) < radiotap_len) {
 		DBGLOG(INIT, ERROR,
-			"radiotap[%u] exceed skb headroom[%u]!\n",
+			"prSkb[0x%p] radiotap[%u] exceed skb headroom[%u]!\n",
+			prSkb,
 			radiotap_len,
 			skb_headroom(prSkb));
+		return FALSE;
+	}
+
+	total_len = radiotap_len + u2RxByteCount;
+	if (SKB_WITH_OVERHEAD(prSkb->truesize) < total_len) {
+		DBGLOG(INIT, ERROR,
+			"prSkb[0x%p] truesize[%u] is smaller than total_len[%u][%u:%u]\n",
+			prSkb,
+			SKB_WITH_OVERHEAD(prSkb->truesize),
+			total_len, radiotap_len,
+			u2RxByteCount);
 		return FALSE;
 	}
 
@@ -1610,7 +1618,7 @@ u_int8_t kalProcessRadiotap(void *pvPacket,
 
 	skb_reset_tail_pointer(prSkb);
 	skb_trim(prSkb, 0);
-	skb_put(prSkb, (radiotap_len + u2RxByteCount));
+	skb_put(prSkb, total_len);
 
 	return TRUE;
 }
@@ -1803,6 +1811,7 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			skb_headroom(prSkb));
 		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
 		prSwRfb->pvPacket = NULL;
+		prSwRfb->prRxStatus = NULL;
 	}
 }
 
@@ -1893,19 +1902,15 @@ fail:
 
 int kalPtrRingCnt(struct ptr_ring *ring)
 {
-	int count;
+	int count = 0;
 
-	/* Check if the ring is full */
-	if (__ptr_ring_full(ring)) {
-		count = ring->size;
-	} else if (__ptr_ring_empty(ring)) {
-		count = 0;
-	} else {
-		/* Calculate the number of items in the ring */
-		count = ring->producer - ring->consumer_head;
-		if (count < 0)
-			count += ring->size;
-	}
+	if (!ring)
+		return 0;
+
+	/* Calculate the number of items in the ring */
+	count = ring->producer - ring->consumer_head;
+	if (count < 0)
+		count += ring->size;
 
 	return count;
 }
@@ -1974,7 +1979,7 @@ kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
 
-	if (!skb || !pucPacketStart) {
+	if (!skb || !pucPacketStart || u4PacketLen == 0) {
 		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
 			RX_NULL_PACKET_COUNT);
 		return WLAN_STATUS_FAILURE;
@@ -1986,7 +1991,8 @@ kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
 	skb_reset_tail_pointer(skb);
 	skb_trim(skb, 0);
 
-	if (skb_tailroom(skb) < 0 || u4PacketLen > skb_tailroom(skb)) {
+	if (skb_tailroom(skb) < 0 || u4PacketLen > skb_tailroom(skb) ||
+		skb->tail > skb->end) {
 		DBGLOG(RX, ERROR,
 #ifdef NET_SKBUFF_DATA_USES_OFFSET
 			"[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%u, end:%u, data:%p\n",
@@ -2155,7 +2161,6 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 	prSkb = pvPkt;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSkb);
-	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT);
 #if DBG && 0
 	do {
 		uint8_t *pu4Head = (uint8_t *) &prSkb->cb[0];
@@ -2184,8 +2189,11 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 
 	if (prNetDev->dev_addr == NULL) {
 		DBGLOG(RX, WARN, "dev_addr == NULL\n");
+		kalPacketFree(prGlueInfo, pvPkt);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT);
 
 	prNetDev->stats.rx_bytes += prSkb->len;
 	prNetDev->stats.rx_packets++;
@@ -2302,10 +2310,19 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			preempt_enable();
 		} else {
 			skb_queue_tail(&prGlueInfo->rRxNapiSkbQ, prSkb);
-			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
-				RX_NAPI_SCHEDULE_COUNT);
-			GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
-			kal_napi_schedule(&prGlueInfo->napi);
+			if (prGlueInfo->fgNapiReady) {
+				if (kal_napi_schedule(&prGlueInfo->napi)) {
+					RX_INC_CNT(
+						&prGlueInfo->prAdapter->rRxCtrl,
+						RX_NAPI_SCHEDULE_COUNT);
+					GLUE_SET_REF_CNT(1,
+						prGlueInfo->fgNapiScheduled);
+				}
+			} else {
+				DBGLOG(RX, WARN,
+					"Skip napi schedule, NapiReady:%u\n",
+					prGlueInfo->fgNapiReady);
+			}
 		}
 #else /* CFG_SUPPORT_RX_NAPI */
 		/* GRO receive function can't be interrupt so it need to
@@ -6322,6 +6339,10 @@ int main_thread(void *data)
 		/* update current throughput */
 		kalPerMonUpdate(prGlueInfo->prAdapter);
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+		qmDetectAbnormalBssAbsence(prGlueInfo->prAdapter);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 		wlanDumpAllBssStatistics(prGlueInfo->prAdapter);
 		/* check tput factor */
 #if CFG_SUPPORT_TPUT_FACTOR
@@ -8740,6 +8761,9 @@ void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 	char *envp[2];
 	char event_string[300];
 
+	if (!prAdapter->prGlueInfo->fgWlanUevent)
+		goto end;
+
 	prUevnetReq = (struct MSG_UEVENT_REQ *)prMsgHdr;
 	src = prUevnetReq->event_string;
 	envp[0] = event_string;
@@ -10813,6 +10837,7 @@ void kalPerfIndReset(struct ADAPTER *prAdapter)
 void kalSetPerfReport(struct ADAPTER *prAdapter)
 {
 	struct CMD_PERF_IND *prCmdPerfReport;
+	struct BSS_INFO *prBssInfo;
 	uint8_t i;
 	uint32_t u4CurrentTp = 0;
 #if CFG_SUPPORT_TPUT_FACTOR
@@ -10837,7 +10862,7 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
 	prCmdPerfReport->ucBssNum = prAdapter->ucSwBssIdNum;
 
-	for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
+	for (i = 0; i < prCmdPerfReport->ucBssNum && i < MAX_BSSID_NUM; i++) {
 		prCmdPerfReport->rUniCmdParm[i].u4CurTxBytes =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
 		prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes =
@@ -10857,7 +10882,11 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 		    prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes;
 	}
 	if (u4CurrentTp != 0) {
-		for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
+		for (i = 0; i < prCmdPerfReport->ucBssNum && i < MAX_BSSID_NUM;
+			i++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (!prBssInfo || !IS_BSS_ALIVE(prAdapter, prBssInfo))
+				continue;
 			DBGLOG(SW4, TRACE,
 			"Total TP[%d] BSS[%d] TX-Byte[%d],RX-Byte[%d],Rate[%d],RCPI0[%d],RCPI1[%d]\n",
 			u4CurrentTp,
@@ -11678,9 +11707,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 #if CFG_SUPPORT_RX_GRO
-#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] "
+#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] "
 #else
-#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
+#define NAPI_TEMPLATE "NAPI[%lu,%lu,%u,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
 #endif
 
 #if CFG_NAPI_DELAY
@@ -11715,6 +11744,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
@@ -13070,7 +13100,7 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter,
 		P2P_DEFAULT_SCENARIO);
 }
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+
 void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 {
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
@@ -13095,12 +13125,10 @@ void kalAisChnlSwitchNotifyWork(struct work_struct *work)
 				prBssInfo->eBand,
 				prBssInfo->ucBssIndex);
 }
-#endif
 
 void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo =
@@ -13110,13 +13138,11 @@ void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalAisChnlSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
-#endif
 }
 
 void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo =
@@ -13127,7 +13153,6 @@ void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 	cancel_work_sync(
 		&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = FALSE;
-#endif
 }
 
 
@@ -13137,8 +13162,6 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucChannelNum, enum ENUM_BAND eBand,
 			uint8_t ucBssIndex)
 {
-
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 
@@ -13146,14 +13169,6 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	prBssInfo =
 		prAdapter->aprBssInfo[ucBssIndex];
 	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
-#else
-	__kalIndicateChannelSwitch(prGlueInfo,
-				eSco,
-				ucChannelNum,
-				eBand,
-				ucBssIndex);
-#endif
-
 }
 
 #endif
@@ -14955,16 +14970,24 @@ void kal_napi_complete_done(struct napi_struct *n, int work_done)
 #endif /* KERNEL_VERSION(3, 19, 0) */
 }
 
-void kal_napi_schedule(struct napi_struct *n)
+uint8_t kal_napi_schedule(struct napi_struct *n)
 {
 	if (!n)
-		return;
+		return FALSE;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-	if (in_interrupt())
+	if (in_interrupt()) {
 		napi_schedule_irqoff(n);
+		return TRUE;
+	}
 	else
 #endif /* KERNEL_VERSION(4, 0, 0) */
+#if (KERNEL_VERSION(6, 12, 0) <= CFG80211_VERSION_CODE)
+		return napi_schedule(n);
+#else
 		napi_schedule(n);
+
+	return TRUE;
+#endif /* KERNEL_VERSION(6, 12, 0) */
 }
 
 #if CFG_SUPPORT_RX_GRO
@@ -15038,9 +15061,6 @@ uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_RX_NAPI_THREADED
 	kalNapiThreadedUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
-#if CFG_NAPI_DELAY
-	kalNapiDelayTimerUninit(prGlueInfo);
-#endif /* CFG_NAPI_DELAY */
 	DBGLOG(INIT, TRACE, "Napi Uninit Done\n");
 	return 0;
 }
@@ -15078,13 +15098,19 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
 
-	prRxCtrl = &prAdapter->rRxCtrl;
 	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo->fgNapiReady) {
+		DBGLOG(RX, WARN, "Skip napi schedule, fgNapiReady:%u\n",
+			prGlueInfo->fgNapiReady);
+		return;
+	}
 
-	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+	prRxCtrl = &prAdapter->rRxCtrl;
 
-	GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
-	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+	if (kal_napi_schedule(prGlueInfo->prRxDirectNapi)) {
+		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+		GLUE_SET_REF_CNT(1, prGlueInfo->fgNapiScheduled);
+	}
 }
 
 static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
@@ -15099,39 +15125,46 @@ static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
 }
 
-static void kalNapiScheduleCheck(struct GLUE_INFO *pr)
+static void kalNapiScheduleCheck(struct GLUE_INFO *prGlueInfo)
 {
 	static OS_SYSTIME now, last;
 	uint32_t u4ScheduleTimeout;
 	uint32_t u4ScheduleCnt, u4NapiPollCnt;
 
-	GET_BOOT_SYSTIME(&now);
+	GET_CURRENT_SYSTIME(&now);
 
-	u4ScheduleCnt =
-		RX_GET_CNT(&pr->prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-	u4NapiPollCnt =
-		RX_GET_CNT(&pr->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
+	u4ScheduleCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_SCHEDULE_COUNT);
+	u4NapiPollCnt = RX_GET_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_POLL_COUNT);
 
-	if (!pr->fgNapiScheduled) {
-		pr->u4LastScheduleCnt = u4ScheduleCnt;
-		pr->u4LastNapiPollCnt = u4NapiPollCnt;
+	if (!prGlueInfo->fgNapiScheduled) {
+		prGlueInfo->u4LastScheduleCnt = u4ScheduleCnt;
+		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
 		last = now;
 		return;
 	}
 
-	if (pr->u4LastNapiPollCnt != 0 &&
-	    u4ScheduleCnt > pr->u4LastScheduleCnt &&
-	    u4NapiPollCnt == pr->u4LastNapiPollCnt) {
+	if (prGlueInfo->u4LastNapiPollCnt != 0 &&
+	    u4ScheduleCnt > prGlueInfo->u4LastScheduleCnt &&
+	    u4NapiPollCnt == prGlueInfo->u4LastNapiPollCnt) {
 		u4ScheduleTimeout =
-			pr->prAdapter->rWifiVar.u4NapiScheduleTimeout
+			prGlueInfo->prAdapter->rWifiVar.u4NapiScheduleTimeout
 				* MSEC_PER_SEC;
+
+		DBGLOG(INIT, INFO,
+			"NapiScheduled[%u] ScheduleCnt[%u/%u] NapiPollCnt[%u/%u]\n",
+			prGlueInfo->fgNapiScheduled,
+			u4ScheduleCnt, prGlueInfo->u4LastScheduleCnt,
+			u4NapiPollCnt, prGlueInfo->u4LastNapiPollCnt);
+
 		if (CHECK_FOR_TIMEOUT(now, last,
 			MSEC_TO_SYSTIME(u4ScheduleTimeout)))
 			kalSendAeeWarning("Napi Schedule Timeout",
 				"Napi Schedule Timeout\n");
 	} else {
-		pr->u4LastScheduleCnt = u4ScheduleCnt;
-		pr->u4LastNapiPollCnt = u4NapiPollCnt;
+		prGlueInfo->u4LastScheduleCnt = u4ScheduleCnt;
+		prGlueInfo->u4LastNapiPollCnt = u4NapiPollCnt;
 		last = now;
 	}
 }
@@ -15383,6 +15416,8 @@ end:
 #endif
 		kal_napi_complete_done(napi, work_done);
 
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
+
 	return work_done;
 }
 #else
@@ -15433,24 +15468,23 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
 
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
-	if (HAL_IS_RX_DIRECT(prAdapter))
 		nicRxDequeuePendingQueue(prAdapter);
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-
-	/* Added in qmHandleReorderBubbleTimeout */
-	while (prReorderQueParm =
+		/* Added in qmHandleReorderBubbleTimeout */
+		while (prReorderQueParm =
 			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry,
 				prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT))
-		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+			qmFlushTimeoutReorderBubble(prAdapter,
+				prReorderQueParm);
 
-	/* Added in qmDelRxBaEntry */
-	while (prReorderQueParm =
+		/* Added in qmDelRxBaEntry */
+		while (prReorderQueParm =
 			getReorderQueParm(&prAdapter->rFlushRxBaEntry,
 				prAdapter, SPIN_LOCK_RX_FLUSH_BA))
-		qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
+			qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
 
-	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		/* Handle SwRFBs under RX-direct mode */
 		return TRACE(kalNapiPollSwRfb(napi, budget),
 			"kalNapiPollSwRfb");
@@ -15481,6 +15515,8 @@ next_try:
 			DBGLOG(RX, ERROR, "skb NULL %d %d\n",
 				work_done, skb_queue_len(prFlushSkbQ));
 			kal_napi_complete_done(napi, work_done);
+			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_NAPI_POLL_END_COUNT);
 			return work_done;
 		}
 
@@ -15520,10 +15556,12 @@ next_try:
 #endif /* CFG_SUPPORT_RX_GRO_PEAK */
 	work_done = kal_min_t(int, work_done, budget-1);
 	kal_napi_complete_done(napi, work_done);
-	if (skb_queue_len(prRxNapiSkbQ)) {
+	if (skb_queue_len(prRxNapiSkbQ) && prGlueInfo->fgNapiReady) {
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT);
 		napi_schedule(napi);
 	}
+
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
 
 	return work_done;
 #else /* CFG_SUPPORT_RX_NAPI */
@@ -15534,6 +15572,7 @@ next_try:
 uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 {
 	napi_enable(&prGlueInfo->napi);
+	prGlueInfo->fgNapiReady = TRUE;
 	DBGLOG(RX, TRACE, "RX NAPI enabled\n");
 	return 0;
 }
@@ -15541,7 +15580,12 @@ uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(RX, INFO, "RX NAPI disable ongoing\n");
-	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
+
+	prGlueInfo->fgNapiReady = FALSE;
+#if CFG_NAPI_DELAY
+	kalNapiDelayTimerUninit(prGlueInfo);
+#endif /* CFG_NAPI_DELAY */
+
 	napi_synchronize(&prGlueInfo->napi);
 	napi_disable(&prGlueInfo->napi);
 	if (skb_queue_len(&prGlueInfo->rRxNapiSkbQ)) {
@@ -15554,6 +15598,9 @@ uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 				!= NULL)
 			kfree_skb(skb);
 	}
+
+	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
+
 	DBGLOG(RX, TRACE, "RX NAPI disabled\n");
 	return 0;
 }
@@ -18565,7 +18612,7 @@ static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 	uint16_t u2QueueIdx;
 	int32_t *prPendingNum;
 
-	if (!prPerCpuTxInfo->fgReady)
+	if (!prPerCpuTxInfo->fgReady || !prSkb)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	prInfo = get_cpu_ptr(prPerCpuTxInfo->prInfo);

@@ -82,7 +82,11 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 };
 
 struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSccOnlyChCandFilterTable[] = {
-	{P2P_CROSS_BAND_STA_SCC_FILTER, p2pCrossBandStaSccFilter}
+	{P2P_CROSS_BAND_STA_SCC_FILTER, p2pCrossBandStaSccFilter},
+	{P2P_REMOVE_DFS_CH_FILTER, p2pRemoveDfsIndoorChFilter},
+	{P2P_USER_PREF_CH_FILTER, p2pUserPrefChFilter},
+	{P2P_ALIVE_BSS_SYNC_FILTER, p2pMccAliveBssSyncFilter},
+	{P2P_SET_DEFAULT_CH_FILTER, p2pSetDefaultFilter}
 };
 
 struct P2P_CH_CANDIDATE_FILETER_ENTRY p2pSingleApMccFilterTable[] = {
@@ -2114,6 +2118,7 @@ SKIP_START_RDD:
 				   &(prBssInfo->rP2pApGoCarrierOnTimer),
 				   AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS);
 #else
+		prBssInfo->fgIsApGoStarted = TRUE;
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
@@ -4636,7 +4641,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint8_t *aucCapa;
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	uint8_t *ie;
 	uint16_t ie_len, ie_offset;
 #endif
@@ -4655,7 +4660,7 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	prStaRec->fgIsSupportCsa = 1;
 	DBGLOG(P2P, TRACE, "Peer support CSA\n");
 
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - 7;
 
@@ -4671,12 +4676,12 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 			 */
 			prStaRec->ucMlrSupportBitmap = prMLR->ucLRBitMap;
 
-			MLR_DBGLOG(prAdapter, P2P, INFO,
-				"MLR assoc req - Type|Len|B[0x%02x]\n",
+			DBGLOG(P2P, INFO,
+				"MLR rx assoc req - Type|Len|B[0x%02x]\n",
 				prStaRec->ucMlrSupportBitmap);
 		}
 	}
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 }				/* p2pFuncParseMTKOuiInfoElem */
 
 /*---------------------------------------------------------------------------*/
@@ -5167,6 +5172,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 
 	if (!IS_FEATURE_FORCE_ENABLED(ucHe))
 		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
+
+	prP2pBssInfo->ucBssColorInfo = HE_OP_BSSCOLOR_BSS_COLOR_DISABLE;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (fgIsApMode)
@@ -5517,18 +5524,21 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 				IE_ID_EXT(pucIE));
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP ||
-			    IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
-					struct _IE_HE_OP_T *prHeOp;
-
-					prHeOp = (struct _IE_HE_OP_T *) pucIE;
-					if (!prAdapter->rWifiVar.fgSapAddTPEIE)
-						prP2pBssInfo->ucBssColorInfo =
-							prHeOp->ucBssColorInfo;
-				}
-
+			    IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
 				prP2pBssInfo->ucPhyTypeSet |=
 					PHY_TYPE_SET_802_11AX;
+
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
+				struct _IE_HE_OP_T *prHeOp;
+
+				prHeOp = (struct _IE_HE_OP_T *) pucIE;
+				prP2pBssInfo->ucBssColorInfo =
+					prHeOp->ucBssColorInfo;
+				if ((prHeOp->ucBssColorInfo &
+				     HE_OP_BSSCOLOR_BSS_COLOR_DISABLE) == 0)
+					DBGLOG(P2P, TRACE,
+						"bss color=0x%x\n",
+						prHeOp->ucBssColorInfo);
 			}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
@@ -8176,12 +8186,28 @@ void p2pCrossBandStaSccFilter(struct ADAPTER *prAdapter,
 		*ucChSwithCandNum = 0;
 		return;
 	}
-	*ucChSwithCandNum = 1;
-	prSapSwitchCand[0].eRfBand = aliveBss[0]->eBand;
-	prSapSwitchCand[0].ucBssIndex = aliveBss[0]->ucBssIndex;
-	prSapSwitchCand[0].ucChLowerBound = aliveBss[0]->ucPrimaryChannel;
-	prSapSwitchCand[0].ucChUpperBound = aliveBss[0]->ucPrimaryChannel;
 
+	if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SCC ||
+		((!rlmDomainIsIndoorChannel(prAdapter,
+				aliveBss[0]->eBand,
+				aliveBss[0]->ucPrimaryChannel)) &&
+		(prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER)) ||
+		((!rlmDomainIsLegalDfsChannel(prAdapter,
+				aliveBss[0]->eBand,
+				aliveBss[0]->ucPrimaryChannel)) &&
+		(prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS))) {
+		prSapSwitchCand[0].eRfBand = aliveBss[0]->eBand;
+		prSapSwitchCand[0].ucBssIndex = aliveBss[0]->ucBssIndex;
+		prSapSwitchCand[0].ucChLowerBound =
+				aliveBss[0]->ucPrimaryChannel;
+		prSapSwitchCand[0].ucChUpperBound =
+				aliveBss[0]->ucPrimaryChannel;
+		*ucChSwithCandNum = 1;
+		return;
+	}
 }
 
 void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
@@ -8227,6 +8253,60 @@ void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
 			prSapSwitchCand[i].eHwBand,
 			prSapSwitchCand[i].ucChLowerBound,
 			prSapSwitchCand[i].ucChUpperBound);
+}
+
+
+void p2pSapSwitchCandidateRemove(
+		uint8_t *ucChSwitchCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		uint8_t ucRemoveIdx)
+{
+	uint8_t j;
+
+	if (ucRemoveIdx <= *ucChSwitchCandNum) {
+		(*ucChSwitchCandNum)--;
+		for (j = ucRemoveIdx; j < *ucChSwitchCandNum; j++)
+			prSapSwitchCand[j] = prSapSwitchCand[j+1];
+	}
+	DBGLOG(P2P, INFO, "[CSA] cand remove: %d\n",
+		ucRemoveIdx);
+}
+
+void p2pRemoveDfsIndoorChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario)
+{
+	struct BSS_INFO *aliveNonSapBss[MAX_BSSID_NUM] = { 0 };
+	uint8_t ucNumAliveNonSapBss;
+
+	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
+					prAdapter, aliveNonSapBss);
+
+	if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SCC ||
+		ucNumAliveNonSapBss == 0)
+		return;
+
+	if ((rlmDomainIsLegalDfsChannel(prAdapter,
+		aliveNonSapBss[0]->eBand,
+		aliveNonSapBss[0]->ucPrimaryChannel)) ||
+		(rlmDomainIsIndoorChannel(prAdapter,
+		aliveNonSapBss[0]->eBand,
+		aliveNonSapBss[0]->ucPrimaryChannel) &&
+		(prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER))) {
+		prSapSwitchCand[0].eRfBand = prP2pBssInfo->eBand;
+		prSapSwitchCand[0].ucBssIndex =
+				prP2pBssInfo->ucBssIndex;
+		prSapSwitchCand[0].ucChLowerBound =
+				prP2pBssInfo->ucPrimaryChannel;
+		prSapSwitchCand[0].ucChUpperBound =
+				prP2pBssInfo->ucPrimaryChannel;
+		*ucChSwithCandNum = 1;
+		return;
+	}
 }
 
 void p2pBtDesenseChFilter(struct ADAPTER *prAdapter,
@@ -8295,22 +8375,6 @@ void p2pDualApChFilter(struct ADAPTER *prAdapter,
 	} else
 		*ucChSwithCandNum = 0;
 #endif
-}
-
-void p2pSapSwitchCandidateRemove(
-		uint8_t *ucChSwitchCandNum,
-		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
-		uint8_t ucRemoveIdx)
-{
-	uint8_t j;
-
-	if (ucRemoveIdx <= *ucChSwitchCandNum) {
-		(*ucChSwitchCandNum)--;
-		for (j = ucRemoveIdx; j < *ucChSwitchCandNum; j++)
-			prSapSwitchCand[j] = prSapSwitchCand[j+1];
-	}
-	DBGLOG(P2P, INFO, "[CSA] cand remove: %d\n",
-		ucRemoveIdx);
 }
 
 void p2pUserPrefChFilter(struct ADAPTER *prAdapter,
@@ -8728,9 +8792,28 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 				fgIsBandMatch = FALSE;
 			else
 				continue;
+
+			DBGLOG(P2P, INFO,
+				"[CSA] AA filter1 :(%u, %u, %u, %u)\n",
+				prSapSwitchCand[i].ucChLowerBound,
+				prSapSwitchCand[i].ucChUpperBound,
+				prHwBandUnit->eRfBand,
+				prHwBandUnit->ucCh);
+			if (prSapSwitchCand[i].eRfBand ==
+				prHwBandUnit->eRfBand &&
+				prSapSwitchCand[i].ucChUpperBound >=
+				prHwBandUnit->ucCh &&
+				prSapSwitchCand[i].ucChLowerBound <=
+				prHwBandUnit->ucCh) {
+				prSapSwitchCand[i].ucChLowerBound =
+					prHwBandUnit->ucCh;
+				prSapSwitchCand[i].ucChUpperBound =
+					prHwBandUnit->ucCh;
+				fgIsBandMatch = TRUE;
+			}
 			for (j = 0; j < rChListLen ; j++) {
 				DBGLOG(P2P, INFO,
-					"[CSA] AA filter :(%u, %u, %u, %u, %u)\n",
+					"[CSA] AA filter2 :(%u, %u, %u, %u, %u)\n",
 					prSapSwitchCand[i].ucChLowerBound,
 					prSapSwitchCand[i].ucChUpperBound,
 					aliveSapBss[0]->ucPrimaryChannel,
@@ -8738,17 +8821,6 @@ void p2pAAChCandModify(struct ADAPTER *prAdapter,
 					aliveSapBss[0]->eBand);
 
 				if (prSapSwitchCand[i].eRfBand ==
-					prHwBandUnit->eRfBand &&
-					prSapSwitchCand[i].ucChUpperBound >=
-					prHwBandUnit->ucCh &&
-					prSapSwitchCand[i].ucChLowerBound <=
-					prHwBandUnit->ucCh) {
-					prSapSwitchCand[i].ucChLowerBound =
-						prHwBandUnit->ucCh;
-					prSapSwitchCand[i].ucChUpperBound =
-						prHwBandUnit->ucCh;
-					fgIsBandMatch = TRUE;
-				} else if (prSapSwitchCand[i].eRfBand ==
 					aliveSapBss[0]->eBand &&
 					prSapSwitchCand[i].ucChLowerBound <=
 					aliveSapBss[0]->ucPrimaryChannel &&
@@ -9088,7 +9160,49 @@ void p2pDualABandFilter(struct ADAPTER *prAdapter,
 	p2pHwBandMccRemove(prAdapter,
 			ucChSwitchCandNum,
 			prSapSwitchCand);
+}
 
+u_int8_t p2pFuncIsBssWpa3OnlyCheck(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prP2pBssInfo)
+{
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	uint8_t i;
+	uint32_t u4PrivateData;
+
+	u4PrivateData =
+		prP2pBssInfo->u4PrivateData;
+	prP2pSpecBssInfo =
+		prAdapter
+		->rWifiVar.prP2pSpecificBssInfo[u4PrivateData];
+
+	if (!(prP2pBssInfo->ucPhyTypeSet &
+		PHY_TYPE_BIT_HE))
+		return FALSE;
+
+	for (i = 0;
+		i < prP2pSpecBssInfo->u4KeyMgtSuiteCount;
+		i++) {
+		if (prP2pSpecBssInfo
+			->au4KeyMgtSuite[i] ==
+			RSN_AKM_SUITE_OWE) {
+			DBGLOG(P2P, TRACE, "OWE security\n");
+			return TRUE;
+		}
+		if (rsnKeyMgmtSae(prP2pSpecBssInfo
+			->au4KeyMgtSuite[i]))
+			continue;
+
+		DBGLOG(P2P, TRACE, "invalid suit:0x%04x\n",
+			prP2pSpecBssInfo->au4KeyMgtSuite[i]);
+		return FALSE;
+	}
+	if ((prP2pSpecBssInfo->aucRsnxIeBuffer[2] &
+		BIT(WLAN_RSNX_CAPAB_SAE_H2E)) == 0) {
+		DBGLOG(P2P, TRACE, "no H2E in RSNX IE\n");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
@@ -9113,17 +9227,13 @@ void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, INFO, "[CSA] scenario error\n");
 		return;
 	}
-	DBGLOG(P2P, INFO, "[CSA] is sap wpa3: %u and %u\n",
-			aliveSapBss[0]->u4RsnSelectedAKMSuite &
-			RSN_AKM_SUITE_SAE,
-			(aliveSapBss[0]->u4RsnSelectedAKMSuite &
-			RSN_AKM_SUITE_SAE) == RSN_AKM_SUITE_SAE);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	for (i = *ucChSwitchCandNum; i > 0; i--) {
 		if (aliveSapBss[0]->eBand == BAND_5G &&
 			prSapSwitchCand[i-1].eRfBand == BAND_6G &&
-			(aliveSapBss[0]->u4RsnSelectedAKMSuite &
-			RSN_AKM_SUITE_SAE) != RSN_AKM_SUITE_SAE) {
+			!p2pFuncIsBssWpa3OnlyCheck(prAdapter,
+				aliveSapBss[0])) {
 			p2pSapSwitchCandidateRemove(
 				ucChSwitchCandNum,
 				prSapSwitchCand,
@@ -9226,9 +9336,26 @@ void p2pFuncSapSwitchChCheck(
 					prSwitchInterface->prP2pChInterface,
 					prP2pBssInfo,
 					*eFilterScnario);
-			if (*prSwitchInterface->ucInterfaceLen == 1)
+			p2pFuncSapFilterTrace(prAdapter,
+					prSwitchInterface->ucInterfaceLen,
+					prSwitchInterface->prP2pChInterface,
+					u4Idx);
+
+			if (*prSwitchInterface
+					->ucInterfaceLen == 1 &&
+				prSwitchInterface
+					->prP2pChInterface[0].ucChLowerBound ==
+				prSwitchInterface
+					->prP2pChInterface[0].ucChUpperBound) {
+				if (prSwitchInterface
+					->prP2pChInterface[0].ucChLowerBound ==
+					prP2pBssInfo->ucPrimaryChannel &&
+					prSwitchInterface
+						->prP2pChInterface[0].eRfBand ==
+					prP2pBssInfo->eBand)
+					(*prSwitchInterface->ucInterfaceLen)--;
 				break;
-			else if (*prSwitchInterface->ucInterfaceLen == 0)
+			} else if (*prSwitchInterface->ucInterfaceLen == 0)
 				return;
 		}
 	} else if (*eFilterScnario ==
@@ -9688,7 +9815,6 @@ bool p2pFuncSwitchSapChannel(
 			&rSapSwitchInterface,
 			prP2pBssInfo,
 			&eFilterScnario);
-
 
 	/* Use sta ch info to do sap ch switch */
 	if (ucSapChCandNum == 0 ||
@@ -11324,32 +11450,17 @@ void p2pFunMulAPAgentBssStatusNotification(
 	kalMemZero(&prBssReport->u8HeMcs, 16);
 	kalMemZero(&prBssReport->u16HeCap, sizeof(uint16_t));
 
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uIfIndex=%d\n", prBssReport->uIfIndex);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] mBssid=" MACSTR "\n", MAC2STR(prBssReport->mBssid));
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uStatus=%d\n", prBssReport->uStatus);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8Channel=%d\n", prBssReport->u8Channel);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8OperClass=%d\n", prBssReport->u8OperClass);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8Txpower=%d\n", prBssReport->u8Txpower);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uBand=%d\n", prBssReport->uBand);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] uHtCap=0x%x\n", prBssReport->uHtCap);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u16VhtTxMcs=0x%x\n", prBssReport->u16VhtTxMcs);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u16VhtRxMcs=0x%x\n", prBssReport->u16VhtRxMcs);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u16VhtCap=0x%x\n", prBssReport->u16VhtCap);
-	DBGLOG(P2P, INFO,
-		"[SAP_Test] u8HeMcsNum=%d\n", prBssReport->u8HeMcsNum);
-	DBGLOG_MEM8(P2P, WARN, prBssReport->u8HeMcs, 16);
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
+		"[SAP_Test] uIfIndex=%d mBssid=" MACSTR
+		" uStatus=%d u8Channel=%d u8OperClass=%d u8Txpower=%d uBand=%d uHtCap=0x%x u16VhtTxMcs=0x%x u16VhtRxMcs=0x%x u16VhtCap=0x%x u8HeMcsNum=%d\n",
+		prBssReport->uIfIndex, MAC2STR(prBssReport->mBssid),
+		prBssReport->uStatus, prBssReport->u8Channel,
+		prBssReport->u8OperClass, prBssReport->u8Txpower,
+		prBssReport->uBand, prBssReport->uHtCap,
+		prBssReport->u16VhtTxMcs, prBssReport->u16VhtRxMcs,
+		prBssReport->u16VhtCap, prBssReport->u8HeMcsNum);
+	DBGLOG_MEM8(P2P, TRACE, prBssReport->u8HeMcs, 16);
+	DBGLOG(P2P, TRACE,
 		"[SAP_Test] u16HeCap=0x%x\n", prBssReport->u16HeCap);
 
 	i4Ret = MulAPAgentMontorSendMsg(

@@ -273,7 +273,9 @@ const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
  */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 static remove_card pfWlanShutdown;
+#endif
 #if CFG_MTK_WIFI_AER_RESET
 static u_int8_t g_AERRstTriggered;
 static u_int8_t g_AERL05Rst;
@@ -375,8 +377,8 @@ static u_int8_t g_fgDriverProbed = FALSE;
 static struct pci_dev *g_prDev;
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-static u_int8_t g_ucReceiveGenSwitch;
-static u_int8_t g_ucBypassException;
+u_int8_t g_ucReceiveGenSwitch;
+u_int8_t g_ucBypassException;
 #endif
 
 
@@ -783,6 +785,62 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+uint8_t pcie_backup_config_space_settings(
+	struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = NULL;
+	int i;
+	uint32_t ret = 0;
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "adapter is NULL\n");
+		return -1;
+	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	for (i = 0; i < PCIE_EP_CONFIG_SPACE_SIZE; i++) {
+		ret = glReadPcieCfgSpace(i * 4,
+			&prBusInfo->u4ConfigSpace[i]);
+		if (ret != 0) {
+			prBusInfo->ucConfigSpaceBkDone = 0;
+			DBGLOG(HAL, ERROR, "cfg space bk failed\n");
+			return -1;
+		}
+	}
+	prBusInfo->ucConfigSpaceBkDone = 1;
+	DBGLOG(HAL, INFO, "cfg space bk pass\n");
+
+	return 0;
+}
+
+uint8_t pcie_restore_config_space_settings(
+	struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = NULL;
+	int i;
+	uint32_t ret = 0;
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "adapter is NULL\n");
+		return -1;
+	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	for (i = 0; i < PCIE_EP_CONFIG_SPACE_SIZE; i++) {
+		ret = glWritePcieCfgSpace(i * 4,
+			prBusInfo->u4ConfigSpace[i]);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "cfg space rs failed\n");
+			return -1;
+		}
+	}
+	DBGLOG(HAL, INFO, "cfg space rs pass\n");
+
+	return 0;
+}
+
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance)
 {
 	return IRQ_WAKE_THREAD;
@@ -870,12 +928,14 @@ irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 }
 #endif
 
-static u_int8_t pcie_check_status_is_linked(struct pci_dev *pdev)
+u_int8_t pcie_check_status_is_linked(void)
 {
-	uint16_t vnd_id = 0;
+	uint32_t vnd_id = 0;
 
-	pci_read_config_word(pdev, PCI_VENDOR_ID, &vnd_id);
-	if (vnd_id == 0 || vnd_id == 0xffff) {
+	if (glReadPcieCfgSpace(PCI_VENDOR_ID, &vnd_id) == WLAN_STATUS_FAILURE)
+		return FALSE;
+
+	if (vnd_id == 0 || vnd_id == 0xffffffff) {
 		DBGLOG(HAL, WARN, "PCIE link down\n");
 		return FALSE;
 	}
@@ -910,14 +970,14 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	if (fgIsPcieDataTransDisabled == FALSE &&
 		state == pci_channel_io_normal &&
 		dump & BIT(6) &&
-		pcie_check_status_is_linked(pdev) == FALSE) {
+		pcie_check_status_is_linked() == FALSE) {
 		DBGLOG(HAL, WARN, "PCIE link down\n");
 		/* block PCIe access */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 		mtk_pcie_disable_data_trans(0);
 		fgIsPcieDataTransDisabled = TRUE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 		fgTriggerDebugSop = TRUE;
 #endif
@@ -930,8 +990,8 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		/* bit[6]: Completion timeout status */
 		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
-			fgIsBusAccessFailed = TRUE;
-			if (pcie_check_status_is_linked(pdev) == TRUE) {
+			wlanUpdateBusAccessStatus(TRUE);
+			if (pcie_check_status_is_linked() == TRUE) {
 #if CFG_MTK_WIFI_AER_L05_RESET
 				g_AERL05Rst = TRUE;
 #endif
@@ -945,7 +1005,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 			mtk_pcie_disable_data_trans(0);
 #endif
 			fgNeedReset = TRUE;
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 			fgTriggerDebugSop = TRUE;
 #endif
@@ -953,7 +1013,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	} else {
 		pci_disable_device(pdev);
 		fgNeedReset = TRUE;
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
 #endif
@@ -1034,7 +1094,7 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
 
-	if (!prGlueInfo)
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
 		return;
 
 	/* trigger driver SER after AER */
@@ -1315,7 +1375,11 @@ exit:
 	return ret;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_wifi_remove(struct platform_device *pdev)
+#else
+static void mtk_wifi_remove(struct platform_device *pdev)
+#endif
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	struct mt66xx_hif_driver_data *prDriverData =
@@ -1339,17 +1403,24 @@ static int mtk_wifi_remove(struct platform_device *pdev)
 	kalReleaseHifSkbList();
 #endif
 	platform_set_drvdata(pdev, NULL);
+
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 static void mtk_wifi_shutdown(struct platform_device *pdev)
 {
+	wfsys_lock();
 	if (g_fgDriverProbed && pfWlanShutdown) {
 		DBGLOG(INIT, INFO, "do shutdown\n");
 		pfWlanShutdown();
 		g_fgDriverProbed = FALSE;
 	}
+	wfsys_unlock();
 }
+#endif
 
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 static int wifiMiscDmaSetup(struct platform_device *pdev,
@@ -1417,13 +1488,19 @@ exit:
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_wifi_misc_remove(struct platform_device *pdev)
+#else
+static void mtk_wifi_misc_remove(struct platform_device *pdev)
+#endif
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_MISC);
 #endif
 	platform_set_drvdata(pdev, NULL);
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 #endif
 
@@ -1615,14 +1692,20 @@ exit:
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_wifi_tx_cma_non_cache_remove(
+#else
+static void mtk_wifi_tx_cma_non_cache_remove(
+#endif
 	struct platform_device *pdev)
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_CMA_NON_CACHE);
 #endif
 	platform_set_drvdata(pdev, NULL);
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
@@ -1666,7 +1749,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto out;
 	}
 
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -2017,6 +2100,7 @@ int mtk_pci_resume(struct pci_dev *pdev)
  * \return The result of registering pci bus
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 uint32_t glRegisterShutdownCB(remove_card pfShutdown)
 {
 	int ret = 0;
@@ -2027,6 +2111,7 @@ uint32_t glRegisterShutdownCB(remove_card pfShutdown)
 	mtk_wifi_driver.shutdown = mtk_wifi_shutdown;
 	return ret;
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2914,7 +2999,7 @@ void halPcieHwControlVote(
 	if (err) {
 		DBGLOG(HAL, ERROR,
 			"hw control mode err[%d]\n", err);
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
 			RST_PCIE_NOT_READY);
 	}
@@ -2942,7 +3027,14 @@ int32_t glBusFuncOn(void)
 	}
 #endif
 
+#if (CFG_PCIE_MT6989_6653 == 1)
+	/* Notify RC to intercept CmpltTO during wlan probe */
+	mtk_pcie_set_aer_detect(0, TRUE);
+#endif
 	ret = pci_register_driver(&mtk_pci_driver);
+#if (CFG_PCIE_MT6989_6653 == 1)
+	mtk_pcie_set_aer_detect(0, FALSE);
+#endif
 	if (ret == -EBUSY) {
 		if (g_fgDriverProbed) {
 			WARN_ON_ONCE(TRUE);
@@ -3041,7 +3133,9 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 					prAdapter->ucStopMMIO = FALSE;
 					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
 					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 					mtk_pcie_disable_cfg_dump(0);
+#endif
 					DBGLOG(INIT, ERROR,
 						"[Gen Switch] timeout\n");
 					break;
@@ -3098,7 +3192,9 @@ void glNotifyPciePowerDown(void)
 {
 #if defined(CFG_MTK_WIFI_PCIE_SUPPORT) && CFG_MTK_ANDROID_WMT
 	DBGLOG(HAL, INFO, "notify PCIE PD\n");
+#if KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE
 	mtk_pcie_pinmux_select(0, PCIE_PINMUX_PD);
+#endif
 #endif
 }
 
@@ -3176,7 +3272,9 @@ int mtk_pcie_retrain(struct pci_dev *dev)
 #if (CFG_PCIE_GEN_SWITCH == 1)
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter)
 {
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	mtk_pcie_disable_cfg_dump(0);
+#endif
 	if (prAdapter)
 		prAdapter->ucStopMMIO = FALSE;
 
@@ -3263,7 +3361,9 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	prAdapter->fgIsGenSwitchProcessing = TRUE;
 
 	pcie_gen_switch_polling_rx_done(prAdapter);
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	mtk_pcie_enable_cfg_dump(0);
+#endif
 
 	DBGLOG(HAL, TRACE, "[Gen_Switch] start\n");
 	if (g_ucBypassException) {
@@ -3302,7 +3402,9 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	struct RX_IDLE_STATE *prRxIdleState;
 
 	DBGLOG(HAL, TRACE, "[Gen_Switch] end\n");
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	mtk_pcie_disable_cfg_dump(0);
+#endif
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
@@ -3347,14 +3449,10 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 }
 #endif
 
-
-#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 uint8_t halPcieIsPcieProbed(void)
 {
 	return g_fgDriverProbed;
 }
-#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
-
 
 #if CFG_MTK_WIFI_PCIE_SR
 int mtk_pcie_enter_L2(struct pci_dev *pdev)
@@ -3386,7 +3484,7 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 	if (state)
 		goto error_return;
 
-	if (!pcie_check_status_is_linked(pdev))
+	if (!pcie_check_status_is_linked())
 		goto error_return;
 
 	pci_restore_state(pdev);
@@ -3397,7 +3495,7 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 	DBGLOG(HAL, LOUD, "done\n");
 	return state;
 error_return:
-	fgIsBusAccessFailed = TRUE;
+	wlanUpdateBusAccessStatus(TRUE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_dump_link_info(0);
 #endif

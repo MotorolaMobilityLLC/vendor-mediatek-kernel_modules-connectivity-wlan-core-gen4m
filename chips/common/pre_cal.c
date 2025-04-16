@@ -225,6 +225,12 @@ void wlanDebugDumpCalibrationEMI(
 	uint32_t i, index = 0, u4ArrSize = 0;
 	uint32_t *p4ucSum = NULL;
 
+	DBGLOG(INIT, INFO, "PreCalEmiData=[0x%x][0x%x][0x%x][0x%x]\n",
+				*(pucEmiStartAddr + 0),
+				*(pucEmiStartAddr + 1),
+				*(pucEmiStartAddr + 2),
+				*(pucEmiStartAddr + 3));
+
 	u4ArrSize = (u4EmiSize/1000 + 1) * sizeof(uint32_t);
 
 	p4ucSum = kalMemAlloc(u4ArrSize, VIR_MEM_TYPE);
@@ -242,8 +248,14 @@ void wlanDebugDumpCalibrationEMI(
 		*(p4ucSum + index) += *(pucEmiStartAddr + i);
 	}
 
-	for (i = 0; i < (u4EmiSize/1000 + 1); i++)
+	/* dump 1KB cal result */
+	for (i = 0; i < 1; i++)
 		DBGLOG(INIT, INFO, "Sum[%d]=0x%08x\n", i, *(p4ucSum + i));
+
+	/* dump all */
+	/* for (i = 0; i < (u4EmiSize/1000 + 1); i++) */
+		/* DBGLOG(INIT, INFO, "Sum[%d]=0x%08x\n", i, *(p4ucSum + i)); */
+
 
 	kalMemFree(p4ucSum, VIR_MEM_TYPE, u4ArrSize);
 #endif
@@ -264,7 +276,7 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	uint8_t *prEmi2Address = NULL;
 
 	#define TURN_ON_EMI_BACKUP 1
-	#define DUMP_PRE_CAL_RESULT 0
+	#define DUMP_PRE_CAL_RESULT 1
 
 	do {
 		if (backupEMI == TRUE) {
@@ -446,7 +458,7 @@ void wlanGetEpaElnaFromNvram(
 	uint32_t *pu4DataLen)
 {
 #define MAX_NVRAM_READY_COUNT 10
-#define MAX_NVRAM_FEM_MAX 512
+#define MAX_NVRAM_FEM_MAX 1024
 
 	/* ePA /eLNA */
 	uint8_t u1TypeID, u1LenLSB, u1LenMSB;
@@ -1565,7 +1577,6 @@ int wlan_precal_docal_v2(void)
 
 	if (!g_fgEverCal) {
 		g_fgEverCal = TRUE;
-		wlan_precal_done_notify();
 	}
 
 	if (wfsys_is_locked())
@@ -1595,7 +1606,6 @@ exit:
 		g_fgPreCal = FALSE;
 		update_pre_cal_status(0);
 		g_fgEverCal = TRUE;
-		wlan_precal_done_notify();
 
 		if (wfsys_is_locked())
 			wfsys_unlock();

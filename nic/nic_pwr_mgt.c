@@ -93,7 +93,7 @@ void nicpmSetFWOwn(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t nicpmSetDriverOwn(struct ADAPTER *prAdapter)
 {
-	return halSetDriverOwn(prAdapter);
+	return halSetDriverOwn(prAdapter, DRV_OWN_SRC_UNKNOWN);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -709,6 +709,11 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->ucULTidBitmap = 0xff;
 			prStaRec->ucDLTidBitmap = 0xff;
 #endif
+
+			/* Default QM RX BA timeout */
+			prStaRec->u4QmRxBaMissTimeout =
+				prAdapter->rWifiVar.u4BaMissTimeoutMs;
+
 			break;
 		}
 	}
@@ -1122,6 +1127,7 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 {
 	struct CMD_UPDATE_STA_RECORD *prCmdContent;
 	uint32_t rStatus;
+	struct BSS_DESC *prBssDesc = NULL;
 
 	if (!prAdapter)
 		return;
@@ -1288,6 +1294,20 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prCmdContent->ucRxAmsduInAmpdu
 			&= prAdapter->rWifiVar.ucHtAmsduInAmpduRx;
 	}
+
+	if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex))
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+			prStaRec->ucBssIndex);
+	else if (IS_BSS_INDEX_P2P(prAdapter, prStaRec->ucBssIndex))
+		prBssDesc = p2pGetTargetBssDesc(prAdapter,
+			prStaRec->ucBssIndex);
+
+	if (prBssDesc && bssIsIotAp(prAdapter, prBssDesc,
+		WLAN_IOT_AP_DIS_TX_AMSDU)) {
+		prCmdContent->ucTxAmsduInAmpdu = 0;
+		DBGLOG(NIC, INFO, "IoT AP: DISABLE AMSDU\n");
+	}
+
 #if CFG_SUPPORT_WED_PROXY
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_MLD_STAREC_MULTI(mldStarecGetByStarec(
@@ -1358,16 +1378,8 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 #if CFG_SUPPORT_MLR
 	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec) &&
-		/* STA MLRV1, MLRP and ALR consider 5G band */
-	    ((MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec) ||
-	      MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec) ||
-	      MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec)) &&
-	     MLR_BAND_IS_SUPPORT(MLR_GET_BAND(prAdapter, prStaRec)) ||
-		/* STA MLRV2 or MLRV1+MLRV2 don't need to consider 5G band */
-	    MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec) ||
-	    MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) &&
-	    MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, prStaRec->ucRCPI) &&
-	    prStaRec->ucStaState == STA_STATE_3) {
+	    mlrCanEnterMlrStart(prAdapter, prStaRec,
+	    MLR_GET_BAND(prAdapter, prStaRec))) {
 		prCmdContent->ucMlrMode = (prStaRec->ucMlrSupportBitmap &
 			prAdapter->u4MlrSupportBitmap);
 		prCmdContent->ucMlrState = MLR_STATE_START;

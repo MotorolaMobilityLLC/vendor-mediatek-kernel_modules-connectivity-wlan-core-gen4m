@@ -434,6 +434,7 @@ void nicRxUninitialize(struct ADAPTER *prAdapter)
 				kalPacketFree(prAdapter->prGlueInfo,
 				prSwRfb->pvPacket);
 			prSwRfb->pvPacket = NULL;
+			prSwRfb->prRxStatus = NULL;
 		}
 	}
 
@@ -733,6 +734,17 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 	ucFragNo = (uint8_t) (u2SeqCtrl & MASK_SC_FRAG_NUM);
 	prSWRfb->u2FrameCtrl = u2FrameCtrl;
 	prSWRfb->ucTid = ucTid;
+
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+	MLR_DBGLOG(prAdapter, RX, INFO,
+		   "SN:%d FragNo:%d MoreFrag:%04x FC:%04x SQ:%04x fgHdrTran:%d\n",
+		   u2SeqNo,
+		   ucFragNo,
+		   (uint16_t) (u2FrameCtrl & MASK_FC_MORE_FRAG),
+		   u2FrameCtrl,
+		   u2SeqCtrl,
+		   prSWRfb->fgHdrTran);
+#endif
 
 	if (!(u2FrameCtrl & MASK_FC_MORE_FRAG)) {
 		/* The last fragment frame */
@@ -1246,12 +1258,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 		prSwRfb->prStaRec->u8TotalRxPkts++;
 	}
 #endif
-#if (CFG_RX_SW_PROCESS_DBG == 1)
-	/* Recognize RX packet forward to host*/
-	HAL_MAC_CONNAC3X_RX_STATUS_SET_SWRFB_TO_HOST(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_PROCESS(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_FREE(prSwRfb->prRxStatus);
-#endif
+
 	if (kalProcessRxPacket(prAdapter->prGlueInfo,
 			       prSwRfb->pvPacket,
 			       prSwRfb->pvHeader,
@@ -1308,7 +1315,10 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 		prRxCtrl->ucNumRetainedPacket++;
 	} else
 #endif
+	{
 		prSwRfb->pvPacket = NULL;
+		prSwRfb->prRxStatus = NULL;
+	}
 
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	/* Move SKB allocation to another context to reduce RX latency,
@@ -1442,6 +1452,7 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 
 		/* release RX buffer (to rIndicatedRfbList) */
 		prSwRfb->pvPacket = NULL;
+		prSwRfb->prRxStatus = NULL;
 		ucTmpTid = prSwRfb->ucTid;
 		nicRxReturnRFB(prAdapter, prSwRfb);
 
@@ -1729,6 +1740,8 @@ void nicRxGetNoiseLevelAndLastRate(struct ADAPTER *prAdapter,
 void nicRxEnqueuePendingQueue(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb)
 {
+	uint8_t ucBssIndex;
+
 	if (!prAdapter || !prStaRec || !prSwRfb)
 		return;
 
@@ -1740,8 +1753,8 @@ void nicRxEnqueuePendingQueue(struct ADAPTER *prAdapter,
 		prSwRfb,
 		GLUE_IS_PKT_FLAG_SET(prSwRfb->pvPacket));
 
-	RX_PENDING_INC_BSS_CNT(&prAdapter->rRxCtrl,
-		prStaRec->ucBssIndex);
+	ucBssIndex = prStaRec->ucBssIndex;
+	RX_PENDING_INC_BSS_CNT(&prAdapter->rRxCtrl, ucBssIndex);
 
 #if CFG_RFB_TRACK
 	RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_RX_PENDING);
@@ -2026,7 +2039,7 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 	prRxDescOps = prChipInfo->prRxDescOps;
-	prRxStatus = prSwRfb->prRxStatus;
+	prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->prRxStatus;
 
 	/* Check AMPDU_nERR_Bitmap */
 	prSwRfb->fgDataFrame = TRUE;
@@ -2176,7 +2189,7 @@ void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
 
 	/* Event cannot be found in event handler table, use default action */
 	if (u4Idx >= u4Size) {
-		DBGLOG(RX, INFO, "Not static config event: id=0x%02X, seq=%u",
+		DBGLOG(RX, TRACE, "Not static config event: id=0x%02X, seq=%u",
 				prEvent->ucEID, prEvent->ucSeqNum);
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 						prEvent->ucSeqNum);
@@ -2668,8 +2681,7 @@ void nicRxProcessPacketType(
 		break;
 
 	case RX_PKT_TYPE_MSDU_REPORT:
-		nicRxProcessMsduReport(prAdapter,
-			prSwRfb);
+		nicRxProcessMsduReport(prAdapter, prSwRfb);
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
 
@@ -2881,18 +2893,15 @@ static uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
 				prRxStatus)),
 			   (sizeof(struct SW_RFB) - OFFSET_OF(struct SW_RFB,
 					   prRxStatus)));
+		kalMemZero(prSwRfb->pucRecvBuff,
+			prAdapter->chip_info->rxd_size);
 	}
 
 	prSwRfb->prRxStatus = prSwRfb->pucRecvBuff;
 #if CFG_RFB_TRACK
 	prSwRfb->u4RfbTrackId = u4RfbTrackId;
 #endif /* CFG_RFB_TRACK */
-#if (CFG_RX_SW_PROCESS_DBG == 1)
-	/* Recognize RX packet passed by SW*/
-	HAL_MAC_CONNAC3X_RX_STATUS_SET_SWRFB_FREE(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_TO_HOST(prSwRfb->prRxStatus);
-	HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_PROCESS(prSwRfb->prRxStatus);
-#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -3156,7 +3165,7 @@ uint32_t nicRxCopyRFB(struct ADAPTER *prAdapter,
 u_int8_t isRfbFromSpared(struct RX_CTRL *prRxCtrl, struct SW_RFB *prSwRfb)
 {
 	return prSwRfb < prRxCtrl->prRxCached ||
-		prSwRfb > prRxCtrl->prRxCached + CFG_RX_MAX_PKT_NUM;
+		prSwRfb >= prRxCtrl->prRxCached + CFG_RX_MAX_PKT_NUM;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3196,6 +3205,15 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	if (prSwRfb->pvPacket) {
+		/* Initialize SwRfb*/
+		kalMemZero(((uint8_t *) prSwRfb + OFFSET_OF(struct SW_RFB,
+				prRxStatus)),
+			   (sizeof(struct SW_RFB) - OFFSET_OF(struct SW_RFB,
+					   prRxStatus)));
+		kalMemZero(prSwRfb->pucRecvBuff,
+			prAdapter->chip_info->rxd_size);
+
+		prSwRfb->prRxStatus = prSwRfb->pucRecvBuff;
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList, prQueEntry);
 #if CFG_RFB_TRACK
@@ -4499,6 +4517,7 @@ static void nicRxReturnUnUseRFB(struct ADAPTER *prAdapter,
 	if (prSwRfb->pvPacket) {
 		kalPacketFree(prAdapter->prGlueInfo, prSwRfb->pvPacket);
 		prSwRfb->pvPacket = NULL;
+		prSwRfb->prRxStatus = NULL;
 	}
 
 	/* enqueue into unuse rfb list */

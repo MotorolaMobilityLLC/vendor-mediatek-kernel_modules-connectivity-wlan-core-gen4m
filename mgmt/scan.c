@@ -857,6 +857,39 @@ scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
 
 	return prDstBssDesc;
 }
+
+uint8_t
+scanSearchBssDescCountByMldAddrSsid(struct ADAPTER *prAdapter,
+				  uint8_t aucMldAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid)
+{
+	struct SCAN_INFO *prScanInfo;
+	struct LINK *prBSSDescList;
+	struct BSS_DESC *prBssDesc;
+	uint8_t count = 0;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+
+	prBSSDescList = &prScanInfo->rBSSDescList;
+
+	/* Search BSS Desc from current SCAN result list. */
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
+		rLinkEntry, struct BSS_DESC) {
+		if (!prBssDesc->rMlInfo.fgValid)
+			continue;
+
+		if (EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucMldAddr)) {
+			if (fgCheckSsid == FALSE || prSsid == NULL ||
+			    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+				       prSsid->aucSsid, prSsid->u4SsidLen))
+				count++;
+		}
+	}
+
+	return count;
+}
+
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -1562,6 +1595,29 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 					aucBSSID, fgIsValidSsid, &rSsid);
 		if (prBssDesc) {
+			uint8_t i;
+			struct BSS_INFO *prBssInfo;
+
+			if ((prBssDesc->ucMaxBSSIDIndicator !=
+				prMbssidIe->ucMaxBSSIDIndicator) ||
+				(prBssDesc->ucMBSSIDIndex !=
+				prMbssidIdxIe->ucBSSIDIndex)) {
+
+				for (i = 0; i < MAX_BSSID_NUM; i++) {
+					prBssInfo =
+					    GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+					if (IS_BSS_ALIVE(prAdapter, prBssInfo)
+					    && (kalMemCmp(prBssInfo->aucBSSID,
+						aucBSSID, MAC_ADDR_LEN) == 0)) {
+						prBssInfo->ucMaxBSSIDIndicator =
+						prMbssidIe->ucMaxBSSIDIndicator;
+						prBssInfo->ucMBSSIDIndex =
+						prMbssidIdxIe->ucBSSIDIndex;
+						nicUpdateBss(prAdapter, i);
+					}
+				}
+			}
 			prBssDesc->ucMaxBSSIDIndicator =
 				prMbssidIe->ucMaxBSSIDIndicator;
 			prBssDesc->ucMBSSIDIndex =
@@ -2660,7 +2716,8 @@ void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
-				  struct SW_RFB *prSwRfb)
+				  struct SW_RFB *prSwRfb,
+				  uint8_t fgHasMLElement)
 {
 	struct BSS_DESC *prBssDesc = NULL;
 	struct SCAN_PARAM *prScanParam;
@@ -2719,6 +2776,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	prScanParam = &prAdapter->rWifiVar.rScanInfo.rScanParam;
 
@@ -2909,12 +2967,25 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
-		") valid(%u) found(%u),band=%d\n",
+		") valid(%u) found(%u), band=%d, ML(%d)\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
 		ucChnlNum,
 		MAC2STR((uint8_t *)prWlanBeaconFrame->aucBSSID), fgIsValidSsid,
 		(prBssDesc != NULL) ? 1 : 0,
-		eHwBand);
+		eHwBand, fgHasMLElement);
+
+	if ((prSwRfb->u2PacketLen > CFG_RAW_BUFFER_SIZE)
+		&& (fgHasMLElement == TRUE)) {
+		DBGLOG(SCN, WARN,
+		"Multi-Link Pkt len(%u) > Max RAW buffer size(%u), discard it!\n",
+			prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
+#if CFG_SUPPORT_802_11K
+		if (prBssDesc)
+			if (prBssDesc->fgIsConnected)
+				rrmUpdateBssTimeTsf(prAdapter, prBssDesc);
+#endif
+		return NULL;
+	}
 
 	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
 			== MAC_FRAME_PROBE_RSP)
@@ -2996,15 +3067,24 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			uint32_t u4AkmSuite = 0;
 			uint8_t u4MgmtProtection = 0;
 			enum ENUM_PARAM_AUTH_MODE eAuthMode;
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			uint8_t ucMaxBSSIDIndicator = 0, ucMBSSIDIndex = 0;
+#endif
+			int8_t cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			uint8_t fgIsTxPwrEnvPresent;
+			uint8_t ucTxPwrEnvPwrLmtNum;
+			int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
+#endif
 
 			DBGLOG_LIMITED(SCN, INFO, "Reset BssDesc "MACSTR
 				"AP Timestamp: %llu BssDesc Timestamp: %llu\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				u8Timestamp,
 				prBssDesc->u8TimeStamp.QuadPart);
-
-			/* set flag for indicating this is a new BSS-DESC */
-			fgIsNewBssDesc = TRUE;
 
 			/* backup for APs which reset timestamp unexpectedly */
 			fgIsConnected = prBssDesc->fgIsConnected;
@@ -3019,6 +3099,22 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			eAuthMode = prBssDesc->eRsnSelectedAuthMode;
 			u4MgmtProtection = prBssDesc->u4RsnSelectedPmf;
 
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			ucMaxBSSIDIndicator = prBssDesc->ucMaxBSSIDIndicator;
+			ucMBSSIDIndex = prBssDesc->ucMBSSIDIndex;
+#endif
+
+			cPowerLimit = prBssDesc->cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			fgIsTxPwrEnvPresent = prBssDesc->fgIsTxPwrEnvPresent;
+			ucTxPwrEnvPwrLmtNum = prBssDesc->ucTxPwrEnvPwrLmtNum;
+			kalMemCopy(aicTxPwrEnvMaxTxPwr,
+				prBssDesc->aicTxPwrEnvMaxTxPwr,
+				sizeof(aicTxPwrEnvMaxTxPwr));
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			e6GPwrMode = prBssDesc->e6GPwrMode;
+#endif
 			/* Connected BSS descriptor still be used by other
 			 * functions. Thus, we should re-initialize the BSS_DESC
 			 * structure instead of re-allocating the BSS_DESC
@@ -3038,6 +3134,23 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedAKMSuite = u4AkmSuite;
 			prBssDesc->eRsnSelectedAuthMode = eAuthMode;
 			prBssDesc->u4RsnSelectedPmf = u4MgmtProtection;
+
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+			prBssDesc->ucMaxBSSIDIndicator = ucMaxBSSIDIndicator;
+			prBssDesc->ucMBSSIDIndex = ucMBSSIDIndex;
+#endif
+
+			prBssDesc->cPowerLimit = cPowerLimit;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			prBssDesc->fgIsTxPwrEnvPresent = fgIsTxPwrEnvPresent;
+			prBssDesc->ucTxPwrEnvPwrLmtNum = ucTxPwrEnvPwrLmtNum;
+			kalMemCopy(prBssDesc->aicTxPwrEnvMaxTxPwr,
+				aicTxPwrEnvMaxTxPwr,
+				sizeof(aicTxPwrEnvMaxTxPwr));
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			prBssDesc->e6GPwrMode = e6GPwrMode;
+#endif
 		}
 	}
 
@@ -4268,15 +4381,15 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 {
 	struct SCAN_INFO *prScanInfo;
 	struct BSS_DESC *prBssDesc = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t *pau4ChBitMap;
 	struct WLAN_BEACON_FRAME *prWlanBeaconFrame = NULL;
+	struct WLAN_INFO *prWlanInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t *pau4ChBitMap;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Idx = 0;
+	uint8_t fgHasMLElement = FALSE;
 #if CFG_SLT_SUPPORT
 	struct SLT_INFO *prSltInfo = NULL;
 #endif
-	uint32_t u4Idx = 0;
-	struct WLAN_INFO *prWlanInfo;
-	struct BSS_INFO *prBssInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4333,7 +4446,10 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	prWlanInfo = &prAdapter->rWlanInfo;
 
 	/* 4 <1> Parse and add into BSS_DESC_T */
-	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgHasMLElement = mldProcessBeaconAndProbeResp(prAdapter, prSwRfb);
+#endif
+	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb, fgHasMLElement);
 	prWlanInfo->u4ScanDbgTimes1++;
 
 	if (prBssDesc) {
@@ -4450,14 +4566,14 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 						= prBssDesc->ucDTIMPeriod;
 					prAisBssInfo->fgTIMPresent
 						= prBssDesc->fgTIMPresent;
-#if CFG_SUPPORT_BALANCE_MLR
+#if (CFG_SUPPORT_BALANCE_MLRP_ALR == 1)
 					prAisBssInfo->u2BeaconInterval
 						= prBssDesc->u2BeaconInterval;
 
 					log_dbg(SCN, WARN,
 						"Update Beacon interval [%u]\n",
 						prAisBssInfo->u2BeaconInterval);
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 					/* Handle No TIM IE information case */
 					if (!prAisBssInfo->fgTIMPresent) {
@@ -4557,9 +4673,6 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			scanP2pProcessBeaconAndProbeResp(prAdapter, prSwRfb,
 				&rStatus, prBssDesc, prWlanBeaconFrame);
 		}
-#endif
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldProcessBeaconAndProbeResp(prAdapter, prSwRfb);
 #endif
 	}
 
@@ -5256,8 +5369,17 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	}
 
 	prEpiIE = (struct IE_VENDOR_EPIGRAM_IE *) pucBuf;
+
+	if (prEpiIE->ucLength <= 5) {
+		DBGLOG(RLM, TRACE,
+			"[Epigram] VHT length is invalid(%d), skip!\n",
+			prEpiIE->ucLength);
+		return;
+	}
+
 	u2IELength = prEpiIE->ucLength -
-		(uint16_t) OFFSET_OF(struct IE_VENDOR_EPIGRAM_IE, pucData[0]);
+		((uint16_t)
+			OFFSET_OF(struct IE_VENDOR_EPIGRAM_IE, pucData[0]) - 2);
 	WLAN_GET_FIELD_BE24(prEpiIE->aucOui, &u4EpigramOui);
 	WLAN_GET_FIELD_BE16(prEpiIE->aucVendorType, &u2EpigramVendorType);
 	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI)
@@ -5453,9 +5575,13 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
 				(struct IE_MTK_PRE_WIFI7 *)ie;
 
+			DBGLOG_MEM8(SCN, LOUD, ie, IE_SIZE(ie));
+			if (IE_SIZE(prPreWifi7) <
+			    sizeof(struct IE_MTK_PRE_WIFI7))
+				return;
+
 			DBGLOG(SCN, LOUD, "MTK_OUI_PRE_WIFI7 %d.%d",
 				prPreWifi7->ucVersion1, prPreWifi7->ucVersion0);
-			DBGLOG_MEM8(SCN, LOUD, ie, IE_SIZE(ie));
 
 			sub = prPreWifi7->aucInfoElem;
 			sub_len = IE_LEN(prPreWifi7) - 2;
@@ -5549,8 +5675,6 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	uint8_t aucOceOui[] = VENDOR_OUI_WFA_SPECIFIC;
 	struct IE_FILS_REQ_FRAME *prFilsReqIe;
 
-	DBGLOG(SCN, INFO, "before OCE IE, length = %d\n", u2IEsBufLen);
-	dumpMemory8(pucBuf, u2IEsBufLen);
 	/* Find MaxChannelTime in FILS request parameter,
 	 * it shall > 10 and not equal to 255 (TUs)
 	 */
@@ -5596,12 +5720,11 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 				prScanParam->u2IELen += 2;
 				IE_LEN(pucBuf) += 2;
 			}
+			DBGLOG(SCN, INFO,
+				"OCE IE, length = %d\n", prScanParam->u2IELen);
+			dumpMemory8(prScanParam->aucIE, prScanParam->u2IELen);
 		}
 	}
-
-	pucBuf = prScanParam->aucIE;
-	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
-	dumpMemory8(pucBuf, prScanParam->u2IELen);
 }
 
 uint8_t	*scanGetFilsCacheIdFromBssDesc(struct BSS_DESC *bss)
@@ -5714,6 +5837,16 @@ void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	struct IE_EHT_CAP *ehtCap = NULL;
 
 	ehtCap = (struct IE_EHT_CAP *) pucIE;
+
+	/* if payload not contain any aucVarInfo,
+	 * IE size = sizeof(struct IE_EHT_CAP)
+	 */
+	if (IE_SIZE(ehtCap) < (sizeof(struct IE_EHT_CAP))) {
+		DBGLOG(SCN, WARN,
+			"EHT_CAP IE_SIZE err(%d)!\n", IE_SIZE(ehtCap));
+		return;
+	}
+
 	prBssDesc->fgIsEHTPresent = TRUE;
 	prBssDesc->u2MaximumMpdu = (ehtCap->ucEhtMacCap[0] &
 		EHT_MAC_CAP_MAX_MPDU_LEN_MASK);
@@ -5737,6 +5870,15 @@ void scanParseEhtOpIE(struct ADAPTER *prAdapter, uint8_t *pucIE,
 	uint8_t ucBssOpBw = 0;
 
 	prEhtOp = (struct IE_EHT_OP *) pucIE;
+
+	/* if payload not contain any aucVarInfo,
+	 * IE size = sizeof(struct IE_EHT_OP)
+	 */
+	if (IE_SIZE(prEhtOp) < (sizeof(struct IE_EHT_OP))) {
+		DBGLOG(SCN, WARN,
+			"EHT_OP IE_SIZE err(%d)!\n", IE_SIZE(prEhtOp));
+		return;
+	}
 
 	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
 		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;

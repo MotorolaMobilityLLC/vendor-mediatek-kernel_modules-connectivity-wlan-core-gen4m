@@ -2217,6 +2217,10 @@ void mt6653_dumpWfTopReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d,
 		fgIsDumpViaBt);
 
+	/* SectionE - Dump wf_top_rgu_von monflg CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e,
+		fgIsDumpViaBt);
+
 	/* SectionF - Dump wf_top_slpprot_on debug CR */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_f,
 		fgIsDumpViaBt);
@@ -2259,6 +2263,8 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
+
+	DBGLOG(HAL, INFO, "Start dump. fgIsDumpViaBt=%u\n", fgIsDumpViaBt);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	connv3_conninfra_bus_dump(fgIsDumpViaBt ?

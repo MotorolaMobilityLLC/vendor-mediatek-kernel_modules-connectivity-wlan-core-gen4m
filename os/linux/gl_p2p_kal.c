@@ -1621,6 +1621,8 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 
 			/* switch netif on */
 			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
+			netif_tx_start_all_queues(
+				prGlueP2pInfo->aprRoleHandler);
 
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
@@ -3075,7 +3077,7 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	netif_carrier_on(prNetdevice);
 	netif_tx_wake_all_queues(prNetdevice);
 }
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+
 void kalP2pChnlSwitchNotifyWork(struct work_struct *work)
 {
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
@@ -3096,26 +3098,19 @@ void kalP2pChnlSwitchNotifyWork(struct work_struct *work)
 
 	__kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
 }
-#endif
+
 void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalP2pChnlSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
-#endif
 }
 
 
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
-#else
-	__kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
-#endif
-
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)

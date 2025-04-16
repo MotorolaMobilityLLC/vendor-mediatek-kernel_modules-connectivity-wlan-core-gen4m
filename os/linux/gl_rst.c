@@ -138,6 +138,7 @@ static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting;
 u_int8_t fgIsL0Resetting;
 u_int8_t fgIsResetOnEnd;
+u_int8_t g_IsFwAsserted;
 u_int8_t fgIsDrvTriggerWholeChipReset;
 enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 u_int8_t fgIsRstPreventFwOwn;
@@ -306,6 +307,26 @@ void glResetUpdateL0Flag(u_int8_t status)
 #endif
 }
 
+u_int8_t glIsFwAsserted(void)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	return g_IsFwAsserted;
+#else
+	return FALSE;
+#endif
+}
+
+void glResetUpdateFwAsserted(u_int8_t isFwAsserted)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	if (g_IsFwAsserted != isFwAsserted)
+		DBGLOG(INIT, INFO, "isFwAsserted: %u\n", isFwAsserted);
+	else
+		DBGLOG(INIT, TRACE, "isFwAsserted: %u\n", isFwAsserted);
+	g_IsFwAsserted = isFwAsserted;
+#endif
+}
+
 #if CFG_CHIP_RESET_SUPPORT
 /*----------------------------------------------------------------------------*/
 /*!
@@ -336,6 +357,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
 	fgSimplifyResetFlow = FALSE;
 	fgIsDrvTriggerWholeChipReset = FALSE;
+	g_IsFwAsserted = FALSE;
 	glResetCleanResetFlag();
 
 	fgIsRstPreventFwOwn = FALSE;
@@ -713,6 +735,16 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 
 	if (kalIsResetting() || kalIsResetOnEnd()) {
 		DBGLOG(INIT, INFO, "already in reset\n");
+		goto exit;
+	}
+
+	/* FW assert may due to L0 reset triggered
+	 * L0 reset should continue even if fw asserted
+	 */
+	if (glIsFwAsserted() && !(eResetReason == RST_FW_ASSERT ||
+	    eResetReason == RST_WHOLE_CHIP_TRIGGER)) {
+		DBGLOG(INIT, WARN,
+			"FW already asserted. Not trigger again.\n");
 		goto exit;
 	}
 
@@ -1902,7 +1934,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	if (drv == CONNV3_DRV_TYPE_CONNV3) {
 		if (prGlueInfo->u4ReadyFlag &&
 		    kalStrnCmp(reason, "PMIC Fault", 10) == 0) {
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 			g_IsWfsysBusHang = TRUE;
 			DBGLOG(REQ, INFO,
 				"Get PMIC Fault\n");
@@ -1979,9 +2011,22 @@ exit:
 
 int wlan_post_whole_chip_rst_v3(void)
 {
+#if CFG_MTK_ANDROID_WMT
+	while (get_wifi_process_status()) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
+	if (!get_wifi_powered_status()) {
+		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		glResetUpdateL0Flag(FALSE);
+		return 0;
+	}
+#endif
+
 	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v3\n");
 
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */

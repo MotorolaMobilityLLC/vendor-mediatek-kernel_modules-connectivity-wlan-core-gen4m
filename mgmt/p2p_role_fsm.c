@@ -1128,7 +1128,8 @@ void p2pRoleFsmRunEventRxDeauthentication(struct ADAPTER *prAdapter,
 	case OP_MODE_ACCESS_POINT:
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
-		if (!prSwRfb->fgDriverGen) {
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+		    [prP2pBssInfo->u4PrivateData]) && !prSwRfb->fgDriverGen) {
 			if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 				if (prSwRfb->fgIsCipherMS ||
 				    prSwRfb->fgIsCipherLenMS) {
@@ -1251,7 +1252,8 @@ void p2pRoleFsmRunEventRxDisassociation(struct ADAPTER *prAdapter,
 	case OP_MODE_ACCESS_POINT:
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
-		if (!prSwRfb->fgDriverGen) {
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+		    [prP2pBssInfo->u4PrivateData]) && !prSwRfb->fgDriverGen) {
 			if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 				if (prSwRfb->fgIsCipherMS ||
 				    prSwRfb->fgIsCipherLenMS) {
@@ -4917,6 +4919,8 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+	struct PARAM_POWER_MODE_ rPowerMode;
+	uint32_t u4Len;
 
 	if (prAdapter == NULL)
 		return;
@@ -4941,8 +4945,20 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucRoleIndex];
 
 	if (rEapolKeyType == EAPOL_KEY_4_OF_4 &&
-			rTxDoneStatus == TX_RESULT_SUCCESS)
+			rTxDoneStatus == TX_RESULT_SUCCESS) {
 		prP2pSpecificBssInfo->fgIsGcEapolDone = TRUE;
+
+		/* If driver does not send FastPS cmd to FW, this BSS
+		 * will not enter PS_MODE by default.
+		 * Send FastPS when EAPOL done in case no DHCP procedure.
+		 * If the DHCP procedure is initiated, FWK will manage PS mode
+		 * using mtk_p2p_cfg80211_set_power_mgmt.
+		 */
+		rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
+		rPowerMode.ucBssIdx = ucBssIndex;
+		wlanoidSet802dot11PowerSaveProfile(prAdapter, &rPowerMode,
+			sizeof(struct PARAM_POWER_MODE_), &u4Len);
+	}
 }
 
 void p2pRoleFsmNotifyDhcpDone(struct ADAPTER *prAdapter,

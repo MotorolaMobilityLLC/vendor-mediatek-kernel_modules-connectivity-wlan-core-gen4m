@@ -549,7 +549,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	if (ucFillRadiotap == FALSE) {
-		DBGLOG(RX, ERROR, "fill radiotap info fail!\n");
+		DBGLOG(RX, TRACE, "fill radiotap info fail!\n");
 		goto bypass;
 	}
 
@@ -785,6 +785,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	prSwRfb->pvPacket = NULL;
+	prSwRfb->prRxStatus = NULL;
 
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	/* Move SKB allocation to another context to reduce RX latency,

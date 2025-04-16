@@ -180,6 +180,7 @@ static void mt6653WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
+static void mt6653PcieMsiDebugDump(struct ADAPTER *prAdapter);
 static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter,
 				    u_int8_t fgForce);
 static void mt6653RecoverSerStatus(struct ADAPTER *prAdapter);
@@ -264,11 +265,20 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
 static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter);
 #endif
 
+#if defined(_HIF_PCIE)
+static void mt6653_notify_fw_disable_SR(struct ADAPTER *prAdapter);
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
+static u_int8_t mt6653_is_support_band2(void);
 #endif
 #if CFG_MTK_WIFI_PCIE_SR
 u_int8_t fgIsL2Finished = FALSE;
+#endif
+
+#if CFG_SUPPORT_PCIE_ASPM
+void *pcie_vir_addr;
 #endif
 
 /*******************************************************************************
@@ -717,6 +727,7 @@ struct BUS_INFO mt6653_bus_info = {
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.checkFwOwnMsiStatus = mt6653CheckFwOwnMsiStatus,
+	.dumpPcieMsiStatus = mt6653PcieMsiDebugDump,
 	.recoveryMsiStatus = mt6653RecoveryMsiStatus,
 	.recoverSerStatus = mt6653RecoverSerStatus,
 #endif
@@ -1382,9 +1393,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	.au4DmaMaxQuotaRfBand = {0x100, 0x2d0, 0x590},
 #else
-	.au4DmaMaxQuotaRfBand = {0x100, 0x2d0},
+	.au4DmaMaxQuotaRfBand = {0x100, 0x590},
 #endif /* CFG_SUPPORT_WIFI_6G */
-#endif
+	.isSupportBand2 = TRUE,
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA */
 #if CFG_SUPPORT_CONNAC3X
 	/* Platform custom config for conninfra */
 	.rPlatcfgInfraSysram = {
@@ -1494,6 +1506,7 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 {
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
+	uint8_t aucTestmode[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
 	mt6653GetFlavorVer(&aucFlavor[0]);
@@ -1524,10 +1537,17 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	/* Type 2. WIFI_MT6653_PATCH_MCU_1_1_hdr.bin */
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	if (get_wifi_test_mode_fwdl() == 1)
+		kalScnprintf(aucTestmode,
+			CFG_FW_FLAVOR_MAX_LEN,
+			"TESTMODE_");
+#endif
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			CFG_FW_NAME_MAX_LEN,
-			"WIFI_MT%x_PATCH_MCU_%s_%u_hdr.bin",
+			"WIFI_MT%x_PATCH_MCU_%s%s_%u_hdr.bin",
 			MT6653_CHIP_ID,
+			aucTestmode,
 			aucFlavor,
 			MT6653_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
@@ -3294,6 +3314,31 @@ static void mt6653WfdmaRxRingExtCtrl(
 }
 
 #if defined(_HIF_PCIE)
+static void mt6653PcieMsiDebugDump(struct ADAPTER *prAdapter)
+{
+	uint32_t u4ReadVal = 0;
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x74030188, &u4ReadVal);
+	DBGLOG(HAL, INFO, "074030188: 0x%08X\n", u4ReadVal);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x70025018, &u4ReadVal);
+	DBGLOG(HAL, INFO, "0x70025018: 0x%08X\n", u4ReadVal);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x740310E0, &u4ReadVal);
+	DBGLOG(HAL, INFO, "0x740310E0: 0x%08X\n", u4ReadVal);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x740310F0, &u4ReadVal);
+	DBGLOG(HAL, INFO, "0x740310F0: 0x%08X\n", u4ReadVal);
+
+	if (pcie_vir_addr) {
+		u4ReadVal = readl(pcie_vir_addr + 0xc14);
+		DBGLOG(HAL, INFO, "0x16910c14: 0x%08X\n", u4ReadVal);
+		u4ReadVal = readl(pcie_vir_addr + 0xc18);
+		DBGLOG(HAL, INFO, "0x16910c18: 0x%08X\n", u4ReadVal);
+		u4ReadVal = readl(pcie_vir_addr + 0xc1c);
+		DBGLOG(HAL, INFO, "0x16910c1c: 0x%08X\n", u4ReadVal);
+	} else
+		DBGLOG(HAL, ERROR, "0x16910000: ioremap fail\n");
+
+}
+
 static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter, u_int8_t fgForce)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
@@ -3443,16 +3488,15 @@ static void mt6653PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit)
 #endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 #endif
 
-#if CFG_SUPPORT_PCIE_ASPM
-void *pcie_vir_addr;
-#endif
-
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4WrVal = 0x08021000, u4Val = 0;
 
 #if CFG_SUPPORT_PCIE_ASPM_EP
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
+#endif
+#if defined(_HIF_PCIE)
+	mt6653_notify_fw_disable_SR(prGlueInfo->prAdapter);
 #endif
 	if (!pcie_vir_addr) {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
@@ -3684,7 +3728,7 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 		0x74030188, 0x7403018C, 0x740310f0, 0x740310f4, 0x70025018
 	};
 
-	buf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	buf = (char *)kalMemAlloc(u4BufSize, PHY_MEM_TYPE);
 	if (!buf) {
 		DBGLOG(HAL, WARN, "buffer alloc fail%s\n", buf);
 		return;
@@ -3704,68 +3748,80 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	}
 
 	DBGLOG(HAL, INFO, "%s\n", buf);
-	kalMemFree(buf, VIR_MEM_TYPE, u4BufSize);
+	kalMemFree(buf, PHY_MEM_TYPE, u4BufSize);
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 {
-	struct pci_dev *pci_dev = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4RegVal[25] = {0};
+	uint32_t u4RegVal[3] = {0};
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	uint32_t link_info = mtk_pcie_dump_link_info(0);
 #endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-	if (!(link_info & BIT(5)))
-		return FALSE;
+	DBGLOG(HAL, INFO, "link_info %u\n", link_info);
+	if (!(link_info & BIT(5))) {
+		if ((link_info & BIT(10))) {
+			/* SDES try recover link */
+			kalMdelay(48);
+		} else
+			return FALSE;
+	}
 #endif
 
-	/*read pcie cfg.space 0x488 // level1: pcie*/
-	prHifInfo = &prGlueInfo->rHifInfo;
-	if (prHifInfo)
-		pci_dev = prHifInfo->pdev;
-
-	if (pci_dev) {
-		pci_read_config_dword(pci_dev, 0x0, &u4RegVal[0]);
-		if (u4RegVal[0] == 0 || u4RegVal[0] == 0xffffffff) {
-			DBGLOG(HAL, INFO,
-				"PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
-			/* block pcie to prevent access */
+	glReadPcieCfgSpace(0x0, &u4RegVal[0]);
+	if (u4RegVal[0] == 0 || u4RegVal[0] == 0xffffffff) {
+		DBGLOG(HAL, INFO,
+		       "PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
+		/* block pcie to prevent access */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-			mtk_pcie_disable_data_trans(0);
+		mtk_pcie_disable_data_trans(0);
 #endif
-			return FALSE;
-		}
+		return FALSE;
+	}
 
-		/*1. read pcie cfg.space 0x488 // Readable check*/
-		pci_read_config_dword(pci_dev, 0x488, &u4RegVal[1]);
-		if ((u4RegVal[1] & 0x3811) != 0x3811 ||
-			u4RegVal[1] == 0xffffffff) {
-			pci_read_config_dword(pci_dev, 0x48C, &u4RegVal[2]);
-			DBGLOG(HAL, INFO,
-				"Cb_infra bus fatal error and un-readble 0x488=0x%08x 0x48C=0x%08x\n",
-				u4RegVal[1], u4RegVal[2]);
-			return FALSE;
-		}
+	/*1. read pcie cfg.space 0x488 // Readable check*/
+	glReadPcieCfgSpace(0x488, &u4RegVal[1]);
+	if ((u4RegVal[1] & 0x3811) != 0x3811 ||
+	    u4RegVal[1] == 0xffffffff) {
+		glReadPcieCfgSpace(0x48C, &u4RegVal[2]);
+		DBGLOG(HAL, INFO,
+		       "Cb_infra bus fatal error and un-readble 0x488=0x%08x 0x48C=0x%08x\n",
+		       u4RegVal[1], u4RegVal[2]);
+		return FALSE;
+	}
 
 #if CFG_MTK_WIFI_PCIE_SR
-		if (!fgIsL2Finished) {
-			DBGLOG(HAL, INFO, "L2 not finished\n");
-			return FALSE;
-		}
-#endif
+	if (!fgIsL2Finished) {
+		DBGLOG(HAL, INFO, "L2 not finished\n");
+		return FALSE;
 	}
+#endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 		fgTriggerDebugSop = TRUE;
 #endif
 		return FALSE;
+	}
+#endif
+
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	if (link_info & BIT(10)) {
+		link_info = mtk_pcie_dump_link_info(0);
+		if (link_info & BIT(5)) {
+			if (pcie_restore_config_space_settings(
+				prGlueInfo->prAdapter) != 0)
+				return FALSE;
+			wlanUpdateBusAccessStatus(FALSE);
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+			fgTriggerDebugSop = FALSE;
+#endif
+		}
 	}
 #endif
 
@@ -4303,7 +4359,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 		ad->chip_info->coexpccifon(ad);
 
 #if CFG_SUPPORT_PCIE_ASPM
-#if CFG_PCIE_MT6989
+#if (CFG_PCIE_MT6989 == 1 || CFG_PCIE_MT6989_6653 == 1)
 	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
 #else
 	pcie_vir_addr = ioremap(0x16910000, 0x2000);
@@ -4357,6 +4413,7 @@ dump:
 
 #if (CFG_SUPPORT_CONNFEM == 1)
 	prChipInfo->isAaDbdcEnable = mt6653_is_AA_DBDC_enable();
+	prChipInfo->isSupportBand2 = mt6653_is_support_band2();
 #endif
 
 exit:
@@ -4601,6 +4658,8 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 
 	if (status == WLAN_STATUS_SUCCESS) {
 		wifi_coredump_set_enable(TRUE);
+
+		pcie_backup_config_space_settings(prAdapter);
 
 #if CFG_MTK_WIFI_PCIE_SR
 		/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
@@ -5031,7 +5090,10 @@ int mt6653PowerDumpStart(void *priv_data, unsigned int force_dump)
 	if (force_dump == TRUE) {
 		DBGLOG(REQ, INFO, "PowerDumpStart force_dump\n");
 		ad->fgIsPowerDumpDrvOwn = TRUE;
-		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+		/* ACQUIRE_POWER_CONTROL_FROM_PM(ad); */
+		halSetDriverOwn(ad, DRV_OWN_SRC_POWER_DUMP);
+		if (ad->fgWiFiInSleepyState == TRUE)
+			ad->fgWiFiInSleepyState = FALSE;
 		ad->fgIsPowerDumpDrvOwn = FALSE;
 
 		if (ad->fgIsFwOwn == TRUE) {
@@ -5049,7 +5111,10 @@ int mt6653PowerDumpStart(void *priv_data, unsigned int force_dump)
 
 		if (u4Val == 0x10) {
 			ad->fgIsPowerDumpDrvOwn = TRUE;
-			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+			/* ACQUIRE_POWER_CONTROL_FROM_PM(ad); */
+			halSetDriverOwn(ad, DRV_OWN_SRC_POWER_DUMP);
+			if (ad->fgWiFiInSleepyState == TRUE)
+				ad->fgWiFiInSleepyState = FALSE;
 			ad->fgIsPowerDumpDrvOwn = FALSE;
 
 			if (ad->fgIsFwOwn == TRUE) {
@@ -5101,6 +5166,19 @@ u_int8_t mt6653_is_AA_DBDC_enable(void)
 		return FALSE;
 
 	return !!((fe_bt_wf_usage & BIT(3)) && (fe_bt_wf_usage & BIT(4)));
+}
+
+static u_int8_t mt6653_is_support_band2(void)
+{
+	uint8_t fe_bt_wf_usage = 0;
+	uint32_t rStarus;
+
+	rStarus = connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-bt-wf-usage",
+			    &fe_bt_wf_usage);
+	if (rStarus != 0)
+		return FALSE;
+
+	return (fe_bt_wf_usage & BIT(3)) ? TRUE : FALSE;
 }
 #endif /* CFG_SUPPORT_CONNFEM == 1 */
 
@@ -5274,4 +5352,17 @@ static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter)
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 }
 #endif
+
+#if defined(_HIF_PCIE)
+static void mt6653_notify_fw_disable_SR(struct ADAPTER *prAdapter)
+{
+	/* notify fw to disable SR if platform not support L2 */
+#if CFG_MTK_WIFI_PCIE_SR
+	if (!kalIsSupportPcieL2())
+#endif
+		HAL_MCR_WR(prAdapter,
+			   PCIE_MAC_IREG_PCIE_DEBUG_DUMMY_5_ADDR, 0x1);
+}
+#endif
+
 #endif  /* MT6653 */

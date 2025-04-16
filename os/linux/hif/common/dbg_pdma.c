@@ -77,7 +77,7 @@ struct wfdma_ring_info {
  *******************************************************************************
  */
 static void halCheckHifState(struct ADAPTER *prAdapter);
-static void halDumpHifDebugLog(struct ADAPTER *prAdapter);
+static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter);
 static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token);
 
 /*******************************************************************************
@@ -115,7 +115,8 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 	}
 
 	halCheckHifState(prAdapter);
-	halDumpHifDebugLog(prAdapter);
+	if (!halDumpHifDebugLog(prAdapter))
+		return;
 
 	if (debug_ops && debug_ops->dumpwfsyscpupcr)
 		debug_ops->dumpwfsyscpupcr(prAdapter);
@@ -352,11 +353,14 @@ end_dump:
 		(prAdapter->u4HifTxHangDumpIdx + 1) % LOG_DUMP_COUNT_PERIOD;
 }
 
-static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
+static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
+	u_int8_t driver_owen_result = 0;
 #if defined(_HIF_PCIE)
 	u_int8_t readable = TRUE;
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
@@ -364,60 +368,54 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 #endif /* _HIF_PCIE */
 
-	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
-	ASSERT(prGlueInfo);
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prDbgOps = prChipInfo->prDebugOps;
+
+	if (!prAdapter->u4HifDbgFlag)
+		return TRUE;
 
 	/* Avoid register checking */
 	prHifInfo->fgIsDumpLog = true;
-
-	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_HOST_CSR)) {
 		if (prDbgOps->showCsrInfo) {
 			bool fgIsClkEn = prDbgOps->showCsrInfo(prAdapter);
 
 			if (!fgIsClkEn)
-				return;
+				return FALSE;
 		}
 	}
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	/* need to check Bus readable */
-	if (prAdapter->chip_info->checkbushang) {
+	if (prChipInfo->checkbushang) {
 		uint32_t ret = 0;
 
-		ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
+		ret = prChipInfo->checkbushang((void *) prAdapter,
 				TRUE);
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR,
 				"return due to checkbushang fail %d\n", ret);
-			return;
+			return FALSE;
 		}
 	}
 #endif
 
 	/* Check Driver own HW CR */
-	{
-		struct BUS_INFO *prBusInfo = NULL;
-		u_int8_t driver_owen_result = 0;
+	if (prBusInfo->lowPowerOwnRead)
+		prBusInfo->lowPowerOwnRead(prAdapter, &driver_owen_result);
+	else {
+		DBGLOG(HAL, ERROR, "retrun due to null API\n");
+		return FALSE;
+	}
 
-		prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
-		if (prBusInfo->lowPowerOwnRead)
-			prBusInfo->lowPowerOwnRead(prGlueInfo->prAdapter,
-				&driver_owen_result);
-		else {
-			DBGLOG(HAL, ERROR, "retrun due to null API\n");
-			return;
-		}
-
-		if (driver_owen_result == 0) {
-			DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
-				driver_owen_result);
-			return;
-		}
+	if (driver_owen_result == 0) {
+		DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
+		       driver_owen_result);
+		return FALSE;
 	}
 
 #if defined(_HIF_PCIE)
@@ -428,13 +426,14 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	if (prDbgOps && prDbgOps->checkDumpViaBt)
 		dumpViaBt = prDbgOps->checkDumpViaBt(prAdapter);
 	if (readable == FALSE || dumpViaBt) {
-		DBGLOG(HAL, ERROR, "PCIe not readable\n");
-		return;
+		DBGLOG(HAL, ERROR, "PCIe not readable[%u][%u]",
+		       readable, dumpViaBt);
+		return FALSE;
 	}
 #else /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
 	if (readable == FALSE) {
 		DBGLOG(HAL, ERROR, "PCIe not readable\n");
-		return;
+		return FALSE;
 	}
 #endif /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
 #endif /* _HIF_PCIE */
@@ -475,6 +474,8 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 
 	prHifInfo->fgIsDumpLog = false;
 	prAdapter->u4HifDbgFlag = 0;
+
+	return TRUE;
 }
 
 static void halDumpTxRing(struct GLUE_INFO *prGlueInfo,
@@ -616,12 +617,8 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,
 	uint32_t u4TokenId)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 	uint32_t u4TmpIdleSlotDiff = 0;
-
-	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
-		return;
 
 	 /* Update SameTokenDuration and Idle slot parameter
 	  * Assume the TokenId is same before 1st time TX timeout coming
@@ -649,11 +646,6 @@ static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,
 
 static void halResetTxTimeoutParams(struct ADAPTER *prAdapter)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-
-	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
-		return;
-
 	/* Reset SameTokenDuration and Idle slot parameter */
 	prAdapter->u4SumIdleSlot = 0;
 	prAdapter->u4SameTokenCnt = 0;
@@ -682,10 +674,8 @@ static void halWarningTxTimeout(struct ADAPTER *prAdapter,
 
 	/* always show if SameToken > thr */
 	if (prAdapter->u4SameTokenCnt > prWifiVar->u4SameTokenThr) {
-		/* only trigger SER when enable in wifi.cfg */
-		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 		kalSendAeeWarning("Tx Timeout",
-			"Tx timeout same token > %d , idle slot %d SER!\n",
+			"Tx timeout same token > %d , idle slot %d\n",
 			prWifiVar->u4SameTokenThr, u4AvgIdleSlot);
 	} else if (u4LongestPending >= prWifiVar->u4TxTimeoutWarningThr) {
 		kalSendAeeWarning("Tx Timeout",
@@ -717,7 +707,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	uint8_t ucStaIdx = 0;
 	struct HIF_STATS *prHifStats;
 	enum ENUM_OP_MODE eOPMode = OP_MODE_NUM;
-	uint32_t u4TimeoutSerTime;
+	uint32_t u4TimeoutSerTime, u4SameTokenThr;
 	struct timespec64 *prLastMsduRptChangedTime;
 	uint32_t u4CurrentMsduRptCnt;
 
@@ -735,6 +725,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	prHistory = &prTokenInfo->rHistory;
 	prWifiVar = &prAdapter->rWifiVar;
 	u4TimeoutSerTime = prWifiVar->u4MsduReportTimeoutSerTime;
+	u4SameTokenThr = prWifiVar->u4SameTokenThr;
 	prHifStats = &prAdapter->rHifStats;
 	prLastMsduRptChangedTime =
 		&prAdapter->prGlueInfo->rLastMsduRptChangedTime;
@@ -821,13 +812,17 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 	/* Trigger SER */
 	if (u4TimeoutSerTime == NIC_MSDU_REPORT_DISABLE_SER_TIME) {
-		DBGLOG(HAL, TRACE, "Do not trigger SER");
+		DBGLOG(HAL, LOUD, "Do not trigger SER");
 	} else if (rLongest.tv_sec >= u4TimeoutSerTime) {
-		if (kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
-				&& rTime.tv_sec >= u4TimeoutSerTime) {
+		if ((kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
+				&& rTime.tv_sec >= u4TimeoutSerTime) ||
+			prAdapter->u4SameTokenCnt > u4SameTokenThr) {
 			prAdapter->u4HifChkFlag |= HIF_DRV_SER;
-			DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
-				u4TimeoutSerTime);
+			DBGLOG(HAL, INFO,
+			       "Timeout > %ds, lastMsduRpt @ %ld, SameTokCnt[%u] trigger SER\n",
+				u4TimeoutSerTime,
+				prLastMsduRptChangedTime->tv_sec,
+				prAdapter->u4SameTokenCnt);
 		} else {
 			DBGLOG(HAL, INFO,
 				"MSDU reports are returning, do not trigger SER. lastMsduRpt @ %ld, MsduRptCnt[%u] timeout[sec:%ld]",
@@ -982,8 +977,11 @@ void halCheckWfdmaHangForWB(struct ADAPTER *prAdapter)
 			prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 #endif
 
-		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
-			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt) {
+			prHifInfo->fgIsTriggerRxTimeout = TRUE;
+			DBGLOG(HAL, ERROR, "CidxErrCnt > WfdmaRxTimeoutCnt\n");
+			break;
+		}
 	}
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
@@ -1022,11 +1020,17 @@ void halCheckWfdmaHangForceRecvRx(struct ADAPTER *prAdapter)
 
 void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
 #if CFG_MTK_WIFI_WFDMA_WB
 	halCheckWfdmaHangForWB(prAdapter);
 #elif (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
 	halCheckWfdmaHangForceRecvRx(prAdapter);
 #endif
+	if (prHifInfo->fgIsTriggerRxTimeout) {
+		prHifInfo->fgIsTriggerRxTimeout = FALSE;
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+	}
 }
 
 

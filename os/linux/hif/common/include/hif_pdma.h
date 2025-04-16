@@ -326,6 +326,8 @@
 
 #define HIF_EMI_SER_STATUS_SIZE		16
 
+#define HIF_RX_DMA_DONE_MAX_FAIL_CNT	3
+
 enum WIFI_MEM_OPER_SETS {
 	/* TRX DESC */
 	WF_MEM_OP_TRX_DESC_ZERO_COPY_PATH = 0,
@@ -427,7 +429,7 @@ enum WIFI_MEM_OPER_SETS {
 #define HAL_GET_RING_DIDX(_RSN, _A, _R, _V)	\
 do { \
 	if (_R->fgEnEmiDidx) { \
-		*_V = *_R->pu2EmiDidx; \
+		*_V = (*_R->pu2EmiDidx & _R->hw_didx_mask); \
 	} else { \
 		HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
 		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
@@ -726,11 +728,17 @@ struct RTMP_RX_RING {
 	uint32_t hw_cnt_shift;
 	bool fgIsDumpLog;
 	bool fgIsWaitRxDmaDoneTimeout;
+	uint32_t u4RxDmaDoneFailCnt;
 	uint32_t u4LastRxEventWaitDmaDoneCnt;
 	uint32_t u4PendingCnt;
 	uint32_t u4TotalCnt;
-	void *pvPacket;
-	uint32_t u4PacketLen;
+#if (CFG_SUPPORT_PDMA_SCATTER == 1)
+	void *pvSegPkt;
+	uint32_t u4SegPktLen;
+	uint32_t u4SegPktLenMax;
+	uint32_t u4SegPktIdx;
+	uint32_t u4SegPktIdxMax;
+#endif
 	uint32_t u4MagicCnt;
 #if CFG_MTK_WIFI_WFDMA_WB
 	u_int8_t fgEnEmiDidx;
@@ -1250,7 +1258,7 @@ bool halInitOneMsduTokenInfo(struct ADAPTER *prAdapter,
 	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx);
 void halUninitOneMsduTokenInfo(struct ADAPTER *prAdapter,
 	struct MSDU_TOKEN_ENTRY *prToken);
-void halInitMsduTokenInfo(struct ADAPTER *prAdapter);
+u_int8_t halInitMsduTokenInfo(struct ADAPTER *prAdapter);
 void halUninitMsduTokenInfo(struct ADAPTER *prAdapter);
 uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter);
 struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,

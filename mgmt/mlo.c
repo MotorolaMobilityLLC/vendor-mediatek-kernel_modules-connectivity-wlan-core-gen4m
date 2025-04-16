@@ -1311,7 +1311,8 @@ uint8_t *mldGenerateBasicCompleteProfile(
 		}
 	}
 
-	if (neid > 0 || nexid > 0) {
+	/* To avoid the rejection of the 5+5 connection, AIS always carring */
+	if (neid > 0 || nexid > 0 || IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 		uint8_t *buf, *p;
 		uint16_t len = 3 + neid + nexid;
 
@@ -1718,7 +1719,7 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		while (tmp_end - tmp_pos >= 2 &&
 		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
 		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
-			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			kalMemCopy(p, IE_DATA(tmp_pos), IE_LEN(tmp_pos));
 			p += IE_LEN(tmp_pos);
 			tmp_pos += IE_SIZE(tmp_pos);
 		}
@@ -1789,7 +1790,7 @@ link_info:
 		while (tmp_end - tmp_pos >= 2 &&
 		       IE_ID(tmp_pos) == SUB_IE_MLD_FRAGMENT &&
 		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
-			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			kalMemCopy(p, IE_DATA(tmp_pos), IE_LEN(tmp_pos));
 			p += IE_LEN(tmp_pos);
 			tmp_pos += IE_SIZE(tmp_pos);
 		}
@@ -1891,11 +1892,11 @@ sta:
 				goto next;
 			}
 
-			kalMemCopy(&prStaProfile->u8TsfOffset, pos, 8);
+			kalMemCopy(&prStaProfile->i8TsfOffset, pos, 8);
 			if (show_info)
 				DBGLOG(ML, INFO,
-					"\tLinkID=%d, TSF_OFFSET = %lu\n",
-					ucLinkId, prStaProfile->u8TsfOffset);
+					"\tLinkID=%d, TSF_OFFSET = %ld\n",
+					ucLinkId, prStaProfile->i8TsfOffset);
 			pos += 8;
 		}
 		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
@@ -2417,44 +2418,50 @@ void mldParsePriorityAccessMlIE(struct ADAPTER *prAdapter,
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 {
-	uint16_t u2Offset = 0;
-	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	const uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	uint16_t u2Offset;
 	uint8_t *ie, *sub;
-	uint16_t ie_len, ie_offset, sub_len, sub_offset;
+	uint16_t ie_len, ie_offset;
+	uint16_t sub_len, sub_offset;
+
+	_Static_assert(sizeof(struct IE_HDR) ==
+		       OFFSET_OF(struct IE_HDR, aucInfo),
+		       "Need to define aucInfo[] in struct IE_HDR");
+	_Static_assert(sizeof(struct IE_MTK_OUI) ==
+		       OFFSET_OF(struct IE_MTK_OUI, aucInfoElem),
+		       "Need to define aucInfoElem[] in struct IE_MTK_OUI");
+	_Static_assert(sizeof(struct IE_MTK_PRE_WIFI7) ==
+		       OFFSET_OF(struct IE_MTK_PRE_WIFI7, aucInfoElem),
+		       "Need to define aucInfoElem[] in struct IE_MTK_PRE_WIFI7");
 
 	IE_FOR_EACH(ies, len, u2Offset) {
 		if (BE_IS_ML_CTRL_TYPE(ies, type))
 			return ies;
 
 		/* only check tlv */
-		if (IE_LEN(ies) < ELEM_MIN_LEN_MTK_OUI ||
-		    kalMemCmp(ies + 2, aucMtkOui, sizeof(aucMtkOui)) ||
+		if (IE_ID(ies) != ELEM_ID_VENDOR ||
+		    IE_SIZE(ies) < sizeof(struct IE_MTK_OUI) ||
+		    kalMemCmp(IE_DATA(ies), aucMtkOui, sizeof(aucMtkOui)) ||
 		    !(MTK_OUI_IE(ies)->aucCapability[0] &
 				MTK_SYNERGY_CAP_SUPPORT_TLV))
 			continue;
 
 		ie = MTK_OUI_IE(ies)->aucInfoElem;
-		ie_len = IE_LEN(ies) - 7;
-
-		if (ie_len > 248) /* 255-7=248, check the upper bound */
-			continue;
+		ie_len = MTK_OUI_IE_INFO_SIZE(ies);
 
 		IE_FOR_EACH(ie, ie_len, ie_offset) {
-			if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
-				struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
-					(struct IE_MTK_PRE_WIFI7 *)ie;
+			if (IE_ID(ie) != MTK_OUI_ID_PRE_WIFI7)
+				continue;
 
-				sub = prPreWifi7->aucInfoElem;
-				sub_len = IE_LEN(prPreWifi7) - 2;
+			if (IE_SIZE(ie) < sizeof(struct IE_MTK_PRE_WIFI7))
+				return NULL;
 
-				/* 255-2=253, check the upper bound */
-				if (sub_len > 253)
-					continue;
+			sub = MTK_PRE_WIFI7_IE(ie)->aucInfoElem;
+			sub_len = MTK_PRE_WIFI7_IE_INFO_SIZE(ie);
 
-				IE_FOR_EACH(sub, sub_len, sub_offset) {
-					if (BE_IS_ML_CTRL_TYPE(ies, type))
-						return sub;
-				}
+			IE_FOR_EACH(sub, sub_len, sub_offset) {
+				if (BE_IS_ML_CTRL_TYPE(sub, type))
+					return sub;
 			}
 		}
 	}
@@ -2834,13 +2841,14 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	}
 
 	if (!ie) {
-		DBGLOG(ML, WARN, "%s no target, complete=%d",
+		DBGLOG(ML, WARN, "%s no target, complete=%d\n",
 			pucDesc, prSta->ucComplete);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
 	if (pucDesc)
-		DBGLOG(ML, TRACE, "%s complete=%d", pucDesc, prSta->ucComplete);
+		DBGLOG(ML, TRACE, "%s complete=%d\n",
+			pucDesc, prSta->ucComplete);
 
 	if (mldParseProfile(ie, ie_len, prSta->aucIEbuf, prSta->u2IEbufLen,
 		ies, &ie_count, MAX_DUP_IE_COUNT, FALSE) < 0)
@@ -2857,10 +2865,30 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	if (fctrl == MAC_FRAME_PROBE_RSP || fctrl == MAC_FRAME_BEACON) {
 		struct WLAN_BEACON_FRAME *bcn = prDst->pvHeader;
 
-		if (prBssDesc)
-			bcn->u2CapInfo = prBssDesc->u2CapInfo;
-		else
+		if (prSta->ucComplete) {
+			uint64_t u8Timestamp;
+
+			WLAN_GET_FIELD_64(bcn->au4Timestamp, &u8Timestamp);
 			bcn->u2CapInfo = prSta->u2CapInfo;
+			WLAN_SET_FIELD_64(bcn->au4Timestamp,
+				u8Timestamp + prSta->i8TsfOffset * 2);
+			bcn->u2BeaconInterval = prSta->u2BcnIntv;
+
+			DBGLOG(ML, TRACE,
+				"tsf=%llu offset=%ld new=%llu bcnInt=%d\n",
+				u8Timestamp, prSta->i8TsfOffset,
+				*((uint64_t *)bcn->au4Timestamp),
+				bcn->u2BeaconInterval);
+		} else if (prBssDesc) {
+			bcn->u2CapInfo = prBssDesc->u2CapInfo;
+			WLAN_SET_FIELD_64(bcn->au4Timestamp,
+				prBssDesc->u8TimeStamp.QuadPart);
+			bcn->u2BeaconInterval = prBssDesc->u2BeaconInterval;
+
+			DBGLOG(ML, TRACE, "tsf=%llu bcnInt=%d\n",
+				*((uint64_t *)bcn->au4Timestamp),
+				bcn->u2BeaconInterval);
+		}
 	} else if (prStaRec) {
 		struct BSS_INFO *bss =
 			GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
@@ -2931,11 +2959,11 @@ done:
 		prSta->rChnlInfo.eBand;
 
 	DBGLOG(ML, INFO,
-		"Dump duplicated SwRFB for id=%d addr="
+		"Duplicated SwRFB for id=%d addr="
 		MACSTR " len=%d, chnl=%d, band=%d\n",
 		prSta->ucLinkId, MAC2STR(addr),
 		offset, prDst->ucChnlNum, prDst->eRfBand);
-	DBGLOG_MEM8(ML, INFO, pos, offset);
+	DBGDUMP_MEM8(ML, TRACE, "Duplicated SwRFB\n", pos, offset);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3044,16 +3072,21 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(que);
 }
 
-void mldProcessBeaconAndProbeResp(
+uint8_t mldProcessBeaconAndProbeResp(
 		struct ADAPTER *prAdapter, struct SW_RFB *prSrc)
 {
 	struct QUE tmp, *que = &tmp;
-	struct SW_RFB *rfb;
+	struct SW_RFB *rfb = NULL;
+	uint8_t fgHasMLElement = FALSE;
 
 	QUEUE_INITIALIZE(que);
 
 	rfb = mldDupProbeRespSwRfb(prAdapter, prSrc);
 	QUEUE_INSERT_TAIL_ALL(que, rfb);
+
+	if (rfb) {
+		fgHasMLElement = TRUE;
+	}
 
 #if CFG_SUPPORT_802_11V_MBSSID && !CFG_SUPPORT_802_11V_MBSSID_OFFLOAD
 	/* duplicate after ml probe resp. if done, skip mbss */
@@ -3068,6 +3101,8 @@ void mldProcessBeaconAndProbeResp(
 		scanProcessBeaconAndProbeResp(prAdapter, rfb);
 		nicRxReturnRFB(prAdapter, rfb);
 	}
+
+	return fgHasMLElement;
 }
 
 struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
@@ -3893,7 +3928,9 @@ struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
 
 	/* Try hash index first, if miss, fallback to original traversal */
 	prMldSta = &prAdapter->aprMldStarec[offset];
-	if (EQUAL_MAC_ADDR(prMldSta->aucPeerMldAddr, aucMacAddr))
+	if (prMldSta->fgIsInUse &&
+	    prMldSta->ucGroupMldId == prMldBssInfo->ucGroupMldId &&
+	    EQUAL_MAC_ADDR(prMldSta->aucPeerMldAddr, aucMacAddr))
 		return prMldSta;
 
 	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
@@ -4702,7 +4739,8 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		enable &= !!(bss->u2RsnSelectedCapInfo & ELEM_WPA_CAP_MFPC);
 #endif
 		enable &= !!(bss->ucPhyTypeSet & PHY_TYPE_BIT_EHT);
-		if (prP2pSpecBssInfo && fgIsApMode)
+		if (!CFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE &&
+		    prP2pSpecBssInfo && fgIsApMode)
 			enable &= prP2pSpecBssInfo->fgMlIeExist;
 	} else if (prStaRec) {
 		enable &= !!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT);

@@ -48,14 +48,14 @@
 #define CHNL_DWELL_TIME_ONLINE   50
 
 #define WEIGHT_IDX_CHNL_UTIL                    0
-#define WEIGHT_IDX_RSSI                         2
+#define WEIGHT_IDX_RSSI                         4
 #define WEIGHT_IDX_SCN_MISS_CNT                 2
 #define WEIGHT_IDX_PROBE_RSP                    1
 #define WEIGHT_IDX_CLIENT_CNT                   0
 #define WEIGHT_IDX_AP_NUM                       0
 #define WEIGHT_IDX_5G_BAND                      2
 #define WEIGHT_IDX_BAND_WIDTH                   1
-#define WEIGHT_IDX_STBC                         1
+#define WEIGHT_IDX_STBC                         0
 #define WEIGHT_IDX_DEAUTH_LAST                  1
 #define WEIGHT_IDX_BLOCK_LIST                   2
 #define WEIGHT_IDX_SAA                          0
@@ -93,7 +93,7 @@
 
 #define WEIGHT_GBAND_COEX_DOWNGRADE		70 /* 0~100 */
 #define CU_6G_INDEX_OFFSET			256
-#define WEIGHT_MCC_DOWNGRADE			70 /* 0~100 */
+#define WEIGHT_MCC_DOWNGRADE			85 /* 0~100 */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1446,6 +1446,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	uint32_t i = 0;
 #endif
+#if (CFG_SUPPORT_ROAMING == 1)
+	struct ROAMING_INFO *prRoamingFsmInfo =
+		aisGetRoamingInfo(prAdapter, ucBssIndex);
+#endif
 
 	if (ais == NULL) {
 		DBGLOG(APS, WARN, "ais is NULL\n");
@@ -1503,6 +1507,16 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+#if (CFG_SUPPORT_ROAMING == 1)
+	if (prRoamingFsmInfo->rRoamScanParam.fgSpecifyBssid &&
+	    UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			&prRoamingFsmInfo->rRoamScanParam.aucBssid[0])) {
+		DBGLOG(APS, WARN, MACSTR " is not allowed BSSID\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
+#endif
+
 	if ((prBssDesc->eBand == BAND_2G4 &&
 		prAdapter->rWifiVar.ucDisallowBand2G) ||
 	    (prBssDesc->eBand == BAND_5G &&
@@ -1550,6 +1564,9 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDesc->prBlock->fgDeauthLastTime &&
 		    (apsCanFormMultiLink(prAdapter, prBssDesc, ucBssIndex) ||
 		     prApsInfo->u4EssApNum <= 1 ||
+#if CFG_SUPPORT_WAPI
+		     aisGetWapiMode(prAdapter, ucBssIndex) ||
+#endif
 		     prBssDesc->prBlock->ucDeauthCount >= 2)) {
 			DBGLOG(APS, WARN, MACSTR " is sending deauth [%d].\n",
 				MAC2STR(prBssDesc->aucBSSID),

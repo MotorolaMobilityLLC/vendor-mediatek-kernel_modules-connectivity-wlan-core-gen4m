@@ -229,6 +229,11 @@ static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad);
 static void mt6639SetPcieSpeed(struct GLUE_INFO *prGlueInfo, uint32_t speed);
 #endif
 
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+static void mt6639PcieMsiMaskIrq(uint32_t u4Irq, uint32_t u4Bit);
+static void mt6639PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit);
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
+
 #if IS_MOBILE_SEGMENT
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
@@ -676,6 +681,10 @@ struct BUS_INFO mt6639_bus_info = {
 	},
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.is_en_drv_ctrl_pci_msi_irq = FALSE,
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+	.pcieMsiMaskIrq = mt6639PcieMsiMaskIrq,
+	.pcieMsiUnmaskIrq = mt6639PcieMsiUnmaskIrq,
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 #endif
 #if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
 	.pcieMsiMaskIrq = mt6639PcieMsiMaskIrq,
@@ -2806,7 +2815,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
 #endif
@@ -2828,14 +2837,25 @@ static void mt6639_set_crypto(struct ADAPTER *prAdapter)
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	uint32_t u4BaseAddr;
+#endif
 	uint32_t u4Addr, u4Val = 0;
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	if (!in_interrupt()) {
-		u4Addr = 0x112F0184;
+#if (CFG_PCIE_MT6991 == 1)
+		u4BaseAddr = 0x16910000;
+#else
+		u4BaseAddr = 0x112f0000;
+#endif
+		u4Addr = u4BaseAddr + 0x184;
 		wf_ioremap_read(u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
+		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
+			u4Addr, u4Val);
+		for (u4Addr = (u4BaseAddr + 0xC04);
+		     u4Addr <= (u4BaseAddr + 0xC1C);
+		     u4Addr += 4) {
 			wf_ioremap_read(u4Addr, &u4Val);
 			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
 			       u4Addr, u4Val);
@@ -3393,7 +3413,11 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
 #if CFG_SUPPORT_PCIE_ASPM
+#if (CFG_PCIE_MT6991 == 1)
+	pcie_vir_addr = ioremap(0x16910000, 0x2000);
+#else
 	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+#endif
 	spin_lock_init(&rPCIELock);
 #endif
 dump:
@@ -3601,7 +3625,11 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 
 	int retry = 0;
 
-	while (is_wifi_coredump_processing()) {
+	while (is_wifi_coredump_processing()
+#if CFG_MTK_ANDROID_WMT
+		&& !kalGetShutdownState()
+#endif
+		) {
 		if (retry >= MAX_WAIT_COREDUMP_COUNT) {
 			DBGLOG(INIT, WARN,
 				"Coredump spend long time, retry = %d\n",
@@ -3918,7 +3946,10 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 		DBGLOG(REQ, INFO, "wlan_power_dump_start force_dump\n");
 
 		ad->fgIsPowerDumpDrvOwn = TRUE;
-		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+		/* ACQUIRE_POWER_CONTROL_FROM_PM(ad); */
+		halSetDriverOwn(ad, DRV_OWN_SRC_POWER_DUMP);
+		if (ad->fgWiFiInSleepyState == TRUE)
+			ad->fgWiFiInSleepyState = FALSE;
 		ad->fgIsPowerDumpDrvOwn = FALSE;
 
 		if (ad->fgIsFwOwn == TRUE) {
@@ -3936,7 +3967,10 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 
 		if (u4Val == 0x10) {
 			ad->fgIsPowerDumpDrvOwn = TRUE;
-			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+			/* ACQUIRE_POWER_CONTROL_FROM_PM(ad); */
+			halSetDriverOwn(ad, DRV_OWN_SRC_POWER_DUMP);
+			if (ad->fgWiFiInSleepyState == TRUE)
+				ad->fgWiFiInSleepyState = FALSE;
 			ad->fgIsPowerDumpDrvOwn = FALSE;
 
 			if (ad->fgIsFwOwn == TRUE) {

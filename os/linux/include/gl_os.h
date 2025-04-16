@@ -603,6 +603,13 @@ enum ENUM_WORK_FLAG {
 	ENUM_WORK_FLAG_MAX
 };
 
+enum ENUM_DRV_OWN_SRC {
+	DRV_OWN_SRC_UNKNOWN = 0,
+	DRV_OWN_SRC_WF_REG_START_WRAPPER,
+	DRV_OWN_SRC_POWER_DUMP,
+	DRV_OWN_SRC_NUM
+};
+
 struct GL_WORK {
 	int32_t i4WorkCpu; /* controlled by CPU Boost */
 	struct workqueue_struct *prWorkQueue;
@@ -732,10 +739,8 @@ struct FT_IES {
 };
 
 struct GL_CH_SWITCH_WORK {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct work_struct rChSwitchNotifyWork;
 	u_int8_t fgWorkInit;
-#endif
 };
 
 #if CFG_SUPPORT_PER_CPU_TX
@@ -1043,6 +1048,7 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_RX_NAPI
 	struct napi_struct *prRxDirectNapi;
 	struct kfifo rRxKfifoQ;
+	u_int8_t fgNapiReady;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
 	u_int8_t fgNapiScheduled;
@@ -1148,6 +1154,7 @@ struct GLUE_INFO {
 	struct work_struct rWfsysResetWork;    /* work for Wfsys L0.5 reset  */
 #endif
 
+	struct work_struct rDrvOwnWork;
 #if (CFG_CE_ASSERT_DUMP == 1)
 	wait_queue_head_t waitq_coredump;
 	struct sk_buff_head rCoreDumpSkbQueue;

@@ -2547,7 +2547,7 @@ static void connac3x_dump_wfdma_dbg_value(
 		return;
 	}
 
-	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	buf = (char *) kalMemAlloc(BUF_SIZE, PHY_MEM_TYPE);
 	if (!buf) {
 		DBGLOG(HAL, ERROR, "Mem allocation failed.\n");
 		return;
@@ -2569,7 +2569,7 @@ static void connac3x_dump_wfdma_dbg_value(
 			set_debug_flag_value == 0x112 ? "\n" : "; ");
 	}
 	DBGLOG(HAL, INFO, "%s", buf);
-	kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+	kalMemFree(buf, PHY_MEM_TYPE, BUF_SIZE);
 }
 
 void connac3x_show_wfdma_dbg_flag_log(

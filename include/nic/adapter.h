@@ -293,6 +293,9 @@ struct BSS_INFO {
 	u_int8_t fgIsQBSS;
 	u_int8_t fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
 	OS_SYSTIME tmLastPresent;
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	OS_SYSTIME tmAbsence;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 	uint32_t u4PresentTime; /* in ms */
 
 	/* Stop/Start Subqueue threshold for BSS */
@@ -546,6 +549,7 @@ struct BSS_INFO {
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct AP_PMF_CFG rApPmfCfg;
+	uint8_t fgBipKeyInstalled;
 #endif
 
 #if CFG_AP_80211KVR_INTERFACE
@@ -1088,6 +1092,10 @@ struct WIFI_VAR {
 	uint32_t u4VhtTxMaxAmsduInAmpduLen;
 	uint32_t u4TxMaxAmsduInAmpduLen;
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	uint32_t u4AbsenceTimeout;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	uint8_t ucTxBaSize;
 	uint8_t ucRxHtBaSize;
 	uint8_t ucRxVhtBaSize;
@@ -1347,6 +1355,9 @@ struct WIFI_VAR {
 #endif /* CFG_DEBUG_RX_SEGMENT */
 
 	uint32_t u4BaShortMissTimeoutMs;
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
+	uint32_t u4BaIotApMissTimeoutMs;
+#endif /* CFG_SUPPORT_IOT_AP_BLOCKLIST */
 	uint32_t u4BaMissTimeoutMs;
 
 	/* Tx Msdu Queue method */
@@ -1683,6 +1694,9 @@ struct WIFI_VAR {
 	u_int8_t fgEnTxFragTxDone;
 	u_int8_t ucErrPos;
 	uint32_t u4MlrCfg;
+#if (CFG_SUPPORT_BALANCE_MLRV2 == 1)
+	uint32_t u4MlrCfgSapP2pEn;
+#endif
 #endif
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
@@ -1800,6 +1814,12 @@ struct WIFI_VAR {
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t fgSpPwrLmtBackoff;
+#endif
+
+	uint32_t u4PmkRefreshThreshold;
+
+#if CFG_SUPPORT_CCM
+	u_int8_t fgEnMspBw320;
 #endif
 };
 
@@ -2535,6 +2555,10 @@ struct ADAPTER {
 	OS_SYSTIME rAllStatsUpdateTime;
 #endif
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	OS_SYSTIME rAbsenceTimeoutDetectTime;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	/* WIFI_VAR_T */
 	struct WIFI_VAR rWifiVar;
 
@@ -2723,9 +2747,6 @@ struct ADAPTER {
 	struct RECAL_INFO_T rReCalInfo;
 
 	struct _ATE_LOG_DUMP_CB rRddRawData;
-
-	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
-	uint32_t u4QmRxBaMissTimeout;
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	u_int8_t fgEnLowLatencyMode;
@@ -3064,6 +3085,7 @@ struct ADAPTER {
 		aucDfsAisChnlReqEntries[KAL_AIS_NUM];
 	struct WLAN_DFS_CHANNEL_REQ_ENTRY
 		aucDfsChnlReqEntries[DFS_CHANNEL_CTRL_SOURCE_NUM];
+	enum ENUM_DRV_OWN_SRC eDrvOwnSrc;
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

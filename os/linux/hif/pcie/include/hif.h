@@ -93,6 +93,8 @@
 #define PCIE_CFGSPACE_FW_STATUS_SYNC_MASK	0x3
 #endif /* CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE */
 
+#define PCIE_EP_CONFIG_SPACE_SIZE	16
+
 #if (CFG_PCIE_GEN_SWITCH == 1)
 #define PCIE_STOP_TRANSITION_NOT_START  0
 #define PCIE_STOP_TRANSITION_ON_GOING   1
@@ -377,6 +379,8 @@ struct GL_HIF_INFO {
 	u_int8_t fgEnablePcieCfgDump;
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 	u_int8_t fgIsDebugSopOnGoing;
+
+	u_int8_t fgIsTriggerRxTimeout;
 };
 
 struct BUS_INFO {
@@ -494,6 +498,8 @@ struct BUS_INFO {
 	const uint32_t u4PseGroupLen;
 	struct pcie_msi_info pcie_msi_info;
 	const u_int8_t is_en_drv_ctrl_pci_msi_irq;
+	uint32_t u4ConfigSpace[PCIE_EP_CONFIG_SPACE_SIZE];
+	uint8_t ucConfigSpaceBkDone;
 
 	void (*pcieMsiMaskIrq)(uint32_t u4Irq, uint32_t u4Bit);
 	void (*pcieMsiUnmaskIrq)(uint32_t u4Irq, uint32_t u4Bit);
@@ -541,6 +547,7 @@ struct BUS_INFO {
 	void (*hwControlVote)(struct ADAPTER *prAdapter,
 		uint8_t enable, uint32_t u4WifiUser);
 	void (*checkFwOwnMsiStatus)(struct ADAPTER *prAdapter);
+	void (*dumpPcieMsiStatus)(struct ADAPTER *prAdapter);
 	void (*recoveryMsiStatus)(struct ADAPTER *prAdapter, u_int8_t fgForce);
 	void (*recoverSerStatus)(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
@@ -644,7 +651,7 @@ struct BUS_INFO {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 uint32_t glRegisterShutdownCB(remove_card pfShutdown);
 #endif
 
@@ -699,6 +706,10 @@ uint32_t mtk_pci_read_msi_mask(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo);
+uint8_t pcie_backup_config_space_settings(
+	struct ADAPTER *prAdapter);
+uint8_t pcie_restore_config_space_settings(
+	struct ADAPTER *prAdapter);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
 #if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
@@ -737,8 +748,9 @@ int mtk_pcie_exit_L2(struct pci_dev *dev);
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 extern int mtk_pcie_enable_cfg_dump(int port);
 extern int mtk_pcie_disable_cfg_dump(int port);
-uint8_t halPcieIsPcieProbed(void);
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
+uint8_t halPcieIsPcieProbed(void);
+u_int8_t pcie_check_status_is_linked(void);
 u_int8_t mtk_get_aer_triggered(void);
 void mtk_trigger_aer_slot_reset(void);
 void glUpdateRxCopyMemOps(
