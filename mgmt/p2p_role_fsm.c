@@ -4956,8 +4956,8 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 		 */
 		rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
 		rPowerMode.ucBssIdx = ucBssIndex;
-		wlanoidSet802dot11PowerSaveProfile(prAdapter, &rPowerMode,
-			sizeof(struct PARAM_POWER_MODE_), &u4Len);
+		wlanoidSet802dot11PowerSaveProfileImpl(prAdapter, &rPowerMode,
+			sizeof(struct PARAM_POWER_MODE_), &u4Len, FALSE);
 	}
 }
 
