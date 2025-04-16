@@ -1950,6 +1950,7 @@ RETURN:
 #endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_LLS
+#if (defined AOSP_LLS_V1_SINGLE_INTERFACE && AOSP_LLS_V1_SINGLE_INTERFACE == 1)
 static void dumpLinkStatsIface(struct STATS_LLS_WIFI_IFACE_STAT *iface)
 {
 	DBGLOG(REQ, DEBUG, "Dump iface");
@@ -1987,6 +1988,7 @@ static void dumpLinkStatsIface(struct STATS_LLS_WIFI_IFACE_STAT *iface)
 			/* AC */
 			iface->num_peers);
 }
+#endif
 
 static void dumpLinkStatsMultiLinkIface(uint8_t bss_idx,
 		struct STATS_LLS_WIFI_IFACE_ML_STAT *ml_iface)
@@ -2779,7 +2781,8 @@ static uint32_t fill_radio(struct ADAPTER *prAdapter, uint8_t *dst,
 		kalMemCopyFromIo(dst, prRadio,
 				sizeof(struct STATS_LLS_WIFI_RADIO_STAT));
 		radio = (struct STATS_LLS_WIFI_RADIO_STAT *)dst;
-		radio->num_tx_levels = TX_POWER_LEVELS;
+		if (prAdapter->pu4TxTimePerLevels)
+			radio->num_tx_levels = TX_POWER_LEVELS;
 		dst += offsetof(struct STATS_LLS_WIFI_RADIO_STAT, channels);
 
 		if (prWifiVar->fgLinkStatsDump)
@@ -2977,7 +2980,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 			query.rtlv.u2Length !=
 				sizeof(struct UNI_EVENT_LINK_LAYER_STATS) ||
 			query.rtlv.data.eUpdateStatus !=
-				STATS_LLS_UPDATE_STATUS_SUCCESS)
+				STATS_LLS_UPDATE_STATUS_SUCCESS
 #else
 			u4QueryInfoLen !=
 				sizeof(struct EVENT_STATS_LLS_DATA) ||
@@ -2985,13 +2988,15 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 				STATS_LLS_UPDATE_STATUS_SUCCESS
 #endif
 			) {
-			DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes, status=%u",
-					rStatus, u4QueryInfoLen,
+			enum ENUM_STATS_LLS_UPDATE_STATUS eUpdateStatus;
+
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-					query.rtlv.data.eUpdateStatus);
+			eUpdateStatus = query.rtlv.data.eUpdateStatus;
 #else
-					query.data.eUpdateStatus);
+			eUpdateStatus = query.data.eUpdateStatus;
 #endif
+			DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes, status=%u",
+					rStatus, u4QueryInfoLen, eUpdateStatus);
 			rStatus = -EFAULT;
 			break;
 		}
