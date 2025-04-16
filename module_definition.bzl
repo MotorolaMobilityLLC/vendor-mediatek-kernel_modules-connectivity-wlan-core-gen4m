@@ -3,8 +3,12 @@ load("@mgk_info//:dict.bzl",
     "KERNEL_VERSION")
 load("//build/bazel_mgk_rules:mgk_ddk_ko.bzl", "define_mgk_ddk_ko")
 load(":module_variable.bzl",
+    "extra_copts",
+    "extra_ko_deps",
     "extra_srcs",
-    "extra_local_defines",)
+    "extra_includes",
+    "extra_local_defines",
+    "extra_header_deps",)
 load("@mgk_info//:dict.bzl", "DEFCONFIG_OVERLAYS",)
 
 kernel_version = KERNEL_VERSION.split("-")[-1]
@@ -12,9 +16,6 @@ common_srcs = [
    "chips/common/cmm_asic_common.c",
    "chips/common/fw_dl.c",
    "chips/common/fw_log.c",
-   "chips/common/fw_log_emi.c",
-   "chips/common/met_log_emi.c",
-   "chips/common/pre_cal.c",
    "common/debug.c",
    "common/dump.c",
    "common/wlan_he.c",
@@ -32,18 +33,13 @@ common_srcs = [
    "mgmt/cnm.c",
    "mgmt/cnm_mem.c",
    "mgmt/cnm_timer.c",
-   "mgmt/eht_rlm.c",
-   "mgmt/epcs.c",
    "mgmt/fils.c",
    "mgmt/gcm.c",
-   "mgmt/he_ie.c",
-   "mgmt/he_rlm.c",
    "mgmt/hem_mbox.c",
    "mgmt/hs20.c",
    "mgmt/ie_sort.c",
    "mgmt/mddp.c",
    "mgmt/mib.c",
-   "mgmt/mlo.c",
    "mgmt/mlr.c",
    "mgmt/mscs.c",
    "mgmt/p2p_assoc.c",
@@ -79,13 +75,9 @@ common_srcs = [
    "mgmt/scan_fsm.c",
    "mgmt/stats.c",
    "mgmt/swcr.c",
-   "mgmt/t2lm.c",
    "mgmt/tdls.c",
    "mgmt/thrm.c",
    "mgmt/tkip_mic.c",
-   "mgmt/twt.c",
-   "mgmt/twt_planner.c",
-   "mgmt/twt_req_fsm.c",
    "mgmt/wapi.c",
    "mgmt/wlan_ring.c",
    "mgmt/wmm.c",
@@ -93,12 +85,10 @@ common_srcs = [
    "nic/cmd_buf.c",
    "nic/nic.c",
    "nic/nic_cmd_event.c",
-   "nic/nic_ext_cmd_event.c",
    "nic/nic_pwr_mgt.c",
    "nic/nic_rate.c",
    "nic/nic_rx.c",
    "nic/nic_tx.c",
-   "nic/nic_uni_cmd_event.c",
    "nic/p2p_nic.c",
    "nic/que_mgt.c",
    "nic/radiotap.c",
@@ -106,7 +96,6 @@ common_srcs = [
    "os/linux/gl_cfg80211.c",
    "os/linux/gl_cmd_validate.c",
    "os/linux/gl_concurrency_matrix.c",
-   "os/linux/gl_coredump.c",
    "os/linux/gl_csi.c",
    "os/linux/gl_custom.c",
    "os/linux/gl_emi.c",
@@ -115,7 +104,6 @@ common_srcs = [
    "os/linux/gl_ics.c",
    "os/linux/gl_init.c",
    "os/linux/gl_kal.c",
-   "os/linux/gl_mbrain.c",
    "os/linux/gl_met_log.c",
    "os/linux/gl_p2p.c",
    "os/linux/gl_p2p_cfg80211.c",
@@ -129,15 +117,12 @@ common_srcs = [
    "os/linux/gl_sys_lock.c",
    "os/linux/gl_vendor.c",
    "os/linux/gl_vendor_logger.c",
-   "os/linux/gl_vendor_ndp.c",
    "os/linux/gl_wext.c",
    "os/linux/gl_wext_priv.c",
    "os/linux/hif/common/dbg_pdma.c",
-   "os/linux/hif/common/hal_mbu.c",
    "os/linux/hif/common/hal_pdma.c",
    "os/linux/hif/common/hif_mem.c",
    "os/linux/hif/common/kal_pdma.c",
-   "os/linux/hif/common/sw_emi_ring.c",
    "os/linux/platform.c",
    "os/linux/gl_plat.c",
    "wlan_service/agent/agent.c",
@@ -153,12 +138,10 @@ common_includes =  [
     "include",
     "include/chips",
     "include/mgmt",
-    "include/nan",
     "include/nic",
     "include/wpa_supp",
     "os",
     "os/linux/hif/common/include",
-    "os/linux/hif/pcie/include",
     "os/linux/include",
     "wlan_service/glue/hal/include",
     "wlan_service/glue/osal/include",
@@ -168,30 +151,30 @@ common_includes =  [
 
 def gen4m_modules(platforms):
     for p in platforms:
-        print("list is:",p)
-        print("srcs is: ", " ".join(extra_srcs[p]))
+        print("list is: ",p)
+        print("extra_srcs is: ", " ".join(extra_srcs[p]))
+        print("extra_includes is: ", " ".join(extra_includes[p]))
         print("extra_local_defines is: ", " ".join(extra_local_defines[p]))
         print("common_srcs is: ", common_srcs)
+        print("extra_copts is: ", " ".join(extra_copts[p]))
+        print("extra_ko_deps is: ", " ".join(extra_ko_deps[p]))
         define_mgk_ddk_ko(
             name = "wlan_drv_gen4m_{}".format(p),
-
             srcs =  common_srcs + extra_srcs[p] + [":headers"],
-            includes = common_includes,
-
+            includes = common_includes + extra_includes[p],
             local_defines = [] + extra_local_defines[p],
 
-            copts = [
-                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/connectivity/power_throttling",
+            copts = extra_copts[p] + [
                 "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/include/mt-plat/",
-                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mbraink",
-                "-I$(TOP)/vendor/mediatek/kernel_modules/connectivity/connfem/include/",
-                "-I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include",
-                "-I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv3/debug_utility",
-                "-I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv3/debug_utility/connsyslog",
-                "-I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv3/debug_utility/include",
-                "-I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include",
-                "-I$(srctree)/drivers/pci/controller/",
-                "-I$(srctree)/drivers/thermal",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/base/power/include/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/performance/include/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/pmic/include/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/power_throttling/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/connectivity/common",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/eccci/inc/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/gpu/drm/mediatek/mediatek_v2/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/devfreq/",
+                "-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mddp/include/",
                 "-I$(srctree)/net",
                 "-Werror",
                 "-Wno-format",
@@ -204,30 +187,23 @@ def gen4m_modules(platforms):
                 "-Wno-macro-redefined",
             ],
 
-            header_deps = [
-                "//kernel_device_modules-{}/drivers/gpu/drm/mediatek/mediatek_v2:ddk_public_headers".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/misc/mediatek/eccci:ccci_header".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/misc/mediatek/mddp:mddp_headers".format(kernel_version),
+            header_deps = extra_header_deps[p] + [
                 "//kernel_device_modules-{}/drivers/misc/mediatek/power_throttling:power_throttling_headers".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/pci/controller:pcie-mediatek-gen3_headers".format(kernel_version),
+                "//kernel_device_modules-{}/drivers/gpu/drm/mediatek/mediatek_v2:ddk_public_headers".format(kernel_version),
+                "//kernel_device_modules-{}/drivers/misc/mediatek/mddp:mddp_headers".format(kernel_version),
+                "//kernel_device_modules-{}/drivers/misc/mediatek/eccci:ccci_header".format(kernel_version),
             ] + ([ ] if "entry_level.config" in DEFCONFIG_OVERLAYS else [
                 "//kernel_device_modules-{}/drivers/misc/mediatek/mbraink/bridge:mtk_mbraink_bridge_headers".format(kernel_version),
             ]),
-            ko_deps = [
+
+            ko_deps = extra_ko_deps[p] + [
+                "//kernel_device_modules-{}/drivers/misc/mediatek/power_throttling:pmic_lbat_service".format(kernel_version),
+                "//kernel_device_modules-{}/drivers/misc/mediatek/connectivity:connadp".format(kernel_version),
                 "//kernel_device_modules-{}/drivers/gpu/drm/mediatek/mediatek_v2:mtk_disp_notify".format(kernel_version),
                 "//kernel_device_modules-{}/drivers/misc/mediatek/aee/aed:aee_aed".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/misc/mediatek/connectivity:connadp".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/misc/mediatek/eccci:ccci_md_all".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/misc/mediatek/mddp:mddp".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/misc/mediatek/power_throttling:pmic_lbat_service".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/pci/controller:pcie-mediatek-gen3".format(kernel_version),
-                "//kernel_device_modules-{}/drivers/soc/mediatek/devapc:device-apc-common-legacy".format(kernel_version),
                 "//kernel_device_modules-{}/drivers/soc/mediatek:mtk-dvfsrc".format(kernel_version),
-                "//vendor/mediatek/kernel_modules/connectivity/connfem:connfem",
-                "//vendor/mediatek/kernel_modules/connectivity/conninfra:conninfra",
-                "//vendor/mediatek/kernel_modules/connectivity/wlan/adaptor/build/connac3x:wmt_chrdev_wifi_connac3",
-                "//vendor/mediatek/kernel_modules/connectivity/wlan/adaptor/wlan_page_pool:wlan_page_pool",
-                "//kernel_device_modules-{}/drivers/misc/mediatek/sched:mtk_core_ctl".format(kernel_version),
+                "//kernel_device_modules-{}/drivers/misc/mediatek/mddp:mddp".format(kernel_version),
+                "//kernel_device_modules-{}/drivers/misc/mediatek/eccci:ccci_md_all".format(kernel_version),
             ] + ([ ] if "entry_level.config" in DEFCONFIG_OVERLAYS else [
                 "//kernel_device_modules-{}/drivers/misc/mediatek/mbraink/bridge:mtk_mbraink_bridge".format(kernel_version),
             ]),
