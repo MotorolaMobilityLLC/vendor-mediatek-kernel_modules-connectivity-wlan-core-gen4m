@@ -53,6 +53,12 @@ static const char * const apucDebugRangingState[RANGING_STATE_NUM] = {
 	"TERMINATE",
 };
 
+
+#if CFG_SUPPORT_RTT
+/* TODO */
+static int32_t g_AllowRangingReq = 1;
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -148,6 +154,10 @@ nanRangingInstanceInit(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, ERROR, "[%s] prRanging is NULL\n", __func__);
 		return;
 	}
+
+#if CFG_SUPPORT_RTT
+	g_AllowRangingReq = 1;
+#endif
 
 	prRangingInfo = &(prAdapter->rRangingInfo);
 
@@ -1735,11 +1745,6 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 	return u4IndStatus;
 }
 
-#if CFG_SUPPORT_RTT
-/* TODO */
-static int32_t g_run = 1;
-#endif
-
 void
 nanRangingCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
@@ -1789,7 +1794,8 @@ nanRangingCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	}
 
 	/* TODO */
-	if (prCtrlEvt->ucIsEnabled && (g_run-- > 0)) {
+	if (prCtrlEvt->ucIsEnabled &&
+		(g_AllowRangingReq-- > 0)) {
 		prRanging = nanRangingInstanceSearchByMac(prAdapter,
 			prCtrlEvt->aucNanAddress);
 		if (prRanging == NULL) {

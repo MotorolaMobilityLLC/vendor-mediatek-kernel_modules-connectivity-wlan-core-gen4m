@@ -1815,6 +1815,12 @@ int mtk_cfg80211_vendor_set_rtt_config(
 				(eBand == BAND_2G4)
 				? BAND_2G4
 				: BAND_5G);
+
+			/* Workaround for preamble */
+			if (config->eType == RTT_TYPE_2_SIDED_11MC)
+				config->ePreamble = WIFI_RTT_PREAMBLE_VHT;
+			else if (config->eType == RTT_TYPE_2_SIDED_11AZ_NTB)
+				config->ePreamble = WIFI_RTT_PREAMBLE_HE;
 		}
 #endif
 
