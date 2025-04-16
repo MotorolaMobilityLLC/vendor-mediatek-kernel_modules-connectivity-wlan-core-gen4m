@@ -8229,8 +8229,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 #if CFG_SUPPORT_RX_NAPI
 	/* unit: s */
-	INIT_UINT(prWifiVar->u4NapiScheduleTimeout, "NapiScheduleTimeout", 60,
-		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NapiScheduleTimeout, "NapiScheduleTimeout",
+		  60, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->fgNapiScheduleAeeEn, "NapiScheduleAeeEn",
+		  FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 #endif
 
 #if CFG_NAPI_DELAY
