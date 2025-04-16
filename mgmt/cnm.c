@@ -5879,11 +5879,12 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		 * If you want to change OpBw in the future, please
 		 * make sure you can restore to current peer's OpBw.
 		 */
-		ucOpMaxBw = cnmGetDbdcBwCapability(prAdapter,
-						   prBssInfo->ucBssIndex);
-		nicReviseBwByCh(prAdapter, prBssInfo->eBand,
-				prBssInfo->ucPrimaryChannel,
-				prBssInfo->eBssSCO, &ucOpMaxBw);
+		if (eNewReq == CNM_OPMODE_REQ_USER_CONFIG_BW &&
+		    IS_BSS_GC(prBssInfo))
+			ucOpMaxBw = rlmGetBssOpBwByOwnAndPeerCapability(
+					prAdapter, prBssInfo);
+		else
+			ucOpMaxBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
 		if (ucOpBwFinal > ucOpMaxBw)
 			ucOpBwFinal = ucOpMaxBw;
 
@@ -5980,9 +5981,12 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		if (eNewReq == CNM_OPMODE_REQ_USER_CONFIG_BW)
 			ucSendAct = OP_CHANGE_SEND_ACT_DEFAULT;
 
+		nicReviseBwByCh(prAdapter, prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBssSCO, &ucOpBwFinal);
 		DBGLOG(CNM, INFO,
-			"rlmChangeOperationMode on-going:%u\n",
-			ucSendAct);
+			"rlmChangeOperationMode on-going:%u, bw:%u\n",
+			ucSendAct, ucOpBwFinal);
 
 		eRlmStatus = rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
