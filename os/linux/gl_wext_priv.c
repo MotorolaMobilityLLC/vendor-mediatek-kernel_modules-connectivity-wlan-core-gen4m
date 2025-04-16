@@ -12521,7 +12521,7 @@ int priv_driver_set_sap_force_trx_config(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint8_t ucScenarioConfig;
+	uint8_t ucScenarioConfig = 0;
 	uint32_t u4Ret = 0;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -22662,7 +22662,7 @@ int32_t MulAPAgentMontorSendMsg(uint16_t msgtype,
 {
 	struct sk_buff *skb;
 	struct nlmsghdr *nlh;
-	uint32_t u4Ret = 0;
+	int32_t i4Ret = 0;
 
 	DBGLOG(REQ, LOUD, "send netlink msg start\n");
 	DBGLOG(INIT, TRACE, "msg len == %d", i4TotalLen);
@@ -22683,17 +22683,17 @@ int32_t MulAPAgentMontorSendMsg(uint16_t msgtype,
 	NETLINK_CB(skb).portid = 0;
 	nlh->nlmsg_type = msgtype;
 	memcpy(NLMSG_DATA(nlh), pvmsgbuf, i4TotalLen);
-	u4Ret = netlink_broadcast(nl_sk, skb, 0, 5, GFP_KERNEL);
+	i4Ret = netlink_broadcast(nl_sk, skb, 0, 5, GFP_KERNEL);
 
-	if (u4Ret < 0) {
+	if (i4Ret < 0) {
 		DBGLOG(REQ, ERROR,
 			"netlink sendmsg failed,msgtype is %x, ret is %d\n",
-			msgtype, u4Ret);
-		return u4Ret;
+			msgtype, i4Ret);
+		return i4Ret;
 	}
 
 	DBGLOG(REQ, LOUD, "send netlink msg success!\n");
-	return u4Ret;
+	return i4Ret;
 }
 
 int32_t priv_driver_MulAPAgent_bss_status_report(
@@ -23333,7 +23333,7 @@ int32_t priv_driver_MulAPAgent_sta_measurement_info(
 		goto exit;
 	}
 
-	if (ucMeasureIdx > 15 || ucMeasureIdx < 0) {
+	if (ucMeasureIdx > 15) {
 		DBGLOG(REQ, ERROR, "ucMeasureIdx number error\n");
 		i4BytesWritten = -1;
 		goto exit;
@@ -23407,6 +23407,12 @@ int32_t priv_driver_MulAPAgent_set_allow_sta(
 		&aucMacAddr[0], &aucMacAddr[1],
 		&aucMacAddr[2], &aucMacAddr[3],
 		&aucMacAddr[4], &aucMacAddr[5]);
+	if (i4Ret != 6) {
+		DBGLOG(INIT, ERROR, "sscanf failed, i4Ret=%d, thisChar=%s\n",
+		       i4Ret, this_char);
+		i4Ret = -1;
+		goto exit;
+	}
 	DBGLOG(INIT, DEBUG, "thisChar=%s\n", this_char);
 	DBGLOG(INIT, DEBUG,
 		"Removing MAC="MACSTR" from BlockList !!\n",
@@ -23461,6 +23467,13 @@ int32_t priv_driver_MulAPAgent_set_block_sta(
 		&aucMacAddr[0], &aucMacAddr[1],
 		&aucMacAddr[2], &aucMacAddr[3],
 		&aucMacAddr[4], &aucMacAddr[5]);
+	if (i4Ret != 6) {
+		DBGLOG(INIT, ERROR,
+		       "sscanf failed to parse MAC address. thisChar=%s\n",
+		       this_char);
+		i4Ret = -1;
+		goto exit;
+	}
 	DBGLOG(INIT, DEBUG, "thisChar=%s\n", this_char);
 	DBGLOG(INIT, DEBUG,
 		"Adding MAC="MACSTR" to BlockList !!\n",
@@ -23837,6 +23850,13 @@ int32_t priv_driver_MulAPAgent_BTM_request(
 		&prSetBtmReqInfo->ucValidityInterval,
 		&prSetBtmReqInfo->ucTargetBSSIDCnt,
 		(char *) &prSetBtmReqInfo->aucSessionUrl);
+	if (i4Ret != 12) {
+		DBGLOG(REQ, ERROR,
+			"sscanf failed or did not match all fields, i4Ret = %d\n",
+			i4Ret);
+		i4Ret = -1;
+		goto exit;
+	}
 #undef TEMP_TEMPLATE
 
 	DBGLOG(REQ, DEBUG,
@@ -23871,7 +23891,8 @@ int32_t priv_driver_MulAPAgent_BTM_request(
 
 	if (i4Argc != prSetBtmReqInfo->ucTargetBSSIDCnt + 1) {
 		DBGLOG(INIT, ERROR,
-			"Read Candicate BSSID List Fail, count not match !!!\n");
+			"Read Candicate BSSID List Fail, count(%d) not match !!!\n",
+			prSetBtmReqInfo->ucTargetBSSIDCnt);
 		i4Ret = -1;
 		goto exit;
 	}
@@ -26324,7 +26345,7 @@ int priv_driver_set_p2p2_gc_csa(struct net_device *prNetDev,
 
 	prRfChnlInfo->u2PriChnlFreq =
 		nicChannelNum2Freq(prRfChnlInfo->ucChannelNum,
-				   prRfChnlInfo->eBand);
+				   prRfChnlInfo->eBand) / 1000;
 	if (ucBw != MAX_BW_UNKNOWN && ucBw < ucMaxBw)
 		prRfChnlInfo->ucChnlBw = ucBw;
 	else

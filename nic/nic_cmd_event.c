@@ -3192,6 +3192,10 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 
 	prAdapter->prLinkStatsIface = (struct STATS_LLS_WIFI_IFACE_STAT *)
 		prAdapter->pucLinkStatsSrcBufAddr;
+	if (!prAdapter->pucLinkStatsSrcBufAddr) {
+		DBGLOG(INIT, ERROR, "NULL ptr pucLinkStatsSrcBufAddr\n");
+		goto error;
+	}
 	prAdapter->prLinkStatsPeerInfo = (struct PEER_INFO_RATE_STAT *)
 		&prAdapter->pucLinkStatsSrcBufAddr[prOffset->u4OffsetPeerInfo];
 	prAdapter->prLinkStatsRadioInfo = (struct WIFI_RADIO_CHANNEL_STAT *)
@@ -3199,6 +3203,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, DEBUG, "EMI offset=%x, offset2=%x (%u), BssNum=%u\n",
 			offset, offset2, size2, prAdapter->ucLinkStatsBssNum);
+error:
 #endif
 	return WLAN_STATUS_SUCCESS;
 }

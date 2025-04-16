@@ -60,6 +60,10 @@ void ccmRegisterStableCb(struct ADAPTER *prAdapter,
 
 	prCcmCbEntry = cnmMemAlloc(prAdapter,
 		RAM_TYPE_MSG, sizeof(struct CCM_STABLE_CB_ENTRY));
+	if (!prCcmCbEntry) {
+		DBGLOG(CCM, ERROR, "mem alloc failed\n");
+		return;
+	}
 	prCcmCbEntry->pfCcmStableCb = func;
 	LINK_INSERT_TAIL(prCcmStableCbList, &prCcmCbEntry->rLinkEntry);
 	DBGLOG(CCM, TRACE, "Register callback func=%ps[%u]\n", func,

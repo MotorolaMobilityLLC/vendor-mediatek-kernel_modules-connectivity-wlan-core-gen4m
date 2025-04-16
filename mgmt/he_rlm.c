@@ -1045,7 +1045,7 @@ uint32_t heRlmFillNANHECapIE(
 #if (CFG_RX_PPE_THRESHOLD == 1)
 	uint8_t *pPPEThreshold;
 #endif
-	uint8_t ucSupportedNss;
+	uint8_t ucSupportedNss, ucDutNss = 0;
 	u_int8_t fgTxStbcEn = TRUE;
 
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
@@ -1060,8 +1060,11 @@ uint32_t heRlmFillNANHECapIE(
 		return 0;
 	}
 
-	ucSupportedNss = wlanGetSupportNss(prAdapter,
-		prBssInfo->ucBssIndex) - 1;
+	ucDutNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	if (ucDutNss > 0)
+		ucSupportedNss = ucDutNss - 1;
+	else
+		ucSupportedNss = 0;
 	prHeCap = (struct _IE_HE_CAP_T *)pOutBuf;
 
 	prHeCap->ucId = ELEM_ID_RESERVED;
