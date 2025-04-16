@@ -1571,17 +1571,6 @@ u_int8_t rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 				   uint8_t ucChannelS1, uint8_t ucChannelS2);
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-
-u_int8_t
-rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY
-#else
-	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
-#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
-		rPowerLimitTableConfiguration,
-	uint8_t ucPwrLimitNum);
-
 void rlmDomainCheckCountryPowerLimitTable(
 	struct ADAPTER *prAdapter);
 

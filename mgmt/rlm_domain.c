@@ -4709,43 +4709,6 @@ error:
 #endif
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Check if power limit setting is in the range [MIN_TX_POWER,
- *        MAX_TX_POWER]
- *
- * @param[in]
- *
- * @return (fgValid) : 0 -> inValid, 1 -> Valid
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t
-rlmDomainCheckPowerLimitValid(
-	struct ADAPTER *prAdapter,
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY
-#else
-	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
-#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
-		rPowerLimitTableConfiguration,
-	uint8_t ucPwrLimitNum)
-{
-	uint16_t i;
-	u_int8_t fgValid = TRUE;
-	int8_t *prPwrLimit;
-
-	prPwrLimit = &rPowerLimitTableConfiguration.aucPwrLimit[0];
-
-	for (i = 0; i < ucPwrLimitNum; i++, prPwrLimit++) {
-		if (*prPwrLimit > MAX_TX_POWER || *prPwrLimit < MIN_TX_POWER) {
-			fgValid = FALSE;
-			break;	/*Find out Wrong Power limit */
-		}
-	}
-	return fgValid;
-
-}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief 1.Check if power limit configuration table valid(channel intervel)
@@ -4773,7 +4736,6 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 	uint16_t i, j, k;
 	uint16_t u2CountryCodeTable, u2CountryCodeCheck;
 	u_int8_t fgChannelValid = FALSE;
-	u_int8_t fgPowerLimitValid = FALSE;
 	u_int8_t fgEntryRepetetion = FALSE;
 	u_int8_t fgTableValid = TRUE;
 	char ucMsgBuf[PWR_BUF_LEN] = {0};
@@ -4812,13 +4774,7 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 		    rlmDomainCheckChannelEntryValid(prAdapter,
 				BAND_NULL, PwrLmtConf[i].i2CentralCh);
 
-		/*<3>Power Limit Range Check */
-		fgPowerLimitValid =
-		    rlmDomainCheckPowerLimitValid(prAdapter,
-						  PwrLmtConf[i],
-						  LEGACY_PWR_LIMIT_NUM);
-
-		if (fgChannelValid == FALSE || fgPowerLimitValid == FALSE) {
+		if (fgChannelValid == FALSE) {
 			fgTableValid = FALSE;
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
@@ -4837,13 +4793,12 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 			}
 
 			DBGLOG(RLM, LOUD,
-				"Domain: CC=%c%c, Ch=%d, Limit: %s, Valid:%d,%d\n",
+				"Domain: CC=%c%c, Ch=%d, Limit: %s, Valid:%d\n",
 				PwrLmtConf[i].aucCountryCode[0],
 				PwrLmtConf[i].aucCountryCode[1],
 				PwrLmtConf[i].i2CentralCh,
 				ucMsgBuf,
-				fgChannelValid,
-				fgPowerLimitValid);
+				fgChannelValid);
 		}
 
 		if (u2CountryCodeTable == COUNTRY_CODE_NULL) {
@@ -5879,12 +5834,6 @@ static void PwrLmtTblArbitrator(int8_t *target,
 	for (i = 0; i < size; i++) {
 		if (target[i] > compare[i])
 			target[i] = compare[i];
-
-		/* Sanity check power boundary */
-		if (target[i] > MAX_TX_POWER)
-			target[i] = MAX_TX_POWER;
-		else if (target[i] < MIN_TX_POWER)
-			target[i] = MIN_TX_POWER;
 	}
 }
 
@@ -8590,12 +8539,6 @@ int32_t txPwrParseAntCfgParaPwr(
 			icPwrSetting = icInitVal;
 		}
 
-		if (icPwrSetting < MIN_TX_POWER)
-			icPwrSetting = MIN_TX_POWER;
-
-		if (icPwrSetting > MAX_TX_POWER)
-			icPwrSetting = MAX_TX_POWER;
-
 		switch (eCfgType) {
 		case PWR_LMT_CHAIN_CFG_TYPE_SGL_WF_SGL_BAND:
 			for (ucAntIdx = ucChainStart;
@@ -8900,8 +8843,9 @@ int32_t txPwrParseTagMultiBand(
 	char *pcContTemp = NULL;
 	char carySeperator[2] = {0, 0};
 	uint8_t i = 0, j = 0, k = 0, cnt = 0, u1BandIdx = 0;
-	uint8_t op = 0, u1MultiBandNum = 0, u1BandMask = 0, u1Pwr = 0;
-	uint8_t u1RfBand = 0, u1ChCnt = 0, u1StartCh = 0, u1EndCh = 0;
+	uint8_t op = 0, u1BandMask = 0, u1Pwr = 0;
+	uint16_t u2MultiBandNum = 0, u2ChCnt;
+	uint8_t u1RfBand = 0, u1StartCh = 0, u1EndCh = 0;
 	struct TX_PWR_CTRL_MULTIBAND_SETTING *prMulBnSetting;
 	char msgLimit[PWR_BUF_LEN];
 	uint32_t u4MsgOfs = 0;
@@ -8917,21 +8861,21 @@ int32_t txPwrParseTagMultiBand(
 	/* Parsing MultiBandNum */
 	pcContOld = pcCurrent;
 	if (txPwrParseNumber(&pcCurrent, ",", &op,
-				(uint16_t *)&u1MultiBandNum)) {
+				(uint16_t *)&u2MultiBandNum)) {
 		DBGLOG(RLM, ERROR, "[MulBnPwr] parse parameter error:%s\n",
 			pcContOld);
 		return -1;
 	}
 
-	if (u1MultiBandNum > PWR_LIMIT_MULTIBAND_TYPE_NUM) {
+	if (u2MultiBandNum > PWR_LIMIT_MULTIBAND_TYPE_NUM) {
 		DBGLOG(RLM, ERROR, "[MulBnPwr] MultiBandNum error:%d>%d\n",
-			u1MultiBandNum,
+			u2MultiBandNum,
 			PWR_LIMIT_MULTIBAND_TYPE_NUM);
 		return -1;
 	}
 
 
-	for (i = 0; i < u1MultiBandNum; i++) {
+	for (i = 0; i < u2MultiBandNum; i++) {
 		/* check BandMask & Channel Group Num*/
 		pcContTemp = pcCurrent;
 		cnt = 0;
@@ -8964,23 +8908,23 @@ int32_t txPwrParseTagMultiBand(
 		/* Parsing Channel Group Num */
 		pcContOld = pcCurrent;
 		if (txPwrParseNumber(&pcCurrent, ":", &op,
-						(uint16_t *)&u1ChCnt)) {
+						(uint16_t *)&u2ChCnt)) {
 			DBGLOG(RLM, ERROR,
 				"[MulBnPwr] parse parameter error:%s\n",
 				pcContOld);
 			return -1;
 		}
-		if (u1ChCnt >= MAX_SUPPORT_CHANNEL_NUMBER) {
+		if (u2ChCnt >= MAX_SUPPORT_CHANNEL_NUMBER) {
 			DBGLOG(RLM, ERROR,
 				"[MulBnPwr] Warning ChGrpCnt more than max: %d\n",
-				u1ChCnt,
+				u2ChCnt,
 				MAX_SUPPORT_CHANNEL_NUMBER);
 			return -1;
 		}
 
-		prMulBnSetting->u1ChGrpCnt = u1ChCnt;
+		prMulBnSetting->u1ChGrpCnt = u2ChCnt;
 
-		for (j = 0; j < u1ChCnt; j++) {
+		for (j = 0; j < u2ChCnt; j++) {
 			/* check rfband, start_ch and end_ch*/
 			pcContTemp = pcCurrent;
 			cnt = 0;
@@ -9298,10 +9242,6 @@ void txPwrOperate(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 		break;
 	}
 
-	if (*operand1 > MAX_TX_POWER)
-		*operand1 = MAX_TX_POWER;
-	else if (*operand1 < MIN_TX_POWER)
-		*operand1 = MIN_TX_POWER;
 }
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 0)
@@ -16420,30 +16360,31 @@ static uint8_t rlmDomainBuildDefaultMultiBandPwrLimitPayload(
 	enum ENUM_PWR_LIMIT_RF_BAND eRF,
 	struct MULTIBAND_PWR_LIMIT_INFO rMultiBandPwrLimitInfo)
 {
-	uint8_t u1SubBandIdx, u1Channel = 0, u1ChCnt = 0, i = 0;
+	uint8_t u1SubBandIdx, u1Channel = 0, i = 0;
+	uint16_t u2ChCnt = 0;
 	struct TX_PWR_CTRL_MULTIBAND_EMI_DATA *prData;
 
 
 	PWR_LIMIT_FOR_EACH_SUBBAND(u1SubBandIdx, rMultiBandPwrLimitInfo) {
 		PWR_LIMIT_FOR_EACH_SUB_BAND_CHANNEL(u1Channel, u1SubBandIdx) {
-			if (u1ChCnt >= MAX_SUPPORT_CHANNEL_NUMBER)
+			if (u2ChCnt >= MAX_SUPPORT_CHANNEL_NUMBER)
 				return 0;
 
 			prData =
 				&prAdapter->rMulBnData[eBandIdx][eRF];
 
-			prData->u1Channel[u1ChCnt] =
+			prData->u1Channel[u2ChCnt] =
 				u1Channel;
 
 			for (i = 0; i < PWR_LIMIT_MULTIBAND_NUM; i++) {
-				prData->i1MBPwrLmt[u1ChCnt][i] =
+				prData->i1MBPwrLmt[u2ChCnt][i] =
 					MAX_TX_POWER;
 			}
-			u1ChCnt++;
+			u2ChCnt++;
 		}
 	}
 
-	return u1ChCnt;
+	return u2ChCnt;
 }
 
 static void rlmDomainApplyDynMultiBandSettings(

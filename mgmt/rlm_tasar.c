@@ -74,7 +74,12 @@ struct tasar_country g_rTasarCountryTbl_reg8[] = {
 struct tasar_country g_rTasarCountryTbl_reg9[] = {
 	{{'B', 'E'}}
 };
-
+struct tasar_country g_rTasarCountryTbl_reg10[] = {
+	{{'A', 'F'}}
+};
+struct tasar_country g_rTasarCountryTbl_reg11[] = {
+	{{'A', 'L'}}
+};
 struct tasar_country_tbl_all g_rTasarCountryTbl[] = {
 	REG_TBL_REG(g_rTasarCountryTbl_reg0, "REG0_ConnsysTasar.cfg"),
 	REG_TBL_REG(g_rTasarCountryTbl_reg1, "REG1_ConnsysTasar.cfg"),
@@ -85,7 +90,9 @@ struct tasar_country_tbl_all g_rTasarCountryTbl[] = {
 	REG_TBL_REG(g_rTasarCountryTbl_reg6, "REG6_ConnsysTasar.cfg"),
 	REG_TBL_REG(g_rTasarCountryTbl_reg7, "REG7_ConnsysTasar.cfg"),
 	REG_TBL_REG(g_rTasarCountryTbl_reg8, "REG8_ConnsysTasar.cfg"),
-	REG_TBL_REG(g_rTasarCountryTbl_reg9, "REG9_ConnsysTasar.cfg")
+	REG_TBL_REG(g_rTasarCountryTbl_reg9, "REG9_ConnsysTasar.cfg"),
+	REG_TBL_REG(g_rTasarCountryTbl_reg10, "REG10_ConnsysTasar.cfg"),
+	REG_TBL_REG(g_rTasarCountryTbl_reg11, "REG11_ConnsysTasar.cfg")
 };
 
 /*******************************************************************************
@@ -285,8 +292,9 @@ static uint32_t tasarSendSetChipCmd(struct ADAPTER *prAdapter, char *pcCommand)
 	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
 	rChipConfigInfo.u2MsgSize = u4CmdLen;
 
-	kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand, u4CmdLen);
-	rChipConfigInfo.aucCmd[u4CmdLen + 1] = '\0';
+	kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand,
+		CHIP_CONFIG_RESP_SIZE - 1);
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 	DBGLOG(RLM, INFO, "[TAS] cmd :%s\n", rChipConfigInfo.aucCmd);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetChipConfig,
@@ -365,7 +373,7 @@ static uint32_t tasarSendCommonField(
 	prTasarCfg = &prAdapter->rTasarCfg;
 
 	pos += kalScnprintf(pcTasCommand + pos, CHIP_CONFIG_RESP_SIZE - pos,
-		"coex tasar_set 21 0 %d %d %d\n",
+		"coex tasar_set 21 0 0x%x %d %d\n",
 		CONN_STATUS_RESEND_INTERVAL(prTasarCfg),
 		CONN_STATUS_RESEND_TIMES(prTasarCfg),
 		SCF_UART_ERR_MARGIN(prTasarCfg)
@@ -552,9 +560,9 @@ void tasarInit(struct ADAPTER *prAdapter)
 		prAdapter->rTasarScenrio.u4Eci);
 
 #if (CFG_SUPPORT_TASAR_DEFAULT_ON == 1)
-	struct tasar_scenrio_ctrl rScenrio;
+	struct tasar_scenrio_ctrl rScenrio = {0};
 
-	rScenrio.u2CountryCode +=
+	rScenrio.u2CountryCode =
 		(uint16_t) g_rTasarCountryTbl[0].tbl[0].aucCountryCode[0] << 8;
 	rScenrio.u2CountryCode +=
 		(uint16_t) g_rTasarCountryTbl[0].tbl[0].aucCountryCode[1];
