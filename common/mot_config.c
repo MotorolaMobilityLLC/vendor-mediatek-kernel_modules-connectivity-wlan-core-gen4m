@@ -17,6 +17,7 @@ static moto_product products_list[] = {
                 {"aito",   "ROW",    "wifi",   "txpowerctrl_ROW"},
                 {"aito",   "DOCOMO", "wifi",   "txpowerctrl_DOCOMO"},
                 {"aito",   "PRC",     "wifi",   "txpowerctrl_PRC"},
+                {"aito",   "MEA",     "wifi",   "txpowerctrl_MEA"},
                 {"aito",   "PRC2",    "wifi",   "txpowerctrl_PRC2"},
                 {"aito",   "NA2",     "wifi",   "txpowerctrl_na2"},
                 {"aito",   "JP2",     "wifi",   "txpowerctrl_JP2"},
