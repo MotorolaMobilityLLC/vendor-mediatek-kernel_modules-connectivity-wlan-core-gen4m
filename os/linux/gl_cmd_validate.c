@@ -2949,15 +2949,15 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 	},
 #if CFG_SUPPORT_LLW_SCAN
 	{
-		.pcCmdStr  = CMD_LATENCY_CRT_DATA_SET,
-		.pfHandler = testmode_set_latency_crt_data,
+		.pcCmdStr  = CMD_SET_LATENCY_MODE,
+		.pfHandler = testmode_set_latency_mode,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = u32_policy,
 		.u4PolicySize = ARRAY_SIZE(u32_policy)
 	},
 	{
-		.pcCmdStr  = CMD_DWELL_TIME_SET,
+		.pcCmdStr  = CMD_SET_SCAN_PARAM,
 		.pfHandler = testmode_set_scan_param,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(5),

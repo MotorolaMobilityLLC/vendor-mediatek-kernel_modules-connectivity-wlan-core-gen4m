@@ -728,6 +728,12 @@ enum WIFI_MLO_MODE_ATTRIBUTE {
 	MTK_MLO_MODE_ATTRIBUTE_MAX
 };
 
+enum WIFI_LATENCY_MODE {
+	WIFI_LATENCY_MODE_NORMAL = 0,
+	WIFI_LATENCY_MODE_LOW = 1,
+	WIFI_LATENCY_MODE_ROAM = 2,
+	WIFI_LATENCY_MODE_SCAN = 3,
+};
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

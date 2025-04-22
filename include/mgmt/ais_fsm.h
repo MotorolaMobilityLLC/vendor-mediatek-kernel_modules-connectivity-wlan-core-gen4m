@@ -685,7 +685,7 @@ struct AIS_FSM_INFO {
 	uint8_t ucNonDfsChDwellTimeMs;
 	uint8_t ucDfsChDwellTimeMs;
 	uint8_t ucPerScanChannelCnt;
-	uint8_t ucLatencyCrtDataMode;
+	uint8_t ucLatencyMode;
 #endif
 	struct LINK rAxBlocklist;
 	struct LINK rHeHtcBlocklist;

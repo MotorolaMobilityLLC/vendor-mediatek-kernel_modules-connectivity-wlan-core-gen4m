@@ -3494,11 +3494,12 @@ struct PARAM_TX_MCS_INFO {
 #endif
 
 #if CFG_SUPPORT_LLW_SCAN
-struct PARAM_SCAN {
+struct PARAM_LLW_SCAN {
 	uint8_t ucDfsChDwellTimeMs;
 	uint8_t ucNonDfsChDwellTimeMs;
 	uint16_t u2OpChStayTimeMs;
 	uint16_t u2OpChAwayTimeMs;
+	uint8_t ucPerScanChannelCnt;
 };
 #endif
 

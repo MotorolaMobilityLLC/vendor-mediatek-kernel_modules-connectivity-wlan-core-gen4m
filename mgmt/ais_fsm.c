@@ -2224,13 +2224,18 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #endif /* CFG_SUPPORT_NCHO == 1 */
 
 #if (CFG_SUPPORT_LLW_SCAN == 1)
-	if (ais->ucLatencyCrtDataMode == 2
+#if (CFG_EXT_FEATURE == 0)
+	if (ais->ucLatencyMode == WIFI_LATENCY_MODE_LOW) {
+#else
+	if (ais->ucLatencyMode == WIFI_LATENCY_MODE_ROAM) {
+#endif
 #if (CFG_SUPPORT_ROAMING == 1)
-	    && roam->eReason != ROAMING_REASON_BEACON_TIMEOUT
+		if (roam->eReason != ROAMING_REASON_BEACON_TIMEOUT) {
+			issued = TRUE;
+			DBGLOG(AIS, INFO,
+				"LLW mode, force to do partial scan\n");
+		}
 #endif /* CFG_SUPPORT_ROAMING == 1 */
-	) {
-		issued = TRUE;
-		DBGLOG(AIS, INFO, "LLW mode, force to do partial scan\n");
 	}
 #endif /* CFG_SUPPORT_LLW_SCAN == 1 */
 
@@ -5824,7 +5829,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_LLW_SCAN == 1)
-	prAisFsmInfo->ucLatencyCrtDataMode = 0;
+	prAisFsmInfo->ucLatencyMode = WIFI_LATENCY_MODE_NORMAL;
 	prAisFsmInfo->ucDfsChDwellTimeMs = 0;
 	prAisFsmInfo->ucNonDfsChDwellTimeMs = 0;
 	prAisFsmInfo->u2OpChStayTimeMs = 0;

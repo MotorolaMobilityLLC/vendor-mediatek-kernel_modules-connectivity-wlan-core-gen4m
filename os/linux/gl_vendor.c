@@ -626,7 +626,7 @@ int mtk_cfg80211_vendor_set_latency_mode(
 
 	DBGLOG(REQ, INFO,
 		"Input Mode = %d, Current = %d\n",
-		u4Mode, ais->ucLatencyCrtDataMode);
+		u4Mode, ais->ucLatencyMode);
 
 	/* Do further scan handling for mode 2 and mode 3,
 	 * reset if u4Mode == 0
@@ -645,12 +645,12 @@ int mtk_cfg80211_vendor_set_latency_mode(
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, ERROR,
-				"SET_CRT_DATA fail 0x%x\n", rStatus);
+				"SET_LATENCY fail 0x%x\n", rStatus);
 		else
 			DBGLOG(INIT, TRACE,
-				"SET_CRT_DATA success\n");
+				"SET_LATENCY success\n");
 	} else {
-		if (ais->ucLatencyCrtDataMode)
+		if (ais->ucLatencyMode)
 			goto exit;
 
 		/* for mode 1 */
@@ -658,6 +658,21 @@ int mtk_cfg80211_vendor_set_latency_mode(
 			"SET_LATENCY_CRT_DATA 1",
 			22,
 			CHIP_CONFIG_TYPE_WO_RESPONSE);
+
+
+#if (CFG_EXT_FEATURE == 0)
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidSetLatency,
+			&u4Mode, sizeof(uint32_t),
+			&u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR,
+				"SET_LATENCY fail 0x%x\n", rStatus);
+		else
+			DBGLOG(INIT, TRACE,
+				"SET_LATENCY success\n");
+#endif
 	}
 
 exit:
