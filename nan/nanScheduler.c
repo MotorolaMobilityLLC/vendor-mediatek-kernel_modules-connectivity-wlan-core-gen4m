@@ -5317,24 +5317,6 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		prNanAvailEntry->fgActive = FALSE;
 	}
 
-	/* Check and optionally add conditional to 2.4G availability */
-	if (NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G) ||
-	    nanGetHighestCommonBand(prAdapter, prPeerSchDesc, TRUE) ==
-		    ENUM_SUPPORTED_BN_2G) {
-		DBGLOG(NAN, STATE, "Attempt to add 2G conditional");
-		p2 = scanAvailabilityAttr(prAttrNanAvailibility,
-					  &r2gConditional);
-	}
-	if (p2 && nanIsValidConditional(p2, prAttrNanAvailibility)) {
-		prCondAttrNanAvailibility =
-			nanInsertConditionalAvailability(pucAvailabilityAttr,
-						 &r2gConditional, p2);
-		new_size = NAN_ATTR_SIZE(prAttrNanAvailibility) +
-			sizeof(r2gConditional);
-		if (prCondAttrNanAvailibility)
-			prAttrNanAvailibility = prCondAttrNanAvailibility;
-	}
-
 	/* Check and optionally add conditional to 5G/6G availability */
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	prPeerSchDesc->fgEht = FALSE;
@@ -5355,6 +5337,25 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		prWifiVar->ucNanMergePotentialThreshold = 17;
 		DBGLOG(NAN, INFO, "Set Merge Potential Threshold = %u",
 		       prWifiVar->ucNanMergePotentialThreshold);
+	}
+
+	/* Check and optionally add conditional to 2.4G availability */
+	if (fgFillByPotential &&
+	    (NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G) ||
+	     nanGetHighestCommonBand(prAdapter, prPeerSchDesc, TRUE) ==
+		    ENUM_SUPPORTED_BN_2G)) {
+		DBGLOG(NAN, STATE, "Attempt to add 2G conditional");
+		p2 = scanAvailabilityAttr(prAttrNanAvailibility,
+					  &r2gConditional);
+	}
+	if (p2 && nanIsValidConditional(p2, prAttrNanAvailibility)) {
+		prCondAttrNanAvailibility =
+			nanInsertConditionalAvailability(pucAvailabilityAttr,
+						 &r2gConditional, p2);
+		new_size = NAN_ATTR_SIZE(prAttrNanAvailibility) +
+			sizeof(r2gConditional);
+		if (prCondAttrNanAvailibility)
+			prAttrNanAvailibility = prCondAttrNanAvailibility;
 	}
 
 	if (fgFillByPotential) {
