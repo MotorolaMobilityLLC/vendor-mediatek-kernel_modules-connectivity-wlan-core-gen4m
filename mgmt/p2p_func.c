@@ -3484,33 +3484,31 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 #endif
 
 void p2pFuncParseH2E(struct BSS_INFO *prP2pBssInfo,
-		     uint8_t *aucAllSupportedRates,
-		     uint8_t ucSupportedRatesLen)
+		     uint8_t *pucSuppRateIE, uint32_t u4SuppRateIELen,
+		     uint8_t *pucExSuppRateIE, uint32_t u4ExSuppRateIELen)
 {
-	if (prP2pBssInfo) {
-		uint32_t i;
+	uint32_t i;
+	u_int8_t fgEnableH2E = FALSE;
 
-		prP2pBssInfo->fgEnableH2E = FALSE;
-
-		for (i = 0;
-			i < RATE_NUM_SW &&
-			i < prP2pBssInfo->ucAllSupportedRatesLen;
-			i++) {
-			DBGLOG(P2P, LOUD,
-				"Rate [%d] = %d\n",
-				i,
-				aucAllSupportedRates[i]);
-			if (aucAllSupportedRates[i] ==
-				RATE_H2E_ONLY_VAL) {
-				prP2pBssInfo->fgEnableH2E = TRUE;
-				break;
-			}
+	for (i = 0; i < RATE_NUM_SW && i < u4SuppRateIELen; i++) {
+		if (pucSuppRateIE[i] == RATE_H2E_ONLY_VAL) {
+			fgEnableH2E = TRUE;
+			goto exit;
 		}
-
-		DBGLOG(P2P, TRACE,
-			"fgEnableH2E = %d\n",
-			prP2pBssInfo->fgEnableH2E);
 	}
+
+	for (i = 0; i < RATE_NUM_SW && i < u4ExSuppRateIELen; i++) {
+		if (pucExSuppRateIE[i] == RATE_H2E_ONLY_VAL) {
+			fgEnableH2E = TRUE;
+			goto exit;
+		}
+	}
+
+exit:
+	DBGLOG(P2P, TRACE, "bss=%u fgEnableH2E = %d\n",
+		prP2pBssInfo->ucBssIndex,
+		fgEnableH2E);
+	prP2pBssInfo->fgEnableH2E = fgEnableH2E;
 }
 
 uint32_t
@@ -5061,6 +5059,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 	u_int8_t fgIsApMode = FALSE;
 	struct IE_RNR *rnr =  NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *info;
+	uint8_t *pucSuppRateIE = NULL, *pucExSuppRateIE = NULL;
+	uint32_t u4SuppRateIELen = 0, u4ExSuppRateIELen = 0;
 
 	ASSERT((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
@@ -5166,9 +5166,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 				SUP_RATES_IE(pucIE)->aucSupportedRates,
 				SUP_RATES_IE(pucIE)->ucLength);
 #endif
-				p2pFuncParseH2E(prP2pBssInfo,
-					SUP_RATES_IE(pucIE)->aucSupportedRates,
-					SUP_RATES_IE(pucIE)->ucLength);
+				pucSuppRateIE = pucIE;
+				u4SuppRateIELen = IE_SIZE(pucIE);
 			}
 			break;
 		case ELEM_ID_DS_PARAM_SET:	/* 3 *//* V *//* Done */
@@ -5319,9 +5318,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 					ucIeLen;
 			}
 #endif
-			p2pFuncParseH2E(prP2pBssInfo,
-				EXT_SUP_RATES_IE(pucIE)->aucExtSupportedRates,
-				EXT_SUP_RATES_IE(pucIE)->ucLength);
+			pucExSuppRateIE = pucIE;
+			u4ExSuppRateIELen = IE_SIZE(pucIE);
 			break;
 		}
 		case ELEM_ID_HT_OP:
@@ -5499,6 +5497,10 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+
+	p2pFuncParseH2E(prP2pBssInfo,
+			pucSuppRateIE, u4SuppRateIELen,
+			pucExSuppRateIE, u4ExSuppRateIELen);
 
 	bssDetermineApBssInfoPhyTypeSet(prAdapter, fgIsApMode, prP2pBssInfo);
 }				/* p2pFuncParseBeaconContent */
