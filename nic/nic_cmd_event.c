@@ -3817,9 +3817,11 @@ nicCfgChipGetMaxBwByRf(struct ADAPTER *prAdapter, uint8_t ucBand,
 	} else if (ucBand == BAND_5G) {
 		ucValidHwBn = prCnmChipCap->ucValidHwBn5g;
 		pucRfMaxBw = prCnmChipCap->aucMaxBw5g;
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	} else {
 		ucValidHwBn = prCnmChipCap->ucValidHwBn6g;
 		pucRfMaxBw = prCnmChipCap->aucMaxBw6g;
+#endif
 	}
 
 	if (!ucValidHwBn)
@@ -3855,8 +3857,10 @@ nicCfgChipGetMaxNssByRf(struct ADAPTER *prAdapter, uint8_t ucBand,
 		ucValidHwBn = prCnmChipCap->ucValidHwBn2g;
 	else if (ucBand == BAND_5G)
 		ucValidHwBn = prCnmChipCap->ucValidHwBn5g;
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	else
 		ucValidHwBn = prCnmChipCap->ucValidHwBn6g;
+#endif
 
 	if (!ucValidHwBn)
 		return ucMaxNss;
