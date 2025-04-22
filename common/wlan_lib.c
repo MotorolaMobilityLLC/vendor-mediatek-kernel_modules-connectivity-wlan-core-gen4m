@@ -7446,6 +7446,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			prWifiVar->ucHeMaxMcsMap5g = HE_CAP_INFO_MCS_MAP_MCS11;
 		if (prWifiVar->ucHeMaxMcsMap6g >= HE_CAP_INFO_MCS_NOT_SUPPORTED)
 			prWifiVar->ucHeMaxMcsMap6g = HE_CAP_INFO_MCS_MAP_MCS11;
+		INIT_UINT(prWifiVar->ucHe6gRegPwrType, "He6gRegPwrType",
+			  HE_REG_INFO_VERY_LOW_POWER, FEATURE_DEBUG_ONLY);
 	}
 #endif
 	INIT_UINT(prWifiVar->ucStaMaxMcsMap, "StaMaxMcsMap", 0xFF,
