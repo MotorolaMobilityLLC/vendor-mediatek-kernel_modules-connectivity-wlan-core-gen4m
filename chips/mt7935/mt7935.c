@@ -2927,13 +2927,8 @@ static void mt7935WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
 		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_CSR_AXI_BUFRDY_BYP_MASK |
 		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_TX_WB_DDONE_MASK;
 
-	/* axi v3 => 3:256 bytes, 2:128 bytes */
-	if (prChipInfo->is_enable_wfdma_write_back)
-		prGloCfg->word |=
+	prGloCfg->word |=
 		(1 << WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_BT_SIZE_SHFT);
-	else
-		prGloCfg->word |=
-		(3 << WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_BT_SIZE_SHFT);
 
 	if (prBusInfo->u4DmaMask > 32) {
 		prGloCfg->word |=
@@ -2967,6 +2962,7 @@ static void mt7935WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE)
 	mt7935WpdmaMsiConfig(prAdapter);
 #endif
+
 	mt7935ConfigWfdmaRxRingThreshold(prAdapter, 0, FALSE);
 
 	mt7935WpdmaConfigExt0(prAdapter);
