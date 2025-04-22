@@ -5947,6 +5947,10 @@ void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	prBssDesc->fgIsEHTPresent = TRUE;
 	prBssDesc->u2MaximumMpdu = (ehtCap->ucEhtMacCap[0] &
 		EHT_MAC_CAP_MAX_MPDU_LEN_MASK);
+	prBssDesc->fgEpcsCap = !!(ehtCap->ucEhtMacCap[0] &
+		EHT_MAC_CAP_EPCS_PRI_ACCESS);
+	prBssDesc->fgUEpcsCap = !!(ehtCap->ucEhtMacCap[1] &
+		EHT_MAC_CAP_U_EPCS_PRI_ACCESS);
 	memcpy(prBssDesc->ucEhtPhyCapInfo, ehtCap->ucEhtPhyCap,
 		EHT_PHY_CAP_BYTE_NUM);
 

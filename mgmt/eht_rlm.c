@@ -260,6 +260,9 @@ void ehtRlmFillCapIE(
 	uint8_t ucSupportedNss = 0, ucDutNss = 0;
 	int8_t eht_bw = 0;
 	u_int8_t fgBfEn = TRUE;
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	struct BSS_DESC *prBssDesc = NULL;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -282,8 +285,17 @@ void ehtRlmFillCapIE(
 
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	/* EPCS: (previously called NSEP) supported for STA */
-	if (IS_BSS_AIS(prBssInfo) && IS_FEATURE_ENABLED(prWifiVar->fgEnEpcs))
-		SET_EHT_MAC_CAP_EPCS_PRI_ACCESS(prEhtCap->ucEhtMacCap);
+	if (IS_BSS_AIS(prBssInfo)) {
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+				prBssInfo->ucBssIndex);
+		if (prBssDesc && prBssDesc->fgEpcsCap &&
+			IS_FEATURE_ENABLED(prWifiVar->fgEnEpcs))
+			SET_EHT_MAC_CAP_EPCS_PRI_ACCESS(prEhtCap->ucEhtMacCap);
+
+		if (prBssDesc && prBssDesc->fgUEpcsCap &&
+			IS_FEATURE_ENABLED(prWifiVar->fgEnUEpcs))
+			SET_EHT_MAC_CAP_U_EPCS_PRI_ACC(prEhtCap->ucEhtMacCap);
+	}
 #endif
 	/* OM_CTRL: default support for both STA and AP; */
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtOMCtrl))

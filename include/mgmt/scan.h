@@ -366,6 +366,16 @@ struct BSS_DESC {
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	u_int8_t fgIsEHTPresent;
+	union {
+		uint8_t ucEpcsPriAccess;
+		struct {
+		/* 0b'01 EPCS
+		 * 0b'10, Unsolicited EPCS
+		 */
+			uint8_t fgEpcsCap: 1;
+			uint8_t fgUEpcsCap: 1;
+		};
+	};
 	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
 #endif
 

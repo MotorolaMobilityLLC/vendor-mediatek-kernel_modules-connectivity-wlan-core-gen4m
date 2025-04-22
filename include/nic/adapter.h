@@ -1001,7 +1001,16 @@ struct WIFI_VAR {
 	uint16_t u2AcsPunctBitmap;
 #endif /* CFG_SUPPORT_SAP_PUNCTURE */
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
-	u_int8_t fgEnEpcs;
+	union {
+		uint8_t ucEnEpcs;
+		struct {
+		/* 0b'01 EPCS
+		 * 0b'10, Unsolicited EPCS
+		 */
+			uint8_t fgEnEpcs: 1;
+			uint8_t fgEnUEpcs: 1;
+		};
+	};
 #endif
 #endif
 
@@ -3311,11 +3320,6 @@ struct ADAPTER {
 #if (CFG_SUPPORT_ML_CHNL_CONDITION == 1)
 	bool fgChnlCondEnabled;
 #endif /* CFG_SUPPORT_ML_CHNL_CONDITION */
-#endif
-#if (CFG_SUPPORT_802_11BE_EPCS == 1)
-	uint8_t ucEpcsTxDialogToken;
-	uint8_t ucEpcsRxDialogToken;
-	uint8_t ucEpcsRspRetryCnt;
 #endif
 	uint8_t ucCnmTokenID;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

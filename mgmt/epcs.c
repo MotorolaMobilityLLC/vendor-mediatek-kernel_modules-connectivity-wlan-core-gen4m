@@ -135,13 +135,13 @@ uint32_t epcsRspTxDoneCb(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prMldStaRec->rEpcsTimer);
 
 	if (rTxDoneStatus != TX_RESULT_SUCCESS &&
-			prAdapter->ucEpcsRspRetryCnt > EPCS_RETRY_LIMIT) {
+			prMldStaRec->ucEpcsRspRetryCnt > EPCS_RETRY_LIMIT) {
 		prMldStaRec->fgEPCS = 0;
-		prAdapter->ucEpcsRspRetryCnt = 0;
+		prMldStaRec->ucEpcsRspRetryCnt = 0;
 		/* Restore BSS (MU)Edca param parsed in Req from AP */
 		epcsMldMUnEdcaBackupRestore(prMldBssInfo, FALSE);
 	} else if (rTxDoneStatus != TX_RESULT_SUCCESS) {
-		prAdapter->ucEpcsRspRetryCnt++;
+		prMldStaRec->ucEpcsRspRetryCnt++;
 		epcsSend(prAdapter, EPCS_ENABLE_RESPONSE, prBssInfo);
 	} else {
 		prMldStaRec->fgEPCS = 1;
@@ -239,15 +239,24 @@ uint32_t epcsSend(struct ADAPTER *prAdapter, enum PROTECTED_EHT_ACTION eAction,
 	struct STA_RECORD *prStaRec;
 	struct MLD_STA_RECORD *prMldStaRec;
 	struct MLD_BSS_INFO *prMldBssInfo;
+	struct BSS_DESC *prBssDesc;
 	uint16_t u2EstimatedFrameLen;
 	uint16_t u2FrameLen = 0;
 
-	if (!prBssInfo)
+
+	if (!prBssInfo || !prAdapter || !IS_BSS_AIS(prBssInfo))
 		return WLAN_STATUS_FAILURE;
 
+	prBssDesc = aisGetTargetBssDesc(prAdapter, prBssInfo->ucBssIndex);
 	prStaRec = aisGetStaRecOfAP(prAdapter, prBssInfo->ucBssIndex);
-	if (!prStaRec)
+	if (!prBssDesc || !prStaRec)
 		return WLAN_STATUS_FAILURE;
+
+	if (!prBssDesc->fgEpcsCap) {
+		DBGLOG(TX, ERROR,
+			"AP does not support EPCS\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
@@ -284,13 +293,13 @@ uint32_t epcsSend(struct ADAPTER *prAdapter, enum PROTECTED_EHT_ACTION eAction,
 
 	switch (eAction) {
 	case EPCS_ENABLE_REQUEST:
-		prAdapter->ucEpcsTxDialogToken++;
-		epcsComposeReq(prMsduInfo, prAdapter->ucEpcsTxDialogToken);
+		prMldStaRec->ucEpcsTxDialogToken++;
+		epcsComposeReq(prMsduInfo, prMldStaRec->ucEpcsTxDialogToken);
 		u2FrameLen += OFFSET_OF(struct ACTION_EPCS_REQ_FRAME,
 					aucMultiLink);
 		break;
 	case EPCS_ENABLE_RESPONSE:
-		epcsComposeRsp(prMsduInfo, prAdapter->ucEpcsRxDialogToken,
+		epcsComposeRsp(prMsduInfo, prMldStaRec->ucEpcsRxDialogToken,
 				STATUS_CODE_SUCCESSFUL);
 		u2FrameLen += OFFSET_OF(struct ACTION_EPCS_RSP_FRAME,
 				aucMultiLink);
@@ -329,9 +338,29 @@ uint32_t epcsSend(struct ADAPTER *prAdapter, enum PROTECTED_EHT_ACTION eAction,
 	return WLAN_STATUS_SUCCESS;
 }
 
+static bool epcsIsRspValid(struct ADAPTER *prAdapter,
+			struct MLD_STA_RECORD *prMldStaRec,
+			struct BSS_DESC *prBssDesc, uint8_t ucRxToken)
+{
+	/* check if Rx token matches latest Tx EPCS request */
+	if (prMldStaRec->ucEpcsTxDialogToken == ucRxToken)
+		return TRUE;
+
+	/* check Unsolicated EPCS capability */
+	if (!prAdapter->rWifiVar.fgEnUEpcs || !prBssDesc->fgUEpcsCap)
+		return FALSE;
+
+	/* the only valid token id of unsolicated EPCS resp is 0 */
+	if (ucRxToken == 0)
+		return TRUE;
+
+	return FALSE;
+
+}
+
 void epcsProcessRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		struct MLD_STA_RECORD *prMldStaRec,
-		struct MLD_BSS_INFO *prMldBssInfo)
+		struct MLD_BSS_INFO *prMldBssInfo, struct BSS_DESC *prBssDesc)
 {
 	const uint8_t *ml;
 	struct ACTION_EPCS_RSP_FRAME *prRxFrame;
@@ -340,7 +369,8 @@ void epcsProcessRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 
-	if (!prAdapter || !prSwRfb || !prMldStaRec || !prMldBssInfo)
+	if (!prAdapter || !prSwRfb || !prMldStaRec || !prMldBssInfo
+	    || !prBssDesc)
 		return;
 
 	prRxFrame = (struct ACTION_EPCS_RSP_FRAME *) prSwRfb->pvHeader;
@@ -348,8 +378,14 @@ void epcsProcessRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	DBGLOG_MEM8(RX, TRACE, prRxFrame, prSwRfb->u2PacketLen);
 	DBGLOG(RX, TRACE, "[EPCS] !=======================================!\n");
 
-	if (prRxFrame->u2StatusCode != STATUS_CODE_SUCCESSFUL ||
-		prRxFrame->ucDialogToken != prAdapter->ucEpcsTxDialogToken)
+	DBGLOG(RX, INFO, "status %u, uEpcs %d, Rx Dia %d, Adapter Dia %d",
+	       prRxFrame->u2StatusCode, prAdapter->rWifiVar.fgEnUEpcs,
+	       prRxFrame->ucDialogToken, prMldStaRec->ucEpcsTxDialogToken);
+
+	if (prRxFrame->u2StatusCode != STATUS_CODE_SUCCESSFUL)
+		return;
+	if (!epcsIsRspValid(prAdapter, prMldStaRec, prBssDesc,
+		prRxFrame->ucDialogToken))
 		return;
 
 	/* Process priority access multi-link IE */
@@ -392,7 +428,7 @@ uint32_t epcsProcessReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 	prRxFrame = (struct ACTION_EPCS_REQ_FRAME *) prSwRfb->pvHeader;
 
-	prAdapter->ucEpcsRxDialogToken = prRxFrame->ucDialogToken;
+	prMldStaRec->ucEpcsRxDialogToken = prRxFrame->ucDialogToken;
 
 	/* Process priority access multi-link IE */
 	pucIE = (uint8_t *) &prRxFrame->aucMultiLink;
@@ -550,6 +586,7 @@ void epcsProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct STA_RECORD *prStaRec;
 	struct MLD_STA_RECORD *prMldStaRec;
 	struct MLD_BSS_INFO *prMldBssInfo;
+	struct BSS_DESC *prBssDesc;
 	struct WIFI_VAR *prWifiVar;
 	uint32_t rStatus;
 
@@ -565,15 +602,17 @@ void epcsProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo || !IS_BSS_AIS(prBssInfo))
 		return;
 
+	prBssDesc = aisGetTargetBssDesc(prAdapter, prBssInfo->ucBssIndex);
 	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 
-	if (!prMldStaRec || !prMldBssInfo) {
+	if (!prMldStaRec || !prMldBssInfo || !prBssDesc) {
 		DBGLOG(RX, ERROR,
-			"prMldStaRec or prMldBssInfo equal to NULL\n");
+			"prMldStaRec, prMldBssInfo, or prBssDesc equal to NULL\n"
+		);
 		return;
 	}
 
@@ -583,17 +622,20 @@ void epcsProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	switch (prRxFrame->ucAction) {
 	case EPCS_ENABLE_REQUEST:
+		if (!prBssDesc->fgEpcsCap)
+			break;
 		rStatus = epcsProcessReq(prAdapter, prSwRfb,
 				prMldStaRec, prMldBssInfo);
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
 			/* Send response */
-			prAdapter->ucEpcsRspRetryCnt = 0;
+			prMldStaRec->ucEpcsRspRetryCnt = 0;
 			epcsSend(prAdapter, EPCS_ENABLE_RESPONSE, prBssInfo);
 		}
 		break;
 	case EPCS_ENABLE_RESPONSE:
-		epcsProcessRsp(prAdapter, prSwRfb, prMldStaRec, prMldBssInfo);
+		epcsProcessRsp(prAdapter, prSwRfb, prMldStaRec, prMldBssInfo,
+			prBssDesc);
 		break;
 	case EPCS_TEARDOWN:
 		/* Restore BSS (MU)Edca param */

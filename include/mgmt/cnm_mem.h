@@ -883,7 +883,12 @@ struct MLD_STA_RECORD {
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
 	uint8_t fgIsSbMlsr; /* single band MLSR 5+6 */
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	uint8_t ucEpcsTxDialogToken;
+	uint8_t ucEpcsRxDialogToken;
+	uint8_t ucEpcsRspRetryCnt;
 	struct TIMER rEpcsTimer;
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	enum ENUM_T2LM_STATE eT2LMState;
 	enum ENUM_T2LM_STATE eT2LMNextState;

@@ -193,6 +193,15 @@ struct IE_BW_INDICATION {
 #define EHT_MAC_CAP_MAX_MPDU_LEN_MASK		BITS(6, 7)
 #define EHT_MAC_CAP_MAX_MPDU_LEN_OFFSET
 
+/* EHT MAC Capablilites byte1 */
+/*
+ * Indicates support for Unsolicited EPCS priority access parameter update
+ * 802.11be D7.0
+ */
+#define EHT_MAC_CAP_U_EPCS_PRI_ACCESS BIT(6)
+
+#define SET_EHT_MAC_CAP_U_EPCS_PRI_ACC(_aucMacCapInfo) \
+	(_aucMacCapInfo[1] |= EHT_MAC_CAP_U_EPCS_PRI_ACCESS)
 /* 802.11be D1.3 9.2.4.6.4 A-Control */
 #define HTC_EHT_A_CTRL_OM			7
 

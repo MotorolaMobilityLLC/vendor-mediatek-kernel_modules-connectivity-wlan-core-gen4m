@@ -7632,8 +7632,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4T2LMRetryLimit, "T2LMRetryLimit", 1,
 		  FEATURE_DEBUG_ONLY);
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
-	INIT_UINT(prWifiVar->fgEnEpcs, "EnableEpcs", FEATURE_ENABLED,
-		  FEATURE_DEBUG_ONLY);
+	/* 0b'01: enable EPCS; 0b'11: enable EPCS + Unsolicited EPCS */
+	INIT_UINT(prWifiVar->ucEnEpcs, "EnableEpcs", 3, FEATURE_DEBUG_ONLY);
 #endif
 #if (CFG_SUPPORT_MLC == 1)
 	INIT_UINT(prWifiVar->ucDisableFwkMlc, "DisableFwkMlc", FEATURE_DISABLED,
