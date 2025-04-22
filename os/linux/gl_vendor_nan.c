@@ -4080,7 +4080,7 @@ mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
-	struct NanFollowupIndMsg *prNanFollowupInd;
+	struct NanSelfFollowupIndMsg *prNanSelfFollowupInd;
 	struct NAN_FOLLOW_UP_EVENT *prFollowupEvt;
 	size_t message_len = 0;
 
@@ -4090,39 +4090,32 @@ mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 
 	prFollowupEvt = (struct NAN_FOLLOW_UP_EVENT *) pcuEvtBuf;
 
-	message_len = sizeof(struct _NanMsgHeader) +
-			sizeof(struct _NanFollowupIndParams);
+	message_len = sizeof(*prNanSelfFollowupInd);
 
-	prNanFollowupInd = kmalloc(message_len, GFP_KERNEL);
-	if (!prNanFollowupInd) {
+	prNanSelfFollowupInd = kmalloc(message_len, GFP_KERNEL);
+	if (!prNanSelfFollowupInd) {
 		DBGLOG(NAN, ERROR, "Allocate failed\n");
 		return -ENOMEM;
 	}
 
-	kalMemZero(prNanFollowupInd, message_len);
+	kalMemZero(prNanSelfFollowupInd, message_len);
 
-	prNanFollowupInd->fwHeader.msgVersion = 1;
-	prNanFollowupInd->fwHeader.msgId =
+	prNanSelfFollowupInd->fwHeader.msgVersion = 1;
+	prNanSelfFollowupInd->fwHeader.msgId =
 			NAN_MSG_ID_SELF_TRANSMIT_FOLLOWUP_IND;
-	prNanFollowupInd->fwHeader.msgLen = message_len;
-	prNanFollowupInd->fwHeader.handle =
+	prNanSelfFollowupInd->fwHeader.msgLen = message_len;
+	prNanSelfFollowupInd->fwHeader.handle =
 		prFollowupEvt->publish_subscribe_id;
 	/* Indication doesn't have transition ID */
-	prNanFollowupInd->fwHeader.transactionId =
+	prNanSelfFollowupInd->fwHeader.transactionId =
 		prFollowupEvt->transaction_id;
 
-	/*
-	 * Follow_Up msg is sent in Firmware, only tx result is reported
-	 * to Driver. Thus, we print tx and tx_done together here.
-	 */
-	/* NAN_CHK_PNT log message */
-	nanLogTxAndTxDoneFollowup("Follow_Up", prFollowupEvt);
+	if (prFollowupEvt->tx_status == WLAN_STATUS_SUCCESS)
+		prNanSelfFollowupInd->reason = NAN_I_STATUS_SUCCESS;
+	else
+		prNanSelfFollowupInd->reason = NAN_I_STATUS_DE_FAILURE;
 
-	/* No sending to kernel while not WLAN_STATUS_SUCCESS */
-	if (prFollowupEvt->tx_status != WLAN_STATUS_SUCCESS) {
-		kfree(prNanFollowupInd);
-		return WLAN_STATUS_SUCCESS;
-	}
+	nanLogTxAndTxDoneFollowup("Follow_Up", prFollowupEvt);
 
 	/*  Fill skb and send to kernel by nl80211*/
 	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
@@ -4130,18 +4123,18 @@ mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 					WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(NAN, ERROR, "Allocate skb failed\n");
-		kfree(prNanFollowupInd);
+		kfree(prNanSelfFollowupInd);
 		return -ENOMEM;
 	}
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN,
-		message_len, prNanFollowupInd) < 0)) {
+		message_len, prNanSelfFollowupInd) < 0)) {
 		DBGLOG(NAN, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
-		kfree(prNanFollowupInd);
+		kfree(prNanSelfFollowupInd);
 		return -EFAULT;
 	}
 	cfg80211_vendor_event(skb, GFP_KERNEL);
-	kfree(prNanFollowupInd);
+	kfree(prNanSelfFollowupInd);
 
 	return WLAN_STATUS_SUCCESS;
 }

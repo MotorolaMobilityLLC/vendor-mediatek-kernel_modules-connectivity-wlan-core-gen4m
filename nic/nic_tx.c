@@ -1981,28 +1981,16 @@ static bool nicIsNanStaRecTxAllowed(
 	if (!prStaRec || !IS_STA_NAN_TYPE(prStaRec))
 		return FALSE;
 
-	mld_starec = mldStarecGetByStarec(prAdapter,
-		prStaRec);
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (!mld_starec)
 		return FALSE;
 
+	links = &mld_starec->rStarecList;
 
-	links =  &mld_starec->rStarecList;
-	LINK_FOR_EACH_ENTRY(starec,
-		links, rLinkEntryMld,
-		struct STA_RECORD) {
-		if (!starec) {
-			DBGLOG(NAN, LOUD,
-				"\tNull starec\n");
-			continue;
-		}
-
-		DBGLOG(INIT, LOUD,
-			"\tsta: %d, wid: %d, bss: %d => %d\n",
-			starec->ucIndex,
-			starec->ucWlanIndex,
-			starec->ucBssIndex,
-			starec->fgIsTxAllowed);
+	LINK_FOR_EACH_ENTRY(starec, links, rLinkEntryMld, struct STA_RECORD) {
+		DBGLOG(INIT, LOUD, "\tsta: %d, wid: %d, bss: %d => %d\n",
+			starec->ucIndex, starec->ucWlanIndex,
+			starec->ucBssIndex, starec->fgIsTxAllowed);
 
 		if (starec->fgIsTxAllowed)
 			return TRUE;

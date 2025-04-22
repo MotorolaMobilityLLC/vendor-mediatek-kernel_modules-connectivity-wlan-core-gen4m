@@ -284,6 +284,11 @@ struct NanFollowupIndMsg {
 	u8 ptlv[];
 } PACKED;
 
+struct NanSelfFollowupIndMsg {
+	struct _NanMsgHeader fwHeader;
+	u32 reason;
+} PACKED;
+
 /* Event Ind */
 struct NanEventIndParams {
 	u32 eventId : 8;

@@ -3045,9 +3045,11 @@ nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
 	nanSchedGetAvailabilityAttr(prAdapter, prNDL, &pucAvailabilityAttr,
 				    &u4AvailabilityAttrLength);
 
-	/* MERGE_POTENTIAL */
-	prPeerSchDesc->u4MergedCommittedChannel = 0;
-	kalMemZero(prPeerSchDesc->aucPotMergedBitmap, TYPICAL_BITMAP_LENGTH);
+	if (prPeerSchDesc) { /* MERGE_POTENTIAL */
+		prPeerSchDesc->u4MergedCommittedChannel = 0;
+		kalMemZero(prPeerSchDesc->aucPotMergedBitmap,
+			   TYPICAL_BITMAP_LENGTH);
+	}
 
 	if ((pucAvailabilityAttr != NULL) && (u4AvailabilityAttrLength != 0)) {
 		kalMemCopy(((uint8_t *)prMsduInfo->prPacket) +
