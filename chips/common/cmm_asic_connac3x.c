@@ -481,6 +481,9 @@ void asicConnac3xWfdmaReInit(
 	struct ADAPTER *prAdapter)
 {
 #if !CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
+#if CFG_MTK_WIFI_DMASHDL_REINIT
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+#endif
 	u_int8_t fgResult = FALSE;
 	uint32_t u4Val = 0;
 
@@ -489,6 +492,10 @@ void asicConnac3xWfdmaReInit(
 	if (fgResult) {
 		asicConnac3xWfdmaReInitImpl(prAdapter);
 		asicConnac3xWfdmaDummyCrWrite(prAdapter);
+#if CFG_MTK_WIFI_DMASHDL_REINIT
+		if (prBusInfo->DmaShdlInit)
+			prBusInfo->DmaShdlInit(prAdapter);
+#endif
 	}
 #endif /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 }

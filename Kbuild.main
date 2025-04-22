@@ -1359,6 +1359,16 @@ else
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_TX_RING_BK_RS=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_WIFI_DMASHDL_REINIT), y)
+    ifeq ($(CONFIG_SUPPORT_WIFI_WFDMA_TX_RING_BK_RS), y)
+        ccflags-y += -DCFG_MTK_WIFI_DMASHDL_REINIT=0
+    else
+        ccflags-y += -DCFG_MTK_WIFI_DMASHDL_REINIT=1
+    endif
+else
+    ccflags-y += -DCFG_MTK_WIFI_DMASHDL_REINIT=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_WIFI_SW_EMI_RING), y)
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=1
     ifeq ($(CONFIG_SUPPORT_MTK_WIFI_MBU), y)
