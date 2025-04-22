@@ -4512,7 +4512,7 @@ exit:
 uint32_t UniCmdSetRecSecPnInfo(struct ADAPTER *ad,
 	struct PARAM_TX_TSC_INFO *tsc)
 {
-	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC *uni_cmd = NULL;
 	struct UNI_CMD_STAREC_GET_PN *tag;
 	uint32_t max_cmd_len = 0, status = WLAN_STATUS_SUCCESS;
 	uint8_t i;
@@ -4570,6 +4570,8 @@ uint32_t UniCmdSetRecSecPnInfo(struct ADAPTER *ad,
 					sizeof(*tsc));
 
 exit:
+	if (uni_cmd)
+		cnmMemFree(ad, uni_cmd);
 	return status;
 }
 
