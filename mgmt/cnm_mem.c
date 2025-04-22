@@ -1237,6 +1237,7 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 {
 	struct CMD_UPDATE_STA_RECORD *prCmdContent;
 	uint32_t rStatus;
+	struct BSS_DESC *prBssDesc = NULL;
 
 	if (!prAdapter)
 		return;
@@ -1401,6 +1402,20 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prCmdContent->ucRxAmsduInAmpdu
 			&= prAdapter->rWifiVar.ucHtAmsduInAmpduRx;
 	}
+
+	if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex))
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+			prStaRec->ucBssIndex);
+	else if (IS_BSS_INDEX_P2P(prAdapter, prStaRec->ucBssIndex))
+		prBssDesc = p2pGetTargetBssDesc(prAdapter,
+			prStaRec->ucBssIndex);
+
+	if (prBssDesc && bssIsIotAp(prAdapter, prBssDesc,
+		WLAN_IOT_AP_DIS_TX_AMSDU)) {
+		prCmdContent->ucTxAmsduInAmpdu = 0;
+		DBGLOG(NIC, INFO, "IoT AP: DISABLE AMSDU\n");
+	}
+
 #if CFG_SUPPORT_WED_PROXY
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_MLD_STAREC_MULTI(mldStarecGetByStarec(

@@ -12835,6 +12835,7 @@ wlanoidSetTxAmsduNumLimit(struct ADAPTER *prAdapter,
 	struct UNI_CMD_TX_AMSDU_NUM_LIMIT *prLimit;
 	uint32_t cmd_len;
 	struct PARAM_SET_TX_AMSDU_NUM_LIMIT_INFO *prParam;
+	struct BSS_DESC *prBssDesc = NULL;
 #endif
 
 	if (!prAdapter || !pvQueryBuffer || !pu4QueryInfoLen)
@@ -12871,7 +12872,18 @@ wlanoidSetTxAmsduNumLimit(struct ADAPTER *prAdapter,
 	prLimit->u2Tag = UNI_CMD_BA_OFFLOAD_TAG_TX_AMSDU_NUM_LIMIT;
 	prLimit->u2Length = sizeof(*prLimit);
 	prLimit->ucBssIdx = ucBssIndex;
-	prLimit->ucTxAmsduNum = prParam->ucTxAmsduNum;
+
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	else if (IS_BSS_INDEX_P2P(prAdapter, ucBssIndex))
+		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIndex);
+
+	if (prBssDesc && bssIsIotAp(prAdapter, prBssDesc,
+		WLAN_IOT_AP_DIS_TX_AMSDU)) {
+		prLimit->ucTxAmsduNum = 0;
+		DBGLOG(NIC, INFO, "IoT AP: DISABLE AMSDU\n");
+	} else
+		prLimit->ucTxAmsduNum = prParam->ucTxAmsduNum;
 	prLimit->ucSet = prParam->ucSet;
 
 	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
