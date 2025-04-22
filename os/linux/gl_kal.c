@@ -7251,7 +7251,6 @@ void kalAlarmTimerStart(struct alarm *prTimer, uint32_t delayMs)
 	}
 
 	alarm_start(prTimer, kTargetTime);
-	kalAlarmTimerIsRunning(prTimer);
 
 	DBGLOG(INIT, TRACE,
 		"alarmtimer %p %lldms started\n", prTimer, delayMs);
