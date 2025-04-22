@@ -5707,7 +5707,7 @@ void nicEventMibInfo(struct ADAPTER *prAdapter,
 */
 /*----------------------------------------------------------------------------*/
 bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
-	uint8_t ucBcnTimeoutReason, uint8_t *ucDisconnectReason,
+	uint8_t ucBcnTimeoutReason, uint8_t ucLinkDtThreshold,
 	uint8_t ucBssIdx)
 {
 	struct RX_CTRL	*prRxCtrl;
@@ -5734,11 +5734,11 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	GET_BOOT_SYSTIME(&rCurrentTime);
 
 	DBGLOG(NIC, DEBUG,
-			"u4MonitorWindow: %d, rCurrentTime: %d, rLastRxTime: %d, rLastUnicastRxTime: %d, rLastTxTime: %d\n",
-			u4MonitorWindow, rCurrentTime,
-			prRxCtrl->rLastRxTime[ucBssIdx],
-			prRxCtrl->rLastUnicastRxTime[ucBssIdx],
-			prTxCtrl->rLastTxTime[ucBssIdx]);
+		"u4MonitorWindow: %d, rCurrentTime: %d, ucLinkDtThreshold: %d, rLastRxTime: %d, rLastUnicastRxTime: %d, rLastTxTime: %d\n",
+		u4MonitorWindow, rCurrentTime, ucLinkDtThreshold,
+		prRxCtrl->rLastRxTime[ucBssIdx],
+		prRxCtrl->rLastUnicastRxTime[ucBssIdx],
+		prTxCtrl->rLastTxTime[ucBssIdx]);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo) {
@@ -5775,7 +5775,8 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 		if (!CHECK_FOR_TIMEOUT(rCurrentTime,
 			prRxCtrl->rLastRxTime[ucBssIdx],
 			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
-		    aisBeaconTimeoutFilterPolicy(prAdapter, ucBssIdx))
+		    aisBeaconTimeoutFilterPolicy(prAdapter,
+				ucLinkDtThreshold, ucBssIdx))
 			bValid = FALSE;
 	}
 #if CFG_ENABLE_WIFI_DIRECT
@@ -5801,6 +5802,7 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 	if (prAdapter->fgDisBcnLostDetection == FALSE) {
 		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 		struct EVENT_BSS_BEACON_TIMEOUT *prEventBssBeaconTimeout;
+		uint8_t ucLinkDtThreshold = RCPI_FOR_DONT_BTO;
 
 		prEventBssBeaconTimeout = (struct EVENT_BSS_BEACON_TIMEOUT
 					   *) (prEvent->aucBuffer);
@@ -5814,9 +5816,15 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(NIC, INFO,
-		       "EVENT_ID_BSS_BEACON_TIMEOUT, BssIdx: %u, Reason code: %d\n",
+		       "EVENT_ID_BSS_BEACON_TIMEOUT, BssIdx: %u, Reason code: %d LinkDtThres: %d\n",
 		       prEventBssBeaconTimeout->ucBssIndex,
-		       prEventBssBeaconTimeout->ucReasonCode);
+		       prEventBssBeaconTimeout->ucReasonCode,
+		       prEventBssBeaconTimeout->ucLinkDtThreshold);
+
+		if (prEventBssBeaconTimeout->ucLinkDtThreshold > 0)
+			ucLinkDtThreshold =
+				prEventBssBeaconTimeout->ucLinkDtThreshold;
+
 /* fos_change begin */
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
 		prAdapter->total_beacon_timeout_count++;
@@ -5842,28 +5850,21 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 		}
 
 		if (IS_BSS_AIS(prBssInfo)) {
-			uint8_t ucDisconnectReason =
-				DISCONNECT_REASON_CODE_RADIO_LOST;
-
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
 				prEventBssBeaconTimeout->ucReasonCode,
-				&ucDisconnectReason,
+				ucLinkDtThreshold,
 				prBssInfo->ucBssIndex))
 				aisBssBeaconTimeout_impl(prAdapter,
 					prEventBssBeaconTimeout->ucReasonCode,
-					ucDisconnectReason,
 					TRUE,
 					prBssInfo->ucBssIndex);
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
-			uint8_t ucDisconnectReason =
-				DISCONNECT_REASON_CODE_RADIO_LOST;
-
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
-					prEventBssBeaconTimeout->ucReasonCode,
-					&ucDisconnectReason,
-					prEventBssBeaconTimeout->ucBssIndex))
+				prEventBssBeaconTimeout->ucReasonCode,
+				ucLinkDtThreshold,
+				prEventBssBeaconTimeout->ucBssIndex))
 				p2pRoleFsmRunEventBeaconTimeout(prAdapter,
 					prBssInfo);
 		}

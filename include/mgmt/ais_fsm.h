@@ -123,7 +123,7 @@
 #define RCPI_FOR_DONT_ROAM		    60 /*-80dbm*/
 #endif
 
-#define RCPI_FOR_DONT_BTO                   66 /*-77dbm*/
+#define RCPI_FOR_DONT_BTO                   68 /*-76dbm*/
 
 #define AIS_BTM_DIS_IMMI_THRESHOLD	    60000 /* MSEC */
 #define AIS_BTM_DIS_IMMI_STATE_0	    0
@@ -884,11 +884,10 @@ void aisBssBeaconTimeout(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
 void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
-	uint8_t ucBcnTimeoutReason, uint8_t ucDisconnectReason,
-	uint8_t fgTryRecover, uint8_t ucBssIndex);
+	uint8_t ucBcnTimeoutReason, uint8_t fgTryRecover, uint8_t ucBssIndex);
 
 uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
+	uint8_t ucLinkDtThreshold, uint8_t ucBssIndex);
 
 void aisBssLinkDown(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);

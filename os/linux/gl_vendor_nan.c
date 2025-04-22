@@ -1216,8 +1216,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			prAdapter->fgIsNANStartWaiting = TRUE;
 			aisBssBeaconTimeout_impl(prAdapter,
 			BEACON_TIMEOUT_REASON_NUM,
-			DISCONNECT_REASON_CODE_RADIO_LOST,
-			TRUE,
+			FALSE,
 			aisGetDefaultLinkBssIndex(prAdapter));
 			waitRet = wait_for_completion_timeout(
 				&prAdapter->prGlueInfo->rNanAisComp,

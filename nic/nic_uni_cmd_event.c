@@ -12820,6 +12820,7 @@ void nicUniEventBeaconTimeout(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_BEACON_TIMEOUT_INFO *) tag;
 
 			legacy.ucReasonCode = info->ucReasonCode;
+			legacy.ucLinkDtThreshold = info->ucLinkDtThreshold;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_BSS_BEACON_TIMEOUT,
 					&legacy);
@@ -13255,10 +13256,6 @@ void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				status->u2RcpiHighThreshold;
 
 			roamingFsmProcessEvent(ad, &legacy);
-		}
-		break;
-		case UNI_EVENT_ROAMING_TAG_LINK_STATUS: {
-			/* TODO */
 		}
 		break;
 		default:

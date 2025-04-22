@@ -567,7 +567,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	int32_t ai4DataRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 	int32_t ai4BSSDescRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
 	int32_t ai4RespRssi[MAX_BSSID_NUM][MAX_ANTENNA_NUM] = {0};
-#if (CFG_EXT_ROAMING == 1)
+#if (CFG_EXT_FEATURE == 1)
 	struct AIS_EXT_INFO *prAisExtInfo;
 #endif
 #if CFG_SUPPORT_MBRAIN_BIGDATA

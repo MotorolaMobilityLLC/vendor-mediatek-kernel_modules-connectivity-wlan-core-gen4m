@@ -16746,7 +16746,6 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 		aisBssBeaconTimeout_impl(prAdapter,
 			BEACON_TIMEOUT_REASON_NUM,
-			DISCONNECT_REASON_CODE_RADIO_LOST,
 			i4Recover != 0,
 			ucBssIndex);
 

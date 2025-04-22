@@ -1323,8 +1323,9 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
-	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA256 ||
-	    prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA384) {
+	if (prBssDesc &&
+	    (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA256 ||
+	     prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA384)) {
 		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
 		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
 			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
@@ -2558,14 +2559,21 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 	/* quick disconnect when bto scan can't find better AP*/
 	if (eReason == ROAMING_REASON_BEACON_TIMEOUT) {
 		struct MSG_AIS_ABORT *prAisAbortMsg;
-		struct BSS_DESC *prBtoBssDesc;
+		struct BSS_DESC *prBssDesc;
+		uint8_t i;
 
-		prBtoBssDesc = ais->rBtoInfo.prBtoBssDesc;
-		if (prBtoBssDesc && !prBtoBssDesc->fgIsInBTO) {
-			DBGLOG(AIS, INFO, "AIS[%d][%d] BTO recovered\n",
-				ais->ucAisIndex, ucBssIndex);
-			aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
-			goto skip_roam_fail;
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			prBssDesc = aisGetLinkBssDesc(ais, i);
+
+			if (prBssDesc && !prBssDesc->fgIsInBTO) {
+				DBGLOG(AIS, INFO, "AIS[%d][%d] Link[%d] "MACSTR
+					"[%s] still alive, BTO recovered\n",
+					ais->ucAisIndex, ucBssIndex,
+					i, MAC2STR(prBssDesc->aucBSSID),
+					apucBandStr[prBssDesc->eBand]);
+				aisFsmClearPostponedBTO(prAdapter, ucBssIndex);
+				goto skip_roam_fail;
+			}
 		}
 
 		prAisAbortMsg = (struct MSG_AIS_ABORT *)
@@ -4329,6 +4337,7 @@ enum ENUM_AIS_STATE aisFsmScanResultsUpdate(struct ADAPTER *prAdapter,
 
 			conn->eConnectionPolicy = CONNECT_BY_BSSID_REUSE;
 			rRoamingData.eReason = ROAMING_REASON_INACTIVE;
+			rRoamingData.u2Event = ROAMING_EVENT_DISCOVERY;
 			rRoamingData.u2Data = prBssDesc->ucRCPI;
 			rRoamingData.u2RcpiLowThreshold =
 				prRoamingFsmInfo->ucThreshold;
@@ -4648,6 +4657,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 
 		prAisFsmInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
 		rRoamingData.eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
+		rRoamingData.u2Event = ROAMING_EVENT_DISCOVERY;
 		rRoamingData.u2Data = prBssDesc ?
 			prBssDesc->ucRCPI : RCPI_FOR_DONT_ROAM;
 		rRoamingData.u2RcpiLowThreshold =
@@ -7137,12 +7147,11 @@ void aisBssBeaconTimeout(struct ADAPTER *prAdapter,
 {
 	/* trigger by driver, use dummy reason code */
 	aisBssBeaconTimeout_impl(prAdapter, BEACON_TIMEOUT_REASON_NUM,
-		DISCONNECT_REASON_CODE_RADIO_LOST, FALSE, ucBssIndex);
+		FALSE, ucBssIndex);
 }
 
 void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
-	uint8_t ucBcnTimeoutReason, uint8_t ucDisconnectReason,
-	uint8_t fgTryRecover, uint8_t ucBssIndex)
+	uint8_t ucBcnTimeoutReason, uint8_t fgTryRecover, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
@@ -7204,7 +7213,8 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 		join = timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer);
 
 		prAisBtoInfo->ucBcnTimeoutReason = ucBcnTimeoutReason;
-		prAisBtoInfo->ucDisconnectReason = ucDisconnectReason;
+		prAisBtoInfo->ucDisconnectReason =
+			DISCONNECT_REASON_CODE_RADIO_LOST;
 		prAisBtoInfo->prBtoBssDesc = prBtoBssDesc;
 		prAisBtoInfo->fgTryRecover = fgTryRecover;
 
@@ -7223,7 +7233,7 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 		}
 	} else {
 		aisFsmStateAbort(prAdapter,
-			ucDisconnectReason,
+			DISCONNECT_REASON_CODE_RADIO_LOST,
 			FALSE, ucBssIndex);
 	}
 }
@@ -7270,6 +7280,7 @@ void aisHandleBeaconTimeout(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 		rRoamingData.eReason = ROAMING_REASON_BEACON_TIMEOUT;
+		rRoamingData.u2Event = ROAMING_EVENT_DISCOVERY;
 		rRoamingData.u2Data = prAisBtoInfo->prBtoBssDesc->ucRCPI;
 		rRoamingData.u2RcpiLowThreshold =
 			prRoamingFsmInfo->ucThreshold;
@@ -7296,7 +7307,7 @@ void aisHandleBeaconTimeout(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 */
 /*----------------------------------------------------------------------------*/
 uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
+	uint8_t ucLinkDtThreshold, uint8_t ucBssIndex)
 {
 	int32_t i4DataRssi0 = 0, i4DataRssi1 = 0, i4DataRssi, i4BcnRssi;
 	struct STA_RECORD *prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
@@ -7320,12 +7331,11 @@ uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	else
 		i4DataRssi = i4DataRssi1;
 
-	DBGLOG(NIC, DEBUG, "RX in the past duration, Beacon = %d, Data = %d\n",
-				i4BcnRssi, i4DataRssi);
+	DBGLOG(AIS, INFO, "RX in the past duration, Beacon = %d, Data = %d\n",
+		i4BcnRssi, i4DataRssi);
 
 	return  (dBm_TO_RCPI(i4BcnRssi) > RCPI_FOR_DONT_ROAM) &&
-		(dBm_TO_RCPI(i4DataRssi) >
-			prAdapter->rWifiVar.ucLDtStaSkipLowRCPIACKThres);
+		(dBm_TO_RCPI(i4DataRssi) > ucLinkDtThreshold);
 }
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
@@ -9349,6 +9359,7 @@ skip_t2lm:
 
 	DBGLOG(AIS, INFO, "BTM req roam start, DIS_IMMI_STATE %d\n",
 		prBtmParam->ucDisImmiState);
+	rRoamingData.u2Event = ROAMING_EVENT_DISCOVERY;
 	rRoamingData.u2Data = prBssDesc->ucRCPI;
 	rRoamingData.u2RcpiLowThreshold = prRoamingFsmInfo->ucThreshold;
 	rRoamingData.ucBssidx = ucBssIndex;

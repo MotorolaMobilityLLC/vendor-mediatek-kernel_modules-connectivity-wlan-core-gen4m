@@ -1430,6 +1430,7 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_STATE eNextState;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
 	struct STA_RECORD *prStaRec;
+	struct CMD_ROAMING_TRANSIT rTransit = {0};
 
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prRoamingFsmInfo->ucRspBssIndex = ucBssIndex;
@@ -1457,6 +1458,12 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 			"prStaRec State < STATE3, Ignore roaming request.\n");
 		return;
 	}
+
+	/* sync that roaming is ongoing with FW */
+	rTransit.u2Event = ROAMING_EVENT_ROAM;
+	rTransit.ucBssidx = ucBssIndex;
+	roamingFsmSendCmd(prAdapter,
+		(struct CMD_ROAMING_TRANSIT *) &rTransit);
 
 	eNextState = ROAMING_STATE_DISCOVERY;
 	/* DECISION -> DISCOVERY */
@@ -1714,8 +1721,6 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	if (prTransit->u2Event == ROAMING_EVENT_DISCOVERY) {
-		struct CMD_ROAMING_TRANSIT rTransit = {0};
-
 		DBGLOG(ROAMING, INFO,
 			"ROAMING_EVENT_DISCOVERY Data[%u] RCPI[%u(%d)] PER[%u] Thr[%u(%d)] Reason[%d] Time[%u]\n",
 			prTransit->u2Data,
@@ -1727,13 +1732,10 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 			prTransit->eReason,
 			prTransit->u4RoamingTriggerTime);
 
-		rTransit.u2Event = ROAMING_EVENT_ROAM;
-		rTransit.ucBssidx = ucBssIndex;
-		roamingFsmSendCmd(prAdapter,
-			(struct CMD_ROAMING_TRANSIT *) &rTransit);
-
 		/* fail when roaming is ongoing or during CSA*/
 		if (!roamingFsmInDecision(prAdapter, FALSE, ucBssIndex)) {
+			struct CMD_ROAMING_TRANSIT rTransit = {0};
+
 			DBGLOG(ROAMING, EVENT,
 				"There's ongoing roaming/CSA - ignore bssidx:%d\n",
 				ucBssIndex);

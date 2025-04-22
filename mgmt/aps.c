@@ -1969,17 +1969,11 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
+	if (!IS_AIS_CONN_BSSDESC(ais, prBssDesc) &&
+	    CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
 		SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
 		SCN_BSS_DESC_STALE_SEC_WFD : SCN_BSS_DESC_STALE_SEC))) {
 		APSLOG(APS, WARN, MACSTR " description is too old.\n",
-			MAC2STR(prBssDesc->aucBSSID));
-		return FALSE;
-	}
-
-	/* BTO case */
-	if (prBssDesc->fgIsInBTO) {
-		log_dbg(APS, WARN, MACSTR " is in BTO.\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
@@ -2177,6 +2171,14 @@ try_again:
 				continue;
 			}
 
+			/* Skip BTO AP */
+			if (bss->fgIsInBTO) {
+				APSLOG(APS, WARN, "BSS[" MACSTR
+					"] is in BTO\n",
+					MAC2STR(bss->aucBSSID));
+				continue;
+			}
+
 			if (conn->u2LinkIdBitmap == 0xFFFF &&
 			    !apsIsBssQualify(ad, bss, reason, min_score,
 				bss->u2Score, bidx))
@@ -2250,7 +2252,7 @@ uint32_t apsSortGetScore(struct BSS_DESC *candi)
 	if (candi) {
 		if (candi->fgIsMatchBssid || candi->fgIsMatchBssidHint)
 			return UINT_MAX;
-		else if (!candi->fgDriverGen)
+		else if (!candi->fgDriverGen && !candi->fgIsInBTO)
 			return candi->u4Tput;
 	}
 	return 0;

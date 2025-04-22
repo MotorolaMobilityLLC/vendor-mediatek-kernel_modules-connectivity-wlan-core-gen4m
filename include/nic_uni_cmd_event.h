@@ -6121,7 +6121,6 @@ struct UNI_EVENT_MDNS_RECORD {
 
 enum ENUM_UNI_EVENT_ROAMING_TAG {
 	UNI_EVENT_ROAMING_TAG_STATUS  = 0,
-	UNI_EVENT_ROAMING_TAG_LINK_STATUS = 1,
 	UNI_EVENT_ROAMING_TAG_NUM
 };
 
@@ -6136,17 +6135,6 @@ struct UNI_EVENT_ROAMING_STATUS {
 	uint32_t u4RoamingTriggerTime;
 	uint16_t u2RcpiLowThreshold;
 	uint16_t u2RcpiHighThreshold;
-} __KAL_ATTRIB_PACKED__;
-
-/* Roaming status (Tag1) */
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_ROAMING_LINK_STATUS {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t  ucBssIndex;
-	uint8_t  ucRcpi;
-	uint8_t  ucPER;
-	uint8_t  aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6383,7 +6371,9 @@ struct UNI_EVENT_BEACON_TIMEOUT_INFO {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
 	uint8_t ucReasonCode;
-	uint8_t aucPadding[3];
+	uint8_t ucMLBTOLinkNum;
+	uint8_t ucLinkDtThreshold;
+	uint8_t aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
