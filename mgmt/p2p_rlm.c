@@ -1138,7 +1138,7 @@ u_int8_t rlmValidatePunctBitmap(struct ADAPTER *prAdapter,
 				enum ENUM_MAX_BANDWIDTH_SETTING eBw,
 				uint8_t ucPriCh, uint16_t u2PunctBitmap)
 {
-	uint8_t ucIdx, ucCount, ucStartCh, ucCenterCh, ucVhtBw;
+	uint8_t ucIdx, ucCount, ucStartCh, ucCenterCh;
 	uint16_t u2Bitmap, u2PriChBit;
 	const uint16_t *prValidBitmaps;
 
@@ -1149,8 +1149,7 @@ u_int8_t rlmValidatePunctBitmap(struct ADAPTER *prAdapter,
 	if (!u2Bitmap)
 		return FALSE;
 
-	ucVhtBw = rlmGetVhtOpBwByBssOpBw(eBw);
-	ucCenterCh = nicGetS1(eBand, ucPriCh, CHNL_EXT_RES, ucVhtBw);
+	ucCenterCh = nicGetCenterCh(eBand, ucPriCh, CHNL_EXT_SCN, eBw);
 
 	switch (eBw) {
 	case MAX_BW_80MHZ:
