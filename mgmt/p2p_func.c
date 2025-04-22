@@ -9246,9 +9246,26 @@ void p2pFuncSapSwitchChCheck(
 					prSwitchInterface->prP2pChInterface,
 					prP2pBssInfo,
 					*eFilterScnario);
-			if (*prSwitchInterface->ucInterfaceLen == 1)
+			p2pFuncSapFilterTrace(prAdapter,
+					prSwitchInterface->ucInterfaceLen,
+					prSwitchInterface->prP2pChInterface,
+					u4Idx);
+
+			if (*prSwitchInterface
+					->ucInterfaceLen == 1 &&
+				prSwitchInterface
+					->prP2pChInterface[0].ucChLowerBound ==
+				prSwitchInterface
+					->prP2pChInterface[0].ucChUpperBound) {
+				if (prSwitchInterface
+					->prP2pChInterface[0].ucChLowerBound ==
+					prP2pBssInfo->ucPrimaryChannel &&
+					prSwitchInterface
+						->prP2pChInterface[0].eRfBand ==
+					prP2pBssInfo->eBand)
+					(*prSwitchInterface->ucInterfaceLen)--;
 				break;
-			else if (*prSwitchInterface->ucInterfaceLen == 0)
+			} else if (*prSwitchInterface->ucInterfaceLen == 0)
 				return;
 		}
 	} else if (*eFilterScnario ==
