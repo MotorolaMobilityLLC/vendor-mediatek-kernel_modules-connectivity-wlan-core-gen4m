@@ -533,7 +533,7 @@ struct BUS_INFO mt7935_bus_info = {
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_WF_B0_HOST_LPCR_FW_OWN_CLR_STAT_MASK,
-#if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
+#if ((CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1) && (CFG_MTK_FPGA_PLATFORM != 1))
 	.fgCheckDriverOwnInt = TRUE,
 #else
 	.fgCheckDriverOwnInt = FALSE,
