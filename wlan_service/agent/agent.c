@@ -5211,7 +5211,10 @@ static s_int32 hqa_set_ru_info_v2(
 						   sizeof(u_int32),
 						   &data, (u_char *)&value);
 			param_loop--;
-			ru_info[sta_seq].start_sp_st = value-1;
+			if (value > 0)
+				ru_info[sta_seq].start_sp_st = value-1;
+			else
+				ru_info[sta_seq].start_sp_st = 0;
 
 
 			/* MPDU length */
@@ -5424,7 +5427,10 @@ static s_int32 hqa_set_ru_info_v3(
 			ru_info[sta_seq].dRU_en = (boolean)seg_dru_en[cnt1];
 			if (seg_dru_en[cnt1] == 0)
 				/* start spatial stream */
-				ru_info[sta_seq].start_sp_st = value-1;
+				if (value > 0)
+					ru_info[sta_seq].start_sp_st = value-1;
+				else
+					ru_info[sta_seq].start_sp_st = 0;
 			else
 				/* dRU BW */
 				ru_info[sta_seq].start_sp_st = value;
@@ -8146,4 +8152,3 @@ s_int32 mt_agent_exit_service(struct service *serv)
 
 	return ret;
 }
-
