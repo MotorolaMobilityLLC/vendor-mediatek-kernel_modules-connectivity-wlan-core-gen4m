@@ -8843,9 +8843,10 @@ int32_t txPwrParseTagMultiBand(
 	char *pcContTemp = NULL;
 	char carySeperator[2] = {0, 0};
 	uint8_t i = 0, j = 0, k = 0, cnt = 0, u1BandIdx = 0;
-	uint8_t op = 0, u1BandMask = 0, u1Pwr = 0;
+	uint8_t op = 0;
 	uint16_t u2MultiBandNum = 0, u2ChCnt;
-	uint8_t u1RfBand = 0, u1StartCh = 0, u1EndCh = 0;
+	uint16_t u2RfBand = 0, u2StartCh = 0, u2EndCh = 0, u2BandMask = 0;
+	uint16_t u2Pwr = 0;
 	struct TX_PWR_CTRL_MULTIBAND_SETTING *prMulBnSetting;
 	char msgLimit[PWR_BUF_LEN];
 	uint32_t u4MsgOfs = 0;
@@ -8893,14 +8894,14 @@ int32_t txPwrParseTagMultiBand(
 		pcContOld = pcCurrent;
 		/* Parsing BandMask */
 		if (txPwrParseNumber(&pcCurrent, ",", &op,
-						(uint16_t *)&u1BandMask)) {
+						(uint16_t *)&u2BandMask)) {
 			DBGLOG(RLM, ERROR,
 				"[MulBnPwr] parse parameter error:%s\n",
 				pcContOld);
 			return -1;
 		}
 
-		u1BandIdx = txPwrBandIdxSearch(u1BandMask);
+		u1BandIdx = txPwrBandIdxSearch(u2BandMask);
 		if (u1BandIdx >= PWR_LIMIT_MULTIBAND_TYPE_NUM)
 			return -1;
 		prMulBnSetting = &pRecord->rMultiBandCfg[u1BandIdx];
@@ -8945,19 +8946,19 @@ int32_t txPwrParseTagMultiBand(
 			/* Parsing RF Band */
 			pcContOld = pcCurrent;
 			if (txPwrParseNumber(&pcCurrent, ",",
-				&op, (uint16_t *)&u1RfBand)) {
+				&op, (uint16_t *)&u2RfBand)) {
 				DBGLOG(RLM, ERROR,
 					"[MulBnPwr] parse parameter error:%s\n",
 					pcContOld);
 				return -1;
 			}
-			if (u1RfBand >= PWR_LIMIT_RF_BAND_NUM)
+			if (u2RfBand >= PWR_LIMIT_RF_BAND_NUM)
 				return -1;
 
 			/* Parsing start ch */
 			pcContOld = pcCurrent;
 			if (txPwrParseNumber(&pcCurrent, ",",
-				&op, (uint16_t *)&u1StartCh)) {
+				&op, (uint16_t *)&u2StartCh)) {
 				DBGLOG(RLM, ERROR,
 					"[MulBnPwr] parse parameter error:%s\n",
 					pcContOld);
@@ -8967,19 +8968,19 @@ int32_t txPwrParseTagMultiBand(
 			/* Parsing end ch */
 			pcContOld = pcCurrent;
 			if (txPwrParseNumber(&pcCurrent, "(",
-				&op, (uint16_t *)&u1EndCh)) {
+				&op, (uint16_t *)&u2EndCh)) {
 				DBGLOG(RLM, ERROR,
 					"[MulBnPwr] parse parameter error:%s\n",
 					pcContOld);
 				return -1;
 			}
-			if (u1StartCh > u1EndCh)
+			if (u2StartCh > u2EndCh)
 				return -1;
 
 			prPwr = &prMulBnSetting->rMultiBandPwr[j];
-			prPwr->u1RfBand = u1RfBand;
-			prPwr->u1Startch = u1StartCh;
-			prPwr->u1Endch = u1EndCh;
+			prPwr->u1RfBand = u2RfBand;
+			prPwr->u1Startch = u2StartCh;
+			prPwr->u1Endch = u2EndCh;
 
 			/* check power limit setting cnt */
 			pcContTemp = pcCurrent;
@@ -9010,14 +9011,16 @@ int32_t txPwrParseTagMultiBand(
 				pcContOld = pcCurrent;
 
 				if (txPwrParseNumber(&pcCurrent, carySeperator,
-					&op, (uint16_t *)&u1Pwr)) {
+					&op, (uint16_t *)&u2Pwr)) {
 					DBGLOG(RLM, ERROR,
 						"[MulBnPwr] [%d-%s]parse parameter error:%s\n",
 						cnt, carySeperator, pcContOld);
 					return -1;
 				}
 				prPwr->Op[k] = op;
-				prPwr->i1MBPwrLmt[k] = u1Pwr;
+				prPwr->i1MBPwrLmt[k] =
+					(int8_t)(op != 2) ? u2Pwr : (0 - u2Pwr);
+
 
 				/*message head*/
 				u4MsgOfs +=
@@ -9039,7 +9042,7 @@ int32_t txPwrParseTagMultiBand(
 			DBGLOG(RLM, TRACE,
 				"[MulBnPwr] [BN:%d,Mask:%d,ChGrp:%d,RF:%d,Ch:%d-%d,%s\n",
 				u1BandIdx,
-				u1BandMask,
+				u2BandMask,
 				j,
 				prMulBnSetting->rMultiBandPwr[j].u1RfBand,
 				prMulBnSetting->rMultiBandPwr[j].u1Startch,
