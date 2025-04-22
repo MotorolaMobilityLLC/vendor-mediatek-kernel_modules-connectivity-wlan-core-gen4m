@@ -4142,7 +4142,6 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 
 		KAL_GET_TS64(&rNowTs);
 		prBssInfo->u8TxStopTS = KAL_TIME_TO_MSEC(rNowTs);
-		prBssInfo->u8TxStartTS = 0;
 #endif
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
@@ -4337,7 +4336,6 @@ void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
 				KAL_GET_TS64(&rNowTs);
 				prBssInfo->u8TxStartTS =
 					KAL_TIME_TO_MSEC(rNowTs);
-				prBssInfo->u8TxStopTS = 0;
 			}
 #endif
 			netif_wake_subqueue(prDev, u2QueueIdx);

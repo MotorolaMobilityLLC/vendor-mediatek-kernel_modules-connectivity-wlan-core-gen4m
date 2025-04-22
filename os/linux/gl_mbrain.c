@@ -661,22 +661,21 @@ void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 			return;
 	}
 
+	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	prToken = &prTokenInfo->arToken[u4TokenId];
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prToken->ucBssIndex);
+	if (!prBssInfo)
+		return;
+
 	if (prAdapter->u4SameTokenCnt > prWifiVar->u4SameTokenThr ||
 		u4TxTimeoutDuration >= prWifiVar->u4TxTimeoutWarningThr) {
-		prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
-		prToken = &prTokenInfo->arToken[u4TokenId];
-
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prToken->ucBssIndex);
-		if (!prBssInfo)
-			return;
-
 		KAL_GET_TS64(&rNowTs);
 		prBssInfo->u8TxTimeoutTS = KAL_TIME_TO_MSEC(rNowTs);
 		prBssInfo->u4TokenId = u4TokenId;
 		prBssInfo->u4TxTimeoutDuration = u4TxTimeoutDuration;
 	}
 }
+
 #if CFG_SUPPORT_PCIE_MBRAIN
 enum wifi2mbr_status mbrWifiPcieHandler(struct ADAPTER *prAdapter,
 	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
@@ -1296,6 +1295,21 @@ uint32_t mbrGetRxSanityDropCnt(struct ADAPTER *prAdapter)
 	return u4RxSanityDropCnt;
 }
 
+
+void mbrTRxPerfDataReset(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	if (!prBssInfo)
+		return;
+
+	prBssInfo->u8TxStopTS = 0;
+	prBssInfo->u8TxStartTS = 0;
+	prBssInfo->u8BTOTS = 0;
+	prBssInfo->u8TxTimeoutTS = 0;
+	prBssInfo->u4TokenId = 0;
+	prBssInfo->u4TxTimeoutDuration = 0;
+}
+
 void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
 {
 	struct MBRAIN_TRXPERF_ENTRY *prTRxPerfEntry = NULL;
@@ -1412,6 +1426,8 @@ void mbrTRxPerfEnqueue(struct ADAPTER *prAdapter)
 	QUEUE_INSERT_TAIL(&prAdapter->rMbrTRxPerfQueue,
 				&prTRxPerfEntry->rQueEntry);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_TRXPERF);
+
+	mbrTRxPerfDataReset(prAdapter, prBssInfo);
 
 	if (prAdapter->rMbrTRxPerfQueue.u4NumElem >
 		MBR_TRX_PERF_QUE_CNT_MAX) {
