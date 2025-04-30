@@ -1124,6 +1124,11 @@ else
     ccflags-y += -DCFG_PCIE_MT6991=0
 endif
 
+ifneq ($(filter $(MODULE_NAME), wlan_drv_gen4m_6991_6639_new9gen2),)
+    CONFIG_MTK_MLR_V2=y
+    CONFIG_MTK_MLR_V2_BALANCE=y
+endif
+
 ifeq ($(CONFIG_SUPPORT_STATS_ONE_CMD), y)
     ccflags-y += -DCFG_SUPPORT_STATS_ONE_CMD=1
 else
