@@ -56,6 +56,10 @@
 
 #include "gl_coredump.h"
 
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 0)
+#include "mt7935_legacy_fw_dl.h"
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -72,7 +76,6 @@
 ********************************************************************************
 */
 
-static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #if defined(_HIF_PCIE)
 static uint8_t mt7935SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
@@ -170,8 +173,7 @@ static void mt7935_apsFillBssDescSet(struct ADAPTER *prAdapter,
 static void mt7935_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
 	struct AP_SCORE_INFO *prScoreInfo, uint8_t ucBssidx);
-#endif
-
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 /*******************************************************************************
 *                              F U N C T I O N S

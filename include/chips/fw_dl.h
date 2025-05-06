@@ -125,8 +125,8 @@ enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_WIFI_ROM_EMI,
 	IMG_DL_IDX_BT_PATCH,
 	IMG_DL_IDX_ZB_PATCH,
-	IMG_DL_IDX_PHY_FW
-
+	IMG_DL_IDX_PHY_FW,
+	IMG_DL_IDX_CBMCU_FW
 };
 
 struct patch_dl_buf {
@@ -223,6 +223,11 @@ struct FWDL_OPS_T {
 		uint8_t *date);
 	uint32_t (*getFlavorVer)(struct GLUE_INFO *prGlueInfo,
 		uint8_t *flavor);
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+	void (*constructCbmcuFwName)(struct GLUE_INFO *prGlueInfo,
+		uint8_t **apucName, uint8_t *pucNameIdx);
+	uint32_t (*downloadCbmcuFw)(struct ADAPTER *prAdapter);
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)

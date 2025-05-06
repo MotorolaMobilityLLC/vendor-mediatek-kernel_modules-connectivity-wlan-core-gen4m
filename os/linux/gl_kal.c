@@ -595,6 +595,10 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 #endif
 		case IMG_DL_IDX_PHY_FW:
 			break;
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+		case IMG_DL_IDX_CBMCU_FW:
+			break;
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
 		default:
 			ASSERT(0);
 			break;
@@ -661,6 +665,17 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 				prChipInfo->fw_dl_ops->constructPhyName(
 					prGlueInfo, apucName, &idx);
 			}
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+		} else if (eDlIdx == IMG_DL_IDX_CBMCU_FW) {
+			if (prChipInfo->fw_dl_ops->constructCbmcuFwName) {
+				prChipInfo->fw_dl_ops->constructCbmcuFwName(
+					prGlueInfo, apucName, &idx);
+				/* constructCbmcuFwName do idx+=1 */
+			} else {
+				DBGLOG(INIT, ERROR, "No CBMCU FW Name!\n");
+				return NULL;
+			}
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
 		} else {
 			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
 				apucName[sub_idx] =

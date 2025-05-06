@@ -503,6 +503,7 @@ local_defines_connv1 = local_defines_common + [
     "CFG_CHIP_RESET_KO_SUPPORT=0",
     "__NO_FORTIFY=1",
     "CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL=0",
+    "CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL=0",
 ]
 
 local_defines_connv2 = local_defines_common + [
@@ -862,6 +863,7 @@ local_defines_connv2 = local_defines_common + [
     "CFG_SUPPORT_MBRAIN=0",
     "CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=0",
     "CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL=0",
+    "CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL=0",
 ]
 
 local_defines_connv3 = local_defines_common + [
@@ -1230,6 +1232,7 @@ local_defines_connv3 = local_defines_common + [
     "CFG_SUPPORT_APF_GET_CAPABILITY=0",
     "CFG_MTK_CCCI_IDC_SUPPORT=0",
     "CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL=0",
+    "CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL=0",
 ] +  ([
     "CFG_SUPPORT_MBRAIN=0",
     "CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=0",

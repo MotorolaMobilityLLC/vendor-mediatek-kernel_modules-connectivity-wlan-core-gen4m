@@ -3344,6 +3344,12 @@ else
     ccflags-y += -DCFG_MTK_WIFI_SUPPORT_PHY_FWDL=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL), y)
+    ccflags-y += -DCFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_TESTMODE_L0P5_FWDL), y)
     ccflags-y += -DCFG_WIFI_TESTMODE_FW_REDOWNLOAD=1
 else
@@ -4121,6 +4127,10 @@ CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
 
 ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
 CHIPS_OBJS += $(CHIPS_CMM)uni_fw_dl.o
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL), y)
+CHIPS_OBJS += $(CHIPS_CMM)fw_dl_legacy_cbmcu.o
 endif
 
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)

@@ -86,9 +86,6 @@ extern struct PP_TOP_CR rMt7935PpTopCr;
 #define CONN_AON_WF_NAPPING_ENABLE	0
 #define CONN_AON_WF_NAPPING_DISABLE	1
 
-#if CFG_ENABLE_FW_DOWNLOAD
-extern struct FWDL_OPS_T mt7935_fw_dl_ops;
-#endif /* CFG_ENABLE_FW_DOWNLOAD */
 
 #if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
 extern struct WLAN_IPC_INFO mt7935_ipc_info;

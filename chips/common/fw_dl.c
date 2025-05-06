@@ -2023,6 +2023,16 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 
 	HAL_ENABLE_FWDL(prAdapter, TRUE);
 
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+	if (prFwDlOps->downloadCbmcuFw) {
+		rStatus = prFwDlOps->downloadCbmcuFw(prAdapter);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "CBMCU FW Download fail\n");
+			goto exit;
+		}
+	}
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
+
 	if (prFwDlOps->downloadPatch) {
 		rStatus = prFwDlOps->downloadPatch(prAdapter);
 		if (rStatus != WLAN_STATUS_SUCCESS) {

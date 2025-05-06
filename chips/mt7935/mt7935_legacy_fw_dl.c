@@ -49,6 +49,10 @@
 
 #include "gl_coredump.h"
 
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+#include "fw_dl_legacy_cbmcu.h"
+#endif
+
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -63,6 +67,11 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  ******************************************************************************
  */
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+static void mt7935ConstructCbmcuName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx);
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
+
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -244,8 +253,7 @@ static void mt7935_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
 			  MT7935_ROM_VERSION);
 	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
 		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
+			"kalSnprintf failed, ret: %d\n", ret);
 	else
 		(*pucNameIdx) += 1;
 }
@@ -270,10 +278,34 @@ static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 
 	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
 		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
+			"kalSnprintf failed, ret: %d\n", ret);
 }
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+static void mt7935ConstructCbmcuName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	int ret = 0;
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
+
+	kalMemZero(aucFlavor, sizeof(aucFlavor));
+	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
+
+	/* Type 1. WIFI_MT7935_PHY_RAM_CODE_1_1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "CBMCU_CODE_MT%x_%s_%u.bin",
+			  MT7935_CHIP_ID,
+			  aucFlavor,
+			  MT7935_ROM_VERSION);
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR,
+			"construct cbmcu fw name fail, ret: %d\n", ret);
+	else
+		(*pucNameIdx) += 1;
+}
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
 
 static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter)
 {
@@ -304,7 +336,7 @@ struct FWDL_OPS_T mt7935_fw_dl_ops = {
 	.parseSingleBinaryFile = wlanParseSingleBinaryFile,
 #endif
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	.constrcutIdxLogBin = NULL,
+	.constrcutIdxLogBin = mt7935_ConstructIdxLogBinName,
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 	.downloadPatch = mt7935_wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
@@ -334,6 +366,11 @@ struct FWDL_OPS_T mt7935_fw_dl_ops = {
 	.constructPhyName = mt7935_ConstructPhyName,
 	.downloadPhyFw  = wlanDownloadPhyFw,
 #endif
+
+#if (CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL == 1)
+	.constructCbmcuFwName = mt7935ConstructCbmcuName,
+	.downloadCbmcuFw = wlanDownloadCbmcuFw,
+#endif /* CFG_MTK_WIFI_SUPPORT_LEGACY_CBMCU_FWDL */
 
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
