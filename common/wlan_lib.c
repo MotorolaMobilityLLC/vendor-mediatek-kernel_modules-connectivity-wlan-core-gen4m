@@ -15282,7 +15282,7 @@ int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
 	for (i = 0; i < BIG_DATA_MAX_STA_NUM; i++) {
 		prStaInfo = &arStaInfo[i];
 
-		if (!prStaInfo->fgValid)
+		if (!prStaInfo || !prStaInfo->fgValid)
 			break;
 
 		if (prStaInfo->u2WtblIdx != prBigDataParam->ucWlanIdx ||
@@ -15343,7 +15343,7 @@ int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
 	if (prAdapter->u4BigDataVer < 1)
 		return rStatus;
 
-	if (!prParam)
+	if (ucBssIdx >= MAX_BSSID_NUM || !prParam)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
@@ -15397,6 +15397,10 @@ int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
 		arAbtCnt[ucDbdcIdx].u4MloAbt);
 
 	prPhyCnt = &arPhyCnt[ucDbdcIdx];
+
+	if (!prPhyCnt)
+		return WLAN_STATUS_INVALID_DATA;
+
 	u4DeltaFcsOk = (prPhyCnt->u4CckRxOk - prPhyCnt->u4CckFcsErr +
 		prPhyCnt->u4OfdmRxOk - prPhyCnt->u4OfdmFcsErr) -
 		lastFcsOk[ucDbdcIdx];
