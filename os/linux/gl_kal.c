@@ -16935,7 +16935,7 @@ uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 
 uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(RX, DEBUG, "RX NAPI disable ongoing\n");
+	DBGLOG(RX, TRACE, "RX NAPI disable ongoing\n");
 
 	prGlueInfo->fgNapiReady = FALSE;
 #if CFG_NAPI_DELAY

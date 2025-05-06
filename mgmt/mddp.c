@@ -1219,7 +1219,7 @@ int32_t mddpNotifyWifiPcieBarInfo(struct QUE *prQue)
 
 	QUEUE_INSERT_TAIL(prQue, prDrvInfoEntry);
 
-	DBGLOG(INIT, DEBUG, "pcie bar info 0x%llx, feature:0x%x.\n",
+	DBGLOG(INIT, TRACE, "pcie bar info 0x%llx, feature:0x%x.\n",
 	       prBarInfo->offset, feature);
 
 	return 0;
@@ -1328,7 +1328,7 @@ int32_t mddpNotifyTrigSerSuppInfo(struct QUE *prQue)
 
 	QUEUE_INSERT_TAIL(prQue, prDrvInfoEntry);
 
-	DBGLOG(INIT, DEBUG, "SER support type %u.\n", prSuppInfo->supp_type);
+	DBGLOG(INIT, TRACE, "SER support type %u.\n", prSuppInfo->supp_type);
 
 	return 0;
 }
@@ -1463,7 +1463,7 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
+		DBGLOG(INIT, TRACE, "power: %d, ret: %d, feature:%d.\n",
 		       status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 		g_eMddpStatus = status;
@@ -2606,7 +2606,7 @@ void mddpUnregisterMdStateCB(void)
 
 #if CFG_MTK_CCCI_SUPPORT
 	mutex_lock(&rMddpLock);
-	DBGLOG(INIT, INFO, "unregister mddp ccci cb\n");
+	DBGLOG(INIT, TRACE, "unregister mddp ccci cb\n");
 	mtk_ccci_register_md_state_cb(NULL);
 	mutex_unlock(&rMddpLock);
 #endif

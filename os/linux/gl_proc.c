@@ -2281,7 +2281,7 @@ int32_t procRemoveProcfs(struct GLUE_INFO *prGlueInfo)
 	remove_proc_entry(prGlueInfo->prDevHandler->name, init_net.proc_net);
 #endif
 
-	DBGLOG(INIT, DEBUG, "remove proc fs done\n");
+	DBGLOG(INIT, TRACE, "remove proc fs done\n");
 	return 0;
 } /* end of procRemoveProcfs() */
 

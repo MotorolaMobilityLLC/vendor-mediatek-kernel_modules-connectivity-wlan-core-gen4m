@@ -215,9 +215,9 @@ nanNdpDissolve(struct ADAPTER *prAdapter,
 		MSEC_TO_JIFFIES(
 		u4Timeout));
 	if (!waitRet)
-		DBGLOG(NAN, WARN, "Disconnect timeout.\n");
+		DBGLOG(NAN, TRACE, "Disconnect timeout.\n");
 	else
-		DBGLOG(NAN, DEBUG, "Disconnect complete.\n");
+		DBGLOG(NAN, TRACE, "Disconnect complete.\n");
 }
 
 /* Helper function to Write and Read TLV called in indication as well as

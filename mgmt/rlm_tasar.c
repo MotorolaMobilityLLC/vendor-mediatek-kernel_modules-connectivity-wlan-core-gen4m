@@ -216,12 +216,12 @@ static bool tasarUpdateConfig(struct ADAPTER *prAdapter, int8_t *pcFileName)
 	}
 
 	if (!pucConfigBuf) {
-		DBGLOG(RLM, INFO, "[TAS] File invalid\n");
+		DBGLOG(RLM, TRACE, "[TAS] File invalid\n");
 		ret = FALSE;
 		goto free;
 	}
 
-	DBGLOG(RLM, INFO, "[TAS] structure size/file size[%d/%d]\n",
+	DBGLOG(RLM, TRACE, "[TAS] structure size/file size[%d/%d]\n",
 		sizeof(prAdapter->rTasarCfg), u4ConfigReadLen);
 
 	if (sizeof(prAdapter->rTasarCfg) != u4ConfigReadLen) {
@@ -250,7 +250,7 @@ static uint32_t tasarSearchReg(struct tasar_scenrio_ctrl rScenrio)
 	for (i = 0; i < TASAR_COUNTRY_TBL_SIZE; i++) {
 		for (j = 0; j < g_rTasarCountryTbl[i].cnt; j++) {
 			prTasCC = &g_rTasarCountryTbl[i].tbl[j];
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"[TAS] Tbl[%d][%d]CC[%c][%c]FileName:[%s]\n",
 				i,
 				j,
@@ -554,7 +554,7 @@ void tasarInit(struct ADAPTER *prAdapter)
 	prAdapter->rTasarScenrio.u2CountryCode = 0;
 	prAdapter->rTasarScenrio.u4Eci = 0;
 
-	DBGLOG(RLM, INFO, "[TAS] Init reg:%d/CC:%d/Eci:%d\n",
+	DBGLOG(RLM, TRACE, "[TAS] Init reg:%d/CC:%d/Eci:%d\n",
 		prAdapter->rTasarScenrio.u4RegTblIndex,
 		prAdapter->rTasarScenrio.u2CountryCode,
 		prAdapter->rTasarScenrio.u4Eci);
@@ -585,7 +585,7 @@ void tasarUpdateScenrio(
 		return;
 	}
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"[TAS] change reg:%d/CC:%d/Eci:%d to [CC:%x/Eci:%d]\n",
 		prAdapter->rTasarScenrio.u4RegTblIndex,
 		prAdapter->rTasarScenrio.u2CountryCode,
@@ -643,7 +643,7 @@ void tasarUpdateScenrio(
 	prAdapter->rTasarScenrio.u2CountryCode = rScenrio.u2CountryCode;
 	prAdapter->rTasarScenrio.u4Eci = rScenrio.u4Eci;
 
-	DBGLOG(RLM, INFO, "[TAS] update reg:%d/CC:%d/Eci:%d\n",
+	DBGLOG(RLM, TRACE, "[TAS] update reg:%d/CC:%d/Eci:%d\n",
 		prAdapter->rTasarScenrio.u4RegTblIndex,
 		prAdapter->rTasarScenrio.u2CountryCode,
 		prAdapter->rTasarScenrio.u4Eci);

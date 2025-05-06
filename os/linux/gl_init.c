@@ -6714,7 +6714,7 @@ int set_p2p_mode_handler_wrapper(struct net_device *netdev,
 	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rP2pmodeWithLock;
 	int ret;
 
-	DBGLOG(INIT, DEBUG, "set p2p enable[%d], mode[%d]\n",
+	DBGLOG(INIT, TRACE, "set p2p enable[%d], mode[%d]\n",
 		p2pmode.u4Enable, p2pmode.u4Mode);
 
 	rP2pmodeWithLock.u4Enable = p2pmode.u4Enable;
@@ -6788,8 +6788,9 @@ int set_p2p_mode_handler(struct net_device *netdev,
 			&u4BufLen);
 
 	DBGLOG(INIT, DEBUG,
-		"Mode%d: ret = 0x%08x, p2p reg = %d, resetting = %d\n",
+		"Mode%d: enable=%u, ret = 0x%08x, p2p reg = %d, resetting = %d\n",
 		rSetP2P.u4Mode,
+		rSetP2P.u4Enable,
 		(uint32_t) rWlanStatus,
 		prGlueInfo->prAdapter->fgIsP2PRegistered,
 		kalIsResetting());

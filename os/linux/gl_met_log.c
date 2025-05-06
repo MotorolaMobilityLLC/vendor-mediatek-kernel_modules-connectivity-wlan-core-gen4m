@@ -324,7 +324,7 @@ int met_log_start(struct GLUE_INFO *prGlueInfo)
 
 int met_log_stop(struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(MET, DEBUG, "Stop MET log.\n");
+	DBGLOG(MET, TRACE, "Stop MET log.\n");
 
 #if CFG_MTK_WIFI_MET_LOG_EMI
 	return met_log_emi_deinit(prGlueInfo->prAdapter);

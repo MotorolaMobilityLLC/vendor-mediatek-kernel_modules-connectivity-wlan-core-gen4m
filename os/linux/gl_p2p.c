@@ -742,7 +742,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 			i4RetReg = register_netdev(prDevHandler);
 		}
 
-		DBGLOG(P2P, INFO,
+		DBGLOG(P2P, TRACE,
 			"P2P interface %d %s ifindex=%d reg=%d\n",
 			i, prDevHandler->name, prDevHandler->ifindex,
 			i4RetReg);
