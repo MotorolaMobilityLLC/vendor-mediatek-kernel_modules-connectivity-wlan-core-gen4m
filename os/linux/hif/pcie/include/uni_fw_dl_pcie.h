@@ -36,7 +36,6 @@ enum UNI_FWDL_PCIE_DL_STATE {
 
 struct UNI_FWLD_PCIE_CTX {
 	uint32_t u4SyncInfo;
-	u_int8_t fgHostEmiUpdateDone;
 
 	uint32_t u4AllocSize;
 
@@ -45,6 +44,10 @@ struct UNI_FWLD_PCIE_CTX {
 
 	uint16_t u2NotifTriggerIdx;
 	uint16_t u2NotifDoneIdx;
+
+	uint16_t u2LastNotifId;
+	uint32_t u4MinDoorbellTime;
+	uint32_t u4LastDoorbellTime;
 
 	UNI_FWDL_NOTIF_CB pfnNotifCb;
 

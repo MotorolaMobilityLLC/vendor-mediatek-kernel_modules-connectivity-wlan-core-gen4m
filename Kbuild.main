@@ -3849,11 +3849,23 @@ ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
     else
         ccflags-y += -DCFG_SUPPORT_UNI_FWDL_PCIE_INTX=0
     endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL_BROM_PATCH_NOTIF), y)
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_BROM_PATCH_NOTIF=1
+    else
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_BROM_PATCH_NOTIF=0
+    endif
+    ifeq ($(CONFIG_SUPPORT_UNI_FWDL_SET_SKU_CONFIG), y)
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SET_SKU_CONFIG=1
+    else
+        ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SET_SKU_CONFIG=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_UNI_FWDL=0
     ccflags-y += -DCFG_SUPPORT_UNI_FWDL_EMI_SHARED_MEM=0
     ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SLOT_DL=0
     ccflags-y += -DCFG_SUPPORT_UNI_FWDL_PCIE_INTX=0
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL_BROM_PATCH_NOTIF=0
+    ccflags-y += -DCFG_SUPPORT_UNI_FWDL_SET_SKU_CONFIG=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_FIPS), y)

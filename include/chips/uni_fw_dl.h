@@ -125,7 +125,7 @@ enum UNI_FWLD_WAKEUP_SOURCE {
 	WAKEUP_SOURCE_DL_DONE,
 	WAKEUP_SOURCE_DL_FAIL,
 	WAKEUP_SOURCE_REQ_DL,
-	WAKEUP_SOURCE_NROM_PATCH_DONE,
+	WAKEUP_SOURCE_BROM_PATCH_DONE,
 	WAKEUP_SOURCE_NUM,
 };
 
@@ -136,6 +136,7 @@ struct UNI_FWDL_INFO {
 	struct UNI_FWDL_HIF_OPS rHifOps;
 	struct UNI_FWDL_SHM_OPS rShmOps;
 	void (*trigger_wf_fwdl_doorbell)(struct ADAPTER *ad);
+	const uint32_t u4MinDoorbellTime;
 };
 
 struct UNI_FWDL_CTX {

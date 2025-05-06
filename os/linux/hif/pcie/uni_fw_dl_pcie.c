@@ -95,33 +95,6 @@ uniFwdlPcieWaitMsgDone(struct ADAPTER *prAdapter,
 }
 
 static u_int8_t
-uniFwdlPcieWaitHostEmiUpdateDone(struct ADAPTER *prAdapter,
-				 struct UNI_FWLD_PCIE_CTX *prUniFwdlPcieCtx,
-				 uint32_t u4TimeoutMs)
-{
-	uint32_t u4Time = kalGetTimeTick();
-	u_int8_t fgDone = FALSE;
-
-	do {
-		if (prUniFwdlPcieCtx->fgHostEmiUpdateDone) {
-			fgDone = TRUE;
-			break;
-		}
-
-		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4Time,
-				      MSEC_TO_SYSTIME(u4TimeoutMs))) {
-			DBGLOG(UNI_FWDL, ERROR,
-				"TIMEOUT, host emi NOT ready.\n");
-			break;
-		}
-
-		kalMsleep(10);
-	} while (TRUE);
-
-	return fgDone;
-}
-
-static u_int8_t
 uniFwdlPcieWaitSlotNonFull(struct ADAPTER *prAdapter,
 			   struct UNI_FWLD_PCIE_CTX *prUniFwdlPcieCtx,
 			   uint32_t u4TimeoutMs)
@@ -217,6 +190,63 @@ uniFwdlPcieWaitCommState(struct ADAPTER *prAdapter,
 	} while (TRUE);
 
 	return fgDone;
+}
+
+static u_int8_t
+uniFwdlPcieWaitNotif(struct ADAPTER *prAdapter,
+		     struct UNI_FWLD_PCIE_CTX *prUniFwdlPcieCtx,
+		     uint16_t u2ExpectNotifId,
+		     uint32_t u4TimeoutMs)
+{
+	uint32_t u4Time = kalGetTimeTick();
+	u_int8_t fgDone = FALSE;
+
+	do {
+		if (prUniFwdlPcieCtx->u2LastNotifId == u2ExpectNotifId) {
+			fgDone = TRUE;
+			break;
+		}
+
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4Time,
+				      MSEC_TO_SYSTIME(u4TimeoutMs))) {
+			DBGLOG(UNI_FWDL, ERROR,
+				"TIMEOUT(%u) expect=%u last=%u\n",
+				u4TimeoutMs,
+				u2ExpectNotifId,
+				prUniFwdlPcieCtx->u2LastNotifId);
+			break;
+		}
+
+		kalMsleep(10);
+	} while (TRUE);
+
+	return fgDone;
+}
+
+static void
+uniFwdlPcieTriggerWfFwdlDoorbell(struct ADAPTER *prAdapter,
+				 struct UNI_FWLD_PCIE_CTX *prUniFwdlPcieCtx,
+				 u_int8_t fgSlotDl)
+{
+	uint32_t u4Timeout =
+		MSEC_TO_SYSTIME(prUniFwdlPcieCtx->u4MinDoorbellTime);
+
+	if (fgSlotDl)
+		goto trigger;
+
+	do {
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+				      prUniFwdlPcieCtx->u4LastDoorbellTime,
+				      u4Timeout))
+			break;
+
+		kalUsleep_range(900, 1000);
+	} while (TRUE);
+
+	prUniFwdlPcieCtx->u4LastDoorbellTime = kalGetTimeTick();
+
+trigger:
+	triggerWfFwdlDoorbell(prAdapter);
 }
 
 static struct SLOT_ENTRY *uniFwdlPcieAllocSlot(struct GL_HIF_INFO *prHif,
@@ -487,6 +517,10 @@ uint32_t uniFwdlPcieInit(struct ADAPTER *prAdapter,
 		goto free_slots;
 	}
 
+	prUniFwdlPcieCtx->u4MinDoorbellTime =
+		prAdapter->chip_info->uni_fwdl_info->u4MinDoorbellTime;
+	prUniFwdlPcieCtx->u4LastDoorbellTime = kalGetTimeTick();
+	prUniFwdlPcieCtx->u2LastNotifId = UNI_FWDL_NOTIF_ID_NUM;
 	prShmCtx = &prUniFwdlPcieCtx->rShmCtx;
 	u4Status = uniFwdlShmInit(prAdapter, prShmCtx);
 	if (u4Status != WLAN_STATUS_SUCCESS)
@@ -517,13 +551,12 @@ uint32_t uniFwdlPcieInit(struct ADAPTER *prAdapter,
 				       UNI_FWDL_HIF_DL_RADIO_TYPE_WF,
 				       UNI_FWDL_MSG_ID_HOST_EMI_ADDR_UPDATE,
 				       (uint8_t *)&rMsg,
-				       sizeof(rMsg)) != WLAN_STATUS_SUCCESS) {
+				       sizeof(rMsg)) != WLAN_STATUS_SUCCESS)
 			goto free_xtal_pkt;
-		}
 
-		if (uniFwdlPcieWaitHostEmiUpdateDone(prAdapter,
-						     prUniFwdlPcieCtx,
-						     MSG_TIMEOUT_MS) == FALSE)
+		if (uniFwdlPcieWaitNotif(prAdapter, prUniFwdlPcieCtx,
+					 UNI_FWDL_NOTIF_ID_EMI_ADDR_UPDATE,
+					 MSG_TIMEOUT_MS) == FALSE)
 			goto free_xtal_pkt;
 
 		uniFwdlShmChangeEmiMode(&prUniFwdlPcieCtx->rShmCtx);
@@ -783,7 +816,7 @@ uint32_t uniFwdlPcieStartDl(struct ADAPTER *prAdapter,
 	uniFwdlShmWrMsgId(&prUniFwdlPcieCtx->rShmCtx,
 			  UNI_FWDL_MSG_ID_START_DL);
 
-	triggerWfFwdlDoorbell(prAdapter);
+	uniFwdlPcieTriggerWfFwdlDoorbell(prAdapter, prUniFwdlPcieCtx, FALSE);
 
 	if (uniFwdlPcieWaitMsgDone(prAdapter, prUniFwdlPcieCtx,
 				   MSG_TIMEOUT_MS) == FALSE)
@@ -858,7 +891,8 @@ uint32_t uniFwdlPcieDlBlock(struct ADAPTER *prAdapter, uint8_t *prBuff,
 			(uint64_t)prEntry->rDmaMem.pa,
 			u4DlSlotSize);
 
-		triggerWfFwdlDoorbell(prAdapter);
+		uniFwdlPcieTriggerWfFwdlDoorbell(prAdapter, prUniFwdlPcieCtx,
+						 TRUE);
 
 		prPos += u4DlSlotSize;
 		u4DlSize += u4DlSlotSize;
@@ -889,6 +923,12 @@ uint32_t uniFwdlPcieSendMsg(struct ADAPTER *prAdapter,
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	switch (ucMsgId) {
+	case UNI_FWDL_MSG_ID_RESUME_DL:
+		/* do nothing */
+		break;
+	case UNI_FWDL_MSG_ID_SET_SKU_CONFIG:
+		/* do nothing */
+		break;
 	case UNI_FWDL_MSG_ID_HOST_EMI_ADDR_UPDATE:
 	{
 		struct UNI_FWDL_MSG_HOST_EMI_ADDR_UPDATE *prMsg =
@@ -916,11 +956,26 @@ uint32_t uniFwdlPcieSendMsg(struct ADAPTER *prAdapter,
 			   prUniFwdlPcieCtx->u2MsgTriggerIdx);
 	uniFwdlShmWrMsgId(&prUniFwdlPcieCtx->rShmCtx, ucMsgId);
 
-	triggerWfFwdlDoorbell(prAdapter);
+	uniFwdlPcieTriggerWfFwdlDoorbell(prAdapter, prUniFwdlPcieCtx, FALSE);
 
 	if (uniFwdlPcieWaitMsgDone(prAdapter, prUniFwdlPcieCtx,
-				   MSG_TIMEOUT_MS) == FALSE)
+				   MSG_TIMEOUT_MS) == FALSE) {
 		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	switch (ucMsgId) {
+	case UNI_FWDL_MSG_ID_SET_SKU_CONFIG:
+		if (uniFwdlPcieWaitNotif(prAdapter, prUniFwdlPcieCtx,
+					 UNI_FWDL_NOTIF_ID_SKU_CONFIG_RESP,
+					 MSG_TIMEOUT_MS) == FALSE) {
+			u4Status = WLAN_STATUS_FAILURE;
+			goto exit;
+		}
+		break;
+	default:
+		break;
+	}
 
 exit:
 	DBGLOG(UNI_FWDL, INFO, "u4Status=0x%x\n", u4Status);
@@ -954,6 +1009,7 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 		return;
 
 	uniFwdlShmRdNotifId(&prCtx->rShmCtx, &u2NotifId);
+	prCtx->u2LastNotifId = u2NotifId;
 
 	if (u2NotifId != UNI_FWDL_NOTIF_ID_SLOT_DONE_IDX)
 		DBGLOG(UNI_FWDL, INFO,
@@ -965,7 +1021,7 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 			u2NotifId, u2NotifTriggerIdx);
 
 	switch (u2NotifId) {
-	case UNI_FWDL_NOTIF_ID_NROM_PATCH_DONE:
+	case UNI_FWDL_NOTIF_ID_BROM_PATCH_DONE:
 	{
 		struct UNI_FWDL_NOTIF_NROM_PATCH_DONE rDone;
 		uint16_t u2RadioType;
@@ -1045,8 +1101,7 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 	}
 		break;
 
-	case UNI_FWDL_NOTIF_ID_HOST_EMI_ADDR_UPDATE_DONE:
-		prCtx->fgHostEmiUpdateDone = TRUE;
+	case UNI_FWDL_NOTIF_ID_EMI_ADDR_UPDATE:
 		break;
 
 	case UNI_FWDL_NOTIF_ID_SLOT_DONE_IDX:
@@ -1064,6 +1119,9 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 		}
 		fgNotifyFw = FALSE;
 	}
+		break;
+
+	case UNI_FWDL_NOTIF_ID_SKU_CONFIG_RESP:
 		break;
 
 	default:
@@ -1089,7 +1147,8 @@ static void uniFwdlPcieHandleNotifUpdate(struct ADAPTER *prAdapter,
 		uniFwdlShmWrNotifDoneIdx(&prCtx->rShmCtx,
 					 prCtx->u2NotifDoneIdx);
 		if (fgNotifyFw)
-			triggerWfFwdlDoorbell(prAdapter);
+			uniFwdlPcieTriggerWfFwdlDoorbell(prAdapter, prCtx,
+							 FALSE);
 	}
 }
 

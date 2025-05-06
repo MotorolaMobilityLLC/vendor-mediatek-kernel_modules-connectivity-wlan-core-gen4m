@@ -72,6 +72,7 @@ static const char * const apucSectionSegmentStr[SUBSYS_SEC_TYPE_SEGMENT_NUM] = {
 #else
 #define UNI_FWDL_DEFAULT_TIMEOUT			(1000 * 4) /* ms */
 #endif /* CFG_MTK_FPGA_PLATFORM */
+
 #define UNI_FWDL_WAIT_DURATION				(10 * 1) /* ms */
 
 #define UNI_FWDL_WAKEUP_CONDITION \
@@ -79,7 +80,7 @@ static const char * const apucSectionSegmentStr[SUBSYS_SEC_TYPE_SEGMENT_NUM] = {
 	 BIT(WAKEUP_SOURCE_DL_DONE) | \
 	 BIT(WAKEUP_SOURCE_DL_FAIL) | \
 	 BIT(WAKEUP_SOURCE_REQ_DL) | \
-	 BIT(WAKEUP_SOURCE_NROM_PATCH_DONE))
+	 BIT(WAKEUP_SOURCE_BROM_PATCH_DONE))
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -639,14 +640,14 @@ void uniFwdlRcvNotifCb(struct ADAPTER *prAdapter,
 	}
 		break;
 
-	case UNI_FWDL_NOTIF_ID_NROM_PATCH_DONE:
+	case UNI_FWDL_NOTIF_ID_BROM_PATCH_DONE:
 	{
 		struct UNI_FWDL_NOTIF_NROM_PATCH_DONE *prDone;
 
 		prDone = (struct UNI_FWDL_NOTIF_NROM_PATCH_DONE *)prBuf;
 		DBGLOG(UNI_FWDL, INFO, "raido=%u\n", prDone->eRadioType);
 		uniFwdlWakeupDlThread(prAdapter,
-				      WAKEUP_SOURCE_NROM_PATCH_DONE);
+				      WAKEUP_SOURCE_BROM_PATCH_DONE);
 	}
 		break;
 
@@ -893,7 +894,7 @@ uint32_t uniFwdlDownloadFW(struct ADAPTER *prAdapter)
 			break;
 		}
 
-		if (KAL_TEST_AND_CLEAR_BIT(WAKEUP_SOURCE_NROM_PATCH_DONE,
+		if (KAL_TEST_AND_CLEAR_BIT(WAKEUP_SOURCE_BROM_PATCH_DONE,
 					   prCtx->ulFlags)) {
 			if (prUniFwdlInfo->u4SyncInfo &
 			    UNI_FWDL_SYNC_INFO_DFD_DUMP) {
@@ -904,6 +905,19 @@ uint32_t uniFwdlDownloadFW(struct ADAPTER *prAdapter)
 			    UNI_FWDL_SYNC_INFO_DL_XTAL_PKT) {
 				/* TODO */
 			}
+
+#if (CFG_SUPPORT_UNI_FWDL_SET_SKU_CONFIG == 1)
+			if (uniFwdlHifSendMsg(prAdapter,
+					      UNI_FWDL_HIF_DL_RADIO_TYPE_WF,
+					      UNI_FWDL_MSG_ID_SET_SKU_CONFIG,
+					      NULL, 0) !=
+			    WLAN_STATUS_SUCCESS) {
+				DBGLOG(UNI_FWDL, ERROR,
+					"Set SKU CFG failed\n");
+				u4Status = WLAN_STATUS_FAILURE;
+				break;
+			}
+#endif /* CFG_SUPPORT_UNI_FWDL_SET_SKU_CONFIG */
 
 			if (uniFwdlHifSendMsg(prAdapter,
 					      UNI_FWDL_HIF_DL_RADIO_TYPE_WF,

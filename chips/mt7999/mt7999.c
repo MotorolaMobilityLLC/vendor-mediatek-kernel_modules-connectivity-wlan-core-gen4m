@@ -847,7 +847,7 @@ struct FWDL_OPS_T mt7999_fw_dl_ops = {
 
 #if (CFG_SUPPORT_UNI_FWDL == 1)
 struct UNI_FWDL_INFO mt7999_uni_fwdl_info = {
-	.u4SyncInfo = (0
+	.u4SyncInfo = BIT(UNI_FWDL_SYNC_INFO_FW_TIMEOUT)
 #if (CFG_SUPPORT_UNI_FWDL_MSG_NOTIF == 1)
 	| BIT(UNI_FWDL_SYNC_INFO_SUPPORT_MSG_NOTIF)
 #endif /* CFG_SUPPORT_UNI_FWDL_MSG_NOTIF */
@@ -857,7 +857,11 @@ struct UNI_FWDL_INFO mt7999_uni_fwdl_info = {
 #if (CFG_SUPPORT_UNI_FWDL_SLOT_DL == 1)
 	| BIT(UNI_FWDL_SYNC_INFO_SUPPORT_SLOT_DL)
 #endif /* CFG_SUPPORT_UNI_FWDL_SLOT_DL */
-	),
+#if (CFG_SUPPORT_UNI_FWDL_BROM_PATCH_NOTIF == 1)
+	| BIT(UNI_FWDL_SYNC_INFO_BROM_NOTIF)
+#endif /* CFG_SUPPORT_UNI_FWDL_BROM_PATCH_NOTIF */
+	,
+	.u4FwTimeoutDuration = 2000, /* ms */
 #if defined(_HIF_PCIE)
 	.rHifOps = {
 		.init = uniFwdlPcieInit,
@@ -917,6 +921,7 @@ struct UNI_FWDL_INFO mt7999_uni_fwdl_info = {
 	},
 #endif
 	.trigger_wf_fwdl_doorbell = mt7999_trigger_wf_fwdl_doorbell,
+	.u4MinDoorbellTime = 3, /* ms */
 };
 #endif /* CFG_SUPPORT_UNI_FWDL */
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
