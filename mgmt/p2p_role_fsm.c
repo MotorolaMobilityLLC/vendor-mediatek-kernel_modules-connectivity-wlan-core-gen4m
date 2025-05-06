@@ -1578,6 +1578,11 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 			bSkipRdd = FALSE;
 	}
 
+	if (!bSkipRdd && p2pFuncGetDfsState() != DFS_STATE_INACTIVE) {
+		DBGLOG(P2P, WARN, "skip RDD, only support one BSS RDD now\n");
+		bSkipRdd = TRUE;
+	}
+
 	/* STA+SAP will follow STA BW */
 	if (!bSkipRdd && p2pGetAisBssByBand(prAdapter, BAND_5G) &&
 	    p2pFuncIsAPMode(prAdapter, prP2pStartAPMsg->ucRoleIdx))
@@ -1587,6 +1592,8 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 		(prAdapter->rWifiVar.u4ByPassCacTime <= 2))
 		bSkipCac = TRUE;
 #endif
+
+	DBGLOG(P2P, INFO, "bSkipRdd=%u, bSkipCac=%u\n", bSkipRdd, bSkipCac);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	/* start rdd without cac */

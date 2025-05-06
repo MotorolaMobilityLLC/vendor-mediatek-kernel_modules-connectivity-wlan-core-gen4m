@@ -26335,6 +26335,63 @@ error:
 	return i4BytesWritten;
 }
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
+int priv_driver_get_rdd_status(struct net_device *prNetDev,
+			  char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct BSS_INFO *prBssInfo;
+	struct GL_P2P_INFO *prP2pInfo;
+	struct net_device *prP2pNetDev;
+	int32_t i4BytesWritten = 0;
+	uint8_t i;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		char *aucBand = "Unknown";
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo) ||
+		    !IS_BSS_APGO(prBssInfo))
+			continue;
+
+		prP2pInfo = prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
+		if (!prP2pInfo)
+			continue;
+		prP2pNetDev = prP2pInfo->aprRoleHandler;
+		if (!prP2pNetDev)
+			continue;
+
+		if (prBssInfo->eBand == BAND_2G4)
+			aucBand = "2G";
+		else if (prBssInfo->eBand == BAND_5G)
+			aucBand = "5G";
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prBssInfo->eBand == BAND_6G)
+			aucBand = "6G";
+#endif
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		       "%s: type=%s, rdd=%u, band=%s, ch=%u, bw=%sMHz\n",
+		       prP2pNetDev->name,
+		       bssGetRoleTypeString(prAdapter, prBssInfo),
+		       prBssInfo->fgIsDfsActive,
+		       aucBand,
+		       prBssInfo->ucPrimaryChannel,
+		       bssOpBw2Str(prBssInfo));
+	}
+
+	return i4BytesWritten;
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if (CFG_SUPPORT_FACT_CAL == 1)

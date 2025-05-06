@@ -1211,6 +1211,9 @@ int32_t priv_driver_get_bw160_capa(struct net_device *prNetDev, char *pcCommand,
 int priv_driver_set_p2p2_gc_csa(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen);
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
+
+int priv_driver_get_rdd_status(struct net_device *prNetDev,
+			  char *pcCommand, int i4TotalLen);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if (CFG_SUPPORT_FACT_CAL == 1)

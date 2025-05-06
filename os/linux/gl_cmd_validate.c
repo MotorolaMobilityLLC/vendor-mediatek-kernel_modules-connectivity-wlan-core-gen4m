@@ -1006,6 +1006,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = set_p2papbw_policy,
 		.u4PolicySize = ARRAY_SIZE(set_p2papbw_policy)
 	},
+#if CFG_ENABLE_WIFI_DIRECT
+	{
+		.pcCmdStr  = CMD_GET_RDD_STATUS,
+		.pfHandler = priv_driver_get_rdd_status,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 };
 
 /*-----------------------------------------------------------------------------
