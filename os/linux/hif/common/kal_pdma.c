@@ -3242,6 +3242,7 @@ void wf_reg_enable(u_int8_t fgEn)
 
 int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 {
+	struct WF_REG_REQ *prOutReq = NULL;
 	int32_t ret = 0, i;
 
 	if (kalIsResetting()) {
@@ -3275,6 +3276,13 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 			break;
 
 		kalUsleep(HIF_REG_WORK_WAIT_TIME);
+	}
+
+	while (KAL_FIFO_OUT_LOCKED(
+		       &glue->rHifRegFifo, prOutReq,
+		       &glue->rHifRegFifoLock) == sizeof(prOutReq)) {
+		if (prReq == prOutReq)
+			break;
 	}
 
 	if (i >= HIF_REG_WORK_WAIT_CNT)
