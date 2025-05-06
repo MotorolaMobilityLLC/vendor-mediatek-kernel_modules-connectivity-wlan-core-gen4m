@@ -11435,8 +11435,18 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	}
 
 	/* nanSchedDbgDumpTimelineDb */
+	prNanScheduler = nanGetScheduler(prAdapter);
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 	    "\n=========================[Scheduler Info]===========================\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "Country: %c%c (%c %c%c%c %c)\n",
+	       prAdapter->rWifiVar.CountryCode[1],
+	       prAdapter->rWifiVar.CountryCode[0],
+	       prNanScheduler->fgEn6g ? '6' : ' ',
+	       prNanScheduler->fgEn5gH || prNanScheduler->fgEn5gL ? '5' : ' ',
+	       prNanScheduler->fgEn5gH ? 'H' : ' ',
+	       prNanScheduler->fgEn5gL ? 'L' : ' ',
+	       prNanScheduler->fgEn2g ? '2' : ' ');
 
 	for (szTimeLineIdx = 0; szTimeLineIdx < NAN_TIMELINE_MGMT_SIZE;
 	     szTimeLineIdx++) {
@@ -11569,7 +11579,6 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"\n[PeerAvailability]\n");
 
-	prNanScheduler = nanGetScheduler(prAdapter);
 	prPeerSchDescList = &prNanScheduler->rPeerSchDescList;
 
 	LINK_FOR_EACH_ENTRY(prPeerSchDesc, prPeerSchDescList, rLinkEntry,

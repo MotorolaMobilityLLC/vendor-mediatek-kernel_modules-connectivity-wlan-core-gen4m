@@ -7010,8 +7010,15 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 #endif
 
 	DBGLOG(NAN, DEBUG,
-	       "Allowed Band: %d, %d, %d, %d, %d\n", fgEn2g, fgEn5gH,
-	       fgEn5gL, fgEn6g, prNanScheduler->fgEn6g);
+	       "Country=%c%c (%c %c%c%c %c), Allowed Band: %d, %d, %d, %d, %d\n",
+	       prAdapter->rWifiVar.CountryCode[1],
+	       prAdapter->rWifiVar.CountryCode[0],
+	       prNanScheduler->fgEn6g ? '6' : ' ',
+	       prNanScheduler->fgEn5gH || prNanScheduler->fgEn5gL ? '5' : ' ',
+	       prNanScheduler->fgEn5gH ? 'H' : ' ',
+	       prNanScheduler->fgEn5gL ? 'L' : ' ',
+	       prNanScheduler->fgEn2g ? '2' : ' ',
+	       fgEn2g, fgEn5gH, fgEn5gL, fgEn6g, prNanScheduler->fgEn6g);
 
 	ucDisc2GChnlBw = nanSchedGet2gNanBw(prAdapter);
 	ucDisc5GChnlBw = nanSchedGet5gNanBw(prAdapter);
