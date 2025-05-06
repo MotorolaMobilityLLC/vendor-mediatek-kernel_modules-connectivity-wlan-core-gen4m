@@ -18846,9 +18846,9 @@ uint32_t wlanoidSendCuReportRequest(struct ADAPTER *prAdapter,
 	uint16_t u2CountryCode;
 	uint8_t ucToken;
 
-	prGlueInfo = prAdapter->prGlueInfo;
 	if (!prAdapter)
 		return WLAN_STATUS_INVALID_DATA;
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	/* check parameter */
 	if (pvSetBuffer == NULL ||
