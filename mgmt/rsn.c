@@ -631,14 +631,8 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 		cp += 2;
 		u2RemainRsnIeLen -= 2;
 
-		if (u2PmkidCount > 4) {
-			DBGLOG(RSN, TRACE,
-				"Bad RSN IE due to PMKID count(%d)\n",
-				u2PmkidCount);
-			return FALSE;
-		}
-
-		if (u2PmkidCount > 0 && u2RemainRsnIeLen < 16 * u2PmkidCount) {
+		if (u2PmkidCount > 0 &&
+		    u2RemainRsnIeLen < IW_PMKID_LEN * u2PmkidCount) {
 			DBGLOG(RSN, TRACE,
 				"Fail to parse PMKID in RSN iE, count: %d\n",
 				u2PmkidCount);
@@ -647,8 +641,8 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 
 		if (u2PmkidCount > 0) {
 			kalMemCopy(prRsnInfo->aucPmkid, cp, IW_PMKID_LEN);
-			cp += IW_PMKID_LEN;
-			u2RemainRsnIeLen -= IW_PMKID_LEN;
+			cp += (IW_PMKID_LEN * u2PmkidCount);
+			u2RemainRsnIeLen -= (IW_PMKID_LEN * u2PmkidCount);
 		}
 
 		if (u2RemainRsnIeLen == 0)
@@ -664,10 +658,6 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 		WLAN_GET_FIELD_32(cp, &u4GroupMgmtSuite);
 		cp += 4;
 		u2RemainRsnIeLen -= 4;
-
-		if (u2RemainRsnIeLen == 0)
-			break;
-
 	} while (FALSE);
 
 	/* Save the RSN information for the BSS. */
