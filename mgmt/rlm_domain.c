@@ -14928,6 +14928,15 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter,
 			eSCO = CHNL_EXT_SCN;
 			break;
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (band == BAND_6G) {
+		if ((primary_ch & 0x7) == 1)
+			eSCO = CHNL_EXT_SCA;
+		else if ((primary_ch & 0x7) == 5)
+			eSCO = CHNL_EXT_SCB;
+		else
+			eSCO = CHNL_EXT_SCN;
+#endif
 	} else {
 		u8 below_ch, above_ch;
 
