@@ -738,6 +738,7 @@ struct RTMP_RX_RING {
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 	uint32_t u4CidxRec;
 	uint32_t u4CidxErrCnt;
+	uint32_t u4TotalCntRec;
 };
 
 struct PCIE_CHIP_CR_MAPPING {

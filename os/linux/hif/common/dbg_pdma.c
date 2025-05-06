@@ -915,12 +915,15 @@ u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx)
 		return FALSE;
 
 	prRxRing = &prHifInfo->RxRing[u4Idx];
-	if (GLUE_GET_REF_CNT(prRxRing->u4CidxRec) != prRxRing->RxCpuIdx) {
-		GLUE_SET_REF_CNT(prRxRing->RxCpuIdx, prRxRing->u4CidxRec);
-		return TRUE;
-	}
+	if ((GLUE_GET_REF_CNT(prRxRing->u4TotalCntRec) ==
+	     prRxRing->u4TotalCnt) &&
+	    (GLUE_GET_REF_CNT(prRxRing->u4CidxRec) == prRxRing->RxCpuIdx))
+		return FALSE;
 
-	return FALSE;
+	GLUE_SET_REF_CNT(prRxRing->u4TotalCnt, prRxRing->u4TotalCntRec);
+	GLUE_SET_REF_CNT(prRxRing->RxCpuIdx, prRxRing->u4CidxRec);
+
+	return TRUE;
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
