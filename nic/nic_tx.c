@@ -5490,6 +5490,8 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	uint8_t ucStaRecIndex;
+	uint8_t ucFreeQuotaForDelivery;
+	uint8_t ucFreeQuotaForNonDelivery;
 	u_int8_t fgReturnStaPsQ = FALSE;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -5515,20 +5517,24 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 	if (qmIsStaInPS(prAdapter, prStaRec)) {
 		DBGLOG_LIMITED(TX, DEBUG, "fgIsInPS!\n");
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+		qmGetDeliveryQuota(prAdapter, prStaRec,
+			&ucFreeQuotaForDelivery, &ucFreeQuotaForNonDelivery);
+
 		while (1) {
 			if (prStaRec->fgIsQoS && prStaRec->fgIsUapsdSupported &&
 			    (prStaRec->ucBmpTriggerAC
 						& BIT(prMsduInfo->ucTC))) {
-				if (prStaRec->ucFreeQuotaForDelivery > 0) {
-					prStaRec->ucFreeQuotaForDelivery--;
+				if (ucFreeQuotaForDelivery > 0) {
+					ucFreeQuotaForDelivery--;
 					QUEUE_INSERT_TAIL(prQue, prMsduInfo);
 				} else {
 					fgReturnStaPsQ = TRUE;
 					break;
 				}
 			} else {
-				if (prStaRec->ucFreeQuotaForNonDelivery > 0) {
-					prStaRec->ucFreeQuotaForNonDelivery--;
+				if (ucFreeQuotaForNonDelivery > 0) {
+					ucFreeQuotaForNonDelivery--;
 					QUEUE_INSERT_TAIL(prQue, prMsduInfo);
 				} else {
 					fgReturnStaPsQ = TRUE;
@@ -5547,6 +5553,10 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 				break;
 			}
 		}
+
+		qmUpdateDeliveryQuota(prAdapter, prStaRec,
+			ucFreeQuotaForDelivery, ucFreeQuotaForNonDelivery);
+
 		if (fgReturnStaPsQ) {
 			QUEUE_INSERT_HEAD(
 				&prAdapter->rStaPsQueue[ucStaRecIndex],

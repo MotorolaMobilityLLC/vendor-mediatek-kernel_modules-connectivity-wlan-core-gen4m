@@ -896,6 +896,8 @@ struct MLD_STA_RECORD {
 	struct TIMER rT2LMFsmTimer;
 	struct T2LM_INFO rT2LMParams;
 #endif
+	uint8_t ucFreeQuotaForDelivery;
+	uint8_t ucFreeQuotaForNonDelivery;
 };
 #endif
 

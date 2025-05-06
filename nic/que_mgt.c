@@ -1507,6 +1507,10 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
 	uint8_t *pucPsStaFreeQuota;
+#if CFG_SUPPORT_802_11BE_MLO
+	struct MLD_STA_RECORD *prMldStarec = NULL;
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 #if CFG_SUPPORT_NAN
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 	unsigned char fgIsNanStaRec;
@@ -1583,6 +1587,9 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 	while (ucLoop < CFG_STA_REC_NUM) {
 		prStaRec = &prAdapter->arStaRec[u4CurStaIndex];
 		prCurrQueue = &prStaRec->arTxQueue[ucAcIdx];
+#if CFG_SUPPORT_802_11BE_MLO
+		prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 		if (prStaRec->fgIsInUse == FALSE)
@@ -1633,19 +1640,43 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 					prStaRec->fgIsUapsdSupported &&
 					(prStaRec->ucBmpTriggerAC &
 						BIT(ucAcIdx))) {
-					u4MaxForwardFrameCountLimit =
-						prStaRec->
-						ucFreeQuotaForDelivery;
-					pucPsStaFreeQuota =
-						&prStaRec->
-						ucFreeQuotaForDelivery;
+#if CFG_SUPPORT_802_11BE_MLO
+					if (prMldStarec) {
+						u4MaxForwardFrameCountLimit =
+						    prMldStarec
+						    ->ucFreeQuotaForDelivery;
+						pucPsStaFreeQuota =
+						    &prMldStarec
+						    ->ucFreeQuotaForDelivery;
+					} else
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+					{
+						u4MaxForwardFrameCountLimit =
+						    prStaRec
+						    ->ucFreeQuotaForDelivery;
+						pucPsStaFreeQuota =
+						    &prStaRec
+						    ->ucFreeQuotaForDelivery;
+					}
 				} else {
-					u4MaxForwardFrameCountLimit =
-						prStaRec->
-						ucFreeQuotaForNonDelivery;
-					pucPsStaFreeQuota =
-						&prStaRec->
-						ucFreeQuotaForNonDelivery;
+#if CFG_SUPPORT_802_11BE_MLO
+					if (prMldStarec) {
+						u4MaxForwardFrameCountLimit =
+						    prMldStarec
+						    ->ucFreeQuotaForNonDelivery;
+						pucPsStaFreeQuota =
+						    &prMldStarec
+						    ->ucFreeQuotaForNonDelivery;
+					} else
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+					{
+						u4MaxForwardFrameCountLimit =
+						    prStaRec
+						    ->ucFreeQuotaForNonDelivery;
+						pucPsStaFreeQuota =
+						    &prStaRec
+						    ->ucFreeQuotaForNonDelivery;
+					}
 				}
 			}
 
@@ -8085,6 +8116,63 @@ void qmHandleEventStaUpdateFreeQuota(struct ADAPTER *prAdapter,
 
 }
 
+void
+qmUpdateDeliveryQuota(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucFreeQuotaForDelivery,
+	uint8_t ucFreeQuotaForNonDelivery)
+{
+#if CFG_SUPPORT_802_11BE_MLO
+	struct MLD_STA_RECORD *prMldStarec =
+		mldStarecGetByStarec(prAdapter, prStaRec);
+
+	if (prMldStarec) {
+		prMldStarec->ucFreeQuotaForDelivery =
+			ucFreeQuotaForDelivery;
+		prMldStarec->ucFreeQuotaForNonDelivery =
+			ucFreeQuotaForNonDelivery;
+		DBGLOG(QM, LOUD,
+			"new MldStarec QuotaForDelivery = %d  QuotaForNonDelivery = %d\n",
+			prMldStarec->ucFreeQuotaForDelivery,
+			prMldStarec->ucFreeQuotaForNonDelivery);
+	} else
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+	{
+		prStaRec->ucFreeQuotaForDelivery = ucFreeQuotaForDelivery;
+		prStaRec->ucFreeQuotaForNonDelivery =
+			ucFreeQuotaForNonDelivery;
+		DBGLOG(QM, LOUD,
+			"new StaRec QuotaForDelivery = %d  QuotaForNonDelivery = %d\n",
+			prStaRec->ucFreeQuotaForDelivery,
+			prStaRec->ucFreeQuotaForNonDelivery);
+	}
+}
+
+
+void
+qmGetDeliveryQuota(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t *ucFreeQuotaForDelivery,
+	uint8_t *ucFreeQuotaForNonDelivery)
+{
+#if CFG_SUPPORT_802_11BE_MLO
+	struct MLD_STA_RECORD *prMldStarec =
+		mldStarecGetByStarec(prAdapter, prStaRec);
+
+	if (prMldStarec) {
+		*ucFreeQuotaForDelivery =
+			prMldStarec->ucFreeQuotaForDelivery;
+		*ucFreeQuotaForNonDelivery =
+			prMldStarec->ucFreeQuotaForNonDelivery;
+	} else
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+	{
+		*ucFreeQuotaForDelivery =
+			prStaRec->ucFreeQuotaForDelivery;
+		*ucFreeQuotaForNonDelivery =
+			prStaRec->ucFreeQuotaForNonDelivery;
+	}
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update STA free quota
@@ -8101,7 +8189,6 @@ qmUpdateFreeQuota(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucUpdateMode,
 	uint8_t ucFreeQuota)
 {
-
 	uint8_t ucFreeQuotaForNonDelivery;
 	uint8_t ucFreeQuotaForDelivery;
 
@@ -8184,15 +8271,8 @@ qmUpdateFreeQuota(struct ADAPTER *prAdapter,
 		}
 	}
 	/* ucFreeQuota > 0 */
-	prStaRec->ucFreeQuotaForDelivery = ucFreeQuotaForDelivery;
-	prStaRec->ucFreeQuotaForNonDelivery =
-		ucFreeQuotaForNonDelivery;
-
-	DBGLOG(QM, LOUD,
-		"new QuotaForDelivery = %d  QuotaForNonDelivery = %d\n",
-		prStaRec->ucFreeQuotaForDelivery,
-		prStaRec->ucFreeQuotaForNonDelivery);
-
+	qmUpdateDeliveryQuota(prAdapter, prStaRec,
+		ucFreeQuotaForDelivery, ucFreeQuotaForNonDelivery);
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 /*----------------------------------------------------------------------------*/

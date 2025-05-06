@@ -1208,6 +1208,16 @@ void qmHandleEventStaUpdateFreeQuota(struct ADAPTER
 				     *prAdapter, struct WIFI_EVENT *prEvent);
 
 void
+qmUpdateDeliveryQuota(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucFreeQuotaForDelivery,
+	uint8_t ucFreeQuotaForNonDelivery);
+
+void
+qmGetDeliveryQuota(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t *ucFreeQuotaForDelivery,
+	uint8_t *ucFreeQuotaForNonDelivery);
+
+void
 qmUpdateFreeQuota(struct ADAPTER *prAdapter,
 		  struct STA_RECORD *prStaRec, uint8_t ucUpdateMode,
 		  uint8_t ucFreeQuota);
