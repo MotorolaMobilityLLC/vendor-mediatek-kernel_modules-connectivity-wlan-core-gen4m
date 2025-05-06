@@ -1444,6 +1444,13 @@ local_defines_6993_6653_triband = local_defines_6993_6653 + [
     "CONFIG_BAND_NUM=3",
 ]
 
+# Name: 6993_6653_mcl50
+# Description:
+srcs_6993_6653_mcl50 = srcs_6993_6653
+
+local_defines_6993_6653_mcl50 = local_defines_6993_6653 + [
+    "BUILD_QA_DBG=1",
+]
 
 #
 # Step 2: registration
@@ -1457,6 +1464,7 @@ extra_copts = {
     "6991_6653_dx5_triband" : copts_connv3,
     "6993_6653" : copts_connv3,
     "6993_6653_triband" : copts_connv3,
+    "6993_6653_mcl50" : copts_connv3,
 }
 
 extra_header_deps = {
@@ -1468,6 +1476,7 @@ extra_header_deps = {
     "6991_6653_dx5_triband" : header_deps_connv3,
     "6993_6653" : header_deps_connv3,
     "6993_6653_triband" : header_deps_connv3,
+    "6993_6653_mcl50" : header_deps_connv3,
 }
 
 extra_ko_deps = {
@@ -1479,6 +1488,7 @@ extra_ko_deps = {
     "6991_6653_dx5_triband" : ko_deps_connv3,
     "6993_6653" : ko_deps_connv3,
     "6993_6653_triband" : ko_deps_connv3,
+    "6993_6653_mcl50" : ko_deps_connv3,
 }
 
 extra_srcs = {
@@ -1490,6 +1500,7 @@ extra_srcs = {
     "6991_6653_dx5_triband" : srcs_6991_6653_dx5_triband,
     "6993_6653" : srcs_6993_6653,
     "6993_6653_triband" : srcs_6993_6653_triband,
+    "6993_6653_mcl50" : srcs_6993_6653_mcl50,
 }
 
 extra_includes = {
@@ -1501,6 +1512,7 @@ extra_includes = {
     "6991_6653_dx5_triband" : include_connv3,
     "6993_6653" : include_connv3,
     "6993_6653_triband" : include_connv3,
+    "6993_6653_mcl50" : include_connv3,
 }
 
 extra_local_defines = {
@@ -1512,4 +1524,5 @@ extra_local_defines = {
     "6991_6653_dx5_triband" : local_defines_6991_6653_dx5_triband,
     "6993_6653" : local_defines_6993_6653,
     "6993_6653_triband" : local_defines_6993_6653_triband,
+    "6993_6653_mcl50" : local_defines_6993_6653_mcl50,
 }

@@ -40,6 +40,7 @@ platforms = [
     "6991_6653_dx5_triband",
     "6993_6653",
     "6993_6653_triband",
+    "6993_6653_mcl50",
 ]
 
 gen4m_modules(platforms)
