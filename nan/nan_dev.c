@@ -263,8 +263,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 				&prnanBssInfo->ucOpRxNss,
 				&prnanBssInfo->ucOpTxNss);
 
-			SET_NET_ACTIVE(prAdapter,
-				prnanBssInfo->ucBssIndex);
+			nicActivateNetwork(prAdapter, prnanBssInfo->ucBssIndex);
 
 			prnanBssInfo->eConnectionState
 				= MEDIA_STATE_CONNECTED;
@@ -846,7 +845,10 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 			return WLAN_STATUS_FAILURE;
 		}
 
-		UNSET_NET_ACTIVE(prAdapter, prnanBssInfo->ucBssIndex);
+		nicDeactivateNetworkEx(prAdapter,
+				       NETWORK_ID(prnanBssInfo->ucBssIndex,
+						  prnanBssInfo->ucLinkId),
+				       TRUE);
 	}
 	nanDevSendEnableRequest(prAdapter, NULL);
 #else
@@ -915,7 +917,10 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 			return WLAN_STATUS_FAILURE;
 		}
 
-		UNSET_NET_ACTIVE(prAdapter, prnanBssInfo->ucBssIndex);
+		nicDeactivateNetworkEx(prAdapter,
+				       NETWORK_ID(prnanBssInfo->ucBssIndex,
+						  prnanBssInfo->ucLinkId),
+				       TRUE);
 	}
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,

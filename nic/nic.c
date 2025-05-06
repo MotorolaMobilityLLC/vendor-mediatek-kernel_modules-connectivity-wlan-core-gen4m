@@ -2371,7 +2371,6 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 #if CFG_SAP_RPS_SUPPORT
 	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
 		p2pFuncRpsAisCheck(prAdapter,
@@ -2383,11 +2382,14 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 	 * it always checks BMCWlan index validity and triggers
 	 * assertion if BMCWlan index is invalid.
 	 */
-	if (prBssInfo->ucBMCWlanIndex == WTBL_RESERVED_ENTRY) {
+	if (prBssInfo->ucBMCWlanIndex == WTBL_RESERVED_ENTRY ||
+	    !IS_NET_ACTIVE(prAdapter, ucBssIndex)) {
 		DBGLOG(RSN, WARN,
 		       "Network may be deactivated already, ignore\n");
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
+
+	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 
 	kalMemZero(&rCmdActivateCtrl,
 		   sizeof(struct CMD_BSS_ACTIVATE_CTRL));

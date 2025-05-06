@@ -236,14 +236,10 @@ uint32_t rttSendCmd(struct ADAPTER *prAdapter,
 void rttActiveNetwork(struct ADAPTER *prAdapter,
 			    uint8_t ucBssIndex, uint8_t active)
 {
-	if (active) {
-		SET_NET_ACTIVE(prAdapter, ucBssIndex);
+	if (active)
 		nicActivateNetwork(prAdapter, ucBssIndex);
-	} else {
-		UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
+	else
 		nicDeactivateNetwork(prAdapter, ucBssIndex);
-	}
-
 }
 
 uint8_t rttChannelWidthToCnmChBw(enum WIFI_CHANNEL_WIDTH eChannelWidth)

@@ -892,6 +892,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 
 	if (bAtResetFlow) {
 		for (i = 0; i < (prAdapter->ucSwBssIdNum + 1); i++)
+			/* halt should not send cmd to FW */
 			UNSET_NET_ACTIVE(prAdapter, i);
 
 #if CFG_CE_ASSERT_DUMP

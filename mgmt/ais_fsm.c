@@ -567,10 +567,12 @@ void aisFreeBssInfo(struct ADAPTER *prAdapter,
 	ucBssIndex = bss->ucBssIndex;
 
 	/* Deactivate BSS. */
-	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 	if (!fgHalted)
 		nicDeactivateNetwork(prAdapter,
 		       NETWORK_ID(ucBssIndex, ucLinkIdx));
+	else
+		/* halt should not send cmd to FW */
+		UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUnregister(prAdapter, prAisFsmInfo->prMldBssInfo, bss);

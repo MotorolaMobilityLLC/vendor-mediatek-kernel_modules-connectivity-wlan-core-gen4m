@@ -1916,7 +1916,6 @@ scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
 	prSchedScanCmd->ucBssIndex = prSchedScanParam->ucBssIndex;
 	active = IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
 	if (!active) {
-		SET_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
 		/* sync with firmware */
 		nicActivateNetwork(prAdapter, prAisBssInfo->ucBssIndex);
 	}
@@ -2024,12 +2023,8 @@ scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
 		prScanInfo->fgSchedScanning = TRUE;
 	} while (0);
 
-	if (!prScanInfo->fgSchedScanning && !active) {
-		UNSET_NET_ACTIVE(prAdapter,
-			prAisBssInfo->ucBssIndex);
-		nicDeactivateNetwork(prAdapter,
-			prAisBssInfo->ucBssIndex);
-	}
+	if (!prScanInfo->fgSchedScanning && !active)
+		nicDeactivateNetwork(prAdapter, prAisBssInfo->ucBssIndex);
 
 	cnmMemFree(prAdapter, (void *) prSchedScanCmd);
 
@@ -2067,10 +2062,8 @@ u_int8_t scnFsmSchedScanStopRequest(struct ADAPTER *prAdapter)
 
 	/* Deactivate network when not connected and not in normal scan */
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE &&
-		prScanInfo->eCurrentState == SCAN_STATE_IDLE) {
-		UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
+		prScanInfo->eCurrentState == SCAN_STATE_IDLE)
 		nicDeactivateNetwork(prAdapter, ucBssIndex);
-	}
 
 	return TRUE;
 }
