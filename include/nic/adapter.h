@@ -2045,6 +2045,7 @@ struct WIFI_VAR {
 	uint8_t ucDisEmlsrAllowlist;
 	u_int8_t fgEnP2pPref6g;
 	u_int8_t fgP2pPrefSkipDfs;
+	u_int8_t fgP2pSkipDrvFastPS;
 
 	uint32_t u4PmkRefreshThreshold;
 

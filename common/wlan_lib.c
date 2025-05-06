@@ -9824,6 +9824,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 #endif /* CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT */
 
+	INIT_UINT(prWifiVar->fgP2pSkipDrvFastPS, "P2pSkipDrvFastPS",
+		  FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgEnP2pPref6g, "EnP2pPref6g", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgP2pPrefSkipDfs, "P2pPrefSkipDfs",

@@ -4961,10 +4961,15 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 		 * If the DHCP procedure is initiated, FWK will manage PS mode
 		 * using mtk_p2p_cfg80211_set_power_mgmt.
 		 */
-		rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
-		rPowerMode.ucBssIdx = ucBssIndex;
-		wlanoidSet802dot11PowerSaveProfileImpl(prAdapter, &rPowerMode,
-			sizeof(struct PARAM_POWER_MODE_), &u4Len, FALSE);
+		if (prAdapter->rWifiVar.fgP2pSkipDrvFastPS) {
+			DBGLOG(P2P, WARN, "Skip driver Fast PS command.\n");
+		} else {
+			rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
+			rPowerMode.ucBssIdx = ucBssIndex;
+			wlanoidSet802dot11PowerSaveProfileImpl(prAdapter,
+				&rPowerMode, sizeof(struct PARAM_POWER_MODE_),
+				&u4Len, FALSE);
+		}
 #endif
 	}
 }
