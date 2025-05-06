@@ -827,7 +827,7 @@ struct WAKE_INFO_T {
 	{ \
 		if (au2DebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
-			dumpHex((uint8_t *)(_Adr), (uint32_t)(_Len)); \
+			dumpHex((_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #define DBGLOG_MEM8(_Mod, _Clz, _Adr, _Len) \
@@ -868,7 +868,7 @@ struct WAKE_INFO_T {
 			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
 				 KAL_GET_CURRENT_THREAD_ID(), \
 				 __func__, _Title); \
-			dumpHex((uint8_t *)(_Adr), (uint32_t)(_Len)); \
+			dumpHex((_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #define DBGDUMP_MEM8(_Mod, _Clz, _Title, _Adr, _Len) \
@@ -1059,7 +1059,7 @@ struct WAKE_INFO_T {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void dumpHex(uint8_t *pucStartAddr, uint16_t u2Length);
+void dumpHex(const void *pBuffer, uint16_t u2Length);
 void dumpMemory8(uint8_t *pucStartAddr,
 		 uint32_t u4Length);
 void dumpMemory32(uint32_t *pu4StartAddr,

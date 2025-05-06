@@ -221,6 +221,38 @@ static uint8_t wmmNewDlgToken(void)
 	return sWmmDlgToken++;
 }
 
+static void wmmComposeTspecTxFrame(void *prPacket, enum TSPEC_OP_CODE eOpCode,
+				   struct PARAM_QOS_TSPEC *prTsParam,
+				   uint16_t u2FrameCtrl,
+				   struct BSS_INFO *prBssInfo,
+				   struct STA_RECORD *prStaRec)
+{
+	struct WMM_ACTION_TSPEC_FRAME *prActionFrame = NULL;
+
+	prActionFrame = prPacket;
+
+	WLAN_SET_FIELD_16(&prActionFrame->u2FrameCtrl, u2FrameCtrl);
+	COPY_MAC_ADDR(prActionFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prActionFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prActionFrame->aucBSSID, prStaRec->aucMacAddr);
+	prActionFrame->u2SeqCtrl = 0;
+
+	prActionFrame->ucCategory = CATEGORY_WME_MGT_NOTIFICATION;
+	if (eOpCode == TX_ADDTS_REQ) {
+		prActionFrame->ucAction = ACTION_ADDTS_REQ;
+		prActionFrame->ucDlgToken = (prTsParam->ucDialogToken == 0)
+						    ? wmmNewDlgToken()
+						    : prTsParam->ucDialogToken;
+	} else if (eOpCode == TX_DELTS_REQ) {
+		prActionFrame->ucAction = ACTION_DELTS;
+		/* dialog token should be always 0 in delts frame */
+		prActionFrame->ucDlgToken = 0;
+	}
+
+	/* this field only meanful in ADD TS response, otherwise set to 0 */
+	prActionFrame->ucStatusCode = 0;
+}
+
 /* follow WMM spec, send add/del tspec request frame */
 static void wmmTxTspecFrame(struct ADAPTER *prAdapter, uint8_t ucTid,
 	enum TSPEC_OP_CODE eOpCode,
@@ -233,8 +265,6 @@ static void wmmTxTspecFrame(struct ADAPTER *prAdapter, uint8_t ucTid,
 	struct STA_RECORD *prStaRec =
 		aisGetTargetStaRec(prAdapter, ucBssIndex);
 	struct MSDU_INFO *prMsduInfo = NULL;
-	struct WMM_ACTION_TSPEC_FRAME *prActionFrame = NULL;
-	uint16_t u2FrameCtrl = MAC_FRAME_ACTION;
 
 	if (!prStaRec || !prTsParam || !prBssInfo) {
 		DBGLOG(WMM, ERROR, "prStaRec NULL %d, prTsParam NULL %d\n",
@@ -257,31 +287,8 @@ static void wmmTxTspecFrame(struct ADAPTER *prAdapter, uint8_t ucTid,
 
 	kalMemZero(prMsduInfo->prPacket, ACTION_ADDTS_REQ_FRAME_LEN);
 
-	prActionFrame = (struct WMM_ACTION_TSPEC_FRAME *)prMsduInfo->prPacket;
-
-	/*********frame header**********************/
-	WLAN_SET_FIELD_16(&prActionFrame->u2FrameCtrl, u2FrameCtrl);
-	COPY_MAC_ADDR(prActionFrame->aucDestAddr, prStaRec->aucMacAddr);
-	COPY_MAC_ADDR(prActionFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
-	COPY_MAC_ADDR(prActionFrame->aucBSSID, prStaRec->aucMacAddr);
-	prActionFrame->u2SeqCtrl = 0;
-
-	/********Frame body*************/
-	prActionFrame->ucCategory =
-		CATEGORY_WME_MGT_NOTIFICATION; /*CATEGORY_QOS_ACTION;*/
-	if (eOpCode == TX_ADDTS_REQ) {
-		prActionFrame->ucAction = ACTION_ADDTS_REQ;
-		prActionFrame->ucDlgToken = (prTsParam->ucDialogToken == 0)
-						    ? wmmNewDlgToken()
-						    : prTsParam->ucDialogToken;
-	} else if (eOpCode == TX_DELTS_REQ) {
-		prActionFrame->ucAction = ACTION_DELTS;
-		prActionFrame->ucDlgToken =
-			0; /* dialog token should be always 0 in delts frame */
-	}
-
-	/* this field only meanful in ADD TS response, otherwise set to 0 */
-	prActionFrame->ucStatusCode = 0;
+	wmmComposeTspecTxFrame(prMsduInfo->prPacket, eOpCode, prTsParam,
+			       MAC_FRAME_ACTION, prBssInfo, prStaRec);
 
 	/*DumpData((PUINT_8)prMsduInfo->prPacket,u2PayLoadLen, "ADDTS-FF");*/
 

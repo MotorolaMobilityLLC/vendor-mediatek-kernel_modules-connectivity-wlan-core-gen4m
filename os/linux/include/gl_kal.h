@@ -1183,6 +1183,8 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 #define kalMemMove(pvDst, pvSrc, u4Size)  \
 	memmove(pvDst, pvSrc, u4Size)
 
+#define kalIsPrint(_c) ((uint8_t)((_c) - 0x20) < 0x5f)
+
 #if KERNEL_VERSION(4, 0, 0) <= LINUX_VERSION_CODE
 #define strnicmp(s1, s2, n)                         strncasecmp(s1, s2, n)
 #endif

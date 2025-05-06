@@ -652,6 +652,8 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 #define kalMemMove(pvDst, pvSrc, u4Size)  \
 	memmove(pvDst, pvSrc, u4Size)
 
+#define kalIsPrint(_c) ((uint8_t)((_c) - 0x20) < 0x5f)
+
 #define strnicmp(s1, s2, n) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 /* string operation */
