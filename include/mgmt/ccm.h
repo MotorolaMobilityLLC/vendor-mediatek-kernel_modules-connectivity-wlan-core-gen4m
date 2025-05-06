@@ -13,6 +13,18 @@ enum ENUM_P2P_CCM_MODE {
 };
 #endif /* CFG_SUPPORT_CCM */
 
+enum ENUM_CCM_NET_TYPE {
+	ENUM_CCM_SAP,
+	ENUM_CCM_GO,
+	ENUM_CCM_GC,
+	ENUM_CCM_NET_NUM
+};
+
+#define CCM_SAP_BIT		BIT(ENUM_CCM_SAP)
+#define CCM_GO_BIT		BIT(ENUM_CCM_GO)
+#define CCM_GC_BIT		BIT(ENUM_CCM_GC)
+#define CCM_ALL_NET_BITS	BITS(ENUM_CCM_SAP, ENUM_CCM_NET_NUM - 1)
+
 typedef void(*CCM_CALLBACK_FUNC) (struct ADAPTER *);
 
 /******************************************************************************
@@ -46,6 +58,11 @@ void ccmUnregisterStableCb(struct ADAPTER *prAdapter,
 void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,
 			      const char *pucSrcFunc);
+
+void ccmChannelSwitchProducerByNetType(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prTargetBss,
+			      const char *pucSrcFunc,
+			      uint8_t ucNetTypeBits);
 
 void ccmChannelSwitchProducerDfs(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *prTargetBss);
@@ -91,6 +108,16 @@ ccmUnregisterStableCb(struct ADAPTER *prAdapter, CCM_CALLBACK_FUNC func) {}
 static inline void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,
 			      const char *pucSrcFunc)
+{
+#if CFG_ENABLE_WIFI_DIRECT
+	p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
+#endif
+}
+
+static inline void ccmChannelSwitchProducerByNetType(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prTargetBss,
+			      const char *pucSrcFunc,
+			      uint8_t ucNetTypeBits)
 {
 #if CFG_ENABLE_WIFI_DIRECT
 	p2pFuncSwitchSapChannel(prAdapter, P2P_DEFAULT_SCENARIO);
