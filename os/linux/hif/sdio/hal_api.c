@@ -44,8 +44,11 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+#if (CFG_MTK_FPGA_PLATFORM != 0)
+#define RX_RESPONSE_TIMEOUT (10000)
+#else
 #define RX_RESPONSE_TIMEOUT (3000)
-
+#endif
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -2352,7 +2355,7 @@ void halPrintMailbox(struct ADAPTER *prAdapter)
 	halGetMailbox(prAdapter, 0, &u4MailBoxStatus0);
 	halGetMailbox(prAdapter, 1, &u4MailBoxStatus1);
 #endif
-	DBGFWLOG(INIT, ERROR,
+	DBGLOG(INIT, ERROR,
 		"MailBox Status = 0x%08X, 0x%08X\n",
 		u4MailBoxStatus0, u4MailBoxStatus1);
 }

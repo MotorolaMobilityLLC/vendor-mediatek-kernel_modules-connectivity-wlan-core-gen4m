@@ -19112,7 +19112,7 @@ int priv_driver_cccr_ops(struct net_device *prNetDev,
 	int32_t i4Ret;
 	int32_t i4Parameter;
 	uint32_t u4CCCR_addr = 0;
-	uint8_t ucCCCR_value = 0;
+	uint32_t ucCCCR_value = 0;
 
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4Offset = 0;
@@ -19149,15 +19149,15 @@ int priv_driver_cccr_ops(struct net_device *prNetDev,
 
 	/* convert address */
 	if (ucOpMode == CCCR_READ || ucOpMode == CCCR_WRITE) {
-		i4Ret = kalkStrtos32(apcArgv[2], 16, &i4Parameter);
+		i4Ret = kalStrtouint(apcArgv[2], 16, &i4Parameter);
 		/* Valid address 0x0~0xFF */
-		u4CCCR_addr = (uint32_t)(i4Parameter & 0xFF);
+		u4CCCR_addr = (uint32_t)(i4Parameter & 0x1FF);
 	}
 
 	/* convert value */
 	if (ucOpMode == CCCR_WRITE) {
-		i4Ret = kalkStrtos32(apcArgv[3], 16, &i4Parameter);
-		ucCCCR_value = (uint8_t)i4Parameter;
+		i4Ret = kalStrtouint(apcArgv[3], 16, &i4Parameter);
+		ucCCCR_value = (uint32_t)i4Parameter;
 	}
 
 	/* Set SDIO host reference */
@@ -19165,9 +19165,7 @@ int priv_driver_cccr_ops(struct net_device *prNetDev,
 
 	/* Start operation */
 	if (ucOpMode == CCCR_READ) {
-		sdio_claim_host(func);
-		ucCCCR_value = sdio_f0_readb(func, u4CCCR_addr, &rStatus);
-		sdio_release_host(func);
+		HAL_MCR_RD(prGlueInfo->prAdapter, u4CCCR_addr, &ucCCCR_value);
 
 		if (rStatus) /* Fail case */
 			u4Offset += kalSnprintf(pcCommand + u4Offset,
@@ -19180,16 +19178,7 @@ int priv_driver_cccr_ops(struct net_device *prNetDev,
 					     "Read success 0x%X = 0x%X\n",
 					     u4CCCR_addr, ucCCCR_value);
 	} else if (ucOpMode == CCCR_WRITE) {
-		uint32_t quirks_bak;
-		sdio_claim_host(func);
-		/* Enable capability to write CCCR */
-		quirks_bak = func->card->quirks;
-		func->card->quirks |= MMC_QUIRK_LENIENT_FN0;
-		/* Write CCCR into card */
-		sdio_f0_writeb(func, ucCCCR_value, u4CCCR_addr, &rStatus);
-		func->card->quirks = quirks_bak;
-		sdio_release_host(func);
-
+		HAL_MCR_WR(prGlueInfo->prAdapter, u4CCCR_addr, ucCCCR_value);
 		if (rStatus) /* Fail case */
 			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
