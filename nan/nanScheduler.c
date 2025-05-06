@@ -4683,9 +4683,11 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 
 			if (IS_2G_OP_CLASS(ucOC) &&
 			    IS_2G_OP_CLASS(ucCheckOpClass)) {
-				/* Reach here: 2G && Potential */
-				if (!pChosen &&
-				    !fgCommitted2G && !fgConditional) {
+				/* Reach here: 2G && Potential.
+				 * Skip checking fgCommitted2G, since in the
+				 * case FC enabled it is always set.
+				 */
+				if (!pChosen && !fgConditional) {
 					pChosen = &prBandChnlList[i];
 					pucTimeBitmap = pTimeBitmapTmp;
 				}
@@ -5358,7 +5360,10 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 			prAttrNanAvailibility = prCondAttrNanAvailibility;
 	}
 
-	if (fgFillByPotential) {
+	if (fgFillByPotential &&
+	    !(NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G) ||
+	      nanGetHighestCommonBand(prAdapter, prPeerSchDesc, TRUE) ==
+		    ENUM_SUPPORTED_BN_2G)) {
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 1)
 		if (getPeerSchDescMaxCap(prPeerSchDesc) == BAND_6G) {
 			DBGLOG(NAN, STATE, "Attempt to add 6G conditional");
@@ -6502,6 +6507,7 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt = NULL;
 	struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
 	size_t i;
+	uint32_t u4FcSlots;
 
 	DBGLOG(NAN, DEBUG, "Update common FAW idx=%u\n", u4SchIdx);
 
@@ -6516,6 +6522,7 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 
 	/* have a preference for 5G band */
 	for (ucTimeLineIdx = szNanActiveTimelineNum; ucTimeLineIdx--; ) {
+		u4FcSlots = nanGetTimelineFcSlots(prAdapter, ucTimeLineIdx, 0);
 
 		prTimeline = &prPeerSchRecord->arCommFawTimeline[ucTimeLineIdx];
 		kalMemZero(prTimeline->au4AvailMap,
@@ -6524,13 +6531,6 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter,
 				ucTimeLineIdx);
 		prTimeline->ucMapId = prNanTimelineMgmt->ucMapId;
-
-		/* Skip 2G timeline, 5G/6G slots=  in nanSchedNegoGenDefCrbV2 */
-		if (prPeerSchRecord->fgSkip2gFaw &&
-		    NAN_IS_2G_TIMELINE(prAdapter, ucTimeLineIdx)) {
-			DBGLOG(NAN, INFO, "Skip 2G FAW");
-			continue;
-		}
 
 		for (u4SlotIdx = 0;
 			u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS; u4SlotIdx++) {
@@ -6609,8 +6609,21 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 				}
 			}
 		}
+
+		if (NAN_IS_2G_TIMELINE(prAdapter, ucTimeLineIdx) &&
+		    (prTimeline->au4AvailMap[0] & ~u4FcSlots) == 0) {
+			DBGLOG(NAN, INFO,
+			       "Erase 2G from timeline %02x-%02x-%02x-%02x equals FC, Skip 2G FAW",
+			       ((uint8_t *)prTimeline->au4AvailMap)[0],
+			       ((uint8_t *)prTimeline->au4AvailMap)[1],
+			       ((uint8_t *)prTimeline->au4AvailMap)[2],
+			       ((uint8_t *)prTimeline->au4AvailMap)[3]);
+			kalMemZero(prTimeline->au4AvailMap,
+				   sizeof(prTimeline->au4AvailMap));
+		}
+
 		DBGLOG(NAN, INFO,
-		       "Update FAW idx=%u, timeline=%u prTimeline->au4AvailMap=%02x-%02x-%02x-%02x\n",
+		       "Update FAW idx=%u, timeline=%u map=%02x-%02x-%02x-%02x\n",
 		       u4SchIdx, ucTimeLineIdx,
 		       ((uint8_t *)prTimeline->au4AvailMap)[0],
 		       ((uint8_t *)prTimeline->au4AvailMap)[1],
@@ -19057,15 +19070,6 @@ done:
 		TRUE;
 }
 
-static void nanSetPeerSkip2gFaw(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
-{
-	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
-
-	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
-	if (prPeerSchRecord)
-		prPeerSchRecord->fgSkip2gFaw = TRUE;
-}
-
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					uint8_t fgChkRmtCondSlot)
 {
@@ -19184,14 +19188,15 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 			 /* !nanLinkNeedMlo(prAdapter) && */ /* FIXME */
 			 !NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G)) {
 			if (!nanGetFeatureIsSigma(prAdapter) &&
-			    !(fgChkRmtCondSlot && /* handling response */
-			      ucSlotCommitted[sz5gTimeLineIdx] < 8)) {
+			    (!fgChkRmtCondSlot ||
+			     ucSlotCommitted[sz5gTimeLineIdx] >= 8)) {
+				/* shall only skip 2G when:
+				 * 1. 5G/6G timeline suffiicent, or
+				 * 2. initiating proposal (request or counter)
+				 */
 				DBGLOG(NAN, INFO,
 				       "Skip 2G timeline, 5G/6G slots=%u",
 				       ucSlotCommitted[sz5gTimeLineIdx]);
-				/* Mark to skip 2G timeline for common FAW */
-				nanSetPeerSkip2gFaw(prAdapter,
-						    prNegoCtrl->u4SchIdx);
 				continue;
 			}
 			DBGLOG(NAN, INFO,
