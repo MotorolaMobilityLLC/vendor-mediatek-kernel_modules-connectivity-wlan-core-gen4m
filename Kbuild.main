@@ -2390,6 +2390,12 @@ else
     ccflags-y += -DCFG_SUPPORT_GET_LTE_SAFE_CHANNEL=0
 endif
 
+ifeq ($(CONFIG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL), y)
+    ccflags-y += -DCFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL=1
+else
+    ccflags-y += -DCFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -DCFG_MTK_WIFI_CONNV3_SUPPORT=1
     ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra),)

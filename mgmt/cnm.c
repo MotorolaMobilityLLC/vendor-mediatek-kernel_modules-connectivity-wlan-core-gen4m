@@ -87,6 +87,13 @@ enum ENUM_CNM_OPMODE_REQ_STATUS {
 	CNM_OPMODE_REQ_STATUS_NUM
 };
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+struct CNM_EVENT_SHR_ANT_SWCH_T {
+	uint8_t ucGrant;
+	uint8_t aucReserved[3];
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2966,8 +2973,17 @@ next:
 #endif
 		   )
 			fgDBDCConcurrent = TRUE;
-		else /* 2.4G only */
-			fgDBDCConcurrent = FALSE;
+		else { /* 2.4G only */
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+			/* If the shared antenna is granted to BT and there
+			 * is G band only, treating it as concurrent DBDC.
+			 */
+			if (prAdapter->eShrAntGrant == SHR_ANT_GRANT_TO_BT)
+				fgDBDCConcurrent = TRUE;
+			else
+#endif
+				fgDBDCConcurrent = FALSE;
+		}
 	} else {
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
 		/* Check DBDC A+A when HW support
@@ -3506,6 +3522,56 @@ void cnmDbdcOpModeChangeDoneCallback(
 	}
 }
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief    Send DBDC setting reason command to FW
+ *
+ * @param prAdapter
+ * @param ucReason
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void cnmUpdateDbdcSettingWithReason(
+	struct ADAPTER *prAdapter,
+	enum ENUM_DBDC_SETTING_REASON ucReason)
+{
+	struct CMD_DBDC_SETTING rDbdcSetting;
+	struct CMD_DBDC_SETTING *prCmdBody;
+
+	if (prAdapter == NULL)
+		return;
+
+	if ((ucReason == DBDC_SETTING_REASON_NULL)
+		|| (ucReason >= DBDC_SETTING_REASON_NUM))
+		return;
+
+	prAdapter->eDbdcUpdatingReason = DBDC_UPDATING_REASON_NULL;
+
+	/* Send event to FW */
+	prCmdBody = (struct CMD_DBDC_SETTING *)&rDbdcSetting;
+	kalMemZero(prCmdBody, sizeof(struct CMD_DBDC_SETTING));
+	prCmdBody->u2CmdLen = sizeof(struct CMD_DBDC_SETTING);
+	DBDC_UPDATE_CMD_WMMBAND_FW_AUTO(prAdapter, prCmdBody);
+	prCmdBody->ucReason = ucReason;
+
+	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
+			    CMD_ID_SET_DBDC_PARMS, /* ucCID */
+			    TRUE, /* fgSetQuery */
+			    FALSE, /* fgNeedResp */
+			    FALSE, /* fgIsOid */
+			    NULL, /* pfCmdDoneHandler */
+			    NULL, /* pfCmdTimeoutHandler */
+			    /* u4SetQueryInfoLen */
+			    sizeof(struct CMD_DBDC_SETTING),
+			    /* pucInfoBuffer */
+			    (uint8_t *)prCmdBody,
+			    NULL, /* pvSetQueryBuffer */
+			    0 /* u4SetQueryBufferLen */);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    Send DBDC Enable/Disable command to FW
@@ -3643,6 +3709,17 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 
 	log_dbg(CNM, WARN, "fgDbdcEn=%d, ucDBDCAAMode=%d\n",
 		prDbdcInfo->fgCmdEn, prCmdBody->ucDBDCAAMode);
+
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+	if (prAdapter->eDbdcUpdatingReason ==
+		DBDC_UPDATING_REASON_SWCH_SHR_ANT_TO_BT)
+		prCmdBody->ucReason =
+			DBDC_SETTING_REASON_SWCH_SHR_ANT_TO_BT_AFTER_DBDC;
+	else
+		prCmdBody->ucReason = DBDC_SETTING_REASON_NULL;
+
+	prAdapter->eDbdcUpdatingReason = DBDC_UPDATING_REASON_NULL;
+#endif
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_SET_DBDC_PARMS,	/* ucCID */
@@ -4820,6 +4897,13 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			cnmUpdateDbdcSetting(prAdapter, FALSE);
 		}
 #endif
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+		if (prAdapter->eDbdcUpdatingReason ==
+			DBDC_UPDATING_REASON_SWCH_SHR_ANT_TO_BT) {
+			cnmUpdateDbdcSettingWithReason(prAdapter,
+			DBDC_SETTING_REASON_SWCH_SHR_ANT_TO_BT_DIRECTLY);
+		}
+#endif
 		return;
 	}
 
@@ -4933,6 +5017,45 @@ void cnmDbdcGuardTimerCallback(struct ADAPTER
 		log_dbg(CNM, ERROR, "[DBDC] WRONG DBDC TO TYPE %u\n",
 		       prDbdcInfo->eDdbcGuardTimerType);
 }
+
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief    HW update shared antenna switch event
+ *
+ * @param prAdapter
+ * @param prEvent
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void cnmUpdateSharedAntennaSwitch(
+	struct ADAPTER *prAdapter,
+	struct UNI_EVENT_SHR_ANT_SWCH_UPDATE_T *prShrAntSwchEvent)
+{
+	enum ENUM_SHR_ANT_GRANT eShrAntGrant;
+	struct DBDC_INFO_T *prDbdcInfo = &prAdapter->rDbdcInfo;
+
+	if ((prAdapter == NULL) || (prShrAntSwchEvent == NULL))
+		return;
+
+	eShrAntGrant =
+		(enum ENUM_SHR_ANT_GRANT) prShrAntSwchEvent->u1Grant;
+	prAdapter->eShrAntGrant = eShrAntGrant;
+
+	if (eShrAntGrant == SHR_ANT_GRANT_TO_BT)
+		prAdapter->eDbdcUpdatingReason =
+			DBDC_UPDATING_REASON_SWCH_SHR_ANT_TO_BT;
+	else
+		prAdapter->eDbdcUpdatingReason =
+			DBDC_UPDATING_REASON_SWCH_SHR_ANT_TO_WIFI;
+
+	cnmDbdcRuntimeCheckDecision(
+		prAdapter,
+		prDbdcInfo->ucBssIdx,
+		FALSE);
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5989,7 +6112,6 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 
 	return eStatus;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

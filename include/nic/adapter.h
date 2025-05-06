@@ -91,6 +91,15 @@ enum {
 	ENUM_SW_TEST_MODE_NUM
 };
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+enum ENUM_DBDC_UPDATING_REASON {
+	DBDC_UPDATING_REASON_NULL,
+	DBDC_UPDATING_REASON_SWCH_SHR_ANT_TO_BT,
+	DBDC_UPDATING_REASON_SWCH_SHR_ANT_TO_WIFI,
+	DBDC_UPDATING_REASON_NUM
+};
+#endif
+
 struct ESS_SCAN_RESULT_T {
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	uint16_t u2SSIDLen;
@@ -3489,6 +3498,10 @@ struct ADAPTER {
 	uint8_t ucNanWmmQueIdx;
 #endif
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+	enum ENUM_DBDC_UPDATING_REASON eDbdcUpdatingReason;
+	enum ENUM_SHR_ANT_GRANT eShrAntGrant;
+#endif
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

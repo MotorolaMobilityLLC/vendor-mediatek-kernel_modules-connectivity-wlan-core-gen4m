@@ -449,6 +449,20 @@ struct CNM_WMM_QUOTA_CONTROL_T {
 	struct TIMER rTimer;
 };
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+enum ENUM_SHR_ANT_GRANT {
+	SHR_ANT_GRANT_TO_WIFI = 0x0,
+	SHR_ANT_GRANT_TO_BT = 0x1,
+};
+
+enum ENUM_DBDC_SETTING_REASON {
+	DBDC_SETTING_REASON_NULL,
+	DBDC_SETTING_REASON_SWCH_SHR_ANT_TO_BT_DIRECTLY,
+	DBDC_SETTING_REASON_SWCH_SHR_ANT_TO_BT_AFTER_DBDC,
+	DBDC_SETTING_REASON_NUM
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1043,6 +1057,23 @@ void cnmDbdcGuardTimerCallback(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void cnmDbdcEventHwSwitchDone(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
+
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief	Function to set Antenna to BT or WF.
+ *
+ * @param[in/out]	prAdapter	Pointer to the adapter structure
+ * @param[in]	prShrAntSwchEvent	Select Antenna grant to which radio
+ *
+ * @return  void
+ */
+/*----------------------------------------------------------------------------*/
+void cnmUpdateSharedAntennaSwitch(struct ADAPTER *prAdapter,
+	struct UNI_EVENT_SHR_ANT_SWCH_UPDATE_T *prShrAntSwchEvent);
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -297,6 +297,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_COEX	= 0x87, /*notify FW coex cmd*/
 	UNI_CMD_ID_UPDATE_PCIE	= 0x89, /*Update PCIE Parameter*/
 	UNI_CMD_ID_PHY_ICS = 0x8A, /*PHY ICS*/
+	UNI_CMD_ID_SHR_ANT_SWCH		= 0x92, /* Shared Antenna Switch */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3422,7 +3423,7 @@ struct UNI_CMD_MBMC_SETTING {
 	uint8_t ucMbmcEn;
 	uint8_t ucAAModeEn;
 	uint8_t ucRfBand;
-	uint8_t aucReserved[1];
+	uint8_t ucReason;
 } __KAL_ATTRIB_PACKED__;
 
 /* Set DVT config Tag */
@@ -5860,6 +5861,31 @@ struct UNI_CMD_BT_CTRL_DATA {
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_SUPPORT_WF_DUMP_BT_COREDUMP */
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+/* shared antenna switch command (0x92) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SHR_ANT_SWCH {
+	/* fixed field */
+	uint8_t u1Reserved[4];
+	/* tlv */
+	uint8_t au1TlvBuffer[];
+} __KAL_ATTRIB_PACKED__;
+
+/* share antenna switch command Tag */
+enum ENUM_UNI_CMD_SHR_ANT_SWCH_TAG {
+	UNI_CMD_ID_SHR_ANT_SWCH_TRIG_EVT = 0,
+	UNI_CMD_ID_SHR_ANT_SWCH_TAG_NUM
+};
+
+/* share antenna switch index (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SHR_ANT_SWCH_TRIG_EVT {
+	uint16_t u2Tag;  /* Tag = 0x00 */
+	uint16_t u2Length;
+	uint32_t u4Reserved;
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -5980,6 +6006,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_OMI	     = 0x84,
 	UNI_EVENT_ID_MLC	     = 0x86,
 	UNI_EVENT_ID_MBRAIN      = 0x89,
+	UNI_EVENT_ID_SHR_ANT_SWCH    = 0x92,
 	UNI_EVENT_ID_COEX_ICER  = 0x93,  /* ICER cmd */
 	UNI_EVENT_ID_NUM
 };
@@ -9550,6 +9577,39 @@ struct UNI_EVENT_TXPWR_MBRAIN_INFO {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_SHR_ANT_SWCH {
+	/* fixed field */
+	uint8_t u1Reserved[4];
+
+	/* tlv */
+	uint8_t au1TlvBuffer[];
+
+	/**< the TLVs included in this field:
+	 *
+	 * TAG                          | ID  | structure
+	 * -----------------------------|-----|--------------
+	 * UNI_EVENT_SHR_ANT_SWCH_UPDATE| 0x0 | UNI_EVENT_SHR_ANT_SWCH_UPDATE_T
+	 */
+} __KAL_ATTRIB_PACKED__;
+
+/** shared antenna switch command TLV List */
+__KAL_ATTRIB_PACKED_FRONT__
+enum ENUM_UNI_EVENT_SHR_ANT_SWCH_TAG {
+	UNI_EVENT_SHR_ANT_SWCH_UPDATE = 0,
+	UNI_EVENT_SHR_ANT_SWCH_TAG_NUM
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_SHR_ANT_SWCH_UPDATE_T {
+	uint16_t         u2Tag;
+	uint16_t         u2Length;
+	uint8_t          u1Grant;
+	uint8_t          u1Reserved[3];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 struct UNI_EVENT_ID_COEX_ICER {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -10479,7 +10539,10 @@ uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
 	struct UNI_CMD_RX_HDR_TRAN_PARM *param);
 #if CFG_MTK_MDDP_SUPPORT
 void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
-	#endif
+#endif
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+void nicUniEventShrAntSwch(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventOmi(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 

@@ -928,6 +928,11 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rMgmtDirectTxQueue);
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+	prAdapter->eDbdcUpdatingReason = DBDC_UPDATING_REASON_NULL;
+	prAdapter->eShrAntGrant = SHR_ANT_GRANT_TO_WIFI;
+#endif
+
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsMcuOff = FALSE;
 	fgIsBusAccessFailed = FALSE;
@@ -1298,6 +1303,56 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* #if CFG_SUPPORT_XONVRAM */
+
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Trigger shared antenna switch event
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ *
+ * \retval WLAN_STATUS_SUCCESS: Success
+ * \retval WLAN_STATUS_FAILURE: Failed
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanTriggerShrAntSwchEvt(struct ADAPTER *prAdapter)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_SHR_ANT_SWCH *uni_cmd;
+	struct UNI_CMD_SHR_ANT_SWCH_TRIG_EVT *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SHR_ANT_SWCH) +
+			       sizeof(struct UNI_CMD_SHR_ANT_SWCH_TRIG_EVT);
+
+	if (prAdapter == NULL)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	uni_cmd = (struct UNI_CMD_SHR_ANT_SWCH *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_SHR_ANT_SWCH ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_SHR_ANT_SWCH_TRIG_EVT *) uni_cmd->au1TlvBuffer;
+	tag->u2Tag = UNI_CMD_ID_SHR_ANT_SWCH_TRIG_EVT;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(prAdapter, /* prAdapter */
+			     UNI_CMD_ID_SHR_ANT_SWCH, /* ucCID */
+			     TRUE, /* fgSetQuery */
+			     FALSE, /* fgNeedResp */
+			     FALSE, /* fgIsOid */
+			     NULL, /* pfCmdDoneHandler */
+			     NULL, /* pfCmdTimeoutHandler */
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1745,6 +1800,10 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		sizeof(struct FACT_CAL_CHANNEL_LOOKUP_TABLE));
 #endif /* CFG_SUPPORT_FACT_CAL_AXIDMA_MAPPING_TBL */
 #endif /* CFG_SUPPORT_FACT_CAL */
+
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+	wlanTriggerShrAntSwchEvt(prAdapter);
+#endif
 
 	return u4Status;
 }				/* wlanAdapterStart */

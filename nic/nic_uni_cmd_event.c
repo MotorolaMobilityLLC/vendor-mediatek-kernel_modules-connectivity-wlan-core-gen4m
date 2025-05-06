@@ -391,8 +391,10 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if CFG_SUPPORT_MBRAIN
 	[UNI_EVENT_ID_MBRAIN] = nicUniUnsolicitMbrEvt,
 #endif
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+	[UNI_EVENT_ID_SHR_ANT_SWCH] = nicUniEventShrAntSwch,
+#endif
 	[UNI_EVENT_ID_COEX_ICER] = nicUniEventIcerRawData,
-
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -1443,6 +1445,7 @@ uint32_t nicUniCmdSetMbmc(struct ADAPTER *ad,
 	tag->ucMbmcEn = cmd->ucDbdcEn;
 	tag->ucAAModeEn = cmd->ucDBDCAAMode;
 	tag->ucRfBand = 0; /* unused */
+	tag->ucReason = cmd->ucReason;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -16498,3 +16501,52 @@ uint32_t nicUniCmdFipsGetResult(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_FIPS */
+
+#if (CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1)
+void nicUniEventShrAntSwch(struct ADAPTER *prAdapter,
+	struct WIFI_UNI_EVENT *prWifiEvent)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_SHR_ANT_SWCH);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(prWifiEvent);
+	uint8_t *data = GET_UNI_EVENT_DATA(prWifiEvent);
+	struct CMD_INFO *prCmdInfo = NULL;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+			case UNI_EVENT_SHR_ANT_SWCH_UPDATE: {
+				struct UNI_EVENT_SHR_ANT_SWCH_UPDATE_T *exp =
+				(struct UNI_EVENT_SHR_ANT_SWCH_UPDATE_T *) tag;
+				cnmUpdateSharedAntennaSwitch(prAdapter, exp);
+			}
+				break;
+			default: {
+				DBGLOG(NIC, WARN, "invalid tag = %d\n",
+					TAG_ID(tag));
+			}
+				break;
+		}
+	}
+
+	/* command response handling */
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prWifiEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler)
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+						    prWifiEvent->aucBuffer);
+		else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo,
+				       prCmdInfo,
+				       0, WLAN_STATUS_SUCCESS);
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+}
+#endif /* CFG_WIFI_RAM_COEX_SPDT_SHR_ANT_CTRL == 1 */
