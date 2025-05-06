@@ -2128,6 +2128,39 @@ void aisFsmRemoveRoamingRequest(
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_ROAMING_CONNECT, ucBssIndex);
 }
 
+void aisFsmIndicateToResetFT(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct net_device *prNetDevice = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct PARAM_RESET_FT *event;
+
+	prNetDevice = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex);
+	if (!prNetDevice) {
+		DBGLOG(AIS, ERROR, "prNetDevice is NULL\n");
+		return;
+	}
+
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
+	wdev = prNetDevice->ieee80211_ptr;
+
+	event = kalMemAlloc(sizeof(struct PARAM_RESET_FT), VIR_MEM_TYPE);
+	if (!event) {
+		DBGLOG(AIS, ERROR, "alloc mgmt chnl list event fail\n");
+		return;
+	}
+
+	kalMemZero(event, sizeof(struct PARAM_RESET_FT));
+	event->id = GRID_RESET_FT_PROCESS;
+	event->len = 0;
+
+	DBGLOG(AIS, STATE, "Reset FT status\n");
+
+	mtk_cfg80211_vendor_event_generic_response(
+		wiphy, wdev, sizeof(struct PARAM_RESET_FT), (uint8_t *)event);
+	kalMemFree(event, VIR_MEM_TYPE, sizeof(struct PARAM_RESET_FT));
+}
+
 struct BSS_DESC *aisSearchBssDescByScore(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	struct BSS_DESC_SET *set)

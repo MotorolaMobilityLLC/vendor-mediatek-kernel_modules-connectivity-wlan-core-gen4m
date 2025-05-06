@@ -14112,16 +14112,19 @@ void kalRoamingReport(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 {
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
-	struct ROAMING_INFO *roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
-	struct ROAMING_REPORT_INFO *prReportInfo = &roam->rReportInfo;
-	struct net_device *prDevHandler =
-			wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex);
+	struct ROAMING_INFO *roam;
+	struct ROAMING_REPORT_INFO *prReportInfo;
+	struct net_device *prDevHandler;
 	struct PARAM_ROAMING_REPORT *log_info;
 	uint32_t size = sizeof(struct PARAM_ROAMING_REPORT);
 	OS_SYSTIME rCurrent;
 
 	GET_CURRENT_SYSTIME(&rCurrent);
 
+	if (!prAdapter)
+		return;
+
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex);
 	if (!prDevHandler)
 		return;
 
@@ -14135,6 +14138,9 @@ void kalRoamingReport(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgRoamingReport))
 		return;
+
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prReportInfo = &roam->rReportInfo;
 
 	log_info = kalMemAlloc(size, VIR_MEM_TYPE);
 	if (!log_info) {

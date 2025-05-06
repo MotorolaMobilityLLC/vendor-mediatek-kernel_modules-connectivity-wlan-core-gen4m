@@ -8452,7 +8452,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_DEBUG_ONLY);
 	INIT_STR(prWifiVar->aucBssidAllowList, "BssidAllowList", "",
 		FEATURE_DEBUG_ONLY);
-	INIT_UINT(prWifiVar->fgRoamingReport, "RoamingReport", FEATURE_DISABLED,
+	INIT_UINT(prWifiVar->fgRoamingReport, "RoamingReport", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisCrossPmf, "DisCrossPmf", 0,
 		  FEATURE_TO_CUSTOMER);
