@@ -856,8 +856,13 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
  * may cause system failed to load firmware. So we still use
  * request_firmware().
  */
+#if (KERNEL_VERSION(4, 18, 0) <= LINUX_VERSION_CODE)
+#define REQUEST_FIRMWARE(_fw, _name, _dev) \
+	firmware_request_nowarn(_fw, _name, _dev)
+#else
 #define REQUEST_FIRMWARE(_fw, _name, _dev) \
 	request_firmware(_fw, _name, _dev)
+#endif
 
 /*----------------------------------------------------------------------------*/
 /* Macros of wake_lock operations for using in Driver Layer                   */
@@ -1248,7 +1253,11 @@ char *strtok_r(char *s, const char *delim, char **last);
 #endif
 
 #if CFG_MTK_ANDROID_WMT
-#define _kalRequestFirmware request_firmware
+	#if (KERNEL_VERSION(4, 18, 0) <= LINUX_VERSION_CODE)
+		#define _kalRequestFirmware firmware_request_nowarn
+	#else
+		#define _kalRequestFirmware request_firmware
+	#endif
 #else
 #define _kalRequestFirmware request_firmware
 #endif
