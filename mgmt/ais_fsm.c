@@ -2223,10 +2223,11 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 #if (CFG_SUPPORT_LLW_SCAN == 1)
 #if (CFG_EXT_FEATURE == 0)
-	if (ais->ucLatencyMode == WIFI_LATENCY_MODE_LOW) {
+	if (ais->ucLatencyMode == WIFI_LATENCY_MODE_LOW
 #else
-	if (ais->ucLatencyMode == WIFI_LATENCY_MODE_ROAM) {
+	if (ais->ucLatencyMode == WIFI_LATENCY_MODE_ROAM
 #endif
+	) {
 #if (CFG_SUPPORT_ROAMING == 1)
 		if (roam->eReason != ROAMING_REASON_BEACON_TIMEOUT) {
 			issued = TRUE;
