@@ -5484,6 +5484,8 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		/* cb_infra */
 		0x7002500C, 0x70025014, 0x70025024, 0x7002502C,
 		0x70028730, 0x70026100,
+	};
+	const uint32_t au4DbgCr3[] = {
 		/* mbu */
 		0x74130200, 0x74130204, 0x7413A004, 0x74138018,
 		0x7413B000, 0x70028800, 0x74130040, 0x74130044,
@@ -5492,14 +5494,15 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		0x74138008, 0x7413800C, 0x74138010, 0x74138014,
 		0x74138018, 0x7413801C, 0x74138020, 0x74138024,
 	};
-	const uint32_t au4DbgCr3[] = {
+	const uint32_t au4DbgCr4[] = {
 		/* mbu */
 		0x74138060, 0x74138064, 0x74138100, 0x74138104,
 		0x74138108, 0x7413810C, 0x74138110, 0x74138114,
-		0x74138118, 0x7413811C, 0x74138120, 0x74138160,
-		0x74138164, 0x7413D008, 0x7413B008, 0x7413B00C,
+		0x74138118, 0x7413811C, 0x74138120, 0x74138124,
+		0x74138160, 0x74138164, 0x7413D008, 0x7413B008,
+		0x7413B00C,
 	};
-	const uint32_t au4DbgCr4[] = {
+	const uint32_t au4DbgCr5[] = {
 		/* mbu ram */
 		0x74040A00, 0x74040A04, 0x74040A08, 0x74040A0C,
 		0x74040A10, 0x74040A14, 0x74040A18, 0x74040A1C,
@@ -5510,7 +5513,7 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		0x74040220, 0x74040224, 0x74040228, 0x7404022C,
 		0x74040230, 0x74040234, 0x74040300, 0x74040304,
 	};
-	const uint32_t au4DbgCr5[] = {
+	const uint32_t au4DbgCr6[] = {
 		/* mbu ram */
 		0x74040308, 0x7404030C, 0x74040310, 0x74040314,
 		0x74040318, 0x7404031C, 0x74040320, 0x74040324,
@@ -5535,9 +5538,6 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		{TRUE, 0x74030164, 0, 0xB4B5B6B7, TRUE, 0x7403002C},
 		{TRUE, 0x74030164, 0, 0x98999A9B, TRUE, 0x7403002C},
 		{TRUE, 0x74030164, 0, 0x9C9D9E9F, TRUE, 0x7403002C},
-		/* cb_infra */
-		{TRUE, 0x70025300, 0, 0x00010E0F, TRUE, 0x70025304},
-		{TRUE, 0x70025300, 0, 0x00011011, TRUE, 0x70025304},
 	};
 	const struct wlan_dbg_command arMbuDbg2[] = {
 		/* write, w_addr, mask, value, read, r_addr*/
@@ -5570,13 +5570,15 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 				 aucBuf, u4BufferSize);
 	mt6653MbuDumpDebugCrAry(prAdapter, au4DbgCr2, ARRAY_SIZE(au4DbgCr2),
 				aucBuf, u4BufferSize);
-	mt6653MbuDumpDebugCrAry(prAdapter, au4DbgCr3, ARRAY_SIZE(au4DbgCr3),
-				aucBuf, u4BufferSize);
 	mt6653MbuDumpDebugCmdAry(prAdapter, arMbuDbg2, ARRAY_SIZE(arMbuDbg2),
 				 aucBuf, u4BufferSize);
+	mt6653MbuDumpDebugCrAry(prAdapter, au4DbgCr3, ARRAY_SIZE(au4DbgCr3),
+				aucBuf, u4BufferSize);
 	mt6653MbuDumpDebugCrAry(prAdapter, au4DbgCr4, ARRAY_SIZE(au4DbgCr4),
 				aucBuf, u4BufferSize);
 	mt6653MbuDumpDebugCrAry(prAdapter, au4DbgCr5, ARRAY_SIZE(au4DbgCr5),
+				aucBuf, u4BufferSize);
+	mt6653MbuDumpDebugCrAry(prAdapter, au4DbgCr6, ARRAY_SIZE(au4DbgCr6),
 				aucBuf, u4BufferSize);
 
 	kalMdelay(3);
