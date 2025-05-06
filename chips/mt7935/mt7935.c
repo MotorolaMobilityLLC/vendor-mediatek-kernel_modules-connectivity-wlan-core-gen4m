@@ -43,7 +43,7 @@
 #include "coda/mt7935/ap2wf_conn_infra_on_ccif4.h"
 #include "coda/mt7935/wf_wtblon_top.h"
 #include "coda/mt7935/wf_uwtbl_top.h"
-
+#include "hal_wfsys_reset_mt7935.h"
 #include "wlan_pinctrl.h"
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -878,8 +878,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 #if CFG_CHIP_RESET_SUPPORT
-	.asicWfsysRst = NULL,
-	.asicPollWfsysSwInitDone = NULL,
+	.asicWfsysRst = mt7935HalCbInfraRguWfRst,
+	.asicPollWfsysSwInitDone = mt7935HalPollWfsysSwInitDone,
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* owner set true when feature is ready. */
@@ -890,7 +890,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.dmashdlQuotaDecision = NULL, /* need update */
 #elif defined(_HIF_SDIO)
 	/* owner set true when feature is ready. */
-	.fgIsSupportL0p5Reset = FALSE,
+	.fgIsSupportL0p5Reset = TRUE,
 #endif
 	.u4MinTxLen = 2,
 #if CFG_NEW_HIF_DEV_REG_IF

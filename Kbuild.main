@@ -4216,6 +4216,7 @@ ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
         CHIPS_OBJS += $(CHIPS)mt7935/mt7935_legacy_fw_dl.o
     endif
     CHIPS_OBJS += $(CHIPS)mt7935/dbg_mt7935.o
+    CHIPS_OBJS += $(CHIPS)mt7935/hal_wfsys_reset_mt7935.o
     ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
         CHIPS_OBJS += $(CHIPS)mt7935/hal_dmashdl_mt7935.o
     endif

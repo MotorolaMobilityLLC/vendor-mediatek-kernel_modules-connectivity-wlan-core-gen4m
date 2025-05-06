@@ -3714,12 +3714,6 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 
 	kalMdelay(50);
 
-	/* rst SD-CTL WF part */
-	HAL_MCR_RD(prAdapter, MCR_WHCR, &u4CrValue);
-	u4CrValue &= (~WHCR_SDIO_WF_PATH_RSTB);
-	HAL_MCR_WR(prAdapter, MCR_WHCR, u4CrValue);
-	kalMdelay(1);
-
 	/* de-assert WF L0.5 reset */
 	if (prChipInfo->asicWfsysRst) {
 		if (prChipInfo->asicWfsysRst(prAdapter, FALSE) == FALSE) {
