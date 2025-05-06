@@ -1384,8 +1384,6 @@ int32_t mddpNotifyWifiStatusByQue(
 	prDrvInfoEntry->info = prDrvInfo;
 	prDrvInfo->info_id = WSVC_DRVINFO_WIFI_ONOFF;
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
-		sizeof(struct mddpw_coex_intf_info_t);
 	prDrvInfo->info_len = sizeof(struct mddpw_coex_intf_info_t);
 	prCoexInfo = (struct mddpw_coex_intf_info_t *)
 		&(prDrvInfo->info[0]);

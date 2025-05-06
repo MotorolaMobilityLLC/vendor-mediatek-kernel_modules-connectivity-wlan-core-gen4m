@@ -19681,8 +19681,10 @@ wlanoidWedDetachWarp(struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct net_device *prDev = NULL;
 
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
+	if (!prAdapter)
+		return WLAN_STATUS_SUCCESS;
+	if (!pvSetBuffer)
+		return WLAN_STATUS_INVALID_DATA;
 
 	if (u4SetBufferLen < sizeof(struct net_device *))
 		return WLAN_STATUS_INVALID_LENGTH;

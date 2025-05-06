@@ -2774,9 +2774,10 @@ void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
 	uint8_t ucAvailable, uint8_t ucChannel,
 	enum ENUM_MAX_BANDWIDTH_SETTING eBw)
 {
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
 	enum ENUM_CHNL_EXT eBssSCO;
 	uint32_t u4CenterFreq;
-
+#endif
 	DBGLOG(P2P, INFO,
 		"%s dfs channel, channel=%d, bw=%d\n",
 		ucAvailable == 1 ? "Set" : "Unset",
