@@ -5998,13 +5998,12 @@ static u_int8_t isIfaceTypeSupportChannel(struct ADAPTER *prAdapter,
 				result = FALSE;
 			}
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			else if (rlmDomainIsLegalChlByNetType(
+			else if (!rlmDomainIsLegalChlByNetType(
 					prAdapter,
 					eBand,
 					ucChannelNum,
 					MAX_BW_20MHZ, /* NOT SUER */
-					NETWORK_TYPE_P2P)
-					!= WLAN_STATUS_SUCCESS) {
+					NETWORK_TYPE_P2P)) {
 				DBGLOG(REQ, TRACE,
 					"skip freq %d, not vlp\n",
 					u4channel_freq);
