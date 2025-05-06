@@ -2670,6 +2670,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				prWifiVar->ucSecondaryOffset = CHNL_EXT_SCN;
 				break;
 			}
+		} else {
+			prWifiVar->ucSecondaryOffset =
+				rlmGetScoByChnInfo(prAdapter, &rRfChnlInfo);
 		}
 		prWifiVar->ucNewChannelS1 =
 			nicGetS1(rRfChnlInfo.eBand,

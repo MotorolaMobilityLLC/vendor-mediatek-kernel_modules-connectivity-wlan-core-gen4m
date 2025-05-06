@@ -1071,25 +1071,44 @@ static void rlmPunctUpdateLegacyBw160(uint16_t u2Bitmap, uint8_t ucPriChannel,
 	}
 }
 
+static void rlmPunctUpdateLegacyBw320(uint16_t u2Bitmap, uint8_t ucPriChannel,
+				      uint8_t *pucBw, uint8_t *pucSeg0)
+{
+	if (ucPriChannel < *pucSeg0) {
+		*pucSeg0 -= 16;
+		if (u2Bitmap & 0x00FF) {
+			*pucBw = MAX_BW_80MHZ;
+			rlmPunctUpdateLegacyBw160(u2Bitmap & 0xFF,
+						  ucPriChannel, pucBw,
+						  pucSeg0);
+		}
+	} else {
+		*pucSeg0 += 16;
+		if (u2Bitmap & 0xFF00) {
+			*pucBw = MAX_BW_80MHZ;
+			rlmPunctUpdateLegacyBw160((u2Bitmap & 0xFF00) >> 8,
+						  ucPriChannel, pucBw,
+						  pucSeg0);
+		}
+	}
+}
+
 void rlmPunctUpdateLegacyBw(enum ENUM_BAND eBand, uint16_t u2Bitmap,
 			    uint8_t ucPriChannel, uint8_t *pucBw,
 			    uint8_t *pucSeg0, uint8_t *pucSeg1,
 			    uint8_t *pucOpClass)
 {
-	uint8_t ucCenterCh, ucSecCh;
-
-	if (*pucBw < MAX_BW_80MHZ || *pucBw > MAX_BW_80_80_MHZ)
-		return;
+	uint8_t ucCenterCh;
 
 	switch (*pucBw) {
 	case MAX_BW_80MHZ:
 	case MAX_BW_80_80_MHZ:
 		ucCenterCh = *pucSeg0;
-		ucSecCh = *pucSeg1;
 		break;
 	case MAX_BW_160MHZ:
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
 		ucCenterCh = *pucSeg1;
-		ucSecCh = 0;
 		break;
 	default:
 		return;
@@ -1104,8 +1123,14 @@ void rlmPunctUpdateLegacyBw(enum ENUM_BAND eBand, uint16_t u2Bitmap,
 
 	if (*pucBw == MAX_BW_160MHZ && (u2Bitmap & 0xFF)) {
 		*pucBw = MAX_BW_80MHZ;
-		ucSecCh = 0;
 		rlmPunctUpdateLegacyBw160(u2Bitmap & 0xFF, ucPriChannel,
+					  pucBw, &ucCenterCh);
+	}
+
+	if ((*pucBw == MAX_BW_320_1MHZ || *pucBw == MAX_BW_320_2MHZ) &&
+	    (u2Bitmap & 0xFFFF)) {
+		*pucBw = MAX_BW_160MHZ;
+		rlmPunctUpdateLegacyBw320(u2Bitmap & 0xFFFF, ucPriChannel,
 					  pucBw, &ucCenterCh);
 	}
 
