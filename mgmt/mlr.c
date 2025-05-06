@@ -1195,13 +1195,18 @@ u_int8_t mlrCanUseMlrRate(struct ADAPTER *prAdapter,
 	u_int8_t fgCanUseMlrRate = FALSE;
 	u_int8_t fgIsMultiLink = FALSE;
 	u_int8_t fgIsForceLink = FALSE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldStaRec;
+#endif
 
 	mlrGetMlrBandConfig(prAdapter, &uc2gTxEnValue, &uc5gTxEnValue);
 
 	if (prMsduInfo->eSrc == TX_PACKET_OS) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		fgIsMultiLink = IS_MLD_STAREC_MULTI(
-			mldStarecGetByStarec(prAdapter, prStaRec));
+		prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (prMldStaRec)
+			fgIsMultiLink = IS_MLD_STAREC_MULTI(prMldStaRec);
+
 		if (fgIsMultiLink && (prMsduInfo->ucControlFlag
 			& MSDU_CONTROL_FLAG_FORCE_LINK))
 			fgIsForceLink = TRUE;
@@ -1452,6 +1457,9 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 	uint8_t ucStaIdx;
 	uint8_t ucBitmapAnd;
 	u_int8_t fgIsMultiLink = FALSE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldStaRec;
+#endif
 
 	if (unlikely(!prAdapter)) {
 		DBGLOG(TX, WARN, "MLR event - prAdapter is NULL");
@@ -1493,8 +1501,9 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		) {
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		fgIsMultiLink = IS_MLD_STAREC_MULTI(
-			mldStarecGetByStarec(prAdapter, prStaRec));
+		prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (prMldStaRec)
+			fgIsMultiLink = IS_MLD_STAREC_MULTI(prMldStaRec);
 #endif
 		prStaRec->ucMlrMode = prEvtMlrFsmUpdate->ucMlrMode;
 		prStaRec->ucMlrState = prEvtMlrFsmUpdate->ucMlrState;
