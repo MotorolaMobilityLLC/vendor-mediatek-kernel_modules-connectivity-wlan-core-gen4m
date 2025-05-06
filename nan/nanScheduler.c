@@ -5160,7 +5160,7 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 			if (prChnlList->ucNumberOfEntry >
 			    pNextAvailEntry - pucBand) {
 				DBGLOG(NAN, WARN,
-				       "ucNumberOfEntry=%u too large (> %u)",
+				       "ucNumberOfEntry=%u too large (> %td)",
 				       prChnlList->ucNumberOfEntry,
 				       pNextAvailEntry - pucBand);
 				continue;
@@ -18907,6 +18907,10 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			   !NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G))) {
 			rSelChnlInfo = g_r5gDwChnl;
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+			if (nanGetFeatureIsSigma(prAdapter))
+				rSelChnlInfo = g_r6gDefChnl;
+#endif
 			nanSchedAddCrbToChnlList(prAdapter, &rSelChnlInfo,
 					szSlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
