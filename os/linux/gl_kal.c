@@ -267,7 +267,7 @@ static uint8_t *apucCr4FwName[] = {
 
 inline uint32_t kalRoundUpPowerOf2(uint32_t v)
 {
-	if (v > 0xfffffff)
+	if (v == 0 || v > 0xfffffff)
 		return 0;
 
 	/* v is already a power of 2, or v is 0 */
