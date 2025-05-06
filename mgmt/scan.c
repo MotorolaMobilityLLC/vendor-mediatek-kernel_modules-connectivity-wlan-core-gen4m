@@ -80,6 +80,9 @@ const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN] = {
 static void scanFreeBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, const char *pucDesc);
 
+static uint8_t scanUpdateTIMCheck(struct BSS_INFO *prAisBssInfo,
+	struct BSS_DESC *prBssDesc,
+	struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -4554,15 +4557,8 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 				       prAisBssInfo->fgTIMPresent,
 				       MAC2STR(prBssDesc->aucBSSID),
 					   prAisBssInfo->u2BeaconInterval);
-				if ((!prAisBssInfo->ucDTIMPeriod) &&
-					prAisBssInfo->fgTIMPresent &&
-					EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-						prAisBssInfo->aucBSSID) &&
-					(prAisBssInfo->eCurrentOPMode
-					== OP_MODE_INFRASTRUCTURE) &&
-					((prWlanBeaconFrame->u2FrameCtrl
-					& MASK_FRAME_TYPE)
-					== MAC_FRAME_BEACON)) {
+				if (scanUpdateTIMCheck(prAisBssInfo,
+					prBssDesc, prWlanBeaconFrame)) {
 					prAisBssInfo->ucDTIMPeriod
 						= prBssDesc->ucDTIMPeriod;
 					prAisBssInfo->fgTIMPresent
@@ -6108,4 +6104,17 @@ void scanFillBssDescW(struct BSS_DESC_W *prBssDescW, struct BSS_DESC *prBssDesc)
 	else
 #endif
 		prBssDescW->ucLinkId = 0;
+}
+
+uint8_t scanUpdateTIMCheck(struct BSS_INFO *prAisBssInfo,
+	struct BSS_DESC *prBssDesc, struct WLAN_BEACON_FRAME *prWlanBeaconFrame)
+{
+	if ((!prAisBssInfo->ucDTIMPeriod) && prAisBssInfo->fgTIMPresent
+		&& EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID)
+		&& (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+		&& ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
+		== MAC_FRAME_BEACON) && (!prBssDesc->fgIsConnecting))
+		return TRUE;
+	else
+		return FALSE;
 }
