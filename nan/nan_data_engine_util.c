@@ -4382,16 +4382,18 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 	/* fill HE Capabilities */
 	if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_HE)) {
-		uint8_t fgSet =
-			HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
+		uint8_t fgSet = FALSE;
+
+		prHeCap = prNDL->aucIeHeCap;
+
+		heRlmRecHeCapInfo(prAdapter, prStaRec, prHeCap);
+
+		fgSet = HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
 			prStaRec->ucHePhyCapInfo);
 
 		DBGLOG(NAN, INFO,
 			"NAN peer supports HE, 40/80: %d\n",
 			fgSet);
-
-		prHeCap = prNDL->aucIeHeCap;
-		heRlmRecHeCapInfo(prAdapter, prStaRec, prHeCap);
 		if (fgSet && (ucPeerBW == 20)) {
 			HE_UNSET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
 			prStaRec->ucHePhyCapInfo);
@@ -4400,6 +4402,7 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+
 #if (CFG_SUPPORT_NAN_11BE == 1)
 	/* fill EHT Capabilities */
 	if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_EHT)) {

@@ -909,6 +909,13 @@ uint32_t nanSchedConfigPhyParams(struct ADAPTER *prAdapter);
 uint32_t nanSchedCmdUpdateSchedVer(struct ADAPTER *prAdapter);
 uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand);
+enum _NAN_CHNL_BW_MAP nanSchedGet2gNanBw(struct ADAPTER *prAdapter);
+enum _NAN_CHNL_BW_MAP nanSchedGet5gNanBw(struct ADAPTER *prAdapter);
+enum _NAN_CHNL_BW_MAP nanSchedGet6gNanBw(struct ADAPTER *prAdapter);
+enum ENUM_CHANNEL_WIDTH
+nanGetChannelBwByBand(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand);
 
 uint32_t
 nanSchedCmdUpdatePhySettigns(struct ADAPTER *prAdapter,

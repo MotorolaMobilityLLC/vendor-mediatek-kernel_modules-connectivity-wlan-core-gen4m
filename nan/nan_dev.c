@@ -192,12 +192,9 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		prnanBssInfo->u2HtOpInfo3 = 0;
 
 #if (CFG_SUPPORT_NAN_DBDC == 1)
-		if (ucIdx == NAN_BSS_INDEX_BAND1)
-			prnanBssInfo->ucVhtChannelWidth =
-				prAdapter->rWifiVar.ucNan5gBandwidth
-				== MAX_BW_160MHZ ? CW_160MHZ : CW_80MHZ;
-		else
-			prnanBssInfo->ucVhtChannelWidth = CW_20_40MHZ;
+		prnanBssInfo->ucVhtChannelWidth =
+			nanGetChannelBwByBand(prAdapter,
+			prnanBssInfo->eBand);
 #else
 		prnanBssInfo->ucVhtChannelWidth = CW_80MHZ;
 #endif
@@ -207,11 +204,11 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 		/* NAN En/Dis BW40 in Assoc IE */
 		if ((prnanBssInfo->eBand == BAND_5G
-				&& prWifiVar->ucNan5gBandwidth
-				>= MAX_BW_40MHZ) ||
+				&& nanSchedGet5gNanBw(prAdapter)
+				>= NAN_CHNL_BW_40) ||
 			(prnanBssInfo->eBand == BAND_2G4
-				&& prWifiVar->ucNan2gBandwidth
-				>= MAX_BW_40MHZ)) {
+				&& nanSchedGet2gNanBw(prAdapter)
+				>= NAN_CHNL_BW_40)) {
 			prnanBssInfo->eBssSCO = CHNL_EXT_SCA;
 			prnanBssInfo->ucHtOpInfo1 |=
 				HT_OP_INFO1_STA_CHNL_WIDTH;

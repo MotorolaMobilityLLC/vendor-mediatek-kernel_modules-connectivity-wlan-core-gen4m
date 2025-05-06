@@ -1928,11 +1928,9 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_NAN
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
 		if (prBssInfo->eBand == BAND_2G4)
-			ucMaxBandwidth = prAdapter->rWifiVar
-					.ucNan2gBandwidth;
+			ucMaxBandwidth = nanSchedGet2gNanBw(prAdapter);
 		else if (prBssInfo->eBand == BAND_5G) {
-			ucMaxBandwidth = prAdapter->rWifiVar
-					.ucNan5gBandwidth;
+			ucMaxBandwidth = nanSchedGet5gNanBw(prAdapter);
 #if (CFG_SUPPORT_NAN_6G == 1)
 		if (prAdapter->rWifiVar.ucNanEnable6g &&
 			prAdapter->rWifiVar.ucNan6gBandwidth != 0) {

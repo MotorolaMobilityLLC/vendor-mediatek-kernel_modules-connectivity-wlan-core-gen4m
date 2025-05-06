@@ -2990,7 +2990,9 @@ uint8_t
 nanGetPeerMinBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		enum ENUM_BAND eBand)
 {
-	uint8_t ucBw = 80;
+	uint8_t ucBw =
+		nanSchedConfigGetAllowedBw(
+		prAdapter, eBand);
 	uint32_t u4Idx;
 	struct _NAN_AVAILABILITY_DB_T *prAvailabilityDB;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
@@ -6772,6 +6774,21 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 	nanSchedCmdUpdateCRB(prAdapter, u4SchIdx);
 }
 
+enum _NAN_CHNL_BW_MAP nanSchedGet2gNanBw(struct ADAPTER *prAdapter)
+{
+	return prAdapter->rWifiVar.ucNan2gBandwidth;
+}
+
+enum _NAN_CHNL_BW_MAP nanSchedGet5gNanBw(struct ADAPTER *prAdapter)
+{
+	/* TODO: Update by reg table */
+	if (prAdapter->rWifiVar.u2CountryCode ==
+		COUNTRY_CODE_ID)
+		return NAN_CHNL_BW_20;
+	else
+		return prAdapter->rWifiVar.ucNan5gBandwidth;
+}
+
 enum _NAN_CHNL_BW_MAP nanSchedGet6gNanBw(struct ADAPTER *prAdapter)
 {
 	if (prAdapter->rWifiVar.ucNan6gBandwidth >= NAN_CHNL_BW_160 &&
@@ -6781,6 +6798,32 @@ enum _NAN_CHNL_BW_MAP nanSchedGet6gNanBw(struct ADAPTER *prAdapter)
 		return prAdapter->rWifiVar.ucNan6gBandwidth;
 }
 
+enum ENUM_CHANNEL_WIDTH
+nanGetChannelBwByBand(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand)
+{
+	uint32_t u4Bw =
+	nanSchedConfigGetAllowedBw(
+			prAdapter,
+			eBand);
+
+	switch (u4Bw) {
+	case 20:
+		return CW_20_40MHZ;
+	case 40:
+		return CW_20_40MHZ;
+	case 80:
+		return CW_80MHZ;
+	case 160:
+		return CW_160MHZ;
+	case 320:
+		return CW_320_1MHZ;
+	default:
+		return CW_20_40MHZ;
+	}
+}
+
 uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
 				    enum ENUM_BAND eBand)
 {
@@ -6788,13 +6831,13 @@ uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
 	uint32_t u4SupportedBw;
 
 	if (eBand == BAND_5G)
-		eBwMap = prAdapter->rWifiVar.ucNan5gBandwidth;
-#if (CFG_SUPPORT_NAN_6G == 1)
+		eBwMap = nanSchedGet5gNanBw(prAdapter);
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 1)
 	else if (eBand == BAND_6G)
 		eBwMap = nanSchedGet6gNanBw(prAdapter);
 #endif
 	else
-		eBwMap = prAdapter->rWifiVar.ucNan2gBandwidth;
+		eBwMap = nanSchedGet2gNanBw(prAdapter);
 
 	if (((eBand == BAND_2G4) || (!prAdapter->rWifiVar.fgEnNanVHT)) &&
 	    (eBwMap > NAN_CHNL_BW_40))
@@ -6970,8 +7013,8 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	       "Allowed Band: %d, %d, %d, %d, %d\n", fgEn2g, fgEn5gH,
 	       fgEn5gL, fgEn6g, prNanScheduler->fgEn6g);
 
-	ucDisc2GChnlBw = prWifiVar->ucNan2gBandwidth;
-	ucDisc5GChnlBw = prWifiVar->ucNan5gBandwidth;
+	ucDisc2GChnlBw = nanSchedGet2gNanBw(prAdapter);
+	ucDisc5GChnlBw = nanSchedGet5gNanBw(prAdapter);
 #if (CFG_SUPPORT_NAN_6G == 1)
 	ucDisc6GChnlBw = nanSchedGet6gNanBw(prAdapter);
 #endif
@@ -13623,8 +13666,8 @@ uint32_t nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter)
 			ucPrimaryChnl = prPotentialChnl->ucPrimaryChnl;
 
 			eBw = ucPrimaryChnl < 36 ?
-				prAdapter->rWifiVar.ucNan2gBandwidth :
-				prAdapter->rWifiVar.ucNan5gBandwidth;
+				nanSchedGet2gNanBw(prAdapter) :
+				nanSchedGet5gNanBw(prAdapter);
 			/* NAN 2G BW check*/
 			if ((ucPrimaryChnl < 36 ||
 			     !prAdapter->rWifiVar.fgEnNanVHT) &&
