@@ -78,11 +78,9 @@ nanGetRoleIndexbyLink(
 	return NAN_BSS_INDEX_BAND0;
 }
 
-uint8_t
-nanGetLinkIndexbyRole(
-	enum NAN_BSS_ROLE_INDEX eRole)
+uint8_t nanGetLinkIndexbyRole(enum NAN_BSS_ROLE_INDEX eRole)
 {
-#if (CFG_SUPPORT_NAN_DBDC == 1)
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
 	/* TBD */
 	if (eRole > NAN_BSS_INDEX_BAND0)
 		return NAN_HIGH_LINK_INDEX;
@@ -127,11 +125,9 @@ nanGetLinkIndexbyBand(
 	return NAN_MAIN_LINK_INDEX;
 }
 
-uint8_t
-nanGetLinkIndexbyOpClass(
-	uint32_t op)
+uint8_t nanGetLinkIndexbyOpClass(uint32_t op)
 {
-#if (CFG_SUPPORT_NAN_DBDC == 1)
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
 	/* TBD */
 	if (!IS_2G_OP_CLASS(op))
 		return NAN_HIGH_LINK_INDEX;
@@ -441,18 +437,15 @@ void nanMldBssUnregister(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		mldBssUnregister(prAdapter,
-			prMldBssInfo,
-			prNanBssInfo);
+		mldBssUnregister(prAdapter, prMldBssInfo, prNanBssInfo);
 
 		nanMldBssUninit(prAdapter);
 	} while (FALSE);
 }
 
-void nanMldStaRecRegister(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t ucLinkIndex)
+void nanMldStaRecRegister(struct ADAPTER *prAdapter,
+			  struct STA_RECORD *prStaRec,
+			  uint8_t ucLinkIndex)
 {
 	struct MLD_STA_RECORD *prMldStarec = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = gprNanMldBssInfo;
@@ -462,10 +455,8 @@ void nanMldStaRecRegister(
 		return;
 	}
 
-	prMldStarec = mldStarecGetByMldAddr(
-		prAdapter,
-		prMldBssInfo,
-		prStaRec->aucMacAddr);
+	prMldStarec = mldStarecGetByMldAddr(prAdapter, prMldBssInfo,
+					    prStaRec->aucMacAddr);
 	if (!prMldStarec) {
 		struct ML_INFO rMlInfo = {0};
 
@@ -481,19 +472,11 @@ void nanMldStaRecRegister(
 		}
 	}
 
-	mldStarecRegister(
-		prAdapter,
-		prMldStarec,
-		prStaRec,
-		ucLinkIndex);
+	mldStarecRegister(prAdapter, prMldStarec, prStaRec, ucLinkIndex);
 
-	mldStarecSetSetupIdx(
-		prAdapter,
-		prStaRec);
+	mldStarecSetSetupIdx(prAdapter, prStaRec);
 
-	nanUpdateMbmcIdx(prAdapter,
-		prStaRec->ucBssIndex,
-		ucLinkIndex);
+	nanUpdateMbmcIdx(prAdapter, prStaRec->ucBssIndex, ucLinkIndex);
 }
 #endif
 

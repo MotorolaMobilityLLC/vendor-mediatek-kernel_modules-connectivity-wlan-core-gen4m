@@ -1464,6 +1464,62 @@ qmUpdateFreeNANQouta(struct ADAPTER *prAdapter,
 }
 #endif
 
+/**
+ * Called by qmDequeueTxPacketsFromPerStaQueues() to update corresponding
+ * prStaRec->fgNanSendTimeExpired.
+ */
+#if CFG_SUPPORT_NAN
+static u_int8_t nanIsSendTimeExpired(struct ADAPTER *prAdapter,
+				     struct STA_RECORD *prStaRec,
+				     OS_SYSTIME rCurrentTime)
+{
+#if (defined CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL && \
+	CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL != 0)
+	unsigned char fgExpired;
+	struct STA_RECORD *prSta;
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldStaRec;
+	struct LINK *prStarecList = NULL;
+#endif
+
+	fgExpired = CHECK_FOR_EXPIRATION(rCurrentTime,
+					 prStaRec->rNanExpiredSendTime);
+
+	/* avoid to flood the kernel log, only the 1st expiry event logged */
+	if (fgExpired && !prStaRec->fgNanSendTimeExpired)
+		DBGLOG(NAN, TRACE,
+		       "[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
+		       prStaRec->ucIndex,
+		       prStaRec->rNanExpiredSendTime,
+		       rCurrentTime);
+
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldStaRec)
+		prStarecList = &prMldStaRec->rStarecList;
+
+	if (!prStarecList) {
+#endif
+		prSta = prStaRec;
+		prSta->fgNanSendTimeExpired = fgExpired;
+
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	}
+
+	/* prStarecList */
+	LINK_FOR_EACH_ENTRY(prSta, prStarecList,
+			    rLinkEntryMld, struct STA_RECORD) {
+		prSta->fgNanSendTimeExpired = fgExpired;
+	}
+
+	return fgExpired;
+#endif
+
+#endif
+	return FALSE;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Dequeue TX packets from a STA_REC for a particular TC
@@ -1511,6 +1567,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec = NULL;
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+	OS_SYSTIME rCurrentTime;
 #if CFG_SUPPORT_NAN
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 	unsigned char fgIsNanStaRec;
@@ -1729,6 +1786,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 			/* Three cases to break: (1) No resource
 			 * (2) No packets (3) Fairness
 			 */
+			rCurrentTime = kalGetTimeTick();
 			while (!QUEUE_IS_EMPTY(prCurrQueue)) {
 				prDequeuedPkt = QUEUE_GET_HEAD(prCurrQueue);
 
@@ -1766,37 +1824,10 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 				}
 
 #if CFG_SUPPORT_NAN
-#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
-				if (fgIsNanStaRec == TRUE) {
-					OS_SYSTIME rCurrentTime;
-					unsigned char fgExpired;
-
-					rCurrentTime = kalGetTimeTick();
-					fgExpired = CHECK_FOR_EXPIRATION(
-						rCurrentTime,
-						prStaRec->rNanExpiredSendTime);
-
-					/* avoid to flood the kernel log,
-					 * only the 1st expiry event logged
-					 */
-					if (fgExpired &&
-					    !prStaRec->fgNanSendTimeExpired)
-						DBGLOG(NAN, TEMP,
-						       "[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
-						       prStaRec->ucIndex,
-						       prStaRec->
-							rNanExpiredSendTime,
-						       rCurrentTime);
-
-					if (fgExpired) {
-						prStaRec->fgNanSendTimeExpired =
-							TRUE;
-						break;
-					}
-
-					prStaRec->fgNanSendTimeExpired = FALSE;
-				}
-#endif
+				if (fgIsNanStaRec &&
+				    nanIsSendTimeExpired(prAdapter, prStaRec,
+							 rCurrentTime))
+					break;
 #endif
 
 #if CFG_SUPPORT_SOFT_ACM

@@ -6207,6 +6207,57 @@ uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
+#if CFG_SUPPORT_NAN
+static void nanSetTxAllow(struct ADAPTER *prAdapter,
+			  struct STA_RECORD *prSta,
+			  OS_SYSTIME rCurrentTime,
+			  u_int8_t fgTxAllowed)
+{
+	if (fgTxAllowed) {
+		prSta->fgNanSendTimeExpired = FALSE;
+	} else {
+		DBGLOG(NAN, TRACE,
+			"[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
+			prSta->ucIndex,
+			prSta->rNanExpiredSendTime, rCurrentTime);
+
+		prSta->fgNanSendTimeExpired = TRUE;
+		qmSetStaRecTxAllowed(prAdapter, prSta, FALSE);
+	}
+}
+
+/* NAN StaRec Stop Tx (for both bands considering MLSR) */
+static void nanSetStaRecTxAllowed(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec,
+				  OS_SYSTIME rCurrentTime,
+				  u_int8_t fgTxAllowed)
+{
+	struct STA_RECORD *prSta;
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldStaRec;
+	struct LINK *prStarecList = NULL;
+
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldStaRec)
+		prStarecList = &prMldStaRec->rStarecList;
+
+	if (!prStarecList) {
+#endif
+		prSta = prStaRec;
+		nanSetTxAllow(prAdapter, prSta, rCurrentTime, fgTxAllowed);
+		return;
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	}
+
+	/* prStarecList */
+	LINK_FOR_EACH_ENTRY(prSta, prStarecList,
+			    rLinkEntryMld, struct STA_RECORD) {
+		nanSetTxAllow(prAdapter, prSta, rCurrentTime, fgTxAllowed);
+	}
+#endif
+}
+#endif
+
 static void updateNanStaRecTxAllowed(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec, struct BSS_INFO *prBssInfo)
 {
@@ -6229,24 +6280,13 @@ static void updateNanStaRecTxAllowed(struct ADAPTER *prAdapter,
 
 	rCurrentTime = kalGetTimeTick();
 	ExpiredSendTime = prStaRec->rNanExpiredSendTime;
-	fgExpired = CHECK_FOR_EXPIRATION(rCurrentTime,
-			ExpiredSendTime);
+	fgExpired = CHECK_FOR_EXPIRATION(rCurrentTime, ExpiredSendTime);
 
 	/* avoid to flood the kernel log, only the 1st expiry event logged */
-	if (fgExpired && !prStaRec->fgNanSendTimeExpired) {
-		DBGLOG(NAN, TRACE,
-			"[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
-			prStaRec->ucIndex,
-			ExpiredSendTime,
-			rCurrentTime);
-
-		prStaRec->fgNanSendTimeExpired = TRUE;
-		/* NAN StaRec Stop Tx */
-		qmSetStaRecTxAllowed(prAdapter, prStaRec, FALSE);
-	} else if (!fgExpired &&
-			prStaRec->fgNanSendTimeExpired) {
-		prStaRec->fgNanSendTimeExpired = FALSE;
-	}
+	if (fgExpired && !prStaRec->fgNanSendTimeExpired)
+		nanSetStaRecTxAllowed(prAdapter, prStaRec, rCurrentTime, FALSE);
+	else if (!fgExpired && prStaRec->fgNanSendTimeExpired)
+		nanSetStaRecTxAllowed(prAdapter, prStaRec, rCurrentTime, TRUE);
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter,
 			SPIN_LOCK_NAN_NDL_FLOW_CTRL);

@@ -7085,7 +7085,7 @@ void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL *)pcuEvtBuf;
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
-		uint8_t ucSTAIdx;
+		uint8_t ucStaIdx;
 		uint16_t u2SlotTime;
 
 		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
@@ -7105,12 +7105,12 @@ void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 		rExpiryTime -= NAN_SEND_PKT_TIME_GUARD_TIME;
 		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
-			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
+			ucStaIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
 				u4Idx, NAN_MAIN_LINK_INDEX);
-			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
+			if (ucStaIdx == STA_REC_INDEX_NOT_FOUND)
 				continue;
 
-			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
+			prStaRec = &prAdapter->arStaRec[ucStaIdx];
 			prStaRec->rNanExpiredSendTime = rExpiryTime;
 
 			if (prStaRec->fgNanSendTimeExpired)
@@ -7125,6 +7125,68 @@ void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	}
 }
 
+static void nanSetTxAllowedByFlowCtrl(struct ADAPTER *prAdapter,
+				 struct STA_RECORD *prStaRec,
+				 OS_SYSTIME rExpiryTime)
+{
+	struct STA_RECORD *prSta;
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldStaRec;
+	struct LINK *prStarecList = NULL;
+
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldStaRec)
+		prStarecList = &prMldStaRec->rStarecList;
+
+	if (!prStarecList) {
+#endif
+		prSta = prStaRec;
+		prSta->rNanExpiredSendTime = rExpiryTime;
+		if (prSta->fgNanSendTimeExpired) {
+			prSta->fgNanSendTimeExpired = FALSE;
+			DBGLOG(NAN, TRACE, "Trigger NAN tx request starec=%u\n",
+			       prSta->ucIndex);
+			qmSetStaRecTxAllowed(prAdapter, prSta, TRUE);
+		}
+		return;
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	}
+
+	/* prStarecList */
+	LINK_FOR_EACH_ENTRY(prSta, prStarecList,
+			    rLinkEntryMld, struct STA_RECORD) {
+		prSta->rNanExpiredSendTime = rExpiryTime;
+		if (prSta->fgNanSendTimeExpired) {
+			prSta->fgNanSendTimeExpired = FALSE;
+			DBGLOG(NAN, TRACE, "Trigger NAN tx request starec=%u\n",
+			       prSta->ucIndex);
+			qmSetStaRecTxAllowed(prAdapter, prSta, TRUE);
+		}
+	}
+#endif
+}
+
+/**
+ * For Rm: values > 0:
+ * 1. set prStaRec->fgNanSendTimeExpired = FALSE
+ * 2. qmSetStaRecTxAllowed(TRUE) for the corresponding prStaRec(s)
+ * 3. kalSetEvent(prAdapter->prGlueInfo) to Wakeup TX to flush pending packets
+ *
+ * See also:
+ * updateNanStaRecTxAllowed, the allow case
+ * called by nicTxDirectStartXmitMain on processing each packet
+ * 1. set prStaRec->fgNanSendTimeExpired = FALSE
+ *
+ * updateNanStaRecTxAllowed, the disallow case
+ * called by nicTxDirectStartXmitMain on processing each packet
+ * 1. set prStaRec->fgNanSendTimeExpired = TRUE
+ * 2. qmSetStaRecTxAllowed(FALSE)
+ *
+ * nanIsSendTimeExpired
+ * called by qmDequeueTxPacketsFromPerStaQueues on processing each packet
+ * 1. set prStaRec->fgNanSendTimeExpired = TRUE
+ * 1. set prStaRec->fgNanSendTimeExpired = FALSE
+ */
 void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct NAN_EVT_NDL_FLOW_CTRL_V2 *prFlowCtrlEvt;
@@ -7144,7 +7206,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	u2SeqNum = prFlowCtrlEvt->u2SeqNum;
 
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
-		uint8_t ucSTAIdx;
+		uint8_t ucStaIdx;
 		uint16_t u2RemainingTime;
 		uint32_t u4OpClass = 0;
 		uint32_t u4PrimaryChnl = 0;
@@ -7187,25 +7249,19 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 		rExpiryTime -= u4NanSendPacketGuardTime;
 		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
-			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
+			ucStaIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
 				u4Idx, nanGetLinkIndexbyOpClass(u4OpClass));
-			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
+			if (ucStaIdx == STA_REC_INDEX_NOT_FOUND)
 				continue;
 
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_NAN_NDL_FLOW_CTRL);
 
-			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
-			prStaRec->rNanExpiredSendTime = rExpiryTime;
+			prStaRec = &prAdapter->arStaRec[ucStaIdx];
 
-			if (prStaRec->fgNanSendTimeExpired) {
-				prStaRec->fgNanSendTimeExpired = FALSE;
+			nanSetTxAllowedByFlowCtrl(prAdapter, prStaRec,
+						  rExpiryTime);
 
-				DBGLOG(NAN, DEBUG, "Trigger NAN tx request\n");
-				/* NAN StaRec Start Tx */
-				qmSetStaRecTxAllowed(prAdapter,
-					prStaRec, TRUE);
-			}
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_NAN_NDL_FLOW_CTRL);
 		}

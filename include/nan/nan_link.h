@@ -12,9 +12,6 @@
  *                              F U N C T I O N S
  *******************************************************************************
  */
-#define NAN_MAIN_LINK_INDEX (0)
-#define NAN_HIGH_LINK_INDEX (1)
-
 void nanGetLinkWmmQueSet(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);

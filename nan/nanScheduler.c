@@ -1418,19 +1418,20 @@ nanSchedLookupPeerSchRecord(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 
 uint32_t
 nanSchedQueryStaRecIdx(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
-		       uint32_t u4Idx, uint8_t ucLinkIdx) {
-	struct _NAN_PEER_SCHEDULE_RECORD_T *p;
+		       uint32_t u4Idx, uint8_t ucLinkIdx)
+{
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
 
-	p = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
-	if (p == NULL) {
+	prPeerSchRec = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+	if (prPeerSchRec == NULL) {
 		DBGLOG(NAN, ERROR, "Get Peer Sch Record %d error\n", u4SchIdx);
 		return STA_REC_INDEX_NOT_FOUND;
 	}
 
 	if (ucLinkIdx >= NAN_LINK_NUM)
-		return p->aucStaRecIdx[NAN_MAIN_LINK_INDEX][u4Idx];
+		return prPeerSchRec->aucStaRecIdx[NAN_MAIN_LINK_INDEX][u4Idx];
 
-	return p->aucStaRecIdx[ucLinkIdx][u4Idx];
+	return prPeerSchRec->aucStaRecIdx[ucLinkIdx][u4Idx];
 }
 
 uint32_t

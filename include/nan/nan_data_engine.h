@@ -22,6 +22,14 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+enum LINK_INDEX {
+	NAN_MAIN_LINK_INDEX,
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	NAN_HIGH_LINK_INDEX,
+#endif
+	NAN_LINK_NUM,
+};
+
 
 /****************************************************
  *                    Common part

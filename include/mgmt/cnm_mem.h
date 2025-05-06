@@ -795,6 +795,9 @@ struct STA_RECORD {
 	uint8_t ucNoise_avg;
 #endif /* fos_change end*/
 #if CFG_SUPPORT_NAN
+	/* Set in nanSetTxAllowedByFlowCtrl() on handling flow control events;
+	 * checked in nanIsSendTimeExpired() on handling TX NAN packets
+	 */
 	OS_SYSTIME rNanExpiredSendTime;
 	unsigned char fgNanSendTimeExpired;
 	atomic_t NanRefCount;
