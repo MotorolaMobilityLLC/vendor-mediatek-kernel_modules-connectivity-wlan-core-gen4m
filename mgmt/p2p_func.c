@@ -10241,6 +10241,9 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 				  (MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM),
 				  VIR_MEM_TYPE);
 
+	if (!paChnlList)
+		return 0;
+
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	p2pFunGetAcsBestChList(prAdapter, BIT(BAND_5G)
 #if (CFG_SUPPORT_WIFI_6G == 1)

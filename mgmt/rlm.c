@@ -11250,7 +11250,7 @@ void rlmSyncSapAntCtrl(struct ADAPTER *prAdapter,
 		return;
 
 	strLen = kalSnprintf(cmd, sizeof(cmd),
-			"AntControl 6 %d %d",
+			"AntControl 6 %u %u",
 			ucNssConfig, BIT(ucBssIndex));
 	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
 
@@ -13892,10 +13892,6 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 			break;
 		default:
 			DBGLOG(RLM, INFO, "[SAP_Test] not know\n");
-			if ((pucOptInfo[1] + 2) <=
-				(prSwRfb->u2PacketLen - u2TmpLen))
-				DBGLOG_MEM8(RLM, WARN,
-					pucOptInfo, pucOptInfo[1] + 2);
 			break;
 		}
 		pucOptInfo += (pucOptInfo[1] + 2);
@@ -13983,7 +13979,8 @@ void rlmProcessRadioMeasurementResponse(
 				prMeasureReportIE->ucReportMode,
 				prMeasureReportIE->ucMeasurementType);
 			if (prMeasureReportIE->ucMeasurementType ==
-				ELEM_RM_TYPE_BEACON_REPORT)
+				ELEM_RM_TYPE_BEACON_REPORT &&
+				prSwRfb->pvHeader != NULL)
 				rlmMulAPAgentProcessRadioMeasurementResponse(
 					prAdapter, prSwRfb);
 			else if (prMeasureReportIE->ucMeasurementType ==

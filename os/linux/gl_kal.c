@@ -7234,7 +7234,7 @@ void kalAlarmTimerInit(struct alarm *prTimer)
 void kalAlarmTimerStart(struct alarm *prTimer, uint32_t delayMs)
 {
 	ktime_t kTargetTime;
-	uint8_t ret = 0;
+	int8_t ret = 0;
 
 	kTargetTime = ktime_get_boottime();
 	kTargetTime = ktime_add(kTargetTime, ms_to_ktime(delayMs));

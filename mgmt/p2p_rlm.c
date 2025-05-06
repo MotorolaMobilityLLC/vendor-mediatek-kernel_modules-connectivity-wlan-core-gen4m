@@ -1666,7 +1666,7 @@ static void p2pRlmHandleChanUsageReqFrame(struct ADAPTER *prAdapter,
 		rChnlInfo.ucChannelNum = prIeChanUsageEntry->ucChannel;
 		rChnlInfo.u2PriChnlFreq =
 			nicChannelNum2Freq(rChnlInfo.ucChannelNum,
-					   rChnlInfo.eBand);
+					   rChnlInfo.eBand) / 1000;
 		switch (u2Bw) {
 		case BW_20:
 			rChnlInfo.ucChnlBw = MAX_BW_20MHZ;

@@ -3577,7 +3577,7 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 				    prP2pLinkBssInfo,
 				    prAssocRspSwRfb);
 
-			} else {
+			} else if (prAssocRspSwRfb->pvHeader) {
 				struct SW_RFB *prSwRfb =
 					mldDupAssocSwRfb(
 					prAdapter,
@@ -3593,7 +3593,9 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 					    prSwRfb);
 					nicRxReturnRFB(prAdapter, prSwRfb);
 				}
-			}
+			} else
+				DBGLOG(P2P, ERROR,
+					"prAssocRspSwRfb->pvHeader is NULL!\n");
 #else
 			p2pFuncUpdateBssInfoForJOIN(prAdapter,
 			    prTargetBssDesc,
