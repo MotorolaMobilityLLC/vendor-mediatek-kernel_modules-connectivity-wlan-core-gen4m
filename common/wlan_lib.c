@@ -15338,6 +15338,8 @@ int wlanQueryStaBigDataByWidx(struct ADAPTER *prAdapter,
 	prBigDataParam = (struct PARAM_QUERY_STA_BIG_DATA *)pvQueryBuffer;
 
 	GET_MBR_EMI_FIELD(prAdapter, u4Status, arStaInfo, arStaInfo);
+	if (u4Status == WLAN_STATUS_FAILURE)
+		return u4Status;
 
 	for (i = 0; i < BIG_DATA_MAX_STA_NUM; i++) {
 		prStaInfo = &arStaInfo[i];
@@ -15415,8 +15417,16 @@ int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 
 	GET_MBR_EMI_FIELD(prAdapter, rStatus, arBssStatCnt, tmpBssCnt);
+	if (rStatus == WLAN_STATUS_FAILURE)
+		return WLAN_STATUS_FAILURE;
+
 	GET_MBR_EMI_FIELD(prAdapter, rStatus, arAbtCnt, arAbtCnt);
+	if (rStatus == WLAN_STATUS_FAILURE)
+		return WLAN_STATUS_FAILURE;
+
 	GET_MBR_EMI_FIELD(prAdapter, rStatus, arPhyCnt, arPhyCnt);
+	if (rStatus == WLAN_STATUS_FAILURE)
+		return WLAN_STATUS_FAILURE;
 
 	cur = &tmpBssCnt[ucBssIdx];
 	pu4lastRtsFail = &au4lastRtsFail[ucBssIdx];
@@ -15457,9 +15467,6 @@ int wlanGetTrxLatencyBigData(struct ADAPTER *prAdapter,
 		arAbtCnt[ucDbdcIdx].u4MloAbt);
 
 	prPhyCnt = &arPhyCnt[ucDbdcIdx];
-
-	if (!prPhyCnt)
-		return WLAN_STATUS_INVALID_DATA;
 
 	u4DeltaFcsOk = (prPhyCnt->u4CckRxOk - prPhyCnt->u4CckFcsErr +
 		prPhyCnt->u4OfdmRxOk - prPhyCnt->u4OfdmFcsErr) -
