@@ -10216,9 +10216,14 @@ static void txPwrCtrlSetSingleRatePwrLimit(
 		 * extend CCK to CCK L/H, OFDM L/H
 		 */
 		if (ofset == 0) {
-			for (i = 0; i <= 3; i++) {
-				prChnlSet->op[ofset + i] = op;
-				prChnlSet->i8PwrLimit[ofset + i] = pwr;
+			for (i = 0; i < 2; i++) {
+				prChnlSet->op[i] = op;
+				prChnlSet->i8PwrLimit[i] = pwr;
+			}
+		} else if (ofset == 1) {
+			for (i = 0; i < 3; i++) {
+				prChnlSet->op[i + 2] = op;
+				prChnlSet->i8PwrLimit[i + 2] = pwr;
 			}
 		} else {
 			prChnlSet->op[ofset + 3] = op;
@@ -10255,9 +10260,14 @@ static void txPwrCtrlSetSingleRatePwrLimit(
 		 * extend CCK to CCK L/H, OFDM L/H
 		 */
 		if (ofset == 0) {
-			for (i = 0; i <= 3; i++) {
-				prChnlSet->opLegacy_6G[ofset + i] = op;
-				prChnlSet->i8PwrLimitLegacy_6G[ofset + i] = pwr;
+			for (i = 0; i < 2; i++) {
+				prChnlSet->opLegacy_6G[i] = op;
+				prChnlSet->i8PwrLimitLegacy_6G[i] = pwr;
+			}
+		} else if (ofset == 1) {
+			for (i = 0; i < 3; i++) {
+				prChnlSet->opLegacy_6G[i + 2] = op;
+				prChnlSet->i8PwrLimitLegacy_6G[i + 2] = pwr;
 			}
 		} else {
 			prChnlSet->opLegacy_6G[ofset + 3] = op;
@@ -15633,7 +15643,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
 	enum ENUM_PWR_LIMIT_TYPE eLimitType;
 	struct EMI_POWER_LIMIT_INFO *prPerTxpwrEmiInfo;
-	struct CMD_EMI_POWER_LIMIT_FORMAT rEmiFormat;
+	struct CMD_EMI_POWER_LIMIT_FORMAT rEmiFormat = {0};
 	uint32_t offset = 0, size = 0, u4ChIdx = 0;
 	uint8_t *prTxPowrEmiAddress = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
