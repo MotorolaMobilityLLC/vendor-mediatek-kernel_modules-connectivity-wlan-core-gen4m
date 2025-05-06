@@ -802,7 +802,7 @@ uint8_t nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 					 uint8_t *pucTimeBitmap);
 
 u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
-					uint8_t *pucAttrNanAvailibility);
+					void *pNextAvailabilityAttr);
 
 uint32_t nanGetCommonBandWithConcurrent(struct ADAPTER *prAdapter,
 					u_int8_t fgPrint,

@@ -1050,6 +1050,7 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 	uint8_t *pucNmiAddr = NULL;
 	uint8_t ucPeerSupportedBands;
+	struct _NAN_ATTR_HDR_T *prNextAttr;
 
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -1104,14 +1105,15 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
 			/* Peek next availability */
-			if ((uint8_t *)prNanAttr + NAN_ATTR_SIZE(prNanAttr) <
-			    pucEnd) {
+			prNextAttr = NAN_ATTR_END(prNanAttr);
+			if ((uint8_t *)NAN_ATTR_END(prNanAttr) < pucEnd &&
+			    (uint8_t *)NAN_ATTR_END(prNextAttr) < pucEnd) {
 				uint8_t ucCommonBands = 0;
 
 				ucPeerSupportedBands =
 					nanCommonBandFromNextAttribute(
 							prAdapter,
-							(uint8_t *)prNanAttr);
+							prNextAttr);
 
 				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%08x",
 				       ucPeerSupportedBands);
@@ -1124,6 +1126,16 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 						nanGetCommonBandWithConcurrent(
 							prAdapter, TRUE,
 							ucCommonBands);
+			}
+
+			if ((uint8_t *)NAN_ATTR_END(prNanAttr) < pucEnd &&
+			    (uint8_t *)NAN_ATTR_END(prNextAttr) < pucEnd &&
+			    eNanAction == NAN_ACTION_SCHEDULE_CONFIRM &&
+			    prNextAttr->ucAttrId == NAN_ATTR_ID_NDC) {
+				prNDL->eNdcParseAction =
+					NDC_NEED_PARSE_WITH_AVAIL;
+				DBGLOG(NAN, TRACE,
+				       "Set process NDC with Availability");
 			}
 
 			rStatus = nanAvailabilityAttrHandler(prAdapter,
@@ -1141,8 +1153,18 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 			break;
 
 		case NAN_ATTR_ID_NDC:
-			rStatus = nanNDCAttrHandler(
-				prAdapter, eNanAction,
+			if (eNanAction == NAN_ACTION_SCHEDULE_CONFIRM &&
+			    prNDL->eNdcParseAction != NDC_PARSE_NORMAL) {
+				if (prNDL->eNdcParseAction ==
+				    NDC_PARSED_WITH_AVAIL) {
+					DBGLOG(NAN, INFO,
+					       "NDC parsed with availability attribute");
+				}
+				prNDL->eNdcParseAction = NDC_PARSE_NORMAL;
+				break;
+			}
+
+			rStatus = nanNDCAttrHandler(prAdapter, eNanAction,
 				(struct _NAN_ATTR_NDC_T *)prNanAttr, prNDL);
 			break;
 
@@ -1831,6 +1853,7 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 	unsigned char fgExistSKD = FALSE;
 	unsigned char fgExistCSID = FALSE;
 	unsigned char fgExistSCID = FALSE;
+	struct _NAN_ATTR_HDR_T *prNextAttr;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
@@ -1913,8 +1936,9 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
 			/* Peek next availability */
-			if ((uint8_t *)prNanAttr + NAN_ATTR_SIZE(prNanAttr) <
-			    pucEnd) {
+			prNextAttr = NAN_ATTR_END(prNanAttr);
+			if ((uint8_t *)NAN_ATTR_END(prNanAttr) < pucEnd &&
+			    (uint8_t *)NAN_ATTR_END(prNextAttr) < pucEnd) {
 				struct _NAN_SCHEDULER_T *prNanScheduler;
 				uint8_t *pucNmiAddr;
 				struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
@@ -1930,7 +1954,7 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 				ucPeerSupportedBands =
 					nanCommonBandFromNextAttribute(
 							prAdapter,
-							(uint8_t *)prNanAttr);
+							prNextAttr);
 
 				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%08x",
 				       ucPeerSupportedBands);

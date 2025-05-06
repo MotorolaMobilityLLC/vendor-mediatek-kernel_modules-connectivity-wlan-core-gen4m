@@ -184,6 +184,12 @@ enum _ENUM_DP_PROTOCOL_REASON_CODE_T {
 	DP_REASON_NUM
 };
 
+enum ENUM_NDC_PARSE_STATE {
+	NDC_PARSE_NORMAL,
+	NDC_NEED_PARSE_WITH_AVAIL, /* set to hint Availability parser to peek */
+	NDC_PARSED_WITH_AVAIL, /* Availability parser parsed NDC */
+};
+
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1)
 enum _ENUM_NDL_RESCHEDULE_STATE_T {
 	NDL_RESCHEDULE_STATE_NONE,
@@ -322,6 +328,9 @@ struct _NAN_DATA_ENGINE_SCHEDULE_TOKEN_T {
 	struct ADAPTER *prAdapter;
 };
 
+/**
+ * NOTE: members shall be initialized in nanDataAllocateNdl().
+ */
 struct _NAN_NDL_INSTANCE_T {
 	unsigned char fgNDLValid;
 	uint8_t ucIndex;
@@ -392,6 +401,8 @@ struct _NAN_NDL_INSTANCE_T {
 	uint8_t fgTriggerReschedNewNDL;
 	uint8_t fgIs3rd6GNewNDL;
 #endif
+
+	enum ENUM_NDC_PARSE_STATE eNdcParseAction;
 };
 
 struct _NAN_DATA_PATH_INFO_T {

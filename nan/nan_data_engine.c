@@ -1306,6 +1306,7 @@ nanDataAllocateNdl(struct ADAPTER *prAdapter, uint8_t *pucMacAddr,
 	prNDL->fgTriggerReschedNewNDL = FALSE;
 	prNDL->fgIs3rd6GNewNDL = FALSE;
 #endif
+	prNDL->eNdcParseAction = NDC_PARSE_NORMAL;
 
 	/* timer initialization sequence */
 	cnmTimerInitTimer(prAdapter, &(prNDL->rNDPProtocolExpireTimer),
@@ -3194,8 +3195,7 @@ nanNdlProcessScheduleConfirm(struct ADAPTER *prAdapter,
 				    prNDL) == WLAN_STATUS_SUCCESS) {
 				if (prNDL->ucNDLSetupCurrentStatus ==
 				    NAN_ATTR_NDL_STATUS_ACCEPTED) {
-					nanNdlMgmtFsmStep(
-						prAdapter,
+					nanNdlMgmtFsmStep(prAdapter,
 						NDL_SCHEDULE_ESTABLISHED,
 						prNDL);
 				} else /* REJECT */

@@ -5108,9 +5108,8 @@ nanGetSubBandByChannelEntry(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
  * This is a simple parse only version as scanAvailabilityAttr
  */
 u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
-					uint8_t *pucAttrNanAvailibility)
+					void *pNextAvailabilityAttr)
 {
-	void *pNextAvailabilityAttr = NAN_ATTR_END(pucAttrNanAvailibility);
 	struct _NAN_ATTR_NAN_AVAILABILITY_T *prNextAvailabilityAttr =
 					pNextAvailabilityAttr;
 	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
@@ -5209,6 +5208,73 @@ nanIsValidConditional(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
 	       *(uint16_t *)prAvailEntry < NAN_ATTR_SIZE(prAttrNanAvailibility);
 }
 
+static void nanParseNdcFromNextAttribute(struct ADAPTER *prAdapter,
+				struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
+				enum _NAN_ACTION_T eNanAction,
+				void *pNextAttr,
+				struct _NAN_NDL_INSTANCE_T *prNDL)
+{
+	struct _NAN_ATTR_NDC_T *prNdcAttr = pNextAttr;
+	struct _NAN_NDC_CTRL_T *prNdcCtrl;
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
+
+	if (prNdcAttr->ucAttrId != NAN_ATTR_ID_NDC)
+		return;
+
+	if (!prNDL || prNDL->eNdcParseAction != NDC_NEED_PARSE_WITH_AVAIL)
+		return;
+
+	DBGLOG(NAN, TRACE, "Peek NDC attribute, action=%u", eNanAction);
+	if (eNanAction != NAN_ACTION_SCHEDULE_CONFIRM)
+		return;
+
+	nanNDCAttrHandler(prAdapter, eNanAction, prNdcAttr, prNDL);
+
+	prNDL->eNdcParseAction = NDC_PARSED_WITH_AVAIL;
+
+	/**
+	 * To set associated prPeerSchRecord->prCommNdcCtrl as
+	 * done in nanSchedNegoChkRmtCrbProposal()
+	 * to be copy and send to firmware in nanSchedCmdUpdateCRB().
+	 *
+	 * nanSchedPeerUpdateNdcAttr() has set
+	 * prPeerSchDesc->rSelectedNdcCtrl.fgValid = TRUE;
+	 * prNdcCtrl = nanSchedGetNdcCtrl(prAdapter, *prNdcAttr->aucNDCID);
+	 *                    prNegoCtrl->rSelectedNdcCtrl.aucNdcId);
+	 * prPeerSchRec->prCommNdcCtrl = prNdcCtrl;
+	 */
+	prNdcCtrl = nanSchedGetNdcCtrl(prAdapter, prNdcAttr->aucNDCID);
+	if (!prNdcCtrl) {
+		prNdcCtrl = nanSchedAcquireNdcCtrl(prAdapter);
+		if (!prNdcCtrl) {
+			DBGLOG(NAN, WARN, "Allocate NDC ctrl failed");
+			return;
+		}
+
+		kalMemCopy(prNdcCtrl, &prPeerSchDesc->rSelectedNdcCtrl,
+			   sizeof(struct _NAN_NDC_CTRL_T));
+	}
+
+	prPeerSchRec =
+		nanSchedGetPeerSchRecord(prAdapter, prPeerSchDesc->u4SchIdx);
+	if (!prPeerSchRec) {
+		DBGLOG(NAN, WARN,
+		       "Peer SchRec not found for %02x-%02x-%02x-%02x-%02x-%02x",
+		       prNDL->aucPeerMacAddr[0], prNDL->aucPeerMacAddr[1],
+		       prNDL->aucPeerMacAddr[2], prNDL->aucPeerMacAddr[3],
+		       prNDL->aucPeerMacAddr[4], prNDL->aucPeerMacAddr[5]);
+		return;
+	}
+	prPeerSchRec->prCommNdcCtrl = prNdcCtrl;
+
+	DBGLOG(NAN, TRACE,
+	       "Processed NDC with Availability, set sch %u, NDC=%02x-%02x-%02x-%02x-%02x-%02x",
+	       prPeerSchRec - g_arNanPeerSchedRecord,
+	       prNdcAttr->aucNDCID[0], prNdcAttr->aucNDCID[1],
+	       prNdcAttr->aucNDCID[2], prNdcAttr->aucNDCID[3],
+	       prNdcAttr->aucNDCID[4], prNdcAttr->aucNDCID[5]);
+}
+
 uint32_t
 nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 				   enum _NAN_ACTION_T eNanAction,
@@ -5222,6 +5288,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	struct _NAN_AVAILABILITY_DB_T *prNanAvailDB;
 	struct _NAN_AVAILABILITY_TIMELINE_T *prNanAvailEntry;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
 	uint16_t u2AttributeControl;
 	uint8_t ucMapId;
 	uint32_t u4EntryListPos;
@@ -5392,6 +5459,18 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 	}
 	if (prCondAttrNanAvailibility)
 		kalMemFree(prCondAttrNanAvailibility, VIR_MEM_TYPE, new_size);
+
+
+	/* Parse next atribute here for NDC schedule confirm to collect NDC for
+	 * before calling nanSchedCmdUpdateCRB
+	 */
+	if (eNanAction == NAN_ACTION_SCHEDULE_CONFIRM) {
+		prNDL = nanDataUtilSearchNdlByMac(prAdapter, pucNmiAddr);
+		nanParseNdcFromNextAttribute(prAdapter, prPeerSchDesc,
+					     eNanAction,
+					     NAN_ATTR_END(pucAvailabilityAttr),
+					     prNDL);
+	}
 
 	if (prPeerSchDesc->fgUsed) {
 		nanSchedPeerUpdateCommonFAW(prAdapter, prPeerSchDesc->u4SchIdx);
@@ -6181,7 +6260,7 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			       prScheduleEntry->aucTimeBitmap[3]);
 		} else {
 			DBGLOG(NAN, INFO,
-			       "NDCID=%02x:%02x:%02x:%02x:%02x:%02x, Selected=%u,",
+			       "NDCID=%02x:%02x:%02x:%02x:%02x:%02x, Selected=%u",
 			       prAttrNdc->aucNDCID[0], prAttrNdc->aucNDCID[1],
 			       prAttrNdc->aucNDCID[2], prAttrNdc->aucNDCID[3],
 			       prAttrNdc->aucNDCID[4], prAttrNdc->aucNDCID[5],
@@ -6201,6 +6280,9 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		} else {
 			prNanNdcCtrl->fgValid = FALSE;
 		}
+		DBGLOG(NAN, INFO, "Set sch %u NDC prNanNdcCtrl->fgValid=%u",
+		       prPeerSchDesc->u4SchIdx, prNanNdcCtrl->fgValid);
+
 	} while (FALSE);
 
 	return rRetStatus;
@@ -12302,8 +12384,7 @@ RMT_PROPOSAL_DONE:
 
 		/* save negotiation result to peer sch record */
 		if (prNegoCtrl->eType == ENUM_NAN_NEGO_DATA_LINK) {
-			prNdcCtrl = nanSchedGetNdcCtrl(
-				prAdapter,
+			prNdcCtrl = nanSchedGetNdcCtrl(prAdapter,
 				prNegoCtrl->rSelectedNdcCtrl.aucNdcId);
 			if (prNdcCtrl == NULL) {
 				prNdcCtrl = nanSchedAcquireNdcCtrl(prAdapter);
@@ -12319,6 +12400,11 @@ RMT_PROPOSAL_DONE:
 					   sizeof(struct _NAN_NDC_CTRL_T));
 			}
 			prPeerSchRec->prCommNdcCtrl = prNdcCtrl;
+			DBGLOG(NAN, INFO,
+			       "Set NDC %02x-%02x-%02x-%02x-%02x-%02x",
+			       prNdcCtrl->aucNdcId[0], prNdcCtrl->aucNdcId[1],
+			       prNdcCtrl->aucNdcId[2], prNdcCtrl->aucNdcId[3],
+			       prNdcCtrl->aucNdcId[4], prNdcCtrl->aucNdcId[5]);
 
 			prPeerSchRec->u4DefNdlNumSlots =
 				prNegoCtrl->u4DefNdlNumSlots;
@@ -13916,15 +14002,28 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 				prPeerSchDesc->ePeerForceAvailAttr & BITS(0, 1);
 
 		if (prPeerSchRecord->prCommNdcCtrl) {
+			struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
+
 			prCmdUpdateCRB->rCommNdcCtrl =
 				*prPeerSchRecord->prCommNdcCtrl;
+
+			prCommNdcCtrl = prPeerSchRecord->prCommNdcCtrl;
+			DBGLOG(NAN, INFO,
+			       "NDC=%02x-%02x-%02x-%02x-%02x-%02x, map_id=%u, bitmap=0x%08x",
+			       prCommNdcCtrl->aucNdcId[0],
+			       prCommNdcCtrl->aucNdcId[1],
+			       prCommNdcCtrl->aucNdcId[2],
+			       prCommNdcCtrl->aucNdcId[3],
+			       prCommNdcCtrl->aucNdcId[4],
+			       prCommNdcCtrl->aucNdcId[5],
+			       prCommNdcCtrl->arTimeline[0].ucMapId,
+			       prCommNdcCtrl->arTimeline[0].au4AvailMap[0]);
 			DBGDUMP_HEX(NAN, TEMP,
 				    "prPeerSchRecord->prCommNdcCtrl\n",
 				    prPeerSchRecord->prCommNdcCtrl,
 				    sizeof(*prPeerSchRecord->prCommNdcCtrl));
 		} else {
-			prNdcCtrl = nanSchedGetNdcCtrl(
-				prAdapter,
+			prNdcCtrl = nanSchedGetNdcCtrl(prAdapter,
 				prNegoCtrl->rSelectedNdcCtrl.aucNdcId);
 			DBGLOG(NAN, WARN,
 			       "prCommNdcCtrl is NULL, prNdcCtrl exist:%u\n",
