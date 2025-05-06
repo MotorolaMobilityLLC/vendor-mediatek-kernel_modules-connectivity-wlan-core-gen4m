@@ -288,12 +288,10 @@ void ehtRlmFillCapIE(
 	if (IS_BSS_AIS(prBssInfo)) {
 		prBssDesc = aisGetTargetBssDesc(prAdapter,
 				prBssInfo->ucBssIndex);
-		if (prBssDesc && prBssDesc->fgEpcsCap &&
-			IS_FEATURE_ENABLED(prWifiVar->fgEnEpcs))
+		if (prBssDesc && prBssDesc->fgEpcsCap && prWifiVar->fgEnEpcs)
 			SET_EHT_MAC_CAP_EPCS_PRI_ACCESS(prEhtCap->ucEhtMacCap);
 
-		if (prBssDesc && prBssDesc->fgUEpcsCap &&
-			IS_FEATURE_ENABLED(prWifiVar->fgEnUEpcs))
+		if (prBssDesc && prBssDesc->fgUEpcsCap && prWifiVar->fgEnUEpcs)
 			SET_EHT_MAC_CAP_U_EPCS_PRI_ACC(prEhtCap->ucEhtMacCap);
 	}
 #endif
