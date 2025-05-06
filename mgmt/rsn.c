@@ -1542,11 +1542,9 @@ u_int8_t rsnPerformPolicySelection(
 	enum ENUM_PARAM_AUTH_MODE eAuthMode, eNewAuthMode;
 	enum ENUM_PARAM_OP_MODE eOPMode;
 	enum ENUM_WEP_STATUS eEncStatus;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct GL_WPA_INFO *prWpaInfo;
 	struct IEEE_802_11_MIB *prMib;
 
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
 
 	prBss->u4RsnSelectedPairwiseCipher = 0;

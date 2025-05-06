@@ -9715,7 +9715,6 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 		       uint32_t *pu4SetInfoLen) {
 	struct MSG_AIS_ABORT *prAisAbortMsg;
 	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_LOCALLY;
-	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	uint8_t ucBssIndex = 0;
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
@@ -9739,7 +9738,6 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	/* Send AIS Abort Message */
@@ -16935,9 +16933,19 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
 
 		if (i4Argc > 1)
-			kalkStrtou16(apcArgv[1], 0, &u2DelLinkIdBitmap);
+			if (kalkStrtou16(apcArgv[1], 0, &u2DelLinkIdBitmap)) {
+				DBGLOG(REQ, LOUD,
+					"u2DelLinkIdBitmap parse %s err\n",
+					apcArgv[1]);
+				return WLAN_STATUS_INVALID_DATA;
+			}
 		if (i4Argc > 2)
-			kalkStrtou16(apcArgv[2], 0, &u2AddLinkIdBitmap);
+			if (kalkStrtou16(apcArgv[2], 0, &u2AddLinkIdBitmap)) {
+				DBGLOG(REQ, LOUD,
+					"u2AddLinkIdBitmap parse %s err\n",
+					apcArgv[2]);
+				return WLAN_STATUS_INVALID_DATA;
+			}
 
 		prMldStaRec = aisGetMldStaRec(prAdapter, ucBssIndex);
 		if (!prMldStaRec || !prMldStaRec->fgMlrcOp) {
@@ -18686,11 +18694,15 @@ uint32_t wlanoidSendBeaconReportRequest(struct ADAPTER *prAdapter,
 	if (kalStrLen(prSetBcnRepReqInfo->aucSsid))
 		ucIELen += sizeof(*prSSIDIe);
 
-	if (prSetBcnRepReqInfo->ucReportingDetail == 1)
+	if (prSetBcnRepReqInfo->ucReportingDetail == 1) {
 		ucIELen += sizeof(*prRequest);
+		ucIELen += prSetBcnRepReqInfo->ucNumberOfRequest;
+	}
 
-	if (prSetBcnRepReqInfo->ucChannel == 255)
+	if (prSetBcnRepReqInfo->ucChannel == 255) {
 		ucIELen += sizeof(*prAPChanReport);
+		ucIELen += prSetBcnRepReqInfo->ucNumberOfAPChanReport;
+	}
 
 	prIE = kalMemAlloc(ucIELen, PHY_MEM_TYPE);
 	if (!prIE) {
@@ -18817,7 +18829,7 @@ uint32_t wlanoidSendCuReportRequest(struct ADAPTER *prAdapter,
 	uint8_t ucIELen = 0;
 	uint8_t i = 0;
 	struct PARAM_CUSTOM_CU_REP_REQ_STRUCT *prSetCuRepReqInfo = NULL;
-	uint16_t u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
+	uint16_t u2CountryCode;
 	uint8_t ucToken;
 
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -18862,6 +18874,7 @@ uint32_t wlanoidSendCuReportRequest(struct ADAPTER *prAdapter,
 	}
 	prIE = (struct SUB_ELEMENT_LIST *) prIEHead;
 
+	u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
 	ucToken = wlanoidAcquireRadioMeasureToken(prBssInfo);
 
 	do {

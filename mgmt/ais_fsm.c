@@ -1155,7 +1155,6 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	u_int8_t fgHalted = kalIsHalted(prAdapter->prGlueInfo);
 	uint8_t ucBssIndex;
 
@@ -1172,7 +1171,6 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisSpecificBssInfo =
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_ROAMING
 	/* Roaming Module - unintiailization */
@@ -4372,7 +4370,6 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
 	uint8_t ucSeqNumOfCompMsg;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq;
 	struct BCN_RM_PARAMS *prBcnRmParam;
@@ -4394,7 +4391,6 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	}
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
 	prBcnRmParam = &prRmReq->rBcnRmParam;
 	prChnlLoadRmParam = &prRmReq->rChnlLoadRmParam;
@@ -4593,7 +4589,6 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	uint8_t ucReasonOfDisconnect;
 	u_int8_t fgDelayIndication;
 	uint16_t u2DeauthReason;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_DESC *prBssDesc;
 	uint8_t ucBssIndex = 0;
 	struct PMKID_ENTRY *prPmkidEntry;
@@ -4618,7 +4613,6 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prPmkidEntry = aisSearchPmkidEntry(prAdapter,
 				prBssInfo->prStaRecOfAP, ucBssIndex);
@@ -4726,7 +4720,6 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	u_int8_t fgIsCheckConnected;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -4737,7 +4730,6 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	if (prAisBssInfo == NULL)
 		return;
 
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	fgIsCheckConnected = FALSE;
 
 	DBGLOG(AIS, STATE,
@@ -5878,9 +5870,8 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	aisFreeIesMem(prAdapter, ucBssIndex, FALSE);
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
-	if (prConnSettings)
-		kalMemZero(&prConnSettings->rErpKey,
-			   sizeof(prConnSettings->rErpKey));
+	kalMemZero(&prConnSettings->rErpKey,
+		   sizeof(prConnSettings->rErpKey));
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 #if CFG_SUPPORT_SCAN_LOG
@@ -6594,7 +6585,6 @@ static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 					  uintptr_t ulParam)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = (uint8_t) ulParam;
 	struct SCAN_INFO *prScanInfo;
 
@@ -6606,7 +6596,6 @@ static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 #endif /* fos_change end */
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
 	DBGLOG(AIS, STATE,
@@ -6831,7 +6820,6 @@ void
 aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
 		     struct PARAM_SCAN_REQUEST_ADV *prRequestIn)
 {
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
@@ -6843,7 +6831,6 @@ aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
 		return;
 	}
 	ucBssIndex = prRequestIn->ucBssIndex;
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -6921,7 +6908,6 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct MSG_CH_GRANT *prMsgChGrant;
 	uint8_t ucTokenID;
 	uint32_t u4GrantInterval;
@@ -6942,7 +6928,6 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo =
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* 1. free message */
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -7368,10 +7353,8 @@ void aisBssLinkDown(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
-	struct CONNECTION_SETTINGS *prConnSettings;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
@@ -7491,7 +7474,6 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 	uint32_t u4ReqScan, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	enum ENUM_AIS_REQUEST_TYPE eAisRequest;
 	struct ROAMING_INFO *prRoamingInfo;
 	struct ROAMING_REPORT_INFO *prReportInfo;
@@ -7501,7 +7483,6 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 #endif /* CFG_EXT_ROAMING_WTC == 1 */
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRoamingInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prReportInfo = &prRoamingInfo->rReportInfo;
 #if (CFG_EXT_ROAMING_WTC == 1)
@@ -7658,12 +7639,10 @@ uint8_t aisCheckNeedDriverRoaming(
 {
 	struct ROAMING_INFO *roam;
 	struct AIS_FSM_INFO *ais;
-	struct CONNECTION_SETTINGS *setting;
 	int8_t rssi;
 
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	setting = aisGetConnSettings(prAdapter, ucBssIndex);
 	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 
 	/*
@@ -8263,7 +8242,6 @@ void aisFsmRunEventRemainOnChannel(struct ADAPTER *prAdapter,
 {
 	struct MSG_REMAIN_ON_CHANNEL *prRemainOnChannel;
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
 
 	prRemainOnChannel = (struct MSG_REMAIN_ON_CHANNEL *)prMsgHdr;
@@ -8271,7 +8249,6 @@ void aisFsmRunEventRemainOnChannel(struct ADAPTER *prAdapter,
 	ucBssIndex = prRemainOnChannel->ucBssIdx;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* record parameters */
 	prAisFsmInfo->rChReqInfo.eBand = prRemainOnChannel->eBand;
