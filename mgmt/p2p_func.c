@@ -10412,6 +10412,35 @@ uint32_t p2pFuncGetPreferAliveBssByBand(struct ADAPTER *prAdapter,
 	return ucNumAliveBss;
 }
 
+static void
+p2pFuncRemoveNotPreferFreq(enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
+			   uint32_t *pu4FreqListNum)
+{
+	uint8_t i, j, ucFreqNum = 0;
+	/* TODO: P2P full scan freq is based on wiphy mtk_5ghz_channels, but
+	 * only DX5 support UNII-4 now. If DX5 auto GO is at UNII-4, legacy GC
+	 * cannot find it.
+	 */
+	uint32_t au4NotPrefFreq[] = { 5845, 5865, 5885 };
+	uint8_t ucSize = sizeof(au4NotPrefFreq) / sizeof(uint32_t);
+
+	if (eIftype != IFTYPE_P2P_GO)
+		return;
+
+	for (i = 0; i < *pu4FreqListNum; ++i) {
+		u_int8_t fgIsPrefer = TRUE;
+
+		for (j = 0; j < ucSize; ++j) {
+			if (pau4FreqList[i] == au4NotPrefFreq[j])
+				fgIsPrefer = FALSE;
+		}
+		if (fgIsPrefer)
+			pau4FreqList[ucFreqNum++] = pau4FreqList[i];
+		else
+			DBGLOG(P2P, TRACE, "remove freq:%u\n", pau4FreqList[i]);
+	}
+	*pu4FreqListNum = ucFreqNum;
+}
 
 /*---------------------------------------------------------------------------*/
 /*!
@@ -10533,6 +10562,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	}
 
 done:
+	p2pFuncRemoveNotPreferFreq(eIftype, pau4FreqList, pu4FreqListNum);
 	p2pFuncGetSafeFreq(eIftype, pau4FreqList, pu4FreqListNum,
 			   pau4FreqAllowList, ucAllowFreqNum);
 
