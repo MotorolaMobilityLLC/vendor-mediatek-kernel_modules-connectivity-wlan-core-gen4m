@@ -4907,6 +4907,10 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+#if CFG_MTK_ANDROID_WMT
+	struct PARAM_POWER_MODE_ rPowerMode;
+	uint32_t u4Len;
+#endif
 
 	if (prAdapter == NULL)
 		return;
@@ -4938,6 +4942,19 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 		p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
 				P2P_ROLE_STATE_IDLE);
+#endif
+
+#if CFG_MTK_ANDROID_WMT
+		/* If driver does not send FastPS cmd to FW, this BSS
+		 * will not enter PS_MODE by default.
+		 * Send FastPS when EAPOL done in case no DHCP procedure.
+		 * If the DHCP procedure is initiated, FWK will manage PS mode
+		 * using mtk_p2p_cfg80211_set_power_mgmt.
+		 */
+		rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
+		rPowerMode.ucBssIdx = ucBssIndex;
+		wlanoidSet802dot11PowerSaveProfileImpl(prAdapter, &rPowerMode,
+			sizeof(struct PARAM_POWER_MODE_), &u4Len, FALSE);
 #endif
 	}
 }

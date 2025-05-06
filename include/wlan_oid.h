@@ -4318,6 +4318,14 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER
 				   uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidSet802dot11PowerSaveProfileImpl(struct ADAPTER
+				   *prAdapter,
+				   void *prSetBuffer,
+				   uint32_t u4SetBufferLen,
+				   uint32_t *pu4SetInfoLen,
+				   u_int8_t fgIsOid);
+
+uint32_t
 wlanoidSetPmkid(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,

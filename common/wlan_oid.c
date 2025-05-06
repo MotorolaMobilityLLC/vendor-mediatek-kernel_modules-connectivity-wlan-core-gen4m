@@ -9873,7 +9873,20 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 				   prAdapter,
 				   void *pvSetBuffer,
 				   uint32_t u4SetBufferLen,
-				   uint32_t *pu4SetInfoLen) {
+				   uint32_t *pu4SetInfoLen)
+{
+	return wlanoidSet802dot11PowerSaveProfileImpl(prAdapter, pvSetBuffer,
+		u4SetBufferLen, pu4SetInfoLen, TRUE);
+}
+
+uint32_t
+wlanoidSet802dot11PowerSaveProfileImpl(struct ADAPTER *
+				   prAdapter,
+				   void *pvSetBuffer,
+				   uint32_t u4SetBufferLen,
+				   uint32_t *pu4SetInfoLen,
+				   u_int8_t fgIsOid)
+{
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	struct PARAM_POWER_MODE_ *prPowerMode;
 	struct BSS_INFO *prBssInfo;
@@ -9964,7 +9977,7 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 	if (prMldBssInfo) {
-		struct BSS_INFO *bss;
+		struct BSS_INFO *bss, *tailBss;
 
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
 					rLinkEntryMld, struct BSS_INFO) {
@@ -9981,12 +9994,13 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 							MLD_LINK_ID_NONE ||
 			    prAdapter->rWifiVar.ucPresetLinkId ==
 							bss->ucLinkId) {
+				tailBss = LINK_PEEK_TAIL(
+					&prMldBssInfo->rBssList,
+					struct BSS_INFO, rLinkEntryMld);
 				status = nicConfigPowerSaveProfile(prAdapter,
 					bss->ucBssIndex,
 					prPowerMode->ePowerMode,
-					bss == LINK_PEEK_TAIL(
-					&prMldBssInfo->rBssList,
-					struct BSS_INFO, rLinkEntryMld),
+					(bss == tailBss) && fgIsOid,
 					PS_CALLER_COMMON);
 			}
 		}
@@ -9997,7 +10011,7 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 	{
 		status = nicConfigPowerSaveProfile(prAdapter,
 			prPowerMode->ucBssIdx, prPowerMode->ePowerMode,
-			TRUE, PS_CALLER_COMMON);
+			fgIsOid, PS_CALLER_COMMON);
 	}
 
 	if (prPowerMode->ePowerMode < Param_PowerModeMax &&
