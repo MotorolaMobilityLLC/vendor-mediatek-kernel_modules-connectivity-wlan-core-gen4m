@@ -3576,7 +3576,8 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		/* 4 <1.3> Update BSS_INFO_T */
 		if (prAssocRspSwRfb) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (prStaRec == prSetupStaRec) {
+			if (prStaRec == prSetupStaRec &&
+				prAssocRspSwRfb->pvHeader) {
 				p2pFuncUpdateBssInfoForJOIN(
 				    prAdapter,
 				    prTargetBssDesc,
