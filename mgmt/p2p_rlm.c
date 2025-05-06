@@ -152,29 +152,29 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	 * But if any of BSS is setup in 40MHz,
 	 * the second BSS would prefer to use 20MHz
 	 * in order to remain in SCC case.
-	 * CSA skip this because CSA has it's own sco setting flow.
 	 */
-	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_SWITCH_CHANNEL) {
-		if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
-			/* GO/SAP decides bss params by itself, including SCO.
-			 * GC follows GO's SCO and assuming SCO under BssInfo
-			 * has been updated elsewhere.
-			 */
-			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-				prBssInfo->eBssSCO =
-					rlmGetScoForAP(prAdapter, prBssInfo);
+	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
+		/* GO/SAP decides bss params by itself, including SCO.
+		 * GC follows GO's SCO and assuming SCO under BssInfo
+		 * has been updated elsewhere.
+		 * CSA skip this because CSA has it's own sco setting flow.
+		 */
+		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
+		    prP2pRoleFsmInfo->eCurrentState !=
+				P2P_ROLE_STATE_SWITCH_CHANNEL)
+			prBssInfo->eBssSCO =
+				rlmGetScoForAP(prAdapter, prBssInfo);
 
-			if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
-				prBssInfo->fg40mBwAllowed = TRUE;
-				prBssInfo->fgAssoc40mBwAllowed = TRUE;
+		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
+			prBssInfo->fg40mBwAllowed = TRUE;
+			prBssInfo->fgAssoc40mBwAllowed = TRUE;
 
-				prBssInfo->ucHtOpInfo1 = (uint8_t)
-					(((uint32_t) prBssInfo->eBssSCO)
-					| HT_OP_INFO1_STA_CHNL_WIDTH);
-			}
-		} else {
-			prBssInfo->eBssSCO = CHNL_EXT_SCN;
+			prBssInfo->ucHtOpInfo1 = (uint8_t)
+				(((uint32_t) prBssInfo->eBssSCO)
+				| HT_OP_INFO1_STA_CHNL_WIDTH);
 		}
+	} else {
+		prBssInfo->eBssSCO = CHNL_EXT_SCN;
 	}
 
 	/* Filled the VHT BW/S1/S2 and MCS rate set */
