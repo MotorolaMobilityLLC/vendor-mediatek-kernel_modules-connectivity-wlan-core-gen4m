@@ -134,6 +134,10 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet,
 	uint8_t silent_mode);
 
+uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
+	enum ENUM_ROAMING_REASON eRoamReason);
+
 enum ENUM_MLO_LINK_PLAN apsLinksToLinkPlan(
 	struct BSS_DESC *aprLink[], uint8_t ucLinkNum);
 

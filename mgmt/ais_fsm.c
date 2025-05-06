@@ -37,30 +37,6 @@
 
 #define AIS_MAIN_LINK_INDEX (0)
 
-/* Support driver triggers roaming */
-#if (CFG_EXT_ROAMING == 1)
-#define RCPI_DIFF_DRIVER_ROAM			 10 /* 5 dbm */
-#define RSSI_BAD_NEED_ROAM                      -70 /* dbm */
-#define RSSI_BAD_NEED_ROAM_24G_TO_5G_6G         -10 /* dbm */
-#else
-#define RCPI_DIFF_DRIVER_ROAM			 20 /* 10 dbm */
-#define RSSI_BAD_NEED_ROAM                      -80 /* dbm */
-/* In case 2.4G->5G, the trigger rssi is RSSI_BAD_NEED_ROAM_24G_TO_5G
- * In other case(2.4G->2.4G/5G->2.4G/5G->5G), the trigger
- * rssi is RSSI_BAD_NEED_ROAM
- *
- * The reason of using two rssi threshold is that we only
- * want to benifit 2.4G->5G case, and keep original logic in
- * other cases.
- */
-#define RSSI_BAD_NEED_ROAM_24G_TO_5G_6G         -40 /* dbm */
-#endif
-
-/* When roam to 5G AP, the AP's rcpi should great than
- * RCPI_THRESHOLD_ROAM_2_5G dbm
- */
-#define RCPI_THRESHOLD_ROAM_TO_5G_6G  90 /* rssi -65 */
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -5255,8 +5231,11 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_ROAMING
 		if (fgTempReject) {
-			prAisFsmInfo->u4SleepInterval =
-				TU_TO_MSEC(prStaRec->u4assocComeBackTime);
+			if (prStaRec->u4assocComeBackTime > 0)
+				prAisFsmInfo->u4SleepInterval =
+				      TU_TO_MSEC(prStaRec->u4assocComeBackTime);
+			else
+				prAisFsmInfo->u4SleepInterval = 1000;
 			eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 		} else {
 			eNextState = AIS_STATE_SEARCH;
@@ -7665,7 +7644,7 @@ uint8_t aisCheckNeedDriverRoaming(
 		bss = apsSearchBssDescByScore(prAdapter,
 			ROAMING_REASON_INACTIVE, ucBssIndex, set,
 			!(au2DebugModule[DBG_APS_IDX] & DBG_CLASS_LOUD));
-		if (bss == NULL)
+		if (bss == NULL || IS_AIS_CONN_BSSDESC(ais, bss))
 			return FALSE;
 
 #if (CFG_SUPPORT_AIS_TEST_MODE == 1)
@@ -7681,30 +7660,14 @@ uint8_t aisCheckNeedDriverRoaming(
 		if (target == NULL)
 			return FALSE;
 
-		/* 2.4 -> 5 */
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if ((bss->eBand == BAND_5G || bss->eBand == BAND_6G)
-#else
-		if (bss->eBand == BAND_5G
-#endif
-			&& target->eBand == BAND_2G4) {
-			if (rssi > RSSI_BAD_NEED_ROAM_24G_TO_5G_6G)
-				return FALSE;
-			if (bss->ucRCPI >= RCPI_THRESHOLD_ROAM_TO_5G_6G ||
-			bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM) {
-				DBGLOG(AIS, INFO,
-					"Driver trigger roaming to A band.\n");
-				return TRUE;
-			}
-		} else {
-			if (rssi > RSSI_BAD_NEED_ROAM)
-				return FALSE;
-			if (bss->ucRCPI - target->ucRCPI >
-				RCPI_DIFF_DRIVER_ROAM) {
-				DBGLOG(AIS, INFO,
-				"Driver trigger roaming for other cases.\n");
-				return TRUE;
-			}
+		/* trigger inactive roaming for better rssi */
+		if (apsNeedReplaceCandidateByRssi(prAdapter, target,
+			bss, ROAMING_REASON_INACTIVE)) {
+			DBGLOG(AIS, INFO,
+				"Driver trigger roaming from %s to %s band.\n",
+				apucBandStr[target->eBand],
+				apucBandStr[bss->eBand]);
+			return TRUE;
 		}
 	}
 	return FALSE;

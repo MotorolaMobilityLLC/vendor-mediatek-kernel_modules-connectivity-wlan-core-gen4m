@@ -31,9 +31,9 @@
 /* Real Rssi of a Bss may range in current_rssi - 5 dbm
  *to current_rssi + 5 dbm
  */
-#define RSSI_DIFF_BIG_STEP			15 /* dbm */
-#define RSSI_DIFF_MED_STEP			10 /* dbm */
-#define RSSI_DIFF_SML_STEP			5 /* dbm */
+#define RSSI_DIFF_BIG_STEP			20 /* dbm */
+#define RSSI_DIFF_MED_STEP			15 /* dbm */
+#define RSSI_DIFF_SML_STEP			10 /* dbm */
 #define LOW_RSSI_FOR_5G_BAND                    -70 /* dbm */
 
 #define CHNL_DWELL_TIME_DEFAULT                 100
@@ -195,8 +195,6 @@ const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
 #endif
 };
 #endif
-
-#define PERCENTAGE(_val, _base) (_val * 100 / _base)
 
 enum ENUM_BAND g_aeLinkPlan[MLO_LINK_PLAN_NUM][APS_LINK_MAX] = {
 	{BAND_2G4, BAND_NULL, BAND_NULL},
@@ -400,6 +398,13 @@ static uint8_t g_silent_mode; /* temp disable log */
 	do { \
 		if (g_silent_mode == FALSE) { \
 			DBGLOG(_Mod, _Clz, _Fmt, ##__VA_ARGS__); \
+		} \
+	} while (0)
+
+#define APSLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
+	do { \
+		if (g_silent_mode == FALSE) { \
+			DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ##__VA_ARGS__); \
 		} \
 	} while (0)
 
@@ -609,7 +614,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 
 #if (CFG_SUPPORT_AIS_TEST_MODE == 1)
 	if (ad->rWifiVar.u4AisTestMode.fgQualifyAll) {
-		APSLOG(AIS, WARN, "[TEST] APS qualify all\n");
+		APSLOG_LIMITED(AIS, WARN, "[TEST] APS qualify all\n");
 		return TRUE;
 	}
 #endif
@@ -617,7 +622,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 	/* check min rcpi */
 	if (bss->ucRCPI < RCPI_FOR_DONT_ROAM) {
-		APSLOG(APS, TRACE, MACSTR " low rssi %d\n",
+		APSLOG_LIMITED(APS, TRACE, MACSTR " low rssi %d\n",
 			MAC2STR(bss->aucBSSID),
 			RCPI_TO_dBm(bss->ucRCPI));
 		return FALSE;
@@ -637,7 +642,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 		 */
 		if (u4CandidateApScore <
 		    u4ConnectedApScore * (100 + delta) / 100) {
-			APSLOG(APS, TRACE, "BSS[" MACSTR
+			APSLOG_LIMITED(APS, TRACE, "BSS[" MACSTR
 				"] (%d < %d*%d%%) reason=%d\n",
 				MAC2STR(bss->aucBSSID),
 				u4CandidateApScore, u4ConnectedApScore,
@@ -665,7 +670,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 			break;
 
 		if (u4CandidateApScore < u4ConnectedApScore) {
-			APSLOG(APS, TRACE, "BSS[" MACSTR
+			APSLOG_LIMITED(APS, TRACE, "BSS[" MACSTR
 				"] (%d < %d) reason=%d\n",
 				MAC2STR(bss->aucBSSID),
 				u4CandidateApScore, u4ConnectedApScore,
@@ -677,7 +682,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 	default:
 	{
 		if (u4CandidateApScore < u4ConnectedApScore) {
-			APSLOG(APS, TRACE, "BSS[" MACSTR
+			APSLOG_LIMITED(APS, TRACE, "BSS[" MACSTR
 				"] (%d < %d) reason=%d\n",
 				MAC2STR(bss->aucBSSID),
 				u4CandidateApScore, u4ConnectedApScore,
@@ -1063,6 +1068,18 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	int32_t idle = 0, a = 0, b = 0, delta = 5;
 	uint8_t *pucIEs = NULL;
 	struct SCAN_INFO *prScanInfo = &(ad->rWifiVar.rScanInfo);
+	uint8_t ucBssOpBw = rlmGetBssOpBwByChannelWidth(bss->eSco,
+		bss->eChannelWidth);
+	static const char * const apucDebugBw[] = {
+		"20",
+		"40",
+		"80",
+		"160",
+		"80+80",
+		"320-1",
+		"320-2",
+		"UNKNOWN",
+	};
 
 	if (aps->ucConsiderEsp) {
 		pucIEs = (uint8_t *) &bss->u4EspInfo[ESP_AC_BE];
@@ -1107,35 +1124,41 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		}
 		tput = (uint32_t)((uint64_t)ideal *
 			(uint64_t)(a * rcpi + b) / 60000);
-		est = PERCENTAGE(airTime, 255) * tput / 100;
+		est = airTime * tput / 255;
+
+		APSLOG(APS, TRACE, "BSS["MACSTR
+			"] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
+			MAC2STR(bss->aucBSSID), ideal, baSize, amsduByte, a, b);
 	} else {
 		if (bss->fgExistBssLoadIE) {
-			airTime = 255 - bss->ucChnlUtilization;
+			ucChannelCuInfo = bss->ucChnlUtilization;
 		} else {
 			ucChannelCuInfo = apsGetCuInfo(ad, bss, bidx);
 
 			if (ucChannelCuInfo) {
-				airTime = 255 - ucChannelCuInfo;
+				/* use average CU of AP on the same channel */
 			} else if (prScanInfo->ucScanDoneVersion >=
 					SCAN_DONE_VERSION_SUPPORT_CU) {
 				ucChannelCuInfo = scanGetChnlUtilVal(ad,
 						bss->eBand, bss->ucChannelNum);
-				airTime = 255 - ucChannelCuInfo;
 			} else {
 				slot = scanGetChnlIdleSlot(ad,
 					bss->eBand, bss->ucChannelNum);
 
 				/* 90000 ms = 90us dwell time to micro sec */
-				idle = (slot * 9 * 100) / (90000);
-				airTime  = kal_max_t(int32_t, idle, 50);
+				idle = (slot * 9 * 100) / 90000;
 
+				/* boundary within 50~100 */
+				idle = kal_min_t(int32_t, idle, 100);
+				idle = kal_max_t(int32_t, idle, 50);
 				/* nomalized to 0~255 */
-				airTime = airTime * 255 / 100;
+				ucChannelCuInfo = (100 - idle) * 255 / 100;
 			}
 		}
 
+		airTime = 255 - ucChannelCuInfo;
 		tput = apsGetMaxRate(ad, bss, bidx); /* kbps */
-		est = PERCENTAGE(airTime, 255) * tput / 100;
+		est = airTime * tput / 255;
 	}
 
 	if (bss->fgIsRWMValid) {
@@ -1156,13 +1179,12 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_MCC_DOWNGRADE / 100);
 
 	APSLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d tput[%dkbps] rwmDL[%d, %dkbps] bw[%d] rssi[%d] CU[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d] ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d]\n",
-		MAC2STR(bss->aucBSSID), est,
-		bss->fgIsRWMValid, rwmDownlink, tput,
-		rlmGetBssOpBwByChannelWidth(bss->eSco, bss->eChannelWidth),
-		RCPI_TO_dBm(bss->ucRCPI), ucChannelCuInfo, airTime, slot,
-		fgIsGBandCoex, bss->fgIsMCC, bss->cTransmitPwr,
-		ideal, baSize, amsduByte, a, b);
+		"] EST:%dkbps tput[%d],rwmDL[%d, %d],bw[%s],rssi[%d],CU[%d],slot[%d],coex[%d],MCC[%d],TxPwr[%d]\n",
+		MAC2STR(bss->aucBSSID), est, tput,
+		bss->fgIsRWMValid, rwmDownlink,
+		ucBssOpBw < MAX_BW_UNKNOWN ? apucDebugBw[ucBssOpBw] : "UNKNOWN",
+		RCPI_TO_dBm(bss->ucRCPI), ucChannelCuInfo, slot,
+		fgIsGBandCoex, bss->fgIsMCC, bss->cTransmitPwr);
 
 	return est;
 }
@@ -2158,14 +2180,14 @@ try_again:
 			    reason != ROAMING_REASON_BTM &&
 			    reason != ROAMING_REASON_BEACON_TIMEOUT &&
 			    IS_AIS_CONN_BSSDESC(ais, bss)) {
-				APSLOG(APS, WARN, MACSTR" connected\n",
+				APSLOG_LIMITED(APS, WARN, MACSTR" connected\n",
 					MAC2STR(bss->aucBSSID));
 				continue;
 			}
 
 			/* Skip generated AP */
 			if (bss->fgDriverGen) {
-				APSLOG(APS, WARN, "BSS[" MACSTR
+				APSLOG_LIMITED(APS, WARN, "BSS[" MACSTR
 					"] is driver gen\n",
 					MAC2STR(bss->aucBSSID));
 				continue;
@@ -2173,7 +2195,7 @@ try_again:
 
 			/* Skip BTO AP */
 			if (bss->fgIsInBTO) {
-				APSLOG(APS, WARN, "BSS[" MACSTR
+				APSLOG_LIMITED(APS, WARN, "BSS[" MACSTR
 					"] is in BTO\n",
 					MAC2STR(bss->aucBSSID));
 				continue;
@@ -2874,7 +2896,7 @@ uint32_t apsCalculateFinalScore(struct ADAPTER *ad,
 	return score;
 }
 
-static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
+uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
 	enum ENUM_ROAMING_REASON eRoamReason)
 {
@@ -2882,25 +2904,6 @@ static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
 	int8_t cCurrRssi = RCPI_TO_dBm(prCurrBss->ucRCPI);
 	enum ENUM_BAND eCurrBand = prCurrBss->eBand;
 	enum ENUM_BAND eCandBand = prCandBss->eBand;
-
-#if CFG_SUPPORT_NCHO
-	if (prAdapter->rNchoInfo.fgNCHOEnabled)
-		return cCurrRssi >= cCandRssi ? TRUE : FALSE;
-#endif
-
-	/* 1.3 Hard connecting RSSI check */
-	if ((eCurrBand == BAND_5G && cCurrRssi < MINIMUM_RSSI_5G) ||
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	   (eCurrBand == BAND_6G && cCurrRssi < MINIMUM_RSSI_6G) ||
-#endif
-	   (eCurrBand == BAND_2G4 && cCurrRssi < MINIMUM_RSSI_2G4))
-		return FALSE;
-	else if ((eCandBand == BAND_5G && cCandRssi < MINIMUM_RSSI_5G) ||
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	   (eCandBand == BAND_6G && cCandRssi < MINIMUM_RSSI_6G) ||
-#endif
-	   (eCandBand == BAND_2G4 && cCandRssi < MINIMUM_RSSI_2G4))
-		return TRUE;
 
 	/* 1.4 prefer to select 5G Bss if Rssi of a 5G band BSS is good */
 	if (eCandBand != eCurrBand) {
@@ -2914,17 +2917,8 @@ static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
 			 || eCurrBand == BAND_6G
 #endif
 			) {
-				if (cCurrRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return TRUE;
-
-				if (cCurrRssi < LOW_RSSI_FOR_5G_BAND &&
-				   (cCandRssi > cCurrRssi + RSSI_DIFF_BIG_STEP))
-					return FALSE;
-
-				if (cCandRssi - cCurrRssi >= RSSI_DIFF_BIG_STEP)
-					return FALSE;
-
-				if (cCurrRssi - cCandRssi >= RSSI_DIFF_SML_STEP)
+				if (cCurrRssi > LOW_RSSI_FOR_5G_BAND &&
+				    cCurrRssi - cCandRssi >= RSSI_DIFF_SML_STEP)
 					return TRUE;
 			}
 			break;
@@ -2933,35 +2927,17 @@ static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
 			 * good enough.
 			 */
 			if (eCurrBand == BAND_2G4) {
-				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return FALSE;
-
 				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
-				   (cCurrRssi > cCandRssi + RSSI_DIFF_BIG_STEP))
-					return TRUE;
-
-				if (cCandRssi - cCurrRssi >= RSSI_DIFF_SML_STEP)
-					return FALSE;
-
-				if (cCurrRssi - cCandRssi >= RSSI_DIFF_BIG_STEP)
+				    cCurrRssi - cCandRssi >= RSSI_DIFF_BIG_STEP)
 					return TRUE;
 			}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			else if (eCurrBand == BAND_6G) {
 				/* Target AP is 6G, replace candidate AP
-				 * if target AP is good
+				 * if target AP has better rssi
 				 */
-				if (cCurrRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return TRUE;
-
-				if (cCurrRssi < LOW_RSSI_FOR_5G_BAND &&
-				   (cCandRssi > cCurrRssi + RSSI_DIFF_MED_STEP))
-					return FALSE;
-
-				if (cCandRssi - cCurrRssi >= RSSI_DIFF_MED_STEP)
-					return FALSE;
-
-				if (cCurrRssi - cCandRssi >= RSSI_DIFF_SML_STEP)
+				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
+				    cCurrRssi - cCandRssi >= RSSI_DIFF_MED_STEP)
 					return TRUE;
 			}
 #endif
@@ -2972,30 +2948,15 @@ static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
 			 * it's good enough.
 			 */
 			if (eCurrBand == BAND_2G4) {
-				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return FALSE;
-
 				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
-				   (cCurrRssi > cCandRssi + RSSI_DIFF_BIG_STEP))
-					return TRUE;
-
-				if (cCandRssi - cCurrRssi >= RSSI_DIFF_SML_STEP)
-					return FALSE;
-
-				if (cCurrRssi - cCandRssi >= RSSI_DIFF_BIG_STEP)
+				    cCurrRssi - cCandRssi >= RSSI_DIFF_BIG_STEP)
 					return TRUE;
 			} else if (eCurrBand == BAND_5G) {
-				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return FALSE;
-
+				/* Target AP is 5G, replace candidate AP
+				 * if target AP has better rssi
+				 */
 				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
-				   (cCurrRssi > cCandRssi + RSSI_DIFF_MED_STEP))
-					return TRUE;
-
-				if (cCandRssi - cCurrRssi >= RSSI_DIFF_SML_STEP)
-					return FALSE;
-
-				if (cCurrRssi - cCandRssi >= RSSI_DIFF_MED_STEP)
+				    cCurrRssi - cCandRssi >= RSSI_DIFF_MED_STEP)
 					return TRUE;
 			}
 			break;
@@ -3004,9 +2965,8 @@ static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
 			break;
 		}
 	} else {
-		if (cCandRssi - cCurrRssi >= RSSI_DIFF_MED_STEP)
-			return FALSE;
-		if (cCurrRssi - cCandRssi >= RSSI_DIFF_MED_STEP)
+		if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
+		    cCurrRssi - cCandRssi >= RSSI_DIFF_SML_STEP)
 			return TRUE;
 	}
 
