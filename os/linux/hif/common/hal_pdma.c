@@ -2131,6 +2131,35 @@ tx_data:
 }
 #endif /* (CFG_SUPPORT_TX_DATA_DELAY == 1) */
 
+#if CFG_MTK_WIFI_WFDMA_WB
+static void halResetWfdmaWb(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct RTMP_TX_RING *prTxRing;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t u4Idx = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+
+	prChipInfo->is_enable_wfdma_write_back = FALSE;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		prTxRing = &prHifInfo->TxRing[u4Idx];
+		prTxRing->fgEnEmiDidx = FALSE;
+		prTxRing->fgEnEmiCidx = FALSE;
+	}
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		prRxRing = &prHifInfo->RxRing[u4Idx];
+		prRxRing->fgEnEmiDidx = FALSE;
+		prRxRing->fgEnEmiCidx = FALSE;
+	}
+	DBGLOG(INIT, INFO, "[SER][L0.5] Reset WFDMA_WB settings\n");
+}
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+
 bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -2175,6 +2204,10 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		halOffloadAllocMem(prAdapter->prGlueInfo, FALSE);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+#if CFG_MTK_WIFI_WFDMA_WB
+		halResetWfdmaWb(prAdapter);
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 		/*only reset TXD & RXD*/
 		if (!halWpdmaAllocRing(prAdapter->prGlueInfo, false))

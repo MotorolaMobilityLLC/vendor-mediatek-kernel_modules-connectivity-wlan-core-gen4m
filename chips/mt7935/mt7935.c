@@ -268,6 +268,7 @@ struct PCIE_CHIP_CR_MAPPING mt7935_bus2chip_cr_mapping[] = {
 	{0x7C010000, 0x100000, 0x10000}, /* CONN_INFRA (gpio clkgen cfg) */
 	{0x7C040000, 0x170000, 0x10000}, /* CONN_INFRA (bus, afe) */
 	{0x70010000, 0x1C0000, 0x10000}, /* CB Infra1 */
+	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x74040000, 0x1D0000, 0x10000}, /* CB PCIe (cbtop remap) */
 	{0x7c500000, MT7935_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x00000000, 0x000000, 0x00000}, /* END */
@@ -883,7 +884,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* owner set true when feature is ready. */
-	.fgIsSupportL0p5Reset = FALSE,
+	.fgIsSupportL0p5Reset = TRUE,
 	.wifiNappingCtrl = mt7935WiFiNappingCtrl,
 #elif defined(_HIF_USB)
 	.fgIsSupportL0p5Reset = FALSE,

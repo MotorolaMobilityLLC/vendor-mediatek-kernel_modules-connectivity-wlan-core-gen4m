@@ -90,7 +90,7 @@ u_int8_t mt7935HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 		HAL_MCR_RD(prAdapter, u4AddrVal, &u4CrVal);
 		DBGLOG(HAL, DEBUG, "Read cr_bus_rst 0x%x: 0x%x\n",
 			u4AddrVal, u4CrVal);
-		u4CrVal |= CB_INFRA_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
+		u4CrVal |= CB_INFRA_RGU_WF_SUBSYS_RST_cr_sw_wf_subsys_rst_MASK;
 		HAL_MCR_WR(prAdapter, u4AddrVal, u4CrVal);
 		DBGLOG(HAL, DEBUG,
 			"A.1 - Write assert cr_bus_rst 0x%x: 0x%x\n",
@@ -101,7 +101,7 @@ u_int8_t mt7935HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 		HAL_MCR_RD(prAdapter, u4AddrVal, &u4CrVal);
 		DBGLOG(HAL, DEBUG, "E. Read 0x%x: 0x%x\n", u4AddrVal, u4CrVal);
 
-		u4CrVal &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
+		u4CrVal &= ~CB_INFRA_RGU_WF_SUBSYS_RST_cr_sw_wf_subsys_rst_MASK;
 
 		HAL_MCR_WR(prAdapter, u4AddrVal, u4CrVal);
 	}
