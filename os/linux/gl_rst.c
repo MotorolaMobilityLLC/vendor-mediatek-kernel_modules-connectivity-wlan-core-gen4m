@@ -49,10 +49,6 @@
 u_int8_t fgSimplifyResetFlow;
 uint64_t u8ResetTime;
 
-#if CFG_CHIP_RESET_HANG
-u_int8_t fgIsResetHangState = SER_L0_HANG_RST_NONE;
-#endif
-
 #if CFG_WMT_RESET_API_SUPPORT
 wait_queue_head_t g_waitq_rst;
 struct completion g_RstOffComp;
@@ -1430,11 +1426,6 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 			->rst_L0_notify_step2 != NULL)
 		fgResult = rst->prGlueInfo->prAdapter
 			->chip_info->rst_L0_notify_step2();
-
-#if CFG_CHIP_RESET_HANG
-	if (fgIsResetHangState == SER_L0_HANG_RST_NONE)
-		fgIsResetHangState = SER_L0_HANG_RST_TRGING;
-#endif
 
 	if (is_bt_exist() == FALSE)
 		kalRemoveProbe(rst->prGlueInfo);

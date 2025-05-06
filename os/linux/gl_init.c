@@ -8644,15 +8644,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 #endif
 
-#if CFG_CHIP_RESET_HANG
-	if (fgIsResetHangState == SER_L0_HANG_RST_TRGING) {
-		DBGLOG(INIT, STATE, "[SER][L0] SET hang!\n");
-			fgIsResetHangState = SER_L0_HANG_RST_HANG;
-			glResetUpdateFlag(TRUE);
-	}
-	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
-#endif
-
 	coredump_register_busNoAck_chk_cb(prAdapter->chip_info->checkbusNoAck);
 
 #if CFG_SUPPORT_PERSIST_NETDEV

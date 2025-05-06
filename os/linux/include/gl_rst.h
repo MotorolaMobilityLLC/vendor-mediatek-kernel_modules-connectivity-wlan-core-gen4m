@@ -46,16 +46,6 @@
 #define RST_FLAG_DO_L0P5_RESET             BIT(3)
 #define RST_FLAG_DO_L1_RESET               BIT(4)
 
-#if CFG_CHIP_RESET_HANG
-#define SER_L0_HANG_RST_NONE		0
-#define SER_L0_HANG_RST_TRGING		1
-#define SER_L0_HANG_RST_HAND_DISABLE	2
-#define SER_L0_HANG_RST_HANG		3
-#define SER_L0_HANG_RST_CMD_TRG		9
-
-#define SER_L0_HANG_LOG_TIME_INTERVAL	3000
-#endif
-
 #ifndef CFG_SUPPORT_SER_DEBUGFS
 #define CFG_SUPPORT_SER_DEBUGFS		0
 #endif
@@ -218,10 +208,6 @@ extern void update_whole_chip_rst_status(uint8_t fgIsWholeChipRst);
 extern u_int8_t fgIsResetting;
 extern u_int8_t fgIsRstPreventFwOwn;
 extern enum COREDUMP_SOURCE_TYPE g_Coredump_source;
-
-#if CFG_CHIP_RESET_HANG
-extern u_int8_t fgIsResetHangState;
-#endif
 
 #endif
 /*******************************************************************************

@@ -5932,13 +5932,6 @@ int hif_thread(void *data)
 	DBGLOG(INIT, DEBUG, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
-#if CFG_CHIP_RESET_HANG
-	while (fgIsResetHangState == SER_L0_HANG_RST_HANG) {
-		kalMsleep(SER_L0_HANG_LOG_TIME_INTERVAL);
-		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
-	}
-#endif
-
 	prGlueInfo->hif_thread = NULL;
 	prGlueInfo->u4HifThreadPid = 0xffffffff;
 
@@ -6075,13 +6068,6 @@ int rx_thread(void *data)
 
 	DBGLOG(INIT, DEBUG, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
-
-#if CFG_CHIP_RESET_HANG
-	while (fgIsResetHangState == SER_L0_HANG_RST_HANG) {
-		kalMsleep(SER_L0_HANG_LOG_TIME_INTERVAL);
-		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
-	}
-#endif
 
 	prGlueInfo->rx_thread = NULL;
 	prGlueInfo->u4RxThreadPid = 0xffffffff;
@@ -6542,13 +6528,6 @@ int main_thread(void *data)
 #endif
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
-
-#if CFG_CHIP_RESET_HANG
-	while (fgIsResetHangState == SER_L0_HANG_RST_HANG) {
-		kalMsleep(SER_L0_HANG_LOG_TIME_INTERVAL);
-		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
-	}
-#endif
 
 	prGlueInfo->main_thread = NULL;
 	prGlueInfo->u4TxThreadPid = 0xffffffff;

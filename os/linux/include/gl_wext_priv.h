@@ -1097,10 +1097,6 @@ int priv_driver_set_pp_rx(struct net_device *prNetDev,
 int priv_driver_set_smpsparams(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_802_11AX */
-#if CFG_CHIP_RESET_HANG
-int priv_driver_set_rst_hang(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-#endif /* CFG_CHIP_RESET_HANG */
 #if (CFG_SUPPORT_TWT == 1)
 int priv_driver_set_twtparams(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

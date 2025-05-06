@@ -287,14 +287,6 @@ struct CMD_VALIDATE_POLICY set_om_ch_bw_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 };
 #endif
 
-#if CFG_CHIP_RESET_HANG
-struct CMD_VALIDATE_POLICY set_rst_hang_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8,
-				 .min = SER_L0_HANG_RST_NONE,
-				 .max = SER_L0_HANG_RST_CMD_TRG}
-};
-#endif
-
 struct CMD_VALIDATE_POLICY reassoc_policy[COMMON_CMD_SET_ARG_NUM(4)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 17},
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX},
@@ -2463,16 +2455,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = set_flag_policy,
 		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
-	},
-#endif
-#if CFG_CHIP_RESET_HANG
-	{
-		.pcCmdStr  = CMD_SET_RST_HANG,
-		.pfHandler = priv_driver_set_rst_hang,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = set_rst_hang_policy,
-		.u4PolicySize = ARRAY_SIZE(set_rst_hang_policy)
 	},
 #endif
 #if (CFG_SUPPORT_TWT == 1)

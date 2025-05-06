@@ -709,9 +709,6 @@
 #endif
 #if CFG_CHIP_RESET_SUPPORT
 #define CFG_SER_L05_DEBUG		0
-#define CFG_CHIP_RESET_HANG		0
-#else
-#define CFG_CHIP_RESET_HANG		0
 #endif
 
 #define CFG_WIFI_AUTO_RECOVER		0
