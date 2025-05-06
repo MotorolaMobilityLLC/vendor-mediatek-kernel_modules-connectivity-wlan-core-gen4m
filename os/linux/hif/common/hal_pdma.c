@@ -5706,6 +5706,9 @@ int halHifTxNapiPoll(struct napi_struct *napi, int budget)
 	if (!halCheckTxRxTaskReady(prGlueInfo))
 		goto skip;
 
+	if (nicSerIsTxStop(prAdapter))
+		goto skip;
+
 	if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt) == 0) {
 		fgIsDone = TRUE;
 		KAL_SET_BIT(HIF_TX_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag);
@@ -5785,6 +5788,9 @@ void halTxWork(struct GLUE_INFO *prGlueInfo)
 
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    HIF_TX_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag)) {
+		if (nicSerIsTxStop(prAdapter))
+			return;
+
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
 		if (!KAL_WAKE_LOCK_ACTIVE(
 			    prAdapter, prGlueInfo->rHifTxWorkerLock))
