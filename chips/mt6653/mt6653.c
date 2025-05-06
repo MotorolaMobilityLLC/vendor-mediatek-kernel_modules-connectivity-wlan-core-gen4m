@@ -3543,6 +3543,9 @@ static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
+	u4WrVal = readl(pcie_vir_addr + 0x74);
+	u4WrVal |= BIT(27);
+
 	writel(u4WrVal, (pcie_vir_addr + 0x74));
 	u4Val = readl(pcie_vir_addr + 0x74);
 	DBGLOG(HAL, DEBUG,
