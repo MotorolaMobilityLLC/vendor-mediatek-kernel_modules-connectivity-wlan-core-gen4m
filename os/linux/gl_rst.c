@@ -1800,11 +1800,19 @@ void glRstWholeChipRstParamInit(void)
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 {
 	bool bRet = 0;
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "GlueInfo null, return\n");
+		goto exit;
+	}
 	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "Adapter null, return\n");
+		goto exit;
+	}
 
 	DBGLOG(INIT, DEBUG,
 			"Enter glRstwlanPreWholeChipReset.\n");
@@ -1923,7 +1931,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	char *reason)
 #endif
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 #if (CFG_MTK_WIFI_DFD_DUMP_SUPPORT == 1)
@@ -1974,6 +1982,10 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	wfsys_unlock();
 #endif
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "GlueInfo null, return\n");
+		goto exit;
+	}
 	prAdapter = prGlueInfo->prAdapter;
 	if (!prAdapter) {
 		DBGLOG(REQ, WARN, "adapter null, return\n");
@@ -2107,7 +2119,7 @@ exit:
 int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	char *reason)
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
 	DBGLOG(INIT, DEBUG,
@@ -2115,7 +2127,15 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		drv, reason);
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "GlueInfo null, return\n");
+		goto exit;
+	}
 	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "Adapter null, return\n");
+		goto exit;
+	}
 
 #if CFG_MTK_ANDROID_WMT
 
