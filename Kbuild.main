@@ -3051,6 +3051,7 @@ endif
 
 ccflags-y += -DDBG=0
 ccflags-y += -I$(KO_CODE_PATH)/os -I$(KO_CODE_PATH)/os/$(os)/include
+ccflags-y += $(EXTRA_CCFLAGS)
 ccflags-y += -I$(KO_CODE_PATH)/include -I$(KO_CODE_PATH)/include/nic -I$(KO_CODE_PATH)/include/mgmt -I$(KO_CODE_PATH)/include/chips -I$(KO_CODE_PATH)/include/wpa_supp
 ifeq ($(CONFIG_MTK_WIFI_NAN), y)
     ccflags-y += -I$(KO_CODE_PATH)/include/nan
@@ -3356,14 +3357,11 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_IPC), y)
     ifeq ($(filter 1 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
         ccflags-y += -DCFG_MTK_WIFI_SUPPORT_IPC=1
-        ccflags-y += -DCFG_ENABLE_IPC_FW_DOWNLOAD=1
     else
         ccflags-y += -DCFG_MTK_WIFI_SUPPORT_IPC=0
-        ccflags-y += -DCFG_ENABLE_IPC_FW_DOWNLOAD=0
     endif
 else
     ccflags-y += -DCFG_MTK_WIFI_SUPPORT_IPC=0
-    ccflags-y += -DCFG_ENABLE_IPC_FW_DOWNLOAD=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_TX_HIF_CREDIT_FEATURE), y)
@@ -4114,9 +4112,6 @@ else
 endif
 
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
-ifeq ($(CONFIG_MTK_WIFI_SUPPORT_IPC), y)
-    CHIPS_OBJS += $(CHIPS_CMM)wlan_ipc.o
-endif
 
 ifeq ($(CONFIG_SUPPORT_UNI_FWDL), y)
 CHIPS_OBJS += $(CHIPS_CMM)uni_fw_dl.o
@@ -4217,6 +4212,9 @@ endif
 
 ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
     CHIPS_OBJS += $(CHIPS)mt7935/mt7935.o
+    ifneq ($(CONFIG_MTK_WIFI_SUPPORT_IPC), y)
+        CHIPS_OBJS += $(CHIPS)mt7935/mt7935_legacy_fw_dl.o
+    endif
     CHIPS_OBJS += $(CHIPS)mt7935/dbg_mt7935.o
     ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
         CHIPS_OBJS += $(CHIPS)mt7935/hal_dmashdl_mt7935.o
@@ -4452,6 +4450,7 @@ ifeq ($(MTK_WLAN_SERVICE), yes)
     ccflags-y += -I$(KO_CODE_PATH)/$(SERVICE_DIR)glue/osal/include
     ccflags-y += -I$(KO_CODE_PATH)/$(SERVICE_DIR)glue/hal/include
     $(info $$CCFLAG is [{$(ccflags-y)}])
+    $(info $$EXTRA_CCFLAGS is [{$(EXTRA_CCFLAGS)}])
     SERVICE_OBJS := $(SERVICE_DIR)agent/agent.o \
                     $(SERVICE_DIR)service/service_test.o \
                     $(SERVICE_DIR)service/test_engine.o \
@@ -4475,6 +4474,7 @@ $(MODULE_NAME)-objs  += $(SYSDVT_OBJS)
 $(MODULE_NAME)-objs  += $(CRYPTO_OBJS)
 $(MODULE_NAME)-objs  += $(NAN_OBJS)
 $(MODULE_NAME)-objs  += $(NAN_SEC_OBJS)
+$(MODULE_NAME)-objs  += $(EXTRA_CHIPS_OBJS)
 
 ifneq ($(findstring UT_TEST_MODE,$(MTK_COMBO_CHIP)),)
     include $(KO_CODE_PATH)/test/ut.make

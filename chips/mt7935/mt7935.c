@@ -55,9 +55,7 @@
 #endif
 
 #include "gl_coredump.h"
-#if CFG_MTK_WIFI_SUPPORT_IPC
-#include "wlan_ipc.h"
-#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -67,56 +65,12 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-#if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
-#define IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(_field) \
-				OFFSET_OF(\
-				struct mt7935_conn_von_sysram_layout_t,\
-				_field)
-#define IPC_GET_WFMCU_DOORBELL_BIT_OFFSET(_field) \
-				OFFSET_OF(\
-				struct mt7935_wfmcu_doorbell_layout_t,\
-				_field)
-#define IPC_GET_CBMCU_DOORBELL_BIT_OFFSET(_field) \
-				OFFSET_OF(\
-				struct mt7935_cbmcu_doorbell_layout_t,\
-				_field)
-#define IPC_GET_BITMAP_BIT_OFFSET(_field) \
-				OFFSET_OF(\
-				struct mt7935_bitmap_layout_t,\
-				_field)
-#define IPC_GET_CONN_VON_SYSRAM_FIELD_SIZE(_addr, _field) \
-	sizeof(((struct mt7935_conn_von_sysram_layout_t *)_addr)->_field)
 
-#define MT7935_WF_CB_MCU_FW_BIN_NAME "WIFI_RAM_CODE_MT7935_1_1.bin"
-#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt7935GetFlavorVer(struct GLUE_INFO *prGlueInfo,
-				   uint8_t *flavor);
-
-static void mt7935_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucNameTable, uint8_t **apucName,
-	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
-
-static void mt7935_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName, uint8_t *pucNameIdx);
-
-#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
-static void mt7935_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName, uint8_t *pucNameIdx);
-#endif
-
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName);
-#endif
 
 static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #if defined(_HIF_PCIE)
@@ -174,9 +128,7 @@ static void mt7935EnableWfdmaWb(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter);
-#if CFG_MTK_WIFI_SUPPORT_IPC
-static void mt7935SetupWiFiMcuEmiAddr(struct ADAPTER *prAdapter);
-#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
+
 static void mt7935WfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing,
@@ -194,8 +146,8 @@ static u_int8_t mt7935_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
 static int32_t mt7935_trigger_fw_assert(struct ADAPTER *prAdapter);
-static uint32_t mt7935_mcu_init(struct ADAPTER *ad);
-static void mt7935_mcu_deinit(struct ADAPTER *ad);
+uint32_t mt7935_mcu_init(struct ADAPTER *ad);
+void mt7935_mcu_deinit(struct ADAPTER *ad);
 static int mt7935_CheckBusNoAck(void *priv, uint8_t rst_enable);
 static void mt7935WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 
@@ -207,11 +159,6 @@ static void mt7935LowPowerOwnSet(struct ADAPTER *prAdapter,
 static void mt7935LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult);
 
-#if (CFG_ENABLE_IPC_FW_DOWNLOAD == 1)
-static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter);
-static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
-				      uint8_t **apucFwNameTable);
-#endif /* CFG_ENABLE_IPC_FW_DOWNLOAD */
 #endif /*_HIF_PCIE */
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -240,11 +187,6 @@ struct ECO_INFO mt7935_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1},	/* E1 */
 	{0x00, 0x00, 0x0, 0x0}	/* End of table */
-};
-
-uint8_t *apucmt7935FwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_7935",
-	NULL
 };
 
 #if defined(_HIF_PCIE)
@@ -613,11 +555,7 @@ struct BUS_INFO mt7935_bus_info = {
 #endif /* (_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8) */
 	.setRxRingHwAddr = mt7935SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7935WfdmaAllocRxRing,
-#if CFG_MTK_WIFI_SUPPORT_IPC
 	.setupMcuEmiAddr = NULL,
-#else /* CFG_MTK_WIFI_SUPPORT_IPC */
-	.setupMcuEmiAddr = mt7935SetupMcuEmiAddr,
-#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
 #endif /*_HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.DmaShdlInit = mt7935DmashdlInit,
@@ -635,84 +573,6 @@ struct BUS_INFO mt7935_bus_info = {
 	.halUpdateTxDonePendingCount = halUpdateTxDonePendingCount_v1,
 #endif /* _HIF_SDIO */
 };
-
-#if CFG_ENABLE_FW_DOWNLOAD
-struct FWDL_OPS_T mt7935_fw_dl_ops = {
-#if CFG_MTK_WIFI_SUPPORT_IPC
-	.constructFirmwarePrio = NULL,
-	.constructPatchName = NULL,
-#else
-	.constructFirmwarePrio = mt7935_ConstructFirmwarePrio,
-	.constructPatchName = mt7935_ConstructPatchName,
-#endif
-#if CFG_SUPPORT_SINGLE_FW_BINARY
-#if CFG_MTK_WIFI_SUPPORT_IPC
-	.parseSingleBinaryFile = NULL,
-#else
-	.parseSingleBinaryFile = wlanParseSingleBinaryFile,
-#endif
-#endif
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	.constrcutIdxLogBin = NULL,
-#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
-#if CFG_MTK_WIFI_SUPPORT_IPC
-	.downloadPatch = NULL,
-	.downloadFirmware = NULL,
-	.downloadByDynMemMap = NULL,
-	.getFwInfo = NULL,
-	.getFwDlInfo = NULL,
-	.downloadEMI = NULL,
-#else
-	.downloadPatch = mt7935_wlanDownloadPatch,
-	.downloadFirmware = wlanConnacFormatDownload,
-	.downloadByDynMemMap = NULL,
-	.getFwInfo = wlanGetConnacFwInfo,
-	.getFwDlInfo = asicGetFwDlInfo,
-	.downloadEMI = wlanDownloadEMISectionViaDma,
-#endif
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-#if CFG_MTK_WIFI_SUPPORT_IPC
-	.phyAction = NULL,
-#else
-	.phyAction = wlanPhyAction,
-#endif
-#else
-	.phyAction = NULL,
-#endif
-#if defined(_HIF_PCIE)
-	.mcu_init = mt7935_mcu_init,
-	.mcu_deinit = mt7935_mcu_deinit,
-#endif
-#if CFG_MTK_WIFI_SUPPORT_IPC
-#if CFG_SUPPORT_WIFI_DL_BT_PATCH
-	.constructBtPatchName = NULL,
-	.downloadBtPatch = NULL,
-#if (CFG_SUPPORT_CONNAC3X == 1)
-	.configBtImageSection = NULL,
-#endif
-#endif
-	.getFwVerInfo = NULL,
-#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
-	.constructPhyName = NULL,
-	.downloadPhyFw = NULL,
-#endif
-#else
-#if CFG_SUPPORT_WIFI_DL_BT_PATCH
-	.constructBtPatchName = asicConnac3xConstructBtPatchName,
-	.downloadBtPatch = asicConnac3xDownloadBtPatch,
-#if (CFG_SUPPORT_CONNAC3X == 1)
-	.configBtImageSection = asicConnac3xConfigBtImageSection,
-#endif
-#endif
-	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
-	.getFlavorVer = mt7935GetFlavorVer,
-#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
-	.constructPhyName = mt7935_ConstructPhyName,
-	.downloadPhyFw = wlanDownloadPhyFw,
-#endif
-#endif
-};
-#endif /* CFG_ENABLE_FW_DOWNLOAD */
 
 struct TX_DESC_OPS_T mt7935_TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
@@ -899,33 +759,6 @@ enum HIF_DEV_REG_REASON mt7935ValidMmioReadReason[] = {
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
-#if CFG_MTK_WIFI_SUPPORT_IPC
-static struct mt7935_conn_von_sysram_layout_t mt7935_conn_von_sysram_layout;
-static struct mt7935_wfmcu_doorbell_layout_t mt7935_wfmcu_doorbell_layout;
-static struct mt7935_cbmcu_doorbell_layout_t mt7935_cbmcu_doorbell_layout;
-static struct mt7935_bitmap_layout_t mt7935_bitmap_layout;
-
-struct WLAN_IPC_INFO mt7935_ipc_info = {
-	.wfmcu_doorbell_pci_cfg_space_base_offset =
-		MT7935_WFMCU_DOORBELL_PCI_CFG_SPACE_BASE_OFFSET,
-	.cbmcu_doorbell_pci_cfg_space_base_offset =
-		MT7935_CBMCU_DOORBELL_PCI_CFG_SPACE_BASE_OFFSET,
-	.bitmap_pci_cfg_space_base_offset =
-		MT7935_BITMAP_PCI_CFG_SPACE_BASE_OFFSET,
-	.conn_von_sysram_base_addr = MT7935_CONN_VON_SYSRAM_BASE_ADDR,
-	.conn_von_sysram_layout = &mt7935_conn_von_sysram_layout,
-	.bitmap_layout = &mt7935_bitmap_layout,
-	.wfmcu_doorbell_layout = &mt7935_wfmcu_doorbell_layout,
-	.cbmcu_doorbell_layout = &mt7935_cbmcu_doorbell_layout,
-	.ipcCheckStatus = wlanIPCCheckStatus,
-	.ipcAccessConnVonSysRam = wlanIPCAccessConnVonSysRam,
-	.ipcAccessPciCfgSpace = wlanIPCAccessPciCfgSpace,
-	.ipcLoadFirmware = mt7935IPCLoadFirmware,
-	.ipcSetupWiFiMcuEmiAddr = mt7935SetupWiFiMcuEmiAddr,
-	.ipcSetupCbMcuEmiAddr = NULL,
-};
-#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
-
 struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.bus_info = &mt7935_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -1080,577 +913,6 @@ void mt7935_icapRiseVcoreClockRate(void)
 void mt7935_icapDownVcoreClockRate(void)
 {
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
-}
-
-static uint32_t mt7935GetFlavorVer(struct GLUE_INFO *prGlueInfo,
-				   uint8_t *flavor)
-{
-	int32_t ret;
-	u_int8_t fgTestFW = FALSE;
-
-#if CFG_WIFI_TESTMODE_FW_REDOWNLOAD
-	if (prGlueInfo)
-		fgTestFW = prGlueInfo->fgTestFwDl;
-#endif
-
-	ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN,
-		fgTestFW ? "1t" : "1");
-
-	return (uint32_t) ret;
-}
-
-#if (CFG_ENABLE_IPC_FW_DOWNLOAD == 1)
-static uint32_t mt7935IPCLoadFirmware(struct ADAPTER *prAdapter,
-	uint8_t **apucFwNameTable)
-{
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct WLAN_IPC_INFO *prIPCInfo = NULL;
-	dma_addr_t rPhyAddr = 0;
-	uint32_t u4Ret = 0, u4FwSize = 0, *pu4FwBuffer = NULL, u4Val = 0;
-
-	if (prGlueInfo == NULL) {
-		DBGLOG(INIT, ERROR, "NULL prGlueInfo\n");
-		u4Ret = WLAN_STATUS_INVALID_DATA;
-		goto exit;
-	}
-
-	glGetChipInfoByGlue(prGlueInfo, (void **)&prChipInfo);
-
-	if (prChipInfo == NULL) {
-		DBGLOG(INIT, ERROR, "NULL prChipInfo\n");
-		u4Ret = WLAN_STATUS_INVALID_DATA;
-		goto exit;
-	}
-
-	prIPCInfo = prChipInfo->ipc_info;
-	if (prIPCInfo == NULL) {
-		DBGLOG(INIT, ERROR, "NULL prIPCInfo\n");
-		u4Ret = WLAN_STATUS_INVALID_DATA;
-		goto exit;
-	}
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	if (prHifInfo->pdev == NULL) {
-		DBGLOG(INIT, ERROR, "NULL pdev\n");
-		u4Ret = WLAN_STATUS_INVALID_DATA;
-		goto exit;
-	}
-
-	u4Ret = kalFirmwareOpen(prGlueInfo, apucFwNameTable);
-	if (u4Ret != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR, "Open FW failed.\n");
-		u4Ret = WLAN_STATUS_INVALID_DATA;
-		goto exit;
-	}
-
-	/* Set FW size */
-	kalFirmwareSize(prGlueInfo, &u4FwSize);
-	/* ALIGN 4 */
-	u4FwSize = ALIGN_4(u4FwSize);
-	pu4FwBuffer = KAL_DMA_ALLOC_COHERENT(prHifInfo->pdev,
-		u4FwSize,
-		&rPhyAddr);
-	if (pu4FwBuffer == NULL) {
-		DBGLOG(INIT, ERROR,
-			"Alloc Physically continuous memory failed, size=%u.\n",
-			u4FwSize);
-		u4Ret = WLAN_STATUS_RESOURCES;
-		goto close_fw;
-	}
-
-	/* Copy FW binary data to local buffer */
-	u4Ret = kalFirmwareLoad(prGlueInfo,
-				pu4FwBuffer,
-				0,
-				&u4FwSize);
-	if (u4Ret != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR,
-			"Copy FW binary to buffer failed.\n");
-		KAL_DMA_FREE_COHERENT(prHifInfo->pdev,
-			u4FwSize,
-			pu4FwBuffer,
-			rPhyAddr);
-		goto free_mem;
-	}
-
-	/* Get FW header information */
-	wlanGetUniFwHeaderInfo(pu4FwBuffer);
-
-	/*Setup FW image addr and size */
-	if (prIPCInfo->ipcAccessConnVonSysRam) {
-		u4Val = rPhyAddr & 0xffffffff;
-		prIPCInfo->ipcAccessConnVonSysRam(prGlueInfo,
-			WLAN_IPC_WRITE,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(lo_image_addr),
-			&u4Val,
-			sizeof(u4Val));
-		u4Val = (rPhyAddr >> 32) & 0xffffffff;
-		prIPCInfo->ipcAccessConnVonSysRam(prGlueInfo,
-			WLAN_IPC_WRITE,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(hi_image_addr),
-			&u4Val,
-			sizeof(u4Val));
-		prIPCInfo->ipcAccessConnVonSysRam(prGlueInfo,
-			WLAN_IPC_WRITE,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(image_size),
-			&u4FwSize,
-			sizeof(u4FwSize));
-	}
-
-	/* Trigger Doorbell */
-	if (prIPCInfo->ipcAccessPciCfgSpace) {
-		u4Ret = prIPCInfo->ipcAccessPciCfgSpace(WLAN_IPC_SET,
-			prIPCInfo->cbmcu_doorbell_pci_cfg_space_base_offset,
-			IPC_GET_CBMCU_DOORBELL_BIT_OFFSET(cb_image_doorbell),
-			&u4Val);
-		if (u4Ret != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR,
-				"Write image doorbell failed, ret=%u\n",
-				u4Ret);
-			goto free_mem;
-		}
-	}
-
-	if (prIPCInfo->ipcCheckStatus) {
-		DBGLOG(INIT, DEBUG,
-			"Start polling image response = success, Time:%u\n",
-			kalGetTimeTick());
-		u4Ret = prIPCInfo->ipcCheckStatus(prAdapter->prGlueInfo,
-			CONN_VON_SYSRAM,
-			FALSE,
-			0,
-			&u4Val,
-			IMG_RESP_SUCCESS,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(image_response),
-			sizeof(u4Val),
-			50,
-			200);
-		if (u4Ret != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR,
-				"Polling image response failed, img resp:%u\n",
-				u4Val);
-			goto free_mem;
-		}
-	}
-
-	if (prIPCInfo->ipcCheckStatus) {
-		DBGLOG(INIT, DEBUG,
-			"Start polling boot stage = OS, Time:%u\n",
-			kalGetTimeTick());
-		u4Ret = prIPCInfo->ipcCheckStatus(prAdapter->prGlueInfo,
-			CONN_VON_SYSRAM,
-			FALSE,
-			0,
-			&u4Val,
-			BOOT_STAGE_OS,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(boot_stage),
-			sizeof(u4Val),
-			10,
-			200);
-		if (u4Ret != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR,
-				"Polling boot stage failed, boot stage:%u\n",
-				u4Val);
-			goto free_mem;
-		}
-	}
-
-	u4Ret = WLAN_STATUS_SUCCESS;
-
-free_mem:
-	KAL_DMA_FREE_COHERENT(prHifInfo->pdev, u4FwSize,
-				pu4FwBuffer, rPhyAddr);
-close_fw:
-	kalFirmwareClose(prGlueInfo);
-exit:
-	return u4Ret;
-}
-
-static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
-{
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct WLAN_IPC_INFO *prIPCInfo = NULL;
-	uint32_t u4Status = WLAN_STATUS_SUCCESS, u4Val = 0, u4Size = 0;
-	uint32_t *pu4EfuseInfo = NULL;
-	uint8_t *apucFwNameTable[] = {
-		MT7935_WF_CB_MCU_FW_BIN_NAME,
-		NULL
-	};
-	enum ENUM_IPC_FWDL_FAIL_REASON {
-		POLLING_SW_INIT_DONE_FAIL,
-		CHECK_HW_FW_ID_FAIL,
-		GET_EFUSE_INFO_FAIL,
-		POLLING_ROM_STAGE_FAIL,
-		LOAD_FW_IMAGE_FAIL,
-		IPC_FWDL_FAIL_REASON_NUM
-	} eFailReason = IPC_FWDL_FAIL_REASON_NUM;
-
-	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR, "NULL prAdapter.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	prChipInfo = prAdapter->chip_info;
-	if (prChipInfo == NULL) {
-		DBGLOG(INIT, ERROR, "NULL prChipInfo.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	prIPCInfo = prChipInfo->ipc_info;
-	if (prIPCInfo == NULL) {
-		DBGLOG(INIT, WARN, "IPC FWDL is not supported.");
-		return WLAN_STATUS_NOT_SUPPORTED;
-	}
-
-	/* Setup Wi-Fi MCU EMI Addr */
-	if (prIPCInfo->ipcSetupWiFiMcuEmiAddr)
-		prIPCInfo->ipcSetupWiFiMcuEmiAddr(prAdapter);
-
-	DBGLOG(INIT, DEBUG, "IPC FWDL LAUNCHED!! Time:%u\n", kalGetTimeTick());
-	do {
-
-		/* <1> Polling Wi-Fi SW init done */
-		if (prIPCInfo->ipcCheckStatus) {
-			u4Status = prIPCInfo->ipcCheckStatus(
-				prAdapter->prGlueInfo,
-				PCI_CFG_SPACE,
-				TRUE,
-				IPC_GET_BITMAP_BIT_OFFSET(wifi_sw_init_done),
-				&u4Val,
-				1,
-				prIPCInfo->bitmap_pci_cfg_space_base_offset,
-				sizeof(u4Val),
-				10,
-				200);
-			if (u4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR,
-					"Polling WiFi SW init done failed.\n");
-				eFailReason = POLLING_SW_INIT_DONE_FAIL;
-				break;
-			}
-		}
-
-		/* <2> Check HW/FW ID */
-		if (prIPCInfo->ipcCheckStatus) {
-			DBGLOG(INIT, DEBUG, "Check HW ID:\n");
-			u4Status = prIPCInfo->ipcCheckStatus(
-				prAdapter->prGlueInfo,
-				CONN_VON_SYSRAM,
-				FALSE,
-				0,
-				&u4Val,
-				0,
-				IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(hw_version),
-				sizeof(u4Val),
-				0,
-				0);
-			if (u4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR, "Check HW ID failed.\n");
-				eFailReason = CHECK_HW_FW_ID_FAIL;
-				break;
-			}
-
-			DBGLOG(INIT, DEBUG, "Check FW ID:\n");
-			u4Status = prIPCInfo->ipcCheckStatus(
-				prAdapter->prGlueInfo,
-				CONN_VON_SYSRAM,
-				FALSE,
-				0,
-				&u4Val,
-				0,
-				IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(fw_version),
-				sizeof(u4Val),
-				0,
-				0);
-			if (u4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR, "Check FW ID failed.\n");
-				eFailReason = CHECK_HW_FW_ID_FAIL;
-				break;
-			}
-		}
-
-		/* <3> Get Efuse info */
-		DBGLOG(INIT, DEBUG, "Get Efuse info:\n");
-		if (prIPCInfo->ipcCheckStatus) {
-			u4Size = IPC_GET_CONN_VON_SYSRAM_FIELD_SIZE(
-				prIPCInfo->conn_von_sysram_layout,
-				wifi_efuse_info);
-			pu4EfuseInfo = kalMemAlloc(u4Size, VIR_MEM_TYPE);
-			if (pu4EfuseInfo == NULL) {
-				DBGLOG(INIT, ERROR,
-					"Alloc memory for eFuse info failed.\n");
-				eFailReason = GET_EFUSE_INFO_FAIL;
-				u4Status = WLAN_STATUS_FAILURE;
-				break;
-			}
-			u4Status = prIPCInfo->ipcCheckStatus(
-				prAdapter->prGlueInfo,
-				CONN_VON_SYSRAM,
-				0,
-				0,
-				pu4EfuseInfo,
-				0,
-				IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(
-					wifi_efuse_info),
-				u4Size,
-				0,
-				0);
-			if (u4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR,
-					"Get Wi-Fi eFuse info failed.\n");
-				eFailReason = GET_EFUSE_INFO_FAIL;
-				break;
-			}
-		}
-
-		/* <4> Polling Boot Stage is ROM */
-		u4Val = BOOT_STAGE_NUM;
-		if (prIPCInfo->ipcCheckStatus) {
-			u4Status = prIPCInfo->ipcCheckStatus(
-				prAdapter->prGlueInfo,
-				CONN_VON_SYSRAM,
-				FALSE,
-				0,
-				&u4Val,
-				BOOT_STAGE_ROM,
-				IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(boot_stage),
-				sizeof(u4Val),
-				10,
-				200);
-			if (u4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR,
-					"Polling WiFi SW init done failed.\n");
-				eFailReason = POLLING_ROM_STAGE_FAIL;
-				break;
-			}
-		}
-
-		/* <5-1> Load FW image and write the doorbell
-		 * <5-2> Polling Image Response = Success (Security check pass)
-		 * <5-3> Polling Boot Stage = OS (Wi-Fi RAM code init done)
-		 */
-		if (prIPCInfo->ipcLoadFirmware) {
-			u4Status = prIPCInfo->ipcLoadFirmware(prAdapter,
-				apucFwNameTable);
-			if (u4Status != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR,
-					"Load FW image and write doorbell failed.\n");
-				eFailReason = LOAD_FW_IMAGE_FAIL;
-				break;
-			}
-		}
-	} while (FALSE);
-
-	if (u4Status != WLAN_STATUS_SUCCESS) {
-		switch (eFailReason) {
-		case LOAD_FW_IMAGE_FAIL:
-		case POLLING_ROM_STAGE_FAIL:
-		case GET_EFUSE_INFO_FAIL:
-			if (pu4EfuseInfo)
-				kalMemFree(pu4EfuseInfo, VIR_MEM_TYPE, u4Size);
-		case CHECK_HW_FW_ID_FAIL:
-		case POLLING_SW_INIT_DONE_FAIL:
-		default:
-			break;
-		}
-		return u4Status;
-	}
-
-	DBGLOG(INIT, DEBUG, "IPC FWDL SUCCESS !! Time: %u\n", kalGetTimeTick());
-	return WLAN_STATUS_SUCCESS;
-}
-#endif /* CFG_ENABLE_IPC_FW_DOWNLOAD */
-
-static void mt7935_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucNameTable, uint8_t **apucName,
-	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
-{
-	int ret = 0;
-	uint8_t ucIdx = 0;
-	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
-
-	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
-
-#if CFG_SUPPORT_SINGLE_FW_BINARY
-	/* Type 0. mt7935_wifi.bin */
-	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-			CFG_FW_NAME_MAX_LEN,
-			"mt7935_wifi.bin");
-	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-		(*pucNameIdx) += 1;
-	else
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-
-	/* Type 1. mt7935_wifi_flavor.bin */
-	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-			CFG_FW_NAME_MAX_LEN,
-			"mt7935_wifi_%s.bin",
-			aucFlavor);
-	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-		(*pucNameIdx) += 1;
-	else
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-#endif
-
-	/* Type 2. WIFI_RAM_CODE_MT7935_1_1.bin */
-	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-			CFG_FW_NAME_MAX_LEN,
-			"WIFI_RAM_CODE_MT%x_%s_%u.bin",
-			MT7935_CHIP_ID,
-			aucFlavor,
-			MT7935_ROM_VERSION);
-	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-		(*pucNameIdx) += 1;
-	else
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-
-	for (ucIdx = 0; apucmt7935FwName[ucIdx]; ucIdx++) {
-		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
-			/* the table is not large enough */
-			DBGLOG(INIT, ERROR,
-				"kalFirmwareImageMapping >> file name array is not enough.\n");
-			ASSERT(0);
-			continue;
-		}
-
-		/* Type 3. WIFI_RAM_CODE_7935.bin */
-		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-				CFG_FW_NAME_MAX_LEN, "%s.bin",
-				apucmt7935FwName[ucIdx]);
-		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-			(*pucNameIdx) += 1;
-		else
-			DBGLOG(INIT, ERROR,
-				"[%u] kalSnprintf failed, ret: %d\n",
-				__LINE__, ret);
-	}
-}
-
-static void mt7935_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName, uint8_t *pucNameIdx)
-{
-	int ret = 0;
-	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
-
-	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
-
-#if CFG_SUPPORT_SINGLE_FW_BINARY
-	/* Type 0. mt7935_wifi.bin */
-	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-			CFG_FW_NAME_MAX_LEN,
-			"mt7935_wifi.bin");
-	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-		(*pucNameIdx) += 1;
-	else
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-
-	/* Type 1. mt7935_wifi_flavor.bin */
-	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-			CFG_FW_NAME_MAX_LEN,
-			"mt7935_wifi_%s.bin",
-			aucFlavor);
-	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-		(*pucNameIdx) += 1;
-	else
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-#endif
-
-	/* Type 2. WIFI_MT7935_PATCH_MCU_1_1_hdr.bin */
-	ret = kalSnprintf(apucName[(*pucNameIdx)],
-			  CFG_FW_NAME_MAX_LEN,
-			  "WIFI_MT%x_PATCH_MCU_%s_%u_hdr.bin",
-			  MT7935_CHIP_ID,
-			  aucFlavor,
-			  MT7935_ROM_VERSION);
-	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-		(*pucNameIdx) += 1;
-	else
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-
-	/* Type 3. mt7935_patch_e1_hdr.bin */
-	ret = kalSnprintf(apucName[(*pucNameIdx)],
-			  CFG_FW_NAME_MAX_LEN,
-			  "mt7935_patch_e1_hdr.bin");
-	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-}
-
-#if CFG_MTK_WIFI_SUPPORT_PHY_FWDL
-static void mt7935_ConstructPhyName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName, uint8_t *pucNameIdx)
-{
-	int ret = 0;
-	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
-
-	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
-
-	/* Type 1. WIFI_MT7935_PHY_RAM_CODE_1_1_hdr.bin */
-	ret = kalSnprintf(apucName[(*pucNameIdx)],
-			  CFG_FW_NAME_MAX_LEN,
-			  "WIFI_MT%x_PHY_RAM_CODE_%s_%u.bin",
-			  MT7935_CHIP_ID,
-			  aucFlavor,
-			  MT7935_ROM_VERSION);
-	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-	else
-		(*pucNameIdx) += 1;
-}
-#endif
-
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName)
-{
-	int ret = 0;
-	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
-
-	mt7935GetFlavorVer(prGlueInfo, &aucFlavor[0]);
-
-	/* ex: WIFI_RAM_CODE_MT7935_2_1_idxlog.bin */
-	ret = kalSnprintf(apucName[0],
-			  CFG_FW_NAME_MAX_LEN,
-			  "WIFI_RAM_CODE_MT%x_%s_%u_idxlog.bin",
-			  MT7935_CHIP_ID,
-			  aucFlavor,
-			  MT7935_ROM_VERSION);
-
-	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-}
-#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
-
-static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter)
-{
-	uint32_t status  = wlanDownloadPatch(prAdapter);
-
-	if (status == WLAN_STATUS_SUCCESS)
-		wifi_coredump_set_enable(TRUE);
-
-	return status;
 }
 
 #if defined(_HIF_PCIE)
@@ -3157,48 +2419,6 @@ static void mt7935ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-#if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
-static void mt7935SetupWiFiMcuEmiAddr(struct ADAPTER *prAdapter)
-{
-	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
-	uint32_t u4Addr = 0;
-	uint32_t size = emi_mem_get_size(prAdapter->chip_info);
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct WLAN_IPC_INFO *prIPCInfo = NULL;
-
-	prChipInfo = prAdapter->chip_info;
-	if (prChipInfo == NULL)
-		return;
-
-	prIPCInfo = prChipInfo->ipc_info;
-	if (prIPCInfo == NULL || !base)
-		return;
-
-	DBGLOG(HAL, DEBUG, "base: 0x%llx, size: 0x%x\n", base, size);
-
-	/* Update EMI's pa and size of WFMCU to conn von sysram */
-	if (prIPCInfo->ipcAccessConnVonSysRam) {
-		u4Addr = base & 0xffffffff;
-		prIPCInfo->ipcAccessConnVonSysRam(prAdapter->prGlueInfo,
-			WLAN_IPC_WRITE,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(lo_host_emi_addr),
-			&u4Addr,
-			sizeof(u4Addr));
-		u4Addr = (base >> 32) & 0xffffffff;
-		prIPCInfo->ipcAccessConnVonSysRam(prAdapter->prGlueInfo,
-			WLAN_IPC_WRITE,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(hi_host_emi_addr),
-			&u4Addr,
-			sizeof(u4Addr));
-		prIPCInfo->ipcAccessConnVonSysRam(prAdapter->prGlueInfo,
-			WLAN_IPC_WRITE,
-			IPC_GET_CONN_VON_SYSRAM_ADDR_OFFSET(wifi_host_emi_size),
-			&size,
-			sizeof(size));
-	}
-}
-#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
-
 static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
 	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
@@ -3359,7 +2579,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
-static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
+uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Val = 0;
 
@@ -3404,14 +2624,11 @@ static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 	kalMemZero(prChipInfo->sw_sync_emi_info,
 		sizeof(struct sw_sync_emi_info) * SW_SYNC_TAG_NUM);
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
-#if (CFG_ENABLE_IPC_FW_DOWNLOAD == 1)
-	rStatus = mt7935IPCFirmwareDownload(ad);
-#endif /* CFG_ENABLE_IPC_FW_DOWNLOAD */
 exit:
 	return rStatus;
 }
 
-static void mt7935_mcu_deinit(struct ADAPTER *ad)
+void mt7935_mcu_deinit(struct ADAPTER *ad)
 {
 #define MAX_WAIT_COREDUMP_COUNT 10
 
