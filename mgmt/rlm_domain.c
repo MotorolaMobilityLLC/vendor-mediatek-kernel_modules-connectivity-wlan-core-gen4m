@@ -3246,6 +3246,10 @@ uint8_t rlmDomainIsLegalChlByNetType(struct ADAPTER *prAdapter,
 				 enum ENUM_NETWORK_TYPE eNetType)
 {
 	uint8_t ucIsLegal = FALSE;
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 && !CFG_SUPPORT_CE_6G_PWR_REGULATIONS)
+	uint8_t ucIsSupport = 0;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+#endif
 
 	if (!prAdapter || (ucBw >= MAX_BW_UNKNOWN) ||
 		(eNetType >= NETWORK_TYPE_NUM)) {
@@ -3258,6 +3262,9 @@ uint8_t rlmDomainIsLegalChlByNetType(struct ADAPTER *prAdapter,
 	}
 
 	ucIsLegal = rlmDomainIsLegalChannel(prAdapter, eBand, ucPriCh);
+
+	if (!ucIsLegal)
+		return ucIsLegal;
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	if (eBand != BAND_6G)
@@ -3280,9 +3287,6 @@ uint8_t rlmDomainIsLegalChlByNetType(struct ADAPTER *prAdapter,
 			ucPriCh,
 			ucBw);
 #else
-	uint8_t ucIsSupport = 0;
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-
 	/* Currently only consider P2P & NAN, since both NetType must use VLP */
 	u4Status = rlmDomain6GPwrModeCountrySupportChk(
 			prAdapter->rWifiVar.u2CountryCode,
