@@ -395,6 +395,60 @@ struct CNM_CHIP_CAP_INFO {
 	uint8_t aucMaxMcs[CONFIG_BAND_NUM];
 };
 
+struct CNM_OPMODE_BSS_REQ {
+	bool fgEnable;
+	bool fgNewRequest;
+	uint8_t ucOpRxNss;
+	uint8_t ucOpTxNss;
+	uint8_t ucBandWidth; /* ENUM_MAX_BANDWIDTH_SETTING */
+};
+
+struct CNM_OPMODE_BSS_RUNNING_REQ {
+	/* Initiator */
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	/* Highest prioirty req */
+	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
+	bool fgIsRunning;
+	uint8_t ucOpRxNss;
+	uint8_t ucOpTxNss;
+	uint8_t ucBandWidth; /* ENUM_MAX_BANDWIDTH_SETTING */
+};
+
+struct CNM_OPMODE_BSS_CONTROL_T {
+	struct CNM_OPMODE_BSS_RUNNING_REQ
+		rRunning;
+	struct CNM_OPMODE_BSS_REQ
+		arReqPool[CNM_OPMODE_REQ_NUM];
+};
+
+enum ENUM_CNM_WMM_QUOTA_REQ_T {
+	CNM_WMM_REQ_DBDC    = 0,
+	CNM_WMM_REQ_NUM     = 1,
+	CNM_WMM_REQ_DEFAULT = 2 /* just for coding */
+};
+
+struct CNM_WMM_QUOTA_REQ {
+	bool fgEnable;
+	uint32_t u4ReqQuota;
+};
+
+struct CNM_WMM_QUOTA_RUNNING_REQ {
+	/* Initiator */
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqIdx;
+	/* Highest prioirty req */
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eRunReq;
+	bool fgIsRunning;
+	uint32_t u4ReqQuota;
+};
+
+struct CNM_WMM_QUOTA_CONTROL_T {
+	struct CNM_WMM_QUOTA_RUNNING_REQ
+		rRunning;
+	struct CNM_WMM_QUOTA_REQ
+		arReqPool[CNM_WMM_REQ_NUM];
+	struct TIMER rTimer;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

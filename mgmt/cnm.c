@@ -87,67 +87,10 @@ enum ENUM_CNM_OPMODE_REQ_STATUS {
 	CNM_OPMODE_REQ_STATUS_NUM
 };
 
-struct CNM_OPMODE_BSS_REQ {
-	bool fgEnable;
-	bool fgNewRequest;
-	uint8_t ucOpRxNss;
-	uint8_t ucOpTxNss;
-	uint8_t ucBandWidth; /* ENUM_MAX_BANDWIDTH_SETTING */
-};
-
-struct CNM_OPMODE_BSS_RUNNING_REQ {
-	/* Initiator */
-	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
-	/* Highest prioirty req */
-	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
-	bool fgIsRunning;
-	uint8_t ucOpRxNss;
-	uint8_t ucOpTxNss;
-	uint8_t ucBandWidth; /* ENUM_MAX_BANDWIDTH_SETTING */
-};
-
-struct CNM_OPMODE_BSS_CONTROL_T {
-	struct CNM_OPMODE_BSS_RUNNING_REQ
-		rRunning;
-	struct CNM_OPMODE_BSS_REQ
-		arReqPool[CNM_OPMODE_REQ_NUM];
-};
-
-enum ENUM_CNM_WMM_QUOTA_REQ_T {
-	CNM_WMM_REQ_DBDC    = 0,
-	CNM_WMM_REQ_NUM     = 1,
-	CNM_WMM_REQ_DEFAULT = 2 /* just for coding */
-};
-
-struct CNM_WMM_QUOTA_REQ {
-	bool fgEnable;
-	uint32_t u4ReqQuota;
-};
-
-struct CNM_WMM_QUOTA_RUNNING_REQ {
-	/* Initiator */
-	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqIdx;
-	/* Highest prioirty req */
-	enum ENUM_CNM_WMM_QUOTA_REQ_T eRunReq;
-	bool fgIsRunning;
-	uint32_t u4ReqQuota;
-};
-
-struct CNM_WMM_QUOTA_CONTROL_T {
-	struct CNM_WMM_QUOTA_RUNNING_REQ
-		rRunning;
-	struct CNM_WMM_QUOTA_REQ
-		arReqPool[CNM_WMM_REQ_NUM];
-	struct TIMER rTimer;
-};
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#if CFG_SUPPORT_IDC_CH_SWITCH
-struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
-#endif
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -223,9 +166,6 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 
 #endif
 
-#ifdef CFG_SUPPORT_NAN_WMM
-uint8_t g_ucNanWmmQueIdx;
-#endif
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -437,11 +377,6 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 };
 #endif
 
-#if CFG_SUPPORT_IDC_CH_SWITCH
-OS_SYSTIME g_rLastCsaSysTime;
-#endif
-
-static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[MAX_BSSID_NUM];
 static const char * const apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP + 1] = {
 	[CNM_OPMODE_REQ_ANT_CTRL] = "ANT Ctrl",
 	[CNM_OPMODE_REQ_DBDC] = "DBDC",
@@ -469,7 +404,6 @@ static const char * const
 	"N/A",
 };
 
-static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[MAX_BSSID_NUM];
 static const char * const apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT + 1] = {
 	"DBDC",
 	"N/A",
@@ -520,7 +454,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 
 	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucSwBssIdNum;
 		ucBssIndex++) {
-		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
+		prBssOpCtrl = &(prAdapter->arBssOpControl[ucBssIndex]);
 		prBssOpCtrl->rRunning.fgIsRunning = false;
 		prBssOpCtrl->rRunning.ucBandWidth = MAX_BW_UNKNOWN;
 		for (eReqIdx = CNM_OPMODE_REQ_START;
@@ -533,7 +467,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
-		prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+		prWmmQuotaCtrl = &(prAdapter->arWmmQuotaControl[ucWmmIndex]);
 		prWmmQuotaCtrl->rRunning.fgIsRunning = false;
 		cnmTimerInitTimer(prAdapter,
 			&(prWmmQuotaCtrl->rTimer),
@@ -547,7 +481,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 	}
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
-	g_rLastCsaSysTime = 0;
+	prAdapter->rLastCsaSysTime = 0;
 #endif
 
 	prAdapter->rWifiVar.ucBssIdxInProgress = MAX_BSSID_NUM;
@@ -572,7 +506,7 @@ void cnmUninit(struct ADAPTER *prAdapter)
 #endif
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
-		prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+		prWmmQuotaCtrl = &(prAdapter->arWmmQuotaControl[ucWmmIndex]);
 		cnmTimerStopTimer(prAdapter, &(prWmmQuotaCtrl->rTimer));
 	}
 }	/* end of cnmUninit()*/
@@ -1174,7 +1108,8 @@ void cnmCsaResetParams(struct ADAPTER *prAdapter,
 #define CFG_SUPPORT_IDC_CROSS_BAND_SWITCH   1
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
-uint8_t cnmIsSafeCh(struct BSS_INFO *prBssInfo)
+uint8_t cnmIsSafeCh(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
 {
 	enum ENUM_BAND eBand;
 	uint8_t ucChannel;
@@ -1183,17 +1118,17 @@ uint8_t cnmIsSafeCh(struct BSS_INFO *prBssInfo)
 		u4Safe5G_2 = 0,
 		u4Safe6G = 0;
 
-	if (!prBssInfo)
+	if (!prAdapter || !prBssInfo)
 		return FALSE;
 
-	if (g_rLteSafeChInfo.u4Flags & BIT(0)) {
-		u4Safe2G = g_rLteSafeChInfo
+	if (prAdapter->rLteSafeChInfo.u4Flags & BIT(0)) {
+		u4Safe2G = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[0];
-		u4Safe5G_1 = g_rLteSafeChInfo
+		u4Safe5G_1 = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[1];
-		u4Safe5G_2 = g_rLteSafeChInfo
+		u4Safe5G_2 = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[2];
-		u4Safe6G = g_rLteSafeChInfo
+		u4Safe6G = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[3];
 	}
 
@@ -1232,6 +1167,7 @@ uint8_t cnmDecideSapNewChannel(
 	uint8_t ucCurrentChannel = 0;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct ADAPTER *prAdapter = NULL;
 
 	if (!prGlueInfo || !prBssInfo) {
 		DBGLOG(P2P, ERROR, "prGlueInfo or prBssInfo is NULL\n");
@@ -1245,6 +1181,7 @@ uint8_t cnmDecideSapNewChannel(
 		P2P_ROLE_STATE_DFS_CAC)
 		return 0;
 
+	prAdapter = prGlueInfo->prAdapter;
 	ucCurrentChannel = prBssInfo->ucPrimaryChannel;
 
 	ASSERT(ucCurrentChannel);
@@ -1264,14 +1201,14 @@ uint8_t cnmDecideSapNewChannel(
 	/*
 	*  Get LTE safe channels
 	*/
-	if (g_rLteSafeChInfo.u4Flags & BIT(0)) {
-		u4LteSafeChnBitMask_2G = g_rLteSafeChInfo
+	if (prAdapter->rLteSafeChInfo.u4Flags & BIT(0)) {
+		u4LteSafeChnBitMask_2G = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[0];
-		u4LteSafeChnBitMask_5G_1 = g_rLteSafeChInfo
+		u4LteSafeChnBitMask_5G_1 = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[1];
-		u4LteSafeChnBitMask_5G_2 = g_rLteSafeChInfo
+		u4LteSafeChnBitMask_5G_2 = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[2];
-		u4LteSafeChnBitMask_6G = g_rLteSafeChInfo
+		u4LteSafeChnBitMask_6G = prAdapter->rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[3];
 	}
 
@@ -1375,7 +1312,7 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 				       ucMode);
 
 		/* Record Last Channel Switch Time */
-		GET_CURRENT_SYSTIME(&g_rLastCsaSysTime);
+		GET_CURRENT_SYSTIME(&prAdapter->rLastCsaSysTime);
 
 		return 0; /* Return Success */
 
@@ -1390,12 +1327,18 @@ uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
 
 void cnmSetIdcBssIdx(struct ADAPTER *prAdapter, uint8_t hwBssIdx)
 {
-	g_rLteSafeChInfo.aucReserved[0] = hwBssIdx;
+	if (!prAdapter)
+		return;
+
+	prAdapter->rLteSafeChInfo.aucReserved[0] = hwBssIdx;
 }
 
 uint8_t cnmGetIdcBssIdx(struct ADAPTER *prAdapter)
 {
-	return g_rLteSafeChInfo.aucReserved[0];
+	if (!prAdapter)
+		return 0;
+
+	return prAdapter->rLteSafeChInfo.aucReserved[0];
 }
 
 void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
@@ -1412,6 +1355,11 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 #endif
+
+	if (!prAdapter) {
+		DBGLOG(CNM, WARN, "prAdapter is NULL\n");
+		return;
+	}
 
 #if CFG_TC10_FEATURE
 	prBssInfo = cnmGetSapBssInfo(prAdapter);
@@ -1435,15 +1383,15 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 	prEventBody = (struct EVENT_LTE_SAFE_CHN *)(
 		prEvent->aucBuffer);
 
-	g_rLteSafeChInfo.ucVersion = prEventBody->ucVersion;
-	g_rLteSafeChInfo.u4Flags = prEventBody->u4Flags;
+	prAdapter->rLteSafeChInfo.ucVersion = prEventBody->ucVersion;
+	prAdapter->rLteSafeChInfo.u4Flags = prEventBody->u4Flags;
 
 	/* Statistics from FW is valid */
 	if (prEventBody->u4Flags & BIT(0)) {
 		for (ucIdx = 0;
 			ucIdx < ENUM_SAFE_CH_MASK_MAX_NUM;
 				ucIdx++) {
-			g_rLteSafeChInfo.rLteSafeChn.
+			prAdapter->rLteSafeChInfo.rLteSafeChn.
 				au4SafeChannelBitmask[ucIdx]
 				= prEventBody->rLteSafeChn.
 				au4SafeChannelBitmask[ucIdx];
@@ -1456,7 +1404,7 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (g_rLteSafeChInfo.ucVersion == 2)
+	if (prAdapter->rLteSafeChInfo.ucVersion == 2)
 		goto SKIP_COOL_DOWN;
 
 	prWifiVar = &prAdapter->rWifiVar;
@@ -1469,9 +1417,9 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 	/* Only allow to switch channel once each minute*/
 	GET_CURRENT_SYSTIME(&rCurrentTime);
 	if ((CHECK_FOR_TIMEOUT(rCurrentTime,
-			g_rLastCsaSysTime,
+			prAdapter->rLastCsaSysTime,
 			SEC_TO_SYSTIME(ucColdDownTime)))
-			|| (g_rLastCsaSysTime == 0)) {
+			|| (prAdapter->rLastCsaSysTime == 0)) {
 		fgCsaCoolDown = TRUE;
 	}
 
@@ -1479,7 +1427,7 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 		DBGLOG(CNM, INFO,
 			"[CSA]CsaCoolDown not Finish yet,rCurrentTime=%d,g_rLastCsaSysTime=%d,IDC_CSA_GUARD_TIME=%d\n",
 			rCurrentTime,
-			g_rLastCsaSysTime,
+			prAdapter->rLastCsaSysTime,
 			SEC_TO_SYSTIME(ucColdDownTime));
 		return;
 	}
@@ -1540,7 +1488,7 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 
 		if (IS_BSS_AP(prAdapter, prBssInfo) &&
 		    IS_NET_PWR_STATE_ACTIVE(prAdapter, prBssInfo->ucBssIndex)) {
-			if (cnmIsSafeCh(prBssInfo))
+			if (cnmIsSafeCh(prAdapter, prBssInfo))
 				continue;
 			ucNewChannel = cnmDecideSapNewChannel(
 				prAdapter->prGlueInfo,
@@ -1556,7 +1504,7 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 					prBssInfo->u4PrivateData);
 				DBGLOG(CNM, INFO,
 					"IDC Version %d, Bss=%d, NewCH=%d\n",
-					g_rLteSafeChInfo.ucVersion,
+					prAdapter->rLteSafeChInfo.ucVersion,
 					prBssInfo->ucBssIndex,
 					ucNewChannel);
 				break;
@@ -2086,7 +2034,7 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		return ucMaxBw;
 	}
 
-	prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
+	prBssOpCtrl = &(prAdapter->arBssOpControl[ucBssIndex]);
 	if (prBssOpCtrl->rRunning.fgIsRunning) {
 		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
 		if (eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP &&
@@ -2466,7 +2414,7 @@ void cnmInitDbdcSetting(struct ADAPTER *prAdapter)
 		    ucBssLoopIndex < prAdapter->ucSwBssIdNum;
 		    ucBssLoopIndex++) {
 			prOpModeReq =
-				&(g_arBssOpControl[ucBssLoopIndex].
+				&(prAdapter->arBssOpControl[ucBssLoopIndex].
 				arReqPool[CNM_OPMODE_REQ_DBDC]);
 			prOpModeReq->fgEnable = TRUE;
 
@@ -3831,7 +3779,7 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 
 	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucSwBssIdNum;
 		ucBssIndex++) {
-		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
+		prBssOpCtrl = &(prAdapter->arBssOpControl[ucBssIndex]);
 		prBssOpCtrl->rRunning.fgIsRunning = false;
 		prBssOpCtrl->arReqPool[CNM_OPMODE_REQ_DBDC].fgEnable = false;
 	}
@@ -5334,33 +5282,33 @@ void cnmWmmIndexDecision(
 				if (!(prAdapter->ucHwWmmEnBit & BIT(1))
 				&& !(prAdapter->ucHwWmmEnBit & BIT(3))) {
 					if (prAdapter->rWifiVar.fgNanWmmSeq) {
-						g_ucNanWmmQueIdx = 3;
+						prAdapter->ucNanWmmQueIdx = 3;
 						ucWmmIndex = 3;
 					} else {
-						g_ucNanWmmQueIdx = 1;
+						prAdapter->ucNanWmmQueIdx = 1;
 						ucWmmIndex = 1;
 					}
 				}
 			} else {
 				if (prAdapter->rWifiVar.fgNanWmmSeq) {
-					g_ucNanWmmQueIdx = 2;
+					prAdapter->ucNanWmmQueIdx = 2;
 					ucWmmIndex = 2;
 				} else {
-					g_ucNanWmmQueIdx = 0;
+					prAdapter->ucNanWmmQueIdx = 0;
 					ucWmmIndex = 0;
 				}
 			}
 		}
 		if (prBssInfo->eBand == BAND_5G) {
 			if (prAdapter->rWifiVar.fgNanWmmSeq) {
-				if (g_ucNanWmmQueIdx == 2)
+				if (prAdapter->ucNanWmmQueIdx == 2)
 					ucWmmIndex = 0;
-				if (g_ucNanWmmQueIdx == 3)
+				if (prAdapter->ucNanWmmQueIdx == 3)
 					ucWmmIndex = 1;
 			} else {
-				if (g_ucNanWmmQueIdx == 0)
+				if (prAdapter->ucNanWmmQueIdx == 0)
 					ucWmmIndex = 2;
-				if (g_ucNanWmmQueIdx == 1)
+				if (prAdapter->ucNanWmmQueIdx == 1)
 					ucWmmIndex = 3;
 			}
 		}
@@ -5508,7 +5456,7 @@ void cnmOpModeCallbackDispatcher(
 	}
 
 	/* Step 1. Run callback function */
-	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	prBssOpCtrl = &prAdapter->arBssOpControl[ucBssIndex];
 	if (prBssOpCtrl->rRunning.eReqIdx < 0
 		|| prBssOpCtrl->rRunning.eRunReq < 0
 		|| prBssOpCtrl->rRunning.eReqIdx > CNM_OPMODE_REQ_MAX_CAP
@@ -5736,7 +5684,7 @@ cnmOpModeSetTRxNssBw(struct ADAPTER *prAdapter,
 		return CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
 	}
 
-	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	prBssOpCtrl = &prAdapter->arBssOpControl[ucBssIndex];
 	prReq = &(prBssOpCtrl->arReqPool[eNewReq]);
 
 	/* Step 1 Update req pool */
@@ -5802,7 +5750,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_WIFI_DIRECT
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
 #endif
-	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	prBssOpCtrl = &prAdapter->arBssOpControl[ucBssIndex];
 	prReq = &(prBssOpCtrl->arReqPool[eNewReq]);
 
 	/* Step 1 Update req pool */
@@ -6090,7 +6038,7 @@ void cnmOpModeGetTRxNss(
 			ucOpTxNss, ucOpRxNss);
 	}
 
-	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	prBssOpCtrl = &prAdapter->arBssOpControl[ucBssIndex];
 
 	*pucOpTxNss = ucOpTxNss;
 	*pucOpRxNss = ucOpRxNss;
@@ -6483,7 +6431,7 @@ cnmWmmQuotaCallback(
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ucWmmIndex = (uint8_t)plParamPtr;
-	prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+	prWmmQuotaCtrl = &(prAdapter->arWmmQuotaControl[ucWmmIndex]);
 
 	if (!prWmmQuotaCtrl->rRunning.fgIsRunning) {
 		DBGLOG(CNM, WARN,
@@ -6550,7 +6498,7 @@ void cnmWmmQuotaSetMaxQuota(
 
 	ASSERT(prAdapter);
 
-	prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+	prWmmQuotaCtrl = &(prAdapter->arWmmQuotaControl[ucWmmIndex]);
 
 	if (eNewReq < 0 || eNewReq >= CNM_WMM_REQ_NUM) {
 		DBGLOG(CNM, WARN, "Invalid eNewReq Idx %d!\n", eNewReq);

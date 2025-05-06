@@ -30,6 +30,7 @@
 #include "tdls_auto.h"
 #endif
 #include "rlm_tasar.h"
+#include "cnm.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3476,6 +3477,18 @@ struct ADAPTER {
 #if (CFG_SUPPORT_UNI_FWDL == 1)
 	struct UNI_FWDL_CTX rUniFwdlCtx;
 #endif /* CFG_SUPPORT_UNI_FWDL */
+
+	bool fgCnmDoTimeOut;        /* use for cnm_timer.c */
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	OS_SYSTIME rLastCsaSysTime; /* use for cnm.c */
+	struct EVENT_LTE_SAFE_CHN rLteSafeChInfo;
+#endif
+	struct CNM_OPMODE_BSS_CONTROL_T arBssOpControl[MAX_BSSID_NUM];
+	struct CNM_WMM_QUOTA_CONTROL_T arWmmQuotaControl[MAX_BSSID_NUM];
+#ifdef CFG_SUPPORT_NAN_WMM
+	uint8_t ucNanWmmQueIdx;
+#endif
+
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

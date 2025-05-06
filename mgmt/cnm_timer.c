@@ -40,7 +40,6 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static bool gDoTimeOut = FALSE;
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -577,7 +576,7 @@ void cnmTimerStartTimerList(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	prRootTimer = &prAdapter->rRootTimer;
 	prTimerList = &prRootTimer->rLinkHead;
 
-	if (gDoTimeOut) {
+	if (prAdapter->fgCnmDoTimeOut) {
 		/* monitor the timer start in callback */
 		DBGLOG_LIMITED(CNM, TRACE,
 			"In DoTimeOut, timer %p func %ps %d ms timercount %d\n",
@@ -744,7 +743,7 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 		= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 
 	log_dbg(CNM, TRACE, "loop start [%d]\n", prTimerList->u4NumElem);
-	gDoTimeOut = TRUE;
+	prAdapter->fgCnmDoTimeOut = TRUE;
 
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
 		if (prLinkEntry == NULL)
@@ -829,7 +828,7 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 	}	/* end of for loop */
 
 	log_dbg(CNM, TRACE, "loop end\n");
-	gDoTimeOut = false;
+	prAdapter->fgCnmDoTimeOut = false;
 
 	/* Setup the prNext timeout event. It is possible the timer was already
 	 * set in the above timeout callback function.
