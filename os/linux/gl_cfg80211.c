@@ -7200,8 +7200,13 @@ void mtk_uninit_monitor_role(struct wiphy *wiphy,
 				prGlueInfo->aucBandIdxEn[i]) {
 				/* ucBandIdx will be used to disable monitor */
 				prGlueInfo->ucBandIdx = i;
+#if KERNEL_VERSION(6, 13, 0) > CFG80211_VERSION_CODE
 				mtk_cfg80211_set_monitor_channel(wiphy,
 					NULL);
+#else
+				mtk_cfg80211_set_monitor_channel(wiphy,
+					ndev, NULL);
+#endif
 			}
 		}
 		prGlueInfo->ucBandIdx = 0xFF;
@@ -9776,8 +9781,14 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 }
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+#if KERNEL_VERSION(6, 13, 0) > CFG80211_VERSION_CODE
 int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 			struct cfg80211_chan_def *chandef)
+#else
+int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
+			struct net_device *dev,
+			struct cfg80211_chan_def *chandef)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucBand = BAND_NULL;

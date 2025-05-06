@@ -7171,8 +7171,12 @@ u_int8_t kalAlarmTimerIsRunning(struct alarm *prTimer)
  * @brief  Handler the kernel timeout event.
  */
 /*----------------------------------------------------------------------------*/
+#if (KERNEL_VERSION(6, 13, 0) > CFG80211_VERSION_CODE)
 enum alarmtimer_restart kalAlarmTimerTimeout(
 		struct alarm *prAlarmTimer, ktime_t now)
+#else
+void kalAlarmTimerTimeout(struct alarm *prAlarmTimer, ktime_t now)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct TIMER *prTimer;
@@ -7209,7 +7213,9 @@ enum alarmtimer_restart kalAlarmTimerTimeout(
 #endif
 	wake_up_interruptible(&prGlueInfo->waitq);
 
+#if (KERNEL_VERSION(6, 13, 0) > CFG80211_VERSION_CODE)
 	return ALARMTIMER_NORESTART;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -16049,7 +16055,9 @@ void kalSetThreadSchPolicyPriority(struct GLUE_INFO *prGlueInfo)
 	set_user_nice(current, prGlueInfo->prAdapter->rWifiVar.cThreadNice);
 }
 
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 13, 0) <= CFG80211_VERSION_CODE
+MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif
 

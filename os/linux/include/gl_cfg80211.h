@@ -806,8 +806,14 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 				struct cfg80211_update_ft_ies_params *ftie);
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+#if KERNEL_VERSION(6, 13, 0) > CFG80211_VERSION_CODE
 int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 				struct cfg80211_chan_def *chandef);
+#else
+int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
+				struct net_device *dev,
+				struct cfg80211_chan_def *chandef);
+#endif
 #endif
 
 #if CFG_SUPPORT_WPA3

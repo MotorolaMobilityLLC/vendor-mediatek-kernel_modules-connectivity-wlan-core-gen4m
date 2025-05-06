@@ -2154,8 +2154,12 @@ void kalHrtimerCancel(struct hrtimer *prTimer);
 #if CFG_SUPPORT_HRTIMER
 u_int8_t kalAlarmTimerIsInit(struct alarm *prTimer);
 u_int8_t kalAlarmTimerIsRunning(struct alarm *prTimer);
+#if (KERNEL_VERSION(6, 13, 0) > CFG80211_VERSION_CODE)
 enum alarmtimer_restart kalAlarmTimerTimeout(
 			struct alarm *prAlarmTimer, ktime_t now);
+#else
+void kalAlarmTimerTimeout(struct alarm *prAlarmTimer, ktime_t now);
+#endif
 void kalAlarmTimerInit(struct alarm *prTimer);
 void kalAlarmTimerStart(struct alarm *prTimer, uint32_t delayMs);
 void kalAlarmTimerCancel(struct alarm *prTimer);
