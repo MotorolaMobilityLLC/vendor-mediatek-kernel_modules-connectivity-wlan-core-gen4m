@@ -6,19 +6,45 @@
 #include "precomp.h"
 
 #if ARP_MONITER_ENABLE
-static uint16_t arpMonGetTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
+static uint16_t arpMonGetGatewayTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
 {
 	return ad->arArpMonitor[ucBssIdx].arpMoniter;
 }
 
-static void arpMonResetTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
+static void arpMonResetGatewayTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
 {
 	ad->arArpMonitor[ucBssIdx].arpMoniter = 0;
 }
 
-static void arpMonIncTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
+static void arpMonIncGatewayTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
 {
 	ad->arArpMonitor[ucBssIdx].arpMoniter++;
+}
+
+static uint16_t arpMonGetTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
+{
+	return GLUE_GET_REF_CNT(ad->arArpMonitor[ucBssIdx].u4TxCnt);
+}
+
+static void arpMonResetTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
+{
+	GLUE_SET_REF_CNT(0, ad->arArpMonitor[ucBssIdx].u4TxCnt);
+}
+
+static void arpMonIncTxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
+{
+	GLUE_INC_REF_CNT(ad->arArpMonitor[ucBssIdx].u4TxCnt);
+}
+
+static uint64_t arpMonGetNudState(struct ADAPTER *ad, uint8_t ucBssIdx)
+{
+	return ad->arArpMonitor[ucBssIdx].eNudState;
+}
+
+static void arpMonSetNudState(struct ADAPTER *ad, uint8_t ucBssIdx,
+	enum ENUM_NUD_STATE eNudState)
+{
+	ad->arArpMonitor[ucBssIdx].eNudState = eNudState;
 }
 
 static uint16_t arpMonGetGatewayRxCnt(struct ADAPTER *ad, uint8_t ucBssIdx)
@@ -158,6 +184,8 @@ static uint8_t *arpMonGetGatewayMacPtr(struct ADAPTER *ad,
 
 static void arpMonReset(struct ADAPTER *ad, uint8_t ucBssIdx)
 {
+	arpMonResetGatewayTxCnt(ad, ucBssIdx);
+	arpMonResetGatewayRxCnt(ad, ucBssIdx);
 	arpMonResetTxCnt(ad, ucBssIdx);
 	arpMonSetLastRxCnt(ad, ucBssIdx, 0);
 	arpMonSetCurrentRxCnt(ad, ucBssIdx, 0);
@@ -326,7 +354,7 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 	if (arpMonNotApIpAndGatewayIp(ad, ucBssIdx, prArp->aucTargetIPaddr))
 		return;
 
-	arpMonIncTxCnt(ad, ucBssIdx);
+	arpMonIncGatewayTxCnt(ad, ucBssIdx);
 
 	if (prWifiVar->ucArpMonitorUseRule == 0) {
 		/* Legacy Rule */
@@ -354,7 +382,8 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 			prRxCtrl->rLastUnicastRxTime[ucBssIdx]);
 	}
 
-	if (arpMonGetTxCnt(ad, ucBssIdx) > prWifiVar->uArpMonitorNumber) {
+	if (arpMonGetGatewayTxCnt(ad, ucBssIdx) >
+		prWifiVar->uArpMonitorNumber) {
 		if (arpMonIsIOTIssue(ad, ucBssIdx)) {
 			DBGLOG(AM, WARN, "IOT issue, arp no resp!\n");
 			if (prAisBssInfo)
@@ -384,7 +413,7 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 			prWifiVar->uArpMonitorNumber,
 			prWifiVar->ucArpMonitorUseRule,
 			prWifiVar->uArpMonitorRxPktNum,
-			arpMonGetTxCnt(ad, ucBssIdx),
+			arpMonGetGatewayTxCnt(ad, ucBssIdx),
 			arpMonGetCurrentRxCnt(ad, ucBssIdx),
 			arpMonGetLastRxCnt(ad, ucBssIdx));
 	} else {
@@ -393,7 +422,7 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 			prWifiVar->uArpMonitorNumber,
 			prWifiVar->ucArpMonitorUseRule,
 			prWifiVar->uArpMonitorRxPktNum,
-			arpMonGetTxCnt(ad, ucBssIdx),
+			arpMonGetGatewayTxCnt(ad, ucBssIdx),
 			arpMonGetCurrentRxUnicastTime(ad, ucBssIdx),
 			arpMonGetLastRxUnicastTime(ad, ucBssIdx));
 	}
@@ -439,6 +468,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 		if (EQUAL_MAC_ADDR(prArp->aucSenderMACaddr,
 				   prAisBssInfo->prStaRecOfAP->aucMacAddr)) {
 			arpMonResetTxCnt(ad, ucBssIdx);
+			arpMonResetGatewayTxCnt(ad, ucBssIdx);
 			arpMonSetApIp(ad, ucBssIdx, prArp->aucSenderIPaddr);
 			DBGLOG(AM, TRACE,
 				"get arp response from AP " IPV4STR "(SA:"
@@ -449,6 +479,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 			prAisBssInfo->prStaRecOfAP->aucMacAddr) &&
 			fgIsFromApIpOrGatewayIp) {
 			arpMonResetTxCnt(ad, ucBssIdx);
+			arpMonResetGatewayTxCnt(ad, ucBssIdx);
 			DBGLOG(AM, TRACE,
 				"get arp response from AP " IPV4STR "(TA:"
 				MACSTR ")\n",
@@ -730,6 +761,8 @@ static void arpMonDetectNoResponse(struct ADAPTER *ad,
 		IPV4TOSTR(arpMonGetGatewayIpPtr(ad, ucBssIdx)),
 		IPV4TOSTR(prArp->aucTargetIPaddr));
 
+	arpMonIncTxCnt(ad, ucBssIdx);
+
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
 	if (arpMonNotApIpAndGatewayIp(ad, ucBssIdx, prArp->aucTargetIPaddr))
 		return;
@@ -842,57 +875,112 @@ static void arpMonHandleNudBTOMsg(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 }
 
-void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
-	uint8_t ucBssIndex)
+enum ENUM_NUD_STATE arpMonNudStateConvert(uint64_t state)
 {
-	if (prAdapter->rWifiVar.fgArpMonitorNudDetectEn == 0)
-		return;
+	enum ENUM_NUD_STATE eState;
 
 	switch (state) {
 	case NUD_INCOMPLETE:
-		DBGLOG_LIMITED(AM, TRACE,
-			"State[INCOMPLETE] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu\n",
-			ucBssIndex,
-			arpMonGetTxCnt(prAdapter, ucBssIndex),
-			arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
-		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
-		break;
-	case NUD_PROBE:
-		DBGLOG_LIMITED(AM, TRACE,
-			"State[PROBE] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu\n",
-			ucBssIndex,
-			arpMonGetTxCnt(prAdapter, ucBssIndex),
-			arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
-		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
+		eState = ENUM_NUD_INCOMPLETE;
 		break;
 	case NUD_REACHABLE:
-		DBGLOG_LIMITED(AM, TRACE,
-			"State[REACHABLE] BssIdx[%u], reset RX Cnt\n",
-			ucBssIndex);
-		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
+		eState = ENUM_NUD_REACHABLE;
+		break;
+	case NUD_STALE:
+		eState = ENUM_NUD_STALE;
+		break;
+	case NUD_DELAY:
+		eState = ENUM_NUD_DELAY;
+		break;
+	case NUD_PROBE:
+		eState = ENUM_NUD_PROBE;
 		break;
 	case NUD_FAILED:
-		DBGLOG_LIMITED(AM, TRACE,
-			"State[FAILED] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu\n",
-			ucBssIndex,
-			arpMonGetTxCnt(prAdapter, ucBssIndex),
-			arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
-		if (arpMonGetTxCnt(prAdapter, ucBssIndex) >
-			prAdapter->rWifiVar.u4NudMonitorTxNumber &&
-			arpMonGetGatewayRxCnt(prAdapter, ucBssIndex) == 0) {
-			DBGLOG(AM, WARN,
-				"State[FAILED] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu, IOT issue, arp no resp!\n",
+		eState = ENUM_NUD_FAILED;
+		break;
+	case NUD_NOARP:
+		eState = ENUM_NUD_NOARP;
+		break;
+	case NUD_PERMANENT:
+		eState = ENUM_NUD_PERMANENT;
+		break;
+	case NUD_NONE:
+		eState = ENUM_NUD_NONE;
+		break;
+	default:
+		eState = ENUM_NUD_STATE_NUM;
+		break;
+	}
+
+	return eState;
+}
+
+
+void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
+	uint8_t ucBssIndex)
+{
+	enum ENUM_NUD_STATE eNudState;
+
+	if (prAdapter->rWifiVar.fgArpMonitorNudDetectEn == 0)
+		return;
+
+	eNudState = arpMonNudStateConvert(state);
+
+	switch (eNudState) {
+	case ENUM_NUD_FAILED:
+		if (arpMonGetNudState(prAdapter, ucBssIndex)
+			!= ENUM_NUD_FAILED) {
+			DBGLOG(AM, INFO,
+				"State[%s] BssIdx[%u] NUD Tx:%lu Rx:%lu, reset TRX Cnt\n",
+				apucNudStateStr[eNudState],
 				ucBssIndex,
 				arpMonGetTxCnt(prAdapter, ucBssIndex),
 				arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
-			arpMonHandleNudBTOMsg(prAdapter, ucBssIndex);
+
+			arpMonSetNudState(prAdapter, ucBssIndex, eNudState);
+			arpMonResetTxCnt(prAdapter, ucBssIndex);
+			arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
+			break;
+		}
+
+		if (arpMonGetTxCnt(prAdapter, ucBssIndex) >
+			prAdapter->rWifiVar.u4NudMonitorTxNumber) {
+			DBGLOG(AM, INFO,
+				"State[%s] BssIdx[%u] NUD Tx:%lu>%lu  Rx:%lu\n",
+				apucNudStateStr[eNudState],
+				ucBssIndex,
+				arpMonGetTxCnt(prAdapter, ucBssIndex),
+				prAdapter->rWifiVar.u4NudMonitorTxNumber,
+				arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
+
+			if (arpMonGetGatewayRxCnt(prAdapter, ucBssIndex) == 0) {
+				DBGLOG(AM, WARN, "IOT issue, arp no resp!\n");
+				arpMonHandleNudBTOMsg(prAdapter, ucBssIndex);
+			}
+
+			arpMonResetTxCnt(prAdapter, ucBssIndex);
+			arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
 		}
 		break;
-	case NUD_STALE:
-	case NUD_DELAY:
-	case NUD_NOARP:
-	case NUD_PERMANENT:
-	case NUD_NONE:
+	case ENUM_NUD_INCOMPLETE:
+	case ENUM_NUD_PROBE:
+	case ENUM_NUD_REACHABLE:
+		arpMonResetTxCnt(prAdapter, ucBssIndex);
+		arpMonResetGatewayRxCnt(prAdapter, ucBssIndex);
+		kal_fallthrough;
+	case ENUM_NUD_STALE:
+	case ENUM_NUD_DELAY:
+	case ENUM_NUD_NOARP:
+	case ENUM_NUD_PERMANENT:
+	case ENUM_NUD_NONE:
+		arpMonSetNudState(prAdapter, ucBssIndex, eNudState);
+		DBGLOG(AM, TRACE,
+			"State[%s] BssIdx[%u] NUD Gateway Tx:%lu Rx:%lu, reset TRX Cnt\n",
+			apucNudStateStr[eNudState],
+			ucBssIndex,
+			arpMonGetGatewayTxCnt(prAdapter, ucBssIndex),
+			arpMonGetGatewayRxCnt(prAdapter, ucBssIndex));
+		break;
 	default:
 		break;
 	}
@@ -1030,10 +1118,10 @@ u_int8_t arpMonIsCritical(struct ADAPTER *ad, uint8_t ucBssIdx)
 
 	DBGLOG(AM, LOUD, "[%u] arpMoniter:[Mon, Thres][%u, %u]\n",
 			ucBssIdx,
-			arpMonGetTxCnt(ad, ucBssIdx),
+			arpMonGetGatewayTxCnt(ad, ucBssIdx),
 			arpMonGetCriticalThres(ad, ucBssIdx));
 
-	return (arpMonGetTxCnt(ad, ucBssIdx) >
+	return (arpMonGetGatewayTxCnt(ad, ucBssIdx) >
 			arpMonGetCriticalThres(ad, ucBssIdx));
 }
 

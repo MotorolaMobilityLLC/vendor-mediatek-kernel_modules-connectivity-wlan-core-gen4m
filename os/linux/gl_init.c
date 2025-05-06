@@ -9348,7 +9348,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 		kalIdcRegisterRilNotifier(prGlueInfo);
 #endif
-		wlanRegisterNeteventNotifier(prGlueInfo);
 #else /* CFG_SUPPORT_MULTI_CARD */
 		prWdev = gprWdev[0];
 		if (!prWdev || !prWdev->wiphy) {
@@ -9513,6 +9512,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		wlanOnPostNetRegister(prGlueInfo);
 
+		wlanRegisterNeteventNotifier(prGlueInfo);
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
 		prAdapter->u4PwrLevel = prHifDriverData->u4PwrLevel;
@@ -9620,6 +9621,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 			power_throttling_stop();
 #endif
+			wlanUnregisterNeteventNotifier(prGlueInfo);
 			wlanNetUnregister(prWdev);
 			/* Unregister notifier callback */
 			wlanUnregisterInetAddrNotifier(prGlueInfo);
@@ -10053,6 +10055,8 @@ void wlanRemove(void)
 	power_throttling_stop();
 #endif
 
+	wlanUnregisterNeteventNotifier(prGlueInfo);
+
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(pprWdev[0]);
 
@@ -10086,7 +10090,6 @@ void wlanRemove(void)
 
 #if CFG_SUPPORT_MULTI_CARD
 	wlanUnregisterNetdevNotifier(prGlueInfo);
-	wlanUnregisterNeteventNotifier(prGlueInfo);
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanUnregisterRebootNotifier(prGlueInfo);
 #endif
@@ -10406,8 +10409,6 @@ static int initWlan(void)
 	if (gprWdev[0])
 		glP2pCreateWirelessDevice(prGlueInfo);
 #endif
-
-	wlanRegisterNeteventNotifier(prGlueInfo);
 #endif /* (CFG_SUPPORT_MULTI_CARD == 0) */
 
 #if CFG_DC_USB_WOW_CALLBACK
@@ -10707,7 +10708,6 @@ static void exitWlan(void)
 
 #if (CFG_SUPPORT_MULTI_CARD == 0)
 	wlanUnregisterNetdevNotifier(prGlueInfo);
-	wlanUnregisterNeteventNotifier(prGlueInfo);
 #endif
 
 	/* free pre-allocated memory */
@@ -10787,7 +10787,6 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
 
 		wlanUnregisterNetdevNotifier(prGlueInfo);
-		wlanUnregisterNeteventNotifier(prGlueInfo);
 		kalFbNotifierUnReg(prGlueInfo);
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT

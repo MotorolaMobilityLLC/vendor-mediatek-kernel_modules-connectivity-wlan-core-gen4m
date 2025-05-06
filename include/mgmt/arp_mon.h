@@ -6,18 +6,48 @@
 #ifndef _ARP_MON_H
 #define _ARP_MON_H
 #if ARP_MONITER_ENABLE
+
+#define NEIGH_STATE_NUM	9
+
+enum ENUM_NUD_STATE {
+	ENUM_NUD_INCOMPLETE,
+	ENUM_NUD_REACHABLE,
+	ENUM_NUD_STALE,
+	ENUM_NUD_DELAY,
+	ENUM_NUD_PROBE,
+	ENUM_NUD_FAILED,
+	ENUM_NUD_NOARP,
+	ENUM_NUD_PERMANENT,
+	ENUM_NUD_NONE,
+	ENUM_NUD_STATE_NUM
+};
+
+static const char * const apucNudStateStr[ENUM_NUD_STATE_NUM] = {
+	[ENUM_NUD_INCOMPLETE] = "incomplete",
+	[ENUM_NUD_REACHABLE] = "reachable",
+	[ENUM_NUD_STALE] = "stale",
+	[ENUM_NUD_DELAY] = "delay",
+	[ENUM_NUD_PROBE] = "probe",
+	[ENUM_NUD_FAILED] = "failed",
+	[ENUM_NUD_NOARP] = "noarp",
+	[ENUM_NUD_PERMANENT] = "permanent",
+	[ENUM_NUD_NONE] = "none"
+};
+
 struct ARP_MON {
 	/* ARP Req Tx Cnt (Not yet Recv ARP Rsp) */
 	uint16_t arpMoniter;
 	uint8_t apIp[IPV4_ADDR_LEN];
 	uint8_t gatewayIp[IPV4_ADDR_LEN];
 	uint8_t gatewayMac[MAC_ADDR_LEN];
+	uint32_t u4TxCnt;
 	uint32_t u4GatewayRxCnt;
 	uint32_t LastRxCnt;
 	uint32_t CurrentRxCnt;
 	uint32_t LastRxUnicastTime;
 	uint32_t CurrentRxUnicastTime;
 	uint8_t arpIsCriticalThres;
+	enum ENUM_NUD_STATE eNudState;
 };
 
 struct ARP_MON_PKT_INFO {
