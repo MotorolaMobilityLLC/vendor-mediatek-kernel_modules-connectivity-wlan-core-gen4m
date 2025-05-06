@@ -916,7 +916,7 @@ enum ENUM_NUD_STATE arpMonNudStateConvert(uint64_t state)
 }
 
 
-void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
+void arpMonHandleNudState(struct ADAPTER *prAdapter, uint8_t state,
 	uint8_t ucBssIndex)
 {
 	enum ENUM_NUD_STATE eNudState;

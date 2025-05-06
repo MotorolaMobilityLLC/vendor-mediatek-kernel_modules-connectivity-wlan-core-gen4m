@@ -84,7 +84,7 @@ u_int8_t arpMonIpIsCritical(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo);
 u_int8_t arpMonIsCritical(struct ADAPTER *ad, uint8_t ucBssIdx);
 void arpMonResetArpDetect(struct ADAPTER *ad, uint8_t ucBssIdx);
 void arpMonHandleLegacyBTOEvent(struct ADAPTER *ad);
-void arpMonHandleNudState(struct ADAPTER *prAdapter, uint64_t state,
+void arpMonHandleNudState(struct ADAPTER *prAdapter, uint8_t state,
 	uint8_t ucBssIndex);
 
 #if CFG_QM_ARP_MONITOR_MSG
