@@ -9763,6 +9763,12 @@ void nicUniCmdStaRecHandleEventPkt(struct ADAPTER
 		struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(prAdapter,
 			secGetStaIdxByWlanIdx(prAdapter, uni_cmd->ucWlanIdxL));
 
+		if (prStaRec &&
+		    IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex))
+			DBGLOG(NIC, INFO,
+				"<CONN> STA_READY bidx=%d widx=%d\n",
+				prStaRec->ucBssIndex, prStaRec->ucWlanIndex);
+
 		qmActivateStaRec(prAdapter, prStaRec);
 	}
 }

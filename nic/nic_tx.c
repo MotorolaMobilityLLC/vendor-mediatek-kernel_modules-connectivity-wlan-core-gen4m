@@ -5621,7 +5621,7 @@ u_int8_t nicIsEapolFrame(struct ADAPTER *prAdapter,
 	if (secIsProtectedBss(prAdapter, prBssInfo) &&
 	    (prMsduInfo->fgIs802_1x) &&
 	    (prMsduInfo->fgIs802_1x_NonProtected) &&
-	    (!prAdapter->fgIsPostponeTxEAPOLM3))
+	    (!prAdapter->fgIsPostponeTxEAPOLM4))
 		return TRUE;
 
 	return FALSE;

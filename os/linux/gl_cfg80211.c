@@ -2915,7 +2915,7 @@ int _mtk_cfg80211_mgmt_tx_via_data_path(
 	uint8_t *pucRecvBuff = NULL;
 	uint8_t ucBssIndex = 0;
 
-	DBGLOG(P2P, INFO, "len[%d], cookie: 0x%llx.\n", len, u8GlCookie);
+	DBGLOG(REQ, INFO, "len[%d], cookie: 0x%llx.\n", len, u8GlCookie);
 	prSkb = kalPacketAlloc(prGlueInfo, len, TRUE, &pucRecvBuff);
 	if (prSkb) {
 		kalMemCopy(pucRecvBuff, buf, len);
@@ -3049,7 +3049,7 @@ int _mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 #define TEMP_LOG_TEMPLATE "bssIdx: %d, band: %d, chan: %d, offchan: %d, " \
 		"wait: %d, len: %d, no_cck: %d, dont_wait_for_ack: %d, " \
 		"cookie: 0x%llx\n"
-		DBGLOG(P2P, INFO, TEMP_LOG_TEMPLATE,
+		DBGLOG(REQ, INFO, TEMP_LOG_TEMPLATE,
 				prMsgTxReq->ucBssIdx,
 				prMsgTxReq->rChannelInfo.eBand,
 				prMsgTxReq->rChannelInfo.ucChannelNum,

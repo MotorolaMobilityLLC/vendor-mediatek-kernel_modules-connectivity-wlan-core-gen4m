@@ -949,7 +949,7 @@ struct QUE *qmDetermineStaTxQueue(struct ADAPTER *prAdapter,
 	} else if (secIsProtectedBss(prAdapter, prBssInfo) &&
 		prMsduInfo->fgIs802_1x &&
 		prMsduInfo->fgIs802_1x_NonProtected &&
-		!prAdapter->fgIsPostponeTxEAPOLM3) {
+		!prAdapter->fgIsPostponeTxEAPOLM4) {
 		/* protected BSS without key set */
 		/* Tx pairwise EAPOL 1x packet (non-protected frame) */
 		prTxQue = &prStaRec->arTxQueue[ucQueIdx];
@@ -9058,7 +9058,7 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 
 	/* get ethernet protocol */
 	u2EtherType = prSwRfb->u2EthTypeLen;
-	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
+	prAdapter->fgIsPostponeTxEAPOLM4 = FALSE;
 
 	if (u2EtherType == ETH_P_1X) {
 		uint8_t *pucEthBody = &pPkt[ETH_HLEN];
@@ -9077,9 +9077,9 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 				m = 1;
 
 			if (m == 3 && !prSwRfb->prStaRec->fgIsTxKeyReady) {
-				prAdapter->fgIsPostponeTxEAPOLM3 = TRUE;
+				prAdapter->fgIsPostponeTxEAPOLM4 = TRUE;
 				DBGLOG(QM, DEBUG,
-					"[Passpoint] Postpone sending EAPOL M4 until PTK installed!\n");
+					"Postpone sending EAPOL M4 until PTK installed!\n");
 			}
 		}
 	}

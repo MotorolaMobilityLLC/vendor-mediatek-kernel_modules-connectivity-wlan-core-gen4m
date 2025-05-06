@@ -643,10 +643,10 @@ saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return WLAN_STATUS_INVALID_PACKET;
 
-	if (rTxDoneStatus)
-		DBGLOG(SAA, INFO,
-		       "EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
-		       rTxDoneStatus, prMsduInfo->ucTxSeqNum, kalGetTimeTick());
+	DBGLOG(SAA, INFO,
+	       "<CONN> EVENT_TX_DONE bidx=%d widx=%d status=%d seq=%d\n",
+	       prStaRec->ucBssIndex, prStaRec->ucWlanIndex,
+	       rTxDoneStatus, prMsduInfo->ucTxSeqNum);
 
 	eNextState = prStaRec->eAuthAssocState;
 
@@ -1858,12 +1858,12 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(SAA, INFO,
-	       "%sRX_DISASSOC sn=%d reason=%d SA[" MACSTR "] BSSID[" MACSTR
-	       "] DA[" MACSTR "] ReasonCode[0x%x]\n",
+	       "%sRX_DISASSOC reason=%d sn=%d SA=" MACSTR " BSSID=" MACSTR
+	       " DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN>" : "",
-	       prDisassocFrame->u2SeqCtrl,
 	       prDisassocFrame->u2ReasonCode,
+	       WLAN_GET_SEQ_SEQ(prDisassocFrame->u2SeqCtrl),
 	       MAC2STR(prDisassocFrame->aucSrcAddr),
 	       MAC2STR(prDisassocFrame->aucBSSID),
 	       MAC2STR(prDisassocFrame->aucDestAddr));

@@ -5430,6 +5430,17 @@ struct IE_P2P2 {
  *                                 M A C R O S
  *******************************************************************************
  */
+
+/* Get SEQ/FRAG from mac header */
+#ifndef WLAN_GET_SEQ_FRAG
+#define WLAN_GET_SEQ_FRAG(seq) ((seq) & (BIT(3) | BIT(2) | BIT(1) | BIT(0)))
+#endif
+
+#ifndef WLAN_GET_SEQ_SEQ
+#define WLAN_GET_SEQ_SEQ(seq)                                                  \
+	(((seq) & (~(BIT(3) | BIT(2) | BIT(1) | BIT(0)))) >> 4)
+#endif
+
 /* Convert the ECWmin(max) to CWmin(max) */
 #define ECW_TO_CW(_ECW)         ((1 << (_ECW)) - 1)
 

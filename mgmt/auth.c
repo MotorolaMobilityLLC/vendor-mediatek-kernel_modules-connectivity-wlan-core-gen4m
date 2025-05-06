@@ -384,12 +384,12 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)
 		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 	DBGLOG(SAA, INFO,
-	       "%sTX_AUTH algo=%d auth_seq=%d status=%d msdu_seq=%d SA=" MACSTR
+	       "%sTX_AUTH algo=%d auth_seq=%d status=%d seq=%d sn=%d SA=" MACSTR
 	       " DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN> " : "",
-	       prAuthFrame->u2AuthAlgNum,
-	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum,
+	       prAuthFrame->u2AuthAlgNum, u2TransactionSeqNum, u2StatusCode,
+	       prMsduInfo->ucTxSeqNum, prMsduInfo->u2SwSN,
 	       MAC2STR(prAuthFrame->aucSrcAddr),
 	       MAC2STR(prAuthFrame->aucDestAddr));
 
@@ -593,14 +593,14 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	DBGLOG(SAA, INFO,
-		"%sRX_AUTH algo=%d auth_seq=%d sn=%d status=%d SA="
+		"%sRX_AUTH algo=%d auth_seq=%d status=%d sn=%d SA="
 		MACSTR " DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN> " : "",
 		prAuthFrame->u2AuthAlgNum,
 		prAuthFrame->u2AuthTransSeqNo,
-		prAuthFrame->u2SeqCtrl,
 		prAuthFrame->u2StatusCode,
+		WLAN_GET_SEQ_SEQ(prAuthFrame->u2SeqCtrl),
 		MAC2STR(prAuthFrame->aucSrcAddr),
 		MAC2STR(prAuthFrame->aucDestAddr));
 

@@ -7226,7 +7226,8 @@ void aisHandleBeaconTimeout(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	if (!prBssDesc)
 		return;
 
-	DBGLOG(AIS, EVENT, "<CONN> BTO_START bssid="MACSTR" reason=%d\n",
+	DBGLOG(AIS, EVENT, "<CONN> BTO_START bssid="MACSTR
+		" freq=%d rssi=%d reason=%d\n",
 		MAC2STR(prBssDesc->aucBSSID),
 		nicChannelNum2Freq(prBssDesc->ucChannelNum,
 				   prBssDesc->eBand) / 1000,
@@ -8646,8 +8647,9 @@ aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 			      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo =
-	    (struct AIS_MGMT_TX_REQ_INFO *)NULL;
+	struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo = NULL;
+	struct WLAN_AUTH_FRAME *prAuthFrame;
+	uint16_t u2TxFrameCtrl;
 	u_int8_t fgIsSuccess = FALSE;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 	uint8_t ucBssIndex = 0;
@@ -8661,6 +8663,15 @@ aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 			(uint64_t *) ((uintptr_t) prMsduInfo->prPacket +
 				(uintptr_t) prMsduInfo->u2FrameLength +
 				MAC_TX_RESERVED_FIELD);
+
+		prAuthFrame = (struct WLAN_AUTH_FRAME *) prMsduInfo->prPacket;
+		u2TxFrameCtrl = prAuthFrame->u2FrameCtrl & MASK_FRAME_TYPE;
+		if (u2TxFrameCtrl == MAC_FRAME_AUTH)
+			DBGLOG(AIS, INFO,
+			       "<CONN> EVENT_TX_DONE bidx=%d widx=%d status=%d cookie=0x%llx seq=%d\n",
+			       ucBssIndex, prMsduInfo->ucWlanIndex,
+			       rTxDoneStatus, *pu8GlCookie,
+			       prMsduInfo->ucTxSeqNum);
 
 #if (CFG_SUPPORT_CONN_LOG == 1)
 		connLogMgmtTx(prAdapter,
@@ -8824,13 +8835,14 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				(prMgmtTxMsdu->prPacket);
 
 			DBGLOG(AIS, INFO,
-			       "<CONN> TX_AUTH algo=%d auth_seq=%d sn=%d status=%d msdu_seq=%d SA="
+			       "<CONN> TX_AUTH algo=%d auth_seq=%d status=%d cookie=0x%llx seq=%d sn=%d SA="
 			       MACSTR " DA=" MACSTR "\n",
 			       prAuthFrame->u2AuthAlgNum,
 			       prAuthFrame->u2AuthTransSeqNo,
-			       prAuthFrame->u2SeqCtrl,
 			       prAuthFrame->u2StatusCode,
+			       u8Cookie,
 			       prMgmtTxMsdu->ucTxSeqNum,
+			       prMgmtTxMsdu->u2SwSN,
 			       MAC2STR(prAuthFrame->aucSrcAddr),
 			       MAC2STR(prAuthFrame->aucDestAddr));
 

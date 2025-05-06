@@ -885,7 +885,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 	prAdapter->u4OwnFailedLogCount = 0;
 	prAdapter->ucCmdSeqNum = 0;
 	prAdapter->u4PwrCtrlBlockCnt = 0;
-	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
+	prAdapter->fgIsPostponeTxEAPOLM4 = FALSE;
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
 	prAdapter->fgIsPowerDumpDrvOwn = FALSE;
 #endif

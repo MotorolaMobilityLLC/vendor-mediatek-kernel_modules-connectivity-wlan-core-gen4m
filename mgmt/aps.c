@@ -2494,6 +2494,37 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	return FALSE;
 }
 
+void apsGetLinkRssiStr(struct AP_COLLECTION *ap, uint8_t buf[], uint16_t len)
+{
+	struct BSS_DESC *aprSorted[APS_LINK_MAX] = {0};
+	uint16_t written = 0;
+	uint8_t i, j, num;
+
+	if (!ap || ap->ucLinkNum == 0)
+		return;
+
+	for (i = 0, num = 0; i < ap->ucLinkNum; i++) {
+		struct BSS_DESC *cand = ap->aprTarget[i];
+
+		for (j = num; j > 0; j--) {
+			if (cand->eBand > aprSorted[j - 1]->eBand)
+				break;
+			aprSorted[j] = aprSorted[j - 1];
+		}
+
+		aprSorted[j] = cand;
+		num++;
+	}
+
+	for (i = 0; i < num; i++) {
+		struct BSS_DESC *cand = aprSorted[i];
+
+		LOGBUF(buf, len, written, "%d", RCPI_TO_dBm(cand->ucRCPI));
+		if (i != ap->ucLinkNum - 1)
+			LOGBUF(buf, len, written, ",");
+	}
+}
+
 void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint16_t min_score, uint8_t min_rfband_bmap,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
@@ -2507,6 +2538,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	enum ENUM_BAND *link_plan;
 	enum ENUM_MLO_LINK_PLAN curr_plan;
 	struct BSS_DESC *bss;
+	uint8_t buf[100] = {0};
 	int i, j, k;
 
 	/* candi bss scoring */
@@ -2782,12 +2814,12 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	block_bmap = ap->prBlock ? ap->prBlock->u4BlockBmap : 0;
 #endif
 
+	apsGetLinkRssiStr(ap, buf, sizeof(buf));
 	APSLOG(APS, INFO,
-		"<CONN> CAND[%d] num[%d,%s] score[%d] tput[%dkbps] mode[%d] simu[%d] mld_blk[0x%x] %s%s%s%s\n",
-		ap->u4Index, ap->ucLinkNum,
-		apsGetLinkPlanStr(ap->eLinkPlan),
+		"<CONN> CAND[%d] band[%s] rssi[%s] score[%d] tput[%dkbps] mode[%s] simu[%d] mld_blk[0x%x] %s%s%s%s\n",
+		ap->u4Index, apsGetLinkPlanStr(ap->eLinkPlan), buf,
 		ap->u4TotalScore, ap->u4TotalTput,
-		ap->eMloMode, ap->ucMaxSimuLinks, block_bmap,
+		apucMloModeStr[ap->eMloMode], ap->ucMaxSimuLinks, block_bmap,
 		ap->fgIsMatchBssid ? "(match_bssid)" : "",
 		ap->fgIsMatchBssidHint ? "(match_bssid_hint)" : "",
 		ap->fgIsAllLinkConnected ? "(connected)" : "",

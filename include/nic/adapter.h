@@ -3341,7 +3341,7 @@ struct ADAPTER {
 	uint32_t u4MultiStaPrimaryInterface;
 	uint32_t u4MultiStaUseCase;
 
-	bool fgIsPostponeTxEAPOLM3;
+	bool fgIsPostponeTxEAPOLM4;
 
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	u_int8_t fgIsNeedDlPatch;

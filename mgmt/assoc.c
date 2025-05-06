@@ -748,7 +748,7 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 {
 	struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
 	struct MSDU_INFO *prMsduInfo;
-	uint16_t u2RxFrameCtrl;
+	uint16_t u2TxFrameCtrl;
 
 	prMsduInfo = assocComposeReAssocReqFrame(prAdapter, prStaRec);
 	if (!prMsduInfo)
@@ -789,12 +789,15 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
-	u2RxFrameCtrl = prAssocFrame->u2FrameCtrl & MASK_FRAME_TYPE;
+	u2TxFrameCtrl = prAssocFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 	DBGLOG(SAA, INFO,
-		"%sTX_%sASSOC SA=" MACSTR " DA=" MACSTR "\n",
+		"%sTX_%sASSOC cap=0x%x listen_int=%d seq=%d sn=%d SA=" MACSTR
+		" DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN> " : "",
-		u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "RE" : "",
+		u2TxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "RE" : "",
+		prAssocFrame->u2CapInfo, prAssocFrame->u2ListenInterval,
+		prMsduInfo->ucTxSeqNum,	prMsduInfo->u2SwSN,
 		MAC2STR(prAssocFrame->aucSrcAddr),
 		MAC2STR(prAssocFrame->aucDestAddr));
 
@@ -1108,13 +1111,13 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2FrameCtrl, &u2RxFrameCtrl); */
 	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 	DBGLOG(SAA, INFO,
-		"%sRX_%sASSOC sn=%d status=%d SA="
+		"%sRX_%sASSOC status=%d sn=%d SA="
 		MACSTR " DA=" MACSTR "\n",
 		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
 		"<CONN> " : "",
 		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "RE" : "",
-		prAssocRspFrame->u2SeqCtrl,
 		prAssocRspFrame->u2StatusCode,
+		WLAN_GET_SEQ_SEQ(prAssocRspFrame->u2SeqCtrl),
 		MAC2STR(prAssocRspFrame->aucSrcAddr),
 		MAC2STR(prAssocRspFrame->aucDestAddr));
 
