@@ -9637,7 +9637,7 @@ uint8_t p2pFuncSapSwichCandidatGen(
 				prBssInfo->eBand) {
 				prSapSwitchCand[k].eHwBand =
 					prBssInfo->eHwBandIdx;
-				DBGLOG(P2P, TRACE,
+				DBGLOG(P2P, INFO,
 					"[cand gen]alive bssindex:%d, hw band:%d\n",
 					j,
 					prBssInfo->eHwBandIdx);
@@ -9771,6 +9771,14 @@ bool p2pFuncSwitchSapChannel(
 			&rSapSwitchInterface,
 			prP2pBssInfo,
 			&eFilterScnario);
+
+	for (i = 0; i < ucSapChCandNum; i++) {
+		DBGLOG(P2P, INFO,
+			"CSA band:%d, up_ch:%d, low_ch:%d\n",
+			rSapSwitchCand[i].eRfBand,
+			rSapSwitchCand[i].ucChUpperBound,
+			rSapSwitchCand[i].ucChLowerBound);
+	}
 
 #if CFG_SUPPORT_NAN
 	if (nanGetSapCsaChannel(prAdapter,
