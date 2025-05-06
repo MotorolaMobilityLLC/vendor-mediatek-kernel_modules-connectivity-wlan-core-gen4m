@@ -1021,7 +1021,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	struct connfem_epaelna_pin_info pin_info;
 	struct connfem_epaelna_laa_pin_info laa_pin_info;
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	struct connfem_epaelna_flags_common flags_common;
+	struct connfem_epaelna_flags_common flags_common = {0};
 #endif
 #endif
 	uint8_t *u1EpaELnaDataPointer = NULL;
