@@ -27,6 +27,7 @@ static moto_product products_list[] = {
 		{"nice",   "OTAPM",    "wifi",   "txpowerctrl_OTAPM"},
 		{"nice",   "LATAM",    "wifi",   "txpowerctrl_LATAM"},
 		{"nice",   "BRLAP",    "wifi",   "txpowerctrl_BRLAP"},
+		{"nice",   "APEM",    "wifi",   "txpowerctrl_APEM"},
 		{"nice",   "PRC",    "wifi_prc",   "txpowerctrl_PRC"},
 		{"nice",   "all",    "wifi",   "txpowerctrl"},
 		{"cybert",   "INDIA",  "wifi",   "txpowerctrl_INDIA"},
