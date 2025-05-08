@@ -1239,7 +1239,14 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
 			,	/*CH_SET_UNII_MID_52_64 */
 			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
-				/*CH_SET_UNII_MID_100_144 */
+						/* CH_SET_UNII_WW_100_144 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			,
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+			,	/* 6G_CH_1_233 */
+			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
+				/* 6G_CH_2 */
+#endif
 		}
 	}
 	,
