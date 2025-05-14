@@ -671,7 +671,7 @@ int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
 	struct nlattr *attr[WIFI_ATTR_SET_DTIM_PARAMS + 1];
 	char str[64] = {0};
-	uint8_t len;
+	int8_t len;
 	uint32_t u4SetDtimPeriod = 0, rStatus, u4BufLen;
 
 	ASSERT(wiphy);
@@ -710,7 +710,7 @@ int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
 
 	len = kalSnprintf(str, sizeof(str), "DtimPeriod 0 %d", u4SetDtimPeriod);
 
-	if (len <= 0 || u4SetDtimPeriod < 0) {
+	if (len <= 0 || u4SetDtimPeriod > 10) {
 		DBGLOG(REQ, ERROR,
 			"set_dtim_param invalid parameters! %d\n",
 			u4SetDtimPeriod);

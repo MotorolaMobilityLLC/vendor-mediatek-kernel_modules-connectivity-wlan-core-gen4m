@@ -4739,9 +4739,10 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		enable &= !!(bss->u2RsnSelectedCapInfo & ELEM_WPA_CAP_MFPC);
 #endif
 		enable &= !!(bss->ucPhyTypeSet & PHY_TYPE_BIT_EHT);
-		if (!CFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE &&
-		    prP2pSpecBssInfo && fgIsApMode)
+#if (CFG_SAP_SKIP_CHECK_HOSTAPD_ML_IE == 0)
+		if (prP2pSpecBssInfo && fgIsApMode)
 			enable &= prP2pSpecBssInfo->fgMlIeExist;
+#endif
 	} else if (prStaRec) {
 		enable &= !!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT);
 
