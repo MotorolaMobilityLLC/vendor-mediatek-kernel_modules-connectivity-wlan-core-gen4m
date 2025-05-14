@@ -37,7 +37,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter, uint8_t aucIntfMac[])
 
 		ASSERT_BREAK(prP2pDevFsmInfo != NULL);
 		if (prP2pDevFsmInfo->fgInitialied == TRUE) {
-			DBGLOG(P2P, WARN,
+			DBGLOG(P2P, TRACE,
 				"p2p dev %u already initialized.\n",
 				prP2pDevFsmInfo->ucBssIndex);
 			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,

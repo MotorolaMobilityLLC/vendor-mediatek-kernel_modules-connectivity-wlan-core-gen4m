@@ -333,7 +333,7 @@ int met_log_start(struct GLUE_INFO *prGlueInfo)
 
 int met_log_stop(struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(MET, INFO, "Stop MET log.\n");
+	DBGLOG(MET, TRACE, "Stop MET log.\n");
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #if CFG_MTK_WIFI_MET_LOG_EMI

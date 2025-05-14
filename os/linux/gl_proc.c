@@ -2082,7 +2082,8 @@ int32_t procRemoveProcfs(void)
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 #endif /* (BUILD_QA_DBG) */
 
-	DBGLOG(INIT, INFO, "remove proc fs done\n");
+	DBGLOG(INIT, TRACE, "remove proc fs done\n");
+
 	return 0;
 } /* end of procRemoveProcfs() */
 

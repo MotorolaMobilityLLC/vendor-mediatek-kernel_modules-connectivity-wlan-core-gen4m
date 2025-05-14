@@ -3753,7 +3753,7 @@ uint32_t nicParsingNicCapV2(struct ADAPTER *prAdapter,
 	}
 
 	if (!fgTagFound)
-		DBGLOG(INIT, ERROR, "Find TAG: %d failed\n", u4Type);
+		DBGLOG(INIT, TRACE, "Find TAG: %d failed\n", u4Type);
 
 	return u4RetStatus;
 }

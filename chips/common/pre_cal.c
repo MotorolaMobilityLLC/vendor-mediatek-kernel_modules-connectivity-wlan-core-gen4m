@@ -620,7 +620,7 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 		prPhyTlv->aucBuffer;
 
 	if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_CAL) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 			"HAL_PHY_ACTION_TAG_CAL ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
 			prPhyEvent->ucEvent,
 			prPhyEvent->ucStatus,
@@ -639,13 +639,13 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 
 		u4Status = WLAN_STATUS_SUCCESS;
 	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_NVRAM) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 			"HAL_PHY_ACTION_TAG_NVRAM status[0x%x]\n",
 			prPhyEvent->ucStatus);
 
 		u4Status = WLAN_STATUS_SUCCESS;
 	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 			"HAL_PHY_ACTION_TAG_COM_FEM status[0x%x]\n",
 			prPhyEvent->ucStatus);
 
@@ -851,7 +851,7 @@ uint8_t _AddConnfemSkuTag(struct ADAPTER *prAdapter,
 	u4TagLen += sizeof(struct PHYACT_CONN_FEM_SPDT_V2_T);
 	pPlvHeader->u2Len = u4TagLen - u4TagLenBk;
 
-	DBGLOG(INIT, INFO, "_AddConnfemTag , Len=%d", u4TagLen);
+	DBGLOG(INIT, TRACE, "_AddConnfemTag , Len=%d", u4TagLen);
 	DBGLOG_MEM8(INIT, TRACE, au1TagBuf, u4TagLen);
 
 	*pu4TagLen = u4TagLen;
