@@ -3411,6 +3411,13 @@ bool mddpIsSupportMcifWifi(void)
 	if (!g_fgMddpWifiEnabled)
 		return false;
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	if (get_wifi_test_mode_fwdl() == 1) {
+		DBGLOG_LIMITED(INIT, INFO, "test mode not support mddp\n");
+		return false;
+	}
+#endif
+
 	if (!gMddpWFunc.get_mddp_feature) {
 		DBGLOG_LIMITED(INIT, LOUD, "gMddpWFunc not register\n");
 		return false;
