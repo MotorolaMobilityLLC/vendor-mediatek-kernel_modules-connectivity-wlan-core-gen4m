@@ -9033,6 +9033,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  BSS_MAX_IDLE_PERIOD_VALUE, FEATURE_TO_CUSTOMER);
 #endif
 
+#if (CFG_SUPPORT_RTT == 1)
+	INIT_UINT(prWifiVar->ucRttBlockScan, "RttBlockScan", 0,
+		  FEATURE_TO_CUSTOMER);
+#endif
+
 #if (CFG_SUPPORT_NAN == 1)
 	INIT_UINT(prWifiVar->ucNanMacAddrOverride, "NanMacOverride", 0,
 		  FEATURE_TO_CUSTOMER);

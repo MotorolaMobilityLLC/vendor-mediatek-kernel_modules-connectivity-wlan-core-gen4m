@@ -1641,6 +1641,10 @@ struct WIFI_VAR {
 	uint8_t fgAllowSameBandDualSta;
 	uint8_t ucApForceSleep;
 
+#if (CFG_SUPPORT_RTT == 1)
+	uint8_t ucRttBlockScan;
+#endif
+
 #if (CFG_SUPPORT_NAN == 1)
 	uint8_t ucMasterPref;
 	uint8_t ucConfig5gChannel;

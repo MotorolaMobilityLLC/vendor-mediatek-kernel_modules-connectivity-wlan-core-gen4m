@@ -76,6 +76,15 @@ static struct RTT_INFO *rttGetInfo(struct ADAPTER *prAdapter);
  *                              F U N C T I O N S
  *******************************************************************************
  */
+/* Block scan activity when RTT is continueously running. Note that this flag
+ * should only be enabled for testing purpose. Enable this flag in MP version
+ * will result in disconnection because roaming will be blocked due to the scan
+ * activity being disabled.
+ */
+uint8_t rttBlockScan(struct ADAPTER *prAdapter)
+{
+	return prAdapter->rWifiVar.ucRttBlockScan;
+}
 
 void rttInit(struct ADAPTER *prAdapter)
 {
@@ -170,10 +179,15 @@ uint8_t rttIsRunning(struct ADAPTER *prAdapter)
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
 	DBGLOG(RTT, LOUD,
-		"Running = %d\n",
-		rttInfo->fgIsContRunning);
+		"Running = %d, ContRunning = %d, Block scan = %d\n",
+		rttInfo->fgIsRunning,
+		rttInfo->fgIsContRunning,
+		rttBlockScan(prAdapter));
 
-	return rttInfo->fgIsContRunning;
+	if (rttBlockScan(prAdapter))
+		return rttInfo->fgIsContRunning;
+	else
+		return FALSE;
 }
 
 uint8_t rttIsSupport(struct ADAPTER *prAdapter)
@@ -1250,8 +1264,10 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &prScanInfo->rScanParam;
 
-	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING)
+	if (rttBlockScan(prAdapter) &&
+		prScanInfo->eCurrentState == SCAN_STATE_SCANNING) {
 		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
+	}
 
 	active = IS_NET_ACTIVE(prAdapter, ucBssIndex);
 	if (!active)

@@ -221,6 +221,8 @@ uint8_t rttBwToBssBw(uint8_t eRttBw);
 void rttProcessPublicAction(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
 
+uint8_t rttBlockScan(struct ADAPTER *prAdapter);
+
 #if CFG_SUPPORT_PASN
 uint32_t rttDoPasn(struct ADAPTER *prAdapter,
 			struct PARAM_RTT_REQUEST *prRequest,
