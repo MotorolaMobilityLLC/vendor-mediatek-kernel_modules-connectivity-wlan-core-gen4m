@@ -1504,16 +1504,15 @@ static u_int8_t nanIsSendTimeExpired(struct ADAPTER *prAdapter,
 		prSta->fgNanSendTimeExpired = fgExpired;
 
 #if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+	} else {
+		/* prStarecList */
+		LINK_FOR_EACH_ENTRY(prSta, prStarecList,
+				    rLinkEntryMld, struct STA_RECORD) {
+			prSta->fgNanSendTimeExpired = fgExpired;
+		}
 	}
-
-	/* prStarecList */
-	LINK_FOR_EACH_ENTRY(prSta, prStarecList,
-			    rLinkEntryMld, struct STA_RECORD) {
-		prSta->fgNanSendTimeExpired = fgExpired;
-	}
-
-	return fgExpired;
 #endif
+	return fgExpired;
 
 #endif
 	return FALSE;
