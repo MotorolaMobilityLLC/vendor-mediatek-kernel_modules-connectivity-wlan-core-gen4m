@@ -16569,8 +16569,8 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	ess = &aiss->rCurEssLink;
 	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 
-	if (!pvBuffer || !u4BufferLen) {
-		DBGLOG(OID, ERROR, "pvBuffer is NULL\n");
+	if (!pvBuffer || !u4BufferLen || !prStaRec) {
+		DBGLOG(OID, ERROR, "pvBuffer or StaRec is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -17957,6 +17957,74 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 
 	return rStatus;
 }	/* wlanoidIndicateBssInfo */
+
+uint32_t
+wlanoidQueryRoamScnChnl(
+	struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen)
+{
+	struct CFG_SCAN_CHNL *list = NULL;
+	struct AIS_SPECIFIC_BSS_INFO *ais;
+	uint8_t i = 0;
+	uint8_t ucBssIndex = 0;
+
+	if (!prAdapter) {
+		DBGLOG(OID, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (u4QueryBufferLen < sizeof(struct CFG_SCAN_CHNL))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	list = (struct CFG_SCAN_CHNL *) pvQueryBuffer;
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	ais = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+
+	list->ucChannelListNum = ais->ucCurEssChnlInfoNum;
+	for (i = 0; i < ais->ucCurEssChnlInfoNum; i++) {
+		list->arChnlInfoList[i].ucChannelNum =
+			ais->arCurEssChnlInfo[i].ucChannel;
+		list->arChnlInfoList[i].eBand =
+			ais->arCurEssChnlInfo[i].eBand;
+	}
+
+	DBGLOG(INIT, TRACE, "Roam scan channel num is %d\n",
+			       list->ucChannelListNum);
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidAddRoamScnChnl(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct CFG_SCAN_CHNL *prRoamScnChnl = NULL;
+
+	*pu4SetInfoLen = sizeof(struct CFG_SCAN_CHNL);
+
+	if (u4SetBufferLen < sizeof(struct CFG_SCAN_CHNL))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prRoamScnChnl = (struct CFG_SCAN_CHNL *) pvSetBuffer;
+
+	kalMemCopy(&prAdapter->rAddRoamScnChnl,
+		prRoamScnChnl,
+		*pu4SetInfoLen);
+
+	DBGLOG(INIT, TRACE,
+		"set roam scan channel num is %d\n",
+		prRoamScnChnl->ucChannelListNum);
+
+	/* update cached channel list */
+	aisFsmGetCurrentEssChnlList(prAdapter,
+	GET_IOCTL_BSSIDX(prAdapter));
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		     void *pvSetBuffer,

@@ -5565,6 +5565,192 @@ int testmode_reassoc(struct wiphy *wiphy,
 	return rStatus;
 }
 
+int testmode_get_roam_scn_freq(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t i = 0;
+	uint32_t u4BufLen = 0, u4ChnlInfo = 0, rStatus = WLAN_STATUS_FAILURE;
+	int32_t i4BytesWritten = -1, i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	static struct CFG_SCAN_CHNL rRoamScnChnl;
+	enum ENUM_BAND eBand;
+	char buf[512] = { 0 };
+	char *pucBuf = buf;
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	if (i4Argc >= 2) {
+		DBGLOG(REQ, ERROR, "wrong input parameter %d\n", i4Argc);
+		return rStatus;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRoamScnChnl,
+			   &rRoamScnChnl, sizeof(struct CFG_SCAN_CHNL),
+			   &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR,
+		       "wlanoidQueryRoamScnChnl fail 0x%x\n", rStatus);
+		return rStatus;
+	}
+
+	DBGLOG(REQ, TRACE, "query ok and ret is %d\n",
+	       rRoamScnChnl.ucChannelListNum);
+	i4BytesWritten = 0;
+	LOGBUF(pucBuf, sizeof(buf), i4BytesWritten, "GET_ROAM_SCAN_FREQ %u",
+					rRoamScnChnl.ucChannelListNum);
+
+	for (i = 0; i < rRoamScnChnl.ucChannelListNum &&
+		i < CFG_MAX_NUM_OF_CHNL_INFO; i++) {
+		u4ChnlInfo = rRoamScnChnl.arChnlInfoList[i].ucChannelNum;
+		eBand = rRoamScnChnl.arChnlInfoList[i].eBand;
+		LOGBUF(pucBuf, sizeof(buf), i4BytesWritten, " %u",
+			KHZ_TO_MHZ(nicChannelNum2Freq(u4ChnlInfo, eBand)));
+	}
+
+	DBGLOG(REQ, INFO, "Get roam scn freq list num is [%d][%s]\n",
+	       rRoamScnChnl.ucChannelListNum, buf);
+
+	LOGBUF(pucBuf, sizeof(buf), i4BytesWritten, "\n");
+
+	return mtk_cfg80211_process_str_cmd_reply(wiphy,
+		buf, i4BytesWritten + 1);
+}
+
+int testmode_add_roam_scn_freq(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4ChnlInfo = 0, u4FreqInfo = 0, u4SetInfoLen = 0;
+	uint8_t i = 1, t = 0;
+	int32_t i4Argc = 0, i4Ret = -1;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct CFG_SCAN_CHNL *prRoamScnChnl, *prExistingRoamScnChnl;
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	prExistingRoamScnChnl = &prGlueInfo->prAdapter->rAddRoamScnChnl;
+
+	prRoamScnChnl = kalMemAlloc(
+		sizeof(struct CFG_SCAN_CHNL),
+		VIR_MEM_TYPE);
+	if (prRoamScnChnl == NULL) {
+		DBGLOG(REQ, ERROR, "alloc roaming scan frequency fail\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+	kalMemZero(prRoamScnChnl,
+		sizeof(struct CFG_SCAN_CHNL));
+
+	if (i4Argc >= 2) {
+		DBGLOG(REQ, INFO, "argc[%i]\n", i4Argc);
+		i4Ret = kalkStrtou32(apcArgv[1], 0, &u4ChnlInfo);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
+			       i4Ret);
+			rStatus = WLAN_STATUS_INVALID_DATA;
+			goto label_exit;
+		}
+
+		prRoamScnChnl->ucChannelListNum = u4ChnlInfo;
+		DBGLOG(REQ, INFO, "Frequency count:%d\n", u4ChnlInfo);
+		if (i4Argc != u4ChnlInfo + 2) {
+			DBGLOG(REQ, ERROR, "param mismatch %d\n", u4ChnlInfo);
+			rStatus = WLAN_STATUS_INVALID_DATA;
+			goto label_exit;
+
+		}
+		for (i = 2; i < i4Argc; i++) {
+			i4Ret = kalkStrtou32(apcArgv[i], 0, &u4FreqInfo);
+			if (i4Ret) {
+				while (i != 2) {
+					prRoamScnChnl->arChnlInfoList[i]
+					.ucChannelNum = 0;
+					i--;
+				}
+				DBGLOG(REQ, ERROR,
+				       "parse chnl num error %d\n", i4Ret);
+				rStatus = WLAN_STATUS_FAILURE;
+				goto label_exit;
+			}
+			if (u4FreqInfo != 0) {
+				DBGLOG(INIT, TRACE,
+				       "[%d] freq=%d\n", t, u4FreqInfo);
+				/* Input freq unit should be kHz */
+				u4ChnlInfo = nicFreq2ChannelNum(
+					u4FreqInfo * 1000);
+				if (u4FreqInfo >= 2412 && u4FreqInfo <= 2484)
+					prRoamScnChnl->arChnlInfoList[t].eBand =
+						BAND_2G4;
+				else if (u4FreqInfo >= 5180 &&
+					u4FreqInfo <= 5900)
+					prRoamScnChnl->arChnlInfoList[t].eBand =
+						BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				else if (u4FreqInfo >= 5955 &&
+					u4FreqInfo <= 7115)
+					prRoamScnChnl->arChnlInfoList[t].eBand =
+						BAND_6G;
+#endif
+
+				prRoamScnChnl->arChnlInfoList[t].ucChannelNum =
+								u4ChnlInfo;
+				prRoamScnChnl->arChnlInfoList[t].u2PriChnlFreq =
+								u4FreqInfo;
+				t++;
+			}
+
+		}
+
+		/* Add existing roam settings */
+		for (i = 0; t < MAXIMUM_OPERATION_CHANNEL_LIST &&
+			i < prExistingRoamScnChnl->ucChannelListNum; i++, t++) {
+			prRoamScnChnl->arChnlInfoList[t].eBand =
+				prExistingRoamScnChnl->arChnlInfoList[i].eBand;
+			prRoamScnChnl->arChnlInfoList[t].ucChannelNum =
+				prExistingRoamScnChnl->arChnlInfoList[
+					i].ucChannelNum;
+			prRoamScnChnl->arChnlInfoList[t].u2PriChnlFreq =
+				prExistingRoamScnChnl->arChnlInfoList[
+					i].u2PriChnlFreq;
+			prRoamScnChnl->ucChannelListNum++;
+		}
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidAddRoamScnChnl,
+			prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL),
+			&u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR,
+			       "add roam scan channel fail 0x%x\n",
+			       rStatus);
+		else
+			DBGLOG(INIT, TRACE,
+			       "add roam scan channel succeeded\n");
+		goto label_exit;
+	} else {
+		DBGLOG(REQ, ERROR, "add failed\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+		goto label_exit;
+	}
+
+label_exit:
+	kalMemFree(prRoamScnChnl,
+		sizeof(struct CFG_SCAN_CHNL),
+		VIR_MEM_TYPE);
+	return rStatus;
+}
+
 int testmode_set_disable_btm(
 	struct wiphy *wiphy,
 	struct wireless_dev *wdev,

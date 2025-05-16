@@ -444,6 +444,8 @@
 #else
 #define CMD_REASSOC				"REASSOC"
 #endif
+#define CMD_GET_ROAM_SCAN_FREQ                  "GET_ROAM_SCAN_FREQ"
+#define CMD_ADD_ROAM_SCAN_FREQ                  "ADD_ROAM_SCAN_FREQ"
 #define CMD_SET_DISABLE_BTM                     "SET_DISABLE_BTM"
 #define CMD_SET_AX_BLOCKLIST                    "SET_AX_BLOCKLIST"
 #define CMD_SET_CUS_BLOCKLIST			"SET_CUS_BLOCKLIST"

@@ -5705,6 +5705,18 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 			uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidQueryRoamScnChnl(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer,
+			uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidAddRoamScnChnl(struct ADAPTER *prAdapter,
+			void *pvSetBuffer,
+			uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
+
+uint32_t
 wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,

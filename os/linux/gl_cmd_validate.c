@@ -2874,6 +2874,22 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.u4PolicySize = ARRAY_SIZE(reassoc_policy)
 	},
 	{
+		.pcCmdStr  = CMD_GET_ROAM_SCAN_FREQ,
+		.pfHandler = testmode_get_roam_scn_freq,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_ADD_ROAM_SCAN_FREQ,
+		.pfHandler = testmode_add_roam_scn_freq,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = u32_policy,
+		.u4PolicySize = ARRAY_SIZE(u32_policy)
+	},
+	{
 		.pcCmdStr  = CMD_SET_DISABLE_BTM,
 		.pfHandler = testmode_set_disable_btm,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,

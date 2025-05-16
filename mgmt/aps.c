@@ -2217,7 +2217,7 @@ try_again:
 
 	if (cand) {
 		if (IS_AIS_CONN_BSSDESC(ais, cand) &&
-		    !search_blk && link->u4NumElem > 1) {
+		    !search_blk && link->u4NumElem > 0) {
 			search_blk = TRUE;
 			goto try_again;
 		}
@@ -2227,7 +2227,7 @@ try_again:
 	}
 
 	/* if No Candidate BSS is found, try BSSes which are in blocklist */
-	if (!search_blk && link->u4NumElem > 1) {
+	if (!search_blk && link->u4NumElem > 0) {
 		search_blk = TRUE;
 		goto try_again;
 	}
