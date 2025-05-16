@@ -83,8 +83,6 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
  *                                 M A C R O S
  *******************************************************************************
  */
-#define IS_BSS_INDEX_VALID(_ucBssIndex)     ((_ucBssIndex) <= MAX_BSSID_NUM)
-
 #define GET_BSS_INFO_BY_INDEX(_prAdapter, _ucBssIndex) \
 	(IS_BSS_INDEX_VALID(_ucBssIndex) ? \
 		(_prAdapter)->aprBssInfo[(_ucBssIndex)] : NULL)
@@ -96,6 +94,8 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 /*----------------------------------------------------------------------------*/
 /* Routines for all Operation Modes                                           */
 /*----------------------------------------------------------------------------*/
+u_int8_t IS_BSS_INDEX_VALID(uint8_t ucBssIndex);
+
 uint32_t bssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo);
 
 struct STA_RECORD *

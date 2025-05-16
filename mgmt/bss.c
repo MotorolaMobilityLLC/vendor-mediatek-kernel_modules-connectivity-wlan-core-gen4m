@@ -240,6 +240,11 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
  *                              F U N C T I O N S
  ******************************************************************************
  */
+u_int8_t IS_BSS_INDEX_VALID(uint8_t ucBssIndex)
+{
+	return ucBssIndex < ARRAY_SIZE(((struct ADAPTER *)0)->aprBssInfo);
+}
+
 /*---------------------------------------------------------------------------*/
 /* Routines for all Operation Modes                                          */
 /*---------------------------------------------------------------------------*/
