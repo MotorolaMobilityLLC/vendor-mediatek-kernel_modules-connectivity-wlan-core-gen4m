@@ -1242,14 +1242,15 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	mld_tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
 	mld_tag->ucLinkId = MLD_LINK_ID_NONE;
 	DBGLOG(INIT, DEBUG,
-		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, WMM=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",
+		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, WMM=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x, DTIM=%d]\n",
 		cmd->ucActive ? "Activate" : "Deactivate",
 		dev_cmd->ucOwnMacIdx, dev_cmd->ucDbdcIdx,
 		bss_cmd->ucBssInfoIdx, bss_basic_tag->ucDbdcIdx,
 		bss_basic_tag->ucOwnMacIdx, bss_basic_tag->ucWmmIdx,
 		bss_basic_tag->u4ConnectionType,
 		bss_basic_tag->ucConnectionState, bss_basic_tag->u2BcMcWlanidx,
-		bss_basic_tag->ucPhyMode, bss_basic_tag->ucPhyModeExt);
+		bss_basic_tag->ucPhyMode, bss_basic_tag->ucPhyModeExt,
+		bss_basic_tag->ucDtimPeriod);
 
 	if (cmd->ucActive) {
 		/* activate devinfo first */

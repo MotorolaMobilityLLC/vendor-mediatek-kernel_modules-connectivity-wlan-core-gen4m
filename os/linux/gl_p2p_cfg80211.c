@@ -2116,6 +2116,27 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 				TRUE);
 		}
 
+		if (dev->ieee80211_ptr &&
+		    dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP &&
+		    prWifiVar->ucApDtimPeriod &&
+		    prWifiVar->ucApDtimPeriod != settings->dtim_period) {
+			DBGLOG(P2P, TRACE,
+				"Change sap dtim from %d to %d\n",
+				settings->dtim_period,
+				prWifiVar->ucApDtimPeriod);
+			settings->dtim_period = prWifiVar->ucApDtimPeriod;
+		} else if (dev->ieee80211_ptr &&
+			   dev->ieee80211_ptr->iftype ==
+			   NL80211_IFTYPE_P2P_GO &&
+			   prWifiVar->ucGoDtimPeriod &&
+			   prWifiVar->ucGoDtimPeriod != settings->dtim_period) {
+			DBGLOG(P2P, TRACE,
+				"Change go dtim from %d to %d\n",
+				settings->dtim_period,
+				prWifiVar->ucGoDtimPeriod);
+			settings->dtim_period = prWifiVar->ucGoDtimPeriod;
+		}
+
 		i4Written += kalSnprintf(aucLogBuf + i4Written,
 					 LOG_BUFFER_SIZE - i4Written,
 					 "name[%s] link_id[%u] inact[%d] beacon[%d] dtim[%d]",

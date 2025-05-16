@@ -9843,6 +9843,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgP2pCapNotif, "P2pCapNotif", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
 #endif /* CFG_P2P2_SUPPORT_CAP_NOTIFICATION */
+	INIT_UINT(prWifiVar->ucApDtimPeriod, "ApDtimPeriod", 0,
+		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->ucGoDtimPeriod, "GoDtimPeriod", 0,
+		  FEATURE_DEBUG_ONLY);
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

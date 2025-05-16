@@ -2063,6 +2063,9 @@ struct WIFI_VAR {
 #if (CFG_TC10_FEATURE == 1)
 	uint8_t ucSarLmtCfgVer;
 #endif
+
+	uint8_t ucApDtimPeriod;
+	uint8_t ucGoDtimPeriod;
 };
 
 /* cnm_timer module */
