@@ -5812,7 +5812,10 @@ static void nicTxDirectEnqueueStaPendQ(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(TX, TRACE, "fgIsTxAllowed isn't TRUE!\n");
+	/* Only log for the first pending packet */
+	if (prAdapter->rStaPendQueue[ucStaIdx].u4NumElem == 0)
+		DBGLOG(TX, DEBUG, "fgIsTxAllowed isn't TRUE!");
+
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	QUEUE_CONCATENATE_QUEUES(
 		&prAdapter->rStaPendQueue[ucStaIdx], prQue);

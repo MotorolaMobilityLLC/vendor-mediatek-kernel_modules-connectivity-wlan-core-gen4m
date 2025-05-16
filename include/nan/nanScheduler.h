@@ -405,7 +405,10 @@ struct _NAN_SCHEDULE_TIMELINE_T {
 	uint8_t ucMapId;
 	uint8_t aucRsvd[3];
 
-	uint32_t au4AvailMap[NAN_TOTAL_DW];
+	union {
+		uint32_t au4AvailMap[NAN_TOTAL_DW];
+		uint8_t aucAvailBlock[NAN_TOTAL_DW * 4];
+	};
 };
 
 struct _NAN_NDL_CUSTOMIZED_T {

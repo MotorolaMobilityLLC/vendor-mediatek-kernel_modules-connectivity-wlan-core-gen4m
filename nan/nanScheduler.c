@@ -4726,8 +4726,8 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	}
 }
 
-static uint8_t nanGetPeerdBands(struct ADAPTER *prAdapter,
-				union _NAN_BAND_CHNL_CTRL *prBandCtrl)
+static uint8_t nanGetPeerBands(struct ADAPTER *prAdapter,
+			       union _NAN_BAND_CHNL_CTRL *prBandCtrl)
 {
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 	uint8_t ucPeerSupportedBand = 0;
@@ -4798,7 +4798,7 @@ nanSchedChkPeerCommonBand(struct ADAPTER *prAdapter,
 				    NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
 
 					ucPeerSupportedBand |=
-						nanGetPeerdBands(prAdapter,
+						nanGetPeerBands(prAdapter,
 								prBandChnlCtrl);
 					continue;
 				}
@@ -5642,7 +5642,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			   sizeof(prNanAvailEntry->au4AvailMap));
 
 		DBGLOG(NAN, DEBUG,
-		       "[%d] Entry Control:0x%04x (Type:%u C:%u/p:%u/c:%u, Pref=%u, Util=%lu, NSS=%u, TBITMAP=%lu)\n",
+		       "[%d] Entry Control:0x%04x (Type:%u C:%u/p:%u/c:%u, Pref=%u, Util=%lu, NSS=%u, TBITMAP=%u)\n",
 		       u4EntryListPos, u2EntryControl,
 		       NAN_AVAIL_ENTRY_CTRL_TYPE(u2EntryControl),
 		       NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl),
@@ -6743,10 +6743,10 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 			       prCommNdcCtrl->aucNdcId[4],
 			       prCommNdcCtrl->aucNdcId[5],
 			       prTimeline[i].ucMapId,
-			       ((uint8_t *)prTimeline[i].au4AvailMap)[0],
-			       ((uint8_t *)prTimeline[i].au4AvailMap)[1],
-			       ((uint8_t *)prTimeline[i].au4AvailMap)[2],
-			       ((uint8_t *)prTimeline[i].au4AvailMap)[3],
+			       prTimeline[i].aucAvailBlock[0],
+			       prTimeline[i].aucAvailBlock[1],
+			       prTimeline[i].aucAvailBlock[2],
+			       prTimeline[i].aucAvailBlock[3],
 			       rChnl.u4PrimaryChnl,
 			       rChnl.u4PrimaryChnl ?
 				       (fgIsCommitted ? 'C' : 'c') : ' ');
@@ -14054,25 +14054,33 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 
 		if (prPeerSchRecord->prCommNdcCtrl) {
 			struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
+			struct _NAN_SCHEDULE_TIMELINE_T *prTimeline;
 
 			prCmdUpdateCRB->rCommNdcCtrl =
 				*prPeerSchRecord->prCommNdcCtrl;
 
 			prCommNdcCtrl = prPeerSchRecord->prCommNdcCtrl;
-			DBGLOG(NAN, INFO,
-			       "NDC=%02x-%02x-%02x-%02x-%02x-%02x, map_id=%u, bitmap=0x%08x",
-			       prCommNdcCtrl->aucNdcId[0],
-			       prCommNdcCtrl->aucNdcId[1],
-			       prCommNdcCtrl->aucNdcId[2],
-			       prCommNdcCtrl->aucNdcId[3],
-			       prCommNdcCtrl->aucNdcId[4],
-			       prCommNdcCtrl->aucNdcId[5],
-			       prCommNdcCtrl->arTimeline[0].ucMapId,
-			       prCommNdcCtrl->arTimeline[0].au4AvailMap[0]);
-			DBGDUMP_HEX(NAN, TEMP,
-				    "prPeerSchRecord->prCommNdcCtrl\n",
-				    prPeerSchRecord->prCommNdcCtrl,
-				    sizeof(*prPeerSchRecord->prCommNdcCtrl));
+			prTimeline = prCommNdcCtrl->arTimeline;
+			for (i = 0; i < ARRAY_SIZE(prCommNdcCtrl->arTimeline);
+			     i++) {
+				if (prTimeline[i].ucMapId == NAN_INVALID_MAP_ID)
+					continue;
+
+				DBGLOG(NAN, INFO,
+				       "sch idx=%u, timeline=%zu, NDC=%02x:%02x:%02x:%02x:%02x:%02x MapID=%u, Avail=%02x-%02x-%02x-%02x",
+				       u4SchIdx, i,
+				       prCommNdcCtrl->aucNdcId[0],
+				       prCommNdcCtrl->aucNdcId[1],
+				       prCommNdcCtrl->aucNdcId[2],
+				       prCommNdcCtrl->aucNdcId[3],
+				       prCommNdcCtrl->aucNdcId[4],
+				       prCommNdcCtrl->aucNdcId[5],
+				       prTimeline[i].ucMapId,
+				       prTimeline[i].aucAvailBlock[0],
+				       prTimeline[i].aucAvailBlock[1],
+				       prTimeline[i].aucAvailBlock[2],
+				       prTimeline[i].aucAvailBlock[3]);
+			}
 		} else {
 			prNdcCtrl = nanSchedGetNdcCtrl(prAdapter,
 				prNegoCtrl->rSelectedNdcCtrl.aucNdcId);
@@ -17870,7 +17878,8 @@ void nanSchedUnRegisterReschedInf(void)
  */
 uint8_t nanSchedNegoChk56GIntersectBySlot(struct ADAPTER *prAdapter,
 					  uint32_t u4SchIdx,
-					  size_t szSlotIdx)
+					  size_t szSlotIdx,
+					  uint8_t *local, uint8_t *remote)
 {
 	const size_t sz5gTimeLineIdx = nanGetTimelineMgmtIndexByBand(prAdapter,
 								     BAND_5G);
@@ -17912,6 +17921,8 @@ uint8_t nanSchedNegoChk56GIntersectBySlot(struct ADAPTER *prAdapter,
 		if (eRmtBand == BAND_2G4)
 			continue;
 
+		*local = u4LocalPrimaryChnl;
+		*remote = u4RmtPrimaryChnl;
 		if (eLocalBand == eRmtBand &&
 		    u4LocalPrimaryChnl == u4RmtPrimaryChnl)
 			return TRUE;
@@ -18004,6 +18015,8 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 	uint8_t fgPeerChnlExist = FALSE;
 	uint32_t u4NegoTransIdx = nanSchedGetCurrentNegoTransIdx(prAdapter);
 	struct _NAN_CRB_NEGO_TRANSACTION_T *prNegoTrans;
+	uint8_t local;
+	uint8_t remote;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prScheduler = nanGetScheduler(prAdapter);
@@ -18199,10 +18212,11 @@ nanSchedNegoFindAisSlotCrb(struct ADAPTER *prAdapter,
 	if (NAN_IS_2G_TIMELINE(prAdapter, szTimeLineIdx) &&
 	    nanSchedNegoChk56GIntersectBySlot(prAdapter,
 					      prNegoCtrl->u4SchIdx,
-					      szSlotIdx)) {
+					      szSlotIdx,
+					      &local, &remote)) {
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%zu) AIS slot(%zu): 5/6G has intersection, skip 2G\n",
-			      szTimeLineIdx, szSlotIdx);
+			      "Tidx(%zu) AIS slot(%zu): 5/6G has intersection (l=%u, r=%u), skip 2G\n",
+			      szTimeLineIdx, szSlotIdx, local, remote);
 		return g_rNullChnl;
 	}
 
@@ -18357,6 +18371,8 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 	uint32_t u4RmtOperatingClass = 0;
 	uint32_t u4NegoTransIdx = nanSchedGetCurrentNegoTransIdx(prAdapter);
 	struct _NAN_CRB_NEGO_TRANSACTION_T *prNegoTrans;
+	uint8_t local;
+	uint8_t remote;
 
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
@@ -18544,10 +18560,12 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 	    !NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G) && /* MCC case: all 2.4G */
 	    nanSchedNegoChk56GIntersectBySlot(prAdapter,
 					      prNegoCtrl->u4SchIdx,
-					      szSlotIdx)) {
+					      szSlotIdx,
+					      &local, &remote)) {
 		NAN_DW_DBGLOG(NAN, DEBUG, fgPrintLog, szSlotIdx,
-			      "Tidx(%zu) NDL slot(%zu): 5/6G has intersection, skip 2G\n",
-			      szTimeLineIdx, szSlotIdx);
+			      "Tidx(%zu) NDL slot(%zu): 5/6G has intersection (l=%u, r=%u), skip 2G\n",
+			      szTimeLineIdx, szSlotIdx,
+			      local, remote);
 		return g_rNullChnl;
 	}
 
@@ -19224,6 +19242,86 @@ done:
 		TRUE;
 }
 
+uint8_t nanCountConflictSlots(struct ADAPTER *prAdapter)
+{
+	const size_t sz5gTimeLineIdx = nanGetTimelineMgmtIndexByBand(prAdapter,
+								     BAND_5G);
+	uint8_t committed[NAN_SLOTS_PER_DW_INTERVAL];
+	uint8_t conditional[NAN_SLOTS_PER_DW_INTERVAL];
+	uint8_t local[NAN_SLOTS_PER_DW_INTERVAL];
+	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl = NULL;
+	uint8_t i;
+	uint8_t n = 0;
+
+	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
+
+	for (i = 0; i < NAN_SLOTS_PER_DW_INTERVAL; i++) {
+		committed[i] = nanGetPeerPrimaryChnlBySlot(prAdapter,
+							prNegoCtrl->u4SchIdx,
+							NAN_NUM_AVAIL_DB, i,
+							FALSE);
+		conditional[i] = nanGetPeerPrimaryChnlBySlot(prAdapter,
+							prNegoCtrl->u4SchIdx,
+							NAN_NUM_AVAIL_DB, i,
+							TRUE);
+		local[i] = nanGetPrimaryChnlBySlot(prAdapter, i,
+						   sz5gTimeLineIdx);
+
+		if (committed[i] && local[i] && committed[i] != local[i])
+			n++;
+	}
+
+	DBGLOG(NAN, DEBUG,
+	       "Remote committed: %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u",
+	       committed[0], committed[1], committed[2], committed[3],
+	       committed[4], committed[5], committed[6], committed[7],
+	       committed[8], committed[9], committed[10], committed[11],
+	       committed[12], committed[13], committed[14], committed[15],
+	       committed[16], committed[17], committed[18], committed[19],
+	       committed[20], committed[21], committed[22], committed[23],
+	       committed[24], committed[25], committed[26], committed[27],
+	       committed[28], committed[29], committed[30], committed[31]);
+
+	DBGLOG(NAN, DEBUG,
+	       "Local: %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u %u-%u-%u-%u-%u-%u-%u-%u",
+	       local[0], local[1], local[2], local[3],
+	       local[4], local[5], local[6], local[7],
+	       local[8], local[9], local[10], local[11],
+	       local[12], local[13], local[14], local[15],
+	       local[16], local[17], local[18], local[19],
+	       local[20], local[21], local[22], local[23],
+	       local[24], local[25], local[26], local[27],
+	       local[28], local[29], local[30], local[31]);
+
+	return n;
+}
+
+/* shall only skip 2G when:
+ * 0. Normal NDP operation &&
+ * 1. 5G/6G timeline suffiicent
+ */
+static u_int8_t nanSkipGen2GTimeline(struct ADAPTER *prAdapter,
+				     u_int8_t fgChkRmtCondSlot,
+				     uint8_t uc5gTimelineCommittedSlot,
+				     uint8_t *ucConflictSlots)
+{
+	/* 5.5.2 requires DUT to send 2G availability in DP request (counter) */
+	if (nanGetFeatureIsSigma(prAdapter))
+		return FALSE;
+
+
+	*ucConflictSlots = nanCountConflictSlots(prAdapter);
+
+	/* 5G/6G slots is not sufficient need to propose 2G availability further
+	 * for instance, half-2G-half-5G or P2p cuased custom committed in 5G/6G
+	 */
+	if (uc5gTimelineCommittedSlot - *ucConflictSlots < 16)
+		return FALSE;
+
+	return TRUE;
+}
+
+
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 					uint8_t fgChkRmtCondSlot)
 {
@@ -19341,22 +19439,25 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 			 szNanActiveTimelineNum > 1 &&
 			 /* !nanLinkNeedMlo(prAdapter) && */ /* FIXME */
 			 !NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G)) {
-			if (!nanGetFeatureIsSigma(prAdapter) &&
-			    (!fgChkRmtCondSlot ||
-			     ucSlotCommitted[sz5gTimeLineIdx] >= 8)) {
-				/* shall only skip 2G when:
-				 * 1. 5G/6G timeline suffiicent, or
-				 * 2. initiating proposal (request or counter)
-				 */
+			uint8_t ucConflictSlots = 0;
+
+			if (nanSkipGen2GTimeline(prAdapter, fgChkRmtCondSlot,
+					ucSlotCommitted[sz5gTimeLineIdx],
+					&ucConflictSlots)) {
 				DBGLOG(NAN, INFO,
-				       "Skip 2G timeline, 5G/6G slots=%u",
-				       ucSlotCommitted[sz5gTimeLineIdx]);
+				       "Skip 2G timeline, 5G/6G slots=%u, [%u]",
+				       ucSlotCommitted[sz5gTimeLineIdx],
+				       ucSlotCommitted[sz5gTimeLineIdx] -
+				       ucConflictSlots);
 				continue;
 			}
+
 			DBGLOG(NAN, INFO,
 			       "Check 2G timeline, fgChkRmtCondSlot=%u, 5G/6G slots=%u",
 			       fgChkRmtCondSlot,
-			       ucSlotCommitted[sz5gTimeLineIdx]);
+			       ucSlotCommitted[sz5gTimeLineIdx],
+			       ucSlotCommitted[sz5gTimeLineIdx] -
+			       ucConflictSlots);
 		}
 
 		/* Skip 5G/6G timeline if P2P is active in 5G/6G but not in

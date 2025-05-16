@@ -1956,7 +1956,7 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 							prAdapter,
 							prNextAttr);
 
-				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%08x",
+				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%02x",
 				       ucPeerSupportedBands);
 
 				ucCommonBands =

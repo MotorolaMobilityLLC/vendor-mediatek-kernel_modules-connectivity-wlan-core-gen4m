@@ -7218,9 +7218,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			prFlowCtrlEvt->arBandChnlInfo[u2SchId].u4OperatingClass;
 		u4PrimaryChnl =
 			prFlowCtrlEvt->arBandChnlInfo[u2SchId].u4PrimaryChnl;
-		if (IS_2G_OP_CLASS(u4OpClass) && !nanLinkNeedMlo(prAdapter) &&
-		    nanSchedGetHighestCommonBand(prAdapter, u2SchId, FALSE)
-			    != ENUM_SUPPORTED_BN_2G) {
+		if (IS_2G_OP_CLASS(u4OpClass) && !nanLinkNeedMlo(prAdapter)) {
 			DBGLOG(NAN, DEBUG,
 				   "Seq:%u, Sch:%u, Rm:%u, Op:%u, ch=%u, 5/6G peer skip 2G flow ctrl\n",
 				   u2SeqNum, u2SchId,
