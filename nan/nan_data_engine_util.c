@@ -3049,7 +3049,7 @@ nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
 {
 	uint8_t *pucAvailabilityAttr = NULL;
 	uint32_t u4AvailabilityAttrLength = 0;
-	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
@@ -3058,13 +3058,13 @@ nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
 	if (prNDL == NULL)
 		return;
 
-	prPeerSchDesc = nanSchedSearchPeerSchDescByNmi(prAdapter,
+	if (prNDL) {
+		prPeerSchDesc = nanSchedSearchPeerSchDescByNmi(prAdapter,
 						       prNDL->aucPeerMacAddr);
-	if (prPeerSchDesc == NULL)
-		return;
 
-	DBGLOG(NAN, DEBUG, "Found prPeerSchDesc for " MACSTR "\n",
-	       MAC2STR(prNDL->aucPeerMacAddr));
+		DBGLOG(NAN, INFO, "Found prPeerSchDesc for " MACSTR "\n",
+		       MAC2STR(prNDL->aucPeerMacAddr));
+	}
 
 	nanSchedGetAvailabilityAttr(prAdapter, prNDL, &pucAvailabilityAttr,
 				    &u4AvailabilityAttrLength);
