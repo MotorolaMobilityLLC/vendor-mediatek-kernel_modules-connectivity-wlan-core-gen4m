@@ -565,12 +565,16 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prT2LMParams->u4SwitchDelayMs == 0) {
-		t2lmFsmSteps(prAdapter, prMldStaRec,
-				T2LM_STATE_ADV_DURATION);
-	} else if (fgSwitchTimeChanged) {
-		t2lmFsmSteps(prAdapter, prMldStaRec,
-				T2LM_STATE_ADV_SWITCH);
+	if (prMldStaRec->eT2LMState == T2LM_STATE_REQ_PENDING) {
+		t2lmMldStaRecBackup(prAdapter, prMldStaRec, prT2LMParams);
+	} else {
+		if (prT2LMParams->u4SwitchDelayMs == 0) {
+			t2lmFsmSteps(prAdapter, prMldStaRec,
+					T2LM_STATE_ADV_DURATION);
+		} else if (fgSwitchTimeChanged) {
+			t2lmFsmSteps(prAdapter, prMldStaRec,
+					T2LM_STATE_ADV_SWITCH);
+		}
 	}
 }
 
