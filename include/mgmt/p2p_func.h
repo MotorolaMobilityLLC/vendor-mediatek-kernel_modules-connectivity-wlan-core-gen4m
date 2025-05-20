@@ -155,7 +155,8 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc,
 		struct STA_RECORD *prStaRec,
 		struct BSS_INFO *prP2pBssInfo,
-		struct SW_RFB *prAssocRspSwRfb);
+		struct SW_RFB *prAssocRspSwRfb,
+		void *pvHeader);
 
 void
 p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,

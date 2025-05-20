@@ -604,10 +604,10 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc,
 		struct STA_RECORD *prStaRec,
 		struct BSS_INFO *prP2pBssInfo,
-		struct SW_RFB *prAssocRspSwRfb)
+		struct SW_RFB *prAssocRspSwRfb,
+		void *pvHeader)
 {
-	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame =
-		(struct WLAN_ASSOC_RSP_FRAME *) NULL;
+	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame = NULL;
 	uint16_t u2IELength;
 	const uint8_t *pucIE;
 
@@ -617,8 +617,7 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			&& (prP2pBssInfo != NULL)
 			&& (prAssocRspSwRfb != NULL));
 
-		prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
-			prAssocRspSwRfb->pvHeader;
+		prAssocRspFrame = pvHeader;
 
 		if (prBssDesc == NULL) {
 			/* Target BSS NULL. */

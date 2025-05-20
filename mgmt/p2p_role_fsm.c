@@ -3583,7 +3583,8 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 				    prTargetBssDesc,
 				    prStaRec,
 				    prP2pLinkBssInfo,
-				    prAssocRspSwRfb);
+				    prAssocRspSwRfb,
+				    prAssocRspSwRfb->pvHeader);
 
 			} else if (prAssocRspSwRfb->pvHeader) {
 				struct SW_RFB *prSwRfb =
@@ -3598,7 +3599,8 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 					    prTargetBssDesc,
 					    prStaRec,
 					    prP2pLinkBssInfo,
-					    prSwRfb);
+					    prSwRfb,
+					    prAssocRspSwRfb->pvHeader);
 					nicRxReturnRFB(prAdapter, prSwRfb);
 				}
 			} else
@@ -3609,8 +3611,8 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			    prTargetBssDesc,
 			    prStaRec,
 			    prP2pLinkBssInfo,
-			    prAssocRspSwRfb);
-
+			    prAssocRspSwRfb,
+			    prAssocRspSwRfb->pvHeader);
 #endif
 #ifdef CFG_SUPPORT_TWT_EXT
 			if (IS_FEATURE_ENABLED(

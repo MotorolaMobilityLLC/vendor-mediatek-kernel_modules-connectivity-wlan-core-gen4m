@@ -1081,7 +1081,8 @@ void rlmMulAPAgentTxMeasurementRequest(struct ADAPTER *prAdapter,
 				       uint16_t u2Repetitions);
 
 void rlmMulAPAgentProcessRadioMeasurementResponse(
-		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+		void *pvHeader);
 
 void rlmProcessRadioMeasurementResponse(
 		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);

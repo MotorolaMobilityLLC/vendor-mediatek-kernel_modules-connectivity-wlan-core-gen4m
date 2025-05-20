@@ -11432,7 +11432,7 @@ void rlmSyncSapAntCtrl(struct ADAPTER *prAdapter,
 		return;
 
 	strLen = kalSnprintf(cmd, sizeof(cmd),
-			"AntControl 6 %u %u",
+			"AntControl 6 %u %lu",
 			ucNssConfig, BIT(ucBssIndex));
 	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
 
@@ -13978,7 +13978,8 @@ void rlmMulAPAgentProcessRMCuRpt(
 }
 
 void rlmMulAPAgentProcessRadioMeasurementResponse(
-		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+		void *pvHeader)
 {
 	struct ACTION_RM_REPORT_FRAME *prRxFrame = NULL;
 	uint8_t *pucOptInfo = NULL;
@@ -14002,7 +14003,7 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 
 	/*TODO, check it's soft ap mode or not ?*/
 
-	prRxFrame = (struct ACTION_RM_REPORT_FRAME *)prSwRfb->pvHeader;
+	prRxFrame = pvHeader;
 
 	prBcnMeasureReport = (struct T_MULTI_AP_BEACON_METRICS_RESP *)
 			kalMemAlloc(sizeof(
@@ -14053,10 +14054,15 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 			prBcnMeasureReport->u8ElemNum++;
 			prBcnMeasureReport->uElemLen +=
 				(prMeasureReportIE->ucLength + 2);
-			kalMemCopy(pucReportElem,
-				&prMeasureReportIE->ucId,
-				prMeasureReportIE->ucLength + 2);
-			pucReportElem += (prMeasureReportIE->ucLength + 2);
+			if (prMeasureReportIE->ucLength + 2 <=
+				sizeof(struct IE_MEASUREMENT_REPORT)) {
+				kalMemCopy(pucReportElem,
+					&prMeasureReportIE->ucId,
+					prMeasureReportIE->ucLength + 2);
+				pucReportElem +=
+					(prMeasureReportIE->ucLength +
+						2);
+			}
 			break;
 		default:
 			DBGLOG(RLM, INFO, "[SAP_Test] not know\n");
@@ -14150,7 +14156,7 @@ void rlmProcessRadioMeasurementResponse(
 				ELEM_RM_TYPE_BEACON_REPORT &&
 				prSwRfb->pvHeader != NULL)
 				rlmMulAPAgentProcessRadioMeasurementResponse(
-					prAdapter, prSwRfb);
+					prAdapter, prSwRfb, prSwRfb->pvHeader);
 			else if (prMeasureReportIE->ucMeasurementType ==
 				ELEM_RM_TYPE_CHNL_LOAD_REPORT) {
 
