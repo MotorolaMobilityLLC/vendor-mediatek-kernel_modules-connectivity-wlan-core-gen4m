@@ -63,7 +63,7 @@
 
 #define DRV_NAME "["CHIP_NAME"]: "
 
-#define	CONTROL_BUFFER_SIZE		(1025)
+#define	CONTROL_BUFFER_SIZE		CFG_RX_MAX_PKT_SIZE
 /* for CFG80211 IE buffering mechanism */
 #define	CFG_CFG80211_IE_BUF_LEN		(640)
 #define	GLUE_INFO_WSCIE_LENGTH		(500)
