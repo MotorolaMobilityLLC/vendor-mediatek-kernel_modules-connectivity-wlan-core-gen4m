@@ -915,6 +915,9 @@ uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
 enum _NAN_CHNL_BW_MAP nanSchedGet2gNanBw(struct ADAPTER *prAdapter);
 enum _NAN_CHNL_BW_MAP nanSchedGet5gNanBw(struct ADAPTER *prAdapter);
 enum _NAN_CHNL_BW_MAP nanSchedGet6gNanBw(struct ADAPTER *prAdapter);
+uint8_t nanGetMaxBw(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand);
 enum ENUM_CHANNEL_WIDTH
 nanGetChannelBwByBand(
 	struct ADAPTER *prAdapter,

@@ -6964,6 +6964,30 @@ enum ENUM_MAX_BANDWIDTH_SETTING nanBwTransmitMaxBw(
 	return MAX_BW_UNKNOWN;
 }
 
+uint8_t nanGetMaxBw(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand)
+{
+	enum _NAN_CHNL_BW_MAP eBwMap = NAN_CHNL_BW_20;
+
+	if (eBand == BAND_2G4)
+		eBwMap = nanSchedGet2gNanBw(prAdapter);
+	else if (eBand == BAND_5G)
+		eBwMap = nanSchedGet5gNanBw(prAdapter);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eBand == BAND_6G)
+		eBwMap = nanSchedGet6gNanBw(prAdapter);
+#endif
+	else {
+		DBGLOG(NAN, WARN,
+			"Invalid band(%d).\n", eBand);
+		return MAX_BW_20MHZ;
+	}
+
+	return (uint8_t)nanBwTransmitMaxBw(eBwMap);
+
+}
+
 uint32_t
 nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 			  unsigned char fgEn5gH, unsigned char fgEn5gL,
