@@ -2085,6 +2085,23 @@ exit:
 
 int wlan_post_whole_chip_rst_v3(void)
 {
+#if CFG_MTK_ANDROID_WMT
+	while (get_wifi_process_status()) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
+	if (!get_wifi_powered_status()) {
+		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		fgIsBusAccessFailed = FALSE;
+		glResetOnEndUpdateFlag(FALSE);
+#if CFG_CHIP_RESET_SUPPORT
+		update_whole_chip_rst_status(FALSE);
+#endif
+		return 0;
+	}
+#endif
+
 	DBGLOG(INIT, DEBUG, "wlan_post_whole_chip_rst_v3\n");
 
 	fgIsBusAccessFailed = FALSE;
