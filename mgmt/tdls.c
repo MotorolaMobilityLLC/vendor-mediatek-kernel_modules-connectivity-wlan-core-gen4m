@@ -162,13 +162,8 @@ void TdlsProcessPublicAction(
 		}
 	}
 
-	if (!prBssInfo) {
-		DBGLOG(TDLS, ERROR, "prBssInfo is NULL");
-		return;
-	}
-
 	if (i == MAX_BSSID_NUM) {
-		DBGLOG(TDLS, ERROR, "No active BSS found matching the BSSID");
+		DBGLOG(TDLS, ERROR, "No valid and matched prBssInfo found\n");
 		return;
 	}
 
@@ -1088,9 +1083,9 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prCmd->ucBssIdx);
 	if (prBssInfo == NULL) {
-		DBGLOG(TDLS, ERROR, "prBssInfo %d is NULL!\n"
-			, prCmd->ucBssIdx);
-		return -EINVAL;
+		DBGLOG(TDLS, ERROR, "prBssInfo %d is NULL!\n",
+		       prCmd->ucBssIdx);
+		return TDLS_STATUS_FAIL;
 	}
 
 	DBGLOG(TDLS, INFO, "u4SetBufferLen=%d\n", u4SetBufferLen);
@@ -1100,13 +1095,13 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 	if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 		prStaRec = prBssInfo->prStaRecOfAP;
 		if (prStaRec == NULL)
-			return 0;
+			return TDLS_STATUS_SUCCESS;
 #if CFG_SUPPORT_TDLS_11AX
 		if (!TdlsAllowed(prAdapter, prCmd->ucBssIdx))
-			return 0;
+			return TDLS_STATUS_SUCCESS;
 #endif
 	} else {
-		return -EINVAL;
+		return TDLS_STATUS_FAIL;
 	}
 #endif
 
@@ -1119,7 +1114,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 
 	case TDLS_FRM_ACTION_DISCOVERY_REQ:
 		if (prStaRec == NULL)
-			return 0;
+			return TDLS_STATUS_SUCCESS;
 		rResult = TdlsDataFrameSend_DISCOVERY_REQ(prAdapter,
 					    prStaRec,
 					    prCmd->aucPeer,
@@ -1132,7 +1127,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 
 	case TDLS_FRM_ACTION_SETUP_REQ:
 		if (prStaRec == NULL)
-			return 0;
+			return TDLS_STATUS_SUCCESS;
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prBssInfo->ucBssIndex,
 				prCmd->aucPeer);
@@ -1155,7 +1150,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		 */
 		/* if(prCmd->u2StatusCode != 0) */
 		if (prBssInfo->fgTdlsIsProhibited)
-			return 0;
+			return TDLS_STATUS_SUCCESS;
 
 		rResult = TdlsDataFrameSend_SETUP_RSP(prAdapter,
 					prStaRec,
@@ -1210,7 +1205,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 
 	default:
 		DBGLOG(TDLS, INFO, "default=%d\n", prCmd->ucActionCode);
-		return -EINVAL;
+		return TDLS_STATUS_FAIL;
 	}
 
 	DBGLOG(TDLS, INFO, "rResult=%d\n", rResult);

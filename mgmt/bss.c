@@ -2502,7 +2502,7 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 
 	if (!prAdapter || !prBssDesc) {
 		DBGLOG(BSS, INFO, "GetIotApAction Param Error!\n");
-		return -EINVAL;
+		return WLAN_STATUS_FAILURE;
 	}
 	/*To make sure one Bss only parse once*/
 	if (prBssDesc->fgIotApActionValid)

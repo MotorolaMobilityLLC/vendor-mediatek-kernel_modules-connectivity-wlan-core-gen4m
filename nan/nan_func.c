@@ -88,14 +88,14 @@ u32 __weak
 wlanoidNANExtCmd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		     uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
-	return -EOPNOTSUPP;
+	return WLAN_STATUS_NOT_SUPPORTED;
 }
 
 u32 __weak
 wlanoidNANExtCmdRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
-	return -EOPNOTSUPP;
+	return WLAN_STATUS_NOT_SUPPORTED;
 }
 
 void __weak
