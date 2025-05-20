@@ -5708,7 +5708,6 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	QUEUE_CONCATENATE_QUEUES(
 		prTmpQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
-	prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
 	u4Size = QUEUE_LENGTH(prTmpQue);
@@ -5738,9 +5737,15 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 		QUEUE_CONCATENATE_QUEUES(
 			&prAdapter->rBssAbsentQueue[ucBssIndex],
 			prTmpQue);
-		prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex]))
+		prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
+	else
+		prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
 	if (QUEUE_IS_NOT_EMPTY(prFreeQue))
 		wlanProcessQueuedMsduInfo(prAdapter, QUEUE_GET_HEAD(prFreeQue));
