@@ -707,6 +707,15 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 uint16_t rlmGenerateMTKChipCapIE(uint8_t *pucBuf, uint16_t u2FrameLength,
 	uint8_t fgNeedOui, uint64_t u8ChipCap);
 
+uint32_t rlmCalculateWFACapLen(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
+
+void rlmGenerateWFACapIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+
+void rlmProcessWfaCapFrame(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, bool fgUseMFP);
+
 u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			const uint8_t *pucBuf,  struct STA_RECORD *prStaRec);
 

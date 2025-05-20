@@ -327,6 +327,11 @@ struct TPENHANCE_PKT_MAP {
 #define FUNC_NAME_LENGTH	30
 #endif
 
+/* Flags of Generational Capabilities Indication */
+#define GCI_DISABLE      0
+#define GCI_ENABLE_WO_CG 1 /* without certification generation field */
+#define GCI_ENABLE       2 /* with certification generation field */
+
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
 	CMD_VER_1_EXT

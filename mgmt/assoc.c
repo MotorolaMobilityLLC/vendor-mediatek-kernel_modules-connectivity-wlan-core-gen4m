@@ -114,6 +114,8 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	{0, rlmCalculateSupportedOpClassIELen, rlmGenerateSupportedOpClassIE}
 	,			/* 221 */
 #endif
+	{0, rlmCalculateWFACapLen, rlmGenerateWFACapIE}
+	,			/* 221 */
 };
 
 #if CFG_SUPPORT_AAA

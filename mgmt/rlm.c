@@ -1108,6 +1108,195 @@ u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, const uint8_t *pucBuf,
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to calculate WFA capability element length
+ *
+ * \param[in]
+ *
+ * \return element length
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmCalculateWFACapLen(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec)
+{
+	uint8_t ucLen = 0, ucGciCfg = 0;
+
+	ASSERT(prAdapter);
+
+	ucGciCfg = prAdapter->rWifiVar.ucGciCfg;
+
+	if (ucGciCfg == GCI_DISABLE)
+		return 0;
+
+	ucLen += sizeof(struct IE_WFA_CAP);
+
+	/* check certified generation field */
+	ucLen += (ucGciCfg == GCI_ENABLE) ? WFA_CAP_CG_TOT_LEN : 0;
+
+	return ucLen;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to generate WFA capabilities element
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void rlmGenerateWFACapIE(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	uint8_t ucGciCfg = 0;
+	uint16_t u2FrameLength = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	struct IE_WFA_CAP *prWfaCapIe = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	ucGciCfg = prAdapter->rWifiVar.ucGciCfg;
+
+	if (!prBssInfo || (ucGciCfg == GCI_DISABLE))
+		return;
+
+	if (!IS_BSS_ACTIVE(prBssInfo))
+		return;
+
+	DBGLOG(RLM, TRACE, "Generating WFA capabilities element\n");
+
+	u2FrameLength = rlmCalculateWFACapLen(prAdapter,
+		prMsduInfo->ucBssIndex, prStaRec);
+	prWfaCapIe = (struct IE_WFA_CAP *)
+		((uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength);
+
+	/* fill WFA capability IE */
+	prWfaCapIe->ucElemId = ELEM_ID_VENDOR;
+	/* exclude size of element id and length */
+	prWfaCapIe->ucLen = u2FrameLength - 2;
+	kalMemCopy(prWfaCapIe->aucOui, aucWfaOui, sizeof(aucWfaOui));
+	prWfaCapIe->ucOuiType = WFA_CAP_OUI_TYPE;
+
+	/* fill Capabilities feild */
+	prWfaCapIe->ucCapLen = sizeof(struct IE_WFA_CAP_CAPABILITY);
+	kalMemSet(&prWfaCapIe->rCap, 0, sizeof(struct IE_WFA_CAP_CAPABILITY));
+
+	/* fill Attributes feild */
+	prWfaCapIe->rAttr.ucAttrId = WFA_CAP_ATTR_ID_GCI;
+	prWfaCapIe->rAttr.ucSGLen = WFA_CAP_SG_LEN;
+	prWfaCapIe->rAttr.ucSG = 0x0F;
+
+	if (ucGciCfg == GCI_ENABLE) {
+		prWfaCapIe->rAttr.ucAttrLen =
+			WFA_CAP_SG_TOT_LEN + WFA_CAP_CG_TOT_LEN;
+		/* Certified Generations Length */
+		prWfaCapIe->rAttr.aucCG[0] = WFA_CAP_CG_LEN;
+		/* Certified Generations */
+		prWfaCapIe->rAttr.aucCG[1] = 0;
+	} else {
+		prWfaCapIe->rAttr.ucAttrLen = WFA_CAP_SG_TOT_LEN;
+	}
+
+	prMsduInfo->u2FrameLength += u2FrameLength;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to send WFA capabilities frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void rlmProcessWfaCapFrame(struct ADAPTER *prAdapter,
+			   struct STA_RECORD *prStaRec,
+			   bool fgUseMFP)
+{
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	uint8_t ucGciCfg = 0;
+	uint16_t u2FrameLen = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct IE_WFA_CAP_FRAME *prTxFrame = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	ucGciCfg = prAdapter->rWifiVar.ucGciCfg;
+
+	if (!prBssInfo || (ucGciCfg == GCI_DISABLE))
+		return;
+
+	DBGLOG(RLM, TRACE, "Sending WFA capabilities frame\n");
+
+	/* calculate MSDU buffer length */
+	u2FrameLen = MAC_TX_RESERVED_FIELD + sizeof(struct IE_WFA_CAP_FRAME);
+	/* check certified generation field */
+	u2FrameLen += (ucGciCfg == GCI_ENABLE) ? WFA_CAP_CG_TOT_LEN : 0;
+
+	/* alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter, u2FrameLen);
+
+	if (!prMsduInfo) {
+		DBGLOG(RLM, ERROR, "Alloc packet failed for MSDU");
+		return;
+	}
+
+	kalMemZero(prMsduInfo->prPacket, u2FrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* compose the frame body's frame */
+	prTxFrame->ucCategory = fgUseMFP ?
+				CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION :
+				CATEGORY_VENDOR_SPECIFIC_ACTION;
+	kalMemCopy(prTxFrame->aucOui, aucWfaOui, sizeof(aucWfaOui));
+	prTxFrame->ucOuiType = WFA_CAP_FRAME_OUI_TYPE;
+
+	/* fill Capabilities feild */
+	prTxFrame->ucCapLen = sizeof(struct IE_WFA_CAP_CAPABILITY);
+	kalMemSet(&prTxFrame->rCap, 0, sizeof(struct IE_WFA_CAP_CAPABILITY));
+
+	/* fill Attributes feild */
+	prTxFrame->rAttr.ucAttrId = WFA_CAP_ATTR_ID_GCI;
+	prTxFrame->rAttr.ucSGLen = WFA_CAP_SG_LEN;
+	prTxFrame->rAttr.ucSG = 0xF;
+
+	if (ucGciCfg == GCI_ENABLE) {
+		prTxFrame->rAttr.ucAttrLen =
+			WFA_CAP_SG_TOT_LEN + WFA_CAP_CG_TOT_LEN;
+		/* Certified Generations Length */
+		prTxFrame->rAttr.aucCG[0] = WFA_CAP_CG_LEN;
+		/* Certified Generations */
+		prTxFrame->rAttr.aucCG[1] = 0;
+	} else {
+		prTxFrame->rAttr.ucAttrLen = WFA_CAP_SG_TOT_LEN;
+	}
+
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     u2FrameLen, NULL, MSDU_RATE_MODE_AUTO);
+
+	/* Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
 #if CFG_SUPPORT_RXSMM_ALLOWLIST
 /*----------------------------------------------------------------------------*/
 /*!

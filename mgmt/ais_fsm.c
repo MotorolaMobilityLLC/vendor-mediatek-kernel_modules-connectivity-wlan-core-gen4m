@@ -5684,6 +5684,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 					0);
 			}
 
+			/* Send WFA capabilities frame */
+			rlmProcessWfaCapFrame(prAdapter, prStaRec, FALSE);
+
 			/* 4 <1.7> Set the Next State of AIS FSM */
 			eNextState = AIS_STATE_NORMAL_TR;
 		}

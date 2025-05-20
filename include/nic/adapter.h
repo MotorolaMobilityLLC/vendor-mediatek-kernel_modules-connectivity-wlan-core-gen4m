@@ -1104,6 +1104,7 @@ struct WIFI_VAR {
 	uint8_t ucRxGf;
 
 	uint8_t ucMCS32;
+	uint8_t ucGciCfg;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucUnsolProbeResp;
 #endif

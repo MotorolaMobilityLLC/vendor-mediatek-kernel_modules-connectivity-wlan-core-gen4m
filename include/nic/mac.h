@@ -2090,7 +2090,20 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_HS_CONFIG_DGAF_DISABLED_MASK           BIT(0)
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#define ELEM_MIN_LEN_VENDOR_OUI			    5
+/* Wi-Fi Alliance Capabilities Element */
+#define WFA_CAP_OUI_TYPE                            0x23
+#define WFA_CAP_FRAME_OUI_TYPE                      0x1B
+
+/* Generational Capabilities Indication Attribute */
+#define WFA_CAP_ATTR_ID_GCI                         1
+#define WFA_CAP_SG_LEN                              1
+/* support generations length + support generations */
+#define WFA_CAP_SG_TOT_LEN                          (WFA_CAP_SG_LEN + 1)
+#define WFA_CAP_CG_LEN                              1
+/* certified generations length + certified generations */
+#define WFA_CAP_CG_TOT_LEN                          (WFA_CAP_CG_LEN + 1)
+
+#define ELEM_MIN_LEN_VENDOR_OUI                     5
 
 /* MTK Vendor Specific OUI */
 #define ELEM_MIN_LEN_MTK_OUI			    \
@@ -4838,6 +4851,69 @@ struct WAPI_INFO_ELEM {
 	uint32_t u4PairSuite;
 	uint32_t u4GroupSuite;
 	uint16_t u2WapiCap;
+} __KAL_ATTRIB_PACKED__;
+
+/* Wi-Fi Alliance Capabilities Element Capabilities Format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_WFA_CAP_CAPABILITY {
+	uint8_t ucQosMgmtDSCP : 1;
+	uint8_t ucQosMgmtDSCPAssc : 1;
+	uint8_t ucQosMgmtScsTraffic : 1;
+	uint8_t ucQosMapping : 1;
+} __KAL_ATTRIB_PACKED__;
+
+/* Wi-Fi Alliance Capabilities Element Attribute Format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_WFA_CAP_ATTRIBUTE {
+	uint8_t ucAttrId;
+	uint8_t ucAttrLen;
+	/* attribute body field */
+	uint8_t ucSGLen; /* Supported Generations Length */
+	/* bit[0] : WiFi 4 Supported
+	 * bit[1] : WiFi 5 Supported
+	 * bit[2] : WiFi 6 Supported
+	 * bit[3] : WiFi 7 Supported
+	 */
+	uint8_t ucSG; /* Supported Generation */
+	/* Certified Generations Length
+	 * Certified Generations
+	 * - bit[0]: WIFI certified n
+	 * - bit[1]: WIFI certified ac
+	 * - bit[2]: WIFI certified ax
+	 * - bit[3]: WIFI certified be
+	 */
+	uint8_t aucCG[]; /* Certified Generation */
+} __KAL_ATTRIB_PACKED__;
+
+/* Wi-Fi Alliance Capabilities Element Format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_WFA_CAP {
+	uint8_t ucElemId;
+	uint8_t ucLen;
+	uint8_t aucOui[3];
+	uint8_t ucOuiType;
+	uint8_t ucCapLen;
+	struct IE_WFA_CAP_CAPABILITY rCap;
+	struct IE_WFA_CAP_ATTRIBUTE rAttr;
+} __KAL_ATTRIB_PACKED__;
+
+/* Wi-Fi Alliance Capabilities Frame Format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_WFA_CAP_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl; /* Frame Control */
+	uint16_t u2Duration; /* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN]; /* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN]; /* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Wi-Fi Alliance Capabilities frame */
+	uint8_t  ucCategory; /* Category */
+	uint8_t  aucOui[3];
+	uint8_t ucOuiType;
+	uint8_t ucCapLen;
+	struct IE_WFA_CAP_CAPABILITY rCap;
+	struct IE_WFA_CAP_ATTRIBUTE rAttr;
 } __KAL_ATTRIB_PACKED__;
 
 /* Information Elements from MTK Synergies.*/

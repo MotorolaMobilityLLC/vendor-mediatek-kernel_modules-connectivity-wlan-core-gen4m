@@ -7786,6 +7786,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucMCS32, "MCS32", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucGciCfg, "GciCfg", GCI_DISABLE,
+		  FEATURE_TO_CUSTOMER);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	INIT_UINT(prWifiVar->ucUnsolProbeResp,
 		"UnsolProbeResp", FEATURE_FORCE_ENABLED, FEATURE_DEBUG_ONLY);
