@@ -2092,16 +2092,20 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	int count = 0, wait = 0, ret;
 	struct ADAPTER *prAdapter = NULL;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GL_HIF_INFO *prHifInfo = NULL;
+#endif
 
 	DBGLOG(HAL, STATE, "mtk_pci_suspend()\n");
 
 	prGlueInfo = wlanDevGetGlueInfo(prdev);
-
 	if (!prGlueInfo) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
 		return -1;
 	}
-
+#if CFG_SUPPORT_PCIE_ASPM
+	prHifInfo = &prGlueInfo->rHifInfo;
+#endif
 	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo->fgIsInSuspendMode = TRUE;
 
@@ -2206,7 +2210,11 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 					prGlueInfo->prAdapter,
 					FALSE,
 					DRV_OWN_SRC_PCI_SUSPEND);
-				if (prAdapter->fgIsFwOwn == FALSE) {
+				if (prAdapter->fgIsFwOwn == FALSE
+#if CFG_SUPPORT_PCIE_ASPM
+				|| prHifInfo->eCurPcieState == PCIE_STATE_L1_2
+#endif
+					) {
 					DBGLOG(HAL, ERROR,
 						"Cannot enter FW own.\n");
 					ret = -EAGAIN;

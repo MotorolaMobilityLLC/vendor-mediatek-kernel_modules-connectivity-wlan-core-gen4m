@@ -3375,6 +3375,7 @@ exit:
 static void mt7999UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	uint32_t u4Status;
 
 	if (fgEn) {
 		prHifInfo->eNextPcieState = PCIE_STATE_L1_2;
@@ -3385,10 +3386,14 @@ static void mt7999UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 
 	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
 		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
-			mt7999ConfigPcieAspm(prGlueInfo, TRUE, 1);
+			u4Status = mt7999ConfigPcieAspm(prGlueInfo,
+							TRUE, 1);
 		else
-			mt7999ConfigPcieAspm(prGlueInfo, FALSE, 1);
-		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
+			u4Status = mt7999ConfigPcieAspm(prGlueInfo,
+							FALSE, 1);
+
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 	}
 }
 

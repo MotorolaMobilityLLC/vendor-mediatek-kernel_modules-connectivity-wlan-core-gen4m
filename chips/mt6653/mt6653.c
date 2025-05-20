@@ -3744,6 +3744,7 @@ exit:
 static void mt6653UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	uint32_t u4Status;
 
 	if (prGlueInfo->prAdapter->rWifiVar.fgPcieEnableL1ss == 0)
 		return;
@@ -3756,11 +3757,15 @@ static void mt6653UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 		prHifInfo->eNextPcieState = PCIE_STATE_L1;
 
 	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
-		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
-			mt6653ConfigPcieAspm(prGlueInfo, TRUE, 1);
+			u4Status = mt6653ConfigPcieAspm(prGlueInfo,
+							TRUE, 1);
 		else
-			mt6653ConfigPcieAspm(prGlueInfo, FALSE, 1);
+			u4Status = mt6653ConfigPcieAspm(prGlueInfo,
+							FALSE, 1);
+
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 	}
 }
 
