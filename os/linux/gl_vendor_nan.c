@@ -549,6 +549,11 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	nanCapabilitiesRsp.fwHeader.msgVersion = 1;
 	nanCapabilitiesRsp.fwHeader.msgId = NAN_MSG_ID_CAPABILITIES_RSP;
 	nanCapabilitiesRsp.fwHeader.msgLen =
@@ -634,6 +639,11 @@ wlanoidNANEnableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	nanEnableRsp.fwHeader.msgVersion = 1;
 	nanEnableRsp.fwHeader.msgId = NAN_MSG_ID_ENABLE_RSP;
 	nanEnableRsp.fwHeader.msgLen = sizeof(struct NanEnableRspMsg);
@@ -683,6 +693,11 @@ wlanoidNANDisableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	nanDisableRsp.fwHeader.msgVersion = 1;
 	nanDisableRsp.fwHeader.msgId = NAN_MSG_ID_DISABLE_RSP;
 	nanDisableRsp.fwHeader.msgLen = sizeof(struct NanDisableRspMsg);
@@ -728,6 +743,11 @@ wlanoidNANConfigRsp(struct ADAPTER *prAdapter,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	nanConfigRsp.fwHeader.msgVersion = 1;
 	nanConfigRsp.fwHeader.msgId = NAN_MSG_ID_CONFIGURATION_RSP;
 	nanConfigRsp.fwHeader.msgLen = sizeof(struct NanConfigRspMsg);
@@ -772,6 +792,11 @@ wlanoidNanPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
 
 	/* Prepare publish response header*/
 	nanPublishRsp.fwHeader.msgVersion = 1;
@@ -836,6 +861,11 @@ wlanoidNANCancelPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	nanPublishCancelRsp.fwHeader.msgVersion = 1;
@@ -895,6 +925,11 @@ wlanoidNanSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
 
 	DBGLOG(NAN, DEBUG, "Enter\n");
 
@@ -957,6 +992,11 @@ wlanoidNANCancelSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	DBGLOG(NAN, DEBUG, "Enter\n");
 
 	nanSubscribeCancelRsp.fwHeader.msgVersion = 1;
@@ -1012,6 +1052,12 @@ wlanoidNANFollowupRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	kalMemZero(&nanXmitFollowupRsp,
 		   sizeof(struct NanTransmitFollowupRspMsg));
 
@@ -3447,6 +3493,11 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	/*Final length includes all TLVs*/
 	message_len = sizeof(struct _NanMsgHeader) +
 		SIZEOF_TLV_HDR + MAC_ADDR_LEN;
@@ -3557,6 +3608,11 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, AIS_DEFAULT_INDEX))
 		->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	/*Final length includes all TLVs*/
 	message_len = sizeof(struct _NanMsgHeader) +
 			sizeof(u16) +
@@ -3615,6 +3671,11 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
 
 	prRepliedEvt = (struct NAN_REPLIED_EVENT *)pcuEvtBuf;
 
@@ -3694,6 +3755,11 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
 
 	kalMemZero(&nanPeerSdeaCtrlarms, sizeof(struct NanFWSdeaCtrlParams));
 	kalMemZero(&peer_sdea_params, sizeof(struct NanSdeaCtrlParams));
@@ -3843,6 +3909,12 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	kalMemZero(&nanPubTerInd, sizeof(struct NanPublishTerminatedIndMsg));
 	prPubTerEvt = (struct NAN_PUBLISH_TERMINATE_EVENT *)pcuEvtBuf;
 
@@ -3910,6 +3982,12 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	kalMemZero(&nanSubTerInd, sizeof(struct NanSubscribeTerminatedIndMsg));
 	prSubTerEvt = (struct NAN_SUBSCRIBE_TERMINATE_EVENT *)pcuEvtBuf;
 
@@ -3976,6 +4054,11 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
 
 	prFollowupEvt = (struct NAN_FOLLOW_UP_EVENT *)pcuEvtBuf;
 
@@ -4088,6 +4171,11 @@ mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
 				AIS_DEFAULT_INDEX))->ieee80211_ptr;
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
+
 	prFollowupEvt = (struct NAN_FOLLOW_UP_EVENT *) pcuEvtBuf;
 
 	message_len = sizeof(*prNanSelfFollowupInd);
@@ -4153,6 +4241,11 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
+
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+		return -ENODEV;
+	}
 
 	prMatchExpireEvt = (struct NAN_MATCH_EXPIRE_EVENT *)pcuEvtBuf;
 
