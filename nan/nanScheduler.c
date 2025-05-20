@@ -62,7 +62,7 @@ do {								\
 	pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)] |=			\
 		BIT(NAN_SLOT_INDEX(u2SlotIdx));			\
 	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",	\
-	       __func__, pu4AvailMap, u2SlotIdx,		\
+	       __func__, pu4AvailMap, (uint16_t)u2SlotIdx,	\
 	       pu4AvailMap[NAN_DW_INDEX(u2SlotIdx)]);		\
 } while (0)
 
@@ -5416,7 +5416,7 @@ static void nanParseNdcFromNextAttribute(struct ADAPTER *prAdapter,
 	prPeerSchRec->prCommNdcCtrl = prNdcCtrl;
 
 	DBGLOG(NAN, TRACE,
-	       "Processed NDC with Availability, set sch %u, NDC=%02x-%02x-%02x-%02x-%02x-%02x",
+	       "Processed NDC with Availability, set sch %td, NDC=%02x-%02x-%02x-%02x-%02x-%02x",
 	       prPeerSchRec - g_arNanPeerSchedRecord,
 	       prNdcAttr->aucNDCID[0], prNdcAttr->aucNDCID[1],
 	       prNdcAttr->aucNDCID[2], prNdcAttr->aucNDCID[3],
@@ -5761,7 +5761,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 			   sizeof(prNanAvailEntry->au4AvailMap));
 
 		DBGLOG(NAN, DEBUG,
-		       "[%d] Entry Control:0x%04x (Type:%u C:%u/p:%u/c:%u, Pref=%u, Util=%lu, NSS=%u, TBITMAP=%u)\n",
+		       "[%d] Entry Control:0x%04x (Type:%u C:%u/p:%u/c:%u, Pref=%u, Util=%u, NSS=%u, TBITMAP=%u)\n",
 		       u4EntryListPos, u2EntryControl,
 		       NAN_AVAIL_ENTRY_CTRL_TYPE(u2EntryControl),
 		       NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl),
@@ -10182,7 +10182,7 @@ nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
 						aau4EmptyMap[szTimeLineIdx],
 						u4SlotIdx);
 					DBGLOG(NAN, DEBUG,
-						"Local empty! TIdx,%zu,Slot,%zu,rmtChnl,%u,AvailDb,%zu,MapId,%d\n",
+						"Local empty! TIdx,%zu,Slot,%u,rmtChnl,%u,AvailDb,%u,MapId,%d\n",
 						szTimeLineIdx, u4SlotIdx,
 						rRmtChnlInfo.u4PrimaryChnl,
 						u4AvailDbIdx,

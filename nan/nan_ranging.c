@@ -1438,7 +1438,7 @@ uint32_t nanRangingReportRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	prRanging = nanRangingInstanceSearchByMac(prAdapter,
 						  prActionFrame->aucSrcAddr);
 	if (prRanging == NULL)
-		return -1;
+		return WLAN_STATUS_FAILURE;
 
 	nanParseRangingFrame(prAdapter, prSwRfb, prRanging);
 
@@ -1474,7 +1474,7 @@ uint32_t nanRangingReportRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		nanRangingReportDiscCmd(prAdapter, &rgrpt);
 	}
 
-	return 0;
+	return WLAN_STATUS_SUCCESS;
 }
 
 /************************************************
