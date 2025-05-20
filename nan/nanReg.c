@@ -125,7 +125,7 @@ struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[] = {
 
 #define REG_DB_ENTRY_NOT_FOUND ARRAY_SIZE(g_rNanRegInfo)
 
-u_int8_t fgNanUseR4AvailAttr;
+u_int8_t g_fgNanUseR4AvailAttr;
 
 /*******************************************
  * Table E4 - Global Operating Classes
@@ -155,7 +155,7 @@ uint8_t nanRegGet20MHzPrimaryChnlIndex(uint8_t ucOperatingClass,
 	 */
 
 	if (IS_6G_OP_CLASS(ucOperatingClass)) {
-		if (fgNanUseR4AvailAttr)
+		if (g_fgNanUseR4AvailAttr)
 			DBGLOG(NAN, WARN, "FIXME, OC=%u, PriChnlBitmap=0x%02x",
 			       ucOperatingClass, ucPriChnlBitmap);
 		else
@@ -185,7 +185,7 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 
 #if (CFG_SUPPORT_NAN_6G == 1)
 	if (IS_6G_OP_CLASS(ucOperatingClass)) {
-		if (fgNanUseR4AvailAttr) {
+		if (g_fgNanUseR4AvailAttr) {
 			kalMemZero(aucSupportChnlList,
 				   sizeof(aucSupportChnlList));
 			uc6gStartChnl = pucBuf[0];
@@ -217,7 +217,7 @@ uint8_t nanRegGetChannelByOrder(uint8_t ucOperatingClass,
 		pucBuf[j / 8] &= ~BIT(j % 8);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-		if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
+		if (IS_6G_OP_CLASS(ucOperatingClass) && g_fgNanUseR4AvailAttr) {
 			uint8_t nxt = 0;
 
 			if (j < u4MaxChnlBitmap - 1)
@@ -254,7 +254,7 @@ nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
 	i = nanRegFindRecordIdx(ucOperatingClass);
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
+	if (IS_6G_OP_CLASS(ucOperatingClass) && g_fgNanUseR4AvailAttr) {
 		pucBuf[0] = ucChannel;
 		pucBuf[1] = 1;
 		return WLAN_STATUS_SUCCESS;
@@ -364,7 +364,7 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 #endif
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-	if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
+	if (IS_6G_OP_CLASS(ucOperatingClass) && g_fgNanUseR4AvailAttr) {
 		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
 		uc6gStartChnl = pucBuf[0];
 		uc6gChnlNum = pucBuf[1];
@@ -403,7 +403,7 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 		 * here should clear bitmap once the channel has been selected
 		 * Save the updated bitmap pointed by pu2ChnlBitmap.
 		 */
-		if (IS_6G_OP_CLASS(ucOperatingClass) && fgNanUseR4AvailAttr) {
+		if (IS_6G_OP_CLASS(ucOperatingClass) && g_fgNanUseR4AvailAttr) {
 			uint8_t nxt = 0;
 
 			if (j < u4MaxChnlBitmap - 1)
@@ -847,7 +847,7 @@ void nanChannelBitmapR4ToR3(void *pBuf)
 
 void nanSetNanUseR4AvailAttr(uint8_t ucEnable)
 {
-	fgNanUseR4AvailAttr = ucEnable;
+	g_fgNanUseR4AvailAttr = !!(ucEnable & BIT(NAN_AVAIL_BIT));
 	DBGLOG(NAN, INFO, "R4 6G channel map (%u)\n", ucEnable);
 }
 #endif

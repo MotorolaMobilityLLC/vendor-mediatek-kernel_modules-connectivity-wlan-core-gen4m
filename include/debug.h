@@ -1050,7 +1050,7 @@ struct WAKE_INFO_T {
 
 #define DBG_IS_LEVEL_SET(_Mod, _Cls) \
 ({								\
-	uint32_t u4DebugLevel;					\
+	uint32_t u4DebugLevel = 0;				\
 	wlanGetDriverDbgLevel(DBG_##_Mod##_IDX, &u4DebugLevel);	\
 	(u4DebugLevel & DBG_CLASS_##_Cls);			\
 })

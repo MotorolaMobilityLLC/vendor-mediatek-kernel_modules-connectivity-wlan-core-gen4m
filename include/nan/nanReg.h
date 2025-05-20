@@ -10,7 +10,7 @@
 
 #define REG_INVALID_INFO 0xFF
 
-extern u_int8_t fgNanUseR4AvailAttr;
+extern u_int8_t g_fgNanUseR4AvailAttr;
 
 uint16_t nanRegGetBw(uint8_t ucOperatingClass);
 uint32_t nanRegGetChannelBitmap(uint8_t ucOperatingClass,

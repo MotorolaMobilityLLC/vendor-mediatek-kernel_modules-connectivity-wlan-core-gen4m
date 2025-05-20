@@ -9137,10 +9137,20 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	wlanCfgSetUint32(prAdapter, "NanEnable6g",
 		prWifiVar->ucNanEnable6g);
-	INIT_UINT(prWifiVar->ucNanUseR4AvailAttr, "NanUseR4Avail", 1,
-		FEATURE_TO_CUSTOMER);
+
+	/* BIT(0): Committed, Conditional
+	 * BIT(1): Potential
+	 * BIT(2): R4 6G capability bit
+	 * BIT(3): Send availability by peer 6G capability bit
+	 * BIT(4): Send availability by peer availability
+	 */
+	INIT_UINT(prWifiVar->ucNanUseR4AvailAttr, "NanUseR4Avail",
+		  BIT(NAN_AVAIL_BIT) | BIT(NAN_POTEN_BIT) |
+		  BIT(NAN_R4_6G_CAP_BIT) | BIT(NAN_REF_PEER_CAP_BIT),
+		  FEATURE_TO_CUSTOMER);
 	wlanCfgSetUint32(prAdapter, "NanUseR4Avail",
 		prWifiVar->ucNanUseR4AvailAttr);
+
 	INIT_UINT(prWifiVar->ucNanEnable6gReschedInit,
 		"NanEnable6gReschedInit", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanBandChnlType, "NanBandChnlType",

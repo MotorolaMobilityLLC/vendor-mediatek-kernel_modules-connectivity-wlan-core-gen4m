@@ -110,6 +110,13 @@
 #define NAN_DEFAULT_RANG_QUOTA_LOW_BOUND 1
 #define NAN_DEFAULT_RANG_QUOTA_UP_BOUND 3
 
+/* Config bits for ucNanUseR4AvailAttr */
+#define NAN_AVAIL_BIT 0
+#define NAN_POTEN_BIT 1
+#define NAN_R4_6G_CAP_BIT 2
+#define NAN_REF_PEER_CAP_BIT 3
+#define NAN_REF_PEER_AVAIL_BIT 4
+
 /**
  * Merge potential to committed if the conditions holds:
  * 1. The bitmap length must be 4 (to be modified)

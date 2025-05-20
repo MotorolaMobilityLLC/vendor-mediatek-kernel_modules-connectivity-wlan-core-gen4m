@@ -716,7 +716,13 @@ struct _NAN_ATTR_MASTER_INDICATION_T {
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_SIMPLE_CHNL_ENTRY_T {
 	uint8_t ucOperatingClass;
-	uint16_t u2ChannelBitmap;
+	union {
+		uint16_t u2ChannelBitmap;
+		struct {
+			uint8_t ucChannelStart;
+			uint8_t ucChannelNum;
+		};
+	};
 	uint8_t ucPrimaryChnlBitmap;
 } __KAL_ATTRIB_PACKED__;
 

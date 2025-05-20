@@ -4518,6 +4518,78 @@ static uint8_t mergeCommittedPotentialTimeBitmap(uint8_t ucPotentialPriChnl,
 }
 #endif
 
+static u_int8_t nanIsR4Avail(uint16_t u2EntryControl, uint8_t ucOperatingClass,
+			     void *pChannelBitmap)
+{
+	uint8_t ucStart = ((uint8_t *)pChannelBitmap)[0];
+	uint8_t ucNum = ((uint8_t *)pChannelBitmap)[1];
+	uint16_t u2Bitmap = *(uint16_t *)pChannelBitmap;
+
+	DBGLOG(NAN, TRACE,
+	       "Type:%u C:%u/p:%u/c:%u, 6G availability OC=%u, start=%u, num=%u, bitmap=0x%04x",
+	       NAN_AVAIL_ENTRY_CTRL_TYPE(u2EntryControl),
+	       NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl),
+	       NAN_AVAIL_ENTRY_CTRL_POTENTIAL(u2EntryControl),
+	       NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl),
+	       ucOperatingClass, ucStart, ucNum, u2Bitmap);
+
+	if (ucNum == 0)
+		return FALSE;
+
+	/* NAN R4 Table 9 */
+	if ((NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl) ||
+	     NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl)) && ucNum != 1)
+		return FALSE;
+
+	if (ucOperatingClass == 137 && ucStart % 64 == 31 ||
+	    ucOperatingClass == 134 && ucStart % 32 == 15 ||
+	    ucOperatingClass == 133 && ucStart % 16 == 7 ||
+	    ucOperatingClass == 132 && ucStart % 8 == 3 ||
+	    ucOperatingClass == 131 && ucStart % 4 == 1)
+		return TRUE;
+
+	return FALSE;
+}
+
+static u_int8_t nanOpClassBandMatch(uint8_t ucCheckOpClass, uint8_t ucOC)
+{
+	return IS_2G_OP_CLASS(ucCheckOpClass) && IS_2G_OP_CLASS(ucOC) ||
+	       IS_5G_OP_CLASS(ucCheckOpClass) && IS_5G_OP_CLASS(ucOC) ||
+	       IS_6G_OP_CLASS(ucCheckOpClass) && IS_6G_OP_CLASS(ucOC);
+}
+
+static u_int8_t nanIsChosenInPotential(struct _NAN_SIMPLE_CHNL_ENTRY_T *pChosen,
+				struct _NAN_SIMPLE_CHNL_ENTRY_T *prPotential,
+				struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry)
+{
+	if (!pChosen)
+		return FALSE;
+
+	if (pChosen->ucOperatingClass != prPotential->ucOperatingClass)
+		return FALSE;
+
+	if (nanIsR4Avail(prAvailEntry->u2EntryControl,
+			 prPotential->ucOperatingClass,
+			 &prPotential->u2ChannelBitmap)) {
+
+		if (pChosen->ucChannelStart < prPotential->ucChannelStart)
+			return FALSE;
+
+		if (pChosen->ucChannelStart + pChosen->ucChannelNum >
+		    prPotential->ucChannelStart + prPotential->ucChannelNum)
+			return FALSE;
+
+	} else {
+		if (!(pChosen->u2ChannelBitmap & prPotential->u2ChannelBitmap))
+			return FALSE;
+	}
+
+	if (!(pChosen->ucPrimaryChnlBitmap & prPotential->ucPrimaryChnlBitmap))
+		return FALSE;
+
+	return TRUE;
+}
+
 static struct _NAN_AVAILABILITY_ENTRY_T *
 scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		     struct _NAN_AVAILABILITY_ENTRY_SIMPLE_T *prConditional)
@@ -4555,6 +4627,7 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 	uint8_t ucTimeBitmapLength;
 	uint8_t *pucBand;
 	uint8_t *pucChnl;
+	uint8_t aucMergedTimeBitmap[TYPICAL_BITMAP_LENGTH] = {0};
 
 	prChnlEntry = &prConditional->channelEntry.rChnlEntry;
 	ucCheckOpClass = prChnlEntry->ucOperatingClass;
@@ -4617,6 +4690,9 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 				    !fgCommitted2G && !fgConditional) {
 					pChosen = &rPrefer2gChannel;
 					pucTimeBitmap = pTimeBitmapTmp;
+					kalMemCopy(aucMergedTimeBitmap,
+						   pucTimeBitmap,
+						   TYPICAL_BITMAP_LENGTH);
 					continue;
 				}
 #if (CFG_SUPPORT_NAN_6G == 1)
@@ -4627,6 +4703,9 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 				    !fgCommitted6G && !fgConditional) {
 					pChosen = &rPrefer6gChannel;
 					pucTimeBitmap = pTimeBitmapTmp;
+					kalMemCopy(aucMergedTimeBitmap,
+						   pucTimeBitmap,
+						   TYPICAL_BITMAP_LENGTH);
 					continue;
 				}
 #endif
@@ -4650,8 +4729,13 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 			prChnlList->aucEntry;
 		for (i = 0; i < prChnlList->ucNumberOfEntry; i++) {
 			uint8_t ucOC;
+			uint8_t ucPrimaryChnlBitmap;
+			uint16_t u2ChannelBitmap;
 
 			ucOC = prBandChnlList[i].ucOperatingClass;
+			u2ChannelBitmap = prBandChnlList[i].u2ChannelBitmap;
+			ucPrimaryChnlBitmap =
+				prBandChnlList[i].ucPrimaryChnlBitmap;
 			if (prAvailEntry->rCtrl.u2TypeCommitted) {
 				u4CommittedBitmap |=
 					*(uint32_t *)pTimeBitmapTmp;
@@ -4664,13 +4748,52 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 			if (!prAvailEntry->rCtrl.u2TypePotential)
 				continue;
 
+			if (!nanOpClassBandMatch(ucCheckOpClass, ucOC))
+				continue;
+
+			DBGLOG(NAN, TRACE,
+			       "Check potential channel[%u], OC=%u, u2ChannelBitmap=0x%04x, ucPrimaryChnlBitmap=0x%02x, %02x-%02x-%02x-%02x",
+			       i, ucOC, u2ChannelBitmap, ucPrimaryChnlBitmap,
+			       pTimeBitmapTmp[0],
+			       pTimeBitmapTmp[1],
+			       pTimeBitmapTmp[2],
+			       pTimeBitmapTmp[3]);
+
 			if (IS_6G_OP_CLASS(ucOC) &&
 			    IS_6G_OP_CLASS(ucCheckOpClass)) {
 				/* Reach here: 6G && Potential */
+
+				/* merge multiple potential of same channel */
+				if (nanIsChosenInPotential(pChosen,
+							   &prBandChnlList[i],
+							   prAvailEntry)) {
+					DBGLOG(NAN, TRACE,
+					      "Same channel, OC=%u %02x-%02x-%02x-%02x",
+					      ucOC,
+					      aucMergedTimeBitmap[0],
+					      aucMergedTimeBitmap[1],
+					      aucMergedTimeBitmap[2],
+					      aucMergedTimeBitmap[3]);
+					for (i = 0; i < TYPICAL_BITMAP_LENGTH;
+					     i++) {
+						aucMergedTimeBitmap[i] |=
+							pTimeBitmapTmp[i];
+					}
+					DBGLOG(NAN, TRACE,
+					      "Merged channel, %02x-%02x-%02x-%02x",
+					      aucMergedTimeBitmap[0],
+					      aucMergedTimeBitmap[1],
+					      aucMergedTimeBitmap[2],
+					      aucMergedTimeBitmap[3]);
+				}
+
 				if (!pChosen &&
 				    !fgCommitted6G && !fgConditional) {
 					pChosen = &prBandChnlList[i];
 					pucTimeBitmap = pTimeBitmapTmp;
+					kalMemCopy(aucMergedTimeBitmap,
+						   pucTimeBitmap,
+						   TYPICAL_BITMAP_LENGTH);
 				}
 
 				if (!pChosen)
@@ -4681,6 +4804,9 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 					/* better chosen */
 					pChosen = &prBandChnlList[i];
 					pucTimeBitmap = pTimeBitmapTmp;
+					kalMemCopy(aucMergedTimeBitmap,
+						   pucTimeBitmap,
+						   TYPICAL_BITMAP_LENGTH);
 				}
 			}
 
@@ -4693,7 +4819,11 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 				if (!pChosen && !fgConditional) {
 					pChosen = &prBandChnlList[i];
 					pucTimeBitmap = pTimeBitmapTmp;
+					kalMemCopy(aucMergedTimeBitmap,
+						   pucTimeBitmap,
+						   TYPICAL_BITMAP_LENGTH);
 				}
+
 				if (!pChosen)
 					continue;
 
@@ -4702,8 +4832,23 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 					/* better chosen */
 					pChosen = &prBandChnlList[i];
 					pucTimeBitmap = pTimeBitmapTmp;
+					kalMemCopy(aucMergedTimeBitmap,
+						   pucTimeBitmap,
+						   TYPICAL_BITMAP_LENGTH);
 				}
 			}
+		}
+
+		if (pChosen) {
+			DBGLOG(NAN, TRACE,
+			       "pChosen, OC=%u, u2ChannelBitmap=0x%04x, ucPrimaryChnlBitmap=0x%02x, %02x-%02x-%02x-%02x",
+			       pChosen->ucOperatingClass,
+			       pChosen->u2ChannelBitmap,
+			       pChosen->ucPrimaryChnlBitmap,
+			       aucMergedTimeBitmap[0],
+			       aucMergedTimeBitmap[1],
+			       aucMergedTimeBitmap[2],
+			       aucMergedTimeBitmap[3]);
 		}
 	} while (pNextAvailEntry < pucAvailAttrEnd);
 
@@ -4711,7 +4856,7 @@ scanAvailabilityAttr(struct _NAN_ATTR_NAN_AVAILABILITY_T *prAttrNanAvailibility,
 		prChnlEntry->ucOperatingClass = pChosen->ucOperatingClass;
 		prChnlEntry->u2ChannelBitmap = pChosen->u2ChannelBitmap;
 		prChnlEntry->ucPrimaryChnlBitmap = pChosen->ucPrimaryChnlBitmap;
-		kalMemCopy(prConditional->aucTimeBitmap, pucTimeBitmap,
+		kalMemCopy(prConditional->aucTimeBitmap, aucMergedTimeBitmap,
 			   TYPICAL_BITMAP_LENGTH);
 		DBGLOG(NAN, DEBUG,
 		       "Committed=0x%08x, potential=0x%08x => conditional=0x%08x\n",
@@ -5093,7 +5238,7 @@ nanGetSubBandByChannelEntry(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
 		}
 	}
 
-	DBGLOG(NAN, INFO,
+	DBGLOG(NAN, TRACE,
 	       "%c availability %s support 6G/5GH/5GL/2G=%u/%u/%u/%u",
 	       nanChnlTypeStr(prAvailEntry),
 	       prChnlList->ucType == NAN_BAND_CH_ENTRY_LIST_TYPE_BAND ?
@@ -5500,7 +5645,11 @@ done:
 	return rRetStatus;
 }
 
-static u_int8_t nanNeedUpdateAvailFormat(struct WIFI_VAR *prWifiVar,
+/* Reflect to send Availability by peer availability if peer format is different
+ * from local setting
+ * See also: nanSetPeerAvailByCap when nanSchedPeerUpdateDevCapabilityAttr
+ */
+static u_int8_t nanReflectPeerAvailFormat(struct WIFI_VAR *prWifiVar,
 				 enum _NAN_ACTION_T eNanAction,
 				struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
 				uint16_t u2EntryControl,
@@ -5515,9 +5664,12 @@ static u_int8_t nanNeedUpdateAvailFormat(struct WIFI_VAR *prWifiVar,
 	      NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl)))
 		return FALSE;
 
+	if (!prWifiVar->b1NanReflectPeerAvailabilityByAvail)
+		return FALSE;
+
 	/* Only set when the peer use different from our default format */
-	if (fgNanUseR4AvailAttr && !prWifiVar->ucNanUseR4AvailAttr ||
-	    !fgNanUseR4AvailAttr && prWifiVar->ucNanUseR4AvailAttr) {
+	if (fgNanUseR4AvailAttr && !prWifiVar->b1NanUseR4AvailAttr ||
+	    !fgNanUseR4AvailAttr && prWifiVar->b1NanUseR4AvailAttr) {
 
 		DBGLOG(NAN, INFO,
 		       "Peer %02x:%02x:%02x:%02x:%02x:%02x use special Availability, R4=%u",
@@ -5530,39 +5682,6 @@ static u_int8_t nanNeedUpdateAvailFormat(struct WIFI_VAR *prWifiVar,
 		       fgNanUseR4AvailAttr);
 		return TRUE;
 	}
-
-	return FALSE;
-}
-
-static u_int8_t nanIsR4Avail(uint16_t u2EntryControl, uint8_t ucOperatingClass,
-			     void *pChannelBitmap)
-{
-	uint8_t ucStart = ((uint8_t *)pChannelBitmap)[0];
-	uint8_t ucNum = ((uint8_t *)pChannelBitmap)[1];
-	uint16_t u2Bitmap = *(uint16_t *)pChannelBitmap;
-
-	DBGLOG(NAN, INFO,
-	       "Type:%u C:%u/p:%u/c:%u, 6G availability OC=%u, start=%u, num=%u, bitmap=0x%04x",
-	       NAN_AVAIL_ENTRY_CTRL_TYPE(u2EntryControl),
-	       NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl),
-	       NAN_AVAIL_ENTRY_CTRL_POTENTIAL(u2EntryControl),
-	       NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl),
-	       ucOperatingClass, ucStart, ucNum, u2Bitmap);
-
-	if (ucNum == 0)
-		return FALSE;
-
-	/* NAN R4 Table 9 */
-	if ((NAN_AVAIL_ENTRY_CTRL_COMMITTED(u2EntryControl) ||
-	     NAN_AVAIL_ENTRY_CTRL_CONDITIONAL(u2EntryControl)) && ucNum != 1)
-		return FALSE;
-
-	if (ucOperatingClass == 137 && ucStart % 64 == 31 ||
-	    ucOperatingClass == 134 && ucStart % 32 == 15 ||
-	    ucOperatingClass == 133 && ucStart % 16 == 7 ||
-	    ucOperatingClass == 132 && ucStart % 8 == 3 ||
-	    ucOperatingClass == 131 && ucStart % 4 == 1)
-		return TRUE;
 
 	return FALSE;
 }
@@ -5613,7 +5732,7 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 	/* To compare with conditional */
 	uint8_t ucCommittedOpClass = 0;
 #endif
-	uint8_t fgNanUseR4AvailAttrBackup = fgNanUseR4AvailAttr;
+	uint8_t fgNanUseR4AvailAttrBackup = g_fgNanUseR4AvailAttr;
 	enum NAN_RX_PEER_SPECIAL_AVAIL *pePeerForceAvailAttr =
 		&prPeerSchDesc->ePeerForceAvailAttr;
 
@@ -5823,19 +5942,20 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 					if (nanIsR4Avail(u2EntryControl,
 							 ucOperatingClass,
 							 pu2ChannelBitmap))
-						fgNanUseR4AvailAttr = TRUE;
+						g_fgNanUseR4AvailAttr = TRUE;
 					else
-						fgNanUseR4AvailAttr = FALSE;
+						g_fgNanUseR4AvailAttr = FALSE;
 
 					/* Peer uses different Avail format */
-					if (nanNeedUpdateAvailFormat(prWifiVar,
+					if (nanReflectPeerAvailFormat(prWifiVar,
 						eNanAction,
 						prPeerSchDesc,
 						u2EntryControl,
-						fgNanUseR4AvailAttr)) {
+						g_fgNanUseR4AvailAttr)) {
+						/* Update ePeerForceAvailAttr */
 						*pePeerForceAvailAttr =
 						      NAN_PEER_AVAIL_FORCE_R3 +
-						      fgNanUseR4AvailAttr;
+						      g_fgNanUseR4AvailAttr;
 					}
 				}
 
@@ -6029,8 +6149,45 @@ u_int8_t updateAvailability(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, TRACE, "Restore backed up Use R4=%u",
 	       fgNanUseR4AvailAttrBackup);
-	fgNanUseR4AvailAttr = fgNanUseR4AvailAttrBackup;
+	g_fgNanUseR4AvailAttr = fgNanUseR4AvailAttrBackup;
 	return !!ucNeedCounter;
+}
+
+/* Set to send Availability according to the position of peer 6G capability bit,
+ * if peer format is different from local setting
+ * See also: nanReflectPeerAvailFormat
+ */
+static u_int8_t nanSetPeerAvailByCap(struct ADAPTER *prAdapter,
+		struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc,
+		struct _NAN_ATTR_DEVICE_CAPABILITY_T *prAttrDevCapability)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prWifiVar->b1NanReflectPeerAvailabilityByCap)
+		return FALSE;
+
+	if (!(prAttrDevCapability->ucSupportedBands &
+	      (NAN_PROPRIETARY_6G_BIT | NAN_SUPPORTED_6G_BIT)))
+		return FALSE;
+
+	/* Only set when the peer use different bit from our default format */
+	if (prAttrDevCapability->ucSupportedBands & NAN_PROPRIETARY_6G_BIT &&
+	    !prWifiVar->b1NanUseR4AvailAttr ||
+	    prAttrDevCapability->ucSupportedBands & NAN_SUPPORTED_6G_BIT &&
+	    prWifiVar->b1NanUseR4AvailAttr)
+		return FALSE;
+
+	DBGLOG(NAN, INFO,
+	       "Peer %02x:%02x:%02x:%02x:%02x:%02x use special 6G Capability=%02x",
+	       prPeerSchDesc->aucNmiAddr[0],
+	       prPeerSchDesc->aucNmiAddr[1],
+	       prPeerSchDesc->aucNmiAddr[2],
+	       prPeerSchDesc->aucNmiAddr[3],
+	       prPeerSchDesc->aucNmiAddr[4],
+	       prPeerSchDesc->aucNmiAddr[5],
+	       prAttrDevCapability->ucSupportedBands);
+
+	return TRUE;
 }
 
 uint32_t
@@ -6101,6 +6258,21 @@ nanSchedPeerUpdateDevCapabilityAttr(struct ADAPTER *prAdapter,
 		    NAN_PROPRIETARY_6G_BIT) {
 			prNanDevCapability->ucSupportedBand |=
 				NAN_SUPPORTED_6G_BIT;
+		}
+
+		if (nanSetPeerAvailByCap(prAdapter, prPeerSchDesc,
+					 prAttrDevCapability)) {
+			enum NAN_RX_PEER_SPECIAL_AVAIL *pePeerForceAvailAttr;
+
+			pePeerForceAvailAttr =
+				&prPeerSchDesc->ePeerForceAvailAttr;
+
+			if (prAttrDevCapability->ucSupportedBands &
+			    NAN_PROPRIETARY_6G_BIT)
+				*pePeerForceAvailAttr = NAN_PEER_AVAIL_FORCE_R3;
+			else if (prAttrDevCapability->ucSupportedBands &
+			    NAN_SUPPORTED_6G_BIT)
+				*pePeerForceAvailAttr = NAN_PEER_AVAIL_FORCE_R4;
 		}
 
 		prNanDevCapability->ucOperationMode =
@@ -12939,9 +13111,9 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		kalMemCopy(pucPos, pucPotentialChnls, u4PotentialChnlSize);
 #if (CFG_SUPPORT_NAN_6G == 1)
 		/* prAdapter->rWifiVar.ucNanUseR4AvailAttr: static configuration
-		 * fgNanUseR4AvailAttr: a runtime dynamic flag
+		 * g_fgNanUseR4AvailAttr: a runtime dynamic flag
 		 */
-		if (!fgNanUseR4AvailAttr)
+		if (!prAdapter->rWifiVar.b1NanPotentialUseR4AvailAttr)
 			nanChannelBitmapR4ToR3(pucPos);
 #endif
 		pucPos += u4PotentialChnlSize;
@@ -13064,7 +13236,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	size_t szMaxTimeBitmapFieldSize = 0, szMaxChnlEntryListSize = 0;
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 	enum _NAN_SUPPORTED_BAND_BIT eHighestCommonBand;
-	uint8_t fgNanUseR4AvailAttrBackup = fgNanUseR4AvailAttr;
+	uint8_t fgNanUseR4AvailAttrBackup = g_fgNanUseR4AvailAttr;
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
@@ -13097,10 +13269,10 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 
 	if (prPeerSchDesc &&
 	    prPeerSchDesc->ePeerForceAvailAttr != NAN_PEER_AVAIL_FORCE_NONE) {
-		fgNanUseR4AvailAttr = prPeerSchDesc->ePeerForceAvailAttr -
+		g_fgNanUseR4AvailAttr = prPeerSchDesc->ePeerForceAvailAttr -
 					NAN_PEER_AVAIL_FORCE_R3;
 		DBGLOG(NAN, INFO, "Force Use R4 Availability=%u",
-		       fgNanUseR4AvailAttr);
+		       g_fgNanUseR4AvailAttr);
 	}
 
 	eHighestCommonBand = nanSchedGetHighestCommonBand(prAdapter,
@@ -13404,7 +13576,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	 */
 
 end:
-	fgNanUseR4AvailAttr = fgNanUseR4AvailAttrBackup;
+	g_fgNanUseR4AvailAttr = fgNanUseR4AvailAttrBackup;
 	return u4Status;
 }
 
@@ -13451,7 +13623,10 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 		prAttrDevCap->ucSupportedBands |= BIT(NAN_SUPPORTED_BAND_ID_5G);
 #if (CFG_SUPPORT_NAN_6G == 1)
 	if (prScheduler->fgEn6g) {
-		if (prAdapter->rWifiVar.ucNanUseR4AvailAttr)
+		DBGLOG(NAN, TRACE, "UseR4Cap=%u\n",
+		       prAdapter->rWifiVar.b1NanUseR4Cap6GBit);
+
+		if (prAdapter->rWifiVar.b1NanUseR4Cap6GBit)
 			prAttrDevCap->ucSupportedBands |= NAN_SUPPORTED_6G_BIT;
 		else
 			prAttrDevCap->ucSupportedBands |=

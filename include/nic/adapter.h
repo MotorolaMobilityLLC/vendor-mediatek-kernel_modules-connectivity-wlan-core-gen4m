@@ -1659,7 +1659,17 @@ struct WIFI_VAR {
 	uint8_t ucNanMapMask;
 	uint8_t ucNanEnable6g;
 	/* Use NAN R4 or R3 style channel map for 6G channel map */
-	uint8_t ucNanUseR4AvailAttr;
+	union {
+		uint8_t ucNanUseR4AvailAttr;
+		struct {
+			uint8_t b1NanUseR4AvailAttr :1,
+				b1NanPotentialUseR4AvailAttr :1,
+				b1NanUseR4Cap6GBit :1,
+				b1NanReflectPeerAvailabilityByCap :1,
+				b1NanReflectPeerAvailabilityByAvail :1,
+				b4NanuseR4Reserved :3;
+		};
+	};
 	/* Initiate NDL reschedule from this device */
 	uint8_t ucNanEnable6gReschedInit;
 	uint8_t ucNanBandChnlType;
