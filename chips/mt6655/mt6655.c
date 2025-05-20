@@ -1513,12 +1513,22 @@ static void mt6655_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 {
 	uint32_t u4Addr = 0;
 
+	ACQUIRE_POWER_CONTROL_FROM_PM(ad,
+		DRV_OWN_SRC_FW_LOG_EMI_UPDATE);
+
+	if (ad->fgIsFwOwn)
+		goto exit;
+
 	if (type == ENUM_FW_LOG_CTRL_TYPE_MCU)
 		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY2_ADDR;
 	else
 		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR;
 
 	HAL_MCR_WR(ad, u4Addr, read_pointer);
+
+exit:
+	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE,
+		DRV_OWN_SRC_FW_LOG_EMI_UPDATE);
 }
 
 static uint32_t mt6655_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
