@@ -5496,6 +5496,8 @@ struct IE_P2P2 {
 
 #define SUP_CH_IE(fp)           ((struct IE_SUPPORTED_CHANNELS *) fp)
 
+#define RRM_EN_IE(fp)           ((struct IE_RRM_ENABLED_CAP *) fp)
+
 #define HT_OP_IE(fp)            ((struct IE_HT_OP *) fp)
 
 #define VHT_CAP_IE(fp)           ((struct IE_VHT_CAP *) fp)

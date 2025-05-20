@@ -12893,7 +12893,7 @@ int priv_driver_dfs_cac_start(struct net_device *prNetDev,
 		(p2pFuncGetDfsState() == DFS_STATE_DETECTED))
 		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
-	p2pFuncSetRadarDetectMode(1);
+	p2pFuncSetRadarDetectMode(DFS_DETECT_MODE_1NSS);
 	p2pFuncResetRadarDetectCnt();
 
 	prP2pStartCacMsg = (struct MSG_P2P_DFS_CAC *)

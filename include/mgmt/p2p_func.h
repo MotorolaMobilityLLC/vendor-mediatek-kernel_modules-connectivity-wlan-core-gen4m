@@ -43,6 +43,14 @@ enum _ENUM_DFS_STATE_T {
 	DFS_STATE_DETECTED,
 	DFS_STATE_NUM
 };
+
+enum ENUM_DFS_DETECT_MODE_T {
+	DFS_DETECT_MODE_NORMAL = 0,
+	DFS_DETECT_MODE_2NSS,
+	DFS_DETECT_MODE_1NSS,
+	DFS_DETECT_MODE_NUM
+};
+
 #endif
 
 enum ENUM_P2P_MGMT_TX_TYPE {
@@ -236,7 +244,8 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 		uint8_t *pucOutNumOfChannel,
 		struct RF_CHANNEL_INFO *paucOutChannelList);
 
-void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
+void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+		uint8_t ucRddNss);
 
 void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
@@ -270,7 +279,8 @@ uint8_t *p2pFuncJpW53RadarType(void);
 
 uint8_t *p2pFuncJpW56RadarType(void);
 
-void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode);
+void p2pFuncSetRadarDetectMode(
+		enum ENUM_DFS_DETECT_MODE_T eRadarDetectMode);
 
 uint8_t p2pFuncGetRadarDetectMode(void);
 
@@ -279,6 +289,9 @@ void p2pFuncAddRadarDetectCnt(void);
 void p2pFuncRadarDetectCntUevent(struct ADAPTER *prAdapter);
 
 void p2pFuncRadarDetectDoneUevent(struct ADAPTER *prAdapter);
+
+void p2pFuncStaSupportCuUevent(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec);
 
 void p2pFuncResetRadarDetectCnt(void);
 

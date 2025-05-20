@@ -1598,7 +1598,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	/* start rdd without cac */
 	if (!bSkipRdd && bSkipCac) {
-		p2pFuncStartRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+		p2pFuncStartRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex, 2);
 		p2pFuncSetDfsState(DFS_STATE_ACTIVE);
 		prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex]
 			->fgIsDfsActive = TRUE;
@@ -2163,7 +2163,7 @@ void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
 
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
-	p2pFuncSetRadarDetectMode(0);
+	p2pFuncSetRadarDetectMode(DFS_DETECT_MODE_NORMAL);
 
 SKIP_END_RDD:
 #endif
@@ -2622,7 +2622,7 @@ void p2pRoleFsmRunEventDfsShutDown(struct ADAPTER *prAdapter,
 	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	p2pFuncResetRadarDetectCnt();
 	p2pFuncRadarDetectDoneUevent(prAdapter);
-	p2pFuncSetRadarDetectMode(0);
+	p2pFuncSetRadarDetectMode(DFS_DETECT_MODE_NORMAL);
 }				/* p2pRoleFsmRunEventDfsShutDownTimeout */
 #endif
 
@@ -4152,10 +4152,15 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 			rlmDomainSetDfsDbdcBand(
 				prAdapter, prMsgChGrant->eDBDCBand);
 
-			if (prMsgChGrant->ucBssIndex < (MAX_BSSID_NUM + 1))
-				p2pFuncStartRdd(prAdapter,
-					prMsgChGrant->ucBssIndex);
-
+			if (prMsgChGrant->ucBssIndex < (MAX_BSSID_NUM + 1)) {
+				if (p2pFuncGetRadarDetectMode() ==
+					DFS_DETECT_MODE_1NSS)
+					p2pFuncStartRdd(prAdapter,
+						prMsgChGrant->ucBssIndex, 1);
+				else
+					p2pFuncStartRdd(prAdapter,
+						prMsgChGrant->ucBssIndex, 2);
+			}
 			u4CacTimeMs = prP2pRoleFsmInfo->rChnlReqInfo
 						.u4MaxInterval;
 

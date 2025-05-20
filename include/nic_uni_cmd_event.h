@@ -2468,7 +2468,8 @@ struct UNI_CMD_RDD_ON_OFF_CTRL_PARM {
 	uint8_t u1RddRxSel;
 	uint8_t u1SetVal;
 	uint8_t ucBssIdx;
-	uint8_t aucReserve[3];
+	uint8_t ucCacLPEn;
+	uint8_t aucReserve[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* Get mac info command (0x1A) */

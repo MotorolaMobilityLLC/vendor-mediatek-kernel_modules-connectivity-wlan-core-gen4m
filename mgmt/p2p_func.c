@@ -2804,7 +2804,8 @@ void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
 #endif
 }
 
-void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
+void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+		uint8_t ucRddNss)
 {
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -2854,6 +2855,9 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
 	else
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_0;
+
+	if (ucRddNss == 1)
+		prCmdRddOnOffCtrl->ucCacLPEn = 1;
 
 	DBGLOG(P2P, INFO,
 		"Start Radar detection at %d - DFS ctrl: %d, RDD index: %d\n",
@@ -3352,9 +3356,10 @@ void p2pFuncGetRadarInfo(struct P2P_RADAR_INFO *prP2pRadarInfo)
 	kalMemCopy(prP2pRadarInfo, &g_rP2pRadarInfo, sizeof(*prP2pRadarInfo));
 }
 
-void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode)
+void p2pFuncSetRadarDetectMode(
+		enum ENUM_DFS_DETECT_MODE_T eRadarDetectMode)
 {
-	g_ucRadarDetectMode = ucRadarDetectMode;
+	g_ucRadarDetectMode = eRadarDetectMode;
 
 	DBGLOG(P2P, INFO,
 		"p2pFuncSetRadarDetectMode: g_ucRadarDetectMode: %d\n",
@@ -3391,6 +3396,18 @@ void p2pFuncRadarDetectDoneUevent(struct ADAPTER *prAdapter)
 		"radardetectdone=1");
 
 	DBGLOG(SCN, LOUD, "radar detect done\n", uEvent);
+	kalSendUevent(prAdapter, uEvent);
+}
+
+void p2pFuncStaSupportCuUevent(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec)
+{
+	char uEvent[300];
+
+	kalSnprintf(uEvent, sizeof(uEvent),
+		"sta_support_cu:" MACSTR "\n",
+		MAC2STR(prStaRec->aucMacAddr));
+
 	kalSendUevent(prAdapter, uEvent);
 }
 

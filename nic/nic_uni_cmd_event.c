@@ -5955,6 +5955,7 @@ uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
 	tag->u1RddRxSel = cmd->ucRddRxSel;
 	tag->ucBssIdx = cmd->ucBssIdx;
 	tag->u1SetVal = cmd->ucSetVal;
+	tag->ucCacLPEn = cmd->ucCacLPEn;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

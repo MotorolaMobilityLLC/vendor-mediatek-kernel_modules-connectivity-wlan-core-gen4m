@@ -1900,6 +1900,18 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 				return WLAN_STATUS_FAILURE;
 			}
 			break;
+		case ELEM_ID_RRM_ENABLED_CAP:
+			if (IE_LEN(pucIE) != ELEM_MAX_LEN_RRM_CAP) {
+				*pu2StatusCode =
+					STATUS_CODE_UNSPECIFIED_FAILURE;
+				DBGLOG(SAA, WARN,
+					"Invalid RRM_ENABLED_CAP IE length!\n");
+				return WLAN_STATUS_FAILURE;
+			}
+			if (RRM_EN_IE(pucIE)->aucCap[1] & 0x02)
+				p2pFuncStaSupportCuUevent(
+					prAdapter, prStaRec);
+			break;
 		case ELEM_ID_RESERVED:
 			DBGLOG(P2P, TRACE, "IE_ID_EXT=%d\n",
 				IE_ID_EXT(pucIE));

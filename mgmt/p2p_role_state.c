@@ -598,7 +598,7 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 				prBssInfo->ucBssIndex);
 		prChnlReqInfo->eChannelWidth = prBssInfo->ucVhtChannelWidth;
 
-		if (p2pFuncGetRadarDetectMode() == 1)
+		if (p2pFuncGetRadarDetectMode() != DFS_DETECT_MODE_NORMAL)
 			ucRfBw = prP2pRoleFsmInfo->eDfsChnlBw;
 		else
 			/* Decide RF BW by own OP BW */
