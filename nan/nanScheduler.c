@@ -14654,6 +14654,9 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 			nanSchedCmdUpdateAvailabilityCtrl(prAdapter);
 		}
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+		rlmDomainConnectionNotifiey(prAdapter, NAN_TIMELINE_UPDATE);
+#endif
 		/* Todo: Update by single command */
 		for (szTimeLineIdx = 0; szTimeLineIdx < szNanActiveTimelineNum;
 		     szTimeLineIdx++) {
@@ -14671,6 +14674,11 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter)
 			if (NAN_IS_6G_TIMELINE(prAdapter, szTimeLineIdx))
 				nanUpdate6gUsage(prAdapter, prNanTimelineMgmt);
 		}
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+		uint8_t ucEvtAction =
+			TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE;
+		rlmDomainPowerLimitEmiEvent(prAdapter, &ucEvtAction);
+#endif
 	} while (FALSE);
 
 	rlmDomainNanTimeLineUpdateNotify(prAdapter);
@@ -14819,10 +14827,6 @@ nanSchedEventScheduleConfig(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 					 prWifiVar->ucDftRangQuotaVal);
 
 	nanSchedCmdUpdatePotentialChnlList(prAdapter);
-
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	rlmDomainConnectionNotifiey(prAdapter, NAN_INIT);
-#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 	return rRetStatus;
 }

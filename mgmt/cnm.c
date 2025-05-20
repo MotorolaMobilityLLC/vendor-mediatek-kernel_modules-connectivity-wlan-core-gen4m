@@ -703,7 +703,9 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 				     );
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	rlmDomainConnectionNotifiey(prAdapter, CNM_REQUEST_CHANNEL);
+	if (txPwrConnectionLUTCtrl(prAdapter, prCmdBody->ucBssIndex,
+		prCmdBody->ucTokenID, TRUE)) /* add LUT */
+		rlmDomainConnectionNotifiey(prAdapter, CNM_REQUEST_CHANNEL);
 #endif
 
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
@@ -822,6 +824,14 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	uint8_t ucEvtAction =
+		TX_PWR_EMI_SCENARIO_TYPE_CONNECTION;
+	if (txPwrConnectionLUTCtrl(prAdapter, prCmdBody->ucBssIndex,
+		prCmdBody->ucTokenID, FALSE)) /* del LUT */
+		rlmDomainPowerLimitEmiEvent(prAdapter, &ucEvtAction);
+#endif
+
 	cnmMemFree(prAdapter, prCmdBody);
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* end of cnmChMngrAbortPrivilege()*/
@@ -936,6 +946,14 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 			      prEventBody->ucDBDCBand;
 	prChResp->u4GrantInterval =
 		prEventBody->u4GrantInterval;
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	uint8_t ucEvtAction =
+		TX_PWR_EMI_SCENARIO_TYPE_CONNECTION;
+	if (txPwrConnectionLUTCtrl(prAdapter, prChResp->ucBssIndex,
+		prChResp->ucTokenID, FALSE)) /* del LUT */
+		rlmDomainPowerLimitEmiEvent(prAdapter, &ucEvtAction);
+#endif
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *)prChResp, MSG_SEND_METHOD_UNBUF);

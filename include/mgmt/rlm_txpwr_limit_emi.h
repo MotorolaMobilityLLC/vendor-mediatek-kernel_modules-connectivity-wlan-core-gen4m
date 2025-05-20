@@ -396,6 +396,17 @@ struct EMI_POWER_LIMIT_INFO {
 	uint8_t u1reserve;
 };
 
+struct TXP_REQUEST_CHANNEL_ELEMENT {
+	struct LINK_ENTRY node;
+	uint8_t ucBssIndex;
+	uint8_t ucTokenID;
+};
+
+struct TXP_LIMIT_EMI_CTRL {
+	int32_t i4PwrLmtLockCounter;
+	struct LINK rReqChLUT;
+};
+
 enum ENUM_CONNECTION_NOTIFIED_REASON {
 	CNM_REQUEST_CHANNEL,
 	NAN_INIT,
@@ -736,5 +747,34 @@ void rlmDomainSendCachePwrLmtData(
 void rlmDomainPwrLmtConnectionCMD(
 	struct ADAPTER *prAdapter,
 	enum ENUM_TX_PWR_EMI_SCENARIO_TYPE type);
+
+void txPwrConnectionAddLUTElement(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID);
+
+void txPwrConnectionDelLUTElement(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID);
+
+struct TXP_REQUEST_CHANNEL_ELEMENT *txPwrConnectionFindLUTElement(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID);
+
+void txPwrConnectionShowLUTElement(
+	struct ADAPTER *prAdapter);
+
+uint8_t txPwrConnectionLUTCtrl(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID,
+	uint8_t fgIsReg);
+
+void txPwrConnectionDelAllLUTElement(
+	struct ADAPTER *prAdapter
+);
+
 #endif /*CFG_SUPPORT_PWR_LMT_EMI == 1 && CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1*/
 #endif /*_RLM_TX_PWR_LIMIT_EMI_H*/

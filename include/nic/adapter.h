@@ -3440,7 +3440,7 @@ struct ADAPTER {
 	struct EMI_POWER_LIMIT_INFO
 		rTxpwrEmiInfo[PWR_LIMIT_RF_BAND_NUM][PWR_LIMIT_PROTOCOL_NUM];
 	bool fgPwrLmtCacheExist;
-	int32_t i4PwrLmtLockCounter;
+	struct TXP_LIMIT_EMI_CTRL rTxpEmiCtrl;
 #endif
 
 #if CFG_SUPPORT_CCM

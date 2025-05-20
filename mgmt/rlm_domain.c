@@ -3458,6 +3458,9 @@ rlmDomainGetChannelInterval(uint16_t u2SubBandIdx,
 	if ((g_rRlmSubBand[u2SubBandIdx].eBand == BAND_6G) &&
 		(ucCurrCh == 1 || ucCurrCh == 2))
 		ucInterval = 1;
+	else if ((g_rRlmSubBand[u2SubBandIdx].eBand == BAND_6G) &&
+		(ucCurrCh == 221 || ucCurrCh == 229))
+		ucInterval = 4;
 	else
 #endif
 		ucInterval =  g_rRlmSubBand[u2SubBandIdx].ucInterval;
@@ -11756,6 +11759,7 @@ void txPwrCtrlInit(struct ADAPTER *prAdapter)
 	txPwrCtrlPatchCountryCfg();
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	LINK_INITIALIZE(&prAdapter->rTxpEmiCtrl.rReqChLUT);
 	u4PwrLimitSize = sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT);
 
 	prAdapter->prPwrLimit =
@@ -11850,6 +11854,8 @@ void txPwrCtrlUninit(struct ADAPTER *prAdapter)
 	txPwrCtrlFreeCountryCfg(prAdapter);
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	txPwrConnectionDelAllLUTElement(prAdapter);
+
 	for (i = 0; i < PWR_LIMIT_RF_BAND_NUM; i++) {
 		kalMemFree(
 			prAdapter->prPwrLimit[i],
@@ -13154,10 +13160,6 @@ uint32_t rlmDomainNanTimeLineUpdateNotify(
 
 		rlmDomainBssUpdateNotify(prAdapter, ucBssIdx);
 	}
-
-#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	rlmDomainConnectionNotifiey(prAdapter, NAN_TIMELINE_UPDATE);
-#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -15188,6 +15190,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	KAL_WAKE_LOCK_T * rTxWakeLock =
 		prAdapter->prGlueInfo->rTxPowerEmiWakeLock;
 #endif
+	struct TXP_LIMIT_EMI_CTRL *prTxpEmiCtrl;
 	static const char * const au1PwrLmtStatusAction[] = {
 		"REQUEST_CHANNEL_START",
 		"REQUEST_CHANNEL_END",
@@ -15203,7 +15206,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 		"CNM_RLM_SYNC_OP_PARAMS_END",
 	};
 	prGlueInfo = prAdapter->prGlueInfo;
-
+	prTxpEmiCtrl = &prAdapter->rTxpEmiCtrl;
 	/*********************************************************************/
 	/* (1)req cmd -> (2)update cmd  -> (3)req end  -> (4)update done     */
 	/* count++    ->                -> count--     ->                    */
@@ -15215,7 +15218,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	DBGLOG(RLM, TRACE,
 		"[In]TxPower wakelock ctrl : action :%s, counter[%d], ret:%d",
 		au1PwrLmtStatusAction[action],
-		prAdapter->i4PwrLmtLockCounter,
+		prTxpEmiCtrl->i4PwrLmtLockCounter,
 		ret);
 
 	switch (action) {
@@ -15224,8 +15227,8 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	case TX_PWR_EMI_STATUS_ACTION_NAN_INIT_START:
 	case TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_START:
 	case TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_START:
-		prAdapter->i4PwrLmtLockCounter++;
-		if (prAdapter->i4PwrLmtLockCounter == 1) {
+		prTxpEmiCtrl->i4PwrLmtLockCounter++;
+		if (prTxpEmiCtrl->i4PwrLmtLockCounter == 1) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
 				DBGLOG(RLM, TRACE, "Start wake lock!");
@@ -15242,8 +15245,8 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	case TX_PWR_EMI_STATUS_ACTION_NAN_INIT_END:
 	case TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_END:
 	case TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_END:
-		prAdapter->i4PwrLmtLockCounter--;
-		if (prAdapter->i4PwrLmtLockCounter <= 0) {
+		prTxpEmiCtrl->i4PwrLmtLockCounter--;
+		if (prTxpEmiCtrl->i4PwrLmtLockCounter <= 0) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
 				DBGLOG(RLM, TRACE, "Stop wake lock!");
@@ -15252,24 +15255,25 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 #endif
 			/* stop timer */
 			del_timer(&prGlueInfo->rTxPowerLimitTimer);
-			prAdapter->i4PwrLmtLockCounter = 0;
+			prTxpEmiCtrl->i4PwrLmtLockCounter = 0;
 			rlmDomainSendCachePwrLmtData(prAdapter);
 		}
 		break;
 	case TX_PWR_EMI_STATUS_ACTION_CHECK:
-		if (prAdapter->i4PwrLmtLockCounter > 0)
+		if (prTxpEmiCtrl->i4PwrLmtLockCounter > 0)
 			ret = TRUE;
 		else
 			ret = FALSE;
 		break;
 	case TX_PWR_EMI_STATUS_ACTION_CLEAR:
 #if CFG_ENABLE_WAKE_LOCK
-		prAdapter->i4PwrLmtLockCounter = 0;
+		prTxpEmiCtrl->i4PwrLmtLockCounter = 0;
 		if (KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
 			DBGLOG(RLM, TRACE, "Stop wake lock!");
 			KAL_WAKE_UNLOCK(prAdapter, rTxWakeLock);
 		}
 #endif
+		txPwrConnectionDelAllLUTElement(prAdapter);
 		break;
 	default:
 		break;
@@ -15278,7 +15282,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	DBGLOG(RLM, TRACE,
 		"[Out]TxPower wakelock ctrl : action :%s, counter[%d], ret:%d",
 		au1PwrLmtStatusAction[action],
-		prAdapter->i4PwrLmtLockCounter,
+		prTxpEmiCtrl->i4PwrLmtLockCounter,
 		ret);
 
 	return ret;
@@ -15292,7 +15296,163 @@ bool rlmDoaminGetPwrLmtNewDataFlag(struct ADAPTER *prAdapter)
 {
 	return prAdapter->fgPwrLmtCacheExist;
 }
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Used to store the status of cnm request/grant/abort channel status
+ *
+ * \param[in/out] prAdapter
+ *                ucBssIndex
+ *                ucTokenID
+ *                fgIsReg : request channel (1)/ grant & abort channel (0)
+ *
+ * \return 1 : fgIsReg(1) register success, fgIsReg(0) : del success
+ * \return 0 : fgIsReg(1) already register, fgIsReg(0) : not find entry
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t txPwrConnectionLUTCtrl(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID,
+	uint8_t fgIsReg
+)
+{
+	struct TXP_REQUEST_CHANNEL_ELEMENT *pElement;
+	uint8_t ucHit = FALSE;
 
+	if (fgIsReg) { /* request channel */
+		pElement = txPwrConnectionFindLUTElement(prAdapter,
+			ucBssIndex, ucTokenID);
+		if (!pElement) {
+			txPwrConnectionAddLUTElement(prAdapter,
+				ucBssIndex, ucTokenID);
+			ucHit = TRUE;
+		} else
+			ucHit = FALSE;
+	} else { /* abort channel or grant channel*/
+		pElement = txPwrConnectionFindLUTElement(prAdapter,
+			ucBssIndex, ucTokenID);
+		if (pElement) {
+			txPwrConnectionDelLUTElement(prAdapter,
+				ucBssIndex, ucTokenID);
+			ucHit = TRUE;
+		} else
+			ucHit = FALSE;
+	}
+
+	DBGLOG(RLM, INFO,
+		"Connection fgIsReg[%d]BssId[%d]Token[%d]Hit[%d]\n",
+		fgIsReg, ucBssIndex,
+		ucTokenID,
+		ucHit);
+
+	txPwrConnectionShowLUTElement(prAdapter);
+	return ucHit;
+}
+
+void txPwrConnectionAddLUTElement(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID
+)
+{
+	struct TXP_REQUEST_CHANNEL_ELEMENT *prNewElement;
+	struct LINK_ENTRY *prNode;
+
+	prNewElement = (struct TXP_REQUEST_CHANNEL_ELEMENT *)kalMemAlloc(
+		sizeof(struct TXP_REQUEST_CHANNEL_ELEMENT), VIR_MEM_TYPE);
+	if (!prNewElement) {
+		DBGLOG(RLM, ERROR,
+		"alloc connection element failed\n");
+		return;
+	}
+	prNewElement->ucBssIndex = ucBssIndex;
+	prNewElement->ucTokenID = ucTokenID;
+	prNode = &prNewElement->node;
+	linkAddTail(prNode, &prAdapter->rTxpEmiCtrl.rReqChLUT);
+}
+
+void txPwrConnectionDelLUTElement(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID
+)
+{
+	struct LINK_ENTRY *prCur, *prNext;
+	struct TXP_REQUEST_CHANNEL_ELEMENT *prCurElement = NULL;
+	u_int8_t fgFind;
+
+	LINK_FOR_EACH_SAFE(prCur, prNext, &prAdapter->rTxpEmiCtrl.rReqChLUT) {
+		fgFind = FALSE;
+		prCurElement = LINK_ENTRY(prCur,
+			struct TXP_REQUEST_CHANNEL_ELEMENT, node);
+		if (prCurElement != NULL) {
+			if (prCurElement->ucBssIndex == ucBssIndex &&
+				prCurElement->ucTokenID == ucTokenID) {
+				linkDel(prCur);
+				kalMemFree(prCurElement, VIR_MEM_TYPE,
+					sizeof(TXP_REQUEST_CHANNEL_ELEMENT));
+				return;
+			}
+		}
+	}
+}
+
+void txPwrConnectionDelAllLUTElement(
+	struct ADAPTER *prAdapter
+)
+{
+	struct LINK_ENTRY *prCur, *prNext;
+	struct TXP_REQUEST_CHANNEL_ELEMENT *prCurElement = NULL;
+
+	LINK_FOR_EACH_SAFE(prCur, prNext, &prAdapter->rTxpEmiCtrl.rReqChLUT) {
+		prCurElement = LINK_ENTRY(prCur,
+			struct TXP_REQUEST_CHANNEL_ELEMENT, node);
+		linkDel(prCur);
+		if (prCurElement != NULL) {
+			kalMemFree(prCurElement, VIR_MEM_TYPE,
+				sizeof(TXP_REQUEST_CHANNEL_ELEMENT));
+		}
+	}
+}
+
+struct TXP_REQUEST_CHANNEL_ELEMENT *txPwrConnectionFindLUTElement(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucTokenID
+)
+{
+	struct LINK_ENTRY *prCur, *prNext;
+	struct TXP_REQUEST_CHANNEL_ELEMENT *prCurElement = NULL;
+
+	LINK_FOR_EACH_SAFE(prCur, prNext, &prAdapter->rTxpEmiCtrl.rReqChLUT) {
+		prCurElement = LINK_ENTRY(prCur,
+			struct TXP_REQUEST_CHANNEL_ELEMENT, node);
+		if (prCurElement != NULL) {
+			if (prCurElement->ucBssIndex == ucBssIndex &&
+				prCurElement->ucTokenID == ucTokenID)
+				return prCurElement;
+		}
+	}
+	return NULL;
+
+}
+void txPwrConnectionShowLUTElement(struct ADAPTER *prAdapter)
+{
+	struct LINK_ENTRY *prCur, *prNext;
+	struct TXP_REQUEST_CHANNEL_ELEMENT *prCurElement = NULL;
+	int count = 0;
+
+	LINK_FOR_EACH_SAFE(prCur, prNext, &prAdapter->rTxpEmiCtrl.rReqChLUT) {
+		prCurElement = LINK_ENTRY(prCur,
+			struct TXP_REQUEST_CHANNEL_ELEMENT, node);
+		if (prCurElement != NULL) {
+			DBGLOG(RLM, INFO,
+				"Connection LUT Element-%d,BSSID[%d],Token[%d]\n",
+				++count, prCurElement->ucBssIndex,
+				prCurElement->ucTokenID);
+		}
+	}
+}
 void rlmDomainConnectionNotifiey(
 	struct ADAPTER *prAdapter,
 	enum ENUM_CONNECTION_NOTIFIED_REASON reason)
@@ -15617,34 +15777,41 @@ void rlmDomainPwrLmtConnectionCMD(
 	enum ENUM_TX_PWR_EMI_SCENARIO_TYPE type)
 {
 	uint32_t rStatus = 0;
+	uint8_t fgNeedSendCmd = TRUE;
 	struct CMD_EMI_POWER_LIMIT_FORMAT rTxPwrEmiFormat = {0};
 	enum ENUM_TX_PWR_EMI_STATUS_ACTION action;
 
 	rTxPwrEmiFormat.u1ScenarioType = type;
 
-	if (type == TX_PWR_EMI_SCENARIO_TYPE_CONNECTION)
+	if (type == TX_PWR_EMI_SCENARIO_TYPE_CONNECTION) {
 		action = TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_START;
-	else if (type == TX_PWR_EMI_SCENARIO_TYPE_NAN_INIT)
+		fgNeedSendCmd = FALSE;
+	} else if (type == TX_PWR_EMI_SCENARIO_TYPE_NAN_INIT) {
 		action = TX_PWR_EMI_STATUS_ACTION_NAN_INIT_START;
-	else if (type == TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE)
+		fgNeedSendCmd = TRUE;
+	} else if (type == TX_PWR_EMI_SCENARIO_TYPE_NAN_TIMELINE_UPDATE) {
 		action = TX_PWR_EMI_STATUS_ACTION_NAN_TIMELINE_UPDATE_START;
-	else if (type == TX_PWR_EMI_SCENARIO_TYPE_CNM_RLM_SYNC_OP_PARAMS)
+		fgNeedSendCmd = FALSE;
+	} else if (type == TX_PWR_EMI_SCENARIO_TYPE_CNM_RLM_SYNC_OP_PARAMS) {
 		action = TX_PWR_EMI_STATUS_ACTION_CNM_RLM_SYNC_OP_PARAMS_START;
-	else
+		fgNeedSendCmd = TRUE;
+	} else
 		return;
 
-	rStatus = wlanSendSetQueryCmd(prAdapter,
-		CMD_ID_SET_PWR_LIMIT_EMI_INFO,
-		TRUE,
-		FALSE,
-		FALSE,
-		NULL,
-		NULL,
-		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT),
-		(uint8_t *) &rTxPwrEmiFormat,
-		NULL,
-		0
-	);
+	if (fgNeedSendCmd == TRUE) {
+		rStatus = wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_PWR_LIMIT_EMI_INFO,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT),
+			(uint8_t *) &rTxPwrEmiFormat,
+			NULL,
+			0
+		);
+	}
 
 	rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
 		action);
