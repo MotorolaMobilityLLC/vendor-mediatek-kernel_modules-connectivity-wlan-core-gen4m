@@ -4939,7 +4939,6 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(RLM, TRACE, "u2TableIndex = [%d]\n", u2TableIndex);
 	return u2TableIndex;
 }
 /*----------------------------------------------------------------------------*/
@@ -11226,14 +11225,20 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 		&prAdapter->rTxPwr_DynamicList
 	};
 	uint8_t ucAppliedWay, ucOperation;
-	int i, count = 0;
+	int i = 0, count = 0, size = 0;
 
-	if (filterType == 1)
-		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
-		       message, txPwrCtrlListSize(prAdapter, filterType));
-	else
-		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
-		       message, txPwrCtrlListSize(prAdapter, filterType));
+	size = txPwrCtrlListSize(prAdapter, filterType);
+
+	if (size != 0) {
+		if (filterType == 1)
+			DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
+				message,
+				txPwrCtrlListSize(prAdapter, filterType));
+		else
+			DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
+				message,
+				txPwrCtrlListSize(prAdapter, filterType));
+	}
 
 	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
 		LINK_FOR_EACH_SAFE(prCur, prNext, aryprlist[i]) {
