@@ -993,7 +993,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	if (p2pFuncNeedForceSleep(prAdapter))
 		DBGLOG(HAL, TRACE, "SAP: Skip fgWiFiInSleepyState check\n");
 	else if (!(prAdapter->fgWiFiInSleepyState)
-#if CFG_CHIP_RESET_SUPPORT
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 		&& (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE)
 #endif
 		) {
