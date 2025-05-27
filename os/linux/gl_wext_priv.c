@@ -737,6 +737,7 @@ __priv_set_int(struct net_device *prNetDev,
 		struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
 		uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
+		kalMemSet(&rSetP2P, 0, sizeof(rSetP2P));
 		rSetP2P.u4Enable = pu4IntBuf[1];
 		rSetP2P.u4Mode = pu4IntBuf[2];
 		rSetP2P.fgIsRtnlLockAcquired = TRUE;
@@ -3567,7 +3568,7 @@ int priv_driver_get_bss_statistics(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
+	struct PARAM_LINK_SPEED_EX *prLinkSpeed = NULL;
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 	int32_t i4BytesWritten = 0;
@@ -5195,6 +5196,7 @@ int priv_driver_set_mcr(struct net_device *prNetDev, char *pcCommand,
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+	kalMemSet(&rCmdAccessReg, 0, sizeof(rCmdAccessReg));
 
 	if (i4Argc >= i4ArgNum) {
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
@@ -5242,6 +5244,7 @@ int priv_driver_set_pwr_met(struct net_device *prNetDev, char *pcCommand,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rCmdPowerMetrics, 0, sizeof(rCmdPowerMetrics));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -5368,6 +5371,7 @@ int priv_driver_set_mdvt(struct net_device *prNetDev, char *pcCommand,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rCmdMdvtCfg, 0, sizeof(rCmdMdvtCfg));
 
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
@@ -8813,6 +8817,7 @@ int priv_driver_set_drv_mcr(struct net_device *prNetDev, char *pcCommand,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rCmdAccessReg, 0, sizeof(rCmdAccessReg));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -8929,6 +8934,7 @@ int priv_driver_get_uhw_mcr(struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+	kalMemSet(&rCmdAccessReg, 0, sizeof(rCmdAccessReg));
 
 	if (i4Argc >= i4ArgNum) {
 
@@ -8991,6 +8997,7 @@ int priv_driver_set_uhw_mcr(struct net_device *prNetDev, char *pcCommand,
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+	kalMemSet(&rCmdAccessReg, 0, sizeof(rCmdAccessReg));
 
 	if (i4Argc >= i4ArgNum) {
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
@@ -9089,6 +9096,7 @@ int priv_driver_set_sw_ctrl(struct net_device *prNetDev, char *pcCommand,
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+	kalMemSet(&rSwCtrlInfo, 0, sizeof(rSwCtrlInfo));
 
 	u4Ret = kalkStrtou32(apcArgv[1], 0, &(rSwCtrlInfo.u4Id));
 	if (u4Ret)
@@ -9533,6 +9541,8 @@ int priv_driver_set_unified_fixed_rate(struct net_device *prNetDev,
 	if (i4Recv == 11) {
 		struct UNI_CMD_RA_SET_FIXED_RATE_V1 rate;
 
+		kalMemSet(&rate, 0, sizeof(rate));
+
 #define HT_LDPC BIT(0)
 #define VHT_LDPC BIT(1)
 #define HE_LDPC BIT(2)
@@ -9630,6 +9640,7 @@ int priv_driver_set_unified_auto_rate(struct net_device *prNetDev,
 	if (i4Recv == 3) {
 		struct UNI_CMD_RA_SET_AUTO_RATE rate;
 
+		kalMemSet(&rate, 0, sizeof(rate));
 		rate.u2WlanIdx = u4WCID;
 		rate.u1AutoRateEn = ucAutoRateEn;
 		rate.u1Mode = ucMode;
@@ -9677,6 +9688,7 @@ int priv_driver_set_unified_mlo_agc_tx(struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&mlo, 0, sizeof(mlo));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -10032,6 +10044,7 @@ int priv_driver_set_pp_cap_ctrl(struct net_device *prNetDev,
 	if (i4Recv == 5) {
 		struct UNI_CMD_PP_EN_CTRL_T pp_cap_ctrl;
 
+		kalMemSet(&pp_cap_ctrl, 0, sizeof(pp_cap_ctrl));
 		pp_cap_ctrl.u1PpMgmtMode = (uint8_t)u4pp_mgmt;
 		pp_cap_ctrl.u1PpCtrl     = (uint8_t)u4pp_ctrl;
 		pp_cap_ctrl.u1PpBitMap   = (uint16_t)u4pp_bitmap;
@@ -10301,6 +10314,7 @@ int priv_driver_set_hm_alg_ctrl(struct net_device *prNetDev,
 	if (i4Recv == 6) {
 		struct UNI_CMD_HM_ALG_CTRL_T hm_alg_ctrl;
 
+		kalMemSet(&hm_alg_ctrl, 0, sizeof(hm_alg_ctrl));
 		hm_alg_ctrl.u1HmManualModeEn = u1HmManualModeEn;
 		hm_alg_ctrl.u1ForceObss = u1ForceObss;
 		hm_alg_ctrl.u1ForceBT = u1ForceBT;
@@ -17506,6 +17520,7 @@ int priv_driver_get_ser_info(struct net_device *prNetDev,
 	uint16_t i, j;
 
 	ASSERT(prNetDev);
+	kalMemSet(&rQuerySerInfo, 0, sizeof(rQuerySerInfo));
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -20599,6 +20614,7 @@ int priv_driver_get_wifi_type(struct net_device *prNetDev,
 		DBGLOG(REQ, ERROR, "GLUE_CHK_PR2 fail\n");
 		return -1;
 	}
+	kalMemSet(&rParamGetWifiType, 0, sizeof(rParamGetWifiType));
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	rParamGetWifiType.prNetDev = prNetDev;
@@ -23510,6 +23526,13 @@ int32_t priv_driver_MulAPAgent_beacon_report_request(
 			&prSetBcnRepReqInfo->ucNumberOfRequest,
 			&prSetBcnRepReqInfo->ucNumberOfAPChanReport,
 			&prSetBcnRepReqInfo->aucSsid);
+
+	if (!i4BytesWritten) {
+		DBGLOG(INIT, ERROR,
+			"cmd parsing error!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
 #undef TEMP_TEMPLATE
 
 	DBGLOG(REQ, TRACE,
@@ -23697,6 +23720,14 @@ int32_t priv_driver_MulAPAgent_cu_report_request(
 				&prSetCuRepReqInfo->ucChanList[0],
 				&prSetCuRepReqInfo->ucChanList[1],
 				&prSetCuRepReqInfo->ucChanList[2]);
+
+	if (!i4BytesWritten) {
+		DBGLOG(INIT, ERROR,
+			"cmd parsing error!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
 	prSetCuRepReqInfo->u2MeasureDuration = 80;
 	prSetCuRepReqInfo->u2RandomInterval = 10;
 
