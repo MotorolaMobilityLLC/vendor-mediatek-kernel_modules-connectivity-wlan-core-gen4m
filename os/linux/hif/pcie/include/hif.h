@@ -349,6 +349,8 @@ struct GL_HIF_INFO {
 
 	uint32_t u4WakeupIntSta;
 	bool fgIsBackupIntSta;
+	uint32_t u4TxRingPrefetchDefaultVal;
+	u_int8_t fgTxRingPrefetchEn[NUM_OF_TX_RING];
 
 	enum pcie_suspend_state eSuspendtate;
 	uint32_t u4VoteState;
@@ -599,6 +601,10 @@ struct BUS_INFO {
 #endif
 	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
 	void (*clearEvtRingTillCmdRingEmpty)(struct ADAPTER *prAdapter);
+
+	void (*enableTxDataRingPrefetch)(
+		struct GLUE_INFO *prGlueInfo, uint32_t u4Port);
+	void (*resetTxDataRingPrefetch)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 #if CFG_MTK_WIFI_SW_EMI_RING
