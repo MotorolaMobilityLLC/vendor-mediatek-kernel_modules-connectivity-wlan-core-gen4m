@@ -1153,6 +1153,8 @@ exit:
 
 static void ensure_rst_pin_min_wait_time(int8_t state)
 {
+#define MAX_RST_PIN_LOOP_COUNT 200
+
 	OS_SYSTIME current_time = 0;
 	uint32_t retry = 0;
 
@@ -1166,15 +1168,23 @@ static void ensure_rst_pin_min_wait_time(int8_t state)
 			break;
 		else if (CHECK_FOR_TIMEOUT(current_time,
 					   last_toggle_time,
-					   RST_PIN_MIN_WAIT_TIME))
+					   RST_PIN_MIN_WAIT_TIME) ||
+				retry > MAX_RST_PIN_LOOP_COUNT)
 			break;
 
-		DBGLOG_LIMITED(INIT, LOUD, "retry: %d.\n", retry);
+		DBGLOG_LIMITED(INIT, INFO,
+			"retry:%d, cur_time:%u, last_time:%u\n",
+			retry, current_time, last_toggle_time);
 		retry++;
 		kalMdelay(1);
 	}
+	DBGLOG(INIT, INFO,
+		"wait done, retry:%d, cur_time:%u, last_time:%u\n",
+		retry, current_time, last_toggle_time);
 	GET_CURRENT_SYSTIME(&last_toggle_time);
 	last_wf_rst_pin_state = state;
+	if (retry > MAX_RST_PIN_LOOP_COUNT)
+		dump_stack();
 }
 
 static int32_t mt6991_wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
