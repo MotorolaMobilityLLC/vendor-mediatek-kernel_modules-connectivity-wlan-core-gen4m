@@ -815,9 +815,14 @@ struct WIFI_VAR {
 	/* Common connection settings start */
 	/* Used for AP mode for desired channel and bandwidth */
 	union {
+		/**
+		 * Note: For COUNTRY_CODE_TW, the characters are stored in
+		 * reverse order ('W', 'T').
+		 * Therefore, an external configuration of "TW" will be stored
+		 * with its characters swapped.
+		 */
 		uint16_t u2CountryCode;
 		char CountryCode[2];
-
 	};
 	uint8_t uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */

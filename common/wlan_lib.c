@@ -10044,14 +10044,15 @@ void wlanCfgSetDebugLevel(struct ADAPTER *prAdapter)
 
 void wlanCfgSetCountryCode(struct ADAPTER *prAdapter)
 {
-	int8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
+	char aucValue[WLAN_CFG_VALUE_LEN_MAX];
 
 	/* Apply COUNTRY Config */
 	if (wlanCfgGet(prAdapter, "Country", aucValue, NULL,
 		       0, FEATURE_TO_CUSTOMER) == WLAN_STATUS_SUCCESS) {
+		kalMemCopy(prAdapter->rWifiVar.CountryCode,
+			   aucValue, sizeof(prAdapter->rWifiVar.CountryCode));
 		prAdapter->rWifiVar.u2CountryCode =
-			(((uint16_t) aucValue[0]) << 8) |
-			((uint16_t) aucValue[1]);
+			HTONS(prAdapter->rWifiVar.u2CountryCode);
 
 		DBGLOG(INIT, TRACE, "u2CountryCode=0x%04x\n",
 		       prAdapter->rWifiVar.u2CountryCode);
@@ -16262,7 +16263,7 @@ uint32_t wlanSetRxBaSize(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter;
 	uint32_t i;
 	struct STA_RECORD *prStaRec;
-	struct CMD_ADDBA_REJECT rAddbaReject;
+	struct CMD_ADDBA_REJECT rAddbaReject = {0};
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 
@@ -16307,7 +16308,7 @@ uint32_t wlanSetTxBaSize(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter;
 	uint32_t i;
 	struct STA_RECORD *prStaRec;
-	struct CMD_TX_AMPDU rTxAmpdu;
+	struct CMD_TX_AMPDU rTxAmpdu = {0};
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 
