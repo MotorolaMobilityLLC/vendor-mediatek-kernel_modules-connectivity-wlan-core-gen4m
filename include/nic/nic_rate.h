@@ -80,6 +80,8 @@ enum ENUM_BAND_WIDTH {
 #define MCS_IDX_MAX_RATE_HE 11
 #define MCS_IDX_MAX_RATE_EHT 13
 
+#define MCS_IDX_MAX_RATE_UNLIMITED 0xFF
+
 /*******************************************************************************
  *                         D A T A   T Y P E S
  *******************************************************************************
