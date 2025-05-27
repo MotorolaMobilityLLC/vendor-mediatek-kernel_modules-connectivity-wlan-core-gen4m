@@ -203,7 +203,6 @@ static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgWakeup);
 static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 #endif
-
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_MTK_WIFI_DEVAPC
@@ -531,8 +530,20 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 #else
 	{"reserved", NULL, NULL, NONE_INT, 0},
 #endif
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	{"gen_switch_irq", pcie_gen_switch_top_handler,
+	pcie_gen_switch_thread_handler, PCIE_GEN_SWITCH_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	{"gen_switch_irq1", pcie_gen_switch_end_top_handler,
+	pcie_gen_switch_end_thread_handler, PCIE_GEN_SWITCH_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
+
 };
 #endif
 
@@ -1051,8 +1062,8 @@ struct thermal_sensor_info mt6639_thermal_sensor_info[] = {
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 struct EMI_WIFI_MISC_RSV_MEM_INFO mt6639_wifi_misc_rsv_mem_info[] = {
-	{WIFI_MISC_MEM_BLOCK_NON_MMIO, 2048, {0}},
-	{WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT, 20480, {0}}
+	{WIFI_MISC_MEM_BLOCK_NON_MMIO, 2016, {0}},
+	{WIFI_MISC_MEM_BLOCK_WF_GEN_SWITCH, 16, {0}}
 };
 #endif
 
@@ -1148,6 +1159,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
+#endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	.uGSMemoryAdd = WIFI_MISC_MEM_BLOCK_WF_GEN_SWITCH,
 #endif
 
 	.prTxPwrLimitFile = "TxPwrLimit_MT66x9.dat",

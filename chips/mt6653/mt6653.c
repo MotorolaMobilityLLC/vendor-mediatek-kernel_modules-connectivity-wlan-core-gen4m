@@ -1304,6 +1304,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.prTxPwrLimit6G1ss1tFile = "TxPwrLimit6G_MT66x9_1ss1t.dat",
 #endif
 #endif
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	.uGSMemoryAdd = WIFI_MISC_MEM_BLOCK_WF_M_BRAIN,
+#endif
 
 	.ucTxPwrLimitBatchSize = 3,
 #if defined(_HIF_PCIE)

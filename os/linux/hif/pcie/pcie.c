@@ -3295,7 +3295,8 @@ uint32_t *pcie_gen_switch_get_emi_add(struct ADAPTER *prAdapter)
 	prMemOps = &prHifInfo->rMemOps;
 	if (prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(
-			prChipInfo, WIFI_MISC_MEM_BLOCK_WF_M_BRAIN);
+		prChipInfo, prChipInfo->uGSMemoryAdd);
+
 		if (prMem && prMem->va)
 			pu4RxDone = (uint32_t *)prMem->va;
 	}
@@ -3305,6 +3306,7 @@ uint32_t *pcie_gen_switch_get_emi_add(struct ADAPTER *prAdapter)
 }
 void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
 {
+
 	struct pcie_msi_info *prMsiInfo;
 	uint32_t u4Val = 0;
 	struct RX_IDLE_STATE *prRxIdleState;
