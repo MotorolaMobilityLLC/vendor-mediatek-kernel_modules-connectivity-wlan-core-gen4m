@@ -2020,6 +2020,7 @@ int wlan_post_whole_chip_rst_v3(void)
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		glResetUpdateL0Flag(FALSE);
+		glResetOnEndUpdateFlag(FALSE);
 		return 0;
 	}
 #endif
