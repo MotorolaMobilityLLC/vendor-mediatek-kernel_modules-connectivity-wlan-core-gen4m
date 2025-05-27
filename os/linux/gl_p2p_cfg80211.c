@@ -2000,6 +2000,9 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		/*DFS todo 20161220_DFS*/
 		netif_tx_start_all_queues(dev);
 
+		prAdapter = prGlueInfo->prAdapter;
+		prWifiVar = &prAdapter->rWifiVar;
+
 		chandef = &settings->chandef;
 #if KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE
 		link_id = settings->beacon.link_id;
@@ -2013,14 +2016,11 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			return -EINVAL;
 		}
 
-		if ((prGlueInfo->prAdapter->rWifiVar.
-			fgSapConcurrencyPolicy ==
+		if ((prWifiVar->fgSapConcurrencyPolicy ==
 			P2P_CONCURRENCY_POLICY_REMOVE) &&
 			(ucRoleIdx == 0) &&
-			aisGetConnectedBssInfo(
-			prGlueInfo->prAdapter) &&
-			p2pFuncIsDualAPMode(
-			prGlueInfo->prAdapter)) {
+			aisGetConnectedBssInfo(prAdapter) &&
+			p2pFuncIsDualAPMode(prAdapter)) {
 			DBGLOG(P2P, WARN,
 				"Remove sap (role%d)\n",
 				ucRoleIdx);
@@ -2028,15 +2028,14 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			goto exit;
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (IS_FEATURE_ENABLED(
-			prGlueInfo->prAdapter->rWifiVar.ucDisallowAcs6G)) {
+		if (IS_FEATURE_ENABLED(prWifiVar->ucDisallowAcs6G)) {
 			struct BSS_INFO *prAisBssInfo =
-				aisGetConnectedBssInfo(prGlueInfo->prAdapter);
+				aisGetConnectedBssInfo(prAdapter);
 			/* Assuming that ap0 is activated in the G band and
 			 * ap1 is activated in the A band.
 			 */
 			if (prAisBssInfo && prAisBssInfo->eBand == BAND_6G &&
-				p2pFuncIsDualAPMode(prGlueInfo->prAdapter) &&
+				p2pFuncIsDualAPMode(prAdapter) &&
 				ucRoleIdx == 1) {
 				DBGLOG(P2P, WARN,
 					"Remove sap (role%d)\n",
@@ -2047,8 +2046,6 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		}
 #endif /* CFG_SUPPORT_WIFI_6G */
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prAdapter = prGlueInfo->prAdapter;
-		prWifiVar = &prAdapter->rWifiVar;
 		if (prWifiVar->fgSapConcurrencyPolicy ==
 			P2P_CONCURRENCY_POLICY_REMOVE_IF_STA_MLO) {
 			struct BSS_INFO *prBssInfo;
@@ -2065,7 +2062,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 				if (prBssInfo &&
 					IS_BSS_AIS(prBssInfo) &&
 					kalGetMediaStateIndicated(
-					prAdapter->prGlueInfo,
+					prGlueInfo,
 					prBssInfo->ucBssIndex) ==
 					MEDIA_STATE_CONNECTED) {
 					if (!prAisBssInfo ||
@@ -2078,11 +2075,9 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			 * ap1 is activated in the A band.
 			 */
 			if (prAisBssInfo) {
-				prMldBssInfo = mldBssGetByBss(
-						prGlueInfo->prAdapter,
+				prMldBssInfo = mldBssGetByBss(prAdapter,
 						prAisBssInfo);
-				if (p2pFuncIsDualAPMode(
-					prGlueInfo->prAdapter) &&
+				if (p2pFuncIsDualAPMode(prAdapter) &&
 					IS_MLD_BSSINFO_MULTI(prMldBssInfo) &&
 					(
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -2106,13 +2101,12 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 		if (dev->ieee80211_ptr &&
 			(dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) &&
-			!p2pFuncIsAPMode(prGlueInfo->prAdapter, ucRoleIdx)) {
+			!p2pFuncIsAPMode(prAdapter, ucRoleIdx)) {
 			DBGLOG(P2P, ERROR,
 				"Set fgIsApMode (role%d)\n",
 				ucRoleIdx);
-			p2pFuncInitConnectionSettings(prGlueInfo->prAdapter,
-				prGlueInfo->prAdapter->rWifiVar.
-				prP2PConnSettings[ucRoleIdx],
+			p2pFuncInitConnectionSettings(prAdapter,
+				prWifiVar->prP2PConnSettings[ucRoleIdx],
 				TRUE);
 		}
 
@@ -2188,9 +2182,6 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			/* Follow the channel info from wifi.cfg
 			 * prior to hostapd.conf
 			 */
-			prAdapter = prGlueInfo->prAdapter;
-			prWifiVar = &prAdapter->rWifiVar;
-
 			if (p2pFuncIsAPMode(prAdapter, ucRoleIdx)) {
 				if ((prWifiVar->ucApChannel != 0) &&
 					(prWifiVar->ucApChnlDefFromCfg != 0) &&
@@ -2230,7 +2221,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			rRfChnlInfo.u2PunctBitmap = punct_bitmap;
 #endif /* CFG_SUPPORT_SAP_PUNCTURE */
 
-			p2pFuncSetChannel(prGlueInfo->prAdapter,
+			p2pFuncSetChannel(prAdapter,
 				ucRoleIdx, &rRfChnlInfo);
 		} else {
 			DBGLOG(P2P, ERROR, "!!! no CH def!!!\n");
@@ -2257,12 +2248,12 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		if (rRfChnlInfo.eBand == BAND_6G) {
 			uint8_t ucMaxBw;
 
-			ucMaxBw = p2pFuncGetMaxBw(prGlueInfo->prAdapter,
+			ucMaxBw = p2pFuncGetMaxBw(prAdapter,
 						  rRfChnlInfo.eBand,
 						  p2pFuncIsAPMode(prAdapter,
 								  ucRoleIdx));
 			if (!rlmDomainIsLegalChlByNetType(
-					prGlueInfo->prAdapter,
+					prAdapter,
 					rRfChnlInfo.eBand,
 					rRfChnlInfo.ucChannelNum,
 					ucMaxBw,
@@ -2287,7 +2278,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 #endif
 
 		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
-			cnmMemAlloc(prGlueInfo->prAdapter,
+			cnmMemAlloc(prAdapter,
 			    RAM_TYPE_MSG,
 			    u4MsgLen);
 
@@ -2375,13 +2366,13 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		}
 #endif
 
-		mboxSendMsg(prGlueInfo->prAdapter,
+		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prP2pBcnUpdateMsg,
 			MSG_SEND_METHOD_BUF);
 
 		prP2pStartAPMsg = (struct MSG_P2P_START_AP *)
-			cnmMemAlloc(prGlueInfo->prAdapter,
+			cnmMemAlloc(prAdapter,
 				RAM_TYPE_MSG, sizeof(struct MSG_P2P_START_AP));
 
 		if (prP2pStartAPMsg == NULL) {
@@ -2468,7 +2459,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			prP2pStartAPMsg->u2SsidLen,
 			settings->ssid, settings->ssid_len);
 
-		mboxSendMsg(prGlueInfo->prAdapter,
+		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prP2pStartAPMsg,
 			MSG_SEND_METHOD_BUF);
