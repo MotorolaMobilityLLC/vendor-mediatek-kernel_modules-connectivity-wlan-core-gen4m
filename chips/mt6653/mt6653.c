@@ -3382,7 +3382,8 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter, u_int8_t fgForce)
 #if CFG_MTK_WIFI_WFDMA_WB
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct RTMP_DMABUF *prRingIntSta = &prHifInfo->rRingIntSta;
-	uint32_t u4Addr = 0, u4IntSta = 0, u4AfterVal;
+	uint32_t u4Addr[3] = {0}, u4IntSta = 0, u4AfterVal;
+	uint32_t u4Vals[5] = {0};
 	u_int8_t fgRet = FALSE;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
@@ -3428,14 +3429,38 @@ recovery:
 	if (prRingIntSta->AllocVa)
 		u4IntSta = *((uint32_t *)prRingIntSta->AllocVa);
 	/* enable wfdma writeback interrupt */
-	u4Addr = WF_WFDMA_HOST_DMA0_HOST_TX_INT_WB_EN_ADDR;
-	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Val, &fgRet);
-	HAL_MCR_WR(prAdapter, u4Addr, 0xF800);
-	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4AfterVal, &fgRet);
+	u4Addr[0] = WF_WFDMA_HOST_DMA0_HOST_TX_INT_WB_EN_ADDR;
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[0], &u4Val, &fgRet);
+	HAL_MCR_WR(prAdapter, u4Addr[0], 0xF800);
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[0], &u4AfterVal, &fgRet);
+
+	/* wfdma pcie msi debug */
+	u4Addr[1] = WF_WFDMA_EXT_WRAP_CSR_BASE + 0x564;
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[1], &u4Vals[0], &fgRet);
+
+	/* pcie mac debug */
+	u4Addr[2] = 0x7403002C;
+	HAL_MCR_WR(prAdapter, 0x74030164, 0x00010203);
+	HAL_MCR_WR(prAdapter, 0x74030168, 0xCCCC0100);
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[2], &u4Vals[1], &fgRet);
+
+	HAL_MCR_WR(prAdapter, 0x74030164, 0x20212223);
+	HAL_MCR_WR(prAdapter, 0x74030168, 0xCCCC0100);
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[2], &u4Vals[2], &fgRet);
+
+	HAL_MCR_WR(prAdapter, 0x74030164, 0x70717261);
+	HAL_MCR_WR(prAdapter, 0x74030168, 0x88880100);
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[2], &u4Vals[3], &fgRet);
+
+	HAL_MCR_WR(prAdapter, 0x74030164, 0x620B080A);
+	HAL_MCR_WR(prAdapter, 0x74030168, 0x88770100);
+	HAL_MCR_EMI_RD(prAdapter, u4Addr[2], &u4Vals[4], &fgRet);
 
 	DBGLOG(HAL, WARN,
-		"Emi=[0x%08x] WbIntSta=[0x%08x] [0x%08x]=[0x%08x]->[0x%08x]",
-	       u4IntSta, prHifInfo->u4WbIntSta, u4Addr, u4Val, u4AfterVal);
+		"Emi=[0x%08x] WbIntSta=[0x%08x] [0x%08x]=[0x%08x]->[0x%08x] [0x%08x]=[0x%08x] PCIe MAC [0x%08x][0x%08x][0x%08x][0x%08x]",
+	       u4IntSta, prHifInfo->u4WbIntSta, u4Addr[0], u4Val, u4AfterVal,
+	       u4Addr[1], u4Vals[0], u4Vals[1],
+	       u4Vals[2], u4Vals[3], u4Vals[4]);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
