@@ -4,6 +4,8 @@
  */
 
 #include "precomp.h"
+#include <linux/sched/debug.h>
+#include <linux/stacktrace.h>
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 
@@ -39,6 +41,14 @@ struct WAKE_INFO_T {
 
 static struct WAKE_INFO_T *gprWakeInfoStatics;
 static uint8_t aucStr[WAKE_STR_BUFFER_LEN];
+#endif /* CFG_SUPPORT_STATISTICS == 1 */
+
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+static void bus_access_timeout(struct timer_list *unused);
+static DEFINE_TIMER(bus_access_timer, bus_access_timeout);
+#else
+static void bus_access_timeout(unsigned long unused);
+static DEFINE_TIMER(bus_access_timer, bus_access_timeout, 0, 0);
 #endif
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
@@ -239,7 +249,7 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
 		}
 	}
 }
-#endif
+#endif /* CFG_SUPPORT_TRACE_TC4 == 1 */
 
 
 #if (CFG_SUPPORT_STATISTICS == 1)
@@ -759,6 +769,42 @@ void wlanDriverDbgLevelSync(void)
 		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 
 	wlanDbgSetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, u4DriverLogLevel);
+}
+
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+static void bus_access_timeout(struct timer_list *unused)
+#else
+static void bus_access_timeout(unsigned long unused)
+#endif
+{
+	if (fgIsBusAccessFailed == FALSE)
+		return;
+
+	if (kalIsResetOnEnd()) {
+		DBGLOG(INIT, INFO, "wifi driver is resetting\n");
+		mod_timer(&bus_access_timer, jiffies +
+			MSEC_TO_JIFFIES(
+			BUS_ACCESS_FAIL_MAX_TIME * MSEC_PER_SEC));
+	}
+
+	if (fgIsWarningTriggered) {
+		DBGLOG(INIT, WARN, "Bus Access Fail longer than %u seconds.",
+			BUS_ACCESS_FAIL_MAX_TIME);
+		return;
+	}
+	fgIsWarningTriggered = TRUE;
+	kalSendAeeWarning("WLAN", "Bus Access Fail too long");
+}
+
+void start_bus_access_fail(void)
+{
+	mod_timer(&bus_access_timer, jiffies +
+		  MSEC_TO_JIFFIES(BUS_ACCESS_FAIL_MAX_TIME * MSEC_PER_SEC));
+}
+
+void stop_bus_access_fail(void)
+{
+	del_timer_sync(&bus_access_timer);
 }
 
 static void

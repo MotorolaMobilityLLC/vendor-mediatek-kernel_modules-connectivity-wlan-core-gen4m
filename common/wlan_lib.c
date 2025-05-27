@@ -103,7 +103,7 @@ static uint8_t wifi_in_switch_mode;
 #endif
 
 static uint32_t u4ChipNoAckCnt;
-static u_int8_t fgIsWarningTriggered;
+u_int8_t fgIsWarningTriggered;
 /* data rate mapping table for CCK */
 struct cckDataRateMappingTable_t {
 	uint32_t rate[4];
@@ -15405,9 +15405,13 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 
 void wlanUpdateBusAccessStatus(u_int8_t flag)
 {
-	if (fgIsBusAccessFailed != flag)
+	if (fgIsBusAccessFailed != flag) {
 		DBGLOG(HAL, INFO, "%pS: %u\n", KAL_TRACE, flag);
-	else
+		if (flag == TRUE)
+			start_bus_access_fail();
+		else
+			stop_bus_access_fail();
+	} else
 		DBGLOG(HAL, TRACE, "%pS: %u\n", KAL_TRACE, flag);
 	fgIsBusAccessFailed = flag;
 }

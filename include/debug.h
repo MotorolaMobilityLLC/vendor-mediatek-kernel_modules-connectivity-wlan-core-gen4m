@@ -41,6 +41,7 @@ extern u_int8_t wlan_fb_power_down;
 extern uint8_t aucDebugModule[];
 extern uint32_t au4LogLevel[];
 extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
+extern u_int8_t fgIsWarningTriggered;
 #if CFG_SUPPORT_SA_LOG
 extern uint32_t get_wifi_standalone_log_mode(void);
 #endif
@@ -157,6 +158,8 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 #define DBG_PLE_INT_VER_SHIFT      24
 #define DBG_PLE_INT_FW_READY_MASK  0xFFFF
 #define DBG_PLE_INT_FW_READY       0xDDDD
+
+#define BUS_ACCESS_FAIL_MAX_TIME 5 /* seconds */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1212,6 +1215,9 @@ void wlanLogTxData(enum WAKE_DATA_TYPE dataType);
 void wlanLogRxData(enum WAKE_DATA_TYPE dataType);
 uint32_t wlanWakeDumpRes(void);
 #endif
+
+void start_bus_access_fail(void);
+void stop_bus_access_fail(void);
 
 #if (CFG_SUPPORT_RA_GEN == 1)
 int32_t mt7663_show_stat_info(struct ADAPTER *prAdapter,
