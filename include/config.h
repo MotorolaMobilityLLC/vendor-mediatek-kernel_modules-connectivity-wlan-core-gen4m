@@ -290,8 +290,7 @@
 /* If skb_buff mark field marked with pre-defined value, change priority to VO*/
 #define CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD	1
 
-/* Enable Mdns offload */
-#define CFG_SUPPORT_MDNS_OFFLOAD 1
+/* Mdns offload */
 #ifndef CFG_SUPPORT_MDNS_OFFLOAD
 #define CFG_SUPPORT_MDNS_OFFLOAD	0
 #endif
