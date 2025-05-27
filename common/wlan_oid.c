@@ -9448,8 +9448,7 @@ wlanoidSet802dot11PowerSaveProfileImpl(struct ADAPTER *
 			fgIsOid, PS_CALLER_COMMON);
 	}
 
-	if (prPowerMode->ePowerMode < Param_PowerModeMax &&
-		prPowerMode->ePowerMode >= 0) {
+	if (prPowerMode->ePowerMode < Param_PowerModeMax) {
 		DBGLOG(INIT, TRACE,
 		       "Set %s Network BSS(%u) PS mode to %s (%d)\n",
 		       apucNetworkType[prBssInfo->eNetworkType],
