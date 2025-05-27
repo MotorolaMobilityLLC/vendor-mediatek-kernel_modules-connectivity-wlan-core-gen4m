@@ -758,11 +758,6 @@ uint32_t nanSchedNegoGenLocalCrbProposal(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoChkRmtCrbProposal(struct ADAPTER *prAdapter,
 			uint32_t *pu4RejectCode);
 
-unsigned char nanSchedNegoIsRmtCrbConflict(struct ADAPTER *prAdapter,
-	struct _NAN_SCHEDULE_TIMELINE_T arTimeline[NAN_NUM_AVAIL_DB],
-	unsigned char *pfgEmptyMapSet,
-	uint32_t au4EmptyMap[NAN_TIMELINE_MGMT_SIZE][NAN_TOTAL_DW]);
-
 unsigned char nanSchedNegoInProgress(struct ADAPTER *prAdapter);
 void nanSchedNegoStop(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoStart(
