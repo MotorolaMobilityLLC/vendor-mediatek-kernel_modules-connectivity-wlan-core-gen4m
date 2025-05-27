@@ -890,6 +890,34 @@ void secPrivacyFreeForEntry(struct ADAPTER *prAdapter, uint8_t ucEntry)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is used to reset a WLAN entry.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure
+ * \param[in]  ucEntry the wlan table index to free
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void secPrivacyResetForEntry(struct ADAPTER *prAdapter, uint8_t ucEntry)
+{
+	struct WLAN_TABLE *prWtbl;
+
+	if (ucEntry >= WTBL_SIZE)
+		return;
+
+	DBGLOG(RSN, TRACE, "reset entry %d\n", ucEntry);
+
+	prWtbl = prAdapter->rWifiVar.arWtbl;
+
+	if (prWtbl[ucEntry].ucUsed) {
+		prWtbl[ucEntry].ucKeyId = 0xff;
+		kalMemZero(prWtbl[ucEntry].aucMacAddr, MAC_ADDR_LEN);
+		prWtbl[ucEntry].ucStaIndex = STA_REC_INDEX_NOT_FOUND;
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is used free a STA WLAN entry.
  *
  * \param[in] prAdapter Pointer to the Adapter structure
@@ -1044,8 +1072,8 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 				if (!fgCheckKeyId) {
 					ucEntry = i;
 					DBGLOG(RSN, TRACE,
-						"[Wlan index]: Reuse entry #%d for open/wep/wpi\n",
-						i);
+						"[Wlan index]: Reuse entry #%d for alg=%d\n",
+						i, ucAlg);
 					break;
 				}
 

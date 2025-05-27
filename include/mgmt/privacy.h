@@ -199,6 +199,9 @@ u_int8_t secPrivacySeekForEntry(struct ADAPTER
 void secPrivacyFreeForEntry(struct ADAPTER *prAdapter,
 			    uint8_t ucEntry);
 
+void secPrivacyResetForEntry(struct ADAPTER *prAdapter,
+			    uint8_t ucEntry);
+
 void secPrivacyFreeSta(struct ADAPTER *prAdapter,
 		       struct STA_RECORD *prStaRec);
 
