@@ -685,6 +685,19 @@
 #define ANT_CFG_CHAIN_NUM_WF1 ANT_CFG_CHAIN_NUM_SINGLE
 #define ANT_CFG_CHAIN_NUM_WF2 ANT_CFG_CHAIN_NUM_SINGLE
 
+#define COUNTRY_LMT_CH_GRP_KEY_ALL_CHNL      0
+#define COUNTRY_LMT_CH_GRP_KEY_2G_ALL       -1 /* 2G 1~14 */
+#define COUNTRY_LMT_CH_GRP_KEY_5G_ALL       -2 /* 5G 36~181 */
+#define COUNTRY_LMT_CH_GRP_KEY_5G_UNII_1    -3 /* 5G 36~50 */
+#define COUNTRY_LMT_CH_GRP_KEY_5G_UNII_2    -4 /* 5G 52~64 */
+#define COUNTRY_LMT_CH_GRP_KEY_5G_UNII_3    -5 /* 5G 100~144 */
+#define COUNTRY_LMT_CH_GRP_KEY_5G_UNII_4    -6 /* 5G 149~165 */
+#define COUNTRY_LMT_CH_GRP_KEY_6G_ALL       -7 /* 6G 1~233 */
+#define COUNTRY_LMT_CH_GRP_KEY_6G_UNII_5    -8 /* 6G 1~93 */
+#define COUNTRY_LMT_CH_GRP_KEY_6G_UNII_6    -9 /* 6G 95~115 */
+#define COUNTRY_LMT_CH_GRP_KEY_6G_UNII_7    -10 /* 6G 117~185 */
+#define COUNTRY_LMT_CH_GRP_KEY_6G_UNII_8    -11 /* 6G 187~233 */
+
 enum ENUM_TX_POWER_CTRL_LIST_TYPE {
 	PWR_CTRL_TYPE_DEFAULT_LIST = 0,
 	PWR_CTRL_TYPE_DYNAMIC_LIST,
@@ -1124,6 +1137,12 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE {
 	struct COUNTRY_POWER_LIMIT_COUNTRY_CODE *prGroup;
 };
 
+struct COUNTRY_LIMIT_CHNL_GRP_TABLE {
+	enum ENUM_BAND eBand;
+	int16_t i2Key;
+	uint8_t ucStartCh;
+	uint8_t ucEndCh;
+};
 #endif /* CFG_SUPPORT_PWR_LIMIT_COUNTRY */
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -1326,7 +1345,7 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER
 uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf);
 
 u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER
-		*prAdapter, enum ENUM_BAND eBand, uint8_t ucCentralCh);
+		*prAdapter, enum ENUM_BAND eBand, int16_t i2CentralCh);
 
 uint8_t rlmDomainGetCenterChannel(enum ENUM_BAND eBand,
 				  uint8_t ucPriChannel,

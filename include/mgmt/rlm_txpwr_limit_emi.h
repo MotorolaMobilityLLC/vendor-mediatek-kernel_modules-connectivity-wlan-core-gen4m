@@ -324,20 +324,20 @@ struct SET_COUNTRY_CHANNEL_POWER_LIMIT {
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_LEGACY_NUM];
 };
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_HE_NUM];
 };
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_EHT_NUM];
 };
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */

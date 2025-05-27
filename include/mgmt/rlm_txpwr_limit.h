@@ -517,27 +517,27 @@ struct CMD_CHANNEL_POWER_LIMIT_EHT { /*HE SU design*/
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	/* Note: this array doesn't include cPwrLimitOFDM_L & cPwrLimitOFDM_H */
 	int8_t aucPwrLimit[PWR_LIMIT_NUM];
 };
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_HE_NUM];
 };
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE_BW160 {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_HE_BW160_NUM];
 };
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_EHT_NUM];
 };
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
@@ -545,20 +545,20 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_6E_NUM];
 };
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_LEGACY_6G_NUM];
 };
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G {
 	uint8_t aucCountryCode[2];
-	uint8_t ucCentralCh;
+	int16_t i2CentralCh;
 	int8_t aucPwrLimit[PWR_LIMIT_EHT_6G_NUM];
 };
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */

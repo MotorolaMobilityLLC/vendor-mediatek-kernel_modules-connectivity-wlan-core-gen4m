@@ -290,7 +290,16 @@ struct TX_PWR_TAG_TABLE {
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+#define COUTRY_LMT_CH_MATCH_KEY_LEGACY(_i, _eBand, _i2CurrCh, _ucTarCh) \
+		(((_i2CurrCh) == g_rCountryLmtChGrpTbl[(_i)].i2Key) && \
+		 ((_ucTarCh) >= g_rCountryLmtChGrpTbl[(_i)].ucStartCh && \
+		  (_ucTarCh) <= g_rCountryLmtChGrpTbl[(_i)].ucEndCh))
 
+#define COUTRY_LMT_CH_MATCH_KEY_6G(_i, _eBand, _i2CurrCh, _ucTarCh) \
+		(((_eBand) == g_rCountryLmtChGrpTbl[(_i)].eBand) && \
+		((_i2CurrCh) == g_rCountryLmtChGrpTbl[(_i)].i2Key) && \
+		((_ucTarCh) >= g_rCountryLmtChGrpTbl[(_i)].ucStartCh && \
+		 (_ucTarCh) <= g_rCountryLmtChGrpTbl[(_i)].ucEndCh))
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1398,6 +1407,24 @@ struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 	,
 	{BAND_6G, UNII8_LOWER_BOUND, UNII8_UPPER_BOUND, 2, 0} /* 6G 187~233 */
 #endif /* CFG_SUPPORT_WIFI_6G */
+};
+struct COUNTRY_LIMIT_CHNL_GRP_TABLE g_rCountryLmtChGrpTbl[] = {
+	{BAND_2G4, COUNTRY_LMT_CH_GRP_KEY_ALL_CHNL, 1, 14},     /* key =  0*/
+	{BAND_2G4, COUNTRY_LMT_CH_GRP_KEY_2G_ALL, 1, 14},       /* key = -1 */
+	{BAND_5G, COUNTRY_LMT_CH_GRP_KEY_ALL_CHNL, 36, 181},    /* key =  0 */
+	{BAND_5G, COUNTRY_LMT_CH_GRP_KEY_5G_ALL, 36, 181},      /* key = -2 */
+	{BAND_5G, COUNTRY_LMT_CH_GRP_KEY_5G_UNII_1, 36, 50},    /* key = -3 */
+	{BAND_5G, COUNTRY_LMT_CH_GRP_KEY_5G_UNII_2, 52, 64},    /* key = -4 */
+	{BAND_5G, COUNTRY_LMT_CH_GRP_KEY_5G_UNII_3, 100, 144},  /* key = -5 */
+	{BAND_5G, COUNTRY_LMT_CH_GRP_KEY_5G_UNII_4, 149, 181},  /* key = -6*/
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	{BAND_6G, COUNTRY_LMT_CH_GRP_KEY_ALL_CHNL, 1, 233},     /* key =  0 */
+	{BAND_6G, COUNTRY_LMT_CH_GRP_KEY_6G_ALL, 1, 233},       /* key = -7 */
+	{BAND_6G, COUNTRY_LMT_CH_GRP_KEY_6G_UNII_5, 1, 93},     /* key = -8 */
+	{BAND_6G, COUNTRY_LMT_CH_GRP_KEY_6G_UNII_6, 95, 115},   /* key = -9 */
+	{BAND_6G, COUNTRY_LMT_CH_GRP_KEY_6G_UNII_7, 117, 185},  /* key = -10 */
+	{BAND_6G, COUNTRY_LMT_CH_GRP_KEY_6G_UNII_8, 187, 233}   /* key = -11 */
+#endif
 };
 #endif
 
@@ -2807,7 +2834,130 @@ rlmDomainGetChannelInterval(uint16_t u2SubBandIdx,
 
 	return ucInterval;
 }
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use to check whether current country limit channel
+ *        match channel group keywork.
+ *
+ * @param[in] eBand : RF band
+ * @param[in] i2CurrCh : Current country channel from configuration table
+ * @param[in] ucTarCh : Target channel which is use for CMD
+ *
+ * @return bool : Match or not
+ */
+/*----------------------------------------------------------------------------*/
+static bool rlmDomainIsMatchCntryChGrpKey(
+	enum ENUM_BAND eBand,
+	int16_t i2CurrCh,
+	uint8_t ucTarCh)
+{
+	uint8_t i = 0;
+	uint8_t ucTblSize =
+		(sizeof(g_rCountryLmtChGrpTbl) /
+		sizeof(struct COUNTRY_LIMIT_CHNL_GRP_TABLE));
+	uint8_t fgDoArb = TRUE;
 
+	for (i = 0; i < ucTblSize; i++) {
+		if ((eBand == BAND_2G4 || eBand == BAND_5G) &&
+		COUTRY_LMT_CH_MATCH_KEY_LEGACY(i, eBand, i2CurrCh, ucTarCh)) {
+			fgDoArb = TRUE;
+			break;
+		} else if (
+		COUTRY_LMT_CH_MATCH_KEY_6G(i, eBand, i2CurrCh, ucTarCh)) {
+			fgDoArb = TRUE;
+			break;
+		}
+	}
+
+	if (i >= ucTblSize) {
+		/* not found */
+		fgDoArb = FALSE;
+	}
+
+	DBGLOG(RLM, LOUD, "Band[%d]CurrCh[%d]TarCh[%d]Arb[%d]",
+					eBand,
+					i2CurrCh,
+					ucTarCh,
+					fgDoArb);
+
+	return fgDoArb;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is use to check current condition is valid, if valid
+ *        will do power limt arbitor
+ *
+ * @param[in] u2CurrContryCode : Current country from configuration table
+ * @param[in] u2TarContryCode : Target country channel is use for CMD
+ * @param[in] fgChlValide : Channel valid or not
+ * @param[in] eBand : RF band
+ * @param[in] i2CurrCh : Current country channel from configuration table
+ * @param[in] ucTarCh : Target channel which is use for CMD
+ *
+ * @return bool : Do arbitor or not
+ */
+/*----------------------------------------------------------------------------*/
+static bool rlmDomainPwrLmtArbitorPreProccess(
+	struct ADAPTER *prAdapter,
+	uint16_t u2CurrContryCode,
+	uint16_t u2TarContryCode,
+	bool fgChlValide,
+	enum ENUM_BAND eBand,
+	int16_t i2CurrCh,
+	uint8_t ucTarCh)
+{
+
+	if (u2CurrContryCode != u2TarContryCode) {
+		return FALSE;
+	} else if (fgChlValide == FALSE) {
+		return FALSE;
+	} else if (i2CurrCh != ucTarCh) {
+		if (rlmDomainIsMatchCntryChGrpKey(eBand, i2CurrCh, ucTarCh)) {
+			/* match key word */
+			return TRUE;
+		} else {
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief
+ *
+ * @param[in]
+ *
+ * @return (fgValid) : 0 -> inValid, 1 -> Valid
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmDomainCheckEntryValidSpecialCase(struct ADAPTER *prAdapter,
+				enum ENUM_BAND eBand, int16_t i2CentralCh)
+{
+	uint8_t i = 0;
+	uint8_t ucTblSize =
+		(sizeof(g_rCountryLmtChGrpTbl) /
+		sizeof(struct COUNTRY_LIMIT_CHNL_GRP_TABLE));
+
+	if ((eBand == BAND_5G) && (i2CentralCh == 50)) {
+		/* CH50 is not located in any FCC subbands
+		 * but it's a valid central channel for 160C
+		 */
+		return TRUE;
+	}
+
+	for (i = 0; i < ucTblSize; i++) {
+		if ((eBand == g_rCountryLmtChGrpTbl[i].eBand) &&
+			(i2CentralCh == g_rCountryLmtChGrpTbl[i].i2Key)) {
+			DBGLOG(RLM, LOUD, "Special case band[%d]Ch[%d]\n",
+							eBand,
+							i2CentralCh);
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -2818,28 +2968,22 @@ rlmDomainGetChannelInterval(uint16_t u2SubBandIdx,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter,
-				enum ENUM_BAND eBand, uint8_t ucCentralCh)
+				enum ENUM_BAND eBand, int16_t i2CentralCh)
 {
 	u_int8_t fgValid = FALSE;
 	uint8_t ucTemp = 0xff;
 	uint8_t i;
-	/*Check Power limit table channel efficient or not */
 
-	/* CH50 is not located in any FCC subbands
-	 * but it's a valid central channel for 160C
-	 */
-	if (eBand == BAND_5G && ucCentralCh == 50) {
-		fgValid = TRUE;
-		return fgValid;
-	}
+	if (rlmDomainCheckEntryValidSpecialCase(prAdapter, eBand, i2CentralCh))
+		return TRUE;
 
 	for (i = PWR_LMT_SUBBAND_2G4; i < PWR_LMT_SUBAND_NUM; i++) {
 		if ((eBand == BAND_NULL || eBand == g_rRlmSubBand[i].eBand) &&
-			(ucCentralCh >= g_rRlmSubBand[i].ucStartCh) &&
-			(ucCentralCh <= g_rRlmSubBand[i].ucEndCh)) {
+			(i2CentralCh >= g_rRlmSubBand[i].ucStartCh) &&
+			(i2CentralCh <= g_rRlmSubBand[i].ucEndCh)) {
 
-			ucTemp = (ucCentralCh - g_rRlmSubBand[i].ucStartCh) %
-			rlmDomainGetChannelInterval(i, ucCentralCh);
+			ucTemp = (i2CentralCh - g_rRlmSubBand[i].ucStartCh) %
+			rlmDomainGetChannelInterval(i, i2CentralCh);
 		}
 		if (ucTemp == 0)
 			break;
@@ -2847,8 +2991,8 @@ u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter,
 
 	if (ucTemp == 0)
 		fgValid = TRUE;
-	return fgValid;
 
+	return fgValid;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3969,22 +4113,22 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 
 			WLAN_GET_FIELD_BE16(&PwrLmtConf[j].aucCountryCode[0],
 					    &u2CountryCodeCheck);
-			if (((PwrLmtConf[i].ucCentralCh) ==
-			     PwrLmtConf[j].ucCentralCh)
+			if (((PwrLmtConf[i].i2CentralCh) ==
+			     PwrLmtConf[j].i2CentralCh)
 			    && (u2CountryCodeTable == u2CountryCodeCheck)) {
 				fgEntryRepetetion = TRUE;
 				DBGLOG(RLM, LOUD,
 				       "Domain: Configuration Repetition CC=%c%c, Ch=%d\n",
 				       PwrLmtConf[i].aucCountryCode[0],
 				       PwrLmtConf[i].aucCountryCode[1],
-				       PwrLmtConf[i].ucCentralCh);
+				       PwrLmtConf[i].i2CentralCh);
 			}
 		}
 
 		/*<2>Channel Number Interval Check */
 		fgChannelValid =
 		    rlmDomainCheckChannelEntryValid(prAdapter,
-				BAND_NULL, PwrLmtConf[i].ucCentralCh);
+				BAND_NULL, PwrLmtConf[i].i2CentralCh);
 
 		/*<3>Power Limit Range Check */
 		fgPowerLimitValid =
@@ -4019,7 +4163,7 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 				"Domain: CC=%c%c, Ch=%d, Limit: %s, Valid:%d,%d\n",
 				PwrLmtConf[i].aucCountryCode[0],
 				PwrLmtConf[i].aucCountryCode[1],
-				PwrLmtConf[i].ucCentralCh,
+				PwrLmtConf[i].i2CentralCh,
 				ucMsgBuf,
 				fgChannelValid,
 				fgPowerLimitValid);
@@ -5324,17 +5468,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					rlmDomainCheckChannelEntryValid(
 						prAdapter,
 						BAND_NULL,
-						prPwrLmtConfHE[i].ucCentralCh);
+						prPwrLmtConfHE[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConfHE[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_NULL,
+					prPwrLmtConfHE[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				/* Choose MINIMUN value from
@@ -5372,17 +5517,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					rlmDomainCheckChannelEntryValid(
 					  prAdapter,
 					  BAND_NULL,
-					  prPwrLmtConfHEBW160[i].ucCentralCh);
+					  prPwrLmtConfHEBW160[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConfHEBW160[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_NULL,
+					prPwrLmtConfHEBW160[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				/* Choose MINIMUN value from
@@ -5428,17 +5574,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					rlmDomainCheckChannelEntryValid(
 						prAdapter,
 						BAND_NULL,
-					prPwrLmtConfEHT[i].ucCentralCh);
+					prPwrLmtConfEHT[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConfEHT[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_NULL,
+					prPwrLmtConfEHT[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				rlmDomainCompareFromConfigTable(
@@ -5463,17 +5610,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 				fgChannelValid =
 				    rlmDomainCheckChannelEntryValid(prAdapter,
 				    BAND_6G,
-					prPwrLmtConf6E[i].ucCentralCh);
+					prPwrLmtConf6E[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConf6E[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_6G,
+					prPwrLmtConf6E[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				/* Choose MINIMUN value from
@@ -5512,17 +5660,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 				    rlmDomainCheckChannelEntryValid(
 					prAdapter,
 					BAND_6G,
-					prPwrLmtConfLegacy_6G[i].ucCentralCh);
+					prPwrLmtConfLegacy_6G[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConfLegacy_6G[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_6G,
+					prPwrLmtConfLegacy_6G[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				/* Choose MINIMUN value from
@@ -5579,17 +5728,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 				fgChannelValid =
 				    rlmDomainCheckChannelEntryValid(prAdapter,
 				    BAND_6G,
-					prPwrLmtConfEHT_6G[i].ucCentralCh);
+					prPwrLmtConfEHT_6G[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConfEHT_6G[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_6G,
+					prPwrLmtConfEHT_6G[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				rlmDomainCompareFromConfigTable(
@@ -5620,17 +5770,18 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					rlmDomainCheckChannelEntryValid(
 						prAdapter,
 						BAND_NULL,
-						prPwrLmtConf[i].ucCentralCh);
+						prPwrLmtConf[i].i2CentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
-				else if (u2CountryCodeTable
-					!= prCmd->u2CountryCode)
-					continue;
-				else if (fgChannelValid == FALSE)
-					continue;
-				else if (ucCentCh
-					!= prPwrLmtConf[i].ucCentralCh)
+				else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prCmd->u2CountryCode,
+					fgChannelValid,
+					BAND_NULL,
+					prPwrLmtConf[i].i2CentralCh,
+					ucCentCh) == FALSE)
 					continue;
 
 				/* Choose MINIMUN value from
@@ -13317,18 +13468,20 @@ static void rlmDomainBuildConfigPwrLimitPayload_Legacy(
 				rlmDomainCheckChannelEntryValid(
 					prAdapter,
 					rlmDomainConvertRFBandEnum(eRF),
-					prCfgPwrLmt[i].ucCentralCh
+					prCfgPwrLmt[i].i2CentralCh
 				);
 
 			if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 				break;	/*end of configuration table */
-			else if (u2CountryCodeTable
-				!= prPerPwrLimit->u2CountryCode)
-				continue;
-			else if (fgChannelValid == FALSE)
-				continue;
-			else if (prChPwrLimit_Legacy->ucCentralCh
-				!= prCfgPwrLmt[i].ucCentralCh)
+			else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prPerPwrLimit->u2CountryCode,
+					fgChannelValid,
+					rlmDomainConvertRFBandEnum(eRF),
+					prCfgPwrLmt[i].i2CentralCh,
+					prChPwrLimit_Legacy->ucCentralCh)
+					== FALSE)
 				continue;
 
 			PwrLmtTblArbitrator(
@@ -13561,18 +13714,19 @@ static void rlmDomainBuildConfigPwrLimitPayload_HE(
 				rlmDomainCheckChannelEntryValid(
 					prAdapter,
 					rlmDomainConvertRFBandEnum(eRFBand),
-					prCfgPwrLmt[i].ucCentralCh
+					prCfgPwrLmt[i].i2CentralCh
 				);
 
 			if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 				break;	/*end of configuration table */
-			else if (u2CountryCodeTable !=
-				prPerPwrLimit->u2CountryCode)
-				continue;
-			else if (fgChannelValid == FALSE)
-				continue;
-			else if (prChPwrLimit_HE->ucCentralCh !=
-				prCfgPwrLmt[i].ucCentralCh)
+			else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prPerPwrLimit->u2CountryCode,
+					fgChannelValid,
+					rlmDomainConvertRFBandEnum(eRFBand),
+					prCfgPwrLmt[i].i2CentralCh,
+					prChPwrLimit_HE->ucCentralCh) == FALSE)
 				continue;
 
 			PwrLmtTblArbitrator(
@@ -13842,18 +13996,19 @@ static void rlmDomainBuildConfigPwrLimitPayload_EHT(
 				rlmDomainCheckChannelEntryValid(
 					prAdapter,
 					rlmDomainConvertRFBandEnum(eRFBand),
-					prCfgPwrLmt[i].ucCentralCh
+					prCfgPwrLmt[i].i2CentralCh
 				);
 
 			if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 				break;	/*end of configuration table */
-			else if (u2CountryCodeTable
-				!= prPerPwrLimit->u2CountryCode)
-				continue;
-			else if (fgChannelValid == FALSE)
-				continue;
-			else if (prChPwrLimit_EHT->ucCentralCh
-				!= prCfgPwrLmt[i].ucCentralCh)
+			else if (rlmDomainPwrLmtArbitorPreProccess(
+					prAdapter,
+					u2CountryCodeTable,
+					prPerPwrLimit->u2CountryCode,
+					fgChannelValid,
+					rlmDomainConvertRFBandEnum(eRFBand),
+					prCfgPwrLmt[i].i2CentralCh,
+					prChPwrLimit_EHT->ucCentralCh) == FALSE)
 				continue;
 
 			PwrLmtTblArbitrator(
