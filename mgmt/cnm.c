@@ -6482,19 +6482,13 @@ void cnmRddOpmodeEventHandler(
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
 			->fgIsRddOpchng = TRUE;
 		rfChannelInfo = prP2pConnReqInfo->rChannelInfo;
-		rfChannelInfo.ucChannelNum = prRddEvtOpMode->ucPriChannel;
-		if (prRddEvtOpMode->ucPriChannel < 14)
-			rfChannelInfo.eBand = BAND_2G4;
-		else
-			rfChannelInfo.eBand = BAND_5G;
-		rfChannelInfo.ucChnlBw = prRddEvtOpMode->ucChBw;
-		rfChannelInfo.u4CenterFreq1 = nicGetS1Freq(rfChannelInfo.eBand,
-			rfChannelInfo.ucChannelNum,
-			prP2pConnReqInfo->eChnlExt,
-			rfChannelInfo.ucChnlBw);
-		rfChannelInfo.u4CenterFreq2 = nicGetS2Freq(rfChannelInfo.eBand,
-			rfChannelInfo.ucChannelNum,
-			rfChannelInfo.ucChnlBw);
+
+		rlmGetChnlInfoForCSA(prAdapter,
+			prRddEvtOpMode->ucPriChannel < 14 ?
+			BAND_2G4 : BAND_5G,
+			prRddEvtOpMode->ucPriChannel,
+			prRddEvtOpMode->ucChBw,
+			ucBssIndex, &rfChannelInfo);
 		cnmSapChannelSwitchReq(prAdapter,
 			&rfChannelInfo,
 			ucRoleIndex,
