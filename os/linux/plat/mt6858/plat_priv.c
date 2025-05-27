@@ -214,12 +214,12 @@ uint32_t kalGetChipID(void)
 
 uint32_t kalGetConnsysVersion(void)
 {
-	return 0x02050403;
+	return 0x02050405;
 }
 
 uint32_t kalGetWfIpVersion(void)
 {
-	return 0x02040400;
+	return 0x02040600;
 }
 
 uint32_t kalGetFwVerOffset(void)

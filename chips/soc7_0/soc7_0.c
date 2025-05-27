@@ -34,6 +34,7 @@
 #include "coda/soc7_0/wf_wfdma_host_dma0.h"
 #include "coda/soc7_0/ap2wf_conn_infra_on_ccif4.h"
 #include "coda/soc7_0/conn_semaphore.h"
+#include "coda/soc7_0/wf_top_rgu_on.h"
 #include "hal_dmashdl_soc7_0.h"
 
 #define CFG_SUPPORT_VCODE_VDFS 1
@@ -1326,11 +1327,13 @@ static int wake_up_conninfra_off(void)
 	uint32_t u4ConnsysVersion = 0;
 
 	/* Wakeup conn_infra off
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b1
+	 * Address: 0x1806_01A4[31:16] 0x1806_01A4[0]
+	 * Data: 16'h5746 1'b1
 	 * Action: write
 	 */
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_WRITE_KEY_MASK;
+	value |= WFSYS_ON_TOP_WRITE_KEY;
 	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 
@@ -1349,7 +1352,9 @@ static int wake_up_conninfra_off(void)
 	u4ConnsysVersion = kalGetConnsysVersion();
 	while (value != u4ConnsysVersion) {
 		if (polling_count > 10) {
-			DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail");
+			DBGLOG(INIT, ERROR,
+				"Polling CONNSYS version ID fail. (0x%x)\n",
+				value);
 			return -1;
 		}
 		udelay(1000);
@@ -1368,7 +1373,9 @@ static int wake_up_conninfra_off(void)
 	polling_count = 0;
 	while ((value & CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_CONN_INFRA_RDY_MASK) == 0) {
 		if (polling_count > 10) {
-			DBGLOG(INIT, ERROR, "Polling CONN_INFRA cmdbt restore done fail.\n");
+			DBGLOG(INIT, ERROR,
+				"Polling CONN_INFRA cmdbt restore done fail. (0x%x)\n",
+				value);
 			return -1;
 		}
 		udelay(500);
@@ -1405,6 +1412,7 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	uint32_t value = 0;
 	uint32_t polling_count;
 	uint32_t u4WfIpVersion = 0;
+	uint32_t u4ChipID = 0;
 	DBGLOG(INIT, DEBUG, "wmmcu power-on start.\n");
 
 #if (CFG_WLAN_LK_FWDL_SUPPORT == 0)
@@ -1417,8 +1425,8 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 		return ret;
 
 	/* PTA clock on
-	 * Address: 0x1801_2064、0x1801_2074
-	 * Data: 0x01010101、0x00000101
+	 * Address: 0x1801_2064 0x1801_2074
+	 * Data: 0x01010101 0x00000101
 	 * Action: write
 	 */
 	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_HCLK_CKEN_M0_MASK |
@@ -1563,7 +1571,9 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	u4WfIpVersion = kalGetWfIpVersion();
 	while (value != u4WfIpVersion) {
 		if (polling_count > 10) {
-			DBGLOG(INIT, ERROR, "Polling WFSYS version ID fail.");
+			DBGLOG(INIT, ERROR,
+				"Polling WFSYS version ID fail. (0x%x)\n",
+				value);
 			ret = -1;
 			return ret;
 		}
@@ -1657,6 +1667,20 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_debug_en_debugtop_MASK);
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
 
+	u4ChipID = kalGetChipID();
+	if (u4ChipID == 0x6858) {
+		/* Un-mask subsys_pwr_ack for PHY and TOP
+		 * Address: 0x184C_0044[7] 0x184C_0044[3] 0x184C_0044[2]
+		 * Data: 1'b1 1'b1 1'b1
+		 * Action: write
+		 */
+		wf_ioremap_read(WF_TOP_RGU_ON_TOP_PWR_CTL_ADDR, &value);
+		value |= (WF_TOP_RGU_ON_TOP_PWR_CTL_CR_SUBSYS_PWR_ACK_S_MASK_BN1_PHY_TOP_MASK |
+			WF_TOP_RGU_ON_TOP_PWR_CTL_CR_SUBSYS_PWR_ACK_S_MASK_BN0_PHY_TOP_MASK |
+			WF_TOP_RGU_ON_TOP_PWR_CTL_CR_SUBSYS_PWR_ACK_S_MASK_TOP_MASK);
+		wf_ioremap_write(WF_TOP_RGU_ON_TOP_PWR_CTL_ADDR, value);
+	}
+
 	set_wf_monflg_on_mailbox_wf();
 
 	/* De-assert WFSYS CPU SW reset
@@ -1704,11 +1728,13 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	}
 
 	/* Disable conn_infra off domain force on
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b0
+	 * Address: 0x1806_01A4[31:16] 0x1806_01A4[0]
+	 * Data: 16'h5746 1'b0
 	 * Action: write
 	 */
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_WRITE_KEY_MASK;
+	value |= WFSYS_ON_TOP_WRITE_KEY;
 	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 
@@ -1794,8 +1820,8 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
 	check = 0;
 	polling_count = 0;
-	while ((value & (CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_RDY_MASK |
-			CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_HW_EN_MASK)) == 0) {
+	while ((value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_RDY_MASK) == 0 ||
+		(value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_CONN2WF_SLP_PROT_RDY_MASK) == 0) {
 		if (polling_count > 100) {
 			check = -1;
 			ret = -1;
@@ -1850,10 +1876,11 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 
 	/* Release WFSYS semaphore */
 	u4ChipID = kalGetChipID();
-
-	if (u4ChipID == 0x6897 || u4ChipID == 0x6878 || u4ChipID == 0x6899) {
-		/* for mt6897, mt6878, mt6899
-		 * 0x18000158[0]=1'b0
+	if (u4ChipID == 0x6897 ||
+	    u4ChipID == 0x6878 ||
+	    u4ChipID == 0x6899 ||
+	    u4ChipID == 0x6858) {
+		/* 0x18000158[0]=1'b0
 		 * Action: write
 		 */
 		wf_ioremap_read(CONN_INFRA_RGU_ON_SEMA_M0_SW_RST_B_ADDR,
@@ -2079,8 +2106,8 @@ release_wfsys_sem_done:
 	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
 
 	/* PTA clock off
-	 * Address: 0x1801_2068、0x1801_2078
-	 * Data: 0x01010101、0x00000101
+	 * Address: 0x1801_2068 0x1801_2078
+	 * Data: 0x01010101 0x00000101
 	 * Action: write
 	 */
 	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_HCLK_CKEN_M0_MASK |
@@ -2093,11 +2120,13 @@ release_wfsys_sem_done:
 	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_CLR_ADDR, value);
 
 	/* release conn_infra force on
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b0
+	 * Address: 0x1806_01A4[31:16] 0x1806_01A4[0]
+	 * Data: 16'h5746 1'b0
 	 * Action: write
 	 */
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_WRITE_KEY_MASK;
+	value |= WFSYS_ON_TOP_WRITE_KEY;
 	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 
