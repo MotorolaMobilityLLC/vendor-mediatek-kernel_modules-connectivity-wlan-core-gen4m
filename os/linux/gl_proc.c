@@ -1502,6 +1502,12 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 	rMcrInfo.u4McrData = 0;
 	rMcrInfo.u4McrOffset = u4McrOffset;
 
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(REQ, WARN, "procMCRRead prAdapter is NULL\n");
+		i4Ret = 0;
+		goto freeBuf;
+	}
+
 	rStatus = kalIoctl(prGlueInfo,
 		wlanoidQueryMcrRead, (void *)&rMcrInfo,
 		sizeof(rMcrInfo), &u4BufLen);
@@ -1553,6 +1559,12 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 
 	ASSERT(data);
 
+	prGlueInfo = g_prGlueInfo_proc;
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(REQ, WARN, "procMCRWrite prAdapter is NULL\n");
+		return 0;
+	}
+
 	u4CopySize = (count < sizeof(acBuf)) ? count : (sizeof(acBuf) - 1);
 	if (copy_from_user(acBuf, buffer, u4CopySize))
 		return 0;
@@ -1573,8 +1585,6 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 		 */
 		/* if (IS_ALIGN_4(rMcrInfo.u4McrOffset)) */
 		{
-			prGlueInfo = g_prGlueInfo_proc;
-
 			u4McrOffset = rMcrInfo.u4McrOffset;
 
 			/* rMcrInfo.u4McrOffset, rMcrInfo.u4McrData); */
