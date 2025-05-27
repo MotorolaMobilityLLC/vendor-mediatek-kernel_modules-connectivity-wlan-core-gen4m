@@ -1300,11 +1300,23 @@ local_defines_6855 = local_defines_connv1 + [
     "CFG_WLAN_LK_FWDL_SUPPORT=0",
 ]
 
-
 # Name: 6895
 # Description:
 srcs_6895 = srcs_connv2 + [":srcs_nan"]
 local_defines_6895 = local_defines_connv2 + []
+
+# Name: 6858
+# Description:
+srcs_6858 = srcs_connv2 + [
+    "os/linux/plat/mt6858/plat_priv.c",
+] + [":srcs_nan"]
+local_defines_6858 = local_defines_connv2 + [
+    "CFG_WLAN_LK_FWDL_SUPPORT=1",
+    "CFG_SUPPORT_NAN_DBDC=0",
+    "CFG_STA_2G_BW=1",
+    "CFG_SAP_2G_BW=1",
+    "CFG_P2P_2G_BW=1",
+]
 
 # Name: 6991_6653
 # Description:
@@ -1462,6 +1474,7 @@ extra_copts = {
     "6789" : copts_connv1,
     "6855" : copts_connv1,
     "6895" : copts_connv2,
+    "6858" : copts_connv2,
     "6991_6653" : copts_connv3,
     "6991_6653_dx5" : copts_connv3,
     "6991_6653_dx5_triband" : copts_connv3,
@@ -1474,6 +1487,7 @@ extra_header_deps = {
     "6789" : header_deps_connv1,
     "6855" : header_deps_connv1,
     "6895" : header_deps_connv2,
+    "6858" : header_deps_connv2,
     "6991_6653" : header_deps_connv3,
     "6991_6653_dx5" : header_deps_connv3,
     "6991_6653_dx5_triband" : header_deps_connv3,
@@ -1486,6 +1500,7 @@ extra_ko_deps = {
 	"6789" : ko_deps_connv1,
     "6855" : ko_deps_connv1,
     "6895" : ko_deps_connv2,
+    "6858" : ko_deps_connv2,
     "6991_6653" : ko_deps_connv3,
     "6991_6653_dx5" : ko_deps_connv3,
     "6991_6653_dx5_triband" : ko_deps_connv3,
@@ -1498,6 +1513,7 @@ extra_srcs = {
     "6789" : srcs_6789,
     "6855" : srcs_6855,
     "6895" : srcs_6895,
+    "6858" : srcs_6858,
     "6991_6653" : srcs_6991_6653,
     "6991_6653_dx5" : srcs_6991_6653_dx5,
     "6991_6653_dx5_triband" : srcs_6991_6653_dx5_triband,
@@ -1510,6 +1526,7 @@ extra_includes = {
     "6789" : include_connv1,
     "6855" : include_connv1,
     "6895" : include_connv2,
+    "6858" : include_connv2,
     "6991_6653" : include_connv3,
     "6991_6653_dx5" : include_connv3,
     "6991_6653_dx5_triband" : include_connv3,
@@ -1522,6 +1539,7 @@ extra_local_defines = {
     "6789" : local_defines_6789,
     "6855" : local_defines_6855,
     "6895" : local_defines_6895,
+    "6858" : local_defines_6858,
     "6991_6653" : local_defines_6991_6653,
     "6991_6653_dx5" : local_defines_6991_6653_dx5,
     "6991_6653_dx5_triband" : local_defines_6991_6653_dx5_triband,
