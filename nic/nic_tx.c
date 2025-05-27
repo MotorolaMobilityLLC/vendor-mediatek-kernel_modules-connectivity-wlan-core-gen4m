@@ -5112,16 +5112,16 @@ void nicTxUpdateStaRecDefaultRate(struct ADAPTER *prAdapter, struct STA_RECORD
 		if (prBssInfo && prBssInfo->ucErMode == RA_DCM) {
 			prStaRec->u2HwDefaultFixedRateCode =
 				RATE_HE_ER_DCM_MCS_0;
-			DBGLOG_LIMITED(TX, WARN,
+			DBGLOG_LIMITED(TX, TRACE,
 			"nicTxUpdateStaRecDefaultRate:HE_ER DCM\n");
 		} else if (prBssInfo &&
 				prBssInfo->ucErMode == RA_ER_106) {
 			prStaRec->u2HwDefaultFixedRateCode =
 				RATE_HE_ER_TONE_106_MCS_0;
-			DBGLOG_LIMITED(TX, WARN,
+			DBGLOG_LIMITED(TX, TRACE,
 			"nicTxUpdateStaRecDefaultRate:HE_ER 106 tone\n");
 		} else {
-			DBGLOG_LIMITED(TX, WARN,
+			DBGLOG_LIMITED(TX, TRACE,
 			"nicTxUpdateStaRecDefaultRate:HE_ER Disable\n");
 		}
 	}

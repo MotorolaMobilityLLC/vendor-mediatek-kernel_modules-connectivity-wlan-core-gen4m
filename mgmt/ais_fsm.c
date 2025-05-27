@@ -263,7 +263,7 @@ bool aisCheckUsingERRate(struct ADAPTER *prAdapter,
 		fgIsStaUseERRate = TRUE;
 	}
 
-	DBGLOG(AIS, INFO, "ER: ER disable:%x, max rx:%x, band:%x, use ER:%x\n",
+	DBGLOG(AIS, TRACE, "ER: ER disable:%x, max rx:%x, band:%x, use ER:%x\n",
 		prBssDesc->fgIsERSUDisable, prBssDesc->ucDCMMaxConRx,
 		prBssDesc->eBand, fgIsStaUseERRate);
 
@@ -2481,7 +2481,7 @@ void aisFsmClearPostponedBTO(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-	DBGLOG(AIS, INFO, "AIS[%d][%d] Clear postponed btoinfo\n",
+	DBGLOG(AIS, TRACE, "AIS[%d][%d] Clear postponed btoinfo\n",
 		prAisFsmInfo->ucAisIndex, ucBssIndex);
 
 	kalMemZero(&prAisFsmInfo->rBtoInfo, sizeof(prAisFsmInfo->rBtoInfo));

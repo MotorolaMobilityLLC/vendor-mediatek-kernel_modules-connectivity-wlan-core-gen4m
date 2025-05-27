@@ -82,6 +82,8 @@
 #define STA_REC_EXCLUDE_NONE		CFG_STA_REC_NUM
 
 #define MLD_LINK_INDEX_NOT_FOUND	0xFF
+#define DUMP_LOG_BUF_SIZE		1024
+
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

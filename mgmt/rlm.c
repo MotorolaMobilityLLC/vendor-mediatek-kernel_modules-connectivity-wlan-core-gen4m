@@ -336,7 +336,7 @@ void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = icPwrMin;
 	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = icPwrMax;
 
-	DBGLOG(RLM, INFO, "PwrCap Min[%d]Max[%d]\n"
+	DBGLOG(RLM, TRACE, "PwrCap Min[%d]Max[%d]\n"
 			, POWER_CAP_IE(pucBuffer)->cMinTxPowerCap
 			, POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap);
 

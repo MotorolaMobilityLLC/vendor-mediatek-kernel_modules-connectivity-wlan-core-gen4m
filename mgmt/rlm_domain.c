@@ -13495,7 +13495,7 @@ uint32_t rlmDomain6GPwrModeUpdate(
 	}
 #endif /* CFG_SUPPORT_CE_6G_PWR_REGULATIONS */
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"BSS[%d]Use_6G[%d]Net[%d]Update[%d]PreCh[%d]CurrCh[%d]PreMode[%d]CurrMode[%d]force[%d]\n",
 		ucBssIndex,
 		rlmDomainIsBssUse6g(prAdapter, prBssInfo, &ucBw),
@@ -15464,7 +15464,7 @@ void rlmDomainConnectionNotifiey(
 {
 	enum ENUM_TX_PWR_EMI_SCENARIO_TYPE type;
 
-	DBGLOG(RLM, INFO, "Connection notify to - Tx Power, reason :%d",
+	DBGLOG(RLM, TRACE, "Connection notify to - Tx Power, reason :%d",
 		reason);
 
 	if (reason == CNM_REQUEST_CHANNEL)
@@ -15719,7 +15719,7 @@ void rlmDomainSendCachePwrLmtData(struct ADAPTER *prAdapter)
 		rlmDomainWritePwrLimitToEmi(prAdapter);
 		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, FALSE);
 	} else {
-		DBGLOG(NIC, DEBUG, "No cache data !!\n");
+		DBGLOG(NIC, TRACE, "No cache data !!\n");
 	}
 
 }
@@ -15730,7 +15730,7 @@ void rlmDomainPowerLimitEmiEvent(struct ADAPTER *prAdapter,
 
 	u4SenarioType = *pucEventBuf;
 
-	DBGLOG(NIC, DEBUG, "u4SenarioType = %d!\n", u4SenarioType);
+	DBGLOG(NIC, TRACE, "u4SenarioType = %d!\n", u4SenarioType);
 
 	if (u4SenarioType == TX_PWR_EMI_SCENARIO_TYPE_UPDATE) {
 		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,

@@ -1810,6 +1810,8 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 	uint32_t i;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
+	uint8_t *prLogBuf;
+	int32_t i4Written = 0;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 
@@ -1821,11 +1823,21 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 
 	ucWTEntry = prStaRec->ucWlanIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	prLogBuf = (uint8_t *)
+		kalMemAlloc(DUMP_LOG_BUF_SIZE, VIR_MEM_TYPE);
+
+	if (!prLogBuf)
+		return;
+
+	kalMemZero(prLogBuf, DUMP_LOG_BUF_SIZE);
 
 	ASSERT(prBssInfo);
 
-	log_dbg(SW4, INFO, "============= DUMP STA[%u] ===========\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"============= DUMP STA[%u] ===========\n",
 		ucStaRecIdx);
+
 	/* [1]STA_IDX                  [2]BSS_IDX
 	 * [3]MAC                      [4]TYPE
 	 * [5]WTBL                     [6]USED
@@ -1848,8 +1860,10 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 	 * [39]aucRxMcsBitmask         [40]IsPeerWithMtkOui
 	 */
 
-	log_dbg(SW4, INFO, "[1][%u],[2][%u],[3][" MACSTR
-			"],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[1][%u],[2][%u],[3][" MACSTR
+		"],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]",
 		prStaRec->ucIndex,
 		prStaRec->ucBssIndex,
 		MAC2STR(prStaRec->aucMacAddr),
@@ -1863,7 +1877,9 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 			& PHY_TYPE_SET_802_11AC) ? TRUE : FALSE,
 		prStaRec->u2AssocId);
 
-	log_dbg(SW4, DEBUG, "[11][%u],[12][%u],[13][%u],[14][0x%x],[15][0x%x],[16][0x%x],[17][0x%x],[18][0x%x],[19][0x%x],[20][0x%x]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[11][%u],[12][%u],[13][%u],[14][0x%x],[15][0x%x],[16][0x%x],[17][0x%x],[18][0x%x],[19][0x%x],[20][0x%x]\n",
 		prStaRec->fgIsWmmSupported,
 		prStaRec->fgIsUapsdSupported,
 		secIsProtectedBss(prAdapter, prBssInfo),
@@ -1875,7 +1891,9 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		prStaRec->u2DesiredNonHTRateSet,
 		prStaRec->u2HwDefaultFixedRateCode);
 
-	log_dbg(SW4, DEBUG, "[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]",
 		prStaRec->u2HtCapInfo,
 		prStaRec->u2HtExtendedCap,
 		prStaRec->u4TxBeamformingCap,
@@ -1887,7 +1905,9 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		prStaRec->ucVhtOpMode,
 		prStaRec->ucRCPI);
 
-	log_dbg(SW4, DEBUG, "[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x],40[%d]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x],40[%d]\n",
 		prStaRec->fgIsInPS,
 		prStaRec->fgIsTxAllowed,
 		prStaRec->fgIsTxKeyReady,
@@ -1906,32 +1926,32 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		prStaRec->aucRxMcsBitmask[1],
 		prStaRec->fgIsPeerWithMtkOui);
 
-	log_dbg(SW4, DEBUG, "[CapInfo][0x%x],[SupOpClass][0x%x],[SupChnl2g][0x%x],[SupChnl5g_0][0x%x],[SupChnl5g_1][0x%x]\n",
-		prStaRec->u2CapInfo,
-		prStaRec->u4SupportedOpClassBits,
-		prStaRec->u2SupportedChnlBits_2g,
-		prStaRec->u4SupportedChnlBits_5g_0,
-		prStaRec->u2SupportedChnlBits_5g_1);
-
 #if (CFG_SUPPORT_802_11AX == 1)
-	log_dbg(SW4, DEBUG, "[HeMacCap][0x%04x%08x],[HePhyCap][0x%02x%04x%016llx]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		 "[HeMacCap][0x%04x%08x],[HePhyCap][0x%02x%04x%016llx]",
 		*(uint16_t *)(prStaRec->ucHeMacCapInfo + 4),
 		*(uint32_t *)(prStaRec->ucHeMacCapInfo),
 		*(uint8_t *)(prStaRec->ucHePhyCapInfo + 10),
 		*(uint16_t *)(prStaRec->ucHePhyCapInfo + 8),
 		*(uint64_t *)(prStaRec->ucHePhyCapInfo));
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	log_dbg(SW4, DEBUG, "[He6gBandCap][0x%02x]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[He6gBandCap][0x%02x]",
 		prStaRec->u2He6gBandCapInfo);
 #endif /* CFG_SUPPORT_WIFI_6G */
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	log_dbg(SW4, DEBUG, "[EhtMacCap][0x%04x],[EhtPhyCap][0x%016llx],[EhtPhyCapExt][0x%016llx]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[EhtMacCap][0x%04x],[EhtPhyCap][0x%016llx],[EhtPhyCapExt][0x%016llx]",
 		(*(uint16_t *)(prStaRec->ucEhtMacCapInfo)),
 		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfo)),
 		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfoExt)));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	log_dbg(SW4, DEBUG,
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
 		"[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [ApRm][%u], [MldAddr]["
 		MACSTR "]\n",
 		prStaRec->ucMldStaIndex,
@@ -1942,15 +1962,28 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 #endif
 #endif
 
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[CapInfo][0x%x],[SupOpClass][0x%x],[SupChnl2g][0x%x],[SupChnl5g_0][0x%x],[SupChnl5g_1][0x%x]",
+		prStaRec->u2CapInfo,
+		prStaRec->u4SupportedOpClassBits,
+		prStaRec->u2SupportedChnlBits_2g,
+		prStaRec->u4SupportedChnlBits_5g_0,
+		prStaRec->u2SupportedChnlBits_5g_1);
+
 #if (CFG_P2P2_SUPPORT == 1)
-	log_dbg(SW4, DEBUG, "[CapNotifSupp][%u], [CapGcCsaSupp][%u]\n",
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[CapNotifSupp][%u], [CapGcCsaSupp][%u]",
 		prStaRec->fgCapNotifSupp,
 		prStaRec->fgCapGcCsaSupp);
 #endif /* CFG_P2P2_SUPPORT */
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		if (prStaRec->aprRxReorderParamRefTbl[i]) {
-			log_dbg(SW4, DEBUG, "TID[%u],Valid[%u],WinStart/End[%u/%u],WinSize[%u],ReOrderQueLen[%u],Bubble Exist[%u],SN[%u]\n",
+			i4Written += kalSnprintf(prLogBuf + i4Written,
+				DUMP_LOG_BUF_SIZE - i4Written,
+				"TID[%u],Valid[%u],WinStart/End[%u/%u],WinSize[%u],ReOrderQueLen[%u],Bubble Exist[%u],SN[%u] ",
 				prStaRec->aprRxReorderParamRefTbl[i]
 					->ucTid,
 				prStaRec->aprRxReorderParamRefTbl[i]
@@ -1969,7 +2002,10 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 					->u2FirstBubbleSn);
 		}
 	}
-	log_dbg(SW4, DEBUG, "============= DUMP END ===========\n");
+	if (i4Written > 0)
+		DBGLOG(RSN, INFO, "%s", prLogBuf);
+	kalMemFree(prLogBuf, DUMP_LOG_BUF_SIZE, VIR_MEM_TYPE);
+
 }
 
 uint32_t cnmDumpMemoryStatus(struct ADAPTER *prAdapter, uint8_t *pucBuf,

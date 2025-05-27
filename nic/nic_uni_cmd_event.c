@@ -4103,7 +4103,7 @@ uint32_t nicUniCmdStaRecTagBfee(struct ADAPTER *ad,
 	tag->rBfeeStaRec.fgIgnFbk = FALSE;
 	tag->rBfeeStaRec.fgRxsmmEnable = prStaRec->fgRxsmmEnable;
 
-	DBGLOG(INIT, DEBUG, "[BF]fgRxsmmEnable=%d\n",
+	DBGLOG(INIT, TRACE, "[BF]fgRxsmmEnable=%d\n",
 		tag->rBfeeStaRec.fgRxsmmEnable);
 
 	return tag->u2Length;
@@ -4698,7 +4698,7 @@ uint32_t nicUniCmdStaRecTagNan(struct ADAPTER *ad,
 	tag->u2Length = sizeof(struct UNI_CMD_STAREC_NAN);
 	tag->ucOtherWlanIndex = cmd->ucOtherWlanIndex;
 
-	DBGLOG(REQ, ERROR,
+	DBGLOG(REQ, TRACE,
 		"NAN unicmd - StaRec[%u] WIDX[%u] other WIDX[%u]\n",
 		cmd->ucStaIndex,
 		cmd->ucWlanIndex,

@@ -663,7 +663,7 @@ void nicRxClearFrag(struct ADAPTER *prAdapter,
 		}
 	}
 
-	TRACE_FUNC(RX, DEBUG, "%s\n");
+	TRACE_FUNC(RX, TRACE, "%s\n");
 }
 
 /*----------------------------------------------------------------------------*/

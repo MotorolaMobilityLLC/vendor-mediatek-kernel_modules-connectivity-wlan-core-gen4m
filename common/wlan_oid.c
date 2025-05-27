@@ -3590,17 +3590,21 @@ wlanoidSetDefaultKey(struct ADAPTER *prAdapter,
 
 	*pu4SetInfoLen = u4SetBufferLen;
 
-	/* Dump PARAM_DEFAULT_KEY_T content. */
-	DBGLOG(RSN, INFO,
-	       "ucBssIndex %d, Key Index : %d, Unicast Key : %d, Multicast Key : %d\n",
-	       prDefaultKey->ucBssIdx,
-	       prDefaultKey->ucKeyID, prDefaultKey->ucUnicast,
-	       prDefaultKey->ucMulticast);
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prDefaultKey->ucBssIdx);
 
-	DBGLOG(RSN, INFO, "WlanIdx = %d\n", prBssInfo->wepkeyWlanIdx);
+	if (prBssInfo == NULL) {
+		DBGLOG(REQ, ERROR, "BSS Info not exist !!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Dump PARAM_DEFAULT_KEY_T content. */
+	DBGLOG(RSN, TRACE,
+	       "ucBssIndex %d, Key Index : %d, Unicast Key : %d, Multicast Key : %d, WepWlanIdx = %d\\n",
+	       prDefaultKey->ucBssIdx,
+	       prDefaultKey->ucKeyID, prDefaultKey->ucUnicast,
+	       prDefaultKey->ucMulticast,
+	       prBssInfo->wepkeyWlanIdx);
 
 	if (prDefaultKey->ucMulticast) {
 		ASSERT(prBssInfo);
@@ -6258,7 +6262,7 @@ wlandioSetSGStatus(struct ADAPTER *prAdapter,
 				prAdapter->rWifiVar.ucSG5GFavorANT;
 	}
 
-	DBGLOG(SW4, DEBUG,
+	DBGLOG(SW4, TRACE,
 			"[SG]Status[%d][%d][%d][%d][%d]\n",
 			prCmdSGStatus->ucSGEnable, prCmdSGStatus->ucSGSpcCmd,
 			prCmdSGStatus->ucNSSCap, prCmdSGStatus->ucSG24GFavorANT,

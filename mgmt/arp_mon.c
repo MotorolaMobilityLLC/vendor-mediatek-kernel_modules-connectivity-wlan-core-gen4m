@@ -1138,7 +1138,7 @@ void arpMonResetArpDetect(struct ADAPTER *ad, uint8_t ucBssIdx)
 	/* Don't reset the gatewayip while roaming or processing BTO */
 	if (!(roamingFsmCheckIfRoaming(ad, ucBssIdx))) {
 		arpMonResetGateway(ad, ucBssIdx);
-		DBGLOG(AM, INFO, "Reset gatewayIp and gatewayMac\n");
+		DBGLOG(AM, TRACE, "Reset gatewayIp and gatewayMac\n");
 	}
 }
 

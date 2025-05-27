@@ -1577,6 +1577,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	struct PARAM_OP_MODE rOpMode;
 	uint32_t u4AkmSuite = 0;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	uint8_t *prLogBuf;
+	int32_t i4Written = 0;
 
 	struct GL_WPA_INFO *prWpaInfo;
 	struct IEEE_802_11_MIB *prMib;
@@ -1592,6 +1594,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
+	prLogBuf = (uint8_t *)
+		kalMemAlloc(DUMP_LOG_BUF_SIZE, VIR_MEM_TYPE);
+	if (!prLogBuf)
+		return -EINVAL;
+	kalMemZero(prLogBuf, DUMP_LOG_BUF_SIZE);
+
 #if (CFG_SUPPORT_CONN_LOG == 1)
 	gResetStaInfoPrinted();
 	connLogConnect(prGlueInfo->prAdapter,
@@ -1599,9 +1607,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		sme);
 #endif
 
-	DBGLOG(REQ, DEBUG,
-	       "[wlan] mtk_cfg80211_connect %p %zu auth_type=%d flags=0x%x\n",
-	       sme->ie, sme->ie_len, sme->auth_type, sme->flags);
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"[wlan] %zu sme auth_type=%d flags=0x%x ",
+		sme->ie_len, sme->auth_type, sme->flags);
 	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
 	/* init to prevent returning status success due to no valid ap. */
 	prConnSettings->u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
@@ -1650,9 +1659,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	else
 		prWpaInfo->u4WpaVersion = IW_AUTH_WPA_VERSION_DISABLED;
 
-	DBGLOG(REQ, DEBUG,
-	       "sme->auth_type=%x, sme->crypto.wpa_versions=%x",
-		sme->auth_type,	sme->crypto.wpa_versions);
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"wpa_versions=%x ",
+		sme->crypto.wpa_versions);
 
 	switch (sme->auth_type) {
 	case NL80211_AUTHTYPE_OPEN_SYSTEM:
@@ -1698,7 +1708,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	}
 
 	if (sme->crypto.n_akm_suites) {
-		DBGLOG(REQ, DEBUG, "n_akm_suites=%x, akm_suites=%x",
+		i4Written += kalSnprintf(prLogBuf + i4Written,
+			DUMP_LOG_BUF_SIZE - i4Written,
+			"n_akm_suites=%x, akm_suites=%x ",
 			sme->crypto.n_akm_suites,
 			sme->crypto.akm_suites[0]);
 		if (wlanParseAkmSuites(sme->crypto.akm_suites,
@@ -1709,8 +1721,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	}
 
 	if (sme->crypto.n_ciphers_pairwise) {
-		DBGLOG(RSN, INFO, "cipher pairwise (0x%x)\n",
-		       sme->crypto.ciphers_pairwise[0]);
+		i4Written += kalSnprintf(prLogBuf + i4Written,
+			DUMP_LOG_BUF_SIZE - i4Written,
+			"cipher pairwise (0x%x) ",
+			sme->crypto.ciphers_pairwise[0]);
 		prMib->dot11RSNAConfigPairwiseCipher =
 			SWAP32(sme->crypto.ciphers_pairwise[0]);
 		switch (sme->crypto.ciphers_pairwise[0]) {
@@ -1762,8 +1776,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	}
 
 	if (sme->crypto.cipher_group) {
-		DBGLOG(RSN, INFO, "cipher group (0x%x)\n",
-		       sme->crypto.cipher_group);
+		i4Written += kalSnprintf(prLogBuf + i4Written,
+			DUMP_LOG_BUF_SIZE - i4Written,
+			"cipher group (0x%x) ",
+			sme->crypto.cipher_group);
 		prMib->dot11RSNAConfigGroupCipher =
 			SWAP32(sme->crypto.cipher_group);
 		switch (sme->crypto.cipher_group) {
@@ -1862,8 +1878,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			    prDesiredIE, &rRsnInfo)) {
 				prWpaInfo->u4CipherGroupMgmt =
 					rRsnInfo.u4GroupMgmtCipherSuite;
-				DBGLOG(RSN, INFO,
-					"RSN: group mgmt cipher suite 0x%x\n",
+				i4Written += kalSnprintf(prLogBuf + i4Written,
+					DUMP_LOG_BUF_SIZE - i4Written,
+					"group mgmt cipher 0x%x ",
 					prWpaInfo->u4CipherGroupMgmt);
 #if CFG_SUPPORT_802_11W
 				if (rRsnInfo.u2RsnCap & ELEM_WPA_CAP_MFPC) {
@@ -1889,8 +1906,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				prWpaInfo->u2RSNXCap = rRsnxeInfo.u2Cap;
 				if (prWpaInfo->u2RSNXCap &
 					BIT(WLAN_RSNX_CAPAB_SAE_H2E)) {
-					DBGLOG(RSN, INFO,
-						"SAE-H2E is supported, RSNX ie: 0x%x\n",
+					i4Written += kalSnprintf(
+						prLogBuf + i4Written,
+						DUMP_LOG_BUF_SIZE - i4Written,
+						"RSNX ie: 0x%x with H2E ",
 						prWpaInfo->u2RSNXCap);
 				}
 			}
@@ -1923,8 +1942,15 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 		break;
 	}
-	DBGLOG(REQ, DEBUG, "MFP=%d\n", prWpaInfo->u4Mfp);
+
+	i4Written += kalSnprintf(prLogBuf + i4Written,
+		DUMP_LOG_BUF_SIZE - i4Written,
+		"MFP=%d ", prWpaInfo->u4Mfp);
 #endif
+
+	if (i4Written > 0)
+		DBGLOG(RSN, INFO, "%s", prLogBuf);
+	kalMemFree(prLogBuf, DUMP_LOG_BUF_SIZE, VIR_MEM_TYPE);
 
 	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,
 			sizeof(eAuthMode), &u4BufLen,
