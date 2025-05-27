@@ -3292,13 +3292,13 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 				need_profile = TRUE;
 				break;
 			}
-		} else if (!mldDupMbssProfileSkipIE(ie)) {
+		} else {
 			need_profile = TRUE;
 		}
 
 		if (need_add) {
 			out[ie_count++] = ie;
-		} else if (need_profile) {
+		} else if (need_profile && !mldDupMbssProfileSkipIE(ie)) {
 			/*check if profile has same ie*/
 			for (i = 0; i < profile_count; i++) {
 				if (mldSameElement(prof_ies[i], ie))
