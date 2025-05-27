@@ -1018,6 +1018,11 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		goto unlock;
 	}
 
+	if (kalIsResetting()) {
+		DBGLOG(HAL, STATE, "Skip FW OWN due to resetting.\n");
+		goto unlock;
+	}
+
 #if defined(_HIF_PCIE)
 	if (prBusInfo->checkFwOwnMsiStatus)
 		prBusInfo->checkFwOwnMsiStatus(prAdapter);

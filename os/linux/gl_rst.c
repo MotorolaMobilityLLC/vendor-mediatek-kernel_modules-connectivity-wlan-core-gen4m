@@ -837,8 +837,16 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		if (prDbgOps && prDbgOps->dumpBusStatus)
 			prDbgOps->dumpBusStatus(prAdapter);
 
-		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-		halPrintHifDbgInfo(prAdapter);
+		/* Only dump when it already in driver own
+		 * and hold the driver own lock until dump done.
+		 */
+		if (KAL_HIF_OWN_TRYLOCK(prAdapter)) {
+			if (prAdapter->fgIsFwOwn == FALSE) {
+				prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+				halPrintHifDbgInfo(prAdapter);
+			}
+			KAL_HIF_OWN_UNLOCK(prAdapter);
+		}
 
 		/* fix AER in debug sop dump, need upgrade to L0 */
 		if (g_IsWholeChipRst == FALSE &&
