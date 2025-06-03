@@ -1972,7 +1972,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 #if (CFG_P2P2_SUPPORT == 1)
 	i4Written += kalSnprintf(prLogBuf + i4Written,
 		DUMP_LOG_BUF_SIZE - i4Written,
-		"[CapNotifSupp][%u], [CapGcCsaSupp][%u]",
+		"[CapNotifSupp][%u], [CapGcCsaSupp][%u] ",
 		prStaRec->fgCapNotifSupp,
 		prStaRec->fgCapGcCsaSupp);
 #endif /* CFG_P2P2_SUPPORT */
