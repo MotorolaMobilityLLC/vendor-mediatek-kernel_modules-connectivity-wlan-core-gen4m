@@ -1646,15 +1646,18 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 					prBssInfo =
 					    GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-					if (IS_BSS_ALIVE(prAdapter, prBssInfo)
-					    && (kalMemCmp(prBssInfo->aucBSSID,
-						aucBSSID, MAC_ADDR_LEN) == 0)) {
-						prBssInfo->ucMaxBSSIDIndicator =
+					if (!IS_BSS_ALIVE(prAdapter, prBssInfo))
+						continue;
+
+					if (UNEQUAL_MAC_ADDR(aucBSSID,
+							   prBssInfo->aucBSSID))
+						continue;
+
+					prBssInfo->ucMaxBSSIDIndicator =
 						prMbssidIe->ucMaxBSSIDIndicator;
-						prBssInfo->ucMBSSIDIndex =
+					prBssInfo->ucMBSSIDIndex =
 						prMbssidIdxIe->ucBSSIDIndex;
-						nicUpdateBss(prAdapter, i);
-					}
+					nicUpdateBss(prAdapter, i);
 				}
 			}
 			prBssDesc->ucMaxBSSIDIndicator =

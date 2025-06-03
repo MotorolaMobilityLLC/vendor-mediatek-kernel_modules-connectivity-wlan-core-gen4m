@@ -555,10 +555,7 @@ TdlsGetSta(
 
 	s = b->prTdlsHash[STA_TDLS_HASH(prSta)];
 
-	while (s &&
-		kalMemCmp(s->aucAddr,
-		prSta,
-		TDLS_FME_MAC_ADDR_LEN))
+	while (s && UNEQUAL_MAC_ADDR(s->aucAddr, prSta))
 		s = s->pNext;
 
 	return s;

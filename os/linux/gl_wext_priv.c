@@ -8488,8 +8488,8 @@ int priv_driver_add_acl_entry(struct net_device *prNetDev,
 	}
 
 	for (i = 1; i <= prBssInfo->rACL.u4Num; i++) {
-		if (memcmp(prBssInfo->rACL.rEntry[i-1].aucAddr, &aucMacAddr,
-		    MAC_ADDR_LEN) == 0) {
+		if (EQUAL_MAC_ADDR(prBssInfo->rACL.rEntry[i-1].aucAddr,
+				   &aucMacAddr)) {
 			DBGLOG(REQ, ERROR, "add this mac [" MACSTR
 			       "] is duplicate.\n", MAC2STR(aucMacAddr));
 			return -1;
@@ -8584,8 +8584,8 @@ int priv_driver_del_acl_entry(struct net_device *prNetDev,
 	}
 
 	for (i = 0; i < prBssInfo->rACL.u4Num; i++) {
-		if (memcmp(prBssInfo->rACL.rEntry[i].aucAddr, &aucMacAddr,
-		    MAC_ADDR_LEN) == 0) {
+		if (EQUAL_MAC_ADDR(prBssInfo->rACL.rEntry[i].aucAddr,
+				   &aucMacAddr)) {
 			memset(&prBssInfo->rACL.rEntry[i], 0x00,
 			       sizeof(struct PARAM_CUSTOM_ACL_ENTRY));
 			DBGLOG(REQ, TRACE, "delete this mac [" MACSTR "]\n",

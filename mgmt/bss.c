@@ -2536,9 +2536,8 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 
 		/*Match Vendor Data rule*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA)) {
-			pucMask =
-				u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA_MASK) ?
-				&prIotApRule->aVendorDataMask[0] : NULL;
+			pucMask = u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA_MASK) ?
+					prIotApRule->aVendorDataMask : NULL;
 			pucIe = kalFindIeMatchMask(
 				WLAN_EID_VENDOR_SPECIFIC,
 				pucIes, prBssDesc->u2IELength,
@@ -2551,9 +2550,8 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 
 		/*Match BSSID rule*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID)) {
-			pucMask =
-				u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID_MASK) ?
-				&prIotApRule->aBssidMask[0] : NULL;
+			pucMask = u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID_MASK) ?
+					prIotApRule->aBssidMask : NULL;
 			if (kalMaskMemCmp(&prBssDesc->aucBSSID,
 				&prIotApRule->aBssid,
 				pucMask,

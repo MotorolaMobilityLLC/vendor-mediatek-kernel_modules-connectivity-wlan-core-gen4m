@@ -4603,9 +4603,8 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 	pucLocalNMI = prAdapter->rDataPathInfo.aucLocalNMIAddr;
 	pucPeerNMI = prNDL->aucPeerMacAddr;
 
-	if ((kalMemCmp(pucLocalNMI, prNDP->aucLocalNDIAddr, MAC_ADDR_LEN) ==
-	     0) &&
-	    (kalMemCmp(pucPeerNMI, prNDP->aucPeerNDIAddr, MAC_ADDR_LEN) == 0))
+	if (EQUAL_MAC_ADDR(pucLocalNMI, prNDP->aucLocalNDIAddr) &&
+	    EQUAL_MAC_ADDR(pucPeerNMI, prNDP->aucPeerNDIAddr))
 		return WLAN_STATUS_SUCCESS;
 
 	u4NdpCxtIdx = NAN_MAX_SUPPORT_NDP_CXT_NUM;
@@ -4617,11 +4616,8 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		if ((kalMemCmp(prNdpCxt->aucLocalNDIAddr, pucLocalNMI,
-			       MAC_ADDR_LEN) == 0) &&
-		    (kalMemCmp(prNdpCxt->aucPeerNDIAddr, pucPeerNMI,
-			       MAC_ADDR_LEN) == 0)) {
-
+		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr, pucLocalNMI) &&
+		    EQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr, pucPeerNMI)) {
 			u4NdpCxtIdx = u4Idx;
 			break;
 		}
@@ -4788,9 +4784,8 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 	pucLocalNMI = prAdapter->rDataPathInfo.aucLocalNMIAddr;
 	pucPeerNMI = prNDL->aucPeerMacAddr;
 
-	if ((kalMemCmp(pucLocalNMI, prNDP->aucLocalNDIAddr, MAC_ADDR_LEN) ==
-	     0) &&
-	    (kalMemCmp(pucPeerNMI, prNDP->aucPeerNDIAddr, MAC_ADDR_LEN) == 0))
+	if (EQUAL_MAC_ADDR(pucLocalNMI, prNDP->aucLocalNDIAddr) &&
+	    EQUAL_MAC_ADDR(pucPeerNMI, prNDP->aucPeerNDIAddr))
 		return WLAN_STATUS_SUCCESS;
 
 	for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
@@ -4798,10 +4793,8 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 		if (prNdpCxt->fgValid == FALSE)
 			continue;
 
-		if ((kalMemCmp(prNdpCxt->aucLocalNDIAddr, pucLocalNMI,
-			       MAC_ADDR_LEN) == 0) &&
-		    (kalMemCmp(prNdpCxt->aucPeerNDIAddr, pucPeerNMI,
-			       MAC_ADDR_LEN) == 0))
+		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr, pucLocalNMI) &&
+		    EQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr, pucPeerNMI))
 			break;
 	}
 	if (u4Idx >= NAN_MAX_SUPPORT_NDP_CXT_NUM)
@@ -4956,10 +4949,10 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		if ((kalMemCmp(prNdpCxt->aucLocalNDIAddr,
-			       prNDP->aucLocalNDIAddr, MAC_ADDR_LEN) == 0) &&
-		    (kalMemCmp(prNdpCxt->aucPeerNDIAddr, prNDP->aucPeerNDIAddr,
-			       MAC_ADDR_LEN) == 0)) {
+		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr,
+				   prNDP->aucLocalNDIAddr) &&
+		    EQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr,
+				   prNDP->aucPeerNDIAddr)) {
 
 			u4NdpCxtIdx = u4Idx;
 			break;
@@ -5390,10 +5383,8 @@ nanDataEngineSearchFirstNDP(struct ADAPTER *prAdapter,
 			MAC2STR(prNdpCxt->aucLocalNDIAddr),
 			MAC2STR(prNdpCxt->aucPeerNDIAddr));
 
-		if ((kalMemCmp(prNdpCxt->aucLocalNDIAddr, pucLocalAddr,
-			       MAC_ADDR_LEN) == 0) &&
-		    (kalMemCmp(prNdpCxt->aucPeerNDIAddr, pucPeerAddr,
-			       MAC_ADDR_LEN) != 0))
+		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr, pucLocalAddr) &&
+		    UNEQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr, pucPeerAddr))
 			return prNdpCxt;
 	}
 

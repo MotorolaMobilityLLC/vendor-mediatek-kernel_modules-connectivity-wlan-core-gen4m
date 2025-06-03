@@ -1210,9 +1210,7 @@ static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prEventContent->ucStaRecIdx);
 
 	if (prStaRec && prStaRec->ucStaState == STA_STATE_3 &&
-		!kalMemCmp(&prStaRec->aucMacAddr[0],
-			&prEventContent->aucMacAddr[0], MAC_ADDR_LEN)) {
-
+	    EQUAL_MAC_ADDR(prStaRec->aucMacAddr, prEventContent->aucMacAddr)) {
 		qmActivateStaRec(prAdapter, prStaRec);
 	}
 

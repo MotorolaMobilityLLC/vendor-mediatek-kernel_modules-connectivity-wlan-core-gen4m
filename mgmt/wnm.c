@@ -684,6 +684,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	uint8_t ucStatus = 0;
 	struct BSS_DESC *prBssDesc;
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	const uint8_t aucBroadcast[MAC_ADDR_LEN] = BC_MAC_ADDR;
 
 	prRxFrame = (struct ACTION_BTM_REQ_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
@@ -705,8 +706,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	       prRxFrame->u2DisassocTimer, prRxFrame->ucDialogToken);
 
 	/* if BTM Request is for broadcast, don't send BTM Response */
-	fgNeedResponse = !!(kalMemCmp(prRxFrame->aucDestAddr,
-		"\xff\xff\xff\xff\xff\xff", MAC_ADDR_LEN));
+	fgNeedResponse = UNEQUAL_MAC_ADDR(prRxFrame->aucDestAddr, aucBroadcast);
 	COPY_MAC_ADDR(prBtmParam->aucBSSID, prRxFrame->aucBSSID);
 	prBtmParam->ucDialogToken = prRxFrame->ucDialogToken;
 	prBtmParam->ucRequestMode = prRxFrame->ucRequestMode;

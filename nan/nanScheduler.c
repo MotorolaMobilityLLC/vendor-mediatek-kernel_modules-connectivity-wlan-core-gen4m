@@ -1382,9 +1382,7 @@ nanSchedLookupPeerSchRecordIdx(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 		prPeerSchRec = nanSchedGetPeerSchRecord(prAdapter, u4Idx);
 
 		if (prPeerSchRec && prPeerSchRec->fgActive &&
-		    (kalMemCmp(prPeerSchRec->aucNmiAddr, pucNmiAddr,
-			       MAC_ADDR_LEN) == 0)) {
-
+		    EQUAL_MAC_ADDR(prPeerSchRec->aucNmiAddr, pucNmiAddr)) {
 			DBGLOG(NAN, DEBUG, "Find peer schedule record %d\n",
 			       u4Idx);
 			return u4Idx;
@@ -1404,8 +1402,7 @@ nanSchedLookupPeerSchRecord(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr)
 		prPeerSchRec = nanSchedGetPeerSchRecord(prAdapter, u4Idx);
 
 		if (prPeerSchRec && prPeerSchRec->fgActive &&
-		    (kalMemCmp(prPeerSchRec->aucNmiAddr, pucNmiAddr,
-			       MAC_ADDR_LEN) == 0)) {
+		    EQUAL_MAC_ADDR(prPeerSchRec->aucNmiAddr, pucNmiAddr)) {
 
 			DBGLOG(NAN, DEBUG, "Find peer schedule record %d\n",
 			       u4Idx);

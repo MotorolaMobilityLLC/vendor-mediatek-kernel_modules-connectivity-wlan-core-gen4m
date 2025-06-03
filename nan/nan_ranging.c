@@ -330,8 +330,8 @@ nanRangingInstanceSearchByMac(struct ADAPTER *prAdapter,
 		if (prRanging == NULL)
 			return NULL;
 
-		if (kalMemCmp(prRanging->ranging_ctrl.aucPeerAddr,
-			      puc_peer_mac, MAC_ADDR_LEN) == 0)
+		if (EQUAL_MAC_ADDR(prRanging->ranging_ctrl.aucPeerAddr,
+				   puc_peer_mac))
 			return prRanging;
 
 	}
@@ -2524,8 +2524,8 @@ nanRangingReportDiscResult(struct ADAPTER *prAdapter, uint8_t *pucPeerAddr)
 	prSubInfo = &prAdapter->rSubscribeInfo;
 	for (ucIdx = 0; ucIdx < NAN_MAX_SUBSCRIBE_NUM; ucIdx++) {
 		prSubSpecificInfo = &prSubInfo->rSubSpecificInfo[ucIdx];
-		if (kalMemCmp(prSubSpecificInfo->rRangingDiscEvt.aucNanAddress,
-				pucPeerAddr, MAC_ADDR_LEN) == 0) {
+		if (EQUAL_MAC_ADDR(pucPeerAddr,
+			    prSubSpecificInfo->rRangingDiscEvt.aucNanAddress)) {
 			prRangingDiscEvt = &prSubSpecificInfo->rRangingDiscEvt;
 			break;
 		}
