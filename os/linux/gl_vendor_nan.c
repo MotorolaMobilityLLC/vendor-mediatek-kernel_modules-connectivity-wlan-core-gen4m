@@ -543,11 +543,17 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanCapabilitiesRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -630,14 +636,20 @@ wlanoidNANEnableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanEnableRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	nanSchedUpdateP2pAisMcc(prAdapter);
 	nanExtEnableReq(prAdapter);
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -685,13 +697,19 @@ wlanoidNANDisableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanDisableRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	nanExtDisableReq(prAdapter);
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -737,11 +755,17 @@ wlanoidNANConfigRsp(struct ADAPTER *prAdapter,
 		(struct NanConfigRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -786,12 +810,18 @@ wlanoidNanPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanPublishServiceRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	kalMemZero(&nanPublishRsp, sizeof(struct NanPublishServiceRspMsg));
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -853,13 +883,19 @@ wlanoidNANCancelPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanPublishServiceCancelRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	kalMemZero(&nanPublishCancelRsp,
 		   sizeof(struct NanPublishServiceCancelRspMsg));
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -919,12 +955,18 @@ wlanoidNanSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanSubscribeServiceRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	kalMemZero(&nanSubscribeRsp, sizeof(struct NanSubscribeServiceRspMsg));
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -984,13 +1026,19 @@ wlanoidNANCancelSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanSubscribeServiceCancelRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	kalMemZero(&nanSubscribeCancelRsp,
 		   sizeof(struct NanSubscribeServiceCancelRspMsg));
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -1047,16 +1095,17 @@ wlanoidNANFollowupRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		(struct NanTransmitFollowupRspMsg *)pvSetBuffer;
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
+	struct net_device *prDev;
 	struct wireless_dev *wdev;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
 
-	if (!wdev) {
-		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
 		return -ENODEV;
 	}
+	wdev = prDev->ieee80211_ptr;
 
 	kalMemZero(&nanXmitFollowupRsp,
 		   sizeof(struct NanTransmitFollowupRspMsg));
@@ -3476,6 +3525,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NanEventIndMsg *prNanEventInd;
 	struct NAN_DE_EVENT *prDeEvt;
 	uint16_t u2EventType;
@@ -3490,8 +3540,13 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 	}
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -3593,6 +3648,7 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NanDisableIndMsg *prNanDisableInd;
 	struct NAN_DISABLE_EVENT *prDisableEvt;
 	size_t message_len = 0;
@@ -3605,8 +3661,13 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 	}
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, AIS_DEFAULT_INDEX))
-		->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -3663,14 +3724,20 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NAN_REPLIED_EVENT *prRepliedEvt = NULL;
 	struct NanPublishRepliedIndMsg *prNanPubRepliedInd;
 	uint8_t *tlvs = NULL;
 	size_t message_len = 0;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -3739,6 +3806,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NAN_DISCOVERY_EVENT *prDiscEvt;
 	struct NanMatchIndMsg *prNanMatchInd;
 	struct NanSdeaCtrlParams peer_sdea_params;
@@ -3753,8 +3821,13 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 	struct RTT_RESULT *prRttResult = NULL;
 #endif
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -3900,6 +3973,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NAN_PUBLISH_TERMINATE_EVENT *prPubTerEvt;
 	struct NanPublishTerminatedIndMsg nanPubTerInd;
 	struct _NAN_PUBLISH_SPECIFIC_INFO_T *prPubSpecificInfo = NULL;
@@ -3907,13 +3981,13 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
 
-	if (!wdev) {
-		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
 		return -ENODEV;
 	}
+	wdev = prDev->ieee80211_ptr;
 
 	kalMemZero(&nanPubTerInd, sizeof(struct NanPublishTerminatedIndMsg));
 	prPubTerEvt = (struct NAN_PUBLISH_TERMINATE_EVENT *)pcuEvtBuf;
@@ -3973,6 +4047,7 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NAN_SUBSCRIBE_TERMINATE_EVENT *prSubTerEvt;
 	struct NanSubscribeTerminatedIndMsg nanSubTerInd;
 	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
@@ -3980,13 +4055,13 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
 
-	if (!wdev) {
-		DBGLOG(NAN, ERROR, "wdev is NULL\n");
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
 		return -ENODEV;
 	}
+	wdev = prDev->ieee80211_ptr;
 
 	kalMemZero(&nanSubTerInd, sizeof(struct NanSubscribeTerminatedIndMsg));
 	prSubTerEvt = (struct NAN_SUBSCRIBE_TERMINATE_EVENT *)pcuEvtBuf;
@@ -4046,14 +4121,20 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NanFollowupIndMsg *prNanFollowupInd;
 	struct NAN_FOLLOW_UP_EVENT *prFollowupEvt;
 	uint8_t *tlvs = NULL;
 	size_t message_len = 0;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -4163,13 +4244,19 @@ mtk_cfg80211_vendor_event_nan_selfflwup_indication(
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NanSelfFollowupIndMsg *prNanSelfFollowupInd;
 	struct NAN_FOLLOW_UP_EVENT *prFollowupEvt;
 	size_t message_len = 0;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
-				AIS_DEFAULT_INDEX))->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -4234,13 +4321,19 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 	struct NAN_MATCH_EXPIRE_EVENT *prMatchExpireEvt;
 	struct NanMatchExpiredIndMsg *prNanMatchExpiredInd;
 	size_t message_len = 0;
 
 	wiphy = GLUE_GET_WIPHY(prAdapter->prGlueInfo);
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
+	}
+	wdev = prDev->ieee80211_ptr;
 
 	if (!wdev) {
 		DBGLOG(NAN, ERROR, "wdev is NULL\n");
@@ -4412,6 +4505,7 @@ int mtk_cfg80211_vendor_nan_ext_indication(struct ADAPTER *prAdapter,
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct net_device *prDev;
 
 	wiphy = wlanGetWiphy();
 	if (!wiphy) {
@@ -4419,12 +4513,13 @@ int mtk_cfg80211_vendor_nan_ext_indication(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		->ieee80211_ptr;
-	if (!wiphy) {
-		DBGLOG(NAN, ERROR, "wiphy error!\n");
-		return -EFAULT;
+	prDev = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev for Bss0 not exist.\n");
+		return -ENODEV;
 	}
+	wdev = prDev->ieee80211_ptr;
 
 	nanExtInd.fwHeader.msgVersion = 1;
 	nanExtInd.fwHeader.msgId = NAN_MSG_ID_EXT_IND;
