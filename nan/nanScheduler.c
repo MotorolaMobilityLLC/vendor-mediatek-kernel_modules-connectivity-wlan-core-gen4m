@@ -18688,6 +18688,13 @@ nanSchedNegoFindNdlSlotCrb(struct ADAPTER *prAdapter,
 	    eHighestCommonBand != ENUM_SUPPORTED_BN_2G) {
 
 		rSelChnlInfo = g_r5gDwChnl;
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (nanGetFeatureIsSigma(prAdapter) &&
+		    eHighestCommonBand == ENUM_SUPPORTED_BN_6G) /* follow #9 */
+			rSelChnlInfo = g_r6gDefChnl;
+#endif
+
 		nanSchedAddCrbToChnlList(prAdapter,
 					 &rSelChnlInfo, szSlotIdx, 1,
 					 ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
@@ -19368,7 +19375,8 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			rSelChnlInfo = g_r5gDwChnl;
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-			if (nanGetFeatureIsSigma(prAdapter))
+			if (nanGetFeatureIsSigma(prAdapter) &&
+			    eHighestCommonBand == ENUM_SUPPORTED_BN_6G) /* #9 */
 				rSelChnlInfo = g_r6gDefChnl;
 #endif
 			nanSchedAddCrbToChnlList(prAdapter, &rSelChnlInfo,
@@ -19384,7 +19392,7 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 		}
 
 		NAN_DW_DBGLOG(NAN, WARN, fgPrintLog, szSlotIdx,
-			      "%u, slot=%zu Hghest Common Band=%u MCC=%u, decide NDC by NDL",
+			      "%u, slot=%zu Highest Common Band=%u MCC=%u, decide NDC by NDL",
 			      prNegoCtrl->u4SchIdx, szSlotIdx,
 			      eHighestCommonBand,
 			      NAN_IS_P2P_AIS_MCC(prAdapter, BAND_5G));
