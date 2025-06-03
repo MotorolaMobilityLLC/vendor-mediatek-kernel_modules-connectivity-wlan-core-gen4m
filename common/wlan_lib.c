@@ -8640,6 +8640,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
 #endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 
+#if CFG_TX_GSO
+	INIT_UINT(prWifiVar->fgTxGsoEn, "TxGsoEn",
+			FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+#endif /* CFG_TX_GSO */
+
+#if CFG_SW_TSO
+	INIT_UINT(prWifiVar->fgSwTsoEn, "SwTsoEn",
+			FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SW_TSO */
+
 #if CFG_SUPPORT_LLS
 	INIT_UINT(prWifiVar->fgLinkStatsDump, "LinkStatsDump", 0,
 		  FEATURE_DEBUG_ONLY);

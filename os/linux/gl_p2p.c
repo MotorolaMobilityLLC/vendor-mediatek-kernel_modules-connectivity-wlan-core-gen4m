@@ -296,14 +296,6 @@ static int p2pInit(struct net_device *prDev)
 	kalRxGroInit(prDev);
 #endif /* CFG_SUPPORT_RX_GRO */
 
-#if CFG_TX_GSO
-	kalTxGsoInit(prDev);
-#endif /* CFG_TX_GSO */
-
-#if CFG_SW_TSO
-	kalTxTsoSwInit(prDev);
-#endif /* CFG_SW_TSO */
-
 	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
 		netdev_priv(prDev);
 	INIT_WORK(&(prNetDevPriv->workq), p2pSetMulticastListWorkQueue);
@@ -1693,6 +1685,14 @@ static int p2pOpen(struct net_device *prDev)
 	kalIoctlByBssIdx(prGlueInfo, wlanoidWedAttachWarp, prDev,
 		sizeof(struct net_device *), &u4BufLen, wlanGetBssIdx(prDev));
 #endif
+
+#if CFG_TX_GSO
+	kalTxGsoInit(prDev);
+#endif /* CFG_TX_GSO */
+
+#if CFG_SW_TSO
+	kalTxTsoSwInit(prDev);
+#endif /* CFG_SW_TSO */
 
 	/* 2. carrier on & start TX queue */
 	/*DFS todo 20161220_DFS*/

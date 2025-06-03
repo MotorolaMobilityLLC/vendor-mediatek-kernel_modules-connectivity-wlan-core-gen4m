@@ -1436,6 +1436,12 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_TX_FREE_SKB_WORK
 	u_int8_t fgTxFreeSkbWorkEn;
 #endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+#if CFG_TX_GSO
+	u_int8_t fgTxGsoEn;
+#endif /* CFG_TX_GSO */
+#if CFG_SW_TSO
+	u_int8_t fgSwTsoEn;
+#endif /* CFG_SW_TSO */
 	u_int8_t fgBoostCpuEn;
 	u_int8_t fgBoostCpuByPPSEn;
 	u_int8_t fgBoostCpuPolicyEn;

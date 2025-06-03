@@ -16109,29 +16109,70 @@ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #if CFG_TX_GSO
 void kalTxGsoInit(struct net_device *prDev)
 {
+	struct GLUE_INFO *pr;
+	struct ADAPTER *ad;
+	struct WIFI_VAR *prWifiVar;
+
+	pr = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (!pr)
+		return;
+
+	ad = pr->prAdapter;
+	if (!ad)
+		return;
+
+	prWifiVar = &ad->rWifiVar;
+
 	/*
 	 * NETIF_F_SG is required when GSO is enabled
 	 * ref: netdev_fix_features
 	 *
 	 * Please note that skb->data only have header after SG is enabled.
 	 */
-	prDev->features |= NETIF_F_GSO | NETIF_F_SG;
 	prDev->hw_features |= NETIF_F_GSO | NETIF_F_SG;
+	if (IS_FEATURE_ENABLED(prWifiVar->fgTxGsoEn)) {
+		prDev->features |= NETIF_F_GSO | NETIF_F_SG;
+		DBGLOG(INIT, TRACE, "Turn on GSO.\n");
+	} else {
+		prDev->features &= ~NETIF_F_GSO;
+		prDev->features &= ~NETIF_F_SG;
+		DBGLOG(INIT, TRACE, "Turn off GSO.\n");
+	}
 }
 #endif /* CFG_TX_GSO */
 
 #if CFG_SW_TSO
 void kalTxTsoSwInit(struct net_device *prDev)
 {
+	struct GLUE_INFO *pr;
+	struct ADAPTER *ad;
+	struct WIFI_VAR *prWifiVar;
+
+	pr = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (!pr)
+		return;
+
+	ad = pr->prAdapter;
+	if (!ad)
+		return;
+
+	prWifiVar = &ad->rWifiVar;
+
 	/*
 	 * NETIF_F_SG is required when TSO is enabled
 	 * ref: netdev_fix_features
 	 *
 	 * Please note that skb->data only have header after SG is enabled.
 	 */
-	prDev->features |= NETIF_F_TSO | NETIF_F_SG;
 	prDev->hw_features |= NETIF_F_TSO | NETIF_F_SG;
-	DBGLOG(INIT, TRACE, "Turn on TSO SW.\n");
+	if (IS_FEATURE_ENABLED(prWifiVar->fgSwTsoEn)) {
+		prDev->features |= NETIF_F_TSO | NETIF_F_SG;
+		DBGLOG(INIT, TRACE, "Turn on TSO SW.\n");
+	} else {
+		prDev->features &= ~NETIF_F_TSO;
+		prDev->features &= ~NETIF_F_SG;
+		DBGLOG(INIT, TRACE, "Turn off TSO SW.\n");
+	}
 }
 
 void kalTxStartTsoSw(struct MSDU_INFO *prMsduInfo)
@@ -19828,9 +19869,19 @@ static void kalDoTxFreeSkb(struct GLUE_INFO *pr, uint8_t ucIdx)
 
 void kalTxFreeSkbWorkSetCpu(struct GLUE_INFO *pr, enum CPU_CORE_TYPE eCoreType)
 {
+	struct ADAPTER *ad;
+	struct WIFI_VAR *prWifiVar;
 	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
 
-	prTxFreeInfo->eCoreType = eCoreType;
+	ad = pr->prAdapter;
+	if (!ad)
+		return;
+
+	prWifiVar = &ad->rWifiVar;
+	if (IS_FEATURE_ENABLED(prWifiVar->fgTxFreeSkbWorkEn)) {
+		prTxFreeInfo->eCoreType = eCoreType;
+		DBGLOG(INIT, TRACE, "eCoreType:%u\n", eCoreType);
+	}
 }
 
 void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr)
@@ -20472,7 +20523,7 @@ void kalSkbAllocWorkSetCpu(struct GLUE_INFO *pr, enum CPU_CORE_TYPE eCoreType)
 	prWifiVar = &ad->rWifiVar;
 	if (IS_FEATURE_ENABLED(prWifiVar->fgSkbAllocWorkEn)) {
 		prSkbAllocInfo->eCoreType = eCoreType;
-		DBGLOG(INIT, DEBUG, "eCoreType:%u\n", eCoreType);
+		DBGLOG(INIT, TRACE, "eCoreType:%u\n", eCoreType);
 	}
 }
 

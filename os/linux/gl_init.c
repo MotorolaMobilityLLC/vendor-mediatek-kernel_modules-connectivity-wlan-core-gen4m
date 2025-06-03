@@ -3916,14 +3916,6 @@ static int wlanInit(struct net_device *prDev)
 #if CFG_SUPPORT_RX_GRO
 	kalRxGroInit(prDev);
 #endif /* CFG_SUPPORT_RX_GRO */
-
-#if CFG_TX_GSO
-	kalTxGsoInit(prDev);
-#endif /* CFG_TX_GSO */
-
-#if CFG_SW_TSO
-	kalTxTsoSwInit(prDev);
-#endif /* CFG_SW_TSO */
 	return 0;		/* success */
 }				/* end of wlanInit() */
 
@@ -4050,6 +4042,15 @@ CFG_SUPPORT_WED_PROXY
 	kalIoctlByBssIdx(prGlueInfo, wlanoidWedAttachWarp, prDev,
 		sizeof(struct net_device *), &u4BufLen, wlanGetBssIdx(prDev));
 #endif
+
+#if CFG_TX_GSO
+	kalTxGsoInit(prDev);
+#endif /* CFG_TX_GSO */
+
+#if CFG_SW_TSO
+	kalTxTsoSwInit(prDev);
+#endif /* CFG_SW_TSO */
+
 	netif_tx_start_all_queues(prDev);
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
