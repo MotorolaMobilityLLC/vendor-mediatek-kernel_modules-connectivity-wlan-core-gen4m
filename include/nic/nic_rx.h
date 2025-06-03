@@ -556,6 +556,7 @@ enum ENUM_RX_STATISTIC_COUNTER {
 	RX_TASKLET_COUNT,
 	RX_WORK_COUNT,
 	RX_NAPI_SCHEDULE_COUNT,
+	RX_NAPI_SCHEDULE_FAIL_COUNT,
 	RX_NAPI_LEGACY_SCHED_COUNT,
 	RX_NAPI_WORK_COUNT,
 	RX_NAPI_POLL_COUNT,
@@ -1245,11 +1246,11 @@ struct ACTION_FRAME_SIZE_MAP {
 		sizeof(prRxCtrl->au8PktTypeCnt)))
 
 #define RX_INC_CNT(prRxCtrl, eCounter)              \
-	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter]++; }
+	(((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter]++)
 
 #define RX_ADD_CNT(prRxCtrl, eCounter, u8Amount)    \
-	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter] += \
-	(uint64_t)u8Amount; }
+	(((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter] += \
+	(uint64_t)u8Amount)
 
 #define RX_GET_CNT(prRxCtrl, eCounter)              \
 	(((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter])
