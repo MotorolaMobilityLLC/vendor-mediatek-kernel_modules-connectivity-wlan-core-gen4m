@@ -466,7 +466,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 
 	if (prAisBssInfo && prAisBssInfo->prStaRecOfAP) {
 		if (EQUAL_MAC_ADDR(prArp->aucSenderMACaddr,
-				   prAisBssInfo->prStaRecOfAP->aucMacAddr)) {
+			cnmStaRecAuthAddr(ad, prAisBssInfo->prStaRecOfAP))) {
 			arpMonResetTxCnt(ad, ucBssIdx);
 			arpMonResetGatewayTxCnt(ad, ucBssIdx);
 			arpMonSetApIp(ad, ucBssIdx, prArp->aucSenderIPaddr);
@@ -476,7 +476,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 				IPV4TOSTR(arpMonGetApIpPtr(ad, ucBssIdx)),
 				MAC2STR(prArp->aucSenderMACaddr));
 		} else if (EQUAL_MAC_ADDR((prArpMonPktInfo->aucTaAddr),
-			prAisBssInfo->prStaRecOfAP->aucMacAddr) &&
+			cnmStaRecAuthAddr(ad, prAisBssInfo->prStaRecOfAP)) &&
 			fgIsFromApIpOrGatewayIp) {
 			arpMonResetTxCnt(ad, ucBssIdx);
 			arpMonResetGatewayTxCnt(ad, ucBssIdx);
