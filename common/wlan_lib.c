@@ -9407,6 +9407,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			BIT(ENUM_PKT_ARP) || BIT(ENUM_PKT_DHCP),
 			FEATURE_TO_CUSTOMER);
 
+	INIT_UINT(prWifiVar->u4RxRateProtoFilterRate, "RxRateProtoFilterRate",
+			60, FEATURE_TO_CUSTOMER);
+
 	INIT_UINT(prWifiVar->ucGetRxRateMode, "GetRxRateMode",
 			FEATURE_RATE_MODE_MAX, FEATURE_TO_CUSTOMER);
 
@@ -15654,6 +15657,29 @@ int wlanGetRxRateByStaRec(struct GLUE_INFO *prGlueInfo,
 		DBGLOG_LIMITED(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
 		return -1;
 	}
+}
+
+u_int8_t wlanIsRxLowRate(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
+	uint32_t au4RxV[RXV_NUM], *prRxV = au4RxV;
+	uint32_t u4CurRate;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
+	if (!prGlueInfo || !prChipInfo || !prChipInfo->asicRxGetRxv)
+		return FALSE;
+
+	prChipInfo->asicRxGetRxv(prSwRfb, prRxV);
+	wlanGetRxRate(prGlueInfo, prRxV, &u4CurRate, NULL, NULL);
+
+	if (u4CurRate > prWifiVar->u4RxRateProtoFilterRate)
+		return FALSE;
+
+	return TRUE;
 }
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR

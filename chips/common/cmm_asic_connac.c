@@ -121,6 +121,7 @@ void asicCapInit(struct ADAPTER *prAdapter)
 	asicInitTxdHook(prChipInfo->prTxDescOps);
 	asicInitRxdHook(prChipInfo->prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
+	prChipInfo->asicRxGetRxv = asicRxGetRxv;
 	prChipInfo->asicRxProcessRxvforMSP = asicRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =	asicRxGetRcpiValueFromRxv;
@@ -1538,10 +1539,24 @@ void asicInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
+void asicRxGetRxv(struct SW_RFB *prRetSwRfb, uint32_t *prRxV)
+{
+	struct HW_MAC_RX_STS_GROUP_3 *prGroup3;
+
+	prGroup3 = prRetSwRfb->prRxStatusGroup3;
+	if (!prGroup3)
+		return;
+
+	prRxV[0] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+	prRxV[1] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
+	prRxV[2] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 2);
+	prRxV[3] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 3);
+	prRxV[4] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 4);
+}
+
 void asicRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb)
 {
-	struct HW_MAC_RX_STS_GROUP_3 *prGroup3;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
@@ -1553,14 +1568,7 @@ void asicRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
 		prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
-
-		prGroup3 = prRetSwRfb->prRxStatusGroup3;
-
-		prRxV[0] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
-		prRxV[1] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
-		prRxV[2] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 2);
-		prRxV[3] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 3);
-		prRxV[4] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 4);
+		asicRxGetRxv(prRetSwRfb, prRxV);
 	}
 }
 #endif /* CFG_SUPPORT_MSP */

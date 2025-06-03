@@ -2671,6 +2671,9 @@ int __wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 		uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
 		struct RxRateInfo *prRxRateInfo);
+
+u_int8_t wlanIsRxLowRate(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);

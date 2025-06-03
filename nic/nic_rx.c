@@ -543,8 +543,9 @@ void nicRxProcessRxv(struct ADAPTER *prAdapter,
 
 	/* Ignore filtered pkt, such as ARP */
 	prWifiVar = &prAdapter->rWifiVar;
-	if (GLUE_IS_PKT_FLAG_SET(pvPacket) &
-		prWifiVar->u4RxRateProtoFilterMask) {
+	if (GLUE_IS_PKT_FLAG_SET(pvPacket) & prWifiVar->u4RxRateProtoFilterMask
+		&& wlanIsRxLowRate(prAdapter, prSwRfb)) {
+
 		DBGLOG(RX, TEMP, "u4RxRateProtoFilterMask:%u, proto:%u\n",
 			prWifiVar->u4RxRateProtoFilterMask,
 			GLUE_IS_PKT_FLAG_SET(pvPacket));

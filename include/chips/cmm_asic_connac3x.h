@@ -1511,6 +1511,7 @@ void asicConnac3xInitRxdHook(
 	struct ADAPTER *prAdapter,
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
+void asicConnac3xRxGetRxv(struct SW_RFB *prRetSwRfb, uint32_t *prRxV);
 void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */

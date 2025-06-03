@@ -145,6 +145,7 @@ void asicConnac3xCapInit(
 	asicConnac3xInitTxdHook(prAdapter, prChipInfo->prTxDescOps);
 	asicConnac3xInitRxdHook(prAdapter, prChipInfo->prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
+	prChipInfo->asicRxGetRxv = asicConnac3xRxGetRxv;
 	prChipInfo->asicRxProcessRxvforMSP = asicConnac3xRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =
@@ -1980,10 +1981,32 @@ void asicConnac3xInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
+void asicConnac3xRxGetRxv(struct SW_RFB *prRetSwRfb, uint32_t *prRxV)
+{
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+
+	prGroup3 = prRetSwRfb->prRxStatusGroup3;
+	if (!prGroup3)
+		return;
+
+	kalMemZero(prRxV, sizeof(uint32_t) * RXV_NUM);
+
+	/* P-RXV0[0:31] in RXD Group3 */
+	prRxV[0] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+
+	/* P-RXV0[32:63] in RXD Group3 */
+	prRxV[1] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
+
+	/* DW22 for MODE, STBC, GI, DBW; rate(MCS), NSTS in RXV0 */
+	prRxV[2] = prGroup3->u2RxInfo;
+
+	/* RXD Group3, DW23 */
+	prRxV[3] = prGroup3->u4Rcpi;
+}
+
 void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	  struct SW_RFB *prRetSwRfb)
 {
-	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct STA_RECORD *prStaRec;
 #endif
@@ -2015,21 +2038,7 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 		ucStaRecIdx = prRetSwRfb->ucStaRecIdx;
 #endif
 		prRxV = prAdapter->arStaRec[ucStaRecIdx].au4RxV;
-		kalMemZero(prRxV, sizeof(uint32_t) * RXV_NUM);
-
-		prGroup3 = prRetSwRfb->prRxStatusGroup3;
-
-		/* P-RXV0[0:31] in RXD Group3 */
-		prRxV[0] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
-
-		/* P-RXV0[32:63] in RXD Group3 */
-		prRxV[1] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
-
-		/* DW22 for MODE, STBC, GI, DBW; rate(MCS), NSTS in RXV0 */
-		prRxV[2] = prGroup3->u2RxInfo;
-
-		/* RXD Group3, DW23 */
-		prRxV[3] = prGroup3->u4Rcpi;
+		asicConnac3xRxGetRxv(prRetSwRfb, prRxV);
 
 		nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV);
 

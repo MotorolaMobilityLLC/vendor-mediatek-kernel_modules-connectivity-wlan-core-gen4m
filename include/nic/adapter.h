@@ -1755,6 +1755,7 @@ struct WIFI_VAR {
 
 	/* rx rate filter */
 	uint32_t u4RxRateProtoFilterMask;
+	uint32_t u4RxRateProtoFilterRate;
 
 	uint32_t ucGetRxRateMode;
 

@@ -112,6 +112,7 @@ void asicInitTxdHook(
 void asicInitRxdHook(
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
+void asicRxGetRxv(struct SW_RFB *prRetSwRfb, uint32_t *prRxV);
 void asicRxProcessRxvforMSP(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb);
