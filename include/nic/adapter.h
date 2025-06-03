@@ -1399,6 +1399,12 @@ struct WIFI_VAR {
 	uint32_t u4HifDumpStatsPeriod;
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+#if CFG_SUPPORT_HIF_TX_NAPI
+	u_int8_t fgHifTxNapiEn;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+#if CFG_SUPPORT_HIF_RX_NAPI
+	u_int8_t fgHifRxNapiEn;
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 #if CFG_SUPPORT_RX_NAPI
 	uint32_t u4NapiScheduleTimeout;
 	u_int8_t fgNapiScheduleAeeEn;
@@ -1408,6 +1414,7 @@ struct WIFI_VAR {
 	uint32_t u4NapiDelayCntTh;
 	uint32_t u4NapiDelayTimeout;
 #endif /* CFG_NAPI_DELAY */
+	uint32_t u4BoostInfoSet;
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	uint32_t u4RfbBoostTpTh[PERF_MON_RFB_MAX_THRESHOLD];
 	uint32_t u4RfbUnUseCnt[PERF_MON_RFB_MAX_THRESHOLD];

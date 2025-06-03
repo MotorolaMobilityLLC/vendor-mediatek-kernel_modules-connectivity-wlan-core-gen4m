@@ -5877,8 +5877,12 @@ int hif_thread(void *data)
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_CMD_BIT,
 					       &prGlueInfo->ulFlag))
 				TRACE(wlanTxCmdMthread(prAdapter), "TX_CMD");
-#if (CFG_SUPPORT_HIF_TX_NAPI == 0)
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+			if (IS_FEATURE_ENABLED(
+				    prAdapter->rWifiVar.fgHifTxNapiEn))
+				goto skip_tx_data;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 			if (test_and_clear_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT,
 				&prGlueInfo->ulFlag)) {
 				RX_INC_HIF_CNT(prRxCtrl,
@@ -5892,8 +5896,10 @@ int hif_thread(void *data)
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_BIT,
 					       &prGlueInfo->ulFlag))
 				TRACE(nicTxMsduQueueMthread(prAdapter), "TX");
-#endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
 		}
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+skip_tx_data:
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 		/* Read chip status when chip no response */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT,
@@ -5933,13 +5939,11 @@ int hif_thread(void *data)
 				prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 		}
 #endif
-#if (CFG_SUPPORT_HIF_TX_NAPI == 0)
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 		if (test_and_clear_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT,
 				       &prGlueInfo->ulHifFlag))
 			halHandleAllTokensUnused(prAdapter, FALSE);
 #endif
-#endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
 
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
@@ -7594,15 +7598,19 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 
 void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr)
 {
-#if CFG_SUPPORT_HIF_TX_NAPI
-	set_bit(HIF_TX_NAPI_TOKENS_UNUSED_BIT, &pr->rHifInfo.rTxNapiDev.ulFlag);
-	kalHifTxWorkSchedule(pr);
-#else
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgHifTxNapiEn)) {
+		set_bit(HIF_TX_NAPI_TOKENS_UNUSED_BIT,
+			&pr->rHifInfo.rTxNapiDev.ulFlag);
+		kalHifTxWorkSchedule(pr);
+		return;
+	}
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+
 #if CFG_SUPPORT_MULTITHREAD
 	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
-#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 void kalSetHifAerResetEvent(struct GLUE_INFO *pr)
@@ -7660,12 +7668,15 @@ void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr)
 	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(u4ThreadWakeUp));
 	set_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT, &pr->ulFlag);
-#if CFG_SUPPORT_HIF_TX_NAPI
-	set_bit(HIF_TX_NAPI_SCHE_NAPI_BIT, &pr->rHifInfo.rTxNapiDev.ulFlag);
-	kalHifTxWorkSchedule(pr);
-#else
-	wake_up_interruptible(&pr->waitq_hif);
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgHifTxNapiEn)) {
+		set_bit(HIF_TX_NAPI_SCHE_NAPI_BIT,
+			&pr->rHifInfo.rTxNapiDev.ulFlag);
+		kalHifTxWorkSchedule(pr);
+		return;
+	}
 #endif /* CFG_SUPPORT_HIF_TX_NAPI */
+	wake_up_interruptible(&pr->waitq_hif);
 }
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
@@ -7678,13 +7689,16 @@ void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
-#if CFG_SUPPORT_HIF_TX_NAPI
-	set_bit(HIF_TX_NAPI_SCHE_NAPI_BIT, &pr->rHifInfo.rTxNapiDev.ulFlag);
-	kalHifTxWorkSchedule(pr);
-#else
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgHifTxNapiEn)) {
+		set_bit(HIF_TX_NAPI_SCHE_NAPI_BIT,
+			&pr->rHifInfo.rTxNapiDev.ulFlag);
+		kalHifTxWorkSchedule(pr);
+		return;
+	}
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 	set_bit(GLUE_FLAG_HIF_TX_BIT, &pr->ulFlag);
 	wake_up_interruptible(&pr->waitq_hif);
-#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr)

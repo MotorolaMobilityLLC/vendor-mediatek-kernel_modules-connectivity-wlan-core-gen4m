@@ -8590,6 +8590,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 #endif /* CFG_NAPI_DELAY */
 
+	INIT_UINT(prWifiVar->u4BoostInfoSet, "BoostInfoSet", 0,
+		  FEATURE_TO_CUSTOMER);
+
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	INIT_UINT(prWifiVar->u4RfbBoostTpTh[0], "RfbBoostTpTh0", 50,
 		  FEATURE_TO_CUSTOMER);
@@ -9750,6 +9753,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->u4HifDetectTxTimeoutPeriod,
 		  "HifDetectTxTimeoutPeriod", 10000, FEATURE_DEBUG_ONLY);
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	INIT_UINT(prWifiVar->fgHifTxNapiEn, "HifTxNapiEn",
+		  FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+
+#if CFG_SUPPORT_HIF_RX_NAPI
+	INIT_UINT(prWifiVar->fgHifRxNapiEn, "HifRxNapiEn",
+		  FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
 #if CFG_UPDATE_PACING_SHIFT_SUPPORT
 	/* Default TCP Small queue budget is ~1 ms of data (1sec >> 10).

@@ -2514,11 +2514,15 @@ static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_DISABLED(
+		    prGlueInfo->prAdapter->rWifiVar.fgHifTxNapiEn))
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 	/* force tx data */
-	if (prMsduInfo->pfTxDoneHandler)
-		KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMEOUT_BIT,
-			    prHifInfo->ulTxDataTimeout);
+		if (prMsduInfo->pfTxDoneHandler)
+			KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMEOUT_BIT,
+				    prHifInfo->ulTxDataTimeout);
 #endif /* (CFG_SUPPORT_TX_DATA_DELAY == 1) */
 
 	u4Port = halTxRingDataSelect(prGlueInfo->prAdapter, prMsduInfo);
@@ -2566,9 +2570,13 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	prRingLock = prGlueInfo->i4RingLock;
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
-	if (halCheckAndStartTxDelayTimer(prGlueInfo->prAdapter))
-		return 0;
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_DISABLED(
+		    prGlueInfo->prAdapter->rWifiVar.fgHifTxNapiEn))
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+		if (halCheckAndStartTxDelayTimer(prGlueInfo->prAdapter))
+			return 0;
 #endif /* CFG_SUPPORT_TX_DATA_DELAY */
 
 #if !CFG_SUPPORT_RX_WORK
@@ -2635,8 +2643,11 @@ end:
 	KAL_HIF_BH_ENABLE(prGlueInfo);
 #endif /* !CFG_SUPPORT_RX_WORK */
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
-	halCancleTxDelayTimer(prGlueInfo->prAdapter);
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_DISABLED(prWifiVar->fgHifTxNapiEn))
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+		halCancleTxDelayTimer(prGlueInfo->prAdapter);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY */
 
 	return 0;

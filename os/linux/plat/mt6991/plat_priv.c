@@ -102,7 +102,9 @@ enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM] = {
 	ENUM_CPU_BOOST_STATUS_LV4  /* 12: 5000Mbps */
 };
 
-struct BOOST_INFO rBoostInfo[] = {
+struct BOOST_INFO rBoostInfo[ENUM_CPU_BOOST_STATUS_NUM];
+
+struct BOOST_INFO rBoostInfoSet0[] = {
 	{
 		/* ENUM_CPU_BOOST_STATUS_INIT */
 	},
@@ -330,6 +332,192 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4DramBoostLv = 3,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
+	}
+};
+
+struct BOOST_INFO rBoostInfoSet1[] = {
+	{
+		/* ENUM_CPU_BOOST_STATUS_INIT */
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV0 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = AUTO_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.u4RpsMap = RPS_LITTLE_CORE,
+		.u4ISRMask = CPU_LITTLE_CORE,
+		.i4RxRfbRetWorkCpu = -1,
+		.i4TxWorkCpu = -1,
+		.i4RxWorkCpu = -1,
+		.i4RxNapiWorkCpu = -1,
+		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaTh = 0,
+		.i4TxFreeMsduWorkCpu = -1,
+		.i4DramBoostLv = -1,
+		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
+		.u4CurCpuMask = 0,
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV1 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = AUTO_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.u4RpsMap = RPS_BIG_CORE,
+		.u4ISRMask = CPU_BIG_CORE,
+		.i4TxFreeMsduWorkCpu = 5,
+		.i4RxRfbRetWorkCpu = 6,
+		.i4TxWorkCpu = 6,
+		.i4RxWorkCpu = 4,
+		.i4RxNapiWorkCpu = -1,
+		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaTh = 0,
+		.i4DramBoostLv = -1,
+		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
+		.u4CurCpuMask = 0x7f,
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV2 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = MAX_CPU_FREQ,
+			.i4BigCpuFreq = MAX_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.u4RpsMap = RPS_BIG_CORE,
+		.u4ISRMask = CPU_X_CORE,
+		.i4TxFreeMsduWorkCpu = 5,
+		.i4RxRfbRetWorkCpu = 6,
+		.i4TxWorkCpu = 6,
+		.i4RxWorkCpu = 4,
+		.i4RxNapiWorkCpu = 7,
+		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaTh = 1,
+		.i4DramBoostLv = 0,
+		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
+		.u4CurCpuMask = 0xff,
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV3 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = MAX_CPU_FREQ,
+			.i4BigCpuFreq = MAX_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.u4RpsMap = RPS_BIG_CORE,
+		.u4ISRMask = CPU_X_CORE,
+		.i4TxFreeMsduWorkCpu = 5,
+		.i4RxRfbRetWorkCpu = 6,
+		.i4TxWorkCpu = 6,
+		.i4RxWorkCpu = 4,
+		.i4RxNapiWorkCpu = 7,
+		.fgKeepPcieWakeup = TRUE,
+		.u4WfdmaTh = 2,
+		.i4DramBoostLv = 0,
+		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
+		.u4CurCpuMask = 0xff,
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV4 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = MAX_CPU_FREQ,
+			.i4BigCpuFreq = MAX_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.u4RpsMap = RPS_BIG_CORE,
+		.u4ISRMask = CPU_X_CORE,
+		.i4TxFreeMsduWorkCpu = 5,
+		.i4RxRfbRetWorkCpu = 6,
+		.i4TxWorkCpu = 6,
+		.i4RxWorkCpu = 4,
+		.i4RxNapiWorkCpu = 7,
+		.fgKeepPcieWakeup = TRUE,
+		.u4WfdmaTh = 2,
+		.i4DramBoostLv = 0,
+		.eSkbAllocWorkCoreType = CPU_CORE_NONE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
+		.u4CurCpuMask = 0xff,
 	}
 };
 
@@ -669,6 +857,14 @@ static void __kalBoostCpuInit(struct ADAPTER *prAdapter)
 
 void kalBoostCpuInit(struct ADAPTER *prAdapter)
 {
+	struct BOOST_INFO *prBoostInfo = &rBoostInfoSet0[0];
+
+	if (prAdapter->rWifiVar.u4BoostInfoSet == 1)
+		prBoostInfo = &rBoostInfoSet1[0];
+
+	kalMemCopy(&rBoostInfo, prBoostInfo,
+		   sizeof(struct BOOST_INFO) * ENUM_CPU_BOOST_STATUS_NUM);
+
 	eCurrBoost = ENUM_CPU_BOOST_STATUS_INIT;
 	__kalBoostCpuInit(prAdapter);
 }

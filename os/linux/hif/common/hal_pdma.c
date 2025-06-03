@@ -1750,9 +1750,10 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	wlanTxLifetimeTagPacket(prAdapter, prMsduInfo,
 		TX_PROF_TAG_ACQR_MSDU_TOK);
 #endif
-#if (CFG_SUPPORT_HIF_TX_NAPI == 0)
-	halProcessBeforeTxData(prAdapter);
-#endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
+#if (CFG_SUPPORT_HIF_TX_NAPI == 1)
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgHifTxNapiEn))
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+		halProcessBeforeTxData(prAdapter);
 
 	GLUE_INC_REF_CNT(prTokenInfo->u4UsedCnt);
 
@@ -2113,7 +2114,7 @@ u_int8_t halCheckAndStartTxDelayTimer(struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_HIF_TX_NAPI
 	u4DataCnt += halGetTxMsduCnt(prAdapter);
-#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
 		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
@@ -2123,7 +2124,7 @@ u_int8_t halCheckAndStartTxDelayTimer(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_TX_NAPI
 	if (halIsTxMsduWithTxDoneCb(prAdapter))
 		goto tx_data;
-#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	halStartTxDelayTimer(prAdapter);
 	return TRUE;
@@ -5535,12 +5536,13 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 			kalDevKickCmd(prGlueInfo);
 #if (CFG_SUPPORT_HIF_TX_NAPI == 1)
-			KAL_SET_BIT(HIF_TX_NAPI_SCHE_NAPI_BIT,
-				    prHifInfo->rTxNapiDev.ulFlag);
-			kalHifTxWorkSchedule(prGlueInfo);
-#else
-			kalDevKickData(prGlueInfo);
+			if (IS_FEATURE_ENABLED(prWifiVar->fgHifTxNapiEn)) {
+				KAL_SET_BIT(HIF_TX_NAPI_SCHE_NAPI_BIT,
+					    prHifInfo->rTxNapiDev.ulFlag);
+				kalHifTxWorkSchedule(prGlueInfo);
+			} else
 #endif
+				kalDevKickData(prGlueInfo);
 			halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 			if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
@@ -5884,7 +5886,7 @@ void halRxTasklet(unsigned long data)
 }
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-void halRxWork(struct GLUE_INFO *prGlueInfo)
+void halRxByNapi(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -5937,8 +5939,9 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 
 	kalRxTaskWorkDone(prGlueInfo, FALSE);
 }
-#else /* !CFG_SUPPORT_HIF_RX_NAPI */
-void halRxWork(struct GLUE_INFO *prGlueInfo)
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+void halRxByWork(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
 	bool fgEnInt = FALSE;
@@ -6004,7 +6007,18 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 				prGlueInfo->rRxWorkerLock);
 #endif
 }
+
+void halRxWork(struct GLUE_INFO *prGlueInfo)
+{
+#if (CFG_SUPPORT_HIF_RX_NAPI == 1)
+	if (IS_FEATURE_ENABLED(
+		    prGlueInfo->prAdapter->rWifiVar.fgHifRxNapiEn)) {
+		halRxByNapi(prGlueInfo);
+		return;
+	}
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+	halRxByWork(prGlueInfo);
+}
 
 void halTxCompleteTasklet(unsigned long data)
 {
