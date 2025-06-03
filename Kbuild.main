@@ -2864,8 +2864,8 @@ endif
 # VO w/ ToS = 0xB0 and 0xB8.
 #
 # By disabling QoS R2 w/ CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT,
-# two additional ToS 0xC0 and 0xE0 are allowed to map to UP 6, 7.
-# Along with the change in sigma tool by setting VO to ToS=0xCo,
+# two additional ToS 0xC0 and 0xE0 are allowed to map to UP 7.
+# Along with the change in sigma tool by setting VO to ToS=0xC0,
 # this makes the intersection values available for QoS R2 and
 # sigma tool for legacy programs.
 ifeq ($(CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT), y)

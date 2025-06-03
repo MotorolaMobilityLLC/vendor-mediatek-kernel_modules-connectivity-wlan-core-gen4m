@@ -137,10 +137,10 @@ static struct cfg80211_qos_map default_qos_map = {
 		{44, 6}, {46, 6},
 #if !CFG_WIFI_AT_THE_EDGE_QOS
 		/* Extend for backward compatibility traffic generation.
-		 * Allow to set 48, 56 to UP 6, 7, intended to now following
+		 * Allow to set 48, 56 to UP 7, intended to now following
 		 * RECOMMENDATION in RFC 8325 Sec 8.2.
 		 */
-		{48, 6}, {56, 7},
+		{48, 7}, {56, 7},
 #endif
 	},
 	.up = {{0, 63}, },/* low, high */

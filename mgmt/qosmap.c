@@ -54,7 +54,7 @@
  * 40   CS5,  5, VI, AC_VI
  * 44   VA,   6, VO, AC_VO
  * 46   EF,   6, VO, AC_VO
- * 48   CS6,  6, VO, AC_VO (NOTE)
+ * 48   CS6,  7, NC, AC_VO (NOTE)
  * 56   CS7,  7, NC, AC_VO (NOTE)
  *
  * NOTE:
@@ -88,7 +88,7 @@ static const uint8_t dscp2up[64] = {
 	[44] = WMM_UP_VO_INDEX,
 	[46] = WMM_UP_VO_INDEX,
 #if !CFG_WIFI_AT_THE_EDGE_QOS
-	[48] = WMM_UP_VO_INDEX,
+	[48] = WMM_UP_NC_INDEX,
 	[56] = WMM_UP_NC_INDEX,
 #endif
 };
@@ -110,10 +110,10 @@ static const struct QOS_MAP defaultQosMap = {
 		{44, 6}, {46, 6},
 #if !CFG_WIFI_AT_THE_EDGE_QOS
 		/* Extend for backward compatibility traffic generation.
-		 * Allow to set 48, 56 to UP 6, 7, intended to now following
+		 * Allow to set 48, 56 to UP 7, intended to now following
 		 * RECOMMENDATION in RFC 8325 Sec 8.2.
 		 */
-		{48, 6}, {56, 7},
+		{48, 7}, {56, 7},
 #endif
 	}, {
 		{0, 63},
