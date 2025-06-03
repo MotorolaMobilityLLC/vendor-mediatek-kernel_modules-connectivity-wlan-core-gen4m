@@ -449,8 +449,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	struct P2P_UNSOL_PROBE_RESP_INFO rUnsolProbeInfo;
 
 	/* OWE */
-	uint8_t *pucDHIEBuf;
-	uint8_t ucDHIELen;
+	uint8_t *pucAssocIEBuf;
+	uint16_t u2AssocIEBufLen;
 
 	u_int8_t fgAddPwrConstrIe;
 

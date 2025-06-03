@@ -800,12 +800,6 @@ uint32_t p2pFuncStoreUnsolProbeInfo(struct ADAPTER *prAdapter,
 void p2pFuncClearUnsolProbeInfo(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
-uint32_t p2pFuncCalculateP2p_IELenForOwe(struct ADAPTER *prAdapter,
-		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
-
-void p2pFuncGenerateP2p_IEForOwe(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo);
-
 typedef void(*PFN_P2P_CH_CANDIDATE_FILETER_FUNC) (struct ADAPTER *,
 		uint8_t *,
 		struct P2P_CH_SWITCH_CANDIDATE *,

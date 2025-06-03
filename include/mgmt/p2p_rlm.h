@@ -179,6 +179,20 @@ uint32_t p2pRlmCalcP2p2IeLen(struct ADAPTER *prAdapter,
 
 uint16_t p2pRlmGenP2p2Ie(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo);
+
+uint32_t p2pRlmCalculateOweIeLen(struct ADAPTER *prAdapter,
+				 uint8_t ucBssIndex,
+				 struct STA_RECORD *prStaRec);
+
+void p2pRlmGenerateOweIe(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo);
+
+uint32_t p2pRlmCalculateRsnIeLen(struct ADAPTER *prAdapter,
+				 uint8_t ucBssIndex,
+				 struct STA_RECORD *prStaRec);
+
+void p2pRlmGenerateRsnIe(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #endif

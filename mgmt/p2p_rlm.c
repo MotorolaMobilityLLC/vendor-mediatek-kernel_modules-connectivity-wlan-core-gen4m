@@ -2026,4 +2026,166 @@ uint16_t p2pRlmGenP2p2Ie(struct ADAPTER *prAdapter,
 	return 0;
 #endif /* CFG_P2P2_SUPPORT_GC_REQ_CSA */
 }
+
+uint32_t p2pRlmCalculateOweIeLen(struct ADAPTER *prAdapter,
+				 uint8_t ucBssIndex,
+				 struct STA_RECORD *prStaRec)
+{
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	const uint8_t *pucDHIEBuf;
+	uint8_t ucRoleIdx;
+
+	if (!prAdapter)
+		return 0;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE)
+		return 0;
+
+	ucRoleIdx = prP2pBssInfo->u4PrivateData;
+	if (ucRoleIdx >= BSS_P2P_NUM)
+		return 0;
+
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
+	if (!prP2pSpecBssInfo->u2AssocIEBufLen)
+		return 0;
+
+	pucDHIEBuf =
+		kalFindIeExtIE(ELEM_ID_RESERVED,
+			       ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM,
+			       prP2pSpecBssInfo->pucAssocIEBuf,
+			       prP2pSpecBssInfo->u2AssocIEBufLen);
+	if (!pucDHIEBuf)
+		return 0;
+
+	return IE_SIZE(pucDHIEBuf);
+}
+
+void p2pRlmGenerateOweIe(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo)
+{
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	const uint8_t *pucDHIEBuf;
+	uint8_t *pucBuf;
+	uint8_t ucRoleIdx;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					     prMsduInfo->ucBssIndex);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE)
+		return;
+
+	ucRoleIdx = prP2pBssInfo->u4PrivateData;
+	if (ucRoleIdx >= BSS_P2P_NUM)
+		return;
+
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
+	if (!prP2pSpecBssInfo->u2AssocIEBufLen)
+		return;
+
+	pucDHIEBuf =
+		kalFindIeExtIE(ELEM_ID_RESERVED,
+			       ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM,
+			       prP2pSpecBssInfo->pucAssocIEBuf,
+			       prP2pSpecBssInfo->u2AssocIEBufLen);
+	if (!pucDHIEBuf)
+		return;
+
+	pucBuf = (uint8_t *)((uintptr_t) prMsduInfo->prPacket +
+			     (uint32_t) prMsduInfo->u2FrameLength);
+
+	kalMemCopy(pucBuf, pucDHIEBuf, IE_SIZE(pucDHIEBuf));
+	prMsduInfo->u2FrameLength += IE_SIZE(pucDHIEBuf);
+}
+
+uint32_t p2pRlmCalculateRsnIeLen(struct ADAPTER *prAdapter,
+				 uint8_t ucBssIndex,
+				 struct STA_RECORD *prStaRec)
+{
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	const uint8_t *pucRsnIE;
+	uint8_t ucRoleIdx;
+
+	if (!prAdapter)
+		return 0;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE)
+		return 0;
+
+	ucRoleIdx = prP2pBssInfo->u4PrivateData;
+	if (ucRoleIdx >= BSS_P2P_NUM)
+		return 0;
+
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
+	if (!prP2pSpecBssInfo->u2AssocIEBufLen)
+		return 0;
+
+	pucRsnIE =
+		kalFindIeMatchMask(ELEM_ID_RSN,
+				   prP2pSpecBssInfo->pucAssocIEBuf,
+				   prP2pSpecBssInfo->u2AssocIEBufLen,
+				   NULL, 0, 0, NULL);
+	if (!pucRsnIE)
+		return 0;
+
+	return IE_SIZE(pucRsnIE);
+}
+
+void p2pRlmGenerateRsnIe(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo)
+{
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	const uint8_t *pucRsnIE;
+	uint8_t *pucBuf;
+	uint8_t ucRoleIdx;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					     prMsduInfo->ucBssIndex);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE)
+		return;
+
+	ucRoleIdx = prP2pBssInfo->u4PrivateData;
+	if (ucRoleIdx >= BSS_P2P_NUM)
+		return;
+
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
+	if (!prP2pSpecBssInfo->u2AssocIEBufLen)
+		return;
+
+	pucRsnIE =
+		kalFindIeMatchMask(ELEM_ID_RSN,
+				   prP2pSpecBssInfo->pucAssocIEBuf,
+				   prP2pSpecBssInfo->u2AssocIEBufLen,
+				   NULL, 0, 0, NULL);
+	if (!pucRsnIE)
+		return;
+
+	pucBuf = (uint8_t *)((uintptr_t) prMsduInfo->prPacket +
+			     (uint32_t) prMsduInfo->u2FrameLength);
+
+	kalMemCopy(pucBuf, pucRsnIE, IE_SIZE(pucRsnIE));
+	prMsduInfo->u2FrameLength += IE_SIZE(pucRsnIE);
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */

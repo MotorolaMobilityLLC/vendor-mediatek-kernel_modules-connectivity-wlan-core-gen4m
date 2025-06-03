@@ -195,9 +195,10 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	rsnPmfGenerateTimeoutIE}
 	,			/* 56 */
 #endif
-	{(0), p2pFuncCalculateP2p_IELenForOwe,
-	 p2pFuncGenerateP2p_IEForOwe}
-	,
+#if CFG_ENABLE_WIFI_DIRECT
+	{(0), p2pRlmCalculateOweIeLen, p2pRlmGenerateOweIe},
+	{(0), p2pRlmCalculateRsnIeLen, p2pRlmGenerateRsnIe},
+#endif
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNXIE}
 	/* 244 */
 };

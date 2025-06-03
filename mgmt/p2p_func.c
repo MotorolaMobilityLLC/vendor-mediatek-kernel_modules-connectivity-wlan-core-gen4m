@@ -1315,7 +1315,7 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	struct MSDU_INFO *prMsduInfo;
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame;
 	uint8_t *pucIEBuf;
-	uint16_t u2Offset, u2IELength, u2RspHdrLen;
+	uint16_t u2IELength, u2RspHdrLen;
 
 	prWifiVar = &prAdapter->rWifiVar;
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
@@ -1340,17 +1340,8 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	pucIEBuf = prAssocRspFrame->aucInfoElem;
 	u2IELength = prMgmtTxMsdu->u2FrameLength - u2RspHdrLen;
 
-	prP2pSpecBssInfo->pucDHIEBuf = NULL;
-	prP2pSpecBssInfo->ucDHIELen = 0;
-
-	IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
-		if (IE_ID(pucIEBuf) == ELEM_ID_RESERVED &&
-		    IE_ID_EXT(pucIEBuf) == ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM) {
-			prP2pSpecBssInfo->pucDHIEBuf = pucIEBuf;
-			prP2pSpecBssInfo->ucDHIELen = IE_SIZE(pucIEBuf);
-			break;
-		}
-	}
+	prP2pSpecBssInfo->pucAssocIEBuf = pucIEBuf;
+	prP2pSpecBssInfo->u2AssocIEBufLen = u2IELength;
 
 	prMsduInfo = assocComposeReAssocRespFrame(prAdapter, prStaRec);
 	if (!prMsduInfo) {
@@ -1364,8 +1355,8 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 		assocComposeReAssocRespFrame);
 #endif
 
-	prP2pSpecBssInfo->pucDHIEBuf = NULL;
-	prP2pSpecBssInfo->ucDHIELen = 0;
+	prP2pSpecBssInfo->pucAssocIEBuf = NULL;
+	prP2pSpecBssInfo->u2AssocIEBufLen = 0;
 
 	return prMsduInfo;
 }
@@ -11778,69 +11769,6 @@ void p2pFuncClearUnsolProbeInfo(struct ADAPTER *prAdapter,
 
 	prUnsolProbeInfo->fgValid = FALSE;
 	prUnsolProbeInfo->u4Length = 0;
-}
-
-uint32_t p2pFuncCalculateP2p_IELenForOwe(struct ADAPTER *prAdapter,
-		uint8_t ucBssIndex, struct STA_RECORD *prStaRec)
-{
-	struct WIFI_VAR *prWifiVar;
-	struct BSS_INFO *prP2pBssInfo;
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
-
-	if (!prAdapter)
-		return 0;
-
-	prWifiVar = &prAdapter->rWifiVar;
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (prP2pBssInfo == NULL ||
-	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE) {
-		return 0;
-	}
-
-	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
-		prP2pBssInfo->u4PrivateData];
-	if (prP2pSpecBssInfo == NULL ||
-	    prP2pSpecBssInfo->ucDHIELen == 0 ||
-	    prP2pSpecBssInfo->pucDHIEBuf == NULL) {
-		return 0;
-	}
-
-	return prP2pSpecBssInfo->ucDHIELen;
-}
-
-void p2pFuncGenerateP2p_IEForOwe(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo)
-{
-	struct WIFI_VAR *prWifiVar;
-	struct BSS_INFO *prP2pBssInfo;
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
-	uint8_t *pucBuf;
-
-	if (!prAdapter || !prMsduInfo)
-		return;
-
-	prWifiVar = &prAdapter->rWifiVar;
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-	if (prP2pBssInfo == NULL ||
-	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE) {
-		return;
-	}
-
-	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
-		prP2pBssInfo->u4PrivateData];
-	if (prP2pSpecBssInfo == NULL ||
-	    prP2pSpecBssInfo->ucDHIELen == 0 ||
-	    prP2pSpecBssInfo->pucDHIEBuf == NULL) {
-		return;
-	}
-
-	pucBuf = (uint8_t *)((uintptr_t) prMsduInfo->prPacket +
-			     (uint32_t) prMsduInfo->u2FrameLength);
-
-	kalMemCopy(pucBuf,
-		   prP2pSpecBssInfo->pucDHIEBuf,
-		   prP2pSpecBssInfo->ucDHIELen);
-	prMsduInfo->u2FrameLength += prP2pSpecBssInfo->ucDHIELen;
 }
 
 u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
