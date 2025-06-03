@@ -1249,7 +1249,7 @@ srcs_6789 = srcs_connv1 + [
 ]
 
 local_defines_6789 = local_defines_connv1 + [
-    "CFG_MTK_MDDP_SUPPORT=0",
+    "CFG_MTK_MDDP_SUPPORT=1",
     "SOC2_1X1",
     "CONFIG_MTK_WIFI_VHT80",
     "CFG_SUPPORT_MDDP_AOR=0",
@@ -1278,7 +1278,7 @@ srcs_6855 = srcs_connv1 + [
     "chips/soc2_1x1/soc2_1x1.c",
 ]
 local_defines_6855 = local_defines_connv1 + [
-    "CFG_MTK_MDDP_SUPPORT=0",
+    "CFG_MTK_MDDP_SUPPORT=1",
     "SOC2_1X1",
     "CONFIG_MTK_WIFI_VHT80",
     "CFG_SUPPORT_MDDP_AOR=1",
