@@ -40,12 +40,14 @@
 #define VLP_NON_SUPPORT     FALSE /* Non-support 6G Very Low Power mode   */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
+#define RRLM_POWER_LIMIT_DEFAULT_SIZE 	180		/*support CE country is 101, FCC country is 67*/
+
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #ifdef MOTO_DYNAMIC_TX_PWR
 #if (CFG_SUPPORT_WIFI_6G == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	/*Default*/
-	g_rRlmPowerLimitDefault[] = {
+	g_rRlmPowerLimitDefault[RRLM_POWER_LIMIT_DEFAULT_SIZE] = {
 	{	{0, 0}
 		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
 		, 0
@@ -55,7 +57,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 /* For 802.11ax 6G Very Low Power mode setting */
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
-	g_rRlmPowerLimitDefault_VLP[] = {
+	g_rRlmPowerLimitDefault_VLP[RRLM_POWER_LIMIT_DEFAULT_SIZE] = {
 	/*Default*/
 	{	{0, 0}
 		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
@@ -3379,7 +3381,7 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 };
 #endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[] = {
+struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[RRLM_POWER_LIMIT_DEFAULT_SIZE] = {
 	{
 		/* Default */
 		{0, 0},
