@@ -3283,6 +3283,12 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
+	if (!glue->prAdapter) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	if (!glue->prHifRegFifoBuf) {
 		DBGLOG(HAL, ERROR, "fifo is free\n");
 		ret = -EFAULT;
@@ -3303,7 +3309,8 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
-	if (pcie_check_status_is_linked() == FALSE) {
+	if (glue->prAdapter->fgIsFwOwn == FALSE &&
+		pcie_check_status_is_linked() == FALSE) {
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -3312,12 +3319,6 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 	glGetChipInfo((void **)&prChipInfo);
 	if (!prChipInfo) {
 		DBGLOG(HAL, ERROR, "chip info is NULL\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	if (!glue->prAdapter) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
