@@ -4425,7 +4425,7 @@ exit:
 
 static void mt6653_mcu_deinit(struct ADAPTER *ad)
 {
-#define MAX_WAIT_COREDUMP_COUNT 10
+#define MAX_WAIT_COREDUMP_COUNT 30
 
 	int retry = 0;
 
