@@ -32,7 +32,7 @@
  *******************************************************************************
  */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-#define MAX_SUBBAND_NUM     7
+#define MAX_SUBBAND_NUM     8
 #else
 #define MAX_SUBBAND_NUM     6
 #endif
