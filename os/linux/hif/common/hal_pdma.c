@@ -4364,9 +4364,22 @@ void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
 static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
 			struct MSDU_INFO *prMsduInfo)
 {
+	struct ADAPTER *prAdapter = pr->prAdapter;
+	u_int8_t fgTxDoneHandler = FALSE;
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	spinlock_t *prSpinLock = &pr->rSpinLock[SPIN_LOCK_MSDUIFO];
 #endif
+
+	if (prMsduInfo->pfTxDoneHandler)
+		fgTxDoneHandler = TRUE;
+
+	KAL_MB_RW();
+
+#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
+	if (!HAL_IS_TX_DIRECT(prAdapter))
+#endif
+		if (prMsduInfo->pfHifTxMsduDoneCb)
+			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
 	/*
 	 * MSDU_INFO with pfTxDoneHandler should not FIFO_IN into
 	 * rTxMsduRetFifo, otherwise it will cause double enqueue issue and
@@ -4376,7 +4389,7 @@ static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
 	 * 2. TxFreeMsduWork FIFO_OUT MSDU_INFO and find that pfTxDoneHandler
 	 *    is NULL and process it again and cause double enqueue issue.
 	 */
-	if (prMsduInfo->pfTxDoneHandler != NULL)
+	if (fgTxDoneHandler)
 		goto end;
 
 	if (pr->prTxMsduRetFifoBuf &&
@@ -4570,12 +4583,6 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		prHifInfo->u4TxDataQLen[u2Port]--;
 	}
 
-#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
-	if (!HAL_IS_TX_DIRECT(prAdapter))
-#endif
-		if (prMsduInfo->pfHifTxMsduDoneCb)
-			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
-
 	if (halEnqueueMsduInfo(prGlueInfo, prMsduInfo)
 		== WLAN_STATUS_NOT_ACCEPTED)
 		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
@@ -4679,12 +4686,6 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 
 		list_del(prCur);
 		prHifInfo->u4TxDataQLen[u2Port]--;
-
-		if (!HAL_IS_TX_DIRECT(prAdapter))
-			if (prMsduInfo->pfHifTxMsduDoneCb)
-				prMsduInfo->pfHifTxMsduDoneCb(
-						prGlueInfo->prAdapter,
-						prMsduInfo);
 
 		if (halEnqueueMsduInfo(prGlueInfo, prMsduInfo)
 			== WLAN_STATUS_NOT_ACCEPTED)
