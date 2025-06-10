@@ -8781,6 +8781,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			"ArpMonitorCriticalThres", 2, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucArpMonitorUseRule, "ArpMonitorUseRule", 1,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgArpMonitorNudDetectEn, "ArpMonitorNudDetectEn",
+		  FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NudMonitorTxNumber, "NudMonitorTxNumber", 5,
+		  FEATURE_TO_CUSTOMER);
 #endif /* ARP_MONITER_ENABLE */
 
 

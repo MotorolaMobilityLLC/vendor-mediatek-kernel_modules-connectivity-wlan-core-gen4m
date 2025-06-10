@@ -35,6 +35,9 @@
 #include <linux/earlysuspend.h>
 #endif
 
+#include <linux/neighbour.h>
+#include <net/netevent.h>
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -485,3 +488,57 @@ void wlanUnregisterNetdevNotifier(void)
 {
 	unregister_netdevice_notifier(&wlan_netdev_notifier);
 }
+
+static int wlan_netevent_notifier_call(struct notifier_block *nb,
+		unsigned long event, void *ptr)
+{
+	struct GLUE_INFO *prGlueInfo = container_of(nb,
+				struct GLUE_INFO, wlan_netevent_notifier);
+	struct neighbour *neighbour = ptr;
+	uint8_t ucBssIndex;
+
+	if (!neighbour || !neighbour->dev)
+		return NOTIFY_DONE;
+
+	ucBssIndex = wlanGetBssIdxByNetInterface(prGlueInfo, neighbour->dev);
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return NOTIFY_DONE;
+
+	switch (event) {
+	case NETEVENT_NEIGH_UPDATE:
+		DBGLOG(REQ, TRACE, "nud new state: 0x%02x.\n",
+			neighbour->nud_state);
+#if ARP_MONITER_ENABLE
+		arpMonHandleNudState(prGlueInfo->prAdapter,
+			neighbour->nud_state, ucBssIndex);
+#endif
+		break;
+	}
+
+	return NOTIFY_DONE;
+}
+
+void wlanRegisterNeteventNotifier(struct GLUE_INFO *prGlueInfo)
+{
+	int ret;
+
+	if (!prGlueInfo)
+		return;
+
+	prGlueInfo->wlan_netevent_notifier.notifier_call =
+					wlan_netevent_notifier_call;
+	ret = register_netevent_notifier(&prGlueInfo->wlan_netevent_notifier);
+	if (ret)
+		DBGLOG(REQ, INFO,
+			"Failed to register netevent notifier, ret=%d\n",
+			ret);
+}
+
+void wlanUnregisterNeteventNotifier(struct GLUE_INFO *prGlueInfo)
+{
+	if (!prGlueInfo)
+		return;
+
+	unregister_netevent_notifier(&prGlueInfo->wlan_netevent_notifier);
+}
+

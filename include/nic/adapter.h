@@ -1432,6 +1432,8 @@ struct WIFI_VAR {
 	uint32_t uArpMonitorRxPktNum;
 	uint8_t uArpMonitorCriticalThres;
 	uint8_t ucArpMonitorUseRule; /* 0:old rule, 1:new rule */
+	u_int8_t fgArpMonitorNudDetectEn;
+	uint32_t u4NudMonitorTxNumber;
 #endif /* ARP_MONITER_ENABLE */
 #if CFG_RFB_TRACK
 	u_int8_t fgRfbTrackEn;

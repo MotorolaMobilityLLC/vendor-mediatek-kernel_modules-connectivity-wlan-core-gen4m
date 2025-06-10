@@ -1194,6 +1194,7 @@ struct GLUE_INFO {
 	cpumask_t hif_cpu_mask;
 #endif
 #endif /* CFG_SUPPORT_TPUT_FACTOR */
+	struct notifier_block wlan_netevent_notifier;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
@@ -1852,6 +1853,8 @@ void wlanRegisterInetAddrNotifier(void);
 void wlanUnregisterInetAddrNotifier(void);
 void wlanRegisterNetdevNotifier(void);
 void wlanUnregisterNetdevNotifier(void);
+void wlanRegisterNeteventNotifier(struct GLUE_INFO *prGlueInfo);
+void wlanUnregisterNeteventNotifier(struct GLUE_INFO *prGlueInfo);
 #if CFG_POWER_OFF_CTRL_SUPPORT
 extern void wlanRegisterRebootNotifier(void);
 extern void wlanUnregisterRebootNotifier(void);
