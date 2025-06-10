@@ -1740,6 +1740,8 @@ void wlanOffUninitNicModule(struct ADAPTER *prAdapter,
 uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 		const u_int8_t bAtResetFlow)
 {
+#define MAX_WAIT_COREDUMP_COUNT 30
+
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
@@ -1752,7 +1754,23 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 	if (prAdapter->rAcpiState == ACPI_STATE_D0 &&
 		!wlanIsChipNoAck(prAdapter)
 		&& !kalIsCardRemoved(prAdapter->prGlueInfo)) {
-		wlanPowerOffWifi(prAdapter);
+		u4Status = wlanPowerOffWifi(prAdapter);
+
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			uint32_t u4RetryCount = 0;
+
+			while (g_IsNeedWaitCoredump) {
+				if (u4RetryCount >= MAX_WAIT_COREDUMP_COUNT) {
+					DBGLOG(INIT, WARN,
+						"Coredump spend long time, retryCount = %d\n",
+						u4RetryCount);
+				}
+				kalMsleep(100);
+				u4RetryCount++;
+			}
+		}
+#endif
 	} else {
 		DBGLOG(INIT, ERROR, "Cannot WF pwr-off, release HIF TRX-res");
 		HAL_CANCEL_TX_RX(prAdapter);
@@ -1878,6 +1896,7 @@ uint32_t wlanCheckWifiFunc(struct ADAPTER *prAdapter,
 {
 	u_int8_t fgResult, fgTimeout;
 	uint32_t u4Result = 0, u4Status, u4StartTime, u4CurTime;
+	uint32_t u4Ret;
 	const uint32_t ready_bits =
 		prAdapter->chip_info->sw_ready_bits;
 
@@ -1938,8 +1957,12 @@ uint32_t wlanCheckWifiFunc(struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR,
 			       "Waiting for %s: Timeout, Status=0x%08x\n",
 			       fgRdyChk ? "ready bit" : "power off", u4Result);
-			GL_DEFAULT_RESET_TRIGGER(prAdapter,
-						 RST_CHECK_READY_BIT_TIMEOUT);
+			u4Ret = GL_DEFAULT_RESET_TRIGGER(prAdapter,
+				RST_CHECK_READY_BIT_TIMEOUT);
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+			if (u4Ret == WLAN_STATUS_SUCCESS)
+				glSetIsNeedWaitCoredumpFlag(TRUE);
+#endif
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
 		}
