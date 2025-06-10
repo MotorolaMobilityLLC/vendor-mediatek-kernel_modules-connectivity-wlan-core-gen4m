@@ -805,32 +805,28 @@ bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 	u_int8_t fgIsSkipAliasing = prAdapter->rWifiVar.fgEnMspBw320;
 	u_int8_t fgAliasingCheck, fgIsolationCheck;
 
+	/* 1. Check if A+A enabled and preferred */
 	if (!ccmIsPreferAA(prAdapter, NULL))
 		return FALSE;
 
-	if (prChnlInfo1->eBand == BAND_5G && prChnlInfo2->eBand == BAND_5G) {
-		if (prChnlInfo1->u4CenterFreq1 > prChnlInfo2->u4CenterFreq1) {
-			prChnlInfo_h = prChnlInfo1;
-			prChnlInfo_l = prChnlInfo2;
-		} else {
-			prChnlInfo_h = prChnlInfo2;
-			prChnlInfo_l = prChnlInfo1;
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	} else if (prChnlInfo1->eBand == BAND_5G &&
-		   prChnlInfo2->eBand == BAND_6G) {
-		prChnlInfo_h = prChnlInfo2;
-		prChnlInfo_l = prChnlInfo1;
-	} else if (prChnlInfo1->eBand == BAND_6G &&
-		   prChnlInfo2->eBand == BAND_5G) {
+	/* 2. Find out the higher and lower freq */
+	if (prChnlInfo1->u4CenterFreq1 > prChnlInfo2->u4CenterFreq1) {
 		prChnlInfo_h = prChnlInfo1;
 		prChnlInfo_l = prChnlInfo2;
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
-	} else
+	} else {
+		prChnlInfo_h = prChnlInfo2;
+		prChnlInfo_l = prChnlInfo1;
+	}
+
+	/* 3. Skip unsupported chnl combinations */
+	if (/* TODO: not support calculate upward now */
+	    prChnlInfo_h->u4CenterFreq1 <= P2P_5G_L_UPPER_BOUND ||
+	    /* not support 6G+6G A+A now */
+	    prChnlInfo_l->u4CenterFreq1 >= P2P_6G_LOWER_BOUND)
 		return FALSE;
 
+	/* 4. Calculate forbidden region downward */
 	arTargetBw[0] = ccmAABwEnumToValue(prChnlInfo_l->ucChnlBw);
-
 	ccmAAForbiddenRegionCal(prAdapter, prChnlInfo_h, &prForbiddenListLen,
 				arTargetBw, arRegOut);
 
