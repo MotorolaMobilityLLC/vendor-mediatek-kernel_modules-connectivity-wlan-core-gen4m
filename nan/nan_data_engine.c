@@ -317,6 +317,15 @@ nanDataRetryTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 				WLAN_STATUS_FAILURE);
 
 		nanDataPathProtocolFsmStep(prAdapter, NDP_DISCONNECT, prNDP);
+	} else if (prNDL != NULL &&
+		(prNDL->eCurrentNDLMgmtState ==
+		NDL_INITIATOR_TX_SCHEDULE_REQUEST)) {
+		DBGLOG(NAN, WARN,
+			"Prevent NDL teardown for availability!\n");
+		nanSchedNegoUpdateNegoResult(prAdapter);
+		nanNdlMgmtFsmStep(prAdapter,
+				  NDL_SCHEDULE_ESTABLISHED,
+				  prNDL);
 	}
 }
 
