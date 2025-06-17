@@ -6405,11 +6405,16 @@ void aisFsmDisconnectAllBss(struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
+		struct STA_RECORD *prStaRec;
 
 		if (!prAisBssInfo)
 			continue;
 
 		aisChangeMediaState(prAisBssInfo, MEDIA_STATE_DISCONNECTED);
+
+		prStaRec = aisGetTargetStaRec(prAdapter, i);
+		if (prStaRec)
+			prStaRec->eAuthAssocState = AA_STATE_IDLE;
 
 		/* 4 <4.1> sync. with firmware */
 		nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
