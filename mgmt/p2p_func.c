@@ -4163,7 +4163,6 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 	u_int8_t fgPmfConn = FALSE;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
-	uint32_t u4StaUsedCount;
 
 	DBGLOG(P2P, TRACE, "p2pValidate Authentication Frame\n");
 
@@ -4189,47 +4188,30 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN, "skip due to CSA in progress\n");
 		return FALSE;
 	}
-
-	u4StaUsedCount = cnmStaRecGetUsedCntByBss(prAdapter,
-						  prP2pBssInfo->ucBssIndex);
-	if (u4StaUsedCount >= P2P_MAXIMUM_CLIENT_COUNT) {
-		DBGLOG(P2P, WARN,
-			"Group Limit Full. used=%u clients=%u max=%u\n",
-			u4StaUsedCount,
-			bssGetClientCount(prAdapter, prP2pBssInfo),
-			P2P_MAXIMUM_CLIENT_COUNT);
-		*pu2StatusCode = STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD;
-		return FALSE;
-	}
+	if (bssGetClientCount(prAdapter, prP2pBssInfo)
+		>= P2P_MAXIMUM_CLIENT_COUNT
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-	else if (kalP2PMaxClients(prAdapter->prGlueInfo,
-				  u4StaUsedCount,
-				  prP2pBssInfo->u4PrivateData)) {
-		DBGLOG(P2P, WARN,
-			"Group Limit Full. used=%u cfg=%u\n",
-			u4StaUsedCount,
-			kalP2PGetMaxClients(prAdapter->prGlueInfo,
-					    prP2pBssInfo->u4PrivateData));
-		*pu2StatusCode = STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD;
-		return FALSE;
-	}
+		|| kalP2PMaxClients(prAdapter->prGlueInfo,
+		bssGetClientCount(prAdapter, prP2pBssInfo),
+		(uint8_t) prP2pBssInfo->u4PrivateData)
 #endif
-
-	if (p2pRoleProcessACLInspection(prAdapter,
-					prAuthFrame->aucSrcAddr,
-					prP2pBssInfo->ucBssIndex) == FALSE) {
-		DBGLOG(P2P, WARN, MACSTR " in acl block list.\n",
-			MAC2STR(prAuthFrame->aucSrcAddr));
-		*pu2StatusCode
-			= STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD;
+	) {
+		/* GROUP limit full. */
+		/* P2P 3.2.8 */
+		DBGLOG(P2P, WARN,
+			"Group Limit Full. (%d)\n",
+			bssGetClientCount(prAdapter, prP2pBssInfo));
+		*pu2StatusCode = STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD;
 		return FALSE;
 	}
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-	else if (kalP2PCmpBlockList(prAdapter->prGlueInfo,
-				    prAuthFrame->aucSrcAddr,
-				    prP2pBssInfo->u4PrivateData)) {
-		DBGLOG(P2P, WARN, MACSTR " in hotspot mgr block list.\n",
-			MAC2STR(prAuthFrame->aucSrcAddr));
+	/* Hotspot Blocklist */
+	if (kalP2PCmpBlockList(prAdapter->prGlueInfo,
+		prAuthFrame->aucSrcAddr,
+		(uint8_t) prP2pBssInfo->u4PrivateData)
+		|| !p2pRoleProcessACLInspection(prAdapter,
+		prAuthFrame->aucSrcAddr, prP2pBssInfo->ucBssIndex)) {
+		DBGLOG(P2P, WARN, "in block list.\n");
 		*pu2StatusCode
 			= STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD;
 		return FALSE;

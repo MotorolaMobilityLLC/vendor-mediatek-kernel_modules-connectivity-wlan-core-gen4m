@@ -701,7 +701,6 @@ void cnmStaRecInit(struct ADAPTER *prAdapter)
 struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 	enum ENUM_STA_TYPE eStaType, uint8_t ucBssIndex, uint8_t *pucMacAddr)
 {
-	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i, k, j;
 	const uint8_t offset = pucMacAddr[5] % CFG_STA_REC_NUM;
@@ -805,10 +804,6 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LIMITED_PKT_PID
 			nicTxInitPktPID(prAdapter, prStaRec->ucWlanIndex);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-							  ucBssIndex);
-			if (prBssInfo)
-				prBssInfo->u4StaRecUsedCnt++;
 		}
 #if DBG
 		else {
@@ -835,8 +830,6 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 {
-	struct BSS_INFO *prBssInfo;
-
 	ASSERT(prAdapter);
 
 	if (!prStaRec)
@@ -858,28 +851,10 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 		cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
 			prStaRec->ucIndex, prStaRec->ucBssIndex);
 
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  prStaRec->ucBssIndex);
-		if (prBssInfo && prBssInfo->u4StaRecUsedCnt > 0)
-			prBssInfo->u4StaRecUsedCnt--;
-
 		cnmStaRoutinesForAbort(prAdapter, prStaRec);
 	} else {
 		log_dbg(CNM, ERROR, "prStaRec is not in use\n");
 	}
-}
-
-uint32_t cnmStaRecGetUsedCntByBss(struct ADAPTER *prAdapter,
-				  uint8_t ucBssIdx)
-{
-	struct BSS_INFO *prBssInfo;
-	uint32_t u4Count = 0;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-	if (prBssInfo)
-		u4Count = prBssInfo->u4StaRecUsedCnt;
-
-	return u4Count;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -981,13 +956,9 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		}
 #endif
 
-		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex &&
-		    i != ucStaRecIndexExcluded) {
-			nicFreePendingTxMsduInfo(prAdapter,
-						 prStaRec->ucWlanIndex,
-						 MSDU_REMOVE_BY_WLAN_INDEX);
+		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex
+			&& i != ucStaRecIndexExcluded)
 			cnmStaRoutinesForAbort(prAdapter, prStaRec);
-		}
 	}	/* end of for loop */
 
 	if (ucStaRecIndexExcluded < CFG_STA_REC_NUM)

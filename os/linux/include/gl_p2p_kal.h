@@ -321,7 +321,6 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 		uint32_t u4NumClient,
 		uint8_t ucRoleIndex);
 
-uint8_t kalP2PGetMaxClients(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIndex);
 #endif
 
 void kalP2pUnlinkBss(struct GLUE_INFO *prGlueInfo, uint8_t aucBSSID[]);
