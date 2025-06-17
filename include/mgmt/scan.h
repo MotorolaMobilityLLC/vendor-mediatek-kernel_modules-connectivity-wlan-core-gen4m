@@ -450,6 +450,7 @@ struct BSS_DESC {
 	u_int8_t fgIEWPA;
 	u_int8_t fgIEOsen;
 	u_int8_t fgIERSNX;
+	u_int8_t fgIEOWETM;
 
 #if (CFG_SUPPORT_RSNO == 1)
 	enum ENUM_RSN_OVERRIDE eRsnSelectedRSNOverride;

@@ -3180,6 +3180,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	prBssDesc->fgIERSN = FALSE;
 	prBssDesc->fgIEWPA = FALSE;
 	prBssDesc->fgIERSNX = FALSE;
+	prBssDesc->fgIEOWETM = FALSE;
 
 #if (CFG_SUPPORT_RSNO == 1)
 	prBssDesc->fgIERSNO = FALSE;
@@ -3560,26 +3561,20 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					prBssDesc->fgIERSNO = TRUE;
 					prBssDesc->u2RsnoCap =
 						prBssDesc->rRSNOInfo.u2RsnCap;
-				}
-			}
-			if (rsnParseCheckForWFASpecificElem(prAdapter,
-				pucIE, &ucOuiType)) {
-				if (ucOuiType == VENDOR_OUI_TYPE_RSNO2 &&
+				} else if (ucOuiType == VENDOR_OUI_TYPE_RSNO2 &&
 				    rsnParseRsnIE(prAdapter, pucIE,
 						&prBssDesc->rRSNO2Info)) {
 					prBssDesc->fgIERSNO2 = TRUE;
 					prBssDesc->u2Rsno2Cap =
 						prBssDesc->rRSNO2Info.u2RsnCap;
-				}
-			}
-			if (rsnParseCheckForWFASpecificElem(prAdapter,
-				pucIE, &ucOuiType)) {
-				if (ucOuiType == VENDOR_OUI_TYPE_RSNXO &&
+				} else if (ucOuiType == VENDOR_OUI_TYPE_RSNXO &&
 				    rsnParseRsnxIE(prAdapter, pucIE,
 						&prBssDesc->rRSNXOInfo)) {
 					prBssDesc->fgIERSNXO = TRUE;
 					prBssDesc->u2RsnxoCap =
 						prBssDesc->rRSNXOInfo.u2Cap;
+				} else if (ucOuiType == VENDOR_OUI_TYPE_OWE) {
+					prBssDesc->fgIEOWETM = TRUE;
 				}
 			}
 #endif /* CFG_SUPPORT_RSNO */

@@ -2554,11 +2554,24 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 	uint8_t chnlNum, band;
 	enum ENUM_BAND eBand;
 	uint8_t ucLoopCnt = 15; /* only loop 15 times to avoid dead loop */
+	struct BSS_DESC *prBssDesc;
+	uint8_t *pucSSID, ucSSIDLen;
+	uint8_t aucSSID[ELEM_MAX_LEN_SSID] = {0};
 
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(REQ, ERROR, "Invalid prBssInfo:%d!\n", ucBssIndex);
 		return WLAN_STATUS_FAILURE;
+	}
+
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	if (prBssDesc && prBssDesc->fgIEOWETM &&
+	    prBssInfo->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_OWE) {
+		pucSSID = aucSSID;
+		ucSSIDLen = 0;
+	} else {
+		pucSSID = prBssInfo->aucSSID;
+		ucSSIDLen = prBssInfo->ucSSIDLen;
 	}
 
 	/* retrieve channel */
@@ -2586,14 +2599,14 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 	bss = cfg80211_get_bss(
 		prWiphy,
 		prChannel, prBssInfo->aucBSSID,
-		prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
+		pucSSID, ucSSIDLen,
 		IEEE80211_BSS_TYPE_ESS,
 		IEEE80211_PRIVACY_ANY);
 #else
 	bss = cfg80211_get_bss(
 		prWiphy,
 		prChannel, prBssInfo->aucBSSID,
-		prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
+		pucSSID, ucSSIDLen,
 		WLAN_CAPABILITY_ESS,
 		WLAN_CAPABILITY_ESS);
 #endif
@@ -2647,6 +2660,45 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 					bss_others);
 			}
 			break;
+		}
+	}
+
+	if (ucSSIDLen == 0) {
+		while (ucLoopCnt--) {
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+			bss_others = cfg80211_get_bss(
+				prWiphy,
+				NULL, prBssInfo->aucBSSID,
+				pucSSID, ucSSIDLen,
+				IEEE80211_BSS_TYPE_ESS,
+				IEEE80211_PRIVACY_ANY);
+#else
+			bss_others = cfg80211_get_bss(
+				prWiphy,
+				NULL, prBssInfo->aucBSSID,
+				pucSSID, ucSSIDLen,
+				WLAN_CAPABILITY_ESS,
+				WLAN_CAPABILITY_ESS);
+#endif
+			if (bss && bss_others && bss_others != bss) {
+				DBGLOG(SCN, INFO,
+				       "remove BSSes that only channel different w/o SSID\n");
+				cfg80211_unlink_bss(
+					prWiphy,
+					bss_others);
+				cfg80211_put_bss(
+					prWiphy,
+					bss_others);
+			} else {
+				if (bss_others) {
+					DBGLOG(SCN, TRACE,
+					      "call cfg80211_put_bss for bss_others w/o SSID\n");
+					cfg80211_put_bss(
+						prWiphy,
+						bss_others);
+				}
+				break;
+			}
 		}
 	}
 
@@ -14167,9 +14219,7 @@ void kalRoamingReport(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	if (!prDevHandler)
 		return;
 
-	if (!wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex))
-		return;
-	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
+	wdev = prDevHandler->ieee80211_ptr;
 	wiphy = wlanGetWiphyByWdev(wdev);
 
 	if (!wdev || !wiphy)
