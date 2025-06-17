@@ -16955,6 +16955,7 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
+	static int32_t i4UserCnt;
 
 	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduleTimeout);
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
@@ -16981,6 +16982,10 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 			"kalNapiPollSwRfb");
 	}
 
+	/* Allow one user only */
+	if (GLUE_INC_REF_CNT(i4UserCnt) > 1)
+		goto end;
+
 	prRxNapiSkbQ = &prGlueInfo->rRxNapiSkbQ;
 	prFlushSkbQ = &rFlushSkbQ;
 #if KERNEL_VERSION(3, 19, 0) <= LINUX_VERSION_CODE
@@ -17006,9 +17011,7 @@ next_try:
 			DBGLOG(RX, ERROR, "skb NULL %d %d\n",
 				work_done, skb_queue_len(prFlushSkbQ));
 			kal_napi_complete_done(napi, work_done);
-			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
-				RX_NAPI_POLL_END_COUNT);
-			return work_done;
+			goto end;
 		}
 
 		/*
@@ -17043,7 +17046,8 @@ next_try:
 
 	/* Debug check only */
 	if (!time_before_eq(jiffies, ulTimeLimit))
-		DBGLOG(RX, WARN, "timeout hit %lu\n", jiffies-ulTimeLimit);
+		DBGLOG_LIMITED(RX, WARN, "timeout hit %lu\n",
+			jiffies-ulTimeLimit);
 #endif /* CFG_SUPPORT_RX_GRO_PEAK */
 	work_done = kal_min_t(int, work_done, budget-1);
 	kal_napi_complete_done(napi, work_done);
@@ -17052,8 +17056,10 @@ next_try:
 		napi_schedule(napi);
 	}
 
+end:
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
 
+	GLUE_DEC_REF_CNT(i4UserCnt);
 	return work_done;
 #else /* CFG_SUPPORT_RX_NAPI */
 	return 0;
