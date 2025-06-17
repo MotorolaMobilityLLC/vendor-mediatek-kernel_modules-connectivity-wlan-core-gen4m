@@ -1927,10 +1927,8 @@ u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
 		if (prAdapter->rWifiVar.ucDataTxRateMode)
 			return FALSE;
 
-#if defined(_HIF_USB)
 		if (!prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority])
 			return FALSE;
-#endif
 
 		return TRUE;
 	}
@@ -2030,13 +2028,6 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucWmmQueSet = 0;
 
-	/* This is to lock the process to preventing */
-	/* nicTxFreeDescTemplate while Filling it */
-#if defined(_HIF_USB)
-	KAL_SPIN_LOCK_DECLARATION();
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
-
 	/*
 	 * -------------------------------------------------------------------
 	 * Fill up common fileds
@@ -2072,14 +2063,8 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 #endif /* !CFG_DEDICATED_TXD */
 			kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength);
 
-#if defined(_HIF_USB)
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 		nicTxFillDescByPktOption(prAdapter, prMsduInfo, prTxDesc);
 	} else { /* Compose TXD by Msdu info */
-#if defined(_HIF_USB)
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 		DBGLOG_LIMITED(NIC, DEBUG, "Compose TXD by Msdu info\n");
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
@@ -2285,13 +2270,7 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 
 	ASSERT(prAdapter);
 
-	/* Free previous template, first */
-	/* nicTxFreeDescTemplate(prAdapter, prStaRec); */
-	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++)
-		prStaRec->aprTxDescTemplate[ucTid] = NULL;
-
 	prMsduInfo = cnmPktAlloc(prAdapter, 0);
-
 	if (!prMsduInfo)
 		return WLAN_STATUS_RESOURCES;
 
@@ -2441,25 +2420,27 @@ uint32_t nicTxGenerateDescTemplate(struct ADAPTER
 void nicTxFreeDescTemplate(struct ADAPTER *prAdapter,
 			   struct STA_RECORD *prStaRec)
 {
+	struct GLUE_INFO *pr;
 	uint8_t ucTid;
 	uint8_t ucTxDescSize;
 	struct TX_DESC_OPS_T *prTxDescOps;
 	struct HW_MAC_TX_DESC *prTxDesc;
 	struct HW_MAC_TX_DESC *prFirstTxDesc = NULL;
 
-#if defined(_HIF_USB)
-	KAL_SPIN_LOCK_DECLARATION();
-#endif
+	if (!prStaRec || !prAdapter)
+		return;
+
+	pr = prAdapter->prGlueInfo;
+	if (!pr)
+		return;
+
+	if (HAL_IS_TX_DIRECT(prAdapter))
+		TX_DIRECT_LOCK(pr);
 
 	DBGLOG(QM, TRACE, "Free TXD template for STA[%u] QoS[%u]\n",
 	       prStaRec->ucIndex, prStaRec->fgIsQoS);
 
 	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
-#if defined(_HIF_USB)
-		/* This is to lock the process to preventing */
-		/* nicTxFreeDescTemplate while Filling it */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 		if (ucTid == 0)
 			prFirstTxDesc = (struct HW_MAC_TX_DESC *)
 				prStaRec->aprTxDescTemplate[0];
@@ -2469,9 +2450,6 @@ void nicTxFreeDescTemplate(struct ADAPTER *prAdapter,
 			prStaRec->aprTxDescTemplate[ucTid];
 
 		if (!prTxDesc) {
-#if defined(_HIF_USB)
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 			continue;
 		}
 
@@ -2482,9 +2460,6 @@ void nicTxFreeDescTemplate(struct ADAPTER *prAdapter,
 			 * so should avoid repeated free.
 			 */
 			prStaRec->aprTxDescTemplate[ucTid] = NULL;
-#if defined(_HIF_USB)
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 			continue;
 		}
 		if (prTxDescOps->nic_txd_long_format_op(prTxDesc, FALSE))
@@ -2493,12 +2468,12 @@ void nicTxFreeDescTemplate(struct ADAPTER *prAdapter,
 			ucTxDescSize = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
 
 		prStaRec->aprTxDescTemplate[ucTid] = NULL;
-#if defined(_HIF_USB)
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 
 		kalMemFree(prTxDesc, VIR_MEM_TYPE, ucTxDescSize);
 	}
+
+	if (HAL_IS_TX_DIRECT(prAdapter))
+		TX_DIRECT_UNLOCK(pr);
 }
 
 /*----------------------------------------------------------------------------*/
