@@ -17049,7 +17049,7 @@ next_try:
 	kal_napi_complete_done(napi, work_done);
 	if (skb_queue_len(prRxNapiSkbQ) && prGlueInfo->fgNapiReady) {
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_NAPI_LEGACY_SCHED_COUNT);
-		__napi_schedule(napi);
+		napi_schedule(napi);
 	}
 
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_END_COUNT);
