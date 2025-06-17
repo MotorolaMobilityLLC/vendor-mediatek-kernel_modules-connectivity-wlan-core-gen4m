@@ -10530,9 +10530,11 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	/* CONNAC 1 only support SCC */
 	if (prWifiVar->eDbdcMode == ENUM_DBDC_MODE_DISABLED &&
 	    ucNumAliveBss2g + ucNumAliveBss5g + ucNumAliveBss6g > 0) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
 		if (ucNumAliveBss6g && prWifiVar->fgEnP2pPref6g)
 			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss6g,
 			    ucNumAliveBss6g, &pau4FreqList[*pu4FreqListNum]);
+#endif
 		if (ucNumAliveBss5g)
 			*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBss5g,
 			    ucNumAliveBss5g, &pau4FreqList[*pu4FreqListNum]);
