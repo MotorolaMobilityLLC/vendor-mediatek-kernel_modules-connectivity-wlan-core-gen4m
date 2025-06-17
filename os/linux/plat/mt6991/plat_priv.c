@@ -86,7 +86,9 @@ enum ENUM_CPU_BOOST_STATUS {
 };
 static enum ENUM_CPU_BOOST_STATUS eCurrBoost;
 
-enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM] = {
+enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM];
+
+enum ENUM_CPU_BOOST_STATUS eBoostCpuTableSet0[] = {
 	ENUM_CPU_BOOST_STATUS_LV0, /* 0 */
 	ENUM_CPU_BOOST_STATUS_LV0, /* 1 */
 	ENUM_CPU_BOOST_STATUS_LV0, /* 2 */
@@ -100,6 +102,22 @@ enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM] = {
 	ENUM_CPU_BOOST_STATUS_LV3, /* 10: 3000Mbps */
 	ENUM_CPU_BOOST_STATUS_LV4, /* 11: 4000Mbps */
 	ENUM_CPU_BOOST_STATUS_LV4  /* 12: 5000Mbps */
+};
+
+enum ENUM_CPU_BOOST_STATUS eBoostCpuTableSet1[] = {
+	ENUM_CPU_BOOST_STATUS_LV0, /* 0 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 1 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 2 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 3: 100Mbps */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 4 */
+	ENUM_CPU_BOOST_STATUS_LV1, /* 5: 250Mbps */
+	ENUM_CPU_BOOST_STATUS_LV1, /* 6 */
+	ENUM_CPU_BOOST_STATUS_LV1, /* 7 */
+	ENUM_CPU_BOOST_STATUS_LV2, /* 8: 1200Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 9: 2000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 10: 3000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 10: 3000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 10: 3000Mbps */
 };
 
 struct BOOST_INFO rBoostInfo[ENUM_CPU_BOOST_STATUS_NUM];
@@ -858,12 +876,17 @@ static void __kalBoostCpuInit(struct ADAPTER *prAdapter)
 void kalBoostCpuInit(struct ADAPTER *prAdapter)
 {
 	struct BOOST_INFO *prBoostInfo = &rBoostInfoSet0[0];
+	enum ENUM_CPU_BOOST_STATUS *prBoostCpuTable = &eBoostCpuTableSet0[0];
 
-	if (prAdapter->rWifiVar.u4BoostInfoSet == 1)
+	if (prAdapter->rWifiVar.u4BoostInfoSet == 1) {
 		prBoostInfo = &rBoostInfoSet1[0];
+		prBoostCpuTable = &eBoostCpuTableSet1[0];
+	}
 
 	kalMemCopy(&rBoostInfo, prBoostInfo,
 		   sizeof(struct BOOST_INFO) * ENUM_CPU_BOOST_STATUS_NUM);
+	kalMemCopy(&eBoostCpuTable, prBoostCpuTable,
+		   sizeof(enum ENUM_CPU_BOOST_STATUS) * BOOST_CPU_TABLE_NUM);
 
 	eCurrBoost = ENUM_CPU_BOOST_STATUS_INIT;
 	__kalBoostCpuInit(prAdapter);
