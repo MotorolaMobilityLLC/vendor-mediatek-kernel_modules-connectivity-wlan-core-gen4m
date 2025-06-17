@@ -12691,7 +12691,13 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 			      sizeof(struct ACTION_CHANNEL_SWITCH_FRAME) +
 			      sizeof(struct IE_CHANNEL_SWITCH) +
 			      sizeof(struct IE_SECONDARY_OFFSET) +
-			      sizeof(struct IE_WIDE_BAND_CHANNEL);
+			      sizeof(struct IE_WIDE_BAND_CHANNEL)
+#if (CFG_SUPPORT_802_11BE == 1)
+			      + sizeof(struct IE_MAX_CHANNEL_SWITCH_TIME)
+			      + sizeof(struct IE_BW_INDICATION)
+			      + sizeof(struct EHT_OP_INFO)
+#endif /* CFG_SUPPORT_802_11BE */
+			      ;
 
 	/* Alloc MSDU_INFO */
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
@@ -12856,7 +12862,13 @@ static void __rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
 			      sizeof(struct ACTION_EX_CHANNEL_SWITCH_FRAME) +
-			      sizeof(struct IE_WIDE_BAND_CHANNEL);
+			      sizeof(struct IE_WIDE_BAND_CHANNEL)
+#if (CFG_SUPPORT_802_11BE == 1)
+			      + sizeof(struct IE_MAX_CHANNEL_SWITCH_TIME)
+			      + sizeof(struct IE_BW_INDICATION)
+			      + sizeof(struct EHT_OP_INFO)
+#endif /* CFG_SUPPORT_802_11BE */
+			      ;
 
 	/* Alloc MSDU_INFO */
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
