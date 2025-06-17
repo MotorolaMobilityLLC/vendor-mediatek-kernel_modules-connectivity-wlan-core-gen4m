@@ -398,7 +398,7 @@ static spinlock_t rPCIELock;
 #define WIFI_ROLE	(1)
 #define MD_ROLE		(2)
 #define WIFI_RST_ROLE	(3)
-#define POLLING_TIMEOUT		(200)
+#define POLLING_TIMEOUT		(500)
 #define POLLING_TIMEOUT_IN_UDS	(8000)
 #endif //CFG_SUPPORT_PCIE_ASPM
 
@@ -3678,7 +3678,8 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 
 				if (delay >= u4PollTimeout) {
 					DBGLOG(HAL, DEBUG,
-						"Enable L1.2 POLLING_TIMEOUT\n");
+						"Enable L1.2 POLLING_TIMEOUT %d\n",
+						u4PollTimeout);
 					rStatus = WLAN_STATUS_FAILURE;
 					goto exit;
 				}
@@ -3733,7 +3734,8 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 
 			if (delay >= u4PollTimeout) {
 				DBGLOG(HAL, DEBUG,
-					"Disable L1.2 POLLING_TIMEOUT\n");
+					"Disable L1.2 POLLING_TIMEOUT %d\n",
+					u4PollTimeout);
 				rStatus = WLAN_STATUS_FAILURE;
 				goto exit;
 			}
