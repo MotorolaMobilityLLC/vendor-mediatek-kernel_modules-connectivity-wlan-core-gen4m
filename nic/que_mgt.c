@@ -8725,14 +8725,14 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 
 	if (!(prWpaInfo->u4CipherGroup &
 		(IW_AUTH_CIPHER_TKIP | IW_AUTH_CIPHER_CCMP))) {
-		DBGLOG(QM, ERROR,
+		DBGLOG_LIMITED(QM, ERROR,
 			"RX status Chipher mode doens't match AP's setting\n");
 		return FALSE;
 	}
 
 	ucKeyID = prSwRfb->ucKeyID;
 	if (ucKeyID >= MAX_KEY_NUM) {
-		DBGLOG(QM, ERROR, "KeyID: %d error\n", ucKeyID);
+		DBGLOG_LIMITED(QM, ERROR, "KeyID: %d error\n", ucKeyID);
 		return TRUE;
 	}
 
@@ -8740,7 +8740,7 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		secGetBssIdxByRfb(prAdapter, prSwRfb));
 	/* TODO : Need check fw rekey while fw rekey event. */
 	if (ucKeyID != prDetRplyInfo->ucCurKeyId) {
-		DBGLOG(QM, TRACE,
+		DBGLOG_LIMITED(QM, TRACE,
 			"use last keyID while detect replay information.(0x%x->0x%x)\n",
 			prDetRplyInfo->ucCurKeyId, ucKeyID);
 		ucKeyID = prDetRplyInfo->ucCurKeyId;
@@ -8750,7 +8750,7 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		prDetRplyInfo->arReplayPNInfo[ucKeyID].fgFirstPkt = FALSE;
 		HAL_RX_STATUS_GET_PN(prSwRfb->prRxStatusGroup1,
 			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN);
-		DBGLOG(QM, DEBUG,
+		DBGLOG_LIMITED(QM, DEBUG,
 			"First check packet. Key ID:0x%x\n", ucKeyID);
 		return FALSE;
 	}
