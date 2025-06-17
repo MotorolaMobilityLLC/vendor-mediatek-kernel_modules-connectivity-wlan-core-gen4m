@@ -18158,9 +18158,8 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 			prCnmInfo->ucBssConnectState[ucBssIdx]);
 
 		if (eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO)
-			fgIsApMode =
-			  prGlueInfo->prAdapter->rWifiVar.prP2PConnSettings[
-			  prBssInfo->u4PrivateData]->fgIsApMode;
+			fgIsApMode = IS_BSS_AP(prGlueInfo->prAdapter,
+					       prBssInfo);
 
 		switch (eNetworkType) {
 		case ENUM_CNM_NETWORK_TYPE_OTHER:

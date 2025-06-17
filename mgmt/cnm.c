@@ -5152,6 +5152,9 @@ u_int8_t cnmDbdcIsP2pListenDbdcEn(struct ADAPTER *prAdapter)
 enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 	struct BSS_INFO *prBssInfo)
 {
+	if (!prBssInfo->fgIsInUse)
+		goto unknown;
+
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
 		return ENUM_CNM_NETWORK_TYPE_AIS;
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
@@ -5163,6 +5166,8 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 			 OP_MODE_ACCESS_POINT)
 			return ENUM_CNM_NETWORK_TYPE_P2P_GO;
 	}
+
+unknown:
 	return ENUM_CNM_NETWORK_TYPE_OTHER;
 }
 
