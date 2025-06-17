@@ -916,6 +916,7 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
     else
         ifeq ($(CONFIG_WIFI_TRIBAND), y)
             CONFIG_BAND_NUM=3
+            CONFIG_MTK_WIFI_11BE_EMLSR=y
         endif
         CONFIG_MLD_LINK_MAX=3
         CONFIG_SUPPORT_MLC=y

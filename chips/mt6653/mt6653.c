@@ -5029,7 +5029,7 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_MLC == 1)
 	if (IS_MLC_ENABLED(prAdapter))
 		u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
-#endif
+#endif /* CFG_SUPPORT_MLC */
 
 	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
 }
@@ -5101,7 +5101,7 @@ static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 		} else if (IS_MLC_ENABLED(prAdapter)) {
 			ucMaxSimuLinks = 0;
 			eMloMode = MLO_MODE_MLSR;
-#endif
+#endif /* CFG_SUPPORT_MLC */
 		} else {
 			/* fallback to single link if ap no emlsr */
 			u4TotalScore = best_bss->u2Score;
@@ -5113,31 +5113,32 @@ static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 
 		break;
 
+#if (CFG_SUPPORT_MLC == 1)
 	/* G+A+A */
 	case MLO_LINK_PLAN_2_5_5:
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case MLO_LINK_PLAN_2_5_6:
 #endif
-
-#if (CONFIG_BAND_NUM == 3)
-		if (IS_NON_AP_EML_ENABLED(prAdapter) &&
-		    BE_IS_EML_CAP_SUPPORT_EMLSR(best_bss->rMlInfo.u2EmlCap)) {
-			ucMaxSimuLinks = 1;
-			eMloMode = MLO_MODE_HYEMLSR;
-			break;
-		}
-#endif
-
-#if (CFG_SUPPORT_MLC == 1)
 		if (IS_MLC_ENABLED(prAdapter)) {
 			ucMaxSimuLinks = 1;
-			eMloMode = MLO_MODE_HYMLSR;
-			break;
-		}
-#endif
 
-		DBGLOG(APS, INFO, "unsupported link plan=%d\n", eLinkPlan);
-		kal_fallthrough;
+			if (IS_NON_AP_EML_ENABLED(prAdapter) &&
+			    BE_IS_EML_CAP_SUPPORT_EMLSR(
+					best_bss->rMlInfo.u2EmlCap))
+				eMloMode = MLO_MODE_HYEMLSR;
+			else
+				eMloMode = MLO_MODE_HYMLSR;
+		} else {
+			/* fallback to single link if no mlc */
+			u4TotalScore = best_bss->u2Score;
+			u4TotalTput = best_bss->u4Tput;
+			ucLinkNum = 1;
+			ucMaxSimuLinks = 0;
+			eMloMode = MLO_MODE_SLSR;
+		}
+
+		break;
+#endif /* CFG_SUPPORT_MLC */
 
 	default:
 		u4TotalScore = best_bss->u2Score;

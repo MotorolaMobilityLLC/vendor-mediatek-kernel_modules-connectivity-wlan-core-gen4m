@@ -1402,6 +1402,7 @@ srcs_6991_6653_dx5_triband = srcs_6991_6653
 
 local_defines_6991_6653_dx5_triband = local_defines_6991_6653_dx5 + [
     "CONFIG_BAND_NUM=3",
+    "CFG_DEFAULT_ENABLE_EMLSR=1",
 ]
 
 
@@ -1464,6 +1465,7 @@ srcs_6993_6653_triband = srcs_6993_6653
 
 local_defines_6993_6653_triband = local_defines_6993_6653 + [
     "CONFIG_BAND_NUM=3",
+    "CFG_DEFAULT_ENABLE_EMLSR=1",
 ]
 
 # Name: 6993_6653_mcl50
