@@ -1049,7 +1049,8 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 	struct _NAN_SCHEDULER_T *prNanScheduler = nanGetScheduler(prAdapter);
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc = NULL;
 	uint8_t *pucNmiAddr = NULL;
-	uint8_t ucPeerSupportedBands;
+	uint8_t ucPeerSupportedBands = 0;
+	uint8_t ucCommonBands = 0;
 	struct _NAN_ATTR_HDR_T *prNextAttr;
 
 
@@ -1105,28 +1106,32 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
 			/* Peek next availability */
+			ucPeerSupportedBands =
+				nanCommonBandFromAvailabilityAttr(prAdapter,
+								  prNanAttr);
+			DBGLOG(NAN, INFO, "Curr ucPeerSupportedBands=0x%02x",
+				       ucPeerSupportedBands);
+
 			prNextAttr = NAN_ATTR_END(prNanAttr);
 			if ((uint8_t *)NAN_ATTR_END(prNanAttr) < pucEnd &&
 			    (uint8_t *)NAN_ATTR_END(prNextAttr) < pucEnd) {
-				uint8_t ucCommonBands = 0;
-
-				ucPeerSupportedBands =
-					nanCommonBandFromNextAttribute(
+				ucPeerSupportedBands |=
+					nanCommonBandFromAvailabilityAttr(
 							prAdapter,
 							prNextAttr);
-
-				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%08x",
+				DBGLOG(NAN, INFO,
+				       "Next ucPeerSupportedBands=0x%02x",
 				       ucPeerSupportedBands);
-
-				ucCommonBands =
-					prNanScheduler->ucLocalSupportedBand &
-					       ucPeerSupportedBands;
-				if (prPeerSchDesc)
-					prPeerSchDesc->u4CommonSupportedBand |=
-						nanGetCommonBandWithConcurrent(
-							prAdapter, TRUE,
-							ucCommonBands);
 			}
+
+			ucCommonBands =
+				prNanScheduler->ucLocalSupportedBand &
+				       ucPeerSupportedBands;
+			if (prPeerSchDesc)
+				prPeerSchDesc->u4CommonSupportedBand |=
+					nanGetCommonBandWithConcurrent(
+						prAdapter, TRUE,
+						ucCommonBands);
 
 			if ((uint8_t *)NAN_ATTR_END(prNanAttr) < pucEnd &&
 			    (uint8_t *)NAN_ATTR_END(prNextAttr) < pucEnd &&
@@ -1855,6 +1860,12 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 	unsigned char fgExistSCID = FALSE;
 	struct _NAN_ATTR_HDR_T *prNextAttr;
 
+	uint8_t *pucNmiAddr;
+	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
+	struct _NAN_SCHEDULER_T *prNanScheduler = nanGetScheduler(prAdapter);
+	uint8_t ucPeerSupportedBands = 0;
+	uint8_t ucCommonBands = 0;
+
 #if (ENABLE_NDP_UT_LOG == 1)
 	TRACE_FUNC(NAN, DEBUG, "[%s] Enter\n");
 #endif
@@ -1868,6 +1879,9 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
+
+	pucNmiAddr = prNDL->aucPeerMacAddr;
+	prPeerSchDesc = nanSchedAcquirePeerSchDescByNmi(prAdapter, pucNmiAddr);
 
 	if (!prNDP) {
 		DBGLOG(NAN, ERROR, "[%s] prNDP error\n", __func__);
@@ -1936,38 +1950,33 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
 			/* Peek next availability */
+			ucPeerSupportedBands =
+				nanCommonBandFromAvailabilityAttr(prAdapter,
+								  prNanAttr);
+			DBGLOG(NAN, INFO, "Curr ucPeerSupportedBands=0x%02x",
+				       ucPeerSupportedBands);
+
 			prNextAttr = NAN_ATTR_END(prNanAttr);
 			if ((uint8_t *)NAN_ATTR_END(prNanAttr) < pucEnd &&
 			    (uint8_t *)NAN_ATTR_END(prNextAttr) < pucEnd) {
-				struct _NAN_SCHEDULER_T *prNanScheduler;
-				uint8_t *pucNmiAddr;
-				struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
-				uint8_t ucPeerSupportedBands;
-				uint8_t ucCommonBands = 0;
-
-				prNanScheduler = nanGetScheduler(prAdapter);
-
-				pucNmiAddr = prNDL->aucPeerMacAddr;
-				prPeerSchDesc = nanSchedAcquirePeerSchDescByNmi(
-							prAdapter, pucNmiAddr);
-
-				ucPeerSupportedBands =
-					nanCommonBandFromNextAttribute(
+				ucPeerSupportedBands |=
+					nanCommonBandFromAvailabilityAttr(
 							prAdapter,
 							prNextAttr);
-
-				DBGLOG(NAN, INFO, "ucPeerSupportedBands=0x%02x",
+				DBGLOG(NAN, INFO,
+				       "Next ucPeerSupportedBands=0x%02x",
 				       ucPeerSupportedBands);
-
-				ucCommonBands =
-					prNanScheduler->ucLocalSupportedBand &
-					       ucPeerSupportedBands;
-				if (prPeerSchDesc)
-					prPeerSchDesc->u4CommonSupportedBand |=
-						nanGetCommonBandWithConcurrent(
-							prAdapter, TRUE,
-							ucCommonBands);
 			}
+
+			ucCommonBands =
+				prNanScheduler->ucLocalSupportedBand &
+				       ucPeerSupportedBands;
+
+			if (prPeerSchDesc)
+				prPeerSchDesc->u4CommonSupportedBand |=
+					nanGetCommonBandWithConcurrent(
+						prAdapter, TRUE,
+						ucCommonBands);
 
 			rStatus = nanAvailabilityAttrHandler(prAdapter,
 					eNanAction,

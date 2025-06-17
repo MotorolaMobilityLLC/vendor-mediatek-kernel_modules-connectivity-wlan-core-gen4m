@@ -5260,21 +5260,21 @@ nanGetSubBandByChannelEntry(struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry,
 	return ucSupportedBands;
 }
 
-/* If the current availability attributes followed by another availability,
- * parse next and collect the common band information.
- * This is a simple parse only version as scanAvailabilityAttr
+/* Given an availability attribute to get the supported band information.
+ * parse pAvailabilityAttr and collect the common band information.
+ * This is a simple version parse only as scanAvailabilityAttr
  */
-u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
-					void *pNextAvailabilityAttr)
+u_int8_t nanCommonBandFromAvailabilityAttr(struct ADAPTER *prAdapter,
+					   void *pAvailabilityAttr)
 {
-	struct _NAN_ATTR_NAN_AVAILABILITY_T *prNextAvailabilityAttr =
-					pNextAvailabilityAttr;
+	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAvailabilityAttr =
+					pAvailabilityAttr;
 	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
 	struct _NAN_SIMPLE_CHNL_ENTRY_T *prBandChnlList;
 	struct _NAN_AVAILABILITY_TIMEBITMAP_ENTRY_T *prTimeBitmap;
 	struct _NAN_BAND_CHNL_LIST_T *prChnlList;
 	uint8_t *pTimeBitmapTmp;
-	uint8_t *pNextAvailEntry;
+	uint8_t *pucAvailEntry;
 	uint8_t *pucAvailAttrEnd;
 	uint32_t i;
 	uint8_t ucSupportedBands = BIT(ENUM_SUPPORTED_BN_2G);
@@ -5283,16 +5283,16 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 	uint8_t *pucChnl;
 
 	/* TODO: check length */
-	if (prNextAvailabilityAttr->ucAttrId != NAN_ATTR_ID_NAN_AVAILABILITY)
+	if (prAvailabilityAttr->ucAttrId != NAN_ATTR_ID_NAN_AVAILABILITY)
 		return ucSupportedBands;
 
-	pNextAvailEntry = prNextAvailabilityAttr->aucAvailabilityEntryList;
-	pucAvailAttrEnd = NAN_ATTR_END(prNextAvailabilityAttr);
+	pucAvailEntry = prAvailabilityAttr->aucAvailabilityEntryList;
+	pucAvailAttrEnd = NAN_ATTR_END(prAvailabilityAttr);
 
 	do {
 		prAvailEntry =
-			(struct _NAN_AVAILABILITY_ENTRY_T *)pNextAvailEntry;
-		pNextAvailEntry = NAN_AVAIL_ENTRY_END(prAvailEntry);
+			(struct _NAN_AVAILABILITY_ENTRY_T *)pucAvailEntry;
+		pucAvailEntry = NAN_AVAIL_ENTRY_END(prAvailEntry);
 
 		if (!prAvailEntry->rCtrl.u2TimeBitmapPresent)
 			continue;
@@ -5314,11 +5314,11 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 			pucBand = prChnlList->aucEntry;
 
 			if (prChnlList->ucNumberOfEntry >
-			    pNextAvailEntry - pucBand) {
+			    pucAvailEntry - pucBand) {
 				DBGLOG(NAN, WARN,
 				       "ucNumberOfEntry=%u too large (> %td)",
 				       prChnlList->ucNumberOfEntry,
-				       pNextAvailEntry - pucBand);
+				       pucAvailEntry - pucBand);
 				continue;
 			}
 
@@ -5335,11 +5335,11 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 		pucChnl = prChnlList->aucEntry;
 		if (prChnlList->ucNumberOfEntry *
 		    sizeof(struct _NAN_CHNL_ENTRY_NO_AUX_T) >
-		    pNextAvailEntry - pucChnl) {
+		    pucAvailEntry - pucChnl) {
 			DBGLOG(NAN, WARN,
 			       "Channel ucNumberOfEntry=%u too large (> %td)",
 			       prChnlList->ucNumberOfEntry,
-			       pNextAvailEntry - pucChnl);
+			       pucAvailEntry - pucChnl);
 			continue;
 		}
 
@@ -5351,7 +5351,7 @@ u_int8_t nanCommonBandFromNextAttribute(struct ADAPTER *prAdapter,
 						prChnlList,
 						&prBandChnlList[i]);
 		}
-	} while (pNextAvailEntry < pucAvailAttrEnd);
+	} while (pucAvailEntry < pucAvailAttrEnd);
 
 	return ucSupportedBands;
 }
