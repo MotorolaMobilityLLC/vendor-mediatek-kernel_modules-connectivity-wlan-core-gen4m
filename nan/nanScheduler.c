@@ -6963,12 +6963,7 @@ enum _NAN_CHNL_BW_MAP nanSchedGet2gNanBw(struct ADAPTER *prAdapter)
 
 enum _NAN_CHNL_BW_MAP nanSchedGet5gNanBw(struct ADAPTER *prAdapter)
 {
-	/* TODO: Update by reg table */
-	if (prAdapter->rWifiVar.u2CountryCode ==
-		COUNTRY_CODE_ID)
-		return NAN_CHNL_BW_20;
-	else
-		return prAdapter->rWifiVar.ucNan5gBandwidth;
+	return prAdapter->rWifiVar.ucNan5gBandwidth;
 }
 
 enum _NAN_CHNL_BW_MAP nanSchedGet6gNanBw(struct ADAPTER *prAdapter)
