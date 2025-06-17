@@ -378,9 +378,7 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	u_int8_t fgQuiet,
 	u_int8_t fgLockHeld);
 
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 void kalP2pChnlSwitchStartNotifyWork(struct work_struct *work);
-#endif
 void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)

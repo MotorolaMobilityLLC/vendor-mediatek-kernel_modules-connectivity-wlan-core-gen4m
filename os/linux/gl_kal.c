@@ -13958,7 +13958,7 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	kalIndicateAllQueueTxAllowed(prGlueInfo, ucBssIndex, TRUE);
 }
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+
 void kalChnlSwitchNotifyWork(struct work_struct *work)
 {
 	struct GL_CH_SWITCH_WORK *prWorkContainer =
@@ -13988,33 +13988,27 @@ void kalChnlSwitchNotifyWork(struct work_struct *work)
 				prBssInfo->ucVhtChannelWidth,
 				prBssInfo->ucBssIndex);
 }
-#endif
 
 void kalCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 
-	prBssInfo =
-		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo)
 		return;
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalChnlSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
-#endif
 }
 
 void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 	struct work_struct *prNotifyWork;
 
-	prBssInfo =
-		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo)
 		return;
 
@@ -14029,7 +14023,6 @@ void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 		cancel_work_sync(prNotifyWork);
 		prBssInfo->rGlChSwitchStartWork.fgWorkInit = FALSE;
 	}
-#endif
 }
 
 void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
@@ -14037,7 +14030,6 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucChannelNum, enum ENUM_BAND eBand,
 			uint8_t ucVhtChannelWidth, uint8_t ucBssIndex)
 {
-#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
@@ -14045,14 +14037,6 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 		return;
 
 	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
-#else
-	__kalIndicateChannelSwitch(prGlueInfo,
-				eSco,
-				ucChannelNum,
-				eBand,
-				ucVhtChannelWidth,
-				ucBssIndex);
-#endif
 }
 
 #endif
