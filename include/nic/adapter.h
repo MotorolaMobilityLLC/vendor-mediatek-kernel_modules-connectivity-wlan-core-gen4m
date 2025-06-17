@@ -699,6 +699,8 @@ struct BSS_INFO {
 	uint32_t u4TokenId;
 	uint32_t u4TxTimeoutDuration;
 #endif
+
+	uint32_t u4StaRecUsedCnt;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

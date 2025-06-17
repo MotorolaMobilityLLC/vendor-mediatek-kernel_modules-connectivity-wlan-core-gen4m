@@ -72,15 +72,15 @@ void aaaFsmRunEventTxReqTimeOut(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	DBGLOG(AAA, LOUD,
-		"EVENT-TIMER: TX REQ TIMEOUT, Current Time = %d\n",
-		kalGetTimeTick());
+	DBGLOG(AAA, ERROR,
+		"bss=%u sta=%u widx=%u state=%u\n",
+		prBssInfo->ucBssIndex,
+		prStaRec->ucIndex,
+		prStaRec->ucWlanIndex,
+		prStaRec->eAuthAssocState);
 
 	switch (prStaRec->eAuthAssocState) {
 	case AAA_STATE_SEND_AUTH2:
-		DBGLOG(AAA, ERROR,
-			       "LOST EVENT ,Auth Tx done disappear timeout");
-
 		prStaRec->eAuthAssocState = AA_STATE_IDLE;
 
 		/* NOTE(Kevin): Change to STATE_1 */
@@ -92,39 +92,11 @@ void aaaFsmRunEventTxReqTimeOut(struct ADAPTER *prAdapter,
 					prStaRec, prBssInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 		break;
-#if 0
-	/*state 2 to state 3 only check Assoc_req valid, no need for time out
-	 *the fail case already handle at aaaFsmRunEventRxAssoc
-	 */
-	case AAA_STATE_SEND_ASSOC2:
-		DBGLOG(AAA, ERROR,
-			       "LOST EVENT ,Assoc Tx done disappear for (%d)Ms\n",
-			TU_TO_MSEC(TX_AUTHENTICATION_RESPONSE_TIMEOUT_TU));
-
-
-		prStaRec->eAuthAssocState = AAA_STATE_SEND_AUTH2;
-
-		/* NOTE(Kevin): Change to STATE_2 */
-		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
-
-#if CFG_ENABLE_WIFI_DIRECT
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
-			p2pRoleFsmRunEventAAATxFail(prAdapter,
-				prStaRec, prBssInfo);
-#endif /* CFG_ENABLE_WIFI_DIRECT */
-		break;
-#endif
 
 	default:
 		return;
 	}
-
-
 }				/* end of saaFsmRunEventTxReqTimeOut() */
-
-
-
-
 
 /*---------------------------------------------------------------------------*/
 /*!
@@ -196,7 +168,8 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		if (!prAdapter->fgIsP2PRegistered)
 			return;
 
-		if (prBssInfo && prBssInfo->fgIsNetActive) {
+		if (prBssInfo && prBssInfo->fgIsNetActive &&
+		    IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 
 			/* 4 <1.1> Validate Auth Frame
 			 * by Auth Algorithm/Transation Seq
@@ -544,7 +517,8 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				GET_BSS_INFO_BY_INDEX(prAdapter,
 					prStaRec->ucBssIndex);
 
-			if (prBssInfo && prBssInfo->fgIsNetActive) {
+			if (prBssInfo && prBssInfo->fgIsNetActive &&
+			    IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 				/* 4 <2.1> Validate Assoc Req Frame and
 				 * get Status Code
 				 */
@@ -768,10 +742,12 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 
 
 	DBGLOG(AAA, INFO,
-		"EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
+		"bss=%u sta=%u widx=%u status=%d seq=%d\n",
+		prMsduInfo->ucBssIndex,
+		prMsduInfo->ucStaRecIndex,
+		prMsduInfo->ucWlanIndex,
 		rTxDoneStatus,
-		prMsduInfo->ucTxSeqNum,
-		kalGetTimeTick());
+		prMsduInfo->ucTxSeqNum);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 

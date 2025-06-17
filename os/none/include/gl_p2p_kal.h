@@ -431,6 +431,9 @@ void kalP2PSetMaxClients(struct GLUE_INFO *prGlueInfo,
 
 #define kalP2PMaxClients(_prGlueInfo, _u4NumClient, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
+#define kalP2PGetMaxClients(_prGlueInfo, _ucRoleIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 u_int8_t kalP2PCmpBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
@@ -439,6 +442,8 @@ u_int8_t kalP2PCmpBlockList(struct GLUE_INFO *prGlueInfo,
 u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 		uint32_t u4NumClient,
 		uint8_t ucRoleIndex);
+
+uint8_t kalP2PGetMaxClients(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIndex);
 #endif
 #endif
 
