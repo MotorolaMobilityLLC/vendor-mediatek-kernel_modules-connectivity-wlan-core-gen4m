@@ -2281,11 +2281,7 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			if (prGlueInfo->fgNapiReady &&
 			    !prGlueInfo->fgNapiScheduleTimeout) {
 				skb_queue_tail(&prGlueInfo->rRxNapiSkbQ, prSkb);
-				if (kal_napi_schedule(&prGlueInfo->napi)) {
-					RX_INC_CNT(
-						&prGlueInfo->prAdapter->rRxCtrl,
-						RX_NAPI_SCHEDULE_COUNT);
-				}
+				kalNapiSchedule(prGlueInfo->prAdapter);
 			} else {
 				RX_INC_CNT(
 					&prGlueInfo->prAdapter->rRxCtrl,
@@ -16630,6 +16626,7 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct RX_CTRL *prRxCtrl;
+	struct napi_struct *prNapi;
 
 	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
@@ -16643,7 +16640,12 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 
-	if (kal_napi_schedule(prGlueInfo->prRxDirectNapi))
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		prNapi = prGlueInfo->prRxDirectNapi;
+	else
+		prNapi = &prGlueInfo->napi;
+
+	if (kal_napi_schedule(prNapi))
 		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
 	else
 		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_FAIL_COUNT);
