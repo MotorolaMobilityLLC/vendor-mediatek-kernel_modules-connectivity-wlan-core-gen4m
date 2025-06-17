@@ -5090,6 +5090,7 @@ nanGetHighestCommonBand(struct ADAPTER *prAdapter,
 {
 	uint32_t u4CommonSupportedBand;
 	enum _NAN_SUPPORTED_BAND_BIT eReturnBand = ENUM_SUPPORTED_BN_2G;
+	struct _NAN_SCHEDULER_T *prScheduler;
 	static const char * const pcaBandString[] = {
 		[ENUM_SUPPORTED_BN_2G] = "2G",
 		[ENUM_SUPPORTED_BN_5G_LOW] = "5GL",
@@ -5098,12 +5099,22 @@ nanGetHighestCommonBand(struct ADAPTER *prAdapter,
 		[ENUM_SUPPORTED_BN_NUM] = "Unknown",
 	};
 
+	prScheduler = nanGetScheduler(prAdapter);
+
 	u4CommonSupportedBand =
 		nanGetConcurrentCommonBand(prAdapter, prPeerSchDesc,
 					    fgPrint);
 
 	if (u4CommonSupportedBand & BIT(ENUM_SUPPORTED_BN_6G))
 		eReturnBand = ENUM_SUPPORTED_BN_6G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_NAN_6G == 1)
+	else if (nanGetFeatureIsSigma(prAdapter) &&
+		 getPeerSchDescMaxCap(prPeerSchDesc) == BAND_6G &&
+		 prScheduler && prScheduler->fgEn6g)
+		eReturnBand = ENUM_SUPPORTED_BN_6G;
+#endif
+#endif
 	else if (u4CommonSupportedBand & BIT(ENUM_SUPPORTED_BN_5G_HIGH))
 		eReturnBand = ENUM_SUPPORTED_BN_5G_HIGH;
 	else if (u4CommonSupportedBand & BIT(ENUM_SUPPORTED_BN_5G_LOW))
