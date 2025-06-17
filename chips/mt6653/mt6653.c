@@ -5507,6 +5507,7 @@ static void mt6653MbuDumpDebugCmdAry(struct ADAPTER *prAdapter,
 static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct SW_EMI_RING_INFO *prMbuInfo;
 	struct MBU_EMI_CTX *prEmi;
@@ -5584,12 +5585,20 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 	};
 
 	prAdapter = prGlueInfo->prAdapter;
-	prBusInfo = prAdapter->chip_info->bus_info;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prMbuInfo = &prBusInfo->rSwEmiRingInfo;
 	prEmi = prMbuInfo->prMbuEmiData;
 
 	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi)
 		return;
+
+	if (prChipInfo->checkbusNoAck) {
+		if (prChipInfo->checkbusNoAck(prAdapter, TRUE)) {
+			DBGLOG(INIT, DEBUG, "Bus check failed.\n");
+			return;
+		}
+	}
 
 	aucBuf = kalMemAlloc(u4BufferSize, PHY_MEM_TYPE);
 	if (aucBuf == NULL) {
