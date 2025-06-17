@@ -201,6 +201,9 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 	u4Val = (u8MsiMirrorAddr & BITS(0, 27)) | BITS(28, 31);
 	halMbuMcrWr(prAdapter, u4Addr, u4Val);
 
+	/* Program to unmask vector event for cb_infra_mbu */
+	HAL_MCR_WR(prAdapter, 0x74130204, 0xFF7FFBF3);
+
 	/* restore remap */
 	if (prMbuInfo->u4RemapAddr) {
 		HAL_MCR_WR(prAdapter, prMbuInfo->u4RemapAddr,
@@ -299,12 +302,11 @@ u_int8_t halMbuRead8(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 
 	/* 5. Modify byte length for DMA#0 (8bytes) */
 	HAL_MCR_WR(prAdapter, 0x74040A08, 0x16100008);
-	HAL_MCR_WR(prAdapter, 0x74040214, 0x16000008);
+	HAL_MCR_WR(prAdapter, 0x74040A0C, 0x16110000);
+	HAL_MCR_WR(prAdapter, 0x74040214, 0x16700008);
+	HAL_MCR_WR(prAdapter, 0x74040218, 0x16710000);
 
-	/* 6. Program to unmask vector event for cb_infra_mbu */
-	HAL_MCR_WR(prAdapter, 0x74140204, 0xFF7FFBF3);
-
-	/* 7. Trigger events */
+	/* 6. Trigger events */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
 	if (IS_CONN_INFRA_MCU_ADDR(u4ReadAddr)) {
 		u4Val = u4ReadAddr - CONN_INFRA_REMAPPING_OFFSET;
