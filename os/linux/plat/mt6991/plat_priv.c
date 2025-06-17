@@ -1392,7 +1392,7 @@ uint32_t kalGetTxBigCpuMask(void)
 #if (CFG_VOLT_INFO == 1)
 uint8_t kalVnfGetEnInitStatus(void)
 {
-	return FEATURE_ENABLED;
+	return FEATURE_DISABLED;
 }
 
 uint32_t kalVnfGetVoltLowBnd(void)

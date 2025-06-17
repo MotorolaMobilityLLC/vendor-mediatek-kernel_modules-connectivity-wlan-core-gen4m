@@ -9560,6 +9560,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_VOLT_INFO == 1)
 	INIT_UINT(prWifiVar->fgVnfEn, "VoltInfoEnable",
 		kalVnfGetEnInitStatus(), FEATURE_TO_CUSTOMER);
+	wlanCfgSetUint32(prAdapter, "VoltInfoEnable",
+			   prWifiVar->fgVnfEn);
 	INIT_UINT(prWifiVar->u4VnfDebTimes, "VoltInfoDebTimes",
 		  VOLT_INFO_DEBOUNCE_TIMES, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4VnfDebInterval, "VoltInfoDebInterval",
