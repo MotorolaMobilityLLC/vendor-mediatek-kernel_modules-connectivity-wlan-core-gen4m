@@ -9211,8 +9211,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			"ucNanMldLinkMax %d => %d\n",
 			prWifiVar->ucNanMldLinkMax, prWifiVar->ucMldLinkMax);
 		prWifiVar->ucNanMldLinkMax = prWifiVar->ucMldLinkMax;
+	} else if (!prWifiVar->ucEnableMlo) {
+		DBGLOG(INIT, WARN,
+			"ucNanMldLinkMax %d => 1\n",
+			prWifiVar->ucNanMldLinkMax);
+		prWifiVar->ucNanMldLinkMax = 1;
 	}
 #endif
+
 	INIT_UINT(prWifiVar->fgNanNdpSkipSchedule,
 		"NanNdpSkipSchedule", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanOnAbortScan,

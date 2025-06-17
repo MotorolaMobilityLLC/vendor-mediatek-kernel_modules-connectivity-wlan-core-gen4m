@@ -58,6 +58,7 @@ nanGetLinkIndexbyRole(
 
 uint8_t
 nanGetLinkIndexbyOpClass(
+	struct ADAPTER *prAdapter,
 	uint32_t op);
 
 void nanResetStaRec(

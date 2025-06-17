@@ -7248,7 +7248,8 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		rExpiryTime -= u4NanSendPacketGuardTime;
 		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
 			ucStaIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
-				u4Idx, nanGetLinkIndexbyOpClass(u4OpClass));
+				u4Idx, nanGetLinkIndexbyOpClass(prAdapter,
+				u4OpClass));
 			if (ucStaIdx == STA_REC_INDEX_NOT_FOUND)
 				continue;
 

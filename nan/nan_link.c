@@ -39,6 +39,12 @@ struct BSS_INFO *nanGetDefaultLinkBssInfo(
 u_int8_t nanLinkNeedMlo(
 	struct ADAPTER *prAdapter)
 {
+	if (!prAdapter)
+		return FALSE;
+
+	if (prAdapter->rWifiVar.ucNanMldLinkMax <= 1)
+		return FALSE;
+
 #if (CFG_SUPPORT_NAN_11BE_MLO == 1)
 	return mldIsMultiLinkEnabled(prAdapter,
 		NETWORK_TYPE_NAN, FALSE);
@@ -125,11 +131,14 @@ nanGetLinkIndexbyBand(
 	return NAN_MAIN_LINK_INDEX;
 }
 
-uint8_t nanGetLinkIndexbyOpClass(uint32_t op)
+uint8_t nanGetLinkIndexbyOpClass(
+	struct ADAPTER *prAdapter,
+	uint32_t op)
 {
 #if (CFG_SUPPORT_NAN_11BE_MLO == 1)
 	/* TBD */
-	if (!IS_2G_OP_CLASS(op))
+	if (!IS_2G_OP_CLASS(op) &&
+		nanLinkNeedMlo(prAdapter))
 		return NAN_HIGH_LINK_INDEX;
 #endif
 

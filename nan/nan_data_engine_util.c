@@ -5042,7 +5042,7 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		prNanStaRec = nanGetLinkStaRec(prNdpCxt, i);
 
 #if (CFG_SUPPORT_NAN_11BE_MLO == 1)
-		if (prAdapter->rWifiVar.ucNanMldLinkMax > 1)
+		if (nanLinkNeedMlo(prAdapter))
 			ucBssIndex = nanGetBssIdxbyLink(prAdapter, i);
 #endif
 
@@ -5064,6 +5064,14 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		}
 
 		nanSetLinkStaRec(prNdpCxt, prNanStaRec, i);
+
+#if (CFG_SUPPORT_NAN_11BE_MLO == 1)
+		if (!nanLinkNeedMlo(prAdapter)) {
+			DBGLOG(NAN, INFO,
+				"Disable MLSR with single StaRec\n");
+			break;
+		}
+#endif
 	}
 
 	for (i = 0;
