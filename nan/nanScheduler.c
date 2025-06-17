@@ -17434,8 +17434,10 @@ void nanSchedUpdateP2pAisMcc(struct ADAPTER *prAdapter)
 
 		DBGLOG(NAN, INFO,
 		       "Country=%c%c, Tidx=%zu p2p=%u, ais=%u, MCC=%u, Num=%u\n",
-		       prAdapter->rWifiVar.CountryCode[1],
-		       prAdapter->rWifiVar.CountryCode[0],
+		       kalIsPrint(prAdapter->rWifiVar.CountryCode[1]) ?
+			       prAdapter->rWifiVar.CountryCode[1] : '-',
+		       kalIsPrint(prAdapter->rWifiVar.CountryCode[0]) ?
+			       prAdapter->rWifiVar.CountryCode[0] : '-',
 		       szTimeline,
 		       rP2pChnlInfo.u4PrimaryChnl, rAisChnlInfo.u4PrimaryChnl,
 		       prP2pAisMcc->fgIsP2pAisMCC, prP2pAisMcc->ucNumOfChannel);

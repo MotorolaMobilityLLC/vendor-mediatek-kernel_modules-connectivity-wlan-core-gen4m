@@ -11454,8 +11454,10 @@ priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	    "\n=========================[Scheduler Info]===========================\n");
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 	       "Country: %c%c (%c %c%c%c %c)\n",
-	       prAdapter->rWifiVar.CountryCode[1],
-	       prAdapter->rWifiVar.CountryCode[0],
+	       kalIsPrint(prAdapter->rWifiVar.CountryCode[1]) ?
+		       prAdapter->rWifiVar.CountryCode[1] : '-',
+	       kalIsPrint(prAdapter->rWifiVar.CountryCode[0]) ?
+		       prAdapter->rWifiVar.CountryCode[0] : '-',
 	       prNanScheduler->fgEn6g ? '6' : ' ',
 	       prNanScheduler->fgEn5gH || prNanScheduler->fgEn5gL ? '5' : ' ',
 	       prNanScheduler->fgEn5gH ? 'H' : ' ',
