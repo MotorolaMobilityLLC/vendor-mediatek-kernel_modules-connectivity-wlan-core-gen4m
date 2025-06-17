@@ -1316,6 +1316,7 @@ local_defines_6858 = local_defines_connv2 + [
     "CFG_STA_2G_BW=1",
     "CFG_SAP_2G_BW=1",
     "CFG_P2P_2G_BW=1",
+    "CFG_SUPPORT_NAN_6G=0",
 ]
 
 # Name: 6991_6653

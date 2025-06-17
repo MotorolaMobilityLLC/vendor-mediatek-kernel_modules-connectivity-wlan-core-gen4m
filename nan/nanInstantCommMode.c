@@ -48,6 +48,29 @@ struct _NAN_CMD_ICM_T {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+
+
+/*******************************************************************************
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
+static u_int8_t NAN_BAND_IN_SAME_TIMELINE(enum ENUM_BAND eBand1,
+						 enum ENUM_BAND eBand2)
+{
+	if (eBand1 == eBand2)
+		return TRUE;
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (eBand1 == BAND_5G && eBand2 == BAND_6G)
+		return TRUE;
+
+	if (eBand1 == BAND_6G && eBand2 == BAND_5G)
+		return TRUE;
+#endif
+
+	return FALSE;
+}
+
 static void nanExcludeConcurrencySlots(struct ADAPTER *prAdapter,
 				       enum ENUM_BAND eCustBand,
 				       uint32_t *u4Bitmap)
@@ -74,9 +97,7 @@ static void nanExcludeConcurrencySlots(struct ADAPTER *prAdapter,
 		eAisBand, u4SlotBitmap);
 
 	if (nanGetTimelineNum() == 1 ||
-		(eAisBand == eCustBand ||
-		 (eAisBand == BAND_5G && eCustBand == BAND_6G ||
-		  eAisBand == BAND_6G && eCustBand == BAND_5G))) {
+	    NAN_BAND_IN_SAME_TIMELINE(eAisBand, eCustBand)) {
 		DBGLOG(NAN, INFO, "Update 0x%08x => 0x%08x\n", *u4Bitmap,
 			   *u4Bitmap & ~u4SlotBitmap);
 		*u4Bitmap &= ~u4SlotBitmap;
