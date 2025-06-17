@@ -225,7 +225,11 @@ struct RX_IDLE_STATE {
 
 #if CFG_SUPPORT_HIF_RX_NAPI
 struct HIF_NAPI_DEVICE {
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	struct net_device *dev;
+#else
 	struct net_device dev;
+#endif
 	struct napi_struct napi;
 	struct GLUE_INFO *prGlueInfo;
 	struct task_struct *napi_thread;

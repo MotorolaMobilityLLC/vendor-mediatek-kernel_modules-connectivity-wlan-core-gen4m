@@ -9856,6 +9856,9 @@ int mtk_cfg_set_txpower(struct wiphy *wiphy,
 
 int mtk_cfg_get_txpower(struct wiphy *wiphy,
 			struct wireless_dev *wdev,
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+			unsigned int link_id,
+#endif
 			int *dbm)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;

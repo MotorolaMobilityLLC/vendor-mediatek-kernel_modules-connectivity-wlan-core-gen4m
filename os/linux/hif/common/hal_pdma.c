@@ -2349,8 +2349,17 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prRxNapiDev->prGlueInfo = prAdapter->prGlueInfo;
 	prRxNapiDev->ulFlag = 0;
 	prRxNapiDev->u4DrvOwnCnt = 0;
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	prRxNapiDev->dev = alloc_netdev_dummy(0);
+	if (!prRxNapiDev->dev)
+		panic("Failed to allocate RxNapi dummy netdev\n");
+#else
 	init_dummy_netdev(&prRxNapiDev->dev);
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#endif
+#if (KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE)
+	netif_napi_add(prRxNapiDev->dev, &prRxNapiDev->napi,
+		       halHifRxNapiPoll);
+#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	netif_napi_add(&prRxNapiDev->dev, &prRxNapiDev->napi,
 		       halHifRxNapiPoll);
 #else
@@ -2358,7 +2367,15 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		       halHifRxNapiPoll, NAPI_POLL_WEIGHT);
 #endif
 
-#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	if (dev_set_threaded(prRxNapiDev->dev, TRUE)) {
+		prRxNapiDev->napi_thread = NULL;
+	} else {
+		prRxNapiDev->napi_thread = prRxNapiDev->napi.thread;
+		prRxNapiDev->u4ThreadPid =
+			task_pid_nr(prRxNapiDev->napi_thread);
+	}
+#elif KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
 	if (dev_set_threaded(&prRxNapiDev->dev, TRUE)) {
 		prRxNapiDev->napi_thread = NULL;
 	} else {
@@ -2374,7 +2391,13 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prTxNapiDev->prGlueInfo = prAdapter->prGlueInfo;
 	prTxNapiDev->ulFlag = 0;
 	prTxNapiDev->u4DrvOwnCnt = 0;
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	prTxNapiDev->dev = alloc_netdev_dummy(0);
+	if (!prTxNapiDev->dev)
+		panic("Failed to allocate TxNapi dummy netdev\n");
+#else
 	init_dummy_netdev(&prTxNapiDev->dev);
+#endif
 	u4HifTxNapiWeight = prAdapter->rWifiVar.u4HifTxNapiWeight;
 	if (u4HifTxNapiWeight <= 1) {
 		DBGLOG(HAL, WARN, "Invalid TxNapiWeight %u\n",
@@ -2382,7 +2405,10 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		u4HifTxNapiWeight = NAPI_POLL_WEIGHT;
 		prAdapter->rWifiVar.u4HifTxNapiWeight = u4HifTxNapiWeight;
 	}
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE)
+	netif_napi_add_weight(prTxNapiDev->dev, &prTxNapiDev->napi,
+		       halHifTxNapiPoll, u4HifTxNapiWeight);
+#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	netif_napi_add_weight(&prTxNapiDev->dev, &prTxNapiDev->napi,
 		       halHifTxNapiPoll, u4HifTxNapiWeight);
 #else
@@ -2390,7 +2416,15 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		       halHifTxNapiPoll, u4HifTxNapiWeight);
 #endif
 
-#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	if (dev_set_threaded(prTxNapiDev->dev, TRUE)) {
+		prTxNapiDev->napi_thread = NULL;
+	} else {
+		prTxNapiDev->napi_thread = prTxNapiDev->napi.thread;
+		prTxNapiDev->u4ThreadPid =
+			task_pid_nr(prTxNapiDev->napi_thread);
+	}
+#elif KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
 	if (dev_set_threaded(&prTxNapiDev->dev, TRUE)) {
 		prTxNapiDev->napi_thread = NULL;
 	} else {

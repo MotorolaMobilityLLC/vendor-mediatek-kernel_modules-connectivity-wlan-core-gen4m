@@ -1049,7 +1049,11 @@ struct GLUE_INFO {
 #endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 
 #if CFG_SUPPORT_RX_GRO
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	struct net_device *dummy_dev;
+#else
 	struct net_device dummy_dev;
+#endif
 	struct napi_struct napi;
 	OS_SYSTIME tmGROFlushTimeout;
 	spinlock_t napi_spinlock;

@@ -16495,7 +16495,17 @@ uint8_t kalRxGroInit(struct net_device *prDev)
 #if CFG_SUPPORT_RX_NAPI_THREADED
 void kalNapiThreadedInit(struct GLUE_INFO *prGlueInfo)
 {
-#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	if (dev_set_threaded(prGlueInfo->dummy_dev, TRUE) != 0) {
+		prGlueInfo->napi_thread = NULL;
+		DBGLOG(INIT, ERROR, "Napi Threaded Init Fail\n");
+	} else {
+		prGlueInfo->napi_thread = prGlueInfo->napi.thread;
+		prGlueInfo->u4RxNapiThreadPid =
+			task_pid_nr(prGlueInfo->napi_thread);
+		DBGLOG(INIT, TRACE, "Napi Threaded Init Done\n");
+	}
+#elif KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
 	if (dev_set_threaded(&prGlueInfo->dummy_dev, TRUE) != 0) {
 		prGlueInfo->napi_thread = NULL;
 		DBGLOG(INIT, ERROR, "Napi Threaded Init Fail\n");
@@ -16520,8 +16530,17 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	spin_lock_init(&prGlueInfo->napi_spinlock);
 	skb_queue_head_init(&prGlueInfo->rRxNapiSkbQ);
 	/* use dummy device to register napi */
+#if KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE
+	prGlueInfo->dummy_dev = alloc_netdev_dummy(0);
+	if (!prGlueInfo->dummy_dev)
+		panic("Failed to allocate Napi dummy netdev\n");
+#else
 	init_dummy_netdev(&prGlueInfo->dummy_dev);
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+#endif
+#if (KERNEL_VERSION(6, 14, 0) <= CFG80211_VERSION_CODE)
+	netif_napi_add(prGlueInfo->dummy_dev, &prGlueInfo->napi,
+			kalNapiPoll);
+#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
 			kalNapiPoll);
 #else
