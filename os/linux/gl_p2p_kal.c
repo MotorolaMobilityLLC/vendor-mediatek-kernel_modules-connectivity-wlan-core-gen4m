@@ -1318,6 +1318,8 @@ kalP2PIndicateBssInfo(struct GLUE_INFO *prGlueInfo,
 void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 		struct MSDU_INFO *prMsduInfo, u_int8_t fgIsAck)
 {
+	struct wireless_dev *prWdev;
+	struct WLAN_MAC_HEADER *prWlanHdr;
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 	struct net_device *prNetdevice = (struct net_device *)NULL;
@@ -1384,12 +1386,27 @@ void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
+		prWdev = prNetdevice->ieee80211_ptr;
+		prWlanHdr = (struct WLAN_MAC_HEADER *)
+			((unsigned long) prMsduInfo->prPacket +
+					 MAC_TX_RESERVED_FIELD);
+
 		p2pFuncRemovePendingMgmtLinkEntry(prGlueInfo->prAdapter,
 			prMsduInfo->ucBssIndex, *pu8GlCookie);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && \
+	(KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)
+		if (prWdev->valid_links &&
+		    prWdev->iftype == NL80211_IFTYPE_AP &&
+		    (ieee80211_is_auth(prWlanHdr->u2FrameCtrl) ||
+		     ieee80211_is_assoc_resp(prWlanHdr->u2FrameCtrl) ||
+		     ieee80211_is_reassoc_resp(prWlanHdr->u2FrameCtrl)))
+			nicMgmtMAT_Tx_L2M(prGlueInfo->prAdapter, prMsduInfo);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+
 		cfg80211_mgmt_tx_status(
-			/* struct net_device * dev, */
-			prNetdevice->ieee80211_ptr,
+			prWdev,
 			*pu8GlCookie,
 			(uint8_t *) ((unsigned long) prMsduInfo->prPacket +
 			MAC_TX_RESERVED_FIELD),
@@ -1503,7 +1520,7 @@ kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 		rRxInfo.flags = GFP_ATOMIC;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (u4LinkId != MLD_LINK_ID_NONE) {
-			nicMgmtMAT_L2M(prAdapter, prSwRfb);
+			nicMgmtMAT_Rx_L2M(prAdapter, prSwRfb);
 			rRxInfo.have_link_id = true;
 			rRxInfo.link_id = u4LinkId;
 		}

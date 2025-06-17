@@ -8489,7 +8489,7 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 		rRxInfo.flags = GFP_ATOMIC;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (u4LinkId != MLD_LINK_ID_NONE) {
-			nicMgmtMAT_L2M(prAdapter, prSwRfb);
+			nicMgmtMAT_Rx_L2M(prAdapter, prSwRfb);
 			rRxInfo.have_link_id = true;
 			rRxInfo.link_id = u4LinkId;
 		}

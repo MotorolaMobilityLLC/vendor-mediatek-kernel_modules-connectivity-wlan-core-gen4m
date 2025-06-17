@@ -1617,9 +1617,9 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				break;
 			}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			nicMgmtMAT_M2L(prAdapter, prMgmtTxMsdu,
-				       prBssInfo->ucGroupMldId,
-				       prStaRec->ucWlanIndex);
+			nicMgmtMAT_Tx_M2L(prAdapter, prMgmtTxMsdu,
+					  prBssInfo->ucGroupMldId,
+					  prStaRec->ucWlanIndex);
 #endif
 			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
@@ -1657,9 +1657,9 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				break;
 			}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			nicMgmtMAT_M2L(prAdapter, prMgmtTxMsdu,
-				       prBssInfo->ucGroupMldId,
-				       prStaRec->ucWlanIndex);
+			nicMgmtMAT_Tx_M2L(prAdapter, prMgmtTxMsdu,
+					  prBssInfo->ucGroupMldId,
+					  prStaRec->ucWlanIndex);
 #endif
 			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
