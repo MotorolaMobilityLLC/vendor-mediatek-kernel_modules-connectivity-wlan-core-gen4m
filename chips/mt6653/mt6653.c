@@ -3385,6 +3385,7 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter, u_int8_t fgForce)
 	uint32_t u4Addr[3] = {0}, u4IntSta = 0, u4AfterVal;
 	uint32_t u4Vals[5] = {0};
 	u_int8_t fgRet = FALSE;
+	uint32_t link_info = 0;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 	if (fgForce)
@@ -3456,11 +3457,15 @@ recovery:
 	HAL_MCR_WR(prAdapter, 0x74030168, 0x88770100);
 	HAL_MCR_EMI_RD(prAdapter, u4Addr[2], &u4Vals[4], &fgRet);
 
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	link_info = mtk_pcie_dump_link_info(0);
+#endif
+
 	DBGLOG(HAL, WARN,
-		"Emi=[0x%08x] WbIntSta=[0x%08x] [0x%08x]=[0x%08x]->[0x%08x] [0x%08x]=[0x%08x] PCIe MAC [0x%08x][0x%08x][0x%08x][0x%08x]",
+		"Emi=[0x%08x] WbIntSta=[0x%08x] [0x%08x]=[0x%08x]->[0x%08x] [0x%08x]=[0x%08x] PCIe MAC [0x%08x][0x%08x][0x%08x][0x%08x] link_info: 0x%X",
 	       u4IntSta, prHifInfo->u4WbIntSta, u4Addr[0], u4Val, u4AfterVal,
 	       u4Addr[1], u4Vals[0], u4Vals[1],
-	       u4Vals[2], u4Vals[3], u4Vals[4]);
+	       u4Vals[2], u4Vals[3], u4Vals[4], link_info);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
