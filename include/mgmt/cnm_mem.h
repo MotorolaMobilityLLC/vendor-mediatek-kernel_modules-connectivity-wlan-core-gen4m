@@ -1179,6 +1179,9 @@ cnmStaRecAlloc(struct ADAPTER *prAdapter, enum ENUM_STA_TYPE eStaType,
 void cnmStaRecFree(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+uint32_t cnmStaRecGetUsedCntByBss(struct ADAPTER *prAdapter,
+				  uint8_t ucBssIdx);
+
 void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucStaRecIndexExcluded);
 
