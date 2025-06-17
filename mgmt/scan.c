@@ -2067,7 +2067,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 
 		/* skip illegal channel */
 		if (!rlmDomainIsLegalChannel(prAdapter, eRfBand, ucRnrChNum)) {
-			DBGLOG_LIMITED(SCN, WARN,
+			DBGLOG_LIMITED(SCN, TRACE,
 				"RNR illegal chanel(%d,%d)\n",
 				eRfBand, ucRnrChNum);
 			u2CurrentLength += SCAN_TBTT_INFO_SET_OFFSET +

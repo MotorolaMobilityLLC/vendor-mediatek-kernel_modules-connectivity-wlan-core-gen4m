@@ -1579,6 +1579,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	uint8_t *prLogBuf;
 	int32_t i4Written = 0;
+	int32_t status = 0;
 
 	struct GL_WPA_INFO *prWpaInfo;
 	struct IEEE_802_11_MIB *prMib;
@@ -1627,7 +1628,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, DEBUG,
 		       "wlanoidSetInfrastructureMode fail 0x%x\n", rStatus);
-		return -EFAULT;
+		status = -EFAULT;
+		goto fail;
 	}
 	/* after set operation mode, key table are cleared */
 
@@ -1692,7 +1694,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		DBGLOG(INIT, DEBUG,
 			"Only support fils share key authentication without PFS (auth_type=%d)\n",
 			sme->auth_type);
-		return -EFAULT;
+		status = -EFAULT;
+		goto fail;
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 	default:
 		/* NL80211 only set the Tx wep key while connect */
@@ -1716,7 +1719,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		if (wlanParseAkmSuites(sme->crypto.akm_suites,
 			sme->crypto.n_akm_suites, prWpaInfo->u4WpaVersion,
 			&eAuthMode, &u4AkmSuite, prMib) < 0) {
-			return -EINVAL;
+			status = -EINVAL;
+			goto fail;
 		}
 	}
 
@@ -1771,7 +1775,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		default:
 			DBGLOG(REQ, WARN, "invalid cipher pairwise (%d)\n",
 			       sme->crypto.ciphers_pairwise[0]);
-			return -EINVAL;
+			status = -EINVAL;
+			goto fail;
+
 		}
 	}
 
@@ -1825,7 +1831,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		default:
 			DBGLOG(REQ, WARN, "invalid cipher group (%d)\n",
 			       sme->crypto.cipher_group);
-			return -EINVAL;
+			status = -EINVAL;
+			goto fail;
 		}
 	}
 
@@ -1950,7 +1957,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	if (i4Written > 0)
 		DBGLOG(RSN, INFO, "%s", prLogBuf);
-	kalMemFree(prLogBuf, DUMP_LOG_BUF_SIZE, VIR_MEM_TYPE);
 
 	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,
 			sizeof(eAuthMode), &u4BufLen,
@@ -2009,7 +2015,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		if (prWepKey->u4KeyLength > MAX_KEY_LEN) {
 			DBGLOG(REQ, WARN, "Too long key length (%u)\n",
 			       prWepKey->u4KeyLength);
-			return -EINVAL;
+			status = -EINVAL;
+			goto fail;
 		}
 		kalMemCopy(prWepKey->aucKeyMaterial, sme->key,
 			   prWepKey->u4KeyLength);
@@ -2031,7 +2038,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, DEBUG, "wlanoidSetAddWep fail 0x%x\n",
 				rStatus);
-			return -EFAULT;
+			status = -EFAULT;
+			goto fail;
 		}
 	}
 
@@ -2051,7 +2059,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, DEBUG,
 				"FILS conn info error:%x\n", rStatus);
-			return -EFAULT;
+			status = -EFAULT;
+			goto fail;
 		}
 	}
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
@@ -2079,8 +2088,14 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "set SSID:%x\n", rStatus);
-		return -EINVAL;
+		status = -EINVAL;
+		goto fail;
 	}
+
+fail:
+	kalMemFree(prLogBuf, DUMP_LOG_BUF_SIZE, VIR_MEM_TYPE);
+	if (status != 0)
+		return status;
 
 	return 0;
 }
