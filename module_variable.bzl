@@ -1449,6 +1449,12 @@ local_defines_6993_6653 = local_defines_connv3 + [
     "CFG_SUPPORT_MBRAIN_TRX_PERF=1",
     "CFG_SUPPORT_MBRAIN_TXPWR_RPT=1",
     "CFG_SUPPORT_PCIE_MBRAIN=1",
+]) + ([
+    "CFG_MTK_MDDP_SUPPORT=0",
+    "CFG_MTK_CCCI_IDC_SUPPORT=0",
+] if "wifionly.config" in DEFCONFIG_OVERLAYS else [
+    "CFG_MTK_MDDP_SUPPORT=1",
+    "CFG_MTK_CCCI_IDC_SUPPORT=1",
 ])
 
 # Name: 6993_6653_triband
