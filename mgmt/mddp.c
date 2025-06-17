@@ -2828,7 +2828,7 @@ int32_t mddpMdNotifyInfoHandleCommunication(
 			       event->pucFuncName,
 			       event->dump_payload[1]);
 	} else {
-		DBGLOG(INIT, TRACE,
+		DBGLOG(INIT, WARN,
 		       "reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
 		       event->u4Reason,
 		       event->u4RstFlag,
