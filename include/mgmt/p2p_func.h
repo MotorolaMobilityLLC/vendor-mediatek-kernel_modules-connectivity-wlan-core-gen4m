@@ -704,6 +704,9 @@ u_int8_t
 p2pFuncNeedForceSleep(struct ADAPTER *prAdapter);
 
 u_int8_t
+p2pFuncIsRoleCsa(struct ADAPTER *prAdapter, uint8_t ucRoleIdx);
+
+u_int8_t
 p2pFuncIsSapGoCsa(struct ADAPTER *prAdapter);
 
 void

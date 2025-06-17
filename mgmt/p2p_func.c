@@ -4184,6 +4184,9 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 			"Current OP mode is not under AP mode. (%d)\n",
 			prP2pBssInfo->eCurrentOPMode);
 		return FALSE;
+	} else if (p2pFuncIsRoleCsa(prAdapter, prP2pBssInfo->u4PrivateData)) {
+		DBGLOG(P2P, WARN, "skip due to CSA in progress\n");
+		return FALSE;
 	}
 	if (bssGetClientCount(prAdapter, prP2pBssInfo)
 		>= P2P_MAXIMUM_CLIENT_COUNT
@@ -10683,19 +10686,21 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 }
 
 u_int8_t
+p2pFuncIsRoleCsa(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_P2P_INFO *prP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+
+	return prP2pInfo && prP2pInfo->fgChannelSwitchReq;
+}
+
+u_int8_t
 p2pFuncIsSapGoCsa(struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo =
-		prAdapter->prGlueInfo;
-	struct GL_P2P_INFO *prP2pInfo = NULL;
-	uint32_t u4Idx = 0;
+	uint8_t ucIdx = 0;
 
-	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
-		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
-		if (prP2pInfo == NULL)
-			continue;
-
-		if (prP2pInfo->fgChannelSwitchReq)
+	for (ucIdx = 0; ucIdx < KAL_P2P_NUM; ucIdx++) {
+		if (p2pFuncIsRoleCsa(prAdapter, ucIdx))
 			return TRUE;
 	}
 
