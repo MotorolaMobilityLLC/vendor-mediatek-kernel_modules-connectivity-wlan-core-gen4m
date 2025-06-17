@@ -4505,11 +4505,12 @@ static uint8_t mergeCommittedPotentialTimeBitmap(uint8_t ucPotentialPriChnl,
 	}
 
 	DBGLOG(NAN, DEBUG,
-	       "Ch: %u, C:%02x-%02x-%02x-%02x P:%02x-%02x-%02x-%02x => %02x-%02x-%02x-%02x\n",
+	       "Ch: %u, C:%02x-%02x-%02x-%02x P:%02x-%02x-%02x-%02x => %02x-%02x-%02x-%02x, modified=0x%02x\n",
 	       ucPotentialPriChnl,
 	       comm_cond[0], comm_cond[1], comm_cond[2], comm_cond[3],
 	       potential[0], potential[1], potential[2], potential[3],
-	       merged[0], merged[1], merged[2], merged[3]);
+	       merged[0], merged[1], merged[2], merged[3],
+	       modified);
 
 	return modified;
 }
@@ -5553,7 +5554,8 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 
 	prDataPathInfo = &prAdapter->rDataPathInfo;
 	/* In Rescheduling, call from nanNdlParseAttributes w/o NDP */
-	if (!prNDP && prDataPathInfo->ucNDLNum == 1) {
+	if (!prNDP && prDataPathInfo->ucNDLNum == 1 &&
+	    eNanAction != NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION) {
 		DBGLOG(NAN, INFO, "Force fgFillByPotential = TRUE");
 		fgFillByPotential = TRUE;
 
@@ -14663,6 +14665,33 @@ nanSchedCmdManagePeerSchRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 	return rStatus;
 }
 
+static void nanDumpTimelineUpdate(const char *type,
+	struct _NAN_SCHED_CMD_UPDATE_AVAILABILITY_T *prCmdUpdateAvailability)
+{
+	struct _NAN_CHANNEL_TIMELINE_T *pTime;
+	uint8_t i;
+
+	for (i = 0; i < ARRAY_SIZE(prCmdUpdateAvailability->arChnlList); i++) {
+		pTime = &prCmdUpdateAvailability->arChnlList[i];
+
+		if (!pTime->fgValid)
+			continue;
+
+		DBGLOG(NAN, INFO,
+		       "Update availability: %s map=%u, timeline=%u, multiple=%u, op=%3u, ch=%3u, bitmap=%02x-%02x-%02x-%02x",
+		       type,
+		       prCmdUpdateAvailability->ucMapId,
+		       prCmdUpdateAvailability->ucTimelineIdx,
+		       prCmdUpdateAvailability->fgMultipleMap,
+		       pTime->rChnlInfo.u4OperatingClass,
+		       pTime->rChnlInfo.u4PrimaryChnl,
+		       ((uint8_t *)(pTime->au4AvailMap))[0],
+		       ((uint8_t *)(pTime->au4AvailMap))[1],
+		       ((uint8_t *)(pTime->au4AvailMap))[2],
+		       ((uint8_t *)(pTime->au4AvailMap))[3]);
+	}
+}
+
 uint32_t
 nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 				size_t szTimeLineIdx,
@@ -14737,6 +14766,8 @@ nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 		kalMemCopy(prCmdUpdateAvailability->arChnlList,
 			   prNanTimelineMgmt->arChnlList,
 			   sizeof(prCmdUpdateAvailability->arChnlList));
+
+		nanDumpTimelineUpdate("Comm", prCmdUpdateAvailability);
 	} else {
 		DBGDUMP_HEX(NAN, TEMP, "arCondChnlList\n",
 			    prNanTimelineMgmt->arCondChnlList,
@@ -14744,6 +14775,8 @@ nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 		kalMemCopy(prCmdUpdateAvailability->arChnlList,
 			   prNanTimelineMgmt->arCondChnlList,
 			   sizeof(prCmdUpdateAvailability->arChnlList));
+
+		nanDumpTimelineUpdate("Cond", prCmdUpdateAvailability);
 	}
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,

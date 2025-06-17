@@ -3306,12 +3306,12 @@ nanNdlProcessScheduleUpdateNotification(struct ADAPTER *prAdapter,
 #endif
 			}
 		} else {
-			/* TODO: unexpected schedule update notification
-			 * received
-			 */
+			DBGLOG(NAN, DEBUG,
+			       "received unexpected schedule update notification in state=%u",
+			       prNDL->eCurrentNDLMgmtState);
 		}
 	} else {
-		/* unknown peer ? ignore it */
+		DBGLOG(NAN, TRACE, "unknown peer, ignore it");
 	}
 
 	return rStatus;
@@ -3863,7 +3863,8 @@ nanNdlMgmtFsmStep(struct ADAPTER *prAdapter,
 
 			/* Query scheduler for checking availbility */
 			rStatus =
-			nanSchedNegoChkRmtCrbProposal(prAdapter, &u4RejectCode);
+				nanSchedNegoChkRmtCrbProposal(prAdapter,
+							      &u4RejectCode);
 			if (rStatus == WLAN_STATUS_SUCCESS) {
 				DBGLOG(NAN, DEBUG,
 				       "NegoChkRmtCrbProposal:accept\n");
