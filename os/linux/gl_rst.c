@@ -2102,6 +2102,7 @@ int wlan_post_whole_chip_rst_v3(void)
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		fgIsBusAccessFailed = FALSE;
+		g_IsWholeChipRst = FALSE;
 		glResetOnEndUpdateFlag(FALSE);
 #if CFG_CHIP_RESET_SUPPORT
 		update_whole_chip_rst_status(FALSE);
