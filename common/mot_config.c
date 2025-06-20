@@ -19,6 +19,7 @@ static moto_product products_list[] = {
 		{"aito",   "all",    "wifi",   "txpowerctrl"},
 		{"vienna",   "LATAM",    "wifi",   "txpowerctrl_LATAM"},
 		{"vienna",   "APEM",    "wifi",   "txpowerctrl_APEM"},
+		{"vienna",   "SUPER",    "wifi",   "txpowerctrl_APEM"},
 		{"vienna",   "all",    "wifi",   "txpowerctrl"},
 		{{0},        {0},   {0},	{0}},
 };
