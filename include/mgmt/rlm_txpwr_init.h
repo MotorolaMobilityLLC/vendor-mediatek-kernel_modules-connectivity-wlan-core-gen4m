@@ -40,14 +40,26 @@
 #define VLP_NON_SUPPORT     FALSE /* Non-support 6G Very Low Power mode   */
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
-#define RRLM_POWER_LIMIT_DEFAULT_SIZE 	180		/*support CE country is 101, FCC country is 67*/
+#define RLM_POWER_LIMIT_TABLE_DEFAULT_SIZE 4 /*CE Group + FCC Group + Japan + Default*/
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #ifdef MOTO_DYNAMIC_TX_PWR
 #if (CFG_SUPPORT_WIFI_6G == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	/*Default*/
-	g_rRlmPowerLimitDefault[RRLM_POWER_LIMIT_DEFAULT_SIZE] = {
+	g_rRlmPowerLimitDefault[RLM_POWER_LIMIT_TABLE_DEFAULT_SIZE] = {
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	},
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	},
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	},
 	{	{0, 0}
 		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
 		, 0
@@ -57,7 +69,19 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 /* For 802.11ax 6G Very Low Power mode setting */
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
-	g_rRlmPowerLimitDefault_VLP[RRLM_POWER_LIMIT_DEFAULT_SIZE] = {
+	g_rRlmPowerLimitDefault_VLP[RLM_POWER_LIMIT_TABLE_DEFAULT_SIZE] = {
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	},
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	},
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	},
 	/*Default*/
 	{	{0, 0}
 		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
@@ -3349,6 +3373,59 @@ static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp2[] = {0};
 
 static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp3[] = {0};
 
+// CE Group
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp_CE[] = {
+	{'A', 'F'}, {'A', 'L'}, {'A', 'D'}, {'A', 'I'},
+	{'A', 'W'}, {'A', 'T'}, {'A', 'Z'}, {'B', 'Y'},
+	{'B', 'E'}, {'B', 'Z'}, {'B', 'T'}, {'B', 'A'},
+	{'B', 'G'}, {'K', 'H'}, {'C', 'M'}, {'T', 'D'},
+	{'C', 'G'}, {'C', 'D'}, {'H', 'R'}, {'C', 'Y'},
+	{'C', 'Z'}, {'D', 'K'}, {'E', 'G'}, {'E', 'E'},
+	{'E', 'T'}, {'F', 'K'}, {'F', 'O'}, {'F', 'I'},
+	{'F', 'R'}, {'G', 'F'}, {'P', 'F'}, {'T', 'F'},
+	{'G', 'E'}, {'D', 'E'}, {'G', 'I'}, {'G', 'R'},
+	/*{'G', 'L'},*/ {'G', 'P'}, {'G', 'G'}, {'V', 'A'},
+	{'H', 'U'}, {'I', 'S'}, {'I', 'Q'}, {'I', 'E'},
+	{'I', 'M'}, {'I', 'L'}, {'I', 'T'}, {'J', 'E'},
+	{'K', 'E'}, {'K', 'W'}, {'L', 'V'}, {'L', 'S'},
+	{'L', 'I'}, {'L', 'T'}, {'L', 'U'}, {'M', 'K'},
+	{'M', 'W'}, {'M', 'T'}, {'M', 'Q'}, {'M', 'R'},
+	{'M', 'U'}, {'Y', 'T'}, {'M', 'D'}, {'M', 'C'},
+	{'M', 'E'}, {'M', 'S'}, {'M', 'A'}, {'N', 'L'},
+	{'A', 'N'}, {'N', 'C'}, {'N', 'U'}, {'N', 'O'},
+	{'O', 'M'}, {'P', 'L'}, {'P', 'T'}, {'Q', 'A'},
+	{'R', 'E'}, {'R', 'O'}, {'R', 'U'}, /*{'B', 'L'},*/
+	/*{'S', 'H'},*/ {'M', 'F'}, {'P', 'M'}, {'V', 'C'},
+	{'W', 'S'}, {'S', 'M'}, {'S', 'A'}, {'R', 'S'},
+	/*{'S', 'X'},*/ {'S', 'K'}, {'S', 'I'}, {'E', 'S'},
+	{'S', 'R'}, {'S', 'E'}, {'C', 'H'}, {'T', 'G'},
+	{'T', 'N'}, {'T', 'R'}, {'U', 'A'}, {'A', 'E'},
+	{'G', 'B'}, {'U', 'Z'}, {'V', 'G'}, /*{'W', 'F'},*/
+};
+
+// FCC Group
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp_FCC[] = {
+	{'A', 'G'}, {'A', 'S'}, /*{'A', 'X'},*/ {'A', 'U'},
+	{'B', 'S'}, {'B', 'B'}, {'B', 'M'}, {'B', 'O'},
+	{'B', 'R'}, {'B', 'N'}, {'B', 'F'}, {'C', 'A'},
+	{'K', 'Y'}, {'C', 'F'}, {'C', 'L'}, {'C', 'X'},
+	{'C', 'O'}, {'C', 'K'}, {'C', 'R'}, {'C', 'I'},
+	{'D', 'M'}, {'D', 'O'}, {'E', 'C'}, {'S', 'V'},
+	{'G', 'H'}, {'G', 'D'}, {'G', 'U'}, {'H', 'T'},
+	/*{'H', 'M'},*/ {'H', 'N'}, {'H', 'K'}, {'J', 'M'},
+	{'L', 'B'}, {'M', 'O'}, {'M', 'Y'}, {'M', 'H'},
+	{'M', 'X'}, {'F', 'M'}, {'M', 'N'}, {'N', 'Z'},
+	{'N', 'I'}, {'N', 'F'}, {'M', 'P'}, {'P', 'W'},
+	{'P', 'A'}, {'P', 'G'}, {'P', 'Y'}, {'P', 'E'},
+	{'P', 'H'}, {'P', 'R'}, {'R', 'W'}, {'S', 'T'},
+	{'S', 'N'}, {'S', 'G'}, {'Z', 'A'}, {'L', 'K'},
+	/*{'S', 'J'},*/ /*{'T', 'W'},*/ {'T', 'H'}, {'T', 'T'},
+	{'T', 'C'}, {'U', 'G'}, {'U', 'S'}, /*{'U', 'M'},*/
+	{'U', 'Y'}, {'V', 'U'}, {'V', 'E'}, {'V', 'N'},
+	{'V', 'I'}, /*{'K', 'R'},*/ {'I', 'N'}, {'J', 'P'},
+	{'X', 'J'}
+};
+
 struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 	{
 		{'G', '0'},
@@ -3373,15 +3450,56 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 		sizeof(g_u2CountryLimitGrp3) /
 			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
 		g_u2CountryLimitGrp3
+	},
+	{
+		// CE Group
+		{'G', '4'},
+		sizeof(g_u2CountryLimitGrp_CE) /
+			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
+		g_u2CountryLimitGrp_CE
+	},
+	{
+		// FCC Group
+		{'G', '5'},
+		sizeof(g_u2CountryLimitGrp_FCC) /
+			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
+		g_u2CountryLimitGrp_FCC
 	}
+};
 
 #define COUNTRY_LIMIT_GROUP_NUM \
 		(sizeof(arSupportCountryPowerLmtGrps) \
 			/ sizeof(struct COUNTRY_POWER_LIMIT_GROUP_TABLE))
-};
 #endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[RRLM_POWER_LIMIT_DEFAULT_SIZE] = {
+struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_rCountryPwrMode6GSupport[RLM_POWER_LIMIT_TABLE_DEFAULT_SIZE] = {
+	{
+		{0, 0},
+		{
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-5 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-6 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-7 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}  /* UNII-8 */
+		}
+	},
+	{
+		{0, 0},
+		{
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-5 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-6 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-7 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}  /* UNII-8 */
+		}
+	},
+	{
+		{0, 0},
+		{
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-5 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-6 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}, /* UNII-7 */
+			{SP_SUPPORT, LPI_SUPPORT, VLP_SUPPORT}  /* UNII-8 */
+		}
+	},
 	{
 		/* Default */
 		{0, 0},
