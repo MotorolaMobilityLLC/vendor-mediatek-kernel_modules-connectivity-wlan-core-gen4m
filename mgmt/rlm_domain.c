@@ -25,7 +25,6 @@
 
 #define MAX_PARTS 16
 #define MAX_LENGTH 64
-static uint8_t VLPCountryNum = 0;
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #include "he_ie.h"
@@ -3743,7 +3742,7 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
-					       uint16_t u2CountryCode)
+							uint16_t u2CountryCode)
 {
 	uint16_t i, j;
 	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
@@ -3800,7 +3799,7 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 
 		WLAN_GET_FIELD_BE16(&prPwrLmtDefaultTable[i].
 						aucCountryCode[0],
-				    &u2CountryCodeTable);
+					&u2CountryCodeTable);
 
 		if (u2CountryCodeTable == u2CountryCode) {
 			u2TableIndex = i;
@@ -9223,15 +9222,22 @@ int moto_atoi(const char *str) {
     return sign * result;
 }
 
-void parseLPI_VLP(char *line, struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *array) {
+void parseLPI_VLP(char *line, struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *array, uint16_t arraySize) {
     char *parts[MAX_PARTS];
     int part_count = 0;
-	char *temp = NULL;
+    char *temp = NULL;
 
     char *token = strtok_r(line, ";", &temp);
     while (token != NULL && part_count < MAX_PARTS) {
         parts[part_count++] = token;
         token = strtok_r(NULL, ";", &temp);
+    }
+
+    if (part_count >= arraySize) {
+        DBGLOG(RLM, WARN,
+                    "parseLPI_VLP, Data Size in vlp.cfg ( %d ) is Out of MAX Array Size\n",
+                    part_count);
+        return;
     }
 
     for (int i = 0; i < part_count; i++) {
@@ -9267,17 +9273,24 @@ void parseLPI_VLP(char *line, struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *array) {
     }
 }
 
-void parsePwrMode6GSupport(char *line, struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *array)
+void parsePwrMode6GSupport(char *line, struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *array, uint16_t arraySize)
 {
     char *parts[MAX_PARTS];
     int part_count = 0;
-	char *temp = NULL;
+    char *temp = NULL;
 
     char *token = strtok_r(line, ";", &temp);
     while (token != NULL && part_count < MAX_PARTS) {
         parts[part_count] = token;
         token = strtok_r(NULL, ";", &temp);
         part_count++;
+    }
+
+    if (part_count >= arraySize) {
+        DBGLOG(RLM, WARN,
+                    "parsePwrMode6GSupport, Data Size in vlp.cfg ( %d ) is Out of MAX Array Size\n",
+                    part_count);
+        return;
     }
 
     for (int i = 0; i < part_count; i++) {
@@ -9320,210 +9333,7 @@ void parsePwrMode6GSupport(char *line, struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE 
                 sub_sub_count++;
             }
         }
-        VLPCountryNum++;
     }
-}
-
-void parse_Scenario_group(char *line, uint16_t *country_code, uint8_t num)
-{
-	uint32_t i = 0, j = 0, k = 0;
-	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT g_rRlmPowerLimitDefaultLPI[1] = {
-		{
-			{0, 0}
-			, {63, 63, 63, 63, 63, 63, 63, 63, 63}
-			, 0
-		}
-	};
-	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT 	g_rRlmPowerLimitDefaultVLP[1] = {
-		{
-			{0, 0}
-			, {63, 63, 63, 63, 63, 63, 63, 63, 63}
-			, 0
-		}
-	};
-	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_PwrMode6GSupportDefault[1] = {
-		{
-			{0, 0},
-			{
-				{0, 1, 1}, /* UNII-5 */
-				{0, 1, 1}, /* UNII-6 */
-				{0, 1, 1}, /* UNII-7 */
-				{0, 1, 1}  /* UNII-8 */
-			}
-		}
-	};
-
-	char *parts[MAX_PARTS];
-	int part_count = 0, sub_count=0;
-	char *temp = NULL;
-
-	char *token = strtok_r(line, ";", &temp);
-	while (token != NULL) {
-		parts[part_count] = token;
-		token = strtok_r(NULL, ";", &temp);
-		part_count++;
-	}
-
-	// parse LPI
-	char *LPI_token = strtok_r(parts[0], ",", &temp);
-	while (LPI_token != NULL) {
-		g_rRlmPowerLimitDefaultLPI[0].aucPwrLimitSubBand[sub_count] = moto_atoi(LPI_token);
-		LPI_token = strtok_r(NULL, ",", &temp);
-		sub_count++;
-	}
-
-	// parse VLP
-	char *VLP_token = strtok_r(parts[1], ",", &temp);
-	sub_count = 0;
-	while (VLP_token != NULL) {
-		g_rRlmPowerLimitDefaultVLP[0].aucPwrLimitSubBand[sub_count] = moto_atoi(VLP_token);
-		VLP_token = strtok_r(NULL, ",", &temp);
-		sub_count++;
-	}
-
-	for (i = 0; i < num; i++) {
-		g_rRlmPowerLimitDefault[VLPCountryNum].aucCountryCode[0] = (country_code[i] >> 8) & 0xFF;
-		g_rRlmPowerLimitDefault[VLPCountryNum].aucCountryCode[1] = country_code[i] & 0xFF;
-		for (j = 0; j < PWR_LMT_DEF_PWR_NUM; j++) {
-			g_rRlmPowerLimitDefault[VLPCountryNum].aucPwrLimitSubBand[j] = g_rRlmPowerLimitDefaultLPI[0].aucPwrLimitSubBand[j];
-		}
-		g_rRlmPowerLimitDefault[VLPCountryNum].ucPwrUnit = g_rRlmPowerLimitDefaultLPI[0].ucPwrUnit;
-
-		g_rRlmPowerLimitDefault_VLP[VLPCountryNum].aucCountryCode[0] = (country_code[i] >> 8) & 0xFF;
-		g_rRlmPowerLimitDefault_VLP[VLPCountryNum].aucCountryCode[1] = country_code[i] & 0xFF;
-		for (j = 0; j < PWR_LMT_DEF_PWR_NUM; j++) {
-			g_rRlmPowerLimitDefault_VLP[VLPCountryNum].aucPwrLimitSubBand[j] = g_rRlmPowerLimitDefaultVLP[0].aucPwrLimitSubBand[j];
-		}
-		g_rRlmPowerLimitDefault_VLP[VLPCountryNum].ucPwrUnit = g_rRlmPowerLimitDefaultVLP[0].ucPwrUnit;
-
-		g_rCountryPwrMode6GSupport[VLPCountryNum].aucCountryCode[0] = (country_code[i] >> 8) & 0xFF;
-		g_rCountryPwrMode6GSupport[VLPCountryNum].aucCountryCode[1] = country_code[i] & 0xFF;
-		for (j = 0; j < SUBBAND_6G_NUM; j++) {
-			for (k = 0; k < PWR_MODE_6G_NUM; k++) {
-				g_rCountryPwrMode6GSupport[VLPCountryNum].rSubBand[j].fgPwrMode6GSupport[k] = \
-				g_PwrMode6GSupportDefault[0].rSubBand[j].fgPwrMode6GSupport[k];
-			}
-		}
-		VLPCountryNum++;
-	}
-	DBGLOG(RLM, TRACE, "VLPCountryNum=%d\n", VLPCountryNum);
-}
-
-void parse_CEScenario_group(char *line)
-{
-    uint16_t country_code_ce[] = {
-		COUNTRY_CODE_AF, COUNTRY_CODE_AL, COUNTRY_CODE_AD, COUNTRY_CODE_AI,
-		COUNTRY_CODE_AW, COUNTRY_CODE_AT, COUNTRY_CODE_AZ, COUNTRY_CODE_BY,
-		COUNTRY_CODE_BE, COUNTRY_CODE_BZ, COUNTRY_CODE_BT, COUNTRY_CODE_BA,
-		COUNTRY_CODE_BG, COUNTRY_CODE_KH, COUNTRY_CODE_CM, COUNTRY_CODE_TD,
-		COUNTRY_CODE_CG, COUNTRY_CODE_CD, COUNTRY_CODE_HR, COUNTRY_CODE_CY,
-		COUNTRY_CODE_CZ, COUNTRY_CODE_DK, COUNTRY_CODE_EG, COUNTRY_CODE_EE,
-		COUNTRY_CODE_ET, COUNTRY_CODE_FK, COUNTRY_CODE_FO, COUNTRY_CODE_FI,
-		COUNTRY_CODE_FR, COUNTRY_CODE_GF, COUNTRY_CODE_PF, COUNTRY_CODE_TF,
-		COUNTRY_CODE_GE, COUNTRY_CODE_DE, COUNTRY_CODE_GI, COUNTRY_CODE_GR,
-		/*COUNTRY_CODE_GL,*/ COUNTRY_CODE_GP, COUNTRY_CODE_GG, COUNTRY_CODE_VA,
-		COUNTRY_CODE_HU, COUNTRY_CODE_IS, COUNTRY_CODE_IQ, COUNTRY_CODE_IE,
-		COUNTRY_CODE_IM, COUNTRY_CODE_IL, COUNTRY_CODE_IT, COUNTRY_CODE_JE,
-		COUNTRY_CODE_KE, COUNTRY_CODE_KW, COUNTRY_CODE_LV, COUNTRY_CODE_LS,
-		COUNTRY_CODE_LI, COUNTRY_CODE_LT, COUNTRY_CODE_LU, COUNTRY_CODE_MK,
-		COUNTRY_CODE_MW, COUNTRY_CODE_MT, COUNTRY_CODE_MQ, COUNTRY_CODE_MR,
-		COUNTRY_CODE_MU, COUNTRY_CODE_YT, COUNTRY_CODE_MD, COUNTRY_CODE_MC,
-		COUNTRY_CODE_ME, COUNTRY_CODE_MS, COUNTRY_CODE_MA, COUNTRY_CODE_NL,
-		COUNTRY_CODE_AN, COUNTRY_CODE_NC, COUNTRY_CODE_NU, COUNTRY_CODE_NO,
-		COUNTRY_CODE_OM, COUNTRY_CODE_PL, COUNTRY_CODE_PT, COUNTRY_CODE_QA,
-		COUNTRY_CODE_RE, COUNTRY_CODE_RO, COUNTRY_CODE_RU, /*COUNTRY_CODE_BL,*/
-		/*COUNTRY_CODE_SH,*/ COUNTRY_CODE_MF, COUNTRY_CODE_PM, COUNTRY_CODE_VC,
-		COUNTRY_CODE_WS, COUNTRY_CODE_SM, COUNTRY_CODE_SA, COUNTRY_CODE_RS,
-		/*COUNTRY_CODE_SX,*/ COUNTRY_CODE_SK, COUNTRY_CODE_SI, COUNTRY_CODE_ES,
-		COUNTRY_CODE_SR, COUNTRY_CODE_SE, COUNTRY_CODE_CH, COUNTRY_CODE_TG,
-		COUNTRY_CODE_TN, COUNTRY_CODE_TR, COUNTRY_CODE_UA, COUNTRY_CODE_AE,
-		COUNTRY_CODE_GB, COUNTRY_CODE_UZ, COUNTRY_CODE_VG, /*COUNTRY_CODE_WF,*/
-		COUNTRY_CODE_YE, COUNTRY_CODE_ZW
-	};
-
-	parse_Scenario_group(line, country_code_ce, ARRAY_SIZE(country_code_ce));
-}
-
-void parse_FCCScenario_group(char *line)
-{
-    uint16_t country_code_fcc[] = {
-		COUNTRY_CODE_AG, COUNTRY_CODE_AS, /*COUNTRY_CODE_AX,*/ COUNTRY_CODE_AU,
-		COUNTRY_CODE_BS, COUNTRY_CODE_BB, COUNTRY_CODE_BM, COUNTRY_CODE_BO,
-		COUNTRY_CODE_BR, COUNTRY_CODE_BN, COUNTRY_CODE_BF, COUNTRY_CODE_CA,
-		COUNTRY_CODE_KY, COUNTRY_CODE_CF, COUNTRY_CODE_CL, COUNTRY_CODE_CX,
-		COUNTRY_CODE_CO, COUNTRY_CODE_CK, COUNTRY_CODE_CR, COUNTRY_CODE_CI,
-		COUNTRY_CODE_DM, COUNTRY_CODE_DO, COUNTRY_CODE_EC, COUNTRY_CODE_SV,
-		COUNTRY_CODE_GH, COUNTRY_CODE_GD, COUNTRY_CODE_GU, COUNTRY_CODE_HT,
-		/*COUNTRY_CODE_HM,*/ COUNTRY_CODE_HN, COUNTRY_CODE_HK, COUNTRY_CODE_JM,
-		COUNTRY_CODE_LB, COUNTRY_CODE_MO, COUNTRY_CODE_MY, COUNTRY_CODE_MH,
-		COUNTRY_CODE_MX, COUNTRY_CODE_FM, COUNTRY_CODE_MN, COUNTRY_CODE_NZ,
-		COUNTRY_CODE_NI, COUNTRY_CODE_NF, COUNTRY_CODE_MP, COUNTRY_CODE_PW,
-		COUNTRY_CODE_PA, COUNTRY_CODE_PG, COUNTRY_CODE_PY, COUNTRY_CODE_PE,
-		COUNTRY_CODE_PH, COUNTRY_CODE_PR, COUNTRY_CODE_RW, COUNTRY_CODE_ST,
-		COUNTRY_CODE_SN, COUNTRY_CODE_SG, COUNTRY_CODE_ZA, COUNTRY_CODE_LK,
-		/*COUNTRY_CODE_SJ,*/ /*COUNTRY_CODE_TW,*/COUNTRY_CODE_TH, COUNTRY_CODE_TT,
-		COUNTRY_CODE_TC, COUNTRY_CODE_UG, COUNTRY_CODE_US, /*COUNTRY_CODE_UM,*/
-		COUNTRY_CODE_UY, COUNTRY_CODE_VU, COUNTRY_CODE_VE, COUNTRY_CODE_VN,
-		COUNTRY_CODE_VI, /*COUNTRY_CODE_KR,*/ COUNTRY_CODE_IN
-	};
-
-	parse_Scenario_group(line, country_code_fcc, ARRAY_SIZE(country_code_fcc));
-}
-
-void appendDefaultValutToPowerLimitDefault(void)
-{
-	uint32_t i = 0, j = 0, k = 0;
-	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT g_rRlmPowerLimitDefaultLPI[1] = {
-		{
-			{0, 0}
-			, {63, 63, 63, 63, 63, 63, 63, 63, 63}
-			, 0
-		}
-	};
-	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT 	g_rRlmPowerLimitDefaultVLP[1] = {
-		{
-			{0, 0}
-			, {63, 63, 63, 63, 63, 63, 63, 63, 63}
-			, 0
-		}
-	};
-	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE g_PwrMode6GSupportDefault[1] = {
-		{
-			{0, 0},
-			{
-				{1, 1, 1}, /* UNII-5 */
-				{1, 1, 1}, /* UNII-6 */
-				{1, 1, 1}, /* UNII-7 */
-				{1, 1, 1}  /* UNII-8 */
-			}
-		}
-	};
-
-	DBGLOG(RLM, ERROR, "leave %d to set default value\n", RRLM_POWER_LIMIT_DEFAULT_SIZE - VLPCountryNum);
-	for (i = VLPCountryNum; i < RRLM_POWER_LIMIT_DEFAULT_SIZE; i++) {
-		g_rRlmPowerLimitDefault[i].aucCountryCode[0] = 0;
-		g_rRlmPowerLimitDefault[i].aucCountryCode[1] = 0;
-		for (j = 0; j < PWR_LMT_DEF_PWR_NUM; j++) {
-			g_rRlmPowerLimitDefault[i].aucPwrLimitSubBand[j] = g_rRlmPowerLimitDefaultLPI[0].aucPwrLimitSubBand[j];
-		}
-		g_rRlmPowerLimitDefault[i].ucPwrUnit = g_rRlmPowerLimitDefaultLPI[0].ucPwrUnit;
-
-		g_rRlmPowerLimitDefault_VLP[i].aucCountryCode[0] = 0;
-		g_rRlmPowerLimitDefault_VLP[i].aucCountryCode[1] = 0;
-		for (j = 0; j < PWR_LMT_DEF_PWR_NUM; j++) {
-			g_rRlmPowerLimitDefault_VLP[i].aucPwrLimitSubBand[j] = g_rRlmPowerLimitDefaultVLP[0].aucPwrLimitSubBand[j];
-		}
-		g_rRlmPowerLimitDefault_VLP[i].ucPwrUnit = g_rRlmPowerLimitDefaultVLP[0].ucPwrUnit;
-
-		g_rCountryPwrMode6GSupport[i].aucCountryCode[0] = 0;
-		g_rCountryPwrMode6GSupport[i].aucCountryCode[1] = 0;
-		for (j = 0; j < SUBBAND_6G_NUM; j++) {
-			for (k = 0; k < PWR_MODE_6G_NUM; k++) {
-				g_rCountryPwrMode6GSupport[i].rSubBand[j].fgPwrMode6GSupport[k] = \
-				g_PwrMode6GSupportDefault[0].rSubBand[j].fgPwrMode6GSupport[k];
-			}
-		}
-	}
 }
 
 void vlpFileBufToList(struct ADAPTER *prAdapter, uint8_t *pucFileBuf)
@@ -9538,15 +9348,11 @@ void vlpFileBufToList(struct ADAPTER *prAdapter, uint8_t *pucFileBuf)
 			continue;
 
 		if (strstr(oneLine, "LPI=") != NULL) {
-			parseLPI_VLP(&oneLine[strlen("LPI=")], &g_rRlmPowerLimitDefault[VLPCountryNum]);
+			parseLPI_VLP(&oneLine[strlen("LPI=")], &g_rRlmPowerLimitDefault[0], (sizeof(g_rRlmPowerLimitDefault) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT)));
 		} else if (strstr(oneLine, "VLP=") != NULL) {
-			parseLPI_VLP(&oneLine[strlen("LPI=")], &g_rRlmPowerLimitDefault_VLP[VLPCountryNum]);
+			parseLPI_VLP(&oneLine[strlen("VLP=")], &g_rRlmPowerLimitDefault_VLP[0], (sizeof(g_rRlmPowerLimitDefault_VLP) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT)));
 		} else if (strstr(oneLine, "PwrMode6GSupport=") != NULL) {
-			parsePwrMode6GSupport(&oneLine[strlen("PwrMode6GSupport=")], &g_rCountryPwrMode6GSupport[VLPCountryNum]);
-		} else if (strstr(oneLine, "CE=") != NULL) {
-			parse_CEScenario_group(&oneLine[strlen("CE=")]);
-		} else if (strstr(oneLine, "FCC=") != NULL) {
-			parse_FCCScenario_group(&oneLine[strlen("FCC=")]);
+			parsePwrMode6GSupport(&oneLine[strlen("PwrMode6GSupport=")], &g_rCountryPwrMode6GSupport[0], (sizeof(g_rCountryPwrMode6GSupport) / sizeof(struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE)));
 		}
 	}
 }
@@ -9558,7 +9364,6 @@ void vlpCfgFileToList(struct ADAPTER *prAdapter)
 	char motoConfigName[ARRAY_VALUE_MAX] = {0};
 	int motoRet = 1;
 
-	VLPCountryNum = 0;	// reset to 0
 	get_moto_config_file_name(motoConfigName, VLP_CFG_INDEX);
 	if (strlen(motoConfigName)) {
 		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
@@ -9593,7 +9398,6 @@ void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)
 
 	/* 3. update cfg list by vlp.cfg */
 	vlpCfgFileToList(prAdapter);
-	appendDefaultValutToPowerLimitDefault();
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 	/* 4. send setting to firmware */
