@@ -8181,6 +8181,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisGTKCipherCheck, "DisGTKCipherCheck", 1,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgDisCrossPmf, "DisCrossPmf", 0,
+		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisSecurityCheck, "DisSecurityCheck", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucAllowBtmReqMode, "AllowBtmReqMode", 0xff,

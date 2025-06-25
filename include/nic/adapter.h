@@ -1243,6 +1243,7 @@ struct WIFI_VAR {
 	uint8_t  fgDisGTKCipherCheck;
 	uint8_t  fgDisSecurityCheck;
 	uint8_t  ucAllowBtmReqMode;
+	uint32_t fgDisCrossPmf;		/* 0:enable cross pmf 1:disable */
 	uint32_t u4RejectBtmReqReason;
 	uint32_t fgRoamByBTO;
 	uint32_t u4AisRoamingNumber;
