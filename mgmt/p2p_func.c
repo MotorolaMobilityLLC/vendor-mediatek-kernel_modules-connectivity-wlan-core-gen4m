@@ -4664,19 +4664,21 @@ void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 	uint16_t ie_len, ie_offset;
 #endif
 
-	if (pucIE == NULL)
+	if (pucIE == NULL || prStaRec == NULL)
 		return;
 
 	aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
 
 	/* only check tlv */
 	if (IE_LEN(pucIE) < ELEM_MIN_LEN_MTK_OUI ||
-	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)) ||
-	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)))
 		return;
 
 	prStaRec->fgIsSupportCsa = 1;
 	DBGLOG(P2P, TRACE, "Peer support CSA\n");
+
+	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
 
 #if ((CFG_SUPPORT_BALANCE_MLRV2 == 1) || (CFG_SUPPORT_BALANCE_MLRP_ALR == 1))
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;

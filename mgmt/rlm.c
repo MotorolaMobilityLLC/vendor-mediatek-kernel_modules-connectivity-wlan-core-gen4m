@@ -3194,6 +3194,8 @@ void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
 		ELEM_MIN_LEN_MTK_OUI)
 		return;
 
+	prStaRec->fgIsSupportCsa = TRUE;
+
 	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
