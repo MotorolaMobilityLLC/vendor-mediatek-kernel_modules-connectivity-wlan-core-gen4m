@@ -1860,7 +1860,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 
 	i4Written += kalSnprintf(prLogBuf + i4Written,
 		DUMP_LOG_BUF_SIZE - i4Written,
-		"[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x],40[%d]\n",
+		"[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x]\n",
 		prStaRec->fgIsInPS,
 		prStaRec->fgIsTxAllowed,
 		prStaRec->fgIsTxKeyReady,
@@ -1905,7 +1905,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	i4Written += kalSnprintf(prLogBuf + i4Written,
 		DUMP_LOG_BUF_SIZE - i4Written,
-		"[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [ApRm][%u], [MldAddr]["
+		"[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [MldAddr]["
 		MACSTR "]\n",
 		prStaRec->ucMldStaIndex,
 		prStaRec->ucLinkIndex,
