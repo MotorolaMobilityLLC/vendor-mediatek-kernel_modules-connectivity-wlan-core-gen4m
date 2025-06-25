@@ -1219,8 +1219,6 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				/* Clear history. */
 				prStaRec->ucJoinFailureCount = 0;
 			} else {
-				cnmStaRecChangeState(prAdapter, prStaRec,
-						STA_STATE_1);
 				DBGLOG(SAA, INFO,
 				       "Assoc Req was rejected by [" MACSTR
 				       "], Status Code = %d\n",
