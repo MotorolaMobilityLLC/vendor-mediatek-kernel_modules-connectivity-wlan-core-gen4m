@@ -501,17 +501,24 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 		 */
 		uint32_t start = 1;
 		uint32_t end = HW_CHNL_NUM_MAX_4G_5G;
+		uint32_t u4FullScanTimeout = CFG_SCAN_FULL2PARTIAL_PERIOD;
 
 		if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4)
 			end = HW_CHNL_NUM_MAX_2G4;
 		else if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_5G)
 			start = HW_CHNL_NUM_MAX_2G4 + 1;
 
+#if (CFG_SUPPORT_ROAMING == 1)
+		if (roamingFsmCheckIfRoaming(prAdapter,
+				prScanReqMsg->ucBssIndex))
+			u4FullScanTimeout = 0;
+#endif
+
 		u4Index = 0;
 		/* If partial scan list are too old, do full scan */
 		if (!CHECK_FOR_TIMEOUT(rCurrentTime,
 			prScanInfo->u4LastFullScanTime,
-			SEC_TO_SYSTIME(CFG_SCAN_FULL2PARTIAL_PERIOD))) {
+			SEC_TO_SYSTIME(u4FullScanTimeout))) {
 			for (u4Channel = start; u4Channel <= end; u4Channel++) {
 				/* 2.4G and 5G check */
 				if (scanIsBitSet(u4Channel,
