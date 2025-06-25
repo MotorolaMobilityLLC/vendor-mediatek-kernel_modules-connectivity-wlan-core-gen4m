@@ -8605,7 +8605,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		wlanOnPostNetRegister();
 
+#if CFG_SUPPORT_NETEVENT_NOTIFY
 		wlanRegisterNeteventNotifier(prGlueInfo);
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
@@ -8753,7 +8755,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 			power_throttling_stop();
 #endif
+#if CFG_SUPPORT_NETEVENT_NOTIFY
 			wlanUnregisterNeteventNotifier(prGlueInfo);
+#endif
 			wlanNetUnregister(prWdev);
 			/* Unregister notifier callback */
 			wlanUnregisterInetAddrNotifier();
@@ -9172,8 +9176,9 @@ static void wlanRemove(void)
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	power_throttling_stop();
 #endif
-
+#if CFG_SUPPORT_NETEVENT_NOTIFY
 	wlanUnregisterNeteventNotifier(prGlueInfo);
+#endif
 
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(gprWdev[0]);

@@ -34,9 +34,10 @@
 #if CFG_ENABLE_EARLY_SUSPEND
 #include <linux/earlysuspend.h>
 #endif
-
+#if CFG_SUPPORT_NETEVENT_NOTIFY
 #include <linux/neighbour.h>
 #include <net/netevent.h>
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -489,6 +490,7 @@ void wlanUnregisterNetdevNotifier(void)
 	unregister_netdevice_notifier(&wlan_netdev_notifier);
 }
 
+#if CFG_SUPPORT_NETEVENT_NOTIFY
 static int wlan_netevent_notifier_call(struct notifier_block *nb,
 		unsigned long event, void *ptr)
 {
@@ -541,4 +543,5 @@ void wlanUnregisterNeteventNotifier(struct GLUE_INFO *prGlueInfo)
 
 	unregister_netevent_notifier(&prGlueInfo->wlan_netevent_notifier);
 }
+#endif
 
