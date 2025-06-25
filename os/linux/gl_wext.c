@@ -1828,7 +1828,6 @@ wext_get_scan(struct net_device *prNetDev,
 		 * buffer.
 		 */
 		ret = -E2BIG;
-		/* Update length to give application a hint on result length */
 		prData->length = (__u16) u4BufLen;
 		goto error;
 #else

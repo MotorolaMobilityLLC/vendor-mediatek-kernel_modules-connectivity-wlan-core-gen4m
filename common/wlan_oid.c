@@ -584,11 +584,12 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 
 	if (prAdapter->fgIsRadioOff == FALSE) {
 		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
-			/* If scan results size bigger than buffer size,
-			 * not to add further.
+			/* If u4QueryBufferLen reaches the maximum value,
+			 * the crop scan list info.
 			 */
-			if ((u4BssidListExLen +
-				ALIGN_4(prScanResult[i].u4Length) + 4)
+			if (u4QueryBufferLen >= U16_MAX &&
+				(u4BssidListExLen +
+				 ALIGN_4(prScanResult[i].u4Length) + 4)
 				> u4QueryBufferLen)
 				break;
 
