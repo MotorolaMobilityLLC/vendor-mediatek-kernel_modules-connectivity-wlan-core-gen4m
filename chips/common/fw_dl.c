@@ -2984,6 +2984,10 @@ uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
 exit:
 	DBGLOG(INIT, INFO, "DSP download end[%d].\n", u4Status);
 
+	if (prVerInfo)
+		kalMemFree(prVerInfo, VIR_MEM_TYPE,
+			   sizeof(struct WIFI_VER_INFO));
+
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
 				  NULL,
 				  prFwBuffer);
