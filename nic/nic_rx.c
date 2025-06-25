@@ -652,7 +652,7 @@ void nicRxClearFrag(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(RX, INFO, "%s\n", __func__);
+	DBGLOG(RX, TRACE, "%s\n", __func__);
 }
 
 /*----------------------------------------------------------------------------*/

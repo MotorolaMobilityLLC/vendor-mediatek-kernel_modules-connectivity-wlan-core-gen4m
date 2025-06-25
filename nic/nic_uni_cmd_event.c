@@ -3957,7 +3957,7 @@ uint32_t nicUniCmdStaRecTagBfee(struct ADAPTER *ad,
 	tag->rBfeeStaRec.fgIgnFbk = FALSE;
 	tag->rBfeeStaRec.fgRxsmmEnable = prStaRec->fgRxsmmEnable;
 
-	DBGLOG(INIT, INFO, "[BF]fgRxsmmEnable=%d\n",
+	DBGLOG(INIT, TRACE, "[BF]fgRxsmmEnable=%d\n",
 		tag->rBfeeStaRec.fgRxsmmEnable);
 
 	return tag->u2Length;

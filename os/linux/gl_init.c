@@ -4388,8 +4388,6 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 	    IS_STA_INDOOR_CHANNEL_ENABLED(prAdapter) == FALSE)
 		return FALSE;
 
-	DBGLOG(INIT, INFO, "ucAisIndex=%d\n", ucAisIndex);
-
 	prEntry = &prAdapter->aucDfsAisChnlReqEntries[ucAisIndex];
 	prBssInfo = AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -4400,6 +4398,7 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 			u4CenterFreq = nicChannelNum2Freq(
 				prBssInfo->ucVhtChannelFrequencyS1,
 				prBssInfo->eBand) / 1000;
+
 			if (wlanIsChannelInDfsRange(prAdapter,
 						    prBssInfo->
 							ucPrimaryChannel,
@@ -4427,7 +4426,8 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 			prEntry->fgValid = TRUE;
 
 			DBGLOG(INIT, TRACE,
-				"[%u] channel=[%u %u %u %u %u %u]\n",
+				"ucAisIndex %d [%u] channel=[%u %u %u %u %u %u]\n",
+				ucAisIndex,
 				prBssInfo->ucBssIndex,
 				prEntry->rRfChnlInfo.eBand,
 				prEntry->rRfChnlInfo.ucChannelNum,
@@ -4443,6 +4443,7 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 	u4CenterFreq = nicChannelNum2Freq(
 		prBssInfo->ucVhtChannelFrequencyS1,
 		prBssInfo->eBand) / 1000;
+
 	if (wlanIsChannelInDfsRange(prAdapter,
 				    prBssInfo->ucPrimaryChannel,
 				    prBssInfo->ucVhtChannelWidth,
@@ -4465,7 +4466,8 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 		prEntry->fgValid = TRUE;
 
 		DBGLOG(INIT, TRACE,
-			"[%u] channel=[%u %u %u %u %u %u]\n",
+			"ucAisIndex %d [%u] channel=[%u %u %u %u %u %u]\n",
+			ucAisIndex,
 			prBssInfo->ucBssIndex,
 			prEntry->rRfChnlInfo.eBand,
 			prEntry->rRfChnlInfo.ucChannelNum,

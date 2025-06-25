@@ -11335,7 +11335,7 @@ uint32_t rlmDomain6GPwrModeUpdate(
 		rlmDomainSendPwrLimitCmd(prAdapter);
 	}
 
-	DBGLOG(RLM, INFO, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]",
+	DBGLOG(RLM, TRACE, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]",
 			ucBssIndex,
 			e6GPwrModeBss,
 			e6GPwrModeCurr,
@@ -12499,7 +12499,7 @@ void rlmDomainConnectionNotifiey(
 	struct ADAPTER *prAdapter,
 	enum ENUM_CONNECTION_NOTIFIED_REASON reason)
 {
-	DBGLOG(RLM, WARN, "CNM notify to - Tx Power, reason :%d", reason);
+	DBGLOG(RLM, TRACE, "CNM notify to - Tx Power, reason :%d", reason);
 
 	if (reason == CNM_REQUEST_CHANNEL)
 		rlmDomainPwrLmtCNMReqChNotify(prAdapter);
@@ -12735,7 +12735,7 @@ void rlmDomainSendCachePwrLmtData(struct ADAPTER *prAdapter)
 		rlmDomainWritePwrLimitToEmi(prAdapter);
 		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, FALSE);
 	} else {
-		DBGLOG(NIC, INFO, "No cache data !!\n");
+		DBGLOG(NIC, TRACE, "No cache data !!\n");
 	}
 
 }
@@ -12746,7 +12746,7 @@ void rlmDomainPowerLimitEmiEvent(struct ADAPTER *prAdapter,
 
 	u4SenarioType = *pucEventBuf;
 
-	DBGLOG(NIC, INFO, "u4SenarioType = %d!\n", u4SenarioType);
+	DBGLOG(NIC, TRACE, "u4SenarioType = %d!\n", u4SenarioType);
 
 	if (u4SenarioType == TX_PWR_EMI_SCENARIO_TYPE_UPDATE) {
 		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
