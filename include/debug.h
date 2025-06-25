@@ -159,7 +159,7 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 #define DBG_PLE_INT_FW_READY_MASK  0xFFFF
 #define DBG_PLE_INT_FW_READY       0xDDDD
 
-#define BUS_ACCESS_FAIL_MAX_TIME 5 /* seconds */
+#define BUS_ACCESS_FAIL_MAX_TIME 10 /* seconds */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
