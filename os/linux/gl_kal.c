@@ -2310,17 +2310,7 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			preempt_enable();
 		} else {
 			skb_queue_tail(&prGlueInfo->rRxNapiSkbQ, prSkb);
-			if (prGlueInfo->fgNapiReady) {
-				if (kal_napi_schedule(&prGlueInfo->napi)) {
-					RX_INC_CNT(
-						&prGlueInfo->prAdapter->rRxCtrl,
-						RX_NAPI_SCHEDULE_COUNT);
-				}
-			} else {
-				DBGLOG(RX, WARN,
-					"Skip napi schedule, NapiReady:%u\n",
-					prGlueInfo->fgNapiReady);
-			}
+			kalNapiSchedule(prGlueInfo->prAdapter);
 		}
 #else /* CFG_SUPPORT_RX_NAPI */
 		/* GRO receive function can't be interrupt so it need to
@@ -15090,6 +15080,7 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct RX_CTRL *prRxCtrl;
+	struct napi_struct *prNapi;
 
 	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
@@ -15103,9 +15094,13 @@ static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 
-	if (kal_napi_schedule(prGlueInfo->prRxDirectNapi)) {
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		prNapi = prGlueInfo->prRxDirectNapi;
+	else
+		prNapi = &prGlueInfo->napi;
+
+	if (kal_napi_schedule(prNapi))
 		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-	}
 }
 
 static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
