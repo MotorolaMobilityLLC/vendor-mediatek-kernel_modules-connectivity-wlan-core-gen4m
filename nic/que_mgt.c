@@ -532,29 +532,13 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 {
 	uint32_t i;
 
-	if (!prStaRec)
+	if (!prAdapter || !prStaRec)
 		return;
 
 #if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	/* clear fragment cache when reconnect, reassoc, disconnect */
 	nicRxClearFrag(prAdapter, prStaRec);
 #endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
-
-	/* 4 <1> Flush TX queues */
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		nicTxDirectClearStaAcmQ(prAdapter, prStaRec->ucIndex);
-		nicTxDirectClearStaPendQ(prAdapter, prStaRec->ucIndex);
-		nicTxDirectClearStaPsQ(prAdapter, prStaRec->ucIndex);
-	} else {
-		struct MSDU_INFO *prFlushedTxPacketList = NULL;
-
-		prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
-			prStaRec->ucIndex);
-
-		if (prFlushedTxPacketList)
-			wlanProcessQueuedMsduInfo(prAdapter,
-				prFlushedTxPacketList);
-	}
 
 	/* 4 <2> Flush RX queues and delete RX BA agreements */
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++)
@@ -575,6 +559,22 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 	prStaRec->ucFreeQuotaForNonDelivery = 0;
 
 	nicTxFreeDescTemplate(prAdapter, prStaRec);
+
+	/* 4 <1> Flush TX queues */
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectClearStaAcmQ(prAdapter, prStaRec->ucIndex);
+		nicTxDirectClearStaPendQ(prAdapter, prStaRec->ucIndex);
+		nicTxDirectClearStaPsQ(prAdapter, prStaRec->ucIndex);
+	} else {
+		struct MSDU_INFO *prFlushedTxPacketList = NULL;
+
+		prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter,
+			prStaRec->ucIndex);
+
+		if (prFlushedTxPacketList)
+			wlanProcessQueuedMsduInfo(prAdapter,
+				prFlushedTxPacketList);
+	}
 
 	qmUpdateStaRec(prAdapter, prStaRec);
 
