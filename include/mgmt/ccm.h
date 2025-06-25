@@ -56,8 +56,7 @@ void ccmAAForbiddenRegionCal(struct ADAPTER *prAdapter,
 			     uint16_t *prTargetBw,
 			     struct CCM_AA_FOBIDEN_REGION_UNIT *arRegionOutput);
 
-u_int8_t ccmIsPreferAA(struct ADAPTER *prAdapter,
-		       struct BSS_INFO *prCsaBss);
+u_int8_t ccmIsPreferAA(struct ADAPTER *prAdapter);
 
 bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 			 struct RF_CHANNEL_INFO *prRfChnlInfo1,

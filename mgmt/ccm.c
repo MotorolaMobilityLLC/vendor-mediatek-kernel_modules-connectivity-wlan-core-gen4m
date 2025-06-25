@@ -380,7 +380,7 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 	     || prBssInfo->eBand == BAND_6G
 #endif
 	     ) &&
-	    p2pFuncIsPreferWfdAa(prAdapter, prBssInfo)) {
+	    p2pFuncIsPreferWfdAa(prAdapter)) {
 		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
 						     freqList);
 		for (u4Idx = 0; u4Idx < u4FreqListNum; u4Idx++) {
@@ -766,26 +766,15 @@ void ccmAAForbiddenRegionCal(struct ADAPTER *prAdapter,
 	}
 }
 
-u_int8_t ccmIsPreferAA(struct ADAPTER *prAdapter,
-		       struct BSS_INFO *prCsaBss)
+u_int8_t ccmIsPreferAA(struct ADAPTER *prAdapter)
 {
 #if (CONFIG_BAND_NUM > 2)
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	u_int8_t fgIsAaDbdcEnable = prChipInfo->isAaDbdcEnable;
-	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
 
 	DBGLOG(CCM, LOUD, "AaDbdcEnable=%u\n", fgIsAaDbdcEnable);
 
-	if (prCsaBss)
-		ccmGetOtherAliveBssHwBitmap(prAdapter,
-					    au4AliveBssBitmap, prCsaBss);
-	else
-		bssGetAliveBssHwBitmap(prAdapter, au4AliveBssBitmap);
-
 	if (ENUM_BAND_NUM > 2 &&
-	    /* bn2 is available */
-	    au4AliveBssBitmap[AA_HW_BAND_1] != 0 &&
-	    au4AliveBssBitmap[AA_HW_BAND_2] == 0 &&
 	    /* skyhawk sku1 */
 	    fgIsAaDbdcEnable)
 		return TRUE;
@@ -806,7 +795,7 @@ bool ccmAAAvailableCheck(struct ADAPTER *prAdapter,
 	u_int8_t fgAliasingCheck, fgIsolationCheck;
 
 	/* 1. Check if A+A enabled and preferred */
-	if (!ccmIsPreferAA(prAdapter, NULL))
+	if (!ccmIsPreferAA(prAdapter))
 		return FALSE;
 
 	/* 2. Find out the higher and lower freq */

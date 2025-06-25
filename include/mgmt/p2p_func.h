@@ -773,8 +773,7 @@ u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 				 uint32_t *pau4SafeChnl);
 
 #if CFG_SUPPORT_CCM
-u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
-			      struct BSS_INFO *prCsaBss);
+u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter);
 #endif
 
 enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,

@@ -10405,7 +10405,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_CCM)
 	/* Prefer A+A for SP Skyhawk Sku1 2G+2A+1A */
-	if (p2pFuncIsPreferWfdAa(prAdapter, NULL))
+	if (p2pFuncIsPreferWfdAa(prAdapter))
 		*pu4FreqListNum += p2pFuncAppendAaFreq(prAdapter, NULL,
 			&pau4FreqList[*pu4FreqListNum]);
 #endif
@@ -11716,13 +11716,12 @@ u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 }
 
 #if CFG_SUPPORT_CCM
-u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
-			      struct BSS_INFO *prCsaBss)
+u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter)
 {
 	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
 		&(prAdapter->rWifiVar.rWfdConfigureSettings);
 
-	return (ccmIsPreferAA(prAdapter, prCsaBss) &&
+	return (ccmIsPreferAA(prAdapter) &&
 		prWfdCfgSettings->ucWfdEnable == 1);
 }
 #endif
