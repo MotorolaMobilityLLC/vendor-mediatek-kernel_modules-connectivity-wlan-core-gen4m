@@ -1049,6 +1049,7 @@ struct GLUE_INFO {
 	struct napi_struct *prRxDirectNapi;
 	struct kfifo rRxKfifoQ;
 	u_int8_t fgNapiReady;
+	u_int8_t fgNapiScheduleTimeout;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
 	uint32_t u4LastNapiPollCnt;
