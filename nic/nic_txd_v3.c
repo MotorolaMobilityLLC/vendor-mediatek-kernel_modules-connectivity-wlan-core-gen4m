@@ -558,8 +558,12 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 				nicTxGetRemainingTxTimeByTc(prMsduInfo->ucTC);
 
 #if CFG_TX_CUSTOMIZE_LTO
-		if (IS_FEATURE_ENABLED(prWifiVar->ucEnableConfigLTO) &&
-			nicTxEnableLTO(prAdapter, prMsduInfo, prBssInfo))
+		if (IS_FEATURE_ENABLED(prWifiVar->ucEnableConfigLTO)
+			&& nicTxEnableLTO(prAdapter, prMsduInfo, prBssInfo)
+#if CFG_SUPPORT_MLR
+			&& !MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)
+#endif
+			)
 			u4RemainingLifetime = prWifiVar->u4LTOValue;
 #endif /* CFG_TX_CUSTOMIZE_LTO */
 
