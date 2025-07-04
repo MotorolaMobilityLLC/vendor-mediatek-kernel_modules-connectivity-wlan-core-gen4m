@@ -3422,7 +3422,7 @@ static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp_FCC[] = {
 	/*{'S', 'J'},*/ /*{'T', 'W'},*/ {'T', 'H'}, {'T', 'T'},
 	{'T', 'C'}, {'U', 'G'}, {'U', 'S'}, /*{'U', 'M'},*/
 	{'U', 'Y'}, {'V', 'U'}, {'V', 'E'}, {'V', 'N'},
-	{'V', 'I'}, /*{'K', 'R'},*/ {'I', 'N'}, {'J', 'P'},
+	{'V', 'I'}, /*{'K', 'R'},*/ {'I', 'N'}, /*{'J', 'P'},*/
 	{'X', 'J'}
 };
 
