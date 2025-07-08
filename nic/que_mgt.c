@@ -5322,7 +5322,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 					&prReorderQueParm->rReorderBubbleTimer,
-					prStaRec->u4QmRxBaMissTimeout);
+					qmGetRxReorderTimeout(prStaRec));
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -5338,8 +5338,8 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 
 			if (fgMissing &&
 			    CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
-				MSEC_TO_SYSTIME(prStaRec->u4QmRxBaMissTimeout))
-				) {
+				MSEC_TO_SYSTIME(qmGetRxReorderTimeout(prStaRec))
+				)) {
 
 				DBGLOG(RX, TRACE,
 					"QM:RX BA Timeout Next Tid %u SSN %u, WinStart:%u->%u\n",
@@ -5477,7 +5477,7 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 					&prReorderQueParm->rReorderBubbleTimer,
-					prStaRec->u4QmRxBaMissTimeout);
+					qmGetRxReorderTimeout(prStaRec));
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -8993,4 +8993,60 @@ void qmSetStaPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	else
 		prAdapter->u4StaInPSBitmap &= ~BIT(prStaRec->ucIndex);
 #endif
+}
+
+uint32_t qmGetRxReorderTimeout(struct STA_RECORD *prStaRec)
+{
+	return prStaRec->u4QmRxBaMissTimeout;
+}
+
+static void __qmSetRxReorderTimeout(struct STA_RECORD *prStaRec,
+	uint32_t u4Timeout)
+{
+	prStaRec->u4QmRxBaMissTimeout = u4Timeout;
+}
+
+void qmSetRxReorderTimeoutByStaRec(struct STA_RECORD *prStaRec,
+	enum RX_REORDER_TIMEOUT_TYPE eType, uint32_t u4Timeout)
+{
+	uint32_t u4OldVal;
+	uint8_t i;
+
+	if (!prStaRec)
+		return;
+
+	prStaRec->u4QmRxBaMissTimeoutType[eType] = u4Timeout;
+
+	u4OldVal = qmGetRxReorderTimeout(prStaRec);
+	for (i = 0; i < RX_REORDER_TIMEOUT_TYPE_MAX; i++) {
+		if (prStaRec->u4QmRxBaMissTimeoutType[i]) {
+			__qmSetRxReorderTimeout(prStaRec,
+				prStaRec->u4QmRxBaMissTimeoutType[i]);
+			break;
+		}
+	}
+
+	if (u4OldVal != qmGetRxReorderTimeout(prStaRec)) {
+		DBGLOG(QM, INFO,
+			"STA[%u] Rx Reorder Timeout changed from %u to %u eType[%u]\n",
+			prStaRec->ucIndex, u4OldVal,
+			qmGetRxReorderTimeout(prStaRec), eType);
+	}
+}
+
+void qmSetRxReorderTimeoutByBssIdx(struct ADAPTER *ad, uint8_t ucBssIndex,
+	enum RX_REORDER_TIMEOUT_TYPE eType, uint32_t u4Timeout)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+
+	if (!ad)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(ad, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	qmSetRxReorderTimeoutByStaRec(prStaRec, eType, u4Timeout);
 }

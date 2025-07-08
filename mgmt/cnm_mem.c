@@ -711,8 +711,9 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 #endif
 
 			/* Default QM RX BA timeout */
-			prStaRec->u4QmRxBaMissTimeout =
-				prAdapter->rWifiVar.u4BaMissTimeoutMs;
+			qmSetRxReorderTimeoutByStaRec(prStaRec,
+				RX_REORDER_TIMEOUT_TYPE_DEFAULT,
+				prAdapter->rWifiVar.u4BaMissTimeoutMs);
 
 			break;
 		}

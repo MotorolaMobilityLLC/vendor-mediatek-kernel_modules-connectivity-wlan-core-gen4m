@@ -683,6 +683,7 @@ struct STA_RECORD {
 
 	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
 	uint32_t u4QmRxBaMissTimeout;
+	uint32_t u4QmRxBaMissTimeoutType[RX_REORDER_TIMEOUT_TYPE_MAX];
 
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 	struct TIMINGMSMT_PARAM rWNMTimingMsmt;

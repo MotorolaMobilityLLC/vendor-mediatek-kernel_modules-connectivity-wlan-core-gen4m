@@ -13124,11 +13124,12 @@ uint32_t wlanSetLowLatencyMode(
 		 * Change QM RX BA timeout if the gaming mode state changed
 		 */
 		if (fgEnMode) {
-			prStaRec->u4QmRxBaMissTimeout
-				= prWifiVar->u4BaShortMissTimeoutMs;
+			qmSetRxReorderTimeoutByStaRec(prStaRec,
+				RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY,
+				prWifiVar->u4BaShortMissTimeoutMs);
 		} else {
-			prStaRec->u4QmRxBaMissTimeout
-				= prWifiVar->u4BaMissTimeoutMs;
+			qmSetRxReorderTimeoutByStaRec(prStaRec,
+				RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY, 0);
 		}
 	}
 

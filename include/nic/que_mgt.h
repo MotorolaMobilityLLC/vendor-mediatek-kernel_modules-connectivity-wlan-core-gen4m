@@ -254,6 +254,14 @@ extern const uint8_t *apucACI2Str[4];
  *******************************************************************************
  */
 
+enum RX_REORDER_TIMEOUT_TYPE {
+	RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY = 0, /* highest priority */
+	RX_REORDER_TIMEOUT_TYPE_APIOT,
+	RX_REORDER_TIMEOUT_TYPE_FW,
+	RX_REORDER_TIMEOUT_TYPE_DEFAULT,
+	RX_REORDER_TIMEOUT_TYPE_MAX
+};
+
 enum {
 	QM_DBG_CNT_00 = 0,
 	QM_DBG_CNT_01,
@@ -1290,3 +1298,9 @@ extern const uint8_t arNetwork2TcResource[MAX_BSSID_NUM +
 u_int8_t qmIsStaInPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec);
 void qmSetStaPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	u_int8_t fgIsInPS);
+
+uint32_t qmGetRxReorderTimeout(struct STA_RECORD *prStaRec);
+void qmSetRxReorderTimeoutByStaRec(struct STA_RECORD *prStaRec,
+	enum RX_REORDER_TIMEOUT_TYPE eType, uint32_t u4Timeout);
+void qmSetRxReorderTimeoutByBssIdx(struct ADAPTER *ad, uint8_t ucBssIndex,
+	enum RX_REORDER_TIMEOUT_TYPE eType, uint32_t u4Timeout);

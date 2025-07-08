@@ -4732,9 +4732,10 @@ void aisRunIotApAction(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar;
 	struct BSS_DESC *prBssDesc;
 	struct STA_RECORD *prStaRec;
-	uint32_t u4NewRxBaMissTimeout;
+	uint32_t u4OldRxBaMissTimeout;
 	uint8_t ucAisIndex;
 	uint8_t ucBssIndex = 0;
+	u_int8_t fgApIotSet = FALSE;
 
 	prWifiVar = &prAdapter->rWifiVar;
 
@@ -4756,42 +4757,31 @@ void aisRunIotApAction(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
-	u4NewRxBaMissTimeout = prStaRec->u4QmRxBaMissTimeout;
+	u4OldRxBaMissTimeout = qmGetRxReorderTimeout(prStaRec);
 
 	/* Handle IOT AP Action */
 	switch (u4iotApAction) {
 	case WLAN_IOT_AP_BA_MISS_TIMEOUT:
-
 		if (eConnectionState == MEDIA_STATE_CONNECTED)
-			u4NewRxBaMissTimeout =
-					prWifiVar->u4BaIotApMissTimeoutMs;
-
+			fgApIotSet = TRUE;
 		break;
-
 
 	default:
-		/* No IOT AP conneted or STA disconnected, set to default */
-		u4NewRxBaMissTimeout = prWifiVar->u4BaMissTimeoutMs;
-
 		break;
 	}
 
-#if CFG_SUPPORT_LOWLATENCY_MODE
-	/* Always short reorder timeout for game mode */
-	if (prAdapter->fgEnLowLatencyMode)
-		u4NewRxBaMissTimeout = prWifiVar->u4BaShortMissTimeoutMs;
-#endif
+	if (!fgApIotSet)
+		return;
 
-	if (u4NewRxBaMissTimeout != prStaRec->u4QmRxBaMissTimeout) {
+	qmSetRxReorderTimeoutByStaRec(prStaRec, RX_REORDER_TIMEOUT_TYPE_APIOT,
+		prWifiVar->u4BaIotApMissTimeoutMs);
 
+	if (u4OldRxBaMissTimeout != qmGetRxReorderTimeout(prStaRec)) {
 		DBGLOG(AIS, INFO,
 			"Change AP reorder timeout from [%d] to [%d]\n",
-			prStaRec->u4QmRxBaMissTimeout,
-			u4NewRxBaMissTimeout);
-
-		prStaRec->u4QmRxBaMissTimeout = u4NewRxBaMissTimeout;
+			u4OldRxBaMissTimeout,
+			qmGetRxReorderTimeout(prStaRec));
 	}
-
 }
 #endif
 
