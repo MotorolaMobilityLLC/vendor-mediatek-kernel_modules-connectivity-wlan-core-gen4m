@@ -9,6 +9,8 @@ CONNAC_VER := 2_0
 CONFIG_MTK_COMBO_WIFI_HIF := axi
 MTK_ANDROID_WMT := y
 MTK_ANDROID_EMI := y
+CONFIG_MTK_MLR_V1 := y
+CONFIG_MTK_MLR_V2 := y
 MODULE_NAME := wlan_drv_gen4m_6899
 
 include $(KO_CODE_PATH)/Kbuild.main
