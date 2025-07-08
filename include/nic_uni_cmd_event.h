@@ -7910,6 +7910,7 @@ enum UNI_EVENT_MDDP_TAG {
 	UNI_EVENT_MDDP_FILTER_RULE,
 	UNI_EVENT_MDDP_EXCEPTION,
 	UNI_EVENT_MDDP_FWOWN_RETRY,
+	UNI_EVENT_MDDP_PF_USING,
 	UNI_EVENT_MDDP_MAX_NUM
 };
 
@@ -7963,6 +7964,13 @@ struct UNI_EVENT_MDDP_FWOWN_RETRY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4RetryCnt;
+};
+
+struct UNI_EVENT_MDDP_PF_USING {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgIsMdPfUsing;
+	uint8_t aucReserved[3];
 };
 /** @} */
 #endif /* CFG_MTK_MDDP_SUPPORT */

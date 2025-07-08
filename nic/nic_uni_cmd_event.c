@@ -14056,6 +14056,7 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	static char aucMddpRsn[MDDP_EXP_RSN_SIZE];
+	uint32_t i = 0, u4RxReorderTimeoutTime = 0;
 
 	/* underflow check */
 	if (data_len < fixed_len) {
@@ -14099,6 +14100,28 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			       retry->u4RetryCnt);
 
 			mddpTriggerMdFwOwnByFw(ad);
+		}
+			break;
+		case UNI_EVENT_MDDP_PF_USING: {
+			struct UNI_EVENT_MDDP_PF_USING *pf_using =
+				(struct UNI_EVENT_MDDP_PF_USING *) tag;
+
+			DBGLOG(NIC, INFO,
+			       "mddp pf_using tag[%u] len[%u] MdPfUsing[%u]\n",
+			       pf_using->u2Tag,
+			       pf_using->u2Length,
+			       pf_using->fgIsMdPfUsing);
+
+			if (pf_using->fgIsMdPfUsing)
+				u4RxReorderTimeoutTime = 50;
+			else
+				u4RxReorderTimeoutTime = 0;
+
+			for (i = 0; i < MAX_BSSID_NUM; i++) {
+				qmSetRxReorderTimeoutByBssIdx(ad, i,
+					RX_REORDER_TIMEOUT_TYPE_FW,
+					u4RxReorderTimeoutTime);
+			}
 		}
 			break;
 		default:
