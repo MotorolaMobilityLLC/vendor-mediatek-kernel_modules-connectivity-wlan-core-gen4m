@@ -89,12 +89,6 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t *pu4Value);
 static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t u4Value);
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
-				uint32_t u4Register, uint32_t *pu4Value);
-static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
-				uint32_t u4Register, uint32_t u4Value);
-#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -666,7 +660,7 @@ static u_int8_t kalIsHostReg(struct mt66xx_chip_info *prChipInfo,
 }
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t *pu4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -788,7 +782,7 @@ static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 	return FALSE;
 }
 
-static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t u4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;

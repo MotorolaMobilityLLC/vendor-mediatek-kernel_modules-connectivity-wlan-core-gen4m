@@ -2024,11 +2024,13 @@ void mt6639_dump_mcr_rd(struct ADAPTER *ad,
 			uint32_t *val,
 			u_int8_t is_bt)
 {
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (is_bt) {
-		connv3_hif_dbg_read(
-			CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			addr, val);
-	} else {
+		if (ad)
+			kalDevRegReadViaBT(ad->prGlueInfo, addr, val);
+	} else
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+	{
 		HAL_MCR_RD(ad, addr, val);
 	}
 }
@@ -2038,11 +2040,13 @@ void mt6639_dump_mcr_wr(struct ADAPTER *ad,
 			uint32_t val,
 			u_int8_t is_bt)
 {
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (is_bt) {
-		connv3_hif_dbg_write(
-			CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			addr, val);
-	} else {
+		if (ad)
+			kalDevRegWriteViaBT(ad->prGlueInfo, addr, val);
+	} else
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+	{
 		HAL_MCR_WR(ad, addr, val);
 	}
 }
@@ -2054,16 +2058,19 @@ void mt6639_dump_mcr_wr_field(struct ADAPTER *ad,
 			      uint32_t mask,
 			      u_int8_t is_bt)
 {
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (is_bt) {
 		uint32_t tmp = 0;
 
-		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-				    addr, &tmp);
+		if (!ad)
+			return;
+		kalDevRegReadViaBT(ad->prGlueInfo, addr, &tmp);
 		tmp &= (~mask);
 		tmp |= (val << shift) & mask;
-		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-				     addr, tmp);
-	} else {
+		kalDevRegWriteViaBT(ad->prGlueInfo, addr, tmp);
+	} else
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+	{
 		HAL_MCR_WR_FIELD(ad, addr, val, shift, mask);
 	}
 }
@@ -5455,10 +5462,10 @@ static void mt6639_dumpConninfraReg(struct ADAPTER *ad)
 static void mt6639_dumpWfsysReg(struct ADAPTER *ad)
 {
 	/* Section A: Dump wf_top_misc_on monflag */
-	mt6639_dumpWfTopMiscOn(ad);
+	mt6639_dumpWfTopMiscOn(ad, FALSE);
 
 	/* Section B: Dump wf_top_misc_von monflag */
-	mt6639_dumpWfTopMiscVon(ad);
+	mt6639_dumpWfTopMiscVon(ad, FALSE);
 
 	/* Section A: Dump VDNR timeout host side info */
 	mt6639_dumpHostVdnrTimeoutInfo(ad, FALSE);
@@ -5467,13 +5474,13 @@ static void mt6639_dumpWfsysReg(struct ADAPTER *ad)
 		return;
 
 	/* Section C: Dump wf_top_cfg_on debug CR */
-	mt6639_dumpWfTopCfgon(ad);
+	mt6639_dumpWfTopCfgon(ad, FALSE);
 
 	/* Section B: Dump VDNR timeout wf side info */
-	mt6639_dumpWfVdnrTimeoutInfo(ad);
+	mt6639_dumpWfVdnrTimeoutInfo(ad, FALSE);
 
 	/* Section C: Dump AHB APB timeout info */
-	mt6639_dumpAhbApbTimeoutInfo(ad);
+	mt6639_dumpAhbApbTimeoutInfo(ad, FALSE);
 }
 
 static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
@@ -5559,10 +5566,10 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 
 	/* 3. WF_TOP_debug status */
 	/* Section A: Dump wf_top_misc_on monflag */
-	mt6639_dumpWfTopMiscOn(ad);
+	mt6639_dumpWfTopMiscOn(ad, FALSE);
 
 	/* Section B: Dump wf_top_misc_von monflag */
-	mt6639_dumpWfTopMiscVon(ad);
+	mt6639_dumpWfTopMiscVon(ad, FALSE);
 
 	/* 4.CONN_INFRA status */
 	/* Dump on domain */
