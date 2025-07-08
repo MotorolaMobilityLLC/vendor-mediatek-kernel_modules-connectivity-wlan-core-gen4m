@@ -1277,7 +1277,10 @@ uint8_t cnmDecideSapNewChannel(
 
 	ucCurrentChannel = prBssInfo->ucPrimaryChannel;
 
-	ASSERT(ucCurrentChannel);
+	if (!ucCurrentChannel) {
+		DBGLOG(P2P, ERROR, "Invalid Bss Ch\n");
+		return 0;
+	}
 
 	if (prBssInfo->eBand == BAND_2G4)
 		ucSwitchMode = CH_SWITCH_2G;
@@ -2472,7 +2475,8 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaDoneTimer);
 #endif
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rObssScanTimer);
-
+	SET_NET_PWR_STATE_IDLE(prAdapter,
+		prBssInfo->ucBssIndex);
 	prBssInfo->fgIsInUse = FALSE;
 	kalCsaNotifyWorkDeinit(prAdapter,
 				prBssInfo->ucBssIndex);
