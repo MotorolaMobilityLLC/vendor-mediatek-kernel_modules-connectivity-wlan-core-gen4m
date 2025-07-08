@@ -3401,6 +3401,11 @@ void connac2x_show_wfdma_info(struct ADAPTER *prAdapter)
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	uint32_t u4DmaNum = 1;
 
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "prAdapter NULL\n");
+		return;
+	}
+
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
@@ -3443,6 +3448,11 @@ void connac2x_show_dmashdl_info(struct ADAPTER *prAdapter)
 	uint8_t is_mismatch = FALSE;
 
 	DBGLOG(HAL, INFO, "DMASHDL info:\n");
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "prAdapter NULL\n");
+		return;
+	}
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
@@ -3593,6 +3603,11 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	uint32_t ple_txd_empty = 0;
 	uint32_t buf_size = 1024, pos = 0;
 	char *buf;
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "prAdapter NULL\n");
+		return;
+	}
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCr = prBusInfo->prPleTopCr;
@@ -3892,6 +3907,11 @@ void connac2x_show_pse_info(struct ADAPTER *prAdapter)
 	struct pse_group_info *group;
 	char *str;
 	uint32_t pse_peek[10] = {0};
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "prAdapter NULL\n");
+		return;
+	}
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	pse_group = prBusInfo->prPseGroup;
