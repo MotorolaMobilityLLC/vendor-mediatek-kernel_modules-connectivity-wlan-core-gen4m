@@ -459,6 +459,13 @@ else
 endif
 
 ifneq ($(filter 6899, $(WLAN_CHIP_ID)),)
+    ifeq ($(CONFIG_MTK_MBRAINK_BRIDGE), m)
+        ifeq ($(call kver_ge,6,6),1)
+            CONFIG_SUPPORT_MBRAIN=y
+            CONFIG_SUPPORT_MBRAIN_BIGDATA=y
+            CONFIG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=y
+        endif
+    endif
     ccflags-y += -DCFG_STA_2G_BW=1
     ccflags-y += -DCFG_SAP_2G_BW=1
     ccflags-y += -DCFG_P2P_2G_BW=1
@@ -2935,6 +2942,12 @@ ifneq ($(CONFIG_P2P_MAXIMUM_CLIENT_COUNT),)
 endif
 ifneq ($(CONFIG_WTBL_MAXSIZE),)
     ccflags-y += -DCFG_WTBL_MAXSIZE=$(CONFIG_WTBL_MAXSIZE)
+endif
+
+ifeq ($(CONFIG_SUPPORT_MBRAIN_WIFI_WKUP_HOST), y)
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=1
+else
+    ccflags-y += -DCFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST=0
 endif
 
 ifeq ($(CONFIG_MTK_MLR_V1), y)

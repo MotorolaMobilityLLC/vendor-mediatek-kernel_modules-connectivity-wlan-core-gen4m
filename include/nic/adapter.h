@@ -2421,8 +2421,12 @@ struct ADAPTER {
 	/* Rx queue that queue rx packets before ASSOC */
 	struct QUE rRxPendingQueue;
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
 #if CFG_SUPPORT_MBRAIN
 	struct QUE rMbrTxTimeoutQueue;
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	struct QUE rMbrWiFiWkUpRsnQueue;
+#endif
 #endif
 
 	struct GLUE_INFO *prGlueInfo;

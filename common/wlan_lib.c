@@ -28,6 +28,11 @@
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 #include "gl_coredump.h"
 #endif
+
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1694,6 +1699,10 @@ void wlanOffClearAllQueues(struct ADAPTER *prAdapter)
 
 	wlanClearRxToOsQueue(prAdapter);
 
+#endif
+
+#if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
+	mbr_wifi_wkup_rsn_clear_queue(prAdapter);
 #endif
 }
 
