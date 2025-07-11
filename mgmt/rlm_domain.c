@@ -438,7 +438,7 @@ static const uint16_t g_u2CountryGroup21[] = {
 	COUNTRY_CODE_ID, COUNTRY_CODE_NP
 };
 static const uint16_t g_u2CountryGroup22[] = {
-	COUNTRY_CODE_KR,
+	COUNTRY_CODE_KR, COUNTRY_CODE_PE,
 	COUNTRY_CODE_TW
 };
 static const uint16_t g_u2CountryGroup23[] = {
@@ -463,7 +463,7 @@ static const uint16_t g_u2CountryGroup28[] = {
 //modify dong.zhang fcc 2.4g channel
 static const uint16_t g_u2CountryGroup29[] = {
 	COUNTRY_CODE_BR, COUNTRY_CODE_MX, COUNTRY_CODE_AR, COUNTRY_CODE_UY,
-	COUNTRY_CODE_CL, COUNTRY_CODE_PE, COUNTRY_CODE_CO, COUNTRY_CODE_EC,
+	COUNTRY_CODE_CL, COUNTRY_CODE_CO, COUNTRY_CODE_EC,
 	COUNTRY_CODE_DO, COUNTRY_CODE_GT, COUNTRY_CODE_CR
 };
 //modify dong.zhang fcc 2.4g channel
