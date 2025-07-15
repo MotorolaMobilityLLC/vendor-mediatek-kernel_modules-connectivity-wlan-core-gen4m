@@ -9756,29 +9756,36 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 
+    // modify for EKLAGOS-1021  by yuran start
 	//TN Start modified by dong.zhang  Do not delete when resolving conflicts please
-	if(getSku() > 10) {
-		if(getSku() == 16) {
-			if (kalRequestFirmware("txpowerctrl16.cfg", &pucConfigBuf,
-				&u4ConfigReadLen, TRUE,
-				kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+	//if(getSku() > 10) {
+	//	if(getSku() == 16) {
+	//		if (kalRequestFirmware("txpowerctrl16.cfg", &pucConfigBuf,
+	//			&u4ConfigReadLen, TRUE,
+	//			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
 				/* ToDo:: Nothing */
-			}
-		}else {
-			if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
-				&u4ConfigReadLen, TRUE,
-				kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+	//		}
+	//	}else {
+	//		if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
+	//			&u4ConfigReadLen, TRUE,
+	//			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
 				/* ToDo:: Nothing */
-			}
-		}
-	}else {
-		if (kalRequestFirmware("txpowerctrllite.cfg", &pucConfigBuf,
-			&u4ConfigReadLen, TRUE,
-			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
-			/* ToDo:: Nothing */
-		}
+	//		}
+	//	}
+	//}else {
+	//	if (kalRequestFirmware("txpowerctrllite.cfg", &pucConfigBuf,
+	//		&u4ConfigReadLen, TRUE,
+	//		kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+	//		/* ToDo:: Nothing */
+	//	}
+	//}
+	if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
+           &u4ConfigReadLen, TRUE,
+           kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+               /* ToDo:: Nothing */
 	}
 	//TN End modified by dong.zhang Do not delete when resolving conflicts please
+	// modify for EKLAGOS-1021  by yuran start
 
 	if (pucConfigBuf) {
 		txPwrCtrlFileBufToList(prAdapter, pucConfigBuf);
