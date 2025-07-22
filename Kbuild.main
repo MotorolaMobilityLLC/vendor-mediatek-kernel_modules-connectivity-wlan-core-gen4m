@@ -605,6 +605,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ifeq ($(CONFIG_WLAN_PLATFORM),mt6985)
         CONFIG_PRELOADER_PMIC_EN_PU=y
     endif
+    ccflags-y += -DCFG_AP_GO_DELAY_CARRIER_ON
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
