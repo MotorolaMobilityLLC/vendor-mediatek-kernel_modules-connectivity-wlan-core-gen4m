@@ -620,7 +620,8 @@ static uint32_t wlanGetTxRateFromLinkStats(
 
 	wlanQueryRateByTable(target->mode,
 		target->rate, target->bw, 0,
-		u4Nss, pu4TxRate, &u4MaxTxRate);
+		u4Nss, pu4TxRate, &u4MaxTxRate,
+		MCS_IDX_MAX_RATE_UNLIMITED);
 	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
 		target->rate, target->mode,
 		u4Nss, target->stbc,

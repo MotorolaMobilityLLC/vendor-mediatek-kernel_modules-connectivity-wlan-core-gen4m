@@ -13919,6 +13919,8 @@ static uint32_t wlanHwRateOfdmNum(uint16_t ofdm_idx)
  * @nsts: NSTS, [1, 3]
  * @pu4CurRate: returning current phy rate by given parameters
  * @pu4MaxRate: returning max phy rate (max MCS)
+ * @ucLimitMcsIdx: caller specified Max Rate index
+ *                 MCS_IDX_MAX_RATE_UNLIMITED if not limited
  *
  * Return:
  *	0: Success
@@ -13926,10 +13928,12 @@ static uint32_t wlanHwRateOfdmNum(uint16_t ofdm_idx)
  */
 int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			uint32_t frmode, uint32_t gi, uint32_t nsts,
-			uint32_t *pu4CurRate, uint32_t *pu4MaxRate)
+			uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
+			uint8_t ucLimitMcsIdx)
 {
 	uint32_t u4CurRate = 0, u4MaxRate = 0;
 	uint8_t ucMaxSize = 0;
+	uint8_t ucMaxRateIdx = 0;
 
 	if (txmode == TX_RATE_MODE_CCK) { /* 11B */
 		ucMaxSize = ARRAY_SIZE(g_rCckDataRateMappingTable.rate);
@@ -14088,10 +14092,13 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			return -1;
 		}
 
+		ucMaxRateIdx = MCS_IDX_MAX_RATE_EHT;
+		if (ucLimitMcsIdx < ucMaxRateIdx)
+			ucMaxRateIdx = ucLimitMcsIdx;
 		u4CurRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[gi].rate[rate];
 		u4MaxRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].gi[gi].rate[MCS_IDX_MAX_RATE_EHT];
+				.bw[frmode].gi[gi].rate[ucMaxRateIdx];
 
 		if (ru106) {
 			u4CurRate = u4CurRate >> 1;
@@ -14120,6 +14127,7 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 	uint8_t ucPhyType, ucTxMode = 0, ucMcsIdx = 0, ucSgi = 0;
 	uint8_t ucBw = 0, ucAPBwPermitted = 0, ucNss = 0, ucApNss = 0;
 	struct BSS_DESC *prBssDesc = NULL;
+	uint8_t ucMaxRateIdx = MCS_IDX_MAX_RATE_UNLIMITED;
 
 	*pu4CurRate = 0;
 	*pu4MaxRate = 0;
@@ -14211,13 +14219,28 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 		goto errhandle;
 	}
 
+#if (CONFIG_BAND_NUM == 3)
+	if (prBssInfo->eHwBandIdx == ENUM_BAND_2) {
+		/* In common case, use supported max NSS;
+		 * band2 native capability is limited
+		 */
+		if (ucNss > prBssInfo->ucOpTxNss)
+			ucNss = prBssInfo->ucOpTxNss;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		if (ucTxMode == TX_RATE_MODE_EHT_MU)
+			ucMaxRateIdx = MCS_IDX_MAX_RATE_HE;
+#endif
+	}
+#endif
+
 	DBGLOG(SW4, TRACE,
-	       "txmode=[%u], mcs idx=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u]\n",
-	       ucTxMode, ucMcsIdx, ucBw, ucSgi, ucNss
-	);
+	       "txmode=[%u], mcs idx=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u], limit=[%u]\n",
+	       ucTxMode, ucMcsIdx, ucBw, ucSgi, ucNss, ucMaxRateIdx);
 
 	if (wlanQueryRateByTable(ucTxMode, ucMcsIdx, ucBw, ucSgi,
-				ucNss, pu4CurRate, pu4MaxRate) < 0)
+				ucNss, pu4CurRate, pu4MaxRate,
+				ucMaxRateIdx) < 0)
 		goto errhandle;
 
 	DBGLOG(SW4, TRACE,
@@ -14274,7 +14297,8 @@ static int wlanGetRxRate(struct GLUE_INFO *prGlueInfo, uint32_t *prRxV,
 
 	rv = wlanQueryRateByTable(rRxRateInfo.u4Mode, rRxRateInfo.u4Rate,
 				rRxRateInfo.u4Bw, rRxRateInfo.u4Gi,
-				rRxRateInfo.u4Nss, pu4CurRate, pu4MaxRate);
+				rRxRateInfo.u4Nss, pu4CurRate, pu4MaxRate,
+				MCS_IDX_MAX_RATE_UNLIMITED);
 	if (rv < 0)
 		goto errhandle;
 

@@ -2530,7 +2530,8 @@ void wlanOffUninitNicModule(struct ADAPTER *prAdapter,
 void wlanOffClearAllQueues(struct ADAPTER *prAdapter);
 int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			uint32_t frmode, uint32_t sgi, uint32_t nsts,
-			uint32_t *pu4CurRate, uint32_t *pu4MaxRate);
+			uint32_t *pu4CurRate, uint32_t *pu4MaxRate,
+			uint8_t ucLimitMcsIdx);
 
 #if (CFG_SUPPORT_DATA_STALL && CFG_SUPPORT_LINK_QUALITY_MONITOR)
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
