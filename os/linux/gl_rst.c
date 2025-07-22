@@ -198,8 +198,11 @@ int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo);
  */
 void glSetIsNeedWaitCoredumpFlag(uint8_t status)
 {
+	if (g_IsNeedWaitCoredump == status)
+		DBGLOG(INIT, TRACE, "isNeedWaitCoredump: %u\n", status);
+	else
+		DBGLOG(INIT, INFO, "isNeedWaitCoredump: %u\n", status);
 	g_IsNeedWaitCoredump = status;
-	DBGLOG(INIT, TRACE, "isNeedWaitCoredump: %u\n", g_IsNeedWaitCoredump);
 }
 
 void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
@@ -273,7 +276,10 @@ u_int8_t kalIsResetting(void)
 
 void glResetUpdateFlag(u_int8_t reset)
 {
-	DBGLOG(INIT, TRACE, "reset: %d\n", reset);
+	if (fgIsResetting == reset)
+		DBGLOG(INIT, TRACE, "reset: %d\n", reset);
+	else
+		DBGLOG(INIT, INFO, "reset: %d\n", reset);
 	fgIsResetting = reset;
 #if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
 	update_driver_reset_status(fgIsResetting);
@@ -734,7 +740,8 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 #endif
 
 	if (kalIsResetting() || kalIsResetOnEnd()) {
-		DBGLOG(INIT, INFO, "already in reset\n");
+		DBGLOG(INIT, INFO, "already in reset [%u:%u]\n",
+			kalIsResetting(), kalIsResetOnEnd());
 		goto exit;
 	}
 

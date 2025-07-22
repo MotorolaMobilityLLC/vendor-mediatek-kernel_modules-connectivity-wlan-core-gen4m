@@ -11217,6 +11217,14 @@ u_int8_t wlanIsChipNoAck(struct ADAPTER *prAdapter)
 			fgIsWarningTriggered = TRUE;
 		}
 	}
+
+	if (fgIsNoAck)
+		DBGLOG(HAL, WARN,
+			"Chip no ack: [%u:%u:%u:%u]",
+			prAdapter->fgIsChipNoAck,
+			fgIsBusAccessFailed, u4ChipNoAckCnt,
+			kalIsResetting());
+
 	return fgIsNoAck;
 }
 

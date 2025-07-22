@@ -2858,7 +2858,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	if (!prAdapter->prGlueInfo->u4ReadyFlag)
-		g_IsNeedWaitCoredump = TRUE;
+		glSetIsNeedWaitCoredumpFlag(TRUE);
 #endif
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
