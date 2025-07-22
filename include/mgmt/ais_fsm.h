@@ -104,13 +104,13 @@
 #endif
 
 #define IS_AIS_OFF_CHNL(_adapter, _bss_idx) \
-	(IS_BSS_INDEX_AIS(_adapter, _bss_idx) && \
-	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
-	AIS_STATE_REQ_REMAIN_ON_CHANNEL || \
-	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
-	AIS_STATE_REMAIN_ON_CHANNEL || \
-	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
-	AIS_STATE_OFF_CHNL_TX)
+	((IS_BSS_INDEX_AIS(_adapter, _bss_idx)) && \
+	((aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
+	AIS_STATE_REQ_REMAIN_ON_CHANNEL) || \
+	(aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
+	AIS_STATE_REMAIN_ON_CHANNEL) || \
+	(aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
+	AIS_STATE_OFF_CHNL_TX)))
 
 #define RCPI_FOR_DONT_ROAM                      60 /*-80dbm*/
 
