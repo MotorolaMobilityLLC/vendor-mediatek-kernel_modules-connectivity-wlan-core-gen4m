@@ -7198,8 +7198,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		return -EINVAL;
 
 	ucAisIndex = AIS_INDEX(prAdapter, ucBssIndex);
-	if (ucAisIndex == AIS_DEFAULT_INDEX ||
-		ucAisIndex >= KAL_AIS_NUM ||
+	if (ucAisIndex >= KAL_AIS_NUM ||
 		!wlanGetAisNetDev(prGlueInfo, ucAisIndex)) {
 		DBGLOG(REQ, INFO, "bss = %d, ais=%d no netdev\n",
 			ucBssIndex, ucAisIndex);
