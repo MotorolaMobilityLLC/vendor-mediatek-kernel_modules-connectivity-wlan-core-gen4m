@@ -4465,6 +4465,9 @@ wlanoidQueryCurrentAddr(struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < MAC_ADDR_LEN)
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
+	if (*pu4QueryInfoLen >= KAL_AIS_NUM)
+		return WLAN_STATUS_INVALID_DATA;
+
 	COPY_MAC_ADDR(pvQueryBuffer,
 		      prAdapter->rWifiVar.aucMacAddress[*pu4QueryInfoLen]);
 	*pu4QueryInfoLen = MAC_ADDR_LEN;
