@@ -4702,25 +4702,14 @@ void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
+static inline void halEnqueueMsduInfo(struct GLUE_INFO *pr,
 			struct MSDU_INFO *prMsduInfo)
 {
-	struct ADAPTER *prAdapter = pr->prAdapter;
-	u_int8_t fgTxDoneHandler = FALSE;
+	struct ADAPTER *ad = pr->prAdapter;
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	spinlock_t *prSpinLock = &pr->rSpinLock[SPIN_LOCK_MSDUIFO];
 #endif
 
-	if (prMsduInfo->pfTxDoneHandler)
-		fgTxDoneHandler = TRUE;
-
-	KAL_MB_RW();
-
-#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
-	if (!HAL_IS_TX_DIRECT(prAdapter))
-#endif
-		if (prMsduInfo->pfHifTxMsduDoneCb)
-			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
 	/*
 	 * MSDU_INFO with pfTxDoneHandler should not FIFO_IN into
 	 * rTxMsduRetFifo, otherwise it will cause double enqueue issue and
@@ -4730,32 +4719,39 @@ static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
 	 * 2. TxFreeMsduWork FIFO_OUT MSDU_INFO and find that pfTxDoneHandler
 	 *    is NULL and process it again and cause double enqueue issue.
 	 */
-	if (fgTxDoneHandler)
-		goto end;
+	if (prMsduInfo->pfTxDoneHandler) {
+		/*
+		 * pfTxDoneHandler is used inside halWpdmaFreeMsdu
+		 * so it should called before pfHifTxMsduDoneCb to prevent
+		 * double enqueue issue.
+		 */
+		halWpdmaFreeMsdu(pr, prMsduInfo, TRUE, NULL);
+
+#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
+		if (!HAL_IS_TX_DIRECT(ad))
+#endif
+			if (prMsduInfo->pfHifTxMsduDoneCb)
+				prMsduInfo->pfHifTxMsduDoneCb(ad, prMsduInfo);
+		return;
+	}
 
 	if (pr->prTxMsduRetFifoBuf &&
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
-		KAL_FIFO_IN_LOCKED(
-			&pr->rTxMsduRetFifo,
-			prMsduInfo, prSpinLock)) {
+		KAL_FIFO_IN_LOCKED(&pr->rTxMsduRetFifo, prMsduInfo, prSpinLock)
 #else
-		KAL_FIFO_IN(&pr->rTxMsduRetFifo,
-			prMsduInfo)) {
+		KAL_FIFO_IN(&pr->rTxMsduRetFifo, prMsduInfo)
 #endif
+	) {
 #if !CFG_SUPPORT_TX_FREE_MSDU_WORK
 		kalTxFreeMsduTaskSchedule(pr);
 #endif /* !CFG_SUPPORT_TX_FREE_MSDU_WORK */
-		return WLAN_STATUS_SUCCESS;
 	}
-
-end:
-	return WLAN_STATUS_NOT_ACCEPTED;
 }
 #else /* CFG_SUPPORT_TASKLET_FREE_MSDU */
-static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
+static inline void halEnqueueMsduInfo(struct GLUE_INFO *pr,
 			struct MSDU_INFO *prMsduInfo)
 {
-	return WLAN_STATUS_NOT_ACCEPTED;
+	halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
 }
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
@@ -4973,9 +4969,7 @@ skip:
 		prHifInfo->u4TxDataQLen[u2Port] -= GET_TX_PKT_CNT(prMsduInfo);
 	}
 
-	if (halEnqueueMsduInfo(prGlueInfo, prMsduInfo)
-		== WLAN_STATUS_NOT_ACCEPTED)
-		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
+	halEnqueueMsduInfo(prGlueInfo, prMsduInfo);
 
 	return true;
 }
@@ -5077,9 +5071,7 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 		list_del(prCur);
 		prHifInfo->u4TxDataQLen[u2Port] -= GET_TX_PKT_CNT(prMsduInfo);
 
-		if (halEnqueueMsduInfo(prGlueInfo, prMsduInfo)
-			== WLAN_STATUS_NOT_ACCEPTED)
-			halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
+		halEnqueueMsduInfo(prGlueInfo, prMsduInfo);
 		prCur = prNext;
 	}
 
