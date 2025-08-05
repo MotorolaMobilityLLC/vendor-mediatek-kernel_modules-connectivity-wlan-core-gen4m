@@ -199,6 +199,8 @@ static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter, u_int role,
 	u_int8_t fgEn);
 static uint32_t mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgEn, u_int enable_role);
+static uint32_t mt6639CmdRestrictPcieL1McsRate(
+	struct ADAPTER *prAdapter, u_int8_t fgIsPcieL0);
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgWakeup);
@@ -682,6 +684,7 @@ struct BUS_INFO mt6639_bus_info = {
 #if CFG_SUPPORT_PCIE_ASPM
 	.configPcieAspm = mt6639ConfigPcieAspm,
 	.updatePcieAspm = mt6639UpdatePcieAspm,
+	.restrictPcieL1McsRate = mt6639CmdRestrictPcieL1McsRate,
 	.keepPcieWakeup = mt6639KeepPcieWakeup,
 	.fgWifiEnL1_2 = TRUE,
 	.fgMDEnL1_2 = TRUE,
@@ -2662,16 +2665,25 @@ static uint32_t mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			udelay(10);
 		}
 
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, 0xc0f);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, &value);
-		writel(0xc0f, (pcie_vir_addr + 0x194));
-
-		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0) {
 			DBGLOG(HAL, TRACE, "Disable aspm L1..\n");
-		else
+			HAL_MCR_WR(prGlueInfo->prAdapter,
+				   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
+				   0xe0f);
+			HAL_MCR_RD(prGlueInfo->prAdapter,
+				   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
+				   &value);
+			writel(0xe0f, (pcie_vir_addr + 0x194));
+		} else {
 			DBGLOG(HAL, TRACE, "Disable aspm L1.1/L1.2..\n");
+			HAL_MCR_WR(prGlueInfo->prAdapter,
+				   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
+				   0xc0f);
+			HAL_MCR_RD(prGlueInfo->prAdapter,
+				   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
+				   &value);
+			writel(0xc0f, (pcie_vir_addr + 0x194));
+		}
 	}
 
 exit:
@@ -2679,9 +2691,117 @@ exit:
 	return rStatus;
 }
 
+static void mt6639EventRestrictPcieL1McsRate(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf)
+{
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct MSDU_TOKEN_INFO *prTokenInfo = &prHifInfo->rTokenInfo;
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	struct UNI_EVENT_CHIP_CONFIG *evt =
+		(struct UNI_EVENT_CHIP_CONFIG *)uni_evt->aucBuffer;
+	struct UNI_CMD_CHIP_CONFIG_CHIP_CFG *tag =
+		(struct UNI_CMD_CHIP_CONFIG_CHIP_CFG *)evt->aucTlvBuffer;
+	struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP *resp =
+		(struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP *)tag->aucbuffer;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo;
+	unsigned long flags = 0;
+
+	prChipConfigInfo = (struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *)
+		prCmdInfo->pvInformationBuffer;
+	if (!prChipConfigInfo) {
+		DBGLOG(REQ, ERROR, "prChipConfigInfo is NULL\n");
+		return;
+	}
+
+	if (kalStrniCmp(resp->aucCmd, "0", 1) != 0) {
+		if (prChipConfigInfo->aucReserved0[0]) {
+			prHifInfo->fgIsFwReadyPcieL1ss = TRUE;
+
+			spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
+			if (prTokenInfo->u4UsedCnt == 0 &&
+			    prBusInfo->updatePcieAspm)
+				prBusInfo->updatePcieAspm(
+					prAdapter->prGlueInfo, TRUE);
+			spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
+		} else
+			prHifInfo->fgIsFwReadyPcieL1ss = FALSE;
+	} else {
+		DBGLOG(REQ, ERROR, "RestrictPcieL1McsRate fail\n");
+	}
+
+	DBGLOG(REQ, INFO,
+	       "EventRestrictPcieL1McsRate[%u] ready[%u] ret[%s]\n",
+	       prChipConfigInfo->aucReserved0[0],
+	       prHifInfo->fgIsFwReadyPcieL1ss,
+	       resp->aucCmd);
+
+	kalMemFree(prChipConfigInfo, PHY_MEM_TYPE,
+		   sizeof(struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT));
+}
+
+static uint32_t mt6639CmdRestrictPcieL1McsRate(
+	struct ADAPTER *prAdapter, u_int8_t fgIsPcieL0) {
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo;
+	char *aucIsPcieL0 = "restrictPcieL1McsRate 0";
+	char *aucIsNotPcieL0 = "restrictPcieL1McsRate 1";
+
+	prChipConfigInfo = kalMemAlloc(
+		sizeof(struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT),
+		PHY_MEM_TYPE);
+	if (!prChipConfigInfo) {
+		DBGLOG(REQ, ERROR, "kalMemAlloc fail\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	kalMemZero(prChipConfigInfo,
+		   sizeof(struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT));
+
+	if (fgIsPcieL0) {
+		prChipConfigInfo->u2MsgSize =
+			kalStrnLen(aucIsPcieL0, CHIP_CONFIG_RESP_SIZE);
+		kalMemCopy(prChipConfigInfo->aucCmd, aucIsPcieL0,
+			   prChipConfigInfo->u2MsgSize);
+		prChipConfigInfo->aucReserved0[0] = 0;
+	} else {
+		prChipConfigInfo->u2MsgSize =
+			kalStrnLen(aucIsNotPcieL0, CHIP_CONFIG_RESP_SIZE);
+		kalMemCopy(prChipConfigInfo->aucCmd, aucIsNotPcieL0,
+			   prChipConfigInfo->u2MsgSize);
+		prChipConfigInfo->aucReserved0[0] = 1;
+	}
+
+	prChipConfigInfo->ucType = CHIP_CONFIG_TYPE_ASCII;
+	prChipConfigInfo->ucRespType = CHIP_CONFIG_TYPE_ASCII;
+
+	DBGLOG(REQ, INFO, "CmdRestrictPcieL1McsRate:%s\n",
+	       (prChipConfigInfo->aucReserved0[0] == 0) ?
+	       aucIsPcieL0 : aucIsNotPcieL0);
+
+	return wlanSendSetQueryCmd(
+		prAdapter,
+		CMD_ID_CHIP_CONFIG,
+		FALSE,	/* fgSetQuery */
+		TRUE,	/* fgNeedResp */
+		FALSE,	/* fgIsOid */
+		mt6639EventRestrictPcieL1McsRate,
+		nicCmdTimeoutCommon,
+		sizeof(struct CMD_CHIP_CONFIG),
+		(uint8_t *)prChipConfigInfo,
+		prChipConfigInfo,
+		sizeof(struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT));
+}
+
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (prHifInfo->fgPcieKeepL0 &&
+	    prHifInfo->eCurPcieState == PCIE_STATE_L0 &&
+	    prHifInfo->eNextPcieState == PCIE_STATE_L0)
+		return;
 
 	if (fgEn) {
 		prHifInfo->eNextPcieState = PCIE_STATE_L1_2;
@@ -2691,16 +2811,24 @@ static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 	}
 
 	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
-		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
-			mt6639ConfigPcieAspm(prGlueInfo, TRUE, 1);
-		else
+		if (prHifInfo->eNextPcieState == PCIE_STATE_L0) {
 			mt6639ConfigPcieAspm(prGlueInfo, FALSE, 1);
+			prHifInfo->fgCmdRestrictPcieL1McsRate = TRUE;
+		} else {
+			if (!prHifInfo->fgIsFwReadyPcieL1ss)
+				return;
+
+			if (prHifInfo->eNextPcieState == PCIE_STATE_L1)
+				mt6639ConfigPcieAspm(prGlueInfo, FALSE, 1);
+			else
+				mt6639ConfigPcieAspm(prGlueInfo, TRUE, 1);
+		}
 		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 	}
 }
 
 static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
-				u_int8_t fgWakeup)
+				 u_int8_t fgWakeup)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
@@ -2709,7 +2837,13 @@ static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 	} else {
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
 			prHifInfo->eNextPcieState = PCIE_STATE_L1;
+
+		if (prHifInfo->fgPcieKeepL0 != fgWakeup) {
+			mt6639CmdRestrictPcieL1McsRate(
+				prGlueInfo->prAdapter, FALSE);
+		}
 	}
+	prHifInfo->fgPcieKeepL0 = fgWakeup;
 }
 
 static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)

@@ -359,6 +359,9 @@ struct GL_HIF_INFO {
 	uint32_t u4PcieASPM;
 	enum pcie_aspm_state eCurPcieState;
 	enum pcie_aspm_state eNextPcieState;
+	u_int8_t fgPcieKeepL0;
+	u_int8_t fgIsFwReadyPcieL1ss;
+	u_int8_t fgCmdRestrictPcieL1McsRate;
 #endif
 
 	unsigned long ulHifIntEnBits;
@@ -560,6 +563,8 @@ struct BUS_INFO {
 	uint32_t (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
 		u_int enable_role);
 	void (*updatePcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	uint32_t (*restrictPcieL1McsRate)(
+		struct ADAPTER *prAdapter, u_int8_t fgIsPcieL0);
 	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
 	u_int8_t fgWifiEnL1_2;
 	u_int8_t fgMDEnL1_2;

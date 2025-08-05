@@ -2051,6 +2051,9 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_PCIE_ASPM
 	prHifInfo->eCurPcieState = PCIE_STATE_NUM;
 	prHifInfo->eNextPcieState = PCIE_STATE_NUM;
+	prHifInfo->fgPcieKeepL0 = FALSE;
+	prHifInfo->fgIsFwReadyPcieL1ss = TRUE;
+	prHifInfo->fgCmdRestrictPcieL1McsRate = FALSE;
 #endif
 #endif
 
@@ -6685,6 +6688,9 @@ void halUpdateHifConfig(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GL_HIF_INFO *prHifInfo;
+#endif
 
 	if (!prAdapter)
 		return;
@@ -6709,6 +6715,14 @@ void halUpdateHifConfig(struct ADAPTER *prAdapter)
 
 	if (prChipInfo->updatePrdcInt)
 		prChipInfo->updatePrdcInt(prGlueInfo, FALSE);
+#if CFG_SUPPORT_PCIE_ASPM
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	if (prHifInfo->fgCmdRestrictPcieL1McsRate) {
+		prHifInfo->fgCmdRestrictPcieL1McsRate = FALSE;
+		if (prBusInfo->restrictPcieL1McsRate)
+			prBusInfo->restrictPcieL1McsRate(prAdapter, TRUE);
+	}
+#endif /* CFG_SUPPORT_PCIE_ASPM */
 }
 
 #if CFG_SUPPORT_LLS

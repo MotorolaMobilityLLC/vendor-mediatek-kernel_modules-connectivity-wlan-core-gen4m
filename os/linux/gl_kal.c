@@ -16711,7 +16711,8 @@ void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
 
 	prAdapter = prGlueInfo->prAdapter;
 	prBusInfo = prAdapter->chip_info->bus_info;
-	if (prBusInfo->keepPcieWakeup != NULL)
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgPcieKeepWakeup) &&
+	    prBusInfo->keepPcieWakeup != NULL)
 		prBusInfo->keepPcieWakeup(prGlueInfo, fgKeepPcieWakeup);
 #endif /* CFG_SUPPORT_PCIE_ASPM */
 }

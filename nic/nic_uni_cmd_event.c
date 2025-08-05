@@ -1205,7 +1205,8 @@ uint32_t nicUniCmdChipCfg(struct ADAPTER *ad,
 	cmd = (struct CMD_CHIP_CONFIG *) info->pucInfoBuffer;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_CHIP_CONFIG, max_cmd_len,
 			info->fgSetQuery ? nicUniCmdEventSetCommon :
-			nicUniEventQueryChipConfig,
+			(info->pfCmdDoneHandler == nicCmdEventQueryChipConfig ?
+			nicUniEventQueryChipConfig : info->pfCmdDoneHandler),
 			nicUniCmdTimeoutCommon);
 
 	if (!entry)
@@ -1220,6 +1221,8 @@ uint32_t nicUniCmdChipCfg(struct ADAPTER *ad,
 	resp->u2MsgSize = cmd->u2MsgSize;
 	resp->ucType = cmd->ucType;
 	resp->ucRespType = cmd->ucRespType;
+	kalMemCopy(resp->aucReserved0, cmd->aucReserved0,
+		   sizeof(resp->aucReserved0));
 	kalMemCopy(resp->aucCmd, cmd->aucCmd, cmd->u2MsgSize);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
