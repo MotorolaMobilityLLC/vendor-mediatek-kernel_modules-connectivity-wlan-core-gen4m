@@ -780,12 +780,8 @@ static void bus_access_timeout(unsigned long unused)
 	if (fgIsBusAccessFailed == FALSE)
 		return;
 
-	if (kalIsResetOnEnd()) {
-		DBGLOG(INIT, INFO, "wifi driver is resetting\n");
-		mod_timer(&bus_access_timer, jiffies +
-			MSEC_TO_JIFFIES(
-			BUS_ACCESS_FAIL_MAX_TIME * MSEC_PER_SEC));
-	}
+	DBGLOG(INIT, INFO, "IsResetOnEnd=%u, IsWarningTriggered=%u\n",
+		kalIsResetOnEnd(), fgIsWarningTriggered);
 
 	if (fgIsWarningTriggered) {
 		DBGLOG(INIT, WARN, "Bus Access Fail longer than %u seconds.",
