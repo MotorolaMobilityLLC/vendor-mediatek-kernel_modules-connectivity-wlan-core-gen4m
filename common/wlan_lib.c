@@ -13025,7 +13025,6 @@ uint32_t wlanSetLowLatencyMode(
 	uint32_t u4Events, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = TRUE; /* Power management */
@@ -13039,12 +13038,6 @@ uint32_t wlanSetLowLatencyMode(
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u]\n", ucBssIndex);
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	prStaRec = prBssInfo->prStaRecOfAP;
-	if (!prStaRec) {
-		DBGLOG(SW4, INFO, "prStaRec is NULL\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -13136,17 +13129,22 @@ uint32_t wlanSetLowLatencyMode(
 
 	if ((prWifiVar->ucLowLatencyModeReOrder == FEATURE_ENABLED) &&
 	    (fgEnMode != prAdapter->fgEnLowLatencyMode)) {
-		/* Queue management:
-		 *
-		 * Change QM RX BA timeout if the gaming mode state changed
-		 */
-		if (fgEnMode) {
-			qmSetRxReorderTimeoutByStaRec(prStaRec,
-				RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY,
-				prWifiVar->u4BaShortMissTimeoutMs);
-		} else {
-			qmSetRxReorderTimeoutByStaRec(prStaRec,
-				RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY, 0);
+		struct STA_RECORD *prStaRec;
+
+		prStaRec = prBssInfo->prStaRecOfAP;
+		if (prStaRec) {
+			/* Queue management:
+			 * Change QM RX BA timeout if the gaming mode
+			 * state changed.
+			 */
+			if (fgEnMode) {
+				qmSetRxReorderTimeoutByStaRec(prStaRec,
+					RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY,
+					prWifiVar->u4BaShortMissTimeoutMs);
+			} else {
+				qmSetRxReorderTimeoutByStaRec(prStaRec,
+					RX_REORDER_TIMEOUT_TYPE_LOW_LATENCY, 0);
+			}
 		}
 	}
 
