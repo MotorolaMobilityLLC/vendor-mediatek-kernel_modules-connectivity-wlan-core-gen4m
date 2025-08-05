@@ -554,6 +554,12 @@ int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "cur_lls_stats version: %u\n",
 		cur_lls_stats.version);
 
+	if (bss_num > MAX_BSSID_NUM) {
+		DBGLOG(INIT, WARN, "fallback bss_num: %u -> %u\n",
+			bss_num, MAX_BSSID_NUM);
+		bss_num = MAX_BSSID_NUM;
+	}
+
 	for (i = 0; i < bss_num; ++i) {
 		for (j = 0; j < AC_NUM; ++j) {
 			prAdapter->aprBssInfo[i]->u4RxMpduAc[j] +=
