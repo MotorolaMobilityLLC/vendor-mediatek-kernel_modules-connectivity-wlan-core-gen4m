@@ -579,7 +579,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter,
 	/* Wait until PCIE gen switch is done */
 	while (prAdapter->fgIsGenSwitchProcessing) {
 		u4PollingCnt++;
-		if (u4PollingCnt > 1000) {
+		if (u4PollingCnt > 2000) {
 			DBGLOG(HAL, WARN,
 				"Polling gen switch status timeout.\n");
 			break;

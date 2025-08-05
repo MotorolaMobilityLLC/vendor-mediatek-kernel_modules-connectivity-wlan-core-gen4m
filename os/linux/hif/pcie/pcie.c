@@ -251,7 +251,7 @@ const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
 #define CHECK_RX_TIMEOUT (1000*50)
-#define GEN_SWITCH_TIMEOUT (1000*100)
+#define GEN_SWITCH_TIMEOUT (1000*200)
 #define DEFAULT_IDLE	0
 #define WF_RX_IDLE	1
 #define FW_RX_IDLE	2
