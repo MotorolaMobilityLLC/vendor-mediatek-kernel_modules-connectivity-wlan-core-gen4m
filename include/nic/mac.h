@@ -1397,6 +1397,8 @@
 	110 /* Multi-link Traffic Indication */
 #define ELEM_EXT_ID_QOS_CHAR \
 	113 /* QoS Characteristics */
+#define ELEM_EXT_ID_REG_CONNECTIVITY  \
+	137 /* Regulatory Connectivity element */
 #define ELEM_EXT_ID_MAX_NUM \
 	256 /* EXT_ID: 0-255 */
 

@@ -1195,14 +1195,15 @@ struct mtk_regdomain {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 /* Order by priority */
 enum ENUM_PWR_MODE_6G_TYPE {
-	PWR_MODE_6G_SP = 0,  /* Standard Power, Priority: Low */
-	PWR_MODE_6G_LPI = 1, /* Low Power Indoor*/
-	PWR_MODE_6G_VLP = 2, /* Very Low Power, Priority: High */
+	PWR_MODE_6G_LPI_SP = 0, /* Indoor Standard Power, Priority: Low */
+	PWR_MODE_6G_SP = 1,  /* Standard Power*/
+	PWR_MODE_6G_LPI = 2, /* Low Power Indoor*/
+	PWR_MODE_6G_VLP = 3, /* Very Low Power, Priority: High */
 	PWR_MODE_6G_NUM
 };
 
 struct  PWR_MODE_6G_SUBAND_SUPPROT {
-	uint8_t   fgPwrMode6GSupport[PWR_MODE_6G_NUM];
+	uint8_t   fgPwrMode6GSupport[3]; /* [0]:SP, [1]:LPI, [2]:VLP */
 };
 
 struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE {

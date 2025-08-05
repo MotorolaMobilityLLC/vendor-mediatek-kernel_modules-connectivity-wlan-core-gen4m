@@ -394,6 +394,9 @@ enum ENUM_HTC_HE_OM_CH_WIDTH  {
 enum ENUM_HE_REG_INFO_TYPE {
 	HE_REG_INFO_LOW_POWER_INDOOR = 0,
 	HE_REG_INFO_STANDARD_POWER = 1,
+	HE_REG_INFO_VERY_LOW_POWER = 2,
+	HE_REG_INFO_INDOOR_ENABLED = 3,
+	HE_REG_INFO_INDOOR_STANDARD_POWER = 8,
 	HE_REG_INFO_NUM
 };
 /* 11ax_D3.0 9.3.1.9 BlockAck frame format */
@@ -870,6 +873,22 @@ struct _IE_HE_6G_BAND_CAP_T {
 	u_int8_t  ucExtId;
 	u_int16_t u2CapInfo;
 } __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct _IE_REG_CONNECTIVITY_T {
+	u_int8_t  ucId;
+	u_int8_t  ucLength;
+	u_int8_t  ucExtId;
+	u_int8_t  aucVarInfo[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct _REG_CONNECTIVITY_FIELD {
+	u_int8_t IndoorAPValid : 1;
+	u_int8_t IndoorAP : 1;
+	u_int8_t SPAPValid : 1;
+	u_int8_t SPAP : 1;
+} __KAL_ATTRIB_PACKED__;
 #endif
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -939,8 +958,9 @@ union _6G_OPER_INFOR_CONTROL_T {
 	struct {
 		u_int8_t ChannelWidth : 2;
 		u_int8_t DuplicateBeacon : 1;
-		u_int8_t RegulatoryInfo:3;/* LPI_AP(0), SP_AP(1) */
-		u_int8_t Reserved : 2;
+		/* LPI_AP(0), SP_AP(1), VLP_AP(2), IN_SP_AP(8) */
+		u_int8_t RegulatoryInfo:4;
+		u_int8_t Reserved : 1;
 	} bits;
 	/* byte endian issue */
 	u_int8_t   ucRaw;

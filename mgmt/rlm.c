@@ -12732,3 +12732,132 @@ rlmVhtBw2Bw(uint8_t ucVhtBw, enum ENUM_CHNL_EXT eSco)
 
 	return eBw;
 }
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+static void rlmFillRegConnectivityIE(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo,
+			    struct MSDU_INFO *prMsduInfo)
+{
+	struct _IE_REG_CONNECTIVITY_T *prRegConnectivity;
+	struct _REG_CONNECTIVITY_FIELD *prRegConnectivityField;
+	uint32_t u4OverallLen =
+		OFFSET_OF(struct _IE_REG_CONNECTIVITY_T, aucVarInfo[0]);
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_SP;
+	uint8_t fgSupport;
+	uint8_t fgLPISupport = FALSE;
+	uint8_t fgSPSupport = FALSE;
+	uint8_t fgLPISPSupport = FALSE;
+#endif
+
+	ASSERT(prAdapter);
+	ASSERT(prBssInfo);
+	ASSERT(prMsduInfo);
+
+	prRegConnectivity = (struct _IE_REG_CONNECTIVITY_T *)
+		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
+
+	prRegConnectivity->ucId = ELEM_ID_RESERVED;
+	prRegConnectivity->ucExtId = ELEM_EXT_ID_REG_CONNECTIVITY;
+
+	prRegConnectivityField = (struct _REG_CONNECTIVITY_FIELD *)
+		(((uint8_t *) prRegConnectivity) + u4OverallLen);
+
+	/*
+	 * (Connectivity With Indoor AP)
+	 * Indicates whether operating under the control of an indoor AP and
+	 * an indoor standard power AP is implemented
+	 *
+	 * (Connectivity With SP AP)
+	 * Indicates whether at least one of the following is implemented:
+	 * 1. operating under the control of an SP AP
+	 * 2. an SP AP and an indoor standard power AP and
+	 *	  operating as a fixed client device
+	 */
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	for (e6GPwrMode = PWR_MODE_6G_LPI_SP;
+		 e6GPwrMode < PWR_MODE_6G_NUM;
+		 e6GPwrMode++) {
+		fgSupport = FALSE;
+
+		rlmDomain6GPwrModeCountrySupportChk(
+				BAND_6G,
+				37,
+				prAdapter->rWifiVar.u2CountryCode,
+				e6GPwrMode,
+				&fgSupport);
+
+		DBGLOG(RLM, INFO, "e6GPwrMode=%d, fgSupport=%d\n",
+				e6GPwrMode, fgSupport);
+
+		if (fgSupport) {
+			if (e6GPwrMode == PWR_MODE_6G_LPI)
+				fgLPISupport = TRUE;
+			else if (e6GPwrMode == PWR_MODE_6G_SP)
+				fgSPSupport = TRUE;
+			else if (e6GPwrMode == PWR_MODE_6G_LPI_SP)
+				fgLPISPSupport = TRUE;
+		}
+	}
+
+	if (fgLPISupport == TRUE) {
+		prRegConnectivityField->IndoorAPValid = 1;
+		prRegConnectivityField->IndoorAP = TRUE;
+	}
+
+	if (fgSPSupport == TRUE) {
+		prRegConnectivityField->SPAPValid = 1;
+		prRegConnectivityField->SPAP = TRUE;
+	}
+
+	if (fgLPISPSupport == TRUE) {
+		prRegConnectivityField->IndoorAPValid = 1;
+		prRegConnectivityField->SPAPValid = 1;
+		if (fgLPISupport == TRUE)
+			prRegConnectivityField->IndoorAP = TRUE;
+		if (fgSPSupport == TRUE)
+			prRegConnectivityField->SPAP = TRUE;
+	}
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+
+	/* TODO: check the number of AP type? */
+	prRegConnectivity->ucLength = 2;
+	prMsduInfo->u2FrameLength += IE_SIZE(prRegConnectivity);
+}
+
+uint32_t heRlmCalculateRegConnectivityIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec)
+{
+	uint32_t u4OverallLen =
+		OFFSET_OF(struct _IE_REG_CONNECTIVITY_T, aucVarInfo[0]);
+
+	/* TODO: check the number of AP type */
+	u4OverallLen += 1;
+
+	return u4OverallLen;
+}
+
+void heRlmReqGenerateHeRegConnectivityIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	/* TODO: Check build this IE condition */
+	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AX)
+	    && (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)))
+		rlmFillRegConnectivityIE(prAdapter, prBssInfo, prMsduInfo);
+}
+#endif /* CFG_SUPPORT_WIFI_6G */
