@@ -4753,8 +4753,8 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 		return -EINVAL;
 	}
 
-	kalMemZero(&g_aucNvram, sizeof(g_aucNvram));
-	kalMemZero(&g_aucNvram_OnlyPreCal, sizeof(g_aucNvram_OnlyPreCal));
+	kalMemZero(g_aucNvram, sizeof(g_aucNvram));
+	kalMemZero(g_aucNvram_OnlyPreCal, sizeof(g_aucNvram_OnlyPreCal));
 	if (copy_from_user(g_aucNvram, buf, length)) {
 		DBGLOG(INIT, ERROR, "copy nvram fail\n");
 		g_NvramFsm = NVRAM_STATE_INIT;
