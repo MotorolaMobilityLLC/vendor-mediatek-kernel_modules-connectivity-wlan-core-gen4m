@@ -184,7 +184,8 @@ static void mt6639WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6639CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
-static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter);
+static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter,
+				    u_int8_t fgForce);
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 static void mt6639PowerOffPcieMac(struct ADAPTER *prAdpater);
@@ -645,6 +646,7 @@ struct BUS_INFO mt6639_bus_info = {
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 #if defined(_HIF_PCIE)
 	.checkFwOwnMsiStatus = mt6639CheckFwOwnMsiStatus,
+	.recoveryMsiStatus = mt6639RecoveryMsiStatus,
 #endif
 	.u4DmaMask = 32,
 	.wfmda_host_tx_group = mt6639_wfmda_host_tx_group,
@@ -2403,13 +2405,16 @@ static void mt6639WfdmaRxRingExtCtrl(
 }
 
 #if defined(_HIF_PCIE)
-static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
+static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter, u_int8_t fgForce)
 {
 	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
 	uint32_t u4Val = 0, u4Cnt = 0;
+
+	if (fgForce)
+		goto recovery;
 
 	/* tput < 10mbps */
 	if (perf->u4CurrPerfLevel > 0)
@@ -2434,6 +2439,7 @@ static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 	if ((u4Val & 0xff) == 0)
 		return;
 
+recovery:
 	mtk_pci_msi_unmask_all_irq(prAdapter->prGlueInfo);
 	DBGLOG(HAL, WARN, "Rx[%u] MSI_MASK=[0x%08x], unmask all msi irq",
 	       u4Cnt, u4Val);
@@ -2441,7 +2447,7 @@ static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 
 static void mt6639CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)
 {
-	mt6639RecoveryMsiStatus(prAdapter);
+	mt6639RecoveryMsiStatus(prAdapter, FALSE);
 }
 
 #if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
