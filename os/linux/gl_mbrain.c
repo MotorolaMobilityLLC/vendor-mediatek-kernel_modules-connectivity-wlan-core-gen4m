@@ -982,7 +982,7 @@ void mbr_wifi_wkup_rsn_clear_queue(struct ADAPTER *prAdapter)
 			kalMemFree(prWkUpRsnEntry, VIR_MEM_TYPE,
 				sizeof(struct MBR_WIFI_WKUP_RSN_ENTRY));
 	}
-	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MBR_WKUP_RSN);
 }
 #endif /* (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1) */
 
