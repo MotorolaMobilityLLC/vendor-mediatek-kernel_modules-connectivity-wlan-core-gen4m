@@ -2760,12 +2760,17 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR)))
 			soc7_0_DumpHostCr(prAdapter);
 
-		if (conninfra_reset) {
-			g_IsWfsysBusHang = TRUE;
-			glResetWholeChipResetTrigger("bus hang");
-		} else if (ucWfResetEnable) {
-			g_IsWfsysBusHang = TRUE;
-			glResetWholeChipResetTrigger("wifi bus hang");
+		if (kalIsResetOnEnd()) {
+			DBGLOG(HAL, ERROR,
+				"already in resetting, skip trigger reset\n");
+		} else {
+			if (conninfra_reset) {
+				g_IsWfsysBusHang = TRUE;
+				glResetWholeChipResetTrigger("bus hang");
+			} else if (ucWfResetEnable) {
+				g_IsWfsysBusHang = TRUE;
+				glResetWholeChipResetTrigger("wifi bus hang");
+			}
 		}
 	} else {
 		connac2x_DbgCrRead(NULL, 0x184be008, &u4WfdmaClockVal);

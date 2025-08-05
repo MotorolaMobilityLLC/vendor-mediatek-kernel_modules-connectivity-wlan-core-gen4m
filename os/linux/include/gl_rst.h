@@ -143,6 +143,12 @@ struct reset_pending_req {
 };
 #endif
 
+enum _ENUM_RST_FLAG_TYPE {
+	RST_FLAG_IS_WHOLE_CHIP_RST,
+	RST_FLAG_RST_OFF_COMP_WAIT,
+	RST_FLAG_DRV_TRI_WHILE_CHIP_RST
+};
+
 struct RESET_STRUCT {
 	struct GLUE_INFO *prGlueInfo;
 	struct work_struct rst_work;
@@ -256,6 +262,7 @@ extern char *g_reason;
  */
 void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason);
 int glGetRstReason(void);
+void glUpdateRstFlag(enum _ENUM_RST_FLAG_TYPE eType, uint32_t status);
 
 u_int8_t kalIsResetting(void);
 u_int8_t kalIsResetOnEnd(void);
