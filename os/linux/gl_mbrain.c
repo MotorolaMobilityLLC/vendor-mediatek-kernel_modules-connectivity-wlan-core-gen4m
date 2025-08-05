@@ -804,6 +804,21 @@ void mbrIsTxTimeout(struct ADAPTER *prAdapter,
 	}
 }
 
+void mbrWifiTxTimeoutFlushQueue(struct ADAPTER *prAdapter)
+{
+	struct MBRAIN_TXTIMEOUT_ENTRY *prTxTimeoutEntry = NULL;
+
+	do {
+		prTxTimeoutEntry = mbrTxTimeoutDequeue(prAdapter);
+		if (prTxTimeoutEntry) {
+			kalMemFree(prTxTimeoutEntry, VIR_MEM_TYPE,
+				sizeof(struct MBRAIN_TXTIMEOUT_ENTRY));
+		} else {
+			break;
+		}
+	} while (TRUE);
+}
+
 #if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
 void mbr_wifi_wkup_rsn_action(struct ADAPTER *prAdapter,
 			      enum MBR_WIFI_WKUPRSN_ACTION eAction,

@@ -186,6 +186,8 @@ void mmbrTxTimeoutEnqueue(struct ADAPTER *prAdapter,
 	uint32_t u4TokenId, struct timespec64 rTimeoutTs,
 	uint32_t u4AvgIdleSlot);
 
+void mbrWifiTxTimeoutFlushQueue(struct ADAPTER *prAdapter);
+
 struct MBRAIN_TXTIMEOUT_ENTRY *mbrTxTimeoutDequeue(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)

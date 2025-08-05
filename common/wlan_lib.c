@@ -1798,6 +1798,10 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 #endif
 	wlanOffUninitNicModule(prAdapter, bAtResetFlow);
 
+#if CFG_SUPPORT_MBRAIN
+	mbrWifiTxTimeoutFlushQueue(prAdapter);
+#endif
+
 #if CFG_SUPPORT_CUSTOM_NETLINK
 	glCustomGenlDeinit();
 #endif
