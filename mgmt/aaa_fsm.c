@@ -965,11 +965,10 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 			if (assocCheckTxReAssocRespFrame(prAdapter,
 				prMsduInfo) != WLAN_STATUS_SUCCESS)
 				break;
-			if (prBssInfo &&
-					!kalP2PIsTxCarrierOn(prAdapter
-					->prGlueInfo,
-					prBssInfo))
+			if (prBssInfo && !prBssInfo->fgIsApGoStarted) {
+				DBGLOG(AAA, WARN, "Skip if APGO not started\n");
 				break;
+			}
 
 			if (prStaRec->u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 				if (rTxDoneStatus == TX_RESULT_SUCCESS) {
