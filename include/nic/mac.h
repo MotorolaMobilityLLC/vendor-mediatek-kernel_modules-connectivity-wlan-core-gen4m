@@ -2564,6 +2564,15 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define TX_PWR_ENV_INFO_TXPWR_CATEGORY_MASK   BITS(6, 7)
 #define TX_PWR_ENV_INFO_TXPWR_CATEGORY_OFFSET 6
 
+#define TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_MAX       16
+#define TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_MASK      BITS(0, 3)
+#define TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_OFFSET    0
+
+/* Include Entension Transmit PSD Information field */
+#define TX_PWR_ENV_MAX_PWR_CNT \
+	((TX_PWR_ENV_INFO_TXPWR_COUNT_MAX) + \
+		(TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_MAX) + 1)
+
 #define TX_PWR_ENV_INFO_GET_TXPWR_COUNT(_ucTxPwrInfo) \
 	((_ucTxPwrInfo & TX_PWR_ENV_INFO_TXPWR_COUNT_MASK) \
 	>> TX_PWR_ENV_INFO_TXPWR_COUNT_OFFSET)
@@ -2573,6 +2582,9 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define TX_PWR_ENV_INFO_GET_TXPWR_CATEGORY(_ucTxPwrInfo) \
 	((_ucTxPwrInfo & TX_PWR_ENV_INFO_TXPWR_CATEGORY_MASK) \
 	>> TX_PWR_ENV_INFO_TXPWR_CATEGORY_OFFSET)
+#define TX_PWR_ENV_INFO_GET_TXPWR_PSD_EXT_COUNT(_ucExtTxPsdInfo) \
+	((_ucExtTxPsdInfo & TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_MASK) \
+	>> TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_OFFSET)
 
 enum TX_PWR_ENV_MAX_TXPWR_INTRPT_TYPE {
 	TX_PWR_ENV_LOCAL_EIRP = 0,
@@ -2585,6 +2597,7 @@ enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE {
 	TX_PWR_ENV_MAX_TXPWR_BW40 = 1,
 	TX_PWR_ENV_MAX_TXPWR_BW80 = 2,
 	TX_PWR_ENV_MAX_TXPWR_BW160 = 3,
+	TX_PWR_ENV_MAX_TXPWR_BW320 = 4,
 	TX_PWR_ENV_MAX_TXPWR_BW_NUM
 };
 #endif /* CFG_SUPPORT_TX_PWR_ENV */
@@ -3796,7 +3809,11 @@ struct IE_TX_PWR_ENV_FRAME {
 				* Bits[3:5] : Max TxPwr Interpret
 				* Bits[6:7] : Max TxPwr Category
 				*/
-	int8_t aicMaxTxPwr[TX_PWR_ENV_INFO_TXPWR_COUNT_MAX];
+	/* Include two field which length is both variable
+	 * 1. Maximum Transmit Power field
+	 * 2. Extension Maximum Transmit Power field
+	 */
+	int8_t aicMaxTxPwr[TX_PWR_ENV_MAX_PWR_CNT];
 } __KAL_ATTRIB_PACKED__;
 #endif
 

@@ -12021,8 +12021,118 @@ static uint32_t rlmTxPwrEnvGetBwShift(
 	case CW_80P80MHZ:
 		*pucShift = TX_PWR_ENV_BW_SHIFT_BW160;
 		break;
+	case CW_320_1MHZ:
+	case CW_320_2MHZ:
+		*pucShift = TX_PWR_ENV_BW_SHIFT_BW320;
+		break;
 	default:
 		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief 1. This func is use to get PSD primary channel index.
+ *
+ * \param[in] ucCenterCh : Center channel
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] ucBwShift : BW shift
+ * \param[in] prTxPwrEnvIE : Pointer of Tranmit Power Envelope IE content
+ * \param[in] pucPriChIdx : Pointer of primary channel index
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t rlmTxPwrEnvGetPsdPriChIdx(
+	uint8_t ucCenterCh,
+	uint8_t ucPriCh,
+	uint8_t ucBwShift,
+	struct IE_TX_PWR_ENV_FRAME *prTxPwrEnvIE,
+	uint8_t *pucPriChIdx)
+{
+	uint8_t ucTxPwrEnvCnt = 0;
+	uint8_t ucPsdCntOrg = 0;
+	uint8_t ucPsdCntExt = 0;
+	uint8_t ucExtTxPsdInfoIdx = 0;
+
+	/* Calculate Transmit Power Envelope max TxPower PSD index
+	 * for target primary channel :
+	 *     - abs(CenterCh - BwShift - PriCh) / 4
+	 * Example :
+	 *    - BW80  6G CenterCH=23 PriCH=21, idx = abs(23- 6-21)/4 = 1
+	 *    - BW160 6G CenterCH=79 PriCH=89, idx = abs(79-14-89)/4 = 6
+	 *    - BW80  5G CenterCH=58 PriCH=52, idx = abs(58- 6-52)/4 = 1
+	 */
+	if (ucCenterCh > (ucBwShift + ucPriCh))
+		*pucPriChIdx = (ucCenterCh - (ucBwShift + ucPriCh)) / 4;
+	else
+		*pucPriChIdx = ((ucBwShift + ucPriCh) - (ucCenterCh)) / 4;
+
+	/* In TxPwr PSD original case , the value of Transmit Power Envelope
+	 * Info Count represent the number of Max TxPwr field by following
+	 * transfer func : (1 << (ucTxPwrEnvCount - 1))
+	 * ie.
+	 *      |ucTxPwrEnvCount|Number of Max TxPwr field|
+	 *      |      0        |             0           |
+	 *      |      1        |             1           |
+	 *      |      2        |             2           |
+	 *      |      3        |             4           |
+	 *      |      4        |             8           |
+	 */
+	ucTxPwrEnvCnt =
+		TX_PWR_ENV_INFO_GET_TXPWR_COUNT(prTxPwrEnvIE->ucTxPwrInfo);
+	ucPsdCntOrg = (1 << (ucTxPwrEnvCnt - 1));
+
+	/* For BW >= 320, it may need to get PSD from Extension Maximum
+	 * Transmit Power field, due to the spec is only define ucTxPwrEnvCount
+	 * value to 4(which indicate there are only 8 PSD field in Maximum
+	 *  Transmit Power field).
+	 * However, for BW >= 320, the primary channel num will more than 8
+	 * (ex: BW320, primary channel num = 16), so it will need Extension
+	 * Maximum Transmit to express additinal field (ex: for BW320,
+	 * to represent No. 9~16 primary PSD limit)
+	 * If Length of TPE IE is longer than
+	 * TX_PWR_ENV_INFO_TXPWR_COUNT_MAX + 1
+	 * (+1 for consider Transmit Power Information field), we will consider
+	 * Extension Maximum Transmit Power field.
+	 */
+	if (IE_LEN(prTxPwrEnvIE) > TX_PWR_ENV_INFO_TXPWR_COUNT_MAX + 1) {
+		/* Get PSD Cnt Ext for sanity check */
+		ucExtTxPsdInfoIdx = TX_PWR_ENV_INFO_TXPWR_COUNT_MAX + 1;
+		ucPsdCntExt = TX_PWR_ENV_INFO_GET_TXPWR_PSD_EXT_COUNT(
+				prTxPwrEnvIE->aicMaxTxPwr[ucExtTxPsdInfoIdx]);
+
+		/* Skip  Extension Transmit PSD information */
+		*pucPriChIdx = *pucPriChIdx + 1;
+	}
+
+	/* Sanity check for PSD count */
+	if ((ucPsdCntOrg > TX_PWR_ENV_INFO_TXPWR_COUNT_MAX) ||
+		(ucPsdCntExt > TX_PWR_ENV_INFO_TXPWR_PSD_EXT_COUNT_MAX) ||
+		((ucPsdCntOrg + ucPsdCntExt + 1) > TX_PWR_ENV_MAX_PWR_CNT)) {
+		DBGLOG(RLM, ERROR,
+			"Psd cnt invalid,len[%d]TxPwrCnt[%d]Org[%d]Ext[%d]\n",
+			IE_LEN(prTxPwrEnvIE),
+			ucTxPwrEnvCnt,
+			ucPsdCntOrg,
+			ucPsdCntExt);
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Sanity check for Primary channel index */
+	if (*pucPriChIdx >= TX_PWR_ENV_MAX_PWR_CNT) {
+		DBGLOG(RLM, ERROR,
+			"Out of bound,idx[%d]len[%d]Org[%d]Ext[%d]MaxCnt[%d]\n",
+			*pucPriChIdx,
+			IE_LEN(prTxPwrEnvIE),
+			ucPsdCntOrg,
+			ucPsdCntExt,
+			TX_PWR_ENV_MAX_PWR_CNT);
+
+		return WLAN_STATUS_FAILURE;
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -12037,7 +12147,6 @@ static uint32_t rlmTxPwrEnvGetBwShift(
  *
  * \param[in] eChannelWidth : Channel BW
  * \param[in] eSco : Channel extent parameter
- * \param[in] ucSize : Indicate the quantity to compare
  * \param[in] ucCenterCh : Center channel
  * \param[in] ucPriCh : Primary channel
  * \param[in] prTxPwrEnvIE : Pointer of Tranmit Power Envelope IE content
@@ -12058,7 +12167,6 @@ static uint32_t rlmTxPwrEnvGetMaxTxPwrPsd(
 	uint8_t ucPriChIdx = 0;
 	uint8_t ucBwShift = 0;
 	uint8_t ucTxPwrEnvCnt = 0;
-	uint8_t ucNumMaxTxPwr = 0;
 
 	if (!picMaxTxPwrPsd)
 		return WLAN_STATUS_INVALID_DATA;
@@ -12078,44 +12186,16 @@ static uint32_t rlmTxPwrEnvGetMaxTxPwrPsd(
 	if (ucTxPwrEnvCnt == 0) {
 		*picMaxTxPwrPsd = prTxPwrEnvIE->aicMaxTxPwr[0];
 	} else {
-		/* Calculate Transmit Power Envelope max TxPower PSD index
-		 * for target primary channel :
-		 *     - abs(CenterCh - BwShift - PriCh) / 4
-		 * Example :
-		 *    - BW80  6G CenterCH=23 PriCH=21, idx = abs(23- 6-21)/4 = 1
-		 *    - BW160 6G CenterCH=79 PriCH=89, idx = abs(79-14-89)/4 = 6
-		 *    - BW80  5G CenterCH=58 PriCH=52, idx = abs(58- 6-52)/4 = 1
-		 */
-		if (ucCenterCh > (ucBwShift + ucPriCh))
-			ucPriChIdx = (ucCenterCh - (ucBwShift + ucPriCh)) / 4;
-		else
-			ucPriChIdx = ((ucBwShift + ucPriCh) - (ucCenterCh)) / 4;
 
-		/* In TxPwr PSD case , the value of Transmit Power Envelope
-		 * Info Count represent the number of Max TxPwr field by
-		 * following transfer func : (1 << (ucTxPwrEnvCount - 1))
-		 *  ie.
-		 *      |ucTxPwrEnvCount|Number of Max TxPwr field|
-		 *      |      0        |             0           |
-		 *      |      1        |             1           |
-		 *      |      2        |             2           |
-		 *      |      3        |             4           |
-		 *      |      4        |             8           |
-		 */
-		ucNumMaxTxPwr = (1 << (ucTxPwrEnvCnt - 1));
-
-		/* Sanity check for TxPwrEnv count */
-		if (ucNumMaxTxPwr > TX_PWR_ENV_INFO_TXPWR_COUNT_MAX ||
-			ucPriChIdx >= ucNumMaxTxPwr) {
-			DBGLOG(RLM, ERROR,
-			"Get max TxPwr PSD idx fail,MaxNum[%d]PriCh_Idx[%d]\n",
-			ucNumMaxTxPwr,
-			ucPriChIdx);
+		if (rlmTxPwrEnvGetPsdPriChIdx(ucCenterCh, ucPriCh, ucBwShift,
+			prTxPwrEnvIE, &ucPriChIdx) != WLAN_STATUS_SUCCESS) {
+			/* Get index fail */
 			return WLAN_STATUS_FAILURE;
 		}
 
 		*picMaxTxPwrPsd = prTxPwrEnvIE->aicMaxTxPwr[ucPriChIdx];
 	}
+
 	DBGLOG(RLM, TRACE,
 		"TPE PSD,BW[%d]Sco[%d]BwShif[%d]PriCh[%d]CenCh[%d]Idx[%d]Cnt[%d]PSD[%d]\n",
 		eChannelWidth,
@@ -12123,7 +12203,8 @@ static uint32_t rlmTxPwrEnvGetMaxTxPwrPsd(
 		ucBwShift,
 		ucPriCh,
 		ucCenterCh,
-		ucPriChIdx,
+		((IE_LEN(prTxPwrEnvIE) > TX_PWR_ENV_INFO_TXPWR_COUNT_MAX + 1) ?
+				(ucPriChIdx - 1) : ucPriChIdx),
 		ucTxPwrEnvCnt,
 		*picMaxTxPwrPsd);
 
@@ -12350,7 +12431,7 @@ void rlmTxPwrEnvMaxPwrSend(
 	}
 
 	DBGLOG(RLM, INFO,
-		"TPE Send:En[%d]B[%d]PriCh[%d]Num[%d]PwrLmtBW20[%d]BW40[%d]BW80[%d]BW160[%d]\n",
+		"TPE Send:En[%d]B[%d]PriCh[%d]Num[%d]PwrLmtBW20[%d]BW40[%d]BW80[%d]BW160[%d]BW320[%d]\n",
 		prTxPwrEnvPwrLmt->fgPwrLmtEnable,
 		prTxPwrEnvPwrLmt->ucBand,
 		prTxPwrEnvPwrLmt->ucPriCh,
@@ -12358,7 +12439,8 @@ void rlmTxPwrEnvMaxPwrSend(
 		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW20],
 		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW40],
 		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW80],
-		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW160]);
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW160],
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW320]);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, /* prAdapter */
 		CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
@@ -12503,8 +12585,25 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 	if (ucTxPwrEnvIntrpt == TX_PWR_ENV_LOCAL_EIRP
 		|| ucTxPwrEnvIntrpt == TX_PWR_ENV_REG_CLIENT_EIRP) {
 
-		ucPwrLmtNum = TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
-					prTxPwrEnvIE->ucTxPwrInfo) + 1;
+		/*      |ucTxPwrEnvCount|    Field present        |
+		 *      |      0        |    BW20                 |
+		 *      |      1        |    BW20/40              |
+		 *      |      2        |    BW20/40/80           |
+		 *      |      3        |    BW20/40/80/160       |
+		 *      |     4~7       |    Reserved             |
+		 */
+		if (TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
+					prTxPwrEnvIE->ucTxPwrInfo) >= 4) {
+			DBGLOG(RLM, ERROR,
+				"Invalid txpwr cnt skip update, itpt[%d]cnt[%d]\n",
+					ucTxPwrEnvIntrpt,
+					TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
+					prTxPwrEnvIE->ucTxPwrInfo));
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		/* Skip TxPwrInfo field */
+		ucPwrLmtNum = IE_LEN(prTxPwrEnvIE) - 1;
 
 		if (ucPwrLmtNum > TX_PWR_ENV_MAX_TXPWR_BW_NUM)
 			ucPwrLmtNum = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
@@ -12518,6 +12617,24 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 
 	} else if (ucTxPwrEnvIntrpt == TX_PWR_ENV_LOCAL_EIRP_PSD
 		|| ucTxPwrEnvIntrpt == TX_PWR_ENV_REG_CLIENT_EIRP_PSD) {
+
+		/*      |ucTxPwrEnvCount|Number of Max TxPwr field|
+		 *      |      0        |             0           |
+		 *      |      1        |             1           |
+		 *      |      2        |             2           |
+		 *      |      3        |             4           |
+		 *      |      4        |             8           |
+		 *      |     5~7       |          Reserved       |
+		 */
+		if (TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
+					prTxPwrEnvIE->ucTxPwrInfo) >= 5) {
+			DBGLOG(RLM, ERROR,
+				"Invalid txpwr cnt skip update, itpt[%d]cnt[%d]\n",
+					ucTxPwrEnvIntrpt,
+					TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
+					prTxPwrEnvIE->ucTxPwrInfo));
+			return WLAN_STATUS_INVALID_DATA;
+		}
 
 		/* Convert TxPower limit PSD to BW TxPower limit first
 		 * and store in the aicTxPwrEnvMaxTxPwr
@@ -12548,9 +12665,11 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
 			eBwType < ucPwrLmtNum; eBwType++) {
 			DBGLOG(RLM, TRACE,
-				"Parse TPE,Band[%d]Itpt[%d]BW[%d]Lmt\n",
-				eHwBand,
+				"Parse TPE Len[%d]Itpt[%d]PwrLmtNum[%d],Band[%d]BW[%d]Lmt[%d]\n",
+				IE_LEN(prTxPwrEnvIE),
 				ucTxPwrEnvIntrpt,
+				ucPwrLmtNum,
+				eHwBand,
 				eBwType,
 				aicTxPwrEnvMaxTxPwr[eBwType]);
 		}

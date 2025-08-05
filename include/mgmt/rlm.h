@@ -175,6 +175,7 @@ extern uint8_t  g_ucHtSMPSCapValue;
 #define TX_PWR_ENV_BW_SHIFT_BW40          2
 #define TX_PWR_ENV_BW_SHIFT_BW80          6
 #define TX_PWR_ENV_BW_SHIFT_BW160        14
+#define TX_PWR_ENV_BW_SHIFT_BW320        30
 
 /* PSD to Power dBm transfer func : 10*log(BW) * 2 */
 #define TX_PWR_ENV_PSD_TRANS_DBM_BW20    26 /* 10*log( 20) * 2  = 26, 0.5dBm */
