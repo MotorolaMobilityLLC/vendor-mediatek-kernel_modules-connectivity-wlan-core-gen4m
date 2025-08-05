@@ -1412,6 +1412,23 @@ static void mtk_wifi_remove(struct platform_device *pdev)
 #if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 static void mtk_wifi_shutdown(struct platform_device *pdev)
 {
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+#if CFG_MTK_ANDROID_WMT
+#define MAX_RETRY_COUNT 10
+
+	uint32_t u4RetryCnt = 0;
+
+	while (is_cal_flow_finished() == FALSE) {
+		u4RetryCnt++;
+		if (u4RetryCnt > MAX_RETRY_COUNT) {
+			DBGLOG(INIT, WARN, "skip, cal not done.\n");
+			return;
+		}
+		kalMdelay(1000);
+	}
+#endif
+#endif
+
 	wfsys_lock();
 	if (g_fgDriverProbed && pfWlanShutdown) {
 		DBGLOG(INIT, INFO, "do shutdown\n");

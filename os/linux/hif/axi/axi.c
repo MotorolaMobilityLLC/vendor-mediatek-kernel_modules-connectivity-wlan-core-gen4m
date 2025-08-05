@@ -477,6 +477,23 @@ static void mtk_axi_remove(struct platform_device *pdev)
 
 static void mtk_axi_shutdown(struct platform_device *pdev)
 {
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+#if CFG_MTK_ANDROID_WMT
+#define MAX_RETRY_COUNT 10
+
+	uint32_t u4RetryCnt = 0;
+
+	while (is_cal_flow_finished() == FALSE) {
+		u4RetryCnt++;
+		if (u4RetryCnt > MAX_RETRY_COUNT) {
+			DBGLOG(INIT, WARN, "skip, cal not done.\n");
+			return;
+		}
+		kalMdelay(1000);
+	}
+#endif
+#endif
+
 	DBGLOG(INIT, INFO, "enter shutdown\n");
 	wfsys_lock();
 	if (g_fgDriverProbed && pfWlanShutdown) {
