@@ -2769,7 +2769,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	uint8_t fg6GPwrModeValid = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t ucBssIdx = 0;
-	struct BSS_INFO *prBssInfo;
+	struct BSS_INFO *prBssInfo = NULL;
 #endif
 
 	struct IE_COUNTRY *prCountryIE = NULL;
@@ -2935,35 +2935,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		       ucIeDsChannelNum, ucIeHtChannelNum);
 		return NULL;
 	}
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	/* In force mode, not update 6G power mode by beacon info */
-	if ((eHwBand == BAND_6G) && (prAdapter->fg6GPwrModeForce) != TRUE) {
-		e6GPwrModeCurr = rlmDomain6GPwrModeDecision(
-					prAdapter,
-					fgIsHE6GPresent,
-					uc6GHeRegInfo);
-		fg6GPwrModeValid = TRUE;
-
-		u4Status = rlmDomain6GPwrModeCountrySupportChk(
-				eHwBand,
-				ucChnlNum,
-				prAdapter->rWifiVar.u2CountryCode,
-				e6GPwrModeCurr,
-				&fgPwrMode6GSupport);
-
-		if (u4Status == WLAN_STATUS_SUCCESS &&
-			fgPwrMode6GSupport == FALSE) {
-
-			DBGLOG(SCN, WARN, "Skip scan, BSSID["MACSTR
-				"] SSID:%s non support 6G pwr mode[%d],0x%08x",
-				MAC2STR(prWlanBeaconFrame->aucBSSID),
-				rSsid.aucSsid,
-				e6GPwrModeCurr,
-				u4Status);
-			return NULL;
-		}
-	}
-#endif
 
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */
 	prBssDesc = scanSearchExistingBssDescWithSsid(
@@ -3945,22 +3916,88 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			ucPowerConstraint);
 	}
 #endif
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	/* In force mode, not update 6G power mode by beacon info */
+	if ((eHwBand == BAND_6G) && (prAdapter->fg6GPwrModeForce) != TRUE) {
+		e6GPwrModeCurr = rlmDomain6GPwrModeDecision(
+					prAdapter,
+					fgIsHE6GPresent,
+					uc6GHeRegInfo);
+		fg6GPwrModeValid = TRUE;
+
+		u4Status = rlmDomain6GPwrModeCountrySupportChk(
+				prAdapter,
+				prAdapter->rWifiVar.u2CountryCode,
+				eHwBand,
+				ucChnlNum,
+				rlmGetBssOpBwByChannelWidth(prBssDesc->eSco,
+						    prBssDesc->eChannelWidth),
+				e6GPwrModeCurr,
+				&fgPwrMode6GSupport);
+
+		if (u4Status == WLAN_STATUS_SUCCESS &&
+			fgPwrMode6GSupport == FALSE &&
+			e6GPwrModeCurr != PWR_MODE_6G_VLP &&
+			prAdapter->rWifiVar.fgVlpExtChk == TRUE) {
+
+			DBGLOG(SCN, WARN, "BSSID["MACSTR
+				"] SSID:%s non support 6G pwr mode[%d] try to check [%d]\n",
+				MAC2STR(prWlanBeaconFrame->aucBSSID),
+				rSsid.aucSsid,
+				e6GPwrModeCurr,
+				PWR_MODE_6G_VLP);
+
+			e6GPwrModeCurr = PWR_MODE_6G_VLP;
+			u4Status = rlmDomain6GPwrModeCountrySupportChk(
+				prAdapter,
+				prAdapter->rWifiVar.u2CountryCode,
+				eHwBand,
+				ucChnlNum,
+				rlmGetBssOpBwByChannelWidth(prBssDesc->eSco,
+						    prBssDesc->eChannelWidth),
+				e6GPwrModeCurr,
+				&fgPwrMode6GSupport);
+		}
+
+		if (u4Status == WLAN_STATUS_SUCCESS &&
+			fgPwrMode6GSupport == FALSE) {
+			scanFreeBssDesc(prAdapter, prBssDesc);
+
+			DBGLOG(SCN, WARN, "Skip scan, BSSID["MACSTR
+				"] SSID:%s non support 6G pwr mode[%d],0x%08x\n",
+				MAC2STR(prWlanBeaconFrame->aucBSSID),
+				rSsid.aucSsid,
+				e6GPwrModeCurr,
+				u4Status);
+
+			return NULL;
+		}
+	}
+
 	if (eHwBand == BAND_6G && fg6GPwrModeValid == TRUE) {
-		prBssDesc->e6GPwrMode = e6GPwrModeCurr;
-		if (prBssDesc->fgIsConnected) {
+		/* Update when STA is connected & AP power mode is change */
+		if (prBssDesc->fgIsConnected &&
+			(prBssDesc->e6GPwrMode != e6GPwrModeCurr)) {
 			for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
 			     ucBssIdx++) {
 				prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+				if (!IS_BSS_AIS(prBssInfo))
+					continue;
+
 				if (EQUAL_MAC_ADDR(prBssInfo->aucBSSID,
 							prBssDesc->aucBSSID)) {
 					rlmDomain6GPwrModeUpdate(prAdapter,
 						ucBssIdx,
-						prBssDesc->e6GPwrMode);
+						e6GPwrModeCurr);
 					break;
 				}
 			}
 		}
+
+		/* Final record AP Power mode */
+		prBssDesc->e6GPwrMode = e6GPwrModeCurr;
 	}
 #endif
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)

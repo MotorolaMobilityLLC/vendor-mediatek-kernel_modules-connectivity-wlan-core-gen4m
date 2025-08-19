@@ -2119,14 +2119,6 @@ SKIP_START_RDD:
 			kalIdcGetRilInfo();
 #endif
 
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-		if (prBssInfo->eBand == BAND_6G) {
-			rlmDomain6GPwrModeUpdate(prAdapter,
-				prBssInfo->ucBssIndex,
-				PWR_MODE_6G_VLP);
-		}
-#endif
-
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
 		/* Wait for fw's setup done event and continue to
 		 * notify carrier_on & start all tx queues to
@@ -2178,6 +2170,40 @@ SKIP_START_RDD:
 #endif /* CFG_AP_80211KVR_INTERFACE */
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
+
+uint8_t p2pFuncGetMaxBw(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+			u_int8_t fgIsSap)
+{
+	uint8_t ucBw = MAX_BW_20MHZ;
+
+	if (fgIsSap) {
+		if (eBand == BAND_2G4)
+			ucBw = prAdapter->rWifiVar.ucAp2gBandwidth;
+		else if (eBand == BAND_5G)
+			ucBw = prAdapter->rWifiVar.ucAp5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			ucBw = prAdapter->rWifiVar.ucAp6gBandwidth;
+#endif
+		else
+			DBGLOG(P2P, WARN,
+				"[SAP] Invalid band(%d).\n", eBand);
+	} else {
+		if (eBand == BAND_2G4)
+			ucBw = prAdapter->rWifiVar.ucP2p2gBandwidth;
+		else if (eBand == BAND_5G)
+			ucBw = prAdapter->rWifiVar.ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			ucBw = prAdapter->rWifiVar.ucP2p6gBandwidth;
+#endif
+		else
+			DBGLOG(P2P, WARN,
+				"[P2P] Invalid band(%d).\n", eBand);
+	}
+
+	return ucBw;
+}
 
 void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo)
@@ -3075,19 +3101,6 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 				prBssInfo->ucVhtChannelFrequencyS1,
 				prBssInfo->eBand) / 1000,
 			prBssInfo->eBand);
-#endif
-
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (prBssInfo->eBand == BAND_6G) {
-		rlmDomain6GPwrModeUpdate(prAdapter,
-			prBssInfo->ucBssIndex,
-			PWR_MODE_6G_VLP);
-	} else if (prBssInfo->eBand == BAND_2G4 ||
-		prBssInfo->eBand == BAND_5G) {
-		rlmDomain6GPwrModeUpdate(prAdapter,
-			prBssInfo->ucBssIndex,
-			PWR_MODE_6G_LPI);
-	}
 #endif
 
 	kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
@@ -9442,6 +9455,57 @@ void p2pFuncSapSwitchChCheck(
 
 }
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void
+p2pGet6GVlpChnlList(struct ADAPTER *prAdapter,
+		    uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
+		    struct RF_CHANNEL_INFO *prChnlList)
+{
+	uint8_t ucChnlNum, i = 0, k;
+	struct RF_CHANNEL_INFO *prRfChInfoArray = NULL;
+	uint32_t u4MsgSize;
+	u_int8_t isLowerBoundAdd = FALSE;
+
+	*pucNumOfChannel = 0;
+
+	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE,
+			     ucMaxChannelNum,
+			     &ucChnlNum, prChnlList);
+
+	u4MsgSize = ucChnlNum * sizeof(struct RF_CHANNEL_INFO);
+	prRfChInfoArray = (struct RF_CHANNEL_INFO *)
+		kalMemAlloc(u4MsgSize, VIR_MEM_TYPE);
+	if (!prRfChInfoArray)
+		goto exit;
+
+	for (k = 0; k < ucChnlNum; k++) {
+		if (!IS_6G_PSC_CHANNEL(prChnlList[k].ucChannelNum)) {
+			DBGLOG(REQ, TRACE,
+				"skip freq %d, not psc channel\n",
+				prChnlList[k].ucChannelNum);
+			continue;
+		}
+		if (rlmDomainIsLegalChlByNetType(prAdapter,
+						 prChnlList[k].eBand,
+						 prChnlList[k].ucChannelNum,
+						 MAX_BW_20MHZ, /* NOT SURE */
+						 NETWORK_TYPE_P2P)) {
+			prRfChInfoArray[i] = prChnlList[k];
+			isLowerBoundAdd = TRUE;
+			i++;
+		} else if (isLowerBoundAdd == TRUE)
+			break;
+	}
+	kalMemCopy(prChnlList, prRfChInfoArray,
+		   i * sizeof(struct RF_CHANNEL_INFO));
+	*pucNumOfChannel = i;
+
+exit:
+	if (prRfChInfoArray)
+		kalMemFree(prRfChInfoArray, VIR_MEM_TYPE, u4MsgSize);
+}
+#endif
+
 #if CFG_SUPPORT_CCM
 uint8_t p2pFuncSapFilteredChListGen(
 		struct ADAPTER *prAdapter,
@@ -9650,8 +9714,8 @@ uint8_t p2pFuncSapSwichCandidatGen(
 #endif
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE, MAX_6G_BAND_CHN_NUM,
-		&ucChnlNum, arChnlList);
+	p2pGet6GVlpChnlList(prAdapter, MAX_PER_BAND_CHN_NUM,
+			    &ucChnlNum, arChnlList);
 	if (ucChnlNum != 0) {
 
 		prSapSwitchCand[i].eRfBand = arChnlList[0].eBand;
@@ -9948,12 +10012,12 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 		uint8_t ucTopPreferNum, uint32_t *pu4Freq)
 {
 	uint8_t ucMaxChnNum = MAX_PER_BAND_CHN_NUM;
-	uint8_t ucNumOfChannel = 0;
-	uint8_t i;
+	uint8_t ucChnlNum = 0;
+	uint8_t i, curr;
 	struct RF_CHANNEL_INFO *aucChannelList = NULL;
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	uint8_t isVlpSupport = 0;
-#endif
+	u_int8_t fgIsCheck6gPwrPref = TRUE;
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum,
@@ -9971,34 +10035,54 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 			BIT(eBandPrefer),
 			BITS(0, 31), BITS(0, 31),
 			BITS(0, 31), BITS(0, 31),
-			&ucNumOfChannel, aucChannelList);
+			&ucChnlNum, aucChannelList);
 #else
-	rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
-		ucMaxChnNum, &ucNumOfChannel, aucChannelList);
+	rlmDomainGetChnlList(prAdapter, eBandPrefer, fgNoDfs,
+		ucMaxChnNum, &ucChnlNum, aucChannelList);
 #endif
 
-	for (i = 0; i < ucNumOfChannel && i < ucTopPreferNum; i++) {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-		if (aucChannelList[i].eBand == BAND_6G &&
-		    rlmDomain6GPwrModeCountrySupportChk(
-		    aucChannelList[i].eBand,
-		    aucChannelList[i].ucChannelNum,
-		    COUNTRY_CODE_TW, PWR_MODE_6G_VLP,
-		    &isVlpSupport) == WLAN_STATUS_SUCCESS &&
-		    isVlpSupport == FALSE) {
-			ucTopPreferNum++;
+no_valid_freq:
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
+	for (i = 0, curr = 0; i < ucChnlNum && curr < ucTopPreferNum; i++) {
+		struct RF_CHANNEL_INFO *info =  &aucChannelList[i];
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (eBandPrefer != BAND_6G)
+			goto selected;
+		else if (rlmDomainIsLegalChlByNetType(prAdapter,
+						      info->eBand,
+						      info->ucChannelNum,
+						      MAX_BW_20MHZ,
+						      NETWORK_TYPE_P2P) &&
+			 (fgIsCheck6gPwrPref == FALSE ||
+			  rlmDomain6GPwrModeIsChnlPrefer(prAdapter,
+							info->eBand,
+							info->ucChannelNum,
+							MAX_BW_20MHZ,
+							PWR_MODE_6G_VLP)))
+			goto selected;
+		else
 			continue;
-		}
-#endif
-		*(pu4Freq + i) = nicChannelNum2Freq(
-			aucChannelList[i].ucChannelNum,
-			aucChannelList[i].eBand) / 1000;
+selected:
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
+
+		pu4Freq[curr++] = nicChannelNum2Freq(info->ucChannelNum,
+						     info->eBand) / 1000;
 	}
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	if (eBandPrefer == BAND_6G && fgIsCheck6gPwrPref && curr == 0) {
+		fgIsCheck6gPwrPref = FALSE;
+		DBGLOG(P2P, INFO, "6G no valid freq, skip pwr pref check\n");
+		goto no_valid_freq;
+	}
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 	kalMemFree(aucChannelList, VIR_MEM_TYPE,
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
 
-	return i;
+	return curr;
 }
 
 uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
@@ -11890,6 +11974,14 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	u_int8_t fgDfsChannel = rlmDomainIsDfsChnls(prAdapter, u4TargetCh);
 	u_int8_t fgDfsDisAllowed = TRUE;
 
+	uint8_t ucTargetBw = 0;
+
+	ucTargetBw = p2pFuncGetMaxBw(prAdapter, eTargetBand,
+				     (IS_BSS_APGO(prBssInfo) &&
+				     p2pFuncIsAPMode(
+				     prAdapter->rWifiVar.prP2PConnSettings[
+				     prBssInfo->u4PrivateData])));
+
 	/*
 	 * Allow dfs channel for p2p GO:
 	 *     1. sta connected on dfs channel
@@ -11918,15 +12010,22 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 			fgDfsDisAllowed = FALSE;
 	}
 
-	if (fgDfsChannel && fgDfsDisAllowed)
+	if (!rlmDomainIsLegalChlByNetType(prAdapter, eTargetBand, u4TargetCh,
+					  ucTargetBw, NETWORK_TYPE_P2P)) {
+		DBGLOG(CCM, WARN, "illegal chnl, bn=%u, ch=%u, bw=%u\n",
+		       eTargetBand, u4TargetCh, ucTargetBw);
+		rStatus = CSA_STATUS_CHNL_ILLEGAL;
+	} else if (fgDfsChannel && fgDfsDisAllowed)
 		rStatus = CSA_STATUS_DFS_NOT_SUP;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	else if (eTargetBand == BAND_6G && !IS_6G_PSC_CHANNEL(u4TargetCh))
-		rStatus = CSA_STATUS_NON_PSC_NOT_SUP;
-	else if (eTargetBand == BAND_6G &&
-	    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
-		DBGLOG(CCM, WARN, "Skip CSA to 6G if auth type not SAE\n");
-		rStatus = CSA_STATUS_NON_SAE_NOT_SUP;
+	else if (eTargetBand == BAND_6G) {
+		if (!IS_6G_PSC_CHANNEL(u4TargetCh))
+			rStatus = CSA_STATUS_NON_PSC_NOT_SUP;
+		else if (!rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
+			DBGLOG(CCM, WARN,
+			       "Skip CSA to 6G if auth type not SAE\n");
+			rStatus = CSA_STATUS_NON_SAE_NOT_SUP;
+		}
 	}
 #endif
 	/* SAP should not consider the capability of peers */

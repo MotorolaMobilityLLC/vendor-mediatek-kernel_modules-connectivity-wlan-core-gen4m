@@ -2301,12 +2301,6 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 	kalMemZero(&rCmdActivateCtrl,
 		   sizeof(struct CMD_BSS_ACTIVATE_CTRL));
 
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (ucBssIndex < MAX_BSSID_NUM)
-		rlmDomain6GPwrModeUpdate(prAdapter, ucBssIndex,
-			PWR_MODE_6G_LPI);
-#endif
-
 	rCmdActivateCtrl.ucBssIndex = ucBssIndex;
 	rCmdActivateCtrl.ucActive = 0;
 	rCmdActivateCtrl.ucNetworkType =
@@ -2828,6 +2822,8 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 #endif
 	else
 		rCmdSetBssInfo.ucStaRecIdxOfAP = STA_REC_INDEX_NOT_FOUND;
+
+	rlmDomainBssUpdateNotify(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {

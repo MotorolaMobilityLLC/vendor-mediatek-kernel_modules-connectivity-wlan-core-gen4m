@@ -4,6 +4,7 @@
  */
 
 #include "precomp.h"
+#include "rlm_domain.h"
 
 #define CFG_NAN_SIGMA_TEST 1
 #define CFG_NAN_AVAIL_CTRL_RESET_TIMEOUT 100
@@ -36,9 +37,6 @@
 #define NAN_5G_LOW_BW80_DISC_CH_OP_CLASS 128
 
 #if (CFG_SUPPORT_NAN_6G == 1)
-/* 6G chnl info */
-#define NAN_6G_BW20_DEFAULT_CHANNEL	37
-
 #define NAN_6G_BW20_OP_CLASS	131
 #define NAN_6G_BW40_OP_CLASS	132
 #define NAN_6G_BW80_OP_CLASS	133
@@ -335,6 +333,8 @@ struct _NAN_SCHEDULER_T {
 	unsigned char fgEn5gH;
 	unsigned char fgEn5gL;
 	unsigned char fgEn6g;
+	unsigned char fgIs6gInUse;
+	enum _NAN_CHNL_BW_MAP e6gBandwidth;
 
 	uint8_t ucNanAvailAttrSeqId; /* shared by all availability attr */
 	uint16_t u2NanAvailAttrControlField;     /* tracking changed flags */
@@ -4366,6 +4366,27 @@ nanSchedConfigDefRangingNumSlots(struct ADAPTER *prAdapter,
 	prNegoCtrl->u4DefRangingNumSlots = u4NumSlots;
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+enum ENUM_MAX_BANDWIDTH_SETTING nanBwTransmitMaxBw(
+	enum _NAN_CHNL_BW_MAP eNanBw)
+{
+	switch (eNanBw) {
+	case NAN_CHNL_BW_20:
+		return MAX_BW_20MHZ;
+	case NAN_CHNL_BW_40:
+		return MAX_BW_40MHZ;
+	case NAN_CHNL_BW_80:
+		return MAX_BW_80MHZ;
+	case NAN_CHNL_BW_160:
+		return MAX_BW_160MHZ;
+	case NAN_CHNL_BW_320:
+		return MAX_BW_320_1MHZ;
+	default:
+		return MAX_BW_UNKNOWN;
+	}
+
+	return MAX_BW_UNKNOWN;
 }
 
 uint32_t
@@ -9360,6 +9381,19 @@ nanSchedCmdUpdateAvailabilityCtrl(struct ADAPTER *prAdapter) {
 	return rStatus;
 }
 
+/* Public function to query whether NAN is using 6G channels */
+u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter,
+		      enum _NAN_CHNL_BW_MAP *e6gBandwidth)
+{
+	struct _NAN_SCHEDULER_T *prScheduler;
+
+	prScheduler = nanGetScheduler(prAdapter);
+	if (prScheduler->fgIs6gInUse && e6gBandwidth)
+		*e6gBandwidth = prScheduler->e6gBandwidth;
+
+	return prScheduler->fgIs6gInUse;
+}
+
 uint32_t
 nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter) {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -9405,6 +9439,8 @@ nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter) {
 			rStatus = nanSchedCmdUpdateAvailabilityDb(prAdapter,
 								  TRUE);
 	} while (FALSE);
+
+	rlmDomainNanTimeLineUpdateNotify(prAdapter);
 
 	return rStatus;
 }

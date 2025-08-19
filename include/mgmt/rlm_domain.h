@@ -20,7 +20,8 @@
  *  E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
- #include "wsys_cmd_handler_fw.h"
+#include "wsys_cmd_handler_fw.h"
+#include "wlan_lib.h"
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 #include "rlm_txpwr_limit_emi.h"
@@ -616,8 +617,21 @@
 		REG_RULE(start, end, bw, 0, 0, reg_flags)
 #endif
 
+#define SUBBAND_6G_NUM                4 /* UNII-5/6/7/8 */
+#define BAND_6G_UPPER_FREQ_UNII_5     5925
+#define BAND_6G_LOWER_FREQ_UNII_5     6425
+#define BAND_6G_UPPER_FREQ_UNII_6     6425
+#define BAND_6G_LOWER_FREQ_UNII_6     6525
+#define BAND_6G_UPPER_FREQ_UNII_7     6525
+#define BAND_6G_LOWER_FREQ_UNII_7     6875
+#define BAND_6G_UPPER_FREQ_UNII_8     6875
+#define BAND_6G_LOWER_FREQ_UNII_8     7125
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-#define SUBBAND_6G_NUM                4/* UNII-5/6/7/8 */
+#define FCC_VLP_CHNL_FREQ_ABOVE_PREFER 6105 /* MHz */
+#define ALLOW_6G_PWR_MODE_CHECK(prAdapter, prBssInfo) \
+	    ((IS_BSS_ALIVE((prAdapter), (prBssInfo))) || \
+	    ((prAdapter)->fgTestMode == TRUE))
 #endif
 /*******************************************************************************
  *  D A T A   T Y P E S
@@ -974,6 +988,12 @@ enum ENUM_REGULATORY_CATEGORY {
 	REG_CAT_NUM
 };
 
+enum ENUM_PWR_LIMIT_DEFINE {
+	PWR_LIMIT_DEFINE_CENTER_CHANNEL,
+	PWR_LIMIT_DEFINE_PRIMARY_CHANNEL,
+	PWR_LIMIT_DEFINE_NUM,
+};
+
 #if 0
 /* If channel width is CHNL_BW_20_40, the first channel will be SCA and
  * the second channel is SCB, then iteratively.
@@ -1196,10 +1216,14 @@ struct mtk_regdomain {
 /* Order by priority */
 enum ENUM_PWR_MODE_6G_TYPE {
 	PWR_MODE_6G_LPI_SP = 0, /* Indoor Standard Power, Priority: Low */
-	PWR_MODE_6G_SP = 1,  /* Standard Power*/
-	PWR_MODE_6G_LPI = 2, /* Low Power Indoor*/
+	PWR_MODE_6G_SP = 1,  /* Standard Power */
+	PWR_MODE_6G_LPI = 2, /* Low Power Indoor */
 	PWR_MODE_6G_VLP = 3, /* Very Low Power, Priority: High */
 	PWR_MODE_6G_NUM
+};
+
+struct PWR_MODE_6G_BSS_INFO {
+	uint8_t ucChnl;
 };
 
 struct  PWR_MODE_6G_SUBAND_SUPPROT {
@@ -1208,6 +1232,7 @@ struct  PWR_MODE_6G_SUBAND_SUPPROT {
 
 struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE {
 	uint8_t aucCountryCode[2];
+	struct PWR_MODE_6G_SUBAND_SUPPROT rCh2Support;
 	struct PWR_MODE_6G_SUBAND_SUPPROT rSubBand[SUBBAND_6G_NUM];
 };
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
@@ -1420,6 +1445,26 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 				 enum ENUM_BAND eBand, uint8_t ucChannel);
 u_int8_t rlmDomainIsIndoorChannel(struct ADAPTER *prAdapter,
 				 enum ENUM_BAND eBand, uint8_t ucChannel);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is used to check whether the current channel for current
+ *        network type is legal or not
+ *
+ * \param[in] prAdapter
+ * \param[in] eBand : RF Band index
+ * \param[in] ucPriCh : Primary
+ * \param[in] ucBw : Bandwidth
+ * \param[in] eNetType : Network type
+ *
+ * \return ucIsLegal : is legal or not.
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmDomainIsLegalChlByNetType(struct ADAPTER *prAdapter,
+				 enum ENUM_BAND eBand,
+				 uint8_t ucPriCh,
+				 uint8_t ucBw,
+				 enum ENUM_NETWORK_TYPE eNetType);
+
 u_int8_t rlmDomainIsStaSapIndoorConn(struct ADAPTER *prAdapter);
 u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand, uint8_t ucChannel);
@@ -1492,8 +1537,59 @@ int32_t txPwrParseTagChainAbs(
 #endif
 
 #endif
+#if (CFG_SUPPORT_NAN == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is update for NAN timeline update
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ *
+ * \return value : bool
+ *                 FALSE : not prefer
+ *                 TRUE : Prefer
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainNanTimeLineUpdateNotify(
+	struct ADAPTER *prAdapter
+);
+#endif
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use for rlm_domain handle bss update
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ * \param[in] ucBssIdx : Bss index
+ *
+ * \return value : WLAN_STATUS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomainBssUpdateNotify(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx);
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use check current channel & BW is prefer use or not
+ *        by 6G power mode
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ * \param[in] eBand : RF band
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] ucBw : Channel BW
+ * \param[in] ePwrMode : 6G Power mode
+ *
+ * \return value : bool
+ *                 FALSE : not prefer
+ *                 TRUE : Prefer
+ */
+/*----------------------------------------------------------------------------*/
+bool rlmDomain6GPwrModeIsChnlPrefer(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t ucBw,
+	enum ENUM_PWR_MODE_6G_TYPE eMode);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This func is use to update 6G power mode, when the power mode have
@@ -1526,13 +1622,16 @@ uint8_t rlmDomain6GPwrModeDecision(
 	uint8_t uc6GHeRegInfo);
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This func is use check whether the country record from STA
- *       support the current 6G power mode or not.
+ * \brief This func is use check whether the country/channel is support the
+ *        current 6G power mode or not.
  *
- * \param[in] eBand : RF Band index
- * \param[in] ucCenterCh : Center Channel
+ * \param[in] prAdapter : pointer of adapter
  * \param[in] u2CountryCode : Country code
- * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] eBand : RF Band index
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] eExtend : Channel extent
+ * \param[in] ucBw : Channel bandwidth
+ * \param[in] eMode : Enum of 6G Power mode
  * \param[in] pfgSupport : Pointer of flag to indicate the support or not for
  *                         STA country
  *
@@ -1541,32 +1640,12 @@ uint8_t rlmDomain6GPwrModeDecision(
  */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmDomain6GPwrModeCountrySupportChk(
+	struct ADAPTER *prAdapter,
+	uint16_t u2CntryCode,
 	enum ENUM_BAND eBand,
-	uint8_t ucCenterCh,
-	uint16_t u2CountryCode,
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
-	uint8_t *pfgSupport);
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This func is use check whether the subband of the country
- *       support the current 6G power mode or not.
- *
- * \param[in] eBand : RF Band index
- * \param[in] u1SubBand : Subband index
- * \param[in] u2CountryCode : Country code
- * \param[in] e6GPwrMode : Enum of 6G Power mode
- * \param[in] pfgSupport : Pointer of flag to indicate the support or not for
- *                         STA country
- *
- * \return value : Success : WLAN_STATUS_SUCCESS
- *                 Fail    : WLAN_STATUS_INVALID_DATA
- */
-/*----------------------------------------------------------------------------*/
-uint32_t rlmDomain6GPwrModeSubbandChk(
-	enum ENUM_BAND eBand,
-	uint8_t u1SubBand,
-	uint16_t u2CountryCode,
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t ucPriCh,
+	uint8_t ucBw,
+	enum ENUM_PWR_MODE_6G_TYPE eMode,
 	uint8_t *pfgSupport);
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 /*******************************************************************************

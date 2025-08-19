@@ -2083,6 +2083,32 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			goto err;
 		}
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (rRfChnlInfo.eBand == BAND_6G) {
+			uint8_t ucMaxBw;
+
+			ucMaxBw = p2pFuncGetMaxBw(prGlueInfo->prAdapter,
+						  rRfChnlInfo.eBand,
+						  p2pFuncIsAPMode(
+				prWifiVar->prP2PConnSettings[ucRoleIdx]));
+
+			if (!rlmDomainIsLegalChlByNetType(
+					prGlueInfo->prAdapter,
+					rRfChnlInfo.eBand,
+					rRfChnlInfo.ucChannelNum,
+					ucMaxBw,
+					NETWORK_TYPE_P2P)) {
+				DBGLOG(P2P, ERROR,
+				       "VLP not supported b=%u, ch=%u, bw=%u\n",
+				       rRfChnlInfo.eBand,
+				       rRfChnlInfo.ucChannelNum,
+				       ucMaxBw);
+				i4Rslt = -EINVAL;
+				goto err;
+			}
+		}
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+
 		u4MsgLen = sizeof(struct MSG_P2P_BEACON_UPDATE) +
 			   settings->beacon.head_len +
 			   settings->beacon.tail_len +

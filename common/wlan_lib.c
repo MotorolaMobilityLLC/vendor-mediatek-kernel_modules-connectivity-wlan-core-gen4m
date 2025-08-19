@@ -8700,6 +8700,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucDftNdlQosQuotaVal, "NanDftNdlQosQuota", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEnNanVHT, "NanVHT", 1, FEATURE_TO_CUSTOMER);
+	/* NAN_6G_CERT_DEFAULT_CHANNEL */
+	INIT_UINT(prWifiVar->ucNan6gDefaultChannel, "Nan6gDefaultChannel",
+		  NAN_6G_BW20_DEFAULT_CHANNEL, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanFtmBw,
 		"NanFtmBw", FTM_FORMAT_BW_HT_MIXED_BW20, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanDiscBcnInterval, "NanDiscBcnInterval", 100,
@@ -9306,6 +9309,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,
 		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgVlpExtChk,
+		  "VlpExtCheck", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 #endif
 
 #if CFG_SUPPORT_CCM

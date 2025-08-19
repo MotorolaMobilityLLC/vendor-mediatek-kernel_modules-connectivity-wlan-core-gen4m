@@ -11145,6 +11145,11 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 					kalSnprintf(pcCommand + i4BytesWritten,
 					    i4TotalLen - i4BytesWritten,
 					    "\nNOT support 6G non SAE Authentication.\n");
+			else if (rStatus == CSA_STATUS_CHNL_ILLEGAL)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nIllegal channel.\n");
 			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CSA)
 				i4BytesWritten +=
 					kalSnprintf(pcCommand + i4BytesWritten,

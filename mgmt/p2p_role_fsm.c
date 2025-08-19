@@ -5607,6 +5607,86 @@ static void p2pRoleFsmSetSafeBitmap(struct ADAPTER *prAdapter,
 			BIT((ucChannelNum - 5)/16);
 #endif
 }
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void p2pRoleFsmRunEventAcs6GCandOpt(struct ADAPTER *prAdapter,
+		struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest)
+{
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	uint8_t i;
+	struct RF_CHANNEL_INFO *prRfChInfoArray;
+	uint32_t u4MsgSize;
+	uint32_t u46gChNum = 0;
+	uint32_t u46gRemoveChNum = 0;
+	uint32_t j = 0;
+
+	if (!prMsgAcsRequest->u4NumChannel)
+		return;
+
+	u4MsgSize = prMsgAcsRequest->u4NumChannel *
+		sizeof(struct RF_CHANNEL_INFO);
+
+	prRfChInfoArray = (struct RF_CHANNEL_INFO *)
+		kalMemAlloc(u4MsgSize, VIR_MEM_TYPE);
+	if (!prRfChInfoArray)
+		goto exit;
+
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
+
+		if (prRfChannelInfo->eBand != BAND_6G)
+			continue;
+
+		u46gChNum++;
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (!rlmDomain6GPwrModeIsChnlPrefer(
+					prAdapter,
+					prRfChannelInfo->eBand,
+					prRfChannelInfo->ucChannelNum,
+					MAX_BW_20MHZ,
+					PWR_MODE_6G_VLP)) {
+			u46gRemoveChNum++;
+			DBGLOG(REQ, TRACE,
+				"not prefer ch=%d\n",
+				prRfChannelInfo->ucChannelNum);
+		}
+#endif
+	}
+
+	if (u46gChNum == u46gRemoveChNum)
+		goto exit;
+
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo =
+			&(prMsgAcsRequest->arChannelListInfo[i]);
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (prRfChannelInfo->eBand == BAND_6G &&
+		    rlmDomain6GPwrModeIsChnlPrefer(prAdapter,
+				prRfChannelInfo->eBand,
+				prRfChannelInfo->ucChannelNum,
+				MAX_BW_20MHZ,
+				PWR_MODE_6G_VLP) == FALSE)
+			continue;
+#endif
+
+		kalMemCopy(&prRfChInfoArray[j],
+			   prRfChannelInfo,
+			   sizeof(struct RF_CHANNEL_INFO));
+		j++;
+	}
+
+	kalMemCopy(prMsgAcsRequest->arChannelListInfo,
+		   prRfChInfoArray,
+		   j * sizeof(struct RF_CHANNEL_INFO));
+	prMsgAcsRequest->u4NumChannel = j;
+
+exit:
+	if (prRfChInfoArray)
+		kalMemFree(prRfChInfoArray, VIR_MEM_TYPE, u4MsgSize);
+}
+#endif
+
 void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -5830,6 +5910,11 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			prAcsReqInfo->eBand = BAND_6G;
 #endif /* CFG_SUPPORT_WIFI_6G */
 	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	p2pRoleFsmRunEventAcs6GCandOpt(prAdapter,
+	prMsgAcsRequest);
+#endif
 
 	u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) + (
 			prMsgAcsRequest->u4NumChannel *

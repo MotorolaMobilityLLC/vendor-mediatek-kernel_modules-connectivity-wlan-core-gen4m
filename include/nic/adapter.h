@@ -1501,6 +1501,7 @@ struct WIFI_VAR {
 	uint8_t ucDftNdlQosQuotaVal;    /* Unit: NAN slot */
 	uint16_t u2DftNdlQosLatencyVal; /* Unit: NAN slot */
 	uint8_t fgEnNanVHT;
+	uint8_t ucNan6gDefaultChannel;
 	uint8_t ucNanFtmBw;
 	uint8_t ucNanDiscBcnInterval;
 	uint8_t ucNanCommittedDw;
@@ -1819,6 +1820,7 @@ struct WIFI_VAR {
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t fgSpPwrLmtBackoff;
+	uint8_t fgVlpExtChk;
 #endif
 
 	uint32_t u4PmkRefreshThreshold;

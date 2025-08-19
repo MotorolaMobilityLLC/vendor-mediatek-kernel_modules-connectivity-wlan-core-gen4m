@@ -62,6 +62,8 @@
 
 #define NAN_INVALID_MAP_ID 0xFF
 
+/* 6G chnl info */
+#define NAN_6G_BW20_DEFAULT_CHANNEL	37
 
 #define NAN_IS_AVAIL_MAP_SET(pu4AvailMap, u2SlotIdx)                           \
 	((pu4AvailMap[u2SlotIdx / NAN_SLOTS_PER_DW_INTERVAL] &                 \
@@ -87,6 +89,7 @@ enum _NAN_CHNL_BW_MAP {
 	NAN_CHNL_BW_40,
 	NAN_CHNL_BW_80,
 	NAN_CHNL_BW_160,
+	NAN_CHNL_BW_320,
 	NAN_CHNL_BW_NUM
 };
 
@@ -345,6 +348,10 @@ uint32_t nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx);
 uint32_t nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter);
 uint32_t nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter);
 uint32_t nanSchedCmdUpdateAvailabilityCtrl(struct ADAPTER *prAdapter);
+
+u_int8_t nanIs6gInUse(struct ADAPTER *prAdapter,
+		      enum _NAN_CHNL_BW_MAP *e6gBandwidth);
+
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 uint32_t nanSchedulerUniEventDispatch(struct ADAPTER *prAdapter,
 				   uint32_t u4SubEvent, uint8_t *pucBuf);
