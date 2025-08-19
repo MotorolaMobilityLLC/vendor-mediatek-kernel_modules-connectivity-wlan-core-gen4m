@@ -1895,11 +1895,17 @@ void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 
 	prSkb = kalAllocHifSkb();
 	if (!prSkb) {
-		DBGLOG(HAL, ERROR, "can't allocate rx %lu size packet\n",
-		       prDmaBuf->AllocSize);
-		prDmaBuf->AllocPa = 0;
-		prDmaBuf->AllocVa = NULL;
-		return NULL;
+		uint8_t *pucRecvBuff;
+
+		prSkb = kalAllocRxSkbFromCmaPp(NULL, &pucRecvBuff);
+		if (!prSkb) {
+			DBGLOG(HAL, ERROR,
+			       "can't allocate rx %lu size packet\n",
+			       prDmaBuf->AllocSize);
+			prDmaBuf->AllocPa = 0;
+			prDmaBuf->AllocVa = NULL;
+			return NULL;
+		}
 	}
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
@@ -1923,6 +1929,7 @@ skip:
 	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
 		DBGLOG(HAL, ERROR, "sk_buff dma mapping error!\n");
 		dev_kfree_skb(prSkb);
+		prDmaBuf->AllocVa = NULL;
 		return NULL;
 	}
 	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
@@ -1932,7 +1939,12 @@ skip:
 void halZeroCopyPathFreePagePoolPacket(struct GL_HIF_INFO *prHifInfo,
 				   void *pvPacket, uint32_t u4Num)
 {
-	kalFreeHifSkb((struct sk_buff *)pvPacket);
+	struct sk_buff *prSkb = (struct sk_buff *)pvPacket;
+
+	if (prSkb->pp_recycle)
+		kalFreeHifSkb(prSkb);
+	else
+		halZeroCopyPathFreePacket(prHifInfo, pvPacket, u4Num);
 }
 
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL

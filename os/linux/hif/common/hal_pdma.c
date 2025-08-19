@@ -3427,7 +3427,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 				continue;
 			}
 
-			if (prMemOps->unmapRxBuf && prRxCell->DmaBuf.AllocVa) {
+			if (prMemOps->unmapRxBuf && prRxCell->DmaBuf.AllocPa) {
 				prMemOps->unmapRxBuf(
 					prHifInfo,
 					prRxCell->DmaBuf.AllocPa,
