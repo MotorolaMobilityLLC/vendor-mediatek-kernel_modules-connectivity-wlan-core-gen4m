@@ -119,6 +119,14 @@ static u_int8_t soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 
 static void soc7_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
 
+#if (CFG_CHECK_DRVOWN_EINT == 1)
+static void soc7_0_CheckDrvownEint(struct ADAPTER *prAdapter);
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_FORCE_HOST_CSR_IRQ_EN)
+static void soc7_0ForceEnableHostCsrIrq(struct ADAPTER *prAdapter);
+#endif
+
 static uint32_t soc7_0_SetupRomEmi(struct ADAPTER *prAdapter);
 static void soc7_0_SetupFwDateInfo(struct ADAPTER *prAdapter,
 	enum ENUM_IMG_DL_IDX_T eDlIdx,
@@ -732,6 +740,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.fw_log_info = {
 		.ops = &soc7_0_fw_log_ops,
 	},
+#if IS_ENABLED(CFG_MTK_WIFI_FORCE_HOST_CSR_IRQ_EN)
+	.forceEnableHostCsrIrq = soc7_0ForceEnableHostCsrIrq,
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0 = {
@@ -1646,6 +1657,27 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	value |= 0x00000100;
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL3, value);
 
+#if (CFG_CHECK_DRVOWN_EINT == 1)
+	/* Set conn2wf remapping window
+	 * Address: 0x830C_0120
+	 * Data: 32'h81050000
+	 * Action: write
+	 */
+	kalDevRegWrite(NULL, WF_MCU_BUS_CR_AP2WF_REMAP_1_ADDR,
+		0x81050000);
+
+	/* Set cirq IRQ_DBGSEL for dump eint status
+	 * Address: 0x1850_00F4[7:0]
+	 * Data: 8'h80
+	 * Action: write
+	 */
+	wf_ioremap_read(0x185000f4, &value);
+	value &= 0xffffff00;
+	value |= 0x00000080;
+	wf_ioremap_write(0x185000f4, value);
+	wf_ioremap_read(0x185000f4, &value);
+#endif
+
 	/* Enable wfsys bus timeout (debug ctrl ao)
 	 * Address: 0x1850_0000[4] 0x1850_0000[3] 0x1850_0000[2]
 	 * Data: 1'b1 1'b1 1'b1
@@ -2293,6 +2325,88 @@ static void soc7_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 	       log_buf_lp[4]);
 }
 
+#if (CFG_CHECK_DRVOWN_EINT == 1)
+static void soc7_0_CheckDrvownEint(struct ADAPTER *prAdapter)
+{
+	u_int32_t u4RegValue = 0;
+
+	/* WR 0x1806_0B00[0] = 0x1 */
+	HAL_MCR_RD(prAdapter, 0x7c060B00, &u4RegValue);
+	u4RegValue |= 0x1;
+	HAL_MCR_WR(prAdapter, 0x7c060B00, u4RegValue);
+
+	/* WR 0x1806_0B04[4:0] = 0x6 */
+	HAL_MCR_RD(prAdapter, 0x7c060B04, &u4RegValue);
+	u4RegValue &= ~BITS(0, 4);
+	u4RegValue |= 0x6;
+	HAL_MCR_WR(prAdapter, 0x7c060B04, u4RegValue);
+
+	/* WR 0x1806_0B14[2:0] = 0x1 */
+	HAL_MCR_RD(prAdapter, 0x7c060B14, &u4RegValue);
+	u4RegValue &= ~BITS(0, 2);
+	u4RegValue |= 0x1;
+	HAL_MCR_WR(prAdapter, 0x7c060B14, u4RegValue);
+
+	/* RD 0x1806_0B10 (WF_AON_DBG_FLAG) */
+	HAL_MCR_RD(prAdapter, 0x7c060B10, &u4RegValue);
+}
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_FORCE_HOST_CSR_IRQ_EN)
+static void soc7_0ForceEnableHostCsrIrq(struct ADAPTER *prAdapter)
+{
+	uint32_t u4RegValue = 0, u4ConnsysVersion = kalGetConnsysVersion();
+	uint8_t	ucPollingCnt = 0;
+
+	/* wake up conn_infra */
+	HAL_MCR_RD(prAdapter, 0x7c0601a4, &u4RegValue);
+	u4RegValue |= BIT(0);
+	HAL_MCR_WR(prAdapter, 0x7c0601a4, u4RegValue);
+	kalUdelay(200);
+
+	/* check conn_infra off ID */
+	while (1) {
+		kalMdelay(1);
+		HAL_MCR_RD(prAdapter, 0x7c011000, &u4RegValue);
+		if (u4RegValue == u4ConnsysVersion)
+			break;
+		if (ucPollingCnt >= 10) {
+			DBGLOG(HAL, ERROR,
+				"Polling conn_infra ID failed. (0x%08x)\n",
+				u4RegValue);
+			return;
+		}
+		ucPollingCnt++;
+	}
+
+	/* check conn_infra cmdbt restore done */
+	ucPollingCnt = 0;
+	while (1) {
+		kalUdelay(500);
+		HAL_MCR_RD(prAdapter, 0x7c001210, &u4RegValue);
+		if ((u4RegValue & BIT(16)) == BIT(16))
+			break;
+		if (ucPollingCnt >= 10) {
+			DBGLOG(HAL, ERROR,
+				"conn_infra cmdbt restore failed.(0x%08x)\n",
+				u4RegValue);
+			return;
+		}
+		ucPollingCnt++;
+	}
+
+	/* force enable HOST_CSR_IRQ_EN */
+	HAL_MCR_RD(prAdapter, 0x7c001600, &u4RegValue);
+	HAL_MCR_WR(prAdapter, 0x7c001600, 0x3FF);
+	HAL_MCR_RD(prAdapter, 0x7c001600, &u4RegValue);
+
+	/* let conn_infra sleep */
+	HAL_MCR_RD(prAdapter, 0x7c0601a4, &u4RegValue);
+	u4RegValue &= ~0x1;
+	HAL_MCR_WR(prAdapter, 0x7c0601a4, u4RegValue);
+}
+#endif
+
 static void soc7_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 {
 #define	HANG_PC_LOG_NUM			32
@@ -2557,6 +2671,10 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
 	connac2x_DbgCrRead(prAdapter, 0x18400120, &u4Val);
 	DBGLOG(INIT, INFO, "0x18400120=[0x%08x]\n", u4Val);
+
+#if (CFG_CHECK_DRVOWN_EINT == 1)
+	soc7_0_CheckDrvownEint(prAdapter);
+#endif
 
 	set_wf_monflg_on_mailbox_wf();
 

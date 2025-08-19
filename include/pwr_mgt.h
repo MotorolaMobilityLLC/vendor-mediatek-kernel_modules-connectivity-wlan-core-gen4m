@@ -49,6 +49,8 @@
 #define LP_OWN_BACK_LOOP_DELAY_MIN_US   900
 #define LP_OWN_BACK_LOOP_DELAY_MAX_US   1000
 #define LP_OWN_REQ_CLR_INTERVAL_MS		200
+#define LP_OWN_EINT_CHECK_DELAY			156 /* 5T 32K = 0.156ms */
+#define LP_OWN_EINT_CHECK_RETRY_CNT		2
 #define LP_DBGCR_POLL_ROUND			1
 
 /*******************************************************************************
