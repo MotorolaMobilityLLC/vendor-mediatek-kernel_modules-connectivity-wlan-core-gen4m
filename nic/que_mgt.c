@@ -152,6 +152,8 @@ static void __qmDetectAbnormalBssAbsence(const uint8_t *fn, struct ADAPTER *ad,
 	uint32_t ucBssIdx, OS_SYSTIME now);
 #endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
+static void resetReorderingIndexCache(struct RX_BA_ENTRY *prReorderQueParm);
+
 static void resetRxRetryCount(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm)
 {
@@ -745,6 +747,8 @@ struct SW_RFB *qmFlushRxQueues(struct ADAPTER *prAdapter)
 	struct SW_RFB *prSwRfbListHead;
 	struct SW_RFB *prSwRfbListTail;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
+	struct RX_BA_ENTRY *prReorderQueParm;
+	struct QUE *prReorderQue;
 
 	prSwRfbListHead = prSwRfbListTail = NULL;
 
@@ -753,38 +757,29 @@ struct SW_RFB *qmFlushRxQueues(struct ADAPTER *prAdapter)
 		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
 	for (i = 0; i < CFG_NUM_OF_RX_BA_AGREEMENTS; i++) {
-		if (QUEUE_IS_NOT_EMPTY(&
-			(prQM->arRxBaTable[i].rReOrderQue))) {
-			if (!prSwRfbListHead) {
+		prReorderQueParm = &prQM->arRxBaTable[i];
+		prReorderQue = &prReorderQueParm->rReOrderQue;
 
-				/* The first MSDU_INFO is found */
-				prSwRfbListHead = QUEUE_GET_HEAD(
-						&(prQM->arRxBaTable[i].
-						rReOrderQue));
-				prSwRfbListTail = QUEUE_GET_TAIL(
-						&(prQM->arRxBaTable[i].
-						rReOrderQue));
-			} else {
-				/* Concatenate the MSDU_INFO list with
-				 * the existing list
-				 */
-				QUEUE_ENTRY_SET_NEXT(prSwRfbListTail,
-					QUEUE_GET_HEAD(&(prQM->arRxBaTable[i].
-						rReOrderQue)));
+		resetReorderingIndexCache(prReorderQueParm);
 
-				prSwRfbListTail = QUEUE_GET_TAIL(
-						&(prQM->arRxBaTable[i].
-						rReOrderQue));
-			}
-
-			QUEUE_INITIALIZE(&(prQM->arRxBaTable[i].rReOrderQue));
-			if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
-				DBGLOG(QM, ERROR,
-					"QM: non-null tail->next at arRxBaTable[%u]\n",
-					i);
-			}
-		} else {
+		if (QUEUE_IS_EMPTY(prReorderQue))
 			continue;
+
+		if (!prSwRfbListHead) {
+			/* The first SW_RFB is found */
+			prSwRfbListHead = QUEUE_GET_HEAD(prReorderQue);
+		} else {
+			/* Concatenate the SW_RFB list with the existing list */
+			QUEUE_ENTRY_SET_NEXT(prSwRfbListTail,
+				QUEUE_GET_HEAD(prReorderQue));
+		}
+		prSwRfbListTail = QUEUE_GET_TAIL(prReorderQue);
+
+		QUEUE_INITIALIZE(prReorderQue);
+		if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
+			DBGLOG(QM, ERROR,
+				"QM: non-null tail->next at arRxBaTable[%u]\n",
+				i);
 		}
 	}
 
@@ -823,6 +818,8 @@ static struct SW_RFB *qmFlushStaRxQueue(struct ADAPTER *prAdapter,
 	 */
 	if (HAL_IS_RX_DIRECT(prAdapter))
 		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
+
+	resetReorderingIndexCache(prReorderQueParm);
 
 	if (QUEUE_IS_NOT_EMPTY(&prReorderQueParm->rReOrderQue)) {
 		prSwRfbListHead =
@@ -4982,6 +4979,15 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 	}
 }
 
+static void resetReorderingIndexCache(struct RX_BA_ENTRY *prReorderQueParm)
+{
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	kalMemZero(prReorderQueParm->prCacheIndex,
+			sizeof(prReorderQueParm->prCacheIndex));
+	prReorderQueParm->u2CacheIndexCount = 0;
+#endif
+}
+
 static void clearReorderingIndexCache(struct RX_BA_ENTRY *prReorderQueParm,
 				const struct SW_RFB *prSwRfb)
 {
@@ -5996,6 +6002,9 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 	 */
 	u2WinSize += prAdapter->rWifiVar.u2BaExtSize;
 	if (prRxBaEntry) {
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
+
 		prRxBaEntry->ucStaRecIdx = ucStaRecIdx;
 		prRxBaEntry->ucTid = ucTid;
 		prRxBaEntry->u2WinStart = u2WinStart;
@@ -6014,11 +6023,8 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 		prRxBaEntry->fgIsValid = TRUE;
 		prRxBaEntry->fgIsWaitingForPktWithSsn = TRUE;
 		prRxBaEntry->fgHasBubble = FALSE;
-#if CFG_SUPPORT_RX_CACHE_INDEX
-		kalMemZero(prRxBaEntry->prCacheIndex,
-				sizeof(prRxBaEntry->prCacheIndex));
-		prRxBaEntry->u2CacheIndexCount = 0;
-#endif
+
+		resetReorderingIndexCache(prRxBaEntry);
 
 		g_arMissTimeout[ucStaRecIdx][ucTid] = 0;
 
@@ -6030,6 +6036,9 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 
 		/* Update the BA entry reference table for per-packet lookup */
 		prStaRec->aprRxReorderParamRefTbl[ucTid] = prRxBaEntry;
+
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 	} else {
 		/* This shall not happen because
 		 * FW should keep track of the usage of RX BA entries
