@@ -447,8 +447,6 @@ struct BUS_INFO soc7_0_bus_info = {
 	.lowPowerOwnSet = asicConnac2xLowPowerOwnSet,
 	.lowPowerOwnClear = asicConnac2xLowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
-	.disablePmicSleepMode = soc7_0_disablePmicSleepMode,
-	.enablePmicSleepMode = soc7_0_enablePmicSleepMode,
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
@@ -2150,48 +2148,6 @@ static void soc7_0_McuDeInit(struct ADAPTER *prAdapter)
 			ret);
 		soc7_0_DumpBusHangCr(prAdapter);
 	}
-}
-
-void soc7_0_disablePmicSleepMode(void)
-{
-	uint32_t value = 0;
-
-	wake_up_conninfra_off();
-
-	wf_ioremap_read(0x18001370, &value);
-	value |= 0x00000101;
-	wf_ioremap_write(0x18001370, value);
-
-	/* Disable conn_infra off domain force on
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b0
-	 * Action: write
-	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value &=
-	  ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
-}
-
-void soc7_0_enablePmicSleepMode(void)
-{
-	uint32_t value = 0;
-
-	wake_up_conninfra_off();
-
-	wf_ioremap_read(0x18001370, &value);
-	value &= ~(0x00000101);
-	wf_ioremap_write(0x18001370, value);
-
-	/* Disable conn_infra off domain force on
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b0
-	 * Action: write
-	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value &=
-	  ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 }
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

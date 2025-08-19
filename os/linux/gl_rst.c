@@ -1926,11 +1926,6 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 exit:
 	glUpdateRstFlag(RST_FLAG_DRV_TRI_WHILE_CHIP_RST, FALSE);
 
-	if (prAdapter && prAdapter->chip_info &&
-	    prAdapter->chip_info->bus_info &&
-	    prAdapter->chip_info->bus_info->enablePmicSleepMode)
-		prAdapter->chip_info->bus_info->enablePmicSleepMode();
-
 	return bRet;
 }
 
@@ -2266,17 +2261,16 @@ bool IsOverRstTimeThreshold(
 void glResetWholeChipResetTrigger(char *pcReason)
 {
 	int ret = -ENOTSUPP;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT) || (CFG_SUPPORT_CONNINFRA == 1)
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	struct RESET_STRUCT *rst = &wifi_rst;
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-#endif
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	struct ADAPTER *prAdapter = NULL;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 #endif
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter != NULL && prAdapter->chip_info != NULL)
 		prDebugOps = prAdapter->chip_info->prDebugOps;
 
@@ -2302,12 +2296,6 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	DBGLOG(INIT, INFO, "ret:%d, reason:%s\n", ret, pcReason);
 #if (CFG_SUPPORT_CONNINFRA == 1) || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (ret == 0) {
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		if (prAdapter && prAdapter->chip_info &&
-		    prAdapter->chip_info->bus_info &&
-		    prAdapter->chip_info->bus_info->disablePmicSleepMode)
-			prAdapter->chip_info->bus_info->disablePmicSleepMode();
-#endif
 		dump_stack();
 		glUpdateRstFlag(RST_FLAG_DRV_TRI_WHILE_CHIP_RST, TRUE);
 	} else {

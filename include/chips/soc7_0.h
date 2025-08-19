@@ -155,7 +155,4 @@ void soc7_0_get_rx_link_stats(struct ADAPTER *prAdapter,
 void soc7_0_icapRiseVcoreClockRate(void);
 void soc7_0_icapDownVcoreClockRate(void);
 
-void soc7_0_disablePmicSleepMode(void);
-void soc7_0_enablePmicSleepMode(void);
-
 #endif  /* soc7_0 */

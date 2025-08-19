@@ -342,8 +342,6 @@ struct BUS_INFO {
 	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,
 		u_int8_t *pfgResult);
 	void (*wakeUpWiFi)(struct ADAPTER *prAdapter);
-	void (*disablePmicSleepMode)(void);
-	void (*enablePmicSleepMode)(void);
 	bool (*isValidRegAccess)(struct ADAPTER *prAdapter,
 				 uint32_t u4Register);
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
