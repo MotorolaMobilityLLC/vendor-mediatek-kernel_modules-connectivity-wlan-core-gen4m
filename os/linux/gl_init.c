@@ -9358,7 +9358,15 @@ void wlanFuncOffImpl(void)
 int wlanFuncOn(void)
 {
 	int ret = 0;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct mt66xx_chip_info *chip = NULL;
+#endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	glGetChipInfo((void **)&chip);
+	if (chip && chip->bus_info && chip->bus_info->disablePmicSleepMode)
+		chip->bus_info->disablePmicSleepMode();
+#endif
 	ret = connsys_power_on();
 	if (ret)
 		goto exit;
@@ -9381,6 +9389,10 @@ func_off:
 connsys_pwr_off:
 	connsys_power_off();
 exit:
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (chip && chip->bus_info && chip->bus_info->enablePmicSleepMode)
+		chip->bus_info->enablePmicSleepMode();
+#endif
 	return ret;
 }
 
