@@ -1174,6 +1174,8 @@ struct GLUE_INFO {
 	uint32_t u4LastAllocIdx;
 #endif
 
+	u_int8_t ucAtWfDebugSOP;
+
 #if CFG_TESTMODE_L0P5_FWDL_SUPPORT
 	bool fgTestFwDl;
 	wait_queue_head_t waitQTestFwDl;

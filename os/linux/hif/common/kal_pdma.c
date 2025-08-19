@@ -3302,6 +3302,14 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
+	/* When performing wifi debug SOP, the conninfra bus needs to be
+	 * dumped via wifi. The capability to read connsys should be checked
+	 * before setting ucAtWfDebugSOP to TRUE.
+	 */
+	if (glue->ucAtWfDebugSOP) {
+		goto exit;
+	}
+
 #if defined(_HIF_PCIE)
 	if (!halPcieIsPcieProbed()) {
 		DBGLOG_LIMITED(HAL, WARN, "PCIe not ready\n");

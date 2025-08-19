@@ -2518,21 +2518,26 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt)
 {
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	uint32_t WFDrvOwnStat = 0, MDDrvOwnStat = 0;
+	struct GLUE_INFO *prGlueInfo;
 
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
-
-	connv3_conninfra_bus_dump(fgIsDumpViaBt ?
-		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
+	prGlueInfo = ad->prGlueInfo;
 
 	if (fgIsDumpViaBt) {
+		connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_BT);
+
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR, &WFDrvOwnStat);
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR, &MDDrvOwnStat);
 	} else {
+		prGlueInfo->ucAtWfDebugSOP = TRUE;
+		connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI);
+		prGlueInfo->ucAtWfDebugSOP = FALSE;
+
 		HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
 			   &WFDrvOwnStat);
 		HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
