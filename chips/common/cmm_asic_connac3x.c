@@ -2907,6 +2907,14 @@ int wlan_test_mode_on(bool uIsSwtichTestMode)
 		return ret;
 	}
 
+#if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
+	if (get_wifi_process_status()) {
+		DBGLOG(REQ, WARN, "Wi-Fi on/off process is ongoing.\n");
+		ret = WLAN_STATUS_FAILURE;
+		return ret;
+	}
+#endif
+
 	if (!wfsys_trylock()) {
 		DBGLOG(INIT, INFO, "now is write processing\n");
 		ret = WLAN_STATUS_FAILURE;
