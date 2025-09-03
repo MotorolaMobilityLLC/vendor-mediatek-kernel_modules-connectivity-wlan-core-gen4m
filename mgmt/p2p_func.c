@@ -10009,7 +10009,8 @@ void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
 uint8_t
 p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBandPrefer,
-		uint8_t ucTopPreferNum, uint32_t *pu4Freq)
+		uint8_t ucTopPreferNum, uint32_t *pu4Freq,
+		u_int8_t fgIsAp)
 {
 	uint8_t ucMaxChnNum = MAX_PER_BAND_CHN_NUM;
 	uint8_t ucChnlNum = 0;
@@ -10017,6 +10018,7 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO *aucChannelList = NULL;
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	u_int8_t fgIsCheck6gPwrPref = TRUE;
+	uint8_t ucTargetBw = p2pFuncGetMaxBw(prAdapter, eBandPrefer, fgIsAp);
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
@@ -10053,13 +10055,13 @@ no_valid_freq:
 		else if (rlmDomainIsLegalChlByNetType(prAdapter,
 						      info->eBand,
 						      info->ucChannelNum,
-						      MAX_BW_20MHZ,
+						      ucTargetBw,
 						      NETWORK_TYPE_P2P) &&
 			 (fgIsCheck6gPwrPref == FALSE ||
 			  rlmDomain6GPwrModeIsChnlPrefer(prAdapter,
 							info->eBand,
 							info->ucChannelNum,
-							MAX_BW_20MHZ,
+							ucTargetBw,
 							PWR_MODE_6G_VLP)))
 			goto selected;
 		else
@@ -10475,6 +10477,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 	uint8_t ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g = 0;
+	u_int8_t fgIsAp = (eIftype == IFTYPE_AP);
 
 	/* prepare alive bss info for SCC */
 	ucNumAliveBss2g = p2pFuncGetPreferAliveBssByBand(
@@ -10508,12 +10511,14 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
 				prAdapter, BAND_6G,
 				MAX_6G_BAND_CHN_NUM,
-				&pau4FreqList[*pu4FreqListNum]);
+				&pau4FreqList[*pu4FreqListNum],
+				fgIsAp);
 #endif
 		*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
 			prAdapter, BAND_5G,
 			MAX_5G_BAND_CHN_NUM,
-			&pau4FreqList[*pu4FreqListNum]);
+			&pau4FreqList[*pu4FreqListNum],
+			fgIsAp);
 	}
 
 	/* Append 2G channels */
@@ -10527,7 +10532,8 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			prAdapter,
 			BAND_2G4,
 			MAX_2G_BAND_CHN_NUM,
-			&pau4FreqList[*pu4FreqListNum]);
+			&pau4FreqList[*pu4FreqListNum],
+			fgIsAp);
 	}
 
 	p2pFuncGetSafeFreq(eIftype, pau4FreqList, pu4FreqListNum,

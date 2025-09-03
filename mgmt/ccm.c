@@ -304,7 +304,8 @@ void ccmChannelSwitchProducerDfs(struct ADAPTER *prAdapter,
 			p2pFunGetTopPreferFreqByBand(prAdapter,
 						     BAND_5G,
 						     MAX_5G_BAND_CHN_NUM,
-						     au4FreqList);
+						     au4FreqList,
+						     FALSE);
 		if (u4FreqListNum == 0)
 			continue;
 

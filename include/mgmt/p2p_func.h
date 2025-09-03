@@ -647,7 +647,8 @@ uint8_t p2pFuncSapFilteredChListGen(
 uint8_t
 p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 			     enum ENUM_BAND eBandPrefer,
-			     uint8_t ucTopPreferNum, uint32_t *pu4Freq);
+			     uint8_t ucTopPreferNum, uint32_t *pu4Freq,
+			     u_int8_t fgIsAp);
 
 uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 			      uint32_t *pau4AllowFreqList);

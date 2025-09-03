@@ -88,6 +88,10 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 
 		prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
 			heRlmMaxBwToHeBw(ucMaxBandwidth);
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		prBssInfo->r6gOperInfor.rControl.bits.RegulatoryInfo =
+			prAdapter->rWifiVar.ucHe6gRegPwrType;
+#endif
 		prBssInfo->r6gOperInfor.ucPrimaryChannel =
 			prBssInfo->ucPrimaryChannel;
 
