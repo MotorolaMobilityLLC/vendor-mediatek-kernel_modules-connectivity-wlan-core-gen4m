@@ -10674,7 +10674,11 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 	struct PARAM_GET_CHN_INFO *prGetChnLoad;
 	uint8_t i;
 	struct PARAM_PREFER_CHN_INFO rPreferChannel;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	u_int8_t fgIsVlpChFound = FALSE;
+#endif
+#endif
 	/* reset */
 	rPreferChannel.ucChannel = 0;
 	rPreferChannel.u4Dirtiness = 0xFFFFFFFF;
@@ -10788,6 +10792,33 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 				   aucChannelList[i].ucChannelNum) ==
 			 CHNL_EXT_SCN)
 			continue;
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (eBand == BAND_6G &&
+			rlmDomain6GPwrModeIsChnlPrefer(
+				prAdapter,
+				eBand,
+				aucChannelList[i].ucChannelNum,
+				p2pFuncGetMaxBw(prAdapter,
+					eBand, TRUE),
+				PWR_MODE_6G_VLP) &&
+			fgIsVlpChFound == FALSE) {
+			fgIsVlpChFound = TRUE;
+			rPreferChannel.u4Dirtiness =
+				prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness;
+			rPreferChannel.ucChannel =
+				prGetChnLoad->rEachChnLoad[ucIdx].ucChannel;
+		} else if (eBand == BAND_6G &&
+			!rlmDomain6GPwrModeIsChnlPrefer(
+				prAdapter,
+				eBand,
+				aucChannelList[i].ucChannelNum,
+				p2pFuncGetMaxBw(prAdapter,
+					eBand, TRUE),
+				PWR_MODE_6G_VLP) &&
+			fgIsVlpChFound == TRUE)
+			continue;
+#endif
 #endif
 
 		if (rPreferChannel.u4Dirtiness >
