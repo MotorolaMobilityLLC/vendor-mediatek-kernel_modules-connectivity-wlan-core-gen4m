@@ -561,9 +561,13 @@ void wlanGetEpaElnaFromNvram(
 		if (u1NeedAdd) {
 			u4Tag_len = sizeof(struct WIFI_NVRAM_TAG_FORMAT);
 			u4Tag_len += (u1LenMSB << 8) | (u1LenLSB);
-			kalMemCopy(&g_aucNvram_OnlyPreCal[*pu4DataLen],
-			 &g_aucNvram[u4NvramOffset], u4Tag_len);
-			*pu4DataLen += u4Tag_len;
+
+			if (*pu4DataLen + u4Tag_len <
+				MAX_CFG_FILE_WIFI_RECAL_SIZE) {
+				kalMemCopy(&g_aucNvram_OnlyPreCal[*pu4DataLen],
+				 &g_aucNvram[u4NvramOffset], u4Tag_len);
+				*pu4DataLen += u4Tag_len;
+			}
 			DBGLOG(INIT, TRACE,
 			"Add tag(%d),len(%d),Offset(%d),PhyActLen(%d)\n",
 			u1TypeID, u4Tag_len, u4NvramOffset, *pu4DataLen);
