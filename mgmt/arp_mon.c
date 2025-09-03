@@ -1095,7 +1095,6 @@ u_int8_t arpMonIpIsCritical(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo)
 	return TRUE;
 }
 
-
 u_int8_t arpMonIsCritical(struct ADAPTER *ad, uint8_t ucBssIdx)
 {
 	if (!ad) {

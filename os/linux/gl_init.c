@@ -2383,6 +2383,16 @@ static bool is_critical_packet(struct net_device *dev,
 	u2EtherType = pucPkt[ETH_TYPE_LEN_OFFSET] << 8 |
 		      pucPkt[ETH_TYPE_LEN_OFFSET + 1];
 
+#if CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD
+	/* Raise priority for special packet if skb mark field
+	 * marked with pre-defined value.
+	 */
+	if (skb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT)) {
+		DBGLOG_LIMITED(TX, TRACE, "skb mark field=[%x]", skb->mark);
+		return TRUE;
+	}
+#endif
+
 	switch (u2EtherType) {
 	case ETH_P_ARP:
 		if (__netif_subqueue_stopped(dev, orig_queue_index))
