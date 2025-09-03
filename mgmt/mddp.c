@@ -1242,7 +1242,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	uint32_t u32DrvOwnTimeoutTime = g_rSettings.u4MdDrvOwnTimeoutTime;
 	uint8_t *buff = NULL;
 
-	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
+	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Config.\n");
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1283,7 +1283,7 @@ exit:
 	if (buff)
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 
-	DBGLOG(INIT, INFO, "ret: %d, timeout: %d.\n",
+	DBGLOG(INIT, INFO, "ret: %d, MD Drv Own Config: %d.\n",
 				   ret, u32DrvOwnTimeoutTime);
 	return ret;
 }

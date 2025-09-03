@@ -731,6 +731,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 #if CFG_SUPPORT_MDDP_SHM
 	.isSupportMddpSHM = TRUE,
 #endif
+#if CFG_MTK_MDDP_SUPPORT
+	.u4MdDrvOwnTimeoutTime = 2000,
+#endif /* CFG_MTK_MDDP_SUPPORT */
 	.ccif_ops = &soc7_0_ccif_ops,
 #if CFG_MTK_ANDROID_WMT
 	.rEmiInfo = {
