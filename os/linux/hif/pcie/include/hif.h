@@ -103,6 +103,7 @@
 #define PCIE_MD_REJECT_GEN_SWITCH       4
 #define PCIE_MD_BYPASS_GEN_SWITCH_START       5
 #define PCIE_MD_BYPASS_GEN_SWITCH_END         6
+#define GEN_SWITCH_LOCK_TIMEOUT         200 /* msec */
 #endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -327,6 +328,10 @@ struct GL_HIF_INFO {
 	uint32_t u4GenSwitchState;
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif /* CFG_MTK_MDDP_SUPPORT */
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	struct timer_list rGenSwitchLockTimer;
+#endif /* CFG_PCIE_GEN_SWITCH */
+
 	struct list_head rTxCmdQ;
 	struct list_head rTxCmdFreeList;
 	spinlock_t rTxCmdQLock;
@@ -781,6 +786,13 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg);
 void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter);
 uint32_t *pcie_gen_switch_get_emi_add(struct ADAPTER *prAdapter);
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
+
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+void pcie_gen_switch_release_lock(struct timer_list *timer);
+#else
+void pcie_gen_switch_release_lock(unsigned long arg);
+#endif
+
 #endif
 
 /*******************************************************************************

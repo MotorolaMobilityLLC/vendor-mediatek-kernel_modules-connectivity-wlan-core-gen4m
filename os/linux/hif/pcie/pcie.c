@@ -3153,6 +3153,9 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 					mtk_pcie_disable_cfg_dump(0);
 #endif
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+					mtk_pcie_dump_link_info(0);
+#endif
 					DBGLOG(INIT, ERROR,
 						"[Gen Switch] timeout\n");
 					break;
@@ -3162,6 +3165,35 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 		}
 	}
 }
+
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+void pcie_gen_switch_release_lock(struct timer_list *timer)
+#else
+void pcie_gen_switch_release_lock(unsigned long arg)
+#endif
+{
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+	struct GL_HIF_INFO *prHif =
+		from_timer(prHif, timer, rGenSwitchLockTimer);
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)prHif->rSerTimerData;
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
+#endif
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	if (KAL_WAKE_LOCK_ACTIVE(
+			prAdapter, prGlueInfo->rGenSwitchWakeLock))
+		KAL_WAKE_UNLOCK(prAdapter,
+				prGlueInfo->rGenSwitchWakeLock);
+
+	pcie_gen_switch_recover(prAdapter);
+	DBGLOG(INIT, ERROR, "[Gen Switch] pcie_gen_switch_release_lock\n");
+}
+
 #endif /*CFG_PCIE_GEN_SWITCH */
 
 uint32_t glReadPcieCfgSpace(int offset, uint32_t *value)
@@ -3363,6 +3395,7 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct RX_IDLE_STATE *prRxIdleState;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
@@ -3407,6 +3440,15 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 
 	prRxIdleState->u4FWIdle = FW_RX_IDLE;
 
+	KAL_WAKE_LOCK(prAdapter,
+		prAdapter->prGlueInfo->rGenSwitchWakeLock);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	mod_timer(&prHifInfo->rGenSwitchLockTimer,
+				  jiffies + GEN_SWITCH_LOCK_TIMEOUT * HZ /
+				  MSEC_PER_SEC);
+	DBGLOG(HAL, STATE, "Start GenSwitch Lock timer\n");
+
 	return IRQ_HANDLED;
 }
 
@@ -3419,6 +3461,7 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct RX_IDLE_STATE *prRxIdleState;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	DBGLOG(HAL, TRACE, "[Gen_Switch] end\n");
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
@@ -3464,6 +3507,14 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 
 	prRxIdleState->u4WFIdle = DEFAULT_IDLE;
 	prRxIdleState->u4FWIdle = DEFAULT_IDLE;
+
+	if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
+		prAdapter->prGlueInfo->rGenSwitchWakeLock))
+		KAL_WAKE_UNLOCK(prAdapter,
+			prAdapter->prGlueInfo->rGenSwitchWakeLock);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	del_timer_sync(&prHifInfo->rGenSwitchLockTimer);
 	return IRQ_HANDLED;
 }
 #endif

@@ -204,6 +204,10 @@ struct GL_HIF_INFO {
 	uint32_t u4GenSwitchState;
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif /* CFG_MTK_MDDP_SUPPORT */
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	struct timer_list rGenSwitchLockTimer;
+#endif /* CFG_PCIE_GEN_SWITCH */
+
 	struct list_head rTxCmdQ;
 	struct list_head rTxCmdFreeList;
 	spinlock_t rTxCmdQLock;

@@ -1022,6 +1022,10 @@ struct GLUE_INFO {
 	KAL_WAKE_LOCK_T *rTxPowerEmiWakeLock;
 #endif
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	KAL_WAKE_LOCK_T *rGenSwitchWakeLock;
+#endif
+
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	u_int8_t fgMetProfilingEn;
 	uint16_t u2MetUdpPort;

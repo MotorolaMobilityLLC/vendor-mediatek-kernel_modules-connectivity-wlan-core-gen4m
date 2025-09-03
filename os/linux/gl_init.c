@@ -5184,6 +5184,11 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTxPowerEmiWakeLock,
 			   "Tx Power");
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rGenSwitchWakeLock,
+				"Gen Switch Wakelock");
+#endif
 #endif
 }
 
@@ -5218,6 +5223,14 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rTxPowerEmiWakeLock);
 	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rTxPowerEmiWakeLock);
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+				 prGlueInfo->rGenSwitchWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rGenSwitchWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rGenSwitchWakeLock);
+#endif
+
 
 #endif
 }
