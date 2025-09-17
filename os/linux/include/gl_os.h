@@ -523,6 +523,16 @@ enum ENUM_WMM_UP {
 	WMM_UP_INDEX_NUM
 };
 
+enum ENUM_WAKEUP_CONN_SRC {
+	WAKEUP_CONN_ON_SEQ = 0,
+	WAKEUP_CONN_OFF_SEQ,
+	WAKEUP_CONN_IRQ,
+	WAKEUP_CONN_FUN_ON,
+	WAKEUP_CONN_FUN_OFF,
+	WAKEUP_CONN_L0_TRIGGER,
+	WAKEUP_CONN_NUM
+};
+
 #define WORKER_NAME_STR_MAX    32
 #define CON_WORK_MAX           4 /* must be power of 2 */
 #define CON_WORK_SHIFT         2 /* modify it when CON_WORK_MAX change */

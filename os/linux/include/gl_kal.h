@@ -654,6 +654,8 @@ enum HIF_DEV_REG_REASON {
  */
 #define KAL_SET_BIT(bitOffset, value)      set_bit(bitOffset, &value)
 #define KAL_CLR_BIT(bitOffset, value)      clear_bit(bitOffset, &value)
+#define KAL_TEST_AND_SET_BIT(bitOffset, value)  \
+	test_and_set_bit(bitOffset, &value)
 #define KAL_TEST_AND_CLEAR_BIT(bitOffset, value)  \
 	test_and_clear_bit(bitOffset, &value)
 #define KAL_TEST_BIT(bitOffset, value)     test_bit(bitOffset, &value)

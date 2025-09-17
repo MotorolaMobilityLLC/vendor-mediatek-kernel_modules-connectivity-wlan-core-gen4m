@@ -131,6 +131,8 @@ static uint32_t soc7_0_SetupRomEmi(struct ADAPTER *prAdapter);
 static void soc7_0_SetupFwDateInfo(struct ADAPTER *prAdapter,
 	enum ENUM_IMG_DL_IDX_T eDlIdx,
 	uint8_t *pucDate);
+static int wake_up_conninfra_off(uint32_t eSrc);
+static void disable_conninfra_off_force_on(uint32_t eSrc);
 static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter);
 static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter);
 static uint32_t soc7_0_McuInit(struct ADAPTER *prAdapter);
@@ -161,6 +163,9 @@ static struct pm_qos_request wifi_req;
 
 #endif /* #if (CFG_SUPPORT_VCODE_VDFS == 1) */
 
+static unsigned long gulIsConnChanging;
+static unsigned long gulWakeUpConnSrc;
+static uint32_t gu4WakeUpConnCnt;
 
 struct ECO_INFO soc7_0_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
@@ -455,6 +460,8 @@ struct BUS_INFO soc7_0_bus_info = {
 	.lowPowerOwnSet = asicConnac2xLowPowerOwnSet,
 	.lowPowerOwnClear = asicConnac2xLowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
+	.wakeUpConninfra = wake_up_conninfra_off,
+	.releaseConninfraWakeUp = disable_conninfra_off_force_on,
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
@@ -1333,11 +1340,22 @@ static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
 }
 #endif
 
-static int wake_up_conninfra_off(void)
+static int wake_up_conninfra_off(uint32_t eSrc)
 {
 	uint32_t value = 0;
 	uint32_t polling_count;
 	uint32_t u4ConnsysVersion = 0;
+
+	while (KAL_TEST_AND_SET_BIT(0, gulIsConnChanging) == 1)
+		udelay(500);
+
+	if (KAL_TEST_BIT(eSrc, gulWakeUpConnSrc)) {
+		DBGLOG(INIT, WARN,
+			"Source %u already hold wakeup.\n", eSrc);
+	} else {
+		GLUE_INC_REF_CNT(gu4WakeUpConnCnt);
+		KAL_SET_BIT(eSrc, gulWakeUpConnSrc);
+	}
 
 	/* Wakeup conn_infra off
 	 * Address: 0x1806_01A4[0]
@@ -1390,7 +1408,43 @@ static int wake_up_conninfra_off(void)
 		polling_count++;
 	}
 
+	KAL_CLR_BIT(0, gulIsConnChanging);
+
 	return 0;
+}
+
+static void disable_conninfra_off_force_on(uint32_t eSrc)
+{
+	uint32_t value = 0;
+	uint32_t u4Cnt = 0xff;
+
+	while (KAL_TEST_AND_SET_BIT(0, gulIsConnChanging) == 1)
+		udelay(500);
+
+	if (KAL_TEST_BIT(eSrc, gulWakeUpConnSrc)) {
+		KAL_CLR_BIT(eSrc, gulWakeUpConnSrc);
+		u4Cnt = GLUE_DEC_REF_CNT(gu4WakeUpConnCnt);
+	} else {
+		DBGLOG(INIT, WARN,
+			"Source %u not hold wakeup.\n", eSrc);
+	}
+
+	if (u4Cnt == 0) {
+		/* Disable conn_infra off domain force on
+		 * Address: 0x1806_01A4[31:16] 0x1806_01A4[0]
+		 * Data: 16'h5746 1'b0
+		 * Action: write
+		 */
+		wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+		value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+		wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+	} else {
+		DBGLOG(INIT, TRACE,
+			"%u source still hold wakeup, bitmap[0x%x]\n",
+			u4Cnt, gulWakeUpConnSrc);
+	}
+
+	KAL_CLR_BIT(0, gulIsConnChanging);
 }
 
 static void set_wf_monflg_on_mailbox_wf(void)
@@ -1426,7 +1480,7 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	soc7_0_SetupRomEmi(prAdapter);
 #endif
 
-	ret = wake_up_conninfra_off();
+	ret = wake_up_conninfra_off(WAKEUP_CONN_ON_SEQ);
 	if (ret)
 		return ret;
 
@@ -1738,14 +1792,7 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 		return ret;
 	}
 
-	/* Disable conn_infra off domain force on
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b0
-	 * Action: write
-	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+	disable_conninfra_off_force_on(WAKEUP_CONN_ON_SEQ);
 
 	DBGLOG(INIT, INFO, "wmmcu power-on done.\n");
 	return ret;
@@ -1780,7 +1827,7 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
 
-	ret = wake_up_conninfra_off();
+	ret = wake_up_conninfra_off(WAKEUP_CONN_OFF_SEQ);
 	if (ret)
 		return ret;
 
@@ -2127,14 +2174,7 @@ release_wfsys_sem_done:
 			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_CO_EXT_FDD_COEX_HCLKCKEN_M0_MASK;
 	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_CLR_ADDR, value);
 
-	/* release conn_infra force on
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b0
-	 * Action: write
-	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+	disable_conninfra_off_force_on(WAKEUP_CONN_OFF_SEQ);
 
 	return ret;
 }
@@ -2924,19 +2964,15 @@ static u_int8_t soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status)
 {
 	int check = 0;
-	uint32_t value = 0;
 	uint32_t sw_int_value = 0;
 
-	check = wake_up_conninfra_off();
+	check = wake_up_conninfra_off(WAKEUP_CONN_IRQ);
 	if (check)
 		return FALSE;
 
 	sw_int_value = ccif_get_interrupt_status(prAdapter);
 
-	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+	disable_conninfra_off_force_on(WAKEUP_CONN_IRQ);
 
 	*status = sw_int_value;
 	return TRUE;

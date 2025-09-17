@@ -1861,6 +1861,10 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	bool bRet = 0;
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+#endif
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
@@ -1925,6 +1929,12 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 exit:
 	glUpdateRstFlag(RST_FLAG_DRV_TRI_WHILE_CHIP_RST, FALSE);
+
+	if (prDriverData && prDriverData->chip_info &&
+	    prDriverData->chip_info->bus_info &&
+	    prDriverData->chip_info->bus_info->releaseConninfraWakeUp)
+		prDriverData->chip_info->bus_info->releaseConninfraWakeUp(
+			WAKEUP_CONN_L0_TRIGGER);
 
 	return bRet;
 }
@@ -2264,13 +2274,16 @@ void glResetWholeChipResetTrigger(char *pcReason)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	struct RESET_STRUCT *rst = &wifi_rst;
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
-	struct ADAPTER *prAdapter = NULL;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 #endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+#endif
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter != NULL && prAdapter->chip_info != NULL)
 		prDebugOps = prAdapter->chip_info->prDebugOps;
 
@@ -2286,6 +2299,11 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	glResetUpdateL0Flag(TRUE);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prDriverData && prDriverData->chip_info &&
+	    prDriverData->chip_info->bus_info &&
+	    prDriverData->chip_info->bus_info->wakeUpConninfra)
+		prDriverData->chip_info->bus_info->wakeUpConninfra(
+			WAKEUP_CONN_L0_TRIGGER);
 	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason);
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_WIFI, pcReason);
@@ -2299,6 +2317,13 @@ void glResetWholeChipResetTrigger(char *pcReason)
 		dump_stack();
 		glUpdateRstFlag(RST_FLAG_DRV_TRI_WHILE_CHIP_RST, TRUE);
 	} else {
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		if (prDriverData && prDriverData->chip_info &&
+		    prDriverData->chip_info->bus_info &&
+		    prDriverData->chip_info->bus_info->releaseConninfraWakeUp)
+			prDriverData->chip_info->bus_info->releaseConninfraWakeUp(
+				WAKEUP_CONN_L0_TRIGGER);
+#endif
 		glResetUpdateL0Flag(FALSE);
 	}
 #endif
