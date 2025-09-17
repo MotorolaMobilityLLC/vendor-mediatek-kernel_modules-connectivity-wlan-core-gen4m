@@ -513,15 +513,17 @@ void mtk_pci_msi_disable_irq(uint32_t u4Irq, uint32_t u4Bit)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
+	struct pcie_msi_info *prMsiInfo;
 
 	glGetChipInfo((void **)&prChipInfo);
 	prBusInfo = prChipInfo->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
 
 	if (prBusInfo->pcieMsiMaskIrq)
 		prBusInfo->pcieMsiMaskIrq(u4Irq, u4Bit);
 	else if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
 		mtk_pci_msi_mask_irq(u4Irq);
-	else
+	else if (!KAL_TEST_BIT(u4Bit, prMsiInfo->ulEnBits))
 		disable_irq_nosync(u4Irq);
 }
 
@@ -601,11 +603,6 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
 		if (prMsiLayout->irq_num == irq) {
-			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
-				irqret = IRQ_NONE;
-				goto exit;
-			}
-
 			mtk_pci_msi_disable_irq(irq, i);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 			goto exit;
@@ -778,10 +775,8 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 		    !prMsiLayout->irq_num)
 			continue;
 
-		if (!KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_disable_irq(prMsiLayout->irq_num, i);
-			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
-		}
+		mtk_pci_msi_disable_irq(prMsiLayout->irq_num, i);
+		KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 	}
 }
 
