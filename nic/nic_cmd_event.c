@@ -3766,6 +3766,15 @@ void nicCmdEventQueryNicCapabilityV2(struct ADAPTER *prAdapter,
 	struct NIC_CAPABILITY_V2_ELEMENT *prElement;
 	uint32_t tag_idx, offset;
 	uint16_t u2TotalElementNum;
+	uint16_t offset_event, offset_cap, uElementLength;
+
+	struct WIFI_EVENT *prEvent = container_of((uint8_t (*)[])pucEventBuf,
+					struct WIFI_EVENT, aucBuffer);
+
+	offset_event = (uint16_t) OFFSET_OF(struct WIFI_EVENT, aucBuffer);
+	offset_cap = (uint16_t) OFFSET_OF(struct EVENT_NIC_CAPABILITY_V2,
+					aucBuffer);
+	uElementLength = prEvent->u2PacketLength-offset_event-offset_cap;
 
 	offset = 0;
 	u2TotalElementNum = ARRAY_SIZE(gNicCapabilityV2InfoTable);
@@ -3777,6 +3786,14 @@ void nicCmdEventQueryNicCapabilityV2(struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR,
 				"tag idx too long: %d > %d\n",
 				tag_idx, u2TotalElementNum);
+			break;
+		}
+
+		if (offset > uElementLength ||
+			((offset+sizeof(struct NIC_CAPABILITY_V2_ELEMENT))
+				>= uElementLength)) {
+			DBGLOG(INIT, ERROR, "uElementLength = %d,offset = %d\n",
+				uElementLength, offset);
 			break;
 		}
 
