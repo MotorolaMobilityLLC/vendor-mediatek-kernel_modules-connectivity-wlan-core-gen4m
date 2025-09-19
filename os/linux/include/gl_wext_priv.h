@@ -519,6 +519,10 @@ int priv_driver_ap_set_ant_nss(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+#if CFG_SUPPORT_RSSI_DISCONNECT
+int priv_driver_get_rssiDisconnect(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 int priv_driver_set_disablepartial(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_band(struct net_device *prNetDev,
