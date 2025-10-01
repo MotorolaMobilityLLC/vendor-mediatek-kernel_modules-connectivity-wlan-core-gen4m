@@ -1888,6 +1888,9 @@ alloc:
 
 	*ppucData = (uint8_t *) (pkt->data);
 
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+		   RX_PACKET_ALLOC_FROM_PP_COUNT);
+
 fail:
 	if (!pkt) {
 		pkt = kalPacketAlloc(
@@ -11712,14 +11715,14 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	"RxReorder[%s] " \
 	RX_PENDING_TEMPLATE \
 	RRB_TRACK_TEMPLATE \
-	"drv[RM,IL,RI,RIE,NGR|RF,PA,PF,DU,DA#" \
-	"RT,RM,RW,RA,RB|DT,NS,IB,HS,LS_" \
-	"DD,ME,BD,NI,DR|TE,PE,CE,DN,FE^" \
-	"DE,IE,TME,CM,FB|ID,FD,NL]:" \
+	"drv[RM,IL,RI,RIE,NGR|RF,PA,PAP,PF,DU#" \
+	"DA,RT,RM,RW,RA|RB,DT,NS,IB,HS_" \
+	"LS,DD,ME,BD,NI|DR,TE,PE,CE,DN^" \
+	"FE,DE,IE,TME,CM|FB,ID,FD,NL]:" \
 	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#" \
 	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_" \
 	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^" \
-	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu\n" \
+	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu\n" \
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
@@ -11797,6 +11800,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_NAPI_GRO_RECEIVE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_FORWARD_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PACKET_ALLOC_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PACKET_ALLOC_FROM_PP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PACKET_FREE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_RETURNED_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_RETAINED_COUNT),
