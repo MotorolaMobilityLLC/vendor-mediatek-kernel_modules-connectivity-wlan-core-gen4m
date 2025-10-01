@@ -8175,6 +8175,9 @@ int32_t wlanOffAtReset(void)
 		prAdapter->chip_info->fw_dl_ops->mcu_deinit(prAdapter);
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
+	/* destroy kal OS timer */
+	kalCancelTimer(prGlueInfo);
+
 	fgSimplifyResetFlow = TRUE;
 
 	return WLAN_STATUS_SUCCESS;
@@ -8242,6 +8245,9 @@ int32_t wlanOnAtReset(void)
 		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	/* init kal OS timer */
+	kalOsTimerInitialize(prGlueInfo, kalTimeoutHandler);
 
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	if (prAdapter->chip_info->coexpccifon)
