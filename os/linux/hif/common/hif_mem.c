@@ -2096,8 +2096,10 @@ struct sk_buff *kalAllocRxSkbFromCmaPp(
 
 	*ppucData = (uint8_t *) (pkt->data);
 
-	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
-		   RX_PACKET_ALLOC_FROM_PP_COUNT);
+	if (prGlueInfo) {
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_PACKET_ALLOC_FROM_PP_COUNT);
+	}
 
 fail:
 #if (CFG_SUPPORT_HOST_OFFLOAD == 0)
