@@ -6374,11 +6374,13 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 		halSetSuspendFlagToFw(prGlueInfo->prAdapter, TRUE);
 	}
 #if (CFG_SUPPORT_MBRAIN_WIFI_WKUP_HOST == 1)
-	mbr_wifi_wkup_rsn_action(
-		prGlueInfo->prAdapter,
-		MBR_WKUP_RSN_UPDATE_SUSPEND_TIME,
-		MBR_WIFI_NO_WKUP,
-		0);
+	if (prGlueInfo && prGlueInfo->prAdapter) {
+		mbr_wifi_wkup_rsn_action(
+			prGlueInfo->prAdapter,
+			MBR_WKUP_RSN_UPDATE_SUSPEND_TIME,
+			MBR_WIFI_NO_WKUP,
+			0);
+	}
 #endif
 end:
 	kalHaltUnlock();
