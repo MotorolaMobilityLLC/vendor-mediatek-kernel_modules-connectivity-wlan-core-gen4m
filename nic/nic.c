@@ -2280,6 +2280,11 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
 		return WLAN_STATUS_FAILURE;
 	}
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	if (ucBssIndex < MAX_BSSID_NUM)
+		rlmDomain6GPwrModeUpdate(prAdapter, ucBssIndex,
+			PWR_MODE_6G_LPI);
+#endif
 	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 #if CFG_SAP_RPS_SUPPORT
 	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
