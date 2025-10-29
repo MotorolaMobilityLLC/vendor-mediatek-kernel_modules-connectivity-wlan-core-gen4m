@@ -10692,7 +10692,12 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 	 * 2. Calculate each channel's dirty score
 	 */
 	prGetChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
-
+#if CFG_MOT_REM_CH12_CH13
+	/* Restrict 2.4G band channel selection range
+	 * to 1~11 per customer's request
+	 */
+	u4LteSafeChnMask_2G &= 0x0FFE;
+#endif
 	DBGLOG(P2P, INFO, "acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
 			u4LteSafeChnMask_2G,
 			u4LteSafeChnMask_5G_1,
