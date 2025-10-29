@@ -410,7 +410,7 @@ static const uint16_t g_u2CountryGroup10[] = {
 	COUNTRY_CODE_DZ
 };
 static const uint16_t g_u2CountryGroup11[] = {
-	COUNTRY_CODE_EG, COUNTRY_CODE_EH, COUNTRY_CODE_UZ
+	COUNTRY_CODE_UZ
 };
 static const uint16_t g_u2CountryGroup12[] = {
 	COUNTRY_CODE_JO
@@ -422,7 +422,7 @@ static const uint16_t g_u2CountryGroup14[] = {
 	COUNTRY_CODE_MY
 };
 static const uint16_t g_u2CountryGroup15[] = {
-	COUNTRY_CODE_MA
+	COUNTRY_CODE_MA, COUNTRY_CODE_EG, COUNTRY_CODE_EH
 };
 static const uint16_t g_u2CountryGroup16[] = {
 	COUNTRY_CODE_GH, COUNTRY_CODE_UG
