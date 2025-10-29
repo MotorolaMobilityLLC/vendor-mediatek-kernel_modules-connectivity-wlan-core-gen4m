@@ -551,7 +551,8 @@
 #define COUNTRY_CODE_DF (((uint16_t) 'D' << 8) | (uint16_t) 'F')
 /* World Wide */
 #define COUNTRY_CODE_WW (((uint16_t) '0' << 8) | (uint16_t) '0')
-
+/* XJ for Docomo */
+#define COUNTRY_CODE_XJ (((uint16_t) 'X' << 8) | (uint16_t) 'J')
 
 /* dot11RegDomainsSupportValue */
 #define MIB_REG_DOMAIN_FCC     0x10	/* FCC (US) */
