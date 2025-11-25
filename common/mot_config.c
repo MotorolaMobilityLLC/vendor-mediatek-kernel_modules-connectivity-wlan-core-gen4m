@@ -30,6 +30,7 @@ static moto_product products_list[] = {
                 {"volcano",   "JP3",     "wifi",   "txpowerctrl_JP3"},
                 {"volcano",   "ROW3",    "wifi",   "txpowerctrl_ROW3"},
                 {"volcano",   "DOCOMO3", "wifi",   "txpowerctrl_DOCOMO3"},
+                {"volcano",   "MEA3", "wifi",   "txpowerctrl_MEA3"},
 		{"volcano",   "all",    "wifi",   "txpowerctrl"},
 		{"vienna",   "LATAM",    "wifi",   "txpowerctrl_LATAM"},
 		{"vienna",   "APEM",    "wifi",   "txpowerctrl_APEM"},
