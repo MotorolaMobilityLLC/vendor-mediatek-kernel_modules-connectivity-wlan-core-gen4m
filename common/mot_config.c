@@ -17,6 +17,10 @@ static moto_product products_list[] = {
 
 		{"naples", "LATAM3", "wifi", "txpowerctrl_LATAM3"},
 		{"naples", "EMEA3",  "wifi", "txpowerctrl_EMEA3"},
+		{"naples", "LATAM1", "wifi", "txpowerctrl_LATAM1"},
+		{"naples", "EMEA1",  "wifi", "txpowerctrl_EMEA1"},
+		{"naples", "LATAM2", "wifi", "txpowerctrl_LATAM1"},
+		{"naples", "EMEA2",  "wifi", "txpowerctrl_EMEA1"},
 		{"naples", "all",    "wifi", "txpowerctrl"},
 
 		{{0},        {0},   {0},	{0}},
