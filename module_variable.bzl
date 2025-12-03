@@ -1298,6 +1298,7 @@ local_defines_6855 = local_defines_connv1 + [
     "CFG_SUPPORT_DBDC_DOWNGRADE_NSS=0",
     "CFG_SUPPORT_DBDC_DOWNGRADE_BW=0",
     "CFG_WLAN_LK_FWDL_SUPPORT=0",
+    "MOTO_UTAGS_MAC=1",
 ]
 
 # Name: 6895
