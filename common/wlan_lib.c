@@ -1998,6 +1998,7 @@ void wlanSendIcsOffCmd(struct ADAPTER *ad, enum ENUM_MBMC_BN eBand)
 	uint32_t u4Status;
 	struct CMD_ICS_SNIFFER_INFO rIcsCmd = {0};
 
+	wlanAcquirePowerControl(ad);
 	rIcsCmd.ucModule = 2;
 	rIcsCmd.ucAction = 0; /* turn off */
 	rIcsCmd.ucCondition[0] = 2;
@@ -2016,8 +2017,11 @@ void wlanSendIcsOffCmd(struct ADAPTER *ad, enum ENUM_MBMC_BN eBand)
 		NULL, 0,
 		CMD_SEND_METHOD_REQ_RESOURCE);
 
+	wlanReleasePowerControl(ad);
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, ERROR, "Ics Off Failed ret:%u\n", u4Status);
+	else
+		DBGLOG(INIT, STATE, "Ics Off (%u) Success.", eBand);
 }
 #endif /* CFG_SUPPORT_ICS */
 
