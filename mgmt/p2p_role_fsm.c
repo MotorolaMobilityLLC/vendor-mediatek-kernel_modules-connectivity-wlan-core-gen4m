@@ -853,29 +853,6 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/*
-	 * After EAP exchange, GO/GC will disconnect
-	 * and re-connect in short time.
-	 * GC's new station record will be removed unexpectedly at GO's side
-	 * if new GC's connection happens
-	 * when previous GO's disconnection flow is
-	 * processing. 4-way handshake will NOT be triggered.
-	 */
-	if ((prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2 ||
-			prStaRec->eAuthAssocState == AAA_STATE_SEND_ASSOC2) &&
-		(prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
-		(p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prP2pBssInfo->u4PrivateData]) == FALSE)) {
-		DBGLOG(P2P, WARN,
-			"Skip deauth tx done since AAA fsm is in progress.\n");
-		return;
-	} else if (prStaRec->eAuthAssocState == SAA_STATE_SEND_AUTH1 ||
-		prStaRec->eAuthAssocState == SAA_STATE_SEND_ASSOC1) {
-		DBGLOG(P2P, WARN,
-			"Skip deauth tx done since SAA fsm is in progress.\n");
-		return;
-	}
-
 #if CFG_AP_80211KVR_INTERFACE
 	aaaMulAPAgentStaEventNotify(prStaRec,
 		prP2pBssInfo->aucBSSID, FALSE);
