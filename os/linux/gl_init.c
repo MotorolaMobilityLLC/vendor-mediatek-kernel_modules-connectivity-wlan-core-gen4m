@@ -8875,14 +8875,20 @@ wlanOffNotifyCfg80211Disconnect(struct GLUE_INFO *prGlueInfo)
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		struct net_device *prDevHandler =
 			wlanGetAisNetDev(prGlueInfo, u4Idx);
-		uint8_t ucBssIndex = 0;
+		struct BSS_INFO *prBssInfo;
 
 		if (!prDevHandler)
 			continue;
 
-		ucBssIndex = AIS_MAIN_BSS_INDEX(prGlueInfo->prAdapter, u4Idx);
- 		if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) ==
-		    MEDIA_STATE_CONNECTED) {
+		prBssInfo = AIS_MAIN_BSS_INFO(prGlueInfo->prAdapter, u4Idx);
+		if (!prBssInfo) {
+			DBGLOG(INIT, WARN,
+				"-> ais(%d) main bssinfo null\n", u4Idx);
+			continue;
+		}
+
+		if (kalGetMediaStateIndicated(prGlueInfo,
+		    prBssInfo->ucBssIndex) == MEDIA_STATE_CONNECTED) {
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
 			cfg80211_disconnected(
 				prDevHandler, 0, NULL, 0,
