@@ -533,6 +533,14 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 
 	/* 4 <7> Trigger SAA FSM */
 	if (prStaRec->ucStaState == STA_STATE_1) {
+		/* Indicate supplicant to reset FT process */
+		if (IS_AP_STA(prStaRec) &&
+		    (prStaRec->ucAuthAlgNum ==
+				(uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM ||
+		     prStaRec->ucAuthAlgNum ==
+				(uint8_t) AUTH_ALGORITHM_NUM_SAE))
+			aisFsmIndicateToResetFT(prAdapter,
+					prStaRec->ucBssIndex);
 #if CFG_SUPPORT_WPA3_LOG
 		wpa3LogSaaStart(prAdapter, prStaRec);
 #endif

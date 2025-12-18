@@ -1472,6 +1472,11 @@ enum PARAM_GENERIC_RESPONSE_ID {
 	GRID_RESET_FT_PROCESS = 7,
 };
 
+struct PARAM_RESET_FT {
+	uint8_t id;
+	uint8_t len;
+};
+
 struct PARAM_EXTERNAL_AUTH_INFO {
 	uint8_t id;
 	uint8_t len;

@@ -729,6 +729,9 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+void aisFsmIndicateToResetFT(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Handling                                                   */
 /*----------------------------------------------------------------------------*/
