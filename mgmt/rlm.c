@@ -1647,8 +1647,10 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 			ELEM_EXT_CAP_QOSMAPSET_BIT);
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+	if (IS_BSS_AIS(prBssInfo))
+		SET_EXT_CAP(prExtCap->aucCapabilities,
+			ELEM_MAX_LEN_EXT_CAP,
+			ELEM_EXT_CAP_BSS_TRANSITION_BIT);
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
