@@ -3078,7 +3078,13 @@ struct CMD_SCHED_SCAN_REQ {
 	uint8_t ucMatchSsidNum;
 	uint8_t aucPadding_0;
 	uint16_t u2IELen;
+// BEGIN Motorola, lixt11, 2025.12.24, IKSWW-114442, make hidden ssid max number configurable
+#ifdef CONFIG_MOTO_HIDDEN_SSID_MAX_NUM_16
+	struct PARAM_SSID auSsid[16];
+#else
 	struct PARAM_SSID auSsid[10];
+#endif
+// END IKSWW-114442
 	struct SSID_MATCH_SETS auMatchSsid[16];
 	uint8_t ucChannelType;
 	uint8_t ucChnlNum;
