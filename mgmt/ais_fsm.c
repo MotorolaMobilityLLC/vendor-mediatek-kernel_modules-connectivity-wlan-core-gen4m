@@ -8502,6 +8502,10 @@ aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
 	if (prMgmtTxMsg->u4Duration < MIN_TX_DURATION_TIME_MS)
 		prMgmtTxMsg->u4Duration = MIN_TX_DURATION_TIME_MS;
 
+#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
+	aisSetRandomOmac(prAdapter, ucBssIndex, prMgmtTxMsg->prMgmtMsduInfo);
+#endif
+
 	if (aisFunAddTxReq2Queue(prAdapter, prMgmtTxReqInfo,
 			prMgmtTxMsg, &prOffChnlTxReq) == FALSE)
 		return WLAN_STATUS_RESOURCES;
@@ -8509,11 +8513,6 @@ aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
 	if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq,
 		ucBssIndex))
 		goto error;
-
-
-#if CFG_SUPPORT_MGMT_TX_RANDOM_TA
-	aisSetRandomOmac(prAdapter, ucBssIndex, prMgmtTxMsg->prMgmtMsduInfo);
-#endif
 
 	return WLAN_STATUS_SUCCESS;
 error:
