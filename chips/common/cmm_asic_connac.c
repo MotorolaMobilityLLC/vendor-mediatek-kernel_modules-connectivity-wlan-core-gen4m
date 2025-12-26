@@ -1558,17 +1558,31 @@ void asicRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb)
 {
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
+	uint8_t ucStaRecIdx;
+	uint8_t ucIdx;
 
-	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
+	ucStaRecIdx = prRetSwRfb->ucStaRecIdx;
+	if (ucStaRecIdx >= CFG_STA_REC_NUM) {
 		DBGLOG(RX, LOUD,
 		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
-			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
+			ucStaRecIdx, CFG_STA_REC_NUM);
 		return;
 	}
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
-		prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
+		prRxV = prAdapter->arStaRec[ucStaRecIdx].au4RxV;
+
 		asicRxGetRxv(prRetSwRfb, prRxV);
+
+		ucIdx = prAdapter->arStaRec[ucStaRecIdx].ucRxVRecordIdx;
+		if (ucIdx % RXV_RECORD_NUM == 0)
+			ucIdx = 0;
+
+		memcpy(prAdapter->arStaRec[ucStaRecIdx].au4RxVRecord[ucIdx],
+			prAdapter->arStaRec[ucStaRecIdx].au4RxV,
+			sizeof(uint32_t) * RXV_NUM);
+		ucIdx++;
+		prAdapter->arStaRec[ucStaRecIdx].ucRxVRecordIdx = ucIdx;
 	}
 }
 #endif /* CFG_SUPPORT_MSP */
