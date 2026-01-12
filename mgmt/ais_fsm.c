@@ -1796,8 +1796,10 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 			if (prStaRec) {
 				prStaRec->ucAuthAlgNum =
 				    (uint8_t) AUTH_ALGORITHM_NUM_SAE;
-				cnmStaRecChangeState(prAdapter,
-					prStaRec, STA_STATE_1);
+
+				if (prStaRec->ucStaState != STA_STATE_1)
+					cnmStaRecChangeState(prAdapter,
+						prStaRec, STA_STATE_1);
 			}
 		}
 	} else if (prAisFsmInfo->ucAvailableAuthTypes &
@@ -1814,8 +1816,10 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 			if (prStaRec) {
 				prStaRec->ucAuthAlgNum =
 				    (uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
-				cnmStaRecChangeState(prAdapter,
-					prStaRec, STA_STATE_1);
+
+				if (prStaRec->ucStaState != STA_STATE_1)
+					cnmStaRecChangeState(prAdapter,
+						prStaRec, STA_STATE_1);
 			}
 		}
 	} else {
