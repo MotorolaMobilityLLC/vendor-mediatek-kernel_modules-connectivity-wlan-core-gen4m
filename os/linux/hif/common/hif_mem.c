@@ -1897,7 +1897,7 @@ void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 	if (!prSkb) {
 		uint8_t *pucRecvBuff;
 
-		prSkb = kalAllocRxSkbFromCmaPp(NULL, &pucRecvBuff);
+		prSkb = kalAllocRxSkbFromCmaPp(NULL, &pucRecvBuff, FALSE);
 		if (!prSkb) {
 			DBGLOG(HAL, ERROR,
 			       "can't allocate rx %lu size packet\n",
@@ -2064,7 +2064,7 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
 struct sk_buff *kalAllocRxSkbFromCmaPp(
-	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData)
+	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData, u_int8_t fgReAlloc)
 {
 	struct page *page;
 	struct sk_buff *pkt = NULL;
@@ -2103,7 +2103,7 @@ struct sk_buff *kalAllocRxSkbFromCmaPp(
 
 fail:
 #if (CFG_SUPPORT_HOST_OFFLOAD == 0)
-	if (!pkt) {
+	if (fgReAlloc && !pkt) {
 		pkt = kalPacketAlloc(
 			prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
 			FALSE, ppucData);
@@ -2137,7 +2137,7 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 #endif
 
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
-		prSkb = kalAllocRxSkbFromCmaPp(NULL, &pucRecvBuff);
+		prSkb = kalAllocRxSkbFromCmaPp(NULL, &pucRecvBuff, FALSE);
 		if (!prSkb) {
 			DBGLOG(HAL, ERROR, "hif skb reserve fail[%u]!\n",
 			       u4Idx);

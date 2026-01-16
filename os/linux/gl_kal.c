@@ -1899,7 +1899,7 @@ fail:
 	}
 	return pkt;
 #else
-	return kalAllocRxSkbFromCmaPp(prGlueInfo, ppucData);
+	return kalAllocRxSkbFromCmaPp(prGlueInfo, ppucData, TRUE);
 #endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 }
 
