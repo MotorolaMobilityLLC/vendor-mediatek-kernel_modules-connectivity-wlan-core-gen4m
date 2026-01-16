@@ -139,6 +139,9 @@ static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
+static void mt6653ProcessSoftwareInterrupt(struct ADAPTER *prAdapter);
+static void mt6653WfdmaSwIntEna(struct ADAPTER *prAdapter, u_int8_t fgEn);
+
 #if (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
 static void mt6653EnableInterruptViaPcie(struct ADAPTER *prAdapter);
 #endif
@@ -822,7 +825,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.lowPowerOwnSet = mt6653LowPowerOwnSet,
 	.lowPowerOwnClear = mt6653LowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
-	.processSoftwareInterrupt = asicConnac3xProcessSoftwareInterrupt,
+	.processSoftwareInterrupt = mt6653ProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
 	.hifRst = asicConnac3xHifRst,
 #if defined(_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8)
@@ -1893,6 +1896,12 @@ static void mt6653ProcessRxInterrupt(struct ADAPTER *prAdapter)
 	mt6653ProcessRxDataInterrupt(prAdapter);
 }
 
+static void mt6653ProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
+{
+	asicConnac3xProcessSoftwareInterrupt(prAdapter);
+	mt6653WfdmaSwIntEna(prAdapter, TRUE);
+}
+
 static void mt6653SetTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Val = 0;
@@ -2107,6 +2116,7 @@ static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 	if (KAL_TEST_BIT(PCIE_MSI_LUMP, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
 		u4WrValue |= CONNAC_MCU_SW_INT;
+		mt6653WfdmaSwIntEna(prAdapter, FALSE);
 	}
 
 	/* force process all interrupt */
@@ -2161,6 +2171,7 @@ static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
 	if (u4RegValue & CONNAC_MCU_SW_INT) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
 		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
+		mt6653WfdmaSwIntEna(prAdapter, FALSE);
 	}
 
 	if (u4RegValue & CONNAC_SUBSYS_INT) {
@@ -2176,6 +2187,19 @@ static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	mt6653ReadOffloadIntStatus(prAdapter, pu4IntStatus);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+}
+
+static void mt6653WfdmaSwIntEna(struct ADAPTER *prAdapter, u_int8_t fgEn)
+{
+	uint32_t u4Addr = 0, u4Val =
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
+
+	u4Addr = fgEn ? WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR :
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR;
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	GLUE_SET_REF_CNT(fgEn, prAdapter->rHifStats.u4SwIntEn);
 }
 
 static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
@@ -2341,6 +2365,7 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 		u4Addr = WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR;
 		u4WrValue = CONNAC_MCU_SW_INT | CONNAC_SUBSYS_INT;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+		mt6653WfdmaSwIntEna(prAdapter, FALSE);
 	}
 
 #if CFG_ENABLE_MAWD_MD_RING

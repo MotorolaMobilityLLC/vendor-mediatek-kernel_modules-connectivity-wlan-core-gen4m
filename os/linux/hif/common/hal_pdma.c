@@ -6908,12 +6908,13 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prHifStats->u4MsiIsrCount[i]));
 	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"/ %u %u %u %u %u %u 0x%lx 0x%lx %u %u]",
+			"/ %u %u %u %u %u %u %u 0x%lx 0x%lx %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4EnIrqCount),
 			GLUE_GET_REF_CNT(prHifStats->u4IsrNotIndCount),
 			GLUE_GET_REF_CNT(prHifStats->u4EmptyIntCount),
+			GLUE_GET_REF_CNT(prHifStats->u4SwIntEn),
 			GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable),
 			prHifInfo->ulHifIntEnBits,
 			ulMsiIntEn,
