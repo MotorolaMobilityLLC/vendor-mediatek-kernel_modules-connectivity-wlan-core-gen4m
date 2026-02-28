@@ -882,7 +882,9 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 static struct ieee80211_channel mtk_6ghz_channels[] = {
 	/* UNII-5 */
+#ifdef MOT_WLAN_ENABLE_6G_CH2
 	CHAN6G(2, 0),
+#endif
 	CHAN6G(1, 0),
 	CHAN6G(5, 0),
 	CHAN6G(9, 0),
