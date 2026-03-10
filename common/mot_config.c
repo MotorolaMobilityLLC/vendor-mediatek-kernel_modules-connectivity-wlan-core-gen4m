@@ -24,7 +24,16 @@ static moto_product products_list[] = {
 		{"naples", "LATAM4", "wifi", "txpowerctrl_LATAM4"},
 		{"naples", "EMEA4",  "wifi", "txpowerctrl_EMEA4"},
 		{"naples", "all",    "wifi", "txpowerctrl"},
-
+		{"sydney", "LATAM", "wifi", "txpowerctrl_LATAM"},
+		{"sydney", "LATAM2", "wifi", "txpowerctrl_LATAM"},
+		{"sydney", "LATAM3", "wifi", "txpowerctrl_LATAM"},
+		{"sydney", "all",    "wifi", "txpowerctrl"},
+		{"sydnyl", "EMEA1", "wifi", "txpowerctrl_EMEA"},
+		{"sydnyl", "EMEA2", "wifi", "txpowerctrl_EMEA"},
+		{"sydnyl", "EMEA3", "wifi", "txpowerctrl_EMEA"},
+		{"sydnyl", "INDIA1", "wifi", "txpowerctrl_IND"},
+		{"sydnyl", "INDIA2", "wifi", "txpowerctrl_IND"},
+		{"sydnyl", "all",    "wifi", "txpowerctrl"},
 		{{0},        {0},   {0},	{0}},
 };
 
