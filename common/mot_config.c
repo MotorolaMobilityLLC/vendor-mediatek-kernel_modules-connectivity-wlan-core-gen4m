@@ -34,6 +34,7 @@ static moto_product products_list[] = {
 		{"sydney", "JP5", "wifi", "txpowerctrl_JP"},
 		{"sydney", "INDIA3", "wifi", "txpowerctrl_IND"},
 		{"sydney", "EMEA4", "wifi", "txpowerctrl_EMEA"},
+		{"sydney", "NA", "wifi", "txpowerctrl_LATAM"},
 		{"sydney", "all",    "wifi", "txpowerctrl"},
 		{"sydnyl", "EMEA1", "wifi", "txpowerctrl_EMEA"},
 		{"sydnyl", "EMEA2", "wifi", "txpowerctrl_EMEA"},
