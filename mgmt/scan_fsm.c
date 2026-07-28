@@ -2053,17 +2053,11 @@ scnSetSchedScanPlan(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 
 
-	if (u2ScanInterval != 0) {
-		uint8_t i;
-
-		prSchedScanCmd->ucMspEntryNum = 10;
-		for (i = 0; i < 10; i++)
-			prSchedScanCmd->au2MspList[i] = u2ScanInterval;
-	} else {
-		prSchedScanCmd->ucMspEntryNum = 0;
-		kalMemZero(prSchedScanCmd->au2MspList,
-				sizeof(prSchedScanCmd->au2MspList));
-	}
+	// BEGIN Motorola, IKSWA17-30214, 2026-07-28, sunyue5@motorola.com, Revert to pre vendor v PNO scan intervals
+	prSchedScanCmd->ucMspEntryNum = 0;
+	kalMemZero(prSchedScanCmd->au2MspList,
+			sizeof(prSchedScanCmd->au2MspList));
+	// END Motorola, IKSWA17-30214
 }
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
